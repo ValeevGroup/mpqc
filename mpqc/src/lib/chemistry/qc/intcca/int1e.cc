@@ -32,6 +32,7 @@
 #include <chemistry/qc/intcca/int1e.h>
 #include <util/class/scexception.h>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_QC_GaussianBasis_ObIntEvalType.hh>
 
 using namespace std;
 using namespace sc;
@@ -42,7 +43,7 @@ Int1eCCA::Int1eCCA(Integral *integral,
 		   const Ref<GaussianBasisSet>&b1,
 		   const Ref<GaussianBasisSet>&b2,
 		   int order, IntegralEvaluatorFactory eval_factory, 
-                   std::string int_type, bool use_opaque,
+                   ObIntEvalType int_type, bool use_opaque,
                    Chemistry::QC::GaussianBasis::DerivCenters cca_dc ):
   bs1_(b1), bs2_(b2),
   overlap_ptr_(0), kinetic_ptr_(0),
@@ -84,76 +85,76 @@ Int1eCCA::Int1eCCA(Integral *integral,
   else
     cca_bs2_ = cca_bs1_;
 
-  if( int_type == "overlap" ) {
-    overlap_ = eval_factory_.get_integral_evaluator2( "overlap", 0, 
-                                                      cca_bs1_, cca_bs2_,
-                                                      cca_dc_ );
+  if( int_type == ObIntEvalType_OVERLAP && deriv_lvl_ == 0 ) {
+    overlap_ = eval_factory_.get_obint_evaluator2( int_type, 0, 
+						   cca_bs1_, cca_bs2_,
+						   cca_dc_ );
     overlap_ptr_ = &overlap_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( overlap_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( overlap_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "overlap_1der" ) {
-    overlap_1der_ = eval_factory_.get_integral_evaluator2( "overlap", 1,
-                                                           cca_bs1_, cca_bs2_,
-                                                           cca_dc_ );
+  else if( int_type == ObIntEvalType_OVERLAP && deriv_lvl_ == 1 ) {
+    overlap_1der_ = eval_factory_.get_obint_evaluator2( int_type, 1,
+							cca_bs1_, cca_bs2_,
+							cca_dc_ );
     overlap_1der_ptr_ = &overlap_1der_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( overlap_1der_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( overlap_1der_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "kinetic" ) {
-    kinetic_ = eval_factory_.get_integral_evaluator2( "kinetic", 0,
+  else if( int_type == ObIntEvalType_KINETIC && deriv_lvl_ == 0 ) {
+    kinetic_ = eval_factory_.get_obint_evaluator2( int_type, 0,
                                                       cca_bs1_, cca_bs2_,
                                                       cca_dc_ );
     kinetic_ptr_ = &kinetic_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( kinetic_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( kinetic_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "kinetic_1der" ) {
-    kinetic_1der_ = eval_factory_.get_integral_evaluator2( "kinetic", 1,
+  else if( int_type == ObIntEvalType_KINETIC && deriv_lvl_ == 1 ) {
+    kinetic_1der_ = eval_factory_.get_obint_evaluator2( int_type, 1,
                                                            cca_bs1_, cca_bs2_,
                                                            cca_dc_ );
     kinetic_1der_ptr_ = &kinetic_1der_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( kinetic_1der_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( kinetic_1der_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "nuclear" ) {
-    nuclear_ = eval_factory_.get_integral_evaluator2( "potential", 0,
+  else if( int_type == ObIntEvalType_NUCLEAR && deriv_lvl_ == 0 ) {
+    nuclear_ = eval_factory_.get_obint_evaluator2( int_type, 0,
                                                       cca_bs1_, cca_bs2_,
                                                       cca_dc_ );
     nuclear_ptr_ = &nuclear_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( nuclear_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( nuclear_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "nuclear_1der" ) {
-    nuclear_1der_ = eval_factory_.get_integral_evaluator2( "potential", 1,
+  else if( int_type == ObIntEvalType_NUCLEAR && deriv_lvl_ == 1 ) {
+    nuclear_1der_ = eval_factory_.get_obint_evaluator2( int_type, 1,
                                                            cca_bs1_, cca_bs2_,
                                                            cca_dc_ );
     nuclear_1der_ptr_ = &nuclear_1der_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( nuclear_1der_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( nuclear_1der_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "hcore" ) {
-    hcore_ = eval_factory_.get_integral_evaluator2( "1eham", 0,
+  else if( int_type == ObIntEvalType_OEHAM && deriv_lvl_ == 0 ) {
+    hcore_ = eval_factory_.get_obint_evaluator2( int_type, 0,
                                                     cca_bs1_, cca_bs2_,
                                                     cca_dc_ );
     hcore_ptr_ = &hcore_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( hcore_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( hcore_ptr_->get_obint_buffer() );
   }
 
-  else if( int_type == "hcore_1der" ) {
-    hcore_1der_ = eval_factory_.get_integral_evaluator2( "1eham", 1,
+  else if( int_type == ObIntEvalType_OEHAM && deriv_lvl_ == 1 ) {
+    hcore_1der_ = eval_factory_.get_obint_evaluator2( int_type, 1,
                                                          cca_bs1_, cca_bs2_,
                                                          cca_dc_ );
     hcore_1der_ptr_ = &hcore_1der_;
     if( use_opaque_ )
-      buff_ = static_cast<double*>( hcore_1der_ptr_->get_buffer() );
+      buff_ = static_cast<double*>( hcore_1der_ptr_->get_obint_buffer() );
   }
 
 }

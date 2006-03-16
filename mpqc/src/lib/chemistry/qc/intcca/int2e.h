@@ -88,7 +88,7 @@ class Int2eCCA: public RefCount {
              const Ref<GaussianBasisSet>&b3,
              const Ref<GaussianBasisSet>&b4,
              int order, size_t storage, IntegralEvaluatorFactory, 
-             bool, string,
+             bool, TbIntEvalType,
              Chemistry::QC::GaussianBasis::DerivCenters cca_dc );
     ~Int2eCCA() {};
     double *buffer() { return buffer_; }

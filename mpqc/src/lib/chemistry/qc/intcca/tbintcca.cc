@@ -47,7 +47,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     const Ref<GaussianBasisSet> &bs4,
 			     size_t storage,
 			     IntegralEvaluatorFactory eval_factory, 
-                             bool use_opaque, string eval_type) :
+                             bool use_opaque, TbIntEvalType eval_type) :
   TwoBodyInt(integral,bs1,bs2,bs3,bs4)
 {
   cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
@@ -101,7 +101,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(Integral* integral,
                              const Ref<GaussianBasisSet> &bs4,
                              size_t storage,
                              IntegralEvaluatorFactory eval_factory,
-                             bool use_opaque, string eval_type) :
+                             bool use_opaque, TbIntEvalType eval_type) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4)
 {
   cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();

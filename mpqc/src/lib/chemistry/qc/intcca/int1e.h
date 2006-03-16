@@ -91,7 +91,7 @@ class Int1eCCA: public RefCount {
     Int1eCCA(Integral *integral,
              const Ref<GaussianBasisSet>&b1,
 	     const Ref<GaussianBasisSet>&b2,
-	     int order, IntegralEvaluatorFactory, std::string, bool,
+	     int order, IntegralEvaluatorFactory, ObIntEvalType, bool,
              Chemistry::QC::GaussianBasis::DerivCenters cca_dc );
     ~Int1eCCA();
 

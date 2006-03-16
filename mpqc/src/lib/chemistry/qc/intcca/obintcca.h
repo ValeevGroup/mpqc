@@ -74,7 +74,7 @@ class OneBodyDerivIntCCA : public OneBodyDerivInt {
   private:
     IntegralEvaluatorFactory eval_factory_;
     bool use_opaque_;
-    string eval_type_;
+    ObIntEvalType eval_type_;
   protected:
     Ref<Int1eCCA> int1ecca_;
     typedef void (Int1eCCA::*IntegralFunction)(int, int, DerivCenters&);
@@ -84,7 +84,7 @@ class OneBodyDerivIntCCA : public OneBodyDerivInt {
                       const Ref<GaussianBasisSet>&,
                       const Ref<GaussianBasisSet>&,
                       IntegralEvaluatorFactory,
-                      bool, string);
+                      bool, ObIntEvalType);
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);
     void compute_shell(int, int, int);

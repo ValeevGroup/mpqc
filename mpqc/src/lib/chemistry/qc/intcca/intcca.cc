@@ -84,8 +84,9 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   if ( buffer == "opaque" ) use_opaque_ = 1;
   else if ( buffer == "array" ) use_opaque_ = 0;
   else {
-    InputError ex("integral_buffer must be either opaque or array",__FILE__, __LINE__,
-                  "integral_buffer",buffer.c_str(),class_desc());
+    InputError ex( "integral_buffer must be either opaque or array",
+                   __FILE__, __LINE__,"integral_buffer",
+                   buffer.c_str(),class_desc() );
     throw ex;
   }
 
@@ -115,7 +116,11 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
-  // get eval factory
+  /////////////////////////////////
+  // get and configure eval factory
+  /////////////////////////////////
+
+  //get the factory
   fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
   services.registerUsesPort("IntegralEvaluatorFactory",
                             "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",
@@ -124,13 +129,33 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
                         fac_id_,"IntegralEvaluatorFactory");
   eval_factory_ = services.getPort("IntegralEvaluatorFactory");
 
-  // configure eval factory
-  eval_config_ = Chemistry::Chemistry_QC_GaussianBasis_EvaluatorConfig::_create();
+  // create config objects
+  ob_config_ = 
+    Chemistry::Chemistry_QC_GaussianBasis_ObIntEvalConfig::_create();
+  tb_config_ = 
+    Chemistry::Chemistry_QC_GaussianBasis_TbIntEvalConfig::_create();
+
+  // set default package on config objects
   package_ = keyval->stringvalue("default_package");
   if ( keyval->error() == KeyVal::OK ) {
-    eval_config_.set_default_pkg(package_);
-    ExEnv::out0() << indent << "Default integral package: " << package_ << std::endl;
+    ExEnv::out0() << indent << "Default integral package: " << package_ 
+		  << std::endl;
+    if( package_ == "intv3" ) {
+      ob_config_.set_default_pkg(Package_INTV3);
+      tb_config_.set_default_pkg(Package_INTV3);
+    }
+    else if( package_ == "cints" ) {
+      ob_config_.set_default_pkg(Package_CINTS);
+      tb_config_.set_default_pkg(Package_CINTS);
+    }
+    else {
+      InputError ex("Unrecognized package",__FILE__, __LINE__,
+                  "default_package",package_.c_str(),class_desc());
+      throw ex;
+    }
   }
+
+  // fill in config objects
   int ntype = keyval->count("type");
   int npkg = keyval->count("package");
   string tp, pkg;
@@ -138,10 +163,14 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   for( int i=0; i<ntype; ++i) {
     tp = keyval->stringvalue("type",i);
     pkg = keyval->stringvalue("package",i);
-    ExEnv::out0() << indent << "Integral type " << tp << ": " << pkg << std::endl;
-    eval_config_.set_pkg_config(tp,pkg);
+    set_config(tp,pkg);
+    ExEnv::out0() << indent << "Integral type " << tp << ": " 
+		  << pkg << std::endl;
   }
-  eval_factory_.set_config( eval_config_ );
+
+  // pass configs to factory
+  eval_factory_.set_obint_config( ob_config_ );
+  eval_factory_.set_tbint_config( tb_config_ );
 
   // set molecule on factory
   molecule_ = Chemistry::Chemistry_Molecule::_create();
@@ -152,9 +181,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
       molecule_.set_cart_coor( i, j, sc_molecule_->r(i,j) );
   }
   eval_factory_.set_molecule(molecule_);
-
-  // set package
-  eval_factory_.set_integral_package(package_);
 
 }
 
@@ -290,22 +316,22 @@ IntegralCCA::spherical_transform(int l, int inv, int subl)
 Ref<OneBodyInt>
 IntegralCCA::overlap()
 {
-  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::overlap, 
-                           use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, 
+			   &Int1eCCA::overlap, use_opaque_ );
 }
 
 Ref<OneBodyInt>
 IntegralCCA::kinetic()
 {
-  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::kinetic, 
-                           use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, 
+			   &Int1eCCA::kinetic, use_opaque_ );
 }
 
 Ref<OneBodyInt>
 IntegralCCA::nuclear()
 {
-  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::nuclear, 
-                           use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, 
+			   &Int1eCCA::nuclear, use_opaque_ );
 }
 
 Ref<OneBodyInt>
@@ -347,42 +373,44 @@ Ref<OneBodyDerivInt>
 IntegralCCA::overlap_deriv()
 {
    return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
-                                 "overlap_1der");
+                                 ObIntEvalType_OVERLAP);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::kinetic_deriv()
 {
    return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
-                                 "kinetic_1der");
+                                 ObIntEvalType_KINETIC);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::nuclear_deriv()
 {
    return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
-                                 "nuclear_1der");
+                                 ObIntEvalType_NUCLEAR);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::hcore_deriv()
 {
    return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_,
-                                 "hcore_1der");
+                                 ObIntEvalType_OEHAM);
 }
 
 Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
    return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                            storage_, eval_factory_, use_opaque_, "eri" );
+                            storage_, eval_factory_, use_opaque_, 
+			    TbIntEvalType_ERI4 );
 }
 
 Ref<TwoBodyDerivInt>
 IntegralCCA::electron_repulsion_deriv()
 {
    return new TwoBodyDerivIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                                 storage_, eval_factory_, use_opaque_, "eri_1der" );
+                                 storage_, eval_factory_, 
+				 use_opaque_, TbIntEvalType_ERI4 );
 }
 
 void
@@ -489,6 +517,63 @@ IntegralCCA::free_transforms()
   }
 
 #endif
+
+}
+
+void 
+IntegralCCA::set_config( string type, string package) 
+{
+
+  // set package
+  Package pkg;
+  if( package == "intv3" )
+    pkg = Package_INTV3;
+  else if( package == "cints" )
+    pkg = Package_CINTS;
+  else 
+    throw InputError("Unrecognized package",__FILE__, __LINE__,
+		     "package",package_.c_str(),class_desc());
+    
+  // one-body types
+  if( type == "overlap" )
+    ob_config_.set_pkg_config(ObIntEvalType_OVERLAP,pkg);
+  else if( type == "kinetic" )
+    ob_config_.set_pkg_config(ObIntEvalType_KINETIC,pkg);
+  else if( type == "nuclear" )
+    ob_config_.set_pkg_config(ObIntEvalType_NUCLEAR,pkg);
+  else if( type == "hcore" )
+    ob_config_.set_pkg_config(ObIntEvalType_OEHAM,pkg);
+  else if( type == "pointcharge1" )
+    ob_config_.set_pkg_config(ObIntEvalType_POINTCHARGE1,pkg);
+  else if( type == "pointcharge2" )
+    ob_config_.set_pkg_config(ObIntEvalType_POINTCHARGE2,pkg);
+  else if( type == "efield_dot_vector" )
+    ob_config_.set_pkg_config(ObIntEvalType_EFIELD_DOT_VECTOR,pkg);
+  else if( type == "dipole" )
+    ob_config_.set_pkg_config(ObIntEvalType_DIPOLE,pkg);
+  else if( type == "quadrupole" )
+    ob_config_.set_pkg_config(ObIntEvalType_QUADRUPOLE,pkg);
+  else if( type == "dk" )
+    ob_config_.set_pkg_config(ObIntEvalType_DK,pkg);
+  else if( type == "ecp" )
+    ob_config_.set_pkg_config(ObIntEvalType_ECP,pkg);
+  else if( type == "projmpole" )
+    ob_config_.set_pkg_config(ObIntEvalType_PROJMPOLE,pkg);
+  
+  // two-body types
+  else if( type == "eri2" )
+    tb_config_.set_pkg_config(TbIntEvalType_ERI2,pkg);
+  else if( type == "eri3" )
+    tb_config_.set_pkg_config(TbIntEvalType_ERI3,pkg);
+  else if( type == "eri4" )
+    tb_config_.set_pkg_config(TbIntEvalType_ERI4,pkg);
+  else if( type == "grt" )
+    tb_config_.set_pkg_config(TbIntEvalType_GRT,pkg);
+
+  // punt
+  else 
+    throw InputError("Unrecognized integral type",__FILE__, __LINE__,
+		     "type",type.c_str(),class_desc());  
 
 }
 

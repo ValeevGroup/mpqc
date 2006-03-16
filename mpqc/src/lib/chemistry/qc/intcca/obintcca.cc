@@ -50,11 +50,11 @@ OneBodyIntCCA::OneBodyIntCCA(Integral* integral,
   OneBodyInt(integral,bs1,bs2), intfunc_(ifunc), eval_factory_(eval_factory), 
   use_opaque_(use_opaque) 
 {
-  std::string int_type;
-  if( ifunc == &Int1eCCA::overlap ) int_type = "overlap";
-  else if (ifunc == &Int1eCCA::kinetic ) int_type = "kinetic";
-  else if (ifunc == &Int1eCCA::nuclear ) int_type = "nuclear";
-  else if (ifunc == &Int1eCCA::hcore ) int_type = "1eham";
+  ObIntEvalType int_type;
+  if( ifunc == &Int1eCCA::overlap ) int_type = ObIntEvalType_OVERLAP;
+  else if (ifunc == &Int1eCCA::kinetic ) int_type = ObIntEvalType_KINETIC;
+  else if (ifunc == &Int1eCCA::nuclear ) int_type = ObIntEvalType_NUCLEAR;
+  else if (ifunc == &Int1eCCA::hcore ) int_type = ObIntEvalType_OEHAM;
   cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,
                            int_type,use_opaque,cca_dc_);
@@ -92,13 +92,13 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
                                        const Ref<GaussianBasisSet>&bs2,
                                        IntegralEvaluatorFactory eval_factory,
                                        bool use_opaque,
-                                       string eval_type ):
+                                       ObIntEvalType int_type ):
   OneBodyDerivInt(integral,bs1,bs2), eval_factory_(eval_factory),
-  use_opaque_(use_opaque), eval_type_(eval_type)
+  use_opaque_(use_opaque), eval_type_(int_type)
 {
   cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   int1ecca_ = new Int1eCCA(integral,bs1,bs2,1,eval_factory,
-                           eval_type,use_opaque,cca_dc_);
+                           eval_type_,use_opaque,cca_dc_);
   buffer_ = int1ecca_->buffer();
 }
 
@@ -114,13 +114,13 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 
   cca_dc_.clear();
   
-  if( eval_type_ == "overlap_1der" )
+  if( eval_type_ == ObIntEvalType_OVERLAP )
     int1ecca_->overlap_1der(i,j);
-  else if( eval_type_ == "kinetic_1der" )  
+  else if( eval_type_ == ObIntEvalType_KINETIC )  
     int1ecca_->kinetic_1der(i,j);
-  else if( eval_type_ == "nuclear_1der" )
+  else if( eval_type_ == ObIntEvalType_NUCLEAR )
     int1ecca_->nuclear_1der(i,j);
-  else if( eval_type_ == "hcore_1der" )
+  else if( eval_type_ == ObIntEvalType_OEHAM )
     int1ecca_->hcore_1der(i,j);
 
   c.clear();
@@ -136,13 +136,13 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 void 
 OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
 
-  if( eval_type_ == "overlap_1der" )
+  if( eval_type_ == ObIntEvalType_OVERLAP )
     int1ecca_->overlap_1der(i,j,c);
-  else if( eval_type_ == "kinetic_1der" )
+  else if( eval_type_ == ObIntEvalType_KINETIC )
     int1ecca_->kinetic_1der(i,j,c);
-  else if( eval_type_ == "nuclear_1der" )
+  else if( eval_type_ == ObIntEvalType_NUCLEAR )
     int1ecca_->nuclear_1der(i,j,c);
-  else if( eval_type_ == "hcore_1der" )
+  else if( eval_type_ == ObIntEvalType_OEHAM )
     int1ecca_->hcore_1der(i,j,c);
 }
 

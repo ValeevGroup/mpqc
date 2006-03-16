@@ -58,7 +58,7 @@ class TwoBodyIntCCA : public TwoBodyInt {
 		  const Ref<GaussianBasisSet>&b3, 
 		  const Ref<GaussianBasisSet>&b4,
                   size_t storage, IntegralEvaluatorFactory, 
-                  bool, string );
+                  bool, TbIntEvalType );
     ~TwoBodyIntCCA() { };
 
     unsigned int num_tbint_types() const { return n_types_; }
@@ -82,11 +82,12 @@ class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
 
   public:
     TwoBodyDerivIntCCA(Integral*,
-                  const Ref<GaussianBasisSet>&b1,
-                  const Ref<GaussianBasisSet>&b2,
-                  const Ref<GaussianBasisSet>&b3,
-                  const Ref<GaussianBasisSet>&b4,
-                  size_t storage, IntegralEvaluatorFactory, bool, string);
+		       const Ref<GaussianBasisSet>&b1,
+		       const Ref<GaussianBasisSet>&b2,
+		       const Ref<GaussianBasisSet>&b3,
+		       const Ref<GaussianBasisSet>&b4,
+		       size_t storage, IntegralEvaluatorFactory, 
+		       bool, TbIntEvalType);
     ~TwoBodyDerivIntCCA() { };
 
     int log2_shell_bound(int,int,int,int);

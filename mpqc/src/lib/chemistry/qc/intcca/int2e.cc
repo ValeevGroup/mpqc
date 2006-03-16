@@ -31,6 +31,7 @@
 
 #include <chemistry/qc/intcca/int2e.h>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_QC_GaussianBasis_TbIntType.hh>
 #include <util/class/scexception.h>
 
 using namespace std;
@@ -46,7 +47,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
 		   const Ref<GaussianBasisSet>&b4,
 		   int order, size_t storage,
 		   IntegralEvaluatorFactory eval_factory, 
-                   bool use_opaque, string eval_type,
+                   bool use_opaque, TbIntEvalType eval_type,
                    Chemistry::QC::GaussianBasis::DerivCenters cca_dc ):
   eval_factory_(eval_factory), bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
   buffer_(0), use_opaque_(use_opaque), erep_ptr_(0), integral_(integral)
@@ -78,23 +79,25 @@ Int2eCCA::Int2eCCA(Integral *integral,
 
   eval_factory_.set_storage(storage);
 
-  if( eval_type == "eri" ) {
-    erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
+  if( eval_type == TbIntEvalType_ERI4 && deriv_lvl_ == 0 ) {
+    erep_ = eval_factory_.get_tbint_evaluator4( eval_type, 0,
                                                    cca_bs1_, cca_bs2_, 
                                                    cca_bs3_, cca_bs4_,
                                                    cca_dc_ );
     erep_ptr_ = &erep_;
     if( use_opaque_ )
-      buffer_ = static_cast<double*>( erep_ptr_->get_buffer() );
+      buffer_ = static_cast<double*>( 
+		  erep_ptr_->get_tbint_buffer(TbIntType_ERI) );
   }
-  else if( eval_type == "eri_1der") {
-    erep_1der_ = eval_factory_.get_integral_evaluator4( "eri2", 1,
+  else if( eval_type == TbIntEvalType_ERI4 && deriv_lvl_ == 1) {
+    erep_1der_ = eval_factory_.get_tbint_evaluator4( eval_type, 1,
                                                         cca_bs1_, cca_bs2_,
                                                         cca_bs3_, cca_bs4_,
                                                         cca_dc_ );
     erep_1der_ptr_ = &erep_1der_;
     if( use_opaque_ )
-      buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
+      buffer_ = static_cast<double*>( 
+                  erep_1der_ptr_->get_tbint_buffer(TbIntType_ERI) );
   }
   else {
     std::cout << "integral type: " << eval_type << std::endl;

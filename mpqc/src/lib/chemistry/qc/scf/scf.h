@@ -179,6 +179,13 @@ class SCF: public OneBodyWavefunction {
         Hamiltonian guess will be used.  If this option is set to true,
         then keep_guess_wavefunction should also be set to true.
 
+        <dt><tt>print_evals</tt><dd>Takes a boolean value.  If true, print
+        all eigenvalues after the SCF procedure converges.  Takes a boolean
+        value.  The default is false.
+
+        <dt><tt>print_occ_evals</tt><dd>Takes a boolean value.  If true,
+        print the occupied eigenvalues after the SCF procedure converges.
+        The default is false.
 
         </dl> */
     SCF(const Ref<KeyVal>&);

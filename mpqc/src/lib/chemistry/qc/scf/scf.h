@@ -95,8 +95,12 @@ class SCF: public OneBodyWavefunction {
     virtual void compute_hessian(const RefSymmSCMatrix&);
     
     // saves state and restart information after every checkpoint_freq()
-    // SCF iteration
+    // SCF iterations
     virtual void savestate_iter(int);
+
+    // saves state to the given filename
+    virtual void savestate_to_file(const std::string &filename);
+    std::string previous_savestate_file_;
     
     // returns the log of the max density element in each shell block
     signed char * init_pmax(double *);

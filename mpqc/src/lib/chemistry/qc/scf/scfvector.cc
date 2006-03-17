@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sstream>
+
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 
@@ -67,6 +69,37 @@ extern "C" {
 }
 
 void
+SCF::savestate_to_file(const std::string &filename)
+{
+  std::string filename_to_delete = previous_savestate_file_;
+  std::string filename_to_use;
+  if (scf_grp_->me() == 0) {
+    filename_to_use = filename;
+    previous_savestate_file_ = filename;
+  }
+  else {
+    filename_to_use = "/dev/null";
+  }
+  StateOutBin so(filename_to_use.c_str());
+  save_state(this,so);
+  so.close();
+  if (filename_to_delete.size() > 0) {
+    if (unlink(filename_to_delete.c_str())) {
+      int unlink_errno = errno;
+      ExEnv::out0() << indent
+                    << "WARNING: SCF::compute_vector(): "
+                    << "unlink of temporary checkpoint file"
+                    << endl
+                    << indent
+                    << "         \"" << filename_to_delete << "\" "
+                    << "failed with error: "
+                    << strerror(unlink_errno)
+                    << endl;
+    }
+  }
+}
+
+void
 SCF::savestate_iter(int iter)
 {
   char *ckptfile=0, *oldckptfile=0;
@@ -77,44 +110,14 @@ SCF::savestate_iter(int iter)
   int savestate_freq = checkpoint_freq();
   
   if (savestate && ( (iter+1)%savestate_freq==0) ) {
-    devnull = "/dev/null";
-    filename = checkpoint_file();
-    if (scf_grp_->me() == 0) {
-      ckptfile = new char[strlen(filename)+10];
-      sprintf(ckptfile,"%s.%d.tmp",filename,iter+1);
-      oldckptfile = new char[strlen(filename)+10];
-      sprintf(oldckptfile,"%s.%d.tmp",filename,(iter+1-savestate_freq));
-    }
-    else {
-      ckptfile = new char[strlen(devnull)+1];
-      strcpy(ckptfile, devnull);
-    }
-    // save temporary checkpoint file after each SCF iteration
-    StateOutBin so(ckptfile);
-    save_state(this,so);
-    if (scf_grp_->me() == 0) {
-      if (oldckptfile != NULL && (iter+1-savestate_freq)>=savestate_freq) {
-        if (unlink(oldckptfile)) {
-          int unlink_errno = errno;
-          ExEnv::out0() << indent
-                        << "WARNING: SCF::compute_vector(): "
-                        << "unlink of temporary checkpoint file"
-                        << endl
-                        << indent
-                        << "         \"" << oldckptfile << "\" "
-                        << "failed with error: "
-                        << strerror(unlink_errno)
-                        << endl;
-        }
-      }
-      delete [] oldckptfile;
-    }
-    delete [] ckptfile;
-    so.close();
+    ostringstream sstr;
+    const char *filename = checkpoint_file();
+    sstr << filename << "." << iter+1 << ".tmp";
+    savestate_to_file(sstr.str());
     free((void*)filename);
   }
-
 }
+
 double
 SCF::compute_vector(double& eelec, double nucrep)
 {
@@ -402,7 +405,13 @@ SCF::compute_vector(double& eelec, double nucrep)
   oso_eigenvectors_.set_actual_accuracy(delta);
   // Checkpoint wavefunction, if needed, so that if converged
   // on the last iteration then the wavefunction is marked as computed
-  savestate_iter(iter-1);
+  if (if_to_checkpoint()) {
+    const char *checkpoint_filename = checkpoint_file();
+    std::string state_filename = checkpoint_filename;
+    free((void*)checkpoint_filename);
+    state_filename += ".tmp";
+    savestate_to_file(state_filename);
+  }
 
   // now clean up
   done_vector();

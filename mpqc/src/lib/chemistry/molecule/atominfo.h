@@ -90,6 +90,86 @@ class AtomInfo: public SavableState {
                               int Z, int i) const;
   public:
     AtomInfo();
+
+    /** The AtomInfo KeyVal constructor is used to generate a AtomInfo
+        object from the input.  Default values will be read in from the
+        <tt>atominfo.kv</tt> file in library directory.  These can be
+        overridden by specifying the keyword below.  The library file is
+        also read using a KeyVal constructor syntax, so consult that file
+        for an example.
+
+        <table border="1">
+
+        <tr><td>Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>mass:unit</tt><td>string<td><tt>amu</tt><td>The unit to
+        be used for masses.  See the Units class for more information about
+        units.
+
+        <tr><td><tt>mass:</tt><em>symbol</em><td>double<td>library
+        value<td>The mass associated with the given atomic symbol.
+
+        <tr><td><tt>vdw_radius:unit</tt><td>string<td><tt>bohr</tt><td>The
+        unit to be used for van der Waals radii.  See the Units class for
+        more information about units.
+
+        <tr><td><tt>vdw_radius:scaling_factor</tt><td>double<td>1.0<td>The
+        scaling factor to be used for all van der Waals radii, including
+        library values.
+
+        <tr><td><tt>vdw_radius:</tt><em>symbol</em><td>double<td>library
+        value <td>The van der Waals radius associated with the given atomic
+        symbol.
+
+        <tr><td><tt>atomic_radius:unit</tt><td>string<td><tt>bohr</tt><td>The
+        unit to be used for atomic radii.  See the Units class for more
+        information about units.
+
+        <tr><td><tt>atomic_radius:scaling_factor</tt><td>double<td>1.0<td>The
+        scaling factor to be used for all atomic radii, including library
+        values.
+
+        <tr><td><tt>atomic_radius:</tt><em>symbol</em><td>double<td>library
+        value <td>The atomic radius associated with the given atomic
+        symbol.
+
+        <tr><td><tt>bragg_radius:unit</tt><td>string<td><tt>bohr</tt><td>The
+        unit to be used for Bragg radii.  See the Units class for more
+        information about units.
+
+        <tr><td><tt>bragg_radius:scaling_factor</tt><td>double<td>1.0<td>The
+        scaling factor to be used for all Bragg radii, including library
+        values.
+
+        <tr><td><tt>bragg_radius:</tt><em>symbol</em><td>double<td>library
+        value <td>The Bragg radius associated with the given atomic symbol.
+
+        <tr><td><tt>maxprob_radius:unit</tt><td>string<td><tt>bohr</tt><td>The
+        unit to be used for maximum probability radii.  See the Units class
+        for more information about units.
+
+        <tr><td><tt>maxprob_radius:scaling_factor</tt><td>double<td>1.0<td>The
+        scaling factor to be used for all maximum probability radii,
+        including library values.
+
+        <tr><td><tt>maxprob_radius:</tt><em>symbol</em><td>double<td>library
+        value<td>The maximum probability radius associated with the given
+        atomic symbol.
+
+        <tr><td><tt>ip:unit</tt><td>string<td><tt>Hartree</tt><td>The unit
+        to be used for ionization potentials.  See the Units class for more
+        information about units.
+
+        <tr><td><tt>ip:</tt><em>symbol</em><td>double<td>library
+        value<td>The ionization potential for the given atom.
+
+        <tr><td><tt>rgb:</tt><em>symbol</em><td>double[3]<td>library
+        value<td>A vector with the red, green, and blue values used to
+        color each atom.  Each element is between 0 (off) and 1 (on).
+
+        </table>
+    */
+
     AtomInfo(const Ref<KeyVal>&);
     AtomInfo(StateIn&);
     ~AtomInfo();

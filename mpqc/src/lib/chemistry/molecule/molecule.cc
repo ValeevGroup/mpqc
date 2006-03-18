@@ -1165,7 +1165,8 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs) const
   // evals: principal moments of inertia
   // evecs: principal axes (optional argument)
 
-  const double au_to_angs = 0.2800283608302436; // for moments of inertia
+  Ref<Units> units = new Units("angstroms * angstroms");
+  double au_to_angs = units->from_atomic_units();
 
   double *inert[3];  // inertia tensor
 

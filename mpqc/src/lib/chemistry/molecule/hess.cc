@@ -478,7 +478,7 @@ static ClassDesc DiagMolecularHessian_cd(
 DiagMolecularHessian::DiagMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
-  diag_ = keyval->doublevalue("coor",KeyValValuedouble(1.0));
+  diag_ = keyval->doublevalue("diag",KeyValValuedouble(1.0));
 }
 
 DiagMolecularHessian::DiagMolecularHessian(StateIn&s):

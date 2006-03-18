@@ -101,6 +101,19 @@ class MolecularEnergy: public Function {
         <dt><tt>hessian_accuracy</tt><dd> Sets the accuracy to which
         hessians are computed.  The default is 1.0e-4 atomic units.
 
+        <dt><tt>hessian</tt><dd>Specifies a MolecularHessian object that is
+        used to compute the hessian.  If this MolecularEnergy
+        specialization does not provide a hessian of its own, and a hessian
+        is needed, then this keyword must be specified.
+
+        <dt><tt>guess_hessian</tt><dd>Specifies a MolecularHessian object
+        that is used to compute a guess hessian.  Guess hessians are used
+        to improve the rate of convergence of optimizations.  If this
+        keyword is not specified, and a MolecularCoor object is given by
+        <tt>coor</tt>, then the guess hessian is obtained from the
+        MolecularCoor object.  If neither this nor <tt>coor</tt> are given,
+        then Function::guess_hessian is used, which returns a unit matrix.
+
         <dt><tt>print_molecule_when_changed</tt><dd> If true, then whenever
         the molecule's coordinates are updated they will be printed.  The
         default is true.

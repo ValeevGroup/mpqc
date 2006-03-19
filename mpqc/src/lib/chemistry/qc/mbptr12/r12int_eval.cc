@@ -1682,27 +1682,29 @@ R12IntEval::compute()
       Ref<MOIndexSpace> vir1_act = vir_act(spin1);
       Ref<MOIndexSpace> vir2_act = vir_act(spin2);
       
-      Ref<TwoBodyMOIntsTransform> tform;
-      if (obs_eq_vbs) {
-        // these transforms were used by VXB evaluators and should be available
-        const std::string tform_name = transform_label(occ1_act,
-                                                       r12info()->refinfo()->orbs(spin1),
-                                                       occ2_act,
-                                                       r12info()->refinfo()->orbs(spin2),0);
-        tform = tform_map_[tform_name];
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+      Ref<R12IntEval> thisref(this);
+      // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
+      if (obs_eq_vbs && nocorrptr.null()) {
+        NewTransformCreator tform_creator(thisref,
+                                          occ1_act,
+                                          r12info()->refinfo()->orbs(spin1),
+                                          occ2_act,
+                                          r12info()->refinfo()->orbs(spin2),0);
+        fill_container(tform_creator,tforms);
       }
       else {
-        // these transforms were used by VXB evaluators and should be available
-        const std::string tform_name = transform_label(occ1_act,
-                                                       vir1_act,
-                                                       occ2_act,
-                                                       vir2_act,0);
-        tform = tform_map_[tform_name];
-      }        
+        NewTransformCreator tform_creator(thisref,
+                                          occ1_act,
+                                          vir1_act,
+                                          occ2_act,
+                                          vir2_act,0);
+        fill_container(tform_creator,tforms);
+      }
       compute_mp2_pair_energies_(emp2pair_[s],spincase2,
                                  occ1_act,vir1_act,
                                  occ2_act,vir2_act,
-                                 tform);
+                                 tforms[0]);
   }
   
   // Distribute the final intermediates to every node

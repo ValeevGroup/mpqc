@@ -39,6 +39,7 @@ static ForceLink<ElectronDensity> wfn_force_link_a_;
 static ForceLink<Orbital> wfn_force_link_b_;
 static ForceLink<BEMSolventH> wfn_force_link_c_;
 static ForceLink<ExtendedHuckelWfn> wfn_force_link_d_;
+static ForceLink<HCoreWfn> wfn_force_link_e_;
 
 }
 

@@ -344,6 +344,7 @@ check_clean: check_clean_scratch
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+	/bin/rm -rf $(RUN)/*.ckpt $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
 
 check: check0
 

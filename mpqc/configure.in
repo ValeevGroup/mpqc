@@ -1519,7 +1519,7 @@ AC_CHECK_FUNC($F77_DGESVD,HAVE_LAPACK=yes,[
 AC_SUBST(HAVE_LAPACK)
 if test X$HAVE_LAPACK != Xyes; then
   echo "Could not link to the LAPACK library.  It can be obtained at"
-  echo "http://www.netlib.org/lapack.  Use --with-libdir and/or --with-libs"
+  echo "http://www.netlib.org/lapack.  Use --with-libdirs and/or --with-libs"
   echo "to specify the name of the library."
   AC_MSG_ERROR([LAPACK is required to complete the build])
 fi

@@ -314,11 +314,11 @@ default::
 	@echo \'make check0_run\' to run the small test suite
 	@echo \'make check0_chk\' to check the small test suite
 	@echo \'make check1\' to run and check the intermediate test suite
-	@echo \'make check1_run\' to run the small test suite
-	@echo \'make check1_chk\' to check the small test suite
+	@echo \'make check1_run\' to run the intermediate test suite
+	@echo \'make check1_chk\' to check the intermediate test suite
 	@echo \'make check2\' to inputs and check the full test suite
-	@echo \'make check2_run\' to run the small test suite
-	@echo \'make check2_chk\' to check the small test suite
+	@echo \'make check2_run\' to run the full test suite
+	@echo \'make check2_chk\' to check the full test suite
 	@echo "  For each of the above, MPQCRUN_ARGS=... can be given to"
 	@echo "  to control how the jobs are run.  If MPQCRUN_ARGS is"
 	@echo "  given to checkn_run, then the same MPQCRUN_ARGS must be given"
@@ -362,6 +362,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 endif
 
 check0_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 	$(MAKE) checkccafe_chk
@@ -373,6 +374,7 @@ check1_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
 
 check2: $(RUN) check2_run check2_chk
@@ -381,6 +383,7 @@ check2_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
@@ -390,6 +393,7 @@ ifeq ($(ENABLESHARED),yes)
 endif
 
 checkcca_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
@@ -402,6 +406,7 @@ checkccafe_run: $(RUN) stamp-ccafe
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs

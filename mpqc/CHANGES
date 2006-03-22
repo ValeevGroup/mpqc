@@ -3,7 +3,7 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
-  * 2006-0x-xx: MPQC-2.3.1
+  * 2006-03-22: MPQC-2.3.1
      o MCSearch added for cubic interpolation during quasi-Newton line
        searches.
      o Added KMLYP method.

@@ -1,6 +1,6 @@
 
 test_basis: STO-3G 6-311G**
-test_method: uhf uxalpha uhfk uhfs uhfb uhfg96 ublyp ub3lyp upbe upw91 ub3pw91 ubpw91 ub3p86 ubp86 uspz81
+test_method: uhf uxalpha uhfk uhfs uhfb uhfg96 ublyp ub3lyp upbe upw91 ub3pw91 ubpw91 ub3p86 ubp86 uspz81 ukmlyp
 gradient: yes
 test_molecule:              h2o  dh2  ch2
 test_molecule_symmetry:     c2v  d2h  c2v

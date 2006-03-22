@@ -98,6 +98,9 @@ class DIIS: public SelfConsistentExtrapolation {
     void start_extrapolation();
 
     void reinitialize();
+
+    /// Override DescribedClass::print.
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

@@ -20,9 +20,10 @@ using namespace sc;
 int main(int argc, char **argv) {
   const char *unitstr = "kcal/mol";
 
-  if (argc == 2) unitstr = argv[1];
-
-  if (argc != 1) {
+  if (argc == 2) {
+      unitstr = argv[1];
+    }
+  else if (argc != 1) {
       cerr << "One argument, the unit to be converted, must be given" << endl;
       abort();
     }

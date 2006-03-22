@@ -163,11 +163,109 @@ class Molecule: public SavableState
     std::vector<int> non_q_atoms_;
 
     void clear();
+
+    // Throw an exception if an atom is duplicated.  The
+    // atoms in the range [begin, natom_) are checked.
+    void throw_if_atom_duplicated(int begin=0, double tol = 1e-3);
   public:
     Molecule();
     Molecule(const Molecule&);
     Molecule(StateIn&);
-    /// The KeyVal constructor.
+    /** The Molecule KeyVal constructor is used to generate a Molecule
+        object from the input.  Several examples are given in the Molecule
+        class overview.  The full list of keywords that are accepted is
+        below.
+
+        <table border="1">
+
+        <tr><td>Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>include_q</tt><td>boolean<td>false<td>Some of the
+        atoms can be specified as <tt>Q</tt> and given a customizable
+        charge.  Such atoms are a point charge that do not have basis
+        functions.  If this option is true, then the <tt>Q</tt> atoms are
+        included when computing the nuclear charge and the electric field
+        due to the nuclear charge.
+
+        <tr><td><tt>include_qq</tt><td>boolean<td>false<td>Some of the
+        atoms can be specified as <tt>Q</tt> and given a customizable
+        charge.  Such atoms are a point charge that do not have basis
+        functions.  If this option is true, then the <tt>Q</tt> atoms are
+        included when computing the nuclear repulsion energy and its
+        derivatives.
+
+        <tr><td><tt>atominfo</tt><td>AtomInfo<td>library values<td>This
+        gives information about each atom, such as the symbol, name, and
+        various atomic radii.
+
+        <tr><td><tt>symmetry</tt><td>string<td><tt>C1</tt><td>The
+        Schoenflies symbol of the point group.  This is case insensitive.
+        It should be a subgroup of D<sub>2h</sub>.  If it is <tt>auto</tt>,
+        then the appropriate subgroup of D<sub>2h</sub> will be found.
+        
+        <tr><td><tt>symmetry_tolerance</tt><td>double<td>1.0e-4<td>When
+        a molecule has symmetry, some atoms may be related by symmetry
+        operations.  The distance between given atoms and atoms generated
+        by symmetry operations is compared to this threshold to determine
+        if they are the same.  If they are the same, then the coordinates
+        are cleaned up to make them exactly symmetry equivalent.  If the
+        given molecule was produced by a optimization that started in C1
+        symmetry, but produced a roughly symmetric structure and you would
+        like to begin using symmetry, then this may need to be increased a
+        bit to properly symmetrize the molecule.
+
+        <tr><td><tt>symmetry_frame</tt><td>double[3][3]<td>[[1 0 0][0 1
+        0][0 0 1]]<td>The symmetry frame.  Ignored for <tt>symmetry =
+        auto</tt>.
+
+        <tr><td><tt>origin</tt><td>double[3]<td>[0 0 0]<td>The origin of
+        the symmetry frame.  Ignored for <tt>symmetry = auto</tt>.
+
+        <tr><td><tt>redundant_atoms</tt><td>boolean<td>false<td>If true,
+        do not generate symmetry equivalent atoms; they are already given
+        in the input.  It should not be necessary to specify this option,
+        since, by default, if a symmetry operation duplicates an atom, the
+        generated atom will not be added to the list of atoms.  Ignored for
+        <tt>symmetry = auto</tt>.
+
+        <tr><td><tt>pdb_file</tt><td>string<td>undefined<td>This gives
+        the name of a PDB file, from which the nuclear coordinates will be
+        read.  If this is given, the following options will be ignored.
+
+        <tr><td><tt>unit</tt><td>string<td>bohr<td>This gives the name
+        of the units used for the geometry.  See the Units class for
+        information about the known units.  This replaces deprecated
+        keywords that are still recognized: <tt>angstrom</tt> and
+        <tt>angstroms</tt>.  This is ignored if <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>geometry</tt><td>double[][3]<td>none<td>This gives
+        the Cartesian coordinates of the molecule.  This is ignored if
+        <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>atoms</tt><td>string[]<td>none<td>This gives the
+        Cartesian coordinates of the molecule.  This is ignored if
+        <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>ghost</tt><td>boolean[]<td>none<td>If true, the atom
+        will be given zero charge.  It will still have basis functions,
+        however.  This is used to estimate basis set superposition error.
+        This is ignored if <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>charge</tt><td>double[]<td>Z for each atom<td>Allows
+        specification of the charge for each atom.  This is ignored if
+        <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>atom_labels</tt><td>string[]<td>none<td>This gives a
+        user defined atom label for each atom.  This is ignored if
+        <tt>pdb_file</tt> is given.
+
+        <tr><td><tt>mass</tt><td>double[]<td>Taken from AtomInfo given by
+        the <tt>atominfo</tt> keyword. <td>This gives a user defined mass
+        for each atom.  This is ignored if <tt>pdb_file</tt> is given.
+
+        </table>
+
+    */
     Molecule(const Ref<KeyVal>&input);
 
     virtual ~Molecule();

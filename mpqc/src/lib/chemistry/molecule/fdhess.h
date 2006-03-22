@@ -39,7 +39,9 @@
 
 namespace sc {
 
-/// Computes the molecular hessian by finite displacements of gradients.
+/** Computes the molecular hessian by finite displacements of gradients.
+    This will use the minimum number of displacements, each in the
+    highest possible point group. */
 class FinDispMolecularHessian: public MolecularHessian {
   protected:
     Ref<MolecularEnergy> mole_;
@@ -90,6 +92,61 @@ class FinDispMolecularHessian: public MolecularHessian {
     void restart();
   public:
     FinDispMolecularHessian(const Ref<MolecularEnergy>&);
+    /** The FinDispMolecularHessian KeyVal constructor is used to generate a
+        FinDispMolecularHessian object from the input.  It reads the keywords
+        below.
+
+        <table border="1">
+
+        <tr><td>Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>energy</tt><td>MolecularEnergy<td>none<td>This gives an
+        object which will be used to compute the gradients needed to form
+        the hessian.  If this is not specified, the object using
+        FinDispMolecularHessian will, in some cases, fill it in
+        appropriately.  However, even in these cases, it may be desirable
+        to specify this keyword.  For example, this could be used in an
+        optimization to compute frequencies using a lower level of theory.
+
+        <tr><td><tt>debug</tt><td>boolean<td>false<td>If true,
+        print out debugging information.
+
+        <tr><td><tt>point_group</tt><td>PointGroup<td>none<td>
+        The point group to use for generating the displacements.
+
+        <tr><td><tt>restart</tt><td>boolean<td>true<td>If true, and a
+        checkpoint file exists, restart from that file.
+
+        <tr><td><tt>restart_file</tt><td>string
+        <td><em>basename</em><tt>.ckpt.hess</tt><td>The name of
+        the file where checkpoint information is written to or read from.
+
+        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
+        checkpoint intermediate data.
+
+        <tr><td><tt>only_totally_symmetric</tt><td>boolean<td>false
+        <td>If true, only follow totally symmetric displacments.  The
+        hessian will not be complete, but it has enough information
+        to use it in a geometry optimization.
+
+        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>true<td>
+        If true, then cubic terms will be eliminated.  This requires
+        that two displacements are done for each totally symmetric
+        coordinate, rather than one.  Setting this to false will reduce
+        the accuracy, but the results will still probably be accurate
+        enough for a geometry optimization.
+
+        <tr><td><tt>do_null_displacement</tt><td>boolean<td>true<td>Run
+        the calculation at the given geometry as well.
+
+        <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
+        the displacement in Bohr.
+
+        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>displacement</tt>
+        / 1000<td>The accuracy to which the gradients will be computed.
+
+        </table>
+    */
     FinDispMolecularHessian(const Ref<KeyVal>&);
     FinDispMolecularHessian(StateIn&);
     ~FinDispMolecularHessian();

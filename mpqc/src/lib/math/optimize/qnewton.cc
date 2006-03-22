@@ -228,55 +228,91 @@ QNewtonOpt::update()
   // either do a lineopt or check stepsize
   double tot;
   if(lineopt_.nonnull()) {
+    if (dynamic_cast<Backtrack*>(lineopt_.pointer()) != 0) {
+      // The Backtrack line search is a special case.
 
-    // perform a search
-    double factor;
-    if( n_iterations_ == 0 && force_search_ ) 
-      factor = lineopt_->set_decrease_factor(1.0);
-    lineopt_->init(xdisp,function());
-    // reset value acc here so line search "precomputes" are 
-    // accurate enough for subsequent gradient evals
-    function()->set_desired_value_accuracy(accuracy_/100);
-    int acceptable = lineopt_->update();
-    if( n_iterations_ == 0 && force_search_ )
-      lineopt_->set_decrease_factor( factor );
+      // perform a search
+      double factor;
+      if( n_iterations_ == 0 && force_search_ ) 
+        factor = lineopt_->set_decrease_factor(1.0);
+      lineopt_->init(xdisp,function());
+      // reset value acc here so line search "precomputes" are 
+      // accurate enough for subsequent gradient evals
+      function()->set_desired_value_accuracy(accuracy_/100);
+      int acceptable = lineopt_->update();
+      if( n_iterations_ == 0 && force_search_ )
+        lineopt_->set_decrease_factor( factor );
 
-    if( !acceptable ) {
-      if( force_search_ ) factor = lineopt_->set_decrease_factor(1.0);
+      if( !acceptable ) {
+        if( force_search_ ) factor = lineopt_->set_decrease_factor(1.0);
 
-      // try a new guess hessian
-      if( restart_ ) {
-	ExEnv::out0() << endl << indent << 
-	  "Restarting Hessian approximation" << endl;
-	RefSymmSCMatrix hessian(dimension(),matrixkit());
-	function()->guess_hessian(hessian);
-	ihessian_ = function()->inverse_hessian(hessian);
-	xdisp = -1.0 * (ihessian_ * gcurrent);
-	lineopt_->init(xdisp,function());
-	acceptable = lineopt_->update();
-      }
+        // try a new guess hessian
+        if( restart_ ) {
+          ExEnv::out0() << endl << indent << 
+            "Restarting Hessian approximation" << endl;
+          RefSymmSCMatrix hessian(dimension(),matrixkit());
+          function()->guess_hessian(hessian);
+          ihessian_ = function()->inverse_hessian(hessian);
+          xdisp = -1.0 * (ihessian_ * gcurrent);
+          lineopt_->init(xdisp,function());
+          acceptable = lineopt_->update();
+        }
       
-      // try steepest descent direction
-      if( !acceptable ) {
-	ExEnv::out0() << endl << indent << 
-	  "Trying steepest descent direction." << endl;
-	xdisp = -1.0 * gcurrent;
-	lineopt_->init(xdisp,function());
-	acceptable = lineopt_->update();
-      }
+        // try steepest descent direction
+        if( !acceptable ) {
+          ExEnv::out0() << endl << indent << 
+            "Trying steepest descent direction." << endl;
+          xdisp = -1.0 * gcurrent;
+          lineopt_->init(xdisp,function());
+          acceptable = lineopt_->update();
+        }
 
-      // give up and use steepest descent step
-      if( !acceptable ) {
-	ExEnv::out0() << endl << indent << 
-	  "Resorting to unscaled steepest descent step." << endl;
-	function()->set_x(xcurrent + xdisp);
-	Ref<NonlinearTransform> t = function()->change_coordinates();
-	apply_transform(t);
-      }
+        // give up and use steepest descent step
+        if( !acceptable ) {
+          ExEnv::out0() << endl << indent << 
+            "Resorting to unscaled steepest descent step." << endl;
+          function()->set_x(xcurrent + xdisp);
+          Ref<NonlinearTransform> t = function()->change_coordinates();
+          apply_transform(t);
+        }
 
-      if( force_search_ ) lineopt_->set_decrease_factor( factor );
+        if( force_search_ ) lineopt_->set_decrease_factor( factor );
+      }
     }
+    else {
+      // All line searches other than Backtrack use this
+      ExEnv::out0() << indent
+                    << "......................................."
+                    << endl
+                    << indent
+                    << "Starting line optimization."
+                    << endl;
+      lineopt_->init(xdisp,function());
+      int nlineopt = 0;
+      int maxlineopt = 3;
+      for (int ilineopt=0; ilineopt<maxlineopt; ilineopt++) {
+        double maxabs_gradient = function()->gradient()->maxabs();
 
+        int converged = lineopt_->update();
+
+        ExEnv::out0() << indent
+                      << "Completed line optimization step " << ilineopt+1
+                      << (converged?" (converged)":" (not converged)")
+                      << endl
+                      << indent
+                      << "......................................."
+                      << endl;
+
+        if (converged) break;
+
+        // Improve accuracy, since we might be able to reuse the next
+        // gradient for the next quasi-Newton step.
+        if (dynamic_grad_acc_)  {
+          accuracy_ = maxabs_gradient*maxabs_gradient_to_next_desired_accuracy;
+          function()->set_desired_gradient_accuracy(accuracy_);
+        }
+      }
+    }
     xnext = function()->get_x();
     xdisp = xnext - xcurrent;
     tot = sqrt(xdisp.scalar_product(xdisp));

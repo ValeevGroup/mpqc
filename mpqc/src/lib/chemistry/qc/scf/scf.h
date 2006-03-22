@@ -95,8 +95,12 @@ class SCF: public OneBodyWavefunction {
     virtual void compute_hessian(const RefSymmSCMatrix&);
     
     // saves state and restart information after every checkpoint_freq()
-    // SCF iteration
+    // SCF iterations
     virtual void savestate_iter(int);
+
+    // saves state to the given filename
+    virtual void savestate_to_file(const std::string &filename);
+    std::string previous_savestate_file_;
     
     // returns the log of the max density element in each shell block
     signed char * init_pmax(double *);
@@ -175,6 +179,13 @@ class SCF: public OneBodyWavefunction {
         Hamiltonian guess will be used.  If this option is set to true,
         then keep_guess_wavefunction should also be set to true.
 
+        <dt><tt>print_evals</tt><dd>Takes a boolean value.  If true, print
+        all eigenvalues after the SCF procedure converges.  Takes a boolean
+        value.  The default is false.
+
+        <dt><tt>print_occ_evals</tt><dd>Takes a boolean value.  If true,
+        print the occupied eigenvalues after the SCF procedure converges.
+        The default is false.
 
         </dl> */
     SCF(const Ref<KeyVal>&);

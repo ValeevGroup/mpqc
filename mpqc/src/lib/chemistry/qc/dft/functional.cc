@@ -146,6 +146,12 @@ DenFunctional::save_data_state(StateOut& s)
   s.put(compute_potential_);
 }
 
+double
+DenFunctional::a0() const
+{
+  return a0_;
+}
+
 int
 DenFunctional::need_density_gradient()
 {
@@ -644,6 +650,16 @@ SumDenFunctional::save_data_state(StateOut& s)
     }
 }
 
+double
+SumDenFunctional::a0() const
+{
+  double eff_a0 = a0_;
+  for (int i=0; i < n_; i++) {
+      eff_a0 += coefs_[i] * funcs_[i]->a0();
+    }
+  return eff_a0;
+}
+
 int
 SumDenFunctional::need_density_gradient()
 {
@@ -835,6 +851,16 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new VWN1LCFunctional(1);
           funcs_[3] = new LYPCFunctional;
+        }
+      else if (!strcmp(name_,"KMLYP")) {
+          init_arrays(3);
+          a0_ = 0.557;
+          coefs_[0] = 0.443;
+          coefs_[1] = 0.552;
+          coefs_[2] = 0.448;
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN1LCFunctional(1);
+          funcs_[2] = new LYPCFunctional;
         }
       else if (!strcmp(name_,"B3PW91")) {
           init_arrays(4);

@@ -152,6 +152,7 @@ CKPTINPUTS = \
  ckpt_0mp2.in       ckpt_1hsosscf.in   ckpt_2efcopt.in    ckpt_qnewtopt.in \
  ckpt_0zapt2.in     ckpt_1mp2.in       ckpt_hsosscf.in \
  ckpt_0clksb3lyp.in     ckpt_1clksb3lyp.in     ckpt_clksb3lyp.in \
+ ckpt_0clkskmlyp.in     ckpt_1clkskmlyp.in     ckpt_clkskmlyp.in \
  ckpt_0clksbp86.in      ckpt_1clksbp86.in      ckpt_clksbp86.in \
  ckpt_0clkshfg96.in     ckpt_1clkshfg96.in     ckpt_clkshfg96.in \
  ckpt_0clksmpwpw91.in   ckpt_1clksmpwpw91.in   ckpt_clksmpwpw91.in \
@@ -200,7 +201,8 @@ clks_blyp.in   hsosks_lsdax.in       uks_b88.in \
 clks_lsdax.in  hsosks_xa.in          uks_blyp.in \
 clks_xa.in     uks_lsdax.in          uks_xa.in \
 hsoshf.in      osshf.in              qmmm1.in \
-qmmm2.in
+qmmm2.in \
+clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
 ifeq ($(HAVE_MBPTR12),yes)
  METHODSINPUTS += \
@@ -312,11 +314,11 @@ default::
 	@echo \'make check0_run\' to run the small test suite
 	@echo \'make check0_chk\' to check the small test suite
 	@echo \'make check1\' to run and check the intermediate test suite
-	@echo \'make check1_run\' to run the small test suite
-	@echo \'make check1_chk\' to check the small test suite
+	@echo \'make check1_run\' to run the intermediate test suite
+	@echo \'make check1_chk\' to check the intermediate test suite
 	@echo \'make check2\' to inputs and check the full test suite
-	@echo \'make check2_run\' to run the small test suite
-	@echo \'make check2_chk\' to check the small test suite
+	@echo \'make check2_run\' to run the full test suite
+	@echo \'make check2_chk\' to check the full test suite
 	@echo "  For each of the above, MPQCRUN_ARGS=... can be given to"
 	@echo "  to control how the jobs are run.  If MPQCRUN_ARGS is"
 	@echo "  given to checkn_run, then the same MPQCRUN_ARGS must be given"
@@ -342,6 +344,7 @@ check_clean: check_clean_scratch
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+	/bin/rm -rf $(RUN)/*.ckpt $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
 
 check: check0
 
@@ -359,6 +362,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 endif
 
 check0_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 	$(MAKE) checkccafe_chk
@@ -370,6 +374,7 @@ check1_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
 
 check2: $(RUN) check2_run check2_chk
@@ -378,6 +383,7 @@ check2_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
@@ -387,6 +393,7 @@ ifeq ($(ENABLESHARED),yes)
 endif
 
 checkcca_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
@@ -400,6 +407,7 @@ checkccafe_run: $(RUN) stamp-ccafe
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:
+	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs
@@ -588,6 +596,7 @@ checkckpt:
 	@$(CHECKOUT) $(RUN)/ckpt_0zapt2.out $(RUN)/ckpt_1zapt2.out
 	@$(CHECKOUT) $(RUN)/ckpt_clksxalpha.out $(RUN)/ckpt_1clksxalpha.out
 	@$(CHECKOUT) $(RUN)/ckpt_clksb3lyp.out $(RUN)/ckpt_1clksb3lyp.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkskmlyp.out $(RUN)/ckpt_1clkskmlyp.out
 	@$(CHECKOUT) $(RUN)/ckpt_clksbp86.out $(RUN)/ckpt_1clksbp86.out
 	@$(CHECKOUT) $(RUN)/ckpt_clkshfg96.out $(RUN)/ckpt_1clkshfg96.out
 	@$(CHECKOUT) $(RUN)/ckpt_clksmpwpw91.out $(RUN)/ckpt_1clksmpwpw91.out

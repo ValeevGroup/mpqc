@@ -107,6 +107,21 @@ Molecule::clear()
   clear_symmetry_info();
 }
 
+void
+Molecule::throw_if_atom_duplicated(int begin, double tol)
+{
+  for (int i=begin; i<natoms_; i++) {
+      SCVector3 ri(r_[i]);
+      for (int j=0; j<i; j++) {
+          SCVector3 rj(r_[j]);
+          if (ri.dist(rj) < tol) {
+              throw InputError("duplicated atom coordinate",
+                               __FILE__, __LINE__, 0, 0, class_desc());
+            }
+        }
+    }
+}
+
 Molecule::Molecule(const Ref<KeyVal>&input):
  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
@@ -362,6 +377,8 @@ Molecule::add_atom(int Z,double x,double y,double z,
     }
 
   natoms_++;
+
+  throw_if_atom_duplicated(natoms_-1);
 }
 
 void
@@ -1148,7 +1165,8 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs) const
   // evals: principal moments of inertia
   // evecs: principal axes (optional argument)
 
-  const double au_to_angs = 0.2800283608302436; // for moments of inertia
+  Ref<Units> units = new Units("angstroms * angstroms");
+  double au_to_angs = units->from_atomic_units();
 
   double *inert[3];  // inertia tensor
 

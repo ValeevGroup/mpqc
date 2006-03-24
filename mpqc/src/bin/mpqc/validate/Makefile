@@ -319,6 +319,10 @@ default::
 	@echo \'make check2\' to inputs and check the full test suite
 	@echo \'make check2_run\' to run the full test suite
 	@echo \'make check2_chk\' to check the full test suite
+	@echo \'The following can be used for custom sets of input files:\'
+	@echo \'make check_custom CUSTOMINPUTS="..."\'
+	@echo \'make check_custom_run CUSTOMINPUTS="..."\'
+	@echo \'make check_custom_chk CUSTOMINPUTS="..."\'
 	@echo "  For each of the above, MPQCRUN_ARGS=... can be given to"
 	@echo "  to control how the jobs are run.  If MPQCRUN_ARGS is"
 	@echo "  given to checkn_run, then the same MPQCRUN_ARGS must be given"
@@ -335,6 +339,7 @@ default::
 	@echo \'make diff\' to use the diff program to compare outputs
 
 .PHONY: check check0 check0_run check0_chk
+.PHONY: check_custom check_custom_run check_custom_chk
 .PHONY: check1 check1_run check1_chk
 .PHONY: check2 check2_run check2_chk
 .PHONY: check_clean check_clean_scratch
@@ -345,6 +350,17 @@ check_clean: check_clean_scratch
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
 	/bin/rm -rf $(RUN)/*.ckpt $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+
+check_custom: $(RUN) check_custom_run check_custom_chk
+
+check_custom_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CUSTOMINPUTS)
+
+CUSTOMOUTPUTS=$(CUSTOMINPUTS:%.$(INSUF)=%.out)
+check_custom_chk:
+	@echo CUSTOMINPUTS = $(CUSTOMINPUTS)
+	@echo CUSTOMOUTPUTS = $(CUSTOMOUTPUTS)
+	$(CHECKOUT) -r $(SRCDIR)/ref $(CUSTOMOUTPUTS:%=$(RUN)/%)
 
 check: check0
 
@@ -362,7 +378,6 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 endif
 
 check0_chk:
-	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 	$(MAKE) checkccafe_chk
@@ -374,7 +389,6 @@ check1_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
-	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
 
 check2: $(RUN) check2_run check2_chk
@@ -383,7 +397,6 @@ check2_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
-	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
@@ -393,7 +406,6 @@ ifeq ($(ENABLESHARED),yes)
 endif
 
 checkcca_chk:
-	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
@@ -406,7 +418,6 @@ checkccafe_run: $(RUN) stamp-ccafe
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:
-	@echo MPQCRUN_ARGS = $(MPQCRUN_ARGS)
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs

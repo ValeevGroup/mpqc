@@ -152,7 +152,9 @@ DistShellPair::init()
     init_dynamic_work();
     }
   else {
-    ntask_ = nshpairs/ncpu_;
+    // when static load balancing is used, ntask_ is only used for printing
+    // messages about progress of the computation
+    ntask_ = nshpairs/ncpu_ + (nshpairs%ncpu_?1:0);
     // Compute starting S_ and R_ for this thread
     if (bs1_eq_bs2_) {
       // This is a slightly nonobvious computation of S_ and R_ from SR = msg_->me()*nthread_ + mythread_

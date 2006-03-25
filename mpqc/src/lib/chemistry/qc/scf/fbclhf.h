@@ -1,5 +1,5 @@
 //
-// linkage.h
+// fbclhf.h --- definition of the closed shell Hartree-Fock SCF class
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -25,28 +25,35 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_linkage_h
-#define _chemistry_qc_scf_linkage_h
+#ifndef _chemistry_qc_scf_fbclhf_h
+#define _chemistry_qc_scf_fbclhf_h
+
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/fbclhf.h>
-#include <chemistry/qc/scf/hsoshf.h>
-#include <chemistry/qc/scf/osshf.h>
-#include <chemistry/qc/scf/tchf.h>
-#include <chemistry/qc/scf/uhf.h>
-
-#include <math/scmat/linkage.h>
-#include <chemistry/molecule/linkage.h>
 
 namespace sc {
 
-static ForceLink<CLHF> scf_force_link_a_;
-static ForceLink<HSOSHF> scf_force_link_b_;
-static ForceLink<OSSHF> scf_force_link_c_;
-static ForceLink<TCHF> scf_force_link_d_;
-static ForceLink<UHF> scf_force_link_e_;
-static ForceLink<FockBuildCLHF> scf_force_link_f_;
+// //////////////////////////////////////////////////////////////////////////
+
+/// CLHF is a Hartree-Fock specialization of CLSCF.
+class FockBuildCLHF: public CLHF {
+  public:
+    FockBuildCLHF(StateIn&);
+    FockBuildCLHF(const Ref<KeyVal>&);
+    ~FockBuildCLHF();
+    void save_data_state(StateOut&);
+  protected:
+    void ao_fock(double accuracy);
+};
 
 }
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "ETS"
+// End:

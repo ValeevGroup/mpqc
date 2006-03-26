@@ -370,7 +370,9 @@ GenericFockContribution::GenericFockContribution(
     Ref<GaussianBasisSet> &p_b2):
   nfmat_(nfmat),
   npmat_(npmat),
-  fmats_(nfmat),
+  jmats_(nfmat),
+  kmats_(nfmat),
+  k_is_j_(nfmat),
   pmats_(npmat),
   f_b1_(f_b1),
   f_b2_(f_b2),
@@ -384,7 +386,9 @@ GenericFockContribution::GenericFockContribution(
 void
 GenericFockContribution::set_fmat(int i, const Ref<SCMatrix> &m)
 {
-  fmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
+  jmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
+  kmats_[i] = jmats_[i];
+  k_is_j_[i] = true;
 }
 
 void
@@ -392,7 +396,41 @@ GenericFockContribution::set_fmat(int i, const Ref<SymmSCMatrix> &m)
 {
   if (!f_b1_equiv_f_b2)
       throw std::runtime_error("set_fmat: basis not equiv");
-  fmats_[i].scmat_to_data(m, f_b1_, false);
+  jmats_[i].scmat_to_data(m, f_b1_, false);
+  kmats_[i] = jmats_[i];
+  k_is_j_[i] = true;
+}
+
+void
+GenericFockContribution::set_jmat(int i, const Ref<SCMatrix> &m)
+{
+  jmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
+  k_is_j_[i] = false;
+}
+
+void
+GenericFockContribution::set_jmat(int i, const Ref<SymmSCMatrix> &m)
+{
+  if (!f_b1_equiv_f_b2)
+      throw std::runtime_error("set_fmat: basis not equiv");
+  jmats_[i].scmat_to_data(m, f_b1_, false);
+  k_is_j_[i] = false;
+}
+
+void
+GenericFockContribution::set_kmat(int i, const Ref<SCMatrix> &m)
+{
+  kmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
+  k_is_j_[i] = false;
+}
+
+void
+GenericFockContribution::set_kmat(int i, const Ref<SymmSCMatrix> &m)
+{
+  if (!f_b1_equiv_f_b2)
+      throw std::runtime_error("set_fmat: basis not equiv");
+  kmats_[i].scmat_to_data(m, f_b1_, false);
+  k_is_j_[i] = false;
 }
 
 void
@@ -412,9 +450,13 @@ GenericFockContribution::set_pmat(int i, const Ref<SymmSCMatrix> &m)
 void
 GenericFockContribution::update()
 {
-  for (int i=0; i<fmats_.size(); i++) {
-      fmats_[i].fix_diagonal_blocks();
-      fmats_[i].data_to_scmat();
+  for (int i=0; i<nfmat_; i++) {
+      jmats_[i].fix_diagonal_blocks();
+      jmats_[i].data_to_scmat();
+      if (!k_is_j_[i]) {
+          kmats_[i].fix_diagonal_blocks();
+          kmats_[i].data_to_scmat();
+        }
     }
 }
 
@@ -422,7 +464,10 @@ void
 GenericFockContribution::copy()
 {
   for (int i=0; i<nfmat_; i++) {
-      fmats_[i].copy_data();
+      jmats_[i].copy_data();
+      if (!k_is_j_[i]) {
+          kmats_[i].copy_data();
+        }
     }
   for (int i=0; i<npmat_; i++) {
       pmats_[i].copy_data();
@@ -439,7 +484,10 @@ GenericFockContribution::accum(const Ref<FockContribution> &c_abs)
       throw std::invalid_argument("merging incompatible fock contributions");
     }
   for (int i=0; i<nfmat_; i++) {
-      fmats_[i].accum(c->fmats_[i]);
+      jmats_[i].accum(c->jmats_[i]);
+      if (!k_is_j_[i]) {
+          kmats_[i].accum(c->kmats_[i]);
+        }
     }
   for (int i=0; i<npmat_; i++) {
       pmats_[i].accum(c->pmats_[i]);

@@ -150,6 +150,12 @@ class FockContribution: public RefCount {
     virtual void set_fmat(int i, const Ref<SCMatrix> &) = 0;
     virtual void set_fmat(int i, const Ref<SymmSCMatrix> &) = 0;
 
+    virtual void set_jmat(int i, const Ref<SCMatrix> &) = 0;
+    virtual void set_jmat(int i, const Ref<SymmSCMatrix> &) = 0;
+
+    virtual void set_kmat(int i, const Ref<SCMatrix> &) = 0;
+    virtual void set_kmat(int i, const Ref<SymmSCMatrix> &) = 0;
+
     virtual void set_pmat(int i, const Ref<SCMatrix> &) = 0;
     virtual void set_pmat(int i, const Ref<SymmSCMatrix> &) = 0;
 
@@ -194,7 +200,9 @@ class FockContribution: public RefCount {
 class GenericFockContribution: public FockContribution {
   protected:
     int nfmat_;     /// the number of Fock matrices
-    std::vector<FockBuildMatrix> fmats_;
+    std::vector<FockBuildMatrix> jmats_;
+    std::vector<FockBuildMatrix> kmats_;
+    std::vector<bool> k_is_j_;
     int npmat_;     /// the number of density matrices
     std::vector<FockBuildMatrix> pmats_;
     Ref<GaussianBasisSet> f_b1_, f_b2_, p_b1_, p_b2_;
@@ -212,8 +220,11 @@ class GenericFockContribution: public FockContribution {
                       bool symmetric) const;
 
   public:
-    double *fmat_block(int i, int I, int J) {
-      return fmats_[i].block(I,J);
+    double *jmat_block(int i, int I, int J) {
+      return jmats_[i].block(I,J);
+    }
+    double *kmat_block(int i, int I, int J) {
+      return kmats_[i].block(I,J);
     }
     const double *pmat_block(int i, int I, int J) {
       return pmats_[i].block(I,J);
@@ -221,6 +232,12 @@ class GenericFockContribution: public FockContribution {
 
     void set_fmat(int i, const Ref<SCMatrix> &);
     void set_fmat(int i, const Ref<SymmSCMatrix> &);
+
+    void set_jmat(int i, const Ref<SCMatrix> &);
+    void set_jmat(int i, const Ref<SymmSCMatrix> &);
+
+    void set_kmat(int i, const Ref<SCMatrix> &);
+    void set_kmat(int i, const Ref<SymmSCMatrix> &);
 
     void set_pmat(int i, const Ref<SCMatrix> &);
     void set_pmat(int i, const Ref<SymmSCMatrix> &);

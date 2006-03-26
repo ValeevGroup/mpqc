@@ -105,7 +105,7 @@ CLHFContribution::contrib_e_J(int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
+  double *F_IJ = jmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
   int nKL = nK*nL;
   for (int i=0, ijkl=0, ij=0; i<nI; i++) {
@@ -127,7 +127,7 @@ CLHFContribution::contrib_e_K(int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
+  double *F_IK = kmat_block(0, I, K);
   const double * restrictxx P_JL = pmat_block(0, J, L);
   for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
       for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -148,8 +148,8 @@ CLHFContribution::contrib_all_J(int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
-  double *F_KL = fmat_block(0, K, L);
+  double *F_IJ = jmat_block(0, I, J);
+  double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
@@ -178,8 +178,8 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
-  double *F_IL = fmat_block(0, I, L);
+  double *F_IK = kmat_block(0, I, K);
+  double *F_IL = kmat_block(0, I, L);
   const double * restrictxx P_IK = pmat_block(0, I, K);
   const double * restrictxx P_IL = pmat_block(0, I, L);
 
@@ -192,8 +192,8 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-      double *F_JK = fmat_block(0, J, K);
-      double *F_JL = fmat_block(0, J, L);
+      double *F_JK = kmat_block(0, J, K);
+      double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_JK = pmat_block(0, J, K);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -222,8 +222,8 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
         }
     }
   else if (J >= L) {
-      double *F_KJ = fmat_block(0, K, J);
-      double *F_JL = fmat_block(0, J, L);
+      double *F_KJ = kmat_block(0, K, J);
+      double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -253,8 +253,8 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
         }
     }
   else {
-      double *F_KJ = fmat_block(0, K, J);
-      double *F_LJ = fmat_block(0, L, J);
+      double *F_KJ = kmat_block(0, K, J);
+      double *F_LJ = kmat_block(0, L, J);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_LJ = pmat_block(0, L, J);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -289,8 +289,8 @@ CLHFContribution::contrib_p12_p13p24_J(int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
-  double *F_KL = fmat_block(0, K, L);
+  double *F_IJ = jmat_block(0, I, J);
+  double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
@@ -319,8 +319,8 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
-//   double *F_IL = fmat_block(0, I, L);
+  double *F_IK = kmat_block(0, I, K);
+//   double *F_IL = kmat_block(0, I, L);
 //   const double * restrictxx P_IK = pmat_block(0, I, K);
   const double * restrictxx P_IL = pmat_block(0, I, L);
 
@@ -333,8 +333,8 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-      double *F_JK = fmat_block(0, J, K);
-//       double *F_JL = fmat_block(0, J, L);
+      double *F_JK = kmat_block(0, J, K);
+//       double *F_JL = kmat_block(0, J, L);
 //       const double * restrictxx P_JK = pmat_block(0, J, K);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -363,8 +363,8 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
         }
     }
   else if (J >= L) {
-      double *F_KJ = fmat_block(0, K, J);
-//       double *F_JL = fmat_block(0, J, L);
+      double *F_KJ = kmat_block(0, K, J);
+//       double *F_JL = kmat_block(0, J, L);
 //       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -394,8 +394,8 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
         }
     }
   else {
-      double *F_KJ = fmat_block(0, K, J);
-//       double *F_LJ = fmat_block(0, L, J);
+      double *F_KJ = kmat_block(0, K, J);
+//       double *F_LJ = kmat_block(0, L, J);
 //       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_LJ = pmat_block(0, L, J);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -430,8 +430,8 @@ CLHFContribution::contrib_p34_p13p24_J(int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
-  double *F_KL = fmat_block(0, K, L);
+  double *F_IJ = jmat_block(0, I, J);
+  double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
@@ -460,8 +460,8 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
-  double *F_IL = fmat_block(0, I, L);
+  double *F_IK = kmat_block(0, I, K);
+  double *F_IL = kmat_block(0, I, L);
   const double * restrictxx P_IK = pmat_block(0, I, K);
   const double * restrictxx P_IL = pmat_block(0, I, L);
 
@@ -474,8 +474,8 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-//       double *F_JK = fmat_block(0, J, K);
-//       double *F_JL = fmat_block(0, J, L);
+//       double *F_JK = kmat_block(0, J, K);
+//       double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_JK = pmat_block(0, J, K);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -504,8 +504,8 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
         }
     }
   else if (J >= L) {
-//       double *F_KJ = fmat_block(0, K, J);
-//       double *F_JL = fmat_block(0, J, L);
+//       double *F_KJ = kmat_block(0, K, J);
+//       double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -535,8 +535,8 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
         }
     }
   else {
-//       double *F_KJ = fmat_block(0, K, J);
-//       double *F_LJ = fmat_block(0, L, J);
+//       double *F_KJ = kmat_block(0, K, J);
+//       double *F_LJ = kmat_block(0, L, J);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_LJ = pmat_block(0, L, J);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -571,7 +571,7 @@ CLHFContribution::contrib_p12_p34_J(int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
                                     const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
+  double *F_IJ = jmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
   int nKL = nK * nL;
@@ -595,8 +595,8 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
                                     const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
-  double *F_IL = fmat_block(0, I, L);
+  double *F_IK = kmat_block(0, I, K);
+  double *F_IL = kmat_block(0, I, L);
   const double * restrictxx P_IK = pmat_block(0, I, K);
   const double * restrictxx P_IL = pmat_block(0, I, L);
 
@@ -609,8 +609,8 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
   double JL_factor = -0.5; // JL are always canonical when this is called.
 
   if (J >= K) {
-      double *F_JK = fmat_block(0, J, K);
-      double *F_JL = fmat_block(0, J, L);
+      double *F_JK = kmat_block(0, J, K);
+      double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_JK = pmat_block(0, J, K);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -639,8 +639,8 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
         }
     }
   else if (J >= L) {
-      double *F_KJ = fmat_block(0, K, J);
-      double *F_JL = fmat_block(0, J, L);
+      double *F_KJ = kmat_block(0, K, J);
+      double *F_JL = kmat_block(0, J, L);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -670,8 +670,8 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
         }
     }
   else {
-      double *F_KJ = fmat_block(0, K, J);
-      double *F_LJ = fmat_block(0, L, J);
+      double *F_KJ = kmat_block(0, K, J);
+      double *F_LJ = kmat_block(0, L, J);
       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_LJ = pmat_block(0, L, J);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -706,8 +706,8 @@ CLHFContribution::contrib_p13p24_J(int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
-  double *F_IJ = fmat_block(0, I, J);
-  double *F_KL = fmat_block(0, K, L);
+  double *F_IJ = jmat_block(0, I, J);
+  double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
@@ -736,8 +736,8 @@ CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
-  double *F_IK = fmat_block(0, I, K);
-//   double *F_IL = fmat_block(0, I, L);
+  double *F_IK = kmat_block(0, I, K);
+//   double *F_IL = kmat_block(0, I, L);
 //   const double * restrictxx P_IK = pmat_block(0, I, K);
 //   const double * restrictxx P_IL = pmat_block(0, I, L);
 
@@ -750,8 +750,8 @@ CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-//       double *F_JK = fmat_block(0, J, K);
-//       double *F_JL = fmat_block(0, J, L);
+//       double *F_JK = kmat_block(0, J, K);
+//       double *F_JL = kmat_block(0, J, L);
 //       const double * restrictxx P_JK = pmat_block(0, J, K);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -780,8 +780,8 @@ CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
         }
     }
   else if (J >= L) {
-//       double *F_KJ = fmat_block(0, K, J);
-//       double *F_JL = fmat_block(0, J, L);
+//       double *F_KJ = kmat_block(0, K, J);
+//       double *F_JL = kmat_block(0, J, L);
 //       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
@@ -811,8 +811,8 @@ CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
         }
     }
   else {
-//       double *F_KJ = fmat_block(0, K, J);
-//       double *F_LJ = fmat_block(0, L, J);
+//       double *F_KJ = kmat_block(0, K, J);
+//       double *F_LJ = kmat_block(0, L, J);
 //       const double * restrictxx P_KJ = pmat_block(0, K, J);
       const double * restrictxx P_LJ = pmat_block(0, L, J);
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;

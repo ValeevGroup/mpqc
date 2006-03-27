@@ -35,6 +35,8 @@
 using namespace std;
 using namespace sc;
 
+#define TEST_FOCKBUILD 0
+
 RefSCMatrix
 R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
                   const Ref<MOIndexSpace>& ket_space,
@@ -113,10 +115,17 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   h_ints = 0;
   h = 0;
   
+  const bool spin_unrestricted = spin_polarized();
+  
+#if TEST_FOCKBUILD
+  RefSCMatrix Ftest;
+  if (!spin_unrestricted)
+    Ftest = F.clone();
+#endif
+  
   //
   // add coulomb and exchange parts
   //
-  const bool spin_unrestricted = spin_polarized();
   const double J_prefactor = (spin_unrestricted ? 1.0 : 2.0);
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 sc = static_cast<SpinCase1>(s);
@@ -133,6 +142,42 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   if (debug_ > 1) {
     F.print("Fock matrix");
   }
+  
+#if TEST_FOCKBUILD
+  if (scale_J == 1.0 && scale_K == 1.0) {
+    Ref<GaussianBasisSet> obs = occ(Alpha)->basis();
+    Ref<FockContribution> fc = new CLHFContribution(bs1,bs2,obs,obs);
+    
+    // transform the density matrix to the AO basis
+    RefSymmSCMatrix D_ao = reference()->ao_density();
+    RefSCMatrix G_ao = Ftest.kit()->matrix(aodim1,aodim2);
+    fc->set_fmat(0, G_ao);
+    fc->set_pmat(0, D_ao);
+    
+    const Ref<Integral>& integral = r12info()->integral();
+    const unsigned int nthreads = r12info()->thr()->nthread();
+    Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[nthreads];
+    for(unsigned int t=0; t<nthreads; ++t)
+      tbints[t] = integral->electron_repulsion();
+    
+    // WARNING should replace with something reasonable
+    const double accuracy = 1.0e-15;
+    Ref<FockBuild> fb = new FockBuild(fc,accuracy,tbints,
+                                      bs1, bs2, obs, obs,
+                                      r12info()->msg(), r12info()->thr(),
+                                      integral);
+    fb->build();
+    ExEnv::out0() << indent << scprintf("%20.0f integrals\n",
+    fb->contrib()->nint());
+    fb = 0;
+    
+    // WARNING Need to symmetrize G
+    
+    for(unsigned int t=0; t<nthreads; ++t)
+      tbints[t] = 0;
+    delete[] tbints;
+  }
+#endif
   
   return F;
 }

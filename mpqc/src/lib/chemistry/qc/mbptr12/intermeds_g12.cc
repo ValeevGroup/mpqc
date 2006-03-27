@@ -281,7 +281,11 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
   V = 0; X = 0; B = 0;
   
   globally_sum_intermeds_();
-
+  
+  // Finally, copy B to BC, since their "diagonal" parts are the same
+  if (stdapprox() == LinearR12::StdApprox_C)
+    BC_[spincase].assign(B_[spincase]);
+  
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited G12 diagonal intermediates evaluator" << endl;
 

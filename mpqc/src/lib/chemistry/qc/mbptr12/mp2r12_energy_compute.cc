@@ -51,9 +51,10 @@ MP2R12Energy::compute()
   int ntasks = msg->n();
   
   const bool ebc = r12eval()->ebc();
-  /// KS approach to EBC-free method differs from mine if std approx != B
+  /// KS approach to EBC-free method differs from mine if std approx != B || C
   const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
-                          (stdapprox_ != LinearR12::StdApprox_B);;
+                          (stdapprox_ != LinearR12::StdApprox_B &&
+                           stdapprox_ != LinearR12::StdApprox_C);
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   
@@ -90,14 +91,21 @@ MP2R12Energy::compute()
       const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
       const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
       
-      // Get the intermediates
+      // Get the intermediates V and X
       RefSCMatrix V = r12eval()->V(spincase2);
       RefSCMatrix X = r12eval()->X(spincase2);
-      RefSymmSCMatrix B = r12eval()->B(spincase2);
-      // in standard approximation B, add up [K1+K2,F12] term
-      if (stdapprox_ == LinearR12::StdApprox_B) {
-        RefSymmSCMatrix BB = r12eval()->BB(spincase2);
-        B.accumulate(BB);
+      // The choice of B depends intricately on approximations
+      RefSymmSCMatrix B;
+      if (stdapprox_ == LinearR12::StdApprox_C) {
+        B = r12eval()->BC(spincase2);
+      }
+      else {
+        B = r12eval()->B(spincase2);
+        // in standard approximation B, add up [K1+K2,F12] term
+        if (stdapprox_ == LinearR12::StdApprox_B) {
+          RefSymmSCMatrix BB = r12eval()->BB(spincase2);
+          B.accumulate(BB);
+        }
       }
       
       // In Klopper-Samson method, two kinds of A are used: app B (I replace with mine A) and app XX (mine Ac)
@@ -123,14 +131,14 @@ MP2R12Energy::compute()
       
       if (debug_ > 1) {
         V.print(prepend_spincase(spincase2,"V matrix").c_str());
-        B.print(prepend_spincase(spincase2,"MP2-F12/A B matrix").c_str());
+        B.print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str());
         //if (ebc == false)
         //  A.print("A matrix");
       }
       
       // Allocate the B matrix:
-      // 1) in MP2-F12/A the B matrix is the same for all pairs
-      // 2) int MP2-F12/A' the B matrix is pair-specific
+      // 1) in approximation A the B matrix is the same for all pairs
+      // 2) in approximations A', B, and C the B matrix is pair-specific
       RefSymmSCMatrix B_ij = B.clone();
       if (stdapprox_ == LinearR12::StdApprox_A) {
 #if USE_INVERT
@@ -157,8 +165,9 @@ MP2R12Energy::compute()
         
         RefSCVector V_ij = V.get_column(ij);
         
-        // In MP2-R12/B or A' matrices B are pair-specific:
-        // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+        // In approximations A', B, or C matrices B are pair-specific:
+        // app A' or B: form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+        // app C:       form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
         if (stdapprox_ != LinearR12::StdApprox_A) {
           B_ij.assign(B);
           
@@ -182,10 +191,14 @@ MP2R12Energy::compute()
                   
                   if (ow > kl)
                     continue;
-
-                  double fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
-                  - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
-                  * X.get_element(kl,ow);
+                  
+                  double fx;
+                  if (stdapprox_ != LinearR12::StdApprox_C)
+                    fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
+                                - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
+                             * X.get_element(kl,ow);
+                  else
+                    fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
                   
                   B_ij.accumulate_element(kl,ow,fx);
                   
@@ -222,13 +235,13 @@ MP2R12Energy::compute()
             }
           }
           if (debug_ > 1)
-            B_ij.print(prepend_spincase(spincase2,"MP2-F12/A' B matrix").c_str());
+            B_ij.print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str());
           
           #if USE_INVERT
           B_ij->gen_invert_this();
           
           if (debug_ > 1)
-            B_ij.print("Inverse MP2-F12/A' B matrix");
+            B_ij.print("Inverse MP2-F12 B matrix");
           #endif
           
         }

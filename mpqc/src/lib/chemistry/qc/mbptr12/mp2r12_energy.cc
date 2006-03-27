@@ -442,6 +442,10 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
       SA_str = "B";
       break;
 
+    case LinearR12::StdApprox_C:
+      SA_str = "C";
+      break;
+
     default:
       throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
   }

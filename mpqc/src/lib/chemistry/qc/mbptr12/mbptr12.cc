@@ -253,6 +253,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 	    !strcmp(sa_string,"b") ) {
     stdapprox_ = LinearR12::StdApprox_B;
   }
+  else if ( !strcmp(sa_string,"C") ||
+	    !strcmp(sa_string,"c") ) {
+    stdapprox_ = LinearR12::StdApprox_C;
+  }
   else {
     delete[] sa_string;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
@@ -323,10 +327,15 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- invalid value for keyword r12ints");
   }
   delete[] r12ints_str;
-
+  
+  // Must always use disk for now
+#if 0
   // Make sure that integrals storage method is compatible with standard approximation
   // If it's a MP2-R12/B calculation or EBC or GBC are not assumed then must use disk
   const bool must_use_disk = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
+#else
+  const bool must_use_disk = true;
+#endif
   if (must_use_disk && r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_only)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
   if (must_use_disk) {
@@ -431,6 +440,9 @@ MBPT2_R12::print(ostream&o) const
     break;
     case LinearR12::StdApprox_B :
       o << indent << "Standard Approximation: B" << endl;
+    break;
+    case LinearR12::StdApprox_C :
+      o << indent << "Standard Approximation: C" << endl;
     break;
   }
   

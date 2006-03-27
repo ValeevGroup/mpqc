@@ -185,7 +185,8 @@ namespace sc {
     
     enum StandardApproximation {StdApprox_A = 0,
 				StdApprox_Ap = 1,
-				StdApprox_B = 2};
+				StdApprox_B = 2,
+                                StdApprox_C = 3};
     enum ABSMethod {ABS_ABS = 0,
 		    ABS_ABSPlus = 1,
 		    ABS_CABS = 2,

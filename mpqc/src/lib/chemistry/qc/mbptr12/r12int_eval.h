@@ -61,6 +61,7 @@ class R12IntEval : virtual public SavableState {
   // that computes asymmetric form of B
   RefSCMatrix B_[NSpinCases2];
   RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
+  RefSCMatrix BC_[NSpinCases2];  // B intermediate of approximation C
   RefSCMatrix A_[NSpinCases2];
   RefSCMatrix Ac_[NSpinCases2];
 #if 0
@@ -335,8 +336,11 @@ class R12IntEval : virtual public SavableState {
   /** Compute contributions to B that vanishe under GBC */
   void compute_B_gbc_();
 
-  /** Compute contributions to B which vanish in standard approximation A' */
+  /** Compute contributions to B which appear in standard approximation B and not in A' */
   void compute_BB_();
+  
+  /** Compute B using standard approximation C */
+  void compute_BC_();
 
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
@@ -421,8 +425,10 @@ public:
   const RefSCMatrix& X(SpinCase2 S);
   /// Returns S block of intermediate B
   RefSymmSCMatrix B(SpinCase2 S);
-  /// Returns S block of intermediate BB
+  /// Returns S block of the difference between intermediate B of approximations B and A'
   RefSymmSCMatrix BB(SpinCase2 S);
+  /// Returns S block of intermediate B in approximation C
+  RefSymmSCMatrix BC(SpinCase2 S);
   /// Returns S block of intermediate A
   const RefSCMatrix& A(SpinCase2 S);
   /// Returns S block of intermediate A computed using commutator method

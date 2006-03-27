@@ -67,6 +67,7 @@ class MBPT2_R12: public MBPT2 {
     Ref<MP2R12Energy> r12a_energy_;
     Ref<MP2R12Energy> r12ap_energy_;
     Ref<MP2R12Energy> r12b_energy_;
+    Ref<MP2R12Energy> r12c_energy_;
 
     Ref<GaussianBasisSet> aux_basis_;   // This is the auxiliary basis set (ABS)
     Ref<GaussianBasisSet> vir_basis_;   // This is the virtuals basis set (VBS)
@@ -148,6 +149,9 @@ class MBPT2_R12: public MBPT2 {
 
           <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation B.
+
+          <dt><tt>C</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
+	  with linear R12 terms in standard approximation C.
 
         </dl>
         

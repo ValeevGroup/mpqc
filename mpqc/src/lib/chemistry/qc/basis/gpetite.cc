@@ -189,6 +189,10 @@ sc::construct_gpetite(const Ref<GaussianBasisSet> &b1,
     canonical_abcc c4(b1,b2,b3,b4);
     return new GPetite4<canonical_abcc>(b1,b2,b3,b4,c4);
   }
+  else if (b1 == b3 && b2 == b4) {
+    canonical_abab c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_abab>(b1,b2,b3,b4,c4);
+  }
   else if (b1 == b2 && b3 == b4) {
     canonical_aabb c4(b1,b2,b3,b4);
     return new GPetite4<canonical_aabb>(b1,b2,b3,b4,c4);

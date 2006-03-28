@@ -733,7 +733,7 @@ R12IntEval::focc(SpinCase1 spin)
     if (debug_ > 1)
       F_ri_o.print("Fock matrix (RI-BS/occ.)");
 
-    std::string id = "m_F";
+    std::string id = "m_F(a')";
     std::string name = "Fock-weighted occupied MOs sorted by energy";
     spinadapt_mospace_labels(spin,id,name);
     
@@ -766,6 +766,17 @@ R12IntEval::kocc_act(SpinCase1 spin)
   return kactocc_space_[s];
 }
 
+const Ref<MOIndexSpace>&
+R12IntEval::hjocc_act(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hjocc_act(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_focc_act(spin);
+  return hjactocc_space_[s];
+}
+
 void
 R12IntEval::form_focc_act(SpinCase1 spin)
 {
@@ -780,16 +791,17 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     RefSCMatrix FmK_ri_ao = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
     RefSCMatrix K_ri_ao = exchange_(occ_space,ribs_space,act_occ_space);
     K_ri_ao.scale(-1.0);
-    RefSCMatrix F_ri_ao = FmK_ri_ao; F_ri_ao.accumulate(K_ri_ao);
+    RefSCMatrix F_ri_ao = FmK_ri_ao.clone(); F_ri_ao.accumulate(K_ri_ao);
     K_ri_ao.scale(-1.0);
     if (debug_ > 1) {
       F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
       K_ri_ao.print("Exchange matrix (RI-BS/act.occ.)");
+      F_ri_ao.print("(h+J) matrix (RI-BS/act.occ.)");
     }
     
     // Fock
     {
-      std::string id = "i_F";
+      std::string id = "i_F(a')";
       std::string name = "Fock-weighted active occupied MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
@@ -798,12 +810,21 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     }
     // Exchange
     {
-      std::string id = "i_K";
+      std::string id = "i_K(a')";
       std::string name = "Exchange-weighted active occupied MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
       kactocc_space_[s] = new MOIndexSpace(id, name, act_occ_space, ribs_space->coefs()*K_ri_ao,
                                            ribs_space->basis());
+    }
+    // Fock
+    {
+      std::string id = "i_hJ(a')";
+      std::string name = "(h+J)-weighted active occupied MOs sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      hjactocc_space_[s] = new MOIndexSpace(id, name, act_occ_space, ribs_space->coefs()*FmK_ri_ao,
+                                            ribs_space->basis());
     }
   }
 }
@@ -853,7 +874,7 @@ R12IntEval::form_fvir_act(SpinCase1 spin)
     
     // Fock
     {
-      std::string id = "a_F";
+      std::string id = "a_F(a')";
       std::string name = "Fock-weighted active virtual MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
@@ -862,7 +883,7 @@ R12IntEval::form_fvir_act(SpinCase1 spin)
     }
     // Exchange
     {
-      std::string id = "a_K";
+      std::string id = "a_K(a')";
       std::string name = "Exchange-weighted active virtual MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
@@ -901,7 +922,7 @@ R12IntEval::form_fribs(SpinCase1 spin)
     
     // Exchange
     {
-      std::string id = "a'_K";
+      std::string id = "a'_K(p')";
       std::string name = "Exchange-weighted RI-BS";
       spinadapt_mospace_labels(spin,id,name);
       
@@ -937,18 +958,18 @@ R12IntEval::form_fribs_T(SpinCase1 spin)
     RefSCMatrix K_ri_abs = exchange_(occ_space,abs_space,ribs_space).t();
     if (debug_ > 1) {
       K_ri_abs.print("Exchange matrix (RI-BS/ABS)");
-      }
+    }
 
     // Exchange
-      {
-      std::string id = "p'_K";
+    {
+      std::string id = "p'_K(a')";
       std::string name = "Exchange-weighted ABS";
       spinadapt_mospace_labels(spin,id,name);
-
+      
       kribs_T_space_[s] = new MOIndexSpace(id, name, abs_space, ribs_space->coefs()*K_ri_abs,
                                          ribs_space->basis());
-      }
     }
+  }
 }
 #endif
 
@@ -1065,7 +1086,7 @@ R12IntEval::form_fvir_ribs(SpinCase1 spin)
     
     // Exchange
     {
-      std::string id = "a_K(P)";
+      std::string id = "a_K(p')";
       std::string name = "Exchange-weighted (through RIBS) virtual MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
@@ -1180,6 +1201,278 @@ R12IntEval::form_canonvir_space_()
   }
 }
 
+
+const Ref<MOIndexSpace>&
+R12IntEval::kribs_ribs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return kribs_ribs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fribs_ribs(spin);
+  return kribs_ribs_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::fribs_ribs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return fribs_ribs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fribs_ribs(spin);
+  return fribs_ribs_[s];
+}
+
+void
+R12IntEval::form_fribs_ribs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between ABS and ABS and
+  // create the new Fock-weighted space
+  if (fribs_ribs_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    Ref<MOIndexSpace> ribs_space;
+    if (r12info()->basis() != r12info()->basis_ri()) {
+      ribs_space = r12info()->abs_space();
+    }
+    else {
+      ribs_space = r12info()->refinfo()->orbs(spin);
+    }
+    
+    RefSCMatrix hJ_ribs_ribs = fock_(ribs_space,ribs_space,spin,1.0,0.0);
+    RefSCMatrix K_ribs_ribs = exchange_(occ_space,ribs_space,ribs_space);
+    K_ribs_ribs.scale(-1.0);
+    RefSCMatrix F_ribs_ribs = hJ_ribs_ribs; F_ribs_ribs.accumulate(K_ribs_ribs);
+    K_ribs_ribs.scale(-1.0);
+    if (debug_ > 1) {
+      hJ_ribs_ribs.print("F matrix (RIBS/RIBS)");
+      K_ribs_ribs.print("Exchange matrix (RIBS/RIBS)");
+    }
+    
+    // Fock
+    {
+      std::string id = "p'_F(p')";
+      std::string name = "Fock-weighted (through RIBS) RIBS sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      fribs_ribs_[s] = new MOIndexSpace(id, name, ribs_space, ribs_space->coefs()*F_ribs_ribs,
+                                            ribs_space->basis());
+    }
+    // Exchange
+    {
+      std::string id = "p'_K(p')";
+      std::string name = "Exchange-weighted (through RIBS) RIBS sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      kribs_ribs_[s] = new MOIndexSpace(id, name, ribs_space, ribs_space->coefs()*K_ribs_ribs,
+                                            ribs_space->basis());
+    }
+  }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::hjactocc_ribs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hjactocc_ribs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_hjactocc_ribs(spin);
+  return hjactocc_ribs_[s];
+}
+
+void
+R12IntEval::form_hjactocc_ribs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between active occupieds and RIBS and
+  // create the new Fock-weighted space
+  if (hjactocc_ribs_[s].null()) {
+    const Ref<MOIndexSpace>& act_occ_space = occ_act(spin);
+    Ref<MOIndexSpace> ribs_space;
+    if (r12info()->basis() != r12info()->basis_ri()) {
+      ribs_space = r12info()->abs_space();
+    }
+    else {
+      ribs_space = r12info()->refinfo()->orbs(spin);
+    }
+    
+    RefSCMatrix hJ_ribs_aocc = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
+    if (debug_ > 1) {
+      hJ_ribs_aocc.print("h+J matrix (RIBS/act.occ.)");
+    }
+    
+    // Fock
+    {
+      std::string id = "i_hJ(p')";
+      std::string name = "(h+J)-weighted (through RIBS) active occupied MOs sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      hjactocc_ribs_[s] = new MOIndexSpace(id, name, act_occ_space, ribs_space->coefs()*hJ_ribs_aocc,
+                                           ribs_space->basis());
+    }
+  }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::focc_occ(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return focc_occ(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_focc_occ(spin);
+  return focc_occ_[s];
+}
+
+void
+R12IntEval::form_focc_occ(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between occupieds and occupieds and
+  // create the new Fock-weighted space
+  if (focc_occ_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    
+    RefSCMatrix F_occ = fock_(occ_space,occ_space,spin);
+    if (debug_ > 1) {
+      F_occ.print("Fock matrix (occ./occ.)");
+    }
+    
+    // Fock
+    {
+      std::string id = "m_F(m)";
+      std::string name = "Fock-weighted (through occupied MOs) occupied MOs sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      // as a test, use act occ space
+      focc_occ_[s] = new MOIndexSpace(id, name, occ_space, occ_space->coefs()*F_occ,
+                                      occ_space->basis());
+    }
+  }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::fobs_obs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return fobs_obs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fobs_obs(spin);
+  return fobs_obs_[s];
+}
+
+void
+R12IntEval::form_fobs_obs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between OBS and OBS and
+  // create the new Fock-weighted space
+  if (fobs_obs_[s].null()) {
+    const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
+    
+    RefSCMatrix F_obs = fock_(obs_space,obs_space,spin);
+    if (debug_ > 1) {
+      F_obs.print("Fock matrix (OBS/OBS)");
+    }
+    
+    // Fock
+    {
+      std::string id = "p_F(p)";
+      std::string name = "Fock-weighted (through OBS) OBS sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      // as a test, use act occ space
+      fobs_obs_[s] = new MOIndexSpace(id, name, obs_space, obs_space->coefs()*F_obs,
+                                      obs_space->basis());
+    }
+  }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::focc_ribs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return focc_ribs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_focc_ribs(spin);
+  return focc_ribs_[s];
+}
+
+void
+R12IntEval::form_focc_ribs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between occupieds and RIBS and
+  // create the new Fock-weighted space
+  if (focc_ribs_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    Ref<MOIndexSpace> ribs_space;
+    if (r12info()->basis() != r12info()->basis_ri()) {
+      ribs_space = r12info()->abs_space();
+    }
+    else {
+      ribs_space = r12info()->refinfo()->orbs(spin);
+    }
+    
+    RefSCMatrix F_ribs_occ = fock_(ribs_space,occ_space,spin);
+    if (debug_ > 1) {
+      F_ribs_occ.print("Fock matrix (RIBS/occ.)");
+    }
+    
+    // Fock
+    {
+      std::string id = "m_F(p')";
+      std::string name = "Fock-weighted (through RIBS) occupied MOs sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      focc_ribs_[s] = new MOIndexSpace(id, name, occ_space, ribs_space->coefs()*F_ribs_occ,
+                                       ribs_space->basis());
+    }
+  }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::fobs_cabs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return fobs_cabs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fobs_cabs(spin);
+  return fobs_cabs_[s];
+}
+
+void
+R12IntEval::form_fobs_cabs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between OBS and CABS and
+  // create the new Fock-weighted space
+  if (fobs_cabs_[s].null()) {
+    const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
+    const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
+    
+    RefSCMatrix F_cabs_obs = fock_(cabs_space,obs_space,spin);
+    if (debug_ > 1) {
+      F_cabs_obs.print("Fock matrix (CABS/OBS)");
+    }
+    
+    // Fock
+    {
+      std::string id = "p_F(a')";
+      std::string name = "Fock-weighted (through CABS) OBS sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      fobs_cabs_[s] = new MOIndexSpace(id, name, obs_space, cabs_space->coefs()*F_cabs_obs,
+                                       cabs_space->basis());
+    }
+  }
+}
+
 const int
 R12IntEval::tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi)
 {
@@ -1206,7 +1499,6 @@ R12IntEval::tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to
     
   return nproc_with_ints;
 }
-
 
 void
 R12IntEval::compute()

@@ -292,7 +292,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (must_use_cabs &&
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
-    
+  
+  // Must use CABS+ for approximation C
+  if (stdapprox() == LinearR12::StdApprox_C && abs_method() != LinearR12::ABS_CABSPlus)
+    throw InputError("MBPT2_R12::MBPT2_R12() -- abs_method must be cabs+ for when stdapprox = C",__FILE__,__LINE__);
+  
   // Standard approximation A is not valid when gbc_ = false or ebc_ = false
   if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- stdapprox=A is not valid when gbc_ = false or ebc_ = false");

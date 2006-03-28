@@ -95,6 +95,8 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> factocc_space_[NSpinCases1];
   /// Exchange-weighted active occupied space |i_K> = K_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> kactocc_space_[NSpinCases1];
+  /// (h+J)-weighted (through CABS) active occupied space for spin case S
+  Ref<MOIndexSpace> hjactocc_space_[NSpinCases1];
   /// Fock-weighted active occupied space |a_f> = f_a^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> factvir_space_[NSpinCases1];
   /// Exchange-weighted active virtual space |a_K> = K_a^R |R>, where R is a function in RI-BS
@@ -115,6 +117,22 @@ class R12IntEval : virtual public SavableState {
   /// Exchange-weighted (through virtuals) ABS |P_K> = K_P^a |a>, where P is a function in ABS
   Ref<MOIndexSpace> kvir_ribs_T_space_[NSpinCases1];
 #endif
+
+  /// Exchange-weighted (through RIBS) RIBS space for spin case S
+  Ref<MOIndexSpace> kribs_ribs_[NSpinCases1];
+  /// Fock-weighted (through RIBS) RIBS space for spin case S
+  Ref<MOIndexSpace> fribs_ribs_[NSpinCases1];
+  /// (h+J)-weighted (through RIBS) act occ space for spin case S
+  Ref<MOIndexSpace> hjactocc_ribs_[NSpinCases1];
+  /// Fock-weighted (through occ) occupied space for spin case S
+  Ref<MOIndexSpace> focc_occ_[NSpinCases1];
+  /// Fock-weighted (through OBS) OBS space for spin case S
+  Ref<MOIndexSpace> fobs_obs_[NSpinCases1];
+  /// Fock-weighted (through RIBS) occ space for spin case S
+  Ref<MOIndexSpace> focc_ribs_[NSpinCases1];
+  /// Fock-weighted (through CABS) OBS space for spin case S
+  Ref<MOIndexSpace> fobs_cabs_[NSpinCases1];
+
   /// Compute factocc and kactocc spaces, if needed
   void form_focc_act(SpinCase1 spin);
   /// Compute factvir and kactvir spaces, if needed
@@ -137,6 +155,21 @@ class R12IntEval : virtual public SavableState {
 #endif
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
+  
+  /// Form Fock-weighted (through RIBS) RIBS space for spin case S
+  void form_fribs_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through CABS) active occupied space for spin case S
+  void form_factocc_cabs(SpinCase1 S);
+  /// Form (h+J)-weighted (through RIBS) act occ space for spin case S
+  void form_hjactocc_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through occ) occupied space for spin case S
+  void form_focc_occ(SpinCase1 S);
+  /// Form Fock-weighted (through OBS) OBS space for spin case S
+  void form_fobs_obs(SpinCase1 S);
+  /// Form Fock-weighted (through RIBS) occ space for spin case S
+  void form_focc_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through CABS) OBS space for spin case S
+  void form_fobs_cabs(SpinCase1 S);
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -464,6 +497,8 @@ public:
   const Ref<MOIndexSpace>& focc_act(SpinCase1 S);
   /// Form exchange-weighted active occupied space for spin case S
   const Ref<MOIndexSpace>& kocc_act(SpinCase1 S);
+  /// Form (h+J)-weighted active occupied space for spin case S
+  const Ref<MOIndexSpace>& hjocc_act(SpinCase1 S);
   /// Form exchange-weighted (through OBS) active occupied space for spin case S
   const Ref<MOIndexSpace>& kocc_act_obs(SpinCase1 S);
   /// Form Fock-weighted active virtual space for spin case S
@@ -484,6 +519,22 @@ public:
   /// Form exchange-weighted (through virtuals) ABS space for spin case S
   const Ref<MOIndexSpace>& kvir_ribs_T(SpinCase1 S);
 #endif
+  
+  // NOTE Names of these spaces are already consistent with the future convention
+  /// Form exchange-weighted (through RIBS) RIBS space for spin case S
+  const Ref<MOIndexSpace>& kribs_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through RIBS) RIBS space for spin case S
+  const Ref<MOIndexSpace>& fribs_ribs(SpinCase1 S);
+  /// Form (h+J)-weighted (through RIBS) active occupied space for spin case S
+  const Ref<MOIndexSpace>& hjactocc_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through occ) occupied space for spin case S
+  const Ref<MOIndexSpace>& focc_occ(SpinCase1 S);
+  /// Form Fock-weighted (through OBS) OBS space for spin case S
+  const Ref<MOIndexSpace>& fobs_obs(SpinCase1 S);
+  /// Form Fock-weighted (through RIBS) occ space for spin case S
+  const Ref<MOIndexSpace>& focc_ribs(SpinCase1 S);
+  /// Form Fock-weighted (through CABS) OBS space for spin case S
+  const Ref<MOIndexSpace>& fobs_cabs(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

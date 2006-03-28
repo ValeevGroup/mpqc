@@ -31,6 +31,8 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
+include $(TOPDIR)/lib/Makedirlist
+
 TARGET_TO_MAKE = libSCscf
 BIN_OR_LIB = LIB
 
@@ -48,7 +50,12 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../dft/LIBS.h)
+XDEF:=
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+  XDEF+=-DHAVE_CHEMISTRY_QC_CINTS
+endif
+
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(XDEF) $(SRCDIR)/../dft/LIBS.h)
 
 scftest:: scftest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)

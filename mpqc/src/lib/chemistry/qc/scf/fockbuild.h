@@ -275,7 +275,6 @@ class FockBuildThread : public Thread {
     Ref<MessageGrp> msg_;
     int nthread_;
     int threadnum_;
-    Ref<GaussianBasisSet> basis_;
     const signed char *pmax_;
 
     Ref<TwoBodyInt> eri_;
@@ -318,6 +317,37 @@ class FockBuildThread_F11_P11 : public FockBuildThread {
     void run();
 };
 
+/** This is used to build the Fock matrix when none of the
+    basis sets are equivalent.
+ */
+class FockBuildThread_F12_P34 : public FockBuildThread {
+    Ref<GaussianBasisSet> basis1_;
+    Ref<GaussianBasisSet> basis2_;
+    Ref<GaussianBasisSet> basis3_;
+    Ref<GaussianBasisSet> basis4_;
+    Ref<PetiteList> pl_;
+
+    void run_J();
+    void run_K();
+
+  public:
+    /// Each thread must be given a unique contribution, c.
+    FockBuildThread_F12_P34(const Ref<MessageGrp> &msg,
+                            int nthread,
+                            int threadnum,
+                            const Ref<TwoBodyInt> &eri,
+                            const Ref<FockContribution>&c,
+                            const Ref<ThreadLock> &lock,
+                            const Ref<Integral> &integral,
+                            double acc, const signed char *pmax,
+                            const Ref<PetiteList> &pl,
+                            const Ref<GaussianBasisSet> &basis1,
+                            const Ref<GaussianBasisSet> &basis2,
+                            const Ref<GaussianBasisSet> &basis3,
+                            const Ref<GaussianBasisSet> &basis4);
+    void run();
+};
+
 /** The FockBuild class works with the FockBuildThread class to generate
     Fock matrices for both closed shell and open shell methods.  It uses a
     helper class, FockContribution, to do the work of forming
@@ -341,7 +371,11 @@ class FockBuild: public RefCount {
     // this array is not managed by FockBuild.
     const Ref<TwoBodyInt>* tbi_;
 
+    // Build for the case where all of the basis sets are the same
     void build_F11_P11();
+
+    // Build for the case where none of the basis sets are the same
+    void build_F12_P34();
 
   public:
     /** Create a FockBuild object using b_f1 as the Fock matrix row

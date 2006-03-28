@@ -42,7 +42,7 @@
 #include <chemistry/qc/scf/fockbuild.h>
 
 #undef DEBUG
-#define DEBUG 1
+#define DEBUG 0
 
 namespace sc {
 
@@ -771,6 +771,96 @@ FockBuildThread_F11_P11::run()
 #endif
 
 /////////////////////////////////////////////////////////////////
+// FockBuildThread_F12_P34
+
+FockBuildThread_F12_P34::FockBuildThread_F12_P34(
+    const Ref<MessageGrp> &msg,
+    int nthread,
+    int threadnum,
+    const Ref<TwoBodyInt> &eri,
+    const Ref<FockContribution>&c,
+    const Ref<ThreadLock> &lock,
+    const Ref<Integral> &integral,
+    double acc, const signed char *pmax,
+    const Ref<PetiteList> &pl,
+    const Ref<GaussianBasisSet> &basis1,
+    const Ref<GaussianBasisSet> &basis2,
+    const Ref<GaussianBasisSet> &basis3,
+    const Ref<GaussianBasisSet> &basis4
+    ):
+  FockBuildThread(msg,nthread,threadnum,eri,c,lock,integral,acc,pmax),
+  pl_(pl),
+  basis1_(basis1),
+  basis2_(basis2),
+  basis3_(basis3),
+  basis4_(basis4)
+{
+}
+
+void
+FockBuildThread_F12_P34::run()
+{
+  run_J();
+  run_K();
+}
+
+void
+FockBuildThread_F12_P34::run_J()
+{
+  ThreadLockHolder eri_alloc_lock(lock_);
+  integral_->set_basis(basis1_,basis2_,basis3_,basis4_);
+  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
+  eri_alloc_lock.unlock();
+  const double *buf = eri_->buffer();
+  int nshell1 = basis1_->nshell();
+  int nshell2 = basis2_->nshell();
+  int nshell3 = basis3_->nshell();
+  int nshell4 = basis4_->nshell();
+  for (int I=0; I<nshell1; I++) {
+      int nI = basis1_->shell(I).nfunction();
+      for (int J=0; J<nshell2; J++) {
+          int nJ = basis2_->shell(J).nfunction();
+          for (int K=0; K<nshell3; K++) {
+              int nK = basis3_->shell(K).nfunction();
+              for (int L=0; L<nshell4; L++) {
+                  int nL = basis4_->shell(L).nfunction();
+                  eri_->compute_shell(I,J,K,L);
+                  contrib_->contrib_e_J(1.0, I, J, K, L, nI, nJ, nK, nL, buf);
+                }
+            }
+        }
+    }
+}
+
+void
+FockBuildThread_F12_P34::run_K()
+{
+  ThreadLockHolder eri_alloc_lock(lock_);
+  integral_->set_basis(basis1_,basis3_,basis2_,basis4_);
+  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
+  eri_alloc_lock.unlock();
+  const double *buf = eri_->buffer();
+  int nshell1 = basis1_->nshell();
+  int nshell2 = basis2_->nshell();
+  int nshell3 = basis3_->nshell();
+  int nshell4 = basis4_->nshell();
+  for (int I=0; I<nshell1; I++) {
+      int nI = basis1_->shell(I).nfunction();
+      for (int J=0; J<nshell3; J++) {
+          int nJ = basis3_->shell(J).nfunction();
+          for (int K=0; K<nshell2; K++) {
+              int nK = basis2_->shell(K).nfunction();
+              for (int L=0; L<nshell4; L++) {
+                  int nL = basis4_->shell(L).nfunction();
+                  eri_->compute_shell(I,J,K,L);
+                  contrib_->contrib_e_K(1.0, I, J, K, L, nI, nJ, nK, nL, buf);
+                }
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////
 // FockBuild
 
 FockBuild::FockBuild(const Ref<FockContribution> &contrib,
@@ -843,17 +933,61 @@ FockBuild::build_F11_P11()
 }
 
 void
+FockBuild::build_F12_P34()
+{
+  int nthread = thr_->nthread();
+  std::vector<Ref<FockContribution> > contribs(nthread);
+  Ref<ThreadLock> lock = thr_->new_lock();
+  
+  Ref<PetiteList> pl = integral_->petite_list(b_p1_);
+
+  signed char *pmax = contrib_->compute_pmax(true);
+
+  for (int i=0; i<nthread; i++) {
+      if (i==0) contribs[i] = contrib_;
+      else contribs[i] = contrib_->clone();
+      FockBuildThread *thread = new FockBuildThread_F12_P34(
+          msg_,
+          nthread,
+          i,
+          tbi_[i],
+          contribs[i],
+          lock,
+          integral_,
+          accuracy_,
+          pmax,
+          pl,
+          b_f1_,
+          b_f2_,
+          b_p1_,
+          b_p2_);
+      contribs[i]->copy();
+      thr_->add_thread(i, thread);
+    }
+  thr_->start_threads();
+  thr_->wait_threads();
+  thr_->delete_threads();
+  delete[] pmax;
+  for (int i=1; i<nthread; i++) {
+      contrib_->accum(contribs[i]);
+    }
+  contrib_->update();
+}
+
+void
 FockBuild::build()
 {
   if (b_f1_->equiv(b_f2_)) {
       if (b_p1_->equiv(b_p2_)) {
-          if (b_f1_->equiv(b_f2_)) {
+          if (b_f1_->equiv(b_p1_)) {
               build_F11_P11();
               return;
             }
         }
     }
-  throw std::runtime_error("FockBuild: got unsupported case");
+  // this might might be run for cases with symmetry that are
+  // not handled by the above code
+  build_F12_P34();
 }
 
 }

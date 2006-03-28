@@ -137,7 +137,8 @@ R12IntEval::compute_BC_()
     if (!omit_P()) {
       
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
-      if (absmethod != LinearR12::ABS_CABS &&
+      if (!abs_eq_obs && 
+          absmethod != LinearR12::ABS_CABS &&
           absmethod != LinearR12::ABS_CABSPlus) {
             throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
       }
@@ -193,7 +194,7 @@ R12IntEval::compute_BC_()
       compute_FxF_(P,spincase2,
                    occ1_act,occ2_act,
                    occ1_act,occ2_act,
-                   occ1,occ2,
+                   vir1,vir2,
                    orbs1,orbs2,
                    forbs1,forbs2);
       }

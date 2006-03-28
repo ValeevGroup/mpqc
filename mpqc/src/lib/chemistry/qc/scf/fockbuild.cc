@@ -661,7 +661,7 @@ FockBuildThread_F11_P11::run()
         
       for (int j=0; j <= i; j++) {
           int oij = can_sym_offset(i,j);
-          
+
           if (!pl.in_p2(oij))
               continue;
 
@@ -707,9 +707,6 @@ FockBuildThread_F11_P11::run()
 #  endif
 #endif
 
-                  std::cout << "computing shell: "
-                            << i << j << k << l
-                            << std::endl;
                   eri_->compute_shell(i,j,k,l);
 
                   int e12 = (i==j);
@@ -722,46 +719,46 @@ FockBuildThread_F11_P11::run()
                       if (e34) {
                           if (e13e24) {
                               // e12 e34 e13e24
-                              contrib_->contrib_e_J(i, j, k, l,
+                              contrib_->contrib_e_J(qijkl, i, j, k, l,
                                                     ni, nj, nk, nl, buf);
-                              contrib_->contrib_e_K(i, j, k, l,
+                              contrib_->contrib_e_K(qijkl, i, j, k, l,
                                                     ni, nj, nk, nl, buf);
                             }
                           else {
                               // e12 e34
-                              contrib_->contrib_p13p24_J(i, j, k, l,
+                              contrib_->contrib_p13p24_J(qijkl, i, j, k, l,
                                                          ni, nj, nk, nl, buf);
-                              contrib_->contrib_p13p24_K(i, j, k, l,
+                              contrib_->contrib_p13p24_K(qijkl, i, j, k, l,
                                                          ni, nj, nk, nl, buf);
                             }
                         }
                       else {
                           // e12
-                          contrib_->contrib_p34_p13p24_J(i, j, k, l,
+                          contrib_->contrib_p34_p13p24_J(qijkl, i, j, k, l,
                                                          ni, nj, nk, nl, buf);
-                          contrib_->contrib_p34_p13p24_K(i, j, k, l,
+                          contrib_->contrib_p34_p13p24_K(qijkl, i, j, k, l,
                                                          ni, nj, nk, nl, buf);
                         }
                     }
                   else if (e34) {
                       // e34
-                      contrib_->contrib_p12_p13p24_J(i, j, k, l,
+                      contrib_->contrib_p12_p13p24_J(qijkl, i, j, k, l,
                                                      ni, nj, nk, nl, buf);
-                      contrib_->contrib_p12_p13p24_K(i, j, k, l,
+                      contrib_->contrib_p12_p13p24_K(qijkl, i, j, k, l,
                                                      ni, nj, nk, nl, buf);
                     }
                   else if (e13e24) {
                       // e13e24
-                      contrib_->contrib_p12_p34_J(i, j, k, l,
+                      contrib_->contrib_p12_p34_J(qijkl, i, j, k, l,
                                                 ni, nj, nk, nl, buf);
-                      contrib_->contrib_p12_p34_K(i, j, k, l,
+                      contrib_->contrib_p12_p34_K(qijkl, i, j, k, l,
                                                  ni, nj, nk, nl, buf);
                     }
                   else {
                       // no equivalent indices
-                      contrib_->contrib_all_J(i, j, k, l,
+                      contrib_->contrib_all_J(qijkl, i, j, k, l,
                                               ni, nj, nk, nl, buf);
-                      contrib_->contrib_all_K(i, j, k, l,
+                      contrib_->contrib_all_K(qijkl, i, j, k, l,
                                               ni, nj, nk, nl, buf);
                     }
 

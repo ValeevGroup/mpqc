@@ -35,7 +35,7 @@
 #include <iomanip>
 
 #undef DEBUG
-#define DEBUG 1
+#define DEBUG 0
 
 namespace sc {
 
@@ -101,7 +101,8 @@ F_contrib(I,J,K,L,i,j,k,l,\
 #endif
     
 void
-CLHFContribution::contrib_e_J(int I, int J, int K, int L,
+CLHFContribution::contrib_e_J(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
@@ -113,7 +114,7 @@ CLHFContribution::contrib_e_J(int I, int J, int K, int L,
           double F_IJ_ij = 0.0;
           for (int kl=0; kl<nKL; ijkl++, kl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,1.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
             }
@@ -123,10 +124,12 @@ CLHFContribution::contrib_e_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_e_K(int I, int J, int K, int L,
+CLHFContribution::contrib_e_K(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
+  double K_factor = factor * -0.5;
   double *F_IK = kmat_block(0, I, K);
   const double * restrictxx P_JL = pmat_block(0, J, L);
   for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
@@ -134,7 +137,7 @@ CLHFContribution::contrib_e_K(int I, int J, int K, int L,
           for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
               for (int l=0, jl=jl_begin; l<nL; l++, ijkl++, jl++) {
                   double val = buf[ijkl];
-                  F_contrib(I,J,K,L,i,j,k,l,-0.5,val,"K ",
+                  F_contrib(I,J,K,L,i,j,k,l,K_factor,val,"K ",
                             F_IK[ik],I,K,ik,nK,
                             P_JL[jl],J,L,jl,nL);
                 }
@@ -144,10 +147,13 @@ CLHFContribution::contrib_e_K(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_all_J(int I, int J, int K, int L,
+CLHFContribution::contrib_all_J(double factor,
+                                int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
+  double J_factor = factor * 2.0;
+
   double *F_IJ = jmat_block(0, I, J);
   double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
@@ -161,10 +167,10 @@ CLHFContribution::contrib_all_J(int I, int J, int K, int L,
           double P_IJ_ij = P_IJ[ij];
           for (int kl=0; kl<nKL; kl++, ijkl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,2.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,J_factor,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,2.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,J_factor,val,"J ",
                         F_KL[kl],K,L,kl,nL,
                         P_IJ_ij,I,J,ij,nJ);
             }
@@ -174,7 +180,8 @@ CLHFContribution::contrib_all_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_all_K(int I, int J, int K, int L,
+CLHFContribution::contrib_all_K(double factor,
+                                int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
@@ -186,10 +193,10 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
   // then we need to multiply by two.
-  double IK_factor = -0.5*(I==K?2:1);
-  double JK_factor = -0.5*(J==K?2:1);
-  double IL_factor = -0.5*(I==L?2:1);
-  double JL_factor = -0.5*(J==L?2:1);
+  double IK_factor = -0.5*(I==K?2:1)*factor;
+  double JK_factor = -0.5*(J==K?2:1)*factor;
+  double IL_factor = -0.5*(I==L?2:1)*factor;
+  double JL_factor = -0.5*(J==L?2:1)*factor;
 
   if (J >= K) {
       double *F_JK = kmat_block(0, J, K);
@@ -285,10 +292,13 @@ CLHFContribution::contrib_all_K(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p12_p13p24_J(int I, int J, int K, int L,
+CLHFContribution::contrib_p12_p13p24_J(double factor,
+                                       int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
+  double factor2 = 2.0 * factor;
+
   double *F_IJ = jmat_block(0, I, J);
   double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
@@ -302,10 +312,10 @@ CLHFContribution::contrib_p12_p13p24_J(int I, int J, int K, int L,
           double P_IJ_ij = P_IJ[ij];
           for (int kl=0; kl<nKL; kl++, ijkl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,1.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,2.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor2,val,"J ",
                         F_KL[kl],K,L,kl,nL,
                         P_IJ_ij,I,J,ij,nJ);
             }
@@ -315,7 +325,8 @@ CLHFContribution::contrib_p12_p13p24_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
+CLHFContribution::contrib_p12_p13p24_K(double factor,
+                                       int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
@@ -327,8 +338,8 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
   // then we need to multiply by two.
-  double IK_factor = -0.5*(I==K?2:1);
-  double JK_factor = -0.5*(J==K?2:1);
+  double IK_factor = -0.5*(I==K?2:1) * factor;
+  double JK_factor = -0.5*(J==K?2:1) * factor;
 //   double IL_factor = -0.5*(I==L?2:1);
 //   double JL_factor = -0.5*(J==L?2:1);
 
@@ -426,10 +437,13 @@ CLHFContribution::contrib_p12_p13p24_K(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p34_p13p24_J(int I, int J, int K, int L,
+CLHFContribution::contrib_p34_p13p24_J(double factor,
+                                       int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
+  double factor2 = 2.0 * factor;
+
   double *F_IJ = jmat_block(0, I, J);
   double *F_KL = jmat_block(0, K, L);
   const double * restrictxx P_IJ = pmat_block(0, I, J);
@@ -443,10 +457,10 @@ CLHFContribution::contrib_p34_p13p24_J(int I, int J, int K, int L,
           double P_IJ_ij = P_IJ[ij];
           for (int kl=0; kl<nKL; kl++, ijkl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,2.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor2,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,1.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
                         F_KL[kl],K,L,kl,nL,
                         P_IJ_ij,I,J,ij,nJ);
             }
@@ -456,7 +470,8 @@ CLHFContribution::contrib_p34_p13p24_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
+CLHFContribution::contrib_p34_p13p24_K(double factor,
+                                       int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
@@ -468,9 +483,9 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
   // then we need to multiply by two.
-  double IK_factor = -0.5*(I==K?2:1);
+  double IK_factor = -0.5*(I==K?2:1) * factor;
 //   double JK_factor = -0.5*(J==K?2:1);
-  double IL_factor = -0.5*(I==L?2:1);
+  double IL_factor = -0.5*(I==L?2:1) * factor;
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
@@ -567,10 +582,13 @@ CLHFContribution::contrib_p34_p13p24_K(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p12_p34_J(int I, int J, int K, int L,
+CLHFContribution::contrib_p12_p34_J(double factor,
+                                    int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
                                     const double * restrictxx buf)
 {
+  double factor2 = 2.0 * factor;
+
   double *F_IJ = jmat_block(0, I, J);
   const double * restrictxx P_KL = pmat_block(0, K, L);
 
@@ -581,7 +599,7 @@ CLHFContribution::contrib_p12_p34_J(int I, int J, int K, int L,
           double F_IJ_ij = F_IJ[ij];
           for (int kl=0; kl<nKL; kl++, ijkl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,2.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor2,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
             }
@@ -591,7 +609,8 @@ CLHFContribution::contrib_p12_p34_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
+CLHFContribution::contrib_p12_p34_K(double factor,
+                                    int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
                                     const double * restrictxx buf)
 {
@@ -603,10 +622,10 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
 
   // Since we are not considering p13p24, only sum in contributions
   // to F with canonical indices.
-  double IK_factor = -0.5; // IK are always canonical when this is called.
-  double IL_factor = -0.5; // IK are always canonical when this is called.
-  double JK_factor = -0.5*(J>=K?1:0);
-  double JL_factor = -0.5; // JL are always canonical when this is called.
+  double IK_factor = -0.5*factor; // IK are always canonical
+  double IL_factor = -0.5*factor; // IK are always canonical
+  double JK_factor = -0.5*(J>=K?1:0)*factor;
+  double JL_factor = -0.5*factor; // JL are always canonical
 
   if (J >= K) {
       double *F_JK = kmat_block(0, J, K);
@@ -702,7 +721,8 @@ CLHFContribution::contrib_p12_p34_K(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p13p24_J(int I, int J, int K, int L,
+CLHFContribution::contrib_p13p24_J(double factor,
+                                   int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
@@ -719,10 +739,10 @@ CLHFContribution::contrib_p13p24_J(int I, int J, int K, int L,
           double P_IJ_ij = P_IJ[ij];
           for (int kl=0; kl<nKL; kl++, ijkl++) {
               double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,1.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
                         F_IJ_ij,I,J,ij,nJ,
                         P_KL[kl],K,L,kl,nL);
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,1.0,val,"J ",
+              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
                         F_KL[kl],K,L,kl,nL,
                         P_IJ_ij,I,J,ij,nJ);
             }
@@ -732,7 +752,8 @@ CLHFContribution::contrib_p13p24_J(int I, int J, int K, int L,
 }
 
 void
-CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
+CLHFContribution::contrib_p13p24_K(double factor,
+                                   int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
@@ -744,7 +765,7 @@ CLHFContribution::contrib_p13p24_K(int I, int J, int K, int L,
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
   // then we need to multiply by two.
-  double IK_factor = -0.5*(I==K?2:1);
+  double IK_factor = -0.5*(I==K?2:1)*factor;
 //   double JK_factor = -0.5*(J==K?2:1);
 //   double IL_factor = -0.5*(I==L?2:1);
 //   double JL_factor = -0.5*(J==L?2:1);

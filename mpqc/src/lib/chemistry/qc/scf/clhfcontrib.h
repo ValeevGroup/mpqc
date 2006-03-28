@@ -20,7 +20,8 @@ class CLHFContribution: public GenericFockContribution {
         permutations. The integrals in buf are the full redundant set
         (nI*nJ*nK*nL integrals). The computes only the Coulomb contribution
         to the Fock matrix. */
-    void contrib_e_J(int I, int J, int K, int L,
+    void contrib_e_J(double factor,
+                     int I, int J, int K, int L,
                      int nI, int nJ, int nK, int nL,
                      const double * restrictxx buf);
 
@@ -28,46 +29,57 @@ class CLHFContribution: public GenericFockContribution {
         permutations. The integrals in buf are the full redundant set
         (nI*nJ*nK*nL integrals). The computes only the Coulomb contribution
         to the Fock matrix. */
-    void contrib_e_K(int I, int J, int K, int L,
+    void contrib_e_K(double factor,
+                     int I, int J, int K, int L,
                      int nI, int nJ, int nK, int nL,
                      const double * restrictxx buf);
 
-    void contrib_p12_p13p24_J(int I, int J, int K, int L,
+    void contrib_p12_p13p24_J(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf);
-    void contrib_p12_p13p24_K(int I, int J, int K, int L,
+    void contrib_p12_p13p24_K(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf);
-    void contrib_p34_p13p24_J(int I, int J, int K, int L,
+    void contrib_p34_p13p24_J(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf);
-    void contrib_p34_p13p24_K(int I, int J, int K, int L,
+    void contrib_p34_p13p24_K(double factor,
+                              int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf);
-    void contrib_p12_p34_J(int I, int J, int K, int L,
+    void contrib_p12_p34_J(double factor,
+                           int I, int J, int K, int L,
                            int nI, int nJ, int nK, int nL,
                            const double * restrictxx buf);
-    void contrib_p12_p34_K(int I, int J, int K, int L,
+    void contrib_p12_p34_K(double factor,
+                           int I, int J, int K, int L,
                            int nI, int nJ, int nK, int nL,
                            const double * restrictxx buf);
-    void contrib_p13p24_J(int I, int J, int K, int L,
+    void contrib_p13p24_J(double factor,
+                          int I, int J, int K, int L,
                           int nI, int nJ, int nK, int nL,
                           const double * restrictxx buf);
-    void contrib_p13p24_K(int I, int J, int K, int L,
+    void contrib_p13p24_K(double factor,
+                          int I, int J, int K, int L,
                           int nI, int nJ, int nK, int nL,
                           const double * restrictxx buf);
 
     /** Compute the Coulomb contribution applying all two electron integral
         permutations. I, J, K, and L indices must all be unique.
     */
-    void contrib_all_J(int I, int J, int K, int L,
+    void contrib_all_J(double factor,
+                       int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
                        const double * restrictxx buf);
 
     /** Compute the exchange contribution applying all two electron integral
         permutations. I, J, K, and L indices must all be unique.
     */
-    void contrib_all_K(int I, int J, int K, int L,
+    void contrib_all_K(double factor,
+                       int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
                        const double * restrictxx buf);
 };

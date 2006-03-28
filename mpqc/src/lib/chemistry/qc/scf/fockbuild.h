@@ -107,42 +107,54 @@ class FockContribution: public RefCount {
     virtual ~FockContribution();
     // This routine does not permute any indices.  The matrix elements
     // contracted with the integrals are F_IJ and P_KL.
-    virtual void contrib_e_J(int I, int J, int K, int L,
+    virtual void contrib_e_J(double factor,
+                             int I, int J, int K, int L,
                              int nI, int nJ, int nK, int nL,
                              const double * restrictxx buf) = 0;
     // This routine does not permute any indices.  The matrix elements
     // contracted with the integrals are F_IK and P_JL.
-    virtual void contrib_e_K(int I, int J, int K, int L,
+    virtual void contrib_e_K(double factor,
+                             int I, int J, int K, int L,
                              int nI, int nJ, int nK, int nL,
                              const double * restrictxx buf) = 0;
-    virtual void contrib_p12_p13p24_J(int I, int J, int K, int L,
+    virtual void contrib_p12_p13p24_J(double factor,
+                                      int I, int J, int K, int L,
                                       int nI, int nJ, int nK, int nL,
                                       const double * restrictxx buf) = 0;
-    virtual void contrib_p12_p13p24_K(int I, int J, int K, int L,
+    virtual void contrib_p12_p13p24_K(double factor,
+                                      int I, int J, int K, int L,
                                       int nI, int nJ, int nK, int nL,
                                       const double * restrictxx buf) = 0;
-    virtual void contrib_p34_p13p24_J(int I, int J, int K, int L,
+    virtual void contrib_p34_p13p24_J(double factor,
+                                      int I, int J, int K, int L,
                                       int nI, int nJ, int nK, int nL,
                                       const double * restrictxx buf) = 0;
-    virtual void contrib_p34_p13p24_K(int I, int J, int K, int L,
+    virtual void contrib_p34_p13p24_K(double factor,
+                                      int I, int J, int K, int L,
                                       int nI, int nJ, int nK, int nL,
                                       const double * restrictxx buf) = 0;
-    virtual void contrib_p12_p34_J(int I, int J, int K, int L,
+    virtual void contrib_p12_p34_J(double factor,
+                                   int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf) = 0;
-    virtual void contrib_p12_p34_K(int I, int J, int K, int L,
+    virtual void contrib_p12_p34_K(double factor,
+                                   int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf) = 0;
-    virtual void contrib_p13p24_J(int I, int J, int K, int L,
+    virtual void contrib_p13p24_J(double factor,
+                                  int I, int J, int K, int L,
                                   int nI, int nJ, int nK, int nL,
                                   const double * restrictxx buf) = 0;
-    virtual void contrib_p13p24_K(int I, int J, int K, int L,
+    virtual void contrib_p13p24_K(double factor,
+                                  int I, int J, int K, int L,
                                   int nI, int nJ, int nK, int nL,
                                   const double * restrictxx buf) = 0;
-    virtual void contrib_all_J(int I, int J, int K, int L,
+    virtual void contrib_all_J(double factor,
+                               int I, int J, int K, int L,
                                int nI, int nJ, int nK, int nL,
                                const double * restrictxx buf) = 0;
-    virtual void contrib_all_K(int I, int J, int K, int L,
+    virtual void contrib_all_K(double factor,
+                               int I, int J, int K, int L,
                                int nI, int nJ, int nK, int nL,
                                const double * restrictxx buf) = 0;
     virtual Ref<FockContribution> clone() = 0;

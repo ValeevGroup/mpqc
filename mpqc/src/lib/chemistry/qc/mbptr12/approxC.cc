@@ -108,13 +108,13 @@ R12IntEval::compute_BC_()
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
     
-    // compute Q
+    // compute Q = F12^2 (note F2_only = true in compute_X_ calls)
     RefSCMatrix Q;
     compute_X_(Q,spincase2,occ1_act,occ2_act,
-               occ1_act,hjocc2_act_ribs);
+               occ1_act,hjocc2_act_ribs,true);
     if (occ1_act != occ2_act) {
       compute_X_(Q,spincase2,occ1_act,occ2_act,
-                 hjocc1_act_ribs,occ2_act);
+                 hjocc1_act_ribs,occ2_act,true);
     }
     else {
       Q.scale(2.0);

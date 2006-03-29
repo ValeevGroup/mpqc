@@ -326,6 +326,7 @@ class R12IntEval : virtual public SavableState {
       of particles 1 and 2. Resulting X is symmetric w.r.t bra-ket permutation, but will not be
       symmetric w.r.t. permutation of particles 1 and 2 if bra1 != bra2 || ket1 != ket2.
       If X is null, then allocate, otherwise check dimensions and accumulate result into X.
+      Setting F2_only to true will only leave F12^2 term.
       
       Semantics: 1) sc2 == AlphaAlpha or BetaBeta means that X will be antisymmetric w.r.t
       permutations bra1<->bra2 or ket1<->ket2, maybe artificially so. So sc2 == AlphaBeta
@@ -337,7 +338,8 @@ class R12IntEval : virtual public SavableState {
                   const Ref<MOIndexSpace>& bra1,
                   const Ref<MOIndexSpace>& bra2,
                   const Ref<MOIndexSpace>& ket1,
-                  const Ref<MOIndexSpace>& ket2);
+                  const Ref<MOIndexSpace>& ket2,
+                  bool F2_only = false);
   /** Compute contraction <bra1 bra2|F12|intb1 int2> <intb1|x|intk1> <intk1 int2|F12|ket1 ket2> +
       <bra1 bra2|F12|int1 intb2> <intb2|x|intk2> <int1 intk2|F12|ket1 ket2>
       sc2 specifies the spin case of particles 1 and 2.

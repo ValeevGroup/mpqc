@@ -77,7 +77,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
                        const Ref<MOIndexSpace>& bra1,
                        const Ref<MOIndexSpace>& bra2,
                        const Ref<MOIndexSpace>& ket1,
-                       const Ref<MOIndexSpace>& ket2)
+                       const Ref<MOIndexSpace>& ket2,
+                       bool F2_only)
 {
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
@@ -100,7 +101,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
   const unsigned int nabs_in_bra = nabs_in_bra1 + nabs_in_bra2;
   const unsigned int nabs_in_ket = nabs_in_ket1 + nabs_in_ket2;
   const unsigned int maxnabs = r12info()->maxnabs();
-  if (nabs_in_bra > maxnabs ||
+  if (!F2_only && nabs_in_bra > maxnabs ||
       nabs_in_ket > maxnabs) {
     throw ProgrammingError("R12IntEval::compute_X_() -- maxnabs is exceeded",__FILE__,__LINE__);
   }
@@ -208,7 +209,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 #if PRINT_COMPONENTS
     print_component(X,"F12^2");
 #endif
-    
+
+    if (!F2_only) {
+      
     // ABS and CABS method differ by the TwoParticleContraction
     using LinearR12::TwoParticleContraction;
     using LinearR12::ABS_OBS_Contraction;
@@ -340,6 +343,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     X.scale(0.5);
     RefSCMatrix X_t = X.t();
     X.accumulate(X_t);  X_t = 0;
+  } // if (!F2_only)
 
   globally_sum_scmatrix_(X);
   

@@ -916,6 +916,8 @@ FockBuild::build()
 
   signed char *pmax = contrib_->compute_pmax(true);
 
+  contrib_->nint() = 0;
+
   for (int i=0; i<nthread; i++) {
       if (i==0) contribs[i] = contrib_;
       else contribs[i] = contrib_->clone();

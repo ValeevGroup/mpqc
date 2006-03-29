@@ -105,14 +105,19 @@ class FockContribution: public RefCount {
   public:
     FockContribution();
     virtual ~FockContribution();
-    // This routine does not permute any indices.  The matrix elements
-    // contracted with the integrals are F_IJ and P_KL.
+    /** This routine does not permute any indices.  The matrix elements are
+        contracted with the integrals are F_IJ and P_KL.  If F is
+        symmetric, then J>I will be ignored.
+        K>=L.
+    */
     virtual void contrib_e_J(double factor,
                              int I, int J, int K, int L,
                              int nI, int nJ, int nK, int nL,
                              const double * restrictxx buf) = 0;
-    // This routine does not permute any indices.  The matrix elements
-    // contracted with the integrals are F_IK and P_JL.
+    /** This routine does not permute any indices.  The matrix elements
+        are contracted with the integrals are F_IK and P_JL.  If F is
+        symmetric, then K>I will be ignored.
+    */
     virtual void contrib_e_K(double factor,
                              int I, int J, int K, int L,
                              int nI, int nJ, int nK, int nL,
@@ -141,6 +146,22 @@ class FockContribution: public RefCount {
                                    int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf) = 0;
+    virtual void contrib_p12_J(double factor,
+                               int I, int J, int K, int L,
+                               int nI, int nJ, int nK, int nL,
+                               const double * restrictxx buf) = 0;
+    virtual void contrib_p12_K(double factor,
+                               int I, int J, int K, int L,
+                               int nI, int nJ, int nK, int nL,
+                               const double * restrictxx buf) = 0;
+    virtual void contrib_p34_J(double factor,
+                               int I, int J, int K, int L,
+                               int nI, int nJ, int nK, int nL,
+                               const double * restrictxx buf) = 0;
+    virtual void contrib_p34_K(double factor,
+                               int I, int J, int K, int L,
+                               int nI, int nJ, int nK, int nL,
+                               const double * restrictxx buf) = 0;
     virtual void contrib_p13p24_J(double factor,
                                   int I, int J, int K, int L,
                                   int nI, int nJ, int nK, int nL,
@@ -235,12 +256,15 @@ class GenericFockContribution: public FockContribution {
     double *jmat_block(int i, int I, int J) {
       return jmats_[i].block(I,J);
     }
+    bool jmat_symmetric(int i) const { return jmats_[i].symmetric(); }
     double *kmat_block(int i, int I, int J) {
       return kmats_[i].block(I,J);
     }
+    bool kmat_symmetric(int i) const { return kmats_[i].symmetric(); }
     const double *pmat_block(int i, int I, int J) {
       return pmats_[i].block(I,J);
     }
+    bool pmat_symmetric(int i) const { return pmats_[i].symmetric(); }
 
     void set_fmat(int i, const Ref<SCMatrix> &);
     void set_fmat(int i, const Ref<SymmSCMatrix> &);
@@ -277,8 +301,6 @@ class FockBuildThread : public Thread {
     int threadnum_;
     const signed char *pmax_;
 
-    Ref<TwoBodyInt> eri_;
-
     int can_sym_offset(int i, int j) { return (i*(i+1))/2 + j; }
     int gen_sym_offset(int i, int j) {
       if (i>=j) { return can_sym_offset(i,j); }
@@ -289,7 +311,6 @@ class FockBuildThread : public Thread {
     FockBuildThread(const Ref<MessageGrp> &msg,
                     int nthread,
                     int threadnum,
-                    const Ref<TwoBodyInt> &eri,
                     const Ref<FockContribution>&c,
                     const Ref<ThreadLock> &lock,
                     const Ref<Integral> &integral,
@@ -307,13 +328,15 @@ class FockBuildThread_F11_P11 : public FockBuildThread {
     FockBuildThread_F11_P11(const Ref<MessageGrp> &msg,
                             int nthread,
                             int threadnum,
-                            const Ref<TwoBodyInt> &eri,
                             const Ref<FockContribution>&c,
                             const Ref<ThreadLock> &lock,
                             const Ref<Integral> &integral,
                             double acc, const signed char *pmax,
                             const Ref<PetiteList> &pl,
-                            const Ref<GaussianBasisSet> &basis);
+                            const Ref<GaussianBasisSet> &basis1,
+                            const Ref<GaussianBasisSet> &basis2/*not used*/,
+                            const Ref<GaussianBasisSet> &basis3/*not used*/,
+                            const Ref<GaussianBasisSet> &basis4/*not used*/);
     void run();
 };
 
@@ -335,7 +358,35 @@ class FockBuildThread_F12_P34 : public FockBuildThread {
     FockBuildThread_F12_P34(const Ref<MessageGrp> &msg,
                             int nthread,
                             int threadnum,
-                            const Ref<TwoBodyInt> &eri,
+                            const Ref<FockContribution>&c,
+                            const Ref<ThreadLock> &lock,
+                            const Ref<Integral> &integral,
+                            double acc, const signed char *pmax,
+                            const Ref<PetiteList> &pl,
+                            const Ref<GaussianBasisSet> &basis1,
+                            const Ref<GaussianBasisSet> &basis2,
+                            const Ref<GaussianBasisSet> &basis3,
+                            const Ref<GaussianBasisSet> &basis4);
+    void run();
+};
+
+/** This is used to build the Fock matrix.
+ */
+class FockBuildThread_F11_P22 : public FockBuildThread {
+    Ref<GaussianBasisSet> basis1_;
+    Ref<GaussianBasisSet> basis2_;
+    Ref<GaussianBasisSet> basis3_;
+    Ref<GaussianBasisSet> basis4_;
+    Ref<PetiteList> pl_;
+
+    void run_J();
+    void run_K();
+
+  public:
+    /// Each thread must be given a unique contribution, c.
+    FockBuildThread_F11_P22(const Ref<MessageGrp> &msg,
+                            int nthread,
+                            int threadnum,
                             const Ref<FockContribution>&c,
                             const Ref<ThreadLock> &lock,
                             const Ref<Integral> &integral,
@@ -365,17 +416,22 @@ class FockBuild: public RefCount {
     Ref<Integral> integral_;
     double accuracy_;
 
-    // A two body integral evaluator for each thread.  This is stored so
-    // the same evalutators can be used for multiple Fock builds.  This
-    // allows integrals to be stored and reused.  The storage for
-    // this array is not managed by FockBuild.
-    const Ref<TwoBodyInt>* tbi_;
+    typedef FockBuildThread* (*FBT_CTOR)(const Ref<MessageGrp> &msg,
+                                         int nthread,
+                                         int threadnum,
+                                         const Ref<FockContribution>&c,
+                                         const Ref<ThreadLock> &lock,
+                                         const Ref<Integral> &integral,
+                                         double acc, const signed char *pmax,
+                                         const Ref<PetiteList> &pl,
+                                         const Ref<GaussianBasisSet> &basis1,
+                                         const Ref<GaussianBasisSet> &basis2,
+                                         const Ref<GaussianBasisSet> &basis3,
+                                         const Ref<GaussianBasisSet> &basis4);
 
-    // Build for the case where all of the basis sets are the same
-    void build_F11_P11();
 
-    // Build for the case where none of the basis sets are the same
-    void build_F12_P34();
+    // Build for the any case.  The thread constructing function is passed in.
+    void build_generic(FBT_CTOR);
 
   public:
     /** Create a FockBuild object using b_f1 as the Fock matrix row
@@ -389,7 +445,6 @@ class FockBuild: public RefCount {
         Integral.  */
     FockBuild(const Ref<FockContribution> &contrib,
               double acc,
-              const Ref<TwoBodyInt> *tbi,
               const Ref<GaussianBasisSet> &b_f1,
               const Ref<GaussianBasisSet> &b_f2 = 0,
               const Ref<GaussianBasisSet> &b_p1 = 0,

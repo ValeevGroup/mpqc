@@ -36,6 +36,7 @@
 
 #include <util/misc/scint.h>
 #include <util/misc/autovec.h>
+#include <util/class/scexception.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blkiter.h>
 #include <chemistry/qc/basis/petite.h>
@@ -386,6 +387,10 @@ GenericFockContribution::GenericFockContribution(
 void
 GenericFockContribution::set_fmat(int i, const Ref<SCMatrix> &m)
 {
+  if (f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_fmat: rect but bases equiv",
+                                 __FILE__, __LINE__);
+    }
   jmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
   kmats_[i] = jmats_[i];
   k_is_j_[i] = true;
@@ -394,8 +399,10 @@ GenericFockContribution::set_fmat(int i, const Ref<SCMatrix> &m)
 void
 GenericFockContribution::set_fmat(int i, const Ref<SymmSCMatrix> &m)
 {
-  if (!f_b1_equiv_f_b2)
-      throw std::runtime_error("set_fmat: basis not equiv");
+  if (!f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_fmat: symm but bases not equiv",
+                                 __FILE__, __LINE__);
+    }
   jmats_[i].scmat_to_data(m, f_b1_, false);
   kmats_[i] = jmats_[i];
   k_is_j_[i] = true;
@@ -404,6 +411,10 @@ GenericFockContribution::set_fmat(int i, const Ref<SymmSCMatrix> &m)
 void
 GenericFockContribution::set_jmat(int i, const Ref<SCMatrix> &m)
 {
+  if (f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_jmat: rect but bases equiv",
+                                 __FILE__, __LINE__);
+    }
   jmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
   k_is_j_[i] = false;
 }
@@ -411,8 +422,10 @@ GenericFockContribution::set_jmat(int i, const Ref<SCMatrix> &m)
 void
 GenericFockContribution::set_jmat(int i, const Ref<SymmSCMatrix> &m)
 {
-  if (!f_b1_equiv_f_b2)
-      throw std::runtime_error("set_fmat: basis not equiv");
+  if (!f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_jmat: symm but bases not equiv",
+                                 __FILE__, __LINE__);
+    }
   jmats_[i].scmat_to_data(m, f_b1_, false);
   k_is_j_[i] = false;
 }
@@ -420,6 +433,10 @@ GenericFockContribution::set_jmat(int i, const Ref<SymmSCMatrix> &m)
 void
 GenericFockContribution::set_kmat(int i, const Ref<SCMatrix> &m)
 {
+  if (f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_kmat: rect but bases equiv",
+                                 __FILE__, __LINE__);
+    }
   kmats_[i].scmat_to_data(m, f_b1_, f_b2_, false);
   k_is_j_[i] = false;
 }
@@ -427,8 +444,10 @@ GenericFockContribution::set_kmat(int i, const Ref<SCMatrix> &m)
 void
 GenericFockContribution::set_kmat(int i, const Ref<SymmSCMatrix> &m)
 {
-  if (!f_b1_equiv_f_b2)
-      throw std::runtime_error("set_fmat: basis not equiv");
+  if (!f_b1_equiv_f_b2) {
+      throw sc::ProgrammingError("set_kmat: symm but bases not equiv",
+                                 __FILE__, __LINE__);
+    }
   kmats_[i].scmat_to_data(m, f_b1_, false);
   k_is_j_[i] = false;
 }
@@ -436,14 +455,20 @@ GenericFockContribution::set_kmat(int i, const Ref<SymmSCMatrix> &m)
 void
 GenericFockContribution::set_pmat(int i, const Ref<SCMatrix> &m)
 {
+  if (p_b1_equiv_p_b2) {
+      throw sc::ProgrammingError("set_pmat: rect but bases equiv",
+                                 __FILE__, __LINE__);
+    }
   pmats_[i].scmat_to_data(m, f_b1_, f_b2_, true);
 }
 
 void
 GenericFockContribution::set_pmat(int i, const Ref<SymmSCMatrix> &m)
 {
-  if (!p_b1_equiv_p_b2)
-      throw std::runtime_error("set_pmat: basis not equiv");
+  if (!p_b1_equiv_p_b2) {
+      throw sc::ProgrammingError("set_pmat: symm but bases not equiv",
+                                 __FILE__, __LINE__);
+    }
   pmats_[i].scmat_to_data(m, p_b1_, true);
 }
 
@@ -571,14 +596,12 @@ GenericFockContribution::pmax_contrib(const FockBuildMatrix &mat,
 FockBuildThread::FockBuildThread(const Ref<MessageGrp> &msg,
                                  int nthread,
                                  int threadnum,
-                                 const Ref<TwoBodyInt> &eri,
                                  const Ref<FockContribution>&c,
                                  const Ref<ThreadLock> &lock,
                                  const Ref<Integral> &integral,
                                  double acc, const signed char *pmax):
   msg_(msg),
   nthread_(nthread),
-  eri_(eri),
   threadnum_(threadnum),
   contrib_(c),
   lock_(lock),
@@ -595,48 +618,22 @@ FockBuildThread_F11_P11::FockBuildThread_F11_P11(
     const Ref<MessageGrp> &msg,
     int nthread,
     int threadnum,
-    const Ref<TwoBodyInt> &eri,
     const Ref<FockContribution>&c,
     const Ref<ThreadLock> &lock,
     const Ref<Integral> &integral,
     double acc, const signed char *pmax,
     const Ref<PetiteList> &pl,
-    const Ref<GaussianBasisSet> &basis
+    const Ref<GaussianBasisSet> &basis1,
+    const Ref<GaussianBasisSet> &basis2,
+    const Ref<GaussianBasisSet> &basis3,
+    const Ref<GaussianBasisSet> &basis4
     ):
-  FockBuildThread(msg,nthread,threadnum,eri,c,lock,integral,acc,pmax),
+  FockBuildThread(msg,nthread,threadnum,c,lock,integral,acc,pmax),
   pl_(pl),
-  basis_(basis)
+  basis_(basis1)
 {
 }
 
-#if 0
-// this original code uses no index permutation symmetry
-void
-FockBuildThread_F11_P11::run()
-{
-  ThreadLockHolder eri_alloc_lock(lock_);
-  integral_->set_basis(basis_);
-  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
-  eri_alloc_lock.unlock();
-  const double *buf = eri_->buffer();
-  int nshell = basis_->nshell();
-  for (int I=0; I<nshell; I++) {
-      int nI = basis_->shell(I).nfunction();
-      for (int J=0; J<nshell; J++) {
-          int nJ = basis_->shell(J).nfunction();
-          for (int K=0; K<nshell; K++) {
-              int nK = basis_->shell(K).nfunction();
-              for (int L=0; L<nshell; L++) {
-                  int nL = basis_->shell(L).nfunction();
-                  eri_->compute_shell(I,J,K,L);
-                  contrib_->contrib_e_J(I, J, K, L, nI, nJ, nK, nL, buf);
-                  contrib_->contrib_e_K(I, J, K, L, nI, nJ, nK, nL, buf);
-                }
-            }
-        }
-    }
-}
-#else
 void
 FockBuildThread_F11_P11::run()
 {
@@ -647,8 +644,11 @@ FockBuildThread_F11_P11::run()
   GaussianBasisSet& gbs = *basis_;
   PetiteList& pl = *pl_;
 
-  eri_->set_redundant(1);
-  const double *buf = eri_->buffer();
+  integral_->set_basis(basis_);
+  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
+
+  eri->set_redundant(1);
+  const double *buf = eri->buffer();
 
   sc_int_least64_t threadind=0;
   sc_int_least64_t ijklind=0;
@@ -695,19 +695,19 @@ FockBuildThread_F11_P11::run()
 
 #ifdef SCF_CHECK_BOUNDS
                   double intbound
-                      = pow(2.0,double(eri_->log2_shell_bound(i,j,k,l)));
+                      = pow(2.0,double(eri->log2_shell_bound(i,j,k,l)));
                   double pbound
                       = pow(2.0,double(pmaxijkl));
                   intbound *= qijkl;
                   GBuild<T>::contribution.set_bound(intbound, pbound);
 #else
 #  ifndef SCF_DONT_USE_BOUNDS
-                  if (eri_->log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
+                  if (eri->log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
                       continue;
 #  endif
 #endif
 
-                  eri_->compute_shell(i,j,k,l);
+                  eri->compute_shell(i,j,k,l);
 
                   int e12 = (i==j);
                   int e34 = (k==l);
@@ -768,7 +768,6 @@ FockBuildThread_F11_P11::run()
         }
     }
 }
-#endif
 
 /////////////////////////////////////////////////////////////////
 // FockBuildThread_F12_P34
@@ -777,7 +776,6 @@ FockBuildThread_F12_P34::FockBuildThread_F12_P34(
     const Ref<MessageGrp> &msg,
     int nthread,
     int threadnum,
-    const Ref<TwoBodyInt> &eri,
     const Ref<FockContribution>&c,
     const Ref<ThreadLock> &lock,
     const Ref<Integral> &integral,
@@ -788,7 +786,7 @@ FockBuildThread_F12_P34::FockBuildThread_F12_P34(
     const Ref<GaussianBasisSet> &basis3,
     const Ref<GaussianBasisSet> &basis4
     ):
-  FockBuildThread(msg,nthread,threadnum,eri,c,lock,integral,acc,pmax),
+  FockBuildThread(msg,nthread,threadnum,c,lock,integral,acc,pmax),
   pl_(pl),
   basis1_(basis1),
   basis2_(basis2),
@@ -811,7 +809,7 @@ FockBuildThread_F12_P34::run_J()
   integral_->set_basis(basis1_,basis2_,basis3_,basis4_);
   Ref<TwoBodyInt> eri = integral_->electron_repulsion();
   eri_alloc_lock.unlock();
-  const double *buf = eri_->buffer();
+  const double *buf = eri->buffer();
   int nshell1 = basis1_->nshell();
   int nshell2 = basis2_->nshell();
   int nshell3 = basis3_->nshell();
@@ -824,7 +822,7 @@ FockBuildThread_F12_P34::run_J()
               int nK = basis3_->shell(K).nfunction();
               for (int L=0; L<nshell4; L++) {
                   int nL = basis4_->shell(L).nfunction();
-                  eri_->compute_shell(I,J,K,L);
+                  eri->compute_shell(I,J,K,L);
                   contrib_->contrib_e_J(1.0, I, J, K, L, nI, nJ, nK, nL, buf);
                 }
             }
@@ -839,7 +837,7 @@ FockBuildThread_F12_P34::run_K()
   integral_->set_basis(basis1_,basis3_,basis2_,basis4_);
   Ref<TwoBodyInt> eri = integral_->electron_repulsion();
   eri_alloc_lock.unlock();
-  const double *buf = eri_->buffer();
+  const double *buf = eri->buffer();
   int nshell1 = basis1_->nshell();
   int nshell2 = basis2_->nshell();
   int nshell3 = basis3_->nshell();
@@ -852,8 +850,118 @@ FockBuildThread_F12_P34::run_K()
               int nK = basis2_->shell(K).nfunction();
               for (int L=0; L<nshell4; L++) {
                   int nL = basis4_->shell(L).nfunction();
-                  eri_->compute_shell(I,J,K,L);
+                  eri->compute_shell(I,J,K,L);
                   contrib_->contrib_e_K(1.0, I, J, K, L, nI, nJ, nK, nL, buf);
+                }
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+// FockBuildThread_F11_P22
+
+FockBuildThread_F11_P22::FockBuildThread_F11_P22(
+    const Ref<MessageGrp> &msg,
+    int nthread,
+    int threadnum,
+    const Ref<FockContribution>&c,
+    const Ref<ThreadLock> &lock,
+    const Ref<Integral> &integral,
+    double acc, const signed char *pmax,
+    const Ref<PetiteList> &pl,
+    const Ref<GaussianBasisSet> &basis1,
+    const Ref<GaussianBasisSet> &basis2,
+    const Ref<GaussianBasisSet> &basis3,
+    const Ref<GaussianBasisSet> &basis4
+    ):
+  FockBuildThread(msg,nthread,threadnum,c,lock,integral,acc,pmax),
+  pl_(pl),
+  basis1_(basis1),
+  basis2_(basis2),
+  basis3_(basis3),
+  basis4_(basis4)
+{
+}
+
+void
+FockBuildThread_F11_P22::run()
+{
+  run_J();
+  run_K();
+}
+
+void
+FockBuildThread_F11_P22::run_J()
+{
+  ThreadLockHolder eri_alloc_lock(lock_);
+  integral_->set_basis(basis1_,basis2_,basis3_,basis4_);
+  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
+  eri_alloc_lock.unlock();
+  const double *buf = eri->buffer();
+  int nshell1 = basis1_->nshell();
+  int nshell2 = basis3_->nshell();
+  for (int I=0; I<nshell1; I++) {
+      int nI = basis1_->shell(I).nfunction();
+      for (int J=0; J<=I; J++) {
+          int nJ = basis2_->shell(J).nfunction();
+          for (int K=0; K<nshell2; K++) {
+              int nK = basis3_->shell(K).nfunction();
+              for (int L=0; L<=K; L++) {
+                  int nL = basis4_->shell(L).nfunction();
+                  eri->compute_shell(I,J,K,L);
+                  if (I == J) {
+                      if (K == L) {
+                          contrib_->contrib_e_J(1.0, I, J, K, L,
+                                                nI, nJ, nK, nL, buf);
+                        }
+                      else {
+                          contrib_->contrib_p34_J(1.0, I, J, K, L,
+                                                  nI, nJ, nK, nL, buf);
+                        }
+                    }
+                  else if (K == L) {
+                      contrib_->contrib_p12_J(1.0, I, J, K, L,
+                                              nI, nJ, nK, nL, buf);
+                    }
+                  else {
+                      contrib_->contrib_p12_p34_J(1.0, I, J, K, L,
+                                                  nI, nJ, nK, nL, buf);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void
+FockBuildThread_F11_P22::run_K()
+{
+  ThreadLockHolder eri_alloc_lock(lock_);
+  integral_->set_basis(basis1_,basis3_,basis2_,basis4_);
+  Ref<TwoBodyInt> eri = integral_->electron_repulsion();
+  eri_alloc_lock.unlock();
+  const double *buf = eri->buffer();
+  int nshell1 = basis1_->nshell();
+  int nshell2 = basis3_->nshell();
+  for (int I=0; I<nshell1; I++) {
+      int nI = basis1_->shell(I).nfunction();
+      for (int J=0; J<nshell2; J++) {
+          int nJ = basis3_->shell(J).nfunction();
+          for (int K=0; K<=I; K++) {
+              int nK = basis2_->shell(K).nfunction();
+              int Lfence = (I==K)?J+1:nshell2;
+              for (int L=0; L<Lfence; L++) {
+                  int nL = basis4_->shell(L).nfunction();
+                  eri->compute_shell(I,J,K,L);
+                  if (I == K && J == L) {
+                      contrib_->contrib_e_K(1.0, I, J, K, L,
+                                            nI, nJ, nK, nL, buf);
+                    }
+                  else {
+                      contrib_->contrib_p13p24_K(1.0, I, J, K, L,
+                                                 nI, nJ, nK, nL, buf);
+                    }
                 }
             }
         }
@@ -865,7 +973,6 @@ FockBuildThread_F12_P34::run_K()
 
 FockBuild::FockBuild(const Ref<FockContribution> &contrib,
                      double acc,
-                     const Ref<TwoBodyInt> *tbi,
                      const Ref<GaussianBasisSet> &b_f1,
                      const Ref<GaussianBasisSet> &b_f2,
                      const Ref<GaussianBasisSet> &b_p1,
@@ -875,7 +982,6 @@ FockBuild::FockBuild(const Ref<FockContribution> &contrib,
                      const Ref<Integral> &integral):
   contrib_(contrib),
   accuracy_(acc),
-  tbi_(tbi),
   b_f1_(b_f1),
   b_f2_(b_f2),
   b_p1_(b_p1),
@@ -893,47 +999,27 @@ FockBuild::~FockBuild()
 {
 }
 
-void
-FockBuild::build_F11_P11()
+template <class T>
+FockBuildThread *
+create_FockBuildThread(const Ref<MessageGrp> &msg,
+                       int nthread,
+                       int threadnum,
+                       const Ref<FockContribution>&c,
+                       const Ref<ThreadLock> &lock,
+                       const Ref<Integral> &integral,
+                       double acc, const signed char *pmax,
+                       const Ref<PetiteList> &pl,
+                       const Ref<GaussianBasisSet> &basis1,
+                       const Ref<GaussianBasisSet> &basis2 = 0,
+                       const Ref<GaussianBasisSet> &basis3 = 0,
+                       const Ref<GaussianBasisSet> &basis4 = 0)
 {
-  int nthread = thr_->nthread();
-  std::vector<Ref<FockContribution> > contribs(nthread);
-  Ref<ThreadLock> lock = thr_->new_lock();
-  
-  Ref<PetiteList> pl = integral_->petite_list(b_p1_);
-
-  signed char *pmax = contrib_->compute_pmax(true);
-
-  for (int i=0; i<nthread; i++) {
-      if (i==0) contribs[i] = contrib_;
-      else contribs[i] = contrib_->clone();
-      FockBuildThread *thread = new FockBuildThread_F11_P11(
-          msg_,
-          nthread,
-          i,
-          tbi_[i],
-          contribs[i],
-          lock,
-          integral_,
-          accuracy_,
-          pmax,
-          pl,
-          b_f1_);
-      contribs[i]->copy();
-      thr_->add_thread(i, thread);
-    }
-  thr_->start_threads();
-  thr_->wait_threads();
-  thr_->delete_threads();
-  delete[] pmax;
-  for (int i=1; i<nthread; i++) {
-      contrib_->accum(contribs[i]);
-    }
-  contrib_->update();
+  return new T(msg,nthread,threadnum,c,lock,integral,acc,pmax,
+               pl,basis1,basis2,basis3,basis4);
 }
 
 void
-FockBuild::build_F12_P34()
+FockBuild::build_generic(FBT_CTOR ctor)
 {
   int nthread = thr_->nthread();
   std::vector<Ref<FockContribution> > contribs(nthread);
@@ -946,11 +1032,10 @@ FockBuild::build_F12_P34()
   for (int i=0; i<nthread; i++) {
       if (i==0) contribs[i] = contrib_;
       else contribs[i] = contrib_->clone();
-      FockBuildThread *thread = new FockBuildThread_F12_P34(
+      FockBuildThread *thread = (*ctor)(
           msg_,
           nthread,
           i,
-          tbi_[i],
           contribs[i],
           lock,
           integral_,
@@ -980,14 +1065,24 @@ FockBuild::build()
   if (b_f1_->equiv(b_f2_)) {
       if (b_p1_->equiv(b_p2_)) {
           if (b_f1_->equiv(b_p1_)) {
-              build_F11_P11();
+              build_generic(create_FockBuildThread<FockBuildThread_F11_P11>);
               return;
+            }
+          else {
+//               build_generic(create_FockBuildThread<FockBuildThread_F11_P22>);
+//               return;
             }
         }
     }
-  // this might might be run for cases with symmetry that are
-  // not handled by the above code
-  build_F12_P34();
+  else if (b_p1_->equiv(b_p2_)) {
+    }
+  else {
+      build_generic(create_FockBuildThread<FockBuildThread_F12_P34>);
+      return;
+    }
+  // use the general code if this case not handled above
+  build_generic(create_FockBuildThread<FockBuildThread_F12_P34>);
+  return;
 }
 
 }

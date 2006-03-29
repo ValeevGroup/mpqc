@@ -117,8 +117,7 @@ try_main(int argc, char **argv)
       fc11->set_fmat(0, f11);
       fc11->set_pmat(0, density);
       clhf->integral()->set_basis(basis1,basis1,basis1,basis1);
-      Ref<TwoBodyInt> eri11 = clhf->integral()->electron_repulsion();
-      Ref<FockBuild> fb11 = new FockBuild(fc11,1e-12,&eri11,
+      Ref<FockBuild> fb11 = new FockBuild(fc11,1e-12,
                                           basis1,basis1,basis1,basis1);
       fb11->build();
       f11.print("Fock matrix in original basis");
@@ -131,8 +130,7 @@ try_main(int argc, char **argv)
       fc22->set_fmat(0, f22);
       fc22->set_pmat(0, density);
       clhf->integral()->set_basis(basis2,basis2,basis1,basis1);
-      Ref<TwoBodyInt> eri22 = clhf->integral()->electron_repulsion();
-      Ref<FockBuild> fb22 = new FockBuild(fc22,1e-12,&eri22,
+      Ref<FockBuild> fb22 = new FockBuild(fc22,1e-12,
                                           basis2,basis2,basis1,basis1);
       fb22->build();
       f22.print("Fock matrix in basis2");
@@ -156,8 +154,7 @@ try_main(int argc, char **argv)
       = new CLHFContribution(gbs,gbs,gbs,gbs);
   fc->set_fmat(0, f);
   fc->set_pmat(0, density);
-  Ref<TwoBodyInt> eri = clhf->integral()->electron_repulsion();
-  Ref<FockBuild> fb = new FockBuild(fc,1e-12,&eri,gbs);
+  Ref<FockBuild> fb = new FockBuild(fc,1e-12,gbs);
   fb->build();
   tim->exit("CLHF Fock build");
 

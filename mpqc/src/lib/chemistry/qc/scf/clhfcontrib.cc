@@ -106,19 +106,42 @@ CLHFContribution::contrib_e_J(double factor,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
+  if (I < J && jmat_symmetric(0)) return;
+
   double *F_IJ = jmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
-  int nKL = nK*nL;
-  for (int i=0, ijkl=0, ij=0; i<nI; i++) {
-      for (int j=0; j<nJ; j++, ij++) {
-          double F_IJ_ij = 0.0;
-          for (int kl=0; kl<nKL; ijkl++, kl++) {
-              double val = buf[ijkl];
-              F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
-                        F_IJ_ij,I,J,ij,nJ,
-                        P_KL[kl],K,L,kl,nL);
+
+  if (K>=L || !pmat_symmetric(0)) {
+      const double * restrictxx P_KL = pmat_block(0, K, L);
+      int nKL = nK*nL;
+      for (int i=0, ijkl=0, ij=0; i<nI; i++) {
+          for (int j=0; j<nJ; j++, ij++) {
+              double F_IJ_ij = 0.0;
+              for (int kl=0; kl<nKL; ijkl++, kl++) {
+                  double val = buf[ijkl];
+                  F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
+                            F_IJ_ij,I,J,ij,nJ,
+                            P_KL[kl],K,L,kl,nL);
+                }
+              F_IJ[ij] += F_IJ_ij;
             }
-          F_IJ[ij] += F_IJ_ij;
+        }
+    }
+  else {
+      const double * restrictxx P_LK = pmat_block(0, L, K);
+      int nKL = nK*nL;
+      for (int i=0, ijkl=0, ij=0; i<nI; i++) {
+          for (int j=0; j<nJ; j++, ij++) {
+              double F_IJ_ij = 0.0;
+              for (int k=0; k<nK; k++) {
+                  for (int l=0, lk=k; l<nL; ijkl++, l++, lk+=nK) {
+                      double val = buf[ijkl];
+                      F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
+                                F_IJ_ij,I,J,ij,nJ,
+                                P_LK[lk],L,K,lk,nK);
+                    }
+                }
+              F_IJ[ij] += F_IJ_ij;
+            }
         }
     }
 }
@@ -129,17 +152,37 @@ CLHFContribution::contrib_e_K(double factor,
                               int nI, int nJ, int nK, int nL,
                               const double * restrictxx buf)
 {
+  if (I < K && kmat_symmetric(0)) return;
+
   double K_factor = factor * -0.5;
   double *F_IK = kmat_block(0, I, K);
-  const double * restrictxx P_JL = pmat_block(0, J, L);
-  for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
-      for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
-          for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
-              for (int l=0, jl=jl_begin; l<nL; l++, ijkl++, jl++) {
-                  double val = buf[ijkl];
-                  F_contrib(I,J,K,L,i,j,k,l,K_factor,val,"K ",
-                            F_IK[ik],I,K,ik,nK,
-                            P_JL[jl],J,L,jl,nL);
+
+  if (J>=L || !pmat_symmetric(0)) {
+      const double * restrictxx P_JL = pmat_block(0, J, L);
+      for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
+          for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
+              for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
+                  for (int l=0, jl=jl_begin; l<nL; l++, ijkl++, jl++) {
+                      double val = buf[ijkl];
+                      F_contrib(I,J,K,L,i,j,k,l,K_factor,val,"K ",
+                                F_IK[ik],I,K,ik,nK,
+                                P_JL[jl],J,L,jl,nL);
+                    }
+                }
+            }
+        }
+    }
+  else {
+      const double * restrictxx P_LJ = pmat_block(0, L, J);
+      for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
+          for (int j=0, lj_begin=0; j<nJ; j++, lj_begin += 1) {
+              for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
+                  for (int l=0, lj=lj_begin; l<nL; l++, ijkl++, lj+=nJ) {
+                      double val = buf[ijkl];
+                      F_contrib(I,J,K,L,i,j,k,l,K_factor,val,"K ",
+                                F_IK[ik],I,K,ik,nK,
+                                P_LJ[lj],L,J,lj,nJ);
+                    }
                 }
             }
         }
@@ -620,8 +663,6 @@ CLHFContribution::contrib_p12_p34_K(double factor,
   const double * restrictxx P_IL = pmat_block(0, I, L);
 
 
-  // Since we are not considering p13p24, only sum in contributions
-  // to F with canonical indices.
   double IK_factor = -0.5*factor; // IK are always canonical
   double IL_factor = -0.5*factor; // IK are always canonical
   double JK_factor = -0.5*(J>=K?1:0)*factor;
@@ -714,6 +755,94 @@ CLHFContribution::contrib_p12_p34_K(double factor,
                                 F_LJ[lj],L,J,lj,nJ,
                                 P_IK[ik],I,K,ik,nK);
                     }
+                }
+            }
+        }
+    }
+}
+
+void
+CLHFContribution::contrib_p12_J(double factor,
+                                int I, int J, int K, int L,
+                                int nI, int nJ, int nK, int nL,
+                                const double * restrictxx buf)
+{
+  contrib_e_J(factor,I,J,K,L,nI,nJ,nK,nL,buf);
+}
+
+void
+CLHFContribution::contrib_p12_K(double factor,
+                                int I, int J, int K, int L,
+                                int nI, int nJ, int nK, int nL,
+                                const double * restrictxx buf)
+{
+  double *F_IK = kmat_block(0, I, K);
+  const double * restrictxx P_IL = pmat_block(0, I, L);
+
+  double IK_factor = -0.5*factor;
+  double JK_factor = -0.5*factor;
+
+  double *F_JK = kmat_block(0, J, K);
+  const double * restrictxx P_JL = pmat_block(0, J, L);
+  for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
+       i++,il_begin+=nL,ik_begin+=nK) {
+      for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
+          for (int k=0,ik=ik_begin; k<nK; k++,ik++,jk++) {
+              for (int l=0, il=il_begin, jl=jl_begin;
+                   l<nL;
+                   l++, ijkl++, il++, jl++) {
+                  double val = buf[ijkl];
+                  F_contrib(I,J,K,L,i,j,k,l,IK_factor,val,"K ",
+                            F_IK[ik],I,K,ik,nK,
+                            P_JL[jl],J,L,jl,nL);
+                  F_contrib(I,J,K,L,i,j,k,l,JK_factor,val,"K ",
+                            F_JK[jk],J,K,jk,nK,
+                            P_IL[il],I,L,il,nL);
+                }
+            }
+        }
+    }
+}
+
+void
+CLHFContribution::contrib_p34_J(double factor,
+                                int I, int J, int K, int L,
+                                int nI, int nJ, int nK, int nL,
+                                const double * restrictxx buf)
+{
+  contrib_p12_p34_J(factor,I,J,K,L,nI,nJ,nK,nL,buf);
+}
+
+void
+CLHFContribution::contrib_p34_K(double factor,
+                                int I, int J, int K, int L,
+                                int nI, int nJ, int nK, int nL,
+                                const double * restrictxx buf)
+{
+  double *F_IK = kmat_block(0, I, K);
+  double *F_IL = kmat_block(0, I, L);
+
+  double IK_factor = -0.5*factor;
+  double IL_factor = -0.5*factor;
+
+  double *F_JK = kmat_block(0, J, K);
+  double *F_JL = kmat_block(0, J, L);
+  const double * restrictxx P_JK = pmat_block(0, J, K);
+  const double * restrictxx P_JL = pmat_block(0, J, L);
+  for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
+       i++,il_begin+=nL,ik_begin+=nK) {
+      for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
+          for (int k=0,ik=ik_begin; k<nK; k++,ik++,jk++) {
+              for (int l=0, il=il_begin, jl=jl_begin;
+                   l<nL;
+                   l++, ijkl++, il++, jl++) {
+                  double val = buf[ijkl];
+                  F_contrib(I,J,K,L,i,j,k,l,IK_factor,val,"K ",
+                            F_IK[ik],I,K,ik,nK,
+                            P_JL[jl],J,L,jl,nL);
+                  F_contrib(I,J,K,L,i,j,k,l,IL_factor,val,"K ",
+                            F_IL[il],I,L,il,nL,
+                            P_JK[jk],J,K,jk,nK);
                 }
             }
         }

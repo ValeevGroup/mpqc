@@ -65,8 +65,13 @@ FockBuildCLHF::ao_fock(double accuracy)
       = new CLHFContribution(gbs,gbs,gbs,gbs);
   fc->set_fmat(0, cl_gmat_);
   fc->set_pmat(0, cl_dens_diff_);
+
+  // The old fock builder uses the tbis_ array to hold a two
+  // body integral evaluator for each thread.  The new builder
+  // creates its own integral evaluators.
+
   Ref<FockBuild> fb
-      = new FockBuild(fc,gmat_accuracy,tbis_,
+      = new FockBuild(fc,gmat_accuracy,
                       gbs, gbs, gbs, gbs,
                       scf_grp_, threadgrp_, integral());
 

@@ -33,6 +33,7 @@
 #endif
 
 #include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/scf/fockbuild.h>
 
 namespace sc {
 
@@ -45,6 +46,10 @@ class FockBuildCLHF: public CLHF {
     FockBuildCLHF(const Ref<KeyVal>&);
     ~FockBuildCLHF();
     void save_data_state(StateOut&);
+
+    Ref<FockBuild> fb_;
+    void init_threads();
+    void done_threads();
   protected:
     void ao_fock(double accuracy);
 };

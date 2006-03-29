@@ -45,6 +45,23 @@ FockBuildCLHF::save_data_state(StateOut& s)
 }
 
 void
+FockBuildCLHF::init_threads()
+{
+  Ref<GaussianBasisSet> gbs(basis());
+  Ref<FockContribution> fc
+      = new CLHFContribution(gbs,gbs,gbs,gbs);
+  fb_ = new FockBuild(fc,
+                      gbs, gbs, gbs, gbs,
+                      scf_grp_, threadgrp_, integral());
+}
+
+void
+FockBuildCLHF::done_threads()
+{
+  fb_ = 0;
+}
+
+void
 FockBuildCLHF::ao_fock(double accuracy)
 {
   Timer routine_tim("ao_fock");
@@ -61,19 +78,9 @@ FockBuildCLHF::ao_fock(double accuracy)
   double gmat_accuracy = accuracy;
   if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
 
-  Ref<FockContribution> fc
-      = new CLHFContribution(gbs,gbs,gbs,gbs);
-  fc->set_fmat(0, cl_gmat_);
-  fc->set_pmat(0, cl_dens_diff_);
-
-  // The old fock builder uses the tbis_ array to hold a two
-  // body integral evaluator for each thread.  The new builder
-  // creates its own integral evaluators.
-
-  Ref<FockBuild> fb
-      = new FockBuild(fc,gmat_accuracy,
-                      gbs, gbs, gbs, gbs,
-                      scf_grp_, threadgrp_, integral());
+  fb_->contrib()->set_fmat(0, cl_gmat_);
+  fb_->contrib()->set_pmat(0, cl_dens_diff_);
+  fb_->set_accuracy(gmat_accuracy);
 
   if (debug_>1) {
     cl_gmat_.print("cl_gmat before build");
@@ -81,12 +88,10 @@ FockBuildCLHF::ao_fock(double accuracy)
   }
 
   step_tim.reset("build");
-  fb->build();
+  fb_->build();
 
   ExEnv::out0() << indent << scprintf("%20.0f integrals\n",
-                                      fb->contrib()->nint());
-
-  fb = 0;
+                                      fb_->contrib()->nint());
 
   step_tim.reset("misc");
 

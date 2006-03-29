@@ -311,10 +311,11 @@ class FockBuildThread : public Thread {
     FockBuildThread(const Ref<MessageGrp> &msg,
                     int nthread,
                     int threadnum,
-                    const Ref<FockContribution>&c,
                     const Ref<ThreadLock> &lock,
-                    const Ref<Integral> &integral,
-                    double acc, const signed char *pmax);
+                    const Ref<Integral> &integral);
+    void set_contrib(const Ref<FockContribution>&c) { contrib_ = c; }
+    void set_accuracy(double acc) { accuracy_ = acc; }
+    void set_pmax(const signed char *pmax) { pmax_ = pmax; }
 };
 
 /** The FockBuildThread class is used to actually build the Fock matrix.
@@ -323,15 +324,14 @@ class FockBuildThread : public Thread {
 class FockBuildThread_F11_P11 : public FockBuildThread {
     Ref<GaussianBasisSet> basis_;
     Ref<PetiteList> pl_;
+    Ref<TwoBodyInt> eri_;
   public:
     /// Each thread must be given a unique contribution, c.
     FockBuildThread_F11_P11(const Ref<MessageGrp> &msg,
                             int nthread,
                             int threadnum,
-                            const Ref<FockContribution>&c,
                             const Ref<ThreadLock> &lock,
                             const Ref<Integral> &integral,
-                            double acc, const signed char *pmax,
                             const Ref<PetiteList> &pl,
                             const Ref<GaussianBasisSet> &basis1,
                             const Ref<GaussianBasisSet> &basis2/*not used*/,
@@ -353,44 +353,16 @@ class FockBuildThread_F12_P34 : public FockBuildThread {
     void run_J();
     void run_K();
 
+    Ref<TwoBodyInt> eri_J_;
+    Ref<TwoBodyInt> eri_K_;
+
   public:
     /// Each thread must be given a unique contribution, c.
     FockBuildThread_F12_P34(const Ref<MessageGrp> &msg,
                             int nthread,
                             int threadnum,
-                            const Ref<FockContribution>&c,
                             const Ref<ThreadLock> &lock,
                             const Ref<Integral> &integral,
-                            double acc, const signed char *pmax,
-                            const Ref<PetiteList> &pl,
-                            const Ref<GaussianBasisSet> &basis1,
-                            const Ref<GaussianBasisSet> &basis2,
-                            const Ref<GaussianBasisSet> &basis3,
-                            const Ref<GaussianBasisSet> &basis4);
-    void run();
-};
-
-/** This is used to build the Fock matrix.
- */
-class FockBuildThread_F11_P22 : public FockBuildThread {
-    Ref<GaussianBasisSet> basis1_;
-    Ref<GaussianBasisSet> basis2_;
-    Ref<GaussianBasisSet> basis3_;
-    Ref<GaussianBasisSet> basis4_;
-    Ref<PetiteList> pl_;
-
-    void run_J();
-    void run_K();
-
-  public:
-    /// Each thread must be given a unique contribution, c.
-    FockBuildThread_F11_P22(const Ref<MessageGrp> &msg,
-                            int nthread,
-                            int threadnum,
-                            const Ref<FockContribution>&c,
-                            const Ref<ThreadLock> &lock,
-                            const Ref<Integral> &integral,
-                            double acc, const signed char *pmax,
                             const Ref<PetiteList> &pl,
                             const Ref<GaussianBasisSet> &basis1,
                             const Ref<GaussianBasisSet> &basis2,
@@ -415,14 +387,13 @@ class FockBuild: public RefCount {
     Ref<ThreadGrp> thr_;
     Ref<Integral> integral_;
     double accuracy_;
+    Ref<PetiteList> pl_;
 
     typedef FockBuildThread* (*FBT_CTOR)(const Ref<MessageGrp> &msg,
                                          int nthread,
                                          int threadnum,
-                                         const Ref<FockContribution>&c,
                                          const Ref<ThreadLock> &lock,
                                          const Ref<Integral> &integral,
-                                         double acc, const signed char *pmax,
                                          const Ref<PetiteList> &pl,
                                          const Ref<GaussianBasisSet> &basis1,
                                          const Ref<GaussianBasisSet> &basis2,
@@ -431,7 +402,10 @@ class FockBuild: public RefCount {
 
 
     // Build for the any case.  The thread constructing function is passed in.
-    void build_generic(FBT_CTOR);
+    FockBuildThread **thread_;
+    void init_threads(FBT_CTOR);
+    void init_threads();
+    void done_threads();
 
   public:
     /** Create a FockBuild object using b_f1 as the Fock matrix row
@@ -444,7 +418,6 @@ class FockBuild: public RefCount {
         MessageGrp, thr gives the ThreadGrp, and integral gives the
         Integral.  */
     FockBuild(const Ref<FockContribution> &contrib,
-              double acc,
               const Ref<GaussianBasisSet> &b_f1,
               const Ref<GaussianBasisSet> &b_f2 = 0,
               const Ref<GaussianBasisSet> &b_p1 = 0,
@@ -457,7 +430,8 @@ class FockBuild: public RefCount {
     /** Contruct the Fock matrices. */
     void build();
 
-    Ref<FockContribution> contrib() { return contrib_; }
+    const Ref<FockContribution> &contrib() const { return contrib_; }
+    void set_accuracy(double acc) { accuracy_ = acc; }
 };
 
 }

@@ -63,9 +63,12 @@ using namespace sc;
 #define INCLUDE_P_PKP 1
 #define INCLUDE_P_PFP 1
 #define INCLUDE_P_pFp 1
+#define TEST_PFP_plus_pFp 0
 #define INCLUDE_P_mFP 1
+#define TEST_P_mFP 0
 #define INCLUDE_P_pFA 1
 #define INCLUDE_P_mFm 1
+#define TEST_FxF 0
 
 void
 R12IntEval::compute_BC_()
@@ -200,6 +203,52 @@ R12IntEval::compute_BC_()
       }
 #endif // INCLUDE_P_pFp
 
+#if !INCLUDE_P_PKP && TEST_PFP_plus_pFp
+      P.print("PFP + pFp");
+      {
+        RefSCMatrix Ptest;
+        Ref<MOIndexSpace> fribs1 = fribs_ribs(spin1);
+        Ref<MOIndexSpace> fribs2 = fribs_ribs(spin2);
+        // R_klPR F_PQ R_QRij
+        compute_FxF_(Ptest,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     ribs1,ribs2,
+                     ribs1,ribs2,
+                     fribs1,fribs2);
+        Ptest.print("test PFP + pFp");
+      }
+#endif
+
+#if TEST_FxF
+      {
+        Ref<MOIndexSpace> focc1 = focc_ribs(spin1);
+        Ref<MOIndexSpace> focc2 = focc_ribs(spin2);
+        RefSCMatrix Ptmp;
+        // R_klmp F_mP R_Ppij
+        compute_FxF_(Ptmp,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     orbs1,orbs2,
+                     occ1,occ2,
+                     focc1,focc2);
+        Ptmp.print("R_klmp F_mP R_Ppij");
+        RefSCMatrix Ptest;
+        {
+          Ref<MOIndexSpace> focc1 = focc_occ(spin1);
+          Ref<MOIndexSpace> focc2 = focc_occ(spin2);
+          // R_klmp F_mn R_npij
+          compute_FxF_(Ptest,spincase2,
+                       occ1_act,occ2_act,
+                       occ1_act,occ2_act,
+                       orbs1,orbs2,
+                       occ1,occ2,
+                       focc1,focc2);
+          Ptest.print("R_klmp F_mn R_npij");
+        }
+      }
+#endif
+      
       if (!abs_eq_obs) {
         
         Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
@@ -209,26 +258,48 @@ R12IntEval::compute_BC_()
         {
           Ref<MOIndexSpace> focc1 = focc_ribs(spin1);
           Ref<MOIndexSpace> focc2 = focc_ribs(spin2);
+	  RefSCMatrix Ptmp;
           // R_klmA F_mP R_PAij
-          compute_FxF_(P,spincase2,
+          compute_FxF_(Ptmp,spincase2,
                        occ1_act,occ2_act,
                        occ1_act,occ2_act,
                        cabs1,cabs2,
                        occ1,occ2,
                        focc1,focc2);
+          Ptmp.scale(2.0);
+          P.accumulate(Ptmp);
+#if TEST_P_mFP
+          Ptmp.print("R_klmA F_mP R_PAij");
+	  RefSCMatrix Ptest;
+	  {
+	    Ref<MOIndexSpace> focc1 = focc_occ(spin1);
+            Ref<MOIndexSpace> focc2 = focc_occ(spin2);
+            // R_klmA F_mn R_nAij
+            compute_FxF_(Ptest,spincase2,
+                         occ1_act,occ2_act,
+                         occ1_act,occ2_act,
+                         cabs1,cabs2,
+                         occ1,occ2,
+                         focc1,focc2);
+	    Ptest.print("R_klmA F_mn R_nAij");
+	  }
+#endif // TEST_P_mFP
         }
 #endif // INCLUDE_P_mFP
 #if INCLUDE_P_pFA
         {
           Ref<MOIndexSpace> forbs1 = fobs_cabs(spin1);
           Ref<MOIndexSpace> forbs2 = fobs_cabs(spin2);
+	  RefSCMatrix Ptmp;
           // R_klpa F_pA R_Aaij
-          compute_FxF_(P,spincase2,
+          compute_FxF_(Ptmp,spincase2,
                        occ1_act,occ2_act,
                        occ1_act,occ2_act,
                        vir1,vir2,
                        orbs1,orbs2,
                        forbs1,forbs2);
+          Ptmp.scale(2.0);
+	  P.accumulate(Ptmp);
         }
 #endif // INCLUDE_P_pFA
         P.scale(-1.0);

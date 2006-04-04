@@ -9,8 +9,7 @@ class CLHFContribution: public GenericFockContribution {
   public:
     CLHFContribution(Ref<GaussianBasisSet> &f_b1,
                      Ref<GaussianBasisSet> &f_b2,
-                     Ref<GaussianBasisSet> &p_b1,
-                     Ref<GaussianBasisSet> &p_b2);
+                     Ref<GaussianBasisSet> &p_b);
     CLHFContribution(const CLHFContribution &);
     ~CLHFContribution();
 
@@ -58,14 +57,6 @@ class CLHFContribution: public GenericFockContribution {
                            int I, int J, int K, int L,
                            int nI, int nJ, int nK, int nL,
                            const double * restrictxx buf);
-    void contrib_p12_J(double factor,
-                       int I, int J, int K, int L,
-                       int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
-    void contrib_p12_K(double factor,
-                       int I, int J, int K, int L,
-                       int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
     void contrib_p34_J(double factor,
                        int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,

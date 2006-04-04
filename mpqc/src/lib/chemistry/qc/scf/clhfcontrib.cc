@@ -45,10 +45,9 @@ namespace sc {
 CLHFContribution::CLHFContribution(
     Ref<GaussianBasisSet> &bs1,
     Ref<GaussianBasisSet> &bs2,
-    Ref<GaussianBasisSet> &bs3,
-    Ref<GaussianBasisSet> &bs4
+    Ref<GaussianBasisSet> &bs3
     ):
-  GenericFockContribution(1,1,bs1,bs2,bs3,bs4)
+  GenericFockContribution(1,1,bs1,bs2,bs3)
 {
 }
 
@@ -110,7 +109,7 @@ CLHFContribution::contrib_e_J(double factor,
 
   double *F_IJ = jmat_block(0, I, J);
 
-  if (K>=L || !pmat_symmetric(0)) {
+  if (K>=L) {
       const double * restrictxx P_KL = pmat_block(0, K, L);
       int nKL = nK*nL;
       for (int i=0, ijkl=0, ij=0; i<nI; i++) {
@@ -157,7 +156,7 @@ CLHFContribution::contrib_e_K(double factor,
   double K_factor = factor * -0.5;
   double *F_IK = kmat_block(0, I, K);
 
-  if (J>=L || !pmat_symmetric(0)) {
+  if (J>=L) {
       const double * restrictxx P_JL = pmat_block(0, J, L);
       for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -755,49 +754,6 @@ CLHFContribution::contrib_p12_p34_K(double factor,
                                 F_LJ[lj],L,J,lj,nJ,
                                 P_IK[ik],I,K,ik,nK);
                     }
-                }
-            }
-        }
-    }
-}
-
-void
-CLHFContribution::contrib_p12_J(double factor,
-                                int I, int J, int K, int L,
-                                int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
-{
-  contrib_e_J(factor,I,J,K,L,nI,nJ,nK,nL,buf);
-}
-
-void
-CLHFContribution::contrib_p12_K(double factor,
-                                int I, int J, int K, int L,
-                                int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
-{
-  double *F_IK = kmat_block(0, I, K);
-  const double * restrictxx P_IL = pmat_block(0, I, L);
-
-  double IK_factor = -0.5*factor;
-  double JK_factor = -0.5*factor;
-
-  double *F_JK = kmat_block(0, J, K);
-  const double * restrictxx P_JL = pmat_block(0, J, L);
-  for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
-       i++,il_begin+=nL,ik_begin+=nK) {
-      for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
-          for (int k=0,ik=ik_begin; k<nK; k++,ik++,jk++) {
-              for (int l=0, il=il_begin, jl=jl_begin;
-                   l<nL;
-                   l++, ijkl++, il++, jl++) {
-                  double val = buf[ijkl];
-                  F_contrib(I,J,K,L,i,j,k,l,IK_factor,val,"K ",
-                            F_IK[ik],I,K,ik,nK,
-                            P_JL[jl],J,L,jl,nL);
-                  F_contrib(I,J,K,L,i,j,k,l,JK_factor,val,"K ",
-                            F_JK[jk],J,K,jk,nK,
-                            P_IL[il],I,L,il,nL);
                 }
             }
         }

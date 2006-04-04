@@ -96,8 +96,12 @@ class FockBuildMatrix {
     }
     /// If the data is not owned, then copy it so it will be.
     void copy_data();
+    /// Zero out the data.
+    void zero_data();
     /// Accumulate fbm into this.
     void accum(const FockBuildMatrix &fbm);
+    /// Accumulate remote contributions.
+    void accum_remote(const Ref<MessageGrp> &);
 };
 
 class FockContribution: public RefCount {
@@ -146,14 +150,6 @@ class FockContribution: public RefCount {
                                    int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf) = 0;
-    virtual void contrib_p12_J(double factor,
-                               int I, int J, int K, int L,
-                               int nI, int nJ, int nK, int nL,
-                               const double * restrictxx buf) = 0;
-    virtual void contrib_p12_K(double factor,
-                               int I, int J, int K, int L,
-                               int nI, int nJ, int nK, int nL,
-                               const double * restrictxx buf) = 0;
     virtual void contrib_p34_J(double factor,
                                int I, int J, int K, int L,
                                int nI, int nJ, int nK, int nL,
@@ -189,12 +185,11 @@ class FockContribution: public RefCount {
     virtual void set_kmat(int i, const Ref<SCMatrix> &) = 0;
     virtual void set_kmat(int i, const Ref<SymmSCMatrix> &) = 0;
 
-    virtual void set_pmat(int i, const Ref<SCMatrix> &) = 0;
     virtual void set_pmat(int i, const Ref<SymmSCMatrix> &) = 0;
 
     /** Compute the maximum of the density in each block.  The pmax vector
-        holds only the unique elements if symmetric is true. */
-    virtual signed char *compute_pmax(bool symmetric = false) const = 0;
+        holds only the unique elements. */
+    virtual signed char *compute_pmax() const = 0;
 
     /// Replicate Fock matrix data so multiple threads can accumulate.
     virtual void copy() = 0;
@@ -203,6 +198,10 @@ class FockContribution: public RefCount {
      *  of this.
      */
     virtual void accum(const Ref<FockContribution> &) = 0;
+    /** Sum the Fock matrix contributions from different processors.
+        This might be a no-op for distributed matrices.
+     */
+    virtual void accum_remote(const Ref<MessageGrp> &) = 0;
     /// Push the internal Fock matrix data back into the original object.
     virtual void update() = 0;
 
@@ -238,19 +237,17 @@ class GenericFockContribution: public FockContribution {
     std::vector<bool> k_is_j_;
     int npmat_;     /// the number of density matrices
     std::vector<FockBuildMatrix> pmats_;
-    Ref<GaussianBasisSet> f_b1_, f_b2_, p_b1_, p_b2_;
-    bool f_b1_equiv_f_b2, p_b1_equiv_p_b2;
+    Ref<GaussianBasisSet> f_b1_, f_b2_, p_b_;
+    bool f_b1_equiv_f_b2;
     double nint_;
 
     GenericFockContribution(int nfmat, int npmat,
                             Ref<GaussianBasisSet> &f_b1,
                             Ref<GaussianBasisSet> &f_b2,
-                            Ref<GaussianBasisSet> &p_b1,
-                            Ref<GaussianBasisSet> &p_b2);
+                            Ref<GaussianBasisSet> &p_b);
 
     void pmax_contrib(const FockBuildMatrix &mat,
-                      signed char *pmax,
-                      bool symmetric) const;
+                      signed char *pmax) const;
 
   public:
     double *jmat_block(int i, int I, int J) {
@@ -264,7 +261,6 @@ class GenericFockContribution: public FockContribution {
     const double *pmat_block(int i, int I, int J) {
       return pmats_[i].block(I,J);
     }
-    bool pmat_symmetric(int i) const { return pmats_[i].symmetric(); }
 
     void set_fmat(int i, const Ref<SCMatrix> &);
     void set_fmat(int i, const Ref<SymmSCMatrix> &);
@@ -275,14 +271,14 @@ class GenericFockContribution: public FockContribution {
     void set_kmat(int i, const Ref<SCMatrix> &);
     void set_kmat(int i, const Ref<SymmSCMatrix> &);
 
-    void set_pmat(int i, const Ref<SCMatrix> &);
     void set_pmat(int i, const Ref<SymmSCMatrix> &);
 
     void copy();
     void accum(const Ref<FockContribution> &);
+    void accum_remote(const Ref<MessageGrp> &);
     void update();
 
-    signed char* compute_pmax(bool symmetric = false) const;
+    signed char* compute_pmax() const;
 
     ~GenericFockContribution();
 };
@@ -335,19 +331,17 @@ class FockBuildThread_F11_P11 : public FockBuildThread {
                             const Ref<PetiteList> &pl,
                             const Ref<GaussianBasisSet> &basis1,
                             const Ref<GaussianBasisSet> &basis2/*not used*/,
-                            const Ref<GaussianBasisSet> &basis3/*not used*/,
-                            const Ref<GaussianBasisSet> &basis4/*not used*/);
+                            const Ref<GaussianBasisSet> &basis3/*not used*/);
     void run();
 };
 
 /** This is used to build the Fock matrix when none of the
     basis sets are equivalent.
  */
-class FockBuildThread_F12_P34 : public FockBuildThread {
+class FockBuildThread_F12_P33 : public FockBuildThread {
     Ref<GaussianBasisSet> basis1_;
     Ref<GaussianBasisSet> basis2_;
     Ref<GaussianBasisSet> basis3_;
-    Ref<GaussianBasisSet> basis4_;
     Ref<PetiteList> pl_;
 
     void run_J();
@@ -358,7 +352,7 @@ class FockBuildThread_F12_P34 : public FockBuildThread {
 
   public:
     /// Each thread must be given a unique contribution, c.
-    FockBuildThread_F12_P34(const Ref<MessageGrp> &msg,
+    FockBuildThread_F12_P33(const Ref<MessageGrp> &msg,
                             int nthread,
                             int threadnum,
                             const Ref<ThreadLock> &lock,
@@ -366,8 +360,7 @@ class FockBuildThread_F12_P34 : public FockBuildThread {
                             const Ref<PetiteList> &pl,
                             const Ref<GaussianBasisSet> &basis1,
                             const Ref<GaussianBasisSet> &basis2,
-                            const Ref<GaussianBasisSet> &basis3,
-                            const Ref<GaussianBasisSet> &basis4);
+                            const Ref<GaussianBasisSet> &basis3);
     void run();
 };
 
@@ -381,8 +374,7 @@ class FockBuild: public RefCount {
     Ref<FockContribution> contrib_;
     Ref<GaussianBasisSet> b_f1_;
     Ref<GaussianBasisSet> b_f2_;
-    Ref<GaussianBasisSet> b_p1_;
-    Ref<GaussianBasisSet> b_p2_;
+    Ref<GaussianBasisSet> b_p_;
     Ref<MessageGrp> msg_;
     Ref<ThreadGrp> thr_;
     Ref<Integral> integral_;
@@ -397,8 +389,7 @@ class FockBuild: public RefCount {
                                          const Ref<PetiteList> &pl,
                                          const Ref<GaussianBasisSet> &basis1,
                                          const Ref<GaussianBasisSet> &basis2,
-                                         const Ref<GaussianBasisSet> &basis3,
-                                         const Ref<GaussianBasisSet> &basis4);
+                                         const Ref<GaussianBasisSet> &basis3);
 
 
     // Build for the any case.  The thread constructing function is passed in.
@@ -410,18 +401,16 @@ class FockBuild: public RefCount {
   public:
     /** Create a FockBuild object using b_f1 as the Fock matrix row
         dimension basis, b_f2 as the Fock matrix column dimension basis,
-        b_p1 as the density matrix row dimension, and b_p2 as the density
-        matrix column dimension.  If b_f2 is not given, then b_f1 is used.
-        If b_p1 is not given, then b_f1 is used.  If b_p2 is not given,
-        then b_p1 is used.  If the following parameters are not given, then
-        the global defaults are used: The msg parameter specifies the
-        MessageGrp, thr gives the ThreadGrp, and integral gives the
-        Integral.  */
+        and b_p as the density matrix dimensions.  If b_f2 is not given,
+        then b_f1 is used.  If b_p1 is not given, then b_f1 is used.  If
+        b_p2 is not given, then b_p1 is used.  If the following parameters
+        are not given, then the global defaults are used: The msg parameter
+        specifies the MessageGrp, thr gives the ThreadGrp, and integral
+        gives the Integral.  */
     FockBuild(const Ref<FockContribution> &contrib,
               const Ref<GaussianBasisSet> &b_f1,
               const Ref<GaussianBasisSet> &b_f2 = 0,
-              const Ref<GaussianBasisSet> &b_p1 = 0,
-              const Ref<GaussianBasisSet> &b_p2 = 0,
+              const Ref<GaussianBasisSet> &b_p = 0,
               const Ref<MessageGrp> &msg=MessageGrp::get_default_messagegrp(),
               const Ref<ThreadGrp> &thr=ThreadGrp::get_default_threadgrp(),
               const Ref<Integral> &integral=Integral::get_default_integral());

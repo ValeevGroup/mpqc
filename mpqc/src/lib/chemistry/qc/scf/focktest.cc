@@ -27,8 +27,12 @@ init_mp(const Ref<KeyVal>& keyval)
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
+
+  std::cout << "n = " << grp->n()
+            << " me = " << grp->me()
+            << std::endl;
   
-  tim = new ParallelRegionTimer(grp,"scftest",1,0);
+  tim = new ParallelRegionTimer(grp,"focktest",1,0);
   RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
@@ -37,6 +41,17 @@ init_mp(const Ref<KeyVal>& keyval)
   SCFormIO::setindent(cerr, 2);
   
   return grp;
+}
+
+static void
+clean_up(void)
+{
+  MemoryGrp::set_default_memorygrp(0);
+  MessageGrp::set_default_messagegrp(0);
+  ThreadGrp::set_default_threadgrp(0);
+  SCMatrixKit::set_default_matrixkit(0);
+  Integral::set_default_integral(0);
+  RegionTimer::set_default_regiontimer(0);
 }
 
 int
@@ -51,7 +66,30 @@ try_main(int argc, char **argv)
 
   Ref<KeyVal> mole(new PrefixKeyVal(rpkv,"mole"));
 
+  ///////////////////////////////////////////////////////////////
+  // Initialize the thread group
+
+  // get the thread group.  first try the commandline and environment
+  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
+  
+  // if we still don't have a group, try reading the thread group
+  // from the input
+  if (thread.null()) {
+    thread << rpkv->describedclassvalue("thread");
+  }
+
+  if (thread.nonnull())
+    ThreadGrp::set_default_threadgrp(thread);
+  else
+    thread = ThreadGrp::get_default_threadgrp();
+
+  std::cout << "nthreads = " << thread->nthread() << std::endl;
+
+  ///////////////////////////////////////////////////////////////
+
   init_mp(rpkv);
+
+  ///////////////////////////////////////////////////////////////
 
   tim->enter("input");
   
@@ -113,12 +151,11 @@ try_main(int argc, char **argv)
       RefSymmSCMatrix f11(density.dim(),density.kit());
       f11.assign(0.0);
       Ref<FockContribution> fc11
-          = new CLHFContribution(basis1,basis1,basis1,basis1);
+          = new CLHFContribution(basis1,basis1,basis1);
       fc11->set_fmat(0, f11);
       fc11->set_pmat(0, density);
-      clhf->integral()->set_basis(basis1,basis1,basis1,basis1);
       Ref<FockBuild> fb11 = new FockBuild(fc11,
-                                          basis1,basis1,basis1,basis1);
+                                          basis1,basis1,basis1);
       fb11->set_accuracy(1e-12);
       fb11->build();
       f11.print("Fock matrix in original basis");
@@ -127,12 +164,11 @@ try_main(int argc, char **argv)
       RefSymmSCMatrix f22(basis2->basisdim(),basis2->matrixkit());
       f22.assign(0.0);
       Ref<FockContribution> fc22
-          = new CLHFContribution(basis2,basis2,basis1,basis1);
+          = new CLHFContribution(basis2,basis2,basis1);
       fc22->set_fmat(0, f22);
       fc22->set_pmat(0, density);
-      clhf->integral()->set_basis(basis2,basis2,basis1,basis1);
       Ref<FockBuild> fb22 = new FockBuild(fc22,
-                                          basis2,basis2,basis1,basis1);
+                                          basis2,basis2,basis1);
       fb22->set_accuracy(1e-12);
       fb22->build();
       f22.print("Fock matrix in basis2");
@@ -153,7 +189,7 @@ try_main(int argc, char **argv)
   RefSymmSCMatrix f(density.dim(),density.kit());
   f.assign(0.0);
   Ref<FockContribution> fc
-      = new CLHFContribution(gbs,gbs,gbs,gbs);
+      = new CLHFContribution(gbs,gbs,gbs);
   fc->set_fmat(0, f);
   fc->set_pmat(0, density);
   Ref<FockBuild> fb = new FockBuild(fc,gbs);
@@ -179,6 +215,11 @@ try_main(int argc, char **argv)
 #endif
 
   tim->print(ExEnv::out0());
+
+  MessageGrp::set_default_messagegrp(0);
+  ThreadGrp::set_default_threadgrp(0);
+
+  clean_up();
 
   return 0;
 }

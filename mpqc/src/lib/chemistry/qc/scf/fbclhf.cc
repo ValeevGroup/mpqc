@@ -49,9 +49,9 @@ FockBuildCLHF::init_threads()
 {
   Ref<GaussianBasisSet> gbs(basis());
   Ref<FockContribution> fc
-      = new CLHFContribution(gbs,gbs,gbs,gbs);
+      = new CLHFContribution(gbs,gbs,gbs);
   fb_ = new FockBuild(fc,
-                      gbs, gbs, gbs, gbs,
+                      gbs, gbs, gbs,
                       scf_grp_, threadgrp_, integral());
 }
 

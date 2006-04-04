@@ -313,10 +313,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
 #if HAVE_MPIIO
   else if (!strcmp(r12ints_str,"mem-mpi")) {
-    r12ints_method_ = R12IntEvalInfo::mem_mpi;
+    r12ints_method_ = MOIntsTransformFactory::StoreMethod::mem_mpi;
   }
   else if (!strcmp(r12ints_str,"mpi")) {
-    r12ints_method_ = R12IntEvalInfo::mpi;
+    r12ints_method_ = MOIntsTransformFactory::StoreMethod::mpi;
   }
 #else
   else if ( !strcmp(r12ints_str,"mem-mpi") ||

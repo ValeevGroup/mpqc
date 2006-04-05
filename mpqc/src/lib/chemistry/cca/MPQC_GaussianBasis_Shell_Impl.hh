@@ -28,6 +28,9 @@
 #ifndef included_MPQC_GaussianBasis_Shell_hh
 #include "MPQC_GaussianBasis_Shell.hh"
 #endif
+#ifndef included_sidl_BaseException_hh
+#include "sidl_BaseException.hh"
+#endif
 #ifndef included_sidl_BaseInterface_hh
 #include "sidl_BaseInterface.hh"
 #endif
@@ -121,16 +124,18 @@ namespace MPQC {
      * @return number of contractions 
      */
     int32_t
-    get_n_contraction() throw () 
-    ;
+    get_n_contraction() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the number of primitives in the shell.
      * @return number of primitives 
      */
     int32_t
-    get_n_primitive() throw () 
-    ;
+    get_n_primitive() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the coefficient for an unnormalized primitive 
@@ -144,8 +149,9 @@ namespace MPQC {
       /* in */ int32_t connum,
       /* in */ int32_t expnum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -157,8 +163,9 @@ namespace MPQC {
     get_exponent (
       /* in */ int32_t expnum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -170,8 +177,9 @@ namespace MPQC {
     get_angular_momentum (
       /* in */ int32_t connum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -180,8 +188,9 @@ namespace MPQC {
      * @return maximum angular momentum value 
      */
     int32_t
-    get_max_angular_momentum() throw () 
-    ;
+    get_max_angular_momentum() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the angular type for a single contraction.
@@ -192,8 +201,9 @@ namespace MPQC {
     get_contraction_angular_type (
       /* in */ int32_t connum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -201,15 +211,17 @@ namespace MPQC {
      * @return enum AngularType 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
-    get_angular_type() throw () 
-    ;
+    get_angular_type() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Print the shell data. 
      */
     void
-    print_shell() throw () 
-    ;
+    print_shell() throw ( 
+      ::sidl::BaseException
+    );
   };  // end class GaussianBasis_Shell_impl
 
 } // end namespace MPQC

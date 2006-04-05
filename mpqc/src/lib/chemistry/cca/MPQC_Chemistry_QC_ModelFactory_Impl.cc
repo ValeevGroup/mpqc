@@ -351,15 +351,6 @@ throw (
     else if(buffer_str == "array") use_opaque=false;
     else { std::cerr << "\bunrecognized integral buffer option"; abort(); }
     intcca_ = new IntegralCCA(eval_factory_,use_opaque);
-    eval_factory_.set_molecule(molecule_);
-    ObIntEvalConfig ob_config_ = 
-      Chemistry::Chemistry_QC_GaussianBasis_ObIntEvalConfig::_create();
-    TbIntEvalConfig tb_config_ = 
-      Chemistry::Chemistry_QC_GaussianBasis_TbIntEvalConfig::_create();
-    ob_config_.set_default_pkg(Package_INTV3);
-    tb_config_.set_default_pkg(Package_INTV3);
-    eval_factory_.set_obint_config( ob_config_ );
-    eval_factory_.set_tbint_config( tb_config_ );
     Integral::set_default_integral( Ref<Integral>(intcca_.pointer()) );
   }
   

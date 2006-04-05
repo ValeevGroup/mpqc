@@ -22,20 +22,23 @@
 // 
 // Includes for all method dependencies.
 // 
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescr_hh
+#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescr_hh
+#include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_ObIntEvalType_hh
-#include "Chemistry_QC_GaussianBasis_ObIntEvalType.hh"
-#endif
-#ifndef included_Chemistry_QC_GaussianBasis_Package_hh
-#include "Chemistry_QC_GaussianBasis_Package.hh"
-#endif
 #ifndef included_MPQC_IntegralEvaluator1_hh
 #include "MPQC_IntegralEvaluator1.hh"
+#endif
+#ifndef included_sidl_BaseException_hh
+#include "sidl_BaseException.hh"
 #endif
 #ifndef included_sidl_BaseInterface_hh
 #include "sidl_BaseInterface.hh"
@@ -46,7 +49,10 @@
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._includes)
-// Insert-Code-Here {MPQC.IntegralEvaluator1._includes} (includes or arbitrary code)
+#include "integral_evaluator.h"
+using namespace sc;
+using namespace Chemistry::QC::GaussianBasis;
+using namespace MpqcCca;
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._includes)
 
 namespace MPQC { 
@@ -66,7 +72,12 @@ namespace MPQC {
     IntegralEvaluator1 self;
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._implementation)
-    // Insert-Code-Here {MPQC.IntegralEvaluator1._implementation} (additional details)
+
+    vector< Molecular > basis_sets_;
+    IntegralEvaluator< OneBodyOneCenterInt, 
+		       onebody_onecenter_computer > eval_;
+    onebody_onecenter_computer computer_;
+
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._implementation)
 
   private:
@@ -99,79 +110,88 @@ namespace MPQC {
      * user defined non-static method.
      */
     void
-    set_integral_package (
-      /* in */ ::Chemistry::QC::GaussianBasis::Package type
+    add_evaluator (
+      /* in */ void* eval,
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
     )
     throw () 
     ;
 
-
     /**
-     * Initialize the evaluator.
-     * @param bs1 Molecular basis on center 1.
-     * @param type ObIntEvalType specifying eval type.
-     * @param max_deriv Max derivative to compute.
-     * @param storage Available storage in bytes.
-     * @param deriv_ctr Derivative center descriptor. 
+     * user defined non-static method.
      */
     void
-    obint_initialize (
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
-      /* in */ int32_t max_deriv,
-      /* in */ int64_t storage,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+    set_basis (
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1
+    )
+    throw () 
+    ;
+
+    /**
+     * user defined non-static method.
+     */
+    void
+    set_reorder (
+      /* in */ int32_t reorder
     )
     throw () 
     ;
 
 
     /**
-     * Get one body int buffer pointer.
+     * Get buffer pointer for given type.
      * @return Buffer pointer. 
      */
     void*
-    get_obint_buffer() throw () 
-    ;
+    get_buffer (
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
+    )
+    throw ( 
+      ::sidl::BaseException
+    );
 
     /**
-     * Compute a shell singlet of integrals.  deriv_atom must
-     * be used for nuclear derivatives if the operator contains
-     * nuclear coordinates, otherwise, set to -1 and use deriv_ctr.
+     * user defined non-static method.
+     */
+    ::Chemistry::QC::GaussianBasis::DerivCenters
+    get_deriv_centers() throw ( 
+      ::sidl::BaseException
+    );
+    /**
+     * user defined non-static method.
+     */
+    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+    get_descriptor() throw ( 
+      ::sidl::BaseException
+    );
+
+    /**
+     * Compute a shell singlet of integrals.
      * @param shellnum1 Gaussian shell number 1.
-     * @param deriv_level Derivative level.
-     * @param deriv_atom Atom number for derivative
-     * (-1 if using DerivCenter). 
+     * @param deriv_level Derivative level. 
      */
     void
     compute (
-      /* in */ int64_t shellnum1,
-      /* in */ int32_t deriv_level,
-      /* in */ int64_t deriv_atom
+      /* in */ int64_t shellnum1
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
      * Compute a shell singlet of integrals and return as a borrowed
-     * sidl array.  deriv_atom must be used for nuclear derivatives if
-     * the operator contains nuclear coordinates, otherwise, set to -1
-     * and use deriv_ctr.
+     * sidl array.
      * @param shellnum1 Gaussian shell number 1.
-     * @param deriv_level Derivative level.
-     * @param deriv_atom Atom number for derivative
-     * (-1 if using DerivCenter).
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
     compute_array (
-      /* in */ int64_t shellnum1,
-      /* in */ int32_t deriv_level,
-      /* in */ int64_t deriv_atom
+      /* in */ int64_t shellnum1
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
   };  // end class IntegralEvaluator1_impl
 

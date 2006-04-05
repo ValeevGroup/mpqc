@@ -121,8 +121,9 @@ throw ()
  */
 ::std::string
 MPQC::GaussianBasis_Molecular_impl::get_label ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_label)
   return label_;
@@ -135,8 +136,9 @@ throw ()
  */
 int64_t
 MPQC::GaussianBasis_Molecular_impl::get_n_basis ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_n_basis)
   return sc_gbs_->nbasis();
@@ -149,8 +151,9 @@ throw ()
  */
 int64_t
 MPQC::GaussianBasis_Molecular_impl::get_n_shell ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_n_shell)
   return sc_gbs_->nshell();
@@ -164,8 +167,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Molecular_impl::get_max_angular_momentum ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_max_angular_momentum)
   return sc_gbs_->max_angular_momentum();
@@ -178,8 +182,9 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Molecular_impl::get_angular_type ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_angular_type)
   return angular_type_;
@@ -194,8 +199,9 @@ throw ()
 ::Chemistry::QC::GaussianBasis::Atomic
 MPQC::GaussianBasis_Molecular_impl::get_atomic (
   /* in */ int64_t atomnum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_atomic)
   return atomic_array_[atomnum];
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular.get_atomic)
@@ -207,8 +213,9 @@ throw ()
  */
 ::Chemistry::Molecule
 MPQC::GaussianBasis_Molecular_impl::get_molecule ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_molecule)
   return molecule_;
@@ -220,8 +227,9 @@ throw ()
  */
 void
 MPQC::GaussianBasis_Molecular_impl::print_molecular ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.print_molecular)
   std::cout << "\nMolecular Basis Set:";

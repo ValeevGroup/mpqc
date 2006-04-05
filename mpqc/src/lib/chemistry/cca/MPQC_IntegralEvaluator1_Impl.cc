@@ -40,95 +40,138 @@ void MPQC::IntegralEvaluator1_impl::_load() {
 
 // user-defined non-static methods:
 /**
- * Method:  set_integral_package[]
+ * Method:  add_evaluator[]
  */
 void
-MPQC::IntegralEvaluator1_impl::set_integral_package (
-  /* in */ ::Chemistry::QC::GaussianBasis::Package type ) 
+MPQC::IntegralEvaluator1_impl::add_evaluator (
+  /* in */ void* eval,
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_integral_package)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.set_integral_package} (set_integral_package method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.set_integral_package)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.add_evaluator)
+
+  eval_.add_evaluator(&eval,desc);
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.add_evaluator)
 }
 
 /**
- * Initialize the evaluator.
- * @param bs1 Molecular basis on center 1.
- * @param type ObIntEvalType specifying eval type.
- * @param max_deriv Max derivative to compute.
- * @param storage Available storage in bytes.
- * @param deriv_ctr Derivative center descriptor. 
+ * Method:  set_basis[]
  */
 void
-MPQC::IntegralEvaluator1_impl::obint_initialize (
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
-  /* in */ int32_t max_deriv,
-  /* in */ int64_t storage,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+MPQC::IntegralEvaluator1_impl::set_basis (
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1 ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.obint_initialize)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.obint_initialize} (obint_initialize method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.obint_initialize)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_basis)
+
+  basis_sets_.push_back(bs1);
+
+  eval_.set_basis( basis_sets_ );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.set_basis)
 }
 
 /**
- * Get one body int buffer pointer.
+ * Method:  set_reorder[]
+ */
+void
+MPQC::IntegralEvaluator1_impl::set_reorder (
+  /* in */ int32_t reorder ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_reorder)
+
+  eval_.set_reorder( reorder );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.set_reorder)
+}
+
+/**
+ * Get buffer pointer for given type.
  * @return Buffer pointer. 
  */
 void*
-MPQC::IntegralEvaluator1_impl::get_obint_buffer ()
-throw () 
+MPQC::IntegralEvaluator1_impl::get_buffer (
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_buffer)
+  
+  return eval_.get_buffer( desc );
 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_obint_buffer)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.get_obint_buffer} (get_obint_buffer method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_obint_buffer)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_buffer)
 }
 
 /**
- * Compute a shell singlet of integrals.  deriv_atom must
- * be used for nuclear derivatives if the operator contains
- * nuclear coordinates, otherwise, set to -1 and use deriv_ctr.
+ * Method:  get_deriv_centers[]
+ */
+::Chemistry::QC::GaussianBasis::DerivCenters
+MPQC::IntegralEvaluator1_impl::get_deriv_centers ()
+throw ( 
+  ::sidl::BaseException
+)
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_deriv_centers)
+
+  return eval_.get_deriv_centers();
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_deriv_centers)
+}
+
+/**
+ * Method:  get_descriptor[]
+ */
+::Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+MPQC::IntegralEvaluator1_impl::get_descriptor ()
+throw ( 
+  ::sidl::BaseException
+)
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_descriptor)
+
+  return eval_.get_descriptor();
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_descriptor)
+}
+
+/**
+ * Compute a shell singlet of integrals.
  * @param shellnum1 Gaussian shell number 1.
- * @param deriv_level Derivative level.
- * @param deriv_atom Atom number for derivative
- * (-1 if using DerivCenter). 
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator1_impl::compute (
-  /* in */ int64_t shellnum1,
-  /* in */ int32_t deriv_level,
-  /* in */ int64_t deriv_atom ) 
-throw () 
-{
+  /* in */ int64_t shellnum1 ) 
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.compute} (compute method)
+
+  computer_.set_shells( shellnum1 );
+  eval_.compute( &computer_ );
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute)
 }
 
 /**
  * Compute a shell singlet of integrals and return as a borrowed
- * sidl array.  deriv_atom must be used for nuclear derivatives if
- * the operator contains nuclear coordinates, otherwise, set to -1
- * and use deriv_ctr.
+ * sidl array.
  * @param shellnum1 Gaussian shell number 1.
- * @param deriv_level Derivative level.
- * @param deriv_atom Atom number for derivative
- * (-1 if using DerivCenter).
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator1_impl::compute_array (
-  /* in */ int64_t shellnum1,
-  /* in */ int32_t deriv_level,
-  /* in */ int64_t deriv_atom ) 
-throw () 
-{
+  /* in */ int64_t shellnum1 ) 
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_array)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.compute_array} (compute_array method)
+
+  computer_.set_shells( shellnum1 );
+  return eval_.compute_array( &computer_ );
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_array)
 }
 

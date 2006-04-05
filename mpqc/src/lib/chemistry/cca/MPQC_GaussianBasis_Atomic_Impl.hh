@@ -31,6 +31,9 @@
 #ifndef included_MPQC_GaussianBasis_Atomic_hh
 #include "MPQC_GaussianBasis_Atomic.hh"
 #endif
+#ifndef included_sidl_BaseException_hh
+#include "sidl_BaseException.hh"
+#endif
 #ifndef included_sidl_BaseInterface_hh
 #include "sidl_BaseInterface.hh"
 #endif
@@ -131,40 +134,45 @@ namespace MPQC {
      * @return canonical name 
      */
     ::std::string
-    get_name() throw () 
-    ;
+    get_name() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the number of basis functions.
      * @return number of functions 
      */
     int32_t
-    get_n_basis() throw () 
-    ;
+    get_n_basis() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the number of shells.
      * @return number of shells 
      */
     int32_t
-    get_n_shell() throw () 
-    ;
+    get_n_shell() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the max angular momentum for any shell on the atom.
      * @return max angular momentum 
      */
     int32_t
-    get_max_angular_momentum() throw () 
-    ;
+    get_max_angular_momentum() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the angular type for the atom.
      * @return enum AngularType 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
-    get_angular_type() throw () 
-    ;
+    get_angular_type() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get a gaussian shell. 
@@ -175,16 +183,18 @@ namespace MPQC {
     get_shell (
       /* in */ int32_t shellnum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
      * Print the atomic basis data. 
      */
     void
-    print_atomic() throw () 
-    ;
+    print_atomic() throw ( 
+      ::sidl::BaseException
+    );
   };  // end class GaussianBasis_Atomic_impl
 
 } // end namespace MPQC

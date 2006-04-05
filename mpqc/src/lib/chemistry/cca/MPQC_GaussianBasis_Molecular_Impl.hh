@@ -34,6 +34,9 @@
 #ifndef included_MPQC_GaussianBasis_Molecular_hh
 #include "MPQC_GaussianBasis_Molecular.hh"
 #endif
+#ifndef included_sidl_BaseException_hh
+#include "sidl_BaseException.hh"
+#endif
 #ifndef included_sidl_BaseInterface_hh
 #include "sidl_BaseInterface.hh"
 #endif
@@ -138,24 +141,27 @@ namespace MPQC {
      * @return name 
      */
     ::std::string
-    get_label() throw () 
-    ;
+    get_label() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the number of basis functions.
      * @return number of functions 
      */
     int64_t
-    get_n_basis() throw () 
-    ;
+    get_n_basis() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the number of shells.
      * @return number of shells 
      */
     int64_t
-    get_n_shell() throw () 
-    ;
+    get_n_shell() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the max angular momentum for any contraction in the 
@@ -163,16 +169,18 @@ namespace MPQC {
      * @return max angular momentum 
      */
     int32_t
-    get_max_angular_momentum() throw () 
-    ;
+    get_max_angular_momentum() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get the angular type.
      * @return enum AngularType 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
-    get_angular_type() throw () 
-    ;
+    get_angular_type() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Get an atomic basis set.
@@ -183,8 +191,9 @@ namespace MPQC {
     get_atomic (
       /* in */ int64_t atomnum
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -192,15 +201,17 @@ namespace MPQC {
      * @return Molecule 
      */
     ::Chemistry::Molecule
-    get_molecule() throw () 
-    ;
+    get_molecule() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Print the molecular basis data. 
      */
     void
-    print_molecular() throw () 
-    ;
+    print_molecular() throw ( 
+      ::sidl::BaseException
+    );
   };  // end class GaussianBasis_Molecular_impl
 
 } // end namespace MPQC

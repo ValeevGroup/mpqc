@@ -14,13 +14,13 @@
 // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._includes)
 #include "dc/babel/babel-cca/AllBabelCCA.hh"
 #include "MPQC_ComponentClassDescription.hh"
-#include "MPQC_IntegralEvaluatorFactory.hh"
+#include "MPQC_IntV3EvaluatorFactory.hh"
 // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
 
 // user-defined constructor.
 void MPQC::ComponentFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._ctor)
-  addDescription( "MPQC.IntegralEvaluatorFactory", "IntegralEvaluatorFactory");
+  //addDescription( "MPQC.IntegralEvaluatorFactory", "IntegralEvaluatorFactory");
   // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._ctor)
 }
 
@@ -101,9 +101,9 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.createComponentInstance)
 
-  if (className == "MPQC.IntegralEvaluatorFactory") {
-    MPQC::IntegralEvaluatorFactory x =
-      MPQC::IntegralEvaluatorFactory::_create();
+  if (className == "MPQC.IntV3EvaluatorFactory") {
+    MPQC::IntV3EvaluatorFactory x =
+      MPQC::IntV3EvaluatorFactory::_create();
     gov::cca::Component c = x;
     return c;
   }

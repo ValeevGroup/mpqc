@@ -46,6 +46,93 @@ void MPQC::SimpleDriver_impl::_load() {
 
 // user-defined non-static methods:
 /**
+ * Starts up a component presence in the calling framework.
+ * @param Svc the component instance's handle on the framework world.
+ * Contracts concerning Svc and setServices:
+ * 
+ * The component interaction with the CCA framework
+ * and Ports begins on the call to setServices by the framework.
+ * 
+ * This function is called exactly once for each instance created
+ * by the framework.
+ * 
+ * The argument Svc will never be nil/null.
+ * 
+ * Those uses ports which are automatically connected by the framework
+ * (so-called service-ports) may be obtained via getPort during
+ * setServices.
+ */
+void
+MPQC::SimpleDriver_impl::setServices (
+  /* in */ ::gov::cca::Services services ) 
+throw ( 
+  ::gov::cca::CCAException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver.setServices)
+
+  services_ = services;
+  if (services_._is_nil()) return;
+
+  try {
+      services_.addProvidesPort(self, "go","gov.cca.ports.GoPort",
+                                0);
+      services_.registerUsesPort("ModelFactory", "Chemistry.QC.ModelFactory",
+                                 0);
+      }
+  catch (gov::cca::CCAException e) {
+      std::cout << "Error using services: "
+                << e.getNote() << std::endl;
+  }
+
+  // setup parameters
+  try {
+
+    if (services_._not_nil()) {
+      gov::cca::TypeMap tm = services_.createTypeMap();
+      services_.registerUsesPort("classicParam",
+                                 "gov.cca.ParameterPortFactoryService",tm);
+      gov::cca::Port p = services_.getPort("classicParam");
+      ccaffeine::ports::PortTranslator portX = p;
+      if(portX._not_nil()) {
+        classic::gov::cca::Port *cp
+          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
+        if(!cp) {
+          std::cout << "Couldn't get classic port" << std::endl;
+          return;
+        }
+
+        ConfigurableParameterFactory *cpf
+          = dynamic_cast<ConfigurableParameterFactory *>(cp);
+        ConfigurableParameterPort *pp = setup_parameters(cpf);
+        classic::gov::cca::Port *clscp
+          = dynamic_cast<classic::gov::cca::Port*>(pp);
+        if (!clscp) {
+          std::cout << "Couldn't cast to classic::gov::cca::Port"
+                    << std::endl;
+        }
+        void *vp = static_cast<void*>(clscp);
+        ccaffeine::ports::PortTranslator provideX
+          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
+
+        services_.addProvidesPort(provideX,
+                                  "configure", "ParameterPort", tm);
+
+        services_.releasePort("classicParam");
+        services_.unregisterUsesPort("classicParam");
+      }
+    }
+
+  }
+  catch(std::exception& e) {
+    std::cout << "Exception caught: " << e.what() << std::endl;
+  }
+
+  return;
+
+  // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver.setServices)
+}
+
+/**
  * Execute some encapsulated functionality on the component. 
  * Return 0 if ok, -1 if internal error but component may be 
  * used further, and -2 if error so severe that component cannot
@@ -144,93 +231,6 @@ throw ()
   return 0;
 
   // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver.go)
-}
-
-/**
- * Starts up a component presence in the calling framework.
- * @param Svc the component instance's handle on the framework world.
- * Contracts concerning Svc and setServices:
- * 
- * The component interaction with the CCA framework
- * and Ports begins on the call to setServices by the framework.
- * 
- * This function is called exactly once for each instance created
- * by the framework.
- * 
- * The argument Svc will never be nil/null.
- * 
- * Those uses ports which are automatically connected by the framework
- * (so-called service-ports) may be obtained via getPort during
- * setServices.
- */
-void
-MPQC::SimpleDriver_impl::setServices (
-  /* in */ ::gov::cca::Services services ) 
-throw ( 
-  ::gov::cca::CCAException
-){
-  // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver.setServices)
-
-  services_ = services;
-  if (services_._is_nil()) return;
-
-  try {
-      services_.addProvidesPort(self, "go","gov.cca.ports.GoPort",
-                                0);
-      services_.registerUsesPort("ModelFactory", "Chemistry.QC.ModelFactory",
-                                 0);
-      }
-  catch (gov::cca::CCAException e) {
-      std::cout << "Error using services: "
-                << e.getNote() << std::endl;
-  }
-
-  // setup parameters
-  try {
-
-    if (services_._not_nil()) {
-      gov::cca::TypeMap tm = services_.createTypeMap();
-      services_.registerUsesPort("classicParam",
-                                 "gov.cca.ParameterPortFactoryService",tm);
-      gov::cca::Port p = services_.getPort("classicParam");
-      ccaffeine::ports::PortTranslator portX = p;
-      if(portX._not_nil()) {
-        classic::gov::cca::Port *cp
-          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
-        if(!cp) {
-          std::cout << "Couldn't get classic port" << std::endl;
-          return;
-        }
-
-        ConfigurableParameterFactory *cpf
-          = dynamic_cast<ConfigurableParameterFactory *>(cp);
-        ConfigurableParameterPort *pp = setup_parameters(cpf);
-        classic::gov::cca::Port *clscp
-          = dynamic_cast<classic::gov::cca::Port*>(pp);
-        if (!clscp) {
-          std::cout << "Couldn't cast to classic::gov::cca::Port"
-                    << std::endl;
-        }
-        void *vp = static_cast<void*>(clscp);
-        ccaffeine::ports::PortTranslator provideX
-          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
-
-        services_.addProvidesPort(provideX,
-                                  "configure", "ParameterPort", tm);
-
-        services_.releasePort("classicParam");
-        services_.unregisterUsesPort("classicParam");
-      }
-    }
-
-  }
-  catch(std::exception& e) {
-    std::cout << "Exception caught: " << e.what() << std::endl;
-  }
-
-  return;
-
-  // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver.setServices)
 }
 
 

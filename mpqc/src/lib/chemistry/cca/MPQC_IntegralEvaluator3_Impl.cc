@@ -40,71 +40,104 @@ void MPQC::IntegralEvaluator3_impl::_load() {
 
 // user-defined non-static methods:
 /**
- * Method:  set_integral_package[]
+ * Method:  add_evaluator[]
  */
 void
-MPQC::IntegralEvaluator3_impl::set_integral_package (
-  /* in */ ::Chemistry::QC::GaussianBasis::Package type ) 
+MPQC::IntegralEvaluator3_impl::add_evaluator (
+  /* in */ void* eval,
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.set_integral_package)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.set_integral_package)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.add_evaluator)
+
+  eval_.add_evaluator(&eval,desc);
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.add_evaluator)
 }
 
 /**
- * Initialize as a 2-body evaluator.
- * @param bs1 Molecular basis on center 1.
- * @param bs2 Molecular basis on center 2.
- * @param bs3 Molecular basis on center 3.
- * @param type TbIntEvalType specifying eval type.
- * @param max_deriv Max derivative to compute.
- * @param storage Available storage in bytes.
- * @param deriv_ctr Derivative center descriptor. 
+ * Method:  set_basis[]
  */
 void
-MPQC::IntegralEvaluator3_impl::tbint_initialize (
+MPQC::IntegralEvaluator3_impl::set_basis (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
-  /* in */ int32_t max_deriv,
-  /* in */ int64_t storage,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3 ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.tbint_initialize)
-  // Insert-Code-Here {MPQC.IntegralEvaluator3.tbint_initialize} (tbint_initialize method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.tbint_initialize)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.set_basis)
+ 
+  basis_sets_.push_back(bs1);
+  basis_sets_.push_back(bs2);
+  basis_sets_.push_back(bs3);
+
+  eval_.set_basis( basis_sets_ );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.set_basis)
 }
 
 /**
- * Return number of supported two body int types.
- * @return Number of types. 
+ * Method:  set_reorder[]
  */
-int32_t
-MPQC::IntegralEvaluator3_impl::get_tbint_n_types ()
+void
+MPQC::IntegralEvaluator3_impl::set_reorder (
+  /* in */ int32_t reorder ) 
 throw () 
-
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_tbint_n_types)
-  // Insert-Code-Here {MPQC.IntegralEvaluator3.get_tbint_n_types} (get_tbint_n_types method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_tbint_n_types)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.set_reorder)
+
+  eval_.set_reorder( reorder );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.set_reorder)
 }
 
 /**
- * Get two body int buffer pointers.
- * @param type TbIntType specifying buffer type.
+ * Get buffer pointer for given type.
  * @return Buffer pointer. 
  */
 void*
-MPQC::IntegralEvaluator3_impl::get_tbint_buffer (
-  /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type ) 
-throw () 
+MPQC::IntegralEvaluator3_impl::get_buffer (
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_buffer)
+
+  return eval_.get_buffer( desc );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_buffer)
+}
+
+/**
+ * Method:  get_deriv_centers[]
+ */
+::Chemistry::QC::GaussianBasis::DerivCenters
+MPQC::IntegralEvaluator3_impl::get_deriv_centers ()
+throw ( 
+  ::sidl::BaseException
+)
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_tbint_buffer)
-  // Insert-Code-Here {MPQC.IntegralEvaluator3.get_tbint_buffer} (get_tbint_buffer method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_tbint_buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_deriv_centers)
+
+  return eval_.get_deriv_centers();
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_deriv_centers)
+}
+
+/**
+ * Method:  get_descriptor[]
+ */
+::Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+MPQC::IntegralEvaluator3_impl::get_descriptor ()
+throw ( 
+  ::sidl::BaseException
+)
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_descriptor)
+
+  return eval_.get_descriptor();
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_descriptor)
 }
 
 /**
@@ -118,12 +151,15 @@ void
 MPQC::IntegralEvaluator3_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
-  /* in */ int64_t shellnum3,
-  /* in */ int32_t deriv_level ) 
-throw () 
-{
+  /* in */ int64_t shellnum3 ) 
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute)
-  // insert implementation here
+
+  computer_.set_shells( shellnum1, shellnum2, shellnum3 );
+  eval_.compute( &computer_ );
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute)
 }
 
@@ -133,38 +169,22 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
- * @param deriv_level Derivative level.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator3_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
-  /* in */ int64_t shellnum3,
-  /* in */ int32_t deriv_level ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_array)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_array)
-}
-
-/**
- * Compute integral bounds.
- * @param shellnum1 Gaussian shell number 1.
- * @param shellnum2 Gaussian shell number 2.
- * @param shellnum3 Gaussian shell number 3. 
- */
-double
-MPQC::IntegralEvaluator3_impl::compute_bounds (
-  /* in */ int64_t shellnum1,
-  /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3 ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_bounds)
-  // Insert-Code-Here {MPQC.IntegralEvaluator3.compute_bounds} (compute_bounds method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_bounds)
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_array)
+  
+  computer_.set_shells( shellnum1, shellnum2, shellnum3 );
+  eval_.compute( &computer_ );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_array)
 }
 
 

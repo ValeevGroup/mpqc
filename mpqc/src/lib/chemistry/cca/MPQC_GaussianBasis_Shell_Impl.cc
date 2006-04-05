@@ -81,8 +81,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Shell_impl::get_n_contraction ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_n_contraction)
   return sc_shell_->ncontraction();
@@ -95,8 +96,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Shell_impl::get_n_primitive ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_n_primitive)
   return sc_shell_->nprimitive();
@@ -114,8 +116,9 @@ double
 MPQC::GaussianBasis_Shell_impl::get_contraction_coef (
   /* in */ int32_t connum,
   /* in */ int32_t expnum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_contraction_coef)
   return sc_shell_->coefficient_unnorm(connum,expnum);
   //return sc_shell_->coefficient_norm(connum,expnum);
@@ -130,8 +133,9 @@ throw ()
 double
 MPQC::GaussianBasis_Shell_impl::get_exponent (
   /* in */ int32_t expnum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_exponent)
   return sc_shell_->exponent(expnum);
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell.get_exponent)
@@ -145,8 +149,9 @@ throw ()
 int32_t
 MPQC::GaussianBasis_Shell_impl::get_angular_momentum (
   /* in */ int32_t connum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_angular_momentum)
   return sc_shell_->am(connum);
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell.get_angular_momentum)
@@ -159,8 +164,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Shell_impl::get_max_angular_momentum ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_max_angular_momentum)
   return max_am_;
@@ -175,8 +181,9 @@ throw ()
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Shell_impl::get_contraction_angular_type (
   /* in */ int32_t connum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_contraction_angular_type)
 
   AngularType angular;
@@ -197,8 +204,9 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Shell_impl::get_angular_type ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_angular_type)
   return angular_type_;
@@ -210,8 +218,9 @@ throw ()
  */
 void
 MPQC::GaussianBasis_Shell_impl::print_shell ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.print_shell)
   std::cout << "\n    shell:";

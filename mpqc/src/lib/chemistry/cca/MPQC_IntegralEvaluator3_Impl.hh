@@ -22,23 +22,23 @@
 // 
 // Includes for all method dependencies.
 // 
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescr_hh
+#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescr_hh
+#include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_Package_hh
-#include "Chemistry_QC_GaussianBasis_Package.hh"
-#endif
-#ifndef included_Chemistry_QC_GaussianBasis_TbIntEvalType_hh
-#include "Chemistry_QC_GaussianBasis_TbIntEvalType.hh"
-#endif
-#ifndef included_Chemistry_QC_GaussianBasis_TbIntType_hh
-#include "Chemistry_QC_GaussianBasis_TbIntType.hh"
-#endif
 #ifndef included_MPQC_IntegralEvaluator3_hh
 #include "MPQC_IntegralEvaluator3.hh"
+#endif
+#ifndef included_sidl_BaseException_hh
+#include "sidl_BaseException.hh"
 #endif
 #ifndef included_sidl_BaseInterface_hh
 #include "sidl_BaseInterface.hh"
@@ -49,7 +49,10 @@
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3._includes)
-// Put additional includes or other arbitrary code here...
+#include "integral_evaluator.h"
+using namespace sc;
+using namespace Chemistry::QC::GaussianBasis;
+using namespace MpqcCca;
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3._includes)
 
 namespace MPQC { 
@@ -80,7 +83,12 @@ namespace MPQC {
     IntegralEvaluator3 self;
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3._implementation)
-    // Put additional implementation details here...
+ 
+    vector< Molecular > basis_sets_;
+    IntegralEvaluator< TwoBodyThreeCenterInt, 
+		       twobody_threecenter_computer > eval_;
+    twobody_threecenter_computer computer_;
+
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3._implementation)
 
   private:
@@ -113,57 +121,62 @@ namespace MPQC {
      * user defined non-static method.
      */
     void
-    set_integral_package (
-      /* in */ ::Chemistry::QC::GaussianBasis::Package type
+    add_evaluator (
+      /* in */ void* eval,
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
     )
     throw () 
     ;
 
-
     /**
-     * Initialize as a 2-body evaluator.
-     * @param bs1 Molecular basis on center 1.
-     * @param bs2 Molecular basis on center 2.
-     * @param bs3 Molecular basis on center 3.
-     * @param type TbIntEvalType specifying eval type.
-     * @param max_deriv Max derivative to compute.
-     * @param storage Available storage in bytes.
-     * @param deriv_ctr Derivative center descriptor. 
+     * user defined non-static method.
      */
     void
-    tbint_initialize (
+    set_basis (
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
-      /* in */ int32_t max_deriv,
-      /* in */ int64_t storage,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3
+    )
+    throw () 
+    ;
+
+    /**
+     * user defined non-static method.
+     */
+    void
+    set_reorder (
+      /* in */ int32_t reorder
     )
     throw () 
     ;
 
 
     /**
-     * Return number of supported two body int types.
-     * @return Number of types. 
-     */
-    int32_t
-    get_tbint_n_types() throw () 
-    ;
-
-    /**
-     * Get two body int buffer pointers.
-     * @param type TbIntType specifying buffer type.
+     * Get buffer pointer for given type.
      * @return Buffer pointer. 
      */
     void*
-    get_tbint_buffer (
-      /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type
+    get_buffer (
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
+    /**
+     * user defined non-static method.
+     */
+    ::Chemistry::QC::GaussianBasis::DerivCenters
+    get_deriv_centers() throw ( 
+      ::sidl::BaseException
+    );
+    /**
+     * user defined non-static method.
+     */
+    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+    get_descriptor() throw ( 
+      ::sidl::BaseException
+    );
 
     /**
      * Compute a shell triplet of integrals.
@@ -176,11 +189,11 @@ namespace MPQC {
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t shellnum3,
-      /* in */ int32_t deriv_level
+      /* in */ int64_t shellnum3
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
 
     /**
@@ -189,34 +202,17 @@ namespace MPQC {
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
-     * @param deriv_level Derivative level.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
     compute_array (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t shellnum3,
-      /* in */ int32_t deriv_level
-    )
-    throw () 
-    ;
-
-
-    /**
-     * Compute integral bounds.
-     * @param shellnum1 Gaussian shell number 1.
-     * @param shellnum2 Gaussian shell number 2.
-     * @param shellnum3 Gaussian shell number 3. 
-     */
-    double
-    compute_bounds (
-      /* in */ int64_t shellnum1,
-      /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3
     )
-    throw () 
-    ;
+    throw ( 
+      ::sidl::BaseException
+    );
 
   };  // end class IntegralEvaluator3_impl
 

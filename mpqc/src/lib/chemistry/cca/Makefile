@@ -44,7 +44,8 @@ BABEL_CLASSES = \
   MPQC.GaussianBasis_Shell \
   MPQC.GaussianBasis_Atomic \
   MPQC.GaussianBasis_Molecular \
-  MPQC.IntegralEvaluatorFactory \
+  MPQC.IntV3EvaluatorFactory \
+  MPQC.CintsEvaluatorFactory \
   MPQC.IntegralEvaluator1 \
   MPQC.IntegralEvaluator2 \
   MPQC.IntegralEvaluator3 \
@@ -54,8 +55,8 @@ BABEL_CLASSES = \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver
 
-EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc
-EXTRA_INCLUDES = socket.h except.h ccaiter.h
+EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc integral_evaluator.cc
+EXTRA_INCLUDES = socket.h except.h ccaiter.h integral_evaluator.h
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"

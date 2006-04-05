@@ -109,8 +109,9 @@ throw ()
  */
 ::std::string
 MPQC::GaussianBasis_Atomic_impl::get_name ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_name)
   return sc_gbs_->name();
@@ -123,8 +124,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Atomic_impl::get_n_basis ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_n_basis)
   return sc_gbs_->nbasis_on_center(atomnum_);
@@ -137,8 +139,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Atomic_impl::get_n_shell ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_n_shell)
   return nshell_;
@@ -151,8 +154,9 @@ throw ()
  */
 int32_t
 MPQC::GaussianBasis_Atomic_impl::get_max_angular_momentum ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_max_angular_momentum)
   return max_am_;
@@ -165,8 +169,9 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Atomic_impl::get_angular_type ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_angular_type)
   return angular_type_;
@@ -181,8 +186,9 @@ throw ()
 ::Chemistry::QC::GaussianBasis::Shell
 MPQC::GaussianBasis_Atomic_impl::get_shell (
   /* in */ int32_t shellnum ) 
-throw () 
-{
+throw ( 
+  ::sidl::BaseException
+){
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_shell)
   return shell_array_[shellnum];
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic.get_shell)
@@ -193,8 +199,9 @@ throw ()
  */
 void
 MPQC::GaussianBasis_Atomic_impl::print_atomic ()
-throw () 
-
+throw ( 
+  ::sidl::BaseException
+)
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.print_atomic)
   std::cout << "\n  Atomic basis set:";

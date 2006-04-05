@@ -30,32 +30,60 @@ package MPQC version 0.2 {
       opaque sc_gbs_pointer();
   };
 
-  class IntegralEvaluatorFactory
+  class IntV3EvaluatorFactory
+    implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
+    gov.cca.Component, gov.cca.Port {};
+ 
+  class CintsEvaluatorFactory
     implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
     gov.cca.Component, gov.cca.Port {};
 
+  class IntegralEvaluator1 implements-all
+    Chemistry.QC.GaussianBasis.IntegralEvaluator1{
+      void add_evaluator(in opaque eval, 
+                         in Chemistry.QC.GaussianBasis.IntegralDescr desc );
+      void set_basis(in Chemistry.QC.GaussianBasis.Molecular bs1);
+      void set_reorder( in int reorder );
+    };
   class IntegralEvaluator2 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator2{
-      void set_integral_package(in string label); 
+      void add_evaluator( in opaque eval,
+                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
+      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1, 
+                      in Chemistry.QC.GaussianBasis.Molecular bs2);
+      void set_reorder( in int reorder );
     };
   class IntegralEvaluator3 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator3{
-      void set_integral_package(in string label);
+      void add_evaluator( in opaque eval,
+                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
+      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
+                      in Chemistry.QC.GaussianBasis.Molecular bs2,
+                      in Chemistry.QC.GaussianBasis.Molecular bs3);
+      void set_reorder( in int reorder );
     };
   class IntegralEvaluator4 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator4{
-      void set_integral_package(in string label);
+      void add_evaluator( in opaque eval, 
+                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
+      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
+                      in Chemistry.QC.GaussianBasis.Molecular bs2,
+                      in Chemistry.QC.GaussianBasis.Molecular bs3,
+                      in Chemistry.QC.GaussianBasis.Molecular bs4 );
+      void set_reorder( in int reorder );
     };
  
-  class ChemistryOpt_CoordinateModel implements-all ChemistryOpt.CoordinateModel,
+  class ChemistryOpt_CoordinateModel 
+    implements-all ChemistryOpt.CoordinateModel,
     gov.cca.Component, gov.cca.Port{};
 
   class ComponentFactory implements-all ccaffeine.ports.ComponentFactory {
     void addDescription(in string className, in string classAlias);
   };
 
-  class ComponentClassDescription implements-all gov.cca.ComponentClassDescription {
-    void initialize(in string className, in string classAlias);
+  class ComponentClassDescription 
+    implements-all gov.cca.ComponentClassDescription {
+      void initialize(in string className, in string classAlias);
   };
 
   class SimpleDriver implements-all gov.cca.Component, gov.cca.ports.GoPort { };

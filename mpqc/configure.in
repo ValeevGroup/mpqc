@@ -468,7 +468,11 @@ echo Using extra FORTRAN libraries: $withval
 have_flibs=no
 AC_ARG_WITH(flibs,
 [  --with-flibs            Specifies the F77 runtime (by default, will guess).],
-FLIBS=$withval
+if test "$withval" = yes; then
+  FLIBS=
+else
+  FLIBS=$withval
+fi
 have_flibs=yes
 echo Using FORTRAN runtime libraries: $withval
 )

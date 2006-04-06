@@ -1236,6 +1236,7 @@ case $os in
 	      | -os2* | -vos* | -palmos* | -uclinux* | -nucleus* \
 	      | -morphos* | -superux* | -rtmk* | -rtmk-nova* | -windiss* \
 	      | -powermax* | -dnix* | -nx6 | -nx7 | -sei* | -dragonfly* \
+	      | -catamount* \
 	      | -skyos* | -haiku* | -rdos* | -irx*)
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;

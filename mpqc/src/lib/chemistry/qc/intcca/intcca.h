@@ -28,52 +28,231 @@
 #ifndef _chemistry_qc_intcca_intcca_h
 #define _chemistry_qc_intcca_intcca_h
 
+#include <map>
 #include <gov_cca.hh>
 #include <chemistry/qc/basis/integral.h>
-#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
-#include <Chemistry_Chemistry_QC_GaussianBasis_ObIntEvalConfig.hh>
-#include <Chemistry_Chemistry_QC_GaussianBasis_TbIntEvalConfig.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/basis/cartiter.h>
+#include "obintcca.h"
+#include "tbintcca.h"
 
+using namespace std;
 using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
 
 /** IntegralCCA provides an SC client for CCA IntegralEvaluator components. */
-class IntegralCCA : public Integral {
+
+  class IntegralCCA : public Integral {
+
   private:
+    
+    //---------------------------------------------------------------------
+    // function object code for evaluator generation 
+    //---------------------------------------------------------------------
+
+    class onebody_generator {
+
+    private:
+
+      Ref<GaussianBasisSet> bs1_, bs2_;
+      IntegralSuperFactory factory_;
+      bool use_opaque_;
+
+    public:
+      
+      onebody_generator( ) { }
+      
+      onebody_generator( IntegralSuperFactory fac, bool use_opaque ):
+	factory_(fac), use_opaque_(use_opaque) { }
+      
+      void set_basis( Ref<GaussianBasisSet> bs1,
+		      Ref<GaussianBasisSet> bs2 ) 
+      { bs1_ = bs1, bs2_ = bs2; }
+      
+      Ref<OneBodyIntCCA> generate( CompositeIntegralDescr cdesc,
+				   vector<string> factories ) 
+      {
+	Ref<OneBodyIntCCA> eval;
+	eval = new OneBodyIntCCA( factory_, cdesc, factories,
+				  bs1_, bs2_, use_opaque_ );
+	return eval;
+      }
+
+    };
+
+    //---------------------------------------------------------------------
+
+    class onebody_deriv_generator {
+
+    private:
+
+      Ref<GaussianBasisSet> bs1_, bs2_;
+      IntegralSuperFactory factory_;
+      bool use_opaque_;
+
+    public:
+      
+      onebody_deriv_generator( ) { }
+
+      onebody_deriv_generator( IntegralSuperFactory fac, bool use_opaque ):
+	factory_(fac), use_opaque_(use_opaque) { }
+
+      void set_basis( Ref<GaussianBasisSet> bs1,
+		      Ref<GaussianBasisSet> bs2 ) 
+      { bs1_ = bs1, bs2_ = bs2; }
+
+      Ref<OneBodyDerivIntCCA> generate( CompositeIntegralDescr cdesc,
+					vector<string> factories ) 
+      {
+	Ref<OneBodyDerivIntCCA> eval;
+	eval = new OneBodyDerivIntCCA( factory_, cdesc, factories,
+				      bs1_, bs2_, use_opaque_ );
+	return eval;
+      }
+
+    };
+
+    //------------------------------------------------------------------------
+
+    class twobody_generator {
+
+    private:
+
+      Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+      IntegralSuperFactory factory_;
+      bool use_opaque_;
+
+    public:
+      
+      twobody_generator( ) { }
+
+      twobody_generator( IntegralSuperFactory fac, bool use_opaque ):
+	factory_(fac), use_opaque_(use_opaque) { }
+
+      void set_basis( Ref<GaussianBasisSet> bs1,
+		      Ref<GaussianBasisSet> bs2,
+		      Ref<GaussianBasisSet> bs3,
+		      Ref<GaussianBasisSet> bs4 ) 
+      { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
+
+      Ref<TwoBodyIntCCA> generate( CompositeIntegralDescr cdesc,
+			      vector<string> factories ) 
+      {
+	Ref<TwoBodyIntCCA> eval;
+	eval = new TwoBodyIntCCA( factory_, cdesc, factories,
+				  bs1_, bs2_, bs3_, bs4_, use_opaque_ );
+	return eval;
+      }
+
+    };
+
+    //------------------------------------------------------------------------
+
+    class twobody_deriv_generator {
+
+    private:
+
+      Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+      IntegralSuperFactory factory_;
+      bool use_opaque_;
+
+    public:
+      
+      twobody_deriv_generator( ) { }
+
+      twobody_deriv_generator( IntegralSuperFactory fac, bool use_opaque ):
+	factory_(fac), use_opaque_(use_opaque) { }
+
+      void set_basis( Ref<GaussianBasisSet> bs1,
+		      Ref<GaussianBasisSet> bs2,
+		      Ref<GaussianBasisSet> bs3,
+		      Ref<GaussianBasisSet> bs4 ) 
+      { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
+
+      Ref<TwoBodyDerivIntCCA> generate( CompositeIntegralDescr cdesc,
+					vector<string> factories ) 
+      {
+	Ref<TwoBodyDerivIntCCA> eval;
+	eval = new TwoBodyDerivIntCCA( factory_, cdesc, factories,
+				       bs1_, bs2_, bs3_, bs4_, use_opaque_ );
+	return eval;
+      }
+
+    };
+
+    //----------------------------------------------------------------------
+	
+    // the function object
+
+    template< typename eval_type, typename generator_type >
+    class sc_eval_factory {
+
+    private:
+      
+      generator_type generator_;
+      map<string,string> name_to_factory_;
+
+    public:
+
+      sc_eval_factory() { }
+      
+      sc_eval_factory( generator_type generator, 
+		       map<string,string> name_to_factory ):
+      generator_(generator), name_to_factory_(name_to_factory) { }
+
+      Ref<eval_type> operator() ( CompositeIntegralDescr cdesc )
+      {
+	vector<string> factories;
+	for( int i=0; i<cdesc.get_n_descr(); ++i)
+	  factories.push_back
+	    ( name_to_factory_[cdesc.get_descr(i).get_type()] );
+    
+	return generator_.generate( cdesc, factories );
+      }
+
+    };
+
+    //----------------------------------------------------------------------
+    
     int maxl_;
     bool use_opaque_;
     gov::cca::ComponentID fac_id_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
-    Chemistry::Chemistry_QC_GaussianBasis_ObIntEvalConfig ob_config_;
-    Chemistry::Chemistry_QC_GaussianBasis_TbIntEvalConfig tb_config_;
-    std::string factory_type_;
-    std::string package_;
-    IntegralEvaluatorFactory eval_factory_;
+    string factory_type_;
+    IntegralSuperFactory eval_factory_;
+    map<string,string> name_to_factory_;
+    CompositeIntegralDescr eval_req_;
 
+    onebody_generator obgen_;
+    onebody_deriv_generator obdgen_;
+    twobody_generator tbgen_;
+    twobody_deriv_generator tbdgen_;
+    sc_eval_factory<OneBodyInt,onebody_generator> get_onebody;
+    sc_eval_factory<OneBodyDerivInt,onebody_deriv_generator> get_onebody_deriv;
+    sc_eval_factory<TwoBodyInt,twobody_generator> get_twobody;
+    sc_eval_factory<TwoBodyDerivInt,twobody_deriv_generator> get_twobody_deriv;
+    
     SphericalTransform ***st_;
     ISphericalTransform ***ist_;
-
+    
     void free_transforms();
     void initialize_transforms();
-    void set_config( std::string type, std::string package );
-
+    
   public:
 
     /** This constructor is used when the framework is not embedded. */
-    IntegralCCA(IntegralEvaluatorFactory eval_factory, bool use_opaque,
-                const Ref<GaussianBasisSet> &b1=0,
-                const Ref<GaussianBasisSet> &b2=0,
-                const Ref<GaussianBasisSet> &b3=0,
-                const Ref<GaussianBasisSet> &b4=0);
-
-    IntegralCCA(StateIn&);
+    IntegralCCA( IntegralSuperFactory eval_factory, 
+		 bool use_opaque,
+                 const Ref<GaussianBasisSet> &b1=0,
+                 const Ref<GaussianBasisSet> &b2=0,
+                 const Ref<GaussianBasisSet> &b3=0,
+                 const Ref<GaussianBasisSet> &b4=0 );
 
     /** The KeyVal constructor.
         This constructor is used when the framework is embedded.
@@ -98,10 +277,8 @@ class IntegralCCA : public Integral {
 
     ~IntegralCCA();
 
-    void save_data_state(StateOut&);
-
     Integral* clone();
-   
+
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);
     RedundantCartesianSubIter * new_redundant_cartesian_sub_iter(int);
@@ -143,6 +320,7 @@ class IntegralCCA : public Integral {
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,
                    const Ref<GaussianBasisSet> &b4 = 0);
+		    
 };
 
 }

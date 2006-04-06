@@ -78,7 +78,7 @@ endif
 
 # need babel headers generated
 ifneq ($(DODEPEND),no)
-include ../../cca/.babel-stamp
+include ../../cca/stamp-babel
 endif
-../../cca/.babel-stamp:
-	cd ../../cca; $(MAKE) .babel-stamp
+../../cca/stamp-babel:
+	cd ../../cca; $(MAKE) stamp-babel

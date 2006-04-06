@@ -58,16 +58,18 @@ namespace sc {
 
     private:
 
-      Ref<GaussianBasisSet> bs1_, bs2_;
+      Integral* integral_;
       IntegralSuperFactory factory_;
       bool use_opaque_;
+      Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
       
       onebody_generator( ) { }
       
-      onebody_generator( IntegralSuperFactory fac, bool use_opaque ):
-	factory_(fac), use_opaque_(use_opaque) { }
+      onebody_generator( Integral* integral, IntegralSuperFactory fac, 
+			 bool use_opaque ):
+	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
       
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
@@ -77,8 +79,9 @@ namespace sc {
 				   vector<string> factories ) 
       {
 	Ref<OneBodyIntCCA> eval;
-	eval = new OneBodyIntCCA( factory_, cdesc, factories,
-				  bs1_, bs2_, use_opaque_ );
+	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
+				  factory_, cdesc, factories, 
+				  use_opaque_ );
 	return eval;
       }
 
@@ -90,16 +93,18 @@ namespace sc {
 
     private:
 
-      Ref<GaussianBasisSet> bs1_, bs2_;
+      Integral* integral_;
       IntegralSuperFactory factory_;
       bool use_opaque_;
+      Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
       
       onebody_deriv_generator( ) { }
 
-      onebody_deriv_generator( IntegralSuperFactory fac, bool use_opaque ):
-	factory_(fac), use_opaque_(use_opaque) { }
+      onebody_deriv_generator( Integral* integral, IntegralSuperFactory fac, 
+			       bool use_opaque ):
+	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
@@ -109,8 +114,9 @@ namespace sc {
 					vector<string> factories ) 
       {
 	Ref<OneBodyDerivIntCCA> eval;
-	eval = new OneBodyDerivIntCCA( factory_, cdesc, factories,
-				      bs1_, bs2_, use_opaque_ );
+	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
+				       factory_, cdesc, factories, 
+				       use_opaque_ );
 	return eval;
       }
 

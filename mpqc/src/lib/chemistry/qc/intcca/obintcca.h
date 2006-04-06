@@ -32,33 +32,48 @@
 #ifndef _chemistry_qc_intcca_obintcca_h
 #define _chemistry_qc_intcca_obintcca_h
 
+#include <vector>
 #include <chemistry/qc/basis/obint.h>
-#include <chemistry/qc/intcca/int1e.h>
-#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
+#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <MPQC_GaussianBasis_Molecular.hh>
 
+using namespace std;
+using namespace sc;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
 
 // /////////////////////////////////////////////////////////////////////////
 
-/** This implements one body integrals through the CCA interface. It is
-    given a function pointer to the IntCCA member that computes the
-    particular integral of interest. */
-class OneBodyIntCCA : public OneBodyInt {
+/** This implements one body integrals through the CCA interface. */
+
+  class OneBodyIntCCA : public OneBodyInt {
+    
   private:
-    IntegralEvaluatorFactory eval_factory_;
+    Integral* integral_;
+    Ref<GaussianBasisSet> bs1_, bs2_;
+    IntegralSuperFactory eval_factory_;
+    CompositeIntegralDescr cdesc_;
+    vector<string> factories_;
     bool use_opaque_;
+    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
+    double* buff_;
+    IntegralEvaluator2 eval_;
+
   protected:
-    Ref<sc::Int1eCCA> int1ecca_;
-    typedef void (sc::Int1eCCA::*IntegralFunction)(int,int);
-    IntegralFunction intfunc_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+    
   public:
-    OneBodyIntCCA(Integral*,
-                 const Ref<GaussianBasisSet>&, const Ref<GaussianBasisSet>&,
-                 IntegralEvaluatorFactory, IntegralFunction, bool );
+    OneBodyIntCCA( Integral* integral,
+		   const Ref<GaussianBasisSet>&, 
+		   const Ref<GaussianBasisSet>&,
+		   IntegralSuperFactory,
+		   CompositeIntegralDescr,
+                   vector<string> factories,
+		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
     bool cloneable();
@@ -67,28 +82,39 @@ class OneBodyIntCCA : public OneBodyInt {
 
 ///////////////////////////////////////////////////////////////////////////////
 
- /** This implements one body derivative integrals. It
-     is given a function pointer to the Int1eCCA member that computes the
-     particular integral of interest. */
-class OneBodyDerivIntCCA : public OneBodyDerivInt {
+ /** This implements one body derivative integrals through the
+     CCA interface */
+
+  class OneBodyDerivIntCCA : public OneBodyDerivInt {
+    
   private:
-    IntegralEvaluatorFactory eval_factory_;
+    Integral* integral_;
+    Ref<GaussianBasisSet> bs1_, bs2_;
+    IntegralSuperFactory eval_factory_;
+    CompositeIntegralDescr cdesc_;
+    vector<string> factories_;
     bool use_opaque_;
-    ObIntEvalType eval_type_;
+    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
+    double* buff_;
+    IntegralEvaluator2 eval_;
+
   protected:
-    Ref<Int1eCCA> int1ecca_;
-    typedef void (Int1eCCA::*IntegralFunction)(int, int, DerivCenters&);
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+ 
   public:
-    OneBodyDerivIntCCA(Integral*,
-                      const Ref<GaussianBasisSet>&,
-                      const Ref<GaussianBasisSet>&,
-                      IntegralEvaluatorFactory,
-                      bool, ObIntEvalType);
+    OneBodyDerivIntCCA( Integral* integral,
+		        const Ref<GaussianBasisSet>&,
+		        const Ref<GaussianBasisSet>&,
+			IntegralSuperFactory,
+		        CompositeIntegralDescr,
+                        vector<string> factories,
+			bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);
     void compute_shell(int, int, int);
-};
+    bool cloneable();
+    Ref<OneBodyDerivInt> clone();
+  };
 
 }
 

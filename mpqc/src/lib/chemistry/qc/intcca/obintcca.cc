@@ -31,44 +31,57 @@
 
 #include <chemistry/qc/intcca/obintcca.h>
 #include <util/class/scexception.h>
-#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
-
-using namespace std;
-using namespace Chemistry;
-using namespace Chemistry::QC::GaussianBasis;
-using namespace sc;
 
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntCCA
 
-OneBodyIntCCA::OneBodyIntCCA(Integral* integral,
-                           const Ref<GaussianBasisSet>&bs1,
-                           const Ref<GaussianBasisSet>&bs2,
-			   IntegralEvaluatorFactory eval_factory,
-                           IntegralFunction ifunc,
-                           bool use_opaque ):
-  OneBodyInt(integral,bs1,bs2), intfunc_(ifunc), eval_factory_(eval_factory), 
-  use_opaque_(use_opaque) 
+OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
+			      const Ref<GaussianBasisSet>& bs1, 
+			      const Ref<GaussianBasisSet>& bs2,
+			      IntegralSuperFactory fac,
+			      CompositeIntegralDescr cdesc,
+			      vector<string> factories, 
+			      bool  use_opaque ):
+  OneBodyInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
+  eval_factory_(fac), cdesc_(cdesc), factories_(factories), 
+   use_opaque_(use_opaque) 
 {
-  ObIntEvalType int_type;
-  if( ifunc == &Int1eCCA::overlap ) int_type = ObIntEvalType_OVERLAP;
-  else if (ifunc == &Int1eCCA::kinetic ) int_type = ObIntEvalType_KINETIC;
-  else if (ifunc == &Int1eCCA::nuclear ) int_type = ObIntEvalType_NUCLEAR;
-  else if (ifunc == &Int1eCCA::hcore ) int_type = ObIntEvalType_OEHAM;
-  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,
-                           int_type,use_opaque,cca_dc_);
-  buffer_ = int1ecca_->buffer();
+  
+  /* The efield routines look like derivatives so nshell*3 */
+  int scratchsize=0,nshell2;
+  nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
+  scratchsize = nshell2*3;
+  if( !use_opaque_ )
+    buff_ = new double[scratchsize];
+
+  // create cca basis sets
+  cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  if( bs1_.pointer() != bs2_.pointer() ) {
+    cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+  }
+  else
+    cca_bs2_ = cca_bs1_;
+
+  // set factory config, CompositeDescr should contain exactly 1 Descr
+  sidl::array<string> sidl_factories = sidl::array<string>::create1d(1);
+  sidl_factories.set( 0, factories_[0] );
+  eval_factory_.set_source_factories( sidl_factories );
+
+  eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
+  
 }
 
 OneBodyIntCCA::~OneBodyIntCCA()
 {
+  delete buff_;
 }
 
 void
 OneBodyIntCCA::compute_shell(int i, int j)
 {
-  (int1ecca_.pointer()->*intfunc_)(i, j);
+  eval_.compute( i, j );
 }
 
 bool
@@ -80,8 +93,8 @@ OneBodyIntCCA::cloneable()
 Ref<OneBodyInt>
 OneBodyIntCCA::clone()
 {
-  return new OneBodyIntCCA(integral_, bs1_, bs2_, 
-                           eval_factory_, intfunc_, use_opaque_ );
+  return new OneBodyIntCCA( integral_, bs1_, bs2_, 
+                            eval_factory_, cdesc_, factories_, use_opaque_ );
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -90,16 +103,14 @@ OneBodyIntCCA::clone()
 OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
                                        const Ref<GaussianBasisSet>&bs1,
                                        const Ref<GaussianBasisSet>&bs2,
-                                       IntegralEvaluatorFactory eval_factory,
-                                       bool use_opaque,
-                                       ObIntEvalType int_type ):
-  OneBodyDerivInt(integral,bs1,bs2), eval_factory_(eval_factory),
-  use_opaque_(use_opaque), eval_type_(int_type)
+                                       IntegralSuperFactory eval_factory,
+				       CompositeIntegralDescr cdesc,
+				       vector<string> factories,
+                                       bool use_opaque ):
+  OneBodyDerivInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
+  eval_factory_(eval_factory), cdesc_(cdesc), factories_(factories),
+  use_opaque_(use_opaque)
 {
-  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  int1ecca_ = new Int1eCCA(integral,bs1,bs2,1,eval_factory,
-                           eval_type_,use_opaque,cca_dc_);
-  buffer_ = int1ecca_->buffer();
 }
 
 OneBodyDerivIntCCA::~OneBodyDerivIntCCA()
@@ -109,41 +120,11 @@ OneBodyDerivIntCCA::~OneBodyDerivIntCCA()
 void
 OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 {
-
-  std::cerr << "THIS IS NEVER USED\n";
-
-  cca_dc_.clear();
-  
-  if( eval_type_ == ObIntEvalType_OVERLAP )
-    int1ecca_->overlap_1der(i,j);
-  else if( eval_type_ == ObIntEvalType_KINETIC )  
-    int1ecca_->kinetic_1der(i,j);
-  else if( eval_type_ == ObIntEvalType_NUCLEAR )
-    int1ecca_->nuclear_1der(i,j);
-  else if( eval_type_ == ObIntEvalType_OEHAM )
-    int1ecca_->hcore_1der(i,j);
-
-  c.clear();
-  for( int id=0; id<cca_dc_.n(); ++id ) {
-    if( id == cca_dc_.omitted_center() )
-      c.add_omitted(cca_dc_.center(id),cca_dc_.atom(id));
-     else
-       c.add_center(cca_dc_.center(id),cca_dc_.atom(id));
-  }
-
 }
 
 void 
-OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
-
-  if( eval_type_ == ObIntEvalType_OVERLAP )
-    int1ecca_->overlap_1der(i,j,c);
-  else if( eval_type_ == ObIntEvalType_KINETIC )
-    int1ecca_->kinetic_1der(i,j,c);
-  else if( eval_type_ == ObIntEvalType_NUCLEAR )
-    int1ecca_->nuclear_1der(i,j,c);
-  else if( eval_type_ == ObIntEvalType_OEHAM )
-    int1ecca_->hcore_1der(i,j,c);
+OneBodyDerivIntCCA::compute_shell(int i, int j, int c) 
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////

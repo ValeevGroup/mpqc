@@ -161,13 +161,13 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // set up function objects for evaluator generation
   //-------------------------------------------------
 
-  obgen_ = onebody_generator( eval_factory_, use_opaque_ );
+  obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>
     ob( obgen_, name_to_factory_ );
   get_onebody = ob;
 
-  obdgen_ = onebody_deriv_generator( eval_factory_, use_opaque_ );
+  obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
     obd( obdgen_, name_to_factory_ );

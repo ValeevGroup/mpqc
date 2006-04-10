@@ -171,17 +171,19 @@ throw (
 }
 
 /**
- * Method:  get_max_deriv_lvl[]
+ * Method:  get_max_deriv_lvls[]
  */
 ::sidl::array<int32_t>
-MPQC::IntV3EvaluatorFactory_impl::get_max_deriv_lvl (
+MPQC::IntV3EvaluatorFactory_impl::get_max_deriv_lvls (
   /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr desc ) 
 throw ( 
   ::sidl::BaseException
 ){
-  // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvl)
-  // Insert-Code-Here {MPQC.IntV3EvaluatorFactory.get_max_deriv_lvl} (get_max_deriv_lvl method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvl)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvls)
+
+  // implementation needed
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvls)
 }
 
 /**

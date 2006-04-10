@@ -167,7 +167,7 @@ namespace MPQC {
      * user defined non-static method.
      */
     ::sidl::array<int32_t>
-    get_max_deriv_lvl (
+    get_max_deriv_lvls (
       /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr desc
     )
     throw ( 

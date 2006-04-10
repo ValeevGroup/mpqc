@@ -190,6 +190,27 @@ throw (
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_array)
 }
 
+/**
+ * Compute integral bounds.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3.
+ * @param shellnum4 Gaussian shell number 4. 
+ */
+double
+MPQC::IntegralEvaluator4_impl::compute_bounds (
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2,
+  /* in */ int64_t shellnum3,
+  /* in */ int64_t shellnum4 ) 
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds)
+  // Insert-Code-Here {MPQC.IntegralEvaluator4.compute_bounds} (compute_bounds method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
+}
+
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._misc)
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._misc)

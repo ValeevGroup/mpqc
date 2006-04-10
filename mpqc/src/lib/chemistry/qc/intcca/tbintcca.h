@@ -32,73 +32,108 @@
 #ifndef _chemistry_qc_intcca_tbintcca_h
 #define _chemistry_qc_intcca_tbintcca_h
 
+#include <vector>
 #include <chemistry/qc/basis/tbint.h>
-#include <chemistry/qc/intcca/int2e.h>
-#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
+#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <MPQC_GaussianBasis_Molecular.hh>
 
 using namespace std;
+using namespace sc;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
 
+  //////////////////////////////////////////////////////////////////////////
+
 /** This implements two body integrals through the CCA interface. */
-class TwoBodyIntCCA : public TwoBodyInt {
-  protected:
-    Ref<Int2eCCA> int2ecca_;
+
+  class TwoBodyIntCCA : public TwoBodyInt {
+  
+  private:
+
+    Integral* integral_;
+    Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+    IntegralSuperFactory eval_factory_;
+    CompositeIntegralDescr cdesc_;
+    vector<string> factories_;
+    bool use_opaque_;
+    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
+    double* buff_;
+    IntegralEvaluator4 eval_;
+    bool redundant_;
     int int_bound_min_;
-    int n_types_;
     double tol_;
     double loginv_;
-    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
-    TwoBodyIntCCA(Integral*,
-		  const Ref<GaussianBasisSet>&b1, 
-		  const Ref<GaussianBasisSet>&b2,
-		  const Ref<GaussianBasisSet>&b3, 
-		  const Ref<GaussianBasisSet>&b4,
-                  size_t storage, IntegralEvaluatorFactory, 
-                  bool, TbIntEvalType );
-    ~TwoBodyIntCCA() { };
+    TwoBodyIntCCA( Integral* integral,
+		   const Ref<GaussianBasisSet>&b1, 
+		   const Ref<GaussianBasisSet>&b2,
+		   const Ref<GaussianBasisSet>&b3, 
+		   const Ref<GaussianBasisSet>&b4,	   
+		   size_t,
+		   IntegralSuperFactory,
+		   CompositeIntegralDescr,
+		   vector<string> factories,
+		   bool );
+    ~TwoBodyIntCCA();
 
-    unsigned int num_tbint_types() const { return n_types_; }
     void compute_shell(int,int,int,int);
     int log2_shell_bound(int,int,int,int);
-    
-    size_t storage_used();
-    int redundant() const { return int2ecca_->redundant(); }
-    void set_redundant(int i) { int2ecca_->set_redundant(i); }
+    int redundant() const { return redundant_; }
+    void set_redundant(int i) { redundant_ = i; }
+    unsigned int num_tbint_types() const;
+    void remove_redundant(int,int,int,int);
 };
 
-/** This implements two body derivative integrals 
-    through the CCA interface. */
-class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
-  protected:
-    Ref<Int2eCCA> int2ecca_;
-    int int_bound_min_;
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  /** This implements two body derivative integrals through the 
+      CCA interface. */
+  class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
+
+  private:
+    Integral* integral_;
+    Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+    IntegralSuperFactory eval_factory_;
+    CompositeIntegralDescr cdesc_;
+    vector<string> factories_;
+    bool use_opaque_;
+    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
+    double* buff_;
+    IntegralEvaluator4 eval_;
+    bool redundant_;
     double tol_;
     double loginv_;
+    int int_bound_min_;
+    int max_deriv_lvl_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+    sidl::array<int> sidl_buffer_;
 
   public:
-    TwoBodyDerivIntCCA(Integral*,
-		       const Ref<GaussianBasisSet>&b1,
-		       const Ref<GaussianBasisSet>&b2,
-		       const Ref<GaussianBasisSet>&b3,
-		       const Ref<GaussianBasisSet>&b4,
-		       size_t storage, IntegralEvaluatorFactory, 
-		       bool, TbIntEvalType);
-    ~TwoBodyDerivIntCCA() { };
+    TwoBodyDerivIntCCA( Integral* integral,
+			const Ref<GaussianBasisSet>&b1, 
+			const Ref<GaussianBasisSet>&b2,
+			const Ref<GaussianBasisSet>&b3, 
+			const Ref<GaussianBasisSet>&b4,	   
+			size_t,
+			IntegralSuperFactory,
+			CompositeIntegralDescr,
+			vector<string> factories,
+			bool );
+    ~TwoBodyDerivIntCCA();
 
-    int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);
-
-    size_t storage_used();
-    void set_integral_storage(size_t storage);
-    int redundant() const { return int2ecca_->redundant(); }
-    void set_redundant(int i) { int2ecca_->set_redundant(i); }
-};
-
+    int log2_shell_bound(int,int,int,int);
+    int redundant() const { return redundant_; }
+    void set_redundant(int i) { redundant_ = i; }
+    unsigned int num_tbint_types() const;
+    void copy_buffer(int);
+  };
+  
 }
 
 #endif

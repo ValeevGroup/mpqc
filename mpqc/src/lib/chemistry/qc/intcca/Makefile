@@ -43,9 +43,9 @@ BIN_OR_LIB = LIB
 
 DEFINES += -DDMALLOC
 
-CXXSRC = int1e.cc int2e.cc obintcca.cc tbintcca.cc intcca.cc
+CXXSRC = obintcca.cc tbintcca.cc intcca.cc
 
-INC = int1e.h int2e.h obintcca.h tbintcca.h intcca.h cartit.h tform.h
+INC = obintcca.h tbintcca.h intcca.h cartit.h tform.h
 
 CPPFLAGS += -I../../cca
 LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \

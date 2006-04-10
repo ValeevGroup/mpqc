@@ -129,6 +129,8 @@ namespace sc {
     private:
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+      Integral* integral_;
+      size_t storage_;
       IntegralSuperFactory factory_;
       bool use_opaque_;
 
@@ -136,8 +138,10 @@ namespace sc {
       
       twobody_generator( ) { }
 
-      twobody_generator( IntegralSuperFactory fac, bool use_opaque ):
-	factory_(fac), use_opaque_(use_opaque) { }
+      twobody_generator( Integral* integral, size_t storage, 
+			 IntegralSuperFactory fac, bool use_opaque ):
+	integral_(integral), storage_(storage), factory_(fac), 
+	use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2,
@@ -149,8 +153,10 @@ namespace sc {
 			      vector<string> factories ) 
       {
 	Ref<TwoBodyIntCCA> eval;
-	eval = new TwoBodyIntCCA( factory_, cdesc, factories,
-				  bs1_, bs2_, bs3_, bs4_, use_opaque_ );
+	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
+				  storage_,
+				  factory_, cdesc, factories,
+				  use_opaque_ );
 	return eval;
       }
 
@@ -163,6 +169,8 @@ namespace sc {
     private:
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+      Integral* integral_;
+      size_t storage_;
       IntegralSuperFactory factory_;
       bool use_opaque_;
 
@@ -170,8 +178,10 @@ namespace sc {
       
       twobody_deriv_generator( ) { }
 
-      twobody_deriv_generator( IntegralSuperFactory fac, bool use_opaque ):
-	factory_(fac), use_opaque_(use_opaque) { }
+      twobody_deriv_generator( Integral* integral, size_t storage, 
+			       IntegralSuperFactory fac, bool use_opaque ):
+	integral_(integral), storage_(storage), factory_(fac),
+	use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2,
@@ -183,8 +193,9 @@ namespace sc {
 					vector<string> factories ) 
       {
 	Ref<TwoBodyDerivIntCCA> eval;
-	eval = new TwoBodyDerivIntCCA( factory_, cdesc, factories,
-				       bs1_, bs2_, bs3_, bs4_, use_opaque_ );
+	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
+				       storage_, factory_, cdesc, factories,
+				       use_opaque_ );
 	return eval;
       }
 

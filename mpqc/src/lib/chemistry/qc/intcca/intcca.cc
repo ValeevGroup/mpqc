@@ -173,13 +173,15 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     obd( obdgen_, name_to_factory_ );
   get_onebody_deriv = obd;
 
-  tbgen_ = twobody_generator( eval_factory_, use_opaque_ );
+  tbgen_ = twobody_generator( this, 50000000,
+			      eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
     tb( tbgen_, name_to_factory_ ); 
   get_twobody = tb;
 
-  tbdgen_ = twobody_deriv_generator( eval_factory_, use_opaque_ );
+  tbdgen_ = twobody_deriv_generator( this, 50000000,
+				     eval_factory_, use_opaque_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ ); 
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
     tbd( tbdgen_, name_to_factory_ ); 

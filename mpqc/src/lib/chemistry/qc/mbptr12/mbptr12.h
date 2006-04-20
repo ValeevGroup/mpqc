@@ -75,7 +75,7 @@ class MBPT2_R12: public MBPT2 {
                                         // Alpha-beta/alpha-alpha pair energies if spin-orbital
 
     Ref<TwoBodyGrid> twopdm_grid_;      // The set of 2 particle positions on which to compute values of pair function
-    unsigned int plot_pair_function_;   // The index of the pair function to plot
+    unsigned int plot_pair_function_[2];// Which pair function to plot
 
 #define ref_to_mp2r12_acc_ 100.0
 
@@ -83,6 +83,7 @@ class MBPT2_R12: public MBPT2 {
     double r12_corr_energy_;
     Ref<LinearR12::CorrelationFactor> corrfactor_;
     LinearR12::StandardApproximation stdapprox_;
+    LinearR12::Ansatz ansatz_;
     LinearR12::ABSMethod abs_method_;
     unsigned int maxnabs_;
     R12IntEvalInfo::StoreMethod::type r12ints_method_;
@@ -154,6 +155,9 @@ class MBPT2_R12: public MBPT2 {
 	  with linear R12 terms in standard approximation C.
 
         </dl>
+        
+        <dt><tt>ansatz</tt><dd> This keyword specifies the ansatz. Valid values
+        are 2 and 3. The default is 2. Ansatz 3 can only be used with approximation C.
         
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
@@ -240,8 +244,8 @@ class MBPT2_R12: public MBPT2 {
         <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
         plot pair function given by <tt>plot_pair_function</tt>.
 
-        <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies which pair function to
-        plot on <tt>twobody_grid</tt>.
+        <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
+        specifies which pair function to plot.
 
         </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
@@ -257,6 +261,7 @@ class MBPT2_R12: public MBPT2 {
     bool ebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
+    LinearR12::Ansatz ansatz() const;
     bool spinadapted() const;
     bool ks_ebcfree() const;
     bool omit_P() const;

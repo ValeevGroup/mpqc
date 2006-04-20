@@ -96,7 +96,7 @@ public:
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   /** Computes values of pair function ij on tbgrid */
-  void compute_pair_function(int ij, SpinCase2 spincase2,
+  void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                              const Ref<TwoBodyGrid>& tbgrid);
 #endif
 

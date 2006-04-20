@@ -52,7 +52,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",7,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",8,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -83,6 +83,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   corrfactor_ = mbptr12->corrfactor();
   abs_method_ = mbptr12->abs_method();
   stdapprox_ = mbptr12->stdapprox();
+  ansatz_ = mbptr12->ansatz();
   ebc_ = mbptr12->ebc();
   gbc_ = mbptr12->gbc();
   ks_ebcfree_ = mbptr12->ks_ebcfree();
@@ -131,6 +132,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     int gbc; si.get(gbc); gbc_ = (bool) gbc;
     int ebc; si.get(ebc); ebc_ = (bool) ebc;
     int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+    if (si.version(::class_desc<R12IntEvalInfo>()) >= 8) {
+      int ansatz; si.get(ansatz); ansatz_ = (LinearR12::Ansatz) ansatz;
+    }
     int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
     int includemp1; si.get(includemp1); include_mp1_ = (bool) includemp1;
     int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
@@ -182,6 +186,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)gbc_);
   so.put((int)ebc_);
   so.put((int)stdapprox_);
+  so.put((int)ansatz_);
   so.put((int)spinadapted_);
   so.put((int)include_mp1_);
   

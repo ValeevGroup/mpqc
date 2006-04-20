@@ -137,7 +137,6 @@ R12IntEval::compute_BC_()
 #if INCLUDE_P
     // compute P
     // WARNING implemented only using CABS/CABS+ approach
-    if (!omit_P()) {
       
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
       if (!abs_eq_obs && 
@@ -164,10 +163,10 @@ R12IntEval::compute_BC_()
       RefSCMatrix P;
       
 #if INCLUDE_P_PKP
+      // R_klPQ K_QR R_PRij is included with ansatz 2 and 3
       {
       Ref<MOIndexSpace> kribs1 = kribs_ribs(spin1);
       Ref<MOIndexSpace> kribs2 = kribs_ribs(spin2);
-      // R_klPQ K_QR R_PRij
       compute_FxF_(P,spincase2,
                    occ1_act,occ2_act,
                    occ1_act,occ2_act,
@@ -176,6 +175,8 @@ R12IntEval::compute_BC_()
                    kribs1,kribs2);
       }
 #endif // INCLUDE_P_PKP
+
+      if (ansatz() == LinearR12::Ansatz_2) {
 #if INCLUDE_P_PFP
       {
       Ref<MOIndexSpace> fribs1 = fribs_ribs(spin1);
@@ -202,6 +203,23 @@ R12IntEval::compute_BC_()
                    forbs1,forbs2);
       }
 #endif // INCLUDE_P_pFp
+      }
+      // Ansatz 3
+      else {
+#if INCLUDE_P_pFp
+      {
+      Ref<MOIndexSpace> forbs1 = fobs_obs(spin1);
+      Ref<MOIndexSpace> forbs2 = fobs_obs(spin2);
+      // R_klpr F_pq R_qrij
+      compute_FxF_(P,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   orbs1,orbs2,
+                   orbs1,orbs2,
+                   forbs1,forbs2);
+      }
+#endif // INCLUDE_P_pFp
+      }
 
 #if !INCLUDE_P_PKP && TEST_PFP_plus_pFp
       P.print("PFP + pFp");
@@ -254,6 +272,7 @@ R12IntEval::compute_BC_()
         Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
         Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
         
+        if (ansatz() == LinearR12::Ansatz_2) {
 #if INCLUDE_P_mFP
         {
           Ref<MOIndexSpace> focc1 = focc_ribs(spin1);
@@ -316,6 +335,27 @@ R12IntEval::compute_BC_()
                        focc1,focc2);
         }
 #endif // INCLUDE_P_mFm
+        }
+        // Ansatz 3
+        else {
+#if INCLUDE_P_pFA
+        {
+          Ref<MOIndexSpace> forbs1 = fobs_cabs(spin1);
+          Ref<MOIndexSpace> forbs2 = fobs_cabs(spin2);
+	  RefSCMatrix Ptmp;
+          // R_klpr F_pA R_Arij
+          compute_FxF_(Ptmp,spincase2,
+                       occ1_act,occ2_act,
+                       occ1_act,occ2_act,
+                       orbs1,orbs2,
+                       orbs1,orbs2,
+                       forbs1,forbs2);
+          Ptmp.scale(2.0);
+	  P.accumulate(Ptmp);
+        }
+#endif // INCLUDE_P_pFA
+        P.scale(-1.0);
+        }
         
       }
       else {
@@ -327,7 +367,6 @@ R12IntEval::compute_BC_()
       tim_exit(Plabel.c_str());
 
       BC_[s].accumulate(P); P = 0;
-    }
 #endif // INCLUDE_P
 
     // Bra-Ket symmetrize the B(C) contribution

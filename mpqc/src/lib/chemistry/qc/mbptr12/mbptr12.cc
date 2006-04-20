@@ -57,7 +57,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",6,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",7,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -85,6 +85,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
     int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
   }
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 7) {
+    int ansatz; s.get(ansatz); ansatz_ = (LinearR12::Ansatz)ansatz;
+  }
 
   maxnabs_ = 2;
   if (s.version(::class_desc<MBPT2_R12>()) >= 5) {
@@ -103,6 +106,10 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   s.get(r12ints_file_);
   s.get(mp2_corr_energy_);
   s.get(r12_corr_energy_);
+
+  twopdm_grid_ << SavableState::restore_state(s);
+  s.get(plot_pair_function_[0]);
+  s.get(plot_pair_function_[1]);
 }
 
 MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
@@ -273,6 +280,18 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       stdapprox_ = LinearR12::StdApprox_A;
   }
   
+  // Default ansatz is 2
+  int ansatz = keyval->intvalue("ansatz",KeyValValueint(2));
+  switch(ansatz) {
+    case 2: ansatz_ = LinearR12::Ansatz_2; break;
+    case 3: ansatz_ = LinearR12::Ansatz_3; break;
+    default:
+    throw InputError("MBPT2_R12::MBPT2_R12 -- invalid value for keyword ansatz",__FILE__,__LINE__);
+  }
+  if (ansatz_ == LinearR12::Ansatz_3 &&
+      stdapprox_ != LinearR12::StdApprox_C)
+    throw InputError("MBPT2_R12::MBPT2_R12 -- ansatz=3 is only valid when stdapprox=C",__FILE__,__LINE__);
+  
   // Default is to include all integrals
   maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(2)));
   
@@ -336,14 +355,15 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
   delete[] r12ints_str;
   
-  // Must always use disk for now
-#if 0
-  // Make sure that integrals storage method is compatible with standard approximation
-  // If it's a MP2-R12/B calculation or EBC or GBC are not assumed then must use disk
-  const bool must_use_disk = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
-#else
-  const bool must_use_disk = true;
-#endif
+  // Most calculations must use disk for now
+  bool must_use_disk = true;
+  // except MP2
+  {
+    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
+    if (nullptr.nonnull())
+      must_use_disk = false;
+  }
+
   if (must_use_disk && r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_only)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
   if (must_use_disk) {
@@ -372,9 +392,12 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
                    "MBPT2_R12::MBPT2_R12\n"
                  );
   if (twopdm_grid_.nonnull()) {
-    plot_pair_function_ = static_cast<unsigned int>(keyval->intvalue("plot_pair_function",
-                                                                     KeyValValueint(0)
-                                                                    ));
+    plot_pair_function_[0] = static_cast<unsigned int>(keyval->intvalue("plot_pair_function", 0,
+									KeyValValueint(0)
+									));
+    plot_pair_function_[1] = static_cast<unsigned int>(keyval->intvalue("plot_pair_function", 1,
+									KeyValValueint(0)
+									));
   }
   
 }
@@ -403,6 +426,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
+  s.put((int)ansatz_);
   s.put((int)spinadapted_);
   s.put((int)include_mp1_);
   s.put((int)r12ints_method_);
@@ -410,6 +434,10 @@ MBPT2_R12::save_data_state(StateOut& s)
 
   s.put(mp2_corr_energy_);
   s.put(r12_corr_energy_);
+
+  SavableState::save_state(twopdm_grid_.pointer(),s);
+  s.put((int)plot_pair_function_[0]);
+  s.put((int)plot_pair_function_[1]);
 }
 
 void
@@ -453,7 +481,11 @@ MBPT2_R12::print(ostream&o) const
       o << indent << "Standard Approximation: C" << endl;
     break;
   }
-  
+  switch (ansatz_) {
+    case LinearR12::Ansatz_2: o << indent << "Ansatz: 2" << endl; break;
+    case LinearR12::Ansatz_3: o << indent << "Ansatz: 3" << endl; break;
+  }
+
   o << indent << "Max # ABS indices: " << maxnabs_ << endl;
 
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
@@ -638,6 +670,14 @@ LinearR12::StandardApproximation
 MBPT2_R12::stdapprox() const
 {
   return stdapprox_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+LinearR12::Ansatz
+MBPT2_R12::ansatz() const
+{
+  return ansatz_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

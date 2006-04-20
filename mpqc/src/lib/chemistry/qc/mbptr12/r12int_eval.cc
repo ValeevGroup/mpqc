@@ -182,8 +182,14 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
     }
   }
   
-  // WARNING Cannot use R12IntsAcc_MemoryGrp with the current design
-  if (r12info()->ints_method() != R12IntEvalInfo::StoreMethod::posix)
+  // WARNING Can use R12IntsAcc_MemoryGrp only for MP2 computations
+  bool mp2_only = false;
+  {
+    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << r12info()->corrfactor();
+    if (nullptr.nonnull())
+      mp2_only = true;
+  }
+  if (r12info()->ints_method() != R12IntEvalInfo::StoreMethod::posix && !mp2_only)
     throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
   
   init_tforms_();
@@ -1534,9 +1540,12 @@ R12IntEval::compute()
         const SpinCase1 spin1 = case1(spincase2);
         const SpinCase1 spin2 = case2(spincase2);
         
+        // "ABS"-type contraction is used for ansatz 2 ABS/ABS+ method when OBS != RIBS
         Ref<TwoParticleContraction> tpcontract;
         if ((absmethod == LinearR12::ABS_ABS ||
-          absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs)
+             absmethod == LinearR12::ABS_ABSPlus) &&
+            !obs_eq_ribs &&
+            ansatz() == LinearR12::Ansatz_2)
           tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
                                                r12info()->refinfo()->occ(spin1)->rank(),
                                                r12info()->refinfo()->occ(spin2)->rank());
@@ -1554,7 +1563,8 @@ R12IntEval::compute()
         }
       }
       
-      if (!obs_eq_ribs) {
+      // These terms don't contribute to ansatz 3
+      if (!obs_eq_ribs && ansatz() == LinearR12::Ansatz_2) {
         // Compute VXB using new code
         using LinearR12::Direct_Contraction;
         for(int s=0; s<nspincases2(); s++) {
@@ -1596,8 +1606,10 @@ R12IntEval::compute()
       contrib_to_VXB_gebc_vbsneqobs_();
     }
     
-    if (stdapprox() == LinearR12::StdApprox_B ||
-        stdapprox() == LinearR12::StdApprox_C) {
+    // This is app B contribution to B -- only valid for ansatz 2
+    if ((stdapprox() == LinearR12::StdApprox_B ||
+         stdapprox() == LinearR12::StdApprox_C) &&
+        ansatz() == LinearR12::Ansatz_2) {
       compute_BB_();
       if (debug_ > 1)
         for(int s=0; s<nspincases2(); s++)
@@ -1692,12 +1704,16 @@ R12IntEval::compute()
       }
       
       AT2_contrib_to_V_();
-      AF12_contrib_to_B_();
+      // EBC contribution to B only appears in ansatz 2
+      if (ansatz() == LinearR12::Ansatz_2) {
+        AF12_contrib_to_B_();
+      }
     }
 #endif
     
 #if INCLUDE_GBC_CODE
-    if (!gbc()) {
+    // GBC contribution to B only appears in ansatz 2
+    if (!gbc() && ansatz() == LinearR12::Ansatz_2) {
       // These functions assume that virtuals are expanded in the same basis
       // as the occupied orbitals
       if (!obs_eq_vbs)

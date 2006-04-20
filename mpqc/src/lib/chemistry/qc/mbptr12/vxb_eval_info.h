@@ -91,6 +91,7 @@ private:
 
   Ref<LinearR12::CorrelationFactor> corrfactor_;
   LinearR12::StandardApproximation stdapprox_;
+  LinearR12::Ansatz ansatz_;
   LinearR12::ABSMethod abs_method_;
   bool gbc_;
   bool ebc_;
@@ -193,6 +194,7 @@ public:
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
   LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
+  LinearR12::Ansatz ansatz() const { return ansatz_; }
   LinearR12::ABSMethod abs_method() const { return abs_method_; }
   bool gbc() const { return gbc_; }
   bool ebc() const { return ebc_; }

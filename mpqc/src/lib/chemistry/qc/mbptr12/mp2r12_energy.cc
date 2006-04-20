@@ -181,7 +181,7 @@ static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVe
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
 void
-MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
+MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                                     const Ref<TwoBodyGrid>& tbgrid)
 {
   const bool spin_polarized = r12eval()->r12info()->refinfo()->ref()->spin_polarized();
@@ -219,6 +219,21 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
   Ref<MOIndexSpace> occ2 = r12info->refinfo()->occ(spin2);
   Ref<MOIndexSpace> ribs1 = r12info->ribs_space(spin1);
   Ref<MOIndexSpace> ribs2 = r12info->ribs_space(spin2);
+  
+  // Pair index
+  unsigned int ij;
+  switch(spincase2) {
+  case AlphaBeta:  ij = i*occ2_act->rank() + j; break;
+  case AlphaAlpha:
+  case BetaBeta:
+    // Cannot violate Pauli exclusion principle
+    if (i == j)
+      return;
+    const unsigned int ii = std::max(i,j);
+    const unsigned int jj = std::min(i,j);
+    ij = ii*(ii-1)/2 + jj;
+    break;
+  }
 
   using LinearR12::CorrelationFactor;
   const Ref<CorrelationFactor> corrfactor = r12info->corrfactor();
@@ -260,7 +275,7 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
   case BetaBeta: spinlabel = "bb"; break;
   }
   std::stringstream output_file_name;
-  output_file_name << "pair_function." << tbgrid->name() << "." << spinlabel << "."
+  output_file_name << SCFormIO::default_basename() << ".pair_function." << tbgrid->name() << "." << spinlabel << "."
                    << ij << ".txt";
   ofstream ofile(output_file_name.str().c_str());
   

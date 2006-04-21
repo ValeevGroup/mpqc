@@ -149,8 +149,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_B ||
-          stdapprox() == LinearR12::StdApprox_C)
+      if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_C)
         BC_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
@@ -217,8 +216,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_B ||
-          stdapprox() == LinearR12::StdApprox_C)
+      if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_C)
         BC_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
@@ -395,9 +393,8 @@ R12IntEval::B(SpinCase2 S) {
 
 RefSymmSCMatrix
 R12IntEval::BB(SpinCase2 S) {
-  if (stdapprox() != LinearR12::StdApprox_B &&
-      stdapprox() != LinearR12::StdApprox_C)
-    throw ProgrammingError("R12IntEval::BB() -- called but standard approximation is not B or C",__FILE__,__LINE__);
+  if (stdapprox() != LinearR12::StdApprox_B)
+    throw ProgrammingError("R12IntEval::BB() -- called but standard approximation is not B",__FILE__,__LINE__);
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(BB_[AlphaAlpha],BB_[AlphaBeta],
@@ -555,7 +552,7 @@ R12IntEval::init_intermeds_()
     V_[s].assign(0.0);
     X_[s].assign(0.0);
     B_[s].assign(0.0);
-    if (stdapprox() == LinearR12::StdApprox_B || stdapprox() == LinearR12::StdApprox_C)
+    if (stdapprox() == LinearR12::StdApprox_B)
       BB_[s].assign(0.0);
     if (stdapprox() == LinearR12::StdApprox_C)
       BC_[s].assign(0.0);
@@ -1606,10 +1603,14 @@ R12IntEval::compute()
       contrib_to_VXB_gebc_vbsneqobs_();
     }
     
+    // Contribution from X to B in approximation A'' is more complicated than in other methods
+    // because exchange is completely skipped
+    if (stdapprox() == LinearR12::StdApprox_App)
+      compute_BApp_();
+    
     // This is app B contribution to B -- only valid for ansatz 2
-    if ((stdapprox() == LinearR12::StdApprox_B ||
-         stdapprox() == LinearR12::StdApprox_C) &&
-        ansatz() == LinearR12::Ansatz_2) {
+    if ((stdapprox() == LinearR12::StdApprox_B) &&
+         ansatz() == LinearR12::Ansatz_2) {
       compute_BB_();
       if (debug_ > 1)
         for(int s=0; s<nspincases2(); s++)
@@ -2024,7 +2025,7 @@ R12IntEval::compute()
                                           occ1_act,
                                           r12info()->refinfo()->orbs(spin1),
                                           occ2_act,
-                                          r12info()->refinfo()->orbs(spin2),0);
+                                          r12info()->refinfo()->orbs(spin2),1);
         fill_container(tform_creator,tforms);
       }
       else {

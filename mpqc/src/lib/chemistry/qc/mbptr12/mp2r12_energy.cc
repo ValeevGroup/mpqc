@@ -445,24 +445,14 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   
   std::string SA_str;
   switch (stdapprox_) {
-    case LinearR12::StdApprox_A:
-      SA_str = "A";
-      break;
-
-    case LinearR12::StdApprox_Ap:
-      SA_str = "A'";
-      break;
-
-    case LinearR12::StdApprox_B:
-      SA_str = "B";
-      break;
-
-    case LinearR12::StdApprox_C:
-      SA_str = "C";
-      break;
-
+    case LinearR12::StdApprox_A:   SA_str = "A";   break;
+    case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
+    case LinearR12::StdApprox_App: SA_str = "A''";  break;
+    case LinearR12::StdApprox_B:   SA_str = "B";   break;
+    case LinearR12::StdApprox_C:   SA_str = "C";   break;
     default:
-      throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
+      throw InputError("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid",
+                       __FILE__,__LINE__);
   }
 
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();

@@ -193,7 +193,8 @@ MP2R12Energy::compute()
                     continue;
                   
                   double fx;
-                  if (stdapprox_ != LinearR12::StdApprox_C)
+                  if (stdapprox_ != LinearR12::StdApprox_C &&
+                      stdapprox_ != LinearR12::StdApprox_App)
                     fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
                                 - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
                              * X.get_element(kl,ow);

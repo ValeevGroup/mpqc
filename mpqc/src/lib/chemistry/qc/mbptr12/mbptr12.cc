@@ -66,7 +66,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12eval_ << SavableState::restore_state(s);
   r12a_energy_ << SavableState::restore_state(s);
   r12ap_energy_ << SavableState::restore_state(s);
+  r12app_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
+  r12c_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
   vir_basis_ << SavableState::restore_state(s);
 
@@ -260,6 +262,12 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 	    !strcmp(sa_string,"a'") ) {
     stdapprox_ = LinearR12::StdApprox_Ap;
   }
+  else if ( !strcmp(sa_string,"App") ||
+	    !strcmp(sa_string,"app") ||
+	    !strcmp(sa_string,"A''") ||
+	    !strcmp(sa_string,"a''") ) {
+    stdapprox_ = LinearR12::StdApprox_App;
+  }
   else if ( !strcmp(sa_string,"B") ||
 	    !strcmp(sa_string,"b") ) {
     stdapprox_ = LinearR12::StdApprox_B;
@@ -273,7 +281,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
 
-  // if no explicit correlation then set to stdapprox to Acom
+  // if no explicit correlation then set stdapprox to A
   {
     Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
     if (nullptr.nonnull())
@@ -383,7 +391,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12eval_ = 0;
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
+  r12app_energy_ = 0;
   r12b_energy_ = 0;
+  r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   r12_corr_energy_ = 0.0;
   
@@ -404,10 +414,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
 MBPT2_R12::~MBPT2_R12()
 {
-  r12eval_ = 0;
-  r12a_energy_ = 0;
-  r12ap_energy_ = 0;
-  r12b_energy_ = 0;
 }
 
 void
@@ -417,7 +423,9 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12eval_.pointer(),s);
   SavableState::save_state(r12a_energy_.pointer(),s);
   SavableState::save_state(r12ap_energy_.pointer(),s);
+  SavableState::save_state(r12app_energy_.pointer(),s);
   SavableState::save_state(r12b_energy_.pointer(),s);
+  SavableState::save_state(r12c_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
   SavableState::save_state(vir_basis_.pointer(),s);
   s.put((int)gbc_);
@@ -473,6 +481,9 @@ MBPT2_R12::print(ostream&o) const
     break;
     case LinearR12::StdApprox_Ap :
       o << indent << "Standard Approximation: A'" << endl;
+    break;
+    case LinearR12::StdApprox_App :
+      o << indent << "Standard Approximation: A''" << endl;
     break;
     case LinearR12::StdApprox_B :
       o << indent << "Standard Approximation: B" << endl;
@@ -532,8 +543,7 @@ MBPT2_R12::density()
 void
 MBPT2_R12::compute()
 {
-  if (std::string(reference_->integral()->class_name())
-      !=integral()->class_name()) {
+  if (std::string(reference_->integral()->class_name()) != integral()->class_name()) {
       FeatureNotImplemented ex(
           "cannot use a reference with a different Integral specialization",
           __FILE__, __LINE__, class_desc());
@@ -551,7 +561,7 @@ MBPT2_R12::compute()
   reference_->set_desired_value_accuracy(desired_value_accuracy()
                                          / ref_to_mp2r12_acc_);
 
-  compute_energy_a_();
+  compute_energy_();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -562,7 +572,9 @@ MBPT2_R12::obsolete()
   r12eval_ = 0;
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
+  r12app_energy_ = 0;
   r12b_energy_ = 0;
+  r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   r12_corr_energy_ = 0.0;
   MBPT2::obsolete();

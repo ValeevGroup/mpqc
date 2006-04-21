@@ -66,6 +66,7 @@ class MBPT2_R12: public MBPT2 {
         can be evaluated with the same set of intermediates */
     Ref<MP2R12Energy> r12a_energy_;
     Ref<MP2R12Energy> r12ap_energy_;
+    Ref<MP2R12Energy> r12app_energy_;
     Ref<MP2R12Energy> r12b_energy_;
     Ref<MP2R12Energy> r12c_energy_;
 
@@ -100,8 +101,8 @@ class MBPT2_R12: public MBPT2 {
     // This checks if the integral factory is suitable for R12 calculations
     void check_integral_factory_();
 
-    // calculate the MP2-R12 energy in std approximations A and A'
-    void compute_energy_a_();
+    // calculate the MP2-R12 energy (or energies, depending on which approximation is chosen)
+    void compute_energy_();
 
   protected:
     // implement the Compute::compute() function,
@@ -148,11 +149,18 @@ class MBPT2_R12: public MBPT2 {
           This will cause MP2-R12/A energies to be computed also.
           Only energies can be computed with the MP2-R12/A' method.
 
+          <dt><tt>A''</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
+	  with linear R12 terms in standard approximation A'' (MP2-R12/A'').
+          Only energies can be computed with the MP2-R12/A'' method.
+
           <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation B.
+          This will cause A and A' energies to be computed also.
+          Only energies can be computed with the MP2-R12/B method.
 
           <dt><tt>C</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation C.
+          Only energies can be computed with the MP2-R12/C method.
 
         </dl>
         

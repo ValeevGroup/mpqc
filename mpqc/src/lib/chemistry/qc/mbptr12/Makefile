@@ -55,7 +55,7 @@ CXXSRCS = mbptr12.cc \
   twoparticlecontraction.cc spin.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
-  creator.cc approxC.cc
+  creator.cc approxC.cc approxApp.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

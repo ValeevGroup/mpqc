@@ -39,7 +39,7 @@ using namespace std;
 using namespace sc;
 
 void
-MBPT2_R12::compute_energy_a_()
+MBPT2_R12::compute_energy_()
 {
   tim_enter("mp2-f12 energy");
 
@@ -70,73 +70,49 @@ MBPT2_R12::compute_energy_a_()
   if (r12info->ansatz() != LinearR12::Ansatz_3) {
 
     // MP2-F12/A
-    tim_enter("mp2-f12/a pair energies");
-    if (r12a_energy_.null())
-      r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
-    r12a_energy_->print_pair_energies(spinadapted_);
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-    if (twopdm_grid_.nonnull()) {
-      if (stdapprox_ == LinearR12::StdApprox_A) {
-	for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
-	  r12a_energy_->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
-					      static_cast<SpinCase2>(sc2),
-					      twopdm_grid_);
-	}
-      }
+    if (stdapprox_ == LinearR12::StdApprox_A ||
+        stdapprox_ == LinearR12::StdApprox_Ap ||
+        stdapprox_ == LinearR12::StdApprox_B) {
+      tim_enter("mp2-f12/a pair energies");
+      if (r12a_energy_.null())
+        r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
+      r12a_energy_->print_pair_energies(spinadapted_);
+      etotal = r12a_energy_->energy();
+      tim_exit("mp2-f12/a pair energies");
     }
-#endif
-    etotal = r12a_energy_->energy();
-    tim_exit("mp2-f12/a pair energies");
-
+    
     // MP2-F12/A'
     if (stdapprox_ == LinearR12::StdApprox_Ap ||
-        stdapprox_ == LinearR12::StdApprox_B  ||
-        stdapprox_ == LinearR12::StdApprox_C) {
+        stdapprox_ == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a' pair energies");
       if (r12ap_energy_.null())
         r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
       r12ap_energy_->print_pair_energies(spinadapted_);
-      
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-      if (twopdm_grid_.nonnull()) {
-        if (stdapprox_ == LinearR12::StdApprox_Ap) {
-          for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
-            r12ap_energy_->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
-						 static_cast<SpinCase2>(sc2),
-						 twopdm_grid_);
-          }
-        }
-      }
-#endif
-      
       etotal = r12ap_energy_->energy();
       tim_exit("mp2-f12/a' pair energies");
     }
 
     // MP2-F12/B
-    if (stdapprox_ == LinearR12::StdApprox_B ||
-    stdapprox_ == LinearR12::StdApprox_C) {
+    if (stdapprox_ == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/b pair energies");
       if (r12b_energy_.null())
         r12b_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_B,debug_);
       r12b_energy_->print_pair_energies(spinadapted_);
-      
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-      if (twopdm_grid_.nonnull()) {
-        if (stdapprox_ == LinearR12::StdApprox_B) {
-	  for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
-	    r12b_energy_->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
-						static_cast<SpinCase2>(sc2),
-						twopdm_grid_);
-	  }
-	}
-      }
-#endif
-      
       etotal = r12b_energy_->energy();
       tim_exit("mp2-f12/b pair energies");
     }
-  }
+    
+    // MP2-F12/A''
+    if (stdapprox_ == LinearR12::StdApprox_App) {
+      tim_enter("mp2-f12/a'' pair energies");
+      if (r12app_energy_.null())
+        r12app_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_App,debug_);
+      r12app_energy_->print_pair_energies(spinadapted_);
+      etotal = r12app_energy_->energy();
+      tim_exit("mp2-f12/a'' pair energies");
+    }
+
+  } // end of != ansatz_3
   
   // MP2-F12/C
   if (stdapprox_ == LinearR12::StdApprox_C) {
@@ -144,19 +120,6 @@ MBPT2_R12::compute_energy_a_()
     if (r12c_energy_.null())
       r12c_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_C,debug_);
     r12c_energy_->print_pair_energies(spinadapted_);
-    
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-    if (twopdm_grid_.nonnull()) {
-      if (stdapprox_ == LinearR12::StdApprox_C) {
-	for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
-	  r12c_energy_->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
-					      static_cast<SpinCase2>(sc2),
-					      twopdm_grid_);
-	}
-      }
-    }
-#endif
-    
     etotal = r12c_energy_->energy();
     tim_exit("mp2-f12/c pair energies");
   }
@@ -167,6 +130,25 @@ MBPT2_R12::compute_energy_a_()
   set_energy(etotal);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
                             *ref_to_mp2_acc);
+  
+#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
+  if (twopdm_grid_.nonnull()) {
+    Ref<MP2R12Energy> wfn_to_plot;
+    switch(stdapprox()) {
+      case LinearR12::StdApprox_A:    wfn_to_plot = r12a_energy_;   break;
+      case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
+      case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
+      case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;
+      case LinearR12::StdApprox_C:    wfn_to_plot = r12c_energy_;   break;
+    }
+    for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
+      wfn_to_plot->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
+                                         static_cast<SpinCase2>(sc2),
+                                         twopdm_grid_);
+    }
+  }
+#endif
+    
   
   return;
 }

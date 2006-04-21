@@ -377,6 +377,9 @@ class R12IntEval : virtual public SavableState {
   /** Compute B using standard approximation C */
   void compute_BC_();
 
+  /** Compute B using standard approximation A'' -- exchange is dropped completely! */
+  void compute_BApp_();
+
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
 

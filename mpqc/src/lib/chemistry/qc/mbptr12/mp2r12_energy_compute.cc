@@ -39,6 +39,23 @@ using namespace sc;
 
 #define USE_INVERT 0
 
+namespace {
+  // Extracts the diagonal d of matrix A. d doesn't have to be preallocated
+  void diagonal(const RefSCMatrix& A, RefSCVector& d);
+  // Extracts the diagonal d of matrix A. d doesn't have to be preallocated
+  void diagonal(const RefSymmSCMatrix& A, RefSCVector& d);
+  // Puts the diagonal d into matrix A.
+  void diagonal(const RefSCVector& d, RefSCMatrix& A);
+  // Prints A
+  template <typename Matrix> void print(bool diag_only, const char* label, Matrix A);
+  // Inverts A in-place
+  template <typename Matrix> void invert(bool diag_only, Matrix A);
+  // Solves A*X = B
+  void solve_linear_system(bool diag_only, const RefSymmSCMatrix& A, RefSCMatrix& X, const RefSCMatrix& B);
+  // computes y = A x
+  void times(bool diag_only, const RefSymmSCMatrix& A, const RefSCMatrix& x, RefSCMatrix& y);
+};
+
 void
 MP2R12Energy::compute()
 {
@@ -55,6 +72,8 @@ MP2R12Energy::compute()
   const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
                           (stdapprox_ != LinearR12::StdApprox_B &&
                            stdapprox_ != LinearR12::StdApprox_C);
+  // Diagonal ansatz?
+  const bool diag = r12info->ansatz()->diag();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   
@@ -130,10 +149,9 @@ MP2R12Energy::compute()
       memset(ef12_vec,0,sizeof(double)*noo);
       
       if (debug_ > 1) {
-        V.print(prepend_spincase(spincase2,"V matrix").c_str());
-        B.print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str());
-        //if (ebc == false)
-        //  A.print("A matrix");
+        ::print(diag,prepend_spincase(spincase2,"V matrix").c_str(),V);
+        ::print(diag,prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B);
+        // A is too big to print out
       }
       
       // Allocate the B matrix:
@@ -143,32 +161,36 @@ MP2R12Energy::compute()
       if (stdapprox_ == LinearR12::StdApprox_A) {
 #if USE_INVERT
         B_ij->assign(B);
-        B_ij->gen_invert_this();
+        invert(diag,B_ij);
         if (debug_ > 1)
-          B_ij.print("Inverse MP2-F12/A B matrix");
+          ::print(diag,"Inverse MP2-F12/A B matrix",B_ij);
+        RefSCMatrix C = C_[spin].clone();
+        times(diag,B_ij,V,C);
+        C_[spin].assign(C);  C = 0;
+        C_[spin].scale(-1.0);
 #else
         // solve B * C = V
         RefSCMatrix C = C_[spin].clone();
-        sc::exp::lapack_linsolv_symmnondef(B, C, V);
+        solve_linear_system(diag, B, C, V);
         C_[spin].assign(C);  C = 0;
         C_[spin].scale(-1.0);
 #endif
       }
-      
-      SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-      for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
-        const int ij = ij_iter.ij();
-        if (ij%ntasks != me)
-          continue;
-        const int i = ij_iter.i();
-        const int j = ij_iter.j();
-        
-        RefSCVector V_ij = V.get_column(ij);
-        
-        // In approximations A', B, or C matrices B are pair-specific:
-        // app A' or B: form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-        // app C:       form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
-        if (stdapprox_ != LinearR12::StdApprox_A) {
+      // Approximations other than A
+      else {
+        SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+        for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
+          const int ij = ij_iter.ij();
+          if (ij%ntasks != me)
+            continue;
+          const int i = ij_iter.i();
+          const int j = ij_iter.j();
+          
+          // 
+          
+          // In approximations A', B, or C matrices B are pair-specific:
+          // app A' or B: form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+          // app C:       form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
           B_ij.assign(B);
           
           for(int f=0; f<num_f12; f++) {
@@ -197,7 +219,7 @@ MP2R12Energy::compute()
                       stdapprox_ != LinearR12::StdApprox_App)
                     fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
                                 - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
-                             * X.get_element(kl,ow);
+                      * X.get_element(kl,ow);
                   else
                     fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
                   
@@ -214,8 +236,8 @@ MP2R12Energy::compute()
                         const int d = cd_iter.j();
                         
                         fy -= 0.5*( A.get_element(kl,cd)*Ac.get_element(ow,cd) + Ac.get_element(kl,cd)*A.get_element(ow,cd) )/
-                        (evals_act_vir1[c] + evals_act_vir2[d]
-                        - evals_act_occ1[i] - evals_act_occ2[j]);
+                          (evals_act_vir1[c] + evals_act_vir2[d]
+                           - evals_act_occ1[i] - evals_act_occ2[j]);
                       }
                     }
                     else {
@@ -225,7 +247,7 @@ MP2R12Energy::compute()
                         const int d = cd_iter.j();
                         
                         fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                        - evals_act_occ1[i] - evals_act_occ2[j]);
+                                                                         - evals_act_occ1[i] - evals_act_occ2[j]);
                       }
                     }
                     
@@ -236,43 +258,34 @@ MP2R12Energy::compute()
             }
           }
           if (debug_ > 1)
-            B_ij.print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str());
-          
-          #if USE_INVERT
-          B_ij->gen_invert_this();
-          
-          if (debug_ > 1)
-            B_ij.print("Inverse MP2-F12 B matrix");
-          #endif
-          
-        }
-        
-        /// Block in which I compute ef12
-        {
+            ::print(diag,prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
+
 #if USE_INVERT
-          // The r12 amplitudes B^-1 * V
-          RefSCVector Cij = -1.0*(B_ij * V_ij);
-          for(int kl=0; kl<nxc; kl++)
-            C_[spin].set_element(kl,ij,Cij.get_element(kl));
+          invert(diag,B_ij);
+          if (debug_ > 1)
+            ::print(diag,"Inverse MP2-F12 B matrix",B_ij);
+#endif
+        
+          /// Block in which I compute ef12
+          {
+            RefSCVector V_ij = V.get_column(ij);
+#if USE_INVERT
+            // The r12 amplitudes B^-1 * V
+            RefSCVector Cij = -1.0*(B_ij * V_ij);
+            for(int kl=0; kl<nxc; kl++)
+              C_[spin].set_element(kl,ij,Cij.get_element(kl));
 #else
-          RefSCVector Cij = V_ij.clone();
-          if (stdapprox_ == LinearR12::StdApprox_A) {
-            double* v = new double[Cij.n()];
-            C_[spin].get_column(ij).convert(v);
-            Cij.assign(v);
-            delete[] v;
-          }
-          else {
+            RefSCVector Cij = V_ij.clone();
             // solve B * C = V
             Cij = V_ij.clone();
             sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
             Cij.scale(-1.0);
             for(int kl=0; kl<nxc; kl++)
               C_[spin].set_element(kl,ij,Cij.get_element(kl));
-          }
 #endif
-          double e_ij = V_ij.dot(Cij);
-          ef12_vec[ij] = e_ij;
+            double e_ij = V_ij.dot(Cij);
+            ef12_vec[ij] = e_ij;
+          }
         }
       }
       B_ij = 0;
@@ -302,3 +315,123 @@ MP2R12Energy::compute()
   return;
 }
 
+namespace {
+
+  // Extracts the diagonal d of a symmetric matrix A
+  void diagonal(const RefSymmSCMatrix& A, RefSCVector& d)
+  {
+    const int n = A.dim().n();
+    // allocate d if necessary
+    if (d.null())
+      d = A.kit()->vector(A.dim());
+    else {
+      if (d.dim().n() != A.dim().n())
+        throw ProgrammingError("anonymous::diagonal() -- dimensions of d and A don't match",__FILE__,__LINE__);
+    }
+    for(int i=0; i<n; i++)
+      d[i] = A.get_element(i,i);
+  }
+
+  // Extracts the "diagonal" d of a matrix A -- the diagonal is defined as concatenation of diagonals of square blocks
+  void diagonal(const RefSCMatrix& A, RefSCVector& d)
+  {
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    const int nmin = std::min(nrow,ncol);
+    if ( nrow%nmin && ncol%nmin)
+      throw ProgrammingError("anonymous::diagonal() -- dimensions of A are not perfect divisors of each other");
+    const int nmax = std::max(nrow,ncol);
+    
+    // allocate d if necessary
+    if (d.null())
+      d = A.kit()->vector(new SCDimension(nmax));
+    for(int i=0; i<nmax; i++)
+      d[i] = A.get_element(i%nrow,i%ncol);
+  }
+
+  // Puts back the "diagonal" d into matrix A -- the diagonal is defined as concatenation of diagonals of square blocks
+  void diagonal(const RefSCVector& d, RefSCMatrix& A)
+  {
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    const int nmin = std::min(nrow,ncol);
+    if ( nrow%nmin && ncol%nmin)
+      throw ProgrammingError("anonymous::diagonal() -- dimensions of A are not perfect divisors of each other");
+    const int nmax = std::max(nrow,ncol);
+    if (nmax != d.dim().n())
+      throw ProgrammingError("anonymous::diagonal() -- dimension of d and A do not match",__FILE__,__LINE__);
+
+    A.assign(0.0);
+    for(int i=0; i<nmax; i++)
+      A.set_element(i%nrow,i%ncol,d[i]);
+  }
+
+  // Prints out matrix A
+  template <typename Matrix> void print(bool diag_only, const char* label, Matrix& A) {
+    if (!diag_only)
+      A.print(label);
+    else {
+      RefSCVector d;
+      diagonal(A,d);
+      d.print(label);
+    }
+  }
+  
+  template <typename Matrix> void invert(bool diag_only, Matrix& A) {
+    if (!diag_only)
+      A->gen_invert_this();
+    else {
+      RefSCVector d;
+      diagonal(A,d);
+      const int nd = d.dim().d();
+      for(int i=0; i<nd; i++) {
+        const double oovalue = 1.0/d.get_element(i);
+        d.set_element(oovalue);
+      }
+      diagonal(d,A);
+    }
+  }
+
+  // Solves A*X = B
+  void solve_linear_system(bool diag_only, const RefSymmSCMatrix& A, RefSCMatrix& X, const RefSCMatrix& B)
+  {
+    if (!diag_only)
+      sc::exp::lapack_linsolv_symmnondef(A, X, B);
+    else {
+      RefSCVector Ad; diagonal(A,Ad);
+      RefSCVector Xd; diagonal(X,Xd);
+      RefSCVector Bd; diagonal(B,Bd);
+      const int n = Ad.dim().n();
+      if (n != Xd.dim().n() || n != Bd.dim().n())
+        throw ProgrammingError("anonymous::solve_linear_system() -- dimensions don't match");
+      for(int i=0; i<n; i++) {
+        const double a = Ad.get_element(i);
+        const double b = Bd.get_element(i);
+        const double tol = 1.0e-10;
+        if (a < tol)
+          throw ToleranceExceeded("ananymous::solve_linear_system() -- a is below tolerance or negative",__FILE__,__LINE__,tol,a);
+        Xd.set_element(i,b/a);
+      }
+      diagonal(Xd,X);
+    }
+  }
+
+  // computes y = A x
+  void times(bool diag_only, const RefSymmSCMatrix& A, const RefSCMatrix& x, RefSCMatrix& y)
+  {
+    if (!diag_only)
+      y = A*x;
+    else {
+      RefSCVector Ad; diagonal(A,Ad);
+      RefSCVector xd; diagonal(A,xd);
+      RefSCVector yd = xd.kit()->vector(xd.dim());
+      const int n = Ad.dim().n();
+      if (n != xd.dim().n())
+        throw ProgrammingError("anonymous::times() -- dimensions don't match");
+      for(int i=0; i<n; i++) {
+        yd(i) = Ad(i) * xd(i);
+      }
+      diagonal(yd,y);
+    }
+  }
+}

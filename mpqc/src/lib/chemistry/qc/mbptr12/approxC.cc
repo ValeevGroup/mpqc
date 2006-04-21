@@ -163,7 +163,7 @@ R12IntEval::compute_BC_()
       RefSCMatrix P;
       
 #if INCLUDE_P_PKP
-      // R_klPQ K_QR R_PRij is included with ansatz 2 and 3
+      // R_klPQ K_QR R_PRij is included with projectors 2 and 3
       {
       Ref<MOIndexSpace> kribs1 = kribs_ribs(spin1);
       Ref<MOIndexSpace> kribs2 = kribs_ribs(spin2);
@@ -176,7 +176,7 @@ R12IntEval::compute_BC_()
       }
 #endif // INCLUDE_P_PKP
 
-if (ansatz()->projector() == LinearR12::Projector_2) {
+      if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
       {
       Ref<MOIndexSpace> fribs1 = fribs_ribs(spin1);

@@ -66,8 +66,8 @@ MBPT2_R12::compute_energy_()
   // Now we can compute and print pair energies
   //
   
-  // can use ansatz 3 only for app C
-  if (r12info->ansatz() != LinearR12::Ansatz_3) {
+  // can use projector 3 only for app C
+  if (r12info->ansatz()->projector() != LinearR12::Projector_3) {
 
     // MP2-F12/A
     if (stdapprox_ == LinearR12::StdApprox_A ||

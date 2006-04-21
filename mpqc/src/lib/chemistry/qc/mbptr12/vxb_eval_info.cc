@@ -133,7 +133,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     int ebc; si.get(ebc); ebc_ = (bool) ebc;
     int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
     if (si.version(::class_desc<R12IntEvalInfo>()) >= 8) {
-      int ansatz; si.get(ansatz); ansatz_ = (LinearR12::Ansatz) ansatz;
+      ansatz_ << SavableState::restore_state(si);
     }
     int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
     int includemp1; si.get(includemp1); include_mp1_ = (bool) includemp1;
@@ -186,7 +186,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)gbc_);
   so.put((int)ebc_);
   so.put((int)stdapprox_);
-  so.put((int)ansatz_);
+  SavableState::save_state(ansatz_.pointer(),so);
   so.put((int)spinadapted_);
   so.put((int)include_mp1_);
   

@@ -37,6 +37,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/ansatz.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
@@ -91,7 +92,7 @@ private:
 
   Ref<LinearR12::CorrelationFactor> corrfactor_;
   LinearR12::StandardApproximation stdapprox_;
-  LinearR12::Ansatz ansatz_;
+  Ref<LinearR12Ansatz> ansatz_;
   LinearR12::ABSMethod abs_method_;
   bool gbc_;
   bool ebc_;
@@ -194,7 +195,7 @@ public:
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
   LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
-  LinearR12::Ansatz ansatz() const { return ansatz_; }
+  const Ref<LinearR12Ansatz>& ansatz() const { return ansatz_; }
   LinearR12::ABSMethod abs_method() const { return abs_method_; }
   bool gbc() const { return gbc_; }
   bool ebc() const { return ebc_; }

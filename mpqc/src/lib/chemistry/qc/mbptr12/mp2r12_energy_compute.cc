@@ -108,7 +108,7 @@ MP2R12Energy::compute()
         }
       }
       
-      // In Klopper-Samson method, two kinds of A are used: app B (I replace with mine A) and app XX (mine Ac)
+      // In Klopper-Samson method, two kinds of A are used: app B (I replace with my A) and app XX (my Ac)
       RefSCMatrix A, Ac;
       if (ebc == false) {
         A = r12eval()->A(spincase2);

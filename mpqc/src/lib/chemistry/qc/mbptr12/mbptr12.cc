@@ -88,7 +88,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   }
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   if (s.version(::class_desc<MBPT2_R12>()) >= 7) {
-    int ansatz; s.get(ansatz); ansatz_ = (LinearR12::Ansatz)ansatz;
+    ansatz_ << SavableState::restore_state(s);
   }
 
   maxnabs_ = 2;
@@ -288,17 +288,16 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       stdapprox_ = LinearR12::StdApprox_A;
   }
   
-  // Default ansatz is 2
-  int ansatz = keyval->intvalue("ansatz",KeyValValueint(2));
-  switch(ansatz) {
-    case 2: ansatz_ = LinearR12::Ansatz_2; break;
-    case 3: ansatz_ = LinearR12::Ansatz_3; break;
-    default:
-    throw InputError("MBPT2_R12::MBPT2_R12 -- invalid value for keyword ansatz",__FILE__,__LINE__);
-  }
-  if (ansatz_ == LinearR12::Ansatz_3 &&
+  ansatz_ = require_dynamic_cast<LinearR12Ansatz*>(
+    keyval->describedclassvalue("ansatz").pointer(),
+    "MBPT2_R12::MBPT2_R12\n"
+    );
+  // Default constructor for LinearR12Ansatz specifies the default
+  if (ansatz_.null())
+    ansatz_ = new LinearR12Ansatz;
+  if (ansatz()->projector() == LinearR12::Projector_3 &&
       stdapprox_ != LinearR12::StdApprox_C)
-    throw InputError("MBPT2_R12::MBPT2_R12 -- ansatz=3 is only valid when stdapprox=C",__FILE__,__LINE__);
+    throw InputError("MBPT2_R12::MBPT2_R12 -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);
   
   // Default is to include all integrals
   maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(2)));
@@ -434,7 +433,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
-  s.put((int)ansatz_);
+  SavableState::save_state(ansatz_.pointer(),s);
   s.put((int)spinadapted_);
   s.put((int)include_mp1_);
   s.put((int)r12ints_method_);
@@ -492,10 +491,7 @@ MBPT2_R12::print(ostream&o) const
       o << indent << "Standard Approximation: C" << endl;
     break;
   }
-  switch (ansatz_) {
-    case LinearR12::Ansatz_2: o << indent << "Ansatz: 2" << endl; break;
-    case LinearR12::Ansatz_3: o << indent << "Ansatz: 3" << endl; break;
-  }
+  ansatz()->print(o);
 
   o << indent << "Max # ABS indices: " << maxnabs_ << endl;
 
@@ -686,7 +682,7 @@ MBPT2_R12::stdapprox() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-LinearR12::Ansatz
+const Ref<LinearR12Ansatz>&
 MBPT2_R12::ansatz() const
 {
   return ansatz_;

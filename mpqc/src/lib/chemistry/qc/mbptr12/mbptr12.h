@@ -47,6 +47,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
+#include <chemistry/qc/mbptr12/ansatz.h>
 
 namespace sc {
 
@@ -84,7 +85,7 @@ class MBPT2_R12: public MBPT2 {
     double r12_corr_energy_;
     Ref<LinearR12::CorrelationFactor> corrfactor_;
     LinearR12::StandardApproximation stdapprox_;
-    LinearR12::Ansatz ansatz_;
+    Ref<LinearR12Ansatz> ansatz_;
     LinearR12::ABSMethod abs_method_;
     unsigned int maxnabs_;
     R12IntEvalInfo::StoreMethod::type r12ints_method_;
@@ -164,8 +165,7 @@ class MBPT2_R12: public MBPT2 {
 
         </dl>
         
-        <dt><tt>ansatz</tt><dd> This keyword specifies the ansatz. Valid values
-        are 2 and 3. The default is 2. Ansatz 3 can only be used with approximation C.
+        <dt><tt>ansatz</tt><dd> This object specifies the ansatz (see LinearR12Ansatz).
         
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
@@ -269,7 +269,7 @@ class MBPT2_R12: public MBPT2 {
     bool ebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
-    LinearR12::Ansatz ansatz() const;
+    const Ref<LinearR12Ansatz>& ansatz() const;
     bool spinadapted() const;
     bool ks_ebcfree() const;
     bool omit_P() const;

@@ -176,7 +176,7 @@ R12IntEval::compute_BC_()
       }
 #endif // INCLUDE_P_PKP
 
-      if (ansatz() == LinearR12::Ansatz_2) {
+if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
       {
       Ref<MOIndexSpace> fribs1 = fribs_ribs(spin1);
@@ -272,7 +272,7 @@ R12IntEval::compute_BC_()
         Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
         Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
         
-        if (ansatz() == LinearR12::Ansatz_2) {
+        if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFP
         {
           Ref<MOIndexSpace> focc1 = focc_ribs(spin1);

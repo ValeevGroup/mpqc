@@ -80,7 +80,7 @@ void
 MP2R12Energy::init_()
 {
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<SCMatrixKit> kit = r12info->matrixkit();
+  Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {

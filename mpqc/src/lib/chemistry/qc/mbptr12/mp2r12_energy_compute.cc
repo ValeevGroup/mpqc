@@ -154,6 +154,7 @@ MP2R12Energy::compute()
       
       if (same_B_for_all_pairs) {
         RefSymmSCMatrix B_ij = B.clone();
+	B_ij.assign(B);
         SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
         for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
           const int ij = ij_iter.ij();
@@ -170,12 +171,11 @@ MP2R12Energy::compute()
               
               // contribution from X still appears in approximations C and A''
               if (stdapprox_ != LinearR12::StdApprox_A) {
-                double fx;
                 if (stdapprox_ == LinearR12::StdApprox_C ||
-                  stdapprox_ == LinearR12::StdApprox_App)
-                  fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(ijf,ijg);
-                
-                B_ij.accumulate_element(ijf,ijg,fx);
+		    stdapprox_ == LinearR12::StdApprox_App) {
+                  double fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(ijf,ijg);
+                  B_ij.accumulate_element(ijf,ijg,fx);
+		}
               }
                   
               // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
@@ -212,8 +212,6 @@ MP2R12Energy::compute()
         if (debug_ > 1)
           util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
 #if USE_INVERT
-        RefSymmSCMatrix B_ij = B.clone();
-        B_ij->assign(B);
         util->invert(B_ij);
         if (debug_ > 1)
           util->print("Inverse MP2-F12/A B matrix",B_ij);
@@ -224,18 +222,12 @@ MP2R12Energy::compute()
 #else
         // solve B * C = V
         RefSCMatrix C = C_[spin].clone();
-        util->solve_linear_system(B, C, V);
+        util->solve_linear_system(B_ij, C, V);
         C_[spin].assign(C);  C = 0;
         C_[spin].scale(-1.0);
 #endif
       }
       // B is pair specific
-      //
-      // NOTE diagonal ansatz could be implemented using a separate piece of code
-      //      (only one loop over ij is needed) -- instead I just continue loops until
-      //      ij == kl = ow. This is wasteful but in big scheme of things the extra
-      //      cost is nothing. Redesign would achieve so little aside from good design
-      //      there is simply no point in being efficient here.
       //
       else {
         RefSymmSCMatrix B_ij = B.clone();
@@ -263,10 +255,6 @@ MP2R12Energy::compute()
               const int k = kl_iter.i();
               const int l = kl_iter.j();
               
-              // for diagonal ansatz kl == ij
-              if (diag && (kl != ij))
-                continue;
-              
               for(int g=0; g<=f; g++) {
                 const int g_off = g*noo;
                 
@@ -279,10 +267,7 @@ MP2R12Energy::compute()
                   // This is a symmetric matrix
                   if (ow > kl)
                     continue;
-                  // for diagonal ansatz ow == ij
-                  if (diag && (ow != ij))
-                    continue;
-                  
+
                   // contribution from X vanishes in approximation A
                   if (stdapprox_ != LinearR12::StdApprox_A) {
                     double fx;

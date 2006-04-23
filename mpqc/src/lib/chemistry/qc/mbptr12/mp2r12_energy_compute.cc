@@ -33,28 +33,12 @@
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
 
 using namespace std;
 using namespace sc;
 
 #define USE_INVERT 0
-
-namespace {
-  // Extracts the diagonal d of matrix A. d doesn't have to be preallocated
-  void diagonal(const RefSCMatrix& A, RefSCVector& d);
-  // Extracts the diagonal d of matrix A. d doesn't have to be preallocated
-  void diagonal(const RefSymmSCMatrix& A, RefSCVector& d);
-  // Puts the diagonal d into matrix A.
-  void diagonal(const RefSCVector& d, RefSCMatrix& A);
-  // Prints A
-  template <typename Matrix> void print(bool diag_only, const char* label, Matrix A);
-  // Inverts A in-place
-  template <typename Matrix> void invert(bool diag_only, Matrix A);
-  // Solves A*X = B
-  void solve_linear_system(bool diag_only, const RefSymmSCMatrix& A, RefSCMatrix& X, const RefSCMatrix& B);
-  // computes y = A x
-  void times(bool diag_only, const RefSymmSCMatrix& A, const RefSCMatrix& x, RefSCMatrix& y);
-};
 
 void
 MP2R12Energy::compute()
@@ -145,39 +129,116 @@ MP2R12Energy::compute()
       const int nxc = dim_xc.n();
       const int num_f12 = r12info->corrfactor()->nfunctions();
       
+      Ref<MP2R12EnergyUtil_base> util;
+      if (diag)
+        util = new MP2R12EnergyUtil<true>(dim_oo, dim_xc);
+      else
+        util = new MP2R12EnergyUtil<false>(dim_oo, dim_xc);
+      
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
       
       if (debug_ > 1) {
-        ::print(diag,prepend_spincase(spincase2,"V matrix").c_str(),V);
-        ::print(diag,prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B);
+        util->print(prepend_spincase(spincase2,"V matrix").c_str(),V);
+        util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B);
         // A is too big to print out
       }
       
-      // Allocate the B matrix:
-      // 1) in approximation A the B matrix is the same for all pairs
+      // Prepare the B matrix:
+      // 1) the B matrix is the same for all pairs in approximation A (EBC assumed) or if
+      //    the ansatz is diagonal
       // 2) in approximations A', B, and C the B matrix is pair-specific
-      RefSymmSCMatrix B_ij = B.clone();
-      if (stdapprox_ == LinearR12::StdApprox_A) {
-#if USE_INVERT
-        B_ij->assign(B);
-        invert(diag,B_ij);
+      const bool same_B_for_all_pairs = ( (stdapprox_ == LinearR12::StdApprox_A &&
+                                           ebc == true) ||
+                                          diag);
+      
+      if (same_B_for_all_pairs) {
+        RefSymmSCMatrix B_ij = B.clone();
+        SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+        for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
+          const int ij = ij_iter.ij();
+          const int i = ij_iter.i();
+          const int j = ij_iter.j();
+          
+          for(int f=0; f<num_f12; f++) {
+            const int f_off = f*noo;
+            const int ijf = f_off + ij;
+            
+            for(int g=0; g<=f; g++) {
+              const int g_off = g*noo;
+              const int ijg = g_off + ij;
+              
+              // contribution from X still appears in approximations C and A''
+              if (stdapprox_ != LinearR12::StdApprox_A) {
+                double fx;
+                if (stdapprox_ == LinearR12::StdApprox_C ||
+                  stdapprox_ == LinearR12::StdApprox_App)
+                  fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(ijf,ijg);
+                
+                B_ij.accumulate_element(ijf,ijg,fx);
+              }
+                  
+              // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+              if (ebc == false) {
+                double fy = 0.0;
+                SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+                if (ks_ebcfree) {
+                  for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                    const int cd = cd_iter.ij();
+                    const int c = cd_iter.i();
+                    const int d = cd_iter.j();
+                    
+                    fy -= 0.5*( A.get_element(ijf,cd)*Ac.get_element(ijg,cd) + Ac.get_element(ijf,cd)*A.get_element(ijg,cd) )/
+                    (evals_act_vir1[c] + evals_act_vir2[d]
+                    - evals_act_occ1[i] - evals_act_occ2[j]);
+                  }
+                }
+                else {
+                  for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                    const int cd = cd_iter.ij();
+                    const int c = cd_iter.i();
+                    const int d = cd_iter.j();
+                    
+                    fy -= A.get_element(ijf,cd)*A.get_element(ijg,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
+                    - evals_act_occ1[i] - evals_act_occ2[j]);
+                  }
+                }
+                
+                B_ij.accumulate_element(ijf,ijg,fy);
+              }
+            }
+          }
+        }
         if (debug_ > 1)
-          ::print(diag,"Inverse MP2-F12/A B matrix",B_ij);
+          util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
+#if USE_INVERT
+        RefSymmSCMatrix B_ij = B.clone();
+        B_ij->assign(B);
+        util->invert(B_ij);
+        if (debug_ > 1)
+          util->print("Inverse MP2-F12/A B matrix",B_ij);
         RefSCMatrix C = C_[spin].clone();
-        times(diag,B_ij,V,C);
+        util->times(B_ij,V,C);
         C_[spin].assign(C);  C = 0;
         C_[spin].scale(-1.0);
 #else
         // solve B * C = V
         RefSCMatrix C = C_[spin].clone();
-        solve_linear_system(diag, B, C, V);
+        util->solve_linear_system(B, C, V);
         C_[spin].assign(C);  C = 0;
         C_[spin].scale(-1.0);
 #endif
       }
-      // Approximations other than A
+      // B is pair specific
+      //
+      // NOTE diagonal ansatz could be implemented using a separate piece of code
+      //      (only one loop over ij is needed) -- instead I just continue loops until
+      //      ij == kl = ow. This is wasteful but in big scheme of things the extra
+      //      cost is nothing. Redesign would achieve so little aside from good design
+      //      there is simply no point in being efficient here.
+      //
       else {
+        RefSymmSCMatrix B_ij = B.clone();
         SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
         for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
           const int ij = ij_iter.ij();
@@ -202,6 +263,10 @@ MP2R12Energy::compute()
               const int k = kl_iter.i();
               const int l = kl_iter.j();
               
+              // for diagonal ansatz kl == ij
+              if (diag && (kl != ij))
+                continue;
+              
               for(int g=0; g<=f; g++) {
                 const int g_off = g*noo;
                 
@@ -211,19 +276,26 @@ MP2R12Energy::compute()
                   const int o = ow_iter.i();
                   const int w = ow_iter.j();
                   
+                  // This is a symmetric matrix
                   if (ow > kl)
                     continue;
+                  // for diagonal ansatz ow == ij
+                  if (diag && (ow != ij))
+                    continue;
                   
-                  double fx;
-                  if (stdapprox_ != LinearR12::StdApprox_C &&
+                  // contribution from X vanishes in approximation A
+                  if (stdapprox_ != LinearR12::StdApprox_A) {
+                    double fx;
+                    if (stdapprox_ != LinearR12::StdApprox_C &&
                       stdapprox_ != LinearR12::StdApprox_App)
                     fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
-                                - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
-                      * X.get_element(kl,ow);
-                  else
-                    fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
-                  
-                  B_ij.accumulate_element(kl,ow,fx);
+                    - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
+                    * X.get_element(kl,ow);
+                    else
+                      fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
+                    
+                    B_ij.accumulate_element(kl,ow,fx);
+                  }
                   
                   // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
                   if (ebc == false) {
@@ -258,19 +330,16 @@ MP2R12Energy::compute()
             }
           }
           if (debug_ > 1)
-            ::print(diag,prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
+            util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
 
-#if USE_INVERT
-          invert(diag,B_ij);
-          if (debug_ > 1)
-            ::print(diag,"Inverse MP2-F12 B matrix",B_ij);
-#endif
-        
           /// Block in which I compute ef12
           {
             RefSCVector V_ij = V.get_column(ij);
 #if USE_INVERT
             // The r12 amplitudes B^-1 * V
+            util->invert(B_ij);
+            if (debug_ > 1)
+              util->print("Inverse MP2-F12 B matrix",B_ij);
             RefSCVector Cij = -1.0*(B_ij * V_ij);
             for(int kl=0; kl<nxc; kl++)
               C_[spin].set_element(kl,ij,Cij.get_element(kl));
@@ -283,12 +352,15 @@ MP2R12Energy::compute()
             for(int kl=0; kl<nxc; kl++)
               C_[spin].set_element(kl,ij,Cij.get_element(kl));
 #endif
-            double e_ij = V_ij.dot(Cij);
-            ef12_vec[ij] = e_ij;
           }
         }
-      }
-      B_ij = 0;
+      } // pair-specific B block
+      
+      // Compute pair energies
+      RefSCVector ef12 = util->dot_product(C_[spin],V);
+      for(unsigned int ij=0; ij<noo; ij++)
+        if (ij%ntasks == me)
+          ef12_vec[ij] = ef12(ij);
       msg->sum(ef12_vec,noo,0,-1);
       ef12_[spin]->assign(ef12_vec);
 
@@ -434,4 +506,5 @@ namespace {
       diagonal(yd,y);
     }
   }
+  
 }

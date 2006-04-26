@@ -32,6 +32,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
 
 using namespace std;
@@ -69,6 +70,8 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
 
   // Default is to assume Cartesian coordinates
   bool polar = keyval->booleanvalue("polar",KeyValValueboolean((int)false));
+  // 2D grid is default
+  unsigned int ndim = keyval->intvalue("ndim",KeyValValueint(2));
 
   bool O_is_given = keyval->exists("origin");
   if (O_is_given) {
@@ -94,8 +97,10 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
     throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r1 must be an array of 3-dimensional vectors");
   if (nelem2 == 0)
     throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r2 must be an array of 3-dimensional vectors");
+  if (ndim == 1 && nelem1 != nelem2)
+    throw InputError("TwoBodyGrid::TwoBodyGrid -- ndim is 1 but number of elements in r1 and r2 do not match",__FILE__,__LINE__);
 
-  const int nelem = nelem1 * nelem2;
+  const int nelem = (ndim == 2) ? nelem1 * nelem2 : nelem1;
   
   r1_.resize(nelem);
   r2_.resize(nelem);
@@ -137,12 +142,20 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
       r2[i] = R2 + O_;
   }
 
-  int ij = 0;
-  for(int i=0; i<nelem1; i++)
-    for(int j=0; j<nelem2; j++, ++ij) {
-      r1_[ij] = r1[i];
-      r2_[ij] = r2[j];
+  if (ndim == 1) {
+    for(int i=0; i<nelem1; i++) {
+      r1_[i] = r1[i];
+      r2_[i] = r2[i];
     }
+  }
+  else {
+    int ij = 0;
+    for(int i=0; i<nelem1; i++)
+      for(int j=0; j<nelem2; j++, ++ij) {
+	r1_[ij] = r1[i];
+	r2_[ij] = r2[j];
+      }
+  }
 }
 
 TwoBodyGrid::~TwoBodyGrid()

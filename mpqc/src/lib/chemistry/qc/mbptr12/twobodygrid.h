@@ -55,7 +55,29 @@ class TwoBodyGrid : virtual public SavableState {
 
 public:
   TwoBodyGrid(StateIn&);
-  /** The KeyVal constructor.
+  /** The KeyVal constructor
+      
+      <dl>
+
+      <dt><tt>name</tt><dd> This string specifies the name for this grid.
+
+      <dt><tt>origin</tt><dd> The 3-element vector specifies the Cartesian coordinates
+      of the origin of the grid. The default is the origin of the reference coordinate frame.
+
+      <dt><tt>polar</tt><dd> This boolean specifies whether coordinates of particles 1 and 2
+      are specified as polar or Cartesian vectors. The default is no (Cartesian).
+
+      <dt><tt>r1</tt><dd> This vector of 3-element vectors specifies the positions
+      of particle 1. There is no default.
+
+      <dt><tt>r2</tt><dd> See <tt>r1</tt>.
+
+      <dt><tt>ndim</tt><dd> This integer specifies the number of dimensions for this grid.
+      Valid values are 1 and 2. The default is 2, i.e. for every position of particle 1
+      every position of particle 2 is included. Value of 1 is only valid if the number of elements
+      in <tt>r1</tt> and <tt>r2</tt> is the same -- then every r1[i] r2[i] pair of positions is included.
+
+      </dl>
     */
   TwoBodyGrid(const Ref<KeyVal>&);
   ~TwoBodyGrid();

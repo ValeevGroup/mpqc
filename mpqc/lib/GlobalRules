@@ -283,18 +283,18 @@ endif
 # rules for cca component code
 #
 
-$(GEN_SRCS): .babel-stamp
+$(GEN_SRCS): stamp-babel
 	@if test -f $@; then \
           touch $@; \
         else \
-          rm -f .babel-stamp; \
-          $(MAKE) .babel-stamp; \
+          rm -f stamp-babel; \
+          $(MAKE) stamp-babel; \
         fi
 
-$(EXTRA_CXX_SRCS): .babel-stamp
+$(EXTRA_CXX_SRCS): stamp-babel
 
-.babel-stamp: $(SIDL_FILES)
-	@rm -f .babel-stamp .babel-temp; touch .babel-temp
+stamp-babel: $(SIDL_FILES)
+	@rm -f stamp-babel .temp-babel; touch .temp-babel
 	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
           do \
             if test ! -e $${i}; then \
@@ -308,12 +308,12 @@ $(EXTRA_CXX_SRCS): .babel-stamp
           -R$(CCAFE_SHARE)/xml --text=xml -o$(REPO) $(SIDL_FILES)
 	$(BABEL) $(BABEL_ARGS) $(BABEL_PACKAGES) $(BABEL_ENUMS) \
           $(BABEL_CLASSES)
-	@mv -f .babel-temp $@
+	@mv -f .temp-babel $@
 
 clean-components: oclean targetclean dclean miscclean
 	rm -f $(IORHDRS) $(IORSRCS) $(STUBHDRS) $(STUBSRCS) \
               $(SKELHDRS) $(SKELSRCS)
-	rm -f babel.make .babel-stamp
+	rm -f babel.make stamp-babel
 	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
           do \
             if test -L $${i}; then \

@@ -397,6 +397,21 @@ ReplSymmSCMatrix::assign_pp(const double**m)
 }
 
 void
+ReplSymmSCMatrix::convert_p(double*m) const
+{
+  int d = i_offset(n());
+  memcpy(m, matrix, sizeof(double)*d);
+}
+
+void
+ReplSymmSCMatrix::convert_pp(double**m) const
+{
+  for (int i=0; i < n(); i++)
+      for (int j=0; j <= i; j++)
+          m[i][j] = rows[i][j];
+}
+
+void
 ReplSymmSCMatrix::scale(double s)
 {
   int nelem = i_offset(n());

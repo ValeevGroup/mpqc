@@ -144,6 +144,10 @@ class ReplSCMatrix: public SCMatrix {
     void assign_column(SCVector *v, int i);
     void accumulate_row(SCVector *v, int i);
     void accumulate_column(SCVector *v, int i);
+    void assign_p(const double*);
+    void assign_pp(const double**);
+    void convert_p(double*) const;
+    void convert_pp(double**) const;
 
     void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
@@ -203,6 +207,8 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void assign_s(SymmSCMatrix*);
     void assign_p(const double*);
     void assign_pp(const double**);
+    void convert_p(double*) const;
+    void convert_pp(double**) const;
     double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);

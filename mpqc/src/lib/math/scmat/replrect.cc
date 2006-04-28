@@ -380,6 +380,40 @@ ReplSCMatrix::assign_val(double a)
 }
 
 void
+ReplSCMatrix::assign_p(const double*m)
+{
+  int n = d1->n() * d2->n();
+  memcpy(matrix, m, sizeof(double)*n);
+}
+
+void
+ReplSCMatrix::assign_pp(const double**m)
+{
+  int n1 = d1->n();
+  int n2 = d2->n();
+  for (int i=0; i < n1; i++)
+      for (int j=0; j < n2; j++)
+          rows[i][j] = m[i][j];
+}
+
+void
+ReplSCMatrix::convert_p(double*m) const
+{
+  int n = d1->n() * d2->n();
+  memcpy(m, matrix, sizeof(double)*n);
+}
+
+void
+ReplSCMatrix::convert_pp(double**m) const
+{
+  int n1 = d1->n();
+  int n2 = d2->n();
+  for (int i=0; i < n1; i++)
+      for (int j=0; j < n2; j++)
+          m[i][j] = rows[i][j];
+}
+
+void
 ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "ReplSCMatrix::accumulate_product_rr";

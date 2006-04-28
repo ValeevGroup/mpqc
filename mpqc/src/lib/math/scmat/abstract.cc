@@ -260,7 +260,7 @@ SCMatrix::assign_pp(const double**a)
 }
 
 void
-SCMatrix::convert(SCMatrix*a)
+SCMatrix::convert_r(SCMatrix*a)
 {
   assign(0.0);
   convert_accumulate(a);
@@ -274,7 +274,7 @@ SCMatrix::convert_accumulate(SCMatrix*a)
 }
 
 void
-SCMatrix::convert(double*a) const
+SCMatrix::convert_p(double*a) const
 {
   int i;
   int nr = nrow();
@@ -288,7 +288,7 @@ SCMatrix::convert(double*a) const
 }
 
 void
-SCMatrix::convert(double**a) const
+SCMatrix::convert_pp(double**a) const
 {
   int i, j;
   int nr, nc;
@@ -538,7 +538,7 @@ SymmSCMatrix::assign_pp(const double**a)
 }
 
 void
-SymmSCMatrix::convert(SymmSCMatrix*a)
+SymmSCMatrix::convert_s(SymmSCMatrix*a)
 {
   assign(0.0);
   convert_accumulate(a);
@@ -552,7 +552,7 @@ SymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
 }
 
 void
-SymmSCMatrix::convert(double*a) const
+SymmSCMatrix::convert_p(double*a) const
 {
   int i;
   int nr = n();
@@ -568,7 +568,7 @@ SymmSCMatrix::convert(double*a) const
 }
 
 void
-SymmSCMatrix::convert(double**a) const
+SymmSCMatrix::convert_pp(double**a) const
 {
   int i;
   int j;
@@ -869,7 +869,7 @@ DiagSCMatrix::assign_p(const double*a)
 }
 
 void
-DiagSCMatrix::convert(DiagSCMatrix*a)
+DiagSCMatrix::convert_d(DiagSCMatrix*a)
 {
   assign(0.0);
   convert_accumulate(a);
@@ -883,7 +883,7 @@ DiagSCMatrix::convert_accumulate(DiagSCMatrix*a)
 }
 
 void
-DiagSCMatrix::convert(double*a) const
+DiagSCMatrix::convert_p(double*a) const
 {
   int i;
   int nr = n();
@@ -1025,7 +1025,7 @@ SCVector::assign_p(const double*a)
 }
 
 void
-SCVector::convert(SCVector*a)
+SCVector::convert_v(SCVector*a)
 {
   assign(0.0);
   convert_accumulate(a);
@@ -1039,7 +1039,7 @@ SCVector::convert_accumulate(SCVector*a)
 }
 
 void
-SCVector::convert(double*a) const
+SCVector::convert_p(double*a) const
 {
   int i;
   int nr = n();

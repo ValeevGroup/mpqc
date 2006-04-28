@@ -135,10 +135,10 @@ class SCVector: public DescribedClass {
     virtual void assign_p(const double* v);
     virtual void assign_v(SCVector *v);
     /// Assign v[i] to element i for all i.
-    virtual void convert(double* v) const;
-    /** Convert an SCVector of a different specialization
-        to this specialization and possibly accumulate the data. */
-    virtual void convert(SCVector*);
+    void convert(double* v) const { convert_p(v); }
+    void convert(SCVector*v) { convert_v(v); }
+    virtual void convert_p(double* v) const;
+    virtual void convert_v(SCVector*);
     virtual void convert_accumulate(SCVector*);
     /// Multiply each element by val.
     virtual void scale(double val);
@@ -234,11 +234,12 @@ class SCMatrix: public DescribedClass {
     virtual void assign_r(SCMatrix* m);
     /** Like the assign members, but these write values to the
         arguments. */
-    virtual void convert(double*) const;
-    virtual void convert(double**) const;
-    /** Convert an SCMatrix of a different specialization to this
-        specialization and possibly accumulate the data. */
-    virtual void convert(SCMatrix*);
+    void convert(double*a) const { convert_p(a); }
+    void convert(double**a) const { convert_pp(a); }
+    void convert(SCMatrix*a) { convert_r(a); }
+    virtual void convert_p(double*) const;
+    virtual void convert_pp(double**) const;
+    virtual void convert_r(SCMatrix*a);
     virtual void convert_accumulate(SCMatrix*);
     /// Multiply all elements by val.
     virtual void scale(double val);
@@ -394,11 +395,12 @@ class SymmSCMatrix: public DescribedClass {
     virtual void assign_pp(const double** m);
     virtual void assign_s(SymmSCMatrix* m);
     /// Like the assign members, but these write values to the arguments.
-    virtual void convert(double*) const;
-    virtual void convert(double**) const;
-    /** Convert an SCSymmSCMatrix of a different specialization
-        to this specialization and possibly accumulate the data. */
-    virtual void convert(SymmSCMatrix*);
+    void convert(double*a) const { convert_p(a); }
+    void convert(double**a) const { convert_pp(a); }
+    void convert(SymmSCMatrix*a) { convert_s(a); }
+    virtual void convert_p(double*) const;
+    virtual void convert_pp(double**) const;
+    virtual void convert_s(SymmSCMatrix*);
     virtual void convert_accumulate(SymmSCMatrix*);
     /// Multiply all elements by val.
     virtual void scale(double);
@@ -531,10 +533,10 @@ class DiagSCMatrix: public DescribedClass {
     virtual void assign_p(const double*);
     virtual void assign_d(DiagSCMatrix*);
     /// Like the assign member, but this writes values to the argument.
-    virtual void convert(double*) const;
-    /** Convert an SCDiagSCMatrix of a different specialization
-        to this specialization and possibly accumulate the data. */
-    virtual void convert(DiagSCMatrix*);
+    void convert(double*a) const { convert_p(a); }
+    void convert(DiagSCMatrix*a) { convert_d(a); }
+    virtual void convert_p(double*) const;
+    virtual void convert_d(DiagSCMatrix*);
     virtual void convert_accumulate(DiagSCMatrix*);
     /// Multiply all elements by val.
     virtual void scale(double);

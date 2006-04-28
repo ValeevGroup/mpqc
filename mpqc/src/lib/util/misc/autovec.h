@@ -83,6 +83,9 @@ class auto_vec {
     /** Returns the i'th element. */
     T &operator[](size_t i) throw() { return d_[i]; }
 
+    /** Returns the i'th element. */
+    const T &operator[](size_t i) const throw() { return d_[i]; }
+
     /** Release ownership. */
     T* release() throw() {
       T *r = d_;

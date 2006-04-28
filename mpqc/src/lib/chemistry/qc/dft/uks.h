@@ -53,8 +53,15 @@ class UKS: public UnrestrictedSCF {
 
   public:
     UKS(StateIn&);
-    /**
-       This KeyVal constructor reads the following keywords:
+    /** This KeyVal constructor is used to construct UKS
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, UnrestrictedSCF, will also be
+        called, so consult the documentation for
+        UnrestrictedSCF(const Ref<KeyVal>&) for additional keywords
+        that will be read.
+
         <dl>
 
        <dt><tt>integrator</tt><dd>Specifies the DenIntegrator that will be

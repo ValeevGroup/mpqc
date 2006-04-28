@@ -129,7 +129,14 @@ class SCF: public OneBodyWavefunction {
     int *read_occ(const Ref<KeyVal> &, const char *name, int nirrep);
   public:
     SCF(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct SCF
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, OneBodyWavefunction, will also be
+        called, so consult the documentation for
+        OneBodyWavefunction(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <dl>
 

@@ -57,7 +57,14 @@ class HSOSSCF: public SCF {
 
   public:
     HSOSSCF(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct HSOSSCF
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, SCF, will also be
+        called, so consult the documentation for
+        SCF(const Ref<KeyVal>&) for additional keywords that
+        will be read.
         <dl>
 
         <dt><tt>total_charge</tt><dd> This floating point number

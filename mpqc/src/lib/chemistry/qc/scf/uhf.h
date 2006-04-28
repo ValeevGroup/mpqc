@@ -44,9 +44,14 @@ namespace sc {
 class UHF: public UnrestrictedSCF {
   public:
     UHF(StateIn&);
-    /**
-       The UHF KeyVal constructor reads no keywords.  All necessary
-       information is gathered by base class KeyVal constructors.
+    /** This KeyVal constructor is used to construct UHF
+        objects from the input.
+
+        This constructor does not read any keywords.  However, the KeyVal
+        constructor for the parent class, UnrestrictedSCF, will also be
+        called, so consult the documentation for
+        UnrestrictedSCF(const Ref<KeyVal>&) for a list of keywords that
+        will be read.
     */
     UHF(const Ref<KeyVal>&);
     ~UHF();

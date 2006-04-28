@@ -83,7 +83,23 @@ class DenIntegrator: virtual public SavableState {
   public:
     /// Construct a new DenIntegrator.
     DenIntegrator();
-    /// Construct a new DenIntegrator given the KeyVal input.
+    /** This KeyVal constructor is used to generate a DenIntegrator object
+        from the input.  The full list of keywords that are accepted is
+        below.
+
+        <table border="1">
+
+        <tr><td>Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>linear_scaling</tt><td>boolean<td>true<td>Use a O(N)
+        algorithm to integrate the density.
+
+        <tr><td><tt>use_dmat_bound</tt><td>boolean<td>true<td>Use density
+        matrix values to bound contributions.
+
+        </table>
+
+    */
     DenIntegrator(const Ref<KeyVal> &);
     /// Construct a new DenIntegrator given the StateIn data.
     DenIntegrator(StateIn &);
@@ -373,11 +389,18 @@ class RadialAngularIntegrator: public DenIntegrator {
     Ref<RadialIntegrator> **radial_grid_;
   public:
     RadialAngularIntegrator();
-    /** Construct a RadialAngularIntegrator from KeyVal input.
+    /** This KeyVal constructor is used to construct RadialAngularIntegrator
+        objects from the input.
 
-        The accepted keyword are listed below.  The most important keyword
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, DenIntegrator, will also be
+        called, so consult the documentation for
+        DenIntegrator(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+        The most important keyword
         is <tt>grid</tt>.  The <tt>dynamic</tt> and <tt>prune_grid</tt>
         options may be of occassional interest.
+
         <dl>
 
         <dt><tt>grid</tt><dd>Specifies the fineness of the grid.  Possible

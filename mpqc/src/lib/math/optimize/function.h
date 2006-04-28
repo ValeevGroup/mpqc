@@ -89,7 +89,9 @@ class Function: virtual public SavableState, public Compute {
     Function(StateIn&);
     Function(const Function&);
 
-    /** The keyval constructor reads the following keywords:
+    /** This KeyVal constructor is used to construct Function
+        objects from the input.
+
         <dl>
 
         <dt><tt>matrixkit</tt><dd> Gives a SCMatrixKit

@@ -223,12 +223,15 @@ class GaussianBasisSet: public SavableState
     /// This can be given to a CTOR to construct a unit basis function.
     enum UnitType {Unit};
 
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to generate a GaussianBasisSet
+        object from the input.  A list of recognized basis sets are given
+        in the GaussianBasisSet class overview.  The full list of keywords
+        that are accepted is below.
 
         <dl>
 
-        <dt><tt>molecule</tt><dd> The gives a Molecule object.  The is no
-        default.
+        <dt><tt>molecule</tt><dd> This gives a Molecule object.  There is
+        no default.
 
         <dt><tt>puream</tt><dd> If this boolean parameter is true then 5D,
         7F, etc. will be used.  Otherwise all cartesian functions will be

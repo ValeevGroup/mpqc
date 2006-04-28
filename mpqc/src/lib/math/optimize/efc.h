@@ -60,7 +60,14 @@ class EFCOpt: public Optimize {
     RefSCVector last_mode_;
 
   public:
-    /** The KeyVal constructor reads the following keywords:
+    /** This KeyVal constructor is used to construct EFCOpt
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, Optimize, will also be
+        called, so consult the documentation for
+        Optimize(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <dl>
 

@@ -15,6 +15,7 @@ sections:
  <li> \ref mpqcooover
  <li> \ref mpqcoowalk
  <li> \ref mpqcoosamp
+ <li> \ref mpqcookeyval
 </ul>
 
 \section mpqcooover Overview of the Object-Oriented Input
@@ -1335,5 +1336,49 @@ mpqc: (
 )
 </pre>
 <br>
+
+\section mpqcookeyval List of Important KeyVal Constructors
+
+The KeyVal constructor documentation for each class describes the keywords
+that it uses in the input. Below is a list of the classes most commonly
+used in an input file.
+
+<ul>
+ <li> sc::Molecule::Molecule(const Ref<KeyVal>&)
+ <li> sc::GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&)
+ <li> sc::MolecularEnergy specializations:
+    <ul>
+        <li> sc::MBPT2::MBPT2(const Ref<KeyVal>&)
+        <li> sc::MBPT2_R12::MBPT2_R12(const Ref<KeyVal>&)
+        <li> sc::CLHF::CLHF(const Ref<KeyVal>&)
+        <li> sc::CLKS::CLKS(const Ref<KeyVal>&)
+        <li> sc::HSOSHF::HSOSHF(const Ref<KeyVal>&)
+        <li> sc::HSOSKS::HSOSKS(const Ref<KeyVal>&)
+        <li> sc::UHF::UHF(const Ref<KeyVal>&)
+        <li> sc::UKS::UKS(const Ref<KeyVal>&)
+    </ul>
+ <li> sc::StdDenFunctional::StdDenFunctional(const Ref<KeyVal>&)
+ <li> sc::RadialAngularIntegrator::RadialAngularIntegrator(const Ref<KeyVal>&)
+ <li> sc::MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>&)
+ <li> sc::MolecularHessian specializations:
+    <ul>
+        <li> sc::FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&)
+        <li> sc::GuessMolecularHessian::GuessMolecularHessian(const Ref<KeyVal>&)
+        <li> sc::ReadMolecularHessian::ReadMolecularHessian(const Ref<KeyVal>&)
+    </ul>
+ <li> sc::Optimize specializations:
+    <ul>
+        <li> sc::QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&)
+        <li> sc::EFCOpt::EFCOpt(const Ref<KeyVal>&)
+        <li> sc::NewtonOpt::NewtonOpt(const Ref<KeyVal>&)
+    </ul>
+ <li> sc::MolecularCoor specializations:
+    <ul>
+        <li> sc::CartMolecularCoor::CartMolecularCoor(const Ref<KeyVal>&)
+        <li> sc::RedundMolecularCoor::RedundMolecularCoor(const Ref<KeyVal>&)
+        <li> sc::SymmMolecularCoor::SymmMolecularCoor(const Ref<KeyVal>&)
+    </ul>
+</ul>
+            
 
 */

@@ -73,7 +73,8 @@ class MolecularFrequencies: public SavableState {
                            const RefSymmSCMatrix &dhessian,
                            const RefSCMatrix &dtranst);
   public:
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct MolecularFrequencies
+        objects from the input.
 
         <dl>
 

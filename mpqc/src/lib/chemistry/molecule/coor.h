@@ -346,7 +346,9 @@ class MolecularCoor: public SavableState
   public:
     MolecularCoor(Ref<Molecule>&);
     MolecularCoor(StateIn&);
-    /** The KeyVal constructor.
+    /** The KeyVal constructor is used to generate a MolecularCoor
+        object from the input.
+
         <dl>
 
         <dt><tt>molecule</tt><dd> A Molecule object.  There is no default.
@@ -517,7 +519,15 @@ class IntMolecularCoor: public MolecularCoor
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(Ref<Molecule>&mol);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct IntMolecularCoor
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularCoor, will also be
+        called, so consult the documentation for
+        MolecularCoor(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+
         <dl>
 
         <dt><tt>variable</tt><dd> Gives a SetIntCoor object that specifies
@@ -678,7 +688,15 @@ class SymmMolecularCoor: public IntMolecularCoor
   public:
     SymmMolecularCoor(Ref<Molecule>&mol);
     SymmMolecularCoor(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct SymmMolecularCoor
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, IntMolecularCoor, will also be
+        called, so consult the documentation for
+        IntMolecularCoor(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+
         <dl>
 
         <dt><tt>change_coordinates</tt><dd> If true, the quality of the
@@ -727,7 +745,15 @@ class RedundMolecularCoor: public IntMolecularCoor
   public:
     RedundMolecularCoor(Ref<Molecule>&mol);
     RedundMolecularCoor(StateIn&);
-    /// The KeyVal constructor.
+    /** This KeyVal constructor is used to construct RedundMolecularCoor
+        objects from the input.
+
+        This constructor reads no input.  However, the KeyVal
+        constructor for the parent class, IntMolecularCoor, will also be
+        called, so consult the documentation for
+        IntMolecularCoor(const Ref<KeyVal>&) for keywords that
+        it will read.
+    */
     RedundMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~RedundMolecularCoor();
@@ -759,7 +785,15 @@ class CartMolecularCoor: public MolecularCoor
   public:
     CartMolecularCoor(Ref<Molecule>&mol);
     CartMolecularCoor(StateIn&);
-    /// The KeyVal constructor.
+    /** This KeyVal constructor is used to construct CartMolecularCoor
+        objects from the input.
+
+        This constructor reads no input.  However, the KeyVal
+        constructor for the parent class, MolecularCoor, will also be
+        called, so consult the documentation for
+        MolecularCoor(const Ref<KeyVal>&) for keywords that
+        it will read.
+    */
     CartMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~CartMolecularCoor();

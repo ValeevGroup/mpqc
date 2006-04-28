@@ -51,8 +51,14 @@ class CLKS: public CLSCF {
     
   public:
     CLKS(StateIn&);
-    /**
-       This KeyVal constructor reads the following keywords:
+    /** This KeyVal constructor is used to construct CLKS
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The
+        KeyVal constructor for the parent class, CLSCF, will also be called,
+        so consult the documentation for CLSCF(const Ref<KeyVal>&) for
+        additional keywords that will be read.
+
         <dl>
 
        <dt><tt>integrator</tt><dd>Specifies the DenIntegrator that will be

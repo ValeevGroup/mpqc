@@ -92,9 +92,14 @@ class FinDispMolecularHessian: public MolecularHessian {
     void restart();
   public:
     FinDispMolecularHessian(const Ref<MolecularEnergy>&);
-    /** The FinDispMolecularHessian KeyVal constructor is used to generate a
-        FinDispMolecularHessian object from the input.  It reads the keywords
-        below.
+    /** This KeyVal constructor is used to construct FinDispMolecularHessian
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularHessian, will also be
+        called, so consult the documentation for
+        MolecularHessian(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <table border="1">
 

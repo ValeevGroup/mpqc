@@ -64,6 +64,45 @@ class UnrestrictedSCF: public SCF {
     
   public:
     UnrestrictedSCF(StateIn&);
+    /** This KeyVal constructor is used to construct UnrestrictedSCF
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The
+        KeyVal constructor for the parent class, SCF, will also be called,
+        so consult the documentation for SCF(const Ref<KeyVal>&) for
+        additional keywords that will be read.
+
+        <dl>
+
+        <dt><tt>total_charge</tt><dd> This floating point number
+        gives the total charge
+        of the molecule.  The default is 0.
+
+        <dt><tt>multiplicity</tt><dd> An integer giving the spin
+        multiplicity.  If there's an odd number of electrons, then the
+        default is a doublet, otherwise a triplet.
+
+        <dt><tt>alpha</tt><dd> This vector of integers gives the total
+        number of alpha electrons in each irreducible representation.  By
+        default, this will be chosen to make the molecule uncharged and the
+        electrons will be distributed among the irreducible representations
+        according to the orbital energies.  If alpha is given, then
+        beta must be given, too, and the multiplicity keyword is ignored.
+
+        <dt><tt>beta</tt><dd> This vector of integers gives the total
+        number of beta electrons in each irreducible representation.  By
+        default, this will be chosen to make the molecule uncharged and the
+        electrons will be distributed among the irreducible representations
+        according to the orbital energies.  If beta is given, then alpha
+        must be given, too, and the multiplicity keyword is ignored.
+
+        <dt><tt>maxiter</tt><dd> This integer gives the maximum number of
+        iterations.  The default is 100.
+
+        <dt><tt>level_shift</tt><dd> This floating point number gives the
+        level shift for the eigenvalues.  The default is 0.25 Hartrees.
+
+        </dl> */
     UnrestrictedSCF(const Ref<KeyVal>&);
     ~UnrestrictedSCF();
 

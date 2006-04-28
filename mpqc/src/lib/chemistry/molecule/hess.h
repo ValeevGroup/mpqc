@@ -103,9 +103,14 @@ class ReadMolecularHessian: public MolecularHessian {
   protected:
     char *filename_;
   public:
-    /** The ReadMolecularHessian KeyVal constructor is used to generate a
-        ReadMolecularHessian object from the input.  It reads the keywords
-        below.
+    /** This KeyVal constructor is used to construct ReadMolecularHessian
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularHessian, will also be
+        called, so consult the documentation for
+        MolecularHessian(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <table border="1">
 
@@ -131,9 +136,14 @@ class GuessMolecularHessian: public MolecularHessian {
   protected:
     Ref<MolecularCoor> coor_;
   public:
-    /** The GuessMolecularHessian KeyVal constructor is used to generate a
-        GuessMolecularHessian object from the input.  It reads the keywords
-        below.
+    /** This KeyVal constructor is used to construct GuessMolecularHessian
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularHessian, will also be
+        called, so consult the documentation for
+        MolecularHessian(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <table border="1">
 
@@ -160,9 +170,14 @@ class DiagMolecularHessian: public MolecularHessian {
   protected:
     double diag_;
   public:
-    /** The DiagMolecularHessian KeyVal constructor is used to generate a
-        DiagMolecularHessian object from the input.  It reads the keywords
-        below.
+    /** This KeyVal constructor is used to construct DiagMolecularHessian
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularHessian, will also be
+        called, so consult the documentation for
+        MolecularHessian(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <table border="1">
 

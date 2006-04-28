@@ -42,6 +42,15 @@ namespace sc {
 class CLHF: public CLSCF {
   public:
     CLHF(StateIn&);
+    /** This KeyVal constructor is used to construct CLHF
+        objects from the input.
+
+        This constructor does not read any keywords.  However, the KeyVal
+        constructor for the parent class, CLSCF, will also be
+        called, so consult the documentation for
+        CLSCF(const Ref<KeyVal>&) for a list of keywords that
+        will be read.
+    */
     CLHF(const Ref<KeyVal>&);
     ~CLHF();
 

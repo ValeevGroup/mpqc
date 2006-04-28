@@ -107,7 +107,14 @@ class Wavefunction: public MolecularEnergy {
     
   public:
     Wavefunction(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct Wavefunction
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MolecularEnergy, will also be
+        called, so consult the documentation for
+        MolecularEnergy(const Ref<KeyVal>&) for additional keywords that
+        will be read.
 
         <dl>
 

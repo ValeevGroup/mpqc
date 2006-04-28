@@ -42,6 +42,15 @@ namespace sc {
 class HSOSHF: public HSOSSCF {
   public:
     HSOSHF(StateIn&);
+    /** This KeyVal constructor is used to construct HSOSHF
+        objects from the input.
+
+        This constructor does not read any keywords.  However, the KeyVal
+        constructor for the parent class, HSOSSCF, will also be
+        called, so consult the documentation for
+        HSOSSCF(const Ref<KeyVal>&) for a list of keywords that
+        will be read.
+    */
     HSOSHF(const Ref<KeyVal>&);
     ~HSOSHF();
 

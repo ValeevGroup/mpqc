@@ -104,7 +104,15 @@ class MBPT2_R12: public MBPT2 {
 
   public:
     MBPT2_R12(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct MBPT2_R12
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, MBPT2, will also be
+        called, so consult the documentation for
+        MBPT2(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+
         <dl>
 
         <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin

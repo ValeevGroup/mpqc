@@ -82,7 +82,15 @@ class MolecularEnergy: public Function {
     int print_molecule_when_changed_;
   public:
     MolecularEnergy(const MolecularEnergy&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct MolecularEnergy
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The
+        KeyVal constructor for the parent class, Function, will also be
+        called, so consult the documentation for
+        Function(const Ref<KeyVal>&,double,double,double)
+        for additional keywords that will be read.
+
         <dl>
 
         <dt><tt>molecule</tt><dd> A Molecule object.  There is no default.

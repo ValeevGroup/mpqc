@@ -44,6 +44,7 @@ namespace sc {
 // //////////////////////////////////////////////////////////////////////
 // newton and related methods
 
+/** The NewtonOpt class implements Newton optimization. */
 class NewtonOpt: public Optimize {
   protected:
     double maxabs_gradient;
@@ -53,6 +54,34 @@ class NewtonOpt: public Optimize {
     int print_x_;
     int print_gradient_;
   public:
+    /** This KeyVal constructor is used to construct NewtonOpt
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, Optimize, will also be
+        called, so consult the documentation for
+        Optimize(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+
+        <table border="1">
+
+        <tr><td>Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>accuracy</tt><td>double<td>0.0001<td>
+        The initial accuracy to which the gradient will be computed.
+
+        <tr><td><tt>print_x</tt><td>boolean<td>false<td>
+        If true, print the coordinates before each step.
+
+        <tr><td><tt>print_hessian</tt><td>boolean<td>false<td>
+        If true, print the hessian before each step.
+
+        <tr><td><tt>print_gradient</tt><td>boolean<td>false<td>
+        If true, print the gradient before each step.
+
+        </table>
+
+    */
     NewtonOpt(const Ref<KeyVal>&);
     NewtonOpt(StateIn&);
     ~NewtonOpt();

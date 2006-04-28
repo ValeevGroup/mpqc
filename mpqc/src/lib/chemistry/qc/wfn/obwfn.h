@@ -59,7 +59,15 @@ class OneBodyWavefunction: public Wavefunction {
 
  public:
     OneBodyWavefunction(StateIn&);
-    /** The KeyVal constructor.
+    /** This KeyVal constructor is used to construct OneBodyWavefunction
+        objects from the input.
+
+        The keywords used by this constructor are listed below.  The KeyVal
+        constructor for the parent class, Wavefunction, will also be
+        called, so consult the documentation for
+        Wavefunction(const Ref<KeyVal>&) for additional keywords that
+        will be read.
+
         <dl>
 
         <dt><tt>eigenvector_accuracy</tt><dd> Gives the accuracy to which

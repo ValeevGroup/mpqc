@@ -2,12 +2,13 @@
 // File:          MPQC_ComponentFactory_Impl.hh
 // Symbol:        MPQC.ComponentFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.ComponentFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.ComponentFactory-v0.2.xml
 // 
 
 #ifndef included_MPQC_ComponentFactory_Impl_hh

@@ -2,12 +2,13 @@
 // File:          MPQC_Chemistry_QC_Model_Impl.cc
 // Symbol:        MPQC.Chemistry_QC_Model-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.Chemistry_QC_Model
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.Chemistry_QC_Model-v0.2.xml
 // 
 #include "MPQC_Chemistry_QC_Model_Impl.hh"
 

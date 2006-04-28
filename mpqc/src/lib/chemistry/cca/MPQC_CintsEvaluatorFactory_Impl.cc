@@ -2,12 +2,13 @@
 // File:          MPQC_CintsEvaluatorFactory_Impl.cc
 // Symbol:        MPQC.CintsEvaluatorFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.CintsEvaluatorFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.CintsEvaluatorFactory-v0.2.xml
 // 
 #include "MPQC_CintsEvaluatorFactory_Impl.hh"
 
@@ -39,34 +40,6 @@ void MPQC::CintsEvaluatorFactory_impl::_load() {
 // user-defined static methods: (none)
 
 // user-defined non-static methods:
-/**
- * Starts up a component presence in the calling framework.
- * @param Svc the component instance's handle on the framework world.
- * Contracts concerning Svc and setServices:
- * 
- * The component interaction with the CCA framework
- * and Ports begins on the call to setServices by the framework.
- * 
- * This function is called exactly once for each instance created
- * by the framework.
- * 
- * The argument Svc will never be nil/null.
- * 
- * Those uses ports which are automatically connected by the framework
- * (so-called service-ports) may be obtained via getPort during
- * setServices.
- */
-void
-MPQC::CintsEvaluatorFactory_impl::setServices (
-  /* in */ ::gov::cca::Services services ) 
-throw ( 
-  ::gov::cca::CCAException
-){
-  // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.setServices)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.setServices} (setServices method)
-  // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.setServices)
-}
-
 /**
  * Method:  get_name[]
  */
@@ -196,6 +169,34 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator4)
   // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_evaluator4} (get_evaluator4 method)
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator4)
+}
+
+/**
+ * Starts up a component presence in the calling framework.
+ * @param services the component instance's handle on the framework world.
+ * Contracts concerning Svc and setServices:
+ * 
+ * The component interaction with the CCA framework
+ * and Ports begins on the call to setServices by the framework.
+ * 
+ * This function is called exactly once for each instance created
+ * by the framework.
+ * 
+ * The argument Svc will never be nil/null.
+ * 
+ * Those uses ports which are automatically connected by the framework
+ * (so-called service-ports) may be obtained via getPort during
+ * setServices.
+ */
+void
+MPQC::CintsEvaluatorFactory_impl::setServices (
+  /* in */ ::gov::cca::Services services ) 
+throw ( 
+  ::gov::cca::CCAException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.setServices)
+  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.setServices} (setServices method)
+  // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.setServices)
 }
 
 

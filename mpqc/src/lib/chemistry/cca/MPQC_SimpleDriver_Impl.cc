@@ -2,12 +2,13 @@
 // File:          MPQC_SimpleDriver_Impl.cc
 // Symbol:        MPQC.SimpleDriver-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.SimpleDriver
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.SimpleDriver-v0.2.xml
 // 
 #include "MPQC_SimpleDriver_Impl.hh"
 
@@ -47,7 +48,7 @@ void MPQC::SimpleDriver_impl::_load() {
 // user-defined non-static methods:
 /**
  * Starts up a component presence in the calling framework.
- * @param Svc the component instance's handle on the framework world.
+ * @param services the component instance's handle on the framework world.
  * Contracts concerning Svc and setServices:
  * 
  * The component interaction with the CCA framework

@@ -55,7 +55,7 @@ BABEL_CLASSES = \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver
 
-EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc integral_evaluator.cc
+EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc
 EXTRA_INCLUDES = socket.h except.h ccaiter.h integral_evaluator.h
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile

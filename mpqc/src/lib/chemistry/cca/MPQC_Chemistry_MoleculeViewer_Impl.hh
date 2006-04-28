@@ -2,12 +2,13 @@
 // File:          MPQC_Chemistry_MoleculeViewer_Impl.hh
 // Symbol:        MPQC.Chemistry_MoleculeViewer-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.Chemistry_MoleculeViewer
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.Chemistry_MoleculeViewer-v0.2.xml
 // 
 
 #ifndef included_MPQC_Chemistry_MoleculeViewer_Impl_hh
@@ -115,32 +116,6 @@ namespace MPQC {
 
   public:
 
-
-    /**
-     * Starts up a component presence in the calling framework.
-     * @param Svc the component instance's handle on the framework world.
-     * Contracts concerning Svc and setServices:
-     * 
-     * The component interaction with the CCA framework
-     * and Ports begins on the call to setServices by the framework.
-     * 
-     * This function is called exactly once for each instance created
-     * by the framework.
-     * 
-     * The argument Svc will never be nil/null.
-     * 
-     * Those uses ports which are automatically connected by the framework
-     * (so-called service-ports) may be obtained via getPort during
-     * setServices.
-     */
-    void
-    setServices (
-      /* in */ ::gov::cca::Services services
-    )
-    throw ( 
-      ::gov::cca::CCAException
-    );
-
     /**
      * user defined non-static method.
      */
@@ -173,6 +148,32 @@ namespace MPQC {
     void
     draw() throw () 
     ;
+
+    /**
+     * Starts up a component presence in the calling framework.
+     * @param services the component instance's handle on the framework world.
+     * Contracts concerning Svc and setServices:
+     * 
+     * The component interaction with the CCA framework
+     * and Ports begins on the call to setServices by the framework.
+     * 
+     * This function is called exactly once for each instance created
+     * by the framework.
+     * 
+     * The argument Svc will never be nil/null.
+     * 
+     * Those uses ports which are automatically connected by the framework
+     * (so-called service-ports) may be obtained via getPort during
+     * setServices.
+     */
+    void
+    setServices (
+      /* in */ ::gov::cca::Services services
+    )
+    throw ( 
+      ::gov::cca::CCAException
+    );
+
   };  // end class Chemistry_MoleculeViewer_impl
 
 } // end namespace MPQC

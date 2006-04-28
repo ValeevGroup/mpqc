@@ -2,12 +2,13 @@
 // File:          MPQC_Chemistry_QC_ModelFactory_Impl.cc
 // Symbol:        MPQC.Chemistry_QC_ModelFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.2
+// Babel Version: 0.10.12
 // Description:   Server-side implementation for MPQC.Chemistry_QC_ModelFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.2
+// babel-version = 0.10.12
+// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/../../../../lib/cca/repo/MPQC.Chemistry_QC_ModelFactory-v0.2.xml
 // 
 #include "MPQC_Chemistry_QC_ModelFactory_Impl.hh"
 
@@ -87,100 +88,6 @@ void MPQC::Chemistry_QC_ModelFactory_impl::_load() {
 // user-defined static methods: (none)
 
 // user-defined non-static methods:
-/**
- * Starts up a component presence in the calling framework.
- * @param Svc the component instance's handle on the framework world.
- * Contracts concerning Svc and setServices:
- * 
- * The component interaction with the CCA framework
- * and Ports begins on the call to setServices by the framework.
- * 
- * This function is called exactly once for each instance created
- * by the framework.
- * 
- * The argument Svc will never be nil/null.
- * 
- * Those uses ports which are automatically connected by the framework
- * (so-called service-ports) may be obtained via getPort during
- * setServices.
- */
-void
-MPQC::Chemistry_QC_ModelFactory_impl::setServices (
-  /* in */ ::gov::cca::Services services ) 
-throw ( 
-  ::gov::cca::CCAException
-){
-  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.setServices)
-
-  services_ = services;
-  if (services_._is_nil()) return;
-
-  try {
-      services_.addProvidesPort(self, "ModelFactory", 
-				"gov.cca.Port", 0);
-      services_.registerUsesPort("BasisName", 
-				 "Util.StringProvider", 0);
-      services_.registerUsesPort("TheoryName", 
-				 "Util.StringProvider", 0);
-      services_.registerUsesPort("MoleculeFile", 
-				 "Util.StringProvider", 0);
-      services_.registerUsesPort("MoleculeFactory", 
-				 "Chemistry.MoleculeFactory", 0);
-      services_.registerUsesPort("IntegralEvaluatorFactory",
-		     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",0);
-  }
-  catch (gov::cca::CCAException e) {
-      std::cout << "Error using services: "
-                << e.getNote() << std::endl;
-  }
-
-  molecule_ = 0;
-
-  // setup parameters
-  try {
-
-    if (services_._not_nil()) {
-      gov::cca::TypeMap tm = services_.createTypeMap();
-      services_.registerUsesPort("classicParam",
-                                 "gov.cca.ParameterPortFactoryService",tm);
-      gov::cca::Port p = services_.getPort("classicParam");
-      ccaffeine::ports::PortTranslator portX = p;
-      if(portX._not_nil()) {
-        classic::gov::cca::Port *cp
-          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
-        if(!cp) {
-          std::cout << "Couldn't get classic port" << std::endl;
-          return;
-        }
-        ConfigurableParameterFactory *cpf
-          = dynamic_cast<ConfigurableParameterFactory *>(cp);
-        ConfigurableParameterPort *pp = setup_parameters(cpf);
-        classic::gov::cca::Port *clscp
-          = dynamic_cast<classic::gov::cca::Port*>(pp);
-        if (!clscp) {
-          std::cout << "Couldn't cast to classic::gov::cca::Port"
-                    << std::endl;
-        }
-        void *vp = static_cast<void*>(clscp);
-        ccaffeine::ports::PortTranslator provideX
-          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
-
-        services_.addProvidesPort(provideX,
-                                  "configure", "ParameterPort", tm);
-
-        services_.releasePort("classicParam");
-        services_.unregisterUsesPort("classicParam");
-      }
-    }
-
-  }
-  catch(std::exception& e) {
-    std::cout << "Exception caught: " << e.what() << std::endl;
-  }
- 
-  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.setServices)
-}
-
 /**
  * Set the theory name for Model's created with get_model.
  * @param theory A string giving the name of the theory, 
@@ -377,6 +284,100 @@ throw ()
       services_.releasePort("MoleculeFactory");
   return 0;
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.finalize)
+}
+
+/**
+ * Starts up a component presence in the calling framework.
+ * @param services the component instance's handle on the framework world.
+ * Contracts concerning Svc and setServices:
+ * 
+ * The component interaction with the CCA framework
+ * and Ports begins on the call to setServices by the framework.
+ * 
+ * This function is called exactly once for each instance created
+ * by the framework.
+ * 
+ * The argument Svc will never be nil/null.
+ * 
+ * Those uses ports which are automatically connected by the framework
+ * (so-called service-ports) may be obtained via getPort during
+ * setServices.
+ */
+void
+MPQC::Chemistry_QC_ModelFactory_impl::setServices (
+  /* in */ ::gov::cca::Services services ) 
+throw ( 
+  ::gov::cca::CCAException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.setServices)
+
+  services_ = services;
+  if (services_._is_nil()) return;
+
+  try {
+      services_.addProvidesPort(self, "ModelFactory", 
+				"gov.cca.Port", 0);
+      services_.registerUsesPort("BasisName", 
+				 "Util.StringProvider", 0);
+      services_.registerUsesPort("TheoryName", 
+				 "Util.StringProvider", 0);
+      services_.registerUsesPort("MoleculeFile", 
+				 "Util.StringProvider", 0);
+      services_.registerUsesPort("MoleculeFactory", 
+				 "Chemistry.MoleculeFactory", 0);
+      services_.registerUsesPort("IntegralEvaluatorFactory",
+		     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",0);
+  }
+  catch (gov::cca::CCAException e) {
+      std::cout << "Error using services: "
+                << e.getNote() << std::endl;
+  }
+
+  molecule_ = 0;
+
+  // setup parameters
+  try {
+
+    if (services_._not_nil()) {
+      gov::cca::TypeMap tm = services_.createTypeMap();
+      services_.registerUsesPort("classicParam",
+                                 "gov.cca.ParameterPortFactoryService",tm);
+      gov::cca::Port p = services_.getPort("classicParam");
+      ccaffeine::ports::PortTranslator portX = p;
+      if(portX._not_nil()) {
+        classic::gov::cca::Port *cp
+          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
+        if(!cp) {
+          std::cout << "Couldn't get classic port" << std::endl;
+          return;
+        }
+        ConfigurableParameterFactory *cpf
+          = dynamic_cast<ConfigurableParameterFactory *>(cp);
+        ConfigurableParameterPort *pp = setup_parameters(cpf);
+        classic::gov::cca::Port *clscp
+          = dynamic_cast<classic::gov::cca::Port*>(pp);
+        if (!clscp) {
+          std::cout << "Couldn't cast to classic::gov::cca::Port"
+                    << std::endl;
+        }
+        void *vp = static_cast<void*>(clscp);
+        ccaffeine::ports::PortTranslator provideX
+          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
+
+        services_.addProvidesPort(provideX,
+                                  "configure", "ParameterPort", tm);
+
+        services_.releasePort("classicParam");
+        services_.unregisterUsesPort("classicParam");
+      }
+    }
+
+  }
+  catch(std::exception& e) {
+    std::cout << "Exception caught: " << e.what() << std::endl;
+  }
+ 
+  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.setServices)
 }
 
 

@@ -122,6 +122,62 @@ BlockedSymmSCMatrix::accumulate_element(int i,int j,double a)
   mats_[block_i]->accumulate_element(elem_i,elem_j,a);
 }
 
+void
+BlockedSymmSCMatrix::assign_p(const double*a)
+{
+  // if this is a single, complete block, then use the block's
+  // assign member.  Otherwise, use the generic member.
+  if (d->blocks()->nblock() == 1
+      && (dim()->n() == mats_[0]->dim()->n())) {
+      mats_[0]->assign_p(a);
+    }
+  else {
+      SymmSCMatrix::assign_p(a);
+    }
+}
+
+void
+BlockedSymmSCMatrix::assign_pp(const double**a)
+{
+  // if this is a single, complete block, then use the block's
+  // assign member.  Otherwise, use the generic member.
+  if (d->blocks()->nblock() == 1
+      && (dim()->n() == mats_[0]->dim()->n())) {
+      mats_[0]->assign_pp(a);
+    }
+  else {
+      SymmSCMatrix::assign_pp(a);
+    }
+}
+
+void
+BlockedSymmSCMatrix::convert_p(double*a) const
+{
+  // if this is a single, complete block, then use the block's
+  // convert member.  Otherwise, use the generic member.
+  if (d->blocks()->nblock() == 1
+      && (dim()->n() == mats_[0]->dim()->n())) {
+      mats_[0]->convert_p(a);
+    }
+  else {
+      SymmSCMatrix::convert_p(a);
+    }
+}
+
+void
+BlockedSymmSCMatrix::convert_pp(double**a) const
+{
+  // if this is a single, complete block, then use the block's
+  // convert member.  Otherwise, use the generic member.
+  if (d->blocks()->nblock() == 1
+      && (dim()->n() == mats_[0]->dim()->n())) {
+      mats_[0]->convert_pp(a);
+    }
+  else {
+      SymmSCMatrix::convert_pp(a);
+    }
+}
+
 SCMatrix *
 BlockedSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

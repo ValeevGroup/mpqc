@@ -182,6 +182,66 @@ BlockedSCMatrix::accumulate_element(int i,int j,double a)
   }
 }
 
+void
+BlockedSCMatrix::assign_p(const double*a)
+{
+  // if this is a single, complete block, then use the block's
+  // assign member.  Otherwise, use the generic member.
+  if (nblocks_ == 1
+      && (rowdim()->n() == mats_[0]->rowdim()->n())
+      && (coldim()->n() == mats_[0]->coldim()->n())) {
+      mats_[0]->assign_p(a);
+    }
+  else {
+      SCMatrix::assign_p(a);
+    }
+}
+
+void
+BlockedSCMatrix::assign_pp(const double**a)
+{
+  // if this is a single, complete block, then use the block's
+  // assign member.  Otherwise, use the generic member.
+  if (nblocks_ == 1
+      && (rowdim()->n() == mats_[0]->rowdim()->n())
+      && (coldim()->n() == mats_[0]->coldim()->n())) {
+      mats_[0]->assign_pp(a);
+    }
+  else {
+      SCMatrix::assign_pp(a);
+    }
+}
+
+void
+BlockedSCMatrix::convert_p(double*a) const
+{
+  // if this is a single, complete block, then use the block's
+  // convert member.  Otherwise, use the generic member.
+  if (nblocks_ == 1
+      && (rowdim()->n() == mats_[0]->rowdim()->n())
+      && (coldim()->n() == mats_[0]->coldim()->n())) {
+      mats_[0]->convert_p(a);
+    }
+  else {
+      SCMatrix::convert_p(a);
+    }
+}
+
+void
+BlockedSCMatrix::convert_pp(double**a) const
+{
+  // if this is a single, complete block, then use the block's
+  // convert member.  Otherwise, use the generic member.
+  if (nblocks_ == 1
+      && (rowdim()->n() == mats_[0]->rowdim()->n())
+      && (coldim()->n() == mats_[0]->coldim()->n())) {
+      mats_[0]->convert_pp(a);
+    }
+  else {
+      SCMatrix::convert_pp(a);
+    }
+}
+
 SCMatrix *
 BlockedSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

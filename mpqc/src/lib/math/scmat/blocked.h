@@ -137,6 +137,11 @@ class BlockedSCMatrix: public SCMatrix {
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
 
+    void assign_p(const double*);
+    void assign_pp(const double**);
+    void convert_p(double*) const;
+    void convert_pp(double**) const;
+
     SCMatrix * get_subblock(int,int,int,int);
     void assign_subblock(SCMatrix*, int,int,int,int,int=0,int=0);
     void accumulate_subblock(SCMatrix*, int,int,int,int,int=0,int=0);
@@ -212,6 +217,11 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void scale(double);
     void assign_val(double);
     void assign_s(SymmSCMatrix*m);
+
+    void assign_p(const double*);
+    void assign_pp(const double**);
+    void convert_p(double*) const;
+    void convert_pp(double**) const;
 
     SCMatrix * get_subblock(int,int,int,int);
     SymmSCMatrix * get_subblock(int,int);

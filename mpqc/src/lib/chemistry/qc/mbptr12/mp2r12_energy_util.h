@@ -141,16 +141,16 @@ namespace sc {
     {
       const int nrow = A.rowdim().n();
       const int ncol = A.coldim().n();
-      if (nrow != f12dim_.n() || nrow != oodim_.n())
+      if (nrow != f12dim_.n() && nrow != oodim_.n())
         throw ProgrammingError("MP2R12EnergyUtil::check_dims -- row dimension does not match",__FILE__,__LINE__);
-      if (ncol != f12dim_.n() || ncol != oodim_.n())
+      if (ncol != f12dim_.n() && ncol != oodim_.n())
         throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
     }
   template <bool Diag>
     void MP2R12EnergyUtil<Diag>::check_dims(const RefSymmSCMatrix& A) const
     {
       const int n = A.dim().n();
-      if (n != f12dim_.n() || n != oodim_.n())
+      if (n != f12dim_.n() && n != oodim_.n())
         throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
     }
 

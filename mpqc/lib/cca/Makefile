@@ -38,3 +38,6 @@ oclean::
 
 dclean::
 
+distclean:
+	/bin/rm -f components.cca
+

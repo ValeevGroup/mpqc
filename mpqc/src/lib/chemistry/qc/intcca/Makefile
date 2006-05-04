@@ -60,6 +60,8 @@ DISTFILES = $(INC) Makefile
 
 DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 #############################################################
 
 default:: $(DEPENDINCLUDE)

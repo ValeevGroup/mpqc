@@ -60,6 +60,8 @@ DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 aotoso.$(OBJSUF) aotoso.d: f77sym.h

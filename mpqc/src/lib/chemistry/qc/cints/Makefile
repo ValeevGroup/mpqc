@@ -72,6 +72,8 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 cintstest: cintstest.$(OBJSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o cintstest $^ $(SYSLIBS) $(LTLINKBINOPTS)

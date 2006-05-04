@@ -55,10 +55,11 @@ LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
-LTLINKLIBOPTS += $(LDFLAGS)
-ifeq ($(HAVE_LIBINT2),yes)
-  LTLINKLIBOPTS += -lint2
-endif
+#LTLINKLIBOPTS += $(LDFLAGS)
+#ifeq ($(HAVE_LIBINT2),yes)
+#  LTLINKLIBOPTS += -lint2
+#endif
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 DISTFILES = $(TESTCSRC) $(INC) Makefile
 

@@ -20,6 +20,8 @@ TESTPROGS = psitest
 LIBOBJ = $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ += $(CSRCS:%.c=%.$(OBJSUF))
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 interface:: $(DEPENDINCLUDE)
 

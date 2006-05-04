@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = options ref container class state misc keyval group render
+SUBDIRS = options ref container class keyval state misc group render
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

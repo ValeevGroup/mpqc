@@ -135,6 +135,8 @@ LIBOBJ = $(LIBSRC:%.cc=%.$(OBJSUF))
 
 DISTFILES = Makefile build.h $(LIBSRC1) $(LIBSRC2) $(LIBSRC3)
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)

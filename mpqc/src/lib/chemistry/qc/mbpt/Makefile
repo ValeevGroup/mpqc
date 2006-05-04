@@ -54,7 +54,7 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 mbpttest:: mbpttest.$(OBJSUF) $(LIBS) libSCdft.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o mbpttest $^ $(SYSLIBS) $(LTLINKBINOPTS)

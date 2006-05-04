@@ -14,6 +14,8 @@ LIBSRC = $(CSRC)
 
 DISTFILES = $(CSRC) Makefile LIBS.h
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 LIBOBJ := $(LIBSRC:%.c=%.$(OBJSUF))
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

@@ -49,6 +49,8 @@ DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCcontainer
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)

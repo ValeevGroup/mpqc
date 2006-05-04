@@ -74,8 +74,16 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 	$(AR) $(ARFLAGS) $@ $^ $(wildcard $(TMPLREPO)/*.o)
 	$(RANLIB) $@
 
-$(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
-	$(LTLINK) $(CXX) -o $@ $^ $(wildcard $(TMPLREPO)/*.o) $(LTLINKLIBOPTS)
+ifeq ($(ENABLE_DEPLIBS),yes)
+LTDEPLIBS=$(LIBS:$(TARGET_TO_MAKE).la=)
+LTSYSLIBS=$(SYSLIBS)
+else
+LTDEPLIBS=
+LTSYSLIBS=
+endif
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ) $(LTDEPLIBS)
+	$(LTLINK) $(CXX) -o $@ $^ $(wildcard $(TMPLREPO)/*.o) $(LTLINKLIBOPTS) $(LTSYSLIBS)
 
 else
 
@@ -103,8 +111,16 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 
 endif
 
-$(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
-	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
+ifeq ($(ENABLE_DEPLIBS),yes)
+LTDEPLIBS=$(LIBS:$(TARGET_TO_MAKE).la=)
+LTSYSLIBS=$(SYSLIBS)
+else
+LTDEPLIBS=
+LTSYSLIBS=
+endif
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ) $(LTDEPLIBS)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS) $(LTSYSLIBS)
 
 endif
 

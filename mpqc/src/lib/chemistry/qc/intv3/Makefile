@@ -58,6 +58,8 @@ DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
 TESTPROGS = inttest fjttest
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 #############################################################
 
 default:: $(DEPENDINCLUDE)

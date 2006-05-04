@@ -46,24 +46,22 @@ SRCS = fbclhf.cc scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
+#Don't generate library dependencies for scf
+#LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-XDEF:=
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
-  XDEF+=-DHAVE_CHEMISTRY_QC_CINTS
-endif
+SCFTESTLIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/../dft/LIBS.h)
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(XDEF) $(SRCDIR)/../dft/LIBS.h)
-
-scftest:: scftest.$(OBJSUF) $(LIBS)
+scftest:: scftest.$(OBJSUF) $(SCFTESTLIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 scftest.$(OBJSUF): scftest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-focktest:: focktest.$(OBJSUF) $(LIBS)
+focktest:: focktest.$(OBJSUF) $(SCFTESTLIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 focktest.$(OBJSUF): focktest.cc

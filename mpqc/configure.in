@@ -78,6 +78,26 @@ esac
 ]
 )
 
+AC_ARG_ENABLE(deplibs,
+[  --enable-deplibs        Generate Use library dependencies in shared libraries],
+[
+case $enableval in
+  yes)
+    ENABLE_DEPLIBS=yes
+  ;;
+  no)
+    ENABLE_DEPLIBS=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-deplibs ($enableval)])
+  ;;
+esac
+],[
+    ENABLE_DEPLIBS=no
+]
+)
+AC_SUBST(ENABLE_DEPLIBS)
+
 enableproduction=no
 AC_ARG_ENABLE(production,
 [  --enable-production     Prepare for a production install.],

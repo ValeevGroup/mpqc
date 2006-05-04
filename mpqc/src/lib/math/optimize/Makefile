@@ -55,6 +55,8 @@ TESTPROGS = kvopt opttest scextest
 
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 opttest: opttest.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)

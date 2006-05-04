@@ -29,36 +29,7 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: mpqc
 
-XDEF =
 XLIBS =
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
-XDEF += -DHAVE_CHEMISTRY_QC_PSI
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
-XDEF += -DHAVE_CHEMISTRY_QC_CC
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
- XDEF += -DHAVE_CHEMISTRY_QC_MBPTR12
- endif
-XDEF += -DHAVE_CHEMISTRY_QC_CINTS
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
-XDEF += -DHAVE_CHEMISTRY_QC_LIBINT2
-endif
-
-ifeq ($(HAVE_LIBINT),yes)
-  XLIBS += -lint
-endif
-ifeq ($(HAVE_LIBR12),yes)
-  XLIBS += -lr12
-endif
-ifeq ($(HAVE_LIBDERIV),yes)
-  XLIBS += -lderiv
-endif
-ifeq ($(HAVE_LIBINT2),yes)
-  XLIBS += -lint2
-endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   ifeq ($(ENABLESHARED),yes)
     LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB)
@@ -70,7 +41,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   CPPFLAGS += -I../../lib/chemistry/cca
 endif
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 #################################################################
 
@@ -87,8 +58,16 @@ $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
-$(TOPDIR)/lib/libmpqc.la: $(BINOBJ)
-	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
+ifeq ($(ENABLE_DEPLIBS),yes)
+MPQCLTDEPLIBS=$(LIBS)
+MPQCLTSYSLIBS=$(SYSLIBS)
+else
+MPQCLTDEPLIBS=
+MPQCLTSYSLIBS=
+endif
+
+$(TOPDIR)/lib/libmpqc.la: $(BINOBJ) $(MPQCLTDEPLIBS)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS) $(MPQCLTSYSLIBS)
 
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)

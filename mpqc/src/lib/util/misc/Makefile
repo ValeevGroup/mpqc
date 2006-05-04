@@ -113,8 +113,9 @@ endif
 # need babel headers generated
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   ifneq ($(DODEPEND),no)
-    include ../../chemistry/cca/.babel-stamp
+    include ../../chemistry/cca/stamp-babel
   endif
 endif
-../../chemistry/cca/.babel-stamp:
-	cd ../../chemistry/cca; $(MAKE) .babel-stamp
+../../chemistry/cca/stamp-babel:
+	cd ../../chemistry/cca; $(MAKE) stamp-babel
+

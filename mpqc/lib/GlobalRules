@@ -329,7 +329,7 @@ stamp-babel: $(SIDL_FILES)
 clean-components: oclean targetclean dclean miscclean
 	rm -f $(IORHDRS) $(IORSRCS) $(STUBHDRS) $(STUBSRCS) \
               $(SKELHDRS) $(SKELSRCS)
-	rm -f babel.make stamp-babel
+	rm -f babel.make* stamp-babel
 	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
           do \
             if test -L $${i}; then \

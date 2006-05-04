@@ -41,7 +41,7 @@ void
 CCAEnv::init(std::string &args)
 { 
   fw_ = ccaffeine::AbstractFramework::_create();
-  fw_.initialize(args); 
+  fw_.initialize(args,0); 
   type_map_ = fw_.createTypeMap();
   services_ = fw_.getServices("uber","UberComponent",type_map_);
   my_id_    = services_.getComponentID();

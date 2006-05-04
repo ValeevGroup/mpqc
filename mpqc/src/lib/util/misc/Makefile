@@ -118,4 +118,6 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
 endif
 ../../chemistry/cca/stamp-babel:
 	cd ../../chemistry/cca; $(MAKE) stamp-babel
+../../../../lib/cca/libSCchemistry.$(LIBSUF):
+	cd ../../chemistry/cca; $(MAKE)
 

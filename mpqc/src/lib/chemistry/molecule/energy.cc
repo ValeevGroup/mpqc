@@ -175,7 +175,10 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   else initial_pg_ = new PointGroup(mol_->point_group());
   if (s.version(::class_desc<MolecularEnergy>()) >= 5) {
     int ckpt; s.get(ckpt); ckpt_ = (bool)ckpt;
-    s.getstring(ckpt_file_);
+    char *tmp;
+    s.getstring(tmp);
+    ckpt_file_ = strdup(tmp);
+    delete[] tmp;
   }
   else {
     ckpt_ = false;

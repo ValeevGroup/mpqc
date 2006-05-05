@@ -175,7 +175,7 @@ double MP2R12Energy::ef12tot(SpinCase2 s) const
 
 static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVector3& r2, double phi_0, double phi_1_mp2, double phi_1_r12)
 {
-  fout << scprintf("%9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %12.8lf %12.8lf %12.8lf",
+  fout << scprintf("%9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %25.15lf %25.15lf %25.15lf",
                    r1.x(),r1.y(),r1.z(),r2.x(),r2.y(),r2.z(),phi_0,phi_1_mp2,phi_1_r12) << endl;
 }
 
@@ -276,7 +276,7 @@ MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 sp
   }
   std::stringstream output_file_name;
   output_file_name << SCFormIO::default_basename() << ".pair_function." << tbgrid->name() << "." << spinlabel << "."
-                   << ij << ".txt";
+                   << i << "_" << j << ".txt";
   ofstream ofile(output_file_name.str().c_str());
   
   // get coefficients for ij-th pair

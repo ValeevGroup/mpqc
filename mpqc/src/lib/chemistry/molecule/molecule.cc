@@ -568,6 +568,7 @@ Molecule::Molecule(StateIn& si):
   pg_ << SavableState::restore_state(si);
   geometry_units_ << SavableState::restore_state(si);
   atominfo_ << SavableState::restore_state(si);
+  q_Z_ = atominfo_->string_to_Z("Q");
   if (natoms_) {
       si.get(Z_);
       r_ = new double*[natoms_];

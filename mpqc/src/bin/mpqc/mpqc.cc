@@ -76,7 +76,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #ifdef HAVE_CHEMISTRY_CCA
-  #include <util/misc/ccaenv.h>
+  #include "cca.h"
 #endif
 #include <util/render/render.h>
 
@@ -528,7 +528,8 @@ try_main(int argc, char *argv[])
     string cca_args = "--path " + cca_path + " --load " + cca_load;
     ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
                   << endl << indent << cca_args << endl;
-    CCAEnv::init( cca_args );
+    Ref<CCAFramework> mpqc_fw = new MPQC_CCAFramework(cca_args);
+    CCAEnv::init( mpqc_fw );
   }
 #endif
 

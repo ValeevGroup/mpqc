@@ -39,6 +39,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   endif
   DEFINES += -DHAVE_CHEMISTRY_CCA -DCCA_PATH=\"$(libdir)/cca\"
   CPPFLAGS += -I../../lib/chemistry/cca
+  CXXSRC += cca.cc
 endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)

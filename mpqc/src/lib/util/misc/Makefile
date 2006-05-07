@@ -61,12 +61,11 @@ DEPENDINCLUDE = $(INC)
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ifeq ($(ENBABLECCA),yes)
   CXXSRC += ccaenv.cc
   INC += ccaenv.h
   LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \
     -L$(BABEL_LIB) -R$(BABEL_LIB) -lsidl
-  CPPFLAGS += -I../../chemistry/cca
 endif
 
 #####################################################################
@@ -109,15 +108,3 @@ $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
-
-# need babel headers generated
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  ifneq ($(DODEPEND),no)
-    include ../../chemistry/cca/stamp-babel
-  endif
-endif
-../../chemistry/cca/stamp-babel:
-	cd ../../chemistry/cca; $(MAKE) stamp-babel
-../../../../lib/cca/libSCchemistry.$(LIBSUF):
-	cd ../../chemistry/cca; $(MAKE)
-

@@ -1,5 +1,5 @@
 //
-// ccaenv.cc
+// mpqc/cca.cc
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -29,43 +29,40 @@
 #pragma implementation
 #endif
 
-#include <util/misc/ccaenv.h>
+#include "cca.h"
 
 using namespace sc;
 
-Ref<CCAFramework> CCAEnv::ccafw_;
-
-void 
-CCAEnv::init(const Ref<CCAFramework> &ccafw)
+MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
 { 
-  ccafw_ = ccafw;
+  fw_ = ccaffeine::AbstractFramework::_create();
+  fw_.initialize(args,0); 
+  type_map_ = fw_.createTypeMap();
+  services_ = fw_.getServices("uber","UberComponent",type_map_);
+  my_id_    = services_.getComponentID();
+  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
+  bs_ = services_.getPort("bs");
+  component_factory_ = MPQC::ComponentFactory::_create();
+  services_.addProvidesPort(component_factory_, "MPQC::ComponentFactory",
+                           "ccaffeine.ports.ComponentFactory",type_map_);
 }
-
-int
-CCAEnv::initialized() 
-{ return ccafw_.nonnull(); }
 
 ccaffeine::AbstractFramework* 
-CCAEnv::get_framework()
-{ return ccafw_->get_framework(); }
+MPQC_CCAFramework::get_framework() 
+{ return &fw_; }
 
 gov::cca::Services* 
-CCAEnv::get_services()
-{ return ccafw_->get_services(); }
+MPQC_CCAFramework::get_services()
+{ return &services_; }
 
 gov::cca::ports::BuilderService* 
-CCAEnv::get_builder_service()
-{ return ccafw_->get_builder_service(); }
+MPQC_CCAFramework::get_builder_service()
+{ return &bs_; }
 
 gov::cca::TypeMap* 
-CCAEnv::get_type_map()
-{ return ccafw_->get_type_map(); }
+MPQC_CCAFramework::get_type_map()
+{ return &type_map_; }
 
 gov::cca::ComponentID* 
-CCAEnv::get_component_id()
-{ return ccafw_->get_component_id(); }
-
-CCAFramework::~CCAFramework()
-{
-}
-
+MPQC_CCAFramework::get_component_id()
+{ return &my_id_; }

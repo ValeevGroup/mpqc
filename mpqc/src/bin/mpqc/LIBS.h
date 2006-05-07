@@ -22,3 +22,6 @@
 #include <chemistry/qc/dft/LIBS.h>
 #include <chemistry/qc/scf/LIBS.h>
 #include <util/options/LIBS.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA
+  #include <chemistry/cca/LIBS.h>
+#endif

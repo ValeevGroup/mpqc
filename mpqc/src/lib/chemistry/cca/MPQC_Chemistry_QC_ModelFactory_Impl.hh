@@ -146,6 +146,8 @@ namespace MPQC {
 
       sc::Ref<sc::IntegralCCA> intcca_;
 
+      gov::cca::ports::ParameterPortFactory ppf_;
+    
       ConfigurableParameterPort* 
         setup_parameters(ConfigurableParameterFactory*);
 

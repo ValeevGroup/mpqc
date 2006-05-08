@@ -28,11 +28,6 @@ using namespace sc;
 void MPQC::Chemistry_QC_ModelFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._ctor)
 
-  /////////////////////////////////////////////////////////////
-  // Since we're setting up groups here, bad things will 
-  // probably happen if multiple MPQC factories are instantiated
-  /////////////////////////////////////////////////////////////
-
   // ccaffeine has main, could use stovepipe to get command-line vars,
   // but for now use environmental variables and fake argc/argv
   int fake_argc=0;
@@ -162,6 +157,9 @@ throw (
 
   int i;
 
+  gov::cca::ports::ParameterPort pp = services_.getPort("pport");
+  gov::cca::TypeMap tm = pp.readConfigurationMap();
+
   /*
    Currently two possibilities for molecule specification:
      1) we are using python GUI, set_molecule() has already been called
@@ -173,7 +171,8 @@ throw (
 
   if( !molecule_ ) { 
     molecule_filename_ = 
-      std::string( molecule_filename_param_->getValueString() );
+      std::string( tm.getString("molecule_filename", 
+				"failed molecule_filename fetch") );
     molecule_factory_ = services_.getPort("MoleculeFactory");
     molecule_factory_.set_molecule_filename(molecule_filename_);
     molecule_ = molecule_factory_.get_molecule();
@@ -206,7 +205,8 @@ throw (
      2) keyval filename is supplied for us to read from
   */  
   std::string keyval_filename = 
-    std::string(keyval_filename_param_->getValueString());
+    std::string( tm.getString("keyval_filename", 
+			      "failed keyval_filename fetch") );
   if( keyval_filename.size() > 0 ) {
     ifstream infile(keyval_filename.c_str());
     if( !infile ) {
@@ -219,8 +219,10 @@ throw (
   }
   else {
 
-    theory_ = std::string( theory_param_->getValueString() );
-    basis_  = std::string( basis_param_->getValueString() );
+    theory_ = std::string( tm.getString("theory",
+					"failed theory fetch") );
+    basis_  = std::string( tm.getString("basis",
+					"failed basis fetch") );
     
     if (theory_ == "HF") {
       input << "  model<CLHF>:(" << std::endl;
@@ -243,8 +245,9 @@ throw (
 
   // currently needed for integrals stuff
   if( basis_.size() == 0 )
-     basis_  = std::string( basis_param_->getValueString() );
-
+    basis_  = std::string( tm.getString("basis",
+					"failed basis fetch") );
+  
   std::cout << "  model input:" << std::endl << input.str() << std::endl;
 
   // hook into integrals component (optional)
@@ -253,7 +256,8 @@ throw (
   if( eval_factory_._not_nil() ) {
     bool use_opaque;
     std::string buffer_str = 
-      std::string(integral_buffer_param_->getValueString());
+      std::string( tm.getString("integral_buffer",
+				"failed integral_buffer fetch") );
     if( buffer_str == "opaque") use_opaque=true;
     else if(buffer_str == "array") use_opaque=false;
     else { std::cerr << "\bunrecognized integral buffer option"; abort(); }
@@ -264,7 +268,7 @@ throw (
   MPQC::Chemistry_QC_Model model = MPQC::Chemistry_QC_Model::_create();  
   model.initialize_parsedkeyval("model",input.str());
   model.set_molecule(molecule_);
-
+  
   return model;
 
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.get_model)
@@ -317,6 +321,8 @@ throw (
   try {
       services_.addProvidesPort(self, "ModelFactory", 
 				"gov.cca.Port", 0);
+      services_.registerUsesPort("ppf",
+				 "gov.cca.ports.ParameterPortFactory", 0);
       services_.registerUsesPort("BasisName", 
 				 "Util.StringProvider", 0);
       services_.registerUsesPort("TheoryName", 
@@ -338,6 +344,25 @@ throw (
   // setup parameters
   try {
 
+    gov::cca::TypeMap tm = services_.createTypeMap();
+    ppf_ = services_.getPort("ppf");
+    ppf_.initParameterData(tm, "pport");
+ 
+    ppf_.setGroupName(tm,"Model Factory Input");
+    ppf_.addRequestString(tm, "theory", "Theory name", 
+			  "theory", "HF");
+    ppf_.addRequestString(tm, "basis", "AO basis name", 
+			  "basis", "STO-3G");
+    ppf_.addRequestString(tm, "molecule_filename", "Molecule filename",
+			  "molecule_filename", ""); 
+    ppf_.addRequestString(tm, "keyval_filename",  "Keyval input filename",
+			  "keyval_filename", "");
+    ppf_.addRequestString(tm, "integral_buffer", "Integral buffer method",
+			  "integral_buffer", "opaque");
+
+    ppf_.addParameterPort(tm, services_);
+
+    /*
     if (services_._not_nil()) {
       gov::cca::TypeMap tm = services_.createTypeMap();
       services_.registerUsesPort("classicParam",
@@ -371,6 +396,7 @@ throw (
         services_.unregisterUsesPort("classicParam");
       }
     }
+    */
 
   }
   catch(std::exception& e) {

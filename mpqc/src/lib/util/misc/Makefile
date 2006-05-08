@@ -61,7 +61,7 @@ DEPENDINCLUDE = $(INC)
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
-ifeq ($(ENBABLECCA),yes)
+ifeq ($(ENABLECCA),yes)
   CXXSRC += ccaenv.cc
   INC += ccaenv.h
   LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \

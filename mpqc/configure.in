@@ -1898,7 +1898,7 @@ if test $components == "yes"; then
     AC_MSG_ERROR([problem with cca-chem-generic headers]) )
 
 else
-  EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_QC_INTCCA $EXCLUDED_DIRS"
+  EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_CCA_CLIENT -x SRC_LIB_CHEMISTRY_CCA_INTCCA -x SRC_LIB_CHEMISTRY_CCA_SERVER -x SRC_LIB_CHEMISTRY_CCA_MODULE $EXCLUDED_DIRS"
 fi
 
 dnl --------- Find the list of all sc libraries. ---------

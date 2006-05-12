@@ -38,7 +38,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
              -lccachem_cxx_server -lccachem_cxx_client -lccafeCore -lcca -lsidl -lxml2 -lz
   endif
   DEFINES += -DHAVE_CHEMISTRY_CCA -DCCA_PATH=\"$(libdir)/cca\"
-  CPPFLAGS += -I../../lib/chemistry/cca
+  CPPFLAGS += -I../../lib/chemistry/cca/client
   CXXSRC += cca.cc
 endif
 

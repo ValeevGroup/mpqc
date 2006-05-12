@@ -49,9 +49,6 @@ endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 SUBDIRS := $(SUBDIRS) mbptr12
 endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
-SUBDIRS := $(SUBDIRS) intcca
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

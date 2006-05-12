@@ -160,10 +160,6 @@ CCAFE_SHARE=@CCAFE_SHARE@
 # cca-chem libs
 CCA_CHEM_LIB=@CCA_CHEM_LIB@
 
-ifeq ($(ENABLECCA),yes)
-  LTLINKLIBOPTS += -rpath $(libdir)/cca
-endif
-
 # intv3 or cca/cints ordering?
 INTV3_ORDER=no
 

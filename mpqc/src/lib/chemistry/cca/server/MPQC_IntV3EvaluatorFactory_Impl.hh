@@ -8,7 +8,6 @@
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
 // babel-version = 0.10.12
-// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/server/../../../../../lib/cca/repo/MPQC.IntV3EvaluatorFactory-v0.2.xml
 // 
 
 #ifndef included_MPQC_IntV3EvaluatorFactory_Impl_hh

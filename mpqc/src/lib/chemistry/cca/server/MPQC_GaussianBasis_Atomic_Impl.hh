@@ -8,7 +8,6 @@
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
 // babel-version = 0.10.12
-// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/server/../../../../../lib/cca/repo/MPQC.GaussianBasis_Atomic-v0.2.xml
 // 
 
 #ifndef included_MPQC_GaussianBasis_Atomic_Impl_hh

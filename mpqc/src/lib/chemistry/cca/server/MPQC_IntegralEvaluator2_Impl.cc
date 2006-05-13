@@ -8,7 +8,6 @@
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
 // babel-version = 0.10.12
-// xml-url       = /home/jpkenny/src/mpqc-libint2.build-shared/src/lib/chemistry/cca/server/../../../../../lib/cca/repo/MPQC.IntegralEvaluator2-v0.2.xml
 // 
 #include "MPQC_IntegralEvaluator2_Impl.hh"
 

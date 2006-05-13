@@ -103,6 +103,7 @@ MKF77SYM= $(PERL) $(TOPDIR)/bin/mkf77sym.pl
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory
 INCLUDE = -I$(TOPDIR)/src/lib -I$(SRCTOPDIR)/include -I$(SRCTOPDIR)/src/lib \
+          -I$(TOPDIR)/src/lib/chemistry/cca/server \
 	  @CPPFLAGS@
 DEFINES = @DEFS@ @EXTRADEFINES@
 

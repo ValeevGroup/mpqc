@@ -61,7 +61,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/cca/CCAMakefile
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = cca/libSCccaclient
+TARGET_TO_MAKE = libSCccaclient
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

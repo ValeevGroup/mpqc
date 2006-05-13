@@ -6,7 +6,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(TOPDIR)/lib/Makedirlist
 
-SUBDIRS = client int server
+SUBDIRS = client int server module
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

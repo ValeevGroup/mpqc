@@ -64,7 +64,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/cca/CCAMakefile
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = cca/libSCccaserver
+TARGET_TO_MAKE = libSCccaserver
 
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 ifeq ($(HAVE_LIBINT),yes)
@@ -74,7 +74,7 @@ ifeq ($(INTV3_ORDER),yes)
   DEFINES += -DINTV3_ORDER
 endif
 
-LTLINKLIBOPTS += -L$(libdir)/cca -R$(libdir)/cca
+LTLINKLIBOPTS += -L$(libdir) -R$(libdir)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -1,1 +1,1 @@
-cca/libSCccaserver.LIBSUF
+libSCccaserver.LIBSUF

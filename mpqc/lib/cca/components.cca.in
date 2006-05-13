@@ -2,7 +2,7 @@
 <libInfo>
 
 <scl>
-  <library uri="@sclibdir@/cca/libSCchemistry.so"
+  <library uri="@sclibdir@/cca/mpqc.so"
    scope="global" resolution="now" >
     <class name="MPQC.Chemistry_MoleculeViewer" desc="ior/impl" />
     <class name="MPQC.Physics_Units" desc="ior/impl" />
@@ -22,9 +22,9 @@
   <environment> 
     <ccaSpec binding="babel" />
     <library loading="dynamic"
-             name="@prefix@/lib/cca/libSCchemistry.so"
-             libtool-archive="@prefix@/lib/cca/libSCchemistry.la"
-             shared-archive="@prefix@/lib/cca/libSCchemistry.so" />
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
              files="MPQC_Chemistry_MoleculeViewer" />
   </environment>
@@ -36,9 +36,9 @@
   <environment>
     <ccaSpec binding="babel" /> 
     <library loading="dynamic"
-             name="@prefix@/lib/cca/libSCchemistry.so"
-             libtool-archive="@prefix@/lib/cca/libSCchemistry.la"
-             shared-archive="@prefix@/lib/cca/libSCchemistry.so" />
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
              files="MPQC_Chemistry_QC_ModelFactory" />
   </environment>
@@ -50,9 +50,9 @@
   <environment>
     <ccaSpec binding="babel" />
     <library loading="dynamic"
-             name="@prefix@/lib/cca/libSCchemistry.so"
-             libtool-archive="@prefix@/lib/cca/libSCchemistry.la"
-             shared-archive="@prefix@/lib/cca/libSCchemistry.so" />
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
              files="MPQC_ChemistryOpt_CoordinateModel" />
   </environment>
@@ -64,9 +64,9 @@
   <environment>
     <ccaSpec binding="babel" />
     <library loading="dynamic"
-             name="@prefix@/lib/cca/libSCchemistry.so"
-             libtool-archive="@prefix@/lib/cca/libSCchemistry.la"
-             shared-archive="@prefix@/lib/cca/libSCchemistry.so" />
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
              files="MPQC_IntegralEvaluatorFactory" />
   </environment>
@@ -78,9 +78,9 @@
  <environment>
    <ccaSpec binding="babel" />
     <library loading="dynamic"
-             name="@prefix@/lib/cca/libSCchemistry.so"
-             libtool-archive="@prefix@/lib/cca/libSCchemistry.la"
-             shared-archive="@prefix@/lib/cca/libSCchemistry.so" />
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
              files="MPQC_SimpleDriver" />
  </environment>

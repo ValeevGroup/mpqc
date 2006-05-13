@@ -38,7 +38,7 @@ ifeq ($(INTV3_ORDER),yes)
   DEFINES += -DINTV3_ORDER
 endif
 
-TARGET_TO_MAKE = cca/libSCccaint
+TARGET_TO_MAKE = libSCccaint
 BIN_OR_LIB = LIB
 
 DEFINES += -DDMALLOC

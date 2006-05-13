@@ -46,9 +46,6 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
 #endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA
-#  include <chemistry/qc/intcca/linkage.h>
-#endif
 
 namespace sc {
 

@@ -113,7 +113,7 @@
 #  include <chemistry/qc/psi/linkage.h>
 #endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA
-#  include <chemistry/qc/intcca/linkage.h>
+#  include <chemistry/cca/int/linkage.h>
 #endif
 
 #ifdef HAVE_MPI

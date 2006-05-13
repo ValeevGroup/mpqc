@@ -25,8 +25,31 @@
 # The U.S. Government is granted a limited license as per AL 91-7.
 #
 
-#
-# ???
-#
-# What happens here Curt?
-#
+TOPDIR=../../../../..
+ifndef SRCDIR
+  SRCDIR=$(shell pwd)
+endif
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+TARGET_TO_MAKE=mpqc
+# This is required to give libtool the right rpath arguments.
+# Without the right rpath arguments, libtool will refuse to install
+# the module.
+libdir:=$(libdir)/cca
+
+default:: $(TOPDIR)/lib/cca/$(TARGET_TO_MAKE).la
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+SRC=dummy.cc
+LIBOBJ=$(SRC:%.cc=%.$(OBJSUF))
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
+$(TOPDIR)/lib/cca/$(TARGET_TO_MAKE).la: $(LIBOBJ) $(LIBS)
+	$(LTLINK) $(CXX) -module -o $@ $^ $(LTLINKLIBOPTS) $(SYSLIBS)
+
+install:: $(TOPDIR)/lib/cca/$(TARGET_TO_MAKE).$(LIBSUF)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	$(LTINST) $(INSTALL) -module $(INSTALLLIBOPT) $< $(installroot)$(libdir)

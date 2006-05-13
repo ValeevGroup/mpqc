@@ -19,6 +19,7 @@ stamp-repo: $(SIDL_FILES)
 	$(BABEL) -e'^sidl.*' -e'^gov.*' \
           -R$(CCA_CHEM_REPO) -R$(CCA_SPEC_BABEL_SHARE)/xml \
           -R$(CCAFE_SHARE)/xml --text=xml -o$(REPO) $(SIDL_FILES)
+	$(PERL) $(SRCTOPDIR)/bin/fix-babel-srcs $(SRCDIR) $(IMPLHDRS) $(IMPLSRCS)
 	@mv -f .temp-repo $@
 
 stamp-babel: stamp-repo
@@ -33,6 +34,7 @@ ifeq ($(CLIENT_OR_SERVER),server)
 endif
 	$(BABEL) $(BABEL_ARGS) $(BABEL_PACKAGES) $(BABEL_ENUMS) \
           $(BABEL_CLASSES)
+	$(PERL) $(SRCTOPDIR)/bin/fix-babel-srcs $(SRCDIR) $(IMPLHDRS) $(IMPLSRCS)
 	@mv -f .temp-babel $@
 
 clean-components: oclean targetclean dclean miscclean

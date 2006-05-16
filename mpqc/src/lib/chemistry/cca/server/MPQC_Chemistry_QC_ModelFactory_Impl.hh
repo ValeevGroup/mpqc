@@ -63,15 +63,9 @@
 //#include <util/group/messmpi.h>
 #include <chemistry/cca/int/intcca.h>
 #include <chemistry/qc/basis/integral.h>
-#include "cca.h"
-#include "dc/babel/babel-cca/server/ccaffeine_TypeMap.hh"
-#include "dc/babel/babel-cca/server/ccaffeine_ports_PortTranslator.hh"
-#include "util/IO.h"
-#include "jc++/jc++.h"
-#include "jc++/util/jc++util.h"
-#include "parameters/parametersStar.h"
-#include "port/portInterfaces.h"
-#include "port/supportInterfaces.h"
+#include <cca.h>
+#include <gov_cca_ports_ParameterPortFactory.hh>
+#include <gov_cca_ports_ParameterPort.hh>
 
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._includes)
 
@@ -130,10 +124,11 @@ namespace MPQC {
       std::string theory_;
       std::string basis_;
       std::string molecule_filename_;
-      StringParameter *theory_param_, *basis_param_, *molecule_filename_param_, 
-                      *keyval_filename_param_, *integral_buffer_param_;
 
       gov::cca::Services services_;
+      gov::cca::TypeMap tm_;
+      gov::cca::ports::ParameterPortFactory ppf_;
+      gov::cca::ports::ParameterPort pp_;
 
       Chemistry::MoleculeFactory molecule_factory_;
       Chemistry::Molecule molecule_;
@@ -145,10 +140,10 @@ namespace MPQC {
 
       sc::Ref<sc::IntegralCCA> intcca_;
 
-      gov::cca::ports::ParameterPortFactory ppf_;
-    
+      /*
       ConfigurableParameterPort* 
         setup_parameters(ConfigurableParameterFactory*);
+      */
 
     // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._implementation)
 

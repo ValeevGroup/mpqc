@@ -153,11 +153,14 @@ throw (
 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.get_model)
+  
+  std::cerr << "getting model\n";
 
   int i;
 
-  gov::cca::ports::ParameterPort pp = services_.getPort("pport");
-  gov::cca::TypeMap tm = pp.readConfigurationMap();
+  gov::cca::TypeMap tm = pp_.readConfigurationMap();
+
+  std::cerr << "got TypeMap\n";
 
   /*
    Currently two possibilities for molecule specification:
@@ -176,6 +179,7 @@ throw (
     molecule_factory_.set_molecule_filename(molecule_filename_);
     molecule_ = molecule_factory_.get_molecule();
   }
+  std::cerr << "got molecule\n";
 
   std::ostringstream input;
 
@@ -343,23 +347,38 @@ throw (
   // setup parameters
   try {
 
-    gov::cca::TypeMap tm = services_.createTypeMap();
+    tm_ = services_.createTypeMap();
+    if(tm_._is_nil()) {
+      std::cerr << "TypeMap is nill\n";
+      abort();
+    }
     ppf_ = services_.getPort("ppf");
-    ppf_.initParameterData(tm, "pport");
- 
-    ppf_.setGroupName(tm,"Model Factory Input");
-    ppf_.addRequestString(tm, "theory", "Theory name", 
-			  "theory", "HF");
-    ppf_.addRequestString(tm, "basis", "AO basis name", 
-			  "basis", "STO-3G");
-    ppf_.addRequestString(tm, "molecule_filename", "Molecule filename",
-			  "molecule_filename", ""); 
-    ppf_.addRequestString(tm, "keyval_filename",  "Keyval input filename",
-			  "keyval_filename", "");
-    ppf_.addRequestString(tm, "integral_buffer", "Integral buffer method",
-			  "integral_buffer", "opaque");
+    ppf_.initParameterData(tm_, "CONFIG");
+    ppf_.setBatchTitle(tm_,"MPQC ModelFactory Options");
+    ppf_.setGroupName(tm_,"Job Specification");
+    ppf_.addRequestString(tm_, "theory", "Theory name", 
+			  "Theory", "HF");
+    ppf_.addRequestString(tm_, "basis", "AO basis name", 
+			  "Basis", "STO-3G");
+    ppf_.addRequestString(tm_, "molecule_filename", 
+		          "Full path to molecule file",
+			  "Molecule filename", ""); 
+    ppf_.addRequestString(tm_, "keyval_filename",  
+		          "Full path to keyval input file",
+			  "Keyval filename", "");
+    ppf_.addRequestString(tm_, "integral_buffer", "Integral buffer approach",
+			  "Integral buffer", "opaque");
 
-    ppf_.addParameterPort(tm, services_);
+    ppf_.addParameterPort(tm_, services_);
+    services_.releasePort("ppf");
+
+    pp_ = services_.getPort("CONFIG");
+    if (pp_._is_nil()) {
+      std::cerr << "getport failed\n";
+      abort();
+    }
+
+    std::cerr << "finished parameter port stuff\n";
 
     /*
     if (services_._not_nil()) {
@@ -396,10 +415,9 @@ throw (
       }
     }
     */
-
   }
   catch(std::exception& e) {
-    std::cout << "Exception caught: " << e.what() << std::endl;
+    std::cerr << "Error in parameter port setup: " << e.what() << std::endl;
   }
  
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.setServices)
@@ -408,6 +426,7 @@ throw (
 
 // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._misc)
 
+/*
 ConfigurableParameterPort *
 MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFactory *cpf)
 {
@@ -428,7 +447,6 @@ MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFact
                   new StringParameter("keyval_filename", 
                                       "Keyval input filename",
                                       "keyval_filename", "");
-  /* integral buffer method: opaque or (sidl) array */
   integral_buffer_param_ = 
                   new StringParameter("integral_buffer",
                                       "Integral buffer method",
@@ -442,6 +460,7 @@ MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFact
 
   return pp;
 }
+*/
 
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._misc)
 

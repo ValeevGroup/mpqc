@@ -131,18 +131,24 @@ HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(HSOSSCF
 HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
 CCAINTV3MASTER=ccaintv3.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAINTV3MASTER))
+  CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
+endif
+
 CCACINTSMASTER=ccacints.qci
-CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
- CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAINTV3MASTER))
- CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
- CCAFEINPUTS = ccafe_h2oscfsto3g.in ccafe_h2oscfgradccpvtz.in 
- CCAFEOUTPUTS = $(CCAFEINPUTS:%.in=%.out)
- CCAFERESULTS = $(CCAFEINPUTS:%.in=%.results)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCACINTSMASTER))
   CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
  endif
+endif
+
+CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ CCAFEINPUTS = ccafe_h2oscfsto3g.cca ccafe_h2oscfgradccpvtz.cca
+ CCAFEOUTPUTS = $(CCAFEINPUTS:%.cca=%.out)
+ CCAFERESULTS = $(CCAFEINPUTS:%.cca=%.results)
 endif
 
 CKPTINPUTS = \
@@ -339,6 +345,8 @@ default::
 
 check_clean: check_clean_scratch
 	/bin/rm -f $(RUN)/*.out $(RUN)/*.diff
+	/bin/rm -f $(RUN)/*.cca $(RUN)/*.results $(RUN)/*.err
+	/bin/rm -rf $(RUN)/*.ccatmpdir
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
@@ -393,7 +401,7 @@ ifeq ($(ENABLESHARED),yes)
 endif
 
 CCARUN = ../ccarun
-CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
+CCARUN_EXTRA_ARGS = --inputprefix $(RUN) \
                      --outputprefix $(RUN)
 
 checkccafe_run: $(RUN) stamp-ccafe
@@ -453,9 +461,6 @@ opt: stamp-opt
 
 .PHONY: optts
 optts: stamp-optts
-
-.PHONY: ccafe
-ccafe: stamp-ccafe
 
 .PHONY: ccaintv3
 ccaintv3: stamp-ccaintv3
@@ -539,12 +544,8 @@ stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(HSOSSCFMASTER)
 	touch stamp-hsosscf
 
-stamp-ccafe: $(INP) $(CCAFEIN)
-	$(MAKEINCCA) --dir $(INP) --scref $(SRCDIR)/ref $(CCAFEIN)
-	for file in $(CCAFEINPUTS); \
-	  do \
-	    ( $(INSTALL) $(INSTALLFILEOPT) $(INP)/$${file} $(SRCDIR)/ref/$${file} ); \
-	  done
+stamp-ccafe: $(RUN) $(CCAFEIN)
+	$(MAKEINCCA) --dir $(RUN) --scref $(SRCDIR)/ref $(CCAFEIN)
 	touch stamp-ccafe
 
 stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)

@@ -2,6 +2,8 @@
 #eval 'exec perl $0 $*'
 #    if 0;
 
+# running from the compiled module does not work
+#$libsc = "@compiledir@/lib/cca";
 $libsc = "@sclibdir@/cca";
 $libgeneric = "@CCA_CHEM_LIB@";
 
@@ -37,7 +39,7 @@ foreach (@ARGV) {
   $full_input_file =~ m/([^\/]*)\/?$/;
   $input_file = $1;
   open INPUT,"<$full_input_file";
-  open OUTPUT,">$dir/$input_file.in";
+  open OUTPUT,">$dir/$input_file.cca";
 
   while (<INPUT>) {
     $line = $_;

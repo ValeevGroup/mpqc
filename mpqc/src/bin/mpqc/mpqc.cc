@@ -112,7 +112,7 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
 #  include <chemistry/qc/psi/linkage.h>
 #endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA_INT
 #  include <chemistry/cca/int/linkage.h>
 #endif
 

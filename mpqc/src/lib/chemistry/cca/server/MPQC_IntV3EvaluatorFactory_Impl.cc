@@ -408,4 +408,3 @@ throw (
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._misc)
 // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._misc)
-

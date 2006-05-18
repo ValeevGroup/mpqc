@@ -120,7 +120,7 @@ throw (
           = ccaffeine::ports::PortTranslator::createFromClassic(vp);
 
         services_.addProvidesPort(provideX,
-                                  "configure", "ParameterPort", tm);
+                                  "configure", "gov.cca.ports.ParameterPort", tm);
 
         services_.releasePort("classicParam");
         services_.unregisterUsesPort("classicParam");

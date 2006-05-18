@@ -202,4 +202,3 @@ throw (
 // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._misc)
 // Insert-Code-Here {MPQC.CintsEvaluatorFactory._misc} (miscellaneous code)
 // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._misc)
-

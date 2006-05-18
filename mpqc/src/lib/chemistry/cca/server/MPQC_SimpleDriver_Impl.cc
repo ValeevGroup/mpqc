@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <cstdio>
 
+#include "MPQC_CCAException.hh"
+
 using namespace std;
 // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._includes)
 
@@ -76,6 +78,9 @@ throw (
   try {
       services_.addProvidesPort(self, "go","gov.cca.ports.GoPort",
                                 0);
+      services_.registerUsesPort("ppf",
+		                 "gov.cca.ports.ParameterPortFactory",
+				 0);
       services_.registerUsesPort("ModelFactory", "Chemistry.QC.ModelFactory",
                                  0);
       }
@@ -88,40 +93,35 @@ throw (
   try {
 
     if (services_._not_nil()) {
-      gov::cca::TypeMap tm = services_.createTypeMap();
-      services_.registerUsesPort("classicParam",
-                                 "gov.cca.ParameterPortFactoryService",tm);
-      gov::cca::Port p = services_.getPort("classicParam");
-      ccaffeine::ports::PortTranslator portX = p;
-      if(portX._not_nil()) {
-        classic::gov::cca::Port *cp
-          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
-        if(!cp) {
-          std::cout << "Couldn't get classic port" << std::endl;
-          return;
-        }
+        tm_ = services_.createTypeMap();
+        if(tm_._is_nil()) {
+            MPQC::CCAException ex = MPQC::CCAException::_create();
+            ex.setNote("tm is nil");
+            ex.add(__FILE__,__LINE__,"MPQC::SimpleDriver_impl::setServices");
+            throw ex;
+          }
+        ppf_ = services_.getPort("ppf");
+        if (ppf_._is_nil()) {
+            MPQC::CCAException ex = MPQC::CCAException::_create();
+            ex.setNote("ppf is nil");
+            ex.add(__FILE__,__LINE__,"MPQC::SimpleDriver_impl::setServices");
+            throw ex;
+          }
+        ppf_.initParameterData(tm_,"CONFIG");
+        ppf_.setBatchTitle(tm_,"MPQC SimpleDriver Options");
+        ppf_.setGroupName(tm_,"Job Options");
+        ppf_.addRequestBoolean(tm_,"do_gradient",
+                               "Perform gradient evaluation?",
+                               "Do gradient?",0);
+        ppf_.addParameterPort(tm_, services_);
+        services_.releasePort("ppf");
 
-        ConfigurableParameterFactory *cpf
-          = dynamic_cast<ConfigurableParameterFactory *>(cp);
-        ConfigurableParameterPort *pp = setup_parameters(cpf);
-        classic::gov::cca::Port *clscp
-          = dynamic_cast<classic::gov::cca::Port*>(pp);
-        if (!clscp) {
-          std::cout << "Couldn't cast to classic::gov::cca::Port"
-                    << std::endl;
-        }
-        void *vp = static_cast<void*>(clscp);
-        ccaffeine::ports::PortTranslator provideX
-          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
-
-        services_.addProvidesPort(provideX,
-                                  "configure", "ParameterPort", tm);
-
-        services_.releasePort("classicParam");
-        services_.unregisterUsesPort("classicParam");
+        pp_ = services_.getPort("CONFIG");
+        if (pp_._is_nil()) {
+            std::cerr << "getport failed\n";
+            abort();
+          }
       }
-    }
-
   }
   catch(std::exception& e) {
     std::cout << "Exception caught: " << e.what() << std::endl;
@@ -235,22 +235,6 @@ throw ()
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._misc)
-
-ConfigurableParameterPort *
-MPQC::SimpleDriver_impl::setup_parameters(ConfigurableParameterFactory *cpf)
-{
-  ConfigurableParameterPort * pp = cpf->createConfigurableParameterPort();
-
-  pp->setBatchTitle("PortTranslatorStarter Configuration");
-  pp->setGroupName("IntegralTest Input");
-
-  grad_param_  = new BoolParameter("do_gradient",
-                                   "Perform gradient evaluation",
-                                   "do_gradient",0);
-  pp->addRequest(grad_param_);
-
-  return pp;
-}
 
 // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._misc)
 

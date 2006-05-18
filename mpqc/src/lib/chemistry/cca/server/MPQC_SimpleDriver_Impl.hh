@@ -52,6 +52,8 @@
 #include "parameters/parametersStar.h"
 #include "port/portInterfaces.h"
 #include "port/supportInterfaces.h"
+#include "gov_cca_ports_ParameterPortFactory.hh"
+#include "gov_cca_ports_ParameterPort.hh"
 // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._includes)
 
 namespace MPQC { 
@@ -79,8 +81,9 @@ namespace MPQC {
     BoolParameter *grad_param_;
     bool do_grad_;
 
-    ConfigurableParameterPort*
-    setup_parameters(ConfigurableParameterFactory *);
+    gov::cca::TypeMap tm_;
+    gov::cca::ports::ParameterPortFactory ppf_;
+    gov::cca::ports::ParameterPort pp_;
 
     // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._implementation)
 

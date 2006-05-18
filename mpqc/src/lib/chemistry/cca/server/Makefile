@@ -39,6 +39,7 @@ CLIENT_OR_SERVER = server
 BABEL_PACKAGES = MPQC
 
 BABEL_CLASSES = \
+  MPQC.CCAException \
   MPQC.Chemistry_MoleculeViewer \
   MPQC.Chemistry_QC_Model \
   MPQC.Chemistry_QC_ModelFactory \

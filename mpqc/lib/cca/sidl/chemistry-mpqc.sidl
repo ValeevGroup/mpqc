@@ -88,4 +88,8 @@ package MPQC version 0.2 {
 
   class SimpleDriver implements-all gov.cca.Component, gov.cca.ports.GoPort { };
 
+  class CCAException implements-all gov.cca.CCAException {
+     void setCCAExceptionType(in gov.cca.CCAExceptionType type);
+  };
+
 };

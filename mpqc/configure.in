@@ -1859,11 +1859,6 @@ dnl --------- CCA component configuration ---------
 
 if test $components == "yes"; then
 
-  if test $HAVE_MPI == "yes" &&
-     test $HAVE_MPIPP == "no"; then
-    AC_MSG_ERROR([libmpi++ needed for mpi cca components])
-  fi
-
   if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
     AC_MSG_ERROR([cca-chem-config is required to build CCA component code])
   fi

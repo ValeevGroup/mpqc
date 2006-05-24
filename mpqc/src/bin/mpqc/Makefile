@@ -35,7 +35,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
     LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB)
   else
     XLIBS += -L$(CCA_CHEM_LIB) -L$(CCAFE_LIB) -L$(CCA_SPEC_BABEL_LIB) -L$(BABEL_LIB) \
-             -lccachem_cxx_server -lccachem_cxx_client -lccafeCore -lcca -lsidl -lxml2 -lz
+             -lccachem_cxx_server -lccachem_cxx_client -lccafeCore -lcca -lsidl -lsidlstub_cxx -lxml2 -lz
   endif
   DEFINES += -DHAVE_CHEMISTRY_CCA -DCCA_PATH=\"$(libdir)/cca\"
   CPPFLAGS += -I../../lib/chemistry/cca/client

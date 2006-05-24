@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <sstream>
+#include <iostream>
+#include <vector>
+#include <set>
 #include <util/state/stateio.h>
 #include <util/misc/ccaenv.h>
 #include <chemistry/qc/basis/integral.h>
@@ -101,9 +105,10 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 		      buffer.c_str(),class_desc() );
   
   // get evaluator factory type
+  string superfactory_type("Chemistry.IntegralSuperFactory");
   factory_type_ = keyval->stringvalue("evaluator_factory");
   if ( keyval->error() != KeyVal::OK ) {
-    factory_type_ = string("Chemistry.IntegralSuperFactory");
+    factory_type_ = superfactory_type;
   }
 
   // get package configuration
@@ -116,27 +121,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 		  << std::endl;
   }
 
-  int ntype = keyval->count("type");
-  int npkg = keyval->count("package");
-  string tp, pkg;
-  if( ntype != npkg ) throw InputError("ntype != npackage",__FILE__,__LINE__);
-  for( int i=0; i<ntype; ++i) {
-
-    tp = keyval->stringvalue("type",i);
-    pkg = keyval->stringvalue("package",i);
-
-    if( name_to_factory_.count(tp) )
-      throw InputError( "multiple occurences of integral type",
-			__FILE__, __LINE__,"type",
-			tp.c_str(),class_desc() );
-    else 
-      name_to_factory_[tp] = pkg;
-
-    ExEnv::out0() << indent << "Integral type " << tp << ": " 
-		  << pkg << std::endl;
-  }
-
-
   //-----------------
   // get eval factory
   //-----------------
@@ -147,15 +131,83 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
-  // get the factory
-  fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
-  services.registerUsesPort("IntegralSuperFactory",
-                        "Chemistry.QC.GaussianBasis.IntegralSuperFactory",
-                        type_map);
-  fac_con_ = bs.connect(my_id,"IntegralSuperFactory",
-                        fac_id_,"IntegralSuperFactory");
-  eval_factory_ = services.getPort("IntegralSuperFactory");
+  // get a (super) evaluator factory
+  if( factory_type_ == superfactory_type ) {
 
+    ExEnv::out0() << indent << "MPQC: configuring IntegralSuperFactory\n";
+      
+    // get the super factory
+    fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
+    services.registerUsesPort("IntegralSuperFactory",
+			      "Chemistry.QC.GaussianBasis.IntegralSuperFactory",
+			      type_map);
+    fac_con_ = bs.connect(my_id,"IntegralSuperFactory",
+			  fac_id_,"IntegralSuperFactory");
+    eval_factory_ = services.getPort("IntegralSuperFactory");
+    IntegralSuperFactory superfac = services.getPort("IntegralSuperFactory");
+    ExEnv::out0() << indent << "MPQC: have super factory port\n";
+
+    // get sub factories
+    set<string> subfac_set;
+    map<string,gov::cca::ComponentID> subfac_name_to_id;
+    int nsubfac = keyval->count("subfactories");
+    for( int i=0; i<nsubfac; ++i)
+      subfac_set.insert( keyval->stringvalue("subfactories",i) );
+    set<string>::iterator iter;
+    int sfname_id=-1;
+    for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
+      ExEnv::out0() << indent << "MPQC: instantiating " 
+		    << *iter << endl;
+      ++sfname_id;
+      ostringstream sfname;
+      sfname << "subfactory" << sfname_id;
+      subfac_name_to_id[sfname.str()] = 
+	bs.createInstance(sfname.str(),
+			  *iter,
+			  type_map);
+    }
+    ExEnv::out0() << indent << "MPQC: sub factories instantiated\n";
+
+    // connect factories with super factory
+    sidl::array<string> sfac_portnames = superfac.add_uses_ports(nsubfac);
+    ExEnv::out0() << indent << "MPQC: " << nsubfac 
+		  << " uses ports available on super factory\n"; 
+    map<string,gov::cca::ComponentID>::iterator miter;
+    vector<gov::cca::ConnectionID> subfac_conids;
+    int portname_iter=-1;
+    for( miter = subfac_name_to_id.begin(); 
+         miter != subfac_name_to_id.end(); miter++) {
+      ExEnv::out0() << indent << "MPQC: connecting " 
+		    << (*miter).first << " to super factory\n"; 
+      subfac_conids.push_back(  
+	  bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
+		      (*miter).second, "IntegralEvaluatorFactory") );
+    }  
+    // construct type->factory map
+    int ntype = keyval->count("type");
+    int npkg = keyval->count("package");
+    string tp, pkg;
+    if( ntype != npkg ) throw InputError("ntype != npackage",__FILE__,__LINE__);
+    for( int i=0; i<ntype; ++i) {
+
+      tp = keyval->stringvalue("type",i);
+      pkg = keyval->stringvalue("package",i);
+
+      if( type_to_factory_.count(tp) )
+	throw InputError( "multiple occurences of integral type",
+			  __FILE__, __LINE__,"type",
+			  tp.c_str(),class_desc() );
+      else 
+	type_to_factory_[tp] = pkg;
+
+      ExEnv::out0() << indent << "Integral type " << tp << ": " 
+		  << pkg << std::endl;
+  
+    }
+    ExEnv::out0() << indent << "MPQC: type->factory map constructed\n";
+  }
+  else { //do a straightforward hook up 
+  }
 
   //-------------------------------------------------
   // set up function objects for evaluator generation
@@ -164,27 +216,27 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>
-    ob( obgen_, name_to_factory_ );
+    ob( obgen_, type_to_factory_ );
   get_onebody = ob;
 
   obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_, name_to_factory_ );
+    obd( obdgen_, type_to_factory_ );
   get_onebody_deriv = obd;
 
   tbgen_ = twobody_generator( this, 50000000,
 			      eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_, name_to_factory_ ); 
+    tb( tbgen_, type_to_factory_ ); 
   get_twobody = tb;
 
   tbdgen_ = twobody_deriv_generator( this, 50000000,
 				     eval_factory_, use_opaque_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ ); 
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_, name_to_factory_ ); 
+    tbd( tbdgen_, type_to_factory_ ); 
   get_twobody_deriv = tbd;
 
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
@@ -454,28 +506,28 @@ IntegralCCA::set_basis(const Ref<GaussianBasisSet> &b1,
   Integral::set_basis(b1,b2,b3,b4);
   initialize_transforms();
 
-  delete &get_onebody;
+  // delete &get_onebody; invalid???
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator >
-    ob( obgen_, name_to_factory_ );
+    ob( obgen_, type_to_factory_ );
   get_onebody = ob;
 
-  delete &get_onebody_deriv;
+  // delete &get_onebody_deriv; invalid???
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_, name_to_factory_ );
+    obd( obdgen_, type_to_factory_ );
   get_onebody_deriv = obd;
 
-  delete &get_twobody;
+  // delete &get_twobody; invalid???
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_, name_to_factory_ ); 
+    tb( tbgen_, type_to_factory_ ); 
   get_twobody = tb;
 
-  delete &get_twobody_deriv;
+  // delete &get_twobody_deriv; invalid???
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_, name_to_factory_ );
+    tbd( tbdgen_, type_to_factory_ );
   get_twobody_deriv = tbd;
 }
 

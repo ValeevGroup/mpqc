@@ -174,3 +174,4 @@ throw (
 // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer._misc)
 // Put miscellaneous code here
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._misc)
+

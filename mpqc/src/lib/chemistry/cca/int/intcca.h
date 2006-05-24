@@ -28,7 +28,6 @@
 #ifndef _chemistry_cca_int_intcca_h
 #define _chemistry_cca_int_intcca_h
 
-#include <map>
 #include <gov_cca.hh>
 #include <chemistry/qc/basis/integral.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
@@ -243,8 +242,8 @@ namespace sc {
     Chemistry::Chemistry_Molecule molecule_;
     string factory_type_;
     IntegralSuperFactory eval_factory_;
-    map<string,string> name_to_factory_;
     CompositeIntegralDescr eval_req_;
+    map<string,string> type_to_factory_;
 
     onebody_generator obgen_;
     onebody_deriv_generator obdgen_;

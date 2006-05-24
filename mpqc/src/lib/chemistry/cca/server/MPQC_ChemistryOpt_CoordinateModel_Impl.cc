@@ -734,3 +734,4 @@ MPQC::ChemistryOpt_CoordinateModel_impl::setup_parameters(ConfigurableParameterF
 }
 
 // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel._misc)
+

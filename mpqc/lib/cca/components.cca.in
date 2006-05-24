@@ -11,7 +11,8 @@
     <class name="MPQC.Chemistry_QC_GaussianBasisSet" desc="ior/impl" />
     <class name="MPQC.Chemistry_QC_Model" desc="ior/impl" />
     <class name="MPQC.ChemistryOpt_CoordinateModel" desc="ior/impl" />
-    <class name="MPQC.IntegralEvaluatorFactory" desc="ior/impl" />
+    <class name="MPQC.IntV3EvaluatorFactory" desc="ior/impl" />
+    <class name="MPQC.CintsEvaluatorFactory" desc="ior/impl" />
     <class name="MPQC.SimpleDriver" desc="ior/impl" />
   </library>
 </scl>
@@ -59,8 +60,8 @@
 </componentDeployment>
 
 <componentDeployment
-  name="MPQC.IntegralEvaluatorFactory"
-  paletteClassAlias="MPQC.IntegralEvaluatorFactory" >
+  name="MPQC.IntV3EvaluatorFactory"
+  paletteClassAlias="MPQC.IntV3EvaluatorFactory" >
   <environment>
     <ccaSpec binding="babel" />
     <library loading="dynamic"
@@ -68,7 +69,21 @@
              libtool-archive="@prefix@/lib/cca/mpqc.la"
              shared-archive="@prefix@/lib/cca/mpqc.so" />
     <headers path="@prefix@/include/chemistry/cca"
-             files="MPQC_IntegralEvaluatorFactory" />
+             files="MPQC_IntV3EvaluatorFactory" />
+  </environment>
+</componentDeployment>
+
+<componentDeployment
+  name="MPQC.CintsEvaluatorFactory"
+  paletteClassAlias="MPQC.CintsEvaluatorFactory" >
+  <environment>
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_CintsEvaluatorFactory" />
   </environment>
 </componentDeployment>
 

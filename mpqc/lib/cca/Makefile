@@ -7,6 +7,8 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 FILES = $(shell echo `find repo`) 
 
+default::
+
 install:: components.cca
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca
 	$(INSTALL) $(INSTALLIBOPT) components.cca $(installroot)$(libdir)/cca

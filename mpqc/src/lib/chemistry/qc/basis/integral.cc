@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
@@ -270,6 +271,20 @@ Integral::storage_unused()
 {
   ptrdiff_t tmp=storage_-storage_used_;
   return (tmp<0?0:tmp);
+}
+
+Ref<OneBodyInt>
+Integral::p_dot_nuclear_p()
+{
+  throw FeatureNotImplemented("p_dot_nuclear_p",
+                              __FILE__, __LINE__, class_desc());
+}
+
+Ref<OneBodyInt>
+Integral::p_cross_nuclear_p()
+{
+  throw FeatureNotImplemented("p_cross_nuclear_p",
+                              __FILE__, __LINE__, class_desc());
 }
 
 Ref<OneBodyOneCenterInt>

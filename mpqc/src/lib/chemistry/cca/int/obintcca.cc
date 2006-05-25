@@ -52,7 +52,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
   nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
   scratchsize = nshell2*3;
   if( !use_opaque_ )
-    buff_ = new double[scratchsize];
+    buffer_ = new double[scratchsize];
 
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
@@ -70,12 +70,13 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
   eval_factory_.set_source_factories( sidl_factories );
 
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
+  buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
+  std::cerr << "IntCCA set buffer to " << buffer_ << std::endl;
   
 }
 
 OneBodyIntCCA::~OneBodyIntCCA()
 {
-  delete buff_;
 }
 
 void

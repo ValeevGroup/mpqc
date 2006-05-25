@@ -60,7 +60,6 @@ namespace sc {
     vector<string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
-    double* buff_;
     IntegralEvaluator2 eval_;
 
   protected:

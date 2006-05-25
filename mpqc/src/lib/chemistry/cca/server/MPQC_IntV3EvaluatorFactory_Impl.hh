@@ -94,6 +94,7 @@ namespace MPQC {
     gov::cca::Services services_;
     int storage_;
     sc::Ref<sc::IntegralV3> integral_;
+    sc::Ref<sc::OneBodyInt> obint_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._implementation)
 

@@ -21,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "Chemistry_CompositeIntegralDescr.hh"
 #include "Chemistry_OverlapIntegralDescr.hh"
 #include "Chemistry_KineticIntegralDescr.hh"
 #include "Chemistry_NuclearIntegralDescr.hh"
@@ -43,6 +44,16 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._ctor)
 
   integral_ = new sc::IntegralV3();
+  cdesc_ = Chemistry::CompositeIntegralDescr::_create();
+
+  /*
+  IntegralDescr desc = OverlapIntegralDescr::_create();
+  if( &desc ) 
+    std::cerr << desc.get_type()<< std::endl; 
+  else
+    std::cerr << "you got nuttin\n";
+  cdesc_.add_descr( desc );
+  */
 
   cdesc_.add_descr( OverlapIntegralDescr::_create() );
   cdesc_.add_descr( KineticIntegralDescr::_create() );
@@ -109,7 +120,7 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_name)
 
-  return string("IntV3EvaluatorFactory");
+  return string("MPQC.IntV3EvaluatorFactory");
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_name)
 }
@@ -220,35 +231,50 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
+  std::cerr << "MPQC Eval2: created MPQC::IntegralEvaluator2\n";
   eval.set_basis( bs1, bs2 );
   eval.set_reorder(true);
 
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2;
+  if( bs1.isSame(bs2) ) 
+   sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  integral_->set_basis(sc_bs1,sc_bs2);
+  
+  std::cerr << "MPQC Eval2: basis and reorder set\n";
+
+  // this will currently bomb for n descr < 1
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
     IntegralDescr idesc = desc.get_descr(i);
+    std::cerr << "MPQC Eval2: descr type is " << idesc.get_type() << std::endl;
     int ideriv = idesc.get_deriv_lvl();
+    std::cerr << "MPQC Eval2: got deriv_lvl\n";
     string itype = idesc.get_type();
-    sc::Ref<sc::OneBodyInt> obint;
     sc::Ref<sc::OneBodyDerivInt> obderivint;
     sc::Ref<sc::TwoBodyTwoCenterInt> tbtcint; 
     
-    if( itype == "overlap"  && ideriv == 0 )
-      obint = integral_->overlap();
+    if( itype == "overlap"  && ideriv == 0 ) {
+      std::cerr << "MPQC Eval2: trying to set obint\n";
+      obint_ = integral_->overlap();
+      std::cerr << "MPQC Eval2: set obint\n";
+    }
     else if( itype == "kinetic" && ideriv == 0 )
-      obint = integral_->kinetic();
+      obint_ = integral_->kinetic();
     else if( itype == "nuclear" && ideriv == 0 )
-      obint = integral_->nuclear();
+      obint_ = integral_->nuclear();
     else if( itype == "hcore" && ideriv == 0 )
-      obint = integral_->hcore();
+      obint_ = integral_->hcore();
     // these need additional data
     //else if( itype == "pointcharge2" && ideriv == 0 )
-    //  obint = integral_->point_charge( ??? );
+    //  obint_ = integral_->point_charge( ??? );
     //else if( itype == "efield_dot_vector" && ideriv == 0 )
-    //  obint = integral_->efield_dot_vector( ??? );
+    //  obint_ = integral_->efield_dot_vector( ??? );
     //else if( itype == "dipole" && ideriv == 0 )
-    //  obint = integral_->dipole( ??? );
+    //  obint_ = integral_->dipole( ??? );
     //else if( itype == "quadrupole" && ideriv == 0 )
-    //  obint = integal_->quadrupole( ??? );
+    //  obint_ = integal_->quadrupole( ??? );
     else if( itype == "overlap" && ideriv == 1 )
       obderivint = integral_->overlap_deriv();
     else if( itype == "kinetic" && ideriv == 1 )
@@ -262,14 +288,18 @@ throw (
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( obint.nonnull() ) 
-      eval.add_evaluator( (void*) obint.pointer(), desc );
+    std::cerr << "MPQC Eval2: going to pass eval pointer now " 
+	      << obint_.pointer() << std::endl;
+    std::cerr << "buffer test: " << obint_.pointer()->buffer() << std::endl;
+    if( obint_.nonnull() ) 
+      eval.add_evaluator( (void*) obint_.pointer(), idesc );
     else if( obderivint.nonnull() ) 
-      eval.add_evaluator( (void*) obderivint.pointer(), desc );
+      eval.add_evaluator( (void*) obderivint.pointer(), idesc );
     else if( tbtcint.nonnull() )
-      eval.add_evaluator( (void*) tbtcint.pointer(), desc );
+      eval.add_evaluator( (void*) tbtcint.pointer(), idesc );
   }
   
+  std::cerr << "MPQC Eval2: going to return eval now\n";
   return eval;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_evaluator2)

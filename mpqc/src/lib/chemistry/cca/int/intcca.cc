@@ -131,6 +131,11 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
+  // just a test
+  //fac_id_ = bs.createInstance("test_fac",
+//			      "MPQC.IntV3EvaluatorFactory",
+//			      0);
+
   // get a (super) evaluator factory
   if( factory_type_ == superfactory_type ) {
 
@@ -150,9 +155,10 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     // get sub factories
     set<string> subfac_set;
     map<string,gov::cca::ComponentID> subfac_name_to_id;
-    int nsubfac = keyval->count("subfactories");
+    int nsubfac = keyval->count("subfactory");
     for( int i=0; i<nsubfac; ++i)
-      subfac_set.insert( keyval->stringvalue("subfactories",i) );
+      subfac_set.insert( keyval->stringvalue("subfactory",i) );
+    nsubfac = subfac_set.size();
     set<string>::iterator iter;
     int sfname_id=-1;
     for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
@@ -184,27 +190,35 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 		      (*miter).second, "IntegralEvaluatorFactory") );
     }  
     // construct type->factory map
+    // need defaults added
     int ntype = keyval->count("type");
-    int npkg = keyval->count("package");
-    string tp, pkg;
-    if( ntype != npkg ) throw InputError("ntype != npackage",__FILE__,__LINE__);
+    int nsfac = keyval->count("subfactory");
+    string tp, subfac;
+    sidl::array<string> sfacs = sidl::array<string>::create1d(ntype);
+    if( ntype != nsfac ) throw InputError("ntype != nsfac",__FILE__,__LINE__);
     for( int i=0; i<ntype; ++i) {
 
       tp = keyval->stringvalue("type",i);
-      pkg = keyval->stringvalue("package",i);
+      subfac = keyval->stringvalue("subfactory",i);
 
       if( type_to_factory_.count(tp) )
 	throw InputError( "multiple occurences of integral type",
 			  __FILE__, __LINE__,"type",
 			  tp.c_str(),class_desc() );
-      else 
-	type_to_factory_[tp] = pkg;
+      else {
+	type_to_factory_[tp] = subfac;
+	sfacs.set(i,subfac);
+      }
 
       ExEnv::out0() << indent << "Integral type " << tp << ": " 
-		  << pkg << std::endl;
+		  << subfac << std::endl;
   
     }
     ExEnv::out0() << indent << "MPQC: type->factory map constructed\n";
+
+    // set source factories on super factory
+    eval_factory_.set_source_factories(sfacs);
+    
   }
   else { //do a straightforward hook up 
   }
@@ -213,6 +227,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // set up function objects for evaluator generation
   //-------------------------------------------------
 
+  ExEnv::out0() << indent << "MPQC: setting up generators\n";
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>
@@ -241,6 +256,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
 
+  ExEnv::out0() << indent << "MPQC: intcca constuctor done\n";
 }
 
 IntegralCCA::~IntegralCCA()
@@ -360,6 +376,9 @@ IntegralCCA::overlap()
   Chemistry::OverlapIntegralDescr desc =
     Chemistry::OverlapIntegralDescr::_create();
   eval_req_.add_descr( desc );
+  ExEnv::out0() << indent 
+	      << "MPQC: descr type is " << eval_req_.get_descr(0).get_type()
+	      << std::endl;
   
   return get_onebody( eval_req_ );
 }

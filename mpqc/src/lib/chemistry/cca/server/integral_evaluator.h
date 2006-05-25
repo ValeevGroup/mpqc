@@ -42,7 +42,9 @@ namespace MpqcCca {
     { sh1_=sh1; sh2_=sh2; }
 
     void compute( OneBodyInt* eval )
-    { eval->compute_shell( sh1_, sh2_ ); }
+    { std::cerr << "computer doing compute shell, pointer is " 
+	        << eval << std::endl;
+      eval->compute_shell( sh1_, sh2_ ); }
   };
 
   class twobody_threecenter_computer {
@@ -109,6 +111,8 @@ namespace MpqcCca {
     {
       eval_type* eval_ptr;   
       eval_ptr = static_cast<eval_type*>(eval);
+      if( eval_ptr ) 
+	std::cerr << "cast appears successful\n";
       pair<eval_type*,IntegralDescr> p(eval_ptr,desc);
       evals_.push_back( p );
     }
@@ -135,10 +139,15 @@ namespace MpqcCca {
 
     void* get_buffer ( IntegralDescr desc ) 
     {
+      std::cerr << "requesting a buffer\n";
       for( int i=0; i<evals_.size(); ++i)
 	if( desc.get_type() == evals_[i].second.get_type() &&
-	    desc.get_deriv_lvl() == evals_[i].second.get_deriv_lvl() )
+	    desc.get_deriv_lvl() == evals_[i].second.get_deriv_lvl() ) {
+          std::cerr << "returning some sort of buffer\n";
+	  std::cerr << "eval pointer is " << evals_[i].first << std::endl;
+	  std::cerr << "buffer is " << evals_[i].first->buffer() << std::endl;
 	  return (void*) evals_[i].first->buffer();
+	}
       return NULL;
     }
     
@@ -188,6 +197,7 @@ namespace MpqcCca {
 	  __FILE__,__LINE__);
 	*/
 	
+	std::cerr << "IntegralEvaluator going to loop through evals now\n";
 	for( int i=0; i<evals_.size(); ++i) 
 	  computer->compute( evals_[i].first );
 	

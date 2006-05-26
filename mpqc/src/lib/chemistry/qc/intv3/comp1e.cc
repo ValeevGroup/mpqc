@@ -58,10 +58,15 @@ Int1eV3::int_initialize_1e(int flags, int order)
   int jmax1,jmax2,jmax;
   int scratchsize=0,nshell2;
 
-  /* The efield routines look like derivatives so bump up order if
-   * it is zero to allow efield integrals to be computed.
+  /* The efield routines look like derivatives.  The p_dot_nuclear_p
+   * routines look like first derivatives in terms of the scratch buffer
+   * size and second derivatives in terms of the primitive intermediates
+   * needed.  Bump up order if it is zero or one to allow these integrals
+   * to be computed.
    */
-  if (order == 0) order = 1;
+  int scratch_order = order;
+  if (order <= 1) order = 2;
+  if (scratch_order == 0) scratch_order = 1;
 
   jmax1 = bs1_->max_angular_momentum();
   jmax2 = bs2_->max_angular_momentum();
@@ -71,16 +76,18 @@ Int1eV3::int_initialize_1e(int flags, int order)
 
   nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
 
-  if (order == 0) {
+  if (scratch_order == 0) {
     init_order = 0;
     scratchsize = nshell2;
     }
-  else if (order == 1) {
+  else if (scratch_order == 1) {
     init_order = 1;
     scratchsize = nshell2*3;
     }
   else {
-    ExEnv::errn() << scprintf("int_initialize_1e: invalid order: %d\n",order);
+    ExEnv::errn()
+      << scprintf("int_initialize_1e: invalid scratch order: %d\n",
+                  scratch_order);
     exit(1);
     }
 
@@ -1263,6 +1270,64 @@ Int1eV3::nuclear(int ish, int jsh)
                cartesianbuffer, buff, gshell1, gshell2);
   }
 
+void
+Int1eV3::p_dot_nuclear_p(int ish, int jsh)
+{
+  int i;
+  int c1,c2;
+  int gc1,gc2;
+
+  if (!(init_order >= 0)) {
+    ExEnv::errn() << scprintf("Int1eV3::p_dot_nuclear_p: one electron routines are not init'ed\n");
+    exit(1);
+    }
+
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+
+  int ni = gshell1->ncartesian();
+  int nj = gshell2->ncartesian();
+  memset(cartesianbuffer,0,sizeof(double)*ni*nj);
+
+  int offi = 0;
+  for (gc1=0; gc1<gshell1->ncontraction(); gc1++) {
+    int a = gshell1->am(gc1);
+    int offj = 0;
+    for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
+      int b = gshell2->am(gc2);
+      /* Loop thru the centers on bs1_. */
+      for (i=0; i<bs1_->ncenter(); i++) {
+        double charge = bs1_->molecule()->charge(i);
+        for (int xyz=0; xyz<3; xyz++) C[xyz] = bs1_->r(i,xyz);
+        comp_shell_block_p_dot_nuclear_p(gc1, a, gc2, b,
+                                         nj, offi, offj,
+                                         -charge, cartesianbuffer);
+        }
+      /* Loop thru the centers on bs2_ if necessary. */
+      if (bs2_ != bs1_) {
+        for (i=0; i<bs2_->ncenter(); i++) {
+          double charge = bs2_->molecule()->charge(i);
+          for (int xyz=0; xyz<3; xyz++) C[xyz] = bs2_->r(i,xyz);
+          comp_shell_block_p_dot_nuclear_p(gc1, a, gc2, b,
+                                           nj, offi, offj,
+                                           -charge, cartesianbuffer);
+          }
+        }
+      offj += INT_NCART_NN(b);
+      }
+    offi += INT_NCART_NN(a);
+    }
+
+  transform_1e(integral_,
+               cartesianbuffer, buff, gshell1, gshell2);
+  }
+
 /* This computes the integrals between functions in two shells for
  * a point charge interaction operator.
  * The result is placed in the buffer.
@@ -1812,6 +1877,328 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
     } END_FOR_CART;
   delete[] shellints;
 #endif
+  }
+
+void
+Int1eV3::comp_shell_block_p_dot_nuclear_p(int gc1, int a, int gc2, int b,
+                                          int gcsize2, int gcoff1, int gcoff2,
+                                          double coef, double *buffer)
+{
+  int i,j,k,xyz;
+  double Pi;
+  double oozeta;
+  double AmB,AmB2;
+  double PmC2;
+  double auxcoef;
+  double tmp;
+  int am = a + b;
+  int size1 = INT_NCART_NN(a);
+  int size2 = INT_NCART_NN(b);
+
+  /* Loop over the primitives in the shells. */
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
+
+      double alpha2 = gshell2->exponent(j);
+
+      /* Compute the intermediates. */
+      zeta = gshell1->exponent(i) + gshell2->exponent(j);
+      oozeta = 1.0/zeta;
+      oo2zeta = 0.5*oozeta;
+      AmB2 = 0.0;
+      PmC2 = 0.0;
+      for (xyz=0; xyz<3; xyz++) {
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz]
+                     + gshell2->exponent(j) * B[xyz]);
+        PmA[xyz] = Pi - A[xyz];
+        PmB[xyz] = Pi - B[xyz];
+        PmC[xyz] = Pi - C[xyz];
+        AmB = A[xyz] - B[xyz];
+        AmB2 += AmB*AmB;
+        PmC2 += PmC[xyz]*PmC[xyz];
+        }
+
+// define this to compute only kinetic energy like integrals
+// the computed integrals will be - 2 * T
+#define PVP_KINETIC_ONLY 0
+#define PVP_DEBUG 0
+
+      /* The auxillary integral coeficients. */
+      auxcoef =   2.0 * M_PI/(gshell1->exponent(i)
+                                           +gshell2->exponent(j))
+           * exp(- oozeta * gshell1->exponent(i)
+                 * gshell2->exponent(j) * AmB2);
+
+      /* The Fm(U) intermediates. */
+      fjttable_ = fjt_->values(am+2,zeta*PmC2);
+
+      /* Convert the Fm(U) intermediates into the auxillary
+       * nuclear attraction integrals. */
+      for (k=0; k<=am+2; k++) {
+        fjttable_[k] *= auxcoef;
+        }
+
+#if PVP_KINETIC_ONLY
+      tmp =  gshell1->coefficient_unnorm(gc1,i)
+             * gshell2->coefficient_unnorm(gc2,j);
+#else
+      // The "-" comes from i*i in the momentum operators
+      tmp =  -gshell1->coefficient_unnorm(gc1,i)
+             * gshell2->coefficient_unnorm(gc2,j)
+             * coef;
+#endif
+
+      double *primbuffer;
+      int i2,j2,k2;
+      int tsize;
+
+      //////////////////////////////////////////
+      // Compute phi_1 V del^2 phi_2
+
+      // differentiate the cartesian prefactors twice:
+      if (b >= 2) {
+#if PVP_KINETIC_ONLY
+        primbuffer = inter(a,b-2,0);
+        ss =   pow(M_PI/(gshell1->exponent(i)
+                         +gshell2->exponent(j)),1.5)
+               * exp(- oozeta * gshell1->exponent(i)
+                     * gshell2->exponent(j) * AmB2);
+        int i1,j1,k1;
+        FOR_CART(i1,j1,k1,a)
+          FOR_CART(i2,j2,k2,b-2)
+            *primbuffer++ = comp_prim_overlap(i1,j1,k1,i2,j2,k2);
+          END_FOR_CART
+        END_FOR_CART
+#else
+        comp_prim_block_nuclear(a,b-2);
+#endif
+
+        primbuffer = inter(a,b-2,0);
+        tsize = INT_NCART(b-2);
+        for (int ip=0; ip<size1; ip++) {
+          int jp=0;
+          FOR_CART(i2,j2,k2,b)
+            if (i2 >= 2) {
+              int tjp = INT_CARTINDEX(b-2,i2-2,j2);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                += i2 * (i2-1) * tmp * primbuffer[tjp];
+#if PVP_DEBUG
+              std::cout << "contribA1x = "
+                        << i2 * (i2-1) * tmp * primbuffer[tjp]
+                        << std::endl;
+#endif
+              }
+            if (j2 >= 2) {
+              int tjp = INT_CARTINDEX(b-2,i2,j2-2);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                += j2 * (j2-1) * tmp * primbuffer[tjp];
+#if PVP_DEBUG
+              std::cout << "contribA1y = "
+                        << j2 * (j2-1) * tmp * primbuffer[tjp]
+                        << std::endl;
+#endif
+              }
+            if (k2 >= 2) {
+              int tjp = INT_CARTINDEX(b-2,i2,j2);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                += k2 * (k2-1) * tmp * primbuffer[tjp];
+#if PVP_DEBUG
+              std::cout << "contribA1z = "
+                        << k2 * (k2-1) * tmp * primbuffer[tjp]
+                        << std::endl;
+#endif
+              }
+            jp++;
+          END_FOR_CART
+          primbuffer += tsize;
+        }
+
+      }
+
+      // differentiate the cartesian prefactor and the exponential
+#if PVP_KINETIC_ONLY
+      primbuffer = inter(a,b,0);
+      ss =   pow(M_PI/(gshell1->exponent(i)
+                       +gshell2->exponent(j)),1.5)
+             * exp(- oozeta * gshell1->exponent(i)
+                   * gshell2->exponent(j) * AmB2);
+      int i1,j1,k1;
+      FOR_CART(i1,j1,k1,a)
+        FOR_CART(i2,j2,k2,b)
+          *primbuffer++ = comp_prim_overlap(i1,j1,k1,i2,j2,k2);
+        END_FOR_CART
+      END_FOR_CART
+#if PVP_DEBUG
+      std::cout << "primbuffer[0] (overlap a b) = " << *inter(a,b,0)
+                << ", " << "*tmp = " << *inter(a,b,0) * tmp
+                << std::endl;
+#endif
+#else
+      comp_prim_block_nuclear(a,b);
+#endif
+
+      primbuffer = inter(a,b,0);
+      for (int ip=0; ip<size1; ip++) {
+        int jp=0;
+        FOR_CART(i2,j2,k2,b)
+          double val = *primbuffer;
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            -= 2.0 * (2.0*i2+1.0) * alpha2 * tmp * val;
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            -= 2.0 * (2.0*j2+1.0) * alpha2 * tmp * val;
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            -= 2.0 * (2.0*k2+1.0) * alpha2 * tmp * val;
+#if PVP_DEBUG
+          std::cout << "contribA2x = "
+                    << - 2.0 * (2.0*i2+1.0) * alpha2 * tmp * val
+                    << std::endl;
+          std::cout << "contribA2y = "
+                    << - 2.0 * (2.0*j2+1.0) * alpha2 * tmp * val
+                    << std::endl;
+          std::cout << "contribA2z = "
+                    << - 2.0 * (2.0*k2+1.0) * alpha2 * tmp * val
+                    << std::endl;
+#endif
+          jp++;
+          primbuffer++;
+        END_FOR_CART
+      }
+
+      // differentiate exponential twice
+#if PVP_KINETIC_ONLY
+      primbuffer = inter(a,b+2,0);
+      ss =   pow(M_PI/(gshell1->exponent(i)
+                       +gshell2->exponent(j)),1.5)
+             * exp(- oozeta * gshell1->exponent(i)
+                   * gshell2->exponent(j) * AmB2);
+      FOR_CART(i1,j1,k1,a)
+        FOR_CART(i2,j2,k2,b+2)
+          *primbuffer++ = comp_prim_overlap(i1,j1,k1,i2,j2,k2);
+        END_FOR_CART
+      END_FOR_CART
+#if PVP_DEBUG
+      std::cout << "primbuffer[0] (overlap a b+2) = " << *inter(a,b+2,0)
+                << std::endl;
+#endif
+#else
+      comp_prim_block_nuclear(a,b+2);
+#endif
+
+      primbuffer = inter(a,b+2,0);
+      tsize = INT_NCART(b+2);
+      for (int ip=0; ip<size1; ip++) {
+        int jp=0;
+        FOR_CART(i2,j2,k2,b)
+          int tjp_x = INT_CARTINDEX(b+2,i2+2,j2);
+          int tjp_y = INT_CARTINDEX(b+2,i2,j2+2);
+          int tjp_z = INT_CARTINDEX(b+2,i2,j2);
+          double val = primbuffer[tjp_x]
+                       +primbuffer[tjp_y]
+                       +primbuffer[tjp_z];
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            += 4.0 * alpha2 * alpha2 * tmp * val;
+#if PVP_DEBUG
+          std::cout << "contribA3 = "
+                    << 4.0 * alpha2 * alpha2 * tmp * val
+                    << std::endl;
+#endif
+          jp++;
+        END_FOR_CART
+        primbuffer += tsize;
+      }
+
+      //////////////////////////////////////////
+      // Compute phi_1 (del V) del phi_2
+
+#if !PVP_KINETIC_ONLY
+
+      // differentiate the cartesian prefactor
+      if (b >= 1) {
+        comp_prim_block_efield(a,b-1);
+        primbuffer = efield_inter(a,b-1,0);
+        int tsize = INT_NCART(b-1);
+        for (int ip=0; ip<size1; ip++) {
+          int jp=0;
+          FOR_CART(i2,j2,k2,b)
+            if (i2 >= 1) {
+              int tjp = INT_CARTINDEX(b-1,i2-1,j2);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                -= i2 * tmp * primbuffer[3*tjp+0];
+#if PVP_DEBUG
+              std::cout << "contribB1x = "
+                        << - i2 * tmp * primbuffer[3*tjp+0]
+                        << endl;
+#endif
+              }
+            if (j2 >= 1) {
+              int tjp = INT_CARTINDEX(b-1,i2,j2-1);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                -= j2 * tmp * primbuffer[3*tjp+1];
+#if PVP_DEBUG
+              std::cout << "contribB1y = "
+                        << - j2 * tmp * primbuffer[3*tjp+1]
+                        << endl;
+#endif
+              }
+            if (k2 >= 1) {
+              int tjp = INT_CARTINDEX(b-1,i2,j2);
+              buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+                -= k2 * tmp * primbuffer[3*tjp+2];
+#if PVP_DEBUG
+              std::cout << "contribB1z = "
+                        << - k2 * tmp * primbuffer[3*tjp+2]
+                        << endl;
+#endif
+              }
+            jp++;
+          END_FOR_CART
+          primbuffer += 3*tsize;
+        }
+      }
+
+      // differentiate the exponential
+      comp_prim_block_efield(a,b+1);
+      primbuffer = efield_inter(a,b+1,0);
+      tsize = INT_NCART(b+1);
+      for (int ip=0; ip<size1; ip++) {
+        int jp=0;
+        FOR_CART(i2,j2,k2,b)
+          int tip = INT_CARTINDEX(b+1,i2+1,j2);
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            += 2.0 * alpha2 * tmp * primbuffer[3*tip+0];
+
+          int tjp = INT_CARTINDEX(b+1,i2,j2+1);
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            += 2.0 * alpha2 * tmp * primbuffer[3*tjp+1];
+
+          int tkp = INT_CARTINDEX(b+1,i2,j2);
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2]
+            += 2.0 * alpha2 * tmp * primbuffer[3*tkp+2];
+
+#if PVP_DEBUG
+          std::cout << "contribB2x = "
+                    << 2.0 * alpha2 * tmp * primbuffer[3*tip+0]
+                    << endl;
+
+          std::cout << "contribB2y = "
+                    << 2.0 * alpha2 * tmp * primbuffer[3*tjp+1]
+                    << endl;
+
+          std::cout << "contribB2z = "
+                    << 2.0 * alpha2 * tmp * primbuffer[3*tkp+2]
+                    << endl;
+#endif
+
+          jp++;
+        END_FOR_CART
+        primbuffer += 3*tsize;
+        }
+
+#endif
+
+
+      }
+    }
   }
 
 void

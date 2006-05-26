@@ -42,13 +42,15 @@ CXXSRC = gaussbas.cc gaussshell.cc files.cc \
          transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
          symmint.cc tbint.cc dercent.cc \
          sobasis.cc sointegral.cc extent.cc orthog.cc \
-         gpetite.cc distshpair.cc intparams.cc intdescr.cc
+         gpetite.cc distshpair.cc intparams.cc intdescr.cc \
+         uncontract.cc
 
 INC = basis.h gaussbas.h guassshell.h files.h \
       cartiter.h transform.h shellrot.h \
       integral.h obint.h petite.h symmint.h tbint.h dercent.h \
       sobasis.h sointegral.h \
-      orthog.h gpetite.h distshpair.h intparams.h intdescr.h
+      orthog.h gpetite.h distshpair.h intparams.h intdescr.h \
+      uncontract.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

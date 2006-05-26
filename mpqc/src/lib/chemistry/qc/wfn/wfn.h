@@ -72,6 +72,9 @@ class Wavefunction: public MolecularEnergy {
     int print_nao_;
     int print_npa_;
 
+    int dk_; // 0, 1, 2, or 3
+    Ref<GaussianBasisSet> momentum_basis_;
+
     void init_orthog();
 
     void set_up_charge_types(std::vector<int> &q_pc,
@@ -95,6 +98,11 @@ class Wavefunction: public MolecularEnergy {
                             const std::vector<int>&c1,
                             const std::vector<int>&c2,
                             bool uniq);
+
+    // Compute the dk relativistic core hamiltonian.
+    RefSymmSCMatrix core_hamiltonian_dk(int dk);
+    // Compute the non-relativistic core hamiltonian.
+    RefSymmSCMatrix core_hamiltonian_nr();
 
   protected:
 

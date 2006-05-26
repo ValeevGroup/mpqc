@@ -56,7 +56,8 @@ using namespace std;
 using namespace sc;
 
 static ClassDesc GaussianBasisSet_cd(
-  typeid(GaussianBasisSet),"GaussianBasisSet",3,"public SavableState",
+  typeid(GaussianBasisSet),"GaussianBasisSet",3,
+  "virtual public SavableState",
   0, create<GaussianBasisSet>, create<GaussianBasisSet>);
 
 static bool
@@ -67,6 +68,10 @@ skip_atom(bool skip_ghosts, bool include_q,
   // charges do not have basis functions
   if (!include_q && mol->atom_symbol(iatom) == "Q") return true;
   return false;
+}
+
+GaussianBasisSet::GaussianBasisSet()
+{
 }
 
 GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
@@ -1139,6 +1144,76 @@ sc::operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B)
 {
   GaussianBasisSet& aref = *(A.pointer());
   return aref + B;
+}
+
+void
+GaussianBasisSet::init(
+    char *name,
+    char *label,
+    const Ref<Molecule> &molecule,
+    const Ref<SCMatrixKit> &matrixkit,
+    const Ref<SCMatrixKit> &so_matrixkit,
+    GaussianShell **shell,
+    const std::vector<int> shell_to_center)
+    
+{
+  name_ = name;
+  label_ = label;
+  molecule_ = molecule;
+  matrixkit_ = matrixkit;
+  so_matrixkit_ = so_matrixkit;
+  shell_ = shell;
+  shell_to_center_ = shell_to_center;
+
+  ncenter_ = molecule_->natom();
+  nshell_ = shell_to_center_.size();
+
+  nbasis_ = 0;
+  nprim_  = 0;
+  has_pure_ = false;
+
+  shell_to_function_.resize(nshell_);
+  shell_to_primitive_.resize(nshell_);
+  center_to_nshell_.resize(ncenter_);
+  center_to_nbasis_.resize(ncenter_);
+  center_to_shell_.resize(nshell_);
+
+  std::fill(center_to_shell_.begin(), center_to_shell_.end(), -1);
+  std::fill(center_to_nshell_.begin(), center_to_nshell_.end(), 0);
+  std::fill(center_to_nbasis_.begin(), center_to_nbasis_.end(), 0);
+
+  for (int ishell=0; ishell<nshell_; ishell++) {
+      int center = shell_to_center_[ishell];
+      if (center_to_shell_[center] == -1) {
+          center_to_shell_[center] = ishell;
+        }
+      center_to_nshell_[center]++;
+      center_to_nbasis_[center] += shell_[ishell]->nfunction();
+      shell_to_function_[ishell] = nbasis_;
+      shell_to_primitive_[ishell] = nprim_;
+      shell_to_center_[ishell] = center;
+      nbasis_ += shell_[ishell]->nfunction();
+      nprim_ += shell_[ishell]->nprimitive();
+      if (shell_[ishell]->has_pure()) has_pure_ = true;
+    }
+
+  if (basisdim_.null()) {
+    int *bs = new int[nshell_];
+    for (int s=0; s < nshell_; s++)
+      bs[s] = shell_[s]->nfunction();
+    basisdim_ = new SCDimension(nbasis_, nshell_, bs, "basis set dimension");
+    delete[] bs;
+  }
+
+  function_to_shell_.resize(nbasis_);
+  int ifunc = 0;
+  for (int i=0; i<nshell_; i++) {
+      int nfun = shell_[i]->nfunction();
+      for (int j=0; j<nfun; j++) {
+          function_to_shell_[ifunc] = i;
+          ifunc++;
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

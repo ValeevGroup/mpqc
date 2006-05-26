@@ -142,7 +142,7 @@ J. Chem. Phys. 116 (2002) 7372; J. Chem. Phys. 117 (2002) 9234; and
 J. Chem. Phys. 121 (2004) 3463.
 
 */
-class GaussianBasisSet: public SavableState
+class GaussianBasisSet: virtual public SavableState
 {
   private:
     // nonnull if keyword "name" was provided
@@ -203,8 +203,23 @@ class GaussianBasisSet: public SavableState
     void init2(int skip_ghosts=0,bool include_q=0);
     
   protected:
+    /** This CTOR leaves it up to the derived class to completely
+        initialize the basis set. */
+    GaussianBasisSet();
     GaussianBasisSet(const GaussianBasisSet&);
     virtual void set_matrixkit(const Ref<SCMatrixKit>&);
+
+    /** Initializes everything.  The storage for name, label, and shell
+        must have been allocated with new.  This object will manage that
+        storage (that is, it will be deleted when this object is finished
+        with it). */
+    void init(char *name,
+              char *label,
+              const Ref<Molecule> &molecule,
+              const Ref<SCMatrixKit> &matrixkit,
+              const Ref<SCMatrixKit> &so_matrixkit,
+              GaussianShell **shell,
+              const std::vector<int> shell_to_center);
     
   public:
     /** This holds scratch data needed to compute basis function values. */

@@ -41,6 +41,8 @@
 #include <util/misc/formio.h>
 #include <util/misc/autovec.h>
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
+#include <chemistry/qc/basis/uncontract.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -144,7 +146,7 @@ ChargeDistInt::cloneable()
 /////////////////////////////////////////////////////////////////////////
 
 static ClassDesc Wavefunction_cd(
-  typeid(Wavefunction),"Wavefunction",7,"public MolecularEnergy",
+  typeid(Wavefunction),"Wavefunction",8,"public MolecularEnergy",
   0, 0, 0);
 
 Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
@@ -224,6 +226,12 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   }
   else {
     atom_basis_coef_ = 0;
+  }
+
+  momentum_basis_ << keyval->describedclassvalue("momentum_basis");
+  dk_ = keyval->intvalue("dk");
+  if (dk_ > 0 && momentum_basis_.null()) {
+    momentum_basis_ = new UncontractedBasisSet(gbs_);
   }
 
   integral_ << keyval->describedclassvalue("integrals");
@@ -318,6 +326,14 @@ Wavefunction::Wavefunction(StateIn&s):
     atom_basis_coef_ = 0;
   }
 
+  if (s.version(::class_desc<Wavefunction>()) >= 8) {
+    s.get(dk_);
+    momentum_basis_ << SavableState::restore_state(s);
+  }
+  else {
+    dk_ = 0;
+  }
+
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();
 
@@ -372,6 +388,9 @@ Wavefunction::save_data_state(StateOut&s)
   if (atom_basis_.nonnull()) {
     s.put_array_double(atom_basis_coef_,atom_basis_->nbasis());
   }
+
+  s.put(dk_);
+  SavableState::save_state(momentum_basis_.pointer(), s);
 }
 
 double
@@ -503,10 +522,283 @@ Wavefunction::overlap()
 }
 
 RefSymmSCMatrix
+Wavefunction::core_hamiltonian_dk(int dk)
+{
+#define DK_DEBUG 0
+
+  ExEnv::out0() << indent << "Including DK" << dk
+                << (dk==1?" (free particle projection)":"")
+                << (dk==2?" (Douglas-Kroll-Hess)":"")
+                << (dk==3?" (complete spin-free Douglas-Kroll)":"")
+                << " terms in the one body Hamiltonian."
+                << std::endl;
+
+  if (atom_basis_.nonnull()) {
+    throw FeatureNotImplemented("atom_basis given and dk > 0",
+                                __FILE__, __LINE__, class_desc());
+  }
+  if (dk > 1) {
+    throw FeatureNotImplemented("dk must be in [0,1]",
+                                __FILE__, __LINE__, class_desc());
+  }
+  if (dk > 0 && gradient_needed()) {
+    throw FeatureNotImplemented("gradients not available for dk",
+                                __FILE__, __LINE__, class_desc());
+  }
+
+  // The one electron integrals will be computed in the momentum basis.
+  integral()->set_basis(momentum_basis_);
+
+  Ref<PetiteList> p_pl = integral()->petite_list();
+
+  RefSCDimension p_so_dim = p_pl->SO_basisdim();
+  RefSCDimension p_ao_dim = p_pl->AO_basisdim();
+  Ref<SCMatrixKit> p_kit = momentum_basis_->matrixkit();
+  Ref<SCMatrixKit> p_so_kit = momentum_basis_->so_matrixkit();
+
+  // Compute the overlap in the momentum basis.
+  RefSymmSCMatrix S_skel(p_ao_dim, p_kit);
+  S_skel.assign(0.0);
+  Ref<SCElementOp> hc =
+    new OneBodyIntOp(new SymmOneBodyIntIter(integral()->overlap(), p_pl));
+  S_skel.element_op(hc);
+  hc=0;
+  RefSymmSCMatrix S(p_so_dim, p_so_kit);
+  p_pl->symmetrize(S_skel,S);
+
+  ExEnv::out0() << indent
+                << "The momentum basis is:"
+                << std::endl;
+  ExEnv::out0() << incindent;
+  momentum_basis_->print_brief(ExEnv::out0());
+  ExEnv::out0() << decindent;
+
+  ExEnv::out0() << indent
+                << "Orthogonalizing the momentum basis"
+                << std::endl;
+  Ref<OverlapOrthog> p_orthog
+    = new OverlapOrthog(orthog_method_, S, p_so_kit,
+                        lindep_tol_, debug_);
+
+  RefSCDimension p_oso_dim = p_orthog->orthog_dim();
+
+  // form skeleton Hcore in the momentum basis
+  RefSymmSCMatrix T_skel(p_ao_dim, p_kit);
+  T_skel.assign(0.0);
+
+  hc =
+    new OneBodyIntOp(new SymmOneBodyIntIter(integral()->kinetic(), p_pl));
+  T_skel.element_op(hc);
+  hc=0;
+
+  // finish constructing the kinetic energy integrals,
+  // for which the skeleton is in hao
+  RefSymmSCMatrix T(p_so_dim, p_so_kit);
+  p_pl->symmetrize(T_skel,T);
+
+  // Transform T into an orthogonal basis
+  RefSymmSCMatrix T_oso(p_oso_dim, p_so_kit);
+  T_oso.assign(0.0);
+  T_oso.accumulate_transform(p_orthog->basis_to_orthog_basis(),T);
+
+  // diagonalize the T integrals to get a momentum basis
+  RefDiagSCMatrix Tval(p_oso_dim, p_so_kit);
+  RefSCMatrix Tvec(p_oso_dim, p_oso_dim, p_so_kit);
+  // Tvec * Tval * Tvec.t() = T_oso
+  T_oso.diagonalize(Tval,Tvec);
+
+#if DK_DEBUG
+  T.print("T");
+  Tval.print("Tval");
+#endif
+
+  // Compute the kinematic factors
+  RefDiagSCMatrix A(p_oso_dim, p_so_kit);
+  RefDiagSCMatrix B(p_oso_dim, p_so_kit);
+  RefDiagSCMatrix E(p_oso_dim, p_so_kit);
+  RefDiagSCMatrix Emc2(p_oso_dim, p_so_kit);
+  const double c = 137.0359895; // speed of light in a vacuum in a.u.
+  int noso = p_oso_dim.n();
+  for (int i=0; i<noso; i++) {
+    double T_val = Tval(i);
+    double p = sqrt(2.0*T_val);
+    double E_val = c * sqrt(p*p+c*c);
+    double A_val = sqrt((E_val+c*c)/(2.0*E_val));
+    double K_val = c/(E_val+c*c);
+    double B_val = A_val * K_val;
+    double Emc2_val = c*c*p*p/(E_val + c*c); // = E - mc^2
+    A(i) = A_val;
+    B(i) = B_val;
+    E(i) = E_val;
+    Emc2(i) = Emc2_val;
+  }
+
+#if DK_DEBUG
+  A.print("A");
+  B.print("B");
+  E.print("E");
+  Emc2.print("Emc2");
+#endif
+
+  // Construct the transform from the coordinate to the momentum
+  // representation in the momentum basis
+  RefSCMatrix so_to_p
+    = Tvec.t() * p_orthog->basis_to_orthog_basis();
+
+#if DK_DEBUG
+  so_to_p.print("so_to_p");
+#endif
+
+  // compute the V integrals
+  Ref<OneBodyInt> V_obi = integral_->nuclear();
+  V_obi->reinitialize();
+  hc = new OneBodyIntOp(new SymmOneBodyIntIter(V_obi, p_pl));
+  RefSymmSCMatrix V_skel(p_ao_dim, p_kit);
+  V_skel.assign(0.0);
+  V_skel.element_op(hc);
+  V_obi = 0;
+  hc = 0;
+  RefSymmSCMatrix V(p_so_dim, p_so_kit);
+  p_pl->symmetrize(V_skel,V);
+
+#if DK_DEBUG
+  V.print("V");
+#endif
+
+  // transform V to the momentum basis
+  RefSymmSCMatrix V_pbas(p_oso_dim, p_so_kit);
+  V_pbas.assign(0.0);
+  V_pbas.accumulate_transform(so_to_p, V);
+
+  // compute the p.Vp integrals
+  Ref<OneBodyInt> pVp_obi = integral()->p_dot_nuclear_p();
+  hc = new OneBodyIntOp(new SymmOneBodyIntIter(pVp_obi, p_pl));
+  RefSymmSCMatrix pVp_skel(p_ao_dim, p_kit);
+  pVp_skel.assign(0.0);
+  pVp_skel.element_op(hc);
+#if DK_DEBUG
+  const double *buf = pVp_obi->buffer();
+  for (int I=0,Ii=0; I<momentum_basis_->nshell(); I++) {
+    for (int i=0; i<momentum_basis_->shell(I).nfunction(); i++,Ii++) {
+      for (int J=0,Jj=0; J<momentum_basis_->nshell(); J++) {
+        pVp_obi->compute_shell(I,J);
+        int ij = i*momentum_basis_->shell(J).nfunction();
+        for (int j=0; j<momentum_basis_->shell(J).nfunction(); j++,ij++,Jj++) {
+          std::cout << "pVp["<<Ii<<"]["<<Jj<<"][0]= " << buf[ij]
+                    << std::endl;
+        }
+      }
+    }
+  }
+#endif
+  pVp_obi = 0;
+  hc = 0;
+  RefSymmSCMatrix pVp(p_so_dim, p_so_kit);
+  p_pl->symmetrize(pVp_skel,pVp);
+
+#if DK_DEBUG
+  pVp.print("pVp");
+  (-2.0*T).print("-2*T");
+#endif
+
+  // transform p.Vp to the momentum basis
+  RefSymmSCMatrix pVp_pbas(p_oso_dim, p_so_kit);
+  pVp_pbas.assign(0.0);
+  pVp_pbas.accumulate_transform(so_to_p, pVp);
+
+  // form the momentum basis hamiltonian
+  RefSymmSCMatrix h_pbas(p_oso_dim, p_so_kit);
+  for (int i=0; i<noso; i++) {
+    for (int j=0; j<noso; j++) {
+      double relativistic_T_val = (i==j?Emc2(i):0.0);
+      double relativistic_V_val = V_pbas(i,j)*A(i)*A(j);
+      double pVp_val = pVp_pbas(i,j)*B(i)*B(j);
+#if DK_DEBUG
+      std::cout << "relativistic_T_val = " << relativistic_T_val << std::endl;
+      std::cout << "relativistic_V_val = " << relativistic_V_val << std::endl;
+      std::cout << "pVp_val            = " << pVp_val << std::endl;
+#endif
+      h_pbas(i,j)
+        = relativistic_T_val
+        + relativistic_V_val
+        + pVp_val;
+      // This is the non-relativistic hamiltonian:
+      //h_pbas(i,j) = (i==j?Tval(i):0.0) + V_pbas(i,j);
+    }
+  }
+
+#if DK_DEBUG
+  h_pbas.print("h_pbas");
+#endif
+
+  // Construct the transform from the momentum representation to the
+  // coordinate representation in the momentum basis
+  RefSCMatrix p_to_so
+    = p_orthog->basis_to_orthog_basis_inverse() * Tvec;
+
+  // Construct the transform from the momentum basis to the
+  // coordinate basis.
+  integral()->set_basis(basis(),momentum_basis_);
+  RefSCMatrix S_ao_p(ao_dimension(), p_ao_dim, p_kit);
+  S_ao_p.assign(0.0);
+  hc = new OneBodyIntOp(integral()->overlap());
+  S_ao_p.element_op(hc);
+  hc=0;
+  Ref<PetiteList> pl = integral()->petite_list();
+  // convert s_ao_p into the so ao and so p basis
+  RefSCMatrix blocked_S_ao_p(pl->AO_basisdim(), p_pl->AO_basisdim(), p_so_kit);
+  blocked_S_ao_p->convert(S_ao_p);
+  RefSCMatrix S_ao_p_so_l = pl->sotoao() * blocked_S_ao_p;
+  RefSCMatrix S_ao_p_so = S_ao_p_so_l * p_pl->aotoso();
+
+  // transform h_pbas back to the so basis
+  RefSymmSCMatrix h_dk_so(so_dimension(),basis_matrixkit());
+  h_dk_so.assign(0.0);
+  h_dk_so.accumulate_transform(S_ao_p_so
+                               *p_orthog->overlap_inverse()
+                               *p_to_so, h_pbas);
+
+#if DK_DEBUG
+  S_ao_p_so.print("S_ao_p_so");
+  p_to_so.print("p_to_so");
+  //(p_to_so*so_to_p).print("p_to_so*so_to_p");
+  (S_ao_p_so*S.gi()*p_to_so).print("S_ao_p_so*S.gi()*p_to_so");
+#endif
+
+#if DK_DEBUG
+  (T+V).print("T+V");
+  h_dk_so.print("h_dk_so");
+#endif
+
+  integral()->set_basis(basis());
+
+  return h_dk_so;
+}
+
+RefSymmSCMatrix
 Wavefunction::core_hamiltonian()
 {
   if (!hcore_.computed()) {
     integral()->set_basis(gbs_);
+
+    if (dk_ > 0) {
+      hcore_ = core_hamiltonian_dk(dk_);
+    }
+    else {
+      hcore_ = core_hamiltonian_nr();
+    }
+
+    hcore_.computed() = 1;
+  }
+
+  return hcore_.result_noupdate();
+}
+
+RefSymmSCMatrix
+Wavefunction::core_hamiltonian_nr()
+{
+    RefSymmSCMatrix hcore;
+
     Ref<PetiteList> pl = integral()->petite_list();
 
 #if ! CHECK_SYMMETRIZED_INTEGRALS
@@ -577,7 +869,7 @@ Wavefunction::core_hamiltonian()
     RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
     pl->symmetrize(hao,h);
 
-    hcore_ = h;
+    hcore = h;
 #else
     ExEnv::out0() << "Checking symmetrized hcore" << endl;
 
@@ -596,7 +888,7 @@ Wavefunction::core_hamiltonian()
     hao.element_op(hc);
     hc=0;
 
-    hcore_ = pl->to_SO_basis(hao);
+    hcore = pl->to_SO_basis(hao);
 
     //// use petite list to form haopl
 
@@ -620,11 +912,11 @@ Wavefunction::core_hamiltonian()
 
     //// compare the answers
 
-    int n = hcore_.result_noupdate().dim().n();
+    int n = hcore.dim().n();
     int me = MessageGrp::get_default_messagegrp()->me();
     for (int i=0; i<n; i++) {
       for (int j=0; j<=i; j++) {
-        double val1 = hcore_.result_noupdate().get_element(i,j);
+        double val1 = hcore.get_element(i,j);
         double val2 = h.get_element(i,j);
         if (me == 0) {
           if (fabs(val1-val2) > 1.0e-6) {
@@ -636,10 +928,7 @@ Wavefunction::core_hamiltonian()
     }
 #endif
 
-    hcore_.computed() = 1;
-  }
-
-  return hcore_.result_noupdate();
+    return hcore;
 }
 
 // Compute lists of centers that are point charges and lists that
@@ -1014,6 +1303,12 @@ Wavefunction::print(ostream&o) const
     ExEnv::out0() << indent << "Nuclear basis:" << std::endl;
     ExEnv::out0() << incindent;
     atom_basis_->print_brief(o);
+    ExEnv::out0() << decindent;
+  }
+  if (momentum_basis_.nonnull()) {
+    ExEnv::out0() << indent << "Momentum basis:" << std::endl;
+    ExEnv::out0() << incindent;
+    momentum_basis_->print_brief(o);
     ExEnv::out0() << decindent;
   }
   // the other stuff is a wee bit too big to print

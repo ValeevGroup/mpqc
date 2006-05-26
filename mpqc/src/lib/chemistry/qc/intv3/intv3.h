@@ -78,6 +78,8 @@ class IntegralV3 : public Integral {
 
     Ref<OneBodyInt> nuclear();
 
+    Ref<OneBodyInt> p_dot_nuclear_p();
+
     Ref<OneBodyInt> hcore();
 
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);

@@ -525,6 +525,16 @@ OverlapOrthog::nlindep()
   return nlindep_; 
 }
 
+RefSymmSCMatrix
+OverlapOrthog::overlap_inverse()
+{
+  RefSCMatrix X = basis_to_orthog_basis();
+  RefSymmSCMatrix result(X.coldim(), X.kit());
+  result.assign(0.0);
+  result.accumulate_symmetric_product(X.t());
+  return result;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

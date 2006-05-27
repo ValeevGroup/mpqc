@@ -139,7 +139,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // get a (super) evaluator factory
   if( factory_type_ == superfactory_type ) {
 
-    ExEnv::out0() << indent << "MPQC: configuring IntegralSuperFactory\n";
+    //ExEnv::out0() << indent << "MPQC: configuring IntegralSuperFactory\n";
       
     // get the super factory
     fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
@@ -150,7 +150,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 			  fac_id_,"IntegralSuperFactory");
     eval_factory_ = services.getPort("IntegralSuperFactory");
     IntegralSuperFactory superfac = services.getPort("IntegralSuperFactory");
-    ExEnv::out0() << indent << "MPQC: have super factory port\n";
+    //ExEnv::out0() << indent << "MPQC: have super factory port\n";
 
     // get sub factories
     set<string> subfac_set;
@@ -162,8 +162,8 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     set<string>::iterator iter;
     int sfname_id=-1;
     for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
-      ExEnv::out0() << indent << "MPQC: instantiating " 
-		    << *iter << endl;
+      //ExEnv::out0() << indent << "MPQC: instantiating " 
+      //              << *iter << endl;
       ++sfname_id;
       ostringstream sfname;
       sfname << "subfactory" << sfname_id;
@@ -172,19 +172,19 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 			  *iter,
 			  type_map);
     }
-    ExEnv::out0() << indent << "MPQC: sub factories instantiated\n";
+    //ExEnv::out0() << indent << "MPQC: sub factories instantiated\n";
 
     // connect factories with super factory
     sidl::array<string> sfac_portnames = superfac.add_uses_ports(nsubfac);
-    ExEnv::out0() << indent << "MPQC: " << nsubfac 
-		  << " uses ports available on super factory\n"; 
+    //ExEnv::out0() << indent << "MPQC: " << nsubfac 
+    //  << " uses ports available on super factory\n"; 
     map<string,gov::cca::ComponentID>::iterator miter;
     vector<gov::cca::ConnectionID> subfac_conids;
     int portname_iter=-1;
     for( miter = subfac_name_to_id.begin(); 
          miter != subfac_name_to_id.end(); miter++) {
-      ExEnv::out0() << indent << "MPQC: connecting " 
-		    << (*miter).first << " to super factory\n"; 
+     // ExEnv::out0() << indent << "MPQC: connecting " 
+     //	              << (*miter).first << " to super factory\n"; 
       subfac_conids.push_back(  
 	  bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
 		      (*miter).second, "IntegralEvaluatorFactory") );
@@ -214,7 +214,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 		  << subfac << std::endl;
   
     }
-    ExEnv::out0() << indent << "MPQC: type->factory map constructed\n";
+    //ExEnv::out0() << indent << "MPQC: type->factory map constructed\n";
 
     // set source factories on super factory
     eval_factory_.set_source_factories(sfacs);
@@ -227,7 +227,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // set up function objects for evaluator generation
   //-------------------------------------------------
 
-  ExEnv::out0() << indent << "MPQC: setting up generators\n";
+  //ExEnv::out0() << indent << "MPQC: setting up generators\n";
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>
@@ -256,7 +256,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
 
-  ExEnv::out0() << indent << "MPQC: intcca constuctor done\n";
+  //ExEnv::out0() << indent << "MPQC: intcca constuctor done\n";
 }
 
 IntegralCCA::~IntegralCCA()
@@ -376,9 +376,9 @@ IntegralCCA::overlap()
   Chemistry::OverlapIntegralDescr desc =
     Chemistry::OverlapIntegralDescr::_create();
   eval_req_.add_descr( desc );
-  ExEnv::out0() << indent 
-	      << "MPQC: descr type is " << eval_req_.get_descr(0).get_type()
-	      << std::endl;
+  //ExEnv::out0() << indent 
+  //              << "MPQC: descr type is " << eval_req_.get_descr(0).get_type()
+  //              << std::endl;
   
   return get_onebody( eval_req_ );
 }

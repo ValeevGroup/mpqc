@@ -47,8 +47,8 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.add_evaluator)  
 
-  std::cerr << "MPQC::IntegralEvaluator2: adding eval " 
-	    << desc.get_type() << std::endl;
+  //std::cerr << "MPQC::IntegralEvaluator2: adding eval " 
+  //          << desc.get_type() << std::endl;
   eval_.add_evaluator(eval,desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.add_evaluator)
@@ -100,7 +100,7 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_buffer)
 
-  std::cerr << "IntegralEvaluator2: buffer request\n";
+  //std::cerr << "IntegralEvaluator2: buffer request\n";
   return eval_.get_buffer( desc );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_buffer)

@@ -71,7 +71,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
   buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
-  std::cerr << "IntCCA set buffer to " << buffer_ << std::endl;
+  //std::cerr << "IntCCA set buffer to " << buffer_ << std::endl;
   
 }
 
@@ -83,6 +83,29 @@ void
 OneBodyIntCCA::compute_shell(int i, int j)
 {
   eval_.compute( i, j );
+
+  // temporary debugging stuff for cca integrals comparison
+  /*
+  if( 1 ) {
+    std::cerr << "CCA buffer for shell doublet:\n";
+    std::cerr << "shellnum1: " << i << std::endl;
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    int nc1 = s1->ncontraction();
+    for (int ii=0; ii<nc1; ++ii)
+      std::cerr << "am: " << s1->am(ii) << std::endl;
+    std::cerr << "shellnum2: " << j << std::endl;
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    int nc2 = s2->ncontraction();
+    for (int ii=0; ii<nc2; ++ii)
+      std::cerr << "am: " << s2->am(ii) << std::endl;
+
+    int nfunc = s1->max_cartesian() * s2->max_cartesian();
+    for( int ii=0; ii<nfunc; ++ii)
+      std::cerr << buffer_[ii] << std::endl;
+    std::cerr << std::endl;
+  }
+  */
+
 }
 
 bool

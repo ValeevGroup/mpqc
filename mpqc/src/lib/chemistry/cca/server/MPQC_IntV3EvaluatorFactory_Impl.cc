@@ -231,7 +231,7 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  std::cerr << "MPQC Eval2: created MPQC::IntegralEvaluator2\n";
+  //std::cerr << "MPQC Eval2: created MPQC::IntegralEvaluator2\n";
   eval.set_basis( bs1, bs2 );
   eval.set_reorder(true);
 
@@ -242,23 +242,23 @@ throw (
   else sc_bs2 = basis_cca_to_sc( bs2 );
   integral_->set_basis(sc_bs1,sc_bs2);
   
-  std::cerr << "MPQC Eval2: basis and reorder set\n";
+  //std::cerr << "MPQC Eval2: basis and reorder set\n";
 
   // this will currently bomb for n descr < 1
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
     IntegralDescr idesc = desc.get_descr(i);
-    std::cerr << "MPQC Eval2: descr type is " << idesc.get_type() << std::endl;
+    //std::cerr << "MPQC Eval2: descr type is " << idesc.get_type() << std::endl;
     int ideriv = idesc.get_deriv_lvl();
-    std::cerr << "MPQC Eval2: got deriv_lvl\n";
+    //std::cerr << "MPQC Eval2: got deriv_lvl\n";
     string itype = idesc.get_type();
     sc::Ref<sc::OneBodyDerivInt> obderivint;
     sc::Ref<sc::TwoBodyTwoCenterInt> tbtcint; 
     
     if( itype == "overlap"  && ideriv == 0 ) {
-      std::cerr << "MPQC Eval2: trying to set obint\n";
+      //std::cerr << "MPQC Eval2: trying to set obint\n";
       obint_ = integral_->overlap();
-      std::cerr << "MPQC Eval2: set obint\n";
+      //std::cerr << "MPQC Eval2: set obint\n";
     }
     else if( itype == "kinetic" && ideriv == 0 )
       obint_ = integral_->kinetic();
@@ -288,9 +288,9 @@ throw (
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    std::cerr << "MPQC Eval2: going to pass eval pointer now " 
-	      << obint_.pointer() << std::endl;
-    std::cerr << "buffer test: " << obint_.pointer()->buffer() << std::endl;
+    //std::cerr << "MPQC Eval2: going to pass eval pointer now " 
+    //          << obint_.pointer() << std::endl;
+    //std::cerr << "buffer test: " << obint_.pointer()->buffer() << std::endl;
     if( obint_.nonnull() ) 
       eval.add_evaluator( (void*) obint_.pointer(), idesc );
     else if( obderivint.nonnull() ) 
@@ -299,7 +299,7 @@ throw (
       eval.add_evaluator( (void*) tbtcint.pointer(), idesc );
   }
   
-  std::cerr << "MPQC Eval2: going to return eval now\n";
+  //std::cerr << "MPQC Eval2: going to return eval now\n";
   return eval;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_evaluator2)

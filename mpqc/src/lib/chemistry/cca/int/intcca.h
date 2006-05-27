@@ -77,13 +77,13 @@ namespace sc {
       Ref<OneBodyIntCCA> generate( CompositeIntegralDescr cdesc,
 				   vector<string> factories ) 
       {
-	ExEnv::out0() << "IntCCA: obgen: type " 
-		      << cdesc.get_descr(0).get_type() << std::endl;
+	//ExEnv::out0() << "IntCCA: obgen: type " 
+        //		      << cdesc.get_descr(0).get_type() << std::endl;
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
 				  factory_, cdesc, factories, 
 				  use_opaque_ );
-	ExEnv::out0() << "IntCCA: obgen done\n";
+	//ExEnv::out0() << "IntCCA: obgen done\n";
 	return eval;
       }
 

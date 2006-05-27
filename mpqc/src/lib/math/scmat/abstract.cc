@@ -421,6 +421,26 @@ SCMatrix::accumulate_product_ss(SymmSCMatrix*a,SymmSCMatrix*b)
 }
 
 void
+SCMatrix::accumulate_product_sd(SymmSCMatrix*a,DiagSCMatrix*b)
+{
+  SCMatrix *arect = kit()->matrix(a->dim(),a->dim());
+  arect->assign(0.0);
+  arect->accumulate(a);
+  accumulate_product(arect,b);
+  delete arect;
+}
+
+void
+SCMatrix::accumulate_product_ds(DiagSCMatrix*a,SymmSCMatrix*b)
+{
+  SCMatrix *brect = kit()->matrix(b->dim(),b->dim());
+  brect->assign(0.0);
+  brect->accumulate(b);
+  accumulate_product(a,brect);
+  delete brect;
+}
+
+void
 SCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   SCMatrix *brect = kit()->matrix(b->dim(),b->dim());

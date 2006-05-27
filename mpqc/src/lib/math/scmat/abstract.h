@@ -304,12 +304,18 @@ class SCMatrix: public DescribedClass {
         { accumulate_product_dr(m1,m2); }
     void accumulate_product(SymmSCMatrix*m1,SymmSCMatrix*m2)
         { accumulate_product_ss(m1,m2); }
+    void accumulate_product(SymmSCMatrix*m1,DiagSCMatrix*m2)
+        { accumulate_product_sd(m1,m2); }
+    void accumulate_product(DiagSCMatrix*m1,SymmSCMatrix*m2)
+        { accumulate_product_ds(m1,m2); }
     virtual void accumulate_product_rr(SCMatrix*,SCMatrix*) = 0;
     virtual void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
     virtual void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
     virtual void accumulate_product_sr(SymmSCMatrix*,SCMatrix*);
     virtual void accumulate_product_dr(DiagSCMatrix*,SCMatrix*);
     virtual void accumulate_product_ss(SymmSCMatrix*,SymmSCMatrix*);
+    virtual void accumulate_product_sd(SymmSCMatrix*,DiagSCMatrix*);
+    virtual void accumulate_product_ds(DiagSCMatrix*,SymmSCMatrix*);
     /// Transpose this.
     virtual void transpose_this() = 0;
     /// Return the trace.

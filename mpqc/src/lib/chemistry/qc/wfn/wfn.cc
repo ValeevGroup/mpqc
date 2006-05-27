@@ -521,6 +521,46 @@ Wavefunction::overlap()
   return overlap_.result_noupdate();
 }
 
+void
+Wavefunction::core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
+                                           const RefDiagSCMatrix &E,
+                                           const RefDiagSCMatrix &K,
+                                           const RefDiagSCMatrix &p2,
+                                           const RefSymmSCMatrix &AVA_pbas,
+                                           const RefSymmSCMatrix &BpVpB_pbas)
+{
+  RefSCDimension pdim = AVA_pbas.dim();
+
+  RefSymmSCMatrix AVA_prime = AVA_pbas.clone();
+  RefSymmSCMatrix BpVpB_prime = BpVpB_pbas.clone();
+  int npbas = pdim.n();
+  for (int i=0; i<npbas; i++) {
+    double Ei = E(i);
+    for (int j=0; j<=i; j++) {
+      double Ej = E(j);
+      AVA_prime(i,j) = AVA_pbas(i,j)/(Ei+Ej);
+      BpVpB_prime(i,j) = BpVpB_pbas(i,j)/(Ei+Ej);
+    }
+  }
+
+  RefDiagSCMatrix p2K2 = p2*K*K;
+  RefDiagSCMatrix p2K2_inv = p2K2.i();
+
+  RefSCMatrix h_contrib;
+  h_contrib
+    =
+    - 1.0 * BpVpB_prime * E * AVA_prime
+    - 0.5 * BpVpB_prime * AVA_prime * E
+    - 0.5 * AVA_prime * BpVpB_prime * E
+    + 0.5 * AVA_prime * p2K2 * AVA_prime * E
+    + 0.5 * BpVpB_prime * p2K2_inv * BpVpB_prime * E
+    + 0.5 * AVA_prime * (p2K2 * E) * AVA_prime
+    + 0.5 * BpVpB_prime * (p2K2_inv * E) * BpVpB_prime
+    ;
+
+  h_pbas.accumulate_symmetric_sum(h_contrib);
+}
+
 RefSymmSCMatrix
 Wavefunction::core_hamiltonian_dk(int dk)
 {
@@ -537,8 +577,8 @@ Wavefunction::core_hamiltonian_dk(int dk)
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
-  if (dk > 1) {
-    throw FeatureNotImplemented("dk must be in [0,1]",
+  if (dk > 2) {
+    throw FeatureNotImplemented("dk must be 0, 1, or 2",
                                 __FILE__, __LINE__, class_desc());
   }
   if (dk > 0 && gradient_needed()) {
@@ -595,6 +635,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
   // for which the skeleton is in hao
   RefSymmSCMatrix T(p_so_dim, p_so_kit);
   p_pl->symmetrize(T_skel,T);
+  T_skel = 0;
 
   // Transform T into an orthogonal basis
   RefSymmSCMatrix T_oso(p_oso_dim, p_so_kit);
@@ -607,6 +648,8 @@ Wavefunction::core_hamiltonian_dk(int dk)
   // Tvec * Tval * Tvec.t() = T_oso
   T_oso.diagonalize(Tval,Tvec);
 
+  T_oso = 0;
+
 #if DK_DEBUG
   T.print("T");
   Tval.print("Tval");
@@ -616,6 +659,8 @@ Wavefunction::core_hamiltonian_dk(int dk)
   RefDiagSCMatrix A(p_oso_dim, p_so_kit);
   RefDiagSCMatrix B(p_oso_dim, p_so_kit);
   RefDiagSCMatrix E(p_oso_dim, p_so_kit);
+  RefDiagSCMatrix K(p_oso_dim, p_so_kit);
+  RefDiagSCMatrix p2(p_oso_dim, p_so_kit);
   RefDiagSCMatrix Emc2(p_oso_dim, p_so_kit);
   const double c = 137.0359895; // speed of light in a vacuum in a.u.
   int noso = p_oso_dim.n();
@@ -630,6 +675,8 @@ Wavefunction::core_hamiltonian_dk(int dk)
     A(i) = A_val;
     B(i) = B_val;
     E(i) = E_val;
+    K(i) = K_val;
+    p2(i) = p*p;
     Emc2(i) = Emc2_val;
   }
 
@@ -637,6 +684,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
   A.print("A");
   B.print("B");
   E.print("E");
+  K.print("K");
   Emc2.print("Emc2");
 #endif
 
@@ -660,6 +708,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
   hc = 0;
   RefSymmSCMatrix V(p_so_dim, p_so_kit);
   p_pl->symmetrize(V_skel,V);
+  V_skel = 0;
 
 #if DK_DEBUG
   V.print("V");
@@ -695,6 +744,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
   hc = 0;
   RefSymmSCMatrix pVp(p_so_dim, p_so_kit);
   p_pl->symmetrize(pVp_skel,pVp);
+  pVp_skel = 0;
 
 #if DK_DEBUG
   pVp.print("pVp");
@@ -706,30 +756,43 @@ Wavefunction::core_hamiltonian_dk(int dk)
   pVp_pbas.assign(0.0);
   pVp_pbas.accumulate_transform(so_to_p, pVp);
 
+  RefSymmSCMatrix AVA_pbas(p_oso_dim, p_so_kit);
+  RefSymmSCMatrix BpVpB_pbas(p_oso_dim, p_so_kit);
+  for (int i=0; i<noso; i++) {
+    for (int j=0; j<=i; j++) {
+      AVA_pbas(i,j) = V_pbas(i,j)*A(i)*A(j);
+      BpVpB_pbas(i,j) = pVp_pbas(i,j)*B(i)*B(j);
+    }
+  }
+
+  V_pbas = 0;
+  pVp_pbas = 0;
+
   // form the momentum basis hamiltonian
   RefSymmSCMatrix h_pbas(p_oso_dim, p_so_kit);
+  h_pbas = AVA_pbas + BpVpB_pbas;
+
+  // Add the kinetic energy
   for (int i=0; i<noso; i++) {
-    for (int j=0; j<noso; j++) {
-      double relativistic_T_val = (i==j?Emc2(i):0.0);
-      double relativistic_V_val = V_pbas(i,j)*A(i)*A(j);
-      double pVp_val = pVp_pbas(i,j)*B(i)*B(j);
-#if DK_DEBUG
-      std::cout << "relativistic_T_val = " << relativistic_T_val << std::endl;
-      std::cout << "relativistic_V_val = " << relativistic_V_val << std::endl;
-      std::cout << "pVp_val            = " << pVp_val << std::endl;
-#endif
-      h_pbas(i,j)
-        = relativistic_T_val
-        + relativistic_V_val
-        + pVp_val;
-      // This is the non-relativistic hamiltonian:
-      //h_pbas(i,j) = (i==j?Tval(i):0.0) + V_pbas(i,j);
-    }
+    h_pbas(i,i) = h_pbas(i,i) + Emc2(i);
+  }
+
+  if (dk_ > 1) {
+    core_hamiltonian_dk2_contrib(h_pbas, E, K, p2,
+                                 AVA_pbas, BpVpB_pbas);
   }
 
 #if DK_DEBUG
   h_pbas.print("h_pbas");
 #endif
+
+  AVA_pbas = 0;
+  BpVpB_pbas = 0;
+  A = 0;
+  B = 0;
+  E = 0;
+  K = 0;
+  Emc2 = 0;
 
   // Construct the transform from the momentum representation to the
   // coordinate representation in the momentum basis
@@ -750,6 +813,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
   blocked_S_ao_p->convert(S_ao_p);
   RefSCMatrix S_ao_p_so_l = pl->sotoao() * blocked_S_ao_p;
   RefSCMatrix S_ao_p_so = S_ao_p_so_l * p_pl->aotoso();
+  S_ao_p_so_l = 0;
 
   // transform h_pbas back to the so basis
   RefSymmSCMatrix h_dk_so(so_dimension(),basis_matrixkit());

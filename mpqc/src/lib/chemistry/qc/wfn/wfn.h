@@ -101,6 +101,12 @@ class Wavefunction: public MolecularEnergy {
 
     // Compute the dk relativistic core hamiltonian.
     RefSymmSCMatrix core_hamiltonian_dk(int dk);
+    void core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
+                                      const RefDiagSCMatrix &E,
+                                      const RefDiagSCMatrix &K,
+                                      const RefDiagSCMatrix &p2,
+                                      const RefSymmSCMatrix &AVA_pbas,
+                                      const RefSymmSCMatrix &BpVpB_pbas);
     // Compute the non-relativistic core hamiltonian.
     RefSymmSCMatrix core_hamiltonian_nr();
 

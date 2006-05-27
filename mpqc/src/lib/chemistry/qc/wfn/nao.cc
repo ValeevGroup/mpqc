@@ -35,20 +35,20 @@ using namespace sc;
 
 #undef DEBUG
 
-namespace sc {
-static RefSCMatrix
-operator *(const RefDiagSCMatrix &d, const RefSymmSCMatrix &s)
-{
-  RefSCMatrix ret(s.dim(), s.dim(), s.kit());
-  int n = s.dim()->n();
-  for (int i=0; i<n; i++) {
-      for (int j=0; j<n; j++) {
-          ret.set_element(i,j, d.get_element(i)*s.get_element(i,j));
-        }
-    }
-  return ret;
-}
-}
+// namespace sc {
+// static RefSCMatrix
+// operator *(const RefDiagSCMatrix &d, const RefSymmSCMatrix &s)
+// {
+//   RefSCMatrix ret(s.dim(), s.dim(), s.kit());
+//   int n = s.dim()->n();
+//   for (int i=0; i<n; i++) {
+//       for (int j=0; j<n; j++) {
+//           ret.set_element(i,j, d.get_element(i)*s.get_element(i,j));
+//         }
+//     }
+//   return ret;
+// }
+// }
 
 static RefSymmSCMatrix
 weight_matrix(const RefDiagSCMatrix &d, const RefSymmSCMatrix &s)

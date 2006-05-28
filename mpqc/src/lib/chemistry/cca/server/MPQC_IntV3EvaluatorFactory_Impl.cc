@@ -46,15 +46,6 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   integral_ = new sc::IntegralV3();
   cdesc_ = Chemistry::CompositeIntegralDescr::_create();
 
-  /*
-  IntegralDescr desc = OverlapIntegralDescr::_create();
-  if( &desc ) 
-    std::cerr << desc.get_type()<< std::endl; 
-  else
-    std::cerr << "you got nuttin\n";
-  cdesc_.add_descr( desc );
-  */
-
   cdesc_.add_descr( OverlapIntegralDescr::_create() );
   cdesc_.add_descr( KineticIntegralDescr::_create() );
   cdesc_.add_descr( NuclearIntegralDescr::_create() );
@@ -95,7 +86,6 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
 // user-defined destructor.
 void MPQC::IntV3EvaluatorFactory_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._dtor)
-  // Insert-Code-Here {MPQC.IntV3EvaluatorFactory._dtor} (destructor)
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._dtor)
 }
 
@@ -198,7 +188,6 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
-    sc::Ref<sc::OneBodyOneCenterInt> obint;
  
     // this needs additional data
     //if( itype == "pointcharge"  && ideriv == 0 )
@@ -206,7 +195,8 @@ throw (
     /*else*/
     throw runtime_error("IntV3EvaluatorFactory: unsupported integral type");
 
-    eval.add_evaluator( (void*) obint.pointer(), desc );
+    if( obocint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
   }
   
   return eval;
@@ -231,7 +221,6 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  //std::cerr << "MPQC Eval2: created MPQC::IntegralEvaluator2\n";
   eval.set_basis( bs1, bs2 );
   eval.set_reorder(true);
 
@@ -242,30 +231,20 @@ throw (
   else sc_bs2 = basis_cca_to_sc( bs2 );
   integral_->set_basis(sc_bs1,sc_bs2);
   
-  //std::cerr << "MPQC Eval2: basis and reorder set\n";
-
-  // this will currently bomb for n descr < 1
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
     IntegralDescr idesc = desc.get_descr(i);
-    //std::cerr << "MPQC Eval2: descr type is " << idesc.get_type() << std::endl;
     int ideriv = idesc.get_deriv_lvl();
-    //std::cerr << "MPQC Eval2: got deriv_lvl\n";
     string itype = idesc.get_type();
-    sc::Ref<sc::OneBodyDerivInt> obderivint;
-    sc::Ref<sc::TwoBodyTwoCenterInt> tbtcint; 
     
-    if( itype == "overlap"  && ideriv == 0 ) {
-      //std::cerr << "MPQC Eval2: trying to set obint\n";
-      obint_ = integral_->overlap();
-      //std::cerr << "MPQC Eval2: set obint\n";
-    }
+    if( itype == "overlap"  && ideriv == 0 )
+      obint_vec_.push_back( integral_->overlap() );
     else if( itype == "kinetic" && ideriv == 0 )
-      obint_ = integral_->kinetic();
+      obint_vec_.push_back( integral_->kinetic() );
     else if( itype == "nuclear" && ideriv == 0 )
-      obint_ = integral_->nuclear();
+      obint_vec_.push_back( integral_->nuclear() );
     else if( itype == "hcore" && ideriv == 0 )
-      obint_ = integral_->hcore();
+      obint_vec_.push_back( integral_->hcore() );
     // these need additional data
     //else if( itype == "pointcharge2" && ideriv == 0 )
     //  obint_ = integral_->point_charge( ??? );
@@ -276,30 +255,29 @@ throw (
     //else if( itype == "quadrupole" && ideriv == 0 )
     //  obint_ = integal_->quadrupole( ??? );
     else if( itype == "overlap" && ideriv == 1 )
-      obderivint = integral_->overlap_deriv();
+      obderivint_vec_.push_back( integral_->overlap_deriv() );
     else if( itype == "kinetic" && ideriv == 1 )
-      obderivint = integral_->kinetic_deriv();
+      obderivint_vec_.push_back( integral_->kinetic_deriv() );
     else if( itype == "nuclear" && ideriv == 1 )
-      obderivint = integral_->nuclear_deriv();
+      obderivint_vec_.push_back( integral_->nuclear_deriv() );
     else if( itype == "hcore" && ideriv == 1 )
-      obderivint = integral_->hcore_deriv();
+      obderivint_vec_.push_back( integral_->hcore_deriv() );
     else if( itype == "eri2" && ideriv == 0 )
-      tbtcint = integral_->electron_repulsion2();
+      tbtcint_vec_.push_back( integral_->electron_repulsion2() );
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    //std::cerr << "MPQC Eval2: going to pass eval pointer now " 
-    //          << obint_.pointer() << std::endl;
-    //std::cerr << "buffer test: " << obint_.pointer()->buffer() << std::endl;
-    if( obint_.nonnull() ) 
-      eval.add_evaluator( (void*) obint_.pointer(), idesc );
-    else if( obderivint.nonnull() ) 
-      eval.add_evaluator( (void*) obderivint.pointer(), idesc );
-    else if( tbtcint.nonnull() )
-      eval.add_evaluator( (void*) tbtcint.pointer(), idesc );
+    if( obint_vec_.back().nonnull() ) 
+      eval.add_evaluator( (void*) obint_vec_.back().pointer(), 
+                          idesc );
+    else if( obderivint_vec_.back().nonnull() ) 
+      eval.add_evaluator( (void*) obderivint_vec_.back().pointer(), 
+                          idesc );
+    else if( tbtcint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(), 
+                          idesc );
   }
   
-  //std::cerr << "MPQC Eval2: going to return eval now\n";
   return eval;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_evaluator2)
@@ -326,20 +304,28 @@ throw (
   eval.set_basis( bs1, bs2, bs3 );
   eval.set_reorder(true);
 
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
+  else sc_bs3 = basis_cca_to_sc( bs3 );
+  integral_->set_basis(sc_bs1,sc_bs2,sc_bs3);
+
+
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
-    sc::Ref<sc::TwoBodyThreeCenterInt> tbint;
 
     if( itype == "eri3"  && ideriv == 0 )
-      tbint = integral_->electron_repulsion3();
+      tb3cint_vec_.push_back( integral_->electron_repulsion3() );
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( tbint.nonnull() ) 
-      eval.add_evaluator( (void*) tbint.pointer(), desc );
+    if( tb3cint_vec_.back().nonnull() ) 
+      eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
   }
 
   return eval;
@@ -369,25 +355,34 @@ throw (
   eval.set_basis( bs1, bs2, bs3, bs4 );
   eval.set_reorder(true);
 
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
+  else sc_bs3 = basis_cca_to_sc( bs3 );
+  if( bs3.isSame(bs3) ) sc_bs4.assign_pointer(sc_bs3.pointer());
+  else sc_bs4 = basis_cca_to_sc( bs4);
+  integral_->set_basis(sc_bs1,sc_bs2,sc_bs3,sc_bs4);
+
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
-    sc::Ref<sc::TwoBodyInt> tbint;
-    sc::Ref<sc::TwoBodyDerivInt> tbderivint;
 
     if( itype == "eri4"  && ideriv == 0 )
-      tbint = integral_->electron_repulsion();
+      tbint_vec_.push_back( integral_->electron_repulsion() );
     else if( itype == "eri4" && ideriv == 1 )
-      tbderivint = integral_->electron_repulsion_deriv();
+      tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( tbint.nonnull() ) 
-      eval.add_evaluator( (void*) tbint.pointer(), desc );
-    else if( tbderivint.nonnull() ) 
-      eval.add_evaluator( (void*) tbderivint.pointer(), desc );
+    if( tbint_vec_.back().nonnull() ) {
+      eval.add_evaluator( (void*) tbint_vec_.back().pointer(), idesc );
+    }
+    else if( tbderivint_vec_.back().nonnull() ) 
+      eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
   }
 
   return eval;

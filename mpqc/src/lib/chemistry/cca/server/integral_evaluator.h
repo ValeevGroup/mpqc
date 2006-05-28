@@ -3,8 +3,10 @@
 #include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <Chemistry_QC_GaussianBasis_Molecular.hh>
+#include <limits.h>
 #include <vector>
 #include <utility>
+#include <sidl_SIDLException.hh>
 using namespace std;
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
@@ -28,6 +30,18 @@ namespace MpqcCca {
 
     void compute( OneBodyOneCenterInt* eval )
     { eval->compute_shell( sh1_ ); }
+
+    double compute_bounds( OneBodyOneCenterInt* eval )
+    {  
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support one body in bounds");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+    }
+
   };
 
   class onebody_computer {
@@ -42,9 +56,18 @@ namespace MpqcCca {
     { sh1_=sh1; sh2_=sh2; }
 
     void compute( OneBodyInt* eval )
-    { //std::cerr << "computer doing compute shell, pointer is " 
-      //	  << eval << std::endl;
-      eval->compute_shell( sh1_, sh2_ ); }
+    { eval->compute_shell( sh1_, sh2_ ); }
+
+    double compute_bounds( OneBodyInt* eval )
+    {
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support one body in bounds");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+    }
   };
 
   class twobody_threecenter_computer {
@@ -60,6 +83,9 @@ namespace MpqcCca {
 
     void compute( TwoBodyThreeCenterInt* eval )
     { eval->compute_shell( sh1_, sh2_, sh3_ ); }
+
+    double compute_bounds( TwoBodyThreeCenterInt* eval )
+    { return eval->shell_bound( sh1_, sh2_, sh3_); }
   };
 
   class twobody_computer {
@@ -75,6 +101,11 @@ namespace MpqcCca {
 
     void compute( TwoBodyInt* eval )
     { eval->compute_shell( sh1_, sh2_, sh3_, sh4_ ); }
+
+    double compute_bounds( TwoBodyInt* eval )
+    {
+      return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
+    }
   };
 
 
@@ -111,8 +142,6 @@ namespace MpqcCca {
     {
       eval_type* eval_ptr;   
       eval_ptr = static_cast<eval_type*>(eval);
-      //if( eval_ptr ) 
-      //  std::cerr << "cast appears successful\n";
       pair<eval_type*,IntegralDescr> p(eval_ptr,desc);
       evals_.push_back( p );
     }
@@ -139,91 +168,90 @@ namespace MpqcCca {
 
     void* get_buffer ( IntegralDescr desc ) 
     {
-      //std::cerr << "requesting a buffer\n";
       for( int i=0; i<evals_.size(); ++i)
 	if( desc.get_type() == evals_[i].second.get_type() &&
 	    desc.get_deriv_lvl() == evals_[i].second.get_deriv_lvl() ) {
-          //std::cerr << "returning some sort of buffer\n";
-	  //std::cerr << "eval pointer is " << evals_[i].first << std::endl;
-	  //std::cerr << "buffer is " << evals_[i].first->buffer() << std::endl;
 	  return (void*) evals_[i].first->buffer();
 	}
       return NULL;
     }
     
-    
     Chemistry::QC::GaussianBasis::DerivCenters get_deriv_centers ()
-      {
-	// later
-      }
+    {
+      // later
+    }
     
-    
-      Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
-	{
-	  CompositeIntegralDescr cdesc;
-	  for( int i=0; i<evals_.size(); ++i)
-	    cdesc.add_descr( evals_[i].second );
-	  return cdesc;
-	}
-      
-      
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
+    {
+      CompositeIntegralDescr cdesc;
+      for( int i=0; i<evals_.size(); ++i)
+        cdesc.add_descr( evals_[i].second );
+      return cdesc;
+    }
 
-      void compute ( computer_type* computer ) 
-      {
-	/*
-	  if( int_type_ == one_body )
-	  eval_->compute_shell( shellnum1, shellnum2 );
-	  else if( int_type_ == one_body_deriv ) {
+    void compute ( computer_type* computer ) 
+    {
+      /*
+      if( int_type_ == one_body )
+        eval_->compute_shell( shellnum1, shellnum2 );
+      else if( int_type_ == one_body_deriv ) {
 	  
-	  sc_deriv_centers_.clear();
-	  deriv_centers_.clear();
+        sc_deriv_centers_.clear();
+        deriv_centers_.clear();
 	  
-	  if( deriv_atom_ == -1) {
-	  deriv_eval_->compute_shell( shellnum1, shellnum2, sc_deriv_centers_ );
+        if( deriv_atom_ == -1) {
+          deriv_eval_->compute_shell( shellnum1, shellnum2, sc_deriv_centers_ );
 	  
-	  if(sc_deriv_centers_.has_omitted_center())
-	  deriv_centers_.add_omitted( sc_deriv_centers_.omitted_center(),
-	  sc_deriv_centers_.omitted_atom() );
-	  for( int i=0; i<sc_deriv_centers_.n() ; ++i)
-	  deriv_centers_.add_center( sc_deriv_centers_.center(i),
-	  sc_deriv_centers_.atom(i) );
-	  }
-	  else
-	  deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_atom_ );
+          if(sc_deriv_centers_.has_omitted_center())
+            deriv_centers_.add_omitted( sc_deriv_centers_.omitted_center(),
+          sc_deriv_centers_.omitted_atom() );
+          for( int i=0; i<sc_deriv_centers_.n() ; ++i)
+            deriv_centers_.add_center( sc_deriv_centers_.center(i),
+          sc_deriv_centers_.atom(i) );
+        }
+        else
+          deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_atom_ );
 	  
-	  }
-	  else 
-	  throw ProgrammingError("bad evaluator type",
-	  __FILE__,__LINE__);
-	*/
+       }
+      else 
+        throw ProgrammingError("bad evaluator type",
+                                  __FILE__,__LINE__);
+      */
 	
-	//std::cerr << "IntegralEvaluator going to loop through evals now\n";
-	for( int i=0; i<evals_.size(); ++i) 
-	  computer->compute( evals_[i].first );
+      for( int i=0; i<evals_.size(); ++i) 
+        computer->compute( evals_[i].first );
 	
-	/*
-	  sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
-	  sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
-	  int nfunc = s1->nfunction() * s2->nfunction();
-	  
-	  if( reorder_ ) reorder( shellnum1, shellnum2 );
-	*/
+      /*
+      sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
+      sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
+      int nfunc = s1->nfunction() * s2->nfunction();
+
+      if( reorder_ ) reorder( shellnum1, shellnum2 );
+      */
       }
+
+    double compute_bounds( computer_type* computer )
+    {
+      // this is obviously not going to work for multiple evals
+      // that will require interface work
+      for( int i=0; i<evals_.size(); ++i)
+        return computer->compute_bounds( evals_[i].first );
+    }
       
       
-      sidl::array<double> compute_array ( computer_type* computer ) 
-	{
-	  /*
-	    compute( shellnum1, shellnum2, deriv_level, deriv_atom );
-	    
-	    int lower[1] = {0};
-	    int upper[1]; upper[0] = max_nshell2_-1;
-	    int stride[1] = {1};
-	    sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1, 
-	    lower, upper, stride);
-	    return sidl_buffer_;
-	  */
-	}
+    sidl::array<double> compute_array ( computer_type* computer ) 
+    {
+      /*
+      compute( shellnum1, shellnum2, deriv_level, deriv_atom );
+  
+      int lower[1] = {0};
+      int upper[1]; upper[0] = max_nshell2_-1;
+      int stride[1] = {1};
+      sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1, 
+                           lower, upper, stride);
+      return sidl_buffer_;
+      */
+    }
 
   private:
       

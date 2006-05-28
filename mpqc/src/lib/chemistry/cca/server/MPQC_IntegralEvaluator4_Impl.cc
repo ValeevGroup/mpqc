@@ -47,7 +47,7 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_evaluator)
 
-  eval_.add_evaluator(&eval,desc);
+  eval_.add_evaluator(eval,desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.add_evaluator)
 }
@@ -207,7 +207,8 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds)
-  // Insert-Code-Here {MPQC.IntegralEvaluator4.compute_bounds} (compute_bounds method)
+  computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+  return eval_.compute_bounds( &computer_ );
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
 }
 

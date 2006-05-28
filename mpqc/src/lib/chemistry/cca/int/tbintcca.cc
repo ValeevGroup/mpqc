@@ -29,7 +29,6 @@
 #pragma implementation
 #endif
 
-
 #include <Chemistry_DerivCenters.hh>
 #include "tbintcca.h"
 #include <util/class/scexception.h>
@@ -97,12 +96,15 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
+  buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
+  // and what happens for multiple buffers???
 
 }
 
 TwoBodyIntCCA::~TwoBodyIntCCA()
 {
-  delete buff_;
+  if( !use_opaque_ )
+    delete buff_;
 }
 
 void
@@ -116,7 +118,7 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 int
 TwoBodyIntCCA::log2_shell_bound( int i, int j, int k, int l )
 {
-  return static_cast<int>( logb( eval_.compute_bounds( i, j, k, l ) ) );
+  return static_cast<int>( logb( eval_.compute_bounds(i,j,k,l) ) );
 }
 
 unsigned int

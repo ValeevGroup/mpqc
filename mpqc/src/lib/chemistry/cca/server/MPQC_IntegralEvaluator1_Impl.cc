@@ -50,7 +50,7 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.add_evaluator)
 
-  eval_.add_evaluator(&eval,desc);
+  eval_.add_evaluator(eval,desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.add_evaluator)
 }

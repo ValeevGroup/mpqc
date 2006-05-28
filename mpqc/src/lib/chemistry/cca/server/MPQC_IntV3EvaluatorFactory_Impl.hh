@@ -62,9 +62,11 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._includes)
 #include <sstream>
+#include <vector>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/intv3/intv3.h>
 using namespace std;
+using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._includes)
@@ -88,13 +90,19 @@ namespace MPQC {
     // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._implementation)
 
     Molecular basis1_, basis2_, basis3_, basis4_;
-    sc::Ref<sc::GaussianBasisSet> sc_basis1_, sc_basis2_, 
-      sc_basis3_, sc_basis4_;
+    //sc::Ref<sc::GaussianBasisSet> sc_basis1_, sc_basis2_, 
+    //  sc_basis3_, sc_basis4_;
     CompositeIntegralDescr cdesc_;
     gov::cca::Services services_;
     int storage_;
-    sc::Ref<sc::IntegralV3> integral_;
-    sc::Ref<sc::OneBodyInt> obint_;
+    Ref<IntegralV3> integral_;
+    vector< Ref<OneBodyOneCenterInt> > obocint_vec_;
+    vector< Ref<OneBodyInt> > obint_vec_;
+    vector< Ref<OneBodyDerivInt> > obderivint_vec_;
+    vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec_;
+    vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec_;
+    vector< Ref<TwoBodyInt> > tbint_vec_;
+    vector< Ref<TwoBodyDerivInt> > tbderivint_vec_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._implementation)
 

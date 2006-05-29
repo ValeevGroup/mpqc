@@ -838,12 +838,12 @@ sub input_string() {
         $buffer_type = "opaque";
       }     
       my $int_package = $qcparse->value("default_package");
-      if( $int_package ne "intv3" && $int_package ne "cints" ) {
-        $int_package = "intv3";
+      if( $int_package ne "MPQC.IntV3EvaluatorFactory" && 
+          $int_package ne "MPQC.CintsEvaluatorFactory" ) {
+        $int_package = "MPQC.IntV3EvaluatorFactory";
       }
       $integrals = "$integrals\n  integral_buffer = $buffer_type";
-      $integrals = "$integrals\n  default_package = $int_package";
-      $integrals = "$integrals\n  evaluator_factory = MPQC.IntegralEvaluatorFactory";
+      $integrals = "$integrals\n  default_subfactory = $int_package";
       $integrals = "$integrals\n  molecule = \$:molecule";
       $integrals = "$integrals\n)\n";
     }

@@ -133,7 +133,8 @@ sub process_file {
     init_var($test_vars, $parse, "orthog_method", "default");
     init_var($test_vars, $parse, "lindep_tol", "default");
     init_var($test_vars, $parse, "integral_buffer", "opaque");
-    init_var($test_vars, $parse, "default_package", "intv3");
+    init_var($test_vars, $parse, "default_package",
+             "MPQC.IntV3EvaluatorFactory");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");

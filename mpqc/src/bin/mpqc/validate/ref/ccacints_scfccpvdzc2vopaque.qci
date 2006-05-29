@@ -1,7 +1,7 @@
 fixed:
 
 test_default_package:
-cints
+MPQC.CintsEvaluatorFactory
 test_symmetry:
 c2v
 followed:
@@ -35,7 +35,7 @@ auto
 test_basis:
 cc-pVDZ
 default_package:
-cints
+MPQC.CintsEvaluatorFactory
 checkpoint:
 no
 symmetry:

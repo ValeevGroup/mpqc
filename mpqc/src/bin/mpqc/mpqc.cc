@@ -521,7 +521,7 @@ try_main(int argc, char *argv[])
     #endif
   }
   if(cca_load.size()==0) {
-    cca_load += "Chemistry.IntegralSuperFactory";
+    cca_load += "Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory";
   }
 
   if( cca_load.size() > 0 && cca_path.size() > 0 && do_cca ) {

@@ -77,13 +77,10 @@ namespace sc {
       Ref<OneBodyIntCCA> generate( CompositeIntegralDescr cdesc,
 				   vector<string> factories ) 
       {
-	//ExEnv::out0() << "IntCCA: obgen: type " 
-        //		      << cdesc.get_descr(0).get_type() << std::endl;
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
 				  factory_, cdesc, factories, 
 				  use_opaque_ );
-	//ExEnv::out0() << "IntCCA: obgen done\n";
 	return eval;
       }
 
@@ -214,21 +211,30 @@ namespace sc {
       
       generator_type generator_;
       map<string,string> name_to_factory_;
+      string default_factory_;
 
     public:
 
       sc_eval_factory() { }
       
       sc_eval_factory( generator_type generator, 
-		       map<string,string> name_to_factory ):
-      generator_(generator), name_to_factory_(name_to_factory) { }
+		       map<string,string> name_to_factory,
+                       string default_factory ):
+      generator_(generator), name_to_factory_(name_to_factory),
+      default_factory_(default_factory) 
+      { }
 
       Ref<eval_type> operator() ( CompositeIntegralDescr cdesc )
       {
 	vector<string> factories;
-	for( int i=0; i<cdesc.get_n_descr(); ++i)
-	  factories.push_back
-	    ( name_to_factory_[cdesc.get_descr(i).get_type()] );
+        string type;
+	for( int i=0; i<cdesc.get_n_descr(); ++i) {
+          type = cdesc.get_descr(i).get_type();
+          if( name_to_factory_.count(type) )
+	    factories.push_back( name_to_factory_[type] );
+          else
+            factories.push_back( default_factory_ );
+        }
     
 	return generator_.generate( cdesc, factories );
       }
@@ -244,6 +250,8 @@ namespace sc {
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
     string factory_type_;
+    string superfactory_type_;
+    string default_subfactory_;
     IntegralSuperFactory eval_factory_;
     CompositeIntegralDescr eval_req_;
     map<string,string> type_to_factory_;

@@ -206,7 +206,7 @@ clks_blyp.in   hsosks_lsdax.in       uks_b88.in \
 clks_lsdax.in  hsosks_xa.in          uks_blyp.in \
 clks_xa.in     uks_lsdax.in          uks_xa.in \
 hsoshf.in      osshf.in              qmmm1.in \
-qmmm2.in
+qmmm2.in       clhfdk1.in            clhfdk2.in
 
 ifeq ($(HAVE_MBPTR12),yes)
  METHODSINPUTS += \

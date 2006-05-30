@@ -65,26 +65,21 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_basis)
 
-  basis_sets_.push_back(bs1);
-
-  eval_.set_basis( basis_sets_ );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.set_basis)
 }
 
 /**
- * Method:  set_reorder[]
+ * Method:  init_reorder[]
  */
 void
-MPQC::IntegralEvaluator1_impl::set_reorder (
-  /* in */ int32_t reorder ) 
+MPQC::IntegralEvaluator1_impl::init_reorder ()
 throw () 
+
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_reorder)
-
-  eval_.set_reorder( reorder );
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.set_reorder)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.init_reorder)
+  // Insert-Code-Here {MPQC.IntegralEvaluator1.init_reorder} (init_reorder method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.init_reorder)
 }
 
 /**

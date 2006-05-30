@@ -50,6 +50,7 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._includes)
 #include "integral_evaluator.h"
+#include "reorder_engine.h"
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace MpqcCca;
@@ -84,8 +85,10 @@ namespace MPQC {
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._implementation)
 
-    vector< Molecular > basis_sets_;
     IntegralEvaluator< OneBodyInt, onebody_computer > eval_; 
+    Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+    bool reorder_;
+    ReorderEngine reorder_engine_;
     onebody_computer computer_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._implementation)
@@ -142,12 +145,8 @@ namespace MPQC {
      * user defined non-static method.
      */
     void
-    set_reorder (
-      /* in */ int32_t reorder
-    )
-    throw () 
+    init_reorder() throw () 
     ;
-
 
     /**
      * Get buffer pointer for given type.

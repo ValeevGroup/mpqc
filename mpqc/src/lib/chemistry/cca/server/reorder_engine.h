@@ -25,14 +25,14 @@ namespace MpqcCca {
     ~ReorderEngine( ) { }
     
   private:
-    n_center_;
-    maxam_;
-    map<IntegralDescr,double*> deriv_lvls_;
-    map<IntegralDescr,double*> buffers_;
-    map<IntegralDescr,double*> temp_buffers_;
-    vector< Ref<GaussianBasisSet> > basis_sets_;
-    vector< int > shell_ids_;
-    vector< Ref<GaussianShell> > shells_;
+    int n_center_, maxam_, max_deriv_lvl_, max_segment_size_;
+    int **reorder_;
+    vector<int> deriv_lvls_;
+    vector<double*> buffers_;
+    double* temp_buffer_;
+    Ref<GaussianBasisSet> basis_sets_[4];
+    int shell_ids_[4];
+    GaussianShell* shells_[4];
     
   public:
     
@@ -42,6 +42,11 @@ namespace MpqcCca {
     void add_buffer ( double* buffer, IntegralDescr desc );
   
     void do_it( int s1, int s2, int s3, int s4 );
+ 
+    void reorder_1c( double* buf, double* tbuf, int offset );
+    void reorder_2c( double* buf, double* tbuf, int offset );
+    void reorder_3c( double* buf, double* tbuf, int offset );
+    void reorder_4c( double* buf, double* tbuf, int offset );
     
   };
 }

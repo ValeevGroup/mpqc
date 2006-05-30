@@ -12,11 +12,16 @@
 #include "MPQC_IntegralEvaluator2_Impl.hh"
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._includes)
+
+sc::Ref<sc::GaussianBasisSet>
+basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
+
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
 // user-defined constructor.
 void MPQC::IntegralEvaluator2_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._ctor)
+  reorder_ = false;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._ctor)
 }
 
@@ -63,27 +68,34 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_basis)
 
-  basis_sets_.push_back(bs1);
-  basis_sets_.push_back(bs2);
-
-  eval_.set_basis( basis_sets_ );
+  bs1_ = basis_cca_to_sc( bs1 );
+  if( bs2.isSame(bs1) )
+    bs2_ = bs1_;
+  else
+    bs2_ = basis_cca_to_sc( bs2 );
   
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_basis)
 }
 
 /**
- * Method:  set_reorder[]
+ * Method:  init_reorder[]
  */
 void
-MPQC::IntegralEvaluator2_impl::set_reorder (
-  /* in */ int32_t reorder ) 
+MPQC::IntegralEvaluator2_impl::init_reorder ()
 throw () 
+
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_reorder)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.init_reorder)
 
-  eval_.set_reorder( reorder );
+  reorder_ = true;
+  reorder_engine_.init( 2, bs1_, bs2_, bs3_, bs4_ );
+  CompositeIntegralDescr desc = eval_.get_descriptor();
+  for( int i=0; i < desc.get_n_descr(); ++i) {
+    IntegralDescr idesc = desc.get_descr(i);
+    reorder_engine_.add_buffer( eval_.get_buffer( idesc ), idesc );
+  }
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_reorder)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.init_reorder)
 }
 
 /**
@@ -152,6 +164,8 @@ throw (
   
   computer_.set_shells( shellnum1, shellnum2 );
   eval_.compute( &computer_ );
+  if( reorder_ )
+    reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute)
 }

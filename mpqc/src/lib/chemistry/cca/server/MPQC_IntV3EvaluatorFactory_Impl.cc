@@ -180,8 +180,6 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
-  eval.set_basis( bs1 );
-  eval.set_reorder(true);
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
     
@@ -198,6 +196,9 @@ throw (
     if( obocint_vec_.back().nonnull() )
       eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
   }
+
+  eval.set_basis( bs1 );
+  eval.init_reorder();
   
   return eval;
   
@@ -221,8 +222,6 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  eval.set_basis( bs1, bs2 );
-  eval.set_reorder(true);
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2;
@@ -277,6 +276,9 @@ throw (
       eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(), 
                           idesc );
   }
+
+  eval.set_basis( bs1, bs2 );
+  eval.init_reorder();
   
   return eval;
 
@@ -301,8 +303,6 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
-  eval.set_basis( bs1, bs2, bs3 );
-  eval.set_reorder(true);
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3;
@@ -328,6 +328,9 @@ throw (
       eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
   }
 
+  eval.set_basis( bs1, bs2, bs3 );
+  eval.init_reorder();
+
   return eval;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_evaluator3)
@@ -352,8 +355,6 @@ throw (
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
-  eval.set_basis( bs1, bs2, bs3, bs4 );
-  eval.set_reorder(true);
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
@@ -384,6 +385,9 @@ throw (
     else if( tbderivint_vec_.back().nonnull() ) 
       eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
   }
+
+  eval.set_basis( bs1, bs2, bs3, bs4 );
+  eval.init_reorder();
 
   return eval;
 

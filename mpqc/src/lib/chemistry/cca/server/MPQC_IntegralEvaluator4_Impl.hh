@@ -84,7 +84,6 @@ namespace MPQC {
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._implementation)
 
-    vector< Molecular > basis_sets_;
     IntegralEvaluator< TwoBodyInt, twobody_computer > eval_;
     twobody_computer computer_;
 
@@ -144,12 +143,8 @@ namespace MPQC {
      * user defined non-static method.
      */
     void
-    set_reorder (
-      /* in */ int32_t reorder
-    )
-    throw () 
+    init_reorder() throw () 
     ;
-
 
     /**
      * Get buffer pointer for given type.

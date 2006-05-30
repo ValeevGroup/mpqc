@@ -75,6 +75,7 @@ static
 char *
 name_conv(const char *name)
 {
+  if (name == 0) return 0;
   std::string newname = "Uncontracted(";
   newname += name;
   newname += ")";

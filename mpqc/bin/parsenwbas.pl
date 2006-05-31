@@ -129,10 +129,11 @@ $basisname =~ tr/\(/L/;
 $basisname =~ tr/\)/R/;
 $basisname =~ tr/,/_/;
 $basisname =~ tr/ /_/;
+$mpqcbasisname = mpqc_basisname($basisname);
 printf "Reading NWChem basis from %s.nw\n", $basisname;
-printf "Writing MPQC basis to %s.kv\n", $basisname;
+printf "Writing MPQC basis to %s.kv\n", $mpqcbasisname;
 open(NWCHEMBASIS, "<$basisname.nw");
-open(MPQCBASIS, ">$basisname.kv");
+open(MPQCBASIS, ">$mpqcbasisname.kv");
 #open(MPQCBASIS, "|cat");
 $firstatom=1;
 $savedcomments="";
@@ -151,6 +152,7 @@ while (<NWCHEMBASIS>) {
     else {
         $basis = $origbasisname;
     }
+    $basis = mpqc_basisname($basis);
     for my $option (split) {
         print "option = $option\n";
         if (uc($option) eq "SPHERICAL") {
@@ -368,4 +370,11 @@ sub nright {
     my $right_digits = $f;
     $right_digits =~ s/.*\.//;
     return length($right_digits);
+}
+
+sub mpqc_basisname {
+    my $basis = shift;
+    $basis =~ s/_dk$/-dk/;
+    $basis =~ s/_DK$/-DK/;
+    return $basis;
 }

@@ -61,7 +61,14 @@
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._includes)
-// Insert-Code-Here {MPQC.CintsEvaluatorFactory._includes} (includes or arbitrary code)
+#include <sstream>
+#include <vector>
+#include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/cints/cints.h>
+using namespace std;
+using namespace sc;
+using namespace Chemistry;
+using namespace Chemistry::QC::GaussianBasis;
 // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._includes)
 
 namespace MPQC { 
@@ -81,7 +88,20 @@ namespace MPQC {
     CintsEvaluatorFactory self;
 
     // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._implementation)
-    // Insert-Code-Here {MPQC.CintsEvaluatorFactory._implementation} (additional details)
+
+    Molecular basis1_, basis2_, basis3_, basis4_;
+    CompositeIntegralDescr cdesc_;
+    gov::cca::Services services_;
+    int storage_;
+    Ref<IntegralCints> integral_;
+    vector< Ref<OneBodyOneCenterInt> > obocint_vec_;
+    vector< Ref<OneBodyInt> > obint_vec_;
+    vector< Ref<OneBodyDerivInt> > obderivint_vec_;
+    vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec_;
+    vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec_;
+    vector< Ref<TwoBodyInt> > tbint_vec_;
+    vector< Ref<TwoBodyDerivInt> > tbderivint_vec_;
+
     // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._implementation)
 
   private:

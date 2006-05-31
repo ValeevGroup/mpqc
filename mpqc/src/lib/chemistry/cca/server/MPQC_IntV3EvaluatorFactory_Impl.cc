@@ -186,6 +186,9 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
+
+    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
+              << " evaluator\n";
  
     // this needs additional data
     //if( itype == "pointcharge"  && ideriv == 0 )
@@ -235,6 +238,9 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
+
+    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype 
+              << " evaluator\n";
     
     if( itype == "overlap"  && ideriv == 0 )
       obint_vec_.push_back( integral_->overlap() );
@@ -319,6 +325,9 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
+    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
+              << " evaluator\n";
+
     if( itype == "eri3"  && ideriv == 0 )
       tb3cint_vec_.push_back( integral_->electron_repulsion3() );
     else 
@@ -371,6 +380,9 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
+
+    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
+              << " evaluator\n";
 
     if( itype == "eri4"  && ideriv == 0 )
       tbint_vec_.push_back( integral_->electron_repulsion() );

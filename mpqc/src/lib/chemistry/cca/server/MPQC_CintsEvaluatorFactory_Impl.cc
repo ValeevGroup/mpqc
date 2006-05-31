@@ -12,13 +12,48 @@
 #include "MPQC_CintsEvaluatorFactory_Impl.hh"
 
 // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._includes)
-// Insert-Code-Here {MPQC.CintsEvaluatorFactory._includes} (additional includes or code)
+
+#include <sstream>
+#include <stdexcept>
+
+#include "MPQC_IntegralEvaluator1.hh"
+#include "MPQC_IntegralEvaluator2.hh"
+#include "MPQC_IntegralEvaluator3.hh"
+#include "MPQC_IntegralEvaluator4.hh"
+
+#include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
+
+#include "Chemistry_CompositeIntegralDescr.hh"
+#include "Chemistry_OverlapIntegralDescr.hh"
+#include "Chemistry_KineticIntegralDescr.hh"
+#include "Chemistry_NuclearIntegralDescr.hh"
+#include "Chemistry_HCoreIntegralDescr.hh"
+#include "Chemistry_PointChargeIntegralDescr.hh"
+#include "Chemistry_EfieldDotVectorIntegralDescr.hh"
+#include "Chemistry_DipoleIntegralDescr.hh"
+#include "Chemistry_QuadrupoleIntegralDescr.hh"
+#include "Chemistry_Eri2IntegralDescr.hh"
+#include "Chemistry_Eri3IntegralDescr.hh"
+#include "Chemistry_Eri4IntegralDescr.hh"
+
+sc::Ref<sc::GaussianBasisSet>
+basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
+
 // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._includes)
 
 // user-defined constructor.
 void MPQC::CintsEvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._ctor)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory._ctor} (constructor)
+
+  integral_ = new sc::IntegralCints();
+  cdesc_ = Chemistry::CompositeIntegralDescr::_create();
+
+  cdesc_.add_descr( OverlapIntegralDescr::_create() );
+  cdesc_.add_descr( KineticIntegralDescr::_create() );
+  cdesc_.add_descr( NuclearIntegralDescr::_create() );
+  cdesc_.add_descr( HCoreIntegralDescr::_create() );
+  cdesc_.add_descr( Eri4IntegralDescr::_create() );
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._ctor)
 }
 
@@ -49,7 +84,9 @@ throw (
 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_name)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_name} (get_name method)
+
+  return string("MPQC.CintsEvaluatorFactory");
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_name)
 }
 
@@ -63,7 +100,9 @@ throw (
 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_descriptor)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_descriptor} (get_descriptor method)
+
+  return cdesc_;
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_descriptor)
 }
 
@@ -77,7 +116,9 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_max_deriv_lvls)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_max_deriv_lvls} (get_max_deriv_lvls method)
+
+  // implementation needed
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_max_deriv_lvls)
 }
 
@@ -92,7 +133,9 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.set_storage)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.set_storage} (set_storage method)
+
+  storage_ = storage;
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.set_storage)
 }
 
@@ -109,8 +152,34 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator1)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_evaluator1} (get_evaluator1 method)
-  // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator1)
+
+  integral_->set_storage(storage_);
+  MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    IntegralDescr idesc = desc.get_descr(i);
+    int ideriv = idesc.get_deriv_lvl();
+    string itype = idesc.get_type();
+
+    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
+              << " evaluator\n";
+
+    // this needs additional data
+    //if( itype == "pointcharge"  && ideriv == 0 )
+    //  obint = integral_->point_charge1( ??? );
+    /*else*/
+    throw runtime_error("CintsEvaluatorFactory: unsupported integral type");
+
+    if( obocint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
+  }
+
+  eval.set_basis( bs1 );
+
+  return eval;
+
+ // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator1)
 }
 
 /**
@@ -127,7 +196,52 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator2)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_evaluator2} (get_evaluator2 method)
+
+  integral_->set_storage(storage_);
+  MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2;
+  if( bs1.isSame(bs2) )
+   sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  integral_->set_basis(sc_bs1,sc_bs2);
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    IntegralDescr idesc = desc.get_descr(i);
+    int ideriv = idesc.get_deriv_lvl();
+    string itype = idesc.get_type();
+
+    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
+              << " evaluator\n";
+
+    if( itype == "overlap"  && ideriv == 0 )
+      obint_vec_.push_back( integral_->overlap() );
+    else if( itype == "kinetic" && ideriv == 0 )
+      obint_vec_.push_back( integral_->kinetic() );
+    else if( itype == "nuclear" && ideriv == 0 )
+      obint_vec_.push_back( integral_->nuclear() );
+    else if( itype == "hcore" && ideriv == 0 )
+      obint_vec_.push_back( integral_->hcore() );
+    else
+      throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
+
+    if( obint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) obint_vec_.back().pointer(),
+                          idesc );
+    else if( obderivint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) obderivint_vec_.back().pointer(),
+                          idesc );
+    else if( tbtcint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(),
+                          idesc );
+  }
+
+  eval.set_basis( bs1, bs2 );
+
+  return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator2)
 }
 
@@ -146,7 +260,41 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator3)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_evaluator3} (get_evaluator3 method)
+
+  integral_->set_storage(storage_);
+  MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
+  else sc_bs3 = basis_cca_to_sc( bs3 );
+  integral_->set_basis(sc_bs1,sc_bs2,sc_bs3);
+
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    IntegralDescr idesc = desc.get_descr(i);
+    int ideriv = idesc.get_deriv_lvl();
+    string itype = idesc.get_type();
+
+    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
+              << " evaluator\n";
+
+    //if( itype == "eri3"  && ideriv == 0 )
+    //  tb3cint_vec_.push_back( integral_->electron_repulsion3() );
+    //else
+      throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
+
+    if( tb3cint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
+  }
+
+  eval.set_basis( bs1, bs2, bs3 );
+
+  return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator3)
 }
 
@@ -166,7 +314,47 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator4)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.get_evaluator4} (get_evaluator4 method)
+
+  integral_->set_storage(storage_);
+  MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
+  else sc_bs3 = basis_cca_to_sc( bs3 );
+  if( bs3.isSame(bs3) ) sc_bs4.assign_pointer(sc_bs3.pointer());
+  else sc_bs4 = basis_cca_to_sc( bs4);
+  integral_->set_basis(sc_bs1,sc_bs2,sc_bs3,sc_bs4);
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    IntegralDescr idesc = desc.get_descr(i);
+    int ideriv = idesc.get_deriv_lvl();
+    string itype = idesc.get_type();
+
+    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
+              << " evaluator\n";
+
+    if( itype == "eri4"  && ideriv == 0 )
+      tbint_vec_.push_back( integral_->electron_repulsion() );
+    else if( itype == "eri4" && ideriv == 1 )
+      tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
+    else
+      throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
+
+    if( tbint_vec_.back().nonnull() ) {
+      eval.add_evaluator( (void*) tbint_vec_.back().pointer(), idesc );
+    }
+    else if( tbderivint_vec_.back().nonnull() )
+      eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
+  }
+
+  eval.set_basis( bs1, bs2, bs3, bs4 );
+
+  return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator4)
 }
 
@@ -194,7 +382,19 @@ throw (
   ::gov::cca::CCAException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.setServices)
-  // Insert-Code-Here {MPQC.CintsEvaluatorFactory.setServices} (setServices method)
+
+  services_ = services;
+  if (services_._is_nil()) return;
+
+  try {
+      services_.addProvidesPort(self, "IntegralEvaluatorFactory",
+                    "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory", 0);
+  }
+  catch (gov::cca::CCAException e) {
+    std::cout << "Error using services: "
+              << e.getNote() << std::endl;
+  }
+
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.setServices)
 }
 

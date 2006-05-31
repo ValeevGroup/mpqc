@@ -213,7 +213,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // set up function objects for evaluator generation
   //-------------------------------------------------
 
-  //ExEnv::out0() << indent << "MPQC: setting up generators\n";
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>

@@ -32,6 +32,8 @@ namespace MpqcCca {
     double* temp_buffer_;
     Ref<GaussianBasisSet> basis_sets_[4];
     int shell_ids_[4];
+ 
+    //Ref<GaussianShell> shells_[4];
     GaussianShell* shells_[4];
     
   public:

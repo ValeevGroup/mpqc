@@ -72,9 +72,6 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif
-ifeq ($(INTV3_ORDER),yes)
-  DEFINES += -DINTV3_ORDER
-endif
 
 LTLINKLIBOPTS += -L$(libdir) -R$(libdir)
 

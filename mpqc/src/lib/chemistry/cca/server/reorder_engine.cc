@@ -85,8 +85,6 @@ ReorderEngine::init( int n,
       v3iter->next();
     }
   }
-  
-  std::cerr << "Reorder engine setup complete\n";
 
 }
 
@@ -115,10 +113,6 @@ ReorderEngine::add_buffer ( double* buffer, IntegralDescr desc )
 void
 ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
 {
-
-  std::cerr << "reordering buffer: " << s1 << " " << s2 << " "
-            << s3 << " "  << s4 << std::endl;
-
   shell_ids_[0] = s1;
   shell_ids_[1] = s2;
   shell_ids_[2] = s3;
@@ -143,12 +137,11 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
       real_size = segment_size * 3;
 
     double* buf = *buff_it;
-    std::cerr << "reading from buffer: " << buf << std::endl;
     for( int i=0; i<real_size; ++i)
       temp_buffer_[i] = buf[i];
 
     int deriv_offset;
-    if( n_center_ == 1 )
+    if( n_center_ == 1 ) {
       if( deriv_lvl == 0 )
         reorder_1c( buf, temp_buffer_, 0 );
       else if( deriv_lvl == 1 )
@@ -156,7 +149,8 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
           deriv_offset = i*segment_size;
           reorder_1c( buf, temp_buffer_, deriv_offset );
         }
-    else if( n_center_ == 2 )
+    }
+    else if( n_center_ == 2 ) {
       if( deriv_lvl == 0 )
         reorder_2c( buf, temp_buffer_, 0 );
       else if( deriv_lvl == 1 )
@@ -164,7 +158,8 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
           deriv_offset = i*segment_size;
           reorder_2c( buf, temp_buffer_, deriv_offset );
         }
-    else if( n_center_ == 3 )
+    }
+    else if( n_center_ == 3 ) {
       if( deriv_lvl == 0 )
         reorder_3c( buf, temp_buffer_, 0 );
       else if( deriv_lvl == 1 )
@@ -172,7 +167,8 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
           deriv_offset = i*segment_size;
           reorder_3c( buf, temp_buffer_, deriv_offset );
         }
-    else if( n_center_ == 4 )
+    }
+    else if( n_center_ == 4 ) {
       if( deriv_lvl == 0 )
         reorder_4c( buf, temp_buffer_, 0 );
       else if( deriv_lvl == 1 )
@@ -180,6 +176,7 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
           deriv_offset = i*segment_size;
           reorder_4c( buf, temp_buffer_, deriv_offset );
         }
+    }
   }
 
 }
@@ -192,9 +189,8 @@ ReorderEngine::reorder_1c( double* buf, double* tbuf, int offset )
 void
 ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset )
 {
-
-  Ref<GaussianShell> s1 = shells_[0];
-  Ref<GaussianShell> s2 = shells_[1];
+  GaussianShell* s1 = shells_[0];
+  GaussianShell* s2 = shells_[1];
   int nc1 = s1->ncontraction();
   int nc2 = s2->ncontraction();
   int index=offset, con2_offset=0, local2_offset,
@@ -227,12 +223,14 @@ ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset )
 
         if( s2_is_cart )
           for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+            int loc = c2_base + local2_offset + reorder_[s2->am(c2)][fc2];
             buf[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] ]
               = tbuf[index];
               ++index;
           }
         else
           for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+            int loc = c2_base + local2_offset + fc2;
             buf[ c2_base + local2_offset + fc2 ] = tbuf[index];
             ++index;
           }

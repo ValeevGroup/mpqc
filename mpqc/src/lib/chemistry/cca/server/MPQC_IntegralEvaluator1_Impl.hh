@@ -50,6 +50,7 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._includes)
 #include "integral_evaluator.h"
+#include "reorder_engine.h"
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace MpqcCca;
@@ -75,6 +76,9 @@ namespace MPQC {
 
     IntegralEvaluator< OneBodyOneCenterInt, 
 		       onebody_onecenter_computer > eval_;
+    Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
+    bool reorder_;
+    ReorderEngine reorder_engine_;
     onebody_onecenter_computer computer_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._implementation)

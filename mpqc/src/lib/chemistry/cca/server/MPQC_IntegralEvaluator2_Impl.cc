@@ -165,7 +165,7 @@ throw (
   computer_.set_shells( shellnum1, shellnum2 );
   eval_.compute( &computer_ );
   if( reorder_ )
-    reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 );
+    reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 ); // -1 ignored
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute)
 }

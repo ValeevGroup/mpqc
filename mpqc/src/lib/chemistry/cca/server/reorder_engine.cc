@@ -193,6 +193,7 @@ ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset )
   GaussianShell* s2 = shells_[1];
   int nc1 = s1->ncontraction();
   int nc2 = s2->ncontraction();
+
   int index=offset, con2_offset=0, local2_offset,
       c1_base, c2_base;
 
@@ -248,5 +249,88 @@ ReorderEngine::reorder_3c( double* buf, double* tbuf, int offset )
 void
 ReorderEngine::reorder_4c( double* buf, double* tbuf, int offset )
 {
+  GaussianShell* s1 = shells_[0];
+  GaussianShell* s2 = shells_[1];
+  GaussianShell* s3 = shells_[2];
+  GaussianShell* s4 = shells_[3];
+  int nc1 = s1->ncontraction();
+  int nc2 = s2->ncontraction();
+  int nc3 = s3->ncontraction();
+  int nc4 = s4->ncontraction();
+
+  int index=offset, con2_offset=0, con3_offset=0, con4_offset=0, con_offset,
+    local2_offset, local3_offset, local4_offset,
+    c1_base, c2_base, c3_base, c4_base;                                       
+
+  int temp;                                                                       for( int c4=0; c4<nc4; ++c4 )
+    con4_offset += s4->nfunction(c4);                                           
+  temp = 0;                                                                       con3_offset = con4_offset;
+  for( int c3=0; c3<nc3; ++c3 )                                                     temp += s3->nfunction(c3);
+  con3_offset *= temp;                                                          
+  temp = 0;                                                                       con2_offset = con3_offset;
+  for( int c2=0; c2<nc2; ++c2 )                                                     temp += s2->nfunction(c2);
+  con2_offset *= temp;                                                          
+
+  int s1_is_cart, s2_is_cart, s3_is_cart, s4_is_cart,                                 s1_nfunc, s2_nfunc, s3_nfunc, s4_nfunc;
+                                                                                  for( int c1=0; c1<nc1; ++c1 ) {
+                                                                                    c1_base = index;
+    s1_is_cart = s1->is_cartesian(c1);                                              s1_nfunc = s1->nfunction(c1);
+                                                                                    for( int fc1=0; fc1<s1_nfunc; ++fc1 ) {
+                                                                                      if( s1_is_cart )
+        c2_base = c1_base + reorder_[s1->am(c1)][fc1] * con2_offset;                  else
+        c2_base = c1_base + fc1 * con2_offset;                                  
+      local2_offset = 0;                                                              for( int c2=0; c2<nc2; ++c2 ) {
+
+        if( c2>0 ) local2_offset += s2->nfunction(c2-1);
+        s2_is_cart = s2->is_cartesian(c2);                                              s2_nfunc = s2->nfunction(c2);
+                                                                                        for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+
+          if( s2_is_cart )
+            c3_base = c2_base + (local2_offset + reorder_[s2->am(c2)][fc2])
+                        * con3_offset;
+          else
+            c3_base = c2_base + (local2_offset + fc2) * con3_offset;
+
+          local3_offset = 0;
+          for( int c3=0; c3<nc3; ++c3 ) {
+
+            if( c3>0 ) local3_offset += s3->nfunction(c3-1);
+            s3_is_cart = s3->is_cartesian(c3);
+            s3_nfunc = s3->nfunction(c3);
+
+            for( int fc3=0; fc3<s3_nfunc; ++fc3 ) {
+
+              if( s3_is_cart )
+                c4_base = c3_base + (local3_offset + reorder_[s3->am(c3)][fc3])
+                            * con4_offset;
+              else
+                c4_base = c3_base + (local3_offset + fc3) * con4_offset;
+
+              local4_offset = 0;
+              for( int c4=0; c4<nc4; ++c4 ) {
+
+                if( c4>0 ) local4_offset += s4->nfunction(c4-1);
+                s4_is_cart = s4->is_cartesian(c4);
+                s4_nfunc = s4->nfunction(c4);
+
+                if( s4_is_cart )
+                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                    buf[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+                      = temp_buffer_[index];
+                    ++index;
+                  }
+                else
+                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                    buf[ c4_base + local4_offset + fc4 ] = temp_buffer_[index];
+                    ++index;
+                  }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
 

@@ -43,7 +43,7 @@ package MPQC version 0.2 {
       void add_evaluator(in opaque eval, 
                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
       void set_basis(in Chemistry.QC.GaussianBasis.Molecular bs1);
-      void set_reorder( in int reorder );
+      void init_reorder();
     };
   class IntegralEvaluator2 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator2{
@@ -51,7 +51,7 @@ package MPQC version 0.2 {
                           in Chemistry.QC.GaussianBasis.IntegralDescr desc );
       void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1, 
                       in Chemistry.QC.GaussianBasis.Molecular bs2);
-      void set_reorder( in int reorder );
+      void init_reorder();
     };
   class IntegralEvaluator3 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator3{
@@ -60,7 +60,7 @@ package MPQC version 0.2 {
       void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
                       in Chemistry.QC.GaussianBasis.Molecular bs2,
                       in Chemistry.QC.GaussianBasis.Molecular bs3);
-      void set_reorder( in int reorder );
+      void init_reorder();
     };
   class IntegralEvaluator4 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator4{
@@ -70,7 +70,7 @@ package MPQC version 0.2 {
                       in Chemistry.QC.GaussianBasis.Molecular bs2,
                       in Chemistry.QC.GaussianBasis.Molecular bs3,
                       in Chemistry.QC.GaussianBasis.Molecular bs4 );
-      void set_reorder( in int reorder );
+      void init_reorder();
     };
  
   class ChemistryOpt_CoordinateModel 

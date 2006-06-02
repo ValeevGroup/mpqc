@@ -2,6 +2,7 @@
 #include <scdirlist.h>
 
 #include <util/group/linkage.h>
+#include <chemistry/qc/basis/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>

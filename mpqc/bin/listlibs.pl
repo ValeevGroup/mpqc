@@ -9,6 +9,8 @@ $debug = 0;
 $includes[++$#includes] = ".";
 $filename = "";
 
+@processing = ("Processing files:");
+
 foreach $arg (@ARGV) {
     if ($arg =~ /^-d$/) {
         $debug = 1;
@@ -84,7 +86,10 @@ sub process_file {
         }
     }
     if ($ifile eq "" || ! -f $ifile) {
-        print STDERR "listlibs.pl: couldn't find file $file\n";
+        print STDERR "listlibs.pl: couldn't find file \"$ifile\"\n";
+        for (my $i=0; $i <= $#processing; $i++) {
+          printf STDERR "  %s\n", "$processing[$i]";
+        }
         exit 1;
     }
 
@@ -103,7 +108,9 @@ sub process_file {
     }
 
     # process the lines of the file
+    $processing[++$#processing] = "$ifile";
     get_lines($filecontents);
+    --$#processing;
 }
 
 sub get_lines {

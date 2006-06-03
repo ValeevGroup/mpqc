@@ -52,7 +52,10 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_evaluator)
 
-  eval_.add_evaluator(eval,desc);
+  if( desc.get_deriv_lvl() == 0 )
+    eval_.add_evaluator(eval,desc);
+  else
+    deriv_eval_.add_evaluator(eval,desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.add_evaluator)
 }
@@ -104,6 +107,11 @@ throw ()
     IntegralDescr idesc = desc.get_descr(i);
     reorder_engine_.add_buffer( eval_.get_buffer( idesc ), idesc );
   }
+  CompositeIntegralDescr deriv_desc = deriv_eval_.get_descriptor();
+  for( int i=0; i < deriv_desc.get_n_descr(); ++i) {
+    IntegralDescr idesc = deriv_desc.get_descr(i);
+    reorder_engine_.add_buffer( deriv_eval_.get_buffer( idesc ), idesc );
+  }
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.init_reorder)
 }
@@ -119,6 +127,11 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_buffer)
+
+  if( desc.get_deriv_lvl() == 0 )
+    return eval_.get_buffer( desc );
+  else
+    return deriv_eval_.get_buffer( desc );
 
   return eval_.get_buffer( desc );
 
@@ -136,6 +149,7 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_deriv_centers)
 
+  // I don't think this is actually needed
   return eval_.get_deriv_centers();
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_deriv_centers)
@@ -152,7 +166,15 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_descriptor)
 
-  return eval_.get_descriptor();
+  CompositeIntegralDescr cdesc = Chemistry::CompositeIntegralDescr::_create();
+  CompositeIntegralDescr desc =  eval_.get_descriptor();
+  CompositeIntegralDescr deriv_desc = deriv_eval_.get_descriptor();
+  for( int i=0; i<desc.get_n_descr(); ++i)
+    cdesc.add_descr( desc.get_descr(i) );
+  for( int i=0; i<deriv_desc.get_n_descr(); ++i)
+    cdesc.add_descr( deriv_desc.get_descr(i) );
+
+  return cdesc;
   
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_descriptor)
 }
@@ -178,6 +200,7 @@ throw (
 
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
   eval_.compute( &computer_ );
+  deriv_eval_.compute( &deriv_computer_ );
   if( reorder_ )
     reorder_engine_.do_it( shellnum1, shellnum2, shellnum3, shellnum4 );
 
@@ -204,8 +227,9 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
+  // uh oh, multiple evals???
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  eval_.compute_array( &computer_ );
+  return eval_.compute_array( &computer_ );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_array)
 }
@@ -229,7 +253,10 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds)
 
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  return eval_.compute_bounds( &computer_ );
+  deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+  double bnd =  eval_.compute_bounds( &computer_ );
+  double d_bnd = deriv_eval_.compute_bounds( &deriv_computer_ );
+  return max( bnd, d_bnd );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
 }

@@ -29,7 +29,6 @@
 #pragma implementation
 #endif
 
-#include <Chemistry_DerivCenters.hh>
 #include "tbintcca.h"
 #include <util/class/scexception.h>
 #include <limits.h>
@@ -136,19 +135,20 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 					const Ref<GaussianBasisSet> &bs3,
 					const Ref<GaussianBasisSet> &bs4,
 					size_t storage,
-					IntegralSuperFactory eval_factory,
+					IntegralSuperFactory fac,
 					CompositeIntegralDescr cdesc,
 					vector<string> factories,
 					bool use_opaque ) :
-  TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4)
+  TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
+  bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
+  eval_factory_(fac), cdesc_(cdesc), factories_(factories),
+  use_opaque_(use_opaque)
 {
   eval_factory_.set_storage(storage);
   
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
   loginv_ = 1.0/log(2.0);
-
-  cca_dc_ = Chemistry::DerivCenters::_create();
 
   // find max deriv level
   max_deriv_lvl_=0;
@@ -199,14 +199,19 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
   for( int i=0; i<n_descr; ++i ) 
     sidl_factories.set( i, factories_[i] );
   eval_factory_.set_source_factories( sidl_factories );
+
+  IntegralDescr idesc = cdesc_.get_descr(0);
+  cca_dc_ = idesc.get_deriv_centers();
   
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
+  buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
+  // and what happens for multiple buffers???
 }
 
 TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA() 
 {
-  delete buff_;
+  //delete buff_;
 }
 
 void

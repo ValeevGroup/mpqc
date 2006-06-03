@@ -196,6 +196,9 @@ namespace MpqcCca {
 
   private:
     int sh1_, sh2_, sh3_, sh4_;
+ 
+  public:
+    sc::DerivCenters sc_dc_;
 
   public:
     twobody_deriv_computer() { }
@@ -205,6 +208,15 @@ namespace MpqcCca {
 
     void compute( TwoBodyDerivInt* eval, QC_DerivCenters* dc )
     {
+      sc_dc_.clear();
+      eval->compute_shell(sh1_,sh2_,sh3_,sh4_,sc_dc_);
+
+      dc->clear();
+      if( sc_dc_.has_omitted_center() )
+        dc->add_omitted(sc_dc_.omitted_center(),sc_dc_.omitted_atom());
+      for( int i=0; i<sc_dc_.n(); ++i)
+        dc->add_center(sc_dc_.center(i),sc_dc_.atom(i));
+
     }
 
     double compute_bounds( TwoBodyDerivInt* eval )
@@ -277,8 +289,11 @@ namespace MpqcCca {
     {
       // this is obviously not going to work for multiple evals
       // that will require interface work
-      for( int i=0; i<evals_.size(); ++i)
-        return computer->compute_bounds( evals_[i].first );
+      if( evals_.size() ) 
+        for( int i=0; i<evals_.size(); ++i)
+          return computer->compute_bounds( evals_[i].first );
+
+      return 0.0;
     }
       
       

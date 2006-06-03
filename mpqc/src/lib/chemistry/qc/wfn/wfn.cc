@@ -544,7 +544,13 @@ Wavefunction::core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
   }
 
   RefDiagSCMatrix p2K2 = p2*K*K;
-  RefDiagSCMatrix p2K2_inv = p2K2.i();
+  RefDiagSCMatrix p2K2_inv = p2K2->clone();
+
+  for (int i=0; i<npbas; i++) {
+    double p2K2_val = p2K2(i);
+    if (fabs(p2K2_val) > DBL_EPSILON) p2K2_inv(i) = 1.0/p2K2_val;
+    else p2K2_inv(i) = 0.0;
+  }
 
   RefSCMatrix h_contrib;
   h_contrib
@@ -666,6 +672,10 @@ Wavefunction::core_hamiltonian_dk(int dk)
   int noso = p_oso_dim.n();
   for (int i=0; i<noso; i++) {
     double T_val = Tval(i);
+    // momentum basis sets with near linear dependencies may
+    // have T_val approximately equal to zero.  These can be
+    // negative, which will cause a SIGFPE in sqrt.
+    if (T_val < DBL_EPSILON) T_val = 0.0;
     double p = sqrt(2.0*T_val);
     double E_val = c * sqrt(p*p+c*c);
     double A_val = sqrt((E_val+c*c)/(2.0*E_val));

@@ -46,7 +46,7 @@ namespace MpqcCca {
     void do_it( int s1, int s2, int s3, int s4 );
  
     void reorder_1c( double* buf, double* tbuf, int offset );
-    void reorder_2c( double* buf, double* tbuf, int offset );
+    void reorder_2c( double* buf, double* tbuf, int is_deriv );
     void reorder_3c( double* buf, double* tbuf, int offset );
     void reorder_4c( double* buf, double* tbuf, int offset );
     

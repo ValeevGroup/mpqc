@@ -33,6 +33,7 @@
 #include "Chemistry_Eri2IntegralDescr.hh"
 #include "Chemistry_Eri3IntegralDescr.hh"
 #include "Chemistry_Eri4IntegralDescr.hh"
+#include "Chemistry_BaseIntegralDescr.hh"
 
 sc::Ref<sc::GaussianBasisSet> 
 basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
@@ -178,10 +179,15 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator1)
 
+  obocint_vec_.clear();
+  bool is_oboc;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+  
+    is_oboc = false;
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -196,7 +202,7 @@ throw (
     /*else*/
     throw runtime_error("IntV3EvaluatorFactory: unsupported integral type");
 
-    if( obocint_vec_.back().nonnull() )
+    if( obocint_vec_.size() && is_oboc )
       eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
   }
 
@@ -223,6 +229,11 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator2)
 
+  obint_vec_.clear();
+  obderivint_vec_.clear();
+  tbtcint_vec_.clear();
+  bool is_ob, is_obderiv, is_tbtc;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
 
@@ -234,6 +245,8 @@ throw (
   integral_->set_basis(sc_bs1,sc_bs2);
   
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+   
+    is_ob = is_obderiv = is_tbtc = false;
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -241,15 +254,23 @@ throw (
 
     std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype 
               << " evaluator\n";
-    
-    if( itype == "overlap"  && ideriv == 0 )
+
+    if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec_.push_back( integral_->overlap() );
-    else if( itype == "kinetic" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "kinetic" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->kinetic() );
-    else if( itype == "nuclear" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "nuclear" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->nuclear() );
-    else if( itype == "hcore" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "hcore" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->hcore() );
+      is_ob = true;
+    }
     // these need additional data
     //else if( itype == "pointcharge2" && ideriv == 0 )
     //  obint_ = integral_->point_charge( ??? );
@@ -259,26 +280,36 @@ throw (
     //  obint_ = integral_->dipole( ??? );
     //else if( itype == "quadrupole" && ideriv == 0 )
     //  obint_ = integal_->quadrupole( ??? );
-    else if( itype == "overlap" && ideriv == 1 )
+    else if( itype == "overlap" && ideriv == 1 ) {
       obderivint_vec_.push_back( integral_->overlap_deriv() );
-    else if( itype == "kinetic" && ideriv == 1 )
+      is_obderiv = true;
+    }
+    else if( itype == "kinetic" && ideriv == 1 ) {
       obderivint_vec_.push_back( integral_->kinetic_deriv() );
-    else if( itype == "nuclear" && ideriv == 1 )
+      is_obderiv = true;
+    }
+    else if( itype == "nuclear" && ideriv == 1 ) {
       obderivint_vec_.push_back( integral_->nuclear_deriv() );
-    else if( itype == "hcore" && ideriv == 1 )
+      is_obderiv = true;
+    }
+    else if( itype == "hcore" && ideriv == 1 ) {
       obderivint_vec_.push_back( integral_->hcore_deriv() );
-    else if( itype == "eri2" && ideriv == 0 )
+      is_obderiv = true;
+    }
+    else if( itype == "eri2" && ideriv == 0 ) {
       tbtcint_vec_.push_back( integral_->electron_repulsion2() );
+      is_obderiv = true;
+    }
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( obint_vec_.back().nonnull() ) 
+    if( obint_vec_.size() && is_ob )
       eval.add_evaluator( (void*) obint_vec_.back().pointer(), 
                           idesc );
-    else if( obderivint_vec_.back().nonnull() ) 
+    else if( obderivint_vec_.size() && is_obderiv )
       eval.add_evaluator( (void*) obderivint_vec_.back().pointer(), 
                           idesc );
-    else if( tbtcint_vec_.back().nonnull() )
+    else if( tbtcint_vec_.size() && is_tbtc )
       eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(), 
                           idesc );
   }
@@ -307,6 +338,9 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator3)
 
+  tb3cint_vec_.clear();
+  bool is_tb3c;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
 
@@ -320,6 +354,8 @@ throw (
 
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+ 
+    is_tb3c = false;
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -328,12 +364,14 @@ throw (
     std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
               << " evaluator\n";
 
-    if( itype == "eri3"  && ideriv == 0 )
+    if( itype == "eri3"  && ideriv == 0 ) {
       tb3cint_vec_.push_back( integral_->electron_repulsion3() );
+      is_tb3c = true;
+    }
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( tb3cint_vec_.back().nonnull() ) 
+    if( tb3cint_vec_.size() && is_tb3c ) 
       eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
   }
 
@@ -362,6 +400,10 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator4)
 
+  tbint_vec_.clear();
+  tbderivint_vec_.clear();
+  bool is_tb, is_tbderiv;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
 
@@ -376,6 +418,8 @@ throw (
   integral_->set_basis(sc_bs1,sc_bs2,sc_bs3,sc_bs4);
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+ 
+    is_tb = is_tbderiv = false;
     
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -384,17 +428,20 @@ throw (
     std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
               << " evaluator\n";
 
-    if( itype == "eri4"  && ideriv == 0 )
+    if( itype == "eri4"  && ideriv == 0 ) {
       tbint_vec_.push_back( integral_->electron_repulsion() );
-    else if( itype == "eri4" && ideriv == 1 )
+      is_tb = true;
+    }
+    else if( itype == "eri4" && ideriv == 1 ) {
       tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
+      is_tbderiv = true;
+    }
     else 
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
-    if( tbint_vec_.back().nonnull() ) {
+    if( tbint_vec_.size() && is_tb )
       eval.add_evaluator( (void*) tbint_vec_.back().pointer(), idesc );
-    }
-    else if( tbderivint_vec_.back().nonnull() ) 
+    else if( tbderivint_vec_.size() && is_tbderiv ) 
       eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
   }
 

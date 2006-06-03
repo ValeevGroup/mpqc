@@ -86,10 +86,12 @@ namespace MPQC {
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._implementation)
 
     IntegralEvaluator< OneBodyInt, onebody_computer > eval_; 
+    IntegralEvaluator< OneBodyDerivInt, onebody_deriv_computer > deriv_eval_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     bool reorder_;
     ReorderEngine reorder_engine_;
     onebody_computer computer_;
+    onebody_deriv_computer deriv_computer_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._implementation)
 

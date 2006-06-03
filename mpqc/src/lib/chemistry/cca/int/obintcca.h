@@ -63,7 +63,6 @@ namespace sc {
     IntegralEvaluator2 eval_;
 
   protected:
-    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
     
   public:
     OneBodyIntCCA( Integral* integral,
@@ -95,11 +94,10 @@ namespace sc {
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     double* buff_;
+    double* temp_buffer_;
     IntegralEvaluator2 eval_;
-
-  protected:
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
- 
+
   public:
     OneBodyDerivIntCCA( Integral* integral,
 		        const Ref<GaussianBasisSet>&,

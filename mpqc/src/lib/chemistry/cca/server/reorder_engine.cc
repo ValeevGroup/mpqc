@@ -38,9 +38,9 @@ ReorderEngine::init( int n,
     }
 
   // terminology:
-  // segment = regarding basis function ids, the smallest repeating 
-  //           portion of a buffer
-  // A simple 0th order buffer has one segments.
+  // Segment: regarding basis function ids, the smallest repeating 
+  // portion of a buffer.
+  // A simple 0th order buffer has one segment.
   // A 1st order nuclear derivative buffer has three segements (dx,dy,dx), etc.
 
   // compute max segment size and max am
@@ -52,7 +52,7 @@ ReorderEngine::init( int n,
   }
 
   max_deriv_lvl_ = 0; // until we discover otherwise
-  temp_buffer_ = new double[max_segment_size_];
+  temp_buffer_ = new double[max_segment_size_*3];
 
   // construct reorder arrays
 
@@ -96,8 +96,8 @@ ReorderEngine::add_buffer ( double* buffer, IntegralDescr desc )
   deriv_lvls_.push_back( deriv_lvl );
   if( max_deriv_lvl_ < deriv_lvl ) {
     max_deriv_lvl_ = deriv_lvl;
-    delete temp_buffer_;
-    temp_buffer_ = new double[max_segment_size_*3];
+    //delete temp_buffer_; //mistmatched ???
+    //temp_buffer_ = new double[max_segment_size_*3];
   } 
   if( max_deriv_lvl_ > 1 ) {
     sidl::SIDLException ex = sidl::SIDLException::_create();
@@ -144,29 +144,20 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
     if( n_center_ == 1 ) {
       if( deriv_lvl == 0 )
         reorder_1c( buf, temp_buffer_, 0 );
-      else if( deriv_lvl == 1 )
-        for(int i=0; i<3; ++i) {
-          deriv_offset = i*segment_size;
-          reorder_1c( buf, temp_buffer_, deriv_offset );
-        }
     }
     else if( n_center_ == 2 ) {
       if( deriv_lvl == 0 )
         reorder_2c( buf, temp_buffer_, 0 );
-      else if( deriv_lvl == 1 )
-        for(int i=0; i<3; ++i) {
-          deriv_offset = i*segment_size;
-          reorder_2c( buf, temp_buffer_, deriv_offset );
-        }
+      else if( deriv_lvl == 1 ) {
+        // a 2-center intv3 derivative buffer is composed of 
+        // nfunc triplets (dx,dy,dz) which must be repacked
+        // into 3 (dx,dy,dz) shell doublets of nfunc entries
+        reorder_2c( buf, temp_buffer_, 1 );
+      }
     }
     else if( n_center_ == 3 ) {
       if( deriv_lvl == 0 )
         reorder_3c( buf, temp_buffer_, 0 );
-      else if( deriv_lvl == 1 )
-        for(int i=0; i<3; ++i) {
-          deriv_offset = i*segment_size;
-          reorder_3c( buf, temp_buffer_, deriv_offset );
-        }
     }
     else if( n_center_ == 4 ) {
       if( deriv_lvl == 0 )
@@ -187,25 +178,28 @@ ReorderEngine::reorder_1c( double* buf, double* tbuf, int offset )
 }
 
 void
-ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset )
+ReorderEngine::reorder_2c( double* buf, double* tbuf, int is_deriv )
 {
   GaussianShell* s1 = shells_[0];
   GaussianShell* s2 = shells_[1];
   int nc1 = s1->ncontraction();
   int nc2 = s2->ncontraction();
 
-  int index=offset, con2_offset=0, local2_offset,
+  int index=0, con2_offset=0, local2_offset, 
       c1_base, c2_base;
 
   int temp;
-  for( int c2=0; c2<nc2; ++c2 )
-    con2_offset += s2->nfunction(c2);
+  con2_offset = s2->nfunction();
 
-  int s1_is_cart, s2_is_cart, s1_nfunc, s2_nfunc;
+  int s1_is_cart, s2_is_cart, nfunc, s1_nfunc, s2_nfunc; 
+  nfunc = s1->nfunction() * s2->nfunction();
 
+  c1_base = 0;
   for( int c1=0; c1<nc1; ++c1 ) {
 
-    c1_base = index;
+    //c1_base = index;
+    if(c1>0) c1_base += s1->nfunction(c1-1) * con2_offset;
+
     s1_is_cart = s1->is_cartesian(c1);
     s1_nfunc = s1->nfunction(c1);
 
@@ -222,19 +216,39 @@ ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset )
         s2_is_cart = s2->is_cartesian(c2);
         s2_nfunc = s2->nfunction(c2);
 
-        if( s2_is_cart )
-          for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
-            int loc = c2_base + local2_offset + reorder_[s2->am(c2)][fc2];
-            buf[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] ]
-              = tbuf[index];
+        if(!is_deriv) {
+          if( s2_is_cart )
+            for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+              buf[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] ]
+                = tbuf[index];
               ++index;
-          }
-        else
-          for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
-            int loc = c2_base + local2_offset + fc2;
-            buf[ c2_base + local2_offset + fc2 ] = tbuf[index];
-            ++index;
-          }
+            }
+          else
+            for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+              buf[ c2_base + local2_offset + fc2 ] = tbuf[index];
+              ++index;
+            }
+        }
+        else {
+          if( s2_is_cart )
+            for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+              for(int di=0; di<3; ++di) {
+                buf[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2]
+                        + di*nfunc ]
+                  = tbuf[index];
+                ++index;
+              }
+            }
+          else
+            for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+              for(int di=0; di<3; ++di) {
+                buf[ c2_base + local2_offset + fc2 + di*nfunc ] 
+                  = tbuf[index];
+                ++index;
+              }
+            }
+        }
+
       }
     }
   }

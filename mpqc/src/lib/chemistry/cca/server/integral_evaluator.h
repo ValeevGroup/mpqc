@@ -29,7 +29,7 @@ namespace MpqcCca {
     void set_shells( int sh1 )
     { sh1_ = sh1; }
 
-    void compute( OneBodyOneCenterInt* eval )
+    void compute( OneBodyOneCenterInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_ ); }
 
     double compute_bounds( OneBodyOneCenterInt* eval )
@@ -45,6 +45,37 @@ namespace MpqcCca {
 
   };
 
+
+  class onebody_onecenter_deriv_computer {
+
+  private:
+    int sh1_;
+    Molecular bs1_;
+
+  public:
+    onebody_onecenter_deriv_computer() { }
+
+    void set_shells( int sh1 )
+    { sh1_ = sh1; }
+
+    void compute( OneBodyOneCenterDerivInt* eval, QC_DerivCenters* dc )
+    {
+    }
+
+    double compute_bounds( OneBodyOneCenterDerivInt* eval )
+    {
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support one body int bounds");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+    }
+
+  };
+
+
   class onebody_computer {
 
   private:
@@ -56,7 +87,7 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2 )
     { sh1_=sh1; sh2_=sh2; }
 
-    void compute( OneBodyInt* eval )
+    void compute( OneBodyInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_ ); }
 
     double compute_bounds( OneBodyInt* eval )
@@ -71,6 +102,36 @@ namespace MpqcCca {
     }
   };
 
+
+  class onebody_deriv_computer {
+
+  private:
+    int sh1_, sh2_;
+
+  public:
+    onebody_deriv_computer() { }
+
+    void set_shells( int sh1, int sh2 )
+    { sh1_=sh1; sh2_=sh2; }
+
+    void compute( OneBodyDerivInt* eval, QC_DerivCenters* dc )
+    {
+      eval->compute_shell( sh1_, sh2_, dc->get_deriv_atom() );
+    }
+
+    double compute_bounds( OneBodyDerivInt* eval )
+    {
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support one body int bounds");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+    }
+  };
+
+
   class twobody_threecenter_computer {
 
   private:
@@ -82,12 +143,33 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; }
 
-    void compute( TwoBodyThreeCenterInt* eval )
+    void compute( TwoBodyThreeCenterInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_, sh3_ ); }
 
     double compute_bounds( TwoBodyThreeCenterInt* eval )
     { return eval->shell_bound( sh1_, sh2_, sh3_); }
   };
+
+
+  class twobody_threecenter_deriv_computer {
+
+  private:
+    int sh1_, sh2_, sh3_;
+
+  public:
+    twobody_threecenter_deriv_computer() { }
+
+    void set_shells( int sh1, int sh2, int sh3 )
+    { sh1_=sh1; sh2_=sh2; sh3_=sh3; }
+
+    void compute( TwoBodyThreeCenterDerivInt* eval, QC_DerivCenters* dc )
+    {
+    }
+
+    double compute_bounds( TwoBodyThreeCenterDerivInt* eval )
+    { return eval->shell_bound( sh1_, sh2_, sh3_); }
+  };
+
 
   class twobody_computer {
 
@@ -100,10 +182,32 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3, int sh4 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; sh4_=sh4; };
 
-    void compute( TwoBodyInt* eval )
+    void compute( TwoBodyInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_, sh3_, sh4_ ); }
 
     double compute_bounds( TwoBodyInt* eval )
+    {
+      return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
+    }
+  };
+
+
+  class twobody_deriv_computer {
+
+  private:
+    int sh1_, sh2_, sh3_, sh4_;
+
+  public:
+    twobody_deriv_computer() { }
+
+    void set_shells( int sh1, int sh2, int sh3, int sh4 )
+    { sh1_=sh1; sh2_=sh2; sh3_=sh3; sh4_=sh4; };
+
+    void compute( TwoBodyDerivInt* eval, QC_DerivCenters* dc )
+    {
+    }
+
+    double compute_bounds( TwoBodyDerivInt* eval )
     {
       return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
     }
@@ -122,6 +226,7 @@ namespace MpqcCca {
   private:
     
     vector< pair<eval_type*,QC_IntegralDescr> > evals_;
+    vector< QC_DerivCenters > dcs_;
     
   public:
     
@@ -131,6 +236,7 @@ namespace MpqcCca {
       eval_ptr = static_cast<eval_type*>(eval);
       pair<eval_type*,IntegralDescr> p(eval_ptr,desc);
       evals_.push_back( p );
+      dcs_.push_back( p.second.get_deriv_centers() );
     }
     
     double* get_buffer ( IntegralDescr desc ) 
@@ -159,8 +265,12 @@ namespace MpqcCca {
 
     void compute ( computer_type* computer ) 
     {
-      for( int i=0; i<evals_.size(); ++i) 
-        computer->compute( evals_[i].first );
+      for( int i=0; i<evals_.size(); ++i) {
+        if( evals_[i].second.get_deriv_lvl() == 0 )
+          computer->compute( evals_[i].first, 0 );
+        else
+          computer->compute( evals_[i].first, &(dcs_[i]) );
+      }
     }
 
     double compute_bounds( computer_type* computer )

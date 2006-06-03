@@ -253,7 +253,9 @@ throw (
   
   std::cout << "  model input:" << std::endl << input.str() << std::endl;
 
+  // this got more complicated with superfactory, needs to be revisited
   // hook into integrals component (optional)
+/*
   try { eval_factory_ = services_.getPort("IntegralEvaluatorFactory"); }
   catch (...) {}
   if( eval_factory_._not_nil() ) {
@@ -267,6 +269,7 @@ throw (
     intcca_ = new IntegralCCA(eval_factory_,use_opaque);
     Integral::set_default_integral( Ref<Integral>(intcca_.pointer()) );
   }
+*/
   
   MPQC::Chemistry_QC_Model model = MPQC::Chemistry_QC_Model::_create();  
   model.initialize_parsedkeyval("model",input.str());
@@ -334,8 +337,8 @@ throw (
 				 "Util.StringProvider", 0);
       services_.registerUsesPort("MoleculeFactory", 
 				 "Chemistry.MoleculeFactory", 0);
-      services_.registerUsesPort("IntegralEvaluatorFactory",
-		     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",0);
+  //    services_.registerUsesPort("IntegralEvaluatorFactory",
+  //		     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",0);
   }
   catch (gov::cca::CCAException e) {
       std::cout << "Error using services: "
@@ -378,43 +381,6 @@ throw (
       abort();
     }
 
-    std::cerr << "finished parameter port stuff\n";
-
-    /*
-    if (services_._not_nil()) {
-      gov::cca::TypeMap tm = services_.createTypeMap();
-      services_.registerUsesPort("classicParam",
-                                 "gov.cca.ParameterPortFactoryService",tm);
-      gov::cca::Port p = services_.getPort("classicParam");
-      ccaffeine::ports::PortTranslator portX = p;
-      if(portX._not_nil()) {
-        classic::gov::cca::Port *cp
-          =static_cast<classic::gov::cca::Port*>(portX.getClassicPort());
-        if(!cp) {
-          std::cout << "Couldn't get classic port" << std::endl;
-          return;
-        }
-        ConfigurableParameterFactory *cpf
-          = dynamic_cast<ConfigurableParameterFactory *>(cp);
-        ConfigurableParameterPort *pp = setup_parameters(cpf);
-        classic::gov::cca::Port *clscp
-          = dynamic_cast<classic::gov::cca::Port*>(pp);
-        if (!clscp) {
-          std::cout << "Couldn't cast to classic::gov::cca::Port"
-                    << std::endl;
-        }
-        void *vp = static_cast<void*>(clscp);
-        ccaffeine::ports::PortTranslator provideX
-          = ccaffeine::ports::PortTranslator::createFromClassic(vp);
-
-        services_.addProvidesPort(provideX,
-                                  "configure", "gov.cca.ports.ParameterPort", tm);
-
-        services_.releasePort("classicParam");
-        services_.unregisterUsesPort("classicParam");
-      }
-    }
-    */
   }
   catch(std::exception& e) {
     std::cerr << "Error in parameter port setup: " << e.what() << std::endl;
@@ -425,42 +391,5 @@ throw (
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._misc)
-
-/*
-ConfigurableParameterPort *
-MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFactory *cpf)
-{
-  ConfigurableParameterPort * pp = cpf->createConfigurableParameterPort();
-
-  pp->setBatchTitle("PortTranslatorStarter Configuration");
-  pp->setGroupName("Model Factory Input");
-
-  theory_param_ = new StringParameter("theory", "Theory name",
-                                      "theory", "HF");
-  basis_param_  = new StringParameter("basis", "AO basis name",
-                                      "basis", "STO-3G");
-  molecule_filename_param_ =
-                  new StringParameter("molecule_filename", 
-                                      "Molecule filename",
-                                      "molecule_filename", ""); 
-  keyval_filename_param_ =
-                  new StringParameter("keyval_filename", 
-                                      "Keyval input filename",
-                                      "keyval_filename", "");
-  integral_buffer_param_ = 
-                  new StringParameter("integral_buffer",
-                                      "Integral buffer method",
-                                      "integral_buffer", "opaque");
-
-  pp->addRequest(theory_param_);
-  pp->addRequest(basis_param_);
-  pp->addRequest(molecule_filename_param_);
-  pp->addRequest(keyval_filename_param_);
-  pp->addRequest(integral_buffer_param_);
-
-  return pp;
-}
-*/
-
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._misc)
 

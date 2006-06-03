@@ -153,10 +153,15 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator1)
 
+  obocint_vec_.clear();
+  bool is_oboc;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    is_oboc = false;
 
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -171,7 +176,7 @@ throw (
     /*else*/
     throw runtime_error("CintsEvaluatorFactory: unsupported integral type");
 
-    if( obocint_vec_.back().nonnull() )
+    if( obocint_vec_.size() && is_oboc )
       eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
   }
 
@@ -197,6 +202,11 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator2)
 
+  obint_vec_.clear();
+  obderivint_vec_.clear();
+  tbtcint_vec_.clear();
+  bool is_ob, is_obderiv, is_tbtc;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
 
@@ -209,6 +219,8 @@ throw (
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
 
+    is_ob = is_obderiv = is_tbtc = false;
+
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
@@ -216,24 +228,33 @@ throw (
     std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
               << " evaluator\n";
 
-    if( itype == "overlap"  && ideriv == 0 )
+    if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec_.push_back( integral_->overlap() );
-    else if( itype == "kinetic" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "kinetic" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->kinetic() );
-    else if( itype == "nuclear" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "nuclear" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->nuclear() );
-    else if( itype == "hcore" && ideriv == 0 )
+      is_ob = true;
+    }
+    else if( itype == "hcore" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->hcore() );
+      is_ob = true;
+    }
     else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
-    if( obint_vec_.back().nonnull() )
+    // multiple types could be a problem here
+    if( obint_vec_.size() && is_ob  )
       eval.add_evaluator( (void*) obint_vec_.back().pointer(),
                           idesc );
-    else if( obderivint_vec_.back().nonnull() )
+    else if( obderivint_vec_.size() && is_obderiv )
       eval.add_evaluator( (void*) obderivint_vec_.back().pointer(),
                           idesc );
-    else if( tbtcint_vec_.back().nonnull() )
+    else if( tbtcint_vec_.size() && is_tbtc )
       eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(),
                           idesc );
   }
@@ -261,6 +282,9 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator3)
 
+  tb3cint_vec_.clear();
+  bool is_tb3c;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
 
@@ -274,6 +298,8 @@ throw (
 
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
+ 
+    is_tb3c = false;
 
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
@@ -287,7 +313,7 @@ throw (
     //else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
-    if( tb3cint_vec_.back().nonnull() )
+    if( tb3cint_vec_.size() && is_tb3c )
       eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
   }
 
@@ -315,6 +341,10 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator4)
 
+  tbint_vec_.clear();
+  tbderivint_vec_.clear();
+  bool is_tb, is_tbderiv;
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
 
@@ -330,6 +360,8 @@ throw (
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
 
+    is_tb = is_tbderiv = false;
+
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
@@ -337,17 +369,21 @@ throw (
     std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
               << " evaluator\n";
 
-    if( itype == "eri4"  && ideriv == 0 )
+    if( itype == "eri4"  && ideriv == 0 ) {
       tbint_vec_.push_back( integral_->electron_repulsion() );
-    else if( itype == "eri4" && ideriv == 1 )
+      is_tb = true;
+    }
+    else if( itype == "eri4" && ideriv == 1 ) {
       tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
+      is_tbderiv = true;
+    }
     else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
-    if( tbint_vec_.back().nonnull() ) {
+    if( tbint_vec_.size() && is_tb ) {
       eval.add_evaluator( (void*) tbint_vec_.back().pointer(), idesc );
     }
-    else if( tbderivint_vec_.back().nonnull() )
+    else if( tbderivint_vec_.size() && is_tbderiv )
       eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
   }
 

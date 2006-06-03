@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+
 #include <sstream>
 #include <iostream>
 #include <vector>
@@ -37,11 +39,13 @@
 #include <chemistry/cca/int/tbintcca.h>
 #include <util/class/scexception.h>
 #include <Chemistry_CompositeIntegralDescr.hh>
+#include <Chemistry_BaseIntegralDescr.hh>
 #include <Chemistry_OverlapIntegralDescr.hh>
 #include <Chemistry_KineticIntegralDescr.hh>
 #include <Chemistry_NuclearIntegralDescr.hh>
 #include <Chemistry_HCoreIntegralDescr.hh>
 #include <Chemistry_Eri4IntegralDescr.hh>
+#include <Chemistry_DerivCenters.hh>
 #ifdef INTV3_ORDER
   #include <chemistry/qc/intv3/cartitv3.h>
   #include <chemistry/qc/intv3/tformv3.h>
@@ -72,7 +76,8 @@ Integral::get_default_integral()
 }
 */
 
-IntegralCCA::IntegralCCA( IntegralSuperFactory eval_factory, 
+/* It'll take a fair bit of work to make superfactory work in ccafe
+IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory, 
 			  bool use_opaque,
 			  const Ref<GaussianBasisSet> &b1,
 			  const Ref<GaussianBasisSet> &b2,
@@ -81,14 +86,16 @@ IntegralCCA::IntegralCCA( IntegralSuperFactory eval_factory,
   Integral(b1,b2,b3,b4), eval_factory_(eval_factory), use_opaque_(use_opaque)
 {
   initialize_transforms();
-  superfactory_type_ = "Chemistry.IntegralSuperFactory";
 }
+*/
 
 IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
 {
 
   superfactory_type_ = "Chemistry.IntegralSuperFactory";
+
+  cca_dc_ = Chemistry::DerivCenters::_create();
 
   initialize_transforms();
 
@@ -360,6 +367,7 @@ IntegralCCA::overlap()
   eval_req_.clear();
   Chemistry::OverlapIntegralDescr desc =
     Chemistry::OverlapIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
 
   return get_onebody( eval_req_ );
@@ -371,6 +379,7 @@ IntegralCCA::kinetic()
   eval_req_.clear();
   Chemistry::KineticIntegralDescr desc =
     Chemistry::KineticIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -382,6 +391,7 @@ IntegralCCA::nuclear()
   eval_req_.clear();
   Chemistry::NuclearIntegralDescr desc =
     Chemistry::NuclearIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -393,6 +403,7 @@ IntegralCCA::hcore()
   eval_req_.clear();
   Chemistry::HCoreIntegralDescr desc =
     Chemistry::HCoreIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -433,6 +444,7 @@ IntegralCCA::overlap_deriv()
   Chemistry::OverlapIntegralDescr desc =
     Chemistry::OverlapIntegralDescr::_create();
   desc.set_deriv_lvl(1);
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -445,6 +457,7 @@ IntegralCCA::kinetic_deriv()
   Chemistry::KineticIntegralDescr desc =
     Chemistry::KineticIntegralDescr::_create();
   desc.set_deriv_lvl(1);
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -457,6 +470,7 @@ IntegralCCA::nuclear_deriv()
   Chemistry::NuclearIntegralDescr desc =
     Chemistry::NuclearIntegralDescr::_create();
   desc.set_deriv_lvl(1);
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -469,6 +483,7 @@ IntegralCCA::hcore_deriv()
   Chemistry::HCoreIntegralDescr desc =
     Chemistry::HCoreIntegralDescr::_create();
   desc.set_deriv_lvl(1);
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -480,6 +495,7 @@ IntegralCCA::electron_repulsion()
   eval_req_.clear();
   Chemistry::Eri4IntegralDescr desc =
     Chemistry::Eri4IntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_twobody( eval_req_ );
@@ -492,6 +508,7 @@ IntegralCCA::electron_repulsion_deriv()
   Chemistry::Eri4IntegralDescr desc =
     Chemistry::Eri4IntegralDescr::_create();
   desc.set_deriv_lvl(1);
+  desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
   
   return get_twobody_deriv( eval_req_ );

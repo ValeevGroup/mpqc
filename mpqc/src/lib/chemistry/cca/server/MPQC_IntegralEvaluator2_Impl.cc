@@ -52,7 +52,10 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.add_evaluator)  
 
-  eval_.add_evaluator(eval,desc);
+  if( desc.get_deriv_lvl() == 0 )
+    eval_.add_evaluator(eval,desc);
+  else 
+    deriv_eval_.add_evaluator(eval,desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.add_evaluator)
 }
@@ -94,6 +97,11 @@ throw ()
     IntegralDescr idesc = desc.get_descr(i);
     reorder_engine_.add_buffer( eval_.get_buffer( idesc ), idesc );
   }
+  CompositeIntegralDescr deriv_desc = deriv_eval_.get_descriptor();
+  for( int i=0; i < deriv_desc.get_n_descr(); ++i) {
+    IntegralDescr idesc = deriv_desc.get_descr(i);
+    reorder_engine_.add_buffer( deriv_eval_.get_buffer( idesc ), idesc );
+  }
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.init_reorder)
 }
@@ -110,8 +118,12 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_buffer)
 
-  return eval_.get_buffer( desc );
+  if( desc.get_deriv_lvl() == 0 )
+    return eval_.get_buffer( desc );
+  else
+    return deriv_eval_.get_buffer( desc );
 
+  return NULL;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_buffer)
 }
 
@@ -126,6 +138,7 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_deriv_centers)
 
+  // I don't think this is actually needed
   return eval_.get_deriv_centers();
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_deriv_centers)
@@ -142,7 +155,13 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_descriptor)
 
-  return eval_.get_descriptor();
+  CompositeIntegralDescr cdesc = Chemistry::CompositeIntegralDescr::_create();
+  CompositeIntegralDescr desc =  eval_.get_descriptor();
+  CompositeIntegralDescr deriv_desc = deriv_eval_.get_descriptor();
+  for( int i=0; i<desc.get_n_descr(); ++i)
+    cdesc.add_descr( desc.get_descr(i) );
+  for( int i=0; i<deriv_desc.get_n_descr(); ++i)
+    cdesc.add_descr( deriv_desc.get_descr(i) );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_descriptor)
 }
@@ -163,7 +182,9 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
   
   computer_.set_shells( shellnum1, shellnum2 );
+  deriv_computer_.set_shells( shellnum1, shellnum2 );
   eval_.compute( &computer_ );
+  deriv_eval_.compute( &deriv_computer_ );
   if( reorder_ )
     reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 ); // -1 ignored
 
@@ -186,6 +207,7 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
   
+  // uh oh, multiple evals???
   computer_.set_shells( shellnum1, shellnum2 );
   return eval_.compute_array( &computer_ ); 
 

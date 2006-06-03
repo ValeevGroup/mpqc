@@ -32,6 +32,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
+#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/basis/cartiter.h>
@@ -249,6 +250,7 @@ namespace sc {
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
     string factory_type_;
     string superfactory_type_;
     string default_subfactory_;
@@ -273,13 +275,16 @@ namespace sc {
     
   public:
 
-    /** This constructor is used when the framework is not embedded. */
+    /* It'll take a fair bit of work to get superfactory to work in ccafe
+    /* This constructor is used when the framework is not embedded. */
+/*
     IntegralCCA( IntegralSuperFactory eval_factory, 
 		 bool use_opaque,
                  const Ref<GaussianBasisSet> &b1=0,
                  const Ref<GaussianBasisSet> &b2=0,
                  const Ref<GaussianBasisSet> &b3=0,
                  const Ref<GaussianBasisSet> &b4=0 );
+*/
 
     /** The KeyVal constructor.
         This constructor is used when the framework is embedded.

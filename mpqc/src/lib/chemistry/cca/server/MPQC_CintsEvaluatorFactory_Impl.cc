@@ -345,6 +345,15 @@ throw (
   tbderivint_vec_.clear();
   bool is_tb, is_tbderiv;
 
+  Chemistry::QC::GaussianBasis::CompositeIntegralDescr comp
+    = Chemistry::CompositeIntegralDescr::_create();
+  bool need_comp = false;
+  for( int i=0; i<desc.get_n_descr(); ++i) {
+    std::string tp = desc.get_descr(i).get_type();
+    if( tp == "r12" || tp == "r12t1" || tp == "r12t2" )
+      need_comp = true;
+  }
+
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
 
@@ -370,13 +379,24 @@ throw (
               << " evaluator\n";
 
     if( itype == "eri4"  && ideriv == 0 ) {
-      tbint_vec_.push_back( integral_->electron_repulsion() );
-      is_tb = true;
+      if( !need_comp ) { 
+        tbint_vec_.push_back( integral_->electron_repulsion() );
+        is_tb = true;
+      }
+      else
+        comp.add_descr( idesc );
     }
     else if( itype == "eri4" && ideriv == 1 ) {
       tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
       is_tbderiv = true;
     }
+    else if( itype == "r12" && ideriv == 0 )
+      comp.add_descr( idesc );
+    else if( itype == "r12t1" && ideriv == 0 )
+      comp.add_descr( idesc );
+    else if( itype == "r12t2" && ideriv == 0 )
+      comp.add_descr( idesc ); 
+      
     else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
@@ -386,6 +406,9 @@ throw (
     else if( tbderivint_vec_.size() && is_tbderiv )
       eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
   }
+
+  if( need_comp )
+    eval.add_composite_evaluator( (void*) integral_->grt(), comp );
 
   eval.set_basis( bs1, bs2, bs3, bs4 );
 

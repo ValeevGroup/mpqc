@@ -1,4 +1,5 @@
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/tbint.h>
 #include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
 #include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
@@ -13,6 +14,8 @@ namespace MpqcCca {
 
   typedef Chemistry::QC::GaussianBasis::IntegralDescr QC_IntegralDescr;
   typedef Chemistry::QC::GaussianBasis::DerivCenters QC_DerivCenters;
+  typedef Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+    QC_CompIntegralDescr;
 
   class onebody_onecenter_computer {
 
@@ -314,5 +317,89 @@ namespace MpqcCca {
       */
     }
       
+  };
+
+  template< typename eval_type, typename computer_type >
+  class CompositeIntegralEvaluator {
+
+  public:
+
+    CompositeIntegralEvaluator( ) { }
+
+    ~CompositeIntegralEvaluator( ) { }
+
+  private:
+
+    std::vector< std::pair<eval_type*,QC_CompIntegralDescr> > evals_;
+
+  public:
+
+    void add_evaluator ( void* eval, QC_CompIntegralDescr cdesc )
+    {
+      eval_type* eval_ptr;
+      eval_ptr = static_cast<eval_type*>(eval);
+      std::pair<eval_type*,QC_CompIntegralDescr> p(eval_ptr,cdesc);
+      evals_.push_back( p );
+    }
+
+    double* get_buffer ( QC_IntegralDescr desc, 
+                         sc::TwoBodyInt::tbint_type tbt )
+    {
+      for( int i=0; i<evals_.size(); ++i)
+        for( int j=0; i<evals_[i].second.get_n_descr(); ++ j)
+          if( desc.get_type() == evals_[i].second.get_descr(j).get_type() &&
+              desc.get_deriv_lvl() == 
+                evals_[i].second.get_descr(j).get_deriv_lvl() )
+            return const_cast<double*>( evals_[i].first->buffer( tbt ) );
+      return NULL;
+    }
+
+    Chemistry::QC::GaussianBasis::DerivCenters get_deriv_centers ()
+    {
+      // later
+    }
+
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
+    {
+      Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc =
+        Chemistry::CompositeIntegralDescr::_create();
+      for( int i=0; i<evals_.size(); ++i)
+        for( int j=0; j<evals_[i].second.get_n_descr(); ++j )
+          cdesc.add_descr( evals_[i].second.get_descr(j) );
+      return cdesc;
+    }
+
+    void compute ( computer_type* computer )
+    {
+      for( int i=0; i<evals_.size(); ++i)
+        computer->compute( evals_[i].first, 0 );
+    }
+
+    double compute_bounds( computer_type* computer )
+    {
+      // this is obviously not going to work for multiple evals
+      // that will require interface work
+      if( evals_.size() )
+        for( int i=0; i<evals_.size(); ++i)
+          return computer->compute_bounds( evals_[i].first );
+
+      return 0.0;
+    }
+
+
+    sidl::array<double> compute_array ( computer_type* computer )
+    {
+      /*
+      compute( shellnum1, shellnum2, deriv_level, deriv_atom );
+
+      int lower[1] = {0};
+      int upper[1]; upper[0] = max_nshell2_-1;
+      int stride[1] = {1};
+      sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1,
+                           lower, upper, stride);
+      return sidl_buffer_;
+      */
+    }
+
   };
 }

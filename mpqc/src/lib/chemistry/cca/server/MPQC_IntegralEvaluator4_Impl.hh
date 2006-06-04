@@ -51,6 +51,8 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 #include "integral_evaluator.h"
 #include "reorder_engine.h"
+#include <map>
+#include <chemistry/qc/basis/tbint.h>
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace MpqcCca;
@@ -87,11 +89,14 @@ namespace MPQC {
 
     IntegralEvaluator< TwoBodyInt, twobody_computer > eval_;
     IntegralEvaluator< TwoBodyDerivInt, twobody_deriv_computer > deriv_eval_;
+    CompositeIntegralEvaluator< TwoBodyInt, twobody_computer > comp_eval_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     bool reorder_;
     ReorderEngine reorder_engine_;
     twobody_computer computer_;
+    twobody_computer computer2_;
     twobody_deriv_computer deriv_computer_;
+    std::map<std::string,sc::TwoBodyInt::tbint_type> descr_to_tbint_type_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._implementation)
 
@@ -128,6 +133,17 @@ namespace MPQC {
     add_evaluator (
       /* in */ void* eval,
       /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
+    )
+    throw () 
+    ;
+
+    /**
+     * user defined non-static method.
+     */
+    void
+    add_composite_evaluator (
+      /* in */ void* eval,
+      /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc
     )
     throw () 
     ;

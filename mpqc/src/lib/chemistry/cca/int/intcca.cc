@@ -38,6 +38,7 @@
 #include <chemistry/cca/int/obintcca.h>
 #include <chemistry/cca/int/tbintcca.h>
 #include <util/class/scexception.h>
+#include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
 #include <Chemistry_CompositeIntegralDescr.hh>
 #include <Chemistry_BaseIntegralDescr.hh>
 #include <Chemistry_OverlapIntegralDescr.hh>
@@ -45,6 +46,9 @@
 #include <Chemistry_NuclearIntegralDescr.hh>
 #include <Chemistry_HCoreIntegralDescr.hh>
 #include <Chemistry_Eri4IntegralDescr.hh>
+#include <Chemistry_R12IntegralDescr.hh>
+#include <Chemistry_R12T1IntegralDescr.hh>
+#include <Chemistry_R12T2IntegralDescr.hh>
 #include <Chemistry_DerivCenters.hh>
 #ifdef INTV3_ORDER
   #include <chemistry/qc/intv3/cartitv3.h>
@@ -512,6 +516,34 @@ IntegralCCA::electron_repulsion_deriv()
   eval_req_.add_descr( desc );
   
   return get_twobody_deriv( eval_req_ );
+}
+
+Ref<TwoBodyInt>
+IntegralCCA::grt()
+{
+  eval_req_.clear();
+  Chemistry::QC::GaussianBasis::IntegralDescr desc =
+    Chemistry::Eri4IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  desc = Chemistry::R12IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  desc = Chemistry::R12T1IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  desc = Chemistry::R12T2IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  return get_twobody( eval_req_ );
 }
 
 void

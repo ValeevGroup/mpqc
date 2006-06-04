@@ -46,6 +46,9 @@
 #if HAVE_INTEGRALLIBINT2
 #  include <chemistry/qc/libint2/libint2.h>
 #endif
+#if HAVE_CHEMISTRY_CCA
+#  include <chemistry/cca/int/intcca.h>
+#endif
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
@@ -753,6 +756,12 @@ MBPT2_R12::check_integral_factory_()
 #if HAVE_INTEGRALLIBINT2
   IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(integral().pointer());
   if (libint2intf) {
+    allowed_integral_factory = true;
+  }
+#endif
+#if HAVE_CHEMISTRY_CCA
+  IntegralCCA* ccaintf = dynamic_cast<IntegralCCA*>(integral().pointer());
+  if(ccaintf) {
     allowed_integral_factory = true;
   }
 #endif

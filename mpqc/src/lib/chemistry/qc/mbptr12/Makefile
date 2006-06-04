@@ -31,6 +31,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 
 TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
@@ -60,6 +61,10 @@ CXXSRCS = mbptr12.cc \
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc
+endif
+
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  DEFINES += -DHAVE_CHEMISTRY_CCA
 endif
 
 LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))

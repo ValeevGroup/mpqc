@@ -32,6 +32,11 @@
 #include <chemistry/cca/int/obintcca.h>
 #include <util/class/scexception.h>
 
+using namespace std;
+using namespace sc;
+using namespace Chemistry;
+using namespace Chemistry::QC::GaussianBasis;
+
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntCCA
 

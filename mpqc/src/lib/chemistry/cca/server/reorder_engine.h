@@ -8,11 +8,8 @@
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
 
-using namespace std;
-using namespace sc;
-using namespace Chemistry::QC::GaussianBasis;
-
-Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis );
+sc::Ref<sc::GaussianBasisSet> basis_cca_to_sc(
+    Chemistry::QC::GaussianBasis::Molecular &cca_basis );
 
 namespace MpqcCca {
 
@@ -27,21 +24,25 @@ namespace MpqcCca {
   private:
     int n_center_, maxam_, max_deriv_lvl_, max_segment_size_;
     int **reorder_;
-    vector<int> deriv_lvls_;
-    vector<double*> buffers_;
+    std::vector<int> deriv_lvls_;
+    std::vector<double*> buffers_;
     double* temp_buffer_;
-    Ref<GaussianBasisSet> basis_sets_[4];
+    sc::Ref<sc::GaussianBasisSet> basis_sets_[4];
     int shell_ids_[4];
  
     //Ref<GaussianShell> shells_[4];
-    GaussianShell* shells_[4];
+    sc::GaussianShell* shells_[4];
     
   public:
     
-    void init( int n, Ref<GaussianBasisSet>, Ref<GaussianBasisSet>,
-               Ref<GaussianBasisSet>, Ref<GaussianBasisSet> ); 
+    void init( int n,
+               sc::Ref<sc::GaussianBasisSet>,
+               sc::Ref<sc::GaussianBasisSet>,
+               sc::Ref<sc::GaussianBasisSet>,
+               sc::Ref<sc::GaussianBasisSet> ); 
 
-    void add_buffer ( double* buffer, IntegralDescr desc );
+    void add_buffer ( double* buffer,
+                      Chemistry::QC::GaussianBasis::IntegralDescr desc );
   
     void do_it( int s1, int s2, int s3, int s4 );
  

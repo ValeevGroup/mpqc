@@ -33,6 +33,11 @@
 #include <util/class/scexception.h>
 #include <limits.h>
 
+using namespace std;
+using namespace sc;
+using namespace Chemistry;
+using namespace Chemistry::QC::GaussianBasis;
+
 ////////////////////////////////////////////////////////////////////////////
 // TwoBodyIntCCA
 

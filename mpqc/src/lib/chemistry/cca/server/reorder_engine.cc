@@ -1,4 +1,9 @@
 #include <reorder_engine.h>
+
+using namespace std;
+using namespace sc;
+using namespace Chemistry::QC::GaussianBasis;
+
 using namespace MpqcCca;
 
 void

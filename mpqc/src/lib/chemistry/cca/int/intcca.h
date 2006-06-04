@@ -39,9 +39,6 @@
 #include "obintcca.h"
 #include "tbintcca.h"
 
-using namespace std;
-using namespace Chemistry::QC::GaussianBasis;
-
 namespace sc {
 
 /** IntegralCCA provides an SC client for CCA IntegralEvaluator components. */
@@ -59,7 +56,7 @@ namespace sc {
     private:
 
       Integral* integral_;
-      IntegralSuperFactory factory_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
@@ -67,16 +64,19 @@ namespace sc {
       
       onebody_generator( ) { }
       
-      onebody_generator( Integral* integral, IntegralSuperFactory fac, 
-			 bool use_opaque ):
+      onebody_generator(
+          Integral* integral,
+          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
+          bool use_opaque ):
 	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
       
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
       { bs1_ = bs1, bs2_ = bs2; }
       
-      Ref<OneBodyIntCCA> generate( CompositeIntegralDescr cdesc,
-				   vector<string> factories ) 
+      Ref<OneBodyIntCCA> generate(
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
+          std::vector<std::string> factories ) 
       {
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
@@ -94,7 +94,7 @@ namespace sc {
     private:
 
       Integral* integral_;
-      IntegralSuperFactory factory_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
@@ -102,16 +102,19 @@ namespace sc {
       
       onebody_deriv_generator( ) { }
 
-      onebody_deriv_generator( Integral* integral, IntegralSuperFactory fac, 
-			       bool use_opaque ):
+      onebody_deriv_generator(
+          Integral* integral,
+          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
+          bool use_opaque ):
 	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
       { bs1_ = bs1, bs2_ = bs2; }
 
-      Ref<OneBodyDerivIntCCA> generate( CompositeIntegralDescr cdesc,
-					vector<string> factories ) 
+      Ref<OneBodyDerivIntCCA> generate(
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
+          std::vector<std::string> factories ) 
       {
 	Ref<OneBodyDerivIntCCA> eval;
 	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
@@ -131,15 +134,17 @@ namespace sc {
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
       size_t storage_;
-      IntegralSuperFactory factory_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
 
     public:
       
       twobody_generator( ) { }
 
-      twobody_generator( Integral* integral, size_t storage, 
-			 IntegralSuperFactory fac, bool use_opaque ):
+      twobody_generator(
+          Integral* integral, size_t storage, 
+          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
+          bool use_opaque ):
 	integral_(integral), storage_(storage), factory_(fac), 
 	use_opaque_(use_opaque) { }
 
@@ -149,8 +154,9 @@ namespace sc {
 		      Ref<GaussianBasisSet> bs4 ) 
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
-      Ref<TwoBodyIntCCA> generate( CompositeIntegralDescr cdesc,
-			      vector<string> factories ) 
+      Ref<TwoBodyIntCCA> generate(
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
+          std::vector<std::string> factories ) 
       {
 	Ref<TwoBodyIntCCA> eval;
 	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
@@ -171,15 +177,18 @@ namespace sc {
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
       size_t storage_;
-      IntegralSuperFactory factory_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
 
     public:
       
       twobody_deriv_generator( ) { }
 
-      twobody_deriv_generator( Integral* integral, size_t storage, 
-			       IntegralSuperFactory fac, bool use_opaque ):
+      twobody_deriv_generator(
+          Integral* integral,
+          size_t storage, 
+          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
+          bool use_opaque ):
 	integral_(integral), storage_(storage), factory_(fac),
 	use_opaque_(use_opaque) { }
 
@@ -189,8 +198,9 @@ namespace sc {
 		      Ref<GaussianBasisSet> bs4 ) 
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
-      Ref<TwoBodyDerivIntCCA> generate( CompositeIntegralDescr cdesc,
-					vector<string> factories ) 
+      Ref<TwoBodyDerivIntCCA> generate(
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
+          std::vector<std::string> factories ) 
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
@@ -211,24 +221,25 @@ namespace sc {
     private:
       
       generator_type generator_;
-      map<string,string> name_to_factory_;
-      string default_factory_;
+      std::map<std::string,std::string> name_to_factory_;
+      std::string default_factory_;
 
     public:
 
       sc_eval_factory() { }
       
       sc_eval_factory( generator_type generator, 
-		       map<string,string> name_to_factory,
-                       string default_factory ):
+		       std::map<std::string,std::string> name_to_factory,
+                       std::string default_factory ):
       generator_(generator), name_to_factory_(name_to_factory),
       default_factory_(default_factory) 
       { }
 
-      Ref<eval_type> operator() ( CompositeIntegralDescr cdesc )
+      Ref<eval_type> operator() (
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
-	vector<string> factories;
-        string type;
+	std::vector<std::string> factories;
+        std::string type;
 	for( int i=0; i<cdesc.get_n_descr(); ++i) {
           type = cdesc.get_descr(i).get_type();
           if( name_to_factory_.count(type) )
@@ -251,12 +262,12 @@ namespace sc {
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
-    string factory_type_;
-    string superfactory_type_;
-    string default_subfactory_;
-    IntegralSuperFactory eval_factory_;
-    CompositeIntegralDescr eval_req_;
-    map<string,string> type_to_factory_;
+    std::string factory_type_;
+    std::string superfactory_type_;
+    std::string default_subfactory_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr eval_req_;
+    std::map<std::string,std::string> type_to_factory_;
 
     onebody_generator obgen_;
     onebody_deriv_generator obdgen_;

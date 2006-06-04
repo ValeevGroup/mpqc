@@ -8,9 +8,6 @@
 #include <vector>
 #include <utility>
 #include <sidl_SIDLException.hh>
-using namespace std;
-using namespace sc;
-using namespace Chemistry::QC::GaussianBasis;
 
 namespace MpqcCca {
 
@@ -21,7 +18,7 @@ namespace MpqcCca {
 
   private:
     int sh1_;
-    Molecular bs1_;
+    Chemistry::QC::GaussianBasis::Molecular bs1_;
 
   public:
     onebody_onecenter_computer() { }
@@ -29,10 +26,13 @@ namespace MpqcCca {
     void set_shells( int sh1 )
     { sh1_ = sh1; }
 
-    void compute( OneBodyOneCenterInt* eval, QC_DerivCenters* dc )
+    void compute(
+        sc::OneBodyOneCenterInt* eval,
+        QC_DerivCenters* dc )
     { eval->compute_shell( sh1_ ); }
 
-    double compute_bounds( OneBodyOneCenterInt* eval )
+    double compute_bounds(
+        sc::OneBodyOneCenterInt* eval )
     {  
       sidl::SIDLException ex = sidl::SIDLException::_create();
       try {
@@ -50,7 +50,7 @@ namespace MpqcCca {
 
   private:
     int sh1_;
-    Molecular bs1_;
+    Chemistry::QC::GaussianBasis::Molecular bs1_;
 
   public:
     onebody_onecenter_deriv_computer() { }
@@ -58,11 +58,14 @@ namespace MpqcCca {
     void set_shells( int sh1 )
     { sh1_ = sh1; }
 
-    void compute( OneBodyOneCenterDerivInt* eval, QC_DerivCenters* dc )
+    void compute(
+        sc::OneBodyOneCenterDerivInt* eval,
+        QC_DerivCenters* dc )
     {
     }
 
-    double compute_bounds( OneBodyOneCenterDerivInt* eval )
+    double compute_bounds(
+        sc::OneBodyOneCenterDerivInt* eval )
     {
       sidl::SIDLException ex = sidl::SIDLException::_create();
       try {
@@ -87,10 +90,10 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2 )
     { sh1_=sh1; sh2_=sh2; }
 
-    void compute( OneBodyInt* eval, QC_DerivCenters* dc )
+    void compute( sc::OneBodyInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_ ); }
 
-    double compute_bounds( OneBodyInt* eval )
+    double compute_bounds( sc::OneBodyInt* eval )
     {
       sidl::SIDLException ex = sidl::SIDLException::_create();
       try {
@@ -114,12 +117,12 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2 )
     { sh1_=sh1; sh2_=sh2; }
 
-    void compute( OneBodyDerivInt* eval, QC_DerivCenters* dc )
+    void compute( sc::OneBodyDerivInt* eval, QC_DerivCenters* dc )
     {
       eval->compute_shell( sh1_, sh2_, dc->get_deriv_atom() );
     }
 
-    double compute_bounds( OneBodyDerivInt* eval )
+    double compute_bounds( sc::OneBodyDerivInt* eval )
     {
       sidl::SIDLException ex = sidl::SIDLException::_create();
       try {
@@ -143,10 +146,10 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; }
 
-    void compute( TwoBodyThreeCenterInt* eval, QC_DerivCenters* dc )
+    void compute( sc::TwoBodyThreeCenterInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_, sh3_ ); }
 
-    double compute_bounds( TwoBodyThreeCenterInt* eval )
+    double compute_bounds( sc::TwoBodyThreeCenterInt* eval )
     { return eval->shell_bound( sh1_, sh2_, sh3_); }
   };
 
@@ -162,11 +165,11 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; }
 
-    void compute( TwoBodyThreeCenterDerivInt* eval, QC_DerivCenters* dc )
+    void compute( sc::TwoBodyThreeCenterDerivInt* eval, QC_DerivCenters* dc )
     {
     }
 
-    double compute_bounds( TwoBodyThreeCenterDerivInt* eval )
+    double compute_bounds( sc::TwoBodyThreeCenterDerivInt* eval )
     { return eval->shell_bound( sh1_, sh2_, sh3_); }
   };
 
@@ -182,10 +185,10 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3, int sh4 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; sh4_=sh4; };
 
-    void compute( TwoBodyInt* eval, QC_DerivCenters* dc )
+    void compute( sc::TwoBodyInt* eval, QC_DerivCenters* dc )
     { eval->compute_shell( sh1_, sh2_, sh3_, sh4_ ); }
 
-    double compute_bounds( TwoBodyInt* eval )
+    double compute_bounds( sc::TwoBodyInt* eval )
     {
       return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
     }
@@ -206,7 +209,7 @@ namespace MpqcCca {
     void set_shells( int sh1, int sh2, int sh3, int sh4 )
     { sh1_=sh1; sh2_=sh2; sh3_=sh3; sh4_=sh4; };
 
-    void compute( TwoBodyDerivInt* eval, QC_DerivCenters* dc )
+    void compute( sc::TwoBodyDerivInt* eval, QC_DerivCenters* dc )
     {
       sc_dc_.clear();
       eval->compute_shell(sh1_,sh2_,sh3_,sh4_,sc_dc_);
@@ -219,7 +222,7 @@ namespace MpqcCca {
 
     }
 
-    double compute_bounds( TwoBodyDerivInt* eval )
+    double compute_bounds( sc::TwoBodyDerivInt* eval )
     {
       return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
     }
@@ -237,21 +240,21 @@ namespace MpqcCca {
     
   private:
     
-    vector< pair<eval_type*,QC_IntegralDescr> > evals_;
-    vector< QC_DerivCenters > dcs_;
+    std::vector< std::pair<eval_type*,QC_IntegralDescr> > evals_;
+    std::vector< QC_DerivCenters > dcs_;
     
   public:
     
-    void add_evaluator ( void* eval, IntegralDescr desc ) 
+    void add_evaluator ( void* eval, QC_IntegralDescr desc ) 
     {
       eval_type* eval_ptr;   
       eval_ptr = static_cast<eval_type*>(eval);
-      pair<eval_type*,IntegralDescr> p(eval_ptr,desc);
+      std::pair<eval_type*,QC_IntegralDescr> p(eval_ptr,desc);
       evals_.push_back( p );
       dcs_.push_back( p.second.get_deriv_centers() );
     }
     
-    double* get_buffer ( IntegralDescr desc ) 
+    double* get_buffer ( QC_IntegralDescr desc ) 
     {
       for( int i=0; i<evals_.size(); ++i)
 	if( desc.get_type() == evals_[i].second.get_type() &&
@@ -268,7 +271,7 @@ namespace MpqcCca {
     
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
     {
-      CompositeIntegralDescr cdesc = 
+      Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc = 
         Chemistry::CompositeIntegralDescr::_create();
       for( int i=0; i<evals_.size(); ++i)
         cdesc.add_descr( evals_[i].second );

@@ -13,6 +13,8 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 
+#include <algorithm>
+
 sc::Ref<sc::GaussianBasisSet>
 basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
 
@@ -256,7 +258,7 @@ throw (
   deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
   double bnd =  eval_.compute_bounds( &computer_ );
   double d_bnd = deriv_eval_.compute_bounds( &deriv_computer_ );
-  return max( bnd, d_bnd );
+  return std::max( bnd, d_bnd );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
 }

@@ -39,11 +39,6 @@
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 
-using namespace std;
-using namespace sc;
-using namespace Chemistry;
-using namespace Chemistry::QC::GaussianBasis;
-
 namespace sc {
 
 // /////////////////////////////////////////////////////////////////////////
@@ -55,12 +50,12 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    IntegralSuperFactory eval_factory_;
-    CompositeIntegralDescr cdesc_;
-    vector<string> factories_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
-    IntegralEvaluator2 eval_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
 
   protected:
     
@@ -68,9 +63,9 @@ namespace sc {
     OneBodyIntCCA( Integral* integral,
 		   const Ref<GaussianBasisSet>&, 
 		   const Ref<GaussianBasisSet>&,
-		   IntegralSuperFactory,
-		   CompositeIntegralDescr,
-                   vector<string> factories,
+		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
+		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
+                   std::vector<std::string> factories,
 		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
@@ -88,23 +83,23 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    IntegralSuperFactory eval_factory_;
-    CompositeIntegralDescr cdesc_;
-    vector<string> factories_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     double* buff_;
     double* temp_buffer_;
-    IntegralEvaluator2 eval_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
     OneBodyDerivIntCCA( Integral* integral,
 		        const Ref<GaussianBasisSet>&,
 		        const Ref<GaussianBasisSet>&,
-			IntegralSuperFactory,
-		        CompositeIntegralDescr,
-                        vector<string> factories,
+			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
+		        Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
+                        std::vector<std::string> factories,
 			bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);

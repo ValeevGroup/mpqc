@@ -38,11 +38,6 @@
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 
-using namespace std;
-using namespace sc;
-using namespace Chemistry;
-using namespace Chemistry::QC::GaussianBasis;
-
 namespace sc {
 
   //////////////////////////////////////////////////////////////////////////
@@ -55,13 +50,13 @@ namespace sc {
 
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
-    IntegralSuperFactory eval_factory_;
-    CompositeIntegralDescr cdesc_;
-    vector<string> factories_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
-    IntegralEvaluator4 eval_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator4 eval_;
     bool redundant_;
     int int_bound_min_;
     double tol_;
@@ -74,9 +69,9 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&b3, 
 		   const Ref<GaussianBasisSet>&b4,	   
 		   size_t,
-		   IntegralSuperFactory,
-		   CompositeIntegralDescr,
-		   vector<string> factories,
+		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
+		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
+		   std::vector<std::string> factories,
 		   bool );
     ~TwoBodyIntCCA();
 
@@ -98,13 +93,13 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
-    IntegralSuperFactory eval_factory_;
-    CompositeIntegralDescr cdesc_;
-    vector<string> factories_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
-    IntegralEvaluator4 eval_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator4 eval_;
     bool redundant_;
     double tol_;
     double loginv_;
@@ -120,9 +115,9 @@ namespace sc {
 			const Ref<GaussianBasisSet>&b3, 
 			const Ref<GaussianBasisSet>&b4,	   
 			size_t,
-			IntegralSuperFactory,
-			CompositeIntegralDescr,
-			vector<string> factories,
+			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
+			Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
+			std::vector<std::string> factories,
 			bool );
     ~TwoBodyDerivIntCCA();
 

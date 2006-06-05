@@ -30,6 +30,7 @@
 
 #include <gov_cca.hh>
 #include <chemistry/qc/basis/integral.h>
+#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
@@ -315,6 +316,18 @@ namespace sc {
         <dt><tt>molecule</tt><dd> This gives a molecule object, it is required.
         </dl>
     */
+
+    IntegralCCA( Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory 
+                   eval_factory,
+                 bool use_opaque,
+                 const Ref<GaussianBasisSet> &b1,
+                 const Ref<GaussianBasisSet> &b2,
+                 const Ref<GaussianBasisSet> &b3,
+                 const Ref<GaussianBasisSet> &b4,
+                 Chemistry::QC::GaussianBasis::DerivCenters dc,
+                 std::map<std::string,std::string> ttf,
+                 std::string default_sf
+                );
 
     IntegralCCA(const Ref<KeyVal>&);
 

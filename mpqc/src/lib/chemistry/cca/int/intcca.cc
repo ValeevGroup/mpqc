@@ -45,11 +45,13 @@
 #include <Chemistry_KineticIntegralDescr.hh>
 #include <Chemistry_NuclearIntegralDescr.hh>
 #include <Chemistry_HCoreIntegralDescr.hh>
+#include <Chemistry_DipoleIntegralDescr.hh>
 #include <Chemistry_Eri4IntegralDescr.hh>
 #include <Chemistry_R12IntegralDescr.hh>
 #include <Chemistry_R12T1IntegralDescr.hh>
 #include <Chemistry_R12T2IntegralDescr.hh>
 #include <Chemistry_DerivCenters.hh>
+#include <Chemistry_DipoleData.hh>
 #ifdef INTV3_ORDER
   #include <chemistry/qc/intv3/cartitv3.h>
   #include <chemistry/qc/intv3/tformv3.h>
@@ -92,6 +94,57 @@ IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
   initialize_transforms();
 }
 */
+
+IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
+                          bool use_opaque,
+                          const Ref<GaussianBasisSet> &b1,
+                          const Ref<GaussianBasisSet> &b2,
+                          const Ref<GaussianBasisSet> &b3,
+                          const Ref<GaussianBasisSet> &b4,
+                          Chemistry::QC::GaussianBasis::DerivCenters dc,
+                          std::map<std::string,std::string> ttf,
+                          std::string default_sf
+                         ):
+  Integral(b1,b2,b3,b4), eval_factory_(eval_factory), use_opaque_(use_opaque),
+  cca_dc_(dc), type_to_factory_( ttf ), default_subfactory_(default_sf)
+{
+  initialize_transforms();
+
+  // grab cca environment
+  gov::cca::Services &services = *CCAEnv::get_services();
+  gov::cca::ports::BuilderService &bs = *CCAEnv::get_builder_service();
+  gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
+  gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
+
+  obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
+  obgen_.set_basis( bs1_, bs2_ );
+  sc_eval_factory< OneBodyInt, onebody_generator>
+    ob( obgen_, type_to_factory_, default_subfactory_ );
+  get_onebody = ob;
+
+  obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
+  obdgen_.set_basis( bs1_, bs2_ );
+  sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
+    obd( obdgen_, type_to_factory_, default_subfactory_ );
+  get_onebody_deriv = obd;
+
+  tbgen_ = twobody_generator( this, 50000000,
+                              eval_factory_, use_opaque_ );
+  tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
+  sc_eval_factory< TwoBodyInt, twobody_generator >
+    tb( tbgen_, type_to_factory_, default_subfactory_ );
+  get_twobody = tb;
+
+  tbdgen_ = twobody_deriv_generator( this, 50000000,
+                                     eval_factory_, use_opaque_ );
+  tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
+  sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
+    tbd( tbdgen_, type_to_factory_, default_subfactory_ );
+  get_twobody_deriv = tbd;
+
+  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+}
+
 
 IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
@@ -263,7 +316,9 @@ IntegralCCA::~IntegralCCA()
 Integral*
 IntegralCCA::clone()
 {
-  throw FeatureNotImplemented( "clone not implemented", __FILE__,__LINE__ );
+  return new IntegralCCA( eval_factory_, use_opaque_,
+                          bs1_, bs2_, bs3_, bs4_, cca_dc_,
+                          type_to_factory_, default_subfactory_ );
 }
 
 CartesianIter *
@@ -430,8 +485,29 @@ IntegralCCA::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 Ref<OneBodyInt>
 IntegralCCA::dipole(const Ref<DipoleData>& dat)
 {
-  throw FeatureNotImplemented("dipole not implemented",
-                              __FILE__,__LINE__);
+
+  sidl::array<double> sidl_origin =  sidl::array<double>::create1d(3);
+
+  if( dat.pointer() )
+    for(int i=0; i<3; ++i)
+      sidl_origin.set(i,dat->origin[i]);
+  else
+    for(int i=0; i<3; ++i)
+      sidl_origin.set(i,0.0);
+
+  Chemistry::DipoleData cca_dat
+    = Chemistry::DipoleData::_create();
+  cca_dat.set_origin( sidl_origin );
+
+  eval_req_.clear();
+  Chemistry::DipoleIntegralDescr desc 
+    = Chemistry::DipoleIntegralDescr::_create();
+  desc.set_dipole_data( cca_dat );
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  return get_onebody( eval_req_ ); 
 }
 
 Ref<OneBodyInt>

@@ -35,6 +35,8 @@
 #include "Chemistry_Eri4IntegralDescr.hh"
 #include "Chemistry_BaseIntegralDescr.hh"
 
+#include "Chemistry_QC_GaussianBasis_DipoleIntegralDescr.hh"
+
 sc::Ref<sc::GaussianBasisSet> 
 basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
 
@@ -255,6 +257,8 @@ throw (
     std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype 
               << " evaluator\n";
 
+    std::cerr << "type: " << itype << std::endl;
+
     if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec_.push_back( integral_->overlap() );
       is_ob = true;
@@ -270,6 +274,19 @@ throw (
     else if( itype == "hcore" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->hcore() );
       is_ob = true;
+    }
+    else if( itype == "dipole" && ideriv == 0 ) {
+      Chemistry::QC::GaussianBasis::DipoleIntegralDescr ddesc;
+      ddesc = idesc;
+      Chemistry::QC::GaussianBasis::DipoleData cca_data;
+      cca_data = ddesc.get_dipole_data();
+      sidl::array<double> origin = cca_data.get_origin();
+      double sc_origin[3];
+      sc_origin[0] = origin.get(0);
+      sc_origin[1] = origin.get(1);
+      sc_origin[2] = origin.get(2);
+      dipole_data_ = new sc::DipoleData(sc_origin);
+      obint_vec_.push_back( integral_->dipole(dipole_data_) );
     }
     // these need additional data
     //else if( itype == "pointcharge2" && ideriv == 0 )

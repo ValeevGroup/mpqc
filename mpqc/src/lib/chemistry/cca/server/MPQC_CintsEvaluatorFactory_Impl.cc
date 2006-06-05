@@ -22,6 +22,8 @@
 #include "MPQC_IntegralEvaluator4.hh"
 
 #include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
+#include "Chemistry_QC_GaussianBasis_DipoleIntegralDescr.hh"
+#include "Chemistry_QC_GaussianBasis_QuadrupoleIntegralDescr.hh"
 
 #include "Chemistry_CompositeIntegralDescr.hh"
 #include "Chemistry_OverlapIntegralDescr.hh"
@@ -242,6 +244,34 @@ throw (
     }
     else if( itype == "hcore" && ideriv == 0 ) {
       obint_vec_.push_back( integral_->hcore() );
+      is_ob = true;
+    }
+    else if( itype == "dipole" && ideriv == 0 ) {
+      Chemistry::QC::GaussianBasis::DipoleIntegralDescr ddesc;
+      ddesc = idesc;
+      Chemistry::QC::GaussianBasis::DipoleData cca_data;
+      cca_data = ddesc.get_dipole_data();
+      sidl::array<double> origin = cca_data.get_origin();
+      double sc_origin[3];
+      sc_origin[0] = origin.get(0);
+      sc_origin[1] = origin.get(1);
+      sc_origin[2] = origin.get(2);
+      dipole_data_ = new sc::DipoleData(sc_origin);
+      obint_vec_.push_back( integral_->dipole(dipole_data_) );
+      is_ob = true;
+    }
+    else if( itype == "quadrupole" && ideriv == 0 ) {
+      Chemistry::QC::GaussianBasis::QuadrupoleIntegralDescr ddesc;
+      ddesc = idesc;
+      Chemistry::QC::GaussianBasis::DipoleData cca_data;
+      cca_data = ddesc.get_dipole_data();
+      sidl::array<double> origin = cca_data.get_origin();
+      double sc_origin[3];
+      sc_origin[0] = origin.get(0);
+      sc_origin[1] = origin.get(1);
+      sc_origin[2] = origin.get(2);
+      dipole_data_ = new sc::DipoleData(sc_origin);
+      obint_vec_.push_back( integral_->dipole(dipole_data_) );
       is_ob = true;
     }
     else

@@ -287,6 +287,7 @@ throw (
       sc_origin[2] = origin.get(2);
       dipole_data_ = new sc::DipoleData(sc_origin);
       obint_vec_.push_back( integral_->dipole(dipole_data_) );
+      is_ob = true;
     }
     // these need additional data
     //else if( itype == "pointcharge2" && ideriv == 0 )

@@ -101,6 +101,7 @@ namespace MPQC {
     vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec_;
     vector< Ref<TwoBodyInt> > tbint_vec_;
     vector< Ref<TwoBodyDerivInt> > tbderivint_vec_;
+    Ref<sc::DipoleData> dipole_data_;
 
     // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._implementation)
 

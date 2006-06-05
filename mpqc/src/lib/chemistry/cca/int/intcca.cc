@@ -46,6 +46,7 @@
 #include <Chemistry_NuclearIntegralDescr.hh>
 #include <Chemistry_HCoreIntegralDescr.hh>
 #include <Chemistry_DipoleIntegralDescr.hh>
+#include <Chemistry_QuadrupoleIntegralDescr.hh>
 #include <Chemistry_Eri4IntegralDescr.hh>
 #include <Chemistry_R12IntegralDescr.hh>
 #include <Chemistry_R12T1IntegralDescr.hh>
@@ -485,7 +486,6 @@ IntegralCCA::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 Ref<OneBodyInt>
 IntegralCCA::dipole(const Ref<DipoleData>& dat)
 {
-
   sidl::array<double> sidl_origin =  sidl::array<double>::create1d(3);
 
   if( dat.pointer() )
@@ -513,8 +513,28 @@ IntegralCCA::dipole(const Ref<DipoleData>& dat)
 Ref<OneBodyInt>
 IntegralCCA::quadrupole(const Ref<DipoleData>& dat)
 {
-  throw FeatureNotImplemented("quadrupole not implemented",
-                              __FILE__,__LINE__);
+  sidl::array<double> sidl_origin =  sidl::array<double>::create1d(3);
+
+  if( dat.pointer() )
+    for(int i=0; i<3; ++i)
+      sidl_origin.set(i,dat->origin[i]);
+  else
+    for(int i=0; i<3; ++i)
+      sidl_origin.set(i,0.0);
+
+  Chemistry::DipoleData cca_dat
+    = Chemistry::DipoleData::_create();
+  cca_dat.set_origin( sidl_origin );
+
+  eval_req_.clear();
+  Chemistry::QuadrupoleIntegralDescr desc
+    = Chemistry::QuadrupoleIntegralDescr::_create();
+  desc.set_dipole_data( cca_dat );
+  desc.set_deriv_lvl(0);
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  return get_onebody( eval_req_ );
 }
 
 Ref<OneBodyDerivInt>

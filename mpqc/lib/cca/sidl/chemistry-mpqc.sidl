@@ -66,6 +66,9 @@ package MPQC version 0.2 {
     Chemistry.QC.GaussianBasis.IntegralEvaluator4{
       void add_evaluator( in opaque eval, 
                           in Chemistry.QC.GaussianBasis.IntegralDescr desc );
+      void add_composite_evaluator( 
+                  in opaque eval,
+                  in Chemistry.QC.GaussianBasis.CompositeIntegralDescr cdesc );
       void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
                       in Chemistry.QC.GaussianBasis.Molecular bs2,
                       in Chemistry.QC.GaussianBasis.Molecular bs3,

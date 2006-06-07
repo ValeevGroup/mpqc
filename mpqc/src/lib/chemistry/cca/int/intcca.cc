@@ -42,6 +42,8 @@
 #include <Chemistry_CompositeIntegralDescr.hh>
 #include <Chemistry_BaseIntegralDescr.hh>
 #include <Chemistry_OverlapIntegralDescr.hh>
+#include <Chemistry_PdotNuclearPIntegralDescr.hh>
+#include <Chemistry_PcrossNuclearPIntegralDescr.hh>
 #include <Chemistry_KineticIntegralDescr.hh>
 #include <Chemistry_NuclearIntegralDescr.hh>
 #include <Chemistry_HCoreIntegralDescr.hh>
@@ -426,6 +428,34 @@ IntegralCCA::overlap()
     Chemistry::OverlapIntegralDescr::_create();
   desc.set_deriv_centers( cca_dc_ );
   eval_req_.add_descr( desc );
+
+  return get_onebody( eval_req_ );
+}
+
+Ref<OneBodyInt>
+IntegralCCA::p_dot_nuclear_p()
+{
+  eval_req_.clear();
+  Chemistry::PdotNuclearPIntegralDescr desc =
+    Chemistry::PdotNuclearPIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  return get_onebody( eval_req_ );
+}
+
+Ref<OneBodyInt>
+IntegralCCA::p_cross_nuclear_p()
+{
+  eval_req_.clear();
+  Chemistry::PcrossNuclearPIntegralDescr desc =
+    Chemistry::PcrossNuclearPIntegralDescr::_create();
+  desc.set_deriv_centers( cca_dc_ );
+  eval_req_.add_descr( desc );
+
+  // need to make the the (x,y,z) components are correctly ordered
+  throw FeatureNotImplemented("p_cross_nuclear_p needs more work",
+                              __FILE__,__LINE__);
 
   return get_onebody( eval_req_ );
 }

@@ -327,6 +327,10 @@ namespace sc {
 
     Ref<OneBodyInt> overlap();
 
+    Ref<OneBodyInt> p_dot_nuclear_p();
+
+    Ref<OneBodyInt> p_cross_nuclear_p();
+
     Ref<OneBodyInt> kinetic();
 
     Ref<OneBodyInt> point_charge(const Ref<PointChargeData>& =0);

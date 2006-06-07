@@ -47,21 +47,33 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._ctor)
 
   integral_ = new sc::IntegralV3();
+  IntegralDescr desc;
+
   cdesc_ = Chemistry::CompositeIntegralDescr::_create();
 
-  cdesc_.add_descr( OverlapIntegralDescr::_create() );
-  cdesc_.add_descr( KineticIntegralDescr::_create() );
-  cdesc_.add_descr( NuclearIntegralDescr::_create() );
-  cdesc_.add_descr( HCoreIntegralDescr::_create() );
-  //cdesc_.add_descr( PointChargeIntegralDescr::_create() );
-  //cdesc_.add_descr( EfieldDotVectorIntegralDescr::_create() );
-  //cdesc_.add_descr( DipoleIntegralDescr::_create() );
-  //cdesc_.add_descr( QuadrupoleIntegralDescr::_create() );
-  //cdesc_.add_descr( Eri2IntegralDescr::_create() );
-  //cdesc_.add_descr( Eri3IntegralDescr::_create() );
-  cdesc_.add_descr( Eri4IntegralDescr::_create() );
+  desc = OverlapIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
 
-  IntegralDescr desc;
+  desc = KineticIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create(); 
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Chemistry::DipoleIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
 
   desc = OverlapIntegralDescr::_create();
   desc.set_deriv_lvl(1);
@@ -82,6 +94,42 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   desc = Eri4IntegralDescr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
+
+
+  cdesc_no_deriv_ = Chemistry::CompositeIntegralDescr::_create();
+
+  desc = OverlapIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = KineticIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Chemistry::DipoleIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = OverlapIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr(desc);
+
+  desc = KineticIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr(desc);
+
+  desc = NuclearIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr(desc);
+
+  desc = HCoreIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr(desc);
+
+  desc = Eri4IntegralDescr::_create();
+  cdesc_no_deriv_.add_descr(desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._ctor)
 }
@@ -129,25 +177,33 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_descriptor)
 
-  return cdesc_;
+  return cdesc_no_deriv_;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_descriptor)
 }
 
 /**
- * Method:  get_max_deriv_lvls[]
+ * Method:  is_supported[]
  */
-::sidl::array<int32_t>
-MPQC::IntV3EvaluatorFactory_impl::get_max_deriv_lvls (
-  /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr desc ) 
+bool
+MPQC::IntV3EvaluatorFactory_impl::is_supported (
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
 throw ( 
   ::sidl::BaseException
 ){
-  // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvls)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.is_supported)
 
-  // implementation needed
+  string type = desc.get_type();
+  int dlevel = desc.get_deriv_lvl();
+  for( int i=0; i<cdesc_.get_n_descr(); ++i ) {
+    if( type == cdesc_.get_descr(i).get_type() &&
+        dlevel == cdesc_.get_descr(i).get_deriv_lvl() )
+      return true;
+  }
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.get_max_deriv_lvls)
+  return false;
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.is_supported)
 }
 
 /**

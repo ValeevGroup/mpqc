@@ -25,6 +25,9 @@
 #ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescr_hh
 #include "Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh"
 #endif
+#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescr_hh
+#include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator1_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator1.hh"
 #endif
@@ -93,6 +96,7 @@ namespace MPQC {
     //sc::Ref<sc::GaussianBasisSet> sc_basis1_, sc_basis2_, 
     //  sc_basis3_, sc_basis4_;
     CompositeIntegralDescr cdesc_;
+    CompositeIntegralDescr cdesc_no_deriv_;
     gov::cca::Services services_;
     int storage_;
     Ref<IntegralV3> integral_;
@@ -150,9 +154,9 @@ namespace MPQC {
     /**
      * user defined non-static method.
      */
-    ::sidl::array<int32_t>
-    get_max_deriv_lvls (
-      /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr desc
+    bool
+    is_supported (
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc
     )
     throw ( 
       ::sidl::BaseException

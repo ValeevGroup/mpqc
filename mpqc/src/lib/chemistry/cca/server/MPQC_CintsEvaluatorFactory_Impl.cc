@@ -48,13 +48,61 @@ void MPQC::CintsEvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._ctor)
 
   integral_ = new sc::IntegralCints();
+  IntegralDescr desc;
+
   cdesc_ = Chemistry::CompositeIntegralDescr::_create();
 
-  cdesc_.add_descr( OverlapIntegralDescr::_create() );
-  cdesc_.add_descr( KineticIntegralDescr::_create() );
-  cdesc_.add_descr( NuclearIntegralDescr::_create() );
-  cdesc_.add_descr( HCoreIntegralDescr::_create() );
-  cdesc_.add_descr( Eri4IntegralDescr::_create() );
+  desc = OverlapIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = KineticIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Chemistry::DipoleIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Chemistry::QuadrupoleIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+
+  cdesc_no_deriv_ = Chemistry::CompositeIntegralDescr::_create();
+
+  desc = OverlapIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = KineticIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Chemistry::DipoleIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Chemistry::QuadrupoleIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
 
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._ctor)
 }
@@ -103,25 +151,33 @@ throw (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_descriptor)
 
-  return cdesc_;
+  return cdesc_no_deriv_;
 
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_descriptor)
 }
 
 /**
- * Method:  get_max_deriv_lvls[]
+ * Method:  is_supported[]
  */
-::sidl::array<int32_t>
-MPQC::CintsEvaluatorFactory_impl::get_max_deriv_lvls (
-  /* in */ ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr desc ) 
+bool
+MPQC::CintsEvaluatorFactory_impl::is_supported (
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralDescr desc ) 
 throw ( 
   ::sidl::BaseException
 ){
-  // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_max_deriv_lvls)
+  // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.is_supported)
 
-  // implementation needed
+  string type = desc.get_type();
+  int dlevel = desc.get_deriv_lvl();
+  for( int i=0; i<cdesc_.get_n_descr(); ++i ) {
+    if( type == cdesc_.get_descr(i).get_type() &&
+        dlevel == cdesc_.get_descr(i).get_deriv_lvl() )
+      return true;
+  }
 
-  // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_max_deriv_lvls)
+  return false;
+
+  // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.is_supported)
 }
 
 /**

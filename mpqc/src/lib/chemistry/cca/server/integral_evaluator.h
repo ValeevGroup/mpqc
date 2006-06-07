@@ -267,11 +267,6 @@ namespace MpqcCca {
       return NULL;
     }
     
-    Chemistry::QC::GaussianBasis::DerivCenters get_deriv_centers ()
-    {
-      // later
-    }
-    
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
     {
       Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc = 

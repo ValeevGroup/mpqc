@@ -122,22 +122,6 @@ throw (
 }
 
 /**
- * Method:  get_deriv_centers[]
- */
-::Chemistry::QC::GaussianBasis::DerivCenters
-MPQC::IntegralEvaluator3_impl::get_deriv_centers ()
-throw ( 
-  ::sidl::BaseException
-)
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_deriv_centers)
-
-  return eval_.get_deriv_centers();
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_deriv_centers)
-}
-
-/**
  * Method:  get_descriptor[]
  */
 ::Chemistry::QC::GaussianBasis::CompositeIntegralDescr
@@ -244,4 +228,3 @@ throw (
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3._misc)
 // Put miscellaneous code here
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3._misc)
-

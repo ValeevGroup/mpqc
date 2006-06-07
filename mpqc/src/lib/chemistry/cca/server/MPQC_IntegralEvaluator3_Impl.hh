@@ -25,9 +25,6 @@
 #ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescr_hh
 #include "Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
-#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
-#endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralDescr_hh
 #include "Chemistry_QC_GaussianBasis_IntegralDescr.hh"
 #endif
@@ -162,13 +159,6 @@ namespace MPQC {
       ::sidl::BaseException
     );
 
-    /**
-     * user defined non-static method.
-     */
-    ::Chemistry::QC::GaussianBasis::DerivCenters
-    get_deriv_centers() throw ( 
-      ::sidl::BaseException
-    );
     /**
      * user defined non-static method.
      */

@@ -49,11 +49,10 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     size_t storage,
 			     IntegralSuperFactory fac,
 			     CompositeIntegralDescr cdesc,
-			     vector<string> factories,
                              bool use_opaque) :
   TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
-  eval_factory_(fac), cdesc_(cdesc), factories_(factories),
+  eval_factory_(fac), cdesc_(cdesc),
   use_opaque_(use_opaque)
 {
   eval_factory_.set_storage(storage);
@@ -92,11 +91,13 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     cca_bs4_ = cca_bs3_;
 
   // set factory config
+/*
   int n_descr = cdesc_.get_n_descr();
   sidl::array<string> sidl_factories = sidl::array<string>::create1d(n_descr);
   for( int i=0; i<n_descr; ++i ) 
     sidl_factories.set( i, factories_[i] );
   eval_factory_.set_source_factories( sidl_factories );
+*/
   
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
@@ -142,11 +143,10 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 					size_t storage,
 					IntegralSuperFactory fac,
 					CompositeIntegralDescr cdesc,
-					vector<string> factories,
 					bool use_opaque ) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
-  eval_factory_(fac), cdesc_(cdesc), factories_(factories),
+  eval_factory_(fac), cdesc_(cdesc),
   use_opaque_(use_opaque)
 {
   eval_factory_.set_storage(storage);
@@ -200,10 +200,12 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
     cca_bs4_ = cca_bs3_;
 
   // set factory config
+/*
   sidl::array<string> sidl_factories = sidl::array<string>::create1d(n_descr);
   for( int i=0; i<n_descr; ++i ) 
     sidl_factories.set( i, factories_[i] );
   eval_factory_.set_source_factories( sidl_factories );
+*/
 
   IntegralDescr idesc = cdesc_.get_descr(0);
   cca_dc_ = idesc.get_deriv_centers();

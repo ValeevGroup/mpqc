@@ -214,6 +214,40 @@ throw (
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute_array)
 }
 
+/**
+ * Compute integral bounds.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2. 
+ */
+double
+MPQC::IntegralEvaluator2_impl::compute_bounds (
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2 ) 
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_bounds)
+  // Insert-Code-Here {MPQC.IntegralEvaluator2.compute_bounds} (compute_bounds method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute_bounds)
+}
+
+/**
+ * Compute array of integral bounds.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2. 
+ */
+::sidl::array<double>
+MPQC::IntegralEvaluator2_impl::compute_bounds_array (
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2 ) 
+throw ( 
+  ::sidl::BaseException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_bounds_array)
+  // Insert-Code-Here {MPQC.IntegralEvaluator2.compute_bounds_array} (compute_bounds_array method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute_bounds_array)
+}
+
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._misc)
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._misc)

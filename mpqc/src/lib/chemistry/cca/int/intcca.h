@@ -76,13 +76,11 @@ namespace sc {
       { bs1_ = bs1, bs2_ = bs2; }
       
       Ref<OneBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
-          std::vector<std::string> factories ) 
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
-				  factory_, cdesc, factories, 
-				  use_opaque_ );
+				  factory_, cdesc, use_opaque_ );
 	return eval;
       }
 
@@ -114,13 +112,11 @@ namespace sc {
       { bs1_ = bs1, bs2_ = bs2; }
 
       Ref<OneBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
-          std::vector<std::string> factories ) 
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
 	Ref<OneBodyDerivIntCCA> eval;
 	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
-				       factory_, cdesc, factories, 
-				       use_opaque_ );
+				       factory_, cdesc, use_opaque_ );
 	return eval;
       }
 
@@ -156,14 +152,12 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
-          std::vector<std::string> factories ) 
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc ) 
       {
 	Ref<TwoBodyIntCCA> eval;
 	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
 				  storage_,
-				  factory_, cdesc, factories,
-				  use_opaque_ );
+				  factory_, cdesc, use_opaque_ );
 	return eval;
       }
 
@@ -200,13 +194,11 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc,
-          std::vector<std::string> factories ) 
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				       storage_, factory_, cdesc, factories,
-				       use_opaque_ );
+				       storage_, factory_, cdesc, use_opaque_ );
 	return eval;
       }
 
@@ -222,34 +214,19 @@ namespace sc {
     private:
       
       generator_type generator_;
-      std::map<std::string,std::string> name_to_factory_;
-      std::string default_factory_;
 
     public:
 
       sc_eval_factory() { }
       
-      sc_eval_factory( generator_type generator, 
-		       std::map<std::string,std::string> name_to_factory,
-                       std::string default_factory ):
-      generator_(generator), name_to_factory_(name_to_factory),
-      default_factory_(default_factory) 
+      sc_eval_factory( generator_type generator ):
+      generator_(generator)
       { }
 
       Ref<eval_type> operator() (
           Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
-	std::vector<std::string> factories;
-        std::string type;
-	for( int i=0; i<cdesc.get_n_descr(); ++i) {
-          type = cdesc.get_descr(i).get_type();
-          if( name_to_factory_.count(type) )
-	    factories.push_back( name_to_factory_[type] );
-          else
-            factories.push_back( default_factory_ );
-        }
-    
-	return generator_.generate( cdesc, factories );
+	return generator_.generate( cdesc );
       }
 
     };
@@ -268,7 +245,9 @@ namespace sc {
     std::string default_subfactory_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr eval_req_;
-    std::map<std::string,std::string> type_to_factory_;
+    sidl::array<std::string> types_;
+    sidl::array<std::string> derivs_;
+    sidl::array<std::string> sfacs_;
 
     onebody_generator obgen_;
     onebody_deriv_generator obdgen_;
@@ -325,7 +304,6 @@ namespace sc {
                  const Ref<GaussianBasisSet> &b3,
                  const Ref<GaussianBasisSet> &b4,
                  Chemistry::QC::GaussianBasis::DerivCenters dc,
-                 std::map<std::string,std::string> ttf,
                  std::string default_sf
                 );
 

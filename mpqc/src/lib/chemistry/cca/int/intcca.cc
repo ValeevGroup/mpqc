@@ -103,11 +103,10 @@ IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
                           const Ref<GaussianBasisSet> &b3,
                           const Ref<GaussianBasisSet> &b4,
                           Chemistry::QC::GaussianBasis::DerivCenters dc,
-                          std::map<std::string,std::string> ttf,
                           std::string default_sf
                          ):
   Integral(b1,b2,b3,b4), eval_factory_(eval_factory), use_opaque_(use_opaque),
-  cca_dc_(dc), type_to_factory_( ttf ), default_subfactory_(default_sf)
+  cca_dc_(dc), default_subfactory_(default_sf)
 {
   initialize_transforms();
 
@@ -120,27 +119,27 @@ IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyInt, onebody_generator>
-    ob( obgen_, type_to_factory_, default_subfactory_ );
+    ob( obgen_ );
   get_onebody = ob;
 
   obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_, type_to_factory_, default_subfactory_ );
+    obd( obdgen_ );
   get_onebody_deriv = obd;
 
   tbgen_ = twobody_generator( this, 50000000,
                               eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_, type_to_factory_, default_subfactory_ );
+    tb( tbgen_ );
   get_twobody = tb;
 
   tbdgen_ = twobody_deriv_generator( this, 50000000,
                                      eval_factory_, use_opaque_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_, type_to_factory_, default_subfactory_ );
+    tbd( tbdgen_ );
   get_twobody_deriv = tbd;
 
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
@@ -192,25 +191,24 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
       default_subfactory_ = "MPQC.IntV3EvaluatorFactory";
     }
 
-    // construct type->factory map
+    // grab explicit factory associations
     int ntype = keyval->count("type");
+    int nderiv = keyval->count("deriv");
     int nsfac = keyval->count("subfactory");
-    string tp, subfac;
-    if( ntype != nsfac ) throw InputError("ntype != nsfac",__FILE__,__LINE__);
+    if( ntype != nsfac ) 
+      throw InputError("ntype != nsfac",__FILE__,__LINE__);
+    if( nderiv > 0 && nderiv != ntype )
+      throw InputError("nderiv != ntype",__FILE__,__LINE__);
+    types_ = sidl::array<string>::create1d(ntype);
+    derivs_ = sidl::array<string>::create1d(ntype);
+    sfacs_ = sidl::array<string>::create1d(ntype);
     for( int i=0; i<ntype; ++i) {
-
-      tp = keyval->stringvalue("type",i);
-      subfac = keyval->stringvalue("subfactory",i);
-
-      if( type_to_factory_.count(tp) )
-        throw InputError( "multiple occurences of integral type",
-                          __FILE__, __LINE__,"type",
-                          tp.c_str(),class_desc() );
+      types_.set( i, keyval->stringvalue("type",i) );
+      sfacs_.set( i, keyval->stringvalue("subfactory",i) );
+      if( nderiv )
+        derivs_.set( i, keyval->stringvalue("deriv",i) );
       else
-        type_to_factory_[tp] = subfac;
-
-      ExEnv::out0() << indent << "Integral type " << tp << ": "
-                  << subfac << std::endl;
+        derivs_.set( i, "n" );
     }
   }
 
@@ -236,6 +234,9 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 			  fac_id_,"IntegralSuperFactory");
     eval_factory_ = services.getPort("IntegralSuperFactory");
     IntegralSuperFactory superfac = services.getPort("IntegralSuperFactory");
+ 
+    eval_factory_.set_default_subfactory( default_subfactory_ );
+    eval_factory_.set_subfactories( types_, derivs_, sfacs_ );
 
     // get sub factories
     set<string> subfac_set;
@@ -281,27 +282,27 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator>
-    ob( obgen_, type_to_factory_, default_subfactory_ );
+    ob( obgen_ );
   get_onebody = ob;
 
   obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_, type_to_factory_, default_subfactory_ );
+    obd( obdgen_ );
   get_onebody_deriv = obd;
 
   tbgen_ = twobody_generator( this, 50000000,
 			      eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_, type_to_factory_, default_subfactory_ ); 
+    tb( tbgen_ ); 
   get_twobody = tb;
 
   tbdgen_ = twobody_deriv_generator( this, 50000000,
 				     eval_factory_, use_opaque_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ ); 
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_, type_to_factory_, default_subfactory_ ); 
+    tbd( tbdgen_ ); 
   get_twobody_deriv = tbd;
 
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
@@ -318,8 +319,8 @@ Integral*
 IntegralCCA::clone()
 {
   return new IntegralCCA( eval_factory_, use_opaque_,
-                          bs1_, bs2_, bs3_, bs4_, cca_dc_,
-                          type_to_factory_, default_subfactory_ );
+                          bs1_, bs2_, bs3_, bs4_, cca_dc_, 
+                          default_subfactory_ );
 }
 
 CartesianIter *
@@ -655,25 +656,25 @@ IntegralCCA::set_basis(const Ref<GaussianBasisSet> &b1,
   // delete &get_onebody; invalid???
   obgen_.set_basis( bs1_, bs2_ ); 
   sc_eval_factory< OneBodyInt, onebody_generator >
-    ob( obgen_, type_to_factory_, default_subfactory_ );
+    ob( obgen_ );
   get_onebody = ob;
 
   // delete &get_onebody_deriv; invalid???
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_, type_to_factory_, default_subfactory_ );
+    obd( obdgen_ );
   get_onebody_deriv = obd;
 
   // delete &get_twobody; invalid???
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_, type_to_factory_, default_subfactory_ ); 
+    tb( tbgen_ ); 
   get_twobody = tb;
 
   // delete &get_twobody_deriv; invalid???
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_, type_to_factory_, default_subfactory_ );
+    tbd( tbdgen_ );
   get_twobody_deriv = tbd;
 }
 

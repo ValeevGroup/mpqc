@@ -213,6 +213,40 @@ namespace MPQC {
       ::sidl::BaseException
     );
 
+
+    /**
+     * Compute integral bounds.
+     * @param shellnum1 Gaussian shell number 1.
+     * @param shellnum2 Gaussian shell number 2.
+     * @param shellnum3 Gaussian shell number 3. 
+     */
+    double
+    compute_bounds (
+      /* in */ int64_t shellnum1,
+      /* in */ int64_t shellnum2,
+      /* in */ int64_t shellnum3
+    )
+    throw ( 
+      ::sidl::BaseException
+    );
+
+
+    /**
+     * Compute array of integral bounds.
+     * @param shellnum1 Gaussian shell number 1.
+     * @param shellnum2 Gaussian shell number 2.
+     * @param shellnum3 Gaussian shell number 3. 
+     */
+    ::sidl::array<double>
+    compute_bounds_array (
+      /* in */ int64_t shellnum1,
+      /* in */ int64_t shellnum2,
+      /* in */ int64_t shellnum3
+    )
+    throw ( 
+      ::sidl::BaseException
+    );
+
   };  // end class IntegralEvaluator3_impl
 
 } // end namespace MPQC

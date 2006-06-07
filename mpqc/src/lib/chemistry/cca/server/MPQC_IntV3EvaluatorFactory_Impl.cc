@@ -257,8 +257,6 @@ throw (
     std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype 
               << " evaluator\n";
 
-    std::cerr << "type: " << itype << std::endl;
-
     if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec_.push_back( integral_->overlap() );
       is_ob = true;
@@ -287,6 +285,14 @@ throw (
       sc_origin[2] = origin.get(2);
       dipole_data_ = new sc::DipoleData(sc_origin);
       obint_vec_.push_back( integral_->dipole(dipole_data_) );
+      is_ob = true;
+    }
+    else if( itype == "pcrossnuclearp" && ideriv == 0 ) {
+      obint_vec_.push_back( integral_->p_cross_nuclear_p() );
+      is_ob = true;
+    }
+    else if( itype == "pdotnuclearp" && ideriv == 0 ) {
+      obint_vec_.push_back( integral_->p_dot_nuclear_p() );
       is_ob = true;
     }
     // these need additional data

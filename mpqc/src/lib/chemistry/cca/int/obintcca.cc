@@ -45,11 +45,9 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 			      const Ref<GaussianBasisSet>& bs2,
 			      IntegralSuperFactory fac,
 			      CompositeIntegralDescr cdesc,
-			      vector<string> factories, 
 			      bool  use_opaque ):
   OneBodyInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
-  eval_factory_(fac), cdesc_(cdesc), factories_(factories), 
-   use_opaque_(use_opaque) 
+  eval_factory_(fac), cdesc_(cdesc), use_opaque_(use_opaque) 
 {
   /* The efield routines look like derivatives so nshell*3 */
   int scratchsize=0,nshell2;
@@ -70,9 +68,11 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   // set factory config, there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
+/*
   sidl::array<string> sidl_factories = sidl::array<string>::create1d(1);
   sidl_factories.set( 0, factories_[0] );
   eval_factory_.set_source_factories( sidl_factories );
+*/
 
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
   buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
@@ -121,7 +121,7 @@ Ref<OneBodyInt>
 OneBodyIntCCA::clone()
 {
   return new OneBodyIntCCA( integral_, bs1_, bs2_, 
-                            eval_factory_, cdesc_, factories_, use_opaque_ );
+                            eval_factory_, cdesc_, use_opaque_ );
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -132,11 +132,9 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
                                        const Ref<GaussianBasisSet>&bs2,
                                        IntegralSuperFactory eval_factory,
 				       CompositeIntegralDescr cdesc,
-				       vector<string> factories,
                                        bool use_opaque ):
   OneBodyDerivInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
-  eval_factory_(eval_factory), cdesc_(cdesc), factories_(factories),
-  use_opaque_(use_opaque)
+  eval_factory_(eval_factory), cdesc_(cdesc), use_opaque_(use_opaque)
 {
   int scratchsize=0,nshell2;
   nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
@@ -157,9 +155,11 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
 
   // set factory config, there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
+/*
   sidl::array<string> sidl_factories = sidl::array<string>::create1d(1);
   sidl_factories.set( 0, factories_[0] );
   eval_factory_.set_source_factories( sidl_factories );
+*/
 
   IntegralDescr idesc = cdesc_.get_descr(0);
   cca_dc_ = idesc.get_deriv_centers();
@@ -241,8 +241,7 @@ Ref<OneBodyDerivInt>
 OneBodyDerivIntCCA::clone()
 {
   return new OneBodyDerivIntCCA( integral_, bs1_, bs2_,
-                                 eval_factory_, cdesc_, 
-                                 factories_, use_opaque_ );
+                                 eval_factory_, cdesc_, use_opaque_ );
 }
 
 /////////////////////////////////////////////////////////////////////////////

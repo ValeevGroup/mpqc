@@ -52,7 +52,6 @@ namespace sc {
     Ref<GaussianBasisSet> bs1_, bs2_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
-    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
@@ -65,7 +64,6 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&,
 		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-                   std::vector<std::string> factories,
 		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
@@ -85,7 +83,6 @@ namespace sc {
     Ref<GaussianBasisSet> bs1_, bs2_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
-    std::vector<std::string> factories_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     double* buff_;
@@ -99,7 +96,6 @@ namespace sc {
 		        const Ref<GaussianBasisSet>&,
 			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 		        Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-                        std::vector<std::string> factories,
 			bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);

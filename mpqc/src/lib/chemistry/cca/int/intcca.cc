@@ -236,7 +236,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     IntegralSuperFactory superfac = services.getPort("IntegralSuperFactory");
  
     eval_factory_.set_default_subfactory( default_subfactory_ );
-    eval_factory_.set_subfactories( types_, derivs_, sfacs_ );
+    eval_factory_.set_subfactory_config( types_, derivs_, sfacs_ );
 
     // get sub factories
     set<string> subfac_set;

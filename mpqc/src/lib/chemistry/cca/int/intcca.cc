@@ -65,6 +65,9 @@ using namespace std;
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 
+static int factory_instance_number=0;
+static int sfactory_instance_number=0;
+
 static ClassDesc IntegralCCA_cd(
   typeid(IntegralCCA),"IntegralCCA",1,"public Integral",
   0, create<IntegralCCA>, 0);
@@ -96,53 +99,31 @@ IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
 }
 */
 
-IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory,
-                          bool use_opaque,
+IntegralCCA::IntegralCCA( bool use_opaque,
                           const Ref<GaussianBasisSet> &b1,
                           const Ref<GaussianBasisSet> &b2,
                           const Ref<GaussianBasisSet> &b3,
                           const Ref<GaussianBasisSet> &b4,
-                          Chemistry::QC::GaussianBasis::DerivCenters dc,
-                          std::string default_sf
+                          std::string default_sf,
+                          std::string factory_type,
+                          sidl::array<std::string> types,
+                          sidl::array<std::string> derivs,
+                          sidl::array<std::string> sfacs
                          ):
-  Integral(b1,b2,b3,b4), eval_factory_(eval_factory), use_opaque_(use_opaque),
-  cca_dc_(dc), default_subfactory_(default_sf)
+  Integral(b1,b2,b3,b4), use_opaque_(use_opaque),
+  default_subfactory_(default_sf), factory_type_(factory_type),
+  types_(types), derivs_(derivs), sfacs_(sfacs)
 {
+  superfactory_type_ = "Chemistry.IntegralSuperFactory";
+
+  cca_dc_ = Chemistry::DerivCenters::_create();
+  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+
   initialize_transforms();
 
-  // grab cca environment
-  gov::cca::Services &services = *CCAEnv::get_services();
-  gov::cca::ports::BuilderService &bs = *CCAEnv::get_builder_service();
-  gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
-  gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
+  init_factory();
 
-  obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
-  obgen_.set_basis( bs1_, bs2_ );
-  sc_eval_factory< OneBodyInt, onebody_generator>
-    ob( obgen_ );
-  get_onebody = ob;
-
-  obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_ );
-  obdgen_.set_basis( bs1_, bs2_ );
-  sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
-    obd( obdgen_ );
-  get_onebody_deriv = obd;
-
-  tbgen_ = twobody_generator( this, 50000000,
-                              eval_factory_, use_opaque_ );
-  tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
-  sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_ );
-  get_twobody = tb;
-
-  tbdgen_ = twobody_deriv_generator( this, 50000000,
-                                     eval_factory_, use_opaque_ );
-  tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
-  sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_ );
-  get_twobody_deriv = tbd;
-
-  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+  init_generators();
 }
 
 
@@ -153,6 +134,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   superfactory_type_ = "Chemistry.IntegralSuperFactory";
 
   cca_dc_ = Chemistry::DerivCenters::_create();
+  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
 
   initialize_transforms();
 
@@ -216,6 +198,19 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // get eval factory
   //-----------------
 
+  init_factory();
+
+  //-------------------------------------------------
+  // set up function objects for evaluator generation
+  //-------------------------------------------------
+
+  init_generators();
+
+}
+
+void
+IntegralCCA::init_factory()
+{
   // grab cca environment
   gov::cca::Services &services = *CCAEnv::get_services();
   gov::cca::ports::BuilderService &bs = *CCAEnv::get_builder_service();
@@ -225,62 +220,67 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // get a (super) evaluator factory
   if( factory_type_ == superfactory_type_ ) {
 
+    ostringstream fname;
+      fname << "evaluator_factory" << factory_instance_number;
+    ostringstream fname_port;
+      fname_port << "IntegralSuperFactory" << factory_instance_number;
+    ++factory_instance_number;
+
     // get the super factory
-    fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
-    services.registerUsesPort("IntegralSuperFactory",
-			      "Chemistry.QC.GaussianBasis.IntegralSuperFactory",
-			      type_map);
-    fac_con_ = bs.connect(my_id,"IntegralSuperFactory",
-			  fac_id_,"IntegralSuperFactory");
-    eval_factory_ = services.getPort("IntegralSuperFactory");
-    IntegralSuperFactory superfac = services.getPort("IntegralSuperFactory");
- 
+    fac_id_ = bs.createInstance(fname.str(),factory_type_,type_map);
+    services.registerUsesPort(fname_port.str(),
+                              "Chemistry.QC.GaussianBasis.IntegralSuperFactory",
+                              type_map);
+    fac_con_ = bs.connect(my_id,fname_port.str(),
+                          fac_id_,"IntegralSuperFactory");
+    eval_factory_ = services.getPort(fname_port.str());
+    IntegralSuperFactory superfac = services.getPort(fname_port.str());
+
     eval_factory_.set_default_subfactory( default_subfactory_ );
     eval_factory_.set_subfactory_config( types_, derivs_, sfacs_ );
 
     // get sub factories
     set<string> subfac_set;
     map<string,gov::cca::ComponentID> subfac_name_to_id;
-    int nsubfac = keyval->count("subfactory");
+    int nsubfac = sfacs_.length();
     for( int i=0; i<nsubfac; ++i)
-      subfac_set.insert( keyval->stringvalue("subfactory",i) );
+      subfac_set.insert( sfacs_.get(i) );
     if( !subfac_set.count(default_subfactory_) )
       subfac_set.insert( default_subfactory_ );
     nsubfac = subfac_set.size();
     set<string>::iterator iter;
-    int sfname_id=-1;
     for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
       std::cerr << "Instantiating: " << *iter << std::endl;
-      ++sfname_id;
       ostringstream sfname;
-      sfname << "subfactory" << sfname_id;
-      subfac_name_to_id[sfname.str()] = 
-	bs.createInstance(sfname.str(),
-			  *iter,
-			  type_map);
+      sfname << "subfactory" << sfactory_instance_number;
+      ++sfactory_instance_number;
+      subfac_name_to_id[sfname.str()] =
+        bs.createInstance(sfname.str(),
+                          *iter,
+                          type_map);
     }
-
     // connect factories with super factory
     sidl::array<string> sfac_portnames = superfac.add_uses_ports(nsubfac);
     map<string,gov::cca::ComponentID>::iterator miter;
     vector<gov::cca::ConnectionID> subfac_conids;
     int portname_iter=-1;
-    for( miter = subfac_name_to_id.begin(); 
+    for( miter = subfac_name_to_id.begin();
          miter != subfac_name_to_id.end(); miter++) {
-      subfac_conids.push_back(  
-	  bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
-		      (*miter).second, "IntegralEvaluatorFactory") );
-    }  
+      subfac_conids.push_back(
+          bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
+                      (*miter).second, "IntegralEvaluatorFactory") );
+    }
   }
-  else { //do a straightforward hook up 
+  else { 
+    //do a straightforward hook up
   }
+}
 
-  //-------------------------------------------------
-  // set up function objects for evaluator generation
-  //-------------------------------------------------
-
+void
+IntegralCCA::init_generators()
+{
   obgen_ = onebody_generator( this, eval_factory_, use_opaque_ );
-  obgen_.set_basis( bs1_, bs2_ ); 
+  obgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyInt, onebody_generator>
     ob( obgen_ );
   get_onebody = ob;
@@ -292,22 +292,18 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   get_onebody_deriv = obd;
 
   tbgen_ = twobody_generator( this, 50000000,
-			      eval_factory_, use_opaque_ );
+                              eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
-    tb( tbgen_ ); 
+    tb( tbgen_ );
   get_twobody = tb;
 
   tbdgen_ = twobody_deriv_generator( this, 50000000,
-				     eval_factory_, use_opaque_ );
-  tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ ); 
+                                     eval_factory_, use_opaque_ );
+  tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
-    tbd( tbdgen_ ); 
+    tbd( tbdgen_ );
   get_twobody_deriv = tbd;
-
-  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
-
-  //ExEnv::out0() << indent << "MPQC: intcca constuctor done\n";
 }
 
 IntegralCCA::~IntegralCCA()
@@ -318,9 +314,9 @@ IntegralCCA::~IntegralCCA()
 Integral*
 IntegralCCA::clone()
 {
-  return new IntegralCCA( eval_factory_, use_opaque_,
-                          bs1_, bs2_, bs3_, bs4_, cca_dc_, 
-                          default_subfactory_ );
+  return new IntegralCCA( use_opaque_, bs1_, bs2_, bs3_, bs4_,
+                          default_subfactory_, factory_type_,
+                          types_, derivs_, sfacs_ );
 }
 
 CartesianIter *

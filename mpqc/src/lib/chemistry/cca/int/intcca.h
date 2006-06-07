@@ -263,6 +263,8 @@ namespace sc {
     
     void free_transforms();
     void initialize_transforms();
+    void init_factory();
+    void init_generators();
     
   public:
 
@@ -296,15 +298,16 @@ namespace sc {
         </dl>
     */
 
-    IntegralCCA( Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory 
-                   eval_factory,
-                 bool use_opaque,
+    IntegralCCA( bool use_opaque,
                  const Ref<GaussianBasisSet> &b1,
                  const Ref<GaussianBasisSet> &b2,
                  const Ref<GaussianBasisSet> &b3,
                  const Ref<GaussianBasisSet> &b4,
-                 Chemistry::QC::GaussianBasis::DerivCenters dc,
-                 std::string default_sf
+                 std::string default_sf,
+                 std::string factory_type,
+                 sidl::array<std::string> types,
+                 sidl::array<std::string> derivs,
+                 sidl::array<std::string> sfacs 
                 );
 
     IntegralCCA(const Ref<KeyVal>&);

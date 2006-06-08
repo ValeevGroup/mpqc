@@ -58,10 +58,10 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
-  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
     cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;
@@ -145,10 +145,10 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
 
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
-  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
     cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;

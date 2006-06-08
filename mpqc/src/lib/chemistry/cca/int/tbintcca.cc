@@ -70,22 +70,22 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
-  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
     cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;
   if( bs2_.pointer() != bs3_.pointer() ) {
     cca_bs3_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
+    cca_bs3_.initialize( bs3_.pointer(), bs3_->label() );
   }
   else
     cca_bs3_ = cca_bs2_;
   if( bs3_.pointer() != bs4_.pointer() ) {
     cca_bs4_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
+    cca_bs4_.initialize( bs4_.pointer(), bs4_->label() );
   }
   else
     cca_bs4_ = cca_bs3_;
@@ -179,22 +179,22 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
-  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
     cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;
   if( bs2_.pointer() != bs3_.pointer() ) {
     cca_bs3_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
+    cca_bs3_.initialize( bs3_.pointer(), bs3_->label() );
   }
   else
     cca_bs3_ = cca_bs2_;
   if( bs3_.pointer() != bs4_.pointer() ) {
     cca_bs4_ = MPQC::GaussianBasis_Molecular::_create();
-    cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
+    cca_bs4_.initialize( bs4_.pointer(), bs4_->label() );
   }
   else
     cca_bs4_ = cca_bs3_;

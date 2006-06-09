@@ -232,6 +232,8 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+  deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+  computer2_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
   eval_.compute( &computer_ );
   deriv_eval_.compute( &deriv_computer_ );
   comp_eval_.compute( &computer2_ );

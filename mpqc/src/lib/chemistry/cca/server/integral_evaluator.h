@@ -94,7 +94,9 @@ namespace MpqcCca {
     { sh1_=sh1; sh2_=sh2; }
 
     void compute( sc::OneBodyInt* eval, QC_DerivCenters* dc )
-    { eval->compute_shell( sh1_, sh2_ ); }
+    { 
+      eval->compute_shell( sh1_, sh2_ ); 
+    }
 
     double compute_bounds( sc::OneBodyInt* eval )
     {
@@ -280,7 +282,7 @@ namespace MpqcCca {
     {
       for( int i=0; i<evals_.size(); ++i) {
         if( evals_[i].second.get_deriv_lvl() == 0 )
-          computer->compute( evals_[i].first, 0 );
+          computer->compute( evals_[i].first, NULL );
         else
           computer->compute( evals_[i].first, &(dcs_[i]) );
       }

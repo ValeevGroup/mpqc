@@ -68,6 +68,7 @@
 #include <vector>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/intv3/intv3.h>
+#include <sidl_SIDLException.hh>
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
@@ -100,14 +101,15 @@ namespace MPQC {
     gov::cca::Services services_;
     int storage_;
     Ref<IntegralV3> integral_;
-    vector< Ref<OneBodyOneCenterInt> > obocint_vec_;
-    vector< Ref<OneBodyInt> > obint_vec_;
-    vector< Ref<OneBodyDerivInt> > obderivint_vec_;
-    vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec_;
-    vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec_;
-    vector< Ref<TwoBodyInt> > tbint_vec_;
-    vector< Ref<TwoBodyDerivInt> > tbderivint_vec_;
     Ref<sc::DipoleData> dipole_data_;
+
+    vector< vector< Ref<OneBodyOneCenterInt> > > obocint_vec_;
+    vector< vector< Ref<OneBodyInt> > > obint_vec_;
+    vector< vector< Ref<OneBodyDerivInt> > > obderivint_vec_;
+    vector< vector< Ref<TwoBodyTwoCenterInt> > > tbtcint_vec_;
+    vector< vector< Ref<TwoBodyThreeCenterInt> > > tb3cint_vec_;
+    vector< vector< Ref<TwoBodyInt> > > tbint_vec_;
+    vector< vector< Ref<TwoBodyDerivInt> > > tbderivint_vec_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._implementation)
 

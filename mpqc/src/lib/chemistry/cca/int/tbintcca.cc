@@ -116,7 +116,8 @@ void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
   eval_.compute( i, j, k, l );
-  if(!redundant_) 
+  //if(!redundant_) 
+  if( 1 )
     remove_redundant( i, j, k, l );
 }
 

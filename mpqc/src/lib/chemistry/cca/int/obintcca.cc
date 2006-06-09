@@ -68,12 +68,6 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   // set factory config, there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
-/*
-  sidl::array<string> sidl_factories = sidl::array<string>::create1d(1);
-  sidl_factories.set( 0, factories_[0] );
-  eval_factory_.set_source_factories( sidl_factories );
-*/
-
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
   buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
 }
@@ -155,15 +149,8 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
 
   // set factory config, there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
-/*
-  sidl::array<string> sidl_factories = sidl::array<string>::create1d(1);
-  sidl_factories.set( 0, factories_[0] );
-  eval_factory_.set_source_factories( sidl_factories );
-*/
-
   IntegralDescr idesc = cdesc_.get_descr(0);
   cca_dc_ = idesc.get_deriv_centers();
-
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
   buffer_ = static_cast<double*>( eval_.get_buffer( idesc ) );
 }

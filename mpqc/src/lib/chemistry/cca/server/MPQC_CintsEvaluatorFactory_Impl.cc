@@ -211,8 +211,10 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator1)
 
-  obocint_vec_.clear();
+  //obocint_vec_.clear();
   bool is_oboc;
+
+  vector< Ref<OneBodyOneCenterInt> > obocint_vec;
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
@@ -234,8 +236,10 @@ throw (
     /*else*/
     throw runtime_error("CintsEvaluatorFactory: unsupported integral type");
 
-    if( obocint_vec_.size() && is_oboc )
-      eval.add_evaluator( (void*) obocint_vec_.back().pointer(), desc );
+    if( obocint_vec.size() && is_oboc ) {
+      eval.add_evaluator( (void*) obocint_vec.back().pointer(), desc );
+      obocint_vec_.push_back( obocint_vec );
+    }
   }
 
   eval.set_basis( bs1 );
@@ -260,9 +264,13 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator2)
 
-  obint_vec_.clear();
-  obderivint_vec_.clear();
-  tbtcint_vec_.clear();
+  //obint_vec_.clear();
+  //obderivint_vec_.clear();
+  //tbtcint_vec_.clear();
+  vector< Ref<OneBodyInt> > obint_vec;
+  vector< Ref<OneBodyDerivInt> > obderivint_vec;
+  vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec;
+
   bool is_ob, is_obderiv, is_tbtc;
 
   integral_->set_storage(storage_);
@@ -287,19 +295,19 @@ throw (
               << " evaluator\n";
 
     if( itype == "overlap"  && ideriv == 0 ) {
-      obint_vec_.push_back( integral_->overlap() );
+      obint_vec.push_back( integral_->overlap() );
       is_ob = true;
     }
     else if( itype == "kinetic" && ideriv == 0 ) {
-      obint_vec_.push_back( integral_->kinetic() );
+      obint_vec.push_back( integral_->kinetic() );
       is_ob = true;
     }
     else if( itype == "nuclear" && ideriv == 0 ) {
-      obint_vec_.push_back( integral_->nuclear() );
+      obint_vec.push_back( integral_->nuclear() );
       is_ob = true;
     }
     else if( itype == "hcore" && ideriv == 0 ) {
-      obint_vec_.push_back( integral_->hcore() );
+      obint_vec.push_back( integral_->hcore() );
       is_ob = true;
     }
     else if( itype == "dipole" && ideriv == 0 ) {
@@ -313,7 +321,7 @@ throw (
       sc_origin[1] = origin.get(1);
       sc_origin[2] = origin.get(2);
       dipole_data_ = new sc::DipoleData(sc_origin);
-      obint_vec_.push_back( integral_->dipole(dipole_data_) );
+      obint_vec.push_back( integral_->dipole(dipole_data_) );
       is_ob = true;
     }
     else if( itype == "quadrupole" && ideriv == 0 ) {
@@ -326,23 +334,29 @@ throw (
       sc_origin[0] = origin.get(0);
       sc_origin[1] = origin.get(1);
       sc_origin[2] = origin.get(2);
-      dipole_data_ = new sc::DipoleData(sc_origin);
-      obint_vec_.push_back( integral_->dipole(dipole_data_) );
+      quad_data_ = new sc::DipoleData(sc_origin);
+      obint_vec.push_back( integral_->quadrupole(quad_data_) );
       is_ob = true;
     }
     else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
     // multiple types could be a problem here
-    if( obint_vec_.size() && is_ob  )
-      eval.add_evaluator( (void*) obint_vec_.back().pointer(),
+    if( obint_vec.size() && is_ob  ) {
+      eval.add_evaluator( (void*) obint_vec.back().pointer(),
                           idesc );
-    else if( obderivint_vec_.size() && is_obderiv )
-      eval.add_evaluator( (void*) obderivint_vec_.back().pointer(),
+      obint_vec_.push_back( obint_vec );
+    }
+    else if( obderivint_vec.size() && is_obderiv ) {
+      eval.add_evaluator( (void*) obderivint_vec.back().pointer(),
                           idesc );
-    else if( tbtcint_vec_.size() && is_tbtc )
-      eval.add_evaluator( (void*) tbtcint_vec_.back().pointer(),
+      obderivint_vec_.push_back( obderivint_vec );
+    }
+    else if( tbtcint_vec.size() && is_tbtc ) {
+      eval.add_evaluator( (void*) tbtcint_vec.back().pointer(),
                           idesc );
+      tbtcint_vec_.push_back( tbtcint_vec );
+    }
   }
 
   eval.set_basis( bs1, bs2 );
@@ -368,8 +382,10 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator3)
 
-  tb3cint_vec_.clear();
+  //tb3cint_vec_.clear();
   bool is_tb3c;
+
+  vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec;
 
   integral_->set_storage(storage_);
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
@@ -399,8 +415,10 @@ throw (
     //else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
-    if( tb3cint_vec_.size() && is_tb3c )
-      eval.add_evaluator( (void*) tb3cint_vec_.back().pointer(), desc );
+    if( tb3cint_vec.size() && is_tb3c ) {
+      eval.add_evaluator( (void*) tb3cint_vec.back().pointer(), desc );
+      tb3cint_vec_.push_back( tb3cint_vec );
+    }
   }
 
   eval.set_basis( bs1, bs2, bs3 );
@@ -427,9 +445,12 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.get_evaluator4)
 
-  tbint_vec_.clear();
-  tbderivint_vec_.clear();
+  //tbint_vec_.clear();
+  //tbderivint_vec_.clear();
   bool is_tb, is_tbderiv;
+
+  vector< Ref<TwoBodyInt> > tbint_vec;
+  vector< Ref<TwoBodyDerivInt> > tbderivint_vec;
 
   Chemistry::QC::GaussianBasis::CompositeIntegralDescr comp
     = Chemistry::CompositeIntegralDescr::_create();
@@ -466,14 +487,14 @@ throw (
 
     if( itype == "eri4"  && ideriv == 0 ) {
       if( !need_comp ) { 
-        tbint_vec_.push_back( integral_->electron_repulsion() );
+        tbint_vec.push_back( integral_->electron_repulsion() );
         is_tb = true;
       }
       else
         comp.add_descr( idesc );
     }
     else if( itype == "eri4" && ideriv == 1 ) {
-      tbderivint_vec_.push_back( integral_->electron_repulsion_deriv() );
+      tbderivint_vec.push_back( integral_->electron_repulsion_deriv() );
       is_tbderiv = true;
     }
     else if( itype == "r12" && ideriv == 0 )
@@ -486,15 +507,21 @@ throw (
     else
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
-    if( tbint_vec_.size() && is_tb ) {
-      eval.add_evaluator( (void*) tbint_vec_.back().pointer(), idesc );
+    if( tbint_vec.size() && is_tb ) {
+      eval.add_evaluator( (void*) tbint_vec.back().pointer(), idesc );
+      tbint_vec_.push_back( tbint_vec );
     }
-    else if( tbderivint_vec_.size() && is_tbderiv )
-      eval.add_evaluator( (void*) tbderivint_vec_.back().pointer(), idesc );
+    else if( tbderivint_vec.size() && is_tbderiv ) {
+      eval.add_evaluator( (void*) tbderivint_vec.back().pointer(), idesc );
+      tbderivint_vec_.push_back( tbderivint_vec );
+    }
   }
 
-  if( need_comp )
-    eval.add_composite_evaluator( (void*) integral_->grt(), comp );
+  if( need_comp ) {
+    grts_.push_back( integral_->grt() );
+    comps_.push_back( comp );
+    eval.add_composite_evaluator( (void*) grts_.back().pointer(), comp );
+  }
 
   eval.set_basis( bs1, bs2, bs3, bs4 );
 

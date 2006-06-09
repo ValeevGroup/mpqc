@@ -346,14 +346,11 @@ namespace MpqcCca {
         for( int j=0; i<evals_[i].second.get_n_descr(); ++ j)
           if( desc.get_type() == evals_[i].second.get_descr(j).get_type() &&
               desc.get_deriv_lvl() == 
-                evals_[i].second.get_descr(j).get_deriv_lvl() )
-            return const_cast<double*>( evals_[i].first->buffer( tbt ) );
+                evals_[i].second.get_descr(j).get_deriv_lvl() ) {
+            const double *b = evals_[i].first->buffer( tbt );
+            return const_cast<double*>( b );
+      }
       return NULL;
-    }
-
-    Chemistry::QC::GaussianBasis::DerivCenters get_deriv_centers ()
-    {
-      // later
     }
 
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()

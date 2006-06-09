@@ -33,6 +33,11 @@
 #include <util/class/scexception.h>
 #include <limits.h>
 
+#include <Chemistry_Eri4IntegralDescr.hh>
+#include <Chemistry_R12IntegralDescr.hh>
+#include <Chemistry_R12T1IntegralDescr.hh>
+#include <Chemistry_R12T2IntegralDescr.hh>
+
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
@@ -55,6 +60,19 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   eval_factory_(fac), cdesc_(cdesc),
   use_opaque_(use_opaque)
 {
+  ndesc_ = cdesc_.get_n_descr();
+
+  tbtype_to_buf_ = new double*[ndesc_];
+
+  IntegralDescr desc = Chemistry::Eri4IntegralDescr::_create();
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::eri;
+  desc = Chemistry::R12IntegralDescr::_create();
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12;
+  desc = Chemistry::R12T1IntegralDescr::_create();
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t1;
+  desc = Chemistry::R12T2IntegralDescr::_create();
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t2;
+
   eval_factory_.set_storage(storage);
   
   int_bound_min_ = SCHAR_MIN;
@@ -90,20 +108,20 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   else
     cca_bs4_ = cca_bs3_;
 
-  // set factory config
-/*
-  int n_descr = cdesc_.get_n_descr();
-  sidl::array<string> sidl_factories = sidl::array<string>::create1d(n_descr);
-  for( int i=0; i<n_descr; ++i ) 
-    sidl_factories.set( i, factories_[i] );
-  eval_factory_.set_source_factories( sidl_factories );
-*/
-  
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
-  buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
-  // and what happens for multiple buffers???
+  for( int i=0; i<ndesc_; ++i ) {
+    IntegralDescr desc = cdesc_.get_descr(i);
+    tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
+      = static_cast<double*>( eval_.get_buffer(desc) );
+  }
 
+}
+
+const double*
+TwoBodyIntCCA::buffer(tbint_type te_type) const
+{
+  return tbtype_to_buf_[ te_type ];
 }
 
 TwoBodyIntCCA::~TwoBodyIntCCA()
@@ -115,10 +133,13 @@ TwoBodyIntCCA::~TwoBodyIntCCA()
 void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
-  eval_.compute( i, j, k, l );
-  //if(!redundant_) 
-  if( 1 )
-    remove_redundant( i, j, k, l );
+  for( int ii=0; ii<ndesc_; ++ii ) {
+    IntegralDescr desc = cdesc_.get_descr(ii);
+    buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ];
+    eval_.compute( i, j, k, l );
+    if( !redundant_ )
+      remove_redundant( i, j, k, l );
+  }
 }
 
 int
@@ -130,7 +151,7 @@ TwoBodyIntCCA::log2_shell_bound( int i, int j, int k, int l )
 unsigned int
 TwoBodyIntCCA::num_tbint_types() const
 {
-  return 1;
+  return ndesc_;
 }
 
 ////////////////////////////////////////////////////////////////////////////

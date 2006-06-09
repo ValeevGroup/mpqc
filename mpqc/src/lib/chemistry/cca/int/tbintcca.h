@@ -33,6 +33,7 @@
 #define _chemistry_cca_int_tbintcca_h
 
 #include <vector>
+#include <map>
 #include <chemistry/qc/basis/tbint.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
@@ -58,8 +59,11 @@ namespace sc {
     Chemistry::QC::GaussianBasis::IntegralEvaluator4 eval_;
     bool redundant_;
     int int_bound_min_;
+    int ndesc_;
     double tol_;
     double loginv_;
+    std::map< std::string, int > dtype_to_tbtype_;
+    double** tbtype_to_buf_;
 
   public:
     TwoBodyIntCCA( Integral* integral,
@@ -74,6 +78,8 @@ namespace sc {
     ~TwoBodyIntCCA();
 
     void compute_shell(int,int,int,int);
+    const double* buffer(tbint_type te_type) const;
+    const double* buffer_not_const();
     int log2_shell_bound(int,int,int,int);
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }

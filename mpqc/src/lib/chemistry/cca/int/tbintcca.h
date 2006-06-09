@@ -57,7 +57,6 @@ namespace sc {
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator4 eval_;
-    bool redundant_;
     int int_bound_min_;
     int ndesc_;
     double tol_;

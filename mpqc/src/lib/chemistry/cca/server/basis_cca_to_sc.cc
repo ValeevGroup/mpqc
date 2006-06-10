@@ -42,8 +42,11 @@ Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
   // form basis keyval
   input.precision(18);
   input << "scbasis<GaussianBasisSet>:(\n" 
-	<< "  molecule = $:molecule\n"
-	<< "  basis = [";
+	<< "  molecule = $:molecule\n";
+  if (cca_basis.get_label().size() > 0) {
+      input << "  name = \"CCA(" << cca_basis.get_label() << ")\"\n";
+    }
+  input << "  basis = [";
   for(int i=0; i<cca_mol.get_n_atom(); ++i) 
     input << " basis" << i;
   input << " ]\n" << ")\n";

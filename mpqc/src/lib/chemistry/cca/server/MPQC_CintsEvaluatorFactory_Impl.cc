@@ -470,7 +470,7 @@ throw (
   else sc_bs2 = basis_cca_to_sc( bs2 );
   if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
   else sc_bs3 = basis_cca_to_sc( bs3 );
-  if( bs3.isSame(bs3) ) sc_bs4.assign_pointer(sc_bs3.pointer());
+  if( bs3.isSame(bs4) ) sc_bs4.assign_pointer(sc_bs3.pointer());
   else sc_bs4 = basis_cca_to_sc( bs4);
   integral_->set_basis(sc_bs1,sc_bs2,sc_bs3,sc_bs4);
 

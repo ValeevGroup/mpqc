@@ -194,9 +194,18 @@ void
 BlockedSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                int source_br, int source_bc)
 {
-  ExEnv::errn() << indent
-       << "BlockedSCMatrix::assign_subblock: cannot assign subblock\n";
-  abort();
+  BlockedSCMatrix* b_sb
+      = require_dynamic_cast<BlockedSCMatrix*>(
+          sb,"BlockedSCMatrix::assign_subblock");
+  if (! (nblocks() == 1 && b_sb->nblocks() == 1)) {
+      ExEnv::errn() << indent << "BlockedSCMatrix::assign_subblock:"
+                    << " cannot assign subblock\n";
+      abort();
+    }
+  else {
+      block(0).assign_subblock(b_sb->block(0),br,er,bc,ec,
+                               source_br,source_bc);
+    }
 }
 
 void
@@ -204,9 +213,18 @@ BlockedSCMatrix::accumulate_subblock(SCMatrix*sb,
                                      int br, int er, int bc, int ec,
                                      int source_br, int source_bc)
 {
-  ExEnv::errn() << indent << "BlockedSCMatrix::accumulate_subblock:"
-       << " cannot accumulate subblock\n";
-  abort();
+  BlockedSCMatrix* b_sb
+      = require_dynamic_cast<BlockedSCMatrix*>(
+          sb,"BlockedSCMatrix::accumulate_subblock");
+  if (! (nblocks() == 1 && b_sb->nblocks() == 1)) {
+      ExEnv::errn() << indent << "BlockedSCMatrix::accumulate_subblock:"
+                    << " cannot accumulate subblock\n";
+      abort();
+    }
+  else {
+      block(0).accumulate_subblock(b_sb->block(0),br,er,bc,ec,
+                                   source_br,source_bc);
+    }
 }
 
 SCVector *

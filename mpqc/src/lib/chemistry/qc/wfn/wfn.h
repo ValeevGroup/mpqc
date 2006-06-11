@@ -100,15 +100,27 @@ class Wavefunction: public MolecularEnergy {
                             bool uniq);
 
     // Compute the dk relativistic core hamiltonian.
-    RefSymmSCMatrix core_hamiltonian_dk(int dk);
+    RefSymmSCMatrix core_hamiltonian_dk(
+      int dk,
+      const Ref<GaussianBasisSet> &bas,
+      const Ref<GaussianBasisSet> &pbas = 0);
     void core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
                                       const RefDiagSCMatrix &E,
                                       const RefDiagSCMatrix &K,
                                       const RefDiagSCMatrix &p2,
+                                      const RefDiagSCMatrix &p2K2,
+                                      const RefDiagSCMatrix &p2K2_inv,
                                       const RefSymmSCMatrix &AVA_pbas,
                                       const RefSymmSCMatrix &BpVpB_pbas);
+    void core_hamiltonian_dk3_contrib(const RefSymmSCMatrix &h_pbas,
+                                      const RefDiagSCMatrix &E,
+                                      const RefDiagSCMatrix &B,
+                                      const RefDiagSCMatrix &p2K2_inv,
+                                      const RefSCMatrix &so_to_p,
+                                      const RefSymmSCMatrix &pxVp);
     // Compute the non-relativistic core hamiltonian.
-    RefSymmSCMatrix core_hamiltonian_nr();
+    RefSymmSCMatrix core_hamiltonian_nr(
+      const Ref<GaussianBasisSet> &bas);
 
   protected:
 
@@ -187,6 +199,9 @@ class Wavefunction: public MolecularEnergy {
     /// Return 1 if the alpha density is not equal to the beta density.
     virtual int spin_polarized() = 0;
 
+    /// Returns the level the of the Douglas-Kroll approximation.
+    int dk() const { return dk_; }
+
     /// Return alpha electron densities in the SO basis.
     virtual RefSymmSCMatrix alpha_density();
     /// Return beta electron densities in the SO basis.
@@ -201,6 +216,12 @@ class Wavefunction: public MolecularEnergy {
 
     /// Returns the SO overlap matrix.
     virtual RefSymmSCMatrix overlap();
+    /** Returns the SO core Hamiltonian in the given basis and momentum
+        basis.  The momentum basis is not needed if no Douglas-Kroll
+        correction is being performed. */
+    virtual RefSymmSCMatrix core_hamiltonian_for_basis(
+      const Ref<GaussianBasisSet> &bas,
+      const Ref<GaussianBasisSet> &pbas = 0);
     /// Returns the SO core Hamiltonian.
     virtual RefSymmSCMatrix core_hamiltonian();
 
@@ -231,6 +252,8 @@ class Wavefunction: public MolecularEnergy {
     Ref<Molecule> molecule() const;
     /// Returns the basis set.
     Ref<GaussianBasisSet> basis() const;
+    /// Returns the basis used for p^2 in the DK correction.
+    Ref<GaussianBasisSet> momentum_basis() const;
     /// Returns the basis set describing the nuclear charge distributions
     Ref<GaussianBasisSet> atom_basis() const;
     /** Returns the coefficients of the nuclear charge distribution basis

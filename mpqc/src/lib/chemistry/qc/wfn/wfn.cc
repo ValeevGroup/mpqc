@@ -526,6 +526,8 @@ Wavefunction::core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
                                            const RefDiagSCMatrix &E,
                                            const RefDiagSCMatrix &K,
                                            const RefDiagSCMatrix &p2,
+                                           const RefDiagSCMatrix &p2K2,
+                                           const RefDiagSCMatrix &p2K2_inv,
                                            const RefSymmSCMatrix &AVA_pbas,
                                            const RefSymmSCMatrix &BpVpB_pbas)
 {
@@ -543,15 +545,6 @@ Wavefunction::core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
     }
   }
 
-  RefDiagSCMatrix p2K2 = p2*K*K;
-  RefDiagSCMatrix p2K2_inv = p2K2->clone();
-
-  for (int i=0; i<npbas; i++) {
-    double p2K2_val = p2K2(i);
-    if (fabs(p2K2_val) > DBL_EPSILON) p2K2_inv(i) = 1.0/p2K2_val;
-    else p2K2_inv(i) = 0.0;
-  }
-
   RefSCMatrix h_contrib;
   h_contrib
     =
@@ -567,8 +560,46 @@ Wavefunction::core_hamiltonian_dk2_contrib(const RefSymmSCMatrix &h_pbas,
   h_pbas.accumulate_symmetric_sum(h_contrib);
 }
 
+void
+Wavefunction::core_hamiltonian_dk3_contrib(const RefSymmSCMatrix &h_pbas,
+                                           const RefDiagSCMatrix &E,
+                                           const RefDiagSCMatrix &B,
+                                           const RefDiagSCMatrix &p2K2_inv,
+                                           const RefSCMatrix &so_to_p,
+                                           const RefSymmSCMatrix &pxVp)
+{
+  RefSCDimension p_oso_dim = so_to_p.rowdim();
+  Ref<SCMatrixKit> p_so_kit = so_to_p.kit();
+  int noso = p_oso_dim.n();
+  RefSymmSCMatrix pxVp_pbas(p_oso_dim, p_so_kit);
+  pxVp_pbas.assign(0.0);
+  pxVp_pbas.accumulate_transform(so_to_p, pxVp);
+
+  RefSymmSCMatrix BpxVpB_prime(p_oso_dim, p_so_kit);
+  for (int i=0; i<noso; i++) {
+    double Ei = E(i);
+    for (int j=0; j<=i; j++) {
+      double Ej = E(j);
+      BpxVpB_prime(i,j) = pxVp_pbas(i,j)*B(i)*B(j)/(Ei+Ej);
+    }
+  }
+
+  RefSCDimension pdim = E.dim();
+
+  RefSCMatrix h_contrib;
+  h_contrib
+    =
+    - 0.5 * BpxVpB_prime * E * p2K2_inv * BpxVpB_prime
+    - 0.5 * BpxVpB_prime * p2K2_inv * BpxVpB_prime * E
+    ;
+
+  h_pbas.accumulate_symmetric_sum(h_contrib);
+}
+
 RefSymmSCMatrix
-Wavefunction::core_hamiltonian_dk(int dk)
+Wavefunction::core_hamiltonian_dk(int dk,
+                                  const Ref<GaussianBasisSet> &bas,
+                                  const Ref<GaussianBasisSet> &p_bas)
 {
 #define DK_DEBUG 0
 
@@ -593,14 +624,14 @@ Wavefunction::core_hamiltonian_dk(int dk)
   }
 
   // The one electron integrals will be computed in the momentum basis.
-  integral()->set_basis(momentum_basis_);
+  integral()->set_basis(p_bas);
 
   Ref<PetiteList> p_pl = integral()->petite_list();
 
   RefSCDimension p_so_dim = p_pl->SO_basisdim();
   RefSCDimension p_ao_dim = p_pl->AO_basisdim();
-  Ref<SCMatrixKit> p_kit = momentum_basis_->matrixkit();
-  Ref<SCMatrixKit> p_so_kit = momentum_basis_->so_matrixkit();
+  Ref<SCMatrixKit> p_kit = p_bas->matrixkit();
+  Ref<SCMatrixKit> p_so_kit = p_bas->so_matrixkit();
 
   // Compute the overlap in the momentum basis.
   RefSymmSCMatrix S_skel(p_ao_dim, p_kit);
@@ -616,7 +647,7 @@ Wavefunction::core_hamiltonian_dk(int dk)
                 << "The momentum basis is:"
                 << std::endl;
   ExEnv::out0() << incindent;
-  momentum_basis_->print_brief(ExEnv::out0());
+  p_bas->print_brief(ExEnv::out0());
   ExEnv::out0() << decindent;
 
   ExEnv::out0() << indent
@@ -737,12 +768,12 @@ Wavefunction::core_hamiltonian_dk(int dk)
   pVp_skel.element_op(hc);
 #if DK_DEBUG
   const double *buf = pVp_obi->buffer();
-  for (int I=0,Ii=0; I<momentum_basis_->nshell(); I++) {
-    for (int i=0; i<momentum_basis_->shell(I).nfunction(); i++,Ii++) {
-      for (int J=0,Jj=0; J<momentum_basis_->nshell(); J++) {
+  for (int I=0,Ii=0; I<p_bas->nshell(); I++) {
+    for (int i=0; i<p_bas->shell(I).nfunction(); i++,Ii++) {
+      for (int J=0,Jj=0; J<p_bas->nshell(); J++) {
         pVp_obi->compute_shell(I,J);
-        int ij = i*momentum_basis_->shell(J).nfunction();
-        for (int j=0; j<momentum_basis_->shell(J).nfunction(); j++,ij++,Jj++) {
+        int ij = i*p_bas->shell(J).nfunction();
+        for (int j=0; j<p_bas->shell(J).nfunction(); j++,ij++,Jj++) {
           std::cout << "pVp["<<Ii<<"]["<<Jj<<"][0]= " << buf[ij]
                     << std::endl;
         }
@@ -788,8 +819,56 @@ Wavefunction::core_hamiltonian_dk(int dk)
   }
 
   if (dk_ > 1) {
-    core_hamiltonian_dk2_contrib(h_pbas, E, K, p2,
+    RefDiagSCMatrix p2K2 = p2*K*K;
+    RefDiagSCMatrix p2K2_inv = p2K2->clone();
+
+    for (int i=0; i<noso; i++) {
+      double p2K2_val = p2K2(i);
+      if (fabs(p2K2_val) > DBL_EPSILON) p2K2_inv(i) = 1.0/p2K2_val;
+      else p2K2_inv(i) = 0.0;
+    }
+
+    core_hamiltonian_dk2_contrib(h_pbas, E, K, p2, p2K2, p2K2_inv,
                                  AVA_pbas, BpVpB_pbas);
+
+    if (dk_ > 2) {
+      Ref<OneBodyInt> pxVp_obi = integral()->p_cross_nuclear_p();
+      Ref<SCElementOp3> hc3;
+      hc3 = new OneBody3IntOp(new SymmOneBodyIntIter(pxVp_obi, p_pl));
+      RefSymmSCMatrix pxVp_x_skel(p_ao_dim, p_kit);
+      RefSymmSCMatrix pxVp_y_skel(p_ao_dim, p_kit);
+      RefSymmSCMatrix pxVp_z_skel(p_ao_dim, p_kit);
+      pxVp_x_skel.assign(0.0);
+      pxVp_y_skel.assign(0.0);
+      pxVp_z_skel.assign(0.0);
+      pxVp_x_skel.element_op(hc3,pxVp_y_skel,pxVp_z_skel);
+      RefSymmSCMatrix pxVp_x(p_so_dim, p_so_kit);
+      RefSymmSCMatrix pxVp_y(p_so_dim, p_so_kit);
+      RefSymmSCMatrix pxVp_z(p_so_dim, p_so_kit);
+      p_pl->symmetrize(pxVp_x_skel,pxVp_x);
+      p_pl->symmetrize(pxVp_y_skel,pxVp_y);
+      p_pl->symmetrize(pxVp_z_skel,pxVp_z);
+      pxVp_x_skel = 0;
+      pxVp_y_skel = 0;
+      pxVp_z_skel = 0;
+
+      core_hamiltonian_dk3_contrib(h_pbas,
+                                   E, B,
+                                   p2K2_inv,
+                                   so_to_p,
+                                   pxVp_x);
+      core_hamiltonian_dk3_contrib(h_pbas,
+                                   E, B,
+                                   p2K2_inv,
+                                   so_to_p,
+                                   pxVp_y);
+      core_hamiltonian_dk3_contrib(h_pbas,
+                                   E, B,
+                                   p2K2_inv,
+                                   so_to_p,
+                                   pxVp_z);
+    }
+
   }
 
 #if DK_DEBUG
@@ -811,13 +890,13 @@ Wavefunction::core_hamiltonian_dk(int dk)
 
   // Construct the transform from the momentum basis to the
   // coordinate basis.
-  integral()->set_basis(basis(),momentum_basis_);
-  RefSCMatrix S_ao_p(ao_dimension(), p_ao_dim, p_kit);
+  integral()->set_basis(bas,p_bas);
+  Ref<PetiteList> pl = integral()->petite_list();
+  RefSCMatrix S_ao_p(pl->AO_basisdim(), p_ao_dim, p_kit);
   S_ao_p.assign(0.0);
   hc = new OneBodyIntOp(integral()->overlap());
   S_ao_p.element_op(hc);
   hc=0;
-  Ref<PetiteList> pl = integral()->petite_list();
   // convert s_ao_p into the so ao and so p basis
   RefSCMatrix blocked_S_ao_p(pl->AO_basisdim(), p_pl->AO_basisdim(), p_so_kit);
   blocked_S_ao_p->convert(S_ao_p);
@@ -826,11 +905,34 @@ Wavefunction::core_hamiltonian_dk(int dk)
   S_ao_p_so_l = 0;
 
   // transform h_pbas back to the so basis
-  RefSymmSCMatrix h_dk_so(so_dimension(),basis_matrixkit());
+  RefSymmSCMatrix h_dk_so(pl->SO_basisdim(),bas->so_matrixkit());
   h_dk_so.assign(0.0);
   h_dk_so.accumulate_transform(S_ao_p_so
                                *p_orthog->overlap_inverse()
                                *p_to_so, h_pbas);
+
+  integral()->set_basis(basis());
+
+  // Check to see if the momentum basis spans the coordinate basis.  The
+  // following approach seems reasonable, but a more careful mathematical
+  // analysis would be desirable.
+  double S_ao_projected_trace
+    = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
+    / pl->SO_basisdim()->n();
+  double S_ao_trace = overlap().trace() / pl->SO_basisdim()->n();
+  ExEnv::out0() << indent
+                << "Tr(orbital basis overlap)/N = "
+                << S_ao_trace
+                << std::endl;
+  ExEnv::out0() << indent
+                << "Tr(orbital basis overlap projected into momentum basis)/N = "
+                << S_ao_projected_trace
+                << std::endl;
+  if (fabs(S_ao_projected_trace-S_ao_trace)>lindep_tol_) {
+    ExEnv::out0() << indent
+                  << "WARNING: the momentum basis does not span the orbital basis"
+                  << std::endl;
+  }
 
 #if DK_DEBUG
   S_ao_p_so.print("S_ao_p_so");
@@ -844,9 +946,24 @@ Wavefunction::core_hamiltonian_dk(int dk)
   h_dk_so.print("h_dk_so");
 #endif
 
-  integral()->set_basis(basis());
-
   return h_dk_so;
+}
+
+RefSymmSCMatrix
+Wavefunction::core_hamiltonian_for_basis(
+  const Ref<GaussianBasisSet> &basis,
+  const Ref<GaussianBasisSet> &p_basis)
+{
+  RefSymmSCMatrix hcore;
+
+  if (dk_ > 0) {
+    hcore = core_hamiltonian_dk(dk_, basis, p_basis);
+  }
+  else {
+    hcore = core_hamiltonian_nr(basis);
+  }
+
+  return hcore;
 }
 
 RefSymmSCMatrix
@@ -856,10 +973,10 @@ Wavefunction::core_hamiltonian()
     integral()->set_basis(gbs_);
 
     if (dk_ > 0) {
-      hcore_ = core_hamiltonian_dk(dk_);
+      hcore_ = core_hamiltonian_dk(dk_,gbs_,momentum_basis_);
     }
     else {
-      hcore_ = core_hamiltonian_nr();
+      hcore_ = core_hamiltonian_nr(gbs_);
     }
 
     hcore_.computed() = 1;
@@ -869,15 +986,16 @@ Wavefunction::core_hamiltonian()
 }
 
 RefSymmSCMatrix
-Wavefunction::core_hamiltonian_nr()
+Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
 {
     RefSymmSCMatrix hcore;
 
+    integral()->set_basis(bas);
+
     Ref<PetiteList> pl = integral()->petite_list();
 
-#if ! CHECK_SYMMETRIZED_INTEGRALS
     // form skeleton Hcore in AO basis
-    RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
+    RefSymmSCMatrix hao(bas->basisdim(), bas->matrixkit());
     hao.assign(0.0);
 
     Ref<SCElementOp> hc =
@@ -927,80 +1045,23 @@ Wavefunction::core_hamiltonian_nr()
 
       // compute the charge distribution contributions
       // H_ij += sum_A -q_A sum_k N_A_k (ij|A_k)
-      integral()->set_basis(gbs_,gbs_,atom_basis_);
+      integral()->set_basis(bas,bas,atom_basis_);
       Ref<TwoBodyThreeCenterInt> cd_tbint
         = integral_->electron_repulsion3();
       Ref<OneBodyInt> cd_int = new ChargeDistInt(cd_tbint, atom_basis_coef_);
       hc = new OneBodyIntOp(new SymmOneBodyIntIter(cd_int,pl));
       hao.element_op(hc);
-      integral()->set_basis(gbs_);
       hc=0;
       cd_int=0;
       cd_tbint=0;
     }
 
     // now symmetrize Hso
-    RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
+    RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);
 
     hcore = h;
-#else
-    ExEnv::out0() << "Checking symmetrized hcore" << endl;
-
-    RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
-    hao.assign(0.0);
-
-    Ref<SCElementOp> hc =
-      new OneBodyIntOp(new OneBodyIntIter(integral_->kinetic()));
-    hao.element_op(hc);
-    hc=0;
-
-//     std::cout << "null atom_basis" << std::endl;
-    Ref<OneBodyInt> nuc = integral_->nuclear();
-    nuc->reinitialize();
-    hc = new OneBodyIntOp(new OneBodyIntIter(nuc));
-    hao.element_op(hc);
-    hc=0;
-
-    hcore = pl->to_SO_basis(hao);
-
-    //// use petite list to form haopl
-
-    // form skeleton Hcore in AO basis
-    RefSymmSCMatrix haopl(basis()->basisdim(), basis()->matrixkit());
-    haopl.assign(0.0);
-
-    hc = new OneBodyIntOp(new SymmOneBodyIntIter(integral_->kinetic(), pl));
-    haopl.element_op(hc);
-    hc=0;
-
-    nuc = integral_->nuclear();
-    nuc->reinitialize();
-    hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
-    haopl.element_op(hc);
-    hc=0;
-
-    // also symmetrize using pl->symmetrize():
-    RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
-    pl->symmetrize(haopl,h);
-
-    //// compare the answers
-
-    int n = hcore.dim().n();
-    int me = MessageGrp::get_default_messagegrp()->me();
-    for (int i=0; i<n; i++) {
-      for (int j=0; j<=i; j++) {
-        double val1 = hcore.get_element(i,j);
-        double val2 = h.get_element(i,j);
-        if (me == 0) {
-          if (fabs(val1-val2) > 1.0e-6) {
-            ExEnv::outn() << "bad hcore vals for " << i << " " << j
-                         << ": " << val1 << " " << val2 << endl;
-          }
-        }
-      }
-    }
-#endif
+    integral()->set_basis(basis());
 
     return hcore;
 }
@@ -1314,6 +1375,12 @@ Ref<GaussianBasisSet>
 Wavefunction::basis() const
 {
   return gbs_;
+}
+
+Ref<GaussianBasisSet>
+Wavefunction::momentum_basis() const
+{
+  return momentum_basis_;
 }
 
 Ref<Molecule>

@@ -30,12 +30,17 @@
 #endif
 
 #include <stdexcept>
+#include <util/class/scexception.h>
+#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/mbptr12.h>
 
 using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
+#define NEW_HCORE 1
 
 RefSCMatrix
 R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
@@ -52,6 +57,68 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
 
   RefSCMatrix vec1t = bra_space->coefs().t();
   RefSCMatrix vec2 = ket_space->coefs();
+
+#if NEW_HCORE
+  RefSCDimension aodim1 = vec1t.coldim();
+  RefSCDimension aodim2 = vec2.rowdim();
+  Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
+
+  // cast the wavefunction to MBPT2_R12
+  MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
+  if (r12wfn == 0) {
+      throw ProgrammingError(
+          "r12info()->wfn() was not an MBPT2_R12 object",
+          __FILE__, __LINE__, class_desc());
+    }
+  Ref<SCF> ref = r12wfn->ref();
+  // Form the DK correction in the current basis using the momentum
+  // basis of the reference wavefunction.  The momentum basis in the
+  // reference should be a superset of hcore_basis
+  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
+  Ref<GaussianBasisSet> hcore_basis;
+  if (bs1_eq_bs2) {
+      hcore_basis = bs1;
+    }
+  else {
+      hcore_basis = bs1 + bs2;
+    }
+
+  RefSymmSCMatrix hsymm
+      = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+
+
+  // convert hsymm to the AO basis
+  Ref<Integral> localints = r12info_->integral()->clone();
+  localints->set_basis(hcore_basis,hcore_basis);
+  Ref<PetiteList> hcore_pl = localints->petite_list();
+  RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
+  hsymm = 0;
+
+  RefSCMatrix h(aodim1, aodim2, sokit);
+  if (bs1_eq_bs2) {
+      h.assign(0.0);
+      h.accumulate(hsymm_ao);
+    }
+  else {
+      int br = 0;
+      int er = bs1->nbasis() - 1;
+      int bc = 0;
+      int ec = bs2->nbasis() - 1;
+      int source_br = 0;
+      int source_bc = bs1->nbasis();
+      RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+      hrect_ao.assign(0.0);
+      hrect_ao.accumulate(hsymm_ao);
+      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
+    }
+
+#else // ! NEW_HCORE
+
+  if (r12info()->wfn()->dk() > 0) {
+      throw ProgrammingError(
+          "cannot use reference with dk > 0 with old mp2r12 fock algorithm",
+          __FILE__, __LINE__, class_desc());
+    }
 
   Ref<Integral> localints = r12info_->integral()->clone();
   localints->set_basis(bs1,bs2);
@@ -109,10 +176,13 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
       }
   }
 
+  h_ints = 0;
+
+#endif // NEW_HCORE
+
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
   // and clean up a bit
-  h_ints = 0;
   h = 0;
   
   const bool spin_unrestricted = spin_polarized();

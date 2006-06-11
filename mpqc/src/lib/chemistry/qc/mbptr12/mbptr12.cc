@@ -765,8 +765,18 @@ MBPT2_R12::check_integral_factory_()
     allowed_integral_factory = true;
   }
 #endif
-  if (!allowed_integral_factory)
-    throw InputError("MBPT2_R12::check_integral_factory_() -- invalid integral factory provided. Try using IntegralCints or IntegralLibint2.",__FILE__,__LINE__);
+  if (!allowed_integral_factory) {
+    InputError ex("MBPT2_R12::check_integral_factory_(): invalid integral factory provided.",
+                  __FILE__, __LINE__, 0, 0, class_desc());
+    try {
+      ex.elaborate() << "Try using IntegralCints, IntegralCCA, or IntegralLibint2."
+                     << std::endl
+                     << "The given integral factory was of type " << integral()->class_name()
+                     << std::endl;
+    }
+    catch (...) {}
+    throw ex;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

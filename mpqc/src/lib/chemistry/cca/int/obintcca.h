@@ -55,6 +55,8 @@ namespace sc {
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
+    double* temp_buffer_;
+    int n_segment_;
 
   protected:
     
@@ -89,6 +91,7 @@ namespace sc {
     double* temp_buffer_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+    int n_segment_;
 
   public:
     OneBodyDerivIntCCA( Integral* integral,

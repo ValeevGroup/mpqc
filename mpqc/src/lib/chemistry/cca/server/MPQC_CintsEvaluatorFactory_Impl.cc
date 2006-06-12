@@ -227,9 +227,6 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
-    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
-              << " evaluator\n";
-
     // this needs additional data
     //if( itype == "pointcharge"  && ideriv == 0 )
     //  obint = integral_->point_charge1( ??? );
@@ -290,9 +287,6 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
-
-    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
-              << " evaluator\n";
 
     if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec.push_back( integral_->overlap() );
@@ -407,9 +401,6 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
-    std::cerr << "MPQC.CintsEvaluatorFactory: creating " << itype
-              << " evaluator\n";
-
     //if( itype == "eri3"  && ideriv == 0 )
     //  tb3cint_vec_.push_back( integral_->electron_repulsion3() );
     //else
@@ -505,12 +496,10 @@ throw (
       throw runtime_error("CintsEvaluatorFactory: unsupported integral set");
 
     if( tbint_vec.size() && is_tb ) {
-      std::cerr << "MPQC.CintsEvaluatorFactory: creating eri4 evaluator\n";
       eval.add_evaluator( (void*) tbint_vec.back().pointer(), idesc );
       tbint_vec_.push_back( tbint_vec );
     }
     else if( tbderivint_vec.size() && is_tbderiv ) {
-      std::cerr << "MPQC.CintsEvaluatorFactory: creating eri4 evaluator\n";
       eval.add_evaluator( (void*) tbderivint_vec.back().pointer(), idesc );
       tbderivint_vec_.push_back( tbderivint_vec );
 
@@ -518,7 +507,6 @@ throw (
   }
 
   if( need_comp ) {
-    std::cerr << "MPQC.CintsEvaluatorFactory: creating grt evaluator\n";
     grts_.push_back( integral_->grt() );
     comps_.push_back( comp );
     eval.add_composite_evaluator( (void*) grts_.back().pointer(), comp );

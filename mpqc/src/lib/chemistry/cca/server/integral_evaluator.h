@@ -302,6 +302,14 @@ namespace MpqcCca {
       
     sidl::array<double> compute_array ( computer_type* computer ) 
     {
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support compute_array yet");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+
       /*
       compute( shellnum1, shellnum2, deriv_level, deriv_atom );
   
@@ -383,6 +391,14 @@ namespace MpqcCca {
 
     sidl::array<double> compute_array ( computer_type* computer )
     {
+      sidl::SIDLException ex = sidl::SIDLException::_create();
+      try {
+        ex.setNote("MPQC doesn't support compute_array yet");
+        ex.add(__FILE__, __LINE__,"");
+      }
+      catch(...) { }
+      throw ex;
+
       /*
       compute( shellnum1, shellnum2, deriv_level, deriv_atom );
 

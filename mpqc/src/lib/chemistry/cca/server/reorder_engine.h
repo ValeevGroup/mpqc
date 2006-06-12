@@ -22,9 +22,10 @@ namespace MpqcCca {
     ~ReorderEngine( ) { }
     
   private:
-    int n_center_, maxam_, max_deriv_lvl_, max_segment_size_;
+    int n_center_, maxam_, max_deriv_lvl_, max_segment_size_, max_n_segment_;
     int **reorder_;
     std::vector<int> deriv_lvls_;
+    std::vector<int> segments_;
     std::vector<double*> buffers_;
     double* temp_buffer_;
     sc::Ref<sc::GaussianBasisSet> basis_sets_[4];
@@ -40,6 +41,8 @@ namespace MpqcCca {
                sc::Ref<sc::GaussianBasisSet>,
                sc::Ref<sc::GaussianBasisSet>,
                sc::Ref<sc::GaussianBasisSet> ); 
+    
+    void check_temp_buffer( int deriv_lvl, int n_segment );
 
     void add_buffer ( double* buffer,
                       Chemistry::QC::GaussianBasis::IntegralDescr desc );
@@ -47,7 +50,7 @@ namespace MpqcCca {
     void do_it( int s1, int s2, int s3, int s4 );
  
     void reorder_1c( double* buf, double* tbuf, int offset );
-    void reorder_2c( double* buf, double* tbuf, int is_deriv );
+    void reorder_2c( double* buf, double* tbuf, int offset, bool is_deriv );
     void reorder_3c( double* buf, double* tbuf, int offset );
     void reorder_4c( double* buf, double* tbuf, int offset );
     

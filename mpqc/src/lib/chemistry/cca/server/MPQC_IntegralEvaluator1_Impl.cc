@@ -162,6 +162,14 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_array)
 
+  sidl::SIDLException ex = sidl::SIDLException::_create();
+  try {
+    ex.setNote("function not implemented yet");
+    ex.add(__FILE__, __LINE__,"");
+  }
+  catch(...) { }
+  throw ex;
+
   computer_.set_shells( shellnum1 );
   return eval_.compute_array( &computer_ );
 
@@ -179,7 +187,15 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_bounds)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.compute_bounds} (compute_bounds method)
+
+  sidl::SIDLException ex = sidl::SIDLException::_create();
+  try {
+    ex.setNote("function not implemented yet");
+    ex.add(__FILE__, __LINE__,"");
+  }
+  catch(...) { }
+  throw ex;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_bounds)
 }
 
@@ -194,7 +210,15 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_bounds_array)
-  // Insert-Code-Here {MPQC.IntegralEvaluator1.compute_bounds_array} (compute_bounds_array method)
+
+  sidl::SIDLException ex = sidl::SIDLException::_create();
+  try {
+    ex.setNote("function not implemented yet");
+    ex.add(__FILE__, __LINE__,"");
+  }
+  catch(...) { }
+  throw ex;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_bounds_array)
 }
 

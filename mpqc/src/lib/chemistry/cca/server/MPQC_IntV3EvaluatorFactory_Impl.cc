@@ -253,9 +253,6 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
-    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
-              << " evaluator\n";
- 
     // this needs additional data
     //if( itype == "pointcharge"  && ideriv == 0 )
     //  obint = integral_->point_charge1( ??? );
@@ -318,9 +315,6 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
-    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype 
-              << " evaluator\n";
-
     if( itype == "overlap"  && ideriv == 0 ) {
       obint_vec.push_back( integral_->overlap() );
       is_ob = true;
@@ -338,15 +332,6 @@ throw (
       is_ob = true;
     }
     else if( itype == "dipole" && ideriv == 0 ) {
-
-      sidl::SIDLException ex = sidl::SIDLException::_create();
-      try {
-        ex.setNote("IntV3 dipole doesn't work via CCA yet (reordering)");
-        ex.add(__FILE__, __LINE__,"");
-      }
-      catch(...) { }
-      throw ex;
-
       Chemistry::QC::GaussianBasis::DipoleIntegralDescr ddesc;
       ddesc = idesc;
       Chemistry::QC::GaussianBasis::DipoleData cca_data;
@@ -466,9 +451,6 @@ throw (
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
-    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
-              << " evaluator\n";
-
     if( itype == "eri3"  && ideriv == 0 ) {
       tb3cint_vec.push_back( integral_->electron_repulsion3() );
       is_tb3c = true;
@@ -534,9 +516,6 @@ throw (
     IntegralDescr idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
-
-    std::cerr << "MPQC.IntV3EvaluatorFactory: creating " << itype
-              << " evaluator\n";
 
     if( itype == "eri4"  && ideriv == 0 ) {
       tbint_vec.push_back( integral_->electron_repulsion() );

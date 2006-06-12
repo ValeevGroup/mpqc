@@ -263,6 +263,14 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
+  sidl::SIDLException ex = sidl::SIDLException::_create();
+  try {
+    ex.setNote("function not implemented yet");
+    ex.add(__FILE__, __LINE__,"");
+  }
+  catch(...) { }
+  throw ex;
+
   // uh oh, multiple evals???
   // this won't work
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
@@ -317,7 +325,15 @@ throw (
   ::sidl::BaseException
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds_array)
-  // Insert-Code-Here {MPQC.IntegralEvaluator4.compute_bounds_array} (compute_bounds_array method)
+
+  sidl::SIDLException ex = sidl::SIDLException::_create();
+  try {
+    ex.setNote("function not implemented yet");
+    ex.add(__FILE__, __LINE__,"");
+  }
+  catch(...) { }
+  throw ex;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds_array)
 }
 

@@ -49,15 +49,17 @@ ReorderEngine::init( int n,
   // A 1st order nuclear derivative buffer has three segements (dx,dy,dx), etc.
 
   // compute max segment size and max am
-  int max_segment_size_ = basis_sets_[0]->max_ncartesian_in_shell();
+  max_segment_size_ = basis_sets_[0]->max_ncartesian_in_shell();
   maxam_ = basis_sets_[0]->max_angular_momentum();
   for( int i=1; i<n_center_; ++i) {
     max_segment_size_ *= basis_sets_[i]->max_ncartesian_in_shell();
     maxam_ = max( maxam_, basis_sets_[i]->max_angular_momentum() );
   }
 
-  max_deriv_lvl_ = 0; // until we discover otherwise
-  temp_buffer_ = new double[max_segment_size_*3];
+  // until we discover otherwise
+  max_deriv_lvl_ = 0;
+  max_n_segment_ = 1;
+  temp_buffer_ = new double[max_segment_size_];
 
   // construct reorder arrays
 
@@ -94,16 +96,38 @@ ReorderEngine::init( int n,
 }
 
 void
+ReorderEngine::check_temp_buffer( int deriv_lvl, int n_segment )
+{
+  bool changed=false;
+  if( deriv_lvl > max_deriv_lvl_ ) {
+    changed = true;
+    max_deriv_lvl_ = deriv_lvl;
+  }
+  if( n_segment > max_n_segment_ ) {
+    changed = true;
+    max_n_segment_ = n_segment;
+  }
+
+  if( changed ) {
+    int nderiv=1;
+    if( max_deriv_lvl_ == 1 )
+      nderiv = 3;
+    delete [] temp_buffer_;
+    temp_buffer_ = new double[ max_segment_size_ * max_n_segment_ * nderiv ];
+  }
+
+}
+
+void
 ReorderEngine::add_buffer ( double* buffer, IntegralDescr desc )
 {
   buffers_.push_back( buffer );
   int deriv_lvl = desc.get_deriv_lvl();
   deriv_lvls_.push_back( deriv_lvl );
-  if( max_deriv_lvl_ < deriv_lvl ) {
-    max_deriv_lvl_ = deriv_lvl;
-    //delete temp_buffer_; //mistmatched ???
-    //temp_buffer_ = new double[max_segment_size_*3];
-  } 
+  int n_segment = desc.get_n_segment();
+  segments_.push_back( n_segment );
+  check_temp_buffer( deriv_lvl, n_segment );
+
   if( max_deriv_lvl_ > 1 ) {
     sidl::SIDLException ex = sidl::SIDLException::_create();
     try {
@@ -132,47 +156,65 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
 
   vector<double*>::iterator buff_it = buffers_.begin();
   vector<int>::iterator lvl_it = deriv_lvls_.begin();
+  vector<int>::iterator seg_it = segments_.begin();
   for( ; buff_it != buffers_.end(); ++buff_it ) {
 
-    int real_size;
     int deriv_lvl = *lvl_it;
-    if( deriv_lvl == 0 )
-      real_size = segment_size;
-    else if( deriv_lvl == 1 )
-      real_size = segment_size * 3;
+    int n_segment = *seg_it;
+   
+    int n_deriv = 1;
+    if( deriv_lvl == 1 ) n_deriv = 3;
+    int segxderiv = n_segment * n_deriv; 
+    int real_size = segment_size * segxderiv;
 
     double* buf = *buff_it;
     for( int i=0; i<real_size; ++i)
       temp_buffer_[i] = buf[i];
 
-    int deriv_offset;
+    int offset=0;
+
     if( n_center_ == 1 ) {
-      if( deriv_lvl == 0 )
-        reorder_1c( buf, temp_buffer_, 0 );
+      for( int i=0; i<segxderiv; ++i ) {
+        reorder_1c( buf, temp_buffer_, offset );
+        offset += segment_size;
+      }
     }
+
     else if( n_center_ == 2 ) {
       if( deriv_lvl == 0 )
-        reorder_2c( buf, temp_buffer_, 0 );
+        for( int i=0; i<n_segment; ++i ) {
+          reorder_2c( buf, temp_buffer_, offset, false );
+          offset += segment_size;
+        }
       else if( deriv_lvl == 1 ) {
+
         // a 2-center intv3 derivative buffer is composed of 
         // nfunc triplets (dx,dy,dz) which must be repacked
         // into 3 (dx,dy,dz) shell doublets of nfunc entries
-        reorder_2c( buf, temp_buffer_, 1 );
+        offset = 0;
+        for( int i=0; i<n_segment; ++i ) {
+          reorder_2c( buf, temp_buffer_, offset, true );
+          offset += segment_size * n_deriv;
+        }
       }
     }
+
     else if( n_center_ == 3 ) {
-      if( deriv_lvl == 0 )
-        reorder_3c( buf, temp_buffer_, 0 );
+      for( int i=0; i<segxderiv; ++i ) {
+        reorder_3c( buf, temp_buffer_, offset );
+        offset += segment_size;
+      }
     }
+
     else if( n_center_ == 4 ) {
-      if( deriv_lvl == 0 )
-        reorder_4c( buf, temp_buffer_, 0 );
-      else if( deriv_lvl == 1 )
-        for(int i=0; i<3; ++i) {
-          deriv_offset = i*segment_size;
-          reorder_4c( buf, temp_buffer_, deriv_offset );
-        }
+      for( int i=0; i<segxderiv; ++i ) {
+        reorder_4c( buf, temp_buffer_, offset );
+        offset += segment_size;
+      }
     }
+
+    ++lvl_it;
+    ++seg_it;
   }
 
 }
@@ -183,14 +225,15 @@ ReorderEngine::reorder_1c( double* buf, double* tbuf, int offset )
 }
 
 void
-ReorderEngine::reorder_2c( double* buf, double* tbuf, int is_deriv )
+ReorderEngine::reorder_2c( double* buf, double* tbuf, int offset, 
+                           bool is_deriv )
 {
   GaussianShell* s1 = shells_[0];
   GaussianShell* s2 = shells_[1];
   int nc1 = s1->ncontraction();
   int nc2 = s2->ncontraction();
 
-  int index=0, con2_offset=0, local2_offset, 
+  int index=offset, con2_offset=0, local2_offset, 
       c1_base, c2_base;
 
   int temp;
@@ -199,7 +242,7 @@ ReorderEngine::reorder_2c( double* buf, double* tbuf, int is_deriv )
   int s1_is_cart, s2_is_cart, nfunc, s1_nfunc, s2_nfunc; 
   nfunc = s1->nfunction() * s2->nfunction();
 
-  c1_base = 0;
+  c1_base = offset;
   for( int c1=0; c1<nc1; ++c1 ) {
 
     //c1_base = index;

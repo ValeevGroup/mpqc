@@ -46,9 +46,6 @@
 #if HAVE_INTEGRALLIBINT2
 #  include <chemistry/qc/libint2/libint2.h>
 #endif
-#if HAVE_CHEMISTRY_CCA
-#  include <chemistry/cca/int/intcca.h>
-#endif
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
@@ -759,12 +756,9 @@ MBPT2_R12::check_integral_factory_()
     allowed_integral_factory = true;
   }
 #endif
-#if HAVE_CHEMISTRY_CCA
-  IntegralCCA* ccaintf = dynamic_cast<IntegralCCA*>(integral().pointer());
-  if(ccaintf) {
+  if(strcmp(integral()->class_name(),"IntegralCCA") == 0) {
     allowed_integral_factory = true;
   }
-#endif
   if (!allowed_integral_factory) {
     InputError ex("MBPT2_R12::check_integral_factory_(): invalid integral factory provided.",
                   __FILE__, __LINE__, 0, 0, class_desc());

@@ -220,6 +220,11 @@ class MemoryGrp: public DescribedClass {
         called to process all outstanding requests. */
     virtual void catchup();
 
+    /** Returns a copy of this MemoryGrp specialization that provides an
+        independent communication context. This will throw for
+        specializations that do not reimplement it. */
+    virtual Ref<MemoryGrp> clone(void);
+
     /// Prints out information about the object.
     virtual void print(std::ostream &o = ExEnv::out0()) const;
 

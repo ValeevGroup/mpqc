@@ -51,7 +51,6 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
                              const Ref<GaussianBasisSet> &bs2,
 			     const Ref<GaussianBasisSet> &bs3,
 			     const Ref<GaussianBasisSet> &bs4,
-			     size_t storage,
 			     IntegralSuperFactory fac,
 			     CompositeIntegralDescr cdesc,
                              bool use_opaque) :
@@ -73,8 +72,6 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   desc = Chemistry::R12T2IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t2;
 
-  eval_factory_.set_storage(storage);
-  
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
   loginv_ = 1.0/log(2.0);
@@ -162,7 +159,6 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 					const Ref<GaussianBasisSet> &bs2,
 					const Ref<GaussianBasisSet> &bs3,
 					const Ref<GaussianBasisSet> &bs4,
-					size_t storage,
 					IntegralSuperFactory fac,
 					CompositeIntegralDescr cdesc,
 					bool use_opaque ) :
@@ -171,8 +167,6 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
   eval_factory_(fac), cdesc_(cdesc),
   use_opaque_(use_opaque)
 {
-  eval_factory_.set_storage(storage);
-  
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
   loginv_ = 1.0/log(2.0);

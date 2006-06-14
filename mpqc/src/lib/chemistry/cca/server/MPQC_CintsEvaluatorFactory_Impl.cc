@@ -193,6 +193,7 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory.set_storage)
 
   storage_ = storage;
+  integral_->set_storage( storage_ );
 
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.set_storage)
 }
@@ -216,7 +217,6 @@ throw (
 
   vector< Ref<OneBodyOneCenterInt> > obocint_vec;
 
-  integral_->set_storage(storage_);
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
@@ -270,7 +270,6 @@ throw (
 
   bool is_ob, is_obderiv, is_tbtc;
 
-  integral_->set_storage(storage_);
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
@@ -381,7 +380,6 @@ throw (
 
   vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec;
 
-  integral_->set_storage(storage_);
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
@@ -452,7 +450,6 @@ throw (
       need_comp = true;
   }
 
-  integral_->set_storage(storage_);
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );

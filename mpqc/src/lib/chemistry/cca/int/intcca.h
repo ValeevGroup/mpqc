@@ -130,7 +130,6 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      size_t storage_;
       Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
 
@@ -139,10 +138,10 @@ namespace sc {
       twobody_generator( ) { }
 
       twobody_generator(
-          Integral* integral, size_t storage, 
+          Integral* integral,
           Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
           bool use_opaque ):
-	integral_(integral), storage_(storage), factory_(fac), 
+	integral_(integral), factory_(fac), 
 	use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
@@ -152,11 +151,10 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc ) 
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
       {
 	Ref<TwoBodyIntCCA> eval;
 	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				  storage_,
 				  factory_, cdesc, use_opaque_ );
 	return eval;
       }
@@ -171,7 +169,6 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      size_t storage_;
       Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
       bool use_opaque_;
 
@@ -181,10 +178,9 @@ namespace sc {
 
       twobody_deriv_generator(
           Integral* integral,
-          size_t storage, 
           Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
           bool use_opaque ):
-	integral_(integral), storage_(storage), factory_(fac),
+	integral_(integral), factory_(fac),
 	use_opaque_(use_opaque) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
@@ -198,7 +194,7 @@ namespace sc {
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				       storage_, factory_, cdesc, use_opaque_ );
+				       factory_, cdesc, use_opaque_ );
 	return eval;
       }
 
@@ -315,6 +311,12 @@ namespace sc {
     ~IntegralCCA();
 
     Integral* clone();
+
+    void set_storage(size_t i) 
+    { 
+      storage_=i; 
+      eval_factory_.set_storage( storage_ );
+    };
 
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);

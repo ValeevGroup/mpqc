@@ -246,7 +246,6 @@ throw (
   throw ex;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_bounds_array)
-
 }
 
 

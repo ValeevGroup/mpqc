@@ -293,15 +293,13 @@ IntegralCCA::init_generators()
     obd( obdgen_ );
   get_onebody_deriv = obd;
 
-  tbgen_ = twobody_generator( this, 50000000,
-                              eval_factory_, use_opaque_ );
+  tbgen_ = twobody_generator( this, eval_factory_, use_opaque_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
     tb( tbgen_ );
   get_twobody = tb;
 
-  tbdgen_ = twobody_deriv_generator( this, 50000000,
-                                     eval_factory_, use_opaque_ );
+  tbdgen_ = twobody_deriv_generator( this, eval_factory_, use_opaque_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
     tbd( tbdgen_ );

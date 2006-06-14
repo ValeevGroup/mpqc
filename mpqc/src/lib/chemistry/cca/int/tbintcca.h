@@ -70,7 +70,6 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&b2,
 		   const Ref<GaussianBasisSet>&b3, 
 		   const Ref<GaussianBasisSet>&b4,	   
-		   size_t,
 		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
 		   bool );
@@ -116,7 +115,6 @@ namespace sc {
 			const Ref<GaussianBasisSet>&b2,
 			const Ref<GaussianBasisSet>&b3, 
 			const Ref<GaussianBasisSet>&b4,	   
-			size_t,
 			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 			Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
 			bool );

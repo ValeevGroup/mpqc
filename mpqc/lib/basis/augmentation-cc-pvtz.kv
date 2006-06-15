@@ -1,4 +1,390 @@
 basis:(
+%Elements                             References
+%--------                             ---------
+% H    :  T.H. Dunning, Jr. J. Chem. Phys. 90, 1007 (1989).
+% He   :  D.E. Woon and T.H. Dunning, Jr., J. Chem. Phys. 100, 2975 (1994).
+% B - F:  R.A. Kendall, T.H. Dunning, Jr. and R.J. Harrison, J. Chem. Phys. 96,
+%         6769 (1992).
+%Al - Cl: D.E. Woon and T.H. Dunning, Jr. J. Chem. Phys. 98, 1358 (1993).
+%
+%
+% BASIS SET: Diffuse (1s,1p,1d)
+ hydrogen: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.025260000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.102000000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.247000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ boron: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.029140000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.020960000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.060400000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.163000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ carbon: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.044020000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.035690000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.100000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.268000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ nitrogen: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.057600000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.049100000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.151000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.364000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ oxygen: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.073760000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.059740000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.214000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.500000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ fluorine: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.091580000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.073610000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.292000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.724000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ neon: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.113300000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.091750000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.386000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            1.084000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ aluminum: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.022100000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.014600000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.035600000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.085800000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ silicon: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.033000000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.023700000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.055600000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.125000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ phosphorus: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.040900000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.030700000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.077500000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.165000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ sulfur: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.049700000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.035100000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.101000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.218000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ chlorine: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.059100000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.041900000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.135000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.312000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ argon: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.068500000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.048700000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.169000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.406000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ gallium: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.014398000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.019300000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.038700000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.098000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ germanium: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.027370000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.021368000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.052800000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.132300000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ arsenic: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.033407000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.026799000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.070000000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.169000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ selenium: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.039201000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.030251000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.083700000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.188000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ bromine: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.045593000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.035142000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.104700000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.258000000      1.00000000
+   })
+ ]
+%
+% BASIS SET: Diffuse (1s,1p,1d,1f)
+ krypton: "augmentation-cc-pVTZ": [
+  (type: [am = s]
+   {exp coef:0} = {
+            0.051985000      1.00000000
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            0.040033000      1.00000000
+   })
+  (type: [(am = d puream = 1)]
+   {exp coef:0} = {
+            0.125700000      1.00000000
+   })
+  (type: [(am = f puream = 1)]
+   {exp coef:0} = {
+            0.328000000      1.00000000
+   })
+ ]
+)
+basis:(
 % Correlation Consistent Basis Set for  Sc
 % N.B. Balabanov and K.A. Peterson, J. Chem. Phys. 123, 064107 (2005)
 % Nonrelativistic correlation consistent polarized  Valence Triple-zeta Basis Set for Sc, Augmenting Functions

@@ -254,7 +254,7 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
   dc.clear();
   if( cca_dc_.has_omitted_center() )
     dc.add_omitted(cca_dc_.omitted_center(),cca_dc_.omitted_atom());
-  for( int i=0; i<cca_dc_.n(); ++i) 
+  for( int i=0; i<cca_dc_.n(); ++i)
     dc.add_center(cca_dc_.center(i),cca_dc_.atom(i));
 }
 

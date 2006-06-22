@@ -67,9 +67,9 @@ ReorderEngine::init( int n,
   reorder_[0] = new int[1];
   reorder_[0][0] = 0;
 
+  IntegralV3 integral;
   for( int i=1; i<=maxam_; ++i) {
 
-    IntegralV3 integral;
     CartesianIter *v3iter = integral.new_cartesian_iter(i);
     MPQC::CartesianIterCCA iter(i);
     MPQC::CartesianIterCCA *ccaiter = &iter;
@@ -110,8 +110,11 @@ ReorderEngine::check_temp_buffer( int deriv_lvl, int n_segment )
 
   if( changed ) {
     int nderiv=1;
-    if( max_deriv_lvl_ == 1 )
+    if( max_deriv_lvl_ == 1 ) {
       nderiv = 3;
+      if( n_center_ > 2 )
+        nderiv *= n_center_ - 1;
+    }
     delete [] temp_buffer_;
     temp_buffer_ = new double[ max_segment_size_ * max_n_segment_ * nderiv ];
   }
@@ -165,6 +168,8 @@ ReorderEngine::do_it( int s1, int s2, int s3, int s4 )
     int n_deriv = 1;
     if( deriv_lvl == 1 ) n_deriv = 3;
     int segxderiv = n_segment * n_deriv; 
+    if( deriv_lvl == 1 && n_center_ > 2 )
+      segxderiv *= n_center_ - 1;
     int real_size = segment_size * segxderiv;
 
     double* buf = *buff_it;

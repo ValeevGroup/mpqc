@@ -276,6 +276,8 @@ IntegralCCA::init_factory()
   else { 
     //do a straightforward hook up
   }
+
+  eval_factory_.set_storage(0);
 }
 
 void

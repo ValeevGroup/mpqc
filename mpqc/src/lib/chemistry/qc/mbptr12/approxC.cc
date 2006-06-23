@@ -136,7 +136,7 @@ R12IntEval::compute_BC_()
 
 #if INCLUDE_P
     // compute P
-    // WARNING implemented only using CABS/CABS+ approach
+    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
       
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
       if (!abs_eq_obs && 

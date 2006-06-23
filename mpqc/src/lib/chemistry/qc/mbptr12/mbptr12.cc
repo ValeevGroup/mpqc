@@ -312,20 +312,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Klopper and Samson's ABS method is only implemented for certain "old" methods
   // Make sure that the ABS method is available for the requested MP2-R12 energy
-#if 0
-  const bool must_use_cabs = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B ||
+  const bool must_use_cabs = (!gbc_ ||
+			      !ebc_ ||
+			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs) ||
+			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs) ||
                               !basis()->equiv(vir_basis_));
-#else
-  const bool must_use_cabs = (!gbc_ || !ebc_ ||
-                              !basis()->equiv(vir_basis_));
-#endif
   if (must_use_cabs &&
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
-
-  // Must use CABS+ for approximation C
-  if (!abs_eq_obs && stdapprox() == LinearR12::StdApprox_C && abs_method() != LinearR12::ABS_CABSPlus)
-    throw InputError("MBPT2_R12::MBPT2_R12() -- abs_method must be cabs+ for when stdapprox = C",__FILE__,__LINE__);
 
   // Standard approximation A is not valid when gbc_ = false or ebc_ = false
   if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )

@@ -168,7 +168,12 @@ TwoBodyInt::set_integral_storage(size_t storage)
 double 
 TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
 {
-  return log2_to_double_[ log2_shell_bound(s1,s2,s3,s4) - SCHAR_MIN ];
+  int ibound = log2_shell_bound(s1,s2,s3,s4);
+  if( ibound < SCHAR_MIN ) 
+    return log2_to_double_[0];
+  else if( ibound > SCHAR_MAX ) 
+    return log2_to_double_[ SCHAR_MAX - SCHAR_MIN ];
+  return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
 ///////////////////////////////////////////////////////////////////////

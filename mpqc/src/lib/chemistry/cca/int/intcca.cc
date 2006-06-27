@@ -252,7 +252,7 @@ IntegralCCA::init_factory()
     nsubfac = subfac_set.size();
     set<string>::iterator iter;
     for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
-      std::cerr << "Instantiating: " << *iter << std::endl;
+      ExEnv::out0() << indent << "Instantiating: " << *iter << std::endl;
       ostringstream sfname;
       sfname << "subfactory" << sfactory_instance_number;
       ++sfactory_instance_number;

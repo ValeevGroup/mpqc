@@ -142,7 +142,37 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 int
 TwoBodyIntCCA::log2_shell_bound( int i, int j, int k, int l )
 {
-  return static_cast<int>( logb( eval_.compute_bounds(i,j,k,l) ) );
+
+  double dbound = eval_.compute_bounds(i,j,k,l);
+
+  // mpqc shouldn't return close to 0, but other codes might
+  if( dbound < tol_ )
+    return int_bound_min_;
+
+  return static_cast<int>( logb(dbound) );
+
+
+// something like this could be required for benchmarking if rounding
+// effects become problematic, seems ok so far, so I'll leave it out
+// for performance
+/*
+  double value = eval_.compute_bounds(i,j,k,l);
+  int upper;
+  if (value > tol_) {
+    double log_dbl = log(value)*loginv_;
+    upper = static_cast<int>( ceil(log_dbl) );
+    // nasty check for rounding effects
+    if( upper > int_bound_min_ ) {
+      int lower = upper - 1;
+      double lower_dbl = static_cast<double>( lower ); 
+      if( abs(log_dbl - lower_dbl) < 0.01 )
+        upper = lower;
+    }
+  }
+  else upper = int_bound_min_;
+  return upper;
+*/
+
 }
 
 unsigned int
@@ -261,7 +291,36 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int i, int j, int k, int l)
 {
-  return static_cast<int>( logb( eval_.compute_bounds( i, j, k, l ) ) );
+  double dbound = eval_.compute_bounds(i,j,k,l);
+
+  // mpqc shouldn't return close to 0, but other codes might
+  if( dbound < tol_ )
+    return int_bound_min_;
+
+  return static_cast<int>( logb(dbound) );
+
+
+// something like this could be required for benchmarking if rounding
+// effects become problematic, seems ok so far, so I'll leave it out
+// for performance
+/*
+  double value = eval_.compute_bounds(i,j,k,l);
+  int upper;
+  if (value > tol_) {
+    double log_dbl = log(value)*loginv_;
+    upper = static_cast<int>( ceil(log_dbl) );
+    // nasty check for rounding effects
+    if( upper > int_bound_min_ ) {
+      int lower = upper - 1;
+      double lower_dbl = static_cast<double>( lower );
+      if( abs(log_dbl - lower_dbl) < 0.01 )
+        upper = lower;
+    }
+  }
+  else upper = int_bound_min_;
+  return upper;
+*/
+
 }
 
 unsigned int

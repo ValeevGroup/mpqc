@@ -105,7 +105,7 @@ class Integral : public SavableState {
     virtual int equiv(const Ref<Integral> &);
 
     /// Sets the total amount of storage, in bytes, that is available.
-    void set_storage(size_t i) { storage_=i; };
+    virtual void set_storage(size_t i) { storage_=i; };
     /// Returns how much storage has been used.
     size_t storage_used() { return storage_used_; }
     /// Returns how much storage was not needed.

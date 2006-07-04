@@ -267,8 +267,9 @@ namespace sc {
             } // bra loop
           } // loop over tasks with access
           
-        }
-      }
+	  accum->deactivate();
+        } // ket blocks
+      } // bra blocks
 
       if (antisymmetrize && alphabeta) {
         // antisymmetrization implies equivalent particles -- hence symmetrize before antisymmetrize

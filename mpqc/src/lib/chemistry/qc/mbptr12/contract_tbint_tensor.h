@@ -351,39 +351,40 @@ namespace sc {
       //
       // Contraction loops
       //
-      unsigned int fbraoffset = 0;
-      for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
-        
-        unsigned int fketoffset = 0;
-        for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
-          
-          for(unsigned int fint=0; fint<nintsets; ++fint) {
-            
-            const unsigned int fbraint = fbra*nintsets+fint;
+
+      // outermost loop over contraction blocks to minimize number of activate()/deactivate() calls
+      for(unsigned int fint=0; fint<nintsets; ++fint) {
+
+	unsigned int fbraoffset = 0;
+	for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
+	  const unsigned int fbraint = fbra*nintsets+fint;
+	  Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbraint];
+
+	  Ref<R12IntsAcc> accumb = tformb->ints_acc();
+	  // if transforms have not been computed yet, compute
+	  if (accumb.null() || !accumb->is_committed()) {
+	    tformb->compute();
+	  }
+	  if (!accumb->is_active())
+	    accumb->activate();
+
+	  unsigned int fketoffset = 0;
+	  for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
             const unsigned int fketint = fket*nintsets+fint;
-            Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbraint];
             Ref<TwoBodyMOIntsTransform> tformk = transforms_ket[fketint];
             
-            if (debug_ > 0) {
-              ExEnv::out0() << indent << "Using transforms "
-                                      << tformb->name() << " and "
-                                      << tformk->name() << std::endl;
-            }
-            
-            Ref<R12IntsAcc> accumb = tformb->ints_acc();
-            // if transforms have not been computed yet, compute
-            if (accumb.null() || !accumb->is_committed()) {
-              tformb->compute();
-            }
-            if (!accumb->is_active())
-              accumb->activate();
-
             Ref<R12IntsAcc> accumk = tformk->ints_acc();
             if (accumk.null() || !accumk->is_committed()) {
               tformk->compute();
             }
             if (!accumk->is_active())
               accumk->activate();
+            
+            if (debug_ > 0) {
+              ExEnv::out0() << indent << "Using transforms "
+                                      << tformb->name() << " and "
+                                      << tformk->name() << std::endl;
+            }
             
             // split work over tasks which have access to integrals
             // WARNING: assuming same accessibility for both bra and ket transforms
@@ -553,9 +554,11 @@ namespace sc {
 
               } // bra loop
             } // loop over tasks with access
-          } // int blocks
-        } // ket blocks
-      } // bra blocks
+	    accumk->deactivate();
+	  } // ket blocks
+	  accumb->deactivate();
+	} // bra blocks
+      } // int blocks
       
       if (antisymmetrize && alphabeta) {
         // antisymmetrization implies equivalent particles -- hence symmetrize before antisymmetrize

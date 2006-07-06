@@ -29,7 +29,8 @@
 #pragma implementation
 #endif
 
-#include "cca.h"
+#include <scdirlist.h>
+#include <cca.h>
 
 using namespace sc;
 
@@ -42,9 +43,20 @@ MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
   my_id_    = services_.getComponentID();
   services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
   bs_ = services_.getPort("bs");
+
   component_factory_ = MPQC::ComponentFactory::_create();
-  services_.addProvidesPort(component_factory_, "MPQC::ComponentFactory",
-                           "ccaffeine.ports.ComponentFactory",type_map_);
+  component_factory_.addDescription("Chemistry.IntegralSuperFactory",
+                                    "Chemistry.IntegralSuperFactory");
+  component_factory_.addDescription("MPQC.IntV3EvaluatorFactory",
+                                    "MPQC.IntV3EvaluatorFactory");
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
+  component_factory_.addDescription("MPQC.CintsEvaluatorFactory",
+                                    "MPQC.CintsEvaluatorFactory");
+#endif
+  services_.addProvidesPort(component_factory_, 
+                            "ccaffeine.ports.ComponentFactory",
+                            "ccaffeine.ports.ComponentFactory",
+                            type_map_);
 }
 
 ccaffeine::AbstractFramework* 

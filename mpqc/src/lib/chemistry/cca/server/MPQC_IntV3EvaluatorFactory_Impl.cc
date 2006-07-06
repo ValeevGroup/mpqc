@@ -395,6 +395,7 @@ throw (
       obderivint_vec_.push_back( obderivint_vec );
     }
     else if( tbtcint_vec.size() && is_tbtc ) {
+      tbtcint_vec.back().pointer()->set_integral_storage(storage_);
       eval.add_evaluator( (void*) tbtcint_vec.back().pointer(), 
                           idesc );
       tbtcint_vec_.push_back( tbtcint_vec );
@@ -457,6 +458,7 @@ throw (
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
     if( tb3cint_vec.size() && is_tb3c ) {
+      tb3cint_vec.back().pointer()->set_integral_storage(storage_);
       eval.add_evaluator( (void*) tb3cint_vec.back().pointer(), desc );
       tb3cint_vec_.push_back( tb3cint_vec );
     }
@@ -526,6 +528,7 @@ throw (
       throw runtime_error("IntV3EvaluatorFactory: unsupported integral set");
 
     if( tbint_vec.size() && is_tb ) {
+      tbint_vec.back().pointer()->set_integral_storage(storage_);
       eval.add_evaluator( (void*) tbint_vec.back().pointer(), idesc );
       tbint_vec_.push_back( tbint_vec );
     }

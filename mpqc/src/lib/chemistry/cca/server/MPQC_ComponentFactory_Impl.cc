@@ -14,8 +14,11 @@
 // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._includes)
 #include "dc/babel/babel-cca/AllBabelCCA.hh"
 #include "MPQC_ComponentClassDescription.hh"
-#include "MPQC_IntV3EvaluatorFactory.hh"
 #include "Chemistry_IntegralSuperFactory.hh"
+#include "MPQC_IntV3EvaluatorFactory.hh"
+#ifdef HAVE_CINTS
+  #include "MPQC_CintsEvaluatorFactory.hh"
+#endif
 // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
 
 // user-defined constructor.
@@ -102,19 +105,28 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.createComponentInstance)
 
-  if (className == "MPQC.IntV3EvaluatorFactory") {
-    MPQC::IntV3EvaluatorFactory x =
-      MPQC::IntV3EvaluatorFactory::_create();
-    gov::cca::Component c = x;
-    return c;
-  }
-
   if (className == "Chemistry.IntegralSuperFactory") { 
     Chemistry::IntegralSuperFactory x =
       Chemistry::IntegralSuperFactory::_create();
     gov::cca::Component c = x;
     return c;
   }
+
+  else if (className == "MPQC.IntV3EvaluatorFactory") {
+    MPQC::IntV3EvaluatorFactory x =
+      MPQC::IntV3EvaluatorFactory::_create();
+    gov::cca::Component c = x;
+    return c;
+  }
+
+#ifdef HAVE_CINTS
+  else if (className == "MPQC.CintsEvaluatorFactory") {
+    MPQC::CintsEvaluatorFactory x =
+      MPQC::CintsEvaluatorFactory::_create();
+    gov::cca::Component c = x;
+    return c;
+  }
+#endif
 
   gov::cca::Component dummy;
   return dummy;

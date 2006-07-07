@@ -32,7 +32,9 @@ package MPQC version 0.2 {
 
   class IntV3EvaluatorFactory
     implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
-    gov.cca.Component, gov.cca.Port {};
+    gov.cca.Component, gov.cca.Port {
+      void set_reorder(in bool reorder);
+  };
  
   class CintsEvaluatorFactory
     implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,

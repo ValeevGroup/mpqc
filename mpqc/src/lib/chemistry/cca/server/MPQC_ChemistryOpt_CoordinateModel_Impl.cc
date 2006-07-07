@@ -75,11 +75,13 @@ throw ()
 
   std::cout << "\nInitializing MPQC::ChemistryOpt_CoordinateModel\n";
 
+/*
   CcaChemGeneric::CoordinateModel::set_tolerances(grad_rms_->value,
 						  grad_max_->value,
 						  disp_rms_->value,
 						  disp_max_->value);
   CcaChemGeneric::CoordinateModel::initialize(services_);
+*/
 
   //get matrix kits
   kit_ = new sc::LocalSCMatrixKit; 
@@ -87,7 +89,7 @@ throw ()
 
   //get coordinate type
   std::string coorString;
-  coorString = std::string( coordinates_->getValueString() );
+  //coorString = std::string( coordinates_->getValueString() );
   std::cout << "  Using coordinate type: " << coorString << std::endl;
   if(coorString == "cartesian") coorType_ = cart;
   else if(coorString == "symmetrized") coorType_ = symm;
@@ -99,7 +101,7 @@ throw ()
   services_.releasePort("CoordinateType");
 
   //get extra_bonds
-  std::string bondsString( extra_bonds_->getValueString() );
+  //std::string bondsString( extra_bonds_->getValueString() );
 
   //get model and molecule
   model_ = CcaChemGeneric::CoordinateModel::get_model();
@@ -111,6 +113,7 @@ throw ()
   std::cout << "\n  CoordinateModel: setting up coordinates\n";
 
   //create input strings for MPQC classes
+/*
   std::ostringstream input;
   input
     << " molecule<Molecule>:(\n"
@@ -160,8 +163,9 @@ throw ()
   }
 
   std::cout << input.str();
-
+*/
   //create the MPQC classes
+/*
   sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal();
   kv->parse_string(input.str().c_str());
   sc::Ref<sc::DescribedClass> dccoor = kv->describedclassvalue("coor");
@@ -184,6 +188,7 @@ throw ()
   natom3_ = scCoor_->dim_natom3().n();
   std::cout << "\n";
 
+*/
   // convergence checking needs this method invoked
   CcaChemGeneric::CoordinateModel::get_n_coor();
 
@@ -529,6 +534,7 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ChemistryOpt_CoordinateModel.guess_hessian_solve)
   
+/*
   sidl::array<double> *sidl_geom_ptr = 
     static_cast< sidl::array<double>* >( first_geom );
   
@@ -552,6 +558,7 @@ throw ()
   array_to_vector(effective_grad, scV);
   sc::RefSCVector result = ihess_*scV;
   effective_step.copy(vector_to_array( result ));
+*/
   
   // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel.guess_hessian_solve)
 }
@@ -639,6 +646,7 @@ throw (
   }
 
     // setup parameters
+/*
   try {
     
     if (services_._not_nil()) {
@@ -684,6 +692,7 @@ throw (
   catch(std::exception& e) {
     std::cout << "Exception caught: " << e.what() << std::endl;
   }
+*/
 
   // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel.setServices)
 }
@@ -691,6 +700,7 @@ throw (
 
 // DO-NOT-DELETE splicer.begin(MPQC.ChemistryOpt_CoordinateModel._misc)
 
+/*
 ConfigurableParameterPort*
 MPQC::ChemistryOpt_CoordinateModel_impl::setup_parameters(ConfigurableParameterFactory *cpf)
 {
@@ -732,6 +742,7 @@ MPQC::ChemistryOpt_CoordinateModel_impl::setup_parameters(ConfigurableParameterF
 
   return pp;
 }
+*/
 
 // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel._misc)
 

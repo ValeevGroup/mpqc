@@ -45,10 +45,12 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 			      const Ref<GaussianBasisSet>& bs2,
 			      IntegralSuperFactory fac,
 			      CompositeIntegralDescr cdesc,
-			      bool  use_opaque
+			      bool  use_opaque,
+                              bool reorder
                               ):
   OneBodyInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
-  eval_factory_(fac), cdesc_(cdesc), use_opaque_(use_opaque)
+  eval_factory_(fac), cdesc_(cdesc), use_opaque_(use_opaque),
+  reorder_(reorder)
 {
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
@@ -88,7 +90,7 @@ OneBodyIntCCA::compute_shell(int i, int j)
   eval_.compute( i, j );
 
   // reorder for mpqc's wacky 1-body multi-segment ordering
-  if( n_segment_ > 1 ) {
+  if( n_segment_ > 1 && reorder_ ) {
     GaussianShell* s1 = &( bs1_->shell(i) );
     GaussianShell* s2 = &( bs2_->shell(j) );
     int nfunc = s1->nfunction() * s2->nfunction();
@@ -133,7 +135,7 @@ Ref<OneBodyInt>
 OneBodyIntCCA::clone()
 {
   return new OneBodyIntCCA( integral_, bs1_, bs2_, 
-                            eval_factory_, cdesc_, use_opaque_ );
+                            eval_factory_, cdesc_, use_opaque_, reorder_ );
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -144,10 +146,12 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
                                        const Ref<GaussianBasisSet>&bs2,
                                        IntegralSuperFactory eval_factory,
 				       CompositeIntegralDescr cdesc,
-                                       bool use_opaque
+                                       bool use_opaque,
+                                       bool reorder
                                        ):
   OneBodyDerivInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
-  eval_factory_(eval_factory), cdesc_(cdesc), use_opaque_(use_opaque)
+  eval_factory_(eval_factory), cdesc_(cdesc), use_opaque_(use_opaque),
+  reorder_(reorder)
 {
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
@@ -200,15 +204,17 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, int atom)
     throw SCException("Deritative, multi-segment buffer structure unclear",
                       __FILE__,__LINE__);
 
-  GaussianShell* s1 = &( bs1_->shell(i) );
-  GaussianShell* s2 = &( bs2_->shell(j) );
-  int nfunc = s1->nfunction() * s2->nfunction();
+  if( reorder_ ) {
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    int nfunc = s1->nfunction() * s2->nfunction();
 
-  for(int i=0; i<nfunc*3; ++i)
-    temp_buffer_[i] = buffer_[i];
-  for(int i=0; i<nfunc; ++i)
-    for( int di=0; di<3; ++di)
-      buffer_[i*3+di] = temp_buffer_[di*nfunc+i];
+    for(int i=0; i<nfunc*3; ++i)
+      temp_buffer_[i] = buffer_[i];
+    for(int i=0; i<nfunc; ++i)
+      for( int di=0; di<3; ++di)
+        buffer_[i*3+di] = temp_buffer_[di*nfunc+i];
+  }
 
 // temporary debuging stuff for cca integrals comparison
 /*
@@ -242,7 +248,8 @@ Ref<OneBodyDerivInt>
 OneBodyDerivIntCCA::clone()
 {
   return new OneBodyDerivIntCCA( integral_, bs1_, bs2_,
-                                 eval_factory_, cdesc_, use_opaque_ );
+                                 eval_factory_, cdesc_, 
+                                 use_opaque_, reorder_ );
 }
 
 /////////////////////////////////////////////////////////////////////////////

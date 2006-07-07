@@ -48,15 +48,15 @@
 #include <chemistry/molecule/coor.h>
 #include "CoordinateModel.h"
 #include "Chemistry_Chemistry_Molecule.hh"
-#include "cca.h"
-#include "dc/babel/babel-cca/server/ccaffeine_TypeMap.hh"
-#include "dc/babel/babel-cca/server/ccaffeine_ports_PortTranslator.hh"
-#include "util/IO.h"
-#include "jc++/jc++.h"
-#include "jc++/util/jc++util.h"
-#include "parameters/parametersStar.h"
-#include "port/portInterfaces.h"
-#include "port/supportInterfaces.h"
+//#include "cca.h"
+//#include "dc/babel/babel-cca/server/ccaffeine_TypeMap.hh"
+//#include "dc/babel/babel-cca/server/ccaffeine_ports_PortTranslator.hh"
+//#include "util/IO.h"
+//#include "jc++/jc++.h"
+//#include "jc++/util/jc++util.h"
+//#include "parameters/parametersStar.h"
+//#include "port/portInterfaces.h"
+//#include "port/supportInterfaces.h"
 // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel._includes)
 
 namespace MPQC { 
@@ -133,10 +133,10 @@ namespace MPQC {
     sc::Ref<sc::SCMatrixKit> kit_;
     sc::Ref<sc::SCMatrixKit> rkit_;
     sc::RefSymmSCMatrix ihess_;
-    DoubleParameter *grad_rms_, *grad_max_, *disp_rms_, *disp_max_;
-    BoolParameter *multiple_guess_h_, *use_current_geom_;
-    StringParameter *coordinates_;
-    StringParameter *extra_bonds_;
+    //DoubleParameter *grad_rms_, *grad_max_, *disp_rms_, *disp_max_;
+    //BoolParameter *multiple_guess_h_, *use_current_geom_;
+    //StringParameter *coordinates_;
+    //StringParameter *extra_bonds_;
     double convFrom_;
     bool have_guess_h_;
     enum {cart,symm,redund};
@@ -144,8 +144,8 @@ namespace MPQC {
     int numCoor_;
     int natom3_;
 
-    ConfigurableParameterPort* 
-    setup_parameters(ConfigurableParameterFactory *);
+    //ConfigurableParameterPort* 
+    //setup_parameters(ConfigurableParameterFactory *);
     
     void draw();
     // DO-NOT-DELETE splicer.end(MPQC.ChemistryOpt_CoordinateModel._implementation)

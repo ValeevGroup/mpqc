@@ -100,6 +100,7 @@ namespace MPQC {
     CompositeIntegralDescr cdesc_no_deriv_;
     gov::cca::Services services_;
     int storage_;
+    bool reorder_;
     Ref<IntegralV3> integral_;
     Ref<sc::DipoleData> dipole_data_;
 
@@ -138,6 +139,16 @@ namespace MPQC {
     static void _load();
 
   public:
+
+    /**
+     * user defined non-static method.
+     */
+    void
+    set_reorder (
+      /* in */ bool reorder
+    )
+    throw () 
+    ;
 
     /**
      * user defined non-static method.

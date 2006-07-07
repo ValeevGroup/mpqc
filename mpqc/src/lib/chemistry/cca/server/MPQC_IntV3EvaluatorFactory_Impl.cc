@@ -151,6 +151,22 @@ void MPQC::IntV3EvaluatorFactory_impl::_load() {
 
 // user-defined non-static methods:
 /**
+ * Method:  set_reorder[]
+ */
+void
+MPQC::IntV3EvaluatorFactory_impl::set_reorder (
+  /* in */ bool reorder ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.set_reorder)
+
+  std::cerr << "IntV3 factory setting reorder to: " << reorder << std::endl;
+  reorder_ = reorder;
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.set_reorder)
+}
+
+/**
  * Method:  get_name[]
  */
 ::std::string
@@ -266,7 +282,8 @@ throw (
   }
 
   eval.set_basis( bs1 );
-  eval.init_reorder();
+  if( reorder_ )
+    eval.init_reorder();
   
   return eval;
   
@@ -403,7 +420,8 @@ throw (
   }
 
   eval.set_basis( bs1, bs2 );
-  eval.init_reorder();
+  if( reorder_ )
+    eval.init_reorder();
   
   return eval;
 
@@ -465,7 +483,8 @@ throw (
   }
 
   eval.set_basis( bs1, bs2, bs3 );
-  eval.init_reorder();
+  if( reorder_ )
+    eval.init_reorder();
 
   return eval;
 
@@ -539,7 +558,8 @@ throw (
   }
 
   eval.set_basis( bs1, bs2, bs3, bs4 );
-  eval.init_reorder();
+  if( reorder_ )
+    eval.init_reorder();
 
   return eval;
 
@@ -577,6 +597,8 @@ throw (
   try {
       services_.addProvidesPort(self, "IntegralEvaluatorFactory",
                     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory", 0);
+      services_.addProvidesPort(self, "IntV3EvaluatorFactory",
+                    "MPQC.IntV3EvaluatorFactory",0);
   }
   catch (gov::cca::CCAException e) {
     std::cout << "Error using services: "

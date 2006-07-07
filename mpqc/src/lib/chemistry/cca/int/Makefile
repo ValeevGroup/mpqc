@@ -43,7 +43,7 @@ BIN_OR_LIB = LIB
 
 DEFINES += -DDMALLOC
 
-CXXSRC = obintcca.cc tbintcca.cc intcca.cc
+CXXSRC = obintcca.cc tbintcca.cc intcca.cc auxintv3.cc
 
 INC = obintcca.h tbintcca.h intcca.h cartit.h tform.h
 

@@ -58,7 +58,7 @@ namespace sc {
 
       Integral* integral_;
       Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_;
+      bool use_opaque_, reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
@@ -68,8 +68,9 @@ namespace sc {
       onebody_generator(
           Integral* integral,
           Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
-          bool use_opaque ):
-	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
+          bool use_opaque, bool reorder ):
+	integral_(integral), factory_(fac), use_opaque_(use_opaque),
+        reorder_(reorder) { }
       
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
@@ -80,7 +81,8 @@ namespace sc {
       {
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
-				  factory_, cdesc, use_opaque_ );
+				  factory_, cdesc, use_opaque_,
+                                  reorder_ );
 	return eval;
       }
 
@@ -94,7 +96,7 @@ namespace sc {
 
       Integral* integral_;
       Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_;
+      bool use_opaque_, reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
@@ -104,8 +106,9 @@ namespace sc {
       onebody_deriv_generator(
           Integral* integral,
           Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
-          bool use_opaque ):
-	integral_(integral), factory_(fac), use_opaque_(use_opaque) { }
+          bool use_opaque, bool reorder ):
+	integral_(integral), factory_(fac), use_opaque_(use_opaque),
+        reorder_(reorder) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
@@ -116,7 +119,8 @@ namespace sc {
       {
 	Ref<OneBodyDerivIntCCA> eval;
 	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
-				       factory_, cdesc, use_opaque_ );
+				       factory_, cdesc, use_opaque_,
+                                       reorder_ );
 	return eval;
       }
 
@@ -231,6 +235,7 @@ namespace sc {
     
     int maxl_;
     bool use_opaque_;
+    bool intv3_order_;
     gov::cca::ComponentID fac_id_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
@@ -257,10 +262,17 @@ namespace sc {
     SphericalTransform ***st_;
     ISphericalTransform ***ist_;
     
-    void free_transforms();
-    void initialize_transforms();
     void init_factory();
     void init_generators();
+    void free_transforms();
+    void initialize_transforms();
+    void free_transformsV3();
+    void initialize_transformsV3();
+    CartesianIter* new_cartesian_iterV3(int l);
+    RedundantCartesianIter* new_redundant_cartesian_iterV3(int l);
+    RedundantCartesianSubIter* new_redundant_cartesian_sub_iterV3(int l);
+    SphericalTransformIter* new_spherical_transform_iterV3(int l, int inv, int subl);
+    const SphericalTransform* spherical_transformV3(int l, int inv, int subl);
     
   public:
 

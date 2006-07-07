@@ -53,6 +53,7 @@ namespace sc {
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
     bool use_opaque_;
+    bool reorder_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
     double* temp_buffer_;
@@ -66,7 +67,7 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&,
 		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-		   bool );
+		   bool, bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
     bool cloneable();
@@ -86,6 +87,7 @@ namespace sc {
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
     bool use_opaque_;
+    bool reorder_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
     double* buff_;
     double* temp_buffer_;
@@ -99,7 +101,7 @@ namespace sc {
 		        const Ref<GaussianBasisSet>&,
 			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 		        Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-			bool );
+			bool, bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);
     void compute_shell(int, int, int);

@@ -315,7 +315,8 @@ namespace sc {
                  std::string factory_type,
                  sidl::array<std::string> types,
                  sidl::array<std::string> derivs,
-                 sidl::array<std::string> sfacs 
+                 sidl::array<std::string> sfacs,
+                 bool intv3_order
                 );
 
     IntegralCCA(const Ref<KeyVal>&);

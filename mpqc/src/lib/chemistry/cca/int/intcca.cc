@@ -112,11 +112,12 @@ IntegralCCA::IntegralCCA( bool use_opaque,
                           std::string factory_type,
                           sidl::array<std::string> types,
                           sidl::array<std::string> derivs,
-                          sidl::array<std::string> sfacs
+                          sidl::array<std::string> sfacs,
+                          bool intv3_order
                          ):
   Integral(b1,b2,b3,b4), use_opaque_(use_opaque),
   default_subfactory_(default_sf), factory_type_(factory_type),
-  types_(types), derivs_(derivs), sfacs_(sfacs)
+  types_(types), derivs_(derivs), sfacs_(sfacs), intv3_order_(intv3_order)
 {
   superfactory_type_ = "Chemistry.IntegralSuperFactory";
 
@@ -139,8 +140,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   cca_dc_ = Chemistry::DerivCenters::_create();
   eval_req_ = Chemistry::CompositeIntegralDescr::_create();
-
-  initialize_transforms();
 
   //------------
   // parse input
@@ -207,6 +206,8 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
         derivs_.set( i, "n" );
     }
   }
+
+  initialize_transforms();
 
   //-----------------
   // get eval factory
@@ -347,7 +348,7 @@ IntegralCCA::clone()
 {
   return new IntegralCCA( use_opaque_, bs1_, bs2_, bs3_, bs4_,
                           default_subfactory_, factory_type_,
-                          types_, derivs_, sfacs_ );
+                          types_, derivs_, sfacs_, intv3_order_ );
 }
 
 Ref<OneBodyInt>

@@ -46,6 +46,8 @@ basis_cca_to_sc( Chemistry::QC::GaussianBasis::Molecular& );
 void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._ctor)
 
+  reorder_ = true;
+
   integral_ = new sc::IntegralV3();
   IntegralDescr desc;
 

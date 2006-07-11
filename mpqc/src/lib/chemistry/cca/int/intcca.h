@@ -240,7 +240,7 @@ namespace sc {
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
-    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+    std::vector<Chemistry::QC::GaussianBasis::DerivCenters> cca_dcs_;
     std::string factory_type_;
     std::string superfactory_type_;
     std::string default_subfactory_;

@@ -384,6 +384,10 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
           // zero out the contracted integrals buffer
           memset(&(prim_ints_[buffer_offset]),0,size*sizeof(double));
+#if LIBINT2_ACCUM_INTS
+	  // zero out targets in Libint_
+	  Libint_.zero_out_targets = 1;
+#endif
 	  /* Begin loop over primitives. */
 	  for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
 	    quartet_info_.p1 = pi;
@@ -398,16 +402,24 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		  eri_quartet_data_(&Libint_, 1.0);
                   if (quartet_info_.am) {
 		    // Compute the integrals
-		      LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
+		    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
+#if !LIBINT2_ACCUM_INTS
                     // Copy the integrals over to prim_ints_
                     const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
 	            for(int ijkl=0; ijkl<size; ijkl++)
 	              prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
+#endif
                   }
                   else {
                     prim_ints_[buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
 		}}}}
+#if LIBINT2_ACCUM_INTS
+	  // Copy the accumulated integrals over to prim_ints_
+	  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
+	  for(int ijkl=0; ijkl<size; ijkl++)
+	      prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];	  
+#endif
 	  buffer_offset += size;
 	}}}}
 

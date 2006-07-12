@@ -431,6 +431,10 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       
                       // Compute primitive data for Libint
                       g12_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
+#if LIBINT2_ACCUM_INTS
+		      // zero out targets in Libint_
+		      Libint_.zero_out_targets = 1;
+#endif
                       // Compute the integrals
                       LIBINT2_PREFIXED_NAME(libint2_build_r12kg12)[tam1][tam2][tam3][tam4](&Libint_);
                       

@@ -1636,11 +1636,20 @@ dnl ----------- libint2 library checks --------------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libint2/libint2.h,
-  AC_CHECK_LIB(int2,libint2_static_init,
+  AC_MSG_CHECKING([for libint2_static_init in -lint2])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+      ]],
+      [[
+        void (*funcptr)() = LIBINT2_PREFIXED_NAME(libint2_static_init);
+      ]]
+      ),
     HAVE_LIBINT2=yes
     AC_DEFINE(HAVE_LIBINT2)
     AC_SUBST(HAVE_LIBINT2)
     LIBS="-lint2 $LIBS"
+    AC_MSG_RESULT([yes])
     )
   AC_MSG_CHECKING([if libint2 can compute ERI])
   AC_COMPILE_IFELSE(

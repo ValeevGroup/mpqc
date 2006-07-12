@@ -119,7 +119,7 @@ class Libint2StaticInterface {
     bool ready;
 
     public:
-    Libint2StaticInterface() { libint2_static_init(); ready = true; }
+    Libint2StaticInterface() { LIBINT2_PREFIXED_NAME(libint2_static_init)(); ready = true; }
     ~Libint2StaticInterface() { ready = false; }
 };
 

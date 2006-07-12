@@ -80,8 +80,8 @@ G12Libint2::G12Libint2(Integral *integral,
     bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
   int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
-  size_t storage_needed = LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(LIBINT2_REALTYPE);
-  libint2_init(&Libint_,lmax);
+  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_r12kg12)(lmax) * sizeof(LIBINT2_REALTYPE);
+  LIBINT2_PREFIXED_NAME(libint2_init_r12kg12)(&Libint_,lmax,0);
   target_ints_buffer_[0]= new double[num_te_types_*max_target_size];
   cart_ints_[0] = new double[num_te_types_*max_cart_target_size];
   for(int te_type=1; te_type<num_te_types_; te_type++) {
@@ -133,7 +133,7 @@ G12Libint2::G12Libint2(Integral *integral,
 
 G12Libint2::~G12Libint2()
 { 
-  libint2_cleanup(&Libint_);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12kg12)(&Libint_);
   delete[] target_ints_buffer_[0];
   delete[] cart_ints_[0];
   if (sphharm_ints_)
@@ -180,7 +180,7 @@ G12Libint2::storage_required(const Ref<GaussianBasisSet>& b1,
   int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
     bs3->max_nfunction_in_shell()*bs4->max_nfunction_in_shell();
 
-  storage_required += LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(LIBINT2_REALTYPE);
+  storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
 
   if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
       bs1->max_ncontraction() != 1 || bs2->max_ncontraction() != 1 ||

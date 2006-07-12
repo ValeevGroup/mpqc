@@ -398,7 +398,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		  eri_quartet_data_(&Libint_, 1.0);
                   if (quartet_info_.am) {
 		    // Compute the integrals
-                    libint2_build_eri[tam1][tam2][tam3][tam4](&Libint_);
+		      LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
                     // Copy the integrals over to prim_ints_
                     const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
 	            for(int ijkl=0; ijkl<size; ijkl++)

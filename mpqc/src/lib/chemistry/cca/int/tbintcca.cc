@@ -60,6 +60,10 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   use_opaque_(use_opaque)
 {
   ndesc_ = cdesc_.get_n_descr();
+  for( int i=0; i<ndesc_; ++i ) {
+    descriptors_.push_back( cdesc_.get_descr(i) );
+    types_.push_back( descriptors_.back().get_type() );
+  }
 
   tbtype_to_buf_ = new double*[ndesc_];
 
@@ -131,8 +135,7 @@ void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
   for( int ii=0; ii<ndesc_; ++ii ) {
-    IntegralDescr desc = cdesc_.get_descr(ii);
-    buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ];
+    buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
     eval_.compute( i, j, k, l );
     if( !redundant_ )
       remove_redundant( i, j, k, l );
@@ -197,6 +200,10 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
   eval_factory_(fac), cdesc_(cdesc),
   use_opaque_(use_opaque)
 {
+  ndesc_ = cdesc_.get_n_descr();
+  for( int i=0; i<ndesc_; ++i )
+    descriptors_.push_back( cdesc_.get_descr(i) );
+
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
   loginv_ = 1.0/log(2.0);

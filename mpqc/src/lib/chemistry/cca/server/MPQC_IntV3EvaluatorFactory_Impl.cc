@@ -162,7 +162,6 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.set_reorder)
 
-  std::cerr << "IntV3 factory setting reorder to: " << reorder << std::endl;
   reorder_ = reorder;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory.set_reorder)

@@ -53,6 +53,8 @@ namespace sc {
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector< Chemistry::QC::GaussianBasis::IntegralDescr > descriptors_;
+    std::vector< std::string > types_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
@@ -97,6 +99,7 @@ namespace sc {
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
+    std::vector< Chemistry::QC::GaussianBasis::IntegralDescr > descriptors_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
@@ -106,6 +109,7 @@ namespace sc {
     double loginv_;
     int int_bound_min_;
     int max_deriv_lvl_;
+    int ndesc_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
     sidl::array<int> sidl_buffer_;
 

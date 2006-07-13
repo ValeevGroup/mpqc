@@ -247,6 +247,7 @@ namespace MpqcCca {
     
     std::vector< std::pair<eval_type*,QC_IntegralDescr> > evals_;
     std::vector< QC_DerivCenters > dcs_;
+    std::vector< int > deriv_lvls_;
     
   public:
     
@@ -257,6 +258,7 @@ namespace MpqcCca {
       std::pair<eval_type*,QC_IntegralDescr> p(eval_ptr,desc);
       evals_.push_back( p );
       dcs_.push_back( p.second.get_deriv_centers() );
+      deriv_lvls_.push_back( p.second.get_deriv_lvl() );
     }
     
     double* get_buffer ( QC_IntegralDescr desc ) 
@@ -281,7 +283,7 @@ namespace MpqcCca {
     void compute ( computer_type* computer ) 
     {
       for( int i=0; i<evals_.size(); ++i) {
-        if( evals_[i].second.get_deriv_lvl() == 0 )
+        if( deriv_lvls_[i] == 0 )
           computer->compute( evals_[i].first, NULL );
         else
           computer->compute( evals_[i].first, &(dcs_[i]) );

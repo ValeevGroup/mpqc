@@ -89,5 +89,5 @@ $(EXTRA_CXX_SRCS): stamp-babel
 LIBOBJ = $(CCA_OBJS)
 
 LTLINKLIBOPTS += -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem_cxx_client -lccachem_cxx_server
-CPPFLAGS += -I./ -I$(SRCDIR) -I$(CCA_SPEC_CLASSIC_INCLUDE)
+CPPFLAGS += -I./ -I$(SRCDIR)
 

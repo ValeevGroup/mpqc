@@ -77,6 +77,7 @@ namespace MPQC {
     bool reorder_;
     ReorderEngine reorder_engine_;
     onebody_onecenter_computer computer_;
+    BufferSize buffer_size_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._implementation)
 
@@ -176,6 +177,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     compute_array (
+      /* in */ const ::std::string& type,
       /* in */ int64_t shellnum1
     )
     throw ( 

@@ -57,6 +57,8 @@ throw ()
   else 
     deriv_eval_.add_evaluator(eval,desc);
 
+  buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.add_evaluator)
 }
 
@@ -76,6 +78,8 @@ throw ()
     bs2_ = bs1_;
   else
     bs2_ = basis_cca_to_sc( bs2 );
+
+  buffer_size_.init( 2, bs1_, bs2_, bs3_, bs4_ );
   
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_basis)
 }
@@ -183,6 +187,7 @@ throw (
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator2_impl::compute_array (
+  /* in */ const ::std::string& type,
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2 ) 
 throw ( 
@@ -190,17 +195,13 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
 
-  sidl::SIDLException ex = sidl::SIDLException::_create();
-  try {
-    ex.setNote("function not implemented yet");
-    ex.add(__FILE__, __LINE__,"");
-  }
-  catch(...) { }
-  throw ex;
-  
-  // uh oh, multiple evals???
   computer_.set_shells( shellnum1, shellnum2 );
-  return eval_.compute_array( &computer_ ); 
+  sidl::array<double> array =
+    eval_.compute_array( &computer_, type, buffer_size_.size() ); 
+  if( reorder_ )
+    reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 );
+
+  return array;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute_array)
 }

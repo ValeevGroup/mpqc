@@ -233,6 +233,9 @@ namespace MpqcCca {
     }
   };
 
+  
+  //---------------------------------------------------------------------------
+
 
   template< typename eval_type, typename computer_type >
   class IntegralEvaluator {
@@ -248,6 +251,9 @@ namespace MpqcCca {
     std::vector< std::pair<eval_type*,QC_IntegralDescr> > evals_;
     std::vector< QC_DerivCenters > dcs_;
     std::vector< int > deriv_lvls_;
+    std::vector< std::string > types_;
+    std::vector< double* > buffers_;
+    sidl::array<double> sidl_buffer_;
     
   public:
     
@@ -259,6 +265,8 @@ namespace MpqcCca {
       evals_.push_back( p );
       dcs_.push_back( p.second.get_deriv_centers() );
       deriv_lvls_.push_back( p.second.get_deriv_lvl() );
+      types_.push_back( p.second.get_type() );
+      buffers_.push_back( const_cast<double*>( p.first->buffer()) );
     }
     
     double* get_buffer ( QC_IntegralDescr desc ) 
@@ -292,39 +300,46 @@ namespace MpqcCca {
 
     double compute_bounds( computer_type* computer )
     {
-      // this is obviously not going to work for multiple evals
-      // that will require interface work
+      double bounds=0;
       if( evals_.size() ) 
         for( int i=0; i<evals_.size(); ++i)
-          return computer->compute_bounds( evals_[i].first );
+          bounds = std::max( computer->compute_bounds(evals_[i].first), 
+                             bounds );
 
-      return 0.0;
+      return bounds;
     }
       
       
-    sidl::array<double> compute_array ( computer_type* computer ) 
+    sidl::array<double> compute_array ( computer_type* computer,
+                                        std::string type,
+                                        int buffer_size ) 
     {
-      sidl::SIDLException ex = sidl::SIDLException::_create();
-      try {
-        ex.setNote("MPQC doesn't support compute_array yet");
-        ex.add(__FILE__, __LINE__,"");
-      }
-      catch(...) { }
-      throw ex;
-
-      /*
-      compute( shellnum1, shellnum2, deriv_level, deriv_atom );
-  
       int lower[1] = {0};
-      int upper[1]; upper[0] = max_nshell2_-1;
+      int upper[1];
+      upper[0] = buffer_size - 1;
       int stride[1] = {1};
-      sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1, 
-                           lower, upper, stride);
-      return sidl_buffer_;
-      */
+
+      for( int i=0; i<evals_.size(); ++i)
+        if( types_[i] == type ) {
+
+          if( deriv_lvls_[i] == 0 )
+            computer->compute( evals_[i].first, NULL );
+          else
+            computer->compute( evals_[i].first, &(dcs_[i]) );
+
+          sidl_buffer_.borrow( const_cast<double*>(buffers_[i]),
+                               1, lower, upper, stride);
+          return sidl_buffer_;
+        }
+
+      return NULL;
     }
       
   };
+
+
+  //-------------------------------------------------------------------------
+
 
   template< typename eval_type, typename computer_type >
   class CompositeIntegralEvaluator {

@@ -58,9 +58,10 @@ BABEL_CLASSES = \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver
 
-EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc reorder_engine.cc
+EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc reorder_engine.cc \
+                 buffer_size.cc
 EXTRA_INCLUDES = socket.h except.h ccaiter.h \
-                 integral_evaluator.h reorder_engine.h
+                 integral_evaluator.h reorder_engine.h buffer_size.h
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/cca/CCAMakefile

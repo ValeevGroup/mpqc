@@ -48,21 +48,19 @@ ReorderEngine::init( int n,
   // A simple 0th order buffer has one segment.
   // A 1st order nuclear derivative buffer has three segements (dx,dy,dx), etc.
 
-  // compute max segment size and max am
-  max_segment_size_ = basis_sets_[0]->max_ncartesian_in_shell();
-  maxam_ = basis_sets_[0]->max_angular_momentum();
-  for( int i=1; i<n_center_; ++i) {
-    max_segment_size_ *= basis_sets_[i]->max_ncartesian_in_shell();
-    maxam_ = max( maxam_, basis_sets_[i]->max_angular_momentum() );
-  }
-
+  buffer_size_.init( n_center_, basis_sets_[0], basis_sets_[1],
+                     basis_sets_[2], basis_sets_[3] );
+  
   // until we discover otherwise
   max_deriv_lvl_ = 0;
-  max_n_segment_ = 1;
-  temp_buffer_ = new double[max_segment_size_];
+  temp_buffer_ = new double[buffer_size_.size()];
+  
+  // compute max am
+  maxam_ = basis_sets_[0]->max_angular_momentum();
+  for( int i=1; i<n_center_; ++i)
+    maxam_ = max( maxam_, basis_sets_[i]->max_angular_momentum() );
 
   // construct reorder arrays
-
   reorder_ = new int*[maxam_+1];
   reorder_[0] = new int[1];
   reorder_[0][0] = 0;
@@ -98,27 +96,14 @@ ReorderEngine::init( int n,
 void
 ReorderEngine::check_temp_buffer( int deriv_lvl, int n_segment )
 {
-  bool changed=false;
-  if( deriv_lvl > max_deriv_lvl_ ) {
-    changed = true;
-    max_deriv_lvl_ = deriv_lvl;
-  }
-  if( n_segment > max_n_segment_ ) {
-    changed = true;
-    max_n_segment_ = n_segment;
-  }
+  int old_size = buffer_size_.size();
+  buffer_size_.update( deriv_lvl, n_segment );
+  size_ = buffer_size_.size();
 
-  if( changed ) {
-    int nderiv=1;
-    if( max_deriv_lvl_ == 1 ) {
-      nderiv = 3;
-      if( n_center_ > 2 )
-        nderiv *= n_center_ - 1;
-    }
+  if( size_ > old_size ) {
     delete [] temp_buffer_;
-    temp_buffer_ = new double[ max_segment_size_ * max_n_segment_ * nderiv ];
+    temp_buffer_ = new double[ size_ ];
   }
-
 }
 
 void

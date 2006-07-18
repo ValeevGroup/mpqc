@@ -67,6 +67,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   IntegralDescr desc = cdesc_.get_descr(0);
   n_segment_ = desc.get_n_segment();
+  type_ = desc.get_type();
   int scratchsize = bs1_->max_ncartesian_in_shell()
                       *  bs2_->max_ncartesian_in_shell()
                       *  n_segment_;
@@ -75,7 +76,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 
   eval_ = eval_factory_.get_evaluator2( cdesc_, cca_bs1_, cca_bs2_ );
   if( use_opaque_ )
-    buffer_ = static_cast<double*>( eval_.get_buffer( desc ) );
+    buffer_ = static_cast<double*>( eval_.get_buffer(desc) );
   else
     buffer_ = new double[scratchsize];
 }
@@ -87,7 +88,14 @@ OneBodyIntCCA::~OneBodyIntCCA()
 void
 OneBodyIntCCA::compute_shell(int i, int j)
 {
-  eval_.compute( i, j );
+  if( use_opaque_ )
+    eval_.compute( i, j );
+  else {
+    sidl_buffer_ = eval_.compute_array( type_, i, j );
+    int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
+    for(int ii=0; ii<sidl_size; ++ii)
+      buffer_[ii] = sidl_buffer_.get(ii);
+  }
 
   // reorder for mpqc's wacky 1-body multi-segment ordering
   if( n_segment_ > 1 && reorder_ ) {

@@ -75,6 +75,8 @@ throw ()
   else
     deriv_eval_.add_evaluator(eval,desc);
 
+  buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.add_evaluator)
 }
 
@@ -90,6 +92,10 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_composite_evaluator)
   comp_eval_.add_evaluator(eval,cdesc);
 
+  for( int i=0; i<cdesc.get_n_descr(); ++i ) {
+    Chemistry::QC::GaussianBasis::IntegralDescr desc = cdesc.get_descr(i);
+    buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
+  } 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.add_composite_evaluator)
 }
 
@@ -119,6 +125,8 @@ throw ()
     bs4_ = bs3_;
   else
     bs4_ = basis_cca_to_sc( bs4 );
+
+  buffer_size_.init( 4, bs1_, bs2_, bs3_, bs4_ );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.set_basis)
 }
@@ -254,6 +262,7 @@ throw (
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator4_impl::compute_array (
+  /* in */ const ::std::string& type,
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
@@ -263,18 +272,13 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
-  sidl::SIDLException ex = sidl::SIDLException::_create();
-  try {
-    ex.setNote("function not implemented yet");
-    ex.add(__FILE__, __LINE__,"");
-  }
-  catch(...) { }
-  throw ex;
-
-  // uh oh, multiple evals???
-  // this won't work
   computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  return eval_.compute_array( &computer_ );
+  sidl::array<double> array =
+    eval_.compute_array( &computer_, type, buffer_size_.size() );
+  if( reorder_ )
+    reorder_engine_.do_it( shellnum1, shellnum2, shellnum3, shellnum4 );
+
+  return array;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_array)
 }

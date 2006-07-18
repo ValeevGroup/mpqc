@@ -33,6 +33,7 @@
 #define _chemistry_cca_int_obintcca_h
 
 #include <vector>
+#include <sidl_cxx.hh>
 #include <chemistry/qc/basis/obint.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
@@ -58,6 +59,8 @@ namespace sc {
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
     double* temp_buffer_;
     int n_segment_;
+    std::string type_;
+    sidl::array<double> sidl_buffer_;
 
   protected:
     
@@ -94,6 +97,8 @@ namespace sc {
     Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
     int n_segment_;
+    std::string type_;
+    sidl::array<double> sidl_buffer_;
 
   public:
     OneBodyDerivIntCCA( Integral* integral,

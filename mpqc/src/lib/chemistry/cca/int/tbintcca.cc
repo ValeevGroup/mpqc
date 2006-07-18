@@ -85,8 +85,6 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     * bs3_->max_ncartesian_in_shell()
     * bs4_->max_ncartesian_in_shell();
     
-  if( !use_opaque_ ) buff_ = new double[scratchsize];
-
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
@@ -113,8 +111,12 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 					cca_bs3_, cca_bs4_ );
   for( int i=0; i<ndesc_; ++i ) {
     IntegralDescr desc = cdesc_.get_descr(i);
-    tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
-      = static_cast<double*>( eval_.get_buffer(desc) );
+    if( use_opaque_ )
+      tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
+        = static_cast<double*>( eval_.get_buffer(desc) );
+    else
+      tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
+        = new double[scratchsize];
   }
 
 }
@@ -127,16 +129,29 @@ TwoBodyIntCCA::buffer(tbint_type te_type) const
 
 TwoBodyIntCCA::~TwoBodyIntCCA()
 {
-  if( !use_opaque_ )
-    delete buff_;
+  for( int i=0; i<ndesc_; ++i ) {
+    IntegralDescr desc = cdesc_.get_descr(i);
+    delete [] tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ];
+  }
+  delete [] tbtype_to_buf_;
 }
 
 void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
   for( int ii=0; ii<ndesc_; ++ii ) {
+
     buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
-    eval_.compute( i, j, k, l );
+
+    if( use_opaque_ )
+      eval_.compute( i, j, k, l );
+    else {
+      sidl_buffer_ = eval_.compute_array( types_[ii], i, j, k, l );
+      int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
+      for(int jj=0; jj<sidl_size; ++jj)
+        buffer_[jj] = sidl_buffer_.get(jj);
+    }
+    
     if( !redundant_ )
       remove_redundant( i, j, k, l );
   }
@@ -282,7 +297,7 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
   if( use_opaque_ )
     eval_.compute( i, j, k, l );
   else {   
-    sidl_buffer_ = eval_.compute_array( i, j, k, l );
+    sidl_buffer_ = eval_.compute_array(NULL, i, j, k, l );
     int nelem = bs1_->shell(i).nfunction() * bs2_->shell(j).nfunction() *
       bs3_->shell(k).nfunction() * bs4_->shell(l).nfunction() * 3;
     copy_buffer(nelem);

@@ -218,6 +218,7 @@ throw (
   vector< Ref<OneBodyOneCenterInt> > obocint_vec;
 
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
+  eval.set_basis( bs1 );
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
 
@@ -238,8 +239,6 @@ throw (
       obocint_vec_.push_back( obocint_vec );
     }
   }
-
-  eval.set_basis( bs1 );
 
   return eval;
 
@@ -271,6 +270,7 @@ throw (
   bool is_ob, is_obderiv, is_tbtc;
 
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
+  eval.set_basis( bs1, bs2 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2;
@@ -353,8 +353,6 @@ throw (
     }
   }
 
-  eval.set_basis( bs1, bs2 );
-
   return eval;
 
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory.get_evaluator2)
@@ -382,6 +380,7 @@ throw (
   vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec;
 
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
+  eval.set_basis( bs1, bs2, bs3 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3;
@@ -411,8 +410,6 @@ throw (
       tb3cint_vec_.push_back( tb3cint_vec );
     }
   }
-
-  eval.set_basis( bs1, bs2, bs3 );
 
   return eval;
 
@@ -453,6 +450,7 @@ throw (
   }
 
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
+  eval.set_basis( bs1, bs2, bs3, bs4 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
@@ -511,8 +509,6 @@ throw (
     comps_.push_back( comp );
     eval.add_composite_evaluator( (void*) grts_.back().pointer(), comp );
   }
-
-  eval.set_basis( bs1, bs2, bs3, bs4 );
 
   return eval;
 

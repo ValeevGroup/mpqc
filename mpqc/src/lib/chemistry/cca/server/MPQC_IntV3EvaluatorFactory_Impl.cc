@@ -261,6 +261,7 @@ throw (
   vector< Ref<OneBodyOneCenterInt> > obocint_vec;
 
   MPQC::IntegralEvaluator1 eval = MPQC::IntegralEvaluator1::_create();
+  eval.set_basis( bs1 );
 
   for( int i=0; i<desc.get_n_descr(); ++i ) {
   
@@ -282,7 +283,6 @@ throw (
     }
   }
 
-  eval.set_basis( bs1 );
   if( reorder_ )
     eval.init_reorder();
   
@@ -316,6 +316,7 @@ throw (
   vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec;
 
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
+  eval.set_basis( bs1, bs2 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2;
@@ -420,7 +421,6 @@ throw (
     }
   }
 
-  eval.set_basis( bs1, bs2 );
   if( reorder_ )
     eval.init_reorder();
   
@@ -451,6 +451,7 @@ throw (
   vector< Ref<TwoBodyThreeCenterInt> > tb3cint_vec;
 
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
+  eval.set_basis( bs1, bs2, bs3 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3;
@@ -483,7 +484,6 @@ throw (
     }
   }
 
-  eval.set_basis( bs1, bs2, bs3 );
   if( reorder_ )
     eval.init_reorder();
 
@@ -517,6 +517,7 @@ throw (
   vector< Ref<TwoBodyDerivInt> > tbderivint_vec;
 
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
+  eval.set_basis( bs1, bs2, bs3, bs4 );
 
   sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
   sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
@@ -558,7 +559,6 @@ throw (
     }
   }
 
-  eval.set_basis( bs1, bs2, bs3, bs4 );
   if( reorder_ )
     eval.init_reorder();
 

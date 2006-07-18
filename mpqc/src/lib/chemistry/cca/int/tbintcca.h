@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <map>
+#include <sidl_cxx.hh>
 #include <chemistry/qc/basis/tbint.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
@@ -57,7 +58,6 @@ namespace sc {
     std::vector< std::string > types_;
     bool use_opaque_;
     MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
-    double* buff_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator4 eval_;
     int int_bound_min_;
     int ndesc_;
@@ -65,6 +65,7 @@ namespace sc {
     double loginv_;
     std::map< std::string, int > dtype_to_tbtype_;
     double** tbtype_to_buf_;
+    sidl::array<double> sidl_buffer_;
 
   public:
     TwoBodyIntCCA( Integral* integral,

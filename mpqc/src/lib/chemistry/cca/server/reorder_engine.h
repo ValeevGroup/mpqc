@@ -1,15 +1,12 @@
 #include <vector>
 #include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
-#include <Chemistry_QC_GaussianBasis_Molecular.hh>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <sidl_SIDLException.hh>
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
-
-sc::Ref<sc::GaussianBasisSet> basis_cca_to_sc(
-    Chemistry::QC::GaussianBasis::Molecular &cca_basis );
+#include <buffer_size.h>
 
 namespace MpqcCca {
 
@@ -22,16 +19,16 @@ namespace MpqcCca {
     ~ReorderEngine( ) { }
     
   private:
-    int n_center_, maxam_, max_deriv_lvl_, max_segment_size_, max_n_segment_;
+    int n_center_, maxam_, size_, max_deriv_lvl_;
     int **reorder_;
     std::vector<int> deriv_lvls_;
     std::vector<int> segments_;
     std::vector<double*> buffers_;
     double* temp_buffer_;
+    BufferSize buffer_size_;
+
     sc::Ref<sc::GaussianBasisSet> basis_sets_[4];
     int shell_ids_[4];
- 
-    //Ref<GaussianShell> shells_[4];
     sc::GaussianShell* shells_[4];
     
   public:

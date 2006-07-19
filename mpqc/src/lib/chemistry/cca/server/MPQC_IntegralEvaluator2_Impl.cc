@@ -196,9 +196,17 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
 
-  computer_.set_shells( shellnum1, shellnum2 );
-  sidl::array<double> array =
-    eval_.compute_array( &computer_, type, deriv_lvl, buffer_size_.size() ); 
+  sidl::array<double> array;
+  if( deriv_lvl == 0 ) {
+    computer_.set_shells( shellnum1, shellnum2 );
+    array = eval_.compute_array( &computer_, type, 
+                                 deriv_lvl, buffer_size_.size() );
+  }
+  else {
+    deriv_computer_.set_shells( shellnum1, shellnum2 );
+    array = deriv_eval_.compute_array( &deriv_computer_, type, 
+                                       deriv_lvl, buffer_size_.size() ); 
+  }
   if( reorder_ )
     reorder_engine_.do_it( shellnum1, shellnum2, -1, -1 );
 

@@ -66,6 +66,7 @@ namespace sc {
     std::map< std::string, int > dtype_to_tbtype_;
     double** tbtype_to_buf_;
     sidl::array<double> sidl_buffer_;
+    std::vector< int > segments_;
 
   public:
     TwoBodyIntCCA( Integral* integral,
@@ -112,7 +113,9 @@ namespace sc {
     int max_deriv_lvl_;
     int ndesc_;
     Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
-    sidl::array<int> sidl_buffer_;
+    sidl::array<double> sidl_buffer_;
+    std::string type_;
+    int n_segment_;
 
   public:
     TwoBodyDerivIntCCA( Integral* integral,

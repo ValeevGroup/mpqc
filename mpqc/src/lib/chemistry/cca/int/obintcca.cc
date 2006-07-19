@@ -88,25 +88,28 @@ OneBodyIntCCA::~OneBodyIntCCA()
 void
 OneBodyIntCCA::compute_shell(int i, int j)
 {
+  int nfunc;
+  if( !use_opaque_ || (n_segment_ > 1 && reorder_) ) {
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    nfunc = s1->nfunction() * s2->nfunction();
+  }
+
   if( use_opaque_ )
     eval_.compute( i, j );
   else {
     sidl_buffer_ = eval_.compute_array( type_, 0, i, j );
-    int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
-    for(int ii=0; ii<sidl_size; ++ii)
+    for(int ii=0; ii<nfunc*n_segment_; ++ii)
       buffer_[ii] = sidl_buffer_.get(ii);
   }
 
   // reorder for mpqc's wacky 1-body multi-segment ordering
   if( n_segment_ > 1 && reorder_ ) {
-    GaussianShell* s1 = &( bs1_->shell(i) );
-    GaussianShell* s2 = &( bs2_->shell(j) );
-    int nfunc = s1->nfunction() * s2->nfunction();
-    for(int i=0; i<nfunc*n_segment_; ++i)
-      temp_buffer_[i] = buffer_[i];
-    for(int i=0; i<nfunc; ++i)
+    for(int ii=0; ii<nfunc*n_segment_; ++ii)
+      temp_buffer_[ii] = buffer_[ii];
+    for(int ii=0; ii<nfunc; ++ii)
       for( int si=0; si<n_segment_; ++si)
-        buffer_[i*n_segment_+si] = temp_buffer_[si*nfunc+i];
+        buffer_[ii*n_segment_+si] = temp_buffer_[si*nfunc+ii];
   }
 
   // temporary debugging stuff for cca integrals comparison
@@ -176,6 +179,7 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
 
   IntegralDescr desc = cdesc_.get_descr(0);
   n_segment_ = desc.get_n_segment();
+  type_ = desc.get_type();
   int scratchsize = bs1_->max_ncartesian_in_shell()
                       *  bs2_->max_ncartesian_in_shell()
                       *  n_segment_ * 3;
@@ -204,24 +208,33 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 void 
 OneBodyDerivIntCCA::compute_shell(int i, int j, int atom) 
 {
+  int nfunc;
+  if( !use_opaque_ || reorder_ ) {
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    nfunc = s1->nfunction() * s2->nfunction();
+  }
+
   cca_dc_.set_deriv_atom( atom );
-  eval_.compute(i,j);
+  if( use_opaque_ )
+    eval_.compute(i,j);
+  else {
+    sidl_buffer_ = eval_.compute_array( type_, 1, i, j );
+    for(int ii=0; ii<(nfunc * n_segment_ * 3); ++ii)
+      buffer_[ii] = sidl_buffer_.get(ii);
+  }
 
   // reorder for mpqc's wacky 1-body derivative ordering
   if( n_segment_ > 1 ) 
-    throw SCException("Deritative, multi-segment buffer structure unclear",
+    throw SCException("Not sure about deritative, multi-segment buffers",
                       __FILE__,__LINE__);
 
   if( reorder_ ) {
-    GaussianShell* s1 = &( bs1_->shell(i) );
-    GaussianShell* s2 = &( bs2_->shell(j) );
-    int nfunc = s1->nfunction() * s2->nfunction();
-
-    for(int i=0; i<nfunc*3; ++i)
-      temp_buffer_[i] = buffer_[i];
-    for(int i=0; i<nfunc; ++i)
+    for(int ii=0; ii<(nfunc * n_segment_ * 3); ++ii)
+      temp_buffer_[ii] = buffer_[ii];
+    for(int ii=0; ii<nfunc; ++ii)
       for( int di=0; di<3; ++di)
-        buffer_[i*3+di] = temp_buffer_[di*nfunc+i];
+        buffer_[ii*3+di] = temp_buffer_[di*nfunc+ii];
   }
 
 // temporary debuging stuff for cca integrals comparison

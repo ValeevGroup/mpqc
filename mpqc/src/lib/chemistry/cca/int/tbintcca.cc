@@ -111,6 +111,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 					cca_bs3_, cca_bs4_ );
   for( int i=0; i<ndesc_; ++i ) {
     IntegralDescr desc = cdesc_.get_descr(i);
+    segments_.push_back( desc.get_n_segment() );
     if( use_opaque_ )
       tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = static_cast<double*>( eval_.get_buffer(desc) );
@@ -139,6 +140,16 @@ TwoBodyIntCCA::~TwoBodyIntCCA()
 void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
+  int nfunc;
+  if( !use_opaque_ ) {
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    GaussianShell* s3 = &( bs3_->shell(k) );
+    GaussianShell* s4 = &( bs4_->shell(l) );
+    nfunc = s1->nfunction() * s2->nfunction() * 
+            s3->nfunction() * s4->nfunction();
+  }
+
   for( int ii=0; ii<ndesc_; ++ii ) {
 
     buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
@@ -147,8 +158,7 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
       eval_.compute( i, j, k, l );
     else {
       sidl_buffer_ = eval_.compute_array( types_[ii], 0, i, j, k, l );
-      int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
-      for(int jj=0; jj<sidl_size; ++jj)
+      for(int jj=0; jj<(nfunc * segments_[ii]); ++jj)
         buffer_[jj] = sidl_buffer_.get(jj);
     }
     
@@ -277,6 +287,8 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 
   IntegralDescr idesc = cdesc_.get_descr(0);
   cca_dc_ = idesc.get_deriv_centers();
+  type_ = idesc.get_type();
+  n_segment_ = idesc.get_n_segment();
   
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
@@ -293,16 +305,23 @@ void
 TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
                                   sc::DerivCenters &dc )
 {
+  int nfunc;
+  if( !use_opaque_ ) {
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    GaussianShell* s3 = &( bs3_->shell(k) );
+    GaussianShell* s4 = &( bs4_->shell(l) );
+    nfunc = s1->nfunction() * s2->nfunction() *
+            s3->nfunction() * s4->nfunction();
+  }
+
   cca_dc_.clear();
   if( use_opaque_ )
     eval_.compute( i, j, k, l );
   else {   
-  /*
-    sidl_buffer_ = eval_.compute_array(NULL, i, j, k, l );
-    int nelem = bs1_->shell(i).nfunction() * bs2_->shell(j).nfunction() *
-      bs3_->shell(k).nfunction() * bs4_->shell(l).nfunction() * 3;
-    copy_buffer(nelem);
-  */
+    sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
+    for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
+      buffer_[ii] = sidl_buffer_.get(ii);
   }
 
   dc.clear();

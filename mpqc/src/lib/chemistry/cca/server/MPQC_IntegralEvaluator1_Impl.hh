@@ -178,6 +178,7 @@ namespace MPQC {
     ::sidl::array<double>
     compute_array (
       /* in */ const ::std::string& type,
+      /* in */ int32_t deriv_lvl,
       /* in */ int64_t shellnum1
     )
     throw ( 

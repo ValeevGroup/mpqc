@@ -146,7 +146,7 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
     if( use_opaque_ )
       eval_.compute( i, j, k, l );
     else {
-      sidl_buffer_ = eval_.compute_array( types_[ii], i, j, k, l );
+      sidl_buffer_ = eval_.compute_array( types_[ii], 0, i, j, k, l );
       int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
       for(int jj=0; jj<sidl_size; ++jj)
         buffer_[jj] = sidl_buffer_.get(jj);
@@ -297,10 +297,12 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
   if( use_opaque_ )
     eval_.compute( i, j, k, l );
   else {   
+  /*
     sidl_buffer_ = eval_.compute_array(NULL, i, j, k, l );
     int nelem = bs1_->shell(i).nfunction() * bs2_->shell(j).nfunction() *
       bs3_->shell(k).nfunction() * bs4_->shell(l).nfunction() * 3;
     copy_buffer(nelem);
+  */
   }
 
   dc.clear();

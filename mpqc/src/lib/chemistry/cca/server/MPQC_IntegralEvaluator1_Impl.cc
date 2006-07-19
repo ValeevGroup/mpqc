@@ -160,6 +160,7 @@ throw (
 ::sidl::array<double>
 MPQC::IntegralEvaluator1_impl::compute_array (
   /* in */ const ::std::string& type,
+  /* in */ int32_t deriv_lvl,
   /* in */ int64_t shellnum1 ) 
 throw ( 
   ::sidl::BaseException
@@ -168,7 +169,7 @@ throw (
 
   computer_.set_shells( shellnum1 );
   sidl::array<double> array = 
-    eval_.compute_array( &computer_, type, buffer_size_.size() );
+    eval_.compute_array( &computer_, type, deriv_lvl, buffer_size_.size() );
   if( reorder_ )
     reorder_engine_.do_it( shellnum1, -1, -1 , -1 );
 

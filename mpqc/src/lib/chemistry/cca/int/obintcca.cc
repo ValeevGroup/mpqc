@@ -91,7 +91,7 @@ OneBodyIntCCA::compute_shell(int i, int j)
   if( use_opaque_ )
     eval_.compute( i, j );
   else {
-    sidl_buffer_ = eval_.compute_array( type_, i, j );
+    sidl_buffer_ = eval_.compute_array( type_, 0, i, j );
     int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
     for(int ii=0; ii<sidl_size; ++ii)
       buffer_[ii] = sidl_buffer_.get(ii);

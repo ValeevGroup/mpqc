@@ -22,13 +22,14 @@ if ($#ARGV != 1) {
 
 $email = $ARGV[0];
 
-$basis = $ARGV[1];
+$basis = "$ARGV[1]";
 
 $basisreq = $basis;
 $basisreq =~ s/\+/%2B/g;
 $basisreq =~ s/\(/\%28/g;
 $basisreq =~ s/\)/\%29/g;
 $basisreq =~ s/,/\%2C/g;
+$basisreq =~ s/ /\%20/g;
 
 $atoms = "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr";
 $atoms =~ s/ /+/g;

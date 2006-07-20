@@ -376,5 +376,7 @@ sub mpqc_basisname {
     my $basis = shift;
     $basis =~ s/_dk$/-dk/;
     $basis =~ s/_DK$/-DK/;
+    $basis =~ s/aug-(.*) Diffuse/augmentation-\1/;
+    $basis =~ s/aug-(.*)_diffuse/augmentation-\1/;
     return $basis;
 }

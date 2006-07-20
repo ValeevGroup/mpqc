@@ -978,7 +978,9 @@ sub input_string() {
         my $fzc = $qcinput->fzc();
 
         $mole = sprintf "%s\n    stdapprox = \"%s\"", $mole, $stdapprox;
-        $mole = "$mole\n    integrals<IntegralCints>: ()";
+        if($do_cca ne "yes") {
+          $mole = "$mole\n    integrals<IntegralCints>: ()";
+        }
         $mole = "$mole\n    nfzc = $fzc";
         # don't write an auxbasis if the auxbasis is the same as the basis set.
         # this will speed up the calculation
@@ -1096,7 +1098,12 @@ sub input_string() {
     $mpqcstart = sprintf ("%s  restart = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->restart()));
     if ($use_cints) {
-        $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+        if ( $do_cca ) {
+          $mpqcstart = "$mpqcstart  integrals = \$:integrals\n";
+        }
+        else {
+          $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+        }
     }
     my $mpqcstop = ")\n";
     my $emacs = "% Emacs should use -*- KeyVal -*- mode\n";

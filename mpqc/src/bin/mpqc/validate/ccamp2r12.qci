@@ -1,0 +1,20 @@
+
+test_basis: cc-pVDZ
+test_auxbasis: cc-pVDZ
+test_method: mp2-r12/a
+test_symmetry: c2v
+test_calc: energy
+test_fzc: 1
+test_integral_buffer: opaque array
+test_default_package: MPQC.CintsEvaluatorFactory
+
+restart: no
+checkpoint: no
+do_cca: yes
+
+label: cca integrals mp2-r12 test
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472

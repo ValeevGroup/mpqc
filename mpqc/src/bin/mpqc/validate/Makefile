@@ -144,6 +144,14 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  endif
 endif
 
+CCAMP2R12MASTER=ccamp2r12.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+  CCAMP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAMP2R12MASTER))
+  CCAMP2R12OUTPUTS = $(CCAMP2R12INPUTS:%.$(INSUF)=%.out)
+ endif
+endif
+
 CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  CCAFEINPUTS = ccafe_h2oscfsto3g.cca ccafe_h2oscfgradccpvtz.cca
@@ -241,7 +249,8 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
-            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS)
+            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) \
+            $(CCAMP2R12INPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
@@ -389,13 +398,13 @@ check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
-	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%) $(CCAMP2R12INPUTS:$(INP)/%=%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_run
 endif
 
 checkcca_chk:
-	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
+	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%) $(CCAMP2R12OUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
 endif
@@ -412,7 +421,7 @@ checkccafe_chk:
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3
+inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -467,6 +476,9 @@ ccaintv3: stamp-ccaintv3
 
 .PHONY: ccacints
 ccacints: stamp-ccacints
+
+.PHONY: ccamp2r12
+ccamp2r12: stamp-ccamp2r12
 
 .PHONY: ckpt
 ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
@@ -555,6 +567,10 @@ stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
 stamp-ccacints: $(INP) $(CCACINTSMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCACINTSMASTER)
 	touch stamp-ccacints
+
+stamp-ccamp2r12: $(INP) $(CCAMP2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCAMP2R12MASTER)
+	touch stamp-ccamp2r12
 
 ##############################################################################
 

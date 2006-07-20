@@ -13,7 +13,7 @@ molecule<Molecule>: (
 )
 % basis set specification
 basis<GaussianBasisSet>: (
-  name = "STO-3G"
+  name = "cc-pVTZ"
   molecule = $:molecule
 )
 % using cca integrals
@@ -47,7 +47,7 @@ mpqc: (
     multiplicity = 1
     print_npa = yes
   )
-  optimize = no
+  optimize = yes
   % optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     max_iterations = 20

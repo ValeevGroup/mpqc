@@ -18,7 +18,7 @@ basis<GaussianBasisSet>: (
 )
 % using cca integrals
 integrals<IntegralCCA>: (
-  integral_buffer = opaque
+  integral_buffer = array
   default_subfactory = MPQC.IntV3EvaluatorFactory
   molecule = $:molecule
 )
@@ -47,7 +47,7 @@ mpqc: (
     multiplicity = 1
     print_npa = yes
   )
-  optimize = no
+  optimize = yes
   % optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     max_iterations = 20

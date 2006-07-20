@@ -1,7 +1,7 @@
 fixed:
 
 test_default_package:
-intv3
+MPQC.IntV3EvaluatorFactory
 test_symmetry:
 c2v
 followed:
@@ -15,13 +15,13 @@ fzc:
 basis:
 cc-pVTZ
 integral_buffer:
-opaque
+array
 method:
 scf
 auxbasis:
 
 test_calc:
-energy
+opt
 restart:
 no
 grid:
@@ -35,7 +35,7 @@ auto
 test_basis:
 STO-3G cc-pVTZ
 default_package:
-intv3
+MPQC.IntV3EvaluatorFactory
 checkpoint:
 no
 symmetry:
@@ -49,7 +49,7 @@ scf
 label:
 cca integrals test
 optimize:
-no
+yes
 molecule:
   O  0.000000000 0  0.369372944
   H  0.783975899 0 -0.184686472

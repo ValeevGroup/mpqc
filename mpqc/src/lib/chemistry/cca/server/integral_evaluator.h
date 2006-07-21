@@ -374,22 +374,48 @@ namespace MpqcCca {
 
 
   //-------------------------------------------------------------------------
-
-
   template< typename eval_type, typename computer_type >
   class CompositeIntegralEvaluator {
 
   public:
 
-    CompositeIntegralEvaluator( ) { }
+    CompositeIntegralEvaluator( ): 
+      have_new_shells_(true), sh1_(-1), sh2_(-1), sh3_(-1), sh4_(-1) { }
 
     ~CompositeIntegralEvaluator( ) { }
 
   private:
 
     std::vector< std::pair<eval_type*,QC_CompIntegralDescr> > evals_;
+    sidl::array<double> sidl_buffer_;
+    int sh1_, sh2_, sh3_, sh4_;
+    bool have_new_shells_;
+    std::vector< double* > buffers_;
+    std::vector< std::string > types_;
+    std::vector< int > deriv_lvls_;
 
   public:
+
+    void set_shells( int sh1, int sh2, int sh3, int sh4 )
+    {
+      have_new_shells_ = false;
+      if( sh1_ != sh1 ) {
+        sh1_ = sh1;
+        have_new_shells_ = true;
+      }
+      if( sh2 != -1 && sh2_ != sh2 ) {
+        sh2_ = sh2;
+        have_new_shells_ = true;
+      }
+      if( sh3 != -1 && sh3_ != sh3 ) {
+        sh3_ = sh3;
+        have_new_shells_ = true;
+      }
+      if( sh4 != -1 && sh4_ != sh4 ) {
+        sh4_ = sh4;
+        have_new_shells_ = true;
+      }
+    }
 
     void add_evaluator ( void* eval, QC_CompIntegralDescr cdesc )
     {
@@ -402,14 +428,18 @@ namespace MpqcCca {
     double* get_buffer ( QC_IntegralDescr desc, 
                          sc::TwoBodyInt::tbint_type tbt )
     {
+      std::string type = desc.get_type();
+      int deriv_lvl = desc.get_deriv_lvl();
       for( int i=0; i<evals_.size(); ++i)
         for( int j=0; i<evals_[i].second.get_n_descr(); ++ j)
-          if( desc.get_type() == evals_[i].second.get_descr(j).get_type() &&
-              desc.get_deriv_lvl() == 
-                evals_[i].second.get_descr(j).get_deriv_lvl() ) {
+          if( type == evals_[i].second.get_descr(j).get_type() &&
+              deriv_lvl == evals_[i].second.get_descr(j).get_deriv_lvl() ) {
             const double *b = evals_[i].first->buffer( tbt );
-            return const_cast<double*>( b );
-      }
+            types_.push_back( type );
+            deriv_lvls_.push_back( deriv_lvl );
+            buffers_.push_back( const_cast<double*>( b ) );
+            return buffers_.back();
+          }
       return NULL;
     }
 
@@ -431,37 +461,37 @@ namespace MpqcCca {
 
     double compute_bounds( computer_type* computer )
     {
-      // this is obviously not going to work for multiple evals
-      // that will require interface work
+      double bounds=0;
       if( evals_.size() )
         for( int i=0; i<evals_.size(); ++i)
-          return computer->compute_bounds( evals_[i].first );
+          bounds = std::max( computer->compute_bounds(evals_[i].first),
+                             bounds );
 
-      return 0.0;
+      return bounds;
     }
 
 
-    sidl::array<double> compute_array ( computer_type* computer )
+    sidl::array<double> compute_array ( computer_type* computer,
+                                        std::string type,
+                                        int deriv_lvl,
+                                        int buffer_size )
     {
-      sidl::SIDLException ex = sidl::SIDLException::_create();
-      try {
-        ex.setNote("MPQC doesn't support compute_array yet");
-        ex.add(__FILE__, __LINE__,"");
-      }
-      catch(...) { }
-      throw ex;
-
-      /*
-      compute( shellnum1, shellnum2, deriv_level, deriv_atom );
-
       int lower[1] = {0};
-      int upper[1]; upper[0] = max_nshell2_-1;
+      int upper[1];
+      upper[0] = buffer_size - 1;
       int stride[1] = {1};
-      sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1,
-                           lower, upper, stride);
-      return sidl_buffer_;
-      */
-    }
+
+      if( have_new_shells_ )
+        compute( computer );
+
+      for( int i=0; i<buffers_.size(); ++i)
+        if( types_[i] == type && deriv_lvls_[i] == deriv_lvl ) {
+          sidl_buffer_.borrow( buffers_[i], 1, lower, upper, stride);
+          return sidl_buffer_;
+        }
+
+      return NULL;
+    } 
 
   };
 }

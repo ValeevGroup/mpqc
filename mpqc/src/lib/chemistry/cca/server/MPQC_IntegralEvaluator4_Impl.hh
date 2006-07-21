@@ -95,6 +95,7 @@ namespace MPQC {
     twobody_deriv_computer deriv_computer_;
     std::map<std::string,sc::TwoBodyInt::tbint_type> descr_to_tbint_type_;
     BufferSize buffer_size_;
+    std::vector< std::pair< std::string, int > > comp_ids_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._implementation)
 

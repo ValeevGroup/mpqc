@@ -95,6 +95,8 @@ throw ()
   for( int i=0; i<cdesc.get_n_descr(); ++i ) {
     Chemistry::QC::GaussianBasis::IntegralDescr desc = cdesc.get_descr(i);
     buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
+    std::pair< std::string, int > p(desc.get_type(),desc.get_deriv_lvl());
+    comp_ids_.push_back( p );
   } 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.add_composite_evaluator)
 }
@@ -274,18 +276,38 @@ throw (
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
   sidl::array<double> array;
-  if( deriv_lvl == 0 ) {
-    computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-    array = eval_.compute_array( &computer_, type, 
-                                 deriv_lvl, buffer_size_.size() );
+
+  bool is_comp = false;
+  std::vector< std::pair< std::string, int > >::iterator 
+    comp_id_it = comp_ids_.begin();
+  for( ; comp_id_it != comp_ids_.end(); ++comp_id_it ) {
+    if( type == (*comp_id_it).first && deriv_lvl == (*comp_id_it).second ){
+      is_comp = true;
+      computer2_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+      comp_eval_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+      array = comp_eval_.compute_array( &computer2_, type,
+                                         deriv_lvl, buffer_size_.size() );
+      // currently no comp_eval will need to reorder (cints only!)
+      // this fact saves lots of headache
+    }
   }
-  else {
-    deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-    array = deriv_eval_.compute_array( &deriv_computer_, type,
-                                       deriv_lvl, buffer_size_.size() );
+
+  if( !is_comp ) {
+    if( deriv_lvl == 0 ) {
+      computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+      array = eval_.compute_array( &computer_, type, 
+                                   deriv_lvl, buffer_size_.size() );
+    }
+    else {
+      deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+      array = deriv_eval_.compute_array( &deriv_computer_, type,
+                                         deriv_lvl, buffer_size_.size() );
+    }
+    // currently bad for multiple evals because EVERY buffer is reordered
+    // every time do_it() is called
+    if( reorder_ )
+      reorder_engine_.do_it( shellnum1, shellnum2, shellnum3, shellnum4 );
   }
-  if( reorder_ )
-    reorder_engine_.do_it( shellnum1, shellnum2, shellnum3, shellnum4 );
 
   return array;
 

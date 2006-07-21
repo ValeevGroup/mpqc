@@ -115,9 +115,11 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     if( use_opaque_ )
       tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = static_cast<double*>( eval_.get_buffer(desc) );
-    else
+    else {
       tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = new double[scratchsize];
+      void* trash = eval_.get_buffer(desc);
+    }
   }
 
 }
@@ -130,11 +132,14 @@ TwoBodyIntCCA::buffer(tbint_type te_type) const
 
 TwoBodyIntCCA::~TwoBodyIntCCA()
 {
+//releasing invalid pointer???
+/*
   for( int i=0; i<ndesc_; ++i ) {
     IntegralDescr desc = cdesc_.get_descr(i);
     delete [] tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ];
   }
   delete [] tbtype_to_buf_;
+*/
 }
 
 void

@@ -57,7 +57,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",7,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",8,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -106,6 +106,20 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   int r12ints_method; s.get(r12ints_method);
     r12ints_method_ = static_cast<R12IntEvalInfo::StoreMethod::type>(r12ints_method);
   s.get(r12ints_file_);
+
+  // didn't do the checks in the old code
+  safety_check_ = false;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 8) {
+      int safety_check; s.get(safety_check);
+      safety_check_ = static_cast<bool>(safety_check);
+  }
+  // didn't ensure positive definite B in the old code
+  posdef_B_ = LinearR12::PositiveDefiniteB_no;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 8) {
+      int posdef_B; s.get(posdef_B);
+      posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
+  }
+
   s.get(mp2_corr_energy_);
   s.get(r12_corr_energy_);
 
@@ -149,10 +163,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Default is to use R12 factor
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
-  if (corrfactor == "r12") {
+  if (corrfactor == "r12" ||
+      corrfactor == "R12") {
     corrfactor_ = new LinearR12::R12CorrelationFactor();
   }
-  else if (corrfactor == "g12") {
+  else if (corrfactor == "g12" || corrfactor == "G12") {
     if (keyval->exists("corr_param")) {
       typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
       CorrParams params;
@@ -197,7 +212,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     else
       throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
   }
-  else if (corrfactor == "none") {
+  else if (corrfactor == "none" || corrfactor == "NONE") {
     corrfactor_ = new LinearR12::NullCorrelationFactor();
   }
   else
@@ -402,7 +417,22 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 									KeyValValueint(0)
 									));
   }
-  
+
+  safety_check_ = keyval->booleanvalue("safety_check",KeyValValueboolean((int)true));
+
+  std::string posdef_B = keyval->stringvalue("posdef_B",KeyValValuestring("weak"));
+  if (posdef_B == "no" || posdef_B == "NO" || posdef_B == "false" || posdef_B == "FALSE") {
+      posdef_B_ = LinearR12::PositiveDefiniteB_no;
+  }
+  else if (posdef_B == "yes" || posdef_B == "YES" || posdef_B == "true" || posdef_B == "TRUE") {
+      posdef_B_ = LinearR12::PositiveDefiniteB_yes;
+  }
+  else if (posdef_B == "weak" || posdef_B == "WEAK") {
+      posdef_B_ = LinearR12::PositiveDefiniteB_weak;
+  }
+  else {
+      throw InputError("MBPT2_R12::MBPT2_R12 -- invalid value for keyword posdef_B",__FILE__,__LINE__);
+  }
 }
 
 MBPT2_R12::~MBPT2_R12()
@@ -432,6 +462,8 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)include_mp1_);
   s.put((int)r12ints_method_);
   s.put(r12ints_file_);
+  s.put((int)safety_check_);
+  s.put((int)posdef_B_);
 
   s.put(mp2_corr_energy_);
   s.put(r12_corr_energy_);
@@ -447,10 +479,17 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
 
+  if (!safety_check())
+    o << indent << "WARNING: ---- safety check SKIPPED ----" << endl;
   corrfactor()->print(o); o << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: " << (!ks_ebcfree_ ? "Valeev" : "Klopper and Samson") << endl;
+  switch (posdef_B()) {
+    case LinearR12::PositiveDefiniteB_no:     o << indent << "Positive definiteness of B is not enforced" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Positive definiteness of B is enforced" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Positive definiteness of B, but not ~B(ij), is enforced" << endl;  break;      
+  }
   if (stdapprox_ == LinearR12::StdApprox_B && omit_P_) {
     o << indent << "Intermediate P is omitted" << endl;
   }
@@ -704,6 +743,22 @@ const std::string&
 MBPT2_R12::r12ints_file() const
 {
   return r12ints_file_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+MBPT2_R12::safety_check() const
+{
+  return safety_check_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+const LinearR12::PositiveDefiniteB&
+MBPT2_R12::posdef_B() const
+{
+  return posdef_B_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

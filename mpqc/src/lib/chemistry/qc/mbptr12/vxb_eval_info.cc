@@ -52,7 +52,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",8,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",9,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -90,7 +90,10 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   omit_P_ = mbptr12->omit_P();
   maxnabs_ = mbptr12->maxnabs();
   include_mp1_ = mbptr12->include_mp1();
-  construct_ri_basis_(false);
+  safety_check_ = mbptr12->safety_check();
+  posdef_B_ = mbptr12->posdef_B();
+
+  construct_ri_basis_(safety_check());
   construct_orthog_vir_();
 
   tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
@@ -137,7 +140,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     }
     int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
     int includemp1; si.get(includemp1); include_mp1_ = (bool) includemp1;
-    int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
   }
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 4) {
@@ -161,6 +163,12 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 7) {
     int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
     int omitP; si.get(omitP); omit_P_ = static_cast<bool>(omitP);
+  }
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 9) {
+    int safety_check; si.get(safety_check);
+    safety_check_ = static_cast<bool>(safety_check);
+    int posdef_B; si.get(posdef_B);
+    posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
   }
 }
 
@@ -201,6 +209,8 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(maxnabs_);
   so.put((int)ks_ebcfree_);
   so.put((int)omit_P_);
+  so.put((int)safety_check_);
+  so.put((int)posdef_B_);
 }
 
 const Ref<SingleRefInfo>&
@@ -227,7 +237,7 @@ R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
 {
   if (abs_method != abs_method_) {
     abs_method = abs_method_;
-    construct_ri_basis_(false);
+    construct_ri_basis_(safety_check());
   }
 }
 

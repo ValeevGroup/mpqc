@@ -355,16 +355,6 @@ R12IntEval::V(SpinCase2 S) {
   return V_[S];
 }
 
-const RefSCMatrix&
-R12IntEval::X(SpinCase2 S) {
-  compute();
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
-                   occ_act(Alpha),
-                   occ_act(Alpha));
-  return X_[S];
-}
-
 namespace {
   /// Returns the lower triangle of the matrix B (which should be symmetric)
   RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B) {
@@ -379,6 +369,16 @@ namespace {
     delete[] b;
     return Bs;
   }
+}
+
+RefSymmSCMatrix
+R12IntEval::X(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
+                   occ_act(Alpha),
+                   occ_act(Alpha));
+  return to_lower_triangle(X_[S]);
 }
 
 RefSymmSCMatrix

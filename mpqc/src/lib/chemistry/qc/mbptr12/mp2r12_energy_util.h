@@ -50,8 +50,16 @@ namespace sc {
     virtual void print(const char* label, const RefSCMatrix& A) const = 0;
     /// Prints A
     virtual void print(const char* label, const RefSymmSCMatrix& A) const = 0;
+    /// Prints A
+    virtual void print(const char* label, const RefDiagSCMatrix& A) const = 0;
     /// Inverts A in-place
     virtual void invert(RefSymmSCMatrix& A) const = 0;
+    /// Computes eigenvalues of A
+    virtual RefDiagSCMatrix eigenvalues(const RefSymmSCMatrix& A) const = 0;
+    /// Computes eigenvalues and eigenvectors of A. evals and evecs don't have to be allocated
+    virtual void diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const = 0;
+    /// B = U * A * U.t()
+    virtual void transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const = 0;
     /// Solves A*X = B
     virtual void solve_linear_system(const RefSymmSCMatrix& A,
                                      RefSCMatrix& X,
@@ -81,8 +89,16 @@ namespace sc {
     void print(const char* label, const RefSCMatrix& A) const;
     /// Prints A
     void print(const char* label, const RefSymmSCMatrix& A) const;
+    /// Prints A
+    void print(const char* label, const RefDiagSCMatrix& A) const;
     /// Inverts A in-place
     void invert(RefSymmSCMatrix& A) const;
+    /// Computes eigenvalues of A
+    RefDiagSCMatrix eigenvalues(const RefSymmSCMatrix& A) const;
+    /// Computes eigenvalues and eigenvectors of A. evals and evecs don't have to be allocated
+    void diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const;
+    /// B = U * A * U.t()
+    void transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const;
     /// Solves A*X = B
     void solve_linear_system(const RefSymmSCMatrix& A,
                              RefSCMatrix& X,
@@ -96,7 +112,7 @@ namespace sc {
                             const RefSCMatrix& B) const;
     
     private:
-    // Number of pairs
+    // number of pairs
     RefSCDimension oodim_;
     // number of geminals per pair times number of pairs
     RefSCDimension f12dim_;
@@ -117,13 +133,21 @@ namespace sc {
     unsigned int nblks(const RefSymmSCMatrix& A) const { check_dims(A); return A.dim().n()/oodim_.n(); }
     
     /// gets ij block of A
-    void get(unsigned int ij, const RefSCMatrix& A, RefSCVector& Aij) const;
+    void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
     /// gets ij block of A
-    void get(unsigned int ij, const RefSymmSCMatrix& A, RefSymmSCMatrix& Aij) const;
+    void get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const;
+    /// gets ij block of A
+    void get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
+    /// gets ij block of A
+    void get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
     /// puts ij block into A
-    void put(unsigned int ij, RefSCMatrix& A, const RefSCVector& Aij) const;
+    void put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
     /// puts ij block into A
-    void put(unsigned int ij, RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
+    void put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const;
+    /// puts ij block into A
+    void put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
+    /// puts ij block into A
+    void put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
   };
   
   template<bool Diag>
@@ -154,16 +178,6 @@ namespace sc {
         throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
     }
 
-  // Prints out matrix A
-  template <bool Diag>
-    void MP2R12EnergyUtil<Diag>::print(const char* label, const RefSCMatrix& A) const {
-      A.print(label);
-    }
-  template <bool Diag>
-    void MP2R12EnergyUtil<Diag>::print(const char* label, const RefSymmSCMatrix& A) const {
-      A.print(label);
-    }
-  
 }
 
 #endif // include guard

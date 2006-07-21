@@ -199,6 +199,13 @@ namespace sc {
 		    ABS_ABSPlus = 1,
 		    ABS_CABS = 2,
 		    ABS_CABSPlus = 3};
+
+    enum PositiveDefiniteB {
+      PositiveDefiniteB_no = 0,
+      PositiveDefiniteB_yes = 1,
+      PositiveDefiniteB_weak = 2
+    };
+			       
   }
 
 }

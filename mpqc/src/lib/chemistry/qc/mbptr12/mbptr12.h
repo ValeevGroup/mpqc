@@ -96,6 +96,8 @@ class MBPT2_R12: public MBPT2 {
     bool omit_P_;
     bool spinadapted_;
     bool include_mp1_;
+    bool safety_check_;
+    LinearR12::PositiveDefiniteB posdef_B_;
 
     void init_variables_();
 
@@ -255,6 +257,18 @@ class MBPT2_R12: public MBPT2 {
         <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
         specifies which pair function to plot.
 
+	<dt><tt>safety_check</tt><dd> Set to true if you want to perform safety checks, e.g., for completeness
+        of the RI basis, linear independence of the geminal basis, positive definiteness of B matrix, etc.
+	The default is true (to perform the checks).
+
+	<dt><tt>posdef_B</tt><dd> This keyword specifies whether and how to enforce the positive definiteness of
+	matrix B. Valid choices are <tt>no</tt>, <tt>yes</tt> (enforce positive definite matrix B and its pair-dependent
+	counterpart, tilde-B), <tt>weak</tt> (same as <tt>yes</tt>, except the positive-definiteness of tilde-B
+	is not enforced). If this keyword is set to <tt>no</tt> then sometimes nonphysical results can be obtained, e.g.,
+	positive pair energy corrections can result from using too many correlation functions.
+	<tt>posdef_B = yes</tt> offers the best protection against nonphysical results.
+	The default is <tt>weak</tt>, which is cheaper <tt>yes</tt> and is definitely safer than <tt>no</tt>.
+
         </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
     ~MBPT2_R12();
@@ -276,6 +290,9 @@ class MBPT2_R12: public MBPT2 {
     bool include_mp1() const;
     R12IntEvalInfo::StoreMethod::type r12ints_method() const;
     const std::string& r12ints_file() const;
+
+    bool safety_check() const;
+    const LinearR12::PositiveDefiniteB& posdef_B() const;
 
     double corr_energy();
     double r12_corr_energy();

@@ -105,6 +105,8 @@ private:
   bool ks_ebcfree_;
   /// omit P from intermediate B under standard approximation B? (matters only if OBS != ABS)
   bool omit_P_;
+  bool safety_check_;
+  LinearR12::PositiveDefiniteB posdef_B_;
 
   int nlindep_aux_;
   int nlindep_vir_;
@@ -204,6 +206,8 @@ public:
   unsigned int maxnabs() const { return maxnabs_; }
   bool ks_ebcfree() const { return ks_ebcfree_; }
   bool omit_P() const { return omit_P_; }
+  bool safety_check() const { return safety_check_; }
+  const LinearR12::PositiveDefiniteB& posdef_B() const { return posdef_B_; }
 
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };

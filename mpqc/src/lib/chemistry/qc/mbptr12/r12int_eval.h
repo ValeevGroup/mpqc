@@ -461,7 +461,7 @@ public:
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);
   /// Returns S block of intermediate X
-  const RefSCMatrix& X(SpinCase2 S);
+  RefSymmSCMatrix X(SpinCase2 S);
   /// Returns S block of intermediate B
   RefSymmSCMatrix B(SpinCase2 S);
   /// Returns S block of the difference between intermediate B of approximations B and A'

@@ -43,7 +43,6 @@
 namespace sc {
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
-
 class MP2R12Energy : virtual public SavableState {
   private:
   Ref<R12IntEval> r12eval_;
@@ -61,10 +60,10 @@ class MP2R12Energy : virtual public SavableState {
 
   // Initialize SCVectors and SCMatrices
   void init_();
-  // Computes values of all 2-body products from
-  // space1 and space2 if electron 1 is at r1 and
-  // electron 2 is at r2. equiv specifies whether electrons
-  // are equivalent (same spin) or not
+  /** Computes values of all 2-body products from
+      space1 and space2 if electron 1 is at r1 and
+      electron 2 is at r2. equiv specifies whether electrons
+      are equivalent (same spin) or not */
   RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const;
 

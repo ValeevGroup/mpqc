@@ -40,6 +40,28 @@ using namespace sc;
 
 #define USE_INVERT 0
 
+namespace {
+  /// Eigenvalues statistics
+  struct EvalStats {
+    EvalStats(const RefDiagSCMatrix& eigenvalues, double thresh, unsigned int nevals_below, double emin, double emax) :
+      evals(eigenvalues), threshold(thresh), num_below_threshold(nevals_below), min(emin), max(emax) {}
+    RefDiagSCMatrix evals;
+    double threshold;
+    unsigned int num_below_threshold;
+    double min;
+    double max;
+  };
+  /// Compute EvalsStats for eigenvalues evals, given threshold (default -- 0.0)
+  EvalStats eigenvalue_stats(const RefDiagSCMatrix& evals, double threshold = 0.0);
+  /// Print eigenstats
+  void print_eigenstats(const EvalStats& stats,
+			const char* label,
+			const Ref<MP2R12EnergyUtil_base>& util,
+			int debug,
+			bool warn,
+			std::ostream& os = ExEnv::out0());
+};
+
 void
 MP2R12Energy::compute()
 {
@@ -60,6 +82,10 @@ MP2R12Energy::compute()
   const bool diag = r12info->ansatz()->diag();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
+  // make B positive definite?
+  const bool posdef_B = (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no);
+  // make ~B(ij) positive definite?
+  const bool posdef_Bij = (r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes);
   
   //
   // Evaluate pair energies:
@@ -96,7 +122,7 @@ MP2R12Energy::compute()
       
       // Get the intermediates V and X
       RefSCMatrix V = r12eval()->V(spincase2);
-      RefSCMatrix X = r12eval()->X(spincase2);
+      RefSymmSCMatrix X = r12eval()->X(spincase2);
       // The choice of B depends intricately on approximations
       RefSymmSCMatrix B;
       if (stdapprox_ == LinearR12::StdApprox_C) {
@@ -128,7 +154,8 @@ MP2R12Energy::compute()
         continue;
       const int nxc = dim_xc.n();
       const int num_f12 = r12info->corrfactor()->nfunctions();
-      
+
+      // util class treats abstractly on dense and "diagonal" matrices used in orb-invariant and non-orb-invariant ansatze
       Ref<MP2R12EnergyUtil_base> util;
       if (diag)
         util = new MP2R12EnergyUtil<true>(dim_oo, dim_xc);
@@ -140,9 +167,102 @@ MP2R12Energy::compute()
       
       if (debug_ > 1) {
         util->print(prepend_spincase(spincase2,"V matrix").c_str(),V);
-        util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B);
+        util->print(prepend_spincase(spincase2,"X matrix").c_str(),X);
+        util->print(prepend_spincase(spincase2,"B matrix (excludes X and coupling)").c_str(),B);
         // A is too big to print out
       }
+
+      //
+      // SAFETY FIRST! Check that X is nonsigular and X and B are positive definite. Rectify, if needed
+      //
+      unsigned int nlindep_g12 = 0;
+      bool lindep_g12 = true;
+      unsigned int nnegevals_B = 0;
+      bool negevals_B = true;
+      RefSCMatrix UX;                // orthonormalizes the geminal space
+      if (r12info->safety_check()) {
+	// Check if XC pair basis is linearly dependent -- check eigenvalues of X
+	RefDiagSCMatrix Xevals = util->eigenvalues(X);
+	const double thresh = 1.0e-12;
+	EvalStats stats = eigenvalue_stats(Xevals,thresh);
+	nlindep_g12 = stats.num_below_threshold;
+	print_eigenstats(stats,prepend_spincase(spincase2,"X matrix").c_str(),
+			 util,debug_,true);
+
+	// if linearly dependent geminals are found, compute orthonormalizer, X
+	if (!diag) {
+	  ExEnv::out0() << indent << "Computing orthonormal geminal space." << endl << incindent;
+	  Ref<SCF> ref = r12info->refinfo()->ref();
+	  OverlapOrthog orthog(OverlapOrthog::Canonical,
+			       X,
+			       X.kit(),
+			       ref->lindep_tol());
+	  nlindep_g12 = orthog.nlindep();
+	  UX = orthog.basis_to_orthog_basis();
+	  ExEnv::out0() << decindent;
+	}
+	else {
+	  ExEnv::out0() << indent << "WARNING: Cannot yet get rid of linear dependencies for the nonorbital invariant ansatz yet." << endl;
+	  nlindep_g12 = 0;
+	}
+
+	// Check if B matrix is positive definite -- check eigenvalues of B
+	{
+	  RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
+	  Borth.assign(0.0);
+	  Borth.accumulate_transform(UX,B);
+
+	  RefDiagSCMatrix Bevals;
+	  RefSCMatrix Bevecs;
+	  if (posdef_B) {
+	    util->diagonalize(Borth,Bevals,Bevecs);
+	  }
+	  else {
+	    Bevals = util->eigenvalues(Borth);
+	  }
+	  Borth = 0;
+	  EvalStats stats = eigenvalue_stats(Bevals,0.0);
+	  nnegevals_B = stats.num_below_threshold;
+	  print_eigenstats(stats,prepend_spincase(spincase2,"B matrix in orthonormal basis").c_str(),
+			   util,debug_,true);
+
+	  // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
+	  if (posdef_B && stats.num_below_threshold) {
+	    RefSCDimension bevdim = new SCDimension(Bevals.dim().n() - nnegevals_B);
+	    RefSCMatrix V = B.kit()->matrix(Bevecs.rowdim(),bevdim);
+	    const unsigned int nbevdim = bevdim.n();
+	    unsigned int ivec = nnegevals_B;
+	    for(unsigned int i=0; i<nbevdim; ++i, ++ivec) {
+	      RefSCVector col = Bevecs.get_column(ivec);
+	      V.assign_column(col,i);
+	      col = 0;
+	    }
+	    
+	    RefSCMatrix Vt = V.t(); V=0;
+	    UX = Vt * UX;
+	    
+	    // Test new transform matrix
+	    if (debug_ > 3) {
+	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
+	      Borth.assign(0.0);
+	      Borth.accumulate_transform(UX,B);
+
+	      RefDiagSCMatrix Bevals = util->eigenvalues(Borth);
+	      Borth = 0;
+	      Bevals.print("Eigenvalues of orthonormalized B matrix");
+
+	      RefSymmSCMatrix Xorth = X.kit()->symmmatrix(UX.rowdim());
+	      Xorth.assign(0.0);
+	      Xorth.accumulate_transform(UX,X);
+	      Xorth.print("Should be 1: UX * X * UX.t()");
+	    }
+
+	    ExEnv::out0() << indent << "WARNING: eliminated " << nnegevals_B << " eigenvalues from B matrix" << endl;
+
+	  } // getting rid of negative eigenvalues of B
+	} // check of positive definiteness of B
+
+      } // safety checks of X and B matrices
       
       // Prepare the B matrix:
       // 1) the B matrix is the same for all pairs in approximation A (EBC assumed) or if
@@ -210,8 +330,13 @@ MP2R12Energy::compute()
           }
         }
         if (debug_ > 1)
-          util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
+          util->print(prepend_spincase(spincase2,"~B matrix").c_str(),B_ij);
+
+	// Compute first-order wave function
+	const bool need_to_transform_f12dim = (lindep_g12 || (posdef_B && negevals_B));
 #if USE_INVERT
+	if (need_to_transform_f12dim && r12info->safety_check())
+	  throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
         util->invert(B_ij);
         if (debug_ > 1)
           util->print("Inverse MP2-F12/A B matrix",B_ij);
@@ -221,9 +346,21 @@ MP2R12Energy::compute()
         C_[spin].scale(-1.0);
 #else
         // solve B * C = V
-        RefSCMatrix C = C_[spin].clone();
-        util->solve_linear_system(B_ij, C, V);
-        C_[spin].assign(C);  C = 0;
+	if (!need_to_transform_f12dim) {
+	  RefSCMatrix C = C_[spin].clone();
+	  util->solve_linear_system(B_ij, C, V);
+	  C_[spin].assign(C);  C = 0;
+	}
+	else {
+	  RefSCMatrix Vo = UX * V;
+	  RefSymmSCMatrix Bo = B_ij.kit()->symmmatrix(UX.rowdim());
+	  Bo.assign(0.0);
+	  Bo.accumulate_transform(UX,B_ij);
+	  RefSCMatrix Co = B_ij.kit()->matrix(UX.rowdim(),C_[spin].coldim());
+	  util->solve_linear_system(Bo, Co, Vo);
+	  RefSCMatrix C = UX.t() * Co;
+	  C_[spin].assign(C);
+	}
         C_[spin].scale(-1.0);
 #endif
       }
@@ -314,28 +451,99 @@ MP2R12Energy::compute()
               }
             }
           }
-          if (debug_ > 1)
-            util->print(prepend_spincase(spincase2,"MP2-F12 B matrix").c_str(),B_ij);
+	  std::string B_ij_label;
+          if (debug_ > 1) {
+	    ostringstream oss; oss << "~B(" << ij << ") matrix";
+	    B_ij_label = oss.str();
+            util->print(prepend_spincase(spincase2,B_ij_label).c_str(),B_ij);
+	  }
 
           /// Block in which I compute ef12
           {
             RefSCVector V_ij = V.get_column(ij);
+
+	    //
+	    // Check if ~B(ij) is positive definite
+	    //
+	    RefSCMatrix UXB = UX;
+	    unsigned int nnegevals_B_ij = 0;
+	    bool negevals_B_ij = true;
+	    if (r12info->safety_check()) {
+	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
+	      Borth.assign(0.0);
+	      Borth.accumulate_transform(UX,B_ij);
+	      
+	      RefDiagSCMatrix Bevals;
+	      RefSCMatrix Bevecs;
+	      if (posdef_Bij) {
+		util->diagonalize(Borth,Bevals,Bevecs);
+	      }
+	      else {
+		Bevals = util->eigenvalues(Borth);
+	      }
+	      Borth = 0;
+	      EvalStats stats = eigenvalue_stats(Bevals,0.0);
+	      nnegevals_B_ij = stats.num_below_threshold;
+	      {
+		ostringstream oss;  oss << B_ij_label << " in orthonormal basis";
+		print_eigenstats(stats,prepend_spincase(spincase2,oss.str()).c_str(),
+				 util,debug_,true);
+	      }
+
+	      // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
+	      if (posdef_Bij && nnegevals_B_ij) {
+		RefSCDimension bevdim = new SCDimension(Bevals.dim().n() - nnegevals_B_ij);
+		RefSCMatrix V = B.kit()->matrix(Bevecs.rowdim(),bevdim);
+		const unsigned int nbevdim = bevdim.n();
+		unsigned int ivec = nnegevals_B_ij;
+		for(unsigned int i=0; i<nbevdim; ++i, ++ivec) {
+		  RefSCVector col = Bevecs.get_column(ivec);
+		  V.assign_column(col,i);
+		  col = 0;
+		}
+		
+		RefSCMatrix Vt = V.t(); V=0;
+		UXB = Vt * UX;
+
+		ExEnv::out0() << indent << "WARNING: eliminated " << nnegevals_B_ij << " eigenvalues from " << B_ij_label << endl;
+
+	      } // getting rid of negative eigenvalues of B
+	    } // check of positive definiteness of B
+
+	    const bool need_to_transform_f12dim = (lindep_g12 || (posdef_B && negevals_B) || (posdef_Bij && negevals_B_ij));
 #if USE_INVERT
+	    if (need_to_transform_f12dim && r12info->safety_check())
+	      throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
             // The r12 amplitudes B^-1 * V
             util->invert(B_ij);
-            if (debug_ > 1)
-              util->print("Inverse MP2-F12 B matrix",B_ij);
+            if (debug_ > 1) {
+	      osringstream oss; oss << "Inverse MP2-F12 matrix B(" << ij << ")";
+              util->print(oss.str(),B_ij);
+	    }
             RefSCVector Cij = -1.0*(B_ij * V_ij);
             for(int kl=0; kl<nxc; kl++)
               C_[spin].set_element(kl,ij,Cij.get_element(kl));
 #else
-            RefSCVector Cij = V_ij.clone();
-            // solve B * C = V
-            Cij = V_ij.clone();
-            sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
-            Cij.scale(-1.0);
-            for(int kl=0; kl<nxc; kl++)
-              C_[spin].set_element(kl,ij,Cij.get_element(kl));
+	    // solve B * C = V
+	    if (!need_to_transform_f12dim) {
+	      RefSCVector Cij = V_ij.clone();
+	      sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
+	      Cij.scale(-1.0);
+	      for(int kl=0; kl<nxc; kl++)
+		C_[spin].set_element(kl,ij,Cij.get_element(kl));
+	    }
+	    else {
+	      RefSCVector Vo = UXB * V_ij;
+	      RefSymmSCMatrix Bo = B_ij.kit()->symmmatrix(UXB.rowdim());
+	      Bo.assign(0.0);
+	      Bo.accumulate_transform(UXB,B_ij);
+	      RefSCVector Co = Vo.clone();
+	      sc::exp::lapack_linsolv_symmnondef(Bo, Co, Vo);
+	      RefSCVector Cij = UXB.t() * Co;
+	      Cij.scale(-1.0);
+	      for(int kl=0; kl<nxc; kl++)
+		C_[spin].set_element(kl,ij,Cij.get_element(kl));
+	    }
 #endif
           }
         }
@@ -374,121 +582,55 @@ MP2R12Energy::compute()
 
 namespace {
 
-  // Extracts the diagonal d of a symmetric matrix A
-  void diagonal(const RefSymmSCMatrix& A, RefSCVector& d)
+  EvalStats eigenvalue_stats(const RefDiagSCMatrix& evals, double threshold)
   {
-    const int n = A.dim().n();
-    // allocate d if necessary
-    if (d.null())
-      d = A.kit()->vector(A.dim());
-    else {
-      if (d.dim().n() != A.dim().n())
-        throw ProgrammingError("anonymous::diagonal() -- dimensions of d and A don't match",__FILE__,__LINE__);
+    const unsigned int n = evals.dim().n();
+    unsigned int nneg = 0;
+    double eval_max = -1.0e100;
+    double eval_min =  1.0e100;
+    for(unsigned int i=0; i<n; i++) {
+      const double eval = evals.get_element(i);
+      eval_max = std::max(eval_max,eval);
+      eval_min = std::min(eval_min,eval);
+      nneg += ( eval < threshold ? 1 : 0);
     }
-    for(int i=0; i<n; i++)
-      d[i] = A.get_element(i,i);
+    return EvalStats(evals,threshold,nneg,eval_min,eval_max);
   }
 
-  // Extracts the "diagonal" d of a matrix A -- the diagonal is defined as concatenation of diagonals of square blocks
-  void diagonal(const RefSCMatrix& A, RefSCVector& d)
+  void print_eigenstats(const EvalStats& stats,
+			const char* label,
+			const Ref<MP2R12EnergyUtil_base>& util,
+			int debug,
+			bool warn,
+			std::ostream& os)
   {
-    const int nrow = A.rowdim().n();
-    const int ncol = A.coldim().n();
-    const int nmin = std::min(nrow,ncol);
-    if ( nrow%nmin && ncol%nmin)
-      throw ProgrammingError("anonymous::diagonal() -- dimensions of A are not perfect divisors of each other");
-    const int nmax = std::max(nrow,ncol);
+    bool below_thresh = (stats.num_below_threshold > 0);
+    bool zero_thresh = (stats.threshold == 0.0);
     
-    // allocate d if necessary
-    if (d.null())
-      d = A.kit()->vector(new SCDimension(nmax));
-    for(int i=0; i<nmax; i++)
-      d[i] = A.get_element(i%nrow,i%ncol);
-  }
-
-  // Puts back the "diagonal" d into matrix A -- the diagonal is defined as concatenation of diagonals of square blocks
-  void diagonal(const RefSCVector& d, RefSCMatrix& A)
-  {
-    const int nrow = A.rowdim().n();
-    const int ncol = A.coldim().n();
-    const int nmin = std::min(nrow,ncol);
-    if ( nrow%nmin && ncol%nmin)
-      throw ProgrammingError("anonymous::diagonal() -- dimensions of A are not perfect divisors of each other");
-    const int nmax = std::max(nrow,ncol);
-    if (nmax != d.dim().n())
-      throw ProgrammingError("anonymous::diagonal() -- dimension of d and A do not match",__FILE__,__LINE__);
-
-    A.assign(0.0);
-    for(int i=0; i<nmax; i++)
-      A.set_element(i%nrow,i%ncol,d[i]);
-  }
-
-  // Prints out matrix A
-  template <typename Matrix> void print(bool diag_only, const char* label, Matrix& A) {
-    if (!diag_only)
-      A.print(label);
-    else {
-      RefSCVector d;
-      diagonal(A,d);
-      d.print(label);
-    }
-  }
-  
-  template <typename Matrix> void invert(bool diag_only, Matrix& A) {
-    if (!diag_only)
-      A->gen_invert_this();
-    else {
-      RefSCVector d;
-      diagonal(A,d);
-      const int nd = d.dim().d();
-      for(int i=0; i<nd; i++) {
-        const double oovalue = 1.0/d.get_element(i);
-        d.set_element(oovalue);
+    if (debug > 2) {
+      ostringstream oss;  oss << "Eigenvalues of " << label;
+      util->print(oss.str().c_str(),stats.evals);
+      os << indent << ( below_thresh && warn ? "WARNING: " : "")
+	 << "min = " << stats.min
+	 << ",  max = " << stats.max;
+      if (below_thresh) {
+	os << ",  " << stats.num_below_threshold;
+	if (zero_thresh)
+	  os << " negative";
+	else
+	  os << " below " << stats.threshold;
       }
-      diagonal(d,A);
+      os << endl;
     }
-  }
-
-  // Solves A*X = B
-  void solve_linear_system(bool diag_only, const RefSymmSCMatrix& A, RefSCMatrix& X, const RefSCMatrix& B)
-  {
-    if (!diag_only)
-      sc::exp::lapack_linsolv_symmnondef(A, X, B);
     else {
-      RefSCVector Ad; diagonal(A,Ad);
-      RefSCVector Xd; diagonal(X,Xd);
-      RefSCVector Bd; diagonal(B,Bd);
-      const int n = Ad.dim().n();
-      if (n != Xd.dim().n() || n != Bd.dim().n())
-        throw ProgrammingError("anonymous::solve_linear_system() -- dimensions don't match");
-      for(int i=0; i<n; i++) {
-        const double a = Ad.get_element(i);
-        const double b = Bd.get_element(i);
-        const double tol = 1.0e-10;
-        if (a < tol)
-          throw ToleranceExceeded("ananymous::solve_linear_system() -- a is below tolerance or negative",__FILE__,__LINE__,tol,a);
-        Xd.set_element(i,b/a);
+      if (below_thresh && warn) {
+	os << "WARNING: " << label << " has " << stats.num_below_threshold;
+	if (zero_thresh)
+	  os << " negative eigenvalues";
+	else
+	  os << " eigenvalues below " << stats.threshold;
+	os << endl;
       }
-      diagonal(Xd,X);
-    }
-  }
-
-  // computes y = A x
-  void times(bool diag_only, const RefSymmSCMatrix& A, const RefSCMatrix& x, RefSCMatrix& y)
-  {
-    if (!diag_only)
-      y = A*x;
-    else {
-      RefSCVector Ad; diagonal(A,Ad);
-      RefSCVector xd; diagonal(A,xd);
-      RefSCVector yd = xd.kit()->vector(xd.dim());
-      const int n = Ad.dim().n();
-      if (n != xd.dim().n())
-        throw ProgrammingError("anonymous::times() -- dimensions don't match");
-      for(int i=0; i<n; i++) {
-        yd(i) = Ad(i) * xd(i);
-      }
-      diagonal(yd,y);
     }
   }
   

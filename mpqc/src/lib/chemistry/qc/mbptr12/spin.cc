@@ -37,25 +37,25 @@ namespace sc {
   SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
   SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
   
-  std::string prepend_spincase(SpinCase2 S, const std::string& R)
+  std::string prepend_spincase(SpinCase2 S, const std::string& R, bool lowercase)
   {
     std::string prefix;
     if (S == AlphaAlpha)
-      prefix = "Alpha-alpha ";
+      prefix = (lowercase ? "alpha-alpha " : "Alpha-alpha ");
     else if (S == AlphaBeta)
-      prefix = "Alpha-beta ";
+      prefix = (lowercase ? "alpha-beta " : "Alpha-beta ");
     else
-      prefix = "Beta-beta ";
+      prefix = (lowercase ? "beta-beta " : "Beta-beta ");
     return prefix + R;
   }
   
-  std::string prepend_spincase(SpinCase1 S, const std::string& R)
+  std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase)
   {
     std::string prefix;
     if (S == Alpha)
-      prefix = "Alpha ";
+      prefix = (lowercase ? "alpha " : "Alpha ");
     else
-      prefix = "Beta ";
+      prefix = (lowercase ? "beta " : "Beta ");
     return prefix + R;
   }
   

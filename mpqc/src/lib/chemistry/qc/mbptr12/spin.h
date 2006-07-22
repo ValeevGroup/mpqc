@@ -49,10 +49,12 @@ namespace sc {
   /// returns the second spin case of the 2-spin S
   SpinCase1 case2(SpinCase2 S);
 
+  enum { ToLowerCase = true,
+	 ToUpperCase = false };
   /// Prepend string representation of S to R and return
-  std::string prepend_spincase(SpinCase1 S, const std::string& R);
+  std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase = false);
   /// Prepend string representation of S to R and return
-  std::string prepend_spincase(SpinCase2 S, const std::string& R);
+  std::string prepend_spincase(SpinCase2 S, const std::string& R, bool lowercase = false);
   
   
 };

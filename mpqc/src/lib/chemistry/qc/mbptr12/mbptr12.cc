@@ -486,9 +486,9 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: " << (!ks_ebcfree_ ? "Valeev" : "Klopper and Samson") << endl;
   switch (posdef_B()) {
-    case LinearR12::PositiveDefiniteB_no:     o << indent << "Positive definiteness of B is not enforced" << endl;  break;      
-    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Positive definiteness of B is enforced" << endl;  break;      
-    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Positive definiteness of B, but not ~B(ij), is enforced" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Enforce positive definiteness of B, but not ~B(ij)" << endl;  break;      
   }
   if (stdapprox_ == LinearR12::StdApprox_B && omit_P_) {
     o << indent << "Intermediate P is omitted" << endl;

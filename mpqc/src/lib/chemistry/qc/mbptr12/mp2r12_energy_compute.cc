@@ -82,10 +82,12 @@ MP2R12Energy::compute()
   const bool diag = r12info->ansatz()->diag();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
-  // make B positive definite?
-  const bool posdef_B = (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no);
-  // make ~B(ij) positive definite?
-  const bool posdef_Bij = (r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes);
+  // make B positive definite? -- cannot do for diagonal ansatz
+  const bool posdef_B = (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no && !diag);
+  // make ~B(ij) positive definite? -- cannot do for diagonal ansatz
+  const bool posdef_Bij = (r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes && !diag);
+  if (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no && diag)
+    ExEnv::out0() << indent << "WARNING: cannot ensure positive definite B matrix when using the diagonal ansatz." << endl;
   
   //
   // Evaluate pair energies:
@@ -181,17 +183,12 @@ MP2R12Energy::compute()
       bool negevals_B = true;
       RefSCMatrix UX;                // orthonormalizes the geminal space
       if (r12info->safety_check()) {
-	// Check if XC pair basis is linearly dependent -- check eigenvalues of X
-	RefDiagSCMatrix Xevals = util->eigenvalues(X);
-	const double thresh = 1.0e-12;
-	EvalStats stats = eigenvalue_stats(Xevals,thresh);
-	nlindep_g12 = stats.num_below_threshold;
-	print_eigenstats(stats,prepend_spincase(spincase2,"X matrix").c_str(),
-			 util,debug_,true);
 
-	// if linearly dependent geminals are found, compute orthonormalizer, X
+	//
+	// Check if XC pair basis is linearly dependent and compute the orthonormalizer, if possible
+	//
 	if (!diag) {
-	  ExEnv::out0() << indent << "Computing orthonormal geminal space." << endl << incindent;
+	  ExEnv::out0() << indent << "Computing orthonormal " << prepend_spincase(spincase2,"geminal space.",ToLowerCase) << endl << incindent;
 	  Ref<SCF> ref = r12info->refinfo()->ref();
 	  OverlapOrthog orthog(OverlapOrthog::Canonical,
 			       X,
@@ -202,7 +199,14 @@ MP2R12Energy::compute()
 	  ExEnv::out0() << decindent;
 	}
 	else {
-	  ExEnv::out0() << indent << "WARNING: Cannot yet get rid of linear dependencies for the nonorbital invariant ansatz yet." << endl;
+	  // For diagonal ansatz cannot yet get rid of linear dependencies, only check for the presence
+	  RefDiagSCMatrix Xevals = util->eigenvalues(X);
+	  const double thresh = 1.0e-12;
+	  EvalStats stats = eigenvalue_stats(Xevals,thresh);
+	  print_eigenstats(stats,prepend_spincase(spincase2,"X matrix").c_str(),
+			   util,debug_,true);
+	  if (stats.num_below_threshold)
+	    ExEnv::out0() << indent << "WARNING: Cannot yet get rid of linear dependencies for the nonorbital invariant ansatz yet." << endl;
 	  nlindep_g12 = 0;
 	}
 
@@ -223,8 +227,9 @@ MP2R12Energy::compute()
 	  Borth = 0;
 	  EvalStats stats = eigenvalue_stats(Bevals,0.0);
 	  nnegevals_B = stats.num_below_threshold;
+	  // only warn if !posdef_B
 	  print_eigenstats(stats,prepend_spincase(spincase2,"B matrix in orthonormal basis").c_str(),
-			   util,debug_,true);
+			   util,debug_,!posdef_B);
 
 	  // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
 	  if (posdef_B && stats.num_below_threshold) {
@@ -452,9 +457,11 @@ MP2R12Energy::compute()
             }
           }
 	  std::string B_ij_label;
-          if (debug_ > 1) {
+	  {
 	    ostringstream oss; oss << "~B(" << ij << ") matrix";
 	    B_ij_label = oss.str();
+	  }
+          if (debug_ > 1) {
             util->print(prepend_spincase(spincase2,B_ij_label).c_str(),B_ij);
 	  }
 
@@ -486,8 +493,9 @@ MP2R12Energy::compute()
 	      nnegevals_B_ij = stats.num_below_threshold;
 	      {
 		ostringstream oss;  oss << B_ij_label << " in orthonormal basis";
+		// only warn if !posdef_Bij
 		print_eigenstats(stats,prepend_spincase(spincase2,oss.str()).c_str(),
-				 util,debug_,true);
+				 util,debug_,!posdef_Bij);
 	      }
 
 	      // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
@@ -607,7 +615,7 @@ namespace {
     bool below_thresh = (stats.num_below_threshold > 0);
     bool zero_thresh = (stats.threshold == 0.0);
     
-    if (debug > 2) {
+    if (debug >= 1) {
       ostringstream oss;  oss << "Eigenvalues of " << label;
       util->print(oss.str().c_str(),stats.evals);
       os << indent << ( below_thresh && warn ? "WARNING: " : "")
@@ -624,7 +632,7 @@ namespace {
     }
     else {
       if (below_thresh && warn) {
-	os << "WARNING: " << label << " has " << stats.num_below_threshold;
+	os << indent << "WARNING: " << label << " has " << stats.num_below_threshold;
 	if (zero_thresh)
 	  os << " negative eigenvalues";
 	else

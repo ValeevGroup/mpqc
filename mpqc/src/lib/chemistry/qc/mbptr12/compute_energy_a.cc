@@ -82,7 +82,10 @@ MBPT2_R12::compute_energy_()
     }
     
     // MP2-F12/A'
-    if (stdapprox_ == LinearR12::StdApprox_Ap ||
+    // skip if using diagonal ansatz -- A' is equivalent to A then
+    const bool skip_Ap = r12info->ansatz()->diag();
+    if (!skip_Ap &&
+	stdapprox_ == LinearR12::StdApprox_Ap ||
         stdapprox_ == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a' pair energies");
       if (r12ap_energy_.null())

@@ -82,13 +82,19 @@ MP2R12Energy::compute()
   const bool diag = r12info->ansatz()->diag();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
-  // make B positive definite? -- cannot do for diagonal ansatz
-  const bool posdef_B = (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no && !diag);
-  // make ~B(ij) positive definite? -- cannot do for diagonal ansatz
-  const bool posdef_Bij = (r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes && !diag);
-  if (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no && diag)
-    ExEnv::out0() << indent << "WARNING: cannot ensure positive definite B matrix when using the diagonal ansatz." << endl;
-  
+  // check positive definiteness of B? -- cannot yet do for diagonal ansatz
+  const bool check_posdef_B = (r12info->safety_check() && !diag);
+  // make B positive definite? -- cannot yet do for diagonal ansatz
+  const bool posdef_B = ((r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag);
+  // make ~B(ij) positive definite? -- cannot yet do for diagonal ansatz
+  const bool posdef_Bij = ((r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag);
+  if (r12info->safety_check()) {
+    if (diag)
+      ExEnv::out0() << indent << "WARNING: cannot yet check positive definitess of the B matrix when using the diagonal ansatz." << endl;
+    if ( (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && diag)
+      ExEnv::out0() << indent << "WARNING: cannot yet ensure positive definite B matrix when using the diagonal ansatz." << endl;
+  }
+
   //
   // Evaluate pair energies:
   // distribute workload among nodes by pair index
@@ -178,9 +184,9 @@ MP2R12Energy::compute()
       // SAFETY FIRST! Check that X is nonsigular and X and B are positive definite. Rectify, if needed
       //
       unsigned int nlindep_g12 = 0;
-      bool lindep_g12 = true;
+      bool lindep_g12 = false;
       unsigned int nnegevals_B = 0;
-      bool negevals_B = true;
+      bool negevals_B = false;
       RefSCMatrix UX;                // orthonormalizes the geminal space
       if (r12info->safety_check()) {
 
@@ -209,9 +215,10 @@ MP2R12Energy::compute()
 	    ExEnv::out0() << indent << "WARNING: Cannot yet get rid of linear dependencies for the nonorbital invariant ansatz yet." << endl;
 	  nlindep_g12 = 0;
 	}
+	lindep_g12 = (nlindep_g12 > 0);
 
 	// Check if B matrix is positive definite -- check eigenvalues of B
-	{
+	if (check_posdef_B) {
 	  RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
 	  Borth.assign(0.0);
 	  Borth.accumulate_transform(UX,B);
@@ -230,9 +237,10 @@ MP2R12Energy::compute()
 	  // only warn if !posdef_B
 	  print_eigenstats(stats,prepend_spincase(spincase2,"B matrix in orthonormal basis").c_str(),
 			   util,debug_,!posdef_B);
+	  negevals_B = (nnegevals_B > 0);
 
 	  // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
-	  if (posdef_B && stats.num_below_threshold) {
+	  if (posdef_B && negevals_B) {
 	    RefSCDimension bevdim = new SCDimension(Bevals.dim().n() - nnegevals_B);
 	    RefSCMatrix V = B.kit()->matrix(Bevecs.rowdim(),bevdim);
 	    const unsigned int nbevdim = bevdim.n();
@@ -474,8 +482,8 @@ MP2R12Energy::compute()
 	    //
 	    RefSCMatrix UXB = UX;
 	    unsigned int nnegevals_B_ij = 0;
-	    bool negevals_B_ij = true;
-	    if (r12info->safety_check()) {
+	    bool negevals_B_ij = false;
+	    if (r12info->safety_check() && check_posdef_B) {
 	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
 	      Borth.assign(0.0);
 	      Borth.accumulate_transform(UX,B_ij);
@@ -491,6 +499,7 @@ MP2R12Energy::compute()
 	      Borth = 0;
 	      EvalStats stats = eigenvalue_stats(Bevals,0.0);
 	      nnegevals_B_ij = stats.num_below_threshold;
+	      negevals_B_ij = (nnegevals_B_ij > 0);
 	      {
 		ostringstream oss;  oss << B_ij_label << " in orthonormal basis";
 		// only warn if !posdef_Bij
@@ -499,7 +508,7 @@ MP2R12Energy::compute()
 	      }
 
 	      // If found negative eigenvalues, throw away the vectors corresponding to negative eigenvalues
-	      if (posdef_Bij && nnegevals_B_ij) {
+	      if (posdef_Bij && negevals_B_ij) {
 		RefSCDimension bevdim = new SCDimension(Bevals.dim().n() - nnegevals_B_ij);
 		RefSCMatrix V = B.kit()->matrix(Bevecs.rowdim(),bevdim);
 		const unsigned int nbevdim = bevdim.n();

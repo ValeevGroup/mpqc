@@ -71,6 +71,7 @@ namespace auxintv3 {
 
 static int factory_instance_number=0;
 static int sfactory_instance_number=0;
+static int intv3port_instance_number=0;
 
 static ClassDesc IntegralCCA_cd(
   typeid(IntegralCCA),"IntegralCCA",1,"public Integral",
@@ -276,14 +277,17 @@ IntegralCCA::init_factory()
                           *iter,
                           type_map);
       if( (*iter == "MPQC.IntV3EvaluatorFactory") && intv3_order_ ) {
-        services.registerUsesPort("IntV3Port",
+        ostringstream intv3_port;
+        intv3_port << "IntV3Port" << intv3port_instance_number;
+        ++intv3port_instance_number;
+        services.registerUsesPort(intv3_port.str(),
                                   "MPQC.IntV3EvaluatorFactory",
                                   type_map);
         gov::cca::ConnectionID conid = 
-          bs.connect( my_id,"IntV3Port",
+          bs.connect( my_id,intv3_port.str(),
                       subfac_name_to_id[sfname.str()],
                       "IntV3EvaluatorFactory");
-        MPQC::IntV3EvaluatorFactory fac = services.getPort("IntV3Port");
+        MPQC::IntV3EvaluatorFactory fac = services.getPort(intv3_port.str());
         fac.set_reorder(false);
       }    
     }

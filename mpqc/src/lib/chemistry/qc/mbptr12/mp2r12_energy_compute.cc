@@ -173,7 +173,7 @@ MP2R12Energy::compute()
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
       
-      if (debug_ > 1) {
+      if (debug_ >= DefaultPrintThresholds::mostO4) {
         util->print(prepend_spincase(spincase2,"V matrix").c_str(),V);
         util->print(prepend_spincase(spincase2,"X matrix").c_str(),X);
         util->print(prepend_spincase(spincase2,"B matrix (excludes X and coupling)").c_str(),B);
@@ -255,7 +255,7 @@ MP2R12Energy::compute()
 	    UX = Vt * UX;
 	    
 	    // Test new transform matrix
-	    if (debug_ > 3) {
+	    if (debug_ >= DefaultPrintThresholds::allO4) {
 	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
 	      Borth.assign(0.0);
 	      Borth.accumulate_transform(UX,B);
@@ -342,7 +342,7 @@ MP2R12Energy::compute()
             }
           }
         }
-        if (debug_ > 1)
+        if (debug_ >= DefaultPrintThresholds::mostO4)
           util->print(prepend_spincase(spincase2,"~B matrix").c_str(),B_ij);
 
 	// Compute first-order wave function
@@ -351,7 +351,7 @@ MP2R12Energy::compute()
 	if (need_to_transform_f12dim && r12info->safety_check())
 	  throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
         util->invert(B_ij);
-        if (debug_ > 1)
+        if (debug_ >= DefaultPrintThresholds::mostO4)
           util->print("Inverse MP2-F12/A B matrix",B_ij);
         RefSCMatrix C = C_[spin].clone();
         util->times(B_ij,V,C);
@@ -469,7 +469,7 @@ MP2R12Energy::compute()
 	    ostringstream oss; oss << "~B(" << ij << ") matrix";
 	    B_ij_label = oss.str();
 	  }
-          if (debug_ > 1) {
+          if (debug_ >= DefaultPrintThresholds::mostO4) {
             util->print(prepend_spincase(spincase2,B_ij_label).c_str(),B_ij);
 	  }
 
@@ -533,7 +533,7 @@ MP2R12Energy::compute()
 	      throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
             // The r12 amplitudes B^-1 * V
             util->invert(B_ij);
-            if (debug_ > 1) {
+            if (debug_ >= DefaultPrintThresholds::allO4) {
 	      osringstream oss; oss << "Inverse MP2-F12 matrix B(" << ij << ")";
               util->print(oss.str(),B_ij);
 	    }
@@ -624,7 +624,7 @@ namespace {
     bool below_thresh = (stats.num_below_threshold > 0);
     bool zero_thresh = (stats.threshold == 0.0);
     
-    if (debug >= 1) {
+    if (debug >= DefaultPrintThresholds::mostN) {
       ostringstream oss;  oss << "Eigenvalues of " << label;
       util->print(oss.str().c_str(),stats.evals);
       os << indent << ( below_thresh && warn ? "WARNING: " : "")

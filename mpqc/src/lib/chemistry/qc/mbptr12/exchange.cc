@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -80,7 +81,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   const int nbraket = nbra*nket;
 
   ExEnv::out0() << indent << "Begin computation of exchange matrix" << endl;
-  if (debug_) {
+  if (debug_ >= DefaultPrintThresholds::fine) {
     ExEnv::out0() << indent << "nbra = " << nbra << endl;
     ExEnv::out0() << indent << "nket = " << nket << endl;
     ExEnv::out0() << indent << "nocc = " << nocc << endl;
@@ -116,7 +117,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
       if (mm_proc != proc_with_ints[me])
         continue;
 
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::fine)
         ExEnv::outn() << indent << "task " << me << ": working on (m) = " << m << " " << endl;
 
       // Get (|1/r12|) integrals
@@ -124,7 +125,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
       const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor()->tbint_type_eri());
       tim_exit("MO ints retrieve");
 
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::fine)
         ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
 
       const double one = 1.0;

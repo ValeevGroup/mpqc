@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace sc;
 using namespace std;
@@ -184,7 +185,7 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   construct_orthog_vir_();
   construct_orthog_ri_();
   
-  if (debug_ > 1) {
+  if (debug_ >= DefaultPrintThresholds::mostN2) {
     refinfo()->docc_sb()->coefs().print("Occupied MOs (symblocked)");
     refinfo()->docc_act()->coefs().print("Active occupied MOs");
     refinfo()->orbs()->coefs().print("All MOs");
@@ -228,10 +229,6 @@ R12IntEvalInfo::orthogonalize(const std::string& id, const std::string& name, co
   s.assign(0.0);
   s.element_op(ov);
   ov=0;
-  //if (debug_ > 1) {
-  //  std::string s_label = "AO skeleton overlap (" + name + "/" + name + ")";
-  //  s.print(s_label.c_str());
-  //}
 
   // then symmetrize it
   RefSCDimension sodim = plist->SO_basisdim();

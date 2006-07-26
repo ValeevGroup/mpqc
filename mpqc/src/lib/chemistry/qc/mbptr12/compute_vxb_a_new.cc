@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -163,7 +164,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   SpatialMOPairIter_neq kl_iter(ispace,jspace);
 
   // Compute intermediates
-  if (debug_)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << "Ready to compute MP2-F12/A (GEBC) intermediates" << endl;
 
   // Compute the number of tasks that have full access to the integrals
@@ -216,13 +217,13 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
         const int j = ij_iter.j();
         const int ij_ab = ij_iter.ij_ab();
         
-        if (debug_)
+	if (debug_ >= DefaultPrintThresholds::mostO4)
           ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
         tim_enter("MO ints retrieve");
         const double *ijxy_buf_f12 = ijxy_acc[f]->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12());
         tim_exit("MO ints retrieve");
-        if (debug_)
+	if (debug_ >= DefaultPrintThresholds::mostO4)
           ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
         //////////////
@@ -235,14 +236,14 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           const int l = kl_iter.j();
           const int kl_ab = kl_iter.ij_ab();
           
-          if (debug_)
+	  if (debug_ >= DefaultPrintThresholds::mostO4)
             ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
           
           // Get (|1/r12|) integrals
           tim_enter("MO ints retrieve");
           const double *klxy_buf_eri = ijxy_acc[0]->retrieve_pair_block(k,l,corrfactor()->tbint_type_eri());
           tim_exit("MO ints retrieve");
-          if (debug_)
+	  if (debug_ >= DefaultPrintThresholds::mostO4)
             ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
           
           tim_enter("MO ints contraction");
@@ -250,7 +251,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           double V_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_eri);
           V_ijkl *= perm_pfac;
           V.accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
-          if (debug_)
+	  if (debug_ >= DefaultPrintThresholds::mostO4)
             ExEnv::out0() << " f = " << f << " ij = " << ij_ab << " kl = " << kl_ab << " V = " << V_ijkl << endl;
           tim_exit("MO ints contraction");
           
@@ -270,7 +271,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
             const int l = kl_iter.j();
             const int kl_ab = kl_iter.ij_ab();
             
-            if (debug_)
+	    if (debug_ >= DefaultPrintThresholds::mostO4)
               ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
             
             // Get (|f12|) and (|[T_i,f12]|) integrals
@@ -279,14 +280,14 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
             const double *klxy_buf_t1f12 = ijxy_acc[g]->retrieve_pair_block(k,l,corrfactor()->tbint_type_t1f12());
             const double *klxy_buf_t2f12 = ijxy_acc[g]->retrieve_pair_block(k,l,corrfactor()->tbint_type_t2f12());
             tim_exit("MO ints retrieve");
-            if (debug_)
+	    if (debug_ >= DefaultPrintThresholds::mostO4)
               ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
             
             tim_enter("MO ints contraction");
             double X_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_f12);
             X_ijkl *= perm_pfac;
             X.accumulate_element(f_offset+ij_ab,g_offset+kl_ab,X_ijkl);
-            if (debug_)
+	    if (debug_ >= DefaultPrintThresholds::mostO4)
               ExEnv::out0() << " f = " << f << " ij = " << ij_ab
                             << " g = " << g << " kl = " << kl_ab
                             << " X = " << X_ijkl << endl;

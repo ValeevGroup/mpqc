@@ -45,6 +45,8 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/pairiter.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -113,7 +115,7 @@ R12IntEval::contrib_to_VXB_gebc_vbsneqobs_()
       }
     }
     
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::O4) {
       V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+VBS+ABS) contribution").c_str());
       X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+VBS+ABS) contribution").c_str());
       B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+VBS+ABS) contribution").c_str());

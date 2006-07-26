@@ -125,7 +125,7 @@ namespace sc {
     void increment_indices();
   };
   
-  using sc::LinearR12::CorrelationFactor;
+  using LinearR12::CorrelationFactor;
   /** Creates TwoBodyIntDescr for correlation factpr C */
   class TwoBodyIntDescrCreator : public RangeCreator< Ref<TwoBodyIntDescr> >
   {

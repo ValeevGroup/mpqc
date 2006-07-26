@@ -634,7 +634,7 @@ R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1,
     r12info_->compute_multipole_ints(space2, space4, MX_24, MY_24, MZ_24, MXX_24, MYY_24, MZZ_24);
     r12info_->compute_overlap_ints(space2, space4, S_24);
   }
-  if (debug_)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << "Computed overlap and multipole moment integrals" << endl;
 
   const int nproc = r12info_->msg()->n();
@@ -733,7 +733,7 @@ R12IntEval::focc(SpinCase1 spin)
     const Ref<MOIndexSpace>& ribs_space = r12info()->ribs_space(spin);
     
     RefSCMatrix F_ri_o = fock_(ribs_space,occ_space,spin);
-    if (debug_ > 1)
+    if (debug_ >= DefaultPrintThresholds::allN2)
       F_ri_o.print("Fock matrix (RI-BS/occ.)");
 
     std::string id = "m_F(a')";
@@ -796,7 +796,7 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     K_ri_ao.scale(-1.0);
     RefSCMatrix F_ri_ao = FmK_ri_ao.clone(); F_ri_ao.accumulate(K_ri_ao);
     K_ri_ao.scale(-1.0);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
       K_ri_ao.print("Exchange matrix (RI-BS/act.occ.)");
       F_ri_ao.print("(h+J) matrix (RI-BS/act.occ.)");
@@ -870,7 +870,7 @@ R12IntEval::form_fvir_act(SpinCase1 spin)
     K_ri_av.scale(-1.0);
     RefSCMatrix F_ri_av = FmK_ri_av; F_ri_av.accumulate(K_ri_av);
     K_ri_av.scale(-1.0);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_ri_av.print("Fock matrix (RI-BS/act.vir.)");
       K_ri_av.print("Exchange matrix (RI-BS/act.vir.)");
     }
@@ -919,7 +919,7 @@ R12IntEval::form_fribs(SpinCase1 spin)
     const Ref<MOIndexSpace>& ribs_space = r12info()->ribs_space(spin);
     
     RefSCMatrix K_abs_ri = exchange_(occ_space,abs_space,ribs_space);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_abs_ri.print("Exchange matrix (ABS/RI-BS)");
     }
     
@@ -959,7 +959,7 @@ R12IntEval::form_fribs_T(SpinCase1 spin)
     const Ref<MOIndexSpace>& ribs_space = r12info()->ribs_space(spin);
 
     RefSCMatrix K_ri_abs = exchange_(occ_space,abs_space,ribs_space).t();
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_ri_abs.print("Exchange matrix (RI-BS/ABS)");
     }
 
@@ -999,7 +999,7 @@ R12IntEval::form_focc_act_obs(SpinCase1 spin)
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     
     RefSCMatrix K_obs_ao = exchange_(occ_space,act_occ_space,obs_space).t();
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_obs_ao.print("Exchange matrix (OBS/act.occ.)");
     }
     
@@ -1044,7 +1044,7 @@ R12IntEval::form_fvir_obs(SpinCase1 spin)
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     
     RefSCMatrix K_obs_vir = exchange_(occ_space,vir_space,obs_space).t();
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_obs_vir.print("Exchange matrix (OBS/vir)");
     }
     
@@ -1083,7 +1083,7 @@ R12IntEval::form_fvir_ribs(SpinCase1 spin)
     const Ref<MOIndexSpace>& ribs_space = r12info()->abs_space();
     
     RefSCMatrix K_ribs_vir = exchange_(occ_space,vir_space,ribs_space).t();
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_ribs_vir.print("Exchange matrix (RIBS/vir)");
     }
     
@@ -1123,7 +1123,7 @@ R12IntEval::form_fvir_ribs_T(SpinCase1 spin)
     const Ref<MOIndexSpace>& ribs_space = r12info()->abs_space();
 
     RefSCMatrix K_vir_ribs = exchange_(occ_space,vir_space,ribs_space);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       K_vir_ribs.print("Exchange matrix (vir/RIBS)");
     }
 
@@ -1248,7 +1248,7 @@ R12IntEval::form_fribs_ribs(SpinCase1 spin)
     K_ribs_ribs.scale(-1.0);
     RefSCMatrix F_ribs_ribs = hJ_ribs_ribs; F_ribs_ribs.accumulate(K_ribs_ribs);
     K_ribs_ribs.scale(-1.0);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       hJ_ribs_ribs.print("F matrix (RIBS/RIBS)");
       K_ribs_ribs.print("Exchange matrix (RIBS/RIBS)");
     }
@@ -1302,7 +1302,7 @@ R12IntEval::form_hjactocc_ribs(SpinCase1 spin)
     }
     
     RefSCMatrix hJ_ribs_aocc = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       hJ_ribs_aocc.print("h+J matrix (RIBS/act.occ.)");
     }
     
@@ -1339,7 +1339,7 @@ R12IntEval::form_focc_occ(SpinCase1 spin)
     const Ref<MOIndexSpace>& occ_space = occ(spin);
     
     RefSCMatrix F_occ = fock_(occ_space,occ_space,spin);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_occ.print("Fock matrix (occ./occ.)");
     }
     
@@ -1377,7 +1377,7 @@ R12IntEval::form_fobs_obs(SpinCase1 spin)
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     
     RefSCMatrix F_obs = fock_(obs_space,obs_space,spin);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_obs.print("Fock matrix (OBS/OBS)");
     }
     
@@ -1422,7 +1422,7 @@ R12IntEval::form_focc_ribs(SpinCase1 spin)
     }
     
     RefSCMatrix F_ribs_occ = fock_(ribs_space,occ_space,spin);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_ribs_occ.print("Fock matrix (RIBS/occ.)");
     }
     
@@ -1460,7 +1460,7 @@ R12IntEval::form_fobs_cabs(SpinCase1 spin)
     const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
     
     RefSCMatrix F_cabs_obs = fock_(cabs_space,obs_space,spin);
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::allN2) {
       F_cabs_obs.print("Fock matrix (CABS/OBS)");
     }
     
@@ -1518,7 +1518,7 @@ R12IntEval::compute()
   // if explicit correlation -- compute linear F12 theory intermediates
   if (nocorrptr.null()) {
     
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::O4) {
       for(int s=0; s<nspincases2(); s++) {
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag) contribution").c_str());
@@ -1553,7 +1553,7 @@ R12IntEval::compute()
                               occ_act(spin2),
                               r12info()->refinfo()->orbs(spin2),
                               spincase2,tpcontract);
-        if (debug_ > 1) {
+	if (debug_ >= DefaultPrintThresholds::O4) {
           V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
           B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
@@ -1590,7 +1590,7 @@ R12IntEval::compute()
                                   spincase2,tpcontract);
           }
           
-          if (debug_ > 1) {
+	  if (debug_ >= DefaultPrintThresholds::O4) {
             V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
             X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
             B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
@@ -1612,14 +1612,14 @@ R12IntEval::compute()
     if ((stdapprox() == LinearR12::StdApprox_B) &&
          ansatz()->projector() == LinearR12::Projector_2) {
       compute_BB_();
-      if (debug_ > 1)
+      if (debug_ >= DefaultPrintThresholds::O4)
         for(int s=0; s<nspincases2(); s++)
           BB_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. B) contribution").c_str());
     }
     
     if (stdapprox() == LinearR12::StdApprox_C) {
       compute_BC_();
-      if (debug_ > 1)
+      if (debug_ >= DefaultPrintThresholds::O4)
         for(int s=0; s<nspincases2(); s++)
           BC_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
     }
@@ -1688,7 +1688,7 @@ R12IntEval::compute()
         }
       }
       
-      if (debug_ > 1) {
+      if (debug_ >= DefaultPrintThresholds::O2N2) {
         for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
           std::string label = prepend_spincase(spincase2,"T2 matrix");
@@ -1773,7 +1773,7 @@ R12IntEval::compute()
         occ_act(spin2), vir_act(spin2),
         spincase2!=AlphaBeta, tforms
       );
-      if (debug_ > 1)
+      if (debug_ >= DefaultPrintThresholds::mostO2N2)
         T2.print("T2 amplitudes");
       mp2pe = G*T2.t();
       mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
@@ -2121,7 +2121,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }
 
-  if (debug_) {
+  if (debug_ >= DefaultPrintThresholds::diagnostics) {
     ExEnv::out0() << indent << "Collected contributions to the intermediates from all tasks";
     if (to_all_tasks)
       ExEnv::out0() << " and distributed to every task" << endl;

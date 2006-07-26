@@ -53,6 +53,7 @@
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -318,7 +319,7 @@ R12IntEval::compute_B_gbc_()
     
 #endif // include GBC2 ?
     
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2,"B(GBC1) contribution");
       B_gbc1.print(label.c_str());
       label = prepend_spincase(spincase2,"B(GBC2) contribution");

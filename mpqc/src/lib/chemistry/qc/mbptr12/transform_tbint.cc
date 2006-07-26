@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -285,7 +286,7 @@ TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
   if (mem_.null())
     throw std::runtime_error("TwoBodyMOIntsTransform::alloc_mem() -- memory group not initialized");
   mem_->set_localsize(localmem);
-  if (debug_ >= 1) {
+  if (debug_ >= DefaultPrintThresholds::diagnostics) {
     ExEnv::out0() << indent
                   << "Size of global distributed array:       "
                   << mem_->totalsize()
@@ -366,15 +367,15 @@ TwoBodyMOIntsTransform::mospace_report(std::ostream& os) const
 void
 TwoBodyMOIntsTransform::print_header(std::ostream& os) const
 {
-  if (debug_ >= 0)
+  if (debug_ >= DefaultPrintThresholds::terse)
     os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
   os << incindent;
 
   int nproc = msg_->n();
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     os << indent << scprintf("nproc = %i", nproc) << endl;
   
-  if (restart_orbital() && debug_ >= 1) {
+  if (restart_orbital() && debug_ >= DefaultPrintThresholds::diagnostics) {
     os << indent
        << scprintf("Restarting at orbital %d",
                    restart_orbital()) << endl;
@@ -383,7 +384,7 @@ TwoBodyMOIntsTransform::print_header(std::ostream& os) const
   memory_report(os);
   if (dynamic_)
     os << indent << "Using dynamic load balancing." << endl;
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     mospace_report(os);
 }
 
@@ -391,7 +392,7 @@ void
 TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
 {
   os << decindent;
-  if (debug_ >= 0)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
 

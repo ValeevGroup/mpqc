@@ -40,6 +40,7 @@
 #include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_12inds.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -205,14 +206,14 @@ TwoBodyMOIntsTransform_12Inds::run()
     
     const int nrs = nr*ns;
 
-    if (debug_ > 1 && (print_index++)%print_interval == 0) {
+    if (debug_ >= DefaultPrintThresholds::fine && (print_index++)%print_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("%d:%d: (PQ|%d %d) %d%%",
 			       me,mythread_,R,S,(100*print_index)/work_per_thread)
 		   << endl;
       lock_->unlock();
     }
-    if (debug_ > 1 && (print_index)%time_interval == 0) {
+    if (debug_ >= DefaultPrintThresholds::fine && (print_index)%time_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread_) << endl;
       timer_->print();

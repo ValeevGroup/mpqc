@@ -53,6 +53,7 @@
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -192,10 +193,12 @@ R12IntEval::AT2_contrib_to_V_()
         A = A_[s];
       RefSCMatrix V = A * amps()->T2(spin).t();
       
-      if (debug_ > 0) {
-        std::string label = prepend_spincase(spin,"AT2 contribution to V");
-        print_scmat_norms(V,label.c_str());
+      std::string label = prepend_spincase(spin,"AT2 contribution to V");
+      if (debug_ >= DefaultPrintThresholds::O4) {
+        V.print(label.c_str());
       }
+      if (debug_ >= DefaultPrintThresholds::O4)
+        print_scmat_norms(V,label.c_str());
       V_[s].accumulate(V);
     }
   }
@@ -229,11 +232,11 @@ R12IntEval::AF12_contrib_to_B_()
       B.accumulate(AFt);
       
       const std::string label = prepend_spincase(spin,"B^{EBC} contribution");
-      if (debug_ > 1) {
+      if (debug_ >= DefaultPrintThresholds::O4) {
         B.print(label.c_str());
       }
       B_[s].accumulate(B);
-      if (debug_ > 0) {
+      if (debug_ >= DefaultPrintThresholds::O4) {
         print_scmat_norms(B,label.c_str());
       }
     }

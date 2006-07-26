@@ -47,6 +47,7 @@
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -208,7 +209,7 @@ MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 sp
   }
   // and transpose so that row dimension is for |ij> pairs
   C = C.t();
-  if (debug_ > 2) C.print("C amplitudes");
+  if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
   
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
   Ref<MOIndexSpace> vir1_act = r12info->vir_act(spin1);
@@ -243,28 +244,28 @@ MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 sp
     return;
   
   Ref<F12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2 = Amps->T2(sc2);  if (debug_ > 2) T2.print("T2 amplitudes");
+  RefSCMatrix T2 = Amps->T2(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2) T2.print("T2 amplitudes");
   const unsigned int nij = T2.rowdim().n();
   if (ij >= nij)
     return;
-  RefSCMatrix Fvv = Amps->Fvv(sc2);  if (debug_>2)Fvv.print("F12(vv) matrix");
-  RefSCMatrix Foo = Amps->Foo(sc2);  if (debug_>2)Foo.print("F12(oo) matrix");
-  RefSCMatrix Fov = Amps->Fov(sc2);  if (debug_>2)Fov.print("F12(ov) matrix");
-  RefSCMatrix Fox = Amps->Fox(sc2);  if (debug_>2)Fox.print("F12(ox) matrix");
+  RefSCMatrix Fvv = Amps->Fvv(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(vv) matrix");
+  RefSCMatrix Foo = Amps->Foo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Foo.print("F12(oo) matrix");
+  RefSCMatrix Fov = Amps->Fov(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fov.print("F12(ov) matrix");
+  RefSCMatrix Fox = Amps->Fox(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fox.print("F12(ox) matrix");
   RefSCMatrix Fvo, Fxo;
   if (p1_neq_p2) {
-    Fvo = Amps->Fvo(sc2);  if (debug_>2)Fvv.print("F12(vo) matrix");
-    Fxo = Amps->Fxo(sc2);  if (debug_>2)Fvv.print("F12(xo) matrix");
+    Fvo = Amps->Fvo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(vo) matrix");
+    Fxo = Amps->Fxo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(xo) matrix");
   }
   
-  RefSCMatrix Cvv = C * Fvv;  if (debug_>2)Cvv.print("C(vv) matrix");
-  RefSCMatrix Coo = C * Foo;  if (debug_>2)Coo.print("C(oo) matrix");
-  RefSCMatrix Cov = C * Fov;  if (debug_>2)Cov.print("C(ov) matrix");
-  RefSCMatrix Cox = C * Fox;  if (debug_>2)Cox.print("C(ox) matrix");
+  RefSCMatrix Cvv = C * Fvv;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cvv.print("C(vv) matrix");
+  RefSCMatrix Coo = C * Foo;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Coo.print("C(oo) matrix");
+  RefSCMatrix Cov = C * Fov;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cov.print("C(ov) matrix");
+  RefSCMatrix Cox = C * Fox;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cox.print("C(ox) matrix");
   RefSCMatrix Cvo, Cxo;
   if (p1_neq_p2) {
-    Cvo = C * Fvo;  if (debug_>2) Cvv.print("C(vo) matrix");
-    Cxo = C * Fxo;  if (debug_>2) Cvv.print("C(xo) matrix");
+    Cvo = C * Fvo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(vo) matrix");
+    Cxo = C * Fxo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(xo) matrix");
   }
   
   const int nelem = tbgrid->nelem();

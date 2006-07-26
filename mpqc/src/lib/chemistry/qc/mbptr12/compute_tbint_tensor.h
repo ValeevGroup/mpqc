@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 #ifndef _chemistry_qc_mbptr12_computetbinttensor_h
 #define _chemistry_qc_mbptr12_computetbinttensor_h
@@ -192,7 +193,7 @@ namespace sc {
           
           Ref<TwoBodyMOIntsTransform> tform = transforms[fbraket];
           
-          if (debug_ > 0)
+          if (debug_ > DefaultPrintThresholds::diagnostics)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
           
           Ref<R12IntsAcc> accum = tform->ints_acc();
@@ -221,12 +222,12 @@ namespace sc {
               const unsigned int ii = map1_bra[i];
               const unsigned int jj = map2_bra[j];
               
-              if (debug_)
+	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
               tim_enter("MO ints retrieve");
               const double *ij_buf = accum->retrieve_pair_block(ii,jj,tbint_type);
               tim_exit("MO ints retrieve");
-              if (debug_)
+	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
               
               for(iterket.start(); iterket; iterket.next()) {
@@ -240,7 +241,7 @@ namespace sc {
                 const double I_ijab = ij_buf[AB];
                 
                 if (alphabeta) {
-                  if (debug_ > 2) {
+		  if (debug_ > DefaultPrintThresholds::mostO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << endl;
                   }
@@ -252,7 +253,7 @@ namespace sc {
                   const int bb = map12_ket[b];
                   const int BA = bb*tblock_ncols+aa;
                   const double I_ijba = ij_buf[BA];
-                  if (debug_ > 2) {
+		  if (debug_ > DefaultPrintThresholds::mostO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << " <ij|ba> = " << I_ijba << endl;
                   }

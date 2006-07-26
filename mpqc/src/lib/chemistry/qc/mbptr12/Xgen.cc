@@ -54,6 +54,7 @@
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -334,7 +335,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     }
 #endif
 
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2,"generic X");
       X.print(label.c_str());
     }

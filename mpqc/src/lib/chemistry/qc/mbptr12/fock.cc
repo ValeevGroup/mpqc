@@ -35,6 +35,7 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -209,7 +210,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     K.scale(-1.0*scale_K); F.accumulate(K); K = 0;
   }
   
-  if (debug_ > 1) {
+  if (debug_ >= DefaultPrintThresholds::allN2) {
     F.print("Fock matrix");
   }
   

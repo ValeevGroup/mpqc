@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -189,7 +190,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
         const int ij_ab = ij_iter.ij_ab();
         const int ij_abs = ij_ab + f_offset;
         
-        if (debug_)
+        if (debug_ >= DefaultPrintThresholds::mostO4)
           ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
         //
@@ -198,7 +199,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
         tim_enter("MO ints retrieve");
         const double *ijmn_buf_f12eri = ijmn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12eri());
         tim_exit("MO ints retrieve");
-        if (debug_)
+        if (debug_ >= DefaultPrintThresholds::mostO4)
           ExEnv::outn() << indent << "task " << me << ": obtained ij blocks for V" << endl;
         // kl loop
         for(kl_iter.start();int(kl_iter);kl_iter.next()) {
@@ -228,7 +229,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
           const double *ijmn_buf_f12f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12f12());
           const double *ijmn_buf_f12t1f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12t1f12());
           tim_exit("MO ints retrieve");
-          if (debug_)
+	  if (debug_ >= DefaultPrintThresholds::mostO4)
             ExEnv::outn() << indent << "task " << me << ": obtained ij blocks for X and B" << endl;
 
           // kl loop

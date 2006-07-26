@@ -43,6 +43,7 @@
 #include <chemistry/qc/mbptr12/transform_ikjy.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_123inds.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -121,7 +122,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
   /////////////////////////////////////
 
   // debug print
-  if (debug_ >= 2) {
+  if (debug_ >= DefaultPrintThresholds::fine) {
     ExEnv::outn() << indent
 		  << scprintf("node %i, begin loop over i-batches",me) << endl;
   }
@@ -134,7 +135,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
   for (int i=0; i<thr_->nthread(); i++) {
     tbints[i] = tbintdescr_->inteval();
   }
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
 
@@ -170,7 +171,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     int nij = compute_nij(ni,rank3,nproc,me);;
 
     // debug print
-    if (debug_)
+    if (debug_ >= DefaultPrintThresholds::fine)
       ExEnv::outn() << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 
@@ -347,8 +348,6 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
   } // end of loop over passes
   tim_exit("mp2-r12/a passes");
-  if (debug_)
-    ExEnv::out0() << indent << "End of mp2-r12/a transformation" << endl;
   // Done storing integrals - commit the content
   // WARNING: it is not safe to use mem until deactivate has been called on the accumulator
   //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]

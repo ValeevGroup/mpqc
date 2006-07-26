@@ -38,6 +38,7 @@
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 namespace sc {
   
@@ -380,7 +381,7 @@ namespace sc {
             if (!accumk->is_active())
               accumk->activate();
             
-            if (debug_ > 0) {
+            if (debug_ >= DefaultPrintThresholds::diagnostics) {
               ExEnv::out0() << indent << "Using transforms "
                                       << tformb->name() << " and "
                                       << tformk->name() << std::endl;
@@ -421,7 +422,7 @@ namespace sc {
                 tim_enter("MO ints retrieve");
                 const double *ij_buf = accumb->retrieve_pair_block(ii,jj,tbint_type_bra);
                 tim_exit("MO ints retrieve");
-                if (debug_)
+		if (debug_ >= DefaultPrintThresholds::mostO4)
                   ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
                 
                 for(iterket.start(); iterket; iterket.next(),ijkl++) {
@@ -436,20 +437,20 @@ namespace sc {
                   const unsigned int kk = map1_ket[k];
                   const unsigned int ll = map2_ket[l];
                 
-                  if (debug_)
+		  if (debug_ >= DefaultPrintThresholds::mostO4)
                     ExEnv::outn() << indent << "task " << me << ": working on (i,j | k,l) = ("
                                   << i << "," << j << " | " << k << "," << l << ")" << endl;
                   tim_enter("MO ints retrieve");
                   const double *kl_buf = accumk->retrieve_pair_block(kk,ll,tbint_type_ket);
                   tim_exit("MO ints retrieve");
-                  if (debug_)
+		  if (debug_ >= DefaultPrintThresholds::mostO4)
                     ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
                   
                   // zero out intblocks
                   memset(T_ij, 0, blksize_int*sizeof(double));
                   memset(T_kl, 0, blksize_int*sizeof(double));
                   
-                  if (debug_ > 3) {
+		  if (debug_ >= DefaultPrintThresholds::mostO4) {
                     ExEnv::out0() << indent << "i = " << i << " j = " << j << " k = " << k << " l = " << l
                                   << incindent << endl;
                   }
@@ -473,12 +474,12 @@ namespace sc {
                     const double I_ijmn = ij_buf[MN_bra];
                     const double I_klmn = kl_buf[MN_ket];
 
-                    if (debug_ > 3) {
+		    if (debug_ >= DefaultPrintThresholds::mostO6) {
                       ExEnv::out0() << indent << " m = " << m << " n = " << n << endl;
                     }
                     
                     if (alphabeta) {
-                      if (debug_ > 3) {
+		      if (debug_ >= DefaultPrintThresholds::mostO6) {
                         ExEnv::out0() << indent << " <ij|mn> = " << I_ijmn << endl
                                       << indent << " <kl|mn> = " << I_klmn << endl;
                       }
@@ -486,7 +487,7 @@ namespace sc {
                                                                  evals1_bra,evals1_intb,evals2_bra,evals2_intb);
                       const double T_klmn = DataProcess_Ket::I2T(I_klmn,k,l,m,n,
                                                                  evals1_ket,evals1_intk,evals2_ket,evals2_intk);
-                      if (debug_ > 3) {
+		      if (debug_ >= DefaultPrintThresholds::mostO6) {
                         ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn << endl
                                       << indent << " <kl|T|mn> = " << T_klmn << endl;
                       }
@@ -511,7 +512,7 @@ namespace sc {
                       const double I_ijnm = ij_buf[NM_bra];
                       const double I_klnm = kl_buf[NM_ket];
                       
-                      if (debug_ > 3) {
+		      if (debug_ >= DefaultPrintThresholds::mostO6) {
                         ExEnv::out0() << " <ij|mn> = " << I_ijmn << endl
                                       << " <ij|nm> = " << I_ijnm << endl
                                       << " <kl|mn> = " << I_klmn << endl
@@ -522,7 +523,7 @@ namespace sc {
                                                                  evals1_bra,evals1_intb,evals2_bra,evals2_intb);
                       const double T_klmn = DataProcess_Ket::I2T(I_klmn-I_klnm,k,l,m,n,
                                                                  evals1_ket,evals1_intk,evals2_ket,evals2_intk);
-                      if (debug_ > 3) {
+		      if (debug_ >= DefaultPrintThresholds::mostO6) {
                         ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn << endl
                                       << indent << " <kl|T|mn> = " << T_klmn << endl;
                       }
@@ -534,13 +535,13 @@ namespace sc {
                   
                   // contract matrices
                   double T_ijkl = tpcontract->contract(T_ij,T_kl);
-                  if (debug_ > 3) {
+		  if (debug_ >= DefaultPrintThresholds::mostO4) {
                     ExEnv::out0() << decindent << indent
                                   << " <ij|kl> = " << T_ijkl << endl;
                   }
                   T_ijkl = DataProcess_BraKet::I2T(T_ijkl,i,j,k,l,
                                                    evals1_bra,evals1_ket,evals2_bra,evals2_ket);
-                  if (debug_ > 3) {
+		  if (debug_ >= DefaultPrintThresholds::mostO4) {
                     ExEnv::out0() << indent << " <ij|T|kl> = " << T_ijkl << endl;
                   }
                   Tcontr.accumulate_element(ij+fbraoffset,kl+fketoffset,T_ijkl);

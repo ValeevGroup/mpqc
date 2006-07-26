@@ -30,6 +30,7 @@
 #include <util/misc/timer.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -120,12 +121,12 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
       const int i = ij_iter.i();
       const int j = ij_iter.j();
 
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::mostO4)
           ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
       tim_enter("MO ints retrieve");
       const double *ijxy_buf_eri = ijxy_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_eri());
       tim_exit("MO ints retrieve");
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
       double emp2 = 0.0;
@@ -147,7 +148,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
         const double ERI_yx = ijxy_buf_eri[yx];
         const double denom = 1.0/(evals_occ1_act(i) + evals_occ2_act(j) - evals_vir1_act(a) - evals_vir2_act(b));
         
-        if (debug_ > 2)
+	if (debug_ >= DefaultPrintThresholds::mostO2N2)
           ExEnv::out0() << "i = " << i << " j = " << j << " a = " << x << " b = " << y
                         << " <ij|ab> = " << ERI_xy << " <ij|ba> = " << ERI_yx
                         << " denom = " << denom << endl;
@@ -265,7 +266,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 pair energies (" << label << ") evaluator" << std::endl;
   ExEnv::out0() << incindent;
-  if (debug_ > 0)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
   
   vector<int> proc_with_ints;
@@ -285,12 +286,12 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       const unsigned int ii = map1[i];
       const unsigned int jj = map3[j];
       
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
       tim_enter("MO ints retrieve");
       const double *ij_buf_eri = accum->retrieve_pair_block(ii,jj,corrfactor()->tbint_type_eri());
       tim_exit("MO ints retrieve");
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
       
       double emp2 = 0.0;
@@ -306,7 +307,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
         
         if (S == AlphaBeta) {
           emp2 += ERI_iajb*ERI_iajb*denom;
-          if (debug_ > 2) {
+	  if (debug_ >= DefaultPrintThresholds::mostO2N2) {
             ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
             << " <ij|ab> = " << ERI_iajb
             << " denom = " << denom << endl;
@@ -319,7 +320,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
           const double ERI_ibja = ij_buf_eri[ba];
           const double ERI_anti = ERI_iajb - ERI_ibja;
           emp2 += ERI_anti*ERI_anti*denom;
-          if (debug_ > 2) {
+	  if (debug_ >= DefaultPrintThresholds::mostO2N2) {
             ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
             << " <ij|ab> = " << ERI_iajb
             << " <ij|ba> = " << ERI_ibja

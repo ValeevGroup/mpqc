@@ -54,6 +54,7 @@
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -117,7 +118,7 @@ R12IntEval::compute_BApp_()
     ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
     tim_exit(Qlabel.c_str());
 
-    if (debug_ > 1) {
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2,"Q(A'') contribution");
       Q.print(label.c_str());
     }

@@ -41,7 +41,7 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
-#define NEW_HCORE 1
+#define NEW_HCORE 0
 
 RefSCMatrix
 R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
@@ -183,6 +183,8 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
 
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
+  if (debug_ >= DefaultPrintThresholds::allN2)
+    F.print("Core Hamiltonian contribution");
   // and clean up a bit
   h = 0;
   
@@ -202,12 +204,18 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     const SpinCase1 sc = static_cast<SpinCase1>(s);
     if (scale_J != 0.0) {
       RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
-      J.scale(J_prefactor*scale_J); F.accumulate(J); J = 0;
+      J.scale(J_prefactor*scale_J);
+      if (debug_ >= DefaultPrintThresholds::allN2)
+        J.print("Coulomb contribution");
+      F.accumulate(J); J = 0;
     }
   }
   if (scale_K != 0.0) {
     RefSCMatrix K = exchange_(occ(spin),bra_space,ket_space);
-    K.scale(-1.0*scale_K); F.accumulate(K); K = 0;
+    K.scale(-1.0*scale_K);
+    if (debug_ >= DefaultPrintThresholds::allN2)
+      K.print("Exchange contribution");
+    F.accumulate(K); K = 0;
   }
   
   if (debug_ >= DefaultPrintThresholds::allN2) {

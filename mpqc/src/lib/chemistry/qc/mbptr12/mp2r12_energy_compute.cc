@@ -34,6 +34,7 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;

@@ -44,7 +44,7 @@ namespace sc {
     /// Additional fine-level diagnostics, e.g. detailed timings, etc.
     static const unsigned int fine = 2;
     /// Print most N quantities
-    static const unsigned int N = 2;
+    static const unsigned int mostN = 3;
     /// Print essential N^2 quantities
     static const unsigned int N2 = 2;
     /// Print most N^2 quantities

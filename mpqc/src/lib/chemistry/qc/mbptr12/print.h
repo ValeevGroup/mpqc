@@ -43,6 +43,10 @@ namespace sc {
     static const unsigned int diagnostics = 1;
     /// Additional fine-level diagnostics, e.g. detailed timings, etc.
     static const unsigned int fine = 2;
+    /// Print N^0 quantities
+    static const unsigned int N0 = terse;
+    /// Print most N^0 quantities
+    static const unsigned int mostN0 = diagnostics;
     /// Print most N quantities
     static const unsigned int mostN = 3;
     /// Print essential N^2 quantities

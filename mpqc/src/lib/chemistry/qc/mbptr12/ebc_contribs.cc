@@ -197,7 +197,7 @@ R12IntEval::AT2_contrib_to_V_()
       if (debug_ >= DefaultPrintThresholds::O4) {
         V.print(label.c_str());
       }
-      if (debug_ >= DefaultPrintThresholds::O4)
+      if (debug_ >= DefaultPrintThresholds::mostN0)
         print_scmat_norms(V,label.c_str());
       V_[s].accumulate(V);
     }
@@ -236,7 +236,7 @@ R12IntEval::AF12_contrib_to_B_()
         B.print(label.c_str());
       }
       B_[s].accumulate(B);
-      if (debug_ >= DefaultPrintThresholds::O4) {
+      if (debug_ >= DefaultPrintThresholds::mostN0) {
         print_scmat_norms(B,label.c_str());
       }
     }

@@ -246,9 +246,10 @@ class MBPT2_R12: public MBPT2 {
 
         <dt><tt>r12ints_file</tt><dd> This specifies the prefix for the transformed
 	MO integrals file if <tt>r12ints</tt> is set to <tt>posix</tt>, <tt>mpi</tt>, <tt>mem-posix</tt>
-        or <tt>mem-mpi</tt> is used.
-	Default is "./<inputbasename>.r12ints", where <inputbasename> is the name of the input
-	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
+        or <tt>mem-mpi</tt>. If the prefix ends in '/' (slash character) then "<basename>.moints"
+        is appended to it where <basename> is the basename as defined in SCFormIO.
+        The default value for the prefix is "./".
+        If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
 
         <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to

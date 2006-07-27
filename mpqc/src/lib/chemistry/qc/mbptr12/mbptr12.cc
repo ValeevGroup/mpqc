@@ -392,9 +392,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
 
   // Get the prefix for the filename to store the integrals
-  std::ostringstream oss;
-  oss << "./" << SCFormIO::default_basename() << ".r12ints";
-  r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(oss.str()));
+  std::string r12ints_file_default("./");
+  r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(r12ints_file_default));
+  // if the last character of r12ints_file is '/' then append the default basename
+  if (*(r12ints_file_.rbegin()) == '/')
+    r12ints_file_ += std::string(SCFormIO::default_basename()) + ".moints";
 
   r12eval_ = 0;
   r12a_energy_ = 0;

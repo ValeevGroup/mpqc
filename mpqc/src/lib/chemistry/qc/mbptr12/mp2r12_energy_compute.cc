@@ -83,12 +83,18 @@ MP2R12Energy::compute()
   const bool diag = r12info->ansatz()->diag();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
+  // 1) the B matrix is the same for all pairs in approximation A (EBC assumed) or if
+  //    the ansatz is diagonal
+  // 2) in approximations A', B, and C the B matrix is pair-specific
+  const bool same_B_for_all_pairs = ( (stdapprox_ == LinearR12::StdApprox_A && 
+                                       ebc == true) ||
+                                      diag);
   // check positive definiteness of B? -- cannot yet do for diagonal ansatz
   const bool check_posdef_B = (r12info->safety_check() && !diag);
   // make B positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_B = ((r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag);
+  const bool posdef_B = ((r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag && same_B_for_all_pairs);
   // make ~B(ij) positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_Bij = ((r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag);
+  const bool posdef_Bij = ((r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag && !same_B_for_all_pairs);
   if (r12info->safety_check()) {
     if (diag)
       ExEnv::out0() << indent << "WARNING: cannot yet check positive definitess of the B matrix when using the diagonal ansatz." << endl;
@@ -279,13 +285,6 @@ MP2R12Energy::compute()
       } // safety checks of X and B matrices
       
       // Prepare the B matrix:
-      // 1) the B matrix is the same for all pairs in approximation A (EBC assumed) or if
-      //    the ansatz is diagonal
-      // 2) in approximations A', B, and C the B matrix is pair-specific
-      const bool same_B_for_all_pairs = ( (stdapprox_ == LinearR12::StdApprox_A &&
-                                           ebc == true) ||
-                                          diag);
-      
       if (same_B_for_all_pairs) {
         RefSymmSCMatrix B_ij = B.clone();
 	B_ij.assign(B);
@@ -528,7 +527,7 @@ MP2R12Energy::compute()
 	      } // getting rid of negative eigenvalues of B
 	    } // check of positive definiteness of B
 
-	    const bool need_to_transform_f12dim = (lindep_g12 || (posdef_B && negevals_B) || (posdef_Bij && negevals_B_ij));
+	    const bool need_to_transform_f12dim = (lindep_g12 || (posdef_Bij && negevals_B_ij));
 #if USE_INVERT
 	    if (need_to_transform_f12dim && r12info->safety_check())
 	      throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");

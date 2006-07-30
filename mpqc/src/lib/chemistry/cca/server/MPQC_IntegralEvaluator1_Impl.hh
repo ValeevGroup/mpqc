@@ -134,6 +134,16 @@ namespace MPQC {
     void
     init_reorder() throw () 
     ;
+    /**
+     * user defined non-static method.
+     */
+    void
+    set_opaque_deriv_centers (
+      /* in */ void* dc
+    )
+    throw () 
+    ;
+
 
     /**
      * Get buffer pointer for given type.

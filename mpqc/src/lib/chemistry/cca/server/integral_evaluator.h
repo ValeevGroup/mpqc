@@ -261,6 +261,12 @@ namespace MpqcCca {
         dc->add_center(sc_dc_.center(i),sc_dc_.atom(i));
     }
 
+    void compute_fast( sc::TwoBodyDerivInt* eval, sc::DerivCenters* sc_dc )
+    {
+      sc_dc->clear();
+      eval->compute_shell(sh1_,sh2_,sh3_,sh4_, *sc_dc );
+    }
+
     double compute_bounds( sc::TwoBodyDerivInt* eval )
     {
       return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
@@ -331,6 +337,13 @@ namespace MpqcCca {
           computer->compute( evals_[i].first, &(dcs_[i]) );
       }
     }
+
+    void compute_fast ( computer_type* computer, sc::DerivCenters* sc_dc )
+    {
+      for( int i=0; i<evals_.size(); ++i)
+        computer->compute_fast( evals_[i].first, sc_dc );
+    }
+
 
     double compute_bounds( computer_type* computer )
     {

@@ -163,6 +163,14 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
       ExEnv::out0() << indent
                     << "Using intv3 integral ordering by user request\n";
   }
+  fast_deriv_ = false;
+  tempbool = keyval->booleanvalue("fast_deriv");
+  if ( keyval->error() == KeyVal::OK ) {
+    fast_deriv_ = tempbool;
+    if( fast_deriv_ )
+      ExEnv::out0() << indent
+                    << "Using opaque deriv centers by user request\n";
+  }
   
   // get evaluator factory type (default to SuperFactory)
   factory_type_ = keyval->stringvalue("evaluator_factory");
@@ -333,7 +341,8 @@ IntegralCCA::init_generators()
     tb( tbgen_ );
   get_twobody = tb;
 
-  tbdgen_ = twobody_deriv_generator( this, eval_factory_, use_opaque_ );
+  tbdgen_ = twobody_deriv_generator( this, eval_factory_, 
+                                     use_opaque_, fast_deriv_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
     tbd( tbdgen_ );

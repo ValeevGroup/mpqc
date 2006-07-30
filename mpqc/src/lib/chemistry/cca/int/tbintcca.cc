@@ -37,6 +37,7 @@
 #include <Chemistry_R12IntegralDescr.hh>
 #include <Chemistry_R12T1IntegralDescr.hh>
 #include <Chemistry_R12T2IntegralDescr.hh>
+#include <MPQC_IntegralEvaluator4.hh>
 
 using namespace std;
 using namespace sc;
@@ -53,7 +54,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     const Ref<GaussianBasisSet> &bs4,
 			     IntegralSuperFactory fac,
 			     CompositeIntegralDescr cdesc,
-                             bool use_opaque) :
+                             bool use_opaque ):
   TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
   eval_factory_(fac), cdesc_(cdesc),
@@ -224,11 +225,11 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 					const Ref<GaussianBasisSet> &bs4,
 					IntegralSuperFactory fac,
 					CompositeIntegralDescr cdesc,
-					bool use_opaque ) :
+					bool use_opaque, bool fast_deriv ) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
   eval_factory_(fac), cdesc_(cdesc),
-  use_opaque_(use_opaque)
+  use_opaque_(use_opaque), fast_deriv_(fast_deriv)
 {
   ndesc_ = cdesc_.get_n_descr();
   for( int i=0; i<ndesc_; ++i )
@@ -299,6 +300,11 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
 					cca_bs3_, cca_bs4_ );
   buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
   // and what happens for multiple buffers???
+
+  if( fast_deriv_ ) {
+    MPQC::IntegralEvaluator4 mpqc_eval = eval_;
+    mpqc_eval.set_opaque_deriv_centers( (void*) &sc_dc_ );
+  }
 }
 
 TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA() 
@@ -320,20 +326,38 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
             s3->nfunction() * s4->nfunction();
   }
 
-  cca_dc_.clear();
-  if( use_opaque_ )
-    eval_.compute( i, j, k, l );
-  else {   
-    sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
-    for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
-      buffer_[ii] = sidl_buffer_.get(ii);
+  if( !fast_deriv_ ) {
+    cca_dc_.clear();
+    if( use_opaque_ )
+      eval_.compute( i, j, k, l );
+    else {   
+      sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
+      for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
+        buffer_[ii] = sidl_buffer_.get(ii);
+    }
+
+    dc.clear();
+    if( cca_dc_.has_omitted_center() )
+      dc.add_omitted(cca_dc_.omitted_center(),cca_dc_.omitted_atom());
+    for( int i=0; i<cca_dc_.n(); ++i)
+      dc.add_center(cca_dc_.center(i),cca_dc_.atom(i));
+  }
+  else {
+    if( use_opaque_ )
+      eval_.compute( i, j, k, l );
+    else {
+      sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
+      for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
+        buffer_[ii] = sidl_buffer_.get(ii);
+    }
+
+    dc.clear();
+    if( sc_dc_.has_omitted_center() )
+      dc.add_omitted(sc_dc_.omitted_center(),sc_dc_.omitted_atom());
+    for( int i=0; i<sc_dc_.n(); ++i)
+      dc.add_center(sc_dc_.center(i),sc_dc_.atom(i));
   }
 
-  dc.clear();
-  if( cca_dc_.has_omitted_center() )
-    dc.add_omitted(cca_dc_.omitted_center(),cca_dc_.omitted_atom());
-  for( int i=0; i<cca_dc_.n(); ++i)
-    dc.add_center(cca_dc_.center(i),cca_dc_.atom(i));
 }
 
 int

@@ -108,6 +108,19 @@ throw ()
 }
 
 /**
+ * Method:  set_opaque_deriv_centers[]
+ */
+void
+MPQC::IntegralEvaluator3_impl::set_opaque_deriv_centers (
+  /* in */ void* dc ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.set_opaque_deriv_centers)
+  // Insert-Code-Here {MPQC.IntegralEvaluator3.set_opaque_deriv_centers} (set_opaque_deriv_centers method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.set_opaque_deriv_centers)
+}
+
+/**
  * Get buffer pointer for given type.
  * @return Buffer pointer. 
  */

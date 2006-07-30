@@ -116,6 +116,8 @@ namespace sc {
     sidl::array<double> sidl_buffer_;
     std::string type_;
     int n_segment_;
+    bool fast_deriv_;
+    sc::DerivCenters sc_dc_;
 
   public:
     TwoBodyDerivIntCCA( Integral* integral,
@@ -125,7 +127,7 @@ namespace sc {
 			const Ref<GaussianBasisSet>&b4,	   
 			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
 			Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-			bool );
+			bool, bool );
     ~TwoBodyDerivIntCCA();
 
     void compute_shell(int,int,int,int,DerivCenters&);

@@ -30,6 +30,7 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._ctor)
 
   reorder_ = false;
+  compute_fast_ = false;
 
   IntegralDescr desc = Chemistry::Eri4IntegralDescr::_create();
   descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::eri;
@@ -170,6 +171,22 @@ throw ()
 }
 
 /**
+ * Method:  set_opaque_deriv_centers[]
+ */
+void
+MPQC::IntegralEvaluator4_impl::set_opaque_deriv_centers (
+  /* in */ void* dc ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.set_opaque_deriv_centers)
+
+  sc_dc_ = static_cast<sc::DerivCenters*>( dc );
+  compute_fast_ = true;
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.set_opaque_deriv_centers)
+}
+
+/**
  * Get buffer pointer for given type.
  * @return Buffer pointer. 
  */
@@ -241,12 +258,18 @@ throw (
 ){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
-  computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  computer2_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
-  eval_.compute( &computer_ );
-  deriv_eval_.compute( &deriv_computer_ );
-  comp_eval_.compute( &computer2_ );
+  if( compute_fast_ ) {
+    deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+    deriv_eval_.compute_fast( &deriv_computer_, sc_dc_ );
+  }
+  else {
+    computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+    deriv_computer_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+    computer2_.set_shells( shellnum1, shellnum2, shellnum3, shellnum4 );
+    eval_.compute( &computer_ );
+    deriv_eval_.compute( &deriv_computer_ );
+    comp_eval_.compute( &computer2_ );
+  }
   if( reorder_ )
     reorder_engine_.do_it( shellnum1, shellnum2, shellnum3, shellnum4 );
 

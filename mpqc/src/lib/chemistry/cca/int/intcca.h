@@ -174,7 +174,7 @@ namespace sc {
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
       Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_;
+      bool use_opaque_, fast_deriv_;
 
     public:
       
@@ -183,9 +183,9 @@ namespace sc {
       twobody_deriv_generator(
           Integral* integral,
           Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
-          bool use_opaque ):
+          bool use_opaque, bool fast_deriv ):
 	integral_(integral), factory_(fac),
-	use_opaque_(use_opaque) { }
+	use_opaque_(use_opaque), fast_deriv_(fast_deriv) { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2,
@@ -198,7 +198,8 @@ namespace sc {
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				       factory_, cdesc, use_opaque_ );
+				       factory_, cdesc, use_opaque_,
+                                       fast_deriv_ );
 	return eval;
       }
 
@@ -236,6 +237,7 @@ namespace sc {
     int maxl_;
     bool use_opaque_;
     bool intv3_order_;
+    bool fast_deriv_;
     gov::cca::ComponentID fac_id_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;

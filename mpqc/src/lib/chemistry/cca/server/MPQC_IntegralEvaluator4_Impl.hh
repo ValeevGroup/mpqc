@@ -96,6 +96,8 @@ namespace MPQC {
     std::map<std::string,sc::TwoBodyInt::tbint_type> descr_to_tbint_type_;
     BufferSize buffer_size_;
     std::vector< std::pair< std::string, int > > comp_ids_;
+    sc::DerivCenters* sc_dc_;
+    bool compute_fast_;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._implementation)
 
@@ -166,6 +168,16 @@ namespace MPQC {
     void
     init_reorder() throw () 
     ;
+    /**
+     * user defined non-static method.
+     */
+    void
+    set_opaque_deriv_centers (
+      /* in */ void* dc
+    )
+    throw () 
+    ;
+
 
     /**
      * Get buffer pointer for given type.

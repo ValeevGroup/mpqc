@@ -4,16 +4,16 @@ If you publish results using MPQC, please cite it using:
 
 An unmodified standard release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.4.0 Prerelease,
-Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward F. Valeev,
-Edward T. Seidl, Sandia National Laboratories, Livermore, CA, USA, 2004.
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.4.0
+Prerelease, Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward
+F. Valeev, Joe P. Kenny, Edward T. Seidl, http://www.mpqc.org.
 
 A modified release:
 
-The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.4.0 Prerelease,
-Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward F. Valeev,
-Edward T. Seidl, Sandia National Laboratories, Livermore, CA, 2004.
-Modified by An Author, institution, location, year.
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.4.0
+Prerelease, Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward
+F. Valeev, Edward T. Seidl, Joe P. Kenny, http://www.mpqc.org.  Modified by
+An Author, institution, location, year.
 
 The literature citation in bibtex format is:
 

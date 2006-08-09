@@ -1910,7 +1910,7 @@ fi
 
 dnl --------- Find the list of all sc libraries. ---------
 
-SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
+SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I./src/lib -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
 AC_SUBST(SCLIBS)
 
 dnl --------- Define the library directory macros. ---------

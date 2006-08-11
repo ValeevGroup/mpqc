@@ -282,6 +282,7 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     /// Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefSCMatrix operator*(const RefSymmSCMatrix&) const;
+    RefSCMatrix operator*(const RefDiagSCMatrix&) const;
     /// Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&a) const;
     RefSymmSCMatrix operator*(double) const;
@@ -400,6 +401,8 @@ class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     RefDiagSCMatrix(const RefSCDimension&,const Ref<SCMatrixKit>&);
     /// Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
+    RefSCMatrix operator*(const RefSymmSCMatrix&) const;
+    RefDiagSCMatrix operator*(const RefDiagSCMatrix&) const;
     RefDiagSCMatrix operator*(double) const;
     /// Matrix addition and subtraction.
     RefDiagSCMatrix operator+(const RefDiagSCMatrix&) const;

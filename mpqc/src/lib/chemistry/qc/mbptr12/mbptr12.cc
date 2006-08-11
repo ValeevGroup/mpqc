@@ -513,13 +513,13 @@ void
 MBPT2_R12::check_integral_factory_()
 {
   // Only IntegralCints can be used at the moment
-  IntegralCints* r12intf = dynamic_cast<IntegralCints*>(integral().pointer());
-  if (!r12intf) {
-    ostringstream errmsg;
-    errmsg << "Integral factory " << (integral().null() ? "null" : integral()->class_name())
-           << " cannot be used in MBPT2_R12 class - try IntegralCints instead" << ends;
-    throw runtime_error(errmsg.str());
-  }
+//  IntegralCints* r12intf = dynamic_cast<IntegralCints*>(integral().pointer());
+//  if (!r12intf) {
+//    ostringstream errmsg;
+//    errmsg << "Integral factory " << (integral().null() ? "null" : integral()->class_name())
+//           << " cannot be used in MBPT2_R12 class - try IntegralCints instead" << ends;
+//    throw runtime_error(errmsg.str());
+//  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -122,6 +122,9 @@ class OverlapOrthog: virtual public SavableState {
      */
     RefSCMatrix basis_to_orthog_basis_inverse();
 
+    /** Return an $S^{-1}$. */
+    RefSymmSCMatrix overlap_inverse();
+
     RefSCDimension dim();
     RefSCDimension orthog_dim();
 

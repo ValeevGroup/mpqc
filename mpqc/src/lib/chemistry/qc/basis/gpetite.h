@@ -80,6 +80,24 @@ class canonical_aabc {
     }
 };
 
+/** If the shell loop structure has 2 fold symmetry between the last
+ *  two indices, then this should be used as the template argument to
+ *  GPetite4.
+*/
+class canonical_abcc {
+    long nj_, nkl_;
+  public:
+    canonical_abcc(const Ref<GaussianBasisSet> bi,
+                   const Ref<GaussianBasisSet> bj,
+                   const Ref<GaussianBasisSet> bk,
+                   const Ref<GaussianBasisSet> bl
+                   );
+    sc_int_least64_t offset(int i, int j, int k, int l) {
+      long kl = (k>l?(((k*long(k+1))>>1)+l):(((l*long(l+1))>>1)+k));
+      return kl + nkl_*sc_int_least64_t(j + nj_*i);
+    }
+};
+
 /** If the shell loop structure has 2 fold symmetry between the first two
  *  indices and a 2 fold symmetry between the last two indices, then this
  *  should be used as the template argument to GPetite4.
@@ -96,6 +114,27 @@ class canonical_aabb {
       long ij = (i>j?(((i*long(i+1))>>1)+j):(((j*long(j+1))>>1)+i));
       long kl = (k>l?(((k*long(k+1))>>1)+l):(((l*long(l+1))>>1)+k));
       return ij + nij_*sc_int_least64_t(kl);
+    }
+};
+
+/** If the shell loop structure has 2 fold symmetry between the bra and the ket
+ *  then this should be used as the template argument to GPetite4.
+*/
+class canonical_abab {
+    long nj_;
+  public:
+    canonical_abab(const Ref<GaussianBasisSet> bi,
+                   const Ref<GaussianBasisSet> bj,
+                   const Ref<GaussianBasisSet> bk,
+                   const Ref<GaussianBasisSet> bl
+                   );
+    sc_int_least64_t offset(int i, int j, int k, int l) {
+      long ij = i*nj_ + j;
+      long kl = k*nj_ + l;
+      sc_int_least64_t
+          off = (ij>kl?(((ij*sc_int_least64_t(ij+1))>>1)+kl)
+                 :(((kl*sc_int_least64_t(kl+1))>>1)+ij));
+      return off;
     }
 };
 

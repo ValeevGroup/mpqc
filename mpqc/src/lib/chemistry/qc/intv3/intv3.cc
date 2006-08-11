@@ -164,6 +164,12 @@ IntegralV3::nuclear()
 }
 
 Ref<OneBodyInt>
+IntegralV3::p_dot_nuclear_p()
+{
+  return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::p_dot_nuclear_p);
+}
+
+Ref<OneBodyInt>
 IntegralV3::hcore()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::hcore);

@@ -25,55 +25,47 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <util/misc/ccaenv.h>
 
 using namespace sc;
 
-int CCAEnv::initialized_ = 0;
-ccaffeine::AbstractFramework CCAEnv::fw_;
-gov::cca::Services CCAEnv::services_;
-gov::cca::ports::BuilderService CCAEnv::bs_;
-gov::cca::TypeMap CCAEnv::type_map_;
-gov::cca::ComponentID CCAEnv::my_id_;
-MPQC::ComponentFactory CCAEnv::component_factory_;
+Ref<CCAFramework> CCAEnv::ccafw_;
 
 void 
-CCAEnv::init(std::string &args)
+CCAEnv::init(const Ref<CCAFramework> &ccafw)
 { 
-  fw_ = ccaffeine::AbstractFramework::_create();
-  fw_.initialize(args); 
-  type_map_ = fw_.createTypeMap();
-  services_ = fw_.getServices("uber","UberComponent",type_map_);
-  my_id_    = services_.getComponentID();
-  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
-  bs_ = services_.getPort("bs");
-  component_factory_ = MPQC::ComponentFactory::_create();
-  services_.addProvidesPort(component_factory_, "MPQC::ComponentFactory",
-                           "ccaffeine.ports.ComponentFactory",type_map_);
-  initialized_=1; 
+  ccafw_ = ccafw;
 }
 
 int
 CCAEnv::initialized() 
-{ return initialized_; }
+{ return ccafw_.nonnull(); }
 
 ccaffeine::AbstractFramework* 
-CCAEnv::get_framework() 
-{ return &fw_; }
+CCAEnv::get_framework()
+{ return ccafw_->get_framework(); }
 
 gov::cca::Services* 
 CCAEnv::get_services()
-{ return &services_; }
+{ return ccafw_->get_services(); }
 
 gov::cca::ports::BuilderService* 
 CCAEnv::get_builder_service()
-{ return &bs_; }
+{ return ccafw_->get_builder_service(); }
 
 gov::cca::TypeMap* 
 CCAEnv::get_type_map()
-{ return &type_map_; }
+{ return ccafw_->get_type_map(); }
 
 gov::cca::ComponentID* 
 CCAEnv::get_component_id()
-{ return &my_id_; }
+{ return ccafw_->get_component_id(); }
+
+CCAFramework::~CCAFramework()
+{
+}
 

@@ -1,0 +1,57 @@
+fixed:
+
+test_default_package:
+MPQC.CintsEvaluatorFactory
+test_symmetry:
+c2v
+followed:
+
+state:
+1
+do_cca:
+yes
+fzc:
+
+basis:
+cc-pVDZ
+integral_buffer:
+array
+method:
+scf
+auxbasis:
+
+test_calc:
+energy
+restart:
+no
+grid:
+default
+test_integral_buffer:
+opaque array
+frequencies:
+no
+docc:
+auto
+test_basis:
+cc-pVDZ
+default_package:
+MPQC.CintsEvaluatorFactory
+checkpoint:
+no
+symmetry:
+c2v
+socc:
+auto
+fzv:
+
+test_method:
+scf
+label:
+cca integrals test
+optimize:
+no
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+

@@ -268,7 +268,7 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
 {
   int sh1,sh2;
 
-  if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
+  if ((bs1_ != bs2_)||(bs1_ != bs3_)||(bs1_ != bs4_)) {
     ExEnv::errn() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);
@@ -314,7 +314,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   int old_red = redundant();
   set_redundant(1);
 
-  if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
+  if ((bs1_ != bs2_)||(bs1_ != bs3_)||(bs1_ != bs4_)) {
     ExEnv::errn() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);

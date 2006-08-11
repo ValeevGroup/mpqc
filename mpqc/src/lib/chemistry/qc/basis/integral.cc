@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
@@ -255,16 +256,35 @@ Integral::storage_required_grt(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
+Integral::storage_required_g12(const Ref<GaussianBasisSet> &b1,
+			       const Ref<GaussianBasisSet> &b2,
+			       const Ref<GaussianBasisSet> &b3,
+			       const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated G12 evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
 Integral::storage_unused()
 {
   ptrdiff_t tmp=storage_-storage_used_;
   return (tmp<0?0:tmp);
 }
 
-Ref<TwoBodyInt>
-Integral::grt()
+Ref<OneBodyInt>
+Integral::p_dot_nuclear_p()
 {
-  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
+  throw FeatureNotImplemented("p_dot_nuclear_p",
+                              __FILE__, __LINE__, class_desc());
+}
+
+Ref<OneBodyInt>
+Integral::p_cross_nuclear_p()
+{
+  throw FeatureNotImplemented("p_cross_nuclear_p",
+                              __FILE__, __LINE__, class_desc());
 }
 
 Ref<OneBodyOneCenterInt>
@@ -295,6 +315,30 @@ Ref<TwoBodyTwoCenterDerivInt>
 Integral::electron_repulsion2_deriv()
 {
   throw std::runtime_error("Integral::electron_repulsion2_deriv(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::electron_repulsion()
+{
+  throw std::runtime_error("Integral::electron_repulsion(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyDerivInt>
+Integral::electron_repulsion_deriv()
+{
+  throw std::runtime_error("Integral::electron_repulsion_deriv(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::grt()
+{
+  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::g12(const Ref<IntParamsG12>& p)
+{
+  throw std::runtime_error("Integral::g12(): not implemented in this particular integrals factory.");
 }
 
 /////////////////////////////////////////////////////////////////////////////

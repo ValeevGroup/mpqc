@@ -249,20 +249,29 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
       overlap_eigvec.assign(U);
     }
   else {
-      BlockedSCMatrix *bev
-          = dynamic_cast<BlockedSCMatrix*>(overlap_eigvec.pointer());
-      BlockedSCMatrix *bU
-          = dynamic_cast<BlockedSCMatrix*>(U.pointer());
-      int ifunc = 0;
-      for (i=0; i<bev->nblocks(); i++) {
-          if (bev->block(i).null()) continue;
-          for (j=0; j<nfunc[i]; j++) {
-              RefSCVector col = bU->block(i)->get_column(pm_index[ifunc]);
-              bev->block(i)->assign_column(col,j);
-              col = 0;
-              ifunc++;
-            }
-        }
+      if (blocked) {
+	  BlockedSCMatrix *bev
+	      = dynamic_cast<BlockedSCMatrix*>(overlap_eigvec.pointer());
+	  BlockedSCMatrix *bU
+	      = dynamic_cast<BlockedSCMatrix*>(U.pointer());
+	  int ifunc = 0;
+	  for (i=0; i<bev->nblocks(); i++) {
+	      if (bev->block(i).null()) continue;
+	      for (j=0; j<nfunc[i]; j++) {
+		  RefSCVector col = bU->block(i)->get_column(pm_index[ifunc]);
+		  bev->block(i)->assign_column(col,j);
+		  col = 0;
+		  ifunc++;
+	      }
+	  }
+      }
+      else {
+	  for (j=0; j<nfunc[0]; j++) {
+	      RefSCVector col = U->get_column(pm_index[j]);
+	      overlap_eigvec->assign_column(col,j);
+	      col = 0;
+	  }
+      }
     }
 
   overlap_sqrt_eigval = result_kit_->diagmatrix(orthog_dim_);
@@ -523,6 +532,16 @@ OverlapOrthog::nlindep()
 {
   if (orthog_dim_.null()) compute_orthog_trans();
   return nlindep_; 
+}
+
+RefSymmSCMatrix
+OverlapOrthog::overlap_inverse()
+{
+  RefSCMatrix X = basis_to_orthog_basis();
+  RefSymmSCMatrix result(X.coldim(), X.kit());
+  result.assign(0.0);
+  result.accumulate_symmetric_product(X.t());
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////////

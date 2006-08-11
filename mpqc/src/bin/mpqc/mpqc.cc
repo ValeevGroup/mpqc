@@ -77,7 +77,7 @@
 #include <util/misc/exenv.h>
 #include <util/misc/runnable.h>
 #ifdef HAVE_CHEMISTRY_CCA
-  #include <util/misc/ccaenv.h>
+  #include "cca.h"
 #endif
 #include <util/render/render.h>
 
@@ -92,6 +92,7 @@
 
 // Force linkages:
 #include <util/group/linkage.h>
+#include <chemistry/qc/basis/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
@@ -102,6 +103,9 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
 #  include <chemistry/qc/cints/linkage.h>
 #endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#  include <chemistry/qc/libint2/linkage.h>
+#endif
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
@@ -110,8 +114,8 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
 #  include <chemistry/qc/psi/linkage.h>
 #endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA
-#  include <chemistry/qc/intcca/linkage.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA_INT
+#  include <chemistry/cca/int/linkage.h>
 #endif
 
 #ifdef HAVE_MPI
@@ -519,14 +523,15 @@ try_main(int argc, char *argv[])
     #endif
   }
   if(cca_load.size()==0) {
-    cca_load += "MPQC.IntegralEvaluatorFactory";
+    cca_load += "Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory";
   }
 
   if( cca_load.size() > 0 && cca_path.size() > 0 && do_cca ) {
     string cca_args = "--path " + cca_path + " --load " + cca_load;
     ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
                   << endl << indent << cca_args << endl;
-    CCAEnv::init( cca_args );
+    Ref<CCAFramework> mpqc_fw = new MPQC_CCAFramework(cca_args);
+    CCAEnv::init( mpqc_fw );
   }
 #endif
 

@@ -45,6 +45,7 @@ namespace sc {
 template <class T>
 class GrpReduce {
   public:
+    GrpReduce() {}
     virtual ~GrpReduce() {};
     virtual void reduce(T*target, T*data, int n) = 0;
 };
@@ -52,6 +53,7 @@ class GrpReduce {
 template <class T>
 class GrpSumReduce: public GrpReduce<T> {
   public:
+    GrpSumReduce() : GrpReduce<T>() {}
     ~GrpSumReduce() {};
     void reduce(T*target, T*data, int nelement);
 };
@@ -59,6 +61,7 @@ class GrpSumReduce: public GrpReduce<T> {
 template <class T>
 class GrpMinReduce: public GrpReduce<T> {
   public:
+    GrpMinReduce() : GrpReduce<T>() {}
     ~GrpMinReduce() {};
     void reduce(T*target, T*data, int nelement);
 };
@@ -66,6 +69,7 @@ class GrpMinReduce: public GrpReduce<T> {
 template <class T>
 class GrpMaxReduce: public GrpReduce<T> {
   public:
+    GrpMaxReduce() : GrpReduce<T>() {}
     ~GrpMaxReduce() {};
     void reduce(T*target, T*data, int nelement);
 };

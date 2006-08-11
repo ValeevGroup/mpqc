@@ -14,10 +14,10 @@ create MPQC.SimpleDriver driver
 connect driver ModelFactory mpqcfactory ModelFactory
 connect mpqcfactory MoleculeFactory molfactory MoleculeFactory
 
-parameter mpqcfactory configure basis STO-3G
-parameter mpqcfactory configure theory HF
-parameter mpqcfactory configure molecule_filename %SCREF%/ccafe_h2o.xyz
-parameter driver configure do_gradient false
+parameter mpqcfactory CONFIG basis STO-3G
+parameter mpqcfactory CONFIG theory HF
+parameter mpqcfactory CONFIG molecule_filename %SCREF%/ccafe_h2o.xyz
+parameter driver CONFIG do_gradient false
 
 go driver go
 
@@ -35,10 +35,10 @@ create MPQC.SimpleDriver driver
 connect driver ModelFactory mpqcfactory ModelFactory
 connect mpqcfactory MoleculeFactory molfactory MoleculeFactory
 
-parameter mpqcfactory configure basis STO-3G
-parameter mpqcfactory configure theory HF
-parameter mpqcfactory configure molecule_filename %SCREF%/ccafe_h2o.xyz
-parameter driver configure do_gradient false
+parameter mpqcfactory CONFIG basis STO-3G
+parameter mpqcfactory CONFIG theory HF
+parameter mpqcfactory CONFIG molecule_filename %SCREF%/ccafe_h2o.xyz
+parameter driver CONFIG do_gradient false
 
 go driver go
 

@@ -841,13 +841,13 @@ sub input_string() {
       if( $buffer_type ne "opaque" && $buffer_type ne "array" ) {
         $buffer_type = "opaque";
       }     
-      my $int_package = $qcparse->value("integral_package");
-      if( $int_package ne "intv3" && $int_package ne "cints" ) {
-        $int_package = "intv3";
+      my $int_package = $qcparse->value("default_package");
+      if( $int_package ne "MPQC.IntV3EvaluatorFactory" && 
+          $int_package ne "MPQC.CintsEvaluatorFactory" ) {
+        $int_package = "MPQC.IntV3EvaluatorFactory";
       }
       $integrals = "$integrals\n  integral_buffer = $buffer_type";
-      $integrals = "$integrals\n  integral_package = $int_package";
-      $integrals = "$integrals\n  evaluator_factory = MPQC.IntegralEvaluatorFactory";
+      $integrals = "$integrals\n  default_subfactory = $int_package";
       $integrals = "$integrals\n  molecule = \$:molecule";
       $integrals = "$integrals\n)\n";
     }
@@ -982,7 +982,9 @@ sub input_string() {
         my $fzc = $qcinput->fzc();
 
         $mole = sprintf "%s\n    stdapprox = \"%s\"", $mole, $stdapprox;
-        $mole = "$mole\n    integrals<IntegralCints>: ()";
+        if($do_cca ne "yes") {
+          $mole = "$mole\n    integrals<IntegralCints>: ()";
+        }
         $mole = "$mole\n    nfzc = $fzc";
         # don't write an auxbasis if the auxbasis is the same as the basis set.
         # this will speed up the calculation
@@ -1100,7 +1102,12 @@ sub input_string() {
     $mpqcstart = sprintf ("%s  restart = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->restart()));
     if ($use_cints) {
-        $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+        if ( $do_cca ) {
+          $mpqcstart = "$mpqcstart  integrals = \$:integrals\n";
+        }
+        else {
+          $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+        }
     }
     my $mpqcstop = ")\n";
     my $emacs = "% Emacs should use -*- KeyVal -*- mode\n";

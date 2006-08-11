@@ -4,7 +4,7 @@ test_method: scf
 test_symmetry: c2v
 test_calc: energy
 test_integral_buffer: opaque array
-test_integral_package: cints
+test_default_package: MPQC.CintsEvaluatorFactory
 
 restart: no
 checkpoint: no

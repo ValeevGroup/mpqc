@@ -112,9 +112,11 @@ class TwoBodyInt : public RefCount {
       eri stands for electron repulsion integral, r12 stands for integrals
       of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
       [r12,T2] operators */
-    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
-  /// The total number of such types
-    static const int num_tbint_types = 4;
+    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3, r12_0_g12 = 1, r12_m1_g12 = 2, t1g12 = 3, t2g12 = 4, g12t1g12 = 5};
+    /// The max number of such types
+    static const int max_num_tbint_types = 12;
+    /// The number of types supported by this TwoBodyInt instance
+    virtual unsigned int num_tbint_types() const =0;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than

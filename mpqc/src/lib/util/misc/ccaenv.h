@@ -32,28 +32,40 @@
 #ifndef _util_misc_ccaenv_h
 #define _util_misc_ccaenv_h
 
+#include <util/ref/ref.h>
 #include <ccaffeine_AbstractFramework.hh>
 #include <gov_cca.hh>
-#include <MPQC_ComponentFactory.hh>
 
 namespace sc {
 
-/** The CCAEnv class handles embedded CCA frameworks. */
+/** The CCAFramework class handles embedded CCA frameworks. */
+class CCAFramework: public RefCount {
+  public:
+    virtual ~CCAFramework();
+    /// Returns pointer to framework
+    virtual ccaffeine::AbstractFramework* get_framework() = 0;
+    /// Returns pointer to Services object
+    virtual gov::cca::Services* get_services() = 0;
+    /// Returns pointer to BuilderService object
+    virtual gov::cca::ports::BuilderService* get_builder_service() = 0;
+    /// Returns pointer to type map
+    virtual gov::cca::TypeMap* get_type_map() = 0;
+    /// Returns pointer to "uber" component's ComponentID
+    virtual gov::cca::ComponentID* get_component_id() = 0;
+};
+
+/** The CCAEnv class provides a default CCAFramework. */
 class CCAEnv {
   private:
-    static int initialized_;
-    static ccaffeine::AbstractFramework fw_;
-    static gov::cca::Services services_;
-    static gov::cca::ports::BuilderService bs_;
-    static gov::cca::TypeMap type_map_;
-    static gov::cca::ComponentID my_id_;
-    static MPQC::ComponentFactory component_factory_;
+    static Ref<CCAFramework> ccafw_;
 
   public:
-    /// Initialize the framework
-    static void init(std::string &args);
+    /// Set the global CCA framework.
+    static void init(const Ref<CCAFramework> &);
     /// Return nonzero if CCAEnv has been initialized.
     static int initialized();
+    /// Returns the CCAFramework object.
+    static Ref<CCAFramework> ccaframework() { return ccafw_; }
     /// Returns pointer to framework
     static ccaffeine::AbstractFramework* get_framework();
     /// Returns pointer to Services object

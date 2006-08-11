@@ -28,7 +28,10 @@
 #ifndef _chemistry_qc_scf_linkage_h
 #define _chemistry_qc_scf_linkage_h
 
+#include <scdirlist.h>
+
 #include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/scf/fbclhf.h>
 #include <chemistry/qc/scf/hsoshf.h>
 #include <chemistry/qc/scf/osshf.h>
 #include <chemistry/qc/scf/tchf.h>
@@ -37,6 +40,13 @@
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
 
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
+#  include <chemistry/qc/cints/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#  include <chemistry/qc/libint2/linkage.h>
+#endif
+
 namespace sc {
 
 static ForceLink<CLHF> scf_force_link_a_;
@@ -44,6 +54,7 @@ static ForceLink<HSOSHF> scf_force_link_b_;
 static ForceLink<OSSHF> scf_force_link_c_;
 static ForceLink<TCHF> scf_force_link_d_;
 static ForceLink<UHF> scf_force_link_e_;
+static ForceLink<FockBuildCLHF> scf_force_link_f_;
 
 }
 

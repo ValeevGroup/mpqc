@@ -205,6 +205,7 @@ if ($help) {
     print  "                     none: uses MPQC's default\n";
     print  "                     intv3: this package is distributed with MPQC\n";
     print  "                     cints: the libint package (required for MP2-R12)\n";
+    print  "                     libint2: the libint2 package (required for MP2-R12 with Gaussian geminals)\n";
     printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
           (($launch eq "")?"<not set>":$launch);
     printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
@@ -294,6 +295,8 @@ if ($nprocperjob eq "all") {
     $nprocperjob = $nnodeperjob * $nprocpernode;
 }
 
+$nprocperjob = $nnodeperjob * $nprocpernode;
+
 if ($messagegrp eq "none" && $nprocperjob > 1) {
     $messagegrp = "mpi";
 }
@@ -369,6 +372,9 @@ elsif ($memorygrp eq "armci") {
 
 if ($integral eq "cints") {
   $ENV{"INTEGRAL"} = "<IntegralCints>:()";
+}
+elsif ($integral eq "libint2") {
+  $ENV{"INTEGRAL"} = "<IntegralLibint2>:()";
 }
 elsif ($integral eq "intv3") {
   $ENV{"INTEGRAL"} = "<IntegralV3>:()";

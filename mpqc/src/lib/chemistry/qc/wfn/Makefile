@@ -46,9 +46,11 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../dft/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
-wfntest:: wfntest.$(OBJSUF) $(LIBS)
+WFNTESTLIBS: = $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/../dft/LIBS.h)
+
+wfntest:: wfntest.$(OBJSUF) $(WFNTESTLIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 wfntest.$(OBJSUF): wfntest.cc

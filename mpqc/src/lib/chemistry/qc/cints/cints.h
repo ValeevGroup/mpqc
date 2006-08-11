@@ -109,8 +109,6 @@ class IntegralCints : public Integral {
 
     Ref<TwoBodyInt> grt();
 
-    Ref<TwoBodyDerivInt> electron_repulsion_deriv();
-
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,

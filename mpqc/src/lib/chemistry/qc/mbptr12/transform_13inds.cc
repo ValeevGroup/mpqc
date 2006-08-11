@@ -141,7 +141,7 @@ TwoBodyMOIntsTransform_13Inds::run()
     Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
    -------------------------------------------------------------*/
   const int num_te_types = tform_->num_te_types();
-  const double *intbuf[TwoBodyInt::num_tbint_types];
+  const double *intbuf[TwoBodyInt::max_num_tbint_types];
   intbuf[TwoBodyInt::eri] = tbint_->buffer(TwoBodyInt::eri);
   intbuf[TwoBodyInt::r12] = tbint_->buffer(TwoBodyInt::r12);
   intbuf[TwoBodyInt::r12t1] = tbint_->buffer(TwoBodyInt::r12t1);

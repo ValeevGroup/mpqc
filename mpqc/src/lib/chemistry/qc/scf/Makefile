@@ -31,33 +31,44 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
+include $(TOPDIR)/lib/Makedirlist
+
 TARGET_TO_MAKE = libSCscf
 BIN_OR_LIB = LIB
 
-TESTPROGS = scftest
+TESTPROGS = scftest focktest
 
-SRCS = scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
+SRCS = fbclhf.cc scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
        clscf.cc clhf.cc hsosscf.cc hsoshf.cc \
        ossscf.cc osshf.cc tcscf.cc tchf.cc \
-       uscf.cc uhf.cc \
+       uscf.cc uhf.cc fockbuild.cc clhfcontrib.cc \
        tmplinst.cc svd.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
+
+#Don't generate library dependencies for scf
+#LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../dft/LIBS.h)
+SCFTESTLIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/../dft/LIBS.h)
 
-scftest:: scftest.$(OBJSUF) $(LIBS)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS) $(LTLINKBINOPTS)
+scftest:: scftest.$(OBJSUF) $(SCFTESTLIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 scftest.$(OBJSUF): scftest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
+focktest:: focktest.$(OBJSUF) $(SCFTESTLIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
+
+focktest.$(OBJSUF): focktest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d) scftest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) scftest.d focktest.d
 endif
 

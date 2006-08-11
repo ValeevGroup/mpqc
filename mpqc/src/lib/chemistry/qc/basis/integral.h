@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/basis/intparams.h>
 
 namespace sc {
 
@@ -104,7 +105,7 @@ class Integral : public SavableState {
     virtual int equiv(const Ref<Integral> &);
 
     /// Sets the total amount of storage, in bytes, that is available.
-    void set_storage(size_t i) { storage_=i; };
+    virtual void set_storage(size_t i) { storage_=i; };
     /// Returns how much storage has been used.
     size_t storage_used() { return storage_used_; }
     /// Returns how much storage was not needed.
@@ -118,6 +119,12 @@ class Integral : public SavableState {
   /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for linear R12 integrals. */
     virtual size_t storage_required_grt(const Ref<GaussianBasisSet> &b1,
+					const Ref<GaussianBasisSet> &b2 = 0,
+					const Ref<GaussianBasisSet> &b3 = 0,
+					const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12 integrals. */
+    virtual size_t storage_required_g12(const Ref<GaussianBasisSet> &b1,
 					const Ref<GaussianBasisSet> &b2 = 0,
 					const Ref<GaussianBasisSet> &b3 = 0,
 					const Ref<GaussianBasisSet> &b4 = 0);
@@ -190,6 +197,16 @@ class Integral : public SavableState {
         included as well.  */
     virtual Ref<OneBodyInt> nuclear() = 0;
 
+    /** Return a OneBodyInt that computes $\bar{p}\cdotp V\bar{p}$, where
+        $V$ is the nuclear potential. */
+    virtual Ref<OneBodyInt> p_dot_nuclear_p();
+
+    /** Return a OneBodyInt that computes $\bar{p}\times V\bar{p}$, where
+        $V$ is the nuclear potential. This is different than most other
+        one body integrals, in that each entry in the integral buffer
+        is a vector of three integrals. */
+    virtual Ref<OneBodyInt> p_cross_nuclear_p();
+
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
     virtual Ref<OneBodyInt> hcore() = 0;
 
@@ -234,10 +251,10 @@ class Integral : public SavableState {
     virtual Ref<TwoBodyTwoCenterDerivInt> electron_repulsion2_deriv();
 
     /// Return a TwoBodyInt that computes electron repulsion integrals.
-    virtual Ref<TwoBodyInt> electron_repulsion() =0;
+    virtual Ref<TwoBodyInt> electron_repulsion();
 
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
-    virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv() =0;
+    virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to linear R12 methods.  According to the convention in the
@@ -246,6 +263,13 @@ class Integral : public SavableState {
         integrals. Implementation for this kind of TwoBodyInt is
         optional. */
     virtual Ref<TwoBodyInt> grt();
+    
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+        gamma1 and gamma2 specify the exponents of the geminal in bra and ket, respectively.
+        Integrals which only include one geminal assume that geminal's parameter to be gamma1+gamma2.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12(const Ref<IntParamsG12>&);
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

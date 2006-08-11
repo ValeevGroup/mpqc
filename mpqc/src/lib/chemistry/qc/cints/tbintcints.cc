@@ -56,9 +56,11 @@ TwoBodyIntCints::TwoBodyIntCints(Integral*integral,
   switch (int2etype) {
   case erieval:
     int2ecints_ = new EriCints(integral,b1,b2,b3,b4,storage);
+    num_tbint_types_ = 1;
     break;
   case grteval:
     int2ecints_ = new GRTCints(integral,b1,b2,b3,b4,storage);
+    num_tbint_types_ = 4;
     break;
   default:
     ExEnv::errn() << scprintf("Tried to construct a two-electron integral evaluator of unimplemented or unknown type") << endl;

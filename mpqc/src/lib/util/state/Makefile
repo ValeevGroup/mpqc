@@ -51,6 +51,8 @@ DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCstate
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)

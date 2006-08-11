@@ -13,6 +13,8 @@ TESTPROGS = sample
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 sample: README.$(OBJSUF) libSCoptions.$(LIBSUF)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKBINOPTS)
 

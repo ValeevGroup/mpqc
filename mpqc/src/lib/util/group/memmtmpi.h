@@ -95,6 +95,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     void deactivate();
 
     void sync();
+
+    Ref<MemoryGrp> clone();
 };
 
 }

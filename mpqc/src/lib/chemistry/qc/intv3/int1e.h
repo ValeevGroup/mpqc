@@ -135,6 +135,9 @@ class Int1eV3: public RefCount {
     void comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
                                   int gcsize2, int gcoff1, int gcoff2,
                                   double coef, double *buffer);
+    void comp_shell_block_p_dot_nuclear_p(int gc1, int a, int gc2, int b,
+                                  int gcsize2, int gcoff1, int gcoff2,
+                                  double coef, double *buffer);
     void comp_prim_block_nuclear(int a, int b);
     void comp_prim_block_nuclear_build_a(int a, int b, int m);
     void comp_prim_block_nuclear_build_b(int b, int m);
@@ -239,6 +242,7 @@ class Int1eV3: public RefCount {
     void kinetic(int ish, int jsh);
     void nuclear_slow(int ish, int jsh);
     void nuclear(int ish, int jsh);
+    void p_dot_nuclear_p(int ish, int jsh);
     void overlap(int ish, int jsh);
     void hcore(int ish, int jsh);
     void efield(int ish, int jsh, double position[3]);

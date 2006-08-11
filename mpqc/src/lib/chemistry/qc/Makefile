@@ -34,20 +34,20 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(TOPDIR)/lib/Makedirlist
 
 SUBDIRS = basis oint3 intv3 wfn scf dft mbpt
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
-SUBDIRS := $(SUBDIRS) psi
-endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
 SUBDIRS := $(SUBDIRS) cc
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
 SUBDIRS := $(SUBDIRS) cints
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+SUBDIRS := $(SUBDIRS) libint2
+endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
+SUBDIRS := $(SUBDIRS) psi
+endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 SUBDIRS := $(SUBDIRS) mbptr12
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
-SUBDIRS := $(SUBDIRS) intcca
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs

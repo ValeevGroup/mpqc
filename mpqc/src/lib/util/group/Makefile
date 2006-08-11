@@ -68,6 +68,8 @@ DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
 
 TESTPROGS = pooltest messtest rnglocktest memtest
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 DEPENDINCLUDE =
 
 default:: $(DEPENDINCLUDE)

@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <libInfo>
+
 <scl>
-  <library uri="@sclibdir@/cca/libSCchemistry.so"
+  <library uri="@sclibdir@/cca/mpqc.so"
    scope="global" resolution="now" >
     <class name="MPQC.Chemistry_MoleculeViewer" desc="ior/impl" />
     <class name="MPQC.Physics_Units" desc="ior/impl" />
@@ -10,41 +11,94 @@
     <class name="MPQC.Chemistry_QC_GaussianBasisSet" desc="ior/impl" />
     <class name="MPQC.Chemistry_QC_Model" desc="ior/impl" />
     <class name="MPQC.ChemistryOpt_CoordinateModel" desc="ior/impl" />
-    <class name="MPQC.IntegralEvaluatorFactory" desc="ior/impl" />
+    <class name="MPQC.IntV3EvaluatorFactory" desc="ior/impl" />
+    <class name="MPQC.CintsEvaluatorFactory" desc="ior/impl" />
     <class name="MPQC.SimpleDriver" desc="ior/impl" />
   </library>
 </scl>
-<componentDeployment name="MPQC.Chemistry_MoleculeViewer"
- paletteClassAlias="MPQC.MoleculeViewer" >
-   <environment> 
-     <ccaSpec binding="babel" /> <library loading="dynamic" />
-   </environment>
+
+<componentDeployment 
+  name="MPQC.Chemistry_MoleculeViewer"
+  paletteClassAlias="MPQC.Chemistry_MoleculeViewer" >
+  <environment> 
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_Chemistry_MoleculeViewer" />
+  </environment>
 </componentDeployment>
-<componentDeployment name="MPQC.Chemistry_QC_ModelFactory"
- paletteClassAlias="MPQC.ModelFactory" >
-   <environment>
-     <ccaSpec binding="babel" /> <library loading="dynamic" />
-   </environment>
+
+<componentDeployment 
+  name="MPQC.Chemistry_QC_ModelFactory"
+  paletteClassAlias="MPQC.Chemistry_QC_ModelFactory" >
+  <environment>
+    <ccaSpec binding="babel" /> 
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_Chemistry_QC_ModelFactory" />
+  </environment>
 </componentDeployment>
+
 <componentDeployment
- name="MPQC.ChemistryOpt_CoordinateModel"
- paletteClassAlias="MPQC.CoordinateModel" >
-   <environment>
-     <ccaSpec binding="babel" /> <library loading="dynamic" />
-   </environment>
+  name="MPQC.ChemistryOpt_CoordinateModel"
+  paletteClassAlias="MPQC.ChemistryOpt_CoordinateModel" >
+  <environment>
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_ChemistryOpt_CoordinateModel" />
+  </environment>
 </componentDeployment>
+
 <componentDeployment
- name="MPQC.IntegralEvaluatorFactory"
- paletteClassAlias="MPQC.IntegralEvaluatorFactory" >
-   <environment>
-     <ccaSpec binding="babel" /> <library loading="dynamic" />
-   </environment>
+  name="MPQC.IntV3EvaluatorFactory"
+  paletteClassAlias="MPQC.IntV3EvaluatorFactory" >
+  <environment>
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_IntV3EvaluatorFactory" />
+  </environment>
 </componentDeployment>
+
+<componentDeployment
+  name="MPQC.CintsEvaluatorFactory"
+  paletteClassAlias="MPQC.CintsEvaluatorFactory" >
+  <environment>
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_CintsEvaluatorFactory" />
+  </environment>
+</componentDeployment>
+
 <componentDeployment
  name="MPQC.SimpleDriver"
  paletteClassAlias="MPQC.SimpleDriver" >
-   <environment>
-     <ccaSpec binding="babel" /> <library loading="dynamic" />
-   </environment>
+ <environment>
+   <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_SimpleDriver" />
+ </environment>
 </componentDeployment>
+
 </libInfo>

@@ -1,0 +1,251 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.4.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@brio
+  Start Time: Mon May 29 21:03:51 2006
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /usr/local/mpqc/2.4.0-alpha-shared/share/mpqc/2.4.0-alpha/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /usr/local/mpqc/2.4.0-alpha-shared/share/mpqc/2.4.0-alpha/basis/cc-pvdz.kv.
+      Reading file /usr/local/mpqc/2.4.0-alpha-shared/share/mpqc/2.4.0-alpha/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      docc = [ 5 0 1 2 ]
+      nbasis = 11
+
+  CLSCF::init: total charge = 0
+
+  docc = [ 5 0 1 2 ]
+  nbasis = 28
+
+  Molecular formula H2Si
+
+  The following keywords in "clhfdk2.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = clhfdk2
+    restart_file  = clhfdk2.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  nuclear repulsion energy =   10.0729498809
+
+  Including DK2 (Douglas-Kroll-Hess) terms in the one body Hamiltonian.
+  The momentum basis is:
+    GaussianBasisSet:
+      nbasis = 55
+      nshell = 31
+      nprim  = 31
+      name = "Uncontracted(cc-pVDZ)"
+  Orthogonalizing the momentum basis
+  Using symmetric orthogonalization.
+  n(basis):            28     2    10    15
+  Maximum orthogonalization residual = 4.20639
+  Minimum orthogonalization residual = 0.00698582
+  integral intermediate storage = 233546 bytes
+  integral cache = 31759958 bytes
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =   10.0729498809
+
+      integral intermediate storage = 20103 bytes
+      integral cache = 31978841 bytes
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             6     0     2     3
+      Maximum orthogonalization residual = 1.80389
+      Minimum orthogonalization residual = 0.330238
+      Beginning iterations.  Basis is STO-3G.
+                      2796 integrals
+      iter     1 energy = -286.3674397399 delta = 6.84097e-01
+                      2787 integrals
+      iter     2 energy = -286.6597972932 delta = 1.78080e-01
+                      2797 integrals
+      iter     3 energy = -286.6643664327 delta = 2.27757e-02
+                      2795 integrals
+      iter     4 energy = -286.6644994187 delta = 4.95268e-03
+                      2797 integrals
+      iter     5 energy = -286.6645049747 delta = 9.45339e-04
+                      2771 integrals
+      iter     6 energy = -286.6645050715 delta = 1.07830e-04
+                      2797 integrals
+      iter     7 energy = -286.6645050354 delta = 6.79645e-06
+
+      HOMO is     5  A1 =  -0.228843
+      LUMO is     2  B1 =   0.220710
+
+      total scf energy = -286.6645050354
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 16
+        Using symmetric orthogonalization.
+        n(basis):            13     2     5     8
+        Maximum orthogonalization residual = 3.43982
+        Minimum orthogonalization residual = 0.0216061
+        The number of electrons in the projected density = 15.9685
+
+  Beginning iterations.  Basis is cc-pVDZ.
+                 62416 integrals
+  iter     1 energy = -290.3899918394 delta = 2.38559e-01
+                 63487 integrals
+  iter     2 energy = -290.5402497015 delta = 4.66675e-02
+                 63487 integrals
+  iter     3 energy = -290.5451107141 delta = 7.71896e-03
+                 63568 integrals
+  iter     4 energy = -290.5453691074 delta = 2.38923e-03
+                 63487 integrals
+  iter     5 energy = -290.5453792940 delta = 5.82802e-04
+                 63568 integrals
+  iter     6 energy = -290.5453795204 delta = 8.86762e-05
+                 63369 integrals
+  iter     7 energy = -290.5453795256 delta = 9.48856e-06
+                 63568 integrals
+  iter     8 energy = -290.5453795260 delta = 3.63638e-06
+
+  HOMO is     5  A1 =  -0.334163
+  LUMO is     2  B1 =   0.011181
+
+  total scf energy = -290.5453795260
+
+  Value of the MolecularEnergy: -290.5453795260
+
+  Function Parameters:
+    value_accuracy    = 7.332008e-07 (1.000000e-06) (computed)
+    gradient_accuracy = 0.000000e+00 (1.000000e-06)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecular Coordinates:
+    IntMolecularCoor Parameters:
+      update_bmat = no
+      scale_bonds = 1
+      scale_bends = 1
+      scale_tors = 1
+      scale_outs = 1
+      symmetry_tolerance = 1.000000e-05
+      simple_tolerance = 1.000000e-03
+      coordinate_tolerance = 1.000000e-07
+      have_fixed_values = 0
+      max_update_steps = 100
+      max_update_disp = 0.500000
+      have_fixed_values = 0
+
+    Molecular formula: H2Si
+    molecule<Molecule>: (
+      symmetry = c2v
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1    Si [    0.0000000000     0.0000000000     0.0200000000]
+         2     H [    0.0000000000    -1.1000000000    -1.0100000000]
+         3     H [    0.0000000000     1.1000000000    -1.0100000000]
+      }
+    )
+    Atomic Masses:
+       27.97693    1.00783    1.00783
+
+    Bonds:
+      STRE       s1     1.50695    1    2         Si-H
+      STRE       s2     1.50695    1    3         Si-H
+    Bends:
+      BEND       b1    93.76456    2    1    3      H-Si-H
+
+    SymmMolecularCoor Parameters:
+      change_coordinates = no
+      transform_hessian = yes
+      max_kappa2 = 10.000000
+
+  Electronic basis:
+    GaussianBasisSet:
+      nbasis = 28
+      nshell = 11
+      nprim  = 31
+      name = "cc-pVDZ"
+  Momentum basis:
+    GaussianBasisSet:
+      nbasis = 55
+      nshell = 31
+      nprim  = 31
+      name = "Uncontracted(cc-pVDZ)"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P)     ne(D) 
+      1   Si    0.634934  5.657015  7.685681  0.022370
+      2    H   -0.317467  1.313107  0.004360
+      3    H   -0.317467  1.313107  0.004360
+
+  SCF Parameters:
+    maxiter = 100
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0
+    ndocc = 8
+    docc = [ 5 0 1 2 ]
+
+                            CPU Wall
+mpqc:                      4.31 4.36
+  NAO:                     0.04 0.03
+  calc:                    4.14 4.19
+    vector:                4.14 4.19
+      density:             0.00 0.00
+      evals:               0.01 0.01
+      extrap:              0.02 0.01
+      fock:                3.61 3.66
+        accum:             0.00 0.00
+        ao_gmat:           3.54 3.59
+          start thread:    3.54 3.59
+          stop thread:     0.00 0.00
+        init pmax:         0.00 0.00
+        local data:        0.00 0.00
+        setup:             0.03 0.03
+        sum:               0.00 0.00
+        symm:              0.03 0.03
+      vector:              0.08 0.07
+        density:           0.00 0.00
+        evals:             0.00 0.00
+        extrap:            0.01 0.01
+        fock:              0.04 0.04
+          accum:           0.00 0.00
+          ao_gmat:         0.02 0.02
+            start thread:  0.02 0.02
+            stop thread:   0.00 0.00
+          init pmax:       0.00 0.00
+          local data:      0.00 0.00
+          setup:           0.01 0.01
+          sum:             0.00 0.00
+          symm:            0.02 0.01
+  input:                   0.13 0.13
+
+  End Time: Mon May 29 21:03:56 2006
+

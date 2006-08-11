@@ -48,6 +48,8 @@ TESTPROGS = testpg
 
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

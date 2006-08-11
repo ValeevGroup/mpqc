@@ -124,7 +124,7 @@ void
 TwoBodyMOIntsTransform::set_num_te_types(const int num_te_types)
 {
   // need to figure out how to determine the number of te types supported by this TwoBodyInt
-  if (num_te_types < 1 || num_te_types > TwoBodyInt::num_tbint_types)
+  if (num_te_types < 1 || num_te_types > TwoBodyInt::max_num_tbint_types)
     throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- ");
   num_te_types_ = num_te_types;
   init_vars();

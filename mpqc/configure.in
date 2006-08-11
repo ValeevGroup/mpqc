@@ -78,6 +78,26 @@ esac
 ]
 )
 
+AC_ARG_ENABLE(deplibs,
+[  --enable-deplibs        Generate Use library dependencies in shared libraries],
+[
+case $enableval in
+  yes)
+    ENABLE_DEPLIBS=yes
+  ;;
+  no)
+    ENABLE_DEPLIBS=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-deplibs ($enableval)])
+  ;;
+esac
+],[
+    ENABLE_DEPLIBS=no
+]
+)
+AC_SUBST(ENABLE_DEPLIBS)
+
 enableproduction=no
 AC_ARG_ENABLE(production,
 [  --enable-production     Prepare for a production install.],
@@ -1611,10 +1631,90 @@ AC_CHECK_HEADERS(libderiv/libderiv.h,
   )
 AC_LANG_RESTORE
 
-dnl ----------- make sure we have everything for cints and mbptr12 ----------
+dnl ----------- libint2 library checks --------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libint2/libint2.h,
+  AC_MSG_CHECKING([for libint2_static_init in -lint2])
+  REF_LIBS=$LIBS  LIBS="-lint2 $LIBS"
+  AC_LINK_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+      ]],
+      [[
+        void (*funcptr)() = LIBINT2_PREFIXED_NAME(libint2_static_init);
+        funcptr();
+      ]]
+      ),
+    HAVE_LIBINT2=yes
+    AC_DEFINE(HAVE_LIBINT2)
+    AC_SUBST(HAVE_LIBINT2)
+    REF_LIBS="-lint2 $LIBS"
+    AC_MSG_RESULT([yes])
+    )
+  LIBS=$REF_LIBS
+  AC_MSG_CHECKING([if libint2 can compute ERI])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_ERI
+        void libint2_support_eri() {}
+        #endif
+      ]],
+      [[
+        libint2_support_eri();
+      ]]
+      ),
+    [HAVE_LIBINT2_ERI=yes
+     AC_SUBST(HAVE_LIBINT2_ERI)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
+  AC_MSG_CHECKING([if libint2 can compute G12])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_G12
+        void libint2_support_g12() {}
+        #endif
+      ]],
+      [[
+        libint2_support_g12();
+      ]]
+      ),
+    [HAVE_LIBINT2_G12=yes
+     AC_SUBST(HAVE_LIBINT2_G12)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
+  )
+AC_LANG_RESTORE
+
+dnl ----------- make sure we have everything for cints ----------
 
 if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
+  HAVE_INTEGRALCINTS=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
+else
+  AC_DEFINE(HAVE_INTEGRALCINTS)
+  AC_SUBST(HAVE_INTEGRALCINTS)
+fi
+
+dnl ----------- make sure we have everything for libint2 interface ----------
+
+if test ! X$HAVE_LIBINT2 = Xyes; then
+  HAVE_INTEGRALLIBINT2=no
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_LIBINT2 $EXCLUDED_DIRS"
+else
+  AC_DEFINE(HAVE_INTEGRALLIBINT2)
+  AC_SUBST(HAVE_INTEGRALLIBINT2)
+fi
+
+dnl ----------- make sure we have everything for mbptr12 ----------
+
+if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 
 dnl --------- Template instantiation. ---------
@@ -1771,11 +1871,6 @@ dnl --------- CCA component configuration ---------
 
 if test $components == "yes"; then
 
-  if test $HAVE_MPI == "yes" &&
-     test $HAVE_MPIPP == "no"; then
-    AC_MSG_ERROR([libmpi++ needed for mpi cca components])
-  fi
-
   if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
     AC_MSG_ERROR([cca-chem-config is required to build CCA component code])
   fi
@@ -1794,7 +1889,7 @@ if test $components == "yes"; then
 
   LIBS="-L$CCAFE_LIB $LIBS"
   CCA_CHEM_INCLUDE=-I$CCA_CHEM_INCLUDE
-  BABEL_INCLUDE=-I$BABEL_INCLUDE
+  BABEL_INCLUDE="-I$BABEL_INCLUDE/c -I$BABEL_INCLUDE/cxx"
   CCA_SPEC_BABEL_INCLUDE=-I$CCA_SPEC_BABEL_INCLUDE
   CCAFE_INCLUDE="-I$CCAFE_INCLUDE -I$CCAFE_INCLUDE/dc/babel/babel-cca/server"
   CPPFLAGS="$CPPFLAGS $BABEL_INCLUDE $CCA_SPEC_BABEL_INCLUDE $CCA_CHEM_INCLUDE $CCAFE_INCLUDE"
@@ -1810,12 +1905,12 @@ if test $components == "yes"; then
     AC_MSG_ERROR([problem with cca-chem-generic headers]) )
 
 else
-  EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_QC_INTCCA $EXCLUDED_DIRS"
+  EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_CCA_CLIENT -x SRC_LIB_CHEMISTRY_CCA_INT -x SRC_LIB_CHEMISTRY_CCA_SERVER -x SRC_LIB_CHEMISTRY_CCA_MODULE $EXCLUDED_DIRS"
 fi
 
 dnl --------- Find the list of all sc libraries. ---------
 
-SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
+SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I./src/lib -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
 AC_SUBST(SCLIBS)
 
 dnl --------- Define the library directory macros. ---------
@@ -1835,3 +1930,34 @@ chmod +x bin/sc-config
 chmod +x src/bin/mpqc/mpqcrun
 chmod +x src/bin/mpqc/ccarun
 chmod +x src/bin/mpqc/validate/makeccain.pl
+
+dnl --------- Print out a configuration summary. ---------
+
+echo -e "\nConfiguration Summary:"
+dnl echo -e "Variable\t\tValue"
+echo -e "---------------------------------------------------------------"
+echo -e "Install prefix\t$prefix"
+echo -e "C compiler\t$CC"
+echo -e "C++ compiler\t$CXX"
+echo -e "F77 compiler\t$F77"
+echo -e "DEFAULT_PARALL.\t${DEFAULT_PARALLEL:-<not set>}"
+echo -e "HAVE_PTHREAD\t${HAVE_PTHREAD:-no}"
+echo -en "HAVE_MPI\t${HAVE_MPI:-no}"
+if test "$HAVE_MPI" = yes; then
+  if test "$ALWAYS_USE_MPI" = yes; then
+    echo -en "\t(MPI_Init always called)"
+  fi
+fi
+echo
+echo -e "HAVE_ARMCI\t${HAVE_ARMCI:-no}"
+echo -e "HAVE_LIBINT\t${HAVE_LIBINT:-no}"
+echo -e "HAVE_LIBR12\t${HAVE_LIBR12:-no}"
+echo -e "HAVE_LIBDERIV\t${HAVE_LIBDERIV:-no}"
+echo -e "HAVE_LIBINT2\t${HAVE_LIBINT2:-no}"
+echo -en "components\t${components:-<not set>}"
+if test "$components" = yes; then
+  echo -ne "\t(CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"
+fi
+echo
+echo -e "---------------------------------------------------------------"
+

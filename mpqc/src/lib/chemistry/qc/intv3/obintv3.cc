@@ -25,9 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <iostream>
+#include <iomanip>
 #include <chemistry/qc/intv3/obintv3.h>
 
 using namespace sc;
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntV3
@@ -51,6 +54,30 @@ void
 OneBodyIntV3::compute_shell(int i, int j)
 {
   (int1ev3_.pointer()->*intfunc_)(i, j);
+
+  // temporary debugging stuff for cca integrals comparison
+  /*
+  if( 1 ) {
+    std::cerr << setprecision(15)
+              << setiosflags( ios::showpoint | ios::fixed);
+    std::cerr << "buffer for shell doublet:\n";
+    std::cerr << "shellnum1: " << i << std::endl;
+    GaussianShell* s1 = &( bs1_->shell(i) );
+    int nc1 = s1->ncontraction();
+    for (int ii=0; ii<nc1; ++ii)
+      std::cerr << "am: " << s1->am(ii) << std::endl;
+    std::cerr << "shellnum2: " << j << std::endl;
+    GaussianShell* s2 = &( bs2_->shell(j) );
+    int nc2 = s2->ncontraction();
+    for (int ii=0; ii<nc2; ++ii)
+      std::cerr << "am: " << s2->am(ii) << std::endl;
+
+    int nfunc = s1->max_cartesian() * s2->max_cartesian();
+    for( int ii=0; ii<nfunc; ++ii)
+      std::cerr << buffer_[ii] << std::endl;
+  }
+  */
+
 }
 
 bool

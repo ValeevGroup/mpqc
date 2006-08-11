@@ -61,6 +61,8 @@ TARGET_TO_MAKE = libSCkeyval
 
 DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 default:: $(DEPENDINCLUDE)
 
 keyvaltest: keyvaltest.$(OBJSUF) libSCkeyval.$(LIBSUF) \

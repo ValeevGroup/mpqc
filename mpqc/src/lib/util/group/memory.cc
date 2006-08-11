@@ -34,6 +34,7 @@
 #endif
 
 #include <scconfig.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/group/memory.h>
 
@@ -358,6 +359,15 @@ MemoryGrp::get_default_memorygrp()
       default_memorygrp = new ProcMemoryGrp;
     }
   return default_memorygrp.pointer();
+}
+
+Ref<MemoryGrp>
+MemoryGrp::clone(void)
+{
+  FeatureNotImplemented ex("clone not implemented",
+                           __FILE__, __LINE__, class_desc());
+  throw ex;
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

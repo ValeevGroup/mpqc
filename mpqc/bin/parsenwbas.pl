@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 $basisname = $ARGV[0];
+$origbasisname = $basisname;
 $basisname =~ s/.nw$//;
 
 $name{"H"}="hydrogen";
@@ -128,10 +129,11 @@ $basisname =~ tr/\(/L/;
 $basisname =~ tr/\)/R/;
 $basisname =~ tr/,/_/;
 $basisname =~ tr/ /_/;
+$mpqcbasisname = mpqc_basisname($basisname);
 printf "Reading NWChem basis from %s.nw\n", $basisname;
-printf "Writing MPQC basis to %s.kv\n", $basisname;
+printf "Writing MPQC basis to %s.kv\n", $mpqcbasisname;
 open(NWCHEMBASIS, "<$basisname.nw");
-open(MPQCBASIS, ">$basisname.kv");
+open(MPQCBASIS, ">$mpqcbasisname.kv");
 #open(MPQCBASIS, "|cat");
 $firstatom=1;
 $savedcomments="";
@@ -140,21 +142,29 @@ while (<NWCHEMBASIS>) {
   #  next;
   GOTLINE:
   #printf "-----> %s\n", $_;
-  if (/^ *(BASIS.* +[^ ]* +)([A-Z]*)/) {
+  if (/^ *[Bb][Aa][Ss][Ii][Ss] +/) {
+    s/^ *[Bb][Aa][Ss][Ii][Ss] +//;
     $retrieve = 1;
-    $spherical_option = $2;
-    $basis = $1;
-    $line = "$1$2";
-    $basis =~ s/^[^\"]*\"//; #"
-    $basis =~ s/\"[^\"]*$//; #"
-    printf "Basis = %s\n", $basis;
-    if ($spherical_option eq "SPHERICAL") {
-      $pure = 1;
+    if (/\"([^\"]*)\"/) { #"
+        $basis = $1;
+        s/\"[^\"]*\"//; #"
     }
+    else {
+        $basis = $origbasisname;
+    }
+    $basis = mpqc_basisname($basis);
+    for my $option (split) {
+        print "option = $option\n";
+        if (uc($option) eq "SPHERICAL") {
+            $pure = 1;
+        }
+    }
+    $line = $_;
+    printf "Basis = %s\n", $basis;
     #printf "%s\n", $line;
-    printf MPQCBASIS "%%%s\n", $line;
+    #printf MPQCBASIS "%%%s", $line;
   }
-  elsif (/^ *END/) {
+  elsif (/^ *[Ee][Nn][Dd]/) {
     $retrieve = 0;
   }
   elsif (/^ *\#(.*)/) {
@@ -196,6 +206,9 @@ while (<NWCHEMBASIS>) {
     else {
       $exp_coef_lines[$#exp_coef_lines+1] = $1;
     }
+  }
+  elsif (! /^ *$/ && ! /^</) {
+      printf MPQCBASIS "%%%s", $_;
   }
 }
 if (!($atom eq none)) {
@@ -357,4 +370,13 @@ sub nright {
     my $right_digits = $f;
     $right_digits =~ s/.*\.//;
     return length($right_digits);
+}
+
+sub mpqc_basisname {
+    my $basis = shift;
+    $basis =~ s/_dk$/-dk/;
+    $basis =~ s/_DK$/-DK/;
+    $basis =~ s/aug-(.*) Diffuse/augmentation-\1/;
+    $basis =~ s/aug-(.*)_diffuse/augmentation-\1/;
+    return $basis;
 }

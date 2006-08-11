@@ -1073,6 +1073,18 @@ RefSymmSCMatrix::operator*(const RefSymmSCMatrix&a) const
   return r;
 }
 
+RefSCMatrix
+RefSymmSCMatrix::operator*(const RefDiagSCMatrix&a) const
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = kit()->matrix(dim(),a->dim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
 RefSCVector
 RefSymmSCMatrix::operator*(const RefSCVector&a) const
 {
@@ -1230,6 +1242,30 @@ RefDiagSCMatrix::operator*(const RefSCMatrix&a) const
   RefSCMatrix r = kit()->matrix(dim(),a->coldim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefSCMatrix
+RefDiagSCMatrix::operator*(const RefSymmSCMatrix&a) const
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = kit()->matrix(dim(),a->dim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefDiagSCMatrix
+RefDiagSCMatrix::operator*(const RefDiagSCMatrix&a) const
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefDiagSCMatrix r = copy();
+  Ref<SCElementOp2> op = new SCDestructiveElementProduct;
+  r->element_op(op,a.pointer());
   return r;
 }
 

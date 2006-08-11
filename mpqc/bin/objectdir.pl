@@ -53,9 +53,12 @@ else {
 
 open(MAKEDIRLIST,">lib/Makedirlist");
 open(INCDIRLIST,">src/lib/scdirlist.h");
+print INCDIRLIST "#ifndef _scdirlist_h\n";
+print INCDIRLIST "#define _scdirlist_h\n";
 
 &dodir("$srcdir",".",$topdir);
 
+print INCDIRLIST "#endif\n";
 close(MAKEDIRLIST);
 close(INCDIRLIST);
 

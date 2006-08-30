@@ -49,6 +49,16 @@ namespace sc {
     return prefix + R;
   }
   
+  std::string prepend_spincase(PureSpinCase2 S, const std::string& R, bool lowercase)
+  {
+    std::string prefix;
+    if (S == Singlet)
+      prefix = (lowercase ? "singlet " : "Singlet ");
+    else
+      prefix = (lowercase ? "triplet " : "Triplet ");
+    return prefix + R;
+  }
+  
   std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase)
   {
     std::string prefix;

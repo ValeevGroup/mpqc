@@ -276,7 +276,7 @@ public:
 
 
 /**
-   SpinMOPairIter iterates over spinorbitals
+   SpinMOPairIter iterates over pairs of spinorbitals
   */
 class SpinMOPairIter : public MOPairIter
 {
@@ -294,6 +294,30 @@ class SpinMOPairIter : public MOPairIter
   operator int() const;
   
   private:
+  int IJ_;
+};
+
+/**
+   PureSpinPairIter iterates over spin-adapted (singlet or triplet) orbital pairs. Clearly, only valid when both indices
+   come from the same orbital space.
+  */
+class PureSpinPairIter : public MOPairIter
+{
+  public:
+  /// spincase S
+  PureSpinPairIter(const Ref<MOIndexSpace>& space,
+		   const PureSpinCase2& S);
+  ~PureSpinPairIter();
+  
+  /// Start the iteration.
+  void start(const int first_ij=0);
+  /// Move to the next pair.
+  void next();
+  /// Returns nonzero if the iterator currently hold valid data.
+  operator int() const;
+  
+  private:
+  PureSpinCase2 spin_;
   int IJ_;
 };
 

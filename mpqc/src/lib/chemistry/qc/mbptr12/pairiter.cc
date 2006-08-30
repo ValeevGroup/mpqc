@@ -163,6 +163,78 @@ SpinMOPairIter::operator int() const { return nij_ > IJ_; }
 
 ///////
 
+PureSpinPairIter::PureSpinPairIter(const Ref<MOIndexSpace>& space,
+				   const PureSpinCase2& S) :
+  MOPairIter(space, space), spin_(S), IJ_(0)
+{
+  if (spin_ == Triplet) {
+    nij_ = (ni_ * (ni_-1))/2;
+    ij_ = 0;
+    i_ = 1;
+    j_ = 0;
+  }
+  else {
+    nij_ = (ni_ * (ni_+1))/2;
+    ij_ = 0;
+    i_ = 0;
+    j_ = 0;
+  }
+}
+
+PureSpinPairIter::~PureSpinPairIter() {}
+
+void
+PureSpinPairIter::start(const int first_ij)
+{
+  IJ_ = 0;
+  if (nij_ > 0) {
+    ij_ = first_ij%nij_;
+    if (spin_ == Triplet) {
+      i_ = (int)floor((sqrt(1.0+8.0*ij_) - 1.0)/2.0) + 1;
+      const int i_off = i_*(i_-1)/2;
+      j_ = ij_ - i_off;
+    }
+    else {
+      i_ = (int)floor((sqrt(1.0+8.0*ij_) + 1.0)/2.0) - 1;
+      const int i_off = i_*(i_+1)/2;
+      j_ = ij_ - i_off;
+    }
+  }
+}
+
+void
+PureSpinPairIter::next()
+{
+  IJ_++;
+  ij_++;
+  if (ij_ == nij_)
+    ij_ = 0;
+  if (spin_ == Triplet) {
+    ++j_;
+    if (j_ >= i_) {
+      i_++;
+      j_ = 0;
+      if (i_ >= ni_) {
+        i_ = 1;
+      }
+    }
+  }
+  else {
+    ++j_;
+    if (j_ > i_) {
+      i_++;
+      j_ = 0;
+      if (i_ >= ni_) {
+        i_ = 0;
+      }
+    }
+  }
+}
+
+PureSpinPairIter::operator int() const { return nij_ > IJ_; }
+
+///////
+
 Ref<SpatialMOPairIter>
 MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
 {

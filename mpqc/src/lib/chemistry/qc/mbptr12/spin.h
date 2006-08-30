@@ -40,6 +40,7 @@ namespace sc {
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
   typedef enum { Alpha = 0, Beta = 1} SpinCase1;
   typedef enum { AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2} SpinCase2;
+  typedef enum { Singlet = 0, Triplet = 1} PureSpinCase2;
   /// Returns the number of unique spin cases (1 or 2)
   unsigned int nspincases1(bool spin_polarized);
   /// Returns the number of unique combinations of 2 spin cases (1 or 3)
@@ -55,6 +56,8 @@ namespace sc {
   std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase = false);
   /// Prepend string representation of S to R and return
   std::string prepend_spincase(SpinCase2 S, const std::string& R, bool lowercase = false);
+  /// Prepend string representation of S to R and return
+  std::string prepend_spincase(PureSpinCase2 S, const std::string& R, bool lowercase = false);
   
   
 };

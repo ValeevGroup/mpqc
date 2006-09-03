@@ -1908,11 +1908,6 @@ else
   EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_CCA_CLIENT -x SRC_LIB_CHEMISTRY_CCA_INT -x SRC_LIB_CHEMISTRY_CCA_SERVER -x SRC_LIB_CHEMISTRY_CCA_MODULE $EXCLUDED_DIRS"
 fi
 
-dnl --------- Find the list of all sc libraries. ---------
-
-SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I./src/lib -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
-AC_SUBST(SCLIBS)
-
 dnl --------- Define the library directory macros. ---------
 
 if test "$enableproduction" = "no"; then
@@ -1921,9 +1916,16 @@ fi
 AC_DEFINE_DIR(INSTALLED_SCLIBDIR, prefix/lib)
 AC_DEFINE_DIR(SCDATADIR, scdatadir)
 
-dnl --------- Create the stub Makefiles. ---------
+dnl --------- Create the stub Makefiles and scdirlist.h. ---------
 
 $PERL $srcdir/bin/objectdir.pl $EXCLUDED_DIRS $srcdir
+
+dnl --------- Find the list of all sc libraries (needs scdirlist.h). ---------
+
+SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I./src/lib -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
+AC_SUBST(SCLIBS)
+
+dnl --------- Generate output files. ---------
 
 AC_OUTPUT(lib/LocalMakefile lib/cca/components.cca bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun src/bin/mpqc/ccarun src/bin/mpqc/validate/makeccain.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config

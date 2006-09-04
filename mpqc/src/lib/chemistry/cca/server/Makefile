@@ -48,7 +48,6 @@ BABEL_CLASSES = \
   MPQC.GaussianBasis_Atomic \
   MPQC.GaussianBasis_Molecular \
   MPQC.IntV3EvaluatorFactory \
-  MPQC.CintsEvaluatorFactory \
   MPQC.IntegralEvaluator1 \
   MPQC.IntegralEvaluator2 \
   MPQC.IntegralEvaluator3 \
@@ -57,6 +56,10 @@ BABEL_CLASSES = \
   MPQC.ComponentClassDescription \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver
+
+ifeq ($(HAVE_LIBINT),yes)
+  BABEL_CLASSES += MPQC.CintsEvaluatorFactory
+endif
 
 EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc reorder_engine.cc \
                  buffer_size.cc

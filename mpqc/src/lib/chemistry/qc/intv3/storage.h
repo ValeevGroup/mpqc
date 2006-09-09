@@ -67,8 +67,9 @@ class IntegralKey {
              && (sh2_sh3_p13p24  == k.sh2_sh3_p13p24);
     }
     bool operator < (const IntegralKey &k) const {
-      return ((sh0_sh1_p12_p34 < k.sh0_sh1_p12_p34)?
-              true:(sh2_sh3_p13p24 < k.sh2_sh3_p13p24));
+      if (sh0_sh1_p12_p34 < k.sh0_sh1_p12_p34) return true;
+      else if (sh0_sh1_p12_p34 > k.sh0_sh1_p12_p34) return false;
+      return sh2_sh3_p13p24 < k.sh2_sh3_p13p24;
     }
     int sh0() const { return (sh0_sh1_p12_p34>>SH0_SHIFT) & SH_MASK; }
     int sh1() const { return (sh0_sh1_p12_p34>>SH1_SHIFT) & SH_MASK; }

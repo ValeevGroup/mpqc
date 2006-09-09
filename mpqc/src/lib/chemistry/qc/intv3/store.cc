@@ -37,6 +37,9 @@
 #include <chemistry/qc/intv3/storage.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+#define PRINT_STORED 0
+#define MONITOR_HASH -1
+
 using namespace sc;
 
 void
@@ -77,11 +80,14 @@ Int2eV3::int_have_stored_integral(int sh1,int sh2,int sh3,int sh4,
       ExEnv::outn() << scprintf("!!!!! SHELL INFO INCONSISTENCY\n");
       abort();
     }
-  ExEnv::outn() << scprintf("===== %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+  ExEnv::outn() << scprintf("===== %2d %2d %2d %2d, %d %d %d size %5d cost %7d slot %5d\n",
          sh1, sh2, sh3, sh4,
          p12, p34, p13p24,
          integral->size, integral->costlist.key,
-         integral, integral->hash()%storer->table_size());
+         integral->hash()%storer->table_size());
+  if (integral->hash()%storer->table_size() == MONITOR_HASH) {
+      storer->table_entry(MONITOR_HASH).detailed_print();
+    }
 #endif
 
   int i;

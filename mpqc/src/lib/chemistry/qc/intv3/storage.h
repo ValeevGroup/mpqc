@@ -67,8 +67,9 @@ class IntegralKey {
              && (sh2_sh3_p13p24  == k.sh2_sh3_p13p24);
     }
     bool operator < (const IntegralKey &k) const {
-      return ((sh0_sh1_p12_p34 < k.sh0_sh1_p12_p34)?
-              true:(sh2_sh3_p13p24 < k.sh2_sh3_p13p24));
+      if (sh0_sh1_p12_p34 < k.sh0_sh1_p12_p34) return true;
+      else if (sh0_sh1_p12_p34 > k.sh0_sh1_p12_p34) return false;
+      return sh2_sh3_p13p24 < k.sh2_sh3_p13p24;
     }
     int sh0() const { return (sh0_sh1_p12_p34>>SH0_SHIFT) & SH_MASK; }
     int sh1() const { return (sh0_sh1_p12_p34>>SH1_SHIFT) & SH_MASK; }
@@ -78,6 +79,19 @@ class IntegralKey {
     int sh3() const { return (sh2_sh3_p13p24>>SH3_SHIFT) & SH_MASK; }
     int p13p24() const { return (sh2_sh3_p13p24>>P13P24_SHIFT) & PE_MASK; }
 };
+
+inline std::ostream&
+operator << (std::ostream &o, const IntegralKey &k)
+{
+  o << '[' << k.sh0()
+    << ' ' << k.sh1()
+    << ' ' << k.sh2()
+    << ' ' << k.sh3()
+    << ' ' << k.p12() << k.p34() << k.p13p24()
+    << " (" << k.sh0_sh1_p12_p34 << ' ' << k.sh2_sh3_p13p24 << ')'
+    << ']';
+  return o;
+}
 
 inline
 IntegralKey::IntegralKey(int sh1_, int sh2_, int sh3_, int sh4_,
@@ -180,6 +194,7 @@ class IntegralStorer: public DescribedClass {
                int size, int cost, int actualsize);
     void print_stats();
     int table_size() const { return table_size_; }
+    EAVLMMap<IntegralKey,IntegralLink>&table_entry(int i){return table_[i];}
 };
 
 }

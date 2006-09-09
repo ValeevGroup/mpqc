@@ -41,6 +41,7 @@
 #include <chemistry/qc/intv3/storage.h>
 
 #define PRINT_STORED 0
+#define MONITOR_HASH -1
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 // instantiate the templates needed for integral storage
@@ -140,10 +141,10 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
     }
 
 #if PRINT_STORED
-  ExEnv::outn() << scprintf("+++++ %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+  ExEnv::outn() << scprintf("+++++ %2d %2d %2d %2d, %d %d %d size %5d cost %7d slot %5d\n",
          key.sh0(),key.sh1(),key.sh2(),key.sh3(),
          key.p12(), key.p34(), key.p13p24(),
-         link->size,link->costlist.key,link,link->hash()%table_size_);
+         link->size,link->costlist.key,link->hash()%table_size_);
 #endif
 
   currentsize_ += actualsize;
@@ -159,13 +160,12 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
       n_shellquart_--;
       n_integrals_ -= eliminate->size;
 #if PRINT_STORED
-      ExEnv::outn() << scprintf("----- %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+      ExEnv::outn() << scprintf("----- %2d %2d %2d %2d, %d %d %d size %5d cost %7d slot %5d\n",
              eliminate->intlist.key.sh0(),eliminate->intlist.key.sh1(),
              eliminate->intlist.key.sh2(),eliminate->intlist.key.sh3(),
              eliminate->intlist.key.p12(), eliminate->intlist.key.p34(),
              eliminate->intlist.key.p13p24(),
              eliminate->size, eliminate->costlist.key,
-             eliminate,
              eliminate->hash()%table_size_);
 #endif
       delete eliminate;
@@ -174,6 +174,12 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
   // add the new shell quartet
   costlist.insert(link);
   table_[link->hash()%table_size_].insert(link);
+
+#if PRINT_STORED
+  if (link->hash()%table_size_ == MONITOR_HASH) {
+      table_[MONITOR_HASH].detailed_print();
+    }
+#endif
 }
 
 int

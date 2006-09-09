@@ -125,9 +125,10 @@ class EAVLMMap {
     iterator begin() { return iterator(this,start()); }
     iterator end() { return iterator(this,0); }
 
-    void print();
+    void print() const;
+    void detailed_print() const;
     int length() const { return length_; }
-    int depth(T*);
+    int depth(T*) const;
 };
 
 template <class K, class T>
@@ -241,7 +242,7 @@ EAVLMMap<K,T>::remove(T* node)
 
 template <class K, class T>
 void
-EAVLMMap<K,T>::print()
+EAVLMMap<K,T>::print() const
 {
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
@@ -254,8 +255,26 @@ EAVLMMap<K,T>::print()
 }
 
 template <class K, class T>
+void
+EAVLMMap<K,T>::detailed_print() const
+{
+  for (T*n=start(); n; next(n)) {
+      int d = depth(n) + 1;
+      for (int i=0; i<d; i++) ExEnv::out0() << "     ";
+      if (balance(n) == 1) ExEnv::out0() << " (+) "
+                                         << key(n) << std::endl;
+      else if (balance(n) == -1) ExEnv::out0() << " (-) "
+                                               << key(n) << std::endl;
+      else if (balance(n) == 0) ExEnv::out0() << " (.) "
+                                              << key(n) << std::endl;
+      else ExEnv::out0() << " (" << balance(n) << ") "
+                         << key(n) << std::endl;
+    }
+}
+
+template <class K, class T>
 int
-EAVLMMap<K,T>::depth(T*node)
+EAVLMMap<K,T>::depth(T*node) const
 {
   int d = 0;
   while (node) {

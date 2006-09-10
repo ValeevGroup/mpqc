@@ -1373,6 +1373,9 @@
 *
 *     .. Scalar Arguments ..
       DOUBLE PRECISION   A, B
+      DOUBLE PRECISION   PDLAMC3_A, PDLAMC3_B, PDLAMC3_C
+      COMMON/PDLAMC3_COMMON/ PDLAMC3_A, PDLAMC3_B, PDLAMC3_C
+      EXTERNAL           PDLAMC3_ADD
 *     ..
 *
 *  Purpose
@@ -1392,13 +1395,29 @@
 *
 *     .. Executable Statements ..
 *
-      PDLAMC3 = A + B
+*     PDLAMC3 = A + B
+      PDLAMC3_A = A
+      PDLAMC3_B = B
+      CALL PDLAMC3_ADD
+      PDLAMC3 = PDLAMC3_C
 *
       RETURN
 *
 *     End of DLAMC3
 *
       END
+*
+************************************************************************
+*
+      SUBROUTINE PDLAMC3_ADD
+      DOUBLE PRECISION   PDLAMC3_A, PDLAMC3_B, PDLAMC3_C
+      COMMON/PDLAMC3_COMMON/ PDLAMC3_A, PDLAMC3_B, PDLAMC3_C
+      PDLAMC3_C = PDLAMC3_A + PDLAMC3_B
+      RETURN
+      END
+*
+*     End of DLAMC3
+*
 *
 ************************************************************************
 *

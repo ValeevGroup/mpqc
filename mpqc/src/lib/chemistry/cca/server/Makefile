@@ -29,6 +29,7 @@ TOPDIR=../../../../..
 ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
+include $(TOPDIR)/lib/Makedirlist
 
 default::
 
@@ -57,7 +58,7 @@ BABEL_CLASSES = \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver
 
-ifeq ($(HAVE_LIBINT),yes)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   BABEL_CLASSES += MPQC.CintsEvaluatorFactory
 endif
 
@@ -73,7 +74,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCccaserver
 
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
-ifeq ($(HAVE_LIBINT),yes)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   DEFINES += -DHAVE_CINTS
 endif
 

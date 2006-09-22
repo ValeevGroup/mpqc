@@ -31,9 +31,6 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-ifeq ($(HAVE_LIBINT),yes)
-  DEFINES += -DHAVE_CINTS
-endif
 ifeq ($(INTV3_ORDER),yes)
   DEFINES += -DINTV3_ORDER
 endif

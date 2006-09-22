@@ -49,7 +49,7 @@ MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
                                     "Chemistry.IntegralSuperFactory");
   component_factory_.addDescription("MPQC.IntV3EvaluatorFactory",
                                     "MPQC.IntV3EvaluatorFactory");
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
+#ifdef HAVE_CINTS
   component_factory_.addDescription("MPQC.CintsEvaluatorFactory",
                                     "MPQC.CintsEvaluatorFactory");
 #endif

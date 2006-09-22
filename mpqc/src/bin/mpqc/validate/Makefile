@@ -806,4 +806,4 @@ $(INP)/input_%.qci:
 
 .PHONY: clean
 clean: check_clean
-	/bin/rm stamp-*;
+	/bin/rm -f stamp-*;

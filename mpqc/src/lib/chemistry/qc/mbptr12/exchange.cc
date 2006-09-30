@@ -147,6 +147,10 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
   K.assign(K_xy);
   delete[] K_xy;
+
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    K.print("Exchange matrix");
+  }
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;

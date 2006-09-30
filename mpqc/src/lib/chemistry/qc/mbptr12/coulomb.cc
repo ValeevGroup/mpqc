@@ -148,6 +148,10 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   J.assign(J_xy);
   delete[] J_xy;
   
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    J.print("Coulomb matrix");
+  }
+
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited Coulomb matrix evaluator" << endl;
   tim_exit("coulomb");

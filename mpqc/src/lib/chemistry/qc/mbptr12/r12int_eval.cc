@@ -794,7 +794,7 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     RefSCMatrix FmK_ri_ao = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
     RefSCMatrix K_ri_ao = exchange_(occ_space,ribs_space,act_occ_space);
     K_ri_ao.scale(-1.0);
-    RefSCMatrix F_ri_ao = FmK_ri_ao.clone(); F_ri_ao.accumulate(K_ri_ao);
+    RefSCMatrix F_ri_ao = FmK_ri_ao.clone(); F_ri_ao.assign(FmK_ri_ao); F_ri_ao.accumulate(K_ri_ao);
     K_ri_ao.scale(-1.0);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");

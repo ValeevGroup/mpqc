@@ -41,6 +41,8 @@ MP2R12EnergyUtil_base::~MP2R12EnergyUtil_base()
 
 ////
 
+namespace sc {
+
   // put/get can only be implemented when Diag=true
   template<>
     void MP2R12EnergyUtil<true>::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const
@@ -378,3 +380,6 @@ MP2R12EnergyUtil_base::~MP2R12EnergyUtil_base()
 	Aij.print(oss.str().c_str());
       }
     }
+
+}
+

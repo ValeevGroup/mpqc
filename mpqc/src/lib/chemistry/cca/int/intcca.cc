@@ -75,7 +75,7 @@ static int intv3port_instance_number=0;
 
 static ClassDesc IntegralCCA_cd(
   typeid(IntegralCCA),"IntegralCCA",1,"public Integral",
-  0, create<IntegralCCA>, 0);
+  0, create<IntegralCCA>, create<IntegralCCA>);
 
 extern Ref<Integral> default_integral;
 
@@ -145,14 +145,14 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   //------------
 
   // get integral buffer type
-  string buffer = keyval->stringvalue("integral_buffer");
-  if ( keyval->error() != KeyVal::OK ) buffer = "opaque";
-  if ( buffer == "opaque" ) use_opaque_ = true;
-  else if ( buffer == "array" ) use_opaque_ = false;
+  buffer_ = keyval->stringvalue("integral_buffer");
+  if ( keyval->error() != KeyVal::OK ) buffer_ = "opaque";
+  if ( buffer_ == "opaque" ) use_opaque_ = true;
+  else if ( buffer_ == "array" ) use_opaque_ = false;
   else 
     throw InputError( "integral_buffer must be either opaque or array",
 		      __FILE__, __LINE__,"integral_buffer",
-		      buffer.c_str(),class_desc() );
+		      buffer_.c_str(),class_desc() );
 
   // for debugging/benchmarking
   intv3_order_ = false;
@@ -164,13 +164,14 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
                     << "Using intv3 integral ordering by user request\n";
   }
   fast_deriv_ = false;
-  tempbool = keyval->booleanvalue("fast_deriv");
-  if ( keyval->error() == KeyVal::OK ) {
-    fast_deriv_ = tempbool;
-    if( fast_deriv_ )
-      ExEnv::out0() << indent
-                    << "Using opaque deriv centers by user request\n";
-  }
+  // this fast_deriv stuff is unneccessary and should be removed
+  //tempbool = keyval->booleanvalue("fast_deriv");
+  //if ( keyval->error() == KeyVal::OK ) {
+  //  fast_deriv_ = tempbool;
+  //  if( fast_deriv_ )
+  //    ExEnv::out0() << indent
+  //                  << "Using opaque deriv centers by user request\n";
+  // }
   
   // get evaluator factory type (default to SuperFactory)
   factory_type_ = keyval->stringvalue("evaluator_factory");
@@ -205,13 +206,21 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     derivs_ = sidl::array<string>::create1d(ntype);
     sfacs_ = sidl::array<string>::create1d(ntype);
     for( int i=0; i<ntype; ++i) {
-      types_.set( i, keyval->stringvalue("type",i) );
-      sfacs_.set( i, keyval->stringvalue("subfactory",i) );
+      std::string tp( keyval->stringvalue("type",i) );
+      types_.set( i, tp );
+      std_types_.push_back( tp );
+      std::string sf( keyval->stringvalue("subfactory",i) );
+      sfacs_.set( i, sf );
+      std_sfacs_.push_back( sf );
+      std::string dv;
       if( nderiv )
-        derivs_.set( i, keyval->stringvalue("deriv",i) );
+        dv = keyval->stringvalue("deriv",i);
       else
-        derivs_.set( i, "n" );
+        dv = "n";
+      derivs_.set( i, dv );
+      std_derivs_.push_back( dv );
     }
+   
   }
 
   initialize_transforms();
@@ -228,6 +237,51 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   init_generators();
 
+}
+
+void
+IntegralCCA::save_data_state(StateOut& s)
+{
+  Integral::save_data_state(s);
+  s.put(superfactory_type_);
+  s.put(buffer_);
+  s.put(use_opaque_);
+  s.put(factory_type_);
+  s.put(default_subfactory_);
+  s.put(std_types_);
+  s.put(std_sfacs_);
+  s.put(std_derivs_);
+}
+
+IntegralCCA::IntegralCCA(StateIn& s): 
+  Integral(s)
+{
+
+  initialize_transforms();
+
+  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+  fast_deriv_ = false;
+
+  s.get(superfactory_type_);
+  s.get(buffer_);
+  s.get(use_opaque_);
+  s.get(factory_type_);
+  s.get(default_subfactory_);
+  s.get(std_types_);
+  s.get(std_sfacs_);
+  s.get(std_derivs_);
+  int ntype = std_types_.size();
+  types_ = sidl::array<string>::create1d(ntype);
+  derivs_ = sidl::array<string>::create1d(ntype);
+  sfacs_ = sidl::array<string>::create1d(ntype);
+  for( int i=0; i<ntype; ++i) {
+    types_.set( i, std_types_[i] );
+    sfacs_.set( i, std_sfacs_[i] );
+    derivs_.set( i, std_derivs_[i] );
+  }
+
+  init_factory();
+  init_generators();
 }
 
 void

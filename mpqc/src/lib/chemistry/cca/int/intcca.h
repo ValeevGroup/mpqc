@@ -71,7 +71,7 @@ namespace sc {
           bool use_opaque, bool reorder ):
 	integral_(integral), factory_(fac), use_opaque_(use_opaque),
         reorder_(reorder) { }
-      
+
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
       { bs1_ = bs1, bs2_ = bs2; }
@@ -243,14 +243,19 @@ namespace sc {
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
     std::vector<Chemistry::QC::GaussianBasis::DerivCenters> cca_dcs_;
+    std::string buffer_;
     std::string factory_type_;
     std::string superfactory_type_;
     std::string default_subfactory_;
     Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescr eval_req_;
+
     sidl::array<std::string> types_;
     sidl::array<std::string> derivs_;
     sidl::array<std::string> sfacs_;
+    std::vector<std::string> std_types_;
+    std::vector<std::string> std_derivs_;
+    std::vector<std::string> std_sfacs_;
 
     onebody_generator obgen_;
     onebody_deriv_generator obdgen_;
@@ -323,7 +328,11 @@ namespace sc {
 
     IntegralCCA(const Ref<KeyVal>&);
 
+    IntegralCCA(StateIn&);
+
     ~IntegralCCA();
+
+    void save_data_state(StateOut&);
 
     Integral* clone();
 

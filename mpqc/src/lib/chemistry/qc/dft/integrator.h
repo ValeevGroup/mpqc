@@ -195,7 +195,11 @@ class RadialIntegrator: virtual public SavableState {
     ~RadialIntegrator();
     void save_data_state(StateOut &);
 
+    /// The number of quadrature points (redundant since radial_value takes this as a parameter)
     virtual int nr() const = 0;
+    /** returns the radius for the quadrature point ir.
+	multiplier returns the quadrature weight which includes the Jacobian (r^2).
+    */
     virtual double radial_value(int ir, int nr, double radii,
                                 double &multiplier) = 0;
 };

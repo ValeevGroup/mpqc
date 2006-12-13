@@ -112,7 +112,8 @@ class DistShellPair {
     void init();
     /// How much stuff to print out.
     void set_debug(int d) { debug_ = d; }
-    /// How often to print status from node 0.
+    /** How often to print status from node 0.  If p > 100.0, then
+        no printing will be done. */
     void set_print_percent(double p);
     /** Puts the current PQ shell pair into P and Q and returns 1.
         When there are no more shell pairs to be processed by this processor,

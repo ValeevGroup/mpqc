@@ -78,6 +78,29 @@ main()
   tim->exit();
   tim->exit("main");
 
+  Ref<RegionTimer> mtim = new RegionTimer("merged_top", 1, 1);
+  mtim->enter("merged_a");
+  for (int k=0; k<300000000; k++) { z += 0.0001; }
+  mtim->change("merged_c");
+  mtim->enter("merged_c_suba");
+  for (int k=0; k<100000000; k++) { z += 0.0001; }
+  mtim->change("merged_c_subb");
+  mtim->exit("merged_c_subb");
+  mtim->change("merged_b");
+  for (int k=0; k<200000000; k++) { z += 0.0001; }
+  mtim->exit("merged_b");
+
+  tim->enter("merge_point");
+  tim->merge(mtim);
+  tim->exit("merge_point");
+
+  tim->enter("merge_point*2");
+  tim->merge(mtim);
+  mtim->enter("merged_z");
+  mtim->exit("merged_z");
+  tim->merge(mtim);
+  tim->exit("merge_point*2");
+
   RegionTimer::set_default_regiontimer(tim);
 
   Timer timertest("timertest");
@@ -96,6 +119,8 @@ main()
 
   Timer y1("y1");
   y1.reset();
+
+  mtim->print();
 
   tim->print();
 

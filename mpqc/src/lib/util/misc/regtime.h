@@ -73,6 +73,9 @@ class TimedRegion {
     TimedRegion *next() const { return next_; }
     TimedRegion *prev() const { return prev_; }
 
+    /// Include the regions in r in this object's regions.
+    void merge(const TimedRegion* r);
+
     int nregion();
     void get_region_names(const char *names[]);
     void get_wall_times(double *);
@@ -109,6 +112,9 @@ class RegionTimer: public DescribedClass {
     void enter_default();
     void exit_default();
     virtual void print(std::ostream& = ExEnv::out0()) const;
+
+    /// Include the regions in r in this object's regions.
+    void merge(const Ref<RegionTimer> &r);
 
     void update_top() const;
 

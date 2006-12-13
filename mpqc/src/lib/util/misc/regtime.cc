@@ -279,6 +279,27 @@ TimedRegion::flops_exit(double f)
   flops_enter_ = f;
 }
 
+void
+TimedRegion::merge(const TimedRegion* r)
+{
+  if (!r) return;
+
+  std::cout << "merging " << r->name_ << " into " << name_
+            << std::endl;
+
+  const TimedRegion *start = r;
+  while (start->prev_) start = start->prev_;
+  for (const TimedRegion *riter = start;
+       riter; riter = riter->next_) {
+      std::cout << "  riter = " << riter->name() << std::endl;
+      TimedRegion *subr = findinsubregion(riter->name());
+      subr->cpu_time_  += riter->cpu_time_;
+      subr->wall_time_ += riter->wall_time_;
+      subr->flops_     += riter->flops_;
+      subr->merge(riter->subregions_);
+    }
+}
+
 //////////////////////////////////////////////////////////////////////
 
 static ClassDesc RegionTimer_cd(
@@ -653,6 +674,13 @@ RegionTimer::print(ostream& o) const
   delete[] flops;
   delete[] names;
   delete[] depth;
+}
+
+void
+RegionTimer::merge(const Ref<RegionTimer> &r)
+{
+  r->update_top();
+  current_->merge(r->top_);
 }
 
 static Ref<RegionTimer> default_regtimer;

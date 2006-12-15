@@ -89,6 +89,7 @@ bindir=@bindir@
 libdir=@libdir@
 includedir=@scincludedir@
 datadir=@datadir@
+datarootdir=@datarootdir@
 scdatadir=@scdatadir@
 
 WISH = @WISH@

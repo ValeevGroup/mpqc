@@ -19,6 +19,7 @@ f77="@F77@"
 version="@SC_VERSION@"
 soversion="@SC_SO_VERSION@"
 buildid="@BUILDID@"
+datarootdir=@datarootdir@
 scdatadir=@scdatadir@
 enableshared=@ENABLESHARED@
 

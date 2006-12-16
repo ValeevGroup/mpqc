@@ -9,6 +9,7 @@ $datarootdir = "@datarootdir@";
 $scdatadir = "@scdatadir@";
 
 use POSIX;
+use Sys::Hostname;
 
 if ($prefix eq '@' . 'prefix@') {
     $configurerun = 0;
@@ -329,6 +330,7 @@ if ($maxjobs == 0) {
 }
 
 $nodesbegin = 0;
+$hostname = hostname();
 foreach my $i (0..$maxjobs-1) {
     my $nodesend = $nodesbegin + $jobnnodes[$i];
     my @slice = (@nodelist)[$nodesbegin..($nodesend-1)];
@@ -338,7 +340,7 @@ foreach my $i (0..$maxjobs-1) {
         if ($nodelist{$i} eq "") { $nodelist{$i} = $j; }
         else { $nodelist{$i} = sprintf "%s,%s", $nodelist{$i}, $j; }
     }
-    $nodefile{$i} = ".tmp.nodefile.$$.$i";
+    $nodefile{$i} = ".tmp.nodefile.$hostname.$$.$i";
     open(NODEFILE,">" . $nodefile{$i});
     foreach my $proc (1..$nprocpernode) {
       foreach my $j (@slice) {
@@ -346,7 +348,7 @@ foreach my $i (0..$maxjobs-1) {
       }
     }
     close(NODEFILE);
-    $configfile{$i} = ".tmp.configfile.$$.$i";
+    $configfile{$i} = ".tmp.configfile.$hostname.$$.$i";
 }
 
 ######################################################################
@@ -466,6 +468,10 @@ else {
 }
 
 foreach $i (values(%nodefile)) {
+    unlink "$i";
+}
+
+foreach $i (values(%configfile)) {
     unlink "$i";
 }
 

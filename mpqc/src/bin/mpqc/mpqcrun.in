@@ -233,19 +233,21 @@ if ($help) {
     print  "\n";
     print  "The launch command can contain special strings that will be substituted.\n";
     print  "These are:\n";
-    print  "  %MPQC%     The MPQC program.\n";
-    print  "  %INPUT%    The input filename.\n";
-    print  "  %OUTPUT%   The output filename.\n";
-    print  "  %NPROC%    The number of processes to start.\n";
-    print  "  %NODEFILE% The name of a file containing the node names.\n";
-    print  "  %CONFIGFILE% The name of a file have lines of the form: node names: command name.\n";
-    print  "  %NODELIST% A comma separated list of node names.\n";
-    print  "  For these last two, if they are contained within square brackets\n";
+    print  "  %MPQCRUNPROC% Runs MPQC with the environment set up correctly.\n";
+    print  "  %INPUT%       The input filename.\n";
+    print  "  %OUTPUT%      The output filename.\n";
+    print  "  %NPROC%       The number of processes to start.\n";
+    print  "  %NODEFILE%    The name of a file containing the node names.\n";
+    print  "  %CONFIGFILE%  The name of a file having lines of the form: node: command.\n";
+    print  "  %NODELIST%    A comma separated list of node names.\n";
+    print  "  %MPQC%        The MPQC executable.\n";
+    print  "  For %OUTPUT% and %NODELIST%, if they are contained within square brackets\n";
     print  "  and a substitution is not available, then everything within the\n";
     print  "  the brackets is removed.\n";
     print  "Examples of the launch argument:\n";
-    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
-    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpiexec -config %CONFIGFILE%\n";
     exit 0;
 }
 
@@ -521,12 +523,15 @@ sub jobrunner {
         }
         $cmd =~ s|%MPQCRUNPROC%|$mpqcrunproc|;
 
+        my $configfile_cmd = "$mpqcrunproc [-o %OUTPUT%] $in";
+        $configfile_cmd = substitute_optional_parameter($configfile_cmd, "%OUTPUT%", "$out");
+
         open(CONFIGFILE,">" . $configfile{$jobslot});
         open(NODEFILE,"<" . $nodefile{$jobslot});
         my $node;
         while ($node = <NODEFILE>) {
           chomp($node);
-          printf CONFIGFILE "%s: %s %s\n", $node, "$mpqcrunproc", "$in";
+          printf CONFIGFILE "%s: %s\n", $node, "$configfile_cmd";
         }
         close(CONFIGFILE);
         close(NODEFILE);

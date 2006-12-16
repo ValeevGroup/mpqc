@@ -284,14 +284,10 @@ TimedRegion::merge(const TimedRegion* r)
 {
   if (!r) return;
 
-  std::cout << "merging " << r->name_ << " into " << name_
-            << std::endl;
-
   const TimedRegion *start = r;
   while (start->prev_) start = start->prev_;
   for (const TimedRegion *riter = start;
        riter; riter = riter->next_) {
-      std::cout << "  riter = " << riter->name() << std::endl;
       TimedRegion *subr = findinsubregion(riter->name());
       subr->cpu_time_  += riter->cpu_time_;
       subr->wall_time_ += riter->wall_time_;

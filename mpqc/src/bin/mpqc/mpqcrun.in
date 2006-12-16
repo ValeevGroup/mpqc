@@ -238,6 +238,7 @@ if ($help) {
     print  "  %OUTPUT%   The output filename.\n";
     print  "  %NPROC%    The number of processes to start.\n";
     print  "  %NODEFILE% The name of a file containing the node names.\n";
+    print  "  %CONFIGFILE% The name of a file have lines of the form: node names: command name.\n";
     print  "  %NODELIST% A comma separated list of node names.\n";
     print  "  For these last two, if they are contained within square brackets\n";
     print  "  and a substitution is not available, then everything within the\n";
@@ -315,6 +316,7 @@ $nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
 %jobnnodes = {};
 %nodelist = {};
 %nodefile = {};
+%configfile = {};
 $maxjobs = 0;
 while (($maxjobs + 1) * $nnodeperjob <= $nnode) {
     $jobnnodes[$maxjobs++] = $nnodeperjob;
@@ -342,6 +344,7 @@ foreach my $i (0..$maxjobs-1) {
       }
     }
     close(NODEFILE);
+    $configfile{$i} = ".tmp.configfile.$$.$i";
 }
 
 ######################################################################
@@ -518,9 +521,20 @@ sub jobrunner {
         }
         $cmd =~ s|%MPQCRUNPROC%|$mpqcrunproc|;
 
+        open(CONFIGFILE,">" . $configfile{$jobslot});
+        open(NODEFILE,"<" . $nodefile{$jobslot});
+        my $node;
+        while ($node = <NODEFILE>) {
+          chomp($node);
+          printf CONFIGFILE "%s: %s %s\n", $node, "$mpqcrunproc", "$in";
+        }
+        close(CONFIGFILE);
+        close(NODEFILE);
+
         $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$out");
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
+        $cmd = substitute_optional_parameter($cmd, "%CONFIGFILE%", $configfile{$jobslot});
 
         printf "starting in slot %d: %s\n", $jobslot, "$cmd";
         $cmd = "true" if ($debug);

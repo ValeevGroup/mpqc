@@ -248,6 +248,7 @@ class MessageGrp: public DescribedClass {
     virtual void sum(double* data, int n, double* = 0, int target = -1);
     virtual void sum(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void sum(int* data, int n, int* = 0, int target = -1);
+    virtual void sum(long* data, int n, long* = 0, int target = -1);
     virtual void sum(char* data, int n, char* = 0, int target = -1);
     virtual void sum(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);

@@ -89,9 +89,9 @@ int
 MTMPIThread::run_one()
 {
   int i;
-  int dsize;
-  int dremain;
-  int doffset;
+  long dsize;
+  long dremain;
+  long doffset;
   long l;
   MemoryDataRequest req;
   MPI_Status status;
@@ -275,7 +275,7 @@ MTMPIMemoryGrp::serial(int node)
 }
 
 void
-MTMPIMemoryGrp::retrieve_data(void *data, int node, int offset, int size,
+MTMPIMemoryGrp::retrieve_data(void *data, int node, long offset, long size,
                               int lock)
 {
   MemoryDataRequest req(MemoryDataRequest::Retrieve,me(),offset,size,lock,
@@ -296,7 +296,7 @@ MTMPIMemoryGrp::retrieve_data(void *data, int node, int offset, int size,
 }
 
 void
-MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size,
+MTMPIMemoryGrp::replace_data(void *data, int node, long offset, long size,
                              int unlock)
 {
   MemoryDataRequest req(MemoryDataRequest::Replace,me(),offset,size,unlock,
@@ -320,7 +320,7 @@ MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size,
 }
 
 void
-MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
+MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
 {
   MemoryDataRequest req(MemoryDataRequest::DoubleSum,me(),offset,size,
                         0, serial(node));

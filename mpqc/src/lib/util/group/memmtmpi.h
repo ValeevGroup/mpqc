@@ -74,9 +74,9 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     void init_mtmpimg(MPI_Comm comm, int nthreads);
 
     // parent class pure virtuals
-    void retrieve_data(void *, int node, int offset, int size, int lock);
-    void replace_data(void *, int node, int offset, int size, int unlock);
-    void sum_data(double *data, int node, int doffset, int dsize);
+    void retrieve_data(void *, int node, long offset, long size, int lock);
+    void replace_data(void *, int node, long offset, long size, int unlock);
+    void sum_data(double *data, int node, long doffset, long dsize);
 
     friend class MTMPIThread;
   public:

@@ -111,8 +111,8 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
 }
 
 void
-ARMCIMemoryGrp::retrieve_data(void *data, int node, int offset,
-                              int size, int lock)
+ARMCIMemoryGrp::retrieve_data(void *data, int node, long offset,
+                              long size, int lock)
 {
   if (armci_lock_.nonnull()) armci_lock_->lock();
   if (lock) ARMCI_Lock(0, node);
@@ -121,8 +121,8 @@ ARMCIMemoryGrp::retrieve_data(void *data, int node, int offset,
 }
 
 void
-ARMCIMemoryGrp::replace_data(void *data, int node, int offset,
-                             int size, int unlock)
+ARMCIMemoryGrp::replace_data(void *data, int node, long offset,
+                             long size, int unlock)
 {
   if (armci_lock_.nonnull()) armci_lock_->lock();
   ARMCI_Put(data, reinterpret_cast<char*>(all_data_[node])+offset, size, node);
@@ -134,10 +134,10 @@ ARMCIMemoryGrp::replace_data(void *data, int node, int offset,
 }
 
 void
-ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
+ARMCIMemoryGrp::sum_data(double *data, int node, long offset, long size)
 {
-  int doffset = offset/sizeof(double);
-  int dsize = size/sizeof(double);
+  long doffset = offset/sizeof(double);
+  long dsize = size/sizeof(double);
 
   void *src = data;
   void *dst = reinterpret_cast<double*>(all_data_[node])+doffset;

@@ -40,32 +40,38 @@ namespace sc {
     
 class MemoryDataRequest {
   public:
-    enum { NData = 6 };
     enum Request { Deactivate, Sync, Retrieve, Replace, DoubleSum };
   private:
-    int data_[NData];
+    struct {
+        long offset;
+        long size;
+        Request request;
+        int node;
+        int serial_number;
+        int lock;
+    } data_;
   public:
     MemoryDataRequest() {}
-    MemoryDataRequest(Request r, int node = 0, int offset = 0, int size = 0,
+    MemoryDataRequest(Request r, int node = 0, long offset = 0, long size = 0,
                       int lock = 0, int serial = 0);
-    void assign(Request r, int node, int offset, int size,
+    void assign(Request r, int node, long offset, long size,
                 int lock, int serial);
-    void *data() const { return (void *) data_; }
-    int nbytes() const { return sizeof(int)*NData; }
+    void *data() const { return (void *) &data_; }
+    int nbytes() const { return sizeof(data_); }
 
     const char *request_string() const;
 
-    MemoryDataRequest::Request request() const { return (Request) data_[0]; }
-    int node() const { return data_[1]; }
-    int offset() const { return data_[2]; }
-    int size() const { return data_[3]; }
-    int serial_number() const { return data_[4]; }
-    int lock() const { return data_[5]; }
+    MemoryDataRequest::Request request() const { return data_.request; }
+    int node() const { return data_.node; }
+    long offset() const { return data_.offset; }
+    long size() const { return data_.size; }
+    int serial_number() const { return data_.serial_number; }
+    int lock() const { return data_.lock; }
 
     int touches_data() const {return request()!=Deactivate&&request()!=Sync;}
 
     // Sync messages only define one datum besides type and node
-    int reactivate() const { return data_[2]; }
+    int reactivate() const { return data_.offset; }
 
     void operator =(const MemoryDataRequest &r);
 
@@ -94,11 +100,11 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
   protected:
     char *data_;
 
-    virtual void retrieve_data(void *, int node, int offset, int size,
+    virtual void retrieve_data(void *, int node, long offset, long size,
                                int lock) = 0;
-    virtual void replace_data(void *, int node, int offset, int size,
+    virtual void replace_data(void *, int node, long offset, long size,
                               int unlock) = 0;
-    virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
+    virtual void sum_data(double *data, int node, long doffset, long dsize) = 0;
   public:
     ActiveMsgMemoryGrp(const Ref<MessageGrp>& msg);
     ActiveMsgMemoryGrp(const Ref<KeyVal>&);

@@ -47,11 +47,11 @@ class RDMAMemoryGrp : public MsgMemoryGrp {
   protected:
     char *data_;
 
-    virtual void retrieve_data(void *, int node, int offset, int size,
+    virtual void retrieve_data(void *, int node, long offset, long size,
                                int lock) = 0;
-    virtual void replace_data(void *, int node, int offset, int size,
+    virtual void replace_data(void *, int node, long offset, long size,
                               int unlock) = 0;
-    virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
+    virtual void sum_data(double *data, int node, long doffset, long dsize) = 0;
 
     std::vector<Pool*> pools_;
     size_t default_pool_size_;

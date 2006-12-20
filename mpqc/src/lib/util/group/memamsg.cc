@@ -64,7 +64,7 @@ using namespace sc;
 // The MemoryDataRequest class
 
 MemoryDataRequest::MemoryDataRequest(Request r, int node,
-                                     int offset, int size, int lock,
+                                     long offset, long size, int lock,
                                      int serial_number)
 {
   assign(r, node, offset, size, lock, serial_number);
@@ -72,15 +72,15 @@ MemoryDataRequest::MemoryDataRequest(Request r, int node,
 
 void
 MemoryDataRequest::assign(Request r, int node,
-                          int offset, int size, int lock,
+                          long offset, long size, int lock,
                           int serial_number)
 {
-  data_[0] = (int) r;
-  data_[1] = node;
-  data_[2] = offset;
-  data_[3] = size;
-  data_[4] = serial_number;
-  data_[5] = lock;
+  data_.request = r;
+  data_.node = node;
+  data_.offset = offset;
+  data_.size = size;
+  data_.serial_number = serial_number;
+  data_.lock = lock;
 }
 
 const char *
@@ -124,9 +124,7 @@ MemoryDataRequest::print(const char *msg, ostream & o) const
 void
 MemoryDataRequest::operator =(const MemoryDataRequest &r)
 {
-  for (int i=0; i<NData; i++) {
-      data_[i] = r.data_[i];
-    }
+  data_ = r.data_;
 }
 
 ///////////////////////////////////////////////////////////////////////

@@ -297,8 +297,11 @@ MBPT2::density()
 void
 MBPT2::compute()
 {
-  if (std::string(reference_->integral()->class_name())
-      !=integral()->class_name()) {
+  std::string reference_name(reference_->integral()->class_name());
+  std::string integral_name(integral()->class_name());
+  if ( reference_name != integral_name &&
+       reference_name != "IntegralCCA" &&
+       integral_name != "IntegralCCA" ) {
       FeatureNotImplemented ex(
           "cannot use a reference with a different Integral specialization",
           __FILE__, __LINE__, class_desc());

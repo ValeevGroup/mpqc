@@ -31,7 +31,7 @@
 
 #include <sstream>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 
 #include <util/state/state_bin.h>
@@ -121,7 +121,7 @@ SCF::savestate_iter(int iter)
 double
 SCF::compute_vector(double& eelec, double nucrep)
 {
-  tim_enter("vector");
+  Timer tim("vector");
   int i;
 
   // reinitialize the extrapolation object
@@ -151,9 +151,9 @@ SCF::compute_vector(double& eelec, double nucrep)
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
     // form the density from the current vector 
-    tim_enter("density");
+    tim.enter("density");
     delta = new_density();
-    tim_exit("density");
+    tim.exit("density");
     
     // check convergence
     if (delta < desired_value_accuracy()
@@ -166,7 +166,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     }
       
     // form the AO basis fock matrix & add density dependant H
-    tim_enter("fock");
+    tim.enter("fock");
     double base_accuracy = delta;
     if (base_accuracy < desired_value_accuracy())
       base_accuracy = desired_value_accuracy();
@@ -181,7 +181,7 @@ SCF::compute_vector(double& eelec, double nucrep)
       }
     }
     ao_fock(accuracy);
-    tim_exit("fock");
+    tim.exit("fock");
 
     // calculate the electronic energy
     eelec = scf_energy();
@@ -193,13 +193,13 @@ SCF::compute_vector(double& eelec, double nucrep)
                   << endl;
 
     // now extrapolate the fock matrix
-    tim_enter("extrap");
+    tim.enter("extrap");
     Ref<SCExtrapData> data = extrap_data();
     Ref<SCExtrapError> error = extrap_error();
     extrap_->extrapolate(data,error);
     data=0;
     error=0;
-    tim_exit("extrap");
+    tim.exit("extrap");
 
 #ifdef GENERALIZED_EIGENSOLVER
     // Get the fock matrix and overlap in the SO basis.  The fock matrix
@@ -280,7 +280,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     oso_scf_vector_ = (oso_scf_vector_ * so_to_orthog_so_inverse()).t();
 #else
     // diagonalize effective MO fock to get MO vector
-    tim_enter("evals");
+    tim.enter("evals");
     RefSCMatrix nvector(oso_dimension(),oso_dimension(),basis_matrixkit());
   
     RefSymmSCMatrix eff = effective_fock();
@@ -300,7 +300,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     eff = 0;
     oso_eff.diagonalize(evals, oso_scf_vector_);
 
-    tim_exit("evals");
+    tim.exit("evals");
 
     if (debug_>0 && level_shift_ != 0.0) {
       evals.print("level shifted scf eigenvalues");
@@ -420,8 +420,8 @@ SCF::compute_vector(double& eelec, double nucrep)
   level_shift->dereference();
   delete level_shift;
 
-  tim_exit("vector");
-  //tim_print(0);
+  tim.exit("vector");
+  //tim.print();
 
   return delta;
 }

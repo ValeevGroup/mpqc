@@ -37,7 +37,7 @@
 #include <iterator>
 
 #include <util/keyval/keyval.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/misc/autovec.h>
 #include <util/state/stateio.h>
@@ -1454,9 +1454,9 @@ Wavefunction::print(ostream&o) const
   }
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
-    tim_enter("NAO");
+    Timer tim("NAO");
     RefSCMatrix naos = ((Wavefunction*)this)->nao();
-    tim_exit("NAO");
+    tim.exit("NAO");
     if (print_nao_) naos.print("NAO");
   }
 }

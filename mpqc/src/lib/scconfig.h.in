@@ -20,6 +20,15 @@
 #define restrictxx
 #endif
 
+/* Define if the deprecated attribute exists in C++.  */
+#undef CXX_DEPRECATED
+
+#ifdef CXX_DEPRECATED
+#define DEPRECATED __attribute__((deprecated))
+#else
+#define DEPRECATED
+#endif
+
 #endif
 
 /* Define if you want to optimize the reference counting code.  */

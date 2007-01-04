@@ -87,13 +87,13 @@ FockBuildCLHF::ao_fock(double accuracy)
     cl_dens_diff_.print("cl_dens_diff before build");
   }
 
-  step_tim.reset("build");
+  step_tim.change("build");
   fb_->build();
 
   ExEnv::out0() << indent << scprintf("%20.0f integrals\n",
                                       fb_->contrib()->nint());
 
-  step_tim.reset("misc");
+  step_tim.change("misc");
 
   // get rid of the AO basis density difference
   cl_dens_diff_ = dd;

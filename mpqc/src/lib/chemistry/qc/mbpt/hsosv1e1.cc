@@ -105,9 +105,10 @@ HSOSV1Erep1Qtr::run()
   int p,q;
   double *c_pi,*c_qi;
 
-  timer->enter("bzerofast trans_int1");
+  Timer tim(timer);
+  tim.enter("bzerofast trans_int1");
   bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
-  timer->exit("bzerofast trans_int1");
+  tim.exit("bzerofast trans_int1");
 
   const double *intbuf = tbint->buffer();
 
@@ -130,11 +131,11 @@ HSOSV1Erep1Qtr::run()
 
       int nq = basis->shell(Q).nfunction();
 
-      timer->enter("erep");
+      tim.enter("erep");
       tbint->compute_shell(P,Q,R,S);
-      timer->exit("erep");
+      tim.exit("erep");
 
-      timer->enter("1. quart. tr."); 
+      tim.enter("1. quart. tr."); 
 
       int index = 0;
 
@@ -180,7 +181,7 @@ HSOSV1Erep1Qtr::run()
             }     /* exit bf3 loop */
           }       /* exit bf2 loop */
         }         /* exit bf1 loop */
-      timer->exit("1. quart. tr.");
+      tim.exit("1. quart. tr.");
       }           /* exit Q loop */
     }             /* exit P loop */
 }

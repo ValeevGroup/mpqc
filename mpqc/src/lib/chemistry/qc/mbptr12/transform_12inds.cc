@@ -33,7 +33,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
@@ -87,6 +87,7 @@ TwoBodyMOIntsTransform_12Inds::~TwoBodyMOIntsTransform_12Inds()
 void
 TwoBodyMOIntsTransform_12Inds::run()
 {
+  Timer tim(timer_);
   Ref<MemoryGrp> mem = tform_->mem();
   Ref<MessageGrp> msg = tform_->msg();
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
@@ -210,7 +211,7 @@ TwoBodyMOIntsTransform_12Inds::run()
     if (debug_ > 1 && (print_index)%time_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread_) << endl;
-      timer_->print();
+      tim.print();
       lock_->unlock();
     }
 
@@ -240,11 +241,11 @@ TwoBodyMOIntsTransform_12Inds::run()
 
         aoint_computed_++;
 
-        timer_->enter("AO integrals");
+        tim.enter("AO integrals");
         tbint_->compute_shell(P,Q,R,S);
-        timer_->exit("AO integrals");
+        tim.exit("AO integrals");
 
-        timer_->enter("1. q.t.");
+        tim.enter("1. q.t.");
 
         // Begin first quarter transformation;
         // generate (iq|rs) for i active
@@ -324,7 +325,7 @@ TwoBodyMOIntsTransform_12Inds::run()
           }       // exit bf1 loop
 	  // end of first quarter transformation
 	}
-	timer_->exit("1. q.t.");
+	tim.exit("1. q.t.");
 
         }           // exit P loop
       }             // exit Q loop
@@ -356,7 +357,7 @@ TwoBodyMOIntsTransform_12Inds::run()
     const int niq = ni*nbasis2;
     double* ij_ints = new double[nij];
     
-    timer_->enter("2. q.t.");
+    tim.enter("2. q.t.");
     // Begin second quarter transformation;
     // generate (ij|rs) stored as ijrs
 
@@ -416,7 +417,7 @@ TwoBodyMOIntsTransform_12Inds::run()
       }
     }
     
-    timer_->exit("2. q.t.");
+    tim.exit("2. q.t.");
     
     delete[] ij_ints;
 	  

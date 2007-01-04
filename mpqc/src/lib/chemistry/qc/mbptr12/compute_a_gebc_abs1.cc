@@ -32,7 +32,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -63,7 +63,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   const int num_te_types = 4;
   enum te_types {eri=0, r12=1, r12t1=2, r12t2=3};
 
-  tim_enter("mp2-r12a intermeds");
+  Timer tim("mp2-r12a intermeds");
 
   int me = msg->me();
   int nproc = msg->n();
@@ -91,7 +91,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
     and collect on node0
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
-  tim_enter("intermediates");
+  tim.enter("intermediates");
   SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
   SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
@@ -148,7 +148,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
       // Get (|1/r12|), (|r12|), (|[r12,T1]|), and (|[r12,T2]|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *klox_buf_eri = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
       double *klox_buf_r12 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
       double *klox_buf_r12t1 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
@@ -158,7 +158,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
       double *lkox_buf_r12 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
       double *lkox_buf_r12t1 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
       double *lkox_buf_r12t2 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t2);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -175,16 +175,16 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         if (debug_)
           ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
 
-        tim_enter("MO ints retrieve");
+        tim.enter("MO ints retrieve");
         double *ijox_buf_r12 = ijky_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
         double *jiox_buf_r12 = ijky_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-        tim_exit("MO ints retrieve");
+        tim.exit("MO ints retrieve");
 
         if (debug_)
           ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
 
-        tim_enter("MO ints contraction");
+        tim.enter("MO ints contraction");
         double Vaa_ijkl, Vab_ijkl, Vab_jikl, Vab_ijlk, Vab_jilk;
         double Xaa_ijkl, Xab_ijkl, Xab_jikl, Xab_ijlk, Xab_jilk;
         double Taa_ijkl, Tab_ijkl, Tab_jikl, Tab_ijlk, Tab_jilk;
@@ -269,7 +269,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
           Bab_.accumulate_element(ji_ab,lk_ab,Tab_jilk);
         if (ij_aa != -1 && kl_aa != -1)
           Baa_.accumulate_element(ij_aa,kl_aa,Taa_ijkl);
-        tim_exit("MO ints contraction");
+        tim.exit("MO ints contraction");
 
 #if PRINT_R12_INTERMED
         if (ij_ab != ji_ab && kl_ab != lk_ab)
@@ -314,12 +314,12 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
     }
   }
   // Tasks that don't do any work here still need to create these timers
-  tim_enter("MO ints retrieve");
-  tim_exit("MO ints retrieve");
-  tim_enter("MO ints contraction");
-  tim_exit("MO ints contraction");
+  tim.enter("MO ints retrieve");
+  tim.exit("MO ints retrieve");
+  tim.enter("MO ints contraction");
+  tim.exit("MO ints contraction");
 
-  tim_exit("intermediates");
+  tim.exit("intermediates");
   ExEnv::out0() << indent << "End of computation of intermediates" << endl;
   ijky_acc->deactivate();
   
@@ -343,7 +343,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited ABS A (GEBC) intermediates evaluator" << endl;
 
-  tim_exit("mp2-r12a intermeds");
+  tim.exit("mp2-r12a intermeds");
   checkpoint_();
 }
 

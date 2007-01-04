@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -173,21 +173,21 @@ OSSHF::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    Timer tim("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "OSSHF: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "OSSHF: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
       
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -291,7 +291,7 @@ OSSHF::ao_fock(double accuracy)
 void
 OSSHF::two_body_energy(double& ec, double& ex)
 {
-  tim_enter("oshf e2");
+  Timer tim("oshf e2");
   ec = 0.0;
   ex = 0.0;
 
@@ -302,7 +302,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
     double *dpmat;
     double *sapmat;
     double *sbpmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix adens = alpha_density();
     RefSymmSCMatrix bdens = beta_density();
     RefSymmSCMatrix ddens = adens+bdens;
@@ -336,7 +336,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
     RefSymmSCMatrix dptmp = get_local_data(ddens, dpmat, SCF::Read);
     RefSymmSCMatrix saptmp = get_local_data(sdensa, sapmat, SCF::Read);
     RefSymmSCMatrix sbptmp = get_local_data(sdensb, sbpmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
@@ -361,7 +361,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
     ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("oshf e2");
+  tim.exit("oshf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////

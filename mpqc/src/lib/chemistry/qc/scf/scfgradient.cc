@@ -29,7 +29,7 @@
 
 #include <stdexcept>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 
 #include <math/scmat/offset.h>
@@ -132,7 +132,7 @@ ob_gradient(const Ref<OneBodyDerivInt>& derint, double * gradient,
 void
 SCF::compute_gradient(const RefSCVector& gradient)
 {
-  tim_enter("compute gradient");
+  Timer tim("compute gradient");
   int i;
   
   init_gradient();
@@ -144,7 +144,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   }
 
   // do the nuclear contribution
-  tim_enter("nuc rep");
+  tim.enter("nuc rep");
   
   double *g = new double[n3];
   nuclear_repulsion_energy_gradient(g);
@@ -158,7 +158,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   memset(o,0,sizeof(double)*gradient.n());
 
   // form overlap contribution
-  tim_change("overlap gradient");
+  tim.change("overlap gradient");
   RefSymmSCMatrix dens = lagrangian();
   Ref<OneBodyDerivInt> derint = integral()->overlap_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
@@ -173,7 +173,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   for (i=0; i < n3; i++) g[i] += o[i];
   
   // other one electron contributions
-  tim_change("one electron gradient");
+  tim.change("one electron gradient");
   memset(o,0,sizeof(double)*gradient.n());
   dens = gradient_density();
   derint = integral()->hcore_deriv();
@@ -192,10 +192,10 @@ SCF::compute_gradient(const RefSCVector& gradient)
   derint=0;
   
   // now calculate two electron contribution
-  tim_change("two electron gradient");
+  tim.change("two electron gradient");
   memset(o,0,sizeof(double)*gradient.n());
   two_body_deriv(o);
-  tim_exit("two electron gradient");
+  tim.exit("two electron gradient");
 
   if (debug_) {
     gradient.assign(o);
@@ -213,8 +213,8 @@ SCF::compute_gradient(const RefSCVector& gradient)
   }
   
   done_gradient();
-  tim_exit("compute gradient");
-  //tim_print(0);
+  tim.exit("compute gradient");
+  //tim.print();
 }
 
 //////////////////////////////////////////////////////////////////////////////

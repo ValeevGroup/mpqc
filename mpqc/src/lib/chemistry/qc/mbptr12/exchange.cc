@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -58,7 +58,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   const int num_te_types = 1;
   enum te_types {eri=0};
 
-  tim_enter("exchange");
+  Timer tim("exchange");
 
   int me = msg->me();
   int nproc = msg->n();
@@ -122,9 +122,9 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
         ExEnv::outn() << indent << "task " << me << ": working on (m) = " << m << " " << endl;
 
       // Get (|1/r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,R12IntsAcc::eri);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
@@ -137,8 +137,8 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
     }
   }
   // Tasks that don't do any work here still need to create these timers
-  tim_enter("MO ints retrieve");
-  tim_exit("MO ints retrieve");
+  tim.enter("MO ints retrieve");
+  tim.exit("MO ints retrieve");
 
   ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
   mnxy_acc->deactivate();
@@ -151,7 +151,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
-  tim_exit("exchange");
+  tim.exit("exchange");
 
   return K;
 }

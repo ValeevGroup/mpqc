@@ -105,10 +105,10 @@ main()
 
   Timer timertest("timertest");
   Timer r1("r1");
-  r1.reset("r2");
+  r1.change("r2");
   Timer r3("r3");
-  r3.reset();
-  r1.reset();
+  r3.exit();
+  r1.exit();
 
   {
     Timer x1("x1");
@@ -118,7 +118,7 @@ main()
   }
 
   Timer y1("y1");
-  y1.reset();
+  y1.exit();
 
   mtim->print();
 

@@ -34,7 +34,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>

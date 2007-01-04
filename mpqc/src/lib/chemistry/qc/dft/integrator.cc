@@ -31,7 +31,7 @@
 
 #include <util/misc/math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/container/carray.h>
@@ -2025,7 +2025,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
 {
   int i;
 
-  tim_enter("integrate");
+  Timer tim("integrate");
 
   init_integration(denfunc, densa, densb, nuclear_gradient);
 
@@ -2128,7 +2128,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
                << scprintf("%14.12f", total_density-wfn_->nelectron())
                << endl;
 
-  tim_exit("integrate");
+  tim.exit("integrate");
 }
 
 void

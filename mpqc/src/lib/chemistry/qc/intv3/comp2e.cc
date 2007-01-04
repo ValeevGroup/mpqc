@@ -42,7 +42,7 @@ using namespace sc;
 #undef EREP_TIMING
 
 #if defined(DER_TIMING)||defined(EREP_TIMING)
-#  include <util/misc/timer.h>
+#  include <util/misc/regtime.h>
 #endif
 
 static inline void
@@ -201,8 +201,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
 #ifdef EREP_TIMING
   sprintf(section,"erep am=%02d",am12+am34);
-  tim_enter(section);
-  tim_enter("setup");
+  Timer tim(section);
+  tim.enter("setup");
 #endif
 
   /* Convert the integral to the most efficient form. */
@@ -321,7 +321,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   if (int_integral_storage) {
 #ifdef EREP_TIMING
-      tim_change("check storage");
+      tim.change("check storage");
 #endif
     if (dam1 || dam2 || dam3 || dam4) {
       ExEnv::errn() << scprintf("cannot use integral storage and dam\n");
@@ -336,7 +336,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Buildam up on center 1 and 3. */
 #ifdef EREP_TIMING
-  tim_change("build");
+  tim.change("build");
 #endif
   int_buildgcam(minam1,minam2,minam3,minam4,
                 am1,am2,am3,am4,
@@ -344,7 +344,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                 sh1,sh2,sh3,sh4,
                 eAB);
 #ifdef EREP_TIMING
-  tim_change("cleanup");
+  tim.change("cleanup");
 #endif
 
   /* Begin loop over generalized contractions. */
@@ -370,12 +370,12 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
           int tsize4 = INT_NCART_NN(tam4);
 
 #ifdef EREP_TIMING
-  tim_change("shift");
+  tim.change("shift");
 #endif
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
   double *shiftbuffer = int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
 #ifdef EREP_TIMING
-  tim_change("cleanup");
+  tim.change("cleanup");
 #endif
 
   /* Place the integrals in the integral buffer. */
@@ -556,7 +556,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       && !int_unit4
       && int_integral_storage) {
 #ifdef EREP_TIMING
-      tim_change("maybe store");
+      tim.change("maybe store");
 #endif
       int_store_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24,size);
     }
@@ -566,7 +566,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   post_computation:
 
 #ifdef EREP_TIMING
-  tim_change("post");
+  tim.change("post");
 #endif
 
   /* Unpermute all of the permuted quantities. */
@@ -640,8 +640,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
     
 #ifdef EREP_TIMING
-  tim_exit("post");
-  tim_exit(section);
+  tim.exit("post");
+  tim.exit(section);
 #endif
   }
 
@@ -891,7 +891,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   GaussianShell *shell1,*shell2,*shell3,*shell4;
 
 #ifdef DER_TIMING
-  tim_enter("erep_1der");
+  Timer tim("erep_1der");
 #endif
 
   /* Set up pointers to the current shells. */
@@ -939,7 +939,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   sizep234 = sizep34 * sizep2;
 
 #ifdef DER_TIMING
-  tim_enter("- erep");
+  tim.enter("- erep");
 #endif
 
   int old_perm = permute();
@@ -987,7 +987,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size234=size2*size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("- 0");
+  tim.change("- 0");
 #endif
     /* The center 0 d/dx integrals */
     ogc1 = 0;
@@ -1076,7 +1076,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size234 = size2*size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("- 1");
+  tim.change("- 1");
 #endif
     /* The center 1 d/dx integrals */
     ogc2 = 0;
@@ -1181,7 +1181,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size34 = size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("- 2");
+  tim.change("- 2");
 #endif
     /* The center 2 d/dx integrals */
     ogc3 = 0;
@@ -1285,7 +1285,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size123 = size1*size2*size3;
 
 #ifdef DER_TIMING
-  tim_change("- 3");
+  tim.change("- 3");
 #endif
     /* The center 3 d/dx integrals */
     ogc4 = 0;
@@ -1374,7 +1374,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     }
 
 #ifdef DER_TIMING
-  tim_change("+ erep");
+  tim.change("+ erep");
 #endif
 
   /* Compute the next contribution to the integrals. */
@@ -1409,7 +1409,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size234=size2*size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("+ 0");
+  tim.change("+ 0");
 #endif
     /* The center 0 d/dx integrals */
     ogc1 = 0;
@@ -1483,7 +1483,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size234 = size2*size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("+ 1");
+  tim.change("+ 1");
 #endif
     /* The center 1 d/dx integrals */
     ogc2 = 0;
@@ -1575,7 +1575,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size34 = size3*size4;
 
 #ifdef DER_TIMING
-  tim_change("+ 2");
+  tim.change("+ 2");
 #endif
     /* The center 2 d/dx integrals */
     ogc3 = 0;
@@ -1666,7 +1666,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     size123 = size1*size2*size3;
 
 #ifdef DER_TIMING
-  tim_change("+ 3");
+  tim.change("+ 3");
 #endif
     /* The center 3 d/dx integrals */
     ogc4 = 0;
@@ -1741,8 +1741,8 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     index += size1234;
     }
 #ifdef DER_TIMING
-  tim_exit(0);
-  tim_exit(0);
+  tim.exit(0);
+  tim.exit(0);
 #endif
   }
 

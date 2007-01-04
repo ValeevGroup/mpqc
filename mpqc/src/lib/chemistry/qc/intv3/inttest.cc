@@ -123,6 +123,7 @@ main(int argc, char **argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<RegionTimer> tim = new ParallelRegionTimer(msg,"inttest", 1, 1);
+  Timer timer(tim);
 
   char *infile = new char[strlen(SRCDIR)+strlen("/inttest.in")+1];
   sprintf(infile,SRCDIR "/inttest.in");
@@ -151,44 +152,44 @@ main(int argc, char **argv)
                                    1, storage);
 
   int permute = tkeyval->booleanvalue("permute");
-  tim->enter("overlap");
+  timer.enter("overlap");
   if (me == tproc && tkeyval->booleanvalue("overlap")) {
       cout << scprintf("testing overlap:\n");
       test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::overlap, permute);
     }
-  tim->change("kinetic");
+  timer.change("kinetic");
   if (me == tproc && tkeyval->booleanvalue("kinetic")) {
       cout << scprintf("testing kinetic:\n");
       test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::kinetic, permute);
     }
-  tim->change("hcore");
+  timer.change("hcore");
   if (me == tproc && tkeyval->booleanvalue("hcore")) {
       cout << scprintf("testing hcore:\n");
       test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::hcore, permute);
     }
-  tim->change("nuclear");
+  timer.change("nuclear");
   if (me == tproc && tkeyval->booleanvalue("nuclear")) {
       cout << scprintf("testing nuclear:\n");
       test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::nuclear, permute);
     }
-  tim->change("3 center");
+  timer.change("3 center");
   if (me == tproc && tkeyval->booleanvalue("3")) {
       test_3_center(tkeyval, int2ev3);
     }
-  tim->change("4 center");
+  timer.change("4 center");
   if (me == tproc && tkeyval->booleanvalue("4")) {
       test_4_center(tkeyval, int2ev3);
     }
-  tim->change("4 center der");
+  timer.change("4 center der");
   if (me == tproc && tkeyval->booleanvalue("4der")) {
       test_4der_center(tkeyval, int2ev3);
     }
-  tim->change("bound stats");
+  timer.change("bound stats");
   if (me == tproc && tkeyval->booleanvalue("boundstats")) {
       do_bounds_stats(tkeyval, int2ev3);
     }
 
-  tim->change("IntegralV3");
+  timer.change("IntegralV3");
   Ref<Integral> integral = new IntegralV3(basis);
   Ref<OneBodyInt> overlap = integral->overlap();
   testint(overlap);
@@ -204,9 +205,9 @@ main(int argc, char **argv)
   testint(erep);
   Ref<TwoBodyDerivInt> erep_der = integral->electron_repulsion_deriv();
   testint(erep_der);
-  tim->exit();
+  timer.exit();
 
-  tim->print();
+  timer.print();
   return 0;
 }
 

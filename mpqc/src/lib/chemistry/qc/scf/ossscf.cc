@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 

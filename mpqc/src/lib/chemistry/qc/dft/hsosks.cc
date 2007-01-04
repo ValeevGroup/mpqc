@@ -32,7 +32,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -285,21 +285,21 @@ HSOSKS::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    Timer tim("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "HSOSKS: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "HSOSKS: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
       
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -402,14 +402,14 @@ HSOSKS::ao_fock(double accuracy)
 void
 HSOSKS::two_body_energy(double &ec, double &ex)
 {
-  tim_enter("hsosks e2");
+  Timer tim("hsosks e2");
   ec = 0.0;
   ex = 0.0;
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *dpmat;
     double *spmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix ddens = beta_ao_density();
     RefSymmSCMatrix sdens = alpha_ao_density() - ddens;
     ddens->scale(2.0);
@@ -420,7 +420,7 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     sdens->scale_diagonal(0.5);
     RefSymmSCMatrix dptmp = get_local_data(ddens, dpmat, SCF::Read);
     RefSymmSCMatrix sptmp = get_local_data(sdens, spmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
@@ -444,7 +444,7 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("hsoshf e2");
+  tim.exit("hsoshf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -452,16 +452,16 @@ HSOSKS::two_body_energy(double &ec, double &ex)
 void
 HSOSKS::two_body_deriv(double * tbgrad)
 {
-  tim_enter("grad");
+  Timer tim("grad");
 
   int natom3 = 3*molecule()->natom();
 
-  tim_enter("two-body");
+  tim.enter("two-body");
   double *hfgrad = new double[natom3];
   memset(hfgrad,0,sizeof(double)*natom3);
   two_body_deriv_hf(hfgrad,functional_->a0());
   //print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
-  tim_exit("two-body");
+  tim.exit("two-body");
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
@@ -482,7 +482,7 @@ HSOSKS::two_body_deriv(double * tbgrad)
   delete[] dftgrad;
   delete[] hfgrad;
 
-  tim_exit("grad");
+  tim.exit("grad");
 }
 
 RefSymmSCMatrix

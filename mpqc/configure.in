@@ -925,6 +925,13 @@ AC_LANG_CPLUSPLUS
 AC_TRY_LINK(,[double *restrict x=0;],AC_DEFINE(CXX_RESTRICT))
 AC_LANG_RESTORE
 
+dnl  ----------- check for C++ deprecated attribute ---------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_TRY_LINK(,[void f() __attribute__((deprecated));],AC_DEFINE(CXX_DEPRECATED))
+AC_LANG_RESTORE
+
 dnl ---------- Checks for C++ header files. -----------
 
 AC_LANG_SAVE

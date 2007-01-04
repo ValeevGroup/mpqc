@@ -92,7 +92,6 @@ static ForceLink<ProcMessageGrp> fl9;
 # endif
 #endif
 
-Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
 static Ref<MessageGrp>
@@ -123,8 +122,8 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
     debugger->debug("curt is a hog");
   }
   
-  tim = new ParallelRegionTimer(grp,"mbpttest",1,0);
-  RegionTimer::set_default_regiontimer(tim);
+  RegionTimer::set_default_regiontimer(
+    new ParallelRegionTimer(grp,"mbpttest",1,0));
 
   SCFormIO::set_printnode(0);
   SCFormIO::init_mp(grp->me());
@@ -147,7 +146,8 @@ main(int argc, char**argv)
 
   init_mp(rpkv, argc, argv);
 
-  tim->enter("input");
+  Timer tim;
+  tim.enter("input");
   
   int do_gradient = rpkv->booleanvalue("gradient");
 
@@ -173,7 +173,7 @@ main(int argc, char**argv)
     }
   }
 
-  tim->exit("input");
+  tim.exit("input");
 
   if (mole.nonnull()) {
     ExEnv::out0() << indent << "energy: " << mole->energy() << endl;
@@ -194,9 +194,8 @@ main(int argc, char**argv)
   StateOutBin so("mbpttest.wfn");
   SavableState::save_state(mole.pointer(),so);
   
-  tim->print(ExEnv::out0());
+  tim.print(ExEnv::out0());
 
-  tim = 0;
   grp = 0;
   RegionTimer::set_default_regiontimer(0);
   MessageGrp::set_default_messagegrp(0);

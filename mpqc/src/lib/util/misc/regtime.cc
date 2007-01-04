@@ -86,6 +86,7 @@ int getrusage (
 
 #include <util/keyval/keyval.h>
 #include <util/misc/regtime.h>
+#define _util_misc_regtime_cc
 #include <util/misc/timer.h>
 #include <util/class/scexception.h>
 
@@ -485,13 +486,21 @@ RegionTimer::exit_default()
 void
 RegionTimer::set_default(const char *name)
 {
+  if (default_) { defaults_.push_front(default_); }
+
   default_ = current_->findinsubregion(name);
 }
 
 void
 RegionTimer::unset_default()
 {
-  default_ = 0;
+  if (defaults_.begin() != defaults_.end()) {
+      default_ = defaults_.front();
+      defaults_.pop_front();
+    }
+  else {
+      default_ = 0;
+    }
 }
 
 void
@@ -697,45 +706,163 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
 // Timer functions
 
 Timer::Timer(const char *name):
-  active_(false)
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0)
 {
   timer_ = RegionTimer::default_regiontimer();
   if (timer_.nonnull() && name != 0) {
-      name_ = name;
-      timer_->enter(name);
-      active_ = true;
+      enter(name);
     }
 }
 
 Timer::Timer(const Ref<RegionTimer>&t, const char *name):
-  active_(false),
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0),
   timer_(t)
 {
   if (timer_.nonnull() && name != 0) {
-      name_ = name;
-      timer_->enter(name);
-      active_ = true;
+      enter(name);
     }
+}
+
+Timer::Timer(const std::string &name):
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0)
+{
+  timer_ = RegionTimer::default_regiontimer();
+  if (timer_.nonnull()) {
+      enter(name);
+    }
+}
+
+Timer::Timer(const Ref<RegionTimer>&t, const std::string &name):
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0),
+  timer_(t)
+{
+  if (timer_.nonnull()) {
+      enter(name);
+    }
+}
+
+Timer::Timer(const Ref<RegionTimer>&t):
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0),
+  timer_(t)
+{
+}
+
+Timer::Timer():
+  default_entered_(false),
+  depth_(0),
+  default_depth_(0)
+{
+  timer_ = RegionTimer::default_regiontimer();
+}
+
+void
+Timer::print(std::ostream &o) const
+{
+  if (timer_.nonnull()) timer_->print(o);
 }
 
 Timer::~Timer()
 {
-  if (active_) {
-      timer_->exit(name_.c_str(), true);
+  // NB: This unwind code could be incorrect for complicated
+  // uses of default timing regions.
+  if (timer_.nonnull()) {
+      while (depth_ > 0) {
+          this->exit();
+        }
+      if (default_entered_) exit_default();
+      while (default_depth_ > 0) {
+          unset_default();
+        }
+    }
+}
+
+void
+Timer::enter(const char *name)
+{
+  if (timer_.nonnull()) {
+      timer_->enter(name);
+      depth_++;
+    }
+}
+
+void
+Timer::change(const char *name)
+{
+  if (timer_.nonnull()) {
+      timer_->change(name);
+    }
+}
+
+void
+Timer::exit(const char *name)
+{
+  if (timer_.nonnull()) {
+      timer_->exit(name,true);
+      depth_--;
+    }
+}
+
+void
+Timer::set_default(const char *name)
+{
+  if (timer_.nonnull()) {
+      timer_->set_default(name);
+      default_depth_++;
+    }
+}
+
+void
+Timer::unset_default()
+{
+  if (timer_.nonnull()) {
+      timer_->unset_default();
+      default_depth_--;
+    }
+}
+
+void
+Timer::enter_default()
+{
+  if (timer_.nonnull()) {
+      timer_->enter_default();
+      default_entered_ = true;
+    }
+}
+
+void
+Timer::exit_default()
+{
+  if (timer_.nonnull()) {
+      timer_->exit_default();
+      default_entered_ = false;
     }
 }
 
 void
 Timer::reset(const char *name)
 {
-  if (active_) {
-      timer_->exit(name_.c_str());
-      active_ = false;
+  if (depth_ > 0) {
+      if (name) {
+          change(name);
+        }
+      else {
+          this->exit();
+        }
     }
-  if (timer_.nonnull() && name) {
-      timer_->enter(name);
-      name_ = name;
-      active_ = true;
+  else {
+      if (name) {
+          enter(name);
+        }
     }
 }
 

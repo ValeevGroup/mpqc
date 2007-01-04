@@ -431,7 +431,9 @@ try_main(int argc, char *argv[])
   else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
-  if (tim.nonnull()) tim->enter("input");
+  Timer timer(tim);
+
+  timer.enter("input");
   
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
@@ -682,7 +684,7 @@ try_main(int argc, char *argv[])
     exit(0);
   }
   
-  if (tim.nonnull()) tim->change("calc");
+  timer.change("calc");
 
   int do_energy = keyval->booleanvalue("do_energy",truevalue);
   
@@ -821,7 +823,7 @@ try_main(int argc, char *argv[])
     }
   }
 
-  if (tim.nonnull()) tim->exit("calc");
+  timer.exit("calc");
 
   // save this before doing the frequency stuff since that obsoletes the
   // function stuff
@@ -903,17 +905,17 @@ try_main(int argc, char *argv[])
     Ref<AnimatedObject> animated;
     animated << keyval->describedclassvalue("rendered");
     if (rendered.nonnull()) {
-      if (tim.nonnull()) tim->enter("render");
+      timer.enter("render");
       if (grp->me() == 0) renderer->render(rendered);
-      if (tim.nonnull()) tim->exit("render");
+      timer.exit("render");
     }
     else if (animated.nonnull()) {
-      if (tim.nonnull()) tim->enter("render");
+      timer.enter("render");
       if (grp->me() == 0) renderer->animate(animated);
-      if (tim.nonnull()) tim->exit("render");
+      timer.exit("render");
     }
     else {
-      if (tim.nonnull()) tim->enter("render");
+      timer.enter("render");
       int n = keyval->count("rendered");
       for (i=0; i<n; i++) {
         rendered << keyval->describedclassvalue("rendered",i);
@@ -937,15 +939,15 @@ try_main(int argc, char *argv[])
           if (grp->me() == 0) renderer->animate(animated);
         }
       }
-      if (tim.nonnull()) tim->exit("render");
+      timer.exit("render");
     }
     Ref<MolFreqAnimate> molfreqanim;
     molfreqanim << keyval->describedclassvalue("animate_modes");
     if (ready_for_freq && molfreq.nonnull()
         && molfreqanim.nonnull()) {
-      if (tim.nonnull()) tim->enter("render");
+      timer.enter("render");
       molfreq->animate(renderer, molfreqanim);
-      if (tim.nonnull()) tim->exit("render");
+      timer.exit("render");
     }
   }
 
@@ -984,7 +986,7 @@ try_main(int argc, char *argv[])
   if (parsedkv.nonnull()) print_unseen(parsedkv, input);
 
   if (print_timings)
-    if (tim.nonnull()) tim->print(ExEnv::out0());
+    timer.print(ExEnv::out0());
 
   delete[] basename;
   delete[] molname;

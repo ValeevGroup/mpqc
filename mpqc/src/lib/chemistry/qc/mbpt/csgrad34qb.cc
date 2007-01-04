@@ -179,7 +179,8 @@ CSGrad34Qbtr::run()
     nr = basis->shell(R).nfunction();
     r_offset = basis->shell_to_function(R);
     
-    timer->enter("3. q.b.t.");
+    Timer tim(timer);
+    tim.enter("3. q.b.t.");
     // Begin third quarter back-transformation.
 
     bzerofast(gamma_iqrs,ni*nbasis*nfuncmax*nfuncmax);
@@ -240,7 +241,7 @@ CSGrad34Qbtr::run()
     // end of third quarter back-transformation
     // we now have gamma_iqrs (symmetrized)
     // for i-batch, all q, s in S, r in R
-    timer->exit("3. q.b.t.");
+    tim.exit("3. q.b.t.");
 
     // only do this if integral is nonzero
     if (tbint->log2_shell_bound(R,S) >= tol) {
@@ -249,7 +250,7 @@ CSGrad34Qbtr::run()
       // (done in AO basis to avoid generating (ov|vv);
       // here, generate Lpi for i-batch; later, transform
       // Lpi to get contribution to Laj
-      timer->enter("(ov|vv) contrib to Laj");
+      tim.enter("(ov|vv) contrib to Laj");
       for (Q=0; Q<nshell; Q++) {
         nq = basis->shell(Q).nfunction();
         q_offset = basis->shell_to_function(Q);
@@ -262,9 +263,9 @@ CSGrad34Qbtr::run()
           if (tbint->log2_shell_bound(P,Q,R,S) < tol) {
             continue;  // skip ereps less than tol
             }
-          timer->enter("erep");
+          tim.enter("erep");
           tbint->compute_shell(P,Q,R,S);
-          timer->exit("erep");
+          tim.exit("erep");
 
           offset = nr*ns*nbasis;
           int_index = 0;
@@ -317,7 +318,7 @@ CSGrad34Qbtr::run()
 
           }             // exit P loop
         }               // exit Q loop
-      timer->exit("(ov|vv) contrib to Laj");
+      tim.exit("(ov|vv) contrib to Laj");
       }                 // endif
 
     if (!dograd) continue;
@@ -336,7 +337,7 @@ CSGrad34Qbtr::run()
           if (tbintder->log2_shell_bound(P,Q,R,S) < tol) continue;
           aointder_computed++;
 
-          timer->enter("4. q.b.t.");
+          tim.enter("4. q.b.t.");
           bzerofast(gamma_pqrs,nfuncmax*nfuncmax*nfuncmax*nfuncmax);
 
           offset = nr*ns*nbasis;
@@ -369,19 +370,19 @@ CSGrad34Qbtr::run()
               }       // exit bf2 loop
             }         // exit bf1 loop
           // end of fourth quarter back-transformation
-          timer->exit("4. q.b.t.");
+          tim.exit("4. q.b.t.");
           // (we now have the contribution from one i-batch to the
           // non-separable part of the 2PDM for one shell block PQRS)
 
           // Evaluate derivative integrals
-          timer->enter("erep derivs");
+          tim.enter("erep derivs");
           tbintder->compute_shell(P,Q,R,S,der_centers);
-          timer->exit("erep derivs");
+          tim.exit("erep derivs");
 
           // Compute contribution to gradient from non-sep 2PDM
           // (i.e., contract derivative integrals with gamma_pqrs)
           int_index = 0;
-          timer->enter("non-sep 2PDM contrib.");
+          tim.enter("non-sep 2PDM contrib.");
           for (int derset=0; derset<der_centers.n(); derset++) {
             for (int xyz=0; xyz<3; xyz++) {
               grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
@@ -413,7 +414,7 @@ CSGrad34Qbtr::run()
                 }       // exit bf1 loop
               }         // exit xyz loop
             }           // exit derset loop
-          timer->exit("non-sep 2PDM contrib.");
+          tim.exit("non-sep 2PDM contrib.");
 
           } // exit P loop
         }   // exit Q loop

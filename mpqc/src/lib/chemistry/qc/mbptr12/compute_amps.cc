@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -61,7 +61,7 @@ R12IntEval::compute_T2_vbsneqobs_()
   if (!ijab_acc->is_active())
     ijab_acc->activate();
 
-  tim_enter("mp2 t2 amplitudes");
+  Timer tim("mp2 t2 amplitudes");
 
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
@@ -122,9 +122,9 @@ R12IntEval::compute_T2_vbsneqobs_()
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|1/r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijxy_buf_eri = ijab_acc->retrieve_pair_block(i,j,R12IntsAcc::eri);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -168,7 +168,7 @@ R12IntEval::compute_T2_vbsneqobs_()
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
-  tim_exit("mp2 t2 amplitudes");
+  tim.exit("mp2 t2 amplitudes");
 }
 
 void
@@ -180,7 +180,7 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("R intermediate");
+  Timer tim("R intermediate");
 
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
@@ -228,10 +228,10 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|1/r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
     double *jixy_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -268,7 +268,7 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited R intermediate evaluator" << endl;
-  tim_exit("R intermediate");
+  tim.exit("R intermediate");
 }
 
 void

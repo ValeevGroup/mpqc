@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -77,7 +77,7 @@ R12IntEval::compute_T2_()
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("mp2 t2 amplitudes");
+  Timer tim("mp2 t2 amplitudes");
 
   ExEnv::out0() << endl << indent
                 << "Entered MP2 T2 amplitude evaluator" << endl;
@@ -140,9 +140,9 @@ R12IntEval::compute_T2_()
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|1/r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijxy_buf_eri = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::eri);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -205,7 +205,7 @@ R12IntEval::compute_T2_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
 
-  tim_exit("mp2 t2 amplitudes");
+  tim.exit("mp2 t2 amplitudes");
 }
 
 
@@ -228,7 +228,7 @@ differs from the basis set for occupieds");
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("R intermediate");
+  Timer tim("R intermediate");
 
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
@@ -275,9 +275,9 @@ differs from the basis set for occupieds");
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|1/r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -323,7 +323,7 @@ differs from the basis set for occupieds");
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited R amplitude evaluator" << endl;
 
-  tim_exit("R intermediate");
+  tim.exit("R intermediate");
 }
 
 
@@ -336,7 +336,7 @@ R12IntEval::compute_A_simple_()
   if (evaluated_)
     return;
 
-  tim_enter("A intermediate");
+  Timer tim("A intermediate");
 
   const int num_te_types = 2;
   
@@ -426,10 +426,10 @@ R12IntEval::compute_A_simple_()
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
     double *jiaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -479,7 +479,7 @@ R12IntEval::compute_A_simple_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited A intermediate evaluator" << endl;
 
-  tim_exit("A intermediate");
+  tim.exit("A intermediate");
 }
 
 void
@@ -501,7 +501,7 @@ differs from the basis set for occupieds");
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("A intermediate via [T,r]");
+  Timer tim("A intermediate via [T,r]");
 
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
@@ -548,11 +548,11 @@ differs from the basis set for occupieds");
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
     // Get (|1/r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
     double *ijxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t1);
     double *jixy_buf_r12t1 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12t1);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -621,7 +621,7 @@ differs from the basis set for occupieds");
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited A amplitude (via [T,r]) evaluator" << endl;
 
-  tim_exit("A intermediate via [T,r]");
+  tim.exit("A intermediate via [T,r]");
 }
 
 

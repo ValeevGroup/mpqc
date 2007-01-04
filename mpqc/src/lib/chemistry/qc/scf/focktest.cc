@@ -17,7 +17,6 @@
 using namespace sc;
 using namespace std;
 
-Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
 static Ref<MessageGrp>
@@ -32,8 +31,8 @@ init_mp(const Ref<KeyVal>& keyval)
             << " me = " << grp->me()
             << std::endl;
   
-  tim = new ParallelRegionTimer(grp,"focktest",1,0);
-  RegionTimer::set_default_regiontimer(tim);
+  RegionTimer::set_default_regiontimer(
+      new ParallelRegionTimer(grp,"focktest",1,0));
 
   SCFormIO::set_printnode(0);
 
@@ -91,7 +90,8 @@ try_main(int argc, char **argv)
 
   ///////////////////////////////////////////////////////////////
 
-  tim->enter("input");
+  Timer tim;
+  tim.enter("input");
   
   if (rpkv->exists("matrixkit")) {
     Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
@@ -112,24 +112,24 @@ try_main(int argc, char **argv)
   else
     integral = Integral::get_default_integral();
 
-  tim->exit("input");
+  tim.exit("input");
 
   Ref<CLHF> clhf;
   //clhf << rpkv->describedclassvalue(keyword);
 
 #if !DEBUG
   std::cout << "computing CLHF energy" << std::endl;
-  tim->enter("CLHF energy/density");
+  tim.enter("CLHF energy/density");
   clhf = new CLHF(mole);
   double eclhf = clhf->energy();
-  tim->exit();
+  tim.exit();
 
   std::cout << "computing FockBuildCLHF energy" << std::endl;
-  tim->enter("New CLHF energy/density");
+  tim.enter("New CLHF energy/density");
   Ref<CLHF> newclhf;
   newclhf = new FockBuildCLHF(mole);
   double enewclhf = newclhf->energy();
-  tim->exit();
+  tim.exit();
 
   std::cout << scprintf("E(CLHF)    = %12.8f", eclhf) << std::endl;
   std::cout << scprintf("E(NewCLHF) = %12.8f", enewclhf) << std::endl;
@@ -176,14 +176,14 @@ try_main(int argc, char **argv)
 
 #else
   std::cout << "computing CLHF energy" << std::endl;
-  tim->enter("CLHF energy/density");
+  tim.enter("CLHF energy/density");
   clhf = new CLHF(mole);
   double eclhf = clhf->energy();
-  tim->exit();
+  tim.exit();
 
   RefSymmSCMatrix density = clhf->ao_density();
 
-  tim->enter("CLHF Fock build");
+  tim.enter("CLHF Fock build");
   Ref<GaussianBasisSet> gbs = clhf->basis();
   gbs->print();
   RefSymmSCMatrix f(density.dim(),density.kit());
@@ -195,7 +195,7 @@ try_main(int argc, char **argv)
   Ref<FockBuild> fb = new FockBuild(fc,gbs);
   fb->set_accuracy(1e-12);
   fb->build();
-  tim->exit("CLHF Fock build");
+  tim.exit("CLHF Fock build");
 
   f.print("FockBuilder Skeleton G Matrix AO Basis (CLHF Density)");
   // now symmetrize the skeleton G matrix in f
@@ -214,7 +214,7 @@ try_main(int argc, char **argv)
       ->print("Difference");
 #endif
 
-  tim->print(ExEnv::out0());
+  tim.print(ExEnv::out0());
 
   MessageGrp::set_default_messagegrp(0);
   ThreadGrp::set_default_threadgrp(0);

@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -193,21 +193,21 @@ TCHF::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    Timer tim("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "TCHF: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "TCHF: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
       
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -316,7 +316,7 @@ TCHF::two_body_energy(double &ec, double &ex)
        << endl;
   abort();
   
-  tim_enter("tchf e2");
+  Timer tim("tchf e2");
   ec = 0.0;
   ex = 0.0;
 
@@ -326,7 +326,7 @@ TCHF::two_body_energy(double &ec, double &ex)
     // grab the data pointers from the G and P matrices
     double *pmata, *pmatb, *spmata, *spmatb;
 
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix densa = alpha_density();
     RefSymmSCMatrix densb = beta_density();
     RefSymmSCMatrix densc = densb.clone();
@@ -359,15 +359,15 @@ TCHF::two_body_energy(double &ec, double &ex)
     RefSymmSCMatrix ptmpb = get_local_data(densb, pmatb, SCF::Read);
     RefSymmSCMatrix sptmpa = get_local_data(sdensa, spmata, SCF::Read);
     RefSymmSCMatrix sptmpb = get_local_data(sdensb, spmatb, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
-    tim_enter("init pmax");
+    tim.enter("init pmax");
     signed char * pmax = init_pmax(pmata);
-    tim_exit("init pmax");
+    tim.exit("init pmax");
   
     LocalTCEnergyContribution lclc(pmata,pmatb,spmata,spmatb);
     LocalGBuild<LocalTCEnergyContribution>
@@ -386,7 +386,7 @@ TCHF::two_body_energy(double &ec, double &ex)
     ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("tchf e2");
+  tim.exit("tchf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////

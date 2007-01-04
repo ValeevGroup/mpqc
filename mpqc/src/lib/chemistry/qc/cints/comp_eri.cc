@@ -214,8 +214,8 @@ EriCints::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
 #ifdef EREP_TIMING
   sprintf(section,"erep am=%02d",am12+am34);
-  tim_enter(section);
-  tim_enter("setup");
+  Timer tim(section);
+  tim.enter("setup");
 #endif
 
   /* Convert the integral to the most efficient form. */

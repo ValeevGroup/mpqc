@@ -35,7 +35,7 @@
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <util/state/state_bin.h>
 
@@ -174,7 +174,8 @@ Optimize::optimize()
         this->save_state(so);
       }
       if (print_timings_) {
-          tim_print(0);
+          Timer t;
+          t.print();
         }
     }
   return result;

@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -66,7 +66,7 @@ R12IntEval::compute_B_gbc_1_()
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("B(GBC1) intermediate");
+  Timer tim("B(GBC1) intermediate");
 
   const int num_te_types = 2;
   
@@ -147,10 +147,10 @@ R12IntEval::compute_B_gbc_1_()
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
     // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *klMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
     double *lkMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -168,10 +168,10 @@ R12IntEval::compute_B_gbc_1_()
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
       // Get (|r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
       double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -245,10 +245,10 @@ R12IntEval::compute_B_gbc_1_()
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
     // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *klMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
     double *lkMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -266,9 +266,9 @@ R12IntEval::compute_B_gbc_1_()
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
       // Get (|r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -329,7 +329,7 @@ R12IntEval::compute_B_gbc_1_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(GBC1) intermediate evaluator" << endl;
 
-  tim_exit("B(GBC1) intermediate");
+  tim.exit("B(GBC1) intermediate");
 }
 
 
@@ -349,7 +349,7 @@ R12IntEval::compute_B_gbc_2_()
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  tim_enter("B(GBC2) intermediate");
+  Timer tim("B(GBC2) intermediate");
 
   const int num_te_types = 2; // only integrals of r_{12} are needed
   Ref<MessageGrp> msg = r12info_->msg();
@@ -437,12 +437,12 @@ R12IntEval::compute_B_gbc_2_()
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
     // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *klfmA_buf_r12 = klfmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
     double *lfkmA_buf_r12 = lfkmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
     double *lkfmA_buf_r12 = klfmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
     double *kflmA_buf_r12 = lfkmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -459,10 +459,10 @@ R12IntEval::compute_B_gbc_2_()
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
       // Get (|r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
       double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -531,10 +531,10 @@ R12IntEval::compute_B_gbc_2_()
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
     // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
+    tim.enter("MO ints retrieve");
     double *klfpq_buf_r12 = klfpq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
     double *lkfpq_buf_r12 = klfpq_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-    tim_exit("MO ints retrieve");
+    tim.exit("MO ints retrieve");
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -551,10 +551,10 @@ R12IntEval::compute_B_gbc_2_()
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
       // Get (|r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
       double *jipq_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -646,7 +646,7 @@ R12IntEval::compute_B_gbc_2_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(GBC2) intermediate evaluator" << endl;
 
-  tim_exit("B(GBC2) intermediate");
+  tim.exit("B(GBC2) intermediate");
 }
 
 ////////////////////////////////////////////////////////////////////////////

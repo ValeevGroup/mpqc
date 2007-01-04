@@ -29,7 +29,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/group/message.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
@@ -394,6 +394,7 @@ MBPT2::compute_hsos_v2()
  *   begin opt2 loops                                                     *
  **************************************************************************/
 
+  Timer tim;
 
   for (pass=0; pass<npass; pass++) {
     i_offset = pass*ni;  
@@ -402,7 +403,7 @@ MBPT2::compute_hsos_v2()
     r_offset = 0;
     bzerofast(trans_int3,nbf[me]*nvir*dim_ij);
 
-    tim_enter("RS loop");
+    tim.enter("RS loop");
 
     for (imyshell=0; imyshell<nRshell; imyshell++) {
 
@@ -411,11 +412,11 @@ MBPT2::compute_hsos_v2()
 
       for (S = 0; S < nshell; S++) {
         ns = basis()->shell(S).nfunction();
-        tim_enter("bzerofast trans_int1");
+        tim.enter("bzerofast trans_int1");
         bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
-        tim_exit("bzerofast trans_int1");
+        tim.exit("bzerofast trans_int1");
 
-        tim_enter("PQ loop");
+        tim.enter("PQ loop");
 
         for (P = 0; P < nshell; P++) {
           np = basis()->shell(P).nfunction();
@@ -429,11 +430,11 @@ MBPT2::compute_hsos_v2()
 
             nq = basis()->shell(Q).nfunction();
 
-            tim_enter("erep");
+            tim.enter("erep");
             tbint_->compute_shell(P,Q,R,S);
-            tim_exit("erep");
+            tim.exit("erep");
 
-            tim_enter("1. quart. tr.");
+            tim.enter("1. quart. tr.");
 
             index = 0;
 
@@ -474,10 +475,10 @@ MBPT2::compute_hsos_v2()
                   }     /* exit bf3 loop */
                 }       /* exit bf2 loop */
               }         /* exit bf1 loop */
-            tim_exit("1. quart. tr.");
+            tim.exit("1. quart. tr.");
             }           /* exit Q loop */
           }             /* exit P loop */
-        tim_exit("PQ loop");
+        tim.exit("PQ loop");
 
         /* begin second and third quarter transformations */
 
@@ -487,11 +488,11 @@ MBPT2::compute_hsos_v2()
           for (bf4 = 0; bf4 < ns; bf4++) {
             s = basis()->shell_to_function(S) + bf4;
 
-            tim_enter("bzerofast trans_int2");
+            tim.enter("bzerofast trans_int2");
             bzerofast(trans_int2,nvir*ni);
-            tim_exit("bzerofast trans_int2");
+            tim.exit("bzerofast trans_int2");
 
-            tim_enter("2. quart. tr.");
+            tim.enter("2. quart. tr.");
 
             for (q = 0; q < nbasis; q++) {
               iars_ptr = trans_int2;
@@ -508,11 +509,11 @@ MBPT2::compute_hsos_v2()
                 c_qa++;
                 }
               }             /* exit q loop */
-            tim_exit("2. quart. tr.");
+            tim.exit("2. quart. tr.");
 
             /* begin third quarter transformation */
 
-            tim_enter("3. quart. tr.");
+            tim.enter("3. quart. tr.");
 
             for (i=0; i<ni; i++) {
               tmp_index = i*(i+1)/2 + i*i_offset;
@@ -527,7 +528,7 @@ MBPT2::compute_hsos_v2()
                   }
                 }
               }   /* exit i loop */
-            tim_exit("3. quart. tr.");
+            tim.exit("3. quart. tr.");
 
             } /* exit bf4 loop */
           }   /* exit bf3 loop */
@@ -535,7 +536,7 @@ MBPT2::compute_hsos_v2()
         }         /* exit S loop */
       r_offset += nr;
       }           /* exit R loop */
-    tim_exit("RS loop");
+    tim.exit("RS loop");
 
 
     /* begin fourth quarter transformation;                                *
@@ -550,7 +551,7 @@ MBPT2::compute_hsos_v2()
 
 
     if (pass == 0) {
-      tim_enter("4. quart. tr.");
+      tim.enter("4. quart. tr.");
       if (nsocc) bzerofast(socc_sum,nsocc);
       for (isocc=0; isocc<nsocc; isocc++) {
 
@@ -572,14 +573,14 @@ MBPT2::compute_hsos_v2()
           }
         }       /* exit isocc loop */
 
-      tim_exit("4. quart. tr.");
+      tim.exit("4. quart. tr.");
 
       /* sum socc_sum contributions from each node (only if nsocc > 0 *
        * since gop1 will fail if nsocc = 0)                           */
       if (nsocc > 0) {
-        tim_enter("global sum socc_sum");
+        tim.enter("global sum socc_sum");
         msg_->sum(socc_sum,nsocc,socc_sum_tmp);
-        tim_exit("global sum socc_sum");
+        tim.exit("global sum socc_sum");
         }
 
       } 
@@ -595,7 +596,7 @@ MBPT2::compute_hsos_v2()
 
       for (j=0; j <= (i_offset+i); j++) {
 
-        tim_enter("4. quart. tr.");
+        tim.enter("4. quart. tr.");
 
         bzerofast(trans_int4,nvir*nvir);
 
@@ -620,18 +621,18 @@ MBPT2::compute_hsos_v2()
             }
           }
 
-        tim_exit("4. quart. tr.");
+        tim.exit("4. quart. tr.");
 
-        tim_enter("global sum trans_int4");
+        tim.enter("global sum trans_int4");
         msg_->sum(trans_int4,nvir*nvir,trans_int4_tmp);
-        tim_exit("global sum trans_int4");
+        tim.exit("global sum trans_int4");
 
         /* we now have the fully transformed integrals (ia|jb)      *
          * for one i, one j (j <= i_offset+i), and all a and b;     *
          * compute contribution to the OPT1 and OPT2 correlation    *
          * energies; use restriction b <= a to save flops           */
 
-        tim_enter("compute ecorr");
+        tim.enter("compute ecorr");
 
         for (a=0; a<nvir; a++) {
           for (b=0; b<=a; b++) {
@@ -739,7 +740,7 @@ MBPT2::compute_hsos_v2()
               }
             }   /* exit b loop */
           }     /* exit a loop */
-        tim_exit("compute ecorr");
+        tim.exit("compute ecorr");
         }       /* exit j loop */
       }         /* exit i loop */
 
@@ -765,12 +766,12 @@ MBPT2::compute_hsos_v2()
    * (Brillouin's theorem not satisfied for ROHF wave functions);         *
    * do this only if nsocc > 0 since gop1 will fail otherwise             */
 
-  tim_enter("compute ecorr");
+  tim.enter("compute ecorr");
 
   if (nsocc > 0) {
-    tim_enter("global sum mo_int_do_so_vir");
+    tim.enter("global sum mo_int_do_so_vir");
     msg_->sum(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc),mo_int_tmp);
-    tim_exit("global sum mo_int_do_so_vir");
+    tim.exit("global sum mo_int_do_so_vir");
     }
 
   /* add extra contribution for triplet and higher spin multiplicities *
@@ -795,7 +796,7 @@ MBPT2::compute_hsos_v2()
       }       /* exit i loop */
     }
 
-  tim_exit("compute ecorr");
+  tim.exit("compute ecorr");
 
   ecorr_zapt2 = ecorr_opt2 + ecorr_zapt2_contrib;
   ecorr_opt2 += ecorr_opt2_contrib;

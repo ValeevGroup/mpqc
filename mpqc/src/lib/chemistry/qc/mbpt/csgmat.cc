@@ -30,7 +30,7 @@
 #include <math.h>
 #include <limits.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/local.h>
@@ -143,7 +143,7 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
   int i;
   int nthread = thr_->nthread();
 
-  tim_enter("gmat");
+  Timer tim("gmat");
 
   Ref<PetiteList> pl = integral()->petite_list(basis());
 
@@ -257,7 +257,7 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
     }
   Gmat = blocked_Gmat->block(0);
 
-  tim_exit("gmat");
+  tim.exit("gmat");
 
   return 0;
 }
@@ -267,7 +267,7 @@ MBPT2::make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat)
 {
   int errcod;
 
-  tim_enter("gmat");
+  Timer tim("gmat");
 
   errcod = make_g_d_nor(Gmat, DPmat, intbuf_);
 
@@ -276,7 +276,7 @@ MBPT2::make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat)
     return -1;
     }
 
-  tim_exit("gmat");
+  tim.exit("gmat");
 
   return 0;
 }

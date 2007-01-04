@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -174,12 +174,12 @@ CLKS::ao_fock(double accuracy)
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
-  tim_enter("setup");
+  Timer tim("setup");
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
-  tim_exit("setup");
+  tim.exit("setup");
 
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
@@ -188,14 +188,14 @@ CLKS::ao_fock(double accuracy)
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *gmat, *pmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_diff_, pmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
-    tim_enter("init pmax");
+    tim.enter("init pmax");
     signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
+    tim.exit("init pmax");
   
 //      LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
 //      LocalGBuild<LocalCLKSContribution>
@@ -229,21 +229,21 @@ CLKS::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    tim.enter("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "CLKS: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "CLKS: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
 
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -268,17 +268,17 @@ CLKS::ao_fock(double accuracy)
     ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
     
     // if we're running on multiple processors, then sum the G matrix
-    tim_enter("sum");
+    tim.enter("sum");
     if (scf_grp_->n() > 1)
       scf_grp_->sum(gmat, i_offset(basis()->nbasis()));
-    tim_exit("sum");
+    tim.exit("sum");
 
     // if we're running on multiple processors, or we don't have local
     // matrices, then accumulate gtmp back into G
-    tim_enter("accum");
+    tim.enter("accum");
     if (!local_ || scf_grp_->n() > 1)
       cl_gmat_->convert_accumulate(gtmp);
-    tim_exit("accum");
+    tim.exit("accum");
   }
 
   // for now quit
@@ -298,7 +298,7 @@ CLKS::ao_fock(double accuracy)
   vxa = pl->to_SO_basis(vxa);
   vxc_ = vxa;
 
-  tim_enter("symm");
+  tim.enter("symm");
   // get rid of AO delta P
   cl_dens_diff_ = dd;
   dd = cl_dens_diff_.clone();
@@ -307,7 +307,7 @@ CLKS::ao_fock(double accuracy)
   RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
   skel_gmat.scale(1.0/(double)pl->order());
   pl->symmetrize(skel_gmat,dd);
-  tim_exit("symm");
+  tim.exit("symm");
   
   
   // F = H+G
@@ -322,27 +322,27 @@ CLKS::ao_fock(double accuracy)
 void
 CLKS::two_body_energy(double &ec, double &ex)
 {
-  tim_enter("clks e2");
+  Timer tim("clks e2");
   ec = 0.0;
   ex = 0.0;
 
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *pmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix dens = ao_density();
     dens->scale(2.0);
     dens->scale_diagonal(0.5);
     RefSymmSCMatrix ptmp = get_local_data(dens, pmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
-    tim_enter("init pmax");
+    tim.enter("init pmax");
     signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
+    tim.exit("init pmax");
   
     LocalCLKSEnergyContribution lclc(pmat, functional_->a0());
     Ref<PetiteList> pl = integral()->petite_list();
@@ -360,7 +360,7 @@ CLKS::two_body_energy(double &ec, double &ex)
     ExEnv::out0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("clks e2");
+  tim.exit("clks e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -368,16 +368,16 @@ CLKS::two_body_energy(double &ec, double &ex)
 void
 CLKS::two_body_deriv(double * tbgrad)
 {
-  tim_enter("grad");
+  Timer tim("grad");
 
   int natom3 = 3*molecule()->natom();
 
-  tim_enter("two-body");
+  tim.enter("two-body");
   double *hfgrad = new double[natom3];
   memset(hfgrad,0,sizeof(double)*natom3);
   two_body_deriv_hf(hfgrad,functional_->a0());
   //print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
-  tim_exit("two-body");
+  tim.exit("two-body");
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
@@ -397,7 +397,7 @@ CLKS::two_body_deriv(double * tbgrad)
   delete[] dftgrad;
   delete[] hfgrad;
 
-  tim_exit("grad");
+  tim.exit("grad");
 }
 
 /////////////////////////////////////////////////////////////////////////////

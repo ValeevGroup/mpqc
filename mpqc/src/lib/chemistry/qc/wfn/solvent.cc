@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/petite.h>
@@ -164,8 +164,8 @@ BEMSolventH::save_data_state(StateOut&s)
 void
 BEMSolventH::init(const Ref<Wavefunction>& wfn)
 {
-  tim_enter("solvent");
-  tim_enter("init");
+  Timer tim("solvent");
+  tim.enter("init");
   wfn_ = wfn;
   // just in case
   done();
@@ -197,8 +197,8 @@ BEMSolventH::init(const Ref<Wavefunction>& wfn)
 
   edisprep_ = solvent_->disprep();
 
-  tim_exit("init");
-  tim_exit("solvent");
+  tim.exit("init");
+  tim.exit("solvent");
 }
 
 // This adds J + X to h, where J and X are the matrices defined
@@ -222,14 +222,14 @@ BEMSolventH::init(const Ref<Wavefunction>& wfn)
 void
 BEMSolventH::accum(const RefSymmSCMatrix& h)
 {
-  tim_enter("solvent");
-  tim_enter("accum");
+  Timer tim("solvent");
+  tim.enter("accum");
   int i,j;
 
   //// compute the polarization charges
 
   // compute the e-field at each point and dot with normals
-  tim_enter("efield");
+  tim.enter("efield");
   int ncharge = solvent_->ncharge();
   Ref<EfieldDotVectorData> efdn_dat = new EfieldDotVectorData;
   Ref<OneBodyInt> efdn = wfn_->integral()->efield_dot_vector(efdn_dat);
@@ -255,10 +255,10 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   Ref<SCMatrixKit> aokit = ao_density.kit();
   ao_density = 0;
   efdn_mat = 0;
-  tim_exit("efield");
+  tim.exit("efield");
 
   // compute a new set of charges
-  tim_enter("charges");
+  tim.enter("charges");
   // electron contrib
   solvent_->compute_charges(efield_dot_normals_, charges_);
   double qeenc = solvent_->computed_enclosed_charge();
@@ -274,20 +274,20 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
     }
   solvent_->compute_charges(efield_dot_normals_, charges_n_);
   double qnenc = solvent_->computed_enclosed_charge();
-  tim_exit("charges");
+  tim.exit("charges");
 
   // normalize the charges
   // e and n are independently normalized since the nature of the
   // errors in e and n are different: n error is just numerical and
   // e error is numerical plus diffuseness of electron distribution
   if (normalize_q_) {
-      tim_enter("norm");
+      tim.enter("norm");
       // electron contrib
       solvent_->normalize_charge(-wfn_->nelectron(), charges_);
       // nuclear contrib
       solvent_->normalize_charge(wfn_->molecule()->nuclear_charge(),
                                  charges_n_);
-      tim_exit("norm");
+      tim.exit("norm");
     }
   // sum the nuclear and electron contrib
   for (i=0; i<ncharge; i++) charges_[i] += charges_n_[i];
@@ -299,24 +299,24 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   ecavitation_ = A * gamma_;
 
   // compute the nuclear-surface interaction energy
-  tim_enter("n-s");
+  tim.enter("n-s");
   enucsurf_
       = solvent_->nuclear_interaction_energy(charge_positions_, charges_);
-  tim_exit("n-s");
+  tim.exit("n-s");
 
   double enqn = 0.0, enqe = 0.0;
   if (y_equals_j_ || separate_surf_charges_) {
-      tim_enter("n-qn");
+      tim.enter("n-qn");
       enqn = solvent_->nuclear_interaction_energy(charge_positions_,
                                                   charges_n_);
       enqe = enucsurf_ - enqn;
-      tim_exit("n-qn");
+      tim.exit("n-qn");
     }
 
   //// compute one body contributions
 
   // compute the electron-surface interaction matrix elements
-  tim_enter("e-s");
+  tim.enter("e-s");
   Ref<PointChargeData> pc_dat = new PointChargeData(ncharge,
                                                   charge_positions_, charges_);
   Ref<OneBodyInt> pc = wfn_->integral()->point_charge(pc_dat);
@@ -337,11 +337,11 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   so_density->scale_diagonal(0.5);
   h_so->element_op(generic_sp, so_density);
   eelecsurf_ = sp->result();
-  tim_exit("e-s");
+  tim.exit("e-s");
 
   double eeqn = 0.0, eeqe = 0.0;
   if (y_equals_j_ || separate_surf_charges_) {
-      tim_enter("e-qn");
+      tim.enter("e-qn");
       pc_dat = new PointChargeData(ncharge, charge_positions_, charges_n_);
       pc = wfn_->integral()->point_charge(pc_dat);
       pc_op = new OneBodyIntOp(pc);
@@ -356,7 +356,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       h_so->element_op(generic_sp, so_density);
       eeqn = sp->result();
       eeqe = eelecsurf_ - eeqn;
-      tim_exit("e-qn");
+      tim.exit("e-qn");
     }
 
   if (y_equals_j_) {
@@ -369,10 +369,10 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   // compute the surface-surface interaction energy
   esurfsurf_ = -0.5*(eelecsurf_+enucsurf_);
   // (this can also be computed as below, but is much more expensive)
-  //tim_enter("s-s");
+  //tim.enter("s-s");
   //double esurfsurf_;
   //esurfsurf_ = solvent_->self_interaction_energy(charge_positions_, charges_);
-  //tim_exit("s-s");
+  //tim.exit("s-s");
 
   escalar_ = enucsurf_ + esurfsurf_ + ecavitation_ + edisprep_;
   // NOTE: SCF currently only adds h_so to the Fock matrix
@@ -414,8 +414,8 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   ExEnv::out0() << decindent;
   ExEnv::out0() << decindent;
 
-  tim_exit("accum");
-  tim_exit("solvent");
+  tim.exit("accum");
+  tim.exit("solvent");
 }
 
 void

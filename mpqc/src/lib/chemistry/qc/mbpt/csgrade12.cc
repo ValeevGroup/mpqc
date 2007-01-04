@@ -142,6 +142,7 @@ CSGradErep12Qtr::run()
   if (debug) shellpairs.set_print_percent(1);
   S = 0;
   R = 0;
+  Timer tim(timer);
   while (shellpairs.get_task(S,R)) {
     ns = basis->shell(S).nfunction();
     s_offset = basis->shell_to_function(S);
@@ -159,7 +160,7 @@ CSGradErep12Qtr::run()
     if (debug > 1 && (print_index)%time_interval == 0) {
       lock->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread) << endl;
-      timer->print();
+      tim.print();
       lock->unlock();
       }
 
@@ -186,11 +187,11 @@ CSGradErep12Qtr::run()
 
         aoint_computed++;
 
-        timer->enter("erep");
+        tim.enter("erep");
         tbint->compute_shell(P,Q,R,S);
-        timer->exit("erep");
+        tim.exit("erep");
 
-        timer->enter("1. q.t.");
+        tim.enter("1. q.t.");
         // Begin first quarter transformation;
         // generate (iq|rs) for i active
 
@@ -241,7 +242,7 @@ CSGradErep12Qtr::run()
             }     // exit bf2 loop
           }       // exit bf1 loop
         // end of first quarter transformation
-        timer->exit("1. q.t.");
+        tim.exit("1. q.t.");
 
         }           // exit P loop
       }             // exit Q loop
@@ -284,7 +285,7 @@ CSGradErep12Qtr::run()
       }
 #endif
 
-    timer->enter("2. q.t.");
+    tim.enter("2. q.t.");
     // Begin second quarter transformation;
     // generate (iq|jr) for i active and j active or frozen
     for (i=0; i<ni; i++) {
@@ -332,7 +333,7 @@ CSGradErep12Qtr::run()
         }     // exit j loop
       }       // exit i loop
     // end of second quarter transformation
-    timer->exit("2. q.t.");
+    tim.exit("2. q.t.");
 
     }         // exit while get_task
 

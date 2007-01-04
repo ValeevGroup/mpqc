@@ -143,9 +143,7 @@ class LocalGBuild : public GBuild<T> {
 #  endif
 #endif
 
-              //tim_enter_default();
               tbi.compute_shell(i,j,k,l);
-              //tim_exit_default();
 
               int e12 = (i==j);
               int e34 = (k==l);

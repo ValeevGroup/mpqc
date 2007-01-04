@@ -34,7 +34,7 @@
 
 #include <util/class/scexception.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <util/state/state_bin.h>
 #include <util/group/mstate.h>
@@ -537,7 +537,7 @@ FinDispMolecularHessian::do_hess_for_irrep(int irrep,
 RefSymmSCMatrix
 FinDispMolecularHessian::cartesian_hessian()
 {
-  tim_enter("hessian");
+  Timer tim("hessian");
 
   if (restart_) restart();
   else init();
@@ -589,7 +589,7 @@ FinDispMolecularHessian::cartesian_hessian()
     }
   original_geometry();
   RefSymmSCMatrix xhessian = compute_hessian_from_gradients();
-  tim_exit("hessian");
+  tim.exit("hessian");
 
   symbasis_ = 0;
   delete[] gradients_;

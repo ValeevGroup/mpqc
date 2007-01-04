@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -600,7 +600,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
   int na3 = molecule()->natom()*3;
   int nthread = threadgrp_->nthread();
 
-  tim_enter("setup");
+  Timer tim("setup");
   Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
   cl_dens_.element_op(m.pointer());
   double pmax = m->result();
@@ -616,7 +616,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
   
   Ref<PetiteList> pl = integral()->petite_list();
   
-  tim_change("contribution");
+  tim.change("contribution");
   
   // now try to figure out the matrix specialization we're dealing with.
   // if we're using Local matrices, then there's just one subblock, or
@@ -636,21 +636,21 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
       threadgrp_->add_thread(i, tblds[i]);
     }
 
-    tim_enter("start thread");
+    tim.enter("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "CLSCF: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "CLSCF: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
 
     for (i=0; i < nthread; i++) {
       if (i) {
@@ -685,7 +685,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     tbis[i] = 0;
   delete[] tbis;
   
-  tim_exit("contribution");
+  tim.exit("contribution");
 }
 
 /////////////////////////////////////////////////////////////////////////////

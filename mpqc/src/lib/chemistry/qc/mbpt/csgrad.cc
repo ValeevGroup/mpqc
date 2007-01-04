@@ -30,7 +30,7 @@
 #include <limits.h>
 
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/group/memory.h>
 #include <util/group/message.h>
 #include <util/class/class.h>
@@ -228,7 +228,7 @@ MBPT2::compute_cs_grad()
 
   int dograd = gradient_needed();
 
-  tim_enter("mp2-mem");
+  Timer tim("mp2-mem");
 
   nfuncmax = basis()->max_nfunction_in_shell();
 
@@ -600,7 +600,7 @@ MBPT2::compute_cs_grad()
         }
       }
 
-  tim_enter("mp2 passes");
+  tim.enter("mp2 passes");
   for (pass=0; pass<npass; pass++) {
 
     if (me == 0) {
@@ -652,7 +652,7 @@ MBPT2::compute_cs_grad()
       }
 
     // Do the two eletron integrals and the first two quarter transformations
-    tim_enter("erep+1.qt+2.qt");
+    tim.enter("erep+1.qt+2.qt");
     sp_e_data.init();
     for (i=0; i<thr_->nthread(); i++) {
       e12thread[i]->set_i_offset(i_offset);
@@ -666,7 +666,7 @@ MBPT2::compute_cs_grad()
     thr_->start_threads();
     thr_->wait_threads();
 #   endif
-    tim_exit("erep+1.qt+2.qt");
+    tim.exit("erep+1.qt+2.qt");
 
     if (me == 0) {
       ExEnv::out0() << indent << "End of loop over shells" << endl;
@@ -708,7 +708,7 @@ MBPT2::compute_cs_grad()
       ExEnv::out0() << indent << "Begin third q.t." << endl;
       }
 
-    tim_enter("3. q.t.");
+    tim.enter("3. q.t.");
     // Begin third quarter transformation;
     // generate (ix|js) for i act, j act or frz, and x any MO (act or frz)
     index = 0;
@@ -756,7 +756,7 @@ MBPT2::compute_cs_grad()
         }       // exit j loop
       }         // exit i loop
     // end of third quarter transformation
-    tim_exit("3. q.t.");
+    tim.exit("3. q.t.");
 
     if (me == 0) {
       ExEnv::out0() << indent << "End of third q.t." << endl;
@@ -805,7 +805,7 @@ MBPT2::compute_cs_grad()
 
     // Begin fourth quarter transformation
     // generating MO integrals (ov|ov), (ov|oo) and (oo|ov)
-    tim_enter("4. q.t.");
+    tim.enter("4. q.t.");
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
@@ -873,7 +873,7 @@ MBPT2::compute_cs_grad()
         }     // exit j loop
       }       // exit i loop
     // end of fourth quarter transformation
-    tim_exit("4. q.t.");
+    tim.exit("4. q.t.");
 
     if (me == 0) {
       ExEnv::out0() << indent << "End of fourth q.t." << endl;
@@ -890,7 +890,7 @@ MBPT2::compute_cs_grad()
     // evals[i]+evals[j]-evals[a]-evals[b]
     // and keep these integrals in mo_int;
     // do this only for active i, j, a, and b
-    tim_enter("divide (ia|jb)'s");
+    tim.enter("divide (ia|jb)'s");
 
     index = 0;
     ij_index = 0;
@@ -923,7 +923,7 @@ MBPT2::compute_cs_grad()
           }       // endif
         }         // exit j loop
       }           // exit i loop
-    tim_exit("divide (ia|jb)'s");
+    tim.exit("divide (ia|jb)'s");
 
     // We now have the fully transformed integrals (ia|jb)
     // divided by the proper orbital energy denominators
@@ -962,7 +962,7 @@ MBPT2::compute_cs_grad()
     fclose(dout);
 #endif
 
-    tim_enter("compute ecorr");
+    tim.enter("compute ecorr");
 
     index = 0;
     ij_index = 0;
@@ -1017,7 +1017,7 @@ MBPT2::compute_cs_grad()
              << endl;
         }
       }           // exit i loop
-    tim_exit("compute ecorr");
+    tim.exit("compute ecorr");
 
     // debug print
     if (debug_ && me == 0) {
@@ -1052,7 +1052,7 @@ MBPT2::compute_cs_grad()
     // contributions from (occ vir|occ vir) integrals
     index = 0;
     ij_index = 0;
-    tim_enter("Pkj and Wkj");
+    tim.enter("Pkj and Wkj");
     for (i=0; i<ni; i++) {
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
@@ -1105,7 +1105,7 @@ MBPT2::compute_cs_grad()
           }         // endif
         }           // exit j loop
       }             // exit i loop
-    tim_exit("Pkj and Wkj");
+    tim.exit("Pkj and Wkj");
 
     // debug print
     if (debug_ && me == 0) {
@@ -1115,7 +1115,7 @@ MBPT2::compute_cs_grad()
 
     // Update the matrices Pab and Wab with
     // contributions from (occ vir|occ vir) integrals
-    tim_enter("Pab and Wab");
+    tim.enter("Pab and Wab");
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
@@ -1181,7 +1181,7 @@ MBPT2::compute_cs_grad()
           }     // endif
         }       // exit j loop
       }         // exit i loop
-    tim_exit("Pab and Wab");
+    tim.exit("Pab and Wab");
 
     // debug print
     if (debug_ && me == 0) {
@@ -1197,7 +1197,7 @@ MBPT2::compute_cs_grad()
     // here a is active and j is active or
     // frozen
     ///////////////////////////////////////
-    tim_enter("Waj and Laj");
+    tim.enter("Waj and Laj");
 
     // (oo|ov) contribution
     index = 0;
@@ -1255,7 +1255,7 @@ MBPT2::compute_cs_grad()
         }         // exit k loop
       }           // exit i loop
 
-    tim_exit("Waj and Laj");
+    tim.exit("Waj and Laj");
     /////////////////////////////
     // End of Waj and Laj update
     /////////////////////////////
@@ -1292,7 +1292,7 @@ MBPT2::compute_cs_grad()
     ///////////////////////////////////////////////////////////
 
     // Begin first quarter back-transformation
-    tim_enter("1. q.b.t.");
+    tim.enter("1. q.b.t.");
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
@@ -1333,7 +1333,7 @@ MBPT2::compute_cs_grad()
         }         // exit j loop
       }           // exit i loop
     // end of first quarter back-transformation
-    tim_exit("1. q.b.t.");
+    tim.exit("1. q.b.t.");
 
     // debug print
     if (debug_ && me == 0) {
@@ -1364,7 +1364,7 @@ MBPT2::compute_cs_grad()
     // Begin second quarter back-transformation
     // (gamma_iqjs elements ordered as i,j,s,q,
     // i.e., q varies fastest)
-    tim_enter("2. q.b.t.");
+    tim.enter("2. q.b.t.");
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
@@ -1400,7 +1400,7 @@ MBPT2::compute_cs_grad()
           }       // endif
         }         // exit j loop
       }           // exit i loop
-    tim_exit("2. q.b.t.");
+    tim.exit("2. q.b.t.");
     // end of second quarter back-transformation
 
     if (debug_ && me == 0) {
@@ -1434,7 +1434,7 @@ MBPT2::compute_cs_grad()
     // and compute contribution to gradient from non-sep 2PDM
     //////////////////////////////////////////////////////////
 
-    tim_enter("3.qbt+4.qbt+non-sep contrib.");
+    tim.enter("3.qbt+4.qbt+non-sep contrib.");
     sp_g_data.init();
     for (i=0; i<thr_->nthread(); i++) {
       qbt34thread[i]->set_i_offset(i_offset);
@@ -1448,7 +1448,7 @@ MBPT2::compute_cs_grad()
     thr_->start_threads();
     thr_->wait_threads();
 #   endif
-    tim_exit("3.qbt+4.qbt+non-sep contrib.");
+    tim.exit("3.qbt+4.qbt+non-sep contrib.");
     // Add thread contributions to Lpi and ginter
     for (i=0; i<thr_->nthread(); i++) {
       double *Lpi_thread = qbt34thread[i]->get_Lpi();
@@ -1503,7 +1503,7 @@ MBPT2::compute_cs_grad()
       ExEnv::out0() << indent << "Done with pass " << pass+1 << endl;
       }
     }           // exit loop over i-batches (pass)
-  tim_exit("mp2 passes");
+  tim.exit("mp2 passes");
 
   if (dograd || do_d1_) {
     for (i=0; i<thr_->nthread(); i++) {
@@ -1759,7 +1759,7 @@ MBPT2::compute_cs_grad()
     delete[] scf_vector;
     delete[] scf_vector_dat;
     delete[] evals;
-    tim_exit("mp2-mem");
+    tim.exit("mp2-mem");
     return;
     }
 
@@ -1808,7 +1808,7 @@ MBPT2::compute_cs_grad()
   }
 
   // Finish computation of Wab
-  tim_enter("Pab and Wab");
+  tim.enter("Pab and Wab");
   pab_ptr = Pab;
   for (a=0; a<nvir_act; a++) {  // active-active part of Wab
     wba_ptr = &Wab[a];
@@ -1839,13 +1839,13 @@ MBPT2::compute_cs_grad()
       } // exit b loop
     }   // exit a loop
   // Wab is now complete
-  tim_exit("Pab and Wab");
+  tim.exit("Pab and Wab");
   RefSCMatrix Wab_matrix(nvir_dim, nvir_dim, kit);
   Wab_matrix->assign(Wab); // Put elements of Wab into Wab_matrix
   free(Wab);
 
   // Update Wkj with contribution from Pkj
-  tim_enter("Pkj and Wkj");
+  tim.enter("Pkj and Wkj");
   pkj_ptr = Pkj;
   for (k=0; k<nocc; k++) {
     wjk_ptr = &Wkj[k];
@@ -1873,13 +1873,13 @@ MBPT2::compute_cs_grad()
       wjk_ptr += nocc;
       }  // exit j loop
     }    // exit k loop
-  tim_exit("Pkj and Wkj");
+  tim.exit("Pkj and Wkj");
 
   /////////////////////////////////
   // Finish the computation of Laj
   /////////////////////////////////
 
-  tim_enter("Laj");
+  tim.enter("Laj");
 
   RefSCMatrix Cv(nbasis_dim, nvir_dim, kit); // virtual block of scf_vector
   RefSCMatrix Co(nbasis_dim, nocc_dim, kit); // occupied block of scf_vector
@@ -1909,13 +1909,13 @@ MBPT2::compute_cs_grad()
 
   RefSymmSCMatrix Gmat(nbasis_dim,kit);
   init_cs_gmat();
-  tim_enter("make_gmat for Laj");
+  tim.enter("make_gmat for Laj");
   make_cs_gmat_new(Gmat, Dmat_matrix); 
   if (debug_ > 1) {
     Dmat_matrix.print("Dmat");
     Gmat.print("Gmat");
     }
-  tim_exit("make_gmat for Laj");
+  tim.exit("make_gmat for Laj");
 
   // Finish computation of Laj
   RefSCMatrix Laj_matrix(nocc_dim,nvir_dim,kit); // elements are ordered as j*nvir+a
@@ -1925,7 +1925,7 @@ MBPT2::compute_cs_grad()
   if (debug_ > 1) Laj_matrix->print("Laj (all of it)");
   Laj_matrix->convert(Laj);  // Put new Laj_matrix elements into Laj
 
-  tim_exit("Laj");
+  tim.exit("Laj");
 
   //////////////////////////////////////
   // Computation of Laj is now complete
@@ -1935,9 +1935,9 @@ MBPT2::compute_cs_grad()
   // Solve the CPHF equations
   ////////////////////////////
   RefSCMatrix Paj_matrix(nvir_dim, nocc_dim, kit);
-  tim_enter("cphf");
+  tim.enter("cphf");
   cs_cphf(scf_vector, Laj, evals, Paj_matrix);
-  tim_exit("cphf");
+  tim.exit("cphf");
 
   free(Laj);
 
@@ -1957,7 +1957,7 @@ MBPT2::compute_cs_grad()
 
 
   // Finish computation of Wkj
-  tim_enter("Pkj and Wkj");
+  tim.enter("Pkj and Wkj");
   // Compute Dmat_matrix =
   // Co*Pkj_matrix*Co.t() + Co*Paj_matrix.t()*Cv.t()
   // + Cv*Paj_matrix*Co.t() + Cv*Pab_matrix*Cv.t();
@@ -1965,9 +1965,9 @@ MBPT2::compute_cs_grad()
   Dmat_matrix.accumulate_symmetric_sum(Cv*Paj_matrix*Co.t());
   Dmat_matrix.accumulate_transform(Co,Pkj_matrix);
   Dmat_matrix.accumulate_transform(Cv,Pab_matrix);
-  tim_enter("make_gmat for Wkj");
+  tim.enter("make_gmat for Wkj");
   make_cs_gmat_new(Gmat, Dmat_matrix);
-  tim_exit("make_gmat for Wkj");
+  tim.exit("make_gmat for Wkj");
   done_cs_gmat();
   for (i=0; i<thr_->nthread(); i++) tbints_[i] = 0;
   delete[] tbints_; tbints_ = 0;
@@ -1976,7 +1976,7 @@ MBPT2::compute_cs_grad()
   Wkj_matrix = Wkj_matrix - 2*Co.t()*Gmat*Co;
   free(Wkj);
   // Wkj is now complete - not as Wkj but as Wkj_matrix
-  tim_exit("Pkj and Wkj");
+  tim.exit("Pkj and Wkj");
 
   ////////////////////////////////////////////////////////////////
   // We now have the matrices Pkj_matrix, Paj_matrix, Pab_matrix,
@@ -2116,7 +2116,7 @@ MBPT2::compute_cs_grad()
 
   zero_gradients(ginter, natom, 3);
   zero_gradients(hf_ginter, natom, 3);
-  tim_enter("sep 2PDM contrib.");
+  tim.enter("sep 2PDM contrib.");
 
   CSGradS2PDM** s2pdmthread = new CSGradS2PDM*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
@@ -2141,7 +2141,7 @@ MBPT2::compute_cs_grad()
   sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
   delete[] s2pdmthread;
 
-  tim_exit("sep 2PDM contrib.");
+  tim.exit("sep 2PDM contrib.");
   delete[] P2AO;
 
   // The separable 2PDM contribution to the gradient has now been
@@ -2171,9 +2171,9 @@ MBPT2::compute_cs_grad()
 
   zero_gradients(ginter, natom, 3);
   zero_gradients(hf_ginter, natom, 3);
-  tim_enter("hcore contrib.");
+  tim.enter("hcore contrib.");
   hcore_cs_grad(PHF, PMP2, hf_ginter, ginter);
-  tim_exit("hcore contrib.");
+  tim.exit("hcore contrib.");
   delete[] PHF;
   delete[] PMP2;
   // The hcore contribution to the gradient has now been accumulated
@@ -2190,10 +2190,10 @@ MBPT2::compute_cs_grad()
 
   zero_gradients(ginter, natom, 3);
   zero_gradients(hf_ginter, natom, 3);
-  tim_enter("overlap contrib.");
+  tim.enter("overlap contrib.");
   overlap_cs_grad(WHF, WMP2, hf_ginter, ginter);
   delete[] WHF;
-  tim_exit("overlap contrib.");
+  tim.exit("overlap contrib.");
   delete[] WMP2;
   // The overlap contribution to the gradient has now been accumulated
   // in ginter on node 0; add it to the total gradients
@@ -2261,7 +2261,7 @@ MBPT2::compute_cs_grad()
   delete[] scf_vector_dat;
   delete[] evals;
 
-  tim_exit("mp2-mem");
+  tim.exit("mp2-mem");
   }
 
 ///////////////////////////////////////////////////////////

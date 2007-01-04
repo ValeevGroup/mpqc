@@ -32,7 +32,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -60,7 +60,7 @@ R12IntEval::compute_dualEmp2_()
   const int num_te_types = 1;
   enum te_types {eri=0};
 
-  tim_enter("dual-basis MP2 energy");
+  Timer tim("dual-basis MP2 energy");
   ExEnv::out0() << endl << indent
 	       << "Entered dual-basis MP2 energy evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -119,9 +119,9 @@ R12IntEval::compute_dualEmp2_()
         ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
       // Get (|1/r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim.enter("MO ints retrieve");
       double *klxy_buf_eri = ijpq_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
-      tim_exit("MO ints retrieve");
+      tim.exit("MO ints retrieve");
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -153,8 +153,8 @@ R12IntEval::compute_dualEmp2_()
   }
 
   // Tasks that don't do any work here still need to create these timers
-  tim_enter("MO ints retrieve");
-  tim_exit("MO ints retrieve");
+  tim.enter("MO ints retrieve");
+  tim.exit("MO ints retrieve");
 
   ExEnv::out0() << indent << "End of computation of energies" << endl;
   ijpq_acc->deactivate();
@@ -164,7 +164,7 @@ R12IntEval::compute_dualEmp2_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited dual-basis MP2 energy evaluator" << endl;
 
-  tim_exit("dual-basis MP2 energy");
+  tim.exit("dual-basis MP2 energy");
   checkpoint_();
   
   return;
@@ -181,7 +181,7 @@ R12IntEval::compute_dualEmp1_()
   const int num_te_types = 1;
   enum te_types {eri=0};
 
-  tim_enter("dual-basis MP1 energy");
+  Timer tim("dual-basis MP1 energy");
   ExEnv::out0() << endl << indent
 	       << "Entered dual-basis MP1 energy evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -214,7 +214,7 @@ R12IntEval::compute_dualEmp1_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << endl << "Exited dual-basis MP1 energy evaluator" << endl;
 
-  tim_exit("dual-basis MP1 energy");
+  tim.exit("dual-basis MP1 energy");
 }
 
 ////////////////////////////////////////////////////////////////////////////

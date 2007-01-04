@@ -30,7 +30,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 
 using namespace std;
 using namespace sc;
@@ -92,7 +92,7 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   d2.print();
   d3.print();
 
-  tim_enter("matrixtest");
+  Timer tim("matrixtest");
   int i;
   int j;
 
@@ -168,9 +168,9 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   b.print("b");
   c.print("c");
 
-  tim_enter("mxm");
+  tim.enter("mxm");
   RefSCMatrix d = c * b.t();
-  tim_exit("mxm");
+  tim.exit("mxm");
 
   d.print("d");
 
@@ -182,9 +182,9 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   RefSCMatrix bbb(d4,d4,kit);
   aaa.assign(1.0);
   bbb.assign(2.0);
-  tim_enter("mxm2");
+  tim.enter("mxm2");
   RefSCMatrix ccc = aaa*bbb;
-  tim_exit("mxm2");
+  tim.exit("mxm2");
 
   d.print("d later");
 
@@ -298,8 +298,8 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
              + tmp + tmp.t();
   bmbt_test.print("bmbt_test");
 
-  tim_exit("matrixtest");
-  tim_print(0);
+  tim.exit("matrixtest");
+  tim.print();
 }
 
 /////////////////////////////////////////////////////////////////////////////

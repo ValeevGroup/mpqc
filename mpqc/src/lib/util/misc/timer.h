@@ -28,15 +28,25 @@
 #ifndef _util_misc_timer_h
 #define _util_misc_timer_h
 
+#include <scconfig.h>
+
+#ifndef _util_misc_regtime_cc
+#warning "util/misc/timer.h is deprecated"
+#endif
+
 namespace sc {
 
-  void tim_enter(const char *);
-  void tim_exit(const char *);
-  void tim_change(const char *);
-  void tim_set_default(const char *);
-  void tim_enter_default();
-  void tim_exit_default();
-  void tim_print(int);
+  // These functions are all deprecated.  Please see the "Exceptions
+  // and Region Timers" section in the MPQC manual
+  // (http://www.mpqc.org/mpqc-html/develop.html#scexcepttimer) for
+  // information on how to do timing calls in an exception-safe manner.
+  void tim_enter(const char *) DEPRECATED;
+  void tim_exit(const char *) DEPRECATED;
+  void tim_change(const char *) DEPRECATED;
+  void tim_set_default(const char *) DEPRECATED;
+  void tim_enter_default() DEPRECATED;
+  void tim_exit_default() DEPRECATED;
+  void tim_print(int) DEPRECATED;
 
 }
 

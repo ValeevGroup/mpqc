@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -160,14 +160,14 @@ UKS::print(ostream&o) const
 void
 UKS::two_body_energy(double &ec, double &ex)
 {
-  tim_enter("uks e2");
+  Timer tim("uks e2");
   ec = 0.0;
   ex = 0.0;
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *apmat;
     double *bpmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix adens = alpha_ao_density();
     RefSymmSCMatrix bdens = beta_ao_density();
     adens->scale(2.0);
@@ -176,7 +176,7 @@ UKS::two_body_energy(double &ec, double &ex)
     bdens->scale_diagonal(0.5);
     RefSymmSCMatrix aptmp = get_local_data(adens, apmat, SCF::Read);
     RefSymmSCMatrix bptmp = get_local_data(bdens, bpmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
@@ -199,7 +199,7 @@ UKS::two_body_energy(double &ec, double &ex)
     ExEnv::out0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("uks e2");
+  tim.exit("uks e2");
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -272,21 +272,21 @@ UKS::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    Timer tim("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "UKS: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "UKS: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
       
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -390,16 +390,16 @@ UKS::ao_fock(double accuracy)
 void
 UKS::two_body_deriv(double * tbgrad)
 {
-  tim_enter("grad");
+  Timer tim("grad");
 
   int natom3 = 3*molecule()->natom();
 
-  tim_enter("two-body");
+  tim.enter("two-body");
   double *hfgrad = new double[natom3];
   memset(hfgrad,0,sizeof(double)*natom3);
   two_body_deriv_hf(hfgrad,functional_->a0());
   //print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
-  tim_exit("two-body");
+  tim.exit("two-body");
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
@@ -418,7 +418,7 @@ UKS::two_body_deriv(double * tbgrad)
   delete[] dftgrad;
   delete[] hfgrad;
 
-  tim_exit("grad");
+  tim.exit("grad");
 }
 
 /////////////////////////////////////////////////////////////////////////////

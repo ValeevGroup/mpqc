@@ -34,10 +34,13 @@
 
 #include <iostream>
 #include <string>
+#include <list>
+#include <scconfig.h>
 #include <util/class/class.h>
 
 namespace sc {
 
+/** TimedRegion is a helper class for RegionTimer. */
 class TimedRegion {
   private:
     char *name_;
@@ -85,10 +88,9 @@ class TimedRegion {
 };
 
 /** The RegionTimer class is used to record the time spent in a section of
-code.  During the run of a code, enter and exit members are called to begin
-and end timed sections.  The print member is used to display the obtained
-times.  Multiple enter calls for a region with the same name aggregate the
-timings. Nested regions are supported. */
+code.  Except for the creation of an initial RegionTimer, this class should
+usually not be used directly.  Instead use the Timer class to control the
+RegionTimer in an exception safe manner. */
 class RegionTimer: public DescribedClass {
   protected:
     int wall_time_;
@@ -98,6 +100,7 @@ class RegionTimer: public DescribedClass {
     TimedRegion *top_;
     TimedRegion *current_;
     TimedRegion *default_;
+    std::list<TimedRegion*> defaults_;
 
   public:
     RegionTimer(const char *topname = "total",
@@ -145,22 +148,72 @@ called.  The programmer is responsible for making sure that timers are
 exited in the reverse of the order that they are entered.  */
 class Timer {
     Ref<RegionTimer> timer_;
-    std::string name_;
-    bool active_;
+    int depth_;
+    int default_depth_;
+    bool default_entered_;
   public:
     /** Start timing a region using the default RegionTimer and activate
         the timer.  If a null name pointer is given, then the
         timer will not be activated. */
     Timer(const char *name);
+    /** Start timing a region using the default RegionTimer. */
+    Timer(const std::string &name);
     /** Start timing a region using the given RegionTimer. If a null name
         pointer is given, then the timer will not be activated. */
     Timer(const Ref<RegionTimer> &, const char *name);
+    /** Start timing a region using the given RegionTimer. */
+    Timer(const Ref<RegionTimer> &, const std::string &name);
+    /** Construct a Timer object using the giving RegionTimer, but do
+        not begin timing a region. */
+    Timer(const Ref<RegionTimer> &);
+    /** Construct a Timer object using the default RegionTimer and do not
+     * begin timing a region. */
+    Timer();
     /** Stop timing a region, if active. */
     ~Timer();
+    /** Print the timings held by this object's RegionTimer. */
+    void print(std::ostream& = ExEnv::out0()) const;
     /** Stop timing the current region, if active.  If a new region name is
         passed in, start timing with that name.  If no region name is
-        given, the Timer will be deactivated.  */
-    void reset(const char * = 0);
+        given, the Timer will be deactivated.  This member is
+        deprecated. */
+    DEPRECATED void reset(const char * = 0);
+
+    /** Begin timing, using the given timing region name.  Nested regions
+        are supported.  That is, after a region is entered, another may be
+        entered before the first is exited.  The time for the nested region
+        is included in the time for the containing region.  */
+    //@{
+    void enter(const char *region);
+    void enter(const std::string &region) { enter(region.c_str()); }
+    //@}
+    /** Change the current timing region to the one specified by the given
+        name. */
+    //@{
+    void change(const char *region);
+    void change(const std::string &region) { change(region.c_str()); }
+    //@}
+    /** Exit the current timing region.  The name optionally can be given
+        for a consistency check. */
+    //@{
+    void exit(const char *region = 0);
+    void exit(const std::string &region) { this->exit(region.c_str()); }
+    //@}
+    /** Default timing regions are provided as a performance optimization.
+        The set_default member is used to specify the default region.
+        Timing is begun with enter_default, which does not need to lookup
+        the region as the enter member must do.  Timing is stopped with
+        exit_default.  Default regions can be nested, and unset_default
+        restores the default in effect before the previous set_default
+        call.
+    */
+    //@{
+    void set_default(const char *region);
+    void set_default(const std::string &r) { set_default(r.c_str()); }
+    void unset_default();
+    void enter_default();
+    void exit_default();
+    //@}
 };
 
 }

@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -102,12 +102,12 @@ CLHF::ao_fock(double accuracy)
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
-  tim_enter("setup");
+  Timer tim("setup");
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
-  tim_exit("setup");
+  tim.exit("setup");
 
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
@@ -121,16 +121,16 @@ CLHF::ao_fock(double accuracy)
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *gmat, *pmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_diff_, pmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
-    tim_enter("init pmax");
+    tim.enter("init pmax");
     signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
+    tim.exit("init pmax");
   
-    tim_enter("ao_gmat");
+    tim.enter("ao_gmat");
     LocalGBuild<LocalCLHFContribution> **gblds =
       new LocalGBuild<LocalCLHFContribution>*[nthread];
     LocalCLHFContribution **conts = new LocalCLHFContribution*[nthread];
@@ -157,21 +157,21 @@ CLHF::ao_fock(double accuracy)
       threadgrp_->add_thread(i, gblds[i]);
     }
 
-    tim_enter("start thread");
+    tim.enter("start thread");
     if (threadgrp_->start_threads() < 0) {
       ExEnv::err0() << indent
            << "CLHF: error starting threads" << endl;
       abort();
     }
-    tim_exit("start thread");
+    tim.exit("start thread");
 
-    tim_enter("stop thread");
+    tim.enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
       ExEnv::err0() << indent
            << "CLHF: error waiting for threads" << endl;
       abort();
     }
-    tim_exit("stop thread");
+    tim.exit("stop thread");
       
     double tnint=0;
     for (i=0; i < nthread; i++) {
@@ -195,20 +195,20 @@ CLHF::ao_fock(double accuracy)
     scf_grp_->sum(&tnint, 1, 0, 0);
     ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
 
-    tim_exit("ao_gmat");
+    tim.exit("ao_gmat");
 
     // if we're running on multiple processors, then sum the G matrix
-    tim_enter("sum");
+    tim.enter("sum");
     if (scf_grp_->n() > 1)
       scf_grp_->sum(gmat, i_offset(basis()->nbasis()));
-    tim_exit("sum");
+    tim.exit("sum");
 
     // if we're running on multiple processors, or we don't have local
     // matrices, then accumulate gtmp back into G
-    tim_enter("accum");
+    tim.enter("accum");
     if (!local_ || scf_grp_->n() > 1)
       cl_gmat_->convert_accumulate(gtmp);
-    tim_exit("accum");
+    tim.exit("accum");
   }
 
   // for now quit
@@ -217,7 +217,7 @@ CLHF::ao_fock(double accuracy)
     abort();
   }
   
-  tim_enter("symm");
+  tim.enter("symm");
   // get rid of AO delta P
   cl_dens_diff_ = dd;
   dd = cl_dens_diff_.clone();
@@ -232,7 +232,7 @@ CLHF::ao_fock(double accuracy)
   if (debug_>1) {
     dd.print("dd after symmetrize");
   }
-  tim_exit("symm");
+  tim.exit("symm");
 
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
@@ -246,27 +246,27 @@ CLHF::ao_fock(double accuracy)
 void
 CLHF::two_body_energy(double &ec, double &ex)
 {
-  tim_enter("clhf e2");
+  Timer tim("clhf e2");
   ec = 0.0;
   ex = 0.0;
 
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *pmat;
-    tim_enter("local data");
+    tim.enter("local data");
     RefSymmSCMatrix dens = ao_density();
     dens->scale(2.0);
     dens->scale_diagonal(0.5);
     RefSymmSCMatrix ptmp = get_local_data(dens, pmat, SCF::Read);
-    tim_exit("local data");
+    tim.exit("local data");
 
     // initialize the two electron integral classes
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
-    tim_enter("init pmax");
+    tim.enter("init pmax");
     signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
+    tim.exit("init pmax");
   
     LocalCLHFEnergyContribution lclc(pmat);
     Ref<PetiteList> pl = integral()->petite_list();
@@ -284,7 +284,7 @@ CLHF::two_body_energy(double &ec, double &ex)
     ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("clhf e2");
+  tim.exit("clhf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////

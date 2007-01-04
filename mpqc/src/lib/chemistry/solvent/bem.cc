@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <util/misc/math.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math/scmat/local.h>
@@ -245,7 +245,7 @@ BEMSolvent::init_system_matrix()
   RefSCMatrix system_matrix(d,d,matrixkit());
   system_matrix.assign(0.0);
 
-  tim_enter("precomp");
+  Timer tim("precomp");
   // precompute some arrays
   TriangulatedSurfaceIntegrator triint(surf_.pointer());
   int n_integration_points = triint.n();
@@ -270,9 +270,9 @@ BEMSolvent::init_system_matrix()
       sfdA[i] = s * fdA;
       rsfdA[i] = rs * fdA;
     }
-  tim_exit("precomp");
+  tim.exit("precomp");
 
-  tim_enter("sysmat");
+  tim.enter("sysmat");
   double *sysmati = new double[n];
   RefSCVector vsysmati(system_matrix->rowdim(),system_matrix->kit());
   // loop thru all the vertices
@@ -302,7 +302,7 @@ BEMSolvent::init_system_matrix()
       vsysmati->assign(sysmati);
       system_matrix->assign_row(vsysmati,i);
     }
-  tim_exit("sysmat");
+  tim.exit("sysmat");
 
   delete[] surfpv;
   delete[] rfdA;
@@ -313,7 +313,7 @@ BEMSolvent::init_system_matrix()
   delete[] j2;
   delete[] sysmati;
 
-  tim_enter("AV");
+  tim.enter("AV");
   double A = 0.0;
   double V = 0.0;
   for (triint = 0; triint.update(); triint++) {
@@ -322,7 +322,7 @@ BEMSolvent::init_system_matrix()
     }
   area_ = A;
   volume_ = V;
-  tim_exit("AV");
+  tim.exit("AV");
 
   ExEnv::out0() << indent
        << scprintf("Solvent Accessible Surface:") << endl
@@ -336,10 +336,10 @@ BEMSolvent::init_system_matrix()
 
   //system_matrix->print("System Matrix");
 
-  tim_enter("inv");
+  tim.enter("inv");
   system_matrix->invert_this();
   system_matrix_i_ = system_matrix;
-  tim_exit("inv");
+  tim.exit("inv");
 
   //system_matrix_i_->print("System Matrix Inverse");
 }
@@ -347,18 +347,20 @@ BEMSolvent::init_system_matrix()
 void
 BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
 {
+  Timer tim;
+
   if (system_matrix_i_.null()) {
-      tim_enter("sysmat");
+      tim.enter("sysmat");
       init_system_matrix();
-      tim_exit("sysmat");
+      tim.exit("sysmat");
     }
 
-  tim_enter("qenq");
+  tim.enter("qenq");
   double efield_dot_normal = 0.0;
   int n = ncharge();
   for (int i=0; i<n; i++)
       efield_dot_normal += efield_dot_normals[i] * vertex_area_[i];
-  tim_exit("qenq");
+  tim.exit("qenq");
 
   computed_enclosed_charge_ = efield_dot_normal/(4.0*M_PI);
 
@@ -374,7 +376,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
                      computed_expected_charge) << endl;
     }
 
-  tim_enter("scomp");
+  tim.enter("scomp");
   RefSCVector edotn(system_matrix_i_.coldim(),matrixkit());
   edotn.assign(efield_dot_normals);
   //edotn.print("E dot normals");
@@ -382,11 +384,11 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   RefSCVector chrg = system_matrix_i_ * edotn;
   //chrg.print("Charges");
   chrg.convert(charges);
-  tim_exit("scomp");
+  tim.exit("scomp");
 
-  tim_enter("stoq");
+  tim.enter("stoq");
   surface_charge_density_to_charges(charges);
-  tim_exit("stoq");
+  tim.exit("stoq");
 }
 
 double

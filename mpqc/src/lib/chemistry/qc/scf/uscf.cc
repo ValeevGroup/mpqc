@@ -37,7 +37,7 @@
 
 #include <util/state/stateio.h>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 
 #include <math/scmat/local.h>
@@ -943,7 +943,7 @@ UnrestrictedSCF::extrap_error()
 double
 UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
 {
-  tim_enter("vector");
+  Timer tim("vector");
   int i;
 
     // reinitialize the extrapolation object
@@ -975,9 +975,9 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
-    tim_enter("density");
+    tim.enter("density");
     delta = new_density();
-    tim_exit("density");
+    tim.exit("density");
     
     // check convergence
     if (delta < desired_value_accuracy())
@@ -988,11 +988,11 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
       reset_density();
       
     // form the AO basis fock matrix
-    tim_enter("fock");
+    tim.enter("fock");
     double accuracy = 0.01 * delta;
     if (accuracy > 0.0001) accuracy = 0.0001;
     ao_fock(accuracy);
-    tim_exit("fock");
+    tim.exit("fock");
 
     // calculate the electronic energy
     eelec = scf_energy();
@@ -1002,16 +1002,16 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
          << endl;
 
     // now extrapolate the fock matrix
-    tim_enter("extrap");
+    tim.enter("extrap");
     Ref<SCExtrapData> data = extrap_data();
     Ref<SCExtrapError> error = extrap_error();
     extrap_->extrapolate(data,error);
     data=0;
     error=0;
-    tim_exit("extrap");
+    tim.exit("extrap");
 
     // diagonalize effective MO fock to get MO vector
-    tim_enter("evals");
+    tim.enter("evals");
 
     RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
 
@@ -1051,7 +1051,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     osob.diagonalize(evalsb,oso_scf_vector_beta_);
     osob = 0;
 
-    tim_exit("evals");
+    tim.exit("evals");
 
     // now un-level shift eigenvalues
     alevel_shift->set_shift(-level_shift_);
@@ -1119,8 +1119,8 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
   blevel_shift->dereference();
   delete blevel_shift;
 
-  tim_exit("vector");
-  //tim_print(0);
+  tim.exit("vector");
+  //tim.print();
 
   return delta;
 }

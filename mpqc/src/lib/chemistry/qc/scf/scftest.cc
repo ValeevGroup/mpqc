@@ -53,7 +53,6 @@
 using namespace std;
 using namespace sc;
 
-Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
 static Ref<MessageGrp>
@@ -74,8 +73,8 @@ init_mp(const Ref<KeyVal>& keyval)
     debugger->debug("curt is a hog");
   }
   
-  tim = new ParallelRegionTimer(grp,"scftest",1,0);
-  RegionTimer::set_default_regiontimer(tim);
+  RegionTimer::set_default_regiontimer(
+    new ParallelRegionTimer(grp,"scftest",1,0));
 
   SCFormIO::set_printnode(0);
   //SCFormIO::set_debug(1);
@@ -97,7 +96,8 @@ main(int argc, char**argv)
 
   init_mp(rpkv);
 
-  tim->enter("input");
+  Timer tim;
+  tim.enter("input");
   
   if (rpkv->exists("matrixkit")) {
     Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
@@ -121,7 +121,7 @@ main(int argc, char**argv)
     }
   }
 
-  tim->exit("input");
+  tim.exit("input");
 
   if (mole.nonnull()) {
     if (mole->gradient_implemented()) {
@@ -141,7 +141,7 @@ main(int argc, char**argv)
   StateOutBin so("scftest.wfn");
   SavableState::save_state(mole.pointer(),so);
   
-  tim->print(ExEnv::out0());
+  tim.print(ExEnv::out0());
 
   return 0;
 }

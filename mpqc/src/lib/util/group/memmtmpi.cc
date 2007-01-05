@@ -186,6 +186,7 @@ static ClassDesc MTMPIMemoryGrp_cd(
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
                                const Ref<ThreadGrp>& th,
                                MPI_Comm comm):
+  nbuffer_(0),
   ActiveMsgMemoryGrp(msg)
 {
   if (debug_) ExEnv::outn() << "MTMPIMemoryGrp CTOR entered" << endl;
@@ -205,6 +206,11 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
   KeyValValueint nthreaddef(th_->nthread());
   int nthread = keyval->intvalue("num_threads",nthreaddef);
   ExEnv::out0() << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
+
+  KeyValValueint nbufferdef(0);
+  nbuffer_ = keyval->intvalue("num_buffer",nbufferdef);
+  ExEnv::out0() << indent << "MTMPIMemoryGrp: num_buffer = "
+                << nbuffer_ << endl;
 
   init_mtmpimg(MPI_COMM_WORLD,nthread);
 }
@@ -332,14 +338,24 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
       req.print("SEND",mout);
       print_lock_->unlock();
     }
+
+  if (nbuffer_ > 1) {
+      int bufnum = get_request();
+      memcpy(datareqs_[bufnum].data(),req.data(),req.nbytes());
+      MPI_Isend(datareqs_[bufnum].data(),req.nbytes(),MPI_BYTE,
+                node,req_tag_,comm_comm_,&datareqs_mpireq_[bufnum]);
+    }
+  else {
 #ifndef USE_IMMEDIATE_MODE
-  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_tag_,comm_comm_);
+      MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_tag_,comm_comm_);
 #else
-  MPI_Status status;
-  MPI_Request mpireq;
-  MPI_Isend(req.data(),req.nbytes(),MPI_BYTE,node,req_tag_,comm_comm_,&mpireq);
-  MPI_Wait(&mpireq,&status);
+      MPI_Status status;
+      MPI_Request mpireq;
+      MPI_Isend(req.data(),req.nbytes(),MPI_BYTE,
+                node,req_tag_,comm_comm_,&mpireq);
+      MPI_Wait(&mpireq,&status);
 #endif // USE_IMMEDIATE_MODE
+    }
 
   // wait for the go ahead message
 //  MPI_Status status;
@@ -353,15 +369,23 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
       int dchunksize = dbufsize;
       if (dremain < dchunksize) dchunksize = dremain;
       // send the data
+      if (nbuffer_ > 1) {
+          int bufnum = get_buffer();
+          memcpy(databufs_[bufnum],&data[dcurrent],dchunksize*sizeof(double));
+          MPI_Isend(databufs_[bufnum],dchunksize,MPI_DOUBLE,
+                    node,tag,comm_comm_,&databufs_mpireq_[bufnum]);
+        }
+      else {
 #ifndef USE_IMMEDIATE_MODE
-      MPI_Send(&data[dcurrent],dchunksize,MPI_DOUBLE,
-               node,tag,comm_comm_);
+          MPI_Send(&data[dcurrent],dchunksize,MPI_DOUBLE,
+                   node,tag,comm_comm_);
 #else
-      MPI_Request mpireq;
-      MPI_Isend(&data[dcurrent],dchunksize,MPI_DOUBLE,
-               node,tag,comm_comm_,&mpireq);
-      MPI_Wait(&mpireq,&status);
+          MPI_Request mpireq;
+          MPI_Isend(&data[dcurrent],dchunksize,MPI_DOUBLE,
+                    node,tag,comm_comm_,&mpireq);
+          MPI_Wait(&mpireq,&status);
 #endif // USE_IMMEDIATE_MODE
+        }
       dcurrent += dchunksize;
       dremain -= dchunksize;
     }
@@ -382,6 +406,8 @@ MTMPIMemoryGrp::activate()
   if (active_) return;
   active_ = 1;
 
+  if (nbuffer_ > 0) init_buffer();
+
   th_->start_threads();
 }
 
@@ -390,6 +416,10 @@ MTMPIMemoryGrp::deactivate()
 {
   if (!active_) return;
   active_ = 0;
+
+  if (nbuffer_ > 0) {
+      done_buffers();
+    }
 
   // send a shutdown message
   MemoryDataRequest req(MemoryDataRequest::Deactivate);
@@ -452,6 +482,78 @@ MTMPIMemoryGrp::clone()
   ret = new MTMPIMemoryGrp(msg_->clone(), th_->clone(), comp_comm_);
 
   return ret;
+}
+
+// nbuffer_ must be set and > 0 before this is called.
+void
+MTMPIMemoryGrp::init_buffer()
+{
+  current_datareq_index_ = 0;
+  datareqs_.resize(nbuffer_);
+  datareqs_mpireq_.resize(nbuffer_);
+  std::fill(datareqs_mpireq_.begin(), datareqs_mpireq_.end(),
+            MPI_REQUEST_NULL);
+
+  current_data_index_ = 0;
+  databufs_.resize(nbuffer_);
+  databufs_mpireq_.resize(nbuffer_);
+  std::fill(databufs_mpireq_.begin(), databufs_mpireq_.end(),
+            MPI_REQUEST_NULL);
+
+  for (int i=0; i<nbuffer_; i++) databufs_[i] = new double[dbufsize];
+
+  buffer_lock_ = th_->new_lock();
+}
+
+int
+MTMPIMemoryGrp::next_buffer(int &counter,
+                            std::vector<MPI_Request> &reqs)
+{
+  buffer_lock_->lock();
+  int rc = counter;
+  counter++;
+  if (counter>=nbuffer_) counter=0;
+  buffer_lock_->unlock();
+
+  if (reqs[rc] != MPI_REQUEST_NULL) {
+      MPI_Status stat;
+      MPI_Wait(&reqs[rc], &stat);
+      reqs[rc] = MPI_REQUEST_NULL;
+    }
+  
+  return rc;
+}
+
+int
+MTMPIMemoryGrp::get_buffer()
+{
+  int bufnum = next_buffer(current_data_index_,
+                           databufs_mpireq_);
+  return bufnum;
+}
+
+int
+MTMPIMemoryGrp::get_request()
+{
+  int bufnum = next_buffer(current_datareq_index_,
+                           datareqs_mpireq_);
+  return bufnum;
+}
+
+void
+MTMPIMemoryGrp::done_buffers()
+{
+  std::vector<MPI_Status> stats(nbuffer_);
+  MPI_Waitall(nbuffer_, &databufs_mpireq_.front(), &stats.front());
+  MPI_Waitall(nbuffer_, &datareqs_mpireq_.front(), &stats.front());
+
+  datareqs_.resize(0);
+  datareqs_mpireq_.resize(0);
+
+  for (int i=0; i<nbuffer_; i++) delete[] databufs_[i];
+
+  databufs_.resize(0);
+  databufs_mpireq_.resize(0);
 }
 
 #endif

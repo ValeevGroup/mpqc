@@ -34,6 +34,8 @@
 #define _util_group_memmtmpi_h
 
 #include <fstream>
+#include <vector>
+
 #define MPICH_SKIP_MPICXX
 #include <mpi.h>
 
@@ -72,6 +74,27 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     std::ofstream mout; // main thread out
 
     void init_mtmpimg(MPI_Comm comm, int nthreads);
+
+    // Buffer data and manipulation members.
+    int nbuffer_;
+
+    int current_datareq_index_;
+    std::vector<MemoryDataRequest> datareqs_;
+    std::vector<MPI_Request> datareqs_mpireq_;
+
+    int current_data_index_;
+    std::vector<double*> databufs_;
+    std::vector<MPI_Request> databufs_mpireq_;
+    
+    Ref<ThreadLock> buffer_lock_;
+
+    int next_buffer(int &counter);
+    void init_buffer();
+    int next_buffer(int &counter,
+                    std::vector<MPI_Request> &reqs);
+    int get_buffer();
+    int get_request();
+    void done_buffers();
 
     // parent class pure virtuals
     void retrieve_data(void *, int node, long offset, long size, int lock);

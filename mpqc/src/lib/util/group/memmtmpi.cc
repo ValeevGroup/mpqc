@@ -339,7 +339,8 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
       print_lock_->unlock();
     }
 
-  if (nbuffer_ > 1) {
+  if (nbuffer_ > 0) {
+      ThreadLockHolder lock(buffer_lock_);
       int bufnum = get_request();
       memcpy(datareqs_[bufnum].data(),req.data(),req.nbytes());
       MPI_Isend(datareqs_[bufnum].data(),req.nbytes(),MPI_BYTE,
@@ -369,7 +370,8 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
       int dchunksize = dbufsize;
       if (dremain < dchunksize) dchunksize = dremain;
       // send the data
-      if (nbuffer_ > 1) {
+      if (nbuffer_ > 0) {
+          ThreadLockHolder lock(buffer_lock_);
           int bufnum = get_buffer();
           memcpy(databufs_[bufnum],&data[dcurrent],dchunksize*sizeof(double));
           MPI_Isend(databufs_[bufnum],dchunksize,MPI_DOUBLE,
@@ -505,15 +507,15 @@ MTMPIMemoryGrp::init_buffer()
   buffer_lock_ = th_->new_lock();
 }
 
+// The lock must be held from before this is called until
+// after the immediate mode MPI call using the buffer is made.
 int
 MTMPIMemoryGrp::next_buffer(int &counter,
                             std::vector<MPI_Request> &reqs)
 {
-  buffer_lock_->lock();
   int rc = counter;
   counter++;
   if (counter>=nbuffer_) counter=0;
-  buffer_lock_->unlock();
 
   if (reqs[rc] != MPI_REQUEST_NULL) {
       MPI_Status stat;

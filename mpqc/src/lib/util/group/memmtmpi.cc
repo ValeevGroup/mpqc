@@ -62,21 +62,25 @@ class MTMPIThread: public Thread {
     int tag_;
     unsigned int nreq_recd_;
     double chunk[dbufsize];
+    Ref<RegionTimer> timer_;
   public:
-    MTMPIThread(MTMPIMemoryGrp *, int reqtype, int tag);
+    MTMPIThread(MTMPIMemoryGrp *, int reqtype, int tag, bool use_timer);
     void run();
     int run_one();
     unsigned int nreq_recd() { return nreq_recd_; }
     void set_nreq_recd(unsigned int val) { nreq_recd_ = val; }
+    Ref<RegionTimer> timer() { return timer_; }
 };
 
 MTMPIThread::MTMPIThread(MTMPIMemoryGrp *mem,
-                         int reqtype, int tag)
+                         int reqtype, int tag,
+                         bool use_timer)
 {
   mem_ = mem;
   req_tag_ = reqtype;
   tag_ = tag;
   nreq_recd_ = 0;
+  if (use_timer) timer_ = new RegionTimer("MTMPIThread",1,1);
 }
 
 void
@@ -95,6 +99,7 @@ MTMPIThread::run_one()
   long l;
   MemoryDataRequest req;
   MPI_Status status;
+  Timer tim(timer_,"recv_req");
 #ifndef USE_IMMEDIATE_MODE
   MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
            req_tag_,mem_->comm_comm_,&status);
@@ -104,6 +109,7 @@ MTMPIThread::run_one()
            req_tag_,mem_->comm_comm_,&mpireq);
   MPI_Wait(&mpireq,&status);
 #endif // USE_IMMEDIATE_MODE
+  tim.change("handle_req");
   int rtag = req.serial_number();
   if (mem_->debug_) {
       mem_->print_lock_->lock();
@@ -120,6 +126,9 @@ MTMPIThread::run_one()
         }
       assert(req.offset()+req.size() <= mem_->localsize());
     }
+  Timer tim2(timer_);
+  if (timer_.nonnull()) tim2.enter(req.request_string());
+  Timer tim3(timer_);
   switch (req.request()) {
   case MemoryDataRequest::Deactivate:
       return 0;
@@ -145,10 +154,13 @@ MTMPIThread::run_one()
       dsize = req.size()/sizeof(double);
       dremain = dsize;
       doffset = req.offset()/sizeof(double);
+      tim3.enter("obtain_local_lock");
       mem_->obtain_local_lock(req.offset(), req.offset()+req.size());
+      tim3.exit();
       while(dremain>0) {
           int dchunksize = dbufsize;
           if (dremain < dchunksize) dchunksize = dremain;
+          tim3.enter("recv");
 #ifndef USE_IMMEDIATE_MODE
           MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
                    req.node(),rtag ,mem_->comm_comm_,&status);
@@ -158,14 +170,18 @@ MTMPIThread::run_one()
                    req.node(),rtag ,mem_->comm_comm_,&mpireq);
           MPI_Wait(&mpireq,&status);
 #endif // USE_IMMEDIATE_MODE
+          tim3.change("sum");
           double *source_data = &((double*)mem_->data_)[doffset];
           for (i=0; i<dchunksize; i++) {
               source_data[i] += chunk[i];
             }
+          tim3.exit();
           dremain -= dchunksize;
           doffset += dchunksize;
         }
+      tim3.enter("release_local_lock");
       mem_->release_local_lock(req.offset(), req.offset()+req.size());
+      tim3.exit();
       break;
   default:
       mem_->print_lock_->lock();
@@ -211,6 +227,14 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
   nbuffer_ = keyval->intvalue("num_buffer",nbufferdef);
   ExEnv::out0() << indent << "MTMPIMemoryGrp: num_buffer = "
                 << nbuffer_ << endl;
+
+  KeyValValueboolean usetimerdef(false);
+  bool use_timer = keyval->booleanvalue("use_timer",usetimerdef);
+  ExEnv::out0() << indent << "MTMPIMemoryGrp: use_timer = "
+                << use_timer << endl;
+  if (use_timer) {
+      timer_ = new RegionTimer("MTMPIMemoryGrp",1,1);
+    }
 
   init_mtmpimg(MPI_COMM_WORLD,nthread);
 }
@@ -258,7 +282,8 @@ MTMPIMemoryGrp::init_mtmpimg(MPI_Comm comm, int nthread)
   thread_ = new MTMPIThread*[nthread-1];
   th_->add_thread(0,0);
   for (i=1; i<nthread; i++) {
-      thread_[i-1] = new MTMPIThread(this,req_tag_,req_tag_ + i);
+      thread_[i-1] = new MTMPIThread(this,req_tag_,req_tag_ + i,
+                                     timer_.nonnull());
       th_->add_thread(i,thread_[i-1]);
     }
   print_lock_ = th_->new_lock();
@@ -341,8 +366,12 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
 
   if (nbuffer_ > 0) {
       ThreadLockHolder lock(buffer_lock_);
+      Timer tim1(timer_, "sum_data(request)");
+      Timer tim2(timer_, "get_request");
       int bufnum = get_request();
+      tim2.change("memcpy");
       memcpy(datareqs_[bufnum].data(),req.data(),req.nbytes());
+      tim2.change("isend");
       MPI_Isend(datareqs_[bufnum].data(),req.nbytes(),MPI_BYTE,
                 node,req_tag_,comm_comm_,&datareqs_mpireq_[bufnum]);
     }
@@ -372,8 +401,12 @@ MTMPIMemoryGrp::sum_data(double *data, int node, long offset, long size)
       // send the data
       if (nbuffer_ > 0) {
           ThreadLockHolder lock(buffer_lock_);
+          Timer tim1(timer_, "sum_data(data)");
+          Timer tim2(timer_, "get_buffer");
           int bufnum = get_buffer();
+          tim2.change("memcpy");
           memcpy(databufs_[bufnum],&data[dcurrent],dchunksize*sizeof(double));
+          tim2.change("isend");
           MPI_Isend(databufs_[bufnum],dchunksize,MPI_DOUBLE,
                     node,tag,comm_comm_,&databufs_mpireq_[bufnum]);
         }
@@ -407,6 +440,13 @@ MTMPIMemoryGrp::activate()
 
   if (active_) return;
   active_ = 1;
+
+  if (timer_.nonnull()) {
+      timer_->reset();
+      for (int i=0; i<th_->nthread()-1; i++) {
+          thread_[i]->timer()->reset();
+        }
+    }
 
   if (nbuffer_ > 0) init_buffer();
 
@@ -443,6 +483,16 @@ MTMPIMemoryGrp::deactivate()
 
   // wait on the thread to shutdown
   th_->wait_threads();
+
+  if (timer_.nonnull()) {
+      for (int i=0; i<th_->nthread()-1; i++) {
+          timer_->merge(thread_[i]->timer());
+        }
+      Ref<RegionTimer> global_timer = RegionTimer::default_regiontimer();
+      if (global_timer.nonnull()) {
+          global_timer->merge(timer_);
+        }
+    }
 }
 
 void

@@ -42,6 +42,7 @@
 #include <util/group/message.h>
 #include <util/group/memamsg.h>
 #include <util/group/thread.h>
+#include <util/misc/regtime.h>
 
 namespace sc {
 
@@ -74,6 +75,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     std::ofstream mout; // main thread out
 
     void init_mtmpimg(MPI_Comm comm, int nthreads);
+
+    Ref<RegionTimer> timer_;
 
     // Buffer data and manipulation members.
     int nbuffer_;

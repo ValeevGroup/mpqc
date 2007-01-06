@@ -361,6 +361,18 @@ RegionTimer::~RegionTimer()
   delete top_;
 }
 
+void
+RegionTimer::reset()
+{
+  std::string topname(top_->name());
+  delete top_;
+  top_ = new TimedRegion(topname.c_str());
+  if (cpu_time_) top_->cpu_enter(get_cpu_time());
+  if (wall_time_) top_->wall_enter(get_wall_time());
+  if (flops_) top_->flops_enter(get_flops());
+  current_ = top_;
+}
+
 double
 RegionTimer::get_cpu_time() const
 {

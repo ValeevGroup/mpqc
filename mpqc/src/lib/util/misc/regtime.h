@@ -115,6 +115,7 @@ class RegionTimer: public DescribedClass {
     void enter_default();
     void exit_default();
     virtual void print(std::ostream& = ExEnv::out0()) const;
+    void reset();
 
     /// Include the regions in r in this object's regions.
     void merge(const Ref<RegionTimer> &r);

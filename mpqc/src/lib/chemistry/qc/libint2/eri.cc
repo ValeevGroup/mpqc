@@ -37,6 +37,8 @@
 #include <dmalloc.h>
 #endif
 
+#if LIBINT2_SUPPORT_ERI
+
 #define STORE_PAIR_DATA 1
 
 using namespace std;
@@ -198,6 +200,7 @@ EriLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
   return storage_required;
 }
 
+#endif // if LIBINT2_SUPPORT_ERI
 
 /////////////////////////////////////////////////////////////////////////////
 

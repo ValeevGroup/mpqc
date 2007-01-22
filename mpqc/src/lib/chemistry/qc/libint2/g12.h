@@ -41,6 +41,7 @@
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
 
+#if LIBINT2_SUPPORT_G12
 #ifndef _chemistry_qc_libint2_g12_h
 #define _chemistry_qc_libint2_g12_h
 
@@ -143,7 +144,8 @@ class G12Libint2: public Int2eLibint2 {
 
 }
 
-#endif
+#endif // header guard
+#endif // if LIBINT2_SUPPORT_G12
 
 // Local Variables:
 // mode: c++

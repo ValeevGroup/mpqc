@@ -36,6 +36,8 @@
 #include <dmalloc.h>
 #endif
 
+#if LIBINT2_SUPPORT_G12
+
 // Set to 1 to compute R12_2_G12 instead [g12,[t1,g12]]
 #define COMPUTE_R12_2_G12 0
 
@@ -602,6 +604,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   return;
 }
 
+#endif // if LIBINT2_SUPPORT_G12
 
 /////////////////////////////////////////////////////////////////////////////
 

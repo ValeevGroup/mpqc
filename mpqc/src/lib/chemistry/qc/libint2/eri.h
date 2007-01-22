@@ -40,6 +40,8 @@
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
 
+#if LIBINT2_SUPPORT_ERI
+
 #ifndef _chemistry_qc_libint2_eri_h
 #define _chemistry_qc_libint2_eri_h
 
@@ -125,7 +127,8 @@ class Libint2StaticInterface {
 
 }
 
-#endif
+#endif // header guard
+#endif // if LIBINT2_SUPPORT_ERI
 
 // Local Variables:
 // mode: c++

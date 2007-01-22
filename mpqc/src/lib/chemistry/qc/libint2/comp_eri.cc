@@ -35,6 +35,8 @@
 #include <dmalloc.h>
 #endif
 
+#if LIBINT2_SUPPORT_ERI
+
 using namespace std;
 using namespace sc;
 
@@ -498,6 +500,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   return;
 }
 
+#endif // if LIBINT2_SUPPORT_ERI
 
 /////////////////////////////////////////////////////////////////////////////
 

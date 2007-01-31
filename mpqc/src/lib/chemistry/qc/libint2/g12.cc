@@ -129,7 +129,7 @@ G12Libint2::G12Libint2(Integral *integral,
     bs2_->max_angular_momentum() +
     bs3_->max_angular_momentum() +
     bs4_->max_angular_momentum();
-  Fm_Eval_ = new FJT(mmax);
+  Fm_Eval_ = new FJT(mmax+1);
 }
 
 

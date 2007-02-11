@@ -162,6 +162,7 @@ R12IntEval::compute_B_gbc_()
 #endif
     
 #if INCLUDE_GBC1
+    if (!omit_P()) {
 
 #if !COMPUTE_GBC1_AS_FXF
     
@@ -223,7 +224,8 @@ R12IntEval::compute_B_gbc_()
     B_gbc1.scale(-1.0);
     
 #endif // if use compute FxF
-    
+
+    } // omit P ?
 #endif // include GBC1
     
 #if INCLUDE_GBC2

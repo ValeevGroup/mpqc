@@ -331,6 +331,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 			      !ebc_ ||
 			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs) ||
 			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs) ||
+			      (stdapprox_ == LinearR12::StdApprox_App && !abs_eq_obs) ||
                               !basis()->equiv(vir_basis_));
   if (must_use_cabs &&
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
@@ -482,7 +483,7 @@ MBPT2_R12::print(ostream&o) const
   o << incindent;
 
   if (!safety_check())
-    o << indent << "WARNING: ---- safety check SKIPPED ----" << endl;
+    o << indent << "WARNING: ---- safety checks SKIPPED ----" << endl;
   corrfactor()->print(o); o << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;

@@ -107,6 +107,8 @@ class R12IntEval : virtual public SavableState {
   /// Exchange-weighted ABS space |P_K> = K_P^a' |a'>, where a' is a function in RIBS
   Ref<MOIndexSpace> kribs_T_space_[NSpinCases1];
 #endif
+  /// (h+J)-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
+  Ref<MOIndexSpace> hjactocc_obs_space_[NSpinCases1];
   /// Exchange-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
   Ref<MOIndexSpace> kactocc_obs_space_[NSpinCases1];
   /// Exchange-weighted (through OBS) virtual space |a_K> = K_a^p |p>, where p is a function in OBS
@@ -505,6 +507,8 @@ public:
   const Ref<MOIndexSpace>& kocc_act(SpinCase1 S);
   /// Form (h+J)-weighted active occupied space for spin case S
   const Ref<MOIndexSpace>& hjocc_act(SpinCase1 S);
+  /// Form (h+J)-weighted (through OBS) active occupied space for spin case S
+  const Ref<MOIndexSpace>& hjocc_act_obs(SpinCase1 S);
   /// Form exchange-weighted (through OBS) active occupied space for spin case S
   const Ref<MOIndexSpace>& kocc_act_obs(SpinCase1 S);
   /// Form Fock-weighted active virtual space for spin case S

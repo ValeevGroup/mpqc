@@ -68,6 +68,7 @@ R12IntEval::compute_BApp_()
     return;
   
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+  const unsigned int maxnabs = r12info()->maxnabs();
   
   tim_enter("B(app. A'') intermediate");
   ExEnv::out0() << endl << indent
@@ -90,8 +91,17 @@ R12IntEval::compute_BApp_()
     Ref<MOIndexSpace> vir2 = vir(spin2);
 
 #if INCLUDE_Q
-    Ref<MOIndexSpace> hjocc1_act_ribs = hjactocc_ribs(spin1);
-    Ref<MOIndexSpace> hjocc2_act_ribs = hjactocc_ribs(spin2);
+
+    // if can only use 1 RI index, h+J can be resolved by the OBS
+    Ref<MOIndexSpace> hjocc1_act_ribs, hjocc2_act_ribs;
+    if (maxnabs > 1) {
+	hjocc1_act_ribs = hjactocc_ribs(spin1);
+	hjocc2_act_ribs = hjactocc_ribs(spin2);
+    }
+    else {
+	hjocc1_act_ribs = hjocc_act_obs(spin1);
+	hjocc2_act_ribs = hjocc_act_obs(spin2);
+    }
     
     std::string Qlabel = prepend_spincase(spincase2,"Q(A'') intermediate");
     tim_enter(Qlabel.c_str());

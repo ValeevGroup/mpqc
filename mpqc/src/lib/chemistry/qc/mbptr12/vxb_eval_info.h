@@ -233,7 +233,7 @@ public:
   const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
   /** Returns the MOIndexSpace object for RI-BS:
       if CABS/CABS+ -- approximates the complement to OBS,
-      if ABS/ABS+   -- null
+      if ABS/ABS+   -- throw
   */
   const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const;
   /// Returns the MOIntsTransformFactory object

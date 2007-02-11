@@ -1,9 +1,0 @@
-% emacs should use -*- KeyVal -*- mode
-mpqc: (
-  checkpoint = no
-  savestate = no
-  restart = yes
-  restart_file = "h2o-rhf-sto3g.wfn"
-  do_gradient = yes
-)
-

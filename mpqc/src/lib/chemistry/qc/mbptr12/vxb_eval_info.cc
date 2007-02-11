@@ -213,6 +213,15 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)posdef_B_);
 }
 
+const Ref<MOIndexSpace>&
+R12IntEvalInfo::ribs_space(const SpinCase1& S) const
+{
+    if (abs_method() == LinearR12::ABS_CABS || abs_method() == LinearR12::ABS_CABSPlus)
+	return vir_spaces_[S].ri_;
+    else
+	throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
+}
+
 const Ref<SingleRefInfo>&
 R12IntEvalInfo::refinfo() const {
   return refinfo_;

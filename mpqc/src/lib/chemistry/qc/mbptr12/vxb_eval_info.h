@@ -235,7 +235,7 @@ public:
       if CABS/CABS+ -- approximates the complement to OBS,
       if ABS/ABS+   -- null
   */
-  const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const { return vir_spaces_[S].ri_; };
+  const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const;
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
   /// Return the SingleRefInfo object

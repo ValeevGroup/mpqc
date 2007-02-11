@@ -229,9 +229,12 @@ public:
   
   /// Returns the MOIndexSpace object for ABS
   const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
-  /// Returns the MOIndexSpace object for RI-BS
+  /// Returns the MOIndexSpace object for RI-BS: approximates the identity
   const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
-  /// Returns the MOIndexSpace object for RI-BS
+  /** Returns the MOIndexSpace object for RI-BS:
+      if CABS/CABS+ -- approximates the complement to OBS,
+      if ABS/ABS+   -- null
+  */
   const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const { return vir_spaces_[S].ri_; };
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };

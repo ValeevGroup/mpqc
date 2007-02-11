@@ -127,11 +127,14 @@ R12IntEvalInfo::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
-  abs_space_ = orthogonalize("p'","ABS", bs_aux_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
+  abs_space_ = orthogonalize("p'","RIBS", bs_aux_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
   if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
+#if 0
+    // vir_spaces_.ri_ should be a CABS space, not a RIBS space
     vir_spaces_[Alpha].ri_ = ribs_space_;
     vir_spaces_[Beta].ri_ = ribs_space_;
+#endif
   }
 }
 
@@ -149,7 +152,7 @@ R12IntEvalInfo::construct_orthog_ri_()
   if (ribs_space_.nonnull())
     return;
 
-  ribs_space_ = orthogonalize("a'","RI-BS", bs_ri_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
+  ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
 }
 
 bool
@@ -191,20 +194,20 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
     refinfo()->orbs()->coefs().print("All MOs");
     vir_sb_->coefs().print("Virtual MOs (symblocked)");
     vir_act_->coefs().print("Active virtual MOs");
-    ribs_space_->coefs().print("Orthogonal RI-BS");
+    ribs_space_->coefs().print("Orthogonal RIBS");
   }
 
   if (!refinfo()->ref()->spin_polarized()) {
-    ribs_space_ = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
-    ribs_space_ = orthog_comp(vir_sb_, ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Alpha].ri_ = ribs_space_;
-    vir_spaces_[Beta].ri_ = ribs_space_;
+    Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "CABS", refinfo()->ref()->lindep_tol());
+    tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
+    vir_spaces_[Alpha].ri_ = tmp;
+    vir_spaces_[Beta].ri_ = tmp;
   }
   else {
-    Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "A'", "RI-BS (Alpha)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Alpha].ri_ = orthog_comp(vir_sb(Alpha), tmp_a, "A'", "RI-BS (Alpha)", refinfo()->ref()->lindep_tol());
-    Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "a'", "RI-BS (Beta)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Beta].ri_ = orthog_comp(vir_sb(Beta), tmp_b, "a'", "RI-BS (Beta)", refinfo()->ref()->lindep_tol());
+    Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+    vir_spaces_[Alpha].ri_ = orthog_comp(vir_sb(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+    Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    vir_spaces_[Beta].ri_ = orthog_comp(vir_sb(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
   }
 }
 

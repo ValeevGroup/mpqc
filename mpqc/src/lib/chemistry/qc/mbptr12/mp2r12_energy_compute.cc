@@ -85,7 +85,7 @@ MP2R12Energy::compute()
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   // 1) the B matrix is the same for all pairs in approximation A (EBC assumed) or if
   //    the ansatz is diagonal
-  // 2) in approximations A', B, and C the B matrix is pair-specific
+  // 2) in approximations A', A'', B, and C the B matrix is pair-specific
   const bool same_B_for_all_pairs = ( (stdapprox_ == LinearR12::StdApprox_A && 
                                        ebc == true) ||
                                       diag);
@@ -146,10 +146,12 @@ MP2R12Energy::compute()
       else {
         B = r12eval()->B(spincase2);
         // in standard approximation B, add up [K1+K2,F12] term
+#if 1
         if (stdapprox_ == LinearR12::StdApprox_B) {
           RefSymmSCMatrix BB = r12eval()->BB(spincase2);
           B.accumulate(BB);
         }
+#endif
       }
       
       // In Klopper-Samson method, two kinds of A are used: app B (I replace with my A) and app XX (my Ac)
@@ -392,8 +394,8 @@ MP2R12Energy::compute()
           // 
           
           // In approximations A', B, or C matrices B are pair-specific:
-          // app A' or B: form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-          // app C:       form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
+          // app A' or B:  form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+          // app A'' or C: form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
           B_ij.assign(B);
           
           for(int f=0; f<num_f12; f++) {
@@ -422,10 +424,12 @@ MP2R12Energy::compute()
                   if (stdapprox_ != LinearR12::StdApprox_A) {
                     double fx;
                     if (stdapprox_ != LinearR12::StdApprox_C &&
-                      stdapprox_ != LinearR12::StdApprox_App)
+			stdapprox_ != LinearR12::StdApprox_App
+			)
                     fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
-                    - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
-                    * X.get_element(kl,ow);
+				- 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j]
+				)
+		      * X.get_element(kl,ow);
                     else
                       fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
                     

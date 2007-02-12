@@ -93,14 +93,14 @@ R12IntEval::compute_BB_()
     Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
     Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
     Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-    Ref<MOIndexSpace> occ1_act = occ_act(spin1);
-    Ref<MOIndexSpace> occ2_act = occ_act(spin2);
     Ref<MOIndexSpace> vir1 = vir(spin1);
     Ref<MOIndexSpace> vir2 = vir(spin2);
+    const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
+    const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
 
 #if INCLUDE_Q
-    Ref<MOIndexSpace> kocc1_act_obs = kocc_act_obs(spin1);
-    Ref<MOIndexSpace> kocc2_act_obs = kocc_act_obs(spin2);
+    Ref<MOIndexSpace> Kxp1 = K_x_p(spin1);
+    Ref<MOIndexSpace> Kxp2 = K_x_p(spin2);
     
     const LinearR12::ABSMethod absmethod = r12info()->abs_method();
     const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
@@ -115,29 +115,29 @@ R12IntEval::compute_BB_()
     // compute Q
     RefSCMatrix Q;
     if (include_Kp) {
-      compute_X_(Q,spincase2,occ1_act,occ2_act,
-                             occ1_act,kocc2_act_obs);
+	compute_X_(Q,spincase2,xspace1,xspace2,
+ 		               xspace1,Kxp2);
     }
     if (!abs_eq_obs) {
-      Ref<MOIndexSpace> kocc2_act = kocc_act(spin2);
-      compute_X_(Q,spincase2,occ1_act,occ2_act,
-                             occ1_act,kocc2_act);
+	Ref<MOIndexSpace> KxA2 = K_x_A(spin2);
+	compute_X_(Q,spincase2,xspace1,xspace2,
+                               xspace1,KxA2);
     }
-    if (occ1_act != occ2_act) {
+    if (xspace1 != xspace2) {
       if (include_Kp) {
-        compute_X_(Q,spincase2,occ1_act,occ2_act,
-                               kocc1_act_obs,occ2_act);
+	compute_X_(Q,spincase2,xspace1,xspace2,
+		               Kxp1,xspace2);
       }
       if (!abs_eq_obs) {
-        Ref<MOIndexSpace> kocc1_act = kocc_act(spin1);
-        compute_X_(Q,spincase2,occ1_act,occ2_act,
-                               kocc1_act,occ2_act);
+	Ref<MOIndexSpace> KxA1 = K_x_A(spin1);
+        compute_X_(Q,spincase2,xspace1,xspace2,
+		               KxA1,xspace2);
       }
     }
     else {
       Q.scale(2.0);
       if (spincase2 == AlphaBeta) {
-        symmetrize<false>(Q,Q,occ1_act,occ2_act);
+	symmetrize<false>(Q,Q,xspace1,xspace1);
       }
     }
 
@@ -180,8 +180,8 @@ R12IntEval::compute_BB_()
 
         // R_klpB K_pa R_aBij
         compute_FxF_(P,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_obs,kvir2_obs);
@@ -196,8 +196,8 @@ R12IntEval::compute_BB_()
 #if INCLUDE_P_AKB
         // R_klPB K_PA R_ABij
         compute_FxF_(P,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      cabs1,cabs2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
@@ -212,8 +212,8 @@ R12IntEval::compute_BB_()
         Ref<MOIndexSpace> abs2 = r12info()->abs_space();
         // R_klAB K_AP R_PBij
         compute_FxF_(P_AKB,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      cabs1,cabs2,
                      abs1,abs2,
                      kabs1,kabs2);
@@ -224,8 +224,8 @@ R12IntEval::compute_BB_()
 #if INCLUDE_P_AKb
         // R_klPb K_PA R_Abij
         compute_FxF_(P,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      vir1,vir2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
@@ -240,8 +240,8 @@ R12IntEval::compute_BB_()
         Ref<MOIndexSpace> abs2 = r12info()->abs_space();
         // R_klAb K_AP R_Pbij
         compute_FxF_(P_AKb,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      vir1,vir2,
                      abs1,abs2,
                      kabs1,kabs2);
@@ -253,13 +253,13 @@ R12IntEval::compute_BB_()
         // (i a |i a') tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiA;
         {
-          NewTransformCreator tform_creator(thisref,occ1_act,vir1,occ2_act,cabs2,true);
+          NewTransformCreator tform_creator(thisref,xspace1,vir1,xspace2,cabs2,true);
           fill_container(tform_creator,tforms_iaiA);
         }
         // (i a |i p') tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiP;
         {
-          NewTransformCreator tform_creator(thisref,occ1_act,vir1,occ2_act,abs2,true);
+          NewTransformCreator tform_creator(thisref,xspace1,vir1,xspace2,abs2,true);
           fill_container(tform_creator,tforms_iaiP);
         }
 
@@ -270,15 +270,15 @@ R12IntEval::compute_BB_()
         RefSCMatrix F12_ij_aP = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_aP.assign(0.0);
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
           F12_ij_aA, corrfactor()->tbint_type_f12(),
-          occ1_act, vir1,
-          occ2_act, cabs2,
+          xspace1, vir1,
+          xspace2, cabs2,
           spincase2!=AlphaBeta, tforms_iaiA
         );
         F12_ij_aA.print("F12 (aA)");
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
           F12_ij_aP, corrfactor()->tbint_type_f12(),
-          occ1_act, vir1,
-          occ2_act, abs2,
+          xspace1, vir1,
+          xspace2, abs2,
           spincase2!=AlphaBeta, tforms_iaiP
         );
         F12_ij_aP.print("F12 (aP)");
@@ -287,28 +287,28 @@ R12IntEval::compute_BB_()
         // (i a'|i a) tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iAia;
         {
-          NewTransformCreator tform_creator(thisref,occ1_act,cabs1,occ2_act,vir2,true);
+          NewTransformCreator tform_creator(thisref,xspace1,cabs1,xspace2,vir2,true);
           fill_container(tform_creator,tforms_iAia);
         }
         // (i p'|i a) tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iPia;
         {
-          NewTransformCreator tform_creator(thisref,occ1_act,abs1,occ2_act,vir2,true);
+          NewTransformCreator tform_creator(thisref,xspace1,abs1,xspace2,vir2,true);
           fill_container(tform_creator,tforms_iPia);
         }
         RefSCMatrix F12_ij_Aa = localkit->matrix(dim_oo(spincase2),dim_aA);  F12_ij_Aa.assign(0.0);
         RefSCMatrix F12_ij_Pa = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_Pa.assign(0.0);
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
           F12_ij_Aa, corrfactor()->tbint_type_f12(),
-          occ1_act, cabs1,
-          occ2_act, vir2,
+          xspace1, cabs1,
+          xspace2, vir2,
           spincase2!=AlphaBeta, tforms_iAia
         );
         F12_ij_Aa.print("F12 (Aa)");
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
           F12_ij_Pa, corrfactor()->tbint_type_f12(),
-          occ1_act, abs1,
-          occ2_act, vir2,
+          xspace1, abs1,
+          xspace2, vir2,
           spincase2!=AlphaBeta, tforms_iPia
         );
         F12_ij_Pa.print("F12 (Pa)");
@@ -340,7 +340,7 @@ R12IntEval::compute_BB_()
         F12_ij_aAK.print("F12 (aAK)");
         RefSCMatrix P_AKb_expl = F12_ij_aA * F12_ij_aAK.t();
         P_AKb_expl.scale(2.0);
-        symmetrize<false>(P_AKb_expl,P_AKb_expl,occ1_act,occ2_act);
+        symmetrize<false>(P_AKb_expl,P_AKb_expl,xspace1,xspace2);
         P_AKb_expl.print("R_klPb K_PA R_Abij (expl)");
 #endif
         
@@ -351,8 +351,8 @@ R12IntEval::compute_BB_()
         Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
         // R_klPB K_Pa R_aBij
         compute_FxF_(P,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_ribs,kvir2_ribs);
@@ -366,8 +366,8 @@ R12IntEval::compute_BB_()
         Ref<MOIndexSpace> abs2 = r12info()->abs_space();
         // R_klaB K_aP R_PBij
         compute_FxF_(P_aKB,spincase2,
-                     occ1_act,occ2_act,
-                     occ1_act,occ2_act,
+                     xspace1,xspace2,
+                     xspace1,xspace2,
                      cabs1,cabs2,
                      abs1,abs2,
                      kabs1,kabs2);
@@ -383,8 +383,8 @@ R12IntEval::compute_BB_()
       Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
       // R_klPb K_Pa R_abij
       compute_FxF_(P_aKb,spincase2,
-                   occ1_act,occ2_act,
-                   occ1_act,occ2_act,
+		   xspace1,xspace2,
+		   xspace1,xspace2,
                    vir1,vir2,
                    vir1,vir2,
                    kvir1_ribs,kvir2_ribs);

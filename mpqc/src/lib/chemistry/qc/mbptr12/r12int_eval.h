@@ -187,9 +187,17 @@ class R12IntEval : virtual public SavableState {
 		 const Ref<MOIndexSpace>& intspace
       );
   Ref<MOIndexSpace> hj_i_p_[NSpinCases1];
+  Ref<MOIndexSpace> hj_i_A_[NSpinCases1];
   Ref<MOIndexSpace> hj_i_P_[NSpinCases1];
   Ref<MOIndexSpace> hj_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> hj_p_A_[NSpinCases1];
   Ref<MOIndexSpace> hj_p_P_[NSpinCases1];
+  Ref<MOIndexSpace> K_i_p_[NSpinCases1];
+  Ref<MOIndexSpace> K_i_A_[NSpinCases1];
+  Ref<MOIndexSpace> K_i_P_[NSpinCases1];
+  Ref<MOIndexSpace> K_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> K_p_A_[NSpinCases1];
+  Ref<MOIndexSpace> K_p_P_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -572,16 +580,40 @@ public:
 
   /// Form <P|h+J|x> space
   const Ref<MOIndexSpace>& hj_x_P(SpinCase1 S);
+  /// Form <A|h+J|x> space
+  const Ref<MOIndexSpace>& hj_x_A(SpinCase1 S);
   /// Form <p|h+J|x> space
   const Ref<MOIndexSpace>& hj_x_p(SpinCase1 S);
   /// Form <P|h+J|i> space
   const Ref<MOIndexSpace>& hj_i_P(SpinCase1 S);
+  /// Form <A|h+J|i> space
+  const Ref<MOIndexSpace>& hj_i_A(SpinCase1 S);
   /// Form <p|h+J|i> space
   const Ref<MOIndexSpace>& hj_i_p(SpinCase1 S);
   /// Form <P|h+J|p> space
   const Ref<MOIndexSpace>& hj_p_P(SpinCase1 S);
+  /// Form <A|h+J|p> space
+  const Ref<MOIndexSpace>& hj_p_A(SpinCase1 S);
   /// Form <p|h+J|p> space
   const Ref<MOIndexSpace>& hj_p_p(SpinCase1 S);
+  /// Form <P|K|x> space
+  const Ref<MOIndexSpace>& K_x_P(SpinCase1 S);
+  /// Form <A|K|x> space
+  const Ref<MOIndexSpace>& K_x_A(SpinCase1 S);
+  /// Form <p|K|x> space
+  const Ref<MOIndexSpace>& K_x_p(SpinCase1 S);
+  /// Form <P|K|i> space
+  const Ref<MOIndexSpace>& K_i_P(SpinCase1 S);
+  /// Form <A|K|i> space
+  const Ref<MOIndexSpace>& K_i_A(SpinCase1 S);
+  /// Form <p|K|i> space
+  const Ref<MOIndexSpace>& K_i_p(SpinCase1 S);
+  /// Form <P|K|p> space
+  const Ref<MOIndexSpace>& K_p_P(SpinCase1 S);
+  /// Form <A|K|p> space
+  const Ref<MOIndexSpace>& K_p_A(SpinCase1 S);
+  /// Form <p|K|p> space
+  const Ref<MOIndexSpace>& K_p_p(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

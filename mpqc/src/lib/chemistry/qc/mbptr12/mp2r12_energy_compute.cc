@@ -124,16 +124,22 @@ MP2R12Energy::compute()
       
       const Ref<MOIndexSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
       const Ref<MOIndexSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
+      const Ref<MOIndexSpace>& xspace1  = r12eval()->xspace(case1(spincase2));
       const Ref<MOIndexSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
       const Ref<MOIndexSpace>& vir2_act = r12eval()->vir_act(case2(spincase2));
+      const Ref<MOIndexSpace>& xspace2  = r12eval()->xspace(case2(spincase2));
       int nocc1_act = occ1_act->rank();
       int nvir1_act = vir1_act->rank();
+      int nx1 = xspace1->rank();
       int nocc2_act = occ2_act->rank();
       int nvir2_act = vir2_act->rank();
+      int nx2 = xspace2->rank();
       const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
       const std::vector<double> evals_act_vir1 = convert(vir1_act->evals());
+      const std::vector<double> evals_xspace1  = convert(xspace1->evals());
       const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
       const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
+      const std::vector<double> evals_xspace2  = convert(xspace2->evals());
       
       // Get the intermediates V and X
       RefSCMatrix V = r12eval()->V(spincase2);
@@ -171,13 +177,15 @@ MP2R12Energy::compute()
         continue;
       const int nxc = dim_xc.n();
       const int num_f12 = r12info->corrfactor()->nfunctions();
+      const int nxy = nxc / num_f12;
+      RefSCDimension dim_xy = new SCDimension(nxy);
 
       // util class treats abstractly on dense and "diagonal" matrices used in orb-invariant and non-orb-invariant ansatze
       Ref<MP2R12EnergyUtil_base> util;
       if (diag)
-        util = new MP2R12EnergyUtil<true>(dim_oo, dim_xc);
+        util = new MP2R12EnergyUtil<true>(dim_oo, dim_oo, dim_xc);
       else
-        util = new MP2R12EnergyUtil<false>(dim_oo, dim_xc);
+        util = new MP2R12EnergyUtil<false>(dim_oo, dim_xy, dim_xc);
       
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
@@ -290,30 +298,30 @@ MP2R12Energy::compute()
       if (same_B_for_all_pairs) {
         RefSymmSCMatrix B_ij = B.clone();
 	B_ij.assign(B);
-        SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-        for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
-          const int ij = ij_iter.ij();
-          const int i = ij_iter.i();
-          const int j = ij_iter.j();
+        SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
+        for(xy_iter.start(); int(xy_iter); xy_iter.next()) {
+          const int xy = xy_iter.ij();
+          const int x = xy_iter.i();
+          const int y = xy_iter.j();
           
           for(int f=0; f<num_f12; f++) {
-            const int f_off = f*noo;
-            const int ijf = f_off + ij;
+            const int f_off = f*nxy;
+            const int xyf = f_off + xy;
             
             for(int g=0; g<=f; g++) {
-              const int g_off = g*noo;
-              const int ijg = g_off + ij;
+              const int g_off = g*nxy;
+              const int xyg = g_off + xy;
               
-              // contribution from X still appears in approximations C and A''
+              // contribution from X still appears in approximations C and A'', but in this case the ansatz is diagonal and xy and ij spaces are the same
               if (stdapprox_ != LinearR12::StdApprox_A) {
                 if (stdapprox_ == LinearR12::StdApprox_C ||
 		    stdapprox_ == LinearR12::StdApprox_App) {
-                  double fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(ijf,ijg);
-                  B_ij.accumulate_element(ijf,ijg,fx);
+                  double fx = - (evals_xspace1[x] + evals_xspace2[y]) * X.get_element(xyf,xyg);
+                  B_ij.accumulate_element(xyf,xyg,fx);
 		}
               }
                   
-              // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+              // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
               if (ebc == false) {
                 double fy = 0.0;
                 SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
@@ -323,9 +331,9 @@ MP2R12Energy::compute()
                     const int c = cd_iter.i();
                     const int d = cd_iter.j();
                     
-                    fy -= 0.5*( A.get_element(ijf,cd)*Ac.get_element(ijg,cd) + Ac.get_element(ijf,cd)*A.get_element(ijg,cd) )/
+                    fy -= 0.5*( A.get_element(xyf,cd)*Ac.get_element(xyg,cd) + Ac.get_element(xyf,cd)*A.get_element(xyg,cd) )/
                     (evals_act_vir1[c] + evals_act_vir2[d]
-                    - evals_act_occ1[i] - evals_act_occ2[j]);
+                    - evals_xspace1[x] - evals_xspace2[y]);
                   }
                 }
                 else {
@@ -334,12 +342,12 @@ MP2R12Energy::compute()
                     const int c = cd_iter.i();
                     const int d = cd_iter.j();
                     
-                    fy -= A.get_element(ijf,cd)*A.get_element(ijg,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                    - evals_act_occ1[i] - evals_act_occ2[j]);
+                    fy -= A.get_element(xyf,cd)*A.get_element(xyg,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
+                    - evals_act_occ1[x] - evals_act_occ2[y]);
                   }
                 }
                 
-                B_ij.accumulate_element(ijf,ijg,fy);
+                B_ij.accumulate_element(xyf,xyg,fy);
               }
             }
           }
@@ -399,18 +407,18 @@ MP2R12Energy::compute()
           B_ij.assign(B);
           
           for(int f=0; f<num_f12; f++) {
-            const int f_off = f*noo;
+            const int f_off = f*nxy;
             
-            SpinMOPairIter kl_iter(occ1_act, occ2_act, spincase2);
+            SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
             for(kl_iter.start(); kl_iter; kl_iter.next()) {
               const int kl = kl_iter.ij() + f_off;
               const int k = kl_iter.i();
               const int l = kl_iter.j();
               
               for(int g=0; g<=f; g++) {
-                const int g_off = g*noo;
+                const int g_off = g*nxy;
                 
-                SpinMOPairIter ow_iter(occ1_act, occ2_act, spincase2);
+                SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
                 for(ow_iter.start(); ow_iter; ow_iter.next()) {
                   const int ow = ow_iter.ij() + g_off;
                   const int o = ow_iter.i();
@@ -426,7 +434,7 @@ MP2R12Energy::compute()
                     if (stdapprox_ != LinearR12::StdApprox_C &&
 			stdapprox_ != LinearR12::StdApprox_App
 			)
-                    fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
+                    fx = 0.5 * (evals_xspace1[k] + evals_xspace2[l] + evals_xspace1[o] + evals_xspace2[w]
 				- 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j]
 				)
 		      * X.get_element(kl,ow);

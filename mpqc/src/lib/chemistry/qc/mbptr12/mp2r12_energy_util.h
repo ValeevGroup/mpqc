@@ -74,14 +74,17 @@ namespace sc {
   };
   
   /** Class MP2R12EnergyUtil provides some misc functions to operate on (blocked)
-      occ-occ matrices. If Diag is true, then each occ-occ block has nonzero diagonal.
+      ijxy and xyxy matrices. If Diag is true, then each xy block is the same size as ij, and ijxy and xyxy blocks are "diagonal".
       f12-f12 matrix then has nf12 by nf12 blocks, each with diagonal structure.
   */
   template <bool Diag>
     class MP2R12EnergyUtil : public MP2R12EnergyUtil_base {
     public:
-    /// oodim is a dimension of active occupied pairs. f12dim is has rank nf12*noo.
+    /// oodim is a dimension of ij (active occupied pairs)
+    /// xydim is a dimension of xy (orbital products used to generate geminal space)
+    /// f12dim is has rank nf12*nxy.
     MP2R12EnergyUtil(const RefSCDimension& oodim,
+		     const RefSCDimension& xydim,
                      const RefSCDimension& f12dim);
     ~MP2R12EnergyUtil() {}
     
@@ -112,9 +115,11 @@ namespace sc {
                             const RefSCMatrix& B) const;
     
     private:
-    // number of pairs
+    // number of ij pairs
     RefSCDimension oodim_;
-    // number of geminals per pair times number of pairs
+    // number of xy pairs
+    RefSCDimension xydim_;
+    // number of geminals per pair times number of xy pairs
     RefSCDimension f12dim_;
     // number of geminals
     RefSCDimension gdim_;
@@ -126,11 +131,11 @@ namespace sc {
     /// Checks if matrix A has proper dimensions. Throw, if not.
     void check_dims(const RefSymmSCMatrix& A) const;
     /// Number of oo blocks in row dimension of A
-    unsigned int nrowblks(const RefSCMatrix& A) const { check_dims(A); return A.rowdim().n()/oodim_.n(); }
+    unsigned int nrowblks(const RefSCMatrix& A) const;
     /// Number of oo blocks in column dimension of A
-    unsigned int ncolblks(const RefSCMatrix& A) const { check_dims(A); return A.coldim().n()/oodim_.n(); }
+    unsigned int ncolblks(const RefSCMatrix& A) const;
     /// Number of oo blocks in dimension of A
-    unsigned int nblks(const RefSymmSCMatrix& A) const { check_dims(A); return A.dim().n()/oodim_.n(); }
+    unsigned int nblks(const RefSymmSCMatrix& A) const;
     
     /// gets ij block of A
     void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
@@ -152,12 +157,15 @@ namespace sc {
   
   template<bool Diag>
     MP2R12EnergyUtil<Diag>::MP2R12EnergyUtil(const RefSCDimension& oodim,
-                                       const RefSCDimension& f12dim) :
-       oodim_(oodim), f12dim_(f12dim), nf12_(f12dim.n()/oodim.n())
+					     const RefSCDimension& xydim,
+					     const RefSCDimension& f12dim) :
+    oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n())
     {
       gdim_ = new SCDimension(nf12_);
-      if (f12dim_.n()%oodim_.n())
-        throw ProgrammingError("MP2R12EnergyUtils::MP2R12EnergyUtils -- rank of f12dim must be divisible by rank of oodim",__FILE__,__LINE__);
+      if (f12dim_.n()%xydim_.n())
+        throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+      if (Diag && oodim_.n() != xydim_.n())
+	throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
     }
   
   template <bool Diag>
@@ -174,7 +182,7 @@ namespace sc {
     void MP2R12EnergyUtil<Diag>::check_dims(const RefSymmSCMatrix& A) const
     {
       const int n = A.dim().n();
-      if (n != f12dim_.n() && n != oodim_.n())
+      if (n != f12dim_.n())
         throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
     }
 

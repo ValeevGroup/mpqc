@@ -79,28 +79,20 @@ R12IntEval::compute_BApp_()
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-    Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-    Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-    Ref<MOIndexSpace> occ1_act = occ_act(spin1);
-    Ref<MOIndexSpace> occ2_act = occ_act(spin2);
-    Ref<MOIndexSpace> vir1 = vir(spin1);
-    Ref<MOIndexSpace> vir2 = vir(spin2);
+    Ref<MOIndexSpace> xspace1 = xspace(spin1);
+    Ref<MOIndexSpace> xspace2 = xspace(spin2);
 
 #if INCLUDE_Q
 
     // if can only use 1 RI index, h+J can be resolved by the OBS
-    Ref<MOIndexSpace> hjocc1_act_ribs, hjocc2_act_ribs;
+    Ref<MOIndexSpace> hj_x1, hj_x2;
     if (maxnabs > 1) {
-	hjocc1_act_ribs = hjactocc_ribs(spin1);
-	hjocc2_act_ribs = hjactocc_ribs(spin2);
+	hj_x1 = hj_x_P(spin1);
+	hj_x2 = hj_x_P(spin2);
     }
     else {
-	hjocc1_act_ribs = hjocc_act_obs(spin1);
-	hjocc2_act_ribs = hjocc_act_obs(spin2);
+	hj_x1 = hj_x_p(spin1);
+	hj_x2 = hj_x_p(spin2);
     }
     
     std::string Qlabel = prepend_spincase(spincase2,"Q(A'') intermediate");
@@ -109,18 +101,18 @@ R12IntEval::compute_BApp_()
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
     
-    // compute Q = X_{ij}^{kl_{hj}}
+    // compute Q = X_{xy}^{xy_{hj}}
     RefSCMatrix Q;
-    compute_X_(Q,spincase2,occ1_act,occ2_act,
-               occ1_act,hjocc2_act_ribs,false);
-    if (occ1_act != occ2_act) {
-      compute_X_(Q,spincase2,occ1_act,occ2_act,
-                 hjocc1_act_ribs,occ2_act,false);
+    compute_X_(Q,spincase2,xspace1,xspace2,
+               xspace1,hj_x2,false);
+    if (xspace1 != xspace2) {
+      compute_X_(Q,spincase2,xspace1,xspace2,
+                 hj_x1,xspace2,false);
     }
     else {
       Q.scale(2.0);
       if (spincase2 == AlphaBeta) {
-        symmetrize<false>(Q,Q,occ1_act,occ2_act);
+        symmetrize<false>(Q,Q,xspace1,xspace1);
       }
     }
 

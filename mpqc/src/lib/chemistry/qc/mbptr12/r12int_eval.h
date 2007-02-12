@@ -72,6 +72,7 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
+  RefSCDimension dim_xy_[NSpinCases2];
   
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
@@ -173,6 +174,23 @@ class R12IntEval : virtual public SavableState {
   /// Form Fock-weighted (through CABS) OBS space for spin case S
   void form_fobs_cabs(SpinCase1 S);
 
+  /// This is the new way to generate needed spaces
+  /// generates fock, h+J, or K weighted spaces
+  void f_bra_ket(SpinCase1 spin,
+		 bool make_F,
+		 bool make_hJ,
+		 bool make_K,
+		 Ref<MOIndexSpace>& F,
+		 Ref<MOIndexSpace>& hJ,
+		 Ref<MOIndexSpace>& K,
+		 const Ref<MOIndexSpace>& extspace,
+		 const Ref<MOIndexSpace>& intspace
+      );
+  Ref<MOIndexSpace> hj_i_p_[NSpinCases1];
+  Ref<MOIndexSpace> hj_i_P_[NSpinCases1];
+  Ref<MOIndexSpace> hj_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> hj_p_P_[NSpinCases1];
+
   /// Initialize standard transforms
   void init_tforms_();
   /// Set intermediates to zero + add the "diagonal" contributions
@@ -219,6 +237,8 @@ class R12IntEval : virtual public SavableState {
                              const Ref<MOIndexSpace>& yspace,
                              SpinCase2 spincase,
                              const Ref<LinearR12::TwoParticleContraction>& tpcontract);
+  /// New version which uses tensor contract functions
+  void contrib_to_VXB_a_();
 
 #if 0
   /// Compute MP2 pair energies of spin case S
@@ -451,8 +471,10 @@ public:
   RefSCDimension dim_oo(SpinCase2 S) const;
   /// Dimension for active-vir/active-vir pairs of spin case S
   RefSCDimension dim_vv(SpinCase2 S) const;
-  /// Dimension for geminal functions of spin case S
+  /// Dimension for geminal functions of spin case S = # of correlation factors x dim_xy
   RefSCDimension dim_f12(SpinCase2 S) const;
+  /// Dimension of orbital product space used to generate geminal functions
+  RefSCDimension dim_xy(SpinCase2 S) const;
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
@@ -499,6 +521,8 @@ public:
   const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
   /// Returns the vir space for spin case S
   const Ref<MOIndexSpace>& vir(SpinCase1 S) const;
+  /// Returns the geminal-generating orbital space for spin case S
+  const Ref<MOIndexSpace>& xspace(SpinCase1 S) const;
   /// Form Fock-weighted occupied space for spin case S
   const Ref<MOIndexSpace>& focc(SpinCase1 S);
   /// Form Fock-weighted active occupied space for spin case S
@@ -545,6 +569,19 @@ public:
   const Ref<MOIndexSpace>& focc_ribs(SpinCase1 S);
   /// Form Fock-weighted (through CABS) OBS space for spin case S
   const Ref<MOIndexSpace>& fobs_cabs(SpinCase1 S);
+
+  /// Form <P|h+J|x> space
+  const Ref<MOIndexSpace>& hj_x_P(SpinCase1 S);
+  /// Form <p|h+J|x> space
+  const Ref<MOIndexSpace>& hj_x_p(SpinCase1 S);
+  /// Form <P|h+J|i> space
+  const Ref<MOIndexSpace>& hj_i_P(SpinCase1 S);
+  /// Form <p|h+J|i> space
+  const Ref<MOIndexSpace>& hj_i_p(SpinCase1 S);
+  /// Form <P|h+J|p> space
+  const Ref<MOIndexSpace>& hj_p_P(SpinCase1 S);
+  /// Form <p|h+J|p> space
+  const Ref<MOIndexSpace>& hj_p_p(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

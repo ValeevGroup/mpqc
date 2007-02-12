@@ -200,6 +200,11 @@ namespace sc {
 		    ABS_CABS = 2,
 		    ABS_CABSPlus = 3};
 
+    enum OrbitalProduct {
+	OrbProd_ij = 0,
+	OrbProd_pq = 1
+    };
+
     enum PositiveDefiniteB {
       PositiveDefiniteB_no = 0,
       PositiveDefiniteB_yes = 1,

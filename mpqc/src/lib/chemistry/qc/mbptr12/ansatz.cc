@@ -28,19 +28,30 @@
 #include <chemistry/qc/mbptr12/ansatz.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
+#include <util/class/scexception.h>
 
 using namespace sc;
 
 static ClassDesc LinearR12Ansatz_cd(
-  typeid(LinearR12Ansatz),"LinearR12Ansatz",1,"virtual public SavableState",
+  typeid(LinearR12Ansatz),"LinearR12Ansatz",2,"virtual public SavableState",
   create<LinearR12Ansatz>, create<LinearR12Ansatz>, create<LinearR12Ansatz>);
 
-LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false) {}
+LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), orbital_product_(LinearR12::OrbProd_ij) {}
 
 LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
   projector_ = (LinearR12::Projector)keyval->intvalue("projector",KeyValValueint(2));
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
+  std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
+  if (op == "ij")
+    orbital_product_ = LinearR12::OrbProd_ij;
+  else if (op == "pq")
+    orbital_product_ = LinearR12::OrbProd_pq;
+  else
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- invalid value for orbital_product",__FILE__,__LINE__);
+  if (orbital_product_ != LinearR12::OrbProd_ij && diag_) {
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- diagonal ansatz only allowed when orbital_product = ij",__FILE__,__LINE__);
+  }
 }
 
 LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
@@ -48,6 +59,9 @@ LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
 {
   int p; s.get(p); projector_ = (LinearR12::Projector)p;
   int d; s.get(d); diag_ = (bool)d;
+  if (s.version(::class_desc<LinearR12Ansatz>()) >= 2) {
+    int o; s.get(o); orbital_product_ = (LinearR12::OrbitalProduct)o;
+  }
 }
 
 LinearR12Ansatz::~LinearR12Ansatz() {}
@@ -57,6 +71,7 @@ LinearR12Ansatz::save_data_state(StateOut& s)
 {
   s.put((int)projector_);
   s.put((int)diag_);
+  s.put((int)orbital_product_);
 }
 
 void
@@ -64,6 +79,13 @@ LinearR12Ansatz::print(std::ostream& o) const
 {
   o << indent << "LinearR12Ansatz:" << std::endl;
   o << incindent;
+
+  o << indent << "Orbital Product Space: ";
+  switch(orbital_product_) {
+    case LinearR12::OrbProd_ij: o << "ij"; break;
+    case LinearR12::OrbProd_pq: o << "pq"; break;
+  }
+  o << std::endl;
 
   o << indent << "Projector: ";
   switch(projector_) {
@@ -82,3 +104,5 @@ LinearR12Ansatz::projector() const { return projector_; }
 bool
 LinearR12Ansatz::diag() const { return diag_; }
 
+LinearR12::OrbitalProduct
+LinearR12Ansatz::orbital_product() const { return orbital_product_; }

@@ -43,6 +43,32 @@ MP2R12EnergyUtil_base::~MP2R12EnergyUtil_base()
 
 namespace sc {
 
+  // number of blocks should only be needed for diagonal ansatze
+  template<>
+  unsigned int MP2R12EnergyUtil<true>::nrowblks(const RefSCMatrix& A) const {
+    check_dims(A); return A.rowdim().n()/oodim_.n();
+  }
+  template<>
+  unsigned int MP2R12EnergyUtil<true>::ncolblks(const RefSCMatrix& A) const {
+    check_dims(A); return A.coldim().n()/oodim_.n();
+  }
+  template<>
+  unsigned int MP2R12EnergyUtil<true>::nblks(const RefSymmSCMatrix& A) const {
+    check_dims(A); return A.dim().n()/oodim_.n();
+  }
+  template<>
+  unsigned int MP2R12EnergyUtil<false>::nrowblks(const RefSCMatrix& A) const {
+    throw ProgrammingError("MP2R12EnergyUtil<false>::nrowblks -- should not be used when Diag=false",__FILE__,__LINE__);
+  }
+  template<>
+  unsigned int MP2R12EnergyUtil<false>::ncolblks(const RefSCMatrix& A) const {
+    throw ProgrammingError("MP2R12EnergyUtil<false>::ncolblks -- should not be used when Diag=false",__FILE__,__LINE__);
+  }
+  template<>
+  unsigned int MP2R12EnergyUtil<false>::nblks(const RefSymmSCMatrix& A) const {
+    throw ProgrammingError("MP2R12EnergyUtil<false>::nblks -- should not be used when Diag=false",__FILE__,__LINE__);
+  }
+
   // put/get can only be implemented when Diag=true
   template<>
     void MP2R12EnergyUtil<true>::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const
@@ -303,7 +329,7 @@ namespace sc {
           A.coldim().n() != oodim_.n() ||
           A.rowdim().n() != f12dim_.n()
          )
-         throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimentions do not match",__FILE__,__LINE__);
+         throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimensions do not match",__FILE__,__LINE__);
       RefSCMatrix AB = A.t() * B;
       const int noo = oodim_.n();
       RefSCVector result = AB.kit()->vector(oodim_);

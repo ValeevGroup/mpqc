@@ -44,6 +44,15 @@ namespace sc {
     /** The KeyVal constructor.
     <dl>
     
+    <dt><tt>orbital_product</tt><dd> This specifies how the geminal space is generated.
+    Geminal functions are products of the correlation factor and 2 orbitals.
+    This keyword specifies which orbital products are allowed.
+    Valid choices are:
+      <dl>
+        <dt><tt>ij</tt><dd> Biproducts of occupied orbitals. This is the default.
+        <dt><tt>pq</tt><dd> Biproducts of any Hartree-Fock orbitals. This has not been implemented yet.
+      </dl>
+
     <dt><tt>projector</tt><dd> This specifies the form of the orthogonal projector.
     Valid values are:
       <dl>
@@ -69,10 +78,12 @@ namespace sc {
     
     LinearR12::Projector projector() const;
     bool diag() const;
+    LinearR12::OrbitalProduct orbital_product() const;
     
     private:
     LinearR12::Projector projector_;
     bool diag_;
+    LinearR12::OrbitalProduct orbital_product_;
   };
   
 }

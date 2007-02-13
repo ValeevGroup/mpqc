@@ -263,6 +263,8 @@ R12IntsAcc_Node0File::activate()
   if (taskid() == 0)
 #endif
     datafile_ = open(filename_, O_RDONLY);
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 void
@@ -274,6 +276,8 @@ R12IntsAcc_Node0File::deactivate()
 #endif
     close(datafile_);
   R12IntsAcc::deactivate();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 double *
@@ -285,6 +289,10 @@ R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
     struct PairBlkInfo *pb = &pairblk_[ij];
     // Always first check if it's already in memory
     if (pb->ints_[oper_type] == 0) {
+
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "retrieving block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+
       off_t offset = pb->offset_ + (off_t)oper_type*blksize_;
       off_t result_offset = lseek(datafile_,offset,SEEK_SET);
       if (offset == (off_t)-1 || result_offset != offset)
@@ -325,6 +333,8 @@ R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type)
       throw std::runtime_error("Logic error: R12IntsAcc_Node0File::release_pair_block: refcount is already zero!");
     }
     if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
+      if (classdebug() > 0)
+	ExEnv::out0() << indent << "releasing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
       delete[] pb->ints_[oper_type];
       pb->ints_[oper_type] = NULL;
     }

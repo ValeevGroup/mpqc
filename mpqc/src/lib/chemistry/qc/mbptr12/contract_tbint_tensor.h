@@ -555,7 +555,8 @@ namespace sc {
 
               } // bra loop
             } // loop over tasks with access
-	    accumk->deactivate();
+	    if (accumb != accumk)
+	      accumk->deactivate();
 	  } // ket blocks
 	  accumb->deactivate();
 	} // bra blocks

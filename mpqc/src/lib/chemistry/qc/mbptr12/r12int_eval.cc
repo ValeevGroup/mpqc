@@ -376,7 +376,7 @@ R12IntEval::V(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],
-                   occ_act(Alpha),
+                   xspace(Alpha),
                    occ_act(Alpha));
   return V_[S];
 }
@@ -402,8 +402,8 @@ R12IntEval::X(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
-                   occ_act(Alpha),
-                   occ_act(Alpha));
+                   xspace(Alpha),
+                   xspace(Alpha));
   return to_lower_triangle(X_[S]);
 }
 
@@ -412,8 +412,8 @@ R12IntEval::B(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],
-                   occ_act(Alpha),
-                   occ_act(Alpha));
+                   xspace(Alpha),
+                   xspace(Alpha));
   return to_lower_triangle(B_[S]);
 }
 
@@ -424,8 +424,8 @@ R12IntEval::BB(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(BB_[AlphaAlpha],BB_[AlphaBeta],
-                   occ_act(Alpha),
-                   occ_act(Alpha));
+                   xspace(Alpha),
+                   xspace(Alpha));
   return to_lower_triangle(BB_[S]);
 }
 
@@ -436,8 +436,8 @@ R12IntEval::BC(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(BC_[AlphaAlpha],BC_[AlphaBeta],
-                   occ_act(Alpha),
-                   occ_act(Alpha));
+                   xspace(Alpha),
+                   xspace(Alpha));
   return to_lower_triangle(BC_[S]);
 }
 
@@ -446,7 +446,7 @@ R12IntEval::A(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
-                   occ_act(Alpha),
+                   xspace(Alpha),
                    vir_act(Alpha));
   return A_[S];
 }
@@ -456,7 +456,7 @@ R12IntEval::Ac(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(Ac_[AlphaAlpha],Ac_[AlphaBeta],
-                   occ_act(Alpha),
+                   xspace(Alpha),
                    vir_act(Alpha));
   return Ac_[S];
 }
@@ -481,7 +481,7 @@ R12IntEval::F12(SpinCase2 S) {
 #if 0
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(F12_[AlphaAlpha],F12_[AlphaBeta],
-                   occ_act(Alpha),
+                   xspace(Alpha),
                    vir_act(Alpha));
   return F12_[S];
 #else

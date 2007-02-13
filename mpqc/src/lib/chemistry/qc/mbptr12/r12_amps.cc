@@ -120,10 +120,12 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<MOIndexSpace> occ2_act = r12eval_->occ_act(spin2);
   Ref<MOIndexSpace> occ1 = r12eval_->occ(spin1);
   Ref<MOIndexSpace> occ2 = r12eval_->occ(spin2);
-  Ref<MOIndexSpace> ribs1 = r12info->ribs_space(spin1);
-  Ref<MOIndexSpace> ribs2 = r12info->ribs_space(spin2);
+  Ref<MOIndexSpace> cabs1 = r12info->ribs_space(spin1);
+  Ref<MOIndexSpace> cabs2 = r12info->ribs_space(spin2);
   Ref<MOIndexSpace> vir1_act = r12eval_->vir_act(spin1);
   Ref<MOIndexSpace> vir2_act = r12eval_->vir_act(spin2);
+  Ref<MOIndexSpace> xspace1 = r12eval_->xspace(spin1);
+  Ref<MOIndexSpace> xspace2 = r12eval_->xspace(spin2);
   
   // Allocate the matrices
   RefSCDimension dim_f12 = r12eval_->dim_f12(spincase2);
@@ -133,9 +135,9 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
                                           occ1->rank() * occ2->rank());
   RefSCDimension dim_vv = r12eval_->dim_vv(spincase2);
   RefSCDimension dim_ov = new SCDimension(occ1->rank() * vir2_act->rank());
-  RefSCDimension dim_ox = new SCDimension(occ1->rank() * ribs2->rank());
+  RefSCDimension dim_ox = new SCDimension(occ1->rank() * cabs2->rank());
   RefSCDimension dim_vo = new SCDimension(occ2->rank() * vir1_act->rank());
-  RefSCDimension dim_xo = new SCDimension(occ2->rank() * ribs1->rank());
+  RefSCDimension dim_xo = new SCDimension(occ2->rank() * cabs1->rank());
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   T2_[s] = kit->matrix(dim_aa,dim_vv);  T2_[s].assign(0.0);
   Fvv_[s] = kit->matrix(dim_f12,dim_vv);  Fvv_[s].assign(0.0);
@@ -166,25 +168,25 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
     }
     {
       NewTransformCreator tform_creator(r12eval_,
-        occ1_act,
+        xspace1,
         refinfo->orbs(spin1),
-        occ2_act,
+        xspace2,
         refinfo->orbs(spin2),true);
         fill_container(tform_creator,tforms_pp);
     }
     {
       NewTransformCreator tform_creator(r12eval_,
-        occ1_act,
+        xspace1,
         occ1,
-        occ2_act,
-        ribs2,true);
+        xspace2,
+        cabs2,true);
         fill_container(tform_creator,tforms_mx);
     }
     {
       NewTransformCreator tform_creator(r12eval_,
-        occ1_act,
-        ribs1,
-        occ2_act,
+        xspace1,
+        cabs1,
+        xspace2,
         occ2,true);
         fill_container(tform_creator,tforms_xm);
     }
@@ -193,18 +195,18 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   
   const bool antisymm = spincase2!=AlphaBeta;
   r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tform0_pp);
-  r12eval_->compute_F12_(Fvv_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tforms_pp);
-  r12eval_->compute_F12_(Foo_[s],occ1_act,occ1,occ2_act,occ2,antisymm,tforms_pp);
+  r12eval_->compute_F12_(Fvv_[s],xspace1,vir1_act,xspace2,vir2_act,antisymm,tforms_pp);
+  r12eval_->compute_F12_(Foo_[s],xspace1,occ1,xspace2,occ2,antisymm,tforms_pp);
   
   // WARNING cannot antisymmetrize matrices if p1_neq_p2. Should throw but will do nothing for now
   if (!antisymm) {
-    r12eval_->compute_F12_(Fov_[s],occ1_act,occ1,occ2_act,vir2_act,antisymm,tforms_pp);
-    r12eval_->compute_F12_(Fox_[s],occ1_act,occ1,occ2_act,ribs2,antisymm,tforms_mx);
+    r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tforms_pp);
+    r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tforms_mx);
     if (p1_neq_p2) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
-      r12eval_->compute_F12_(Fvo_[s],occ1_act,vir1_act,occ2_act,occ2,antisymm,tforms_pp);
-      r12eval_->compute_F12_(Fxo_[s],occ1_act,ribs1,occ2_act,occ2,antisymm,tforms_xm);
+      r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tforms_pp);
+      r12eval_->compute_F12_(Fxo_[s],xspace1,cabs1,xspace2,occ2,antisymm,tforms_xm);
     }
   }
   

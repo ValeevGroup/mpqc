@@ -114,6 +114,7 @@ static ClassDesc R12IntEval_cd(
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   r12info_(r12i), evaluated_(false), debug_(0)
 {
+  this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
   int navir_a, navir_b;
   if (!spin_polarized()) {
@@ -219,6 +220,8 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   //}
   
   Amps_ = new F12Amplitudes(this);
+
+  this->dereference();   // to match reference() above
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)

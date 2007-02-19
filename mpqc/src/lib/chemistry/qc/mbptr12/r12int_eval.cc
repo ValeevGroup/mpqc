@@ -144,11 +144,13 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       dim_xy_[BetaBeta] = dim_oo_[BetaBeta];
       break;
   case LinearR12::OrbProd_pq:
-      const unsigned int norbs_a = r12info()->refinfo()->orbs(Alpha)->rank();
-      const unsigned int norbs_b = r12info()->refinfo()->orbs(Beta)->rank();
-      dim_xy_[AlphaAlpha] = new SCDimension((norbs_a*(norbs_a-1))/2);
-      dim_xy_[AlphaBeta] = new SCDimension(norbs_a*norbs_b);
-      dim_xy_[BetaBeta] = new SCDimension((norbs_b*(norbs_b-1))/2);
+      {
+        const unsigned int norbs_a = r12info()->refinfo()->orbs(Alpha)->rank();
+        const unsigned int norbs_b = r12info()->refinfo()->orbs(Beta)->rank();
+        dim_xy_[AlphaAlpha] = new SCDimension((norbs_a*(norbs_a-1))/2);
+        dim_xy_[AlphaBeta] = new SCDimension(norbs_a*norbs_b);
+        dim_xy_[BetaBeta] = new SCDimension((norbs_b*(norbs_b-1))/2);
+      }
       break;
   default:
       throw ProgrammingError("R12IntEval::R12IntEval -- invalid orbital_product for the R12 ansatz",__FILE__,__LINE__);
@@ -1741,6 +1743,113 @@ R12IntEval::K_p_p(SpinCase1 spin)
   return K_p_p_[s];
 }
 
+const Ref<MOIndexSpace>&
+R12IntEval::K_P_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_P_P(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->ribs_space();
+  const Ref<MOIndexSpace>& intspace = r12info()->ribs_space();
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,true,
+	    F_P_P_[s],
+	    null,
+	    K_P_P_[s],
+	    extspace,intspace);
+  return K_P_P_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_P_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_P_P(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->ribs_space();
+  const Ref<MOIndexSpace>& intspace = r12info()->ribs_space();
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,true,
+	    F_P_P_[s],
+	    null,
+	    K_P_P_[s],
+	    extspace,intspace);
+  return F_P_P_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_p_A(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_p_A(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->ribs_space(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_p_A_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_p_A_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_p_p(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_p_p(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->refinfo()->orbs(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_p_p_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_p_p_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_m_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_m_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->refinfo()->occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_m_m_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_m_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_m_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_m_P(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->ribs_space();
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_m_P_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_m_P_[s];
+}
 
 void
 R12IntEval::f_bra_ket(

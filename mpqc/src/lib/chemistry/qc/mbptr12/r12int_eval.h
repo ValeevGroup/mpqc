@@ -192,12 +192,19 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> hj_p_p_[NSpinCases1];
   Ref<MOIndexSpace> hj_p_A_[NSpinCases1];
   Ref<MOIndexSpace> hj_p_P_[NSpinCases1];
+  Ref<MOIndexSpace> hj_P_P_[NSpinCases1];
   Ref<MOIndexSpace> K_i_p_[NSpinCases1];
   Ref<MOIndexSpace> K_i_A_[NSpinCases1];
   Ref<MOIndexSpace> K_i_P_[NSpinCases1];
   Ref<MOIndexSpace> K_p_p_[NSpinCases1];
   Ref<MOIndexSpace> K_p_A_[NSpinCases1];
   Ref<MOIndexSpace> K_p_P_[NSpinCases1];
+  Ref<MOIndexSpace> K_P_P_[NSpinCases1];
+  Ref<MOIndexSpace> F_P_P_[NSpinCases1];
+  Ref<MOIndexSpace> F_p_A_[NSpinCases1];
+  Ref<MOIndexSpace> F_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> F_m_m_[NSpinCases1];
+  Ref<MOIndexSpace> F_m_P_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -614,6 +621,32 @@ public:
   const Ref<MOIndexSpace>& K_p_A(SpinCase1 S);
   /// Form <p|K|p> space
   const Ref<MOIndexSpace>& K_p_p(SpinCase1 S);
+  /// Form <P|K|P> space
+  const Ref<MOIndexSpace>& K_P_P(SpinCase1 S);
+  /// Form <P|F|x> space
+  const Ref<MOIndexSpace>& F_x_P(SpinCase1 S);
+  /// Form <A|F|x> space
+  const Ref<MOIndexSpace>& F_x_A(SpinCase1 S);
+  /// Form <p|F|x> space
+  const Ref<MOIndexSpace>& F_x_p(SpinCase1 S);
+  /// Form <P|F|i> space
+  const Ref<MOIndexSpace>& F_i_P(SpinCase1 S);
+  /// Form <A|F|i> space
+  const Ref<MOIndexSpace>& F_i_A(SpinCase1 S);
+  /// Form <p|F|i> space
+  const Ref<MOIndexSpace>& F_i_p(SpinCase1 S);
+  /// Form <m|F|m> space
+  const Ref<MOIndexSpace>& F_m_m(SpinCase1 S);
+  /// Form <P|F|m> space
+  const Ref<MOIndexSpace>& F_m_P(SpinCase1 S);
+  /// Form <P|F|p> space
+  const Ref<MOIndexSpace>& F_p_P(SpinCase1 S);
+  /// Form <A|F|p> space
+  const Ref<MOIndexSpace>& F_p_A(SpinCase1 S);
+  /// Form <p|F|p> space
+  const Ref<MOIndexSpace>& F_p_p(SpinCase1 S);
+  /// Form <P|F|P> space
+  const Ref<MOIndexSpace>& F_P_P(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

@@ -321,12 +321,21 @@ R12IntEval::compute_B_gbc_()
     
 #endif // include GBC2 ?
     
+    std::string label = prepend_spincase(spincase2,"B(GBC1) contribution");
     if (debug_ >= DefaultPrintThresholds::mostO4) {
-      std::string label = prepend_spincase(spincase2,"B(GBC1) contribution");
       B_gbc1.print(label.c_str());
-      label = prepend_spincase(spincase2,"B(GBC2) contribution");
+    }
+    if (debug_ >= DefaultPrintThresholds::mostN0) {
+      print_scmat_norms(B_gbc1,label.c_str());
+    }
+    label = prepend_spincase(spincase2,"B(GBC2) contribution");
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       B_gbc2.print(label.c_str());
     }
+    if (debug_ >= DefaultPrintThresholds::mostN0) {
+      print_scmat_norms(B_gbc2,label.c_str());
+    }
+
     RefSCMatrix B_gbc;
     {
       B_gbc = B_gbc1;

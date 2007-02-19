@@ -51,6 +51,7 @@
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
+#include <chemistry/qc/mbptr12/print_scmat_norms.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/print.h>

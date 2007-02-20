@@ -104,8 +104,8 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
 
   Data->oo2ze[0] = 0.5*ooze;
   Data->roe[0] = zeta*ooze;
-  Data->oo2z[0] = 0.5/zeta;
-  Data->oo2e[0] = 0.5/eta;
+  Data->oo2z[0] = 0.5 * ooz;
+  Data->oo2e[0] = 0.5 * ooe;
   W[0] = (zeta*P[0] + eta*Q[0])*ooze;
   W[1] = (zeta*P[1] + eta*Q[1])*ooze;
   W[2] = (zeta*P[2] + eta*Q[2])*ooze;

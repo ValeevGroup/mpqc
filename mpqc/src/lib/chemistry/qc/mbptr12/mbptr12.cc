@@ -310,6 +310,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   // Default constructor for LinearR12Ansatz specifies the default
   if (ansatz_.null())
     ansatz_ = new LinearR12Ansatz;
+  if (ansatz()->projector() == LinearR12::Projector_1)
+    throw InputError("MBPT2_R12::MBPT2_R12 -- projector 1 has not been implemented yet",__FILE__,__LINE__);
   if (ansatz()->projector() == LinearR12::Projector_3 &&
       stdapprox_ != LinearR12::StdApprox_C)
     throw InputError("MBPT2_R12::MBPT2_R12 -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);

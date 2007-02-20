@@ -185,10 +185,12 @@ namespace sc {
     
     /**
       Projector of linear R12 methods:
+      1: Q_{12} = (1 - P_1)(1 - P_2)
       2: Q_{12} = (1 - P_1 P_2)(1 - O_1)(1 - O_2)
       3: Q_{12} = 1 - P_1 P_2
     */
-    enum Projector {Projector_2 = 2,
+    enum Projector {Projector_1 = 1,
+	            Projector_2 = 2,
                     Projector_3 = 3};
     enum StandardApproximation {StdApprox_A = 0,
 				StdApprox_Ap = 1,

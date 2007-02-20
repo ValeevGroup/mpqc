@@ -56,6 +56,7 @@ namespace sc {
     <dt><tt>projector</tt><dd> This specifies the form of the orthogonal projector.
     Valid values are:
       <dl>
+        <dt><tt>1</tt><dd> (1-P1)(1-P2).
         <dt><tt>2</tt><dd> (1-O1)(1-O2)(1-V1V2). This is the default.
         <dt><tt>3</tt><dd> 1-P1P2. Should be used ONLY for testing.
       </dl>

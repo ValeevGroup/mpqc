@@ -365,9 +365,12 @@ namespace sc {
 	  // if transforms have not been computed yet, compute
 	  if (accumb.null() || !accumb->is_committed()) {
 	    tformb->compute();
+	    accumb = tformb->ints_acc();
 	  }
-	  if (!accumb->is_active())
+	  if (!accumb->is_active()) {
+	    //ExEnv::out0() << indent << "Activating accumb" << endl;
 	    accumb->activate();
+	  }
 
 	  unsigned int fketoffset = 0;
 	  for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
@@ -377,9 +380,12 @@ namespace sc {
             Ref<R12IntsAcc> accumk = tformk->ints_acc();
             if (accumk.null() || !accumk->is_committed()) {
               tformk->compute();
+	      accumk = tformk->ints_acc();
             }
-            if (!accumk->is_active())
+            if (!accumk->is_active()) {
+	      //ExEnv::out0() << indent << "Activating accumk" << endl;
               accumk->activate();
+	    }
             
             if (debug_ >= DefaultPrintThresholds::diagnostics) {
               ExEnv::out0() << indent << "Using transforms "
@@ -555,9 +561,16 @@ namespace sc {
 
               } // bra loop
             } // loop over tasks with access
-	    if (accumb != accumk)
+
+	    //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
+	    //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
+	    //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+	    if (accumb != accumk) {
+	      //ExEnv::out0() << indent << "Deactivating accumk" << endl;
 	      accumk->deactivate();
+	    }
 	  } // ket blocks
+	  //ExEnv::out0() << indent << "Deactivating accumb" << endl;
 	  accumb->deactivate();
 	} // bra blocks
       } // int blocks

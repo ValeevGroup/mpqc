@@ -85,6 +85,7 @@ R12IntEval::contrib_to_VXB_a_()
       Ref<TwoParticleContraction> tpcontract;
       const ABSMethod absmethod = r12info()->abs_method();
       // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
+      // it involves this term +O1O2-V1V2
       if ((absmethod == LinearR12::ABS_ABS ||
 	   absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
 	  ansatz()->projector() == LinearR12::Projector_2)
@@ -92,6 +93,7 @@ R12IntEval::contrib_to_VXB_a_()
                                                refinfo->occ(spin1)->rank(),
                                                refinfo->occ(spin2)->rank());
       else
+	  // involves this term -P1P2
           tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
         
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
@@ -149,12 +151,13 @@ R12IntEval::contrib_to_VXB_a_()
 	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
 
+      RefSCMatrix Bpp = B_[s].clone();  Bpp.assign(0.0);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
 	  true,true,false>
           (
-	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+	      Bpp, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
 	      xspace1, xspace2,
 	      orbs1, orbs2,
 	      xspace1, xspace2,
@@ -167,7 +170,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  ManyBodyTensors::I_to_T,
 	  true,true,false>
           (
-	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+	      Bpp, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
 	      xspace1, xspace2,
 	      orbs1, orbs2,
 	      xspace1, xspace2,
@@ -175,6 +178,33 @@ R12IntEval::contrib_to_VXB_a_()
 	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+	  ManyBodyTensors::I_to_T,
+	  ManyBodyTensors::I_to_T,
+	  true,true,false>
+          (
+	      Bpp, corrfactor()->tbint_type_t1f12(), corrfactor()->tbint_type_f12(),
+	      xspace1, xspace2,
+	      orbs1, orbs2,
+	      xspace1, xspace2,
+	      orbs1, orbs2,
+	      tpcontract,
+	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
+          );
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+	  ManyBodyTensors::I_to_T,
+	  ManyBodyTensors::I_to_T,
+	  true,true,false>
+          (
+	      Bpp, corrfactor()->tbint_type_t2f12(), corrfactor()->tbint_type_f12(),
+	      xspace1, xspace2,
+	      orbs1, orbs2,
+	      xspace1, xspace2,
+	      orbs1, orbs2,
+	      tpcontract,
+	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
+          );
+      Bpp.scale(0.5);  B_[s].accumulate(Bpp);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
 
       if (debug_ >= DefaultPrintThresholds::O4) {
@@ -184,7 +214,7 @@ R12IntEval::contrib_to_VXB_a_()
       }
 
 
-      // These terms don't contribute to projector 3
+      // These terms only contribute if Projector=2
       if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
 
 	  const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
@@ -261,12 +291,14 @@ R12IntEval::contrib_to_VXB_a_()
 		  tpcontract,
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
+
+	  RefSCMatrix Bxy = B_[s].clone();  Bxy.assign(0.0);
 	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	      ManyBodyTensors::I_to_T,
 	      ManyBodyTensors::I_to_T,
 	      true,true,false>
 	      (
-		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		  Bxy, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  xspace1, xspace2,
@@ -279,7 +311,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      ManyBodyTensors::I_to_T,
 	      true,true,false>
 	      (
-		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		  Bxy, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  xspace1, xspace2,
@@ -287,6 +319,7 @@ R12IntEval::contrib_to_VXB_a_()
 		  tpcontract,
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
+	  Bxy.scale(0.5);B_[s].accumulate(Bxy);
 	  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
 
 	  // If particles 1 and 2 are not equivalent, also need another set of terms

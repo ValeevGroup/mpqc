@@ -56,10 +56,14 @@ namespace sc {
     <dt><tt>projector</tt><dd> This specifies the form of the orthogonal projector.
     Valid values are:
       <dl>
-        <dt><tt>1</tt><dd> (1-P1)(1-P2).
+        <dt><tt>0</tt><dd> 1. Should be used ONLY for testing. This implies the Weak Orthogonality Functional (WOF). Not implemented yet.
+        <dt><tt>1</tt><dd> (1-P1)(1-P2). Not implemented yet.
         <dt><tt>2</tt><dd> (1-O1)(1-O2)(1-V1V2). This is the default.
         <dt><tt>3</tt><dd> 1-P1P2. Should be used ONLY for testing.
       </dl>
+
+    <dt><tt>wof</tt><dd> Setting this to <tt>true</tt> will cause the Weak Orthogonality Functional to be used. The default is <tt>false</tt>,
+    unless <tt>projector=0</tt>.
 
     <dt><tt>diag</tt><dd> Setting this to <tt>true</tt> will only keep the diagonal terms,
     which is equivalent to the "old" (pre-1992) form of R12 theory. The default is <tt>false</tt>,
@@ -79,11 +83,13 @@ namespace sc {
     
     LinearR12::Projector projector() const;
     bool diag() const;
+    bool wof() const;
     LinearR12::OrbitalProduct orbital_product() const;
     
     private:
     LinearR12::Projector projector_;
     bool diag_;
+    bool wof_;
     LinearR12::OrbitalProduct orbital_product_;
   };
   

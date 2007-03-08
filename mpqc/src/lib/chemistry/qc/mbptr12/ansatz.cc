@@ -33,14 +33,17 @@
 using namespace sc;
 
 static ClassDesc LinearR12Ansatz_cd(
-  typeid(LinearR12Ansatz),"LinearR12Ansatz",2,"virtual public SavableState",
+  typeid(LinearR12Ansatz),"LinearR12Ansatz",3,"virtual public SavableState",
   create<LinearR12Ansatz>, create<LinearR12Ansatz>, create<LinearR12Ansatz>);
 
-LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), orbital_product_(LinearR12::OrbProd_ij) {}
+LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), wof_(false), orbital_product_(LinearR12::OrbProd_ij) {}
 
 LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
   projector_ = (LinearR12::Projector)keyval->intvalue("projector",KeyValValueint(2));
+  diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
+  const bool default_wof = (projector_ == LinearR12::Projector_0);
+  wof_ = keyval->booleanvalue("diag",KeyValValueboolean((int)default_wof));
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
   std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
   if (op == "ij")
@@ -59,6 +62,9 @@ LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
 {
   int p; s.get(p); projector_ = (LinearR12::Projector)p;
   int d; s.get(d); diag_ = (bool)d;
+  if (s.version(::class_desc<LinearR12Ansatz>()) >= 3) {
+    int w; s.get(w); wof_ = (bool)w;
+  }
   if (s.version(::class_desc<LinearR12Ansatz>()) >= 2) {
     int o; s.get(o); orbital_product_ = (LinearR12::OrbitalProduct)o;
   }
@@ -71,6 +77,7 @@ LinearR12Ansatz::save_data_state(StateOut& s)
 {
   s.put((int)projector_);
   s.put((int)diag_);
+  s.put((int)wof_);
   s.put((int)orbital_product_);
 }
 
@@ -89,6 +96,7 @@ LinearR12Ansatz::print(std::ostream& o) const
 
   o << indent << "Projector: ";
   switch(projector_) {
+    case LinearR12::Projector_0: o << "0  , i.e. 1"; break;
     case LinearR12::Projector_1: o << "1  , i.e. (1-P1)(1-P2)"; break;
     case LinearR12::Projector_2: o << "2  , i.e. (1-P1)(1-P2)-V1V2"; break;
     case LinearR12::Projector_3: o << "3  , i.e. 1-P1P2"; break;
@@ -96,6 +104,7 @@ LinearR12Ansatz::print(std::ostream& o) const
   o << std::endl;
   
   o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant") << std::endl;
+  o << indent << "WOF: " << (wof_ ? "true" : "false") << std::endl;
   o << decindent;
 }
 
@@ -104,6 +113,9 @@ LinearR12Ansatz::projector() const { return projector_; }
 
 bool
 LinearR12Ansatz::diag() const { return diag_; }
+
+bool
+LinearR12Ansatz::wof() const { return wof_; }
 
 LinearR12::OrbitalProduct
 LinearR12Ansatz::orbital_product() const { return orbital_product_; }

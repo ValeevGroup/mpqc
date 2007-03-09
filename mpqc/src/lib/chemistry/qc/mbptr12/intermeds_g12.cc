@@ -112,7 +112,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 	  antisymmetrize,
 	  tforms_f12_xmyn
 	  );
-      // integrals of [g12,[t1,g12]] and g12*g12 operator (use integrals with the exponent multiplied by 2, and additionally [g12,[t1,g12]] integral needs to be scaled by 0.25 to take into account that real exponent is half what the integral library thinks)
+      // g12*g12' operator
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 	  X_[s], corrfactor()->tbint_type_f12f12(),
 	  xspace1, xspace1,
@@ -120,6 +120,11 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 	  antisymmetrize,
 	  tforms_f12f12_xmyn
 	  );
+      // 0.5 ( g12*[T,g12'] + [g12,T]*g12' ) = [g12,[t1,g12']] + 0.5 ( g12*[T,g12'] - g12'*[T,g12] )
+      //   = [g12,[t1,g12']] - 0.5 ( g12*[g12',T] - g12'*[g12,T] ) = [g12,[t1,g12']] - 0.5 ( (beta-alpha)/(beta+alpha) * [g12*g12',T] ),
+      // where the last step valid is for 2 primitive gaussians only (must be contracted otherwise)
+      // The first term is symmetric with respect to permutation of g12 and g12', the second is antisymmetric
+      // the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 	  B_[s], corrfactor()->tbint_type_f12t1f12(),
 	  xspace1, xspace1,
@@ -127,7 +132,26 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 	  antisymmetrize,
 	  tforms_f12f12_xmyn
 	  );
-
+      // Add the antisymmetric part of f12tf12' if # of geminals > 1 (i.e. off diagonal blocks appear)
+      if (r12info()->corrfactor()->nfunctions() > 1) {
+	  RefSCMatrix Banti = B_[s].clone(); Banti.assign(0.0);
+	  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+	      Banti, corrfactor()->tbint_type_t1f12(),
+	      xspace1, xspace1,
+	      xspace2, xspace2,
+	      antisymmetrize,
+	      tforms_f12f12_xmyn
+	      );
+	  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+	      Banti, corrfactor()->tbint_type_t2f12(),
+	      xspace1, xspace1,
+	      xspace2, xspace2,
+	      antisymmetrize,
+	      tforms_f12f12_xmyn
+	      );
+	  Banti.scale(-0.5);
+	  B_[s].accumulate(Banti);
+      }
       // Finally, copy B to BC, since their "diagonal" parts are the same
       if (stdapprox() == LinearR12::StdApprox_C)
 	  BC_[s].assign(B_[s]);

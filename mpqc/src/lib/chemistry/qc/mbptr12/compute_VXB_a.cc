@@ -150,14 +150,12 @@ R12IntEval::contrib_to_VXB_a_()
 	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
-
-      RefSCMatrix Bpp = B_[s].clone();  Bpp.assign(0.0);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
 	  true,true,false>
           (
-	      Bpp, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
 	      xspace1, xspace2,
 	      orbs1, orbs2,
 	      xspace1, xspace2,
@@ -170,7 +168,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  ManyBodyTensors::I_to_T,
 	  true,true,false>
           (
-	      Bpp, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
 	      xspace1, xspace2,
 	      orbs1, orbs2,
 	      xspace1, xspace2,
@@ -178,33 +176,6 @@ R12IntEval::contrib_to_VXB_a_()
 	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,true,false>
-          (
-	      Bpp, corrfactor()->tbint_type_t1f12(), corrfactor()->tbint_type_f12(),
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      tpcontract,
-	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,true,false>
-          (
-	      Bpp, corrfactor()->tbint_type_t2f12(), corrfactor()->tbint_type_f12(),
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      tpcontract,
-	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-      Bpp.scale(0.5);  B_[s].accumulate(Bpp);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
 
       if (debug_ >= DefaultPrintThresholds::O4) {

@@ -47,7 +47,7 @@ mpqc.man.dox:
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcoo.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcval.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/lib/chemistry/qc/psi/mpqcpsi.dox >> $@
-	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/lib/chemistry/cca/mpqccomponents.dox >> $@
+	#$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/lib/chemistry/cca/mpqccomponents.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqclic.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcwar.dox >> $@
 	echo "*/" >> $@

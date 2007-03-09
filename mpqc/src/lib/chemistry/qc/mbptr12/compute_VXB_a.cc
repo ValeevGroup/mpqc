@@ -263,13 +263,12 @@ R12IntEval::contrib_to_VXB_a_()
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
 
-	  RefSCMatrix Bxy = B_[s].clone();  Bxy.assign(0.0);
 	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	      ManyBodyTensors::I_to_T,
 	      ManyBodyTensors::I_to_T,
 	      true,true,false>
 	      (
-		  Bxy, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  xspace1, xspace2,
@@ -282,7 +281,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      ManyBodyTensors::I_to_T,
 	      true,true,false>
 	      (
-		  Bxy, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  xspace1, xspace2,
@@ -290,7 +289,6 @@ R12IntEval::contrib_to_VXB_a_()
 		  tpcontract,
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
-	  Bxy.scale(0.5);B_[s].accumulate(Bxy);
 	  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
 
 	  // If particles 1 and 2 are not equivalent, also need another set of terms

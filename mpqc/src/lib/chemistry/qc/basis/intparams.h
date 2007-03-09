@@ -59,8 +59,14 @@ namespace sc {
     public:
       typedef std::pair<double,double> PrimitiveGeminal;
       typedef std::vector<PrimitiveGeminal> ContractedGeminal;
+      /// 1 = e^(-0.0 * r_{12})
       static ContractedGeminal zero_exponent_geminal;
-      
+      /// null (i.e., invalid) geminal
+      static ContractedGeminal null_geminal;
+
+      /// Request integrals with only 1 geminal (g12, g12/r12, [Ti,g12])
+      IntParamsG12(const ContractedGeminal& bra);
+      /// Request integrals with 2 geminals (g12*g12', [g12,[T1,g12']], [Ti,g12*g12'])
       IntParamsG12(const ContractedGeminal& bra,
                    const ContractedGeminal& ket);
       ~IntParamsG12();
@@ -69,6 +75,9 @@ namespace sc {
       const ContractedGeminal& ket() const;
       
     private:
+      /// An invalid exponent (exponent of null_geminal)
+      static double null_exponent;
+
       ContractedGeminal bra_;
       ContractedGeminal ket_;
   };

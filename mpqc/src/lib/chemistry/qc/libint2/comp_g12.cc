@@ -40,6 +40,8 @@
 
 // Set to 1 to compute R12_2_G12 instead [g12,[t1,g12]]
 #define COMPUTE_R12_2_G12 0
+// Set to 0 to not include antisymmetric conributions to g12 t g12'
+#define NONSYMMETRIC_G12TG12 0
 
 using namespace std;
 using namespace sc;
@@ -383,8 +385,14 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       }
     }
 
-  const int nbra_geminal_prims = geminal_bra_.size();
-  const int nket_geminal_prims = geminal_ket_.size();
+  //
+  // Need to distinguish 1-geminal and 2-geminal cases, hence don't use geminal_xxx_ directly, via references only
+  //
+  const bool braonly = (geminal_ket_ == IntParamsG12::null_geminal);
+  const ContractedGeminal& gbra = geminal_bra_;
+  const ContractedGeminal& gket = braonly ? IntParamsG12::zero_exponent_geminal : geminal_ket_;
+  const int nbra_geminal_prims = gbra.size();
+  const int nket_geminal_prims = gket.size();
   
   /* Begin loops over generalized contractions. */
   int buffer_offset = 0;
@@ -423,11 +431,11 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		  
                   // Begin loop over Gaussian Geminal primitives
                   for (int ggi=0; ggi<nbra_geminal_prims; ggi++) {
-                    const PrimitiveGeminal& gpbra = geminal_bra_[ggi];
+                    const PrimitiveGeminal& gpbra = gbra[ggi];
                     const double gamma_bra = gpbra.first;
                     const double gpcoef_bra = gpbra.second;
                     for (int ggj=0; ggj<nket_geminal_prims; ggj++) {
-                      const PrimitiveGeminal& gpket = geminal_ket_[ggj];
+                      const PrimitiveGeminal& gpket = gket[ggj];
                       const double gamma_ket = gpket.first;
                       const double gpcoef_ket = gpket.second;
                       
@@ -448,11 +456,21 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 #endif
 
                       if (quartet_info_.am) {
-#if !COMPUTE_R12_2_G12
                         LIBINT2_REALTYPE* prim_ints = Libint_.targets[4];
                         for(int ijkl=0; ijkl<size; ijkl++)
                           prim_ints[ijkl] *= g2_4;
-#endif
+
+			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
+			if (!braonly && gamma_bra != gamma_ket){
+			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
+			    LIBINT2_REALTYPE* t1g12_ints = Libint_.targets[2];
+			    LIBINT2_REALTYPE* t2g12_ints = Libint_.targets[3];
+			    for(int ijkl=0; ijkl<size; ijkl++) {
+				t1g12_ints[ijkl] *= pfac;
+				t2g12_ints[ijkl] *= pfac;
+			    }
+			}
+
                         for(int te_type = 0; te_type < 5; te_type++) {
                           // Copy the integrals over to prim_ints_
                           const LIBINT2_REALTYPE* prim_ints = Libint_.targets[te_type];
@@ -464,8 +482,18 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                         prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
                         prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
                         prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
-                        prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
-                        prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
+
+			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
+			if (!braonly && gamma_bra != gamma_ket){
+			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
+			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += pfac * Libint_.targets[0][0];
+			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += pfac * Libint_.targets[1][0];
+			}
+			else {
+			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
+			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
+			}
+
                       }
                       
                     } // end of ket geminal primitive loop

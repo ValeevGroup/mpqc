@@ -50,7 +50,17 @@ namespace sc {
 class Integral;
 
 /** G12Libint2 is a specialization of Int2eLibint2 that computes two-electron integrals specific
-    to explicitly correlated methods which use Gaussian geminals */
+    to explicitly correlated methods which use Gaussian geminals.
+
+    G12Libint2 can compute integrals with 1 or 2 geminals. All 2-geminal integrals can be represented as 1-geminals integrals
+    of a product of the original 2 geminals. For example, overlap of 2 geminals (g12*g12') is directly reduced to an integral over 1 geminal (G12)
+    whose exponent is a sum of exponents of g12 and g12'. The following integrals over 2 geminals are needed:
+    <list type="bullet">
+      <item> g12*g12' = G12. Returned as r12_0_g12. </item>
+      <item> [g12,[t1,g12']] = 4 exp(g12) * exp(g12') r12^2 G12. Returned as g12t1g12. </item>
+      <item> g12[ti,g12'] - g12'[ti,g12] = [ti,G12] * (exp(g12') - exp(g12))/(exp(g12')+exp(g12)). Returned as t1g12 or t2g12.</item>
+    </list>
+ */
 class G12Libint2: public Int2eLibint2 {
   private:
   /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, t1g12, t2g12, and g12t1g12 integrals */
@@ -58,9 +68,9 @@ class G12Libint2: public Int2eLibint2 {
 
     typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
     typedef IntParamsG12::ContractedGeminal ContractedGeminal;
-    // exponent of the geminal in the bra
+    // the geminal in the bra
     ContractedGeminal geminal_bra_;
-    // exponent of the geminal in the ket
+    // the geminal in the ket (can be null)
     ContractedGeminal geminal_ket_;
     
     // Storage for target integrals
@@ -109,6 +119,7 @@ class G12Libint2: public Int2eLibint2 {
     ExpensiveMath ExpMath_;
   
   public:
+    /// When integrals with 1 geminal are needed, gket should be IntParamsG12::null_geminal
     G12Libint2(Integral *,
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
@@ -116,7 +127,8 @@ class G12Libint2: public Int2eLibint2 {
 	     const Ref<GaussianBasisSet>&,
 	     size_t storage,
              const ContractedGeminal& gbra,
-             const ContractedGeminal& gket);
+	     const ContractedGeminal& gket
+	);
     ~G12Libint2();
 
     double *buffer(TwoBodyInt::tbint_type te_type) const {

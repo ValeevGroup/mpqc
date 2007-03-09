@@ -58,7 +58,7 @@ G12Libint2::G12Libint2(Integral *integral,
 		   const Ref<GaussianBasisSet>& b4,
 		   size_t storage,
                    const ContractedGeminal& geminal_bra,
-                   const ContractedGeminal& geminal_ket) :
+		   const ContractedGeminal& geminal_ket) :
   Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(),
   geminal_bra_(geminal_bra), geminal_ket_(geminal_ket)
 {

@@ -57,7 +57,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				 const Ref<GaussianBasisSet>& b4,
 				 size_t storage, tbinteval int2etype,
                                  const ContractedGeminal& gbra,
-                                 const ContractedGeminal& gket):
+				 const ContractedGeminal& gket):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
   // Which evaluator to use

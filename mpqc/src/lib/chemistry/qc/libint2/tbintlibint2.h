@@ -53,7 +53,7 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, tbinteval int2etype,
                  const ContractedGeminal& gamma_bra,
-                 const ContractedGeminal& gamma_ket);
+                 const ContractedGeminal& gamma_ket = IntParamsG12::null_geminal);
     ~TwoBodyIntLibint2();
 
     unsigned int num_tbint_types() const {

@@ -271,7 +271,7 @@ LinearR12::G12CorrelationFactor::tbint_type_f12t1f12() const
 Ref<TwoBodyIntDescr>
 LinearR12::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
 {
-  Ref<IntParamsG12> params = new IntParamsG12(function(f), IntParamsG12::zero_exponent_geminal);
+  Ref<IntParamsG12> params = new IntParamsG12(function(f));
   return new TwoBodyIntDescrG12(IF,params);
 }
 

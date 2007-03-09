@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <float.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/intparams.h>
 
@@ -50,6 +51,20 @@ IntParams::nparams() const
 }
 
 /////////////////////////////
+
+IntParamsG12::IntParamsG12(const ContractedGeminal& bra) :
+  IntParams(2), bra_(bra), ket_(null_geminal)
+{
+  if (bra_.size() == 0)
+    throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal contractions of zero length",__FILE__,__LINE__);
+  
+  typedef ContractedGeminal::const_iterator citer;
+  citer end = bra_.end();
+  for(citer i=bra_.begin(); i<end; i++) {
+    if ( (*i).first < 0.0)
+      throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  }
+}
 
 IntParamsG12::IntParamsG12(const ContractedGeminal& bra,
                            const ContractedGeminal& ket) :
@@ -84,3 +99,8 @@ IntParamsG12::ket() const { return ket_; }
 IntParamsG12::ContractedGeminal
 IntParamsG12::zero_exponent_geminal(1,std::make_pair(0.0,1.0));
 
+double
+IntParamsG12::null_exponent(DBL_MAX);
+
+IntParamsG12::ContractedGeminal
+IntParamsG12::null_geminal(1,std::make_pair(null_exponent,1.0));

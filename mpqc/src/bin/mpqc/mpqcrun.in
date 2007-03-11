@@ -131,6 +131,10 @@ $simpout = 0;
 # If true, run mpqc from the object directory
 $objdir = 0;
 
+# Use this to modify all the hostnames.  The default leaves the name
+# unchanged.
+$nodenamesub = "s/(.*)/\\1/";
+
 ######################################################################
 
 use Getopt::Long;
@@ -147,6 +151,7 @@ if (!GetOptions("small!" => \$small,
                 "nprocperjob=i" => \$nprocperjob,
                 "seq=s" => \$seq,
                 "mpqc=s" => \$mpqc,
+                "nodenamesub=s" => \$nodenamesub,
                 "readdir=s" => \$readdir,
                 "outputprefix=s" => \$outputprefix,
                 "inputprefix=s" => \$inputprefix,
@@ -216,6 +221,7 @@ if ($help) {
           (($nodes eq "")?"<not set>":$nodes);
     printf "                     groups can be given as 8-10,12,15-17 for example\n";
     printf "  --nodename fmt     converts node num to name (value: %s)\n", $nodename;
+    printf "  --nodenamesub e    substitute hostname using given expression (value: %s)\n", $nodenamesub;
     printf "  --seq regex        run inputs matching reqex sequentially (value: %s)\n",
           (("$seq" eq "")?"<not set>":"$seq");
     printf "  --exclude regex    exclude files matching regex (value: %s)\n",
@@ -264,7 +270,9 @@ if ($objdir) {
 if ($nodes ne "") {
     $nodes =~ s/-/../g;
     foreach my $i (eval $nodes) {
-        $nodelist[$#nodelist + 1] = sprintf "$nodename", $i;
+        my $newname = sprintf "$nodename", $i;
+        eval "\$newname =~ $nodenamesub";
+        $nodelist[$#nodelist + 1] = $newname;
     }
 }
 elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
@@ -277,7 +285,9 @@ if ("$nodefile" ne "" && -f "$nodefile") {
         if (/(\S+)/) {
             my $nodename = $1;
             if (!exists($nodesfound{$nodename})) {
-                $nodelist[$#nodelist + 1] = $nodename;
+                my $newname = $nodename;
+                eval "\$newname =~ $nodenamesub";
+                $nodelist[$#nodelist + 1] = $newname;
                 $nodesfound{$nodename} = 1;
             }
         }

@@ -1921,7 +1921,7 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_hJ(";  id += intspace->id();  id += ")";
 	  std::string name = "(h+J)-weighted space";
-	  spinadapt_mospace_labels(spin,id,name);
+	  name = prepend_spincase(spin,name);
 	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_i_e,
 				intspace->basis());
       }
@@ -1941,7 +1941,7 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
 	  std::string name = "K-weighted space";
-	  spinadapt_mospace_labels(spin,id,name);
+          name = prepend_spincase(spin,name);
 	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_i_e,
 				intspace->basis());
       }
@@ -1981,7 +1981,7 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_F(";  id += intspace->id();  id += ")";
 	  std::string name = "F-weighted space";
-	  spinadapt_mospace_labels(spin,id,name);
+          name = prepend_spincase(spin,name);
 	  F = new MOIndexSpace(id, name, extspace, intspace->coefs()*F_i_e,
 				intspace->basis());
       }

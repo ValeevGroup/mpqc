@@ -35,7 +35,7 @@ using namespace std;
 using namespace sc;
 
 void
-R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
+R12IntEval::init_intermeds_g12_()
 {
   if (evaluated_)
     return;

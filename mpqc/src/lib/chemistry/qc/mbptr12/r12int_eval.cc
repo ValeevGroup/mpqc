@@ -608,8 +608,7 @@ R12IntEval::init_intermeds_()
     init_intermeds_r12_();
   }
   else if (g12ptr.nonnull()) {
-    for(int s=0; s<nspincases2(); s++)
-      init_intermeds_g12_(static_cast<SpinCase2>(s));
+    init_intermeds_g12_();
   }
 }
 

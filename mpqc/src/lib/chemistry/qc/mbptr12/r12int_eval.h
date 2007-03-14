@@ -215,7 +215,7 @@ class R12IntEval : virtual public SavableState {
   /// When F12=R12 number of simplifications occur so a specialized code is provided
   void init_intermeds_r12_();
   /// When F12 != R12 the following code is used
-  void init_intermeds_g12_(SpinCase2 S);
+  void init_intermeds_g12_();
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
   /// Compute <space1 space2|r_{12}^2|space3 space4> matrix

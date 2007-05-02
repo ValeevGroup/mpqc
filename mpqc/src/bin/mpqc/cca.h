@@ -33,12 +33,13 @@
 #define _mpqc_cca_h
 
 #include <util/misc/ccaenv.h>
-#include <MPQC_ComponentFactory.hh>
+#include <MPQC_ComponentFactory.hxx>
+#include <ccaffeine_AbstractFramework.hxx>
 
 namespace sc {
 
-/** The CCAFramework class handles embedded CCA frameworks. */
-class MPQC_CCAFramework: public CCAFramework {
+/** The MPQC_CCAFramework class handles embedded CCA frameworks. */
+class MPQC_CCAFramework: public AbstractCCAFramework {
 
     ccaffeine::AbstractFramework fw_;
     gov::cca::Services services_;

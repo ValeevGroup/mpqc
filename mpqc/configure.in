@@ -1889,16 +1889,22 @@ if test $components == "yes"; then
   AC_SUBST(CCA_CHEM_INCLUDE)
   AC_SUBST(CCA_CHEM_LIB)
   AC_SUBST(CCA_CHEM_REPO)
+  AC_SUBST(CCA_CHEM_PREFIX)
 
   CCAFE_CONFIG=`$CCA_CHEM_CONFIG --ccafe-config`
+  CCAFE_CORE=`$CCAFE_CONFIG --var CCAFE_LIB_L`
+  CCAFE_LIB_L_DIR=`$CCAFE_CONFIG --var CCAFE_LIB_L_DIR`
+  AC_SUBST(CCAFE_CORE)
+  AC_SUBST(CCAFE_LIB_L_DIR)
   ENABLE_PYTHON="no" # no need for python checks
+
   AC_CHECK_CCA()
 
-  LIBS="-L$CCAFE_LIB $LIBS"
+  LIBS="-L$CCAFE_LIB -L$CCAFE_LIB_L_DIR $LIBS"
   CCA_CHEM_INCLUDE=-I$CCA_CHEM_INCLUDE
   BABEL_INCLUDE="-I$BABEL_INCLUDE/c -I$BABEL_INCLUDE/cxx"
-  CCA_SPEC_BABEL_INCLUDE=-I$CCA_SPEC_BABEL_INCLUDE
-  CCAFE_INCLUDE="-I$CCAFE_INCLUDE -I$CCAFE_INCLUDE/dc/babel/babel-cca/server"
+  CCA_SPEC_BABEL_INCLUDE="-I$CCA_SPEC_BABEL_INCLUDE -I$CCA_SPEC_BABEL_INCLUDE/c -I$CCA_SPEC_BABEL_INCLUDE/cxx"
+  CCAFE_INCLUDE="-I$CCAFE_INCLUDE -I$CCAFE_INCLUDE/../cxx -I$CCAFE_INCLUDE/dc/babel.new/babel-cca/server"
   CPPFLAGS="$CPPFLAGS $BABEL_INCLUDE $CCA_SPEC_BABEL_INCLUDE $CCA_CHEM_INCLUDE $CCAFE_INCLUDE"
 
   AC_CHECK_HEADER(sidl.h,
@@ -1907,7 +1913,7 @@ if test $components == "yes"; then
   AC_CHECK_HEADER(gov_cca_IOR.h,
     AC_DEFINE(HAVE_CCA_SPEC_BABEL_HEADERS),
     AC_MSG_ERROR([problem with cca-spec-babel headers]) )
-  AC_CHECK_HEADER(Chemistry_QC_Model_IOR.h,
+  AC_CHECK_HEADER(ChemistryCXX_Molecule_IOR.h,
     AC_DEFINE(HAVE_CCA_CHEM_HEADERS),
     AC_MSG_ERROR([problem with cca-chem-generic headers]) )
 
@@ -1934,7 +1940,7 @@ AC_SUBST(SCLIBS)
 
 dnl --------- Generate output files. ---------
 
-AC_OUTPUT(lib/LocalMakefile lib/cca/components.cca bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun src/bin/mpqc/ccarun src/bin/mpqc/validate/makeccain.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
+AC_OUTPUT(lib/LocalMakefile lib/cca/mpqc.cca bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun src/bin/mpqc/ccarun src/bin/mpqc/validate/makeccain.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config
 chmod +x src/bin/mpqc/mpqcrun
 chmod +x src/bin/mpqc/ccarun

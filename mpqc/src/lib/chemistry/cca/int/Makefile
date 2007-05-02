@@ -44,9 +44,11 @@ CXXSRC = obintcca.cc tbintcca.cc intcca.cc auxintv3.cc
 
 INC = obintcca.h tbintcca.h intcca.h cartit.h tform.h
 
-CPPFLAGS += -I../client
-LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \
-  -L$(BABEL_LIB) -R$(BABEL_LIB) -lsidl
+CPPFLAGS += -I../server
+LTLINKLIBOPTS += \
+  -L$(CCAFE_LIB) -R$(CCAFE_LIB) $(CCAFE_CORE) \
+  -L$(BABEL_LIB) -R$(BABEL_LIB) -lsidl \
+  -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem
 
 LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
@@ -72,11 +74,3 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 
-#############################################################
-
-# need babel headers generated
-ifneq ($(DODEPEND),no)
-include ../client/stamp-babel
-endif
-../client/stamp-babel:
-	cd ../client; $(MAKE) stamp-babel

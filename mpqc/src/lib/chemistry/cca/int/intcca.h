@@ -28,12 +28,12 @@
 #ifndef _chemistry_cca_int_intcca_h
 #define _chemistry_cca_int_intcca_h
 
-#include <gov_cca.hh>
+#include <gov_cca.hxx>
 #include <chemistry/qc/basis/integral.h>
-#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
-#include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
-#include <Chemistry_Chemistry_Molecule.hh>
-#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactoryInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
+#include <ChemistryCXX_Molecule.hxx>
+#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/basis/cartiter.h>
@@ -57,8 +57,8 @@ namespace sc {
     private:
 
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_, reorder_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      bool reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
@@ -67,22 +67,21 @@ namespace sc {
       
       onebody_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
-          bool use_opaque, bool reorder ):
-	integral_(integral), factory_(fac), use_opaque_(use_opaque),
-        reorder_(reorder) { }
+          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac, 
+          bool reorder ):
+	integral_(integral), factory_(fac), reorder_(reorder) 
+      { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
       { bs1_ = bs1, bs2_ = bs2; }
       
       Ref<OneBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
       {
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
-				  factory_, cdesc, use_opaque_,
-                                  reorder_ );
+				  factory_, cdesc, reorder_ );
 	return eval;
       }
 
@@ -95,8 +94,8 @@ namespace sc {
     private:
 
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_, reorder_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      bool reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
     public:
@@ -105,22 +104,21 @@ namespace sc {
 
       onebody_deriv_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac, 
-          bool use_opaque, bool reorder ):
-	integral_(integral), factory_(fac), use_opaque_(use_opaque),
-        reorder_(reorder) { }
+          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac, 
+          bool reorder ):
+	integral_(integral), factory_(fac), reorder_(reorder)
+      { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2 ) 
       { bs1_ = bs1, bs2_ = bs2; }
 
       Ref<OneBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
       {
 	Ref<OneBodyDerivIntCCA> eval;
 	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
-				       factory_, cdesc, use_opaque_,
-                                       reorder_ );
+				       factory_, cdesc, reorder_ );
 	return eval;
       }
 
@@ -134,8 +132,7 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
 
     public:
       
@@ -143,10 +140,9 @@ namespace sc {
 
       twobody_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
-          bool use_opaque ):
-	integral_(integral), factory_(fac), 
-	use_opaque_(use_opaque) { }
+          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac ):
+	integral_(integral), factory_(fac)
+      { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2,
@@ -155,11 +151,11 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
       {
 	Ref<TwoBodyIntCCA> eval;
 	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				  factory_, cdesc, use_opaque_ );
+				  factory_, cdesc );
 	return eval;
       }
 
@@ -173,8 +169,7 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactory factory_;
-      bool use_opaque_, fast_deriv_;
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
 
     public:
       
@@ -182,10 +177,9 @@ namespace sc {
 
       twobody_deriv_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactory fac,
-          bool use_opaque, bool fast_deriv ):
-	integral_(integral), factory_(fac),
-	use_opaque_(use_opaque), fast_deriv_(fast_deriv) { }
+          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac ):
+	integral_(integral), factory_(fac)
+      { }
 
       void set_basis( Ref<GaussianBasisSet> bs1,
 		      Ref<GaussianBasisSet> bs2,
@@ -194,12 +188,11 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
-				       factory_, cdesc, use_opaque_,
-                                       fast_deriv_ );
+				       factory_, cdesc );
 	return eval;
       }
 
@@ -225,7 +218,7 @@ namespace sc {
       { }
 
       Ref<eval_type> operator() (
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc )
+          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
       {
 	return generator_.generate( cdesc );
       }
@@ -235,20 +228,19 @@ namespace sc {
     //----------------------------------------------------------------------
     
     int maxl_;
-    bool use_opaque_;
     bool intv3_order_;
-    bool fast_deriv_;
     gov::cca::ComponentID fac_id_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
-    Chemistry::Chemistry_Molecule molecule_;
-    std::vector<Chemistry::QC::GaussianBasis::DerivCenters> cca_dcs_;
+    ChemistryCXX::Molecule molecule_;
+    std::vector<Chemistry::QC::GaussianBasis::DerivCentersInterface> cca_dcs_;
+    std::vector<Chemistry::QC::GaussianBasis::IntegralDescrInterface> descs_;
     std::string buffer_;
     std::string factory_type_;
     std::string superfactory_type_;
     std::string default_subfactory_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescr eval_req_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface eval_req_;
 
     sidl::array<std::string> types_;
     sidl::array<std::string> derivs_;
@@ -313,8 +305,9 @@ namespace sc {
         </dl>
     */
 
-    IntegralCCA( bool use_opaque,
-                 const Ref<GaussianBasisSet> &b1,
+    IntegralCCA(const Ref<KeyVal>&);
+
+    IntegralCCA( const Ref<GaussianBasisSet> &b1,
                  const Ref<GaussianBasisSet> &b2,
                  const Ref<GaussianBasisSet> &b3,
                  const Ref<GaussianBasisSet> &b4,
@@ -325,8 +318,6 @@ namespace sc {
                  sidl::array<std::string> sfacs,
                  bool intv3_order
                 );
-
-    IntegralCCA(const Ref<KeyVal>&);
 
     IntegralCCA(StateIn&);
 

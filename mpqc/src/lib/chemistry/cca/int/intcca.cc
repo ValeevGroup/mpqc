@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 
 #include <sstream>
 #include <iostream>
@@ -38,30 +38,30 @@
 #include <chemistry/cca/int/obintcca.h>
 #include <chemistry/cca/int/tbintcca.h>
 #include <util/class/scexception.h>
-#include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
-#include <Chemistry_CompositeIntegralDescr.hh>
-#include <Chemistry_BaseIntegralDescr.hh>
-#include <Chemistry_OverlapIntegralDescr.hh>
-#include <Chemistry_PdotNuclearPIntegralDescr.hh>
-#include <Chemistry_PcrossNuclearPIntegralDescr.hh>
-#include <Chemistry_KineticIntegralDescr.hh>
-#include <Chemistry_NuclearIntegralDescr.hh>
-#include <Chemistry_HCoreIntegralDescr.hh>
-#include <Chemistry_DipoleIntegralDescr.hh>
-#include <Chemistry_QuadrupoleIntegralDescr.hh>
-#include <Chemistry_Eri4IntegralDescr.hh>
-#include <Chemistry_R12IntegralDescr.hh>
-#include <Chemistry_R12T1IntegralDescr.hh>
-#include <Chemistry_R12T2IntegralDescr.hh>
-#include <Chemistry_DerivCenters.hh>
-#include <Chemistry_DipoleData.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
+#include <ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_OverlapIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_PdotNuclearPIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_PcrossNuclearPIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_KineticIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_NuclearIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_HCoreIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_DipoleIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_QuadrupoleIntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_DerivCenters.hxx>
+#include <ChemistryIntegralDescrCXX_DipoleData.hxx>
 #include <chemistry/cca/int/cartit.h>
 #include <chemistry/cca/int/tform.h>
-#include <MPQC_IntV3EvaluatorFactory.hh>
+#include <MPQC_IntV3EvaluatorFactory.hxx>
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
+using namespace ChemistryIntegralDescrCXX;
 
 namespace auxintv3 {
   CartesianIter* new_cartesian_iter(int l);
@@ -91,21 +91,7 @@ Integral::get_default_integral()
 }
 */
 
-/* It'll take a fair bit of work to make superfactory work in ccafe
-IntegralCCA::IntegralCCA( IntegralEvaluatorFactory eval_factory, 
-			  bool use_opaque,
-			  const Ref<GaussianBasisSet> &b1,
-			  const Ref<GaussianBasisSet> &b2,
-			  const Ref<GaussianBasisSet> &b3,
-			  const Ref<GaussianBasisSet> &b4 ):
-  Integral(b1,b2,b3,b4), eval_factory_(eval_factory), use_opaque_(use_opaque)
-{
-  initialize_transforms();
-}
-*/
-
-IntegralCCA::IntegralCCA( bool use_opaque,
-                          const Ref<GaussianBasisSet> &b1,
+IntegralCCA::IntegralCCA( const Ref<GaussianBasisSet> &b1,
                           const Ref<GaussianBasisSet> &b2,
                           const Ref<GaussianBasisSet> &b3,
                           const Ref<GaussianBasisSet> &b4,
@@ -116,13 +102,13 @@ IntegralCCA::IntegralCCA( bool use_opaque,
                           sidl::array<std::string> sfacs,
                           bool intv3_order
                          ):
-  Integral(b1,b2,b3,b4), use_opaque_(use_opaque),
+  Integral(b1,b2,b3,b4),
   default_subfactory_(default_sf), factory_type_(factory_type),
   types_(types), derivs_(derivs), sfacs_(sfacs), intv3_order_(intv3_order)
 {
   superfactory_type_ = "Chemistry.IntegralSuperFactory";
 
-  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+  eval_req_ = CompositeIntegralDescr::_create();
 
   initialize_transforms();
 
@@ -131,28 +117,16 @@ IntegralCCA::IntegralCCA( bool use_opaque,
   init_generators();
 }
 
-
 IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
 {
-
   superfactory_type_ = "Chemistry.IntegralSuperFactory";
 
-  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
+  eval_req_ = CompositeIntegralDescr::_create();
 
   //------------
   // parse input
   //------------
-
-  // get integral buffer type
-  buffer_ = keyval->stringvalue("integral_buffer");
-  if ( keyval->error() != KeyVal::OK ) buffer_ = "opaque";
-  if ( buffer_ == "opaque" ) use_opaque_ = true;
-  else if ( buffer_ == "array" ) use_opaque_ = false;
-  else 
-    throw InputError( "integral_buffer must be either opaque or array",
-		      __FILE__, __LINE__,"integral_buffer",
-		      buffer_.c_str(),class_desc() );
 
   // for debugging/benchmarking
   intv3_order_ = false;
@@ -163,15 +137,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
       ExEnv::out0() << indent
                     << "Using intv3 integral ordering by user request\n";
   }
-  fast_deriv_ = false;
-  // this fast_deriv stuff is unneccessary and should be removed
-  //tempbool = keyval->booleanvalue("fast_deriv");
-  //if ( keyval->error() == KeyVal::OK ) {
-  //  fast_deriv_ = tempbool;
-  //  if( fast_deriv_ )
-  //    ExEnv::out0() << indent
-  //                  << "Using opaque deriv centers by user request\n";
-  // }
   
   // get evaluator factory type (default to SuperFactory)
   factory_type_ = keyval->stringvalue("evaluator_factory");
@@ -245,7 +210,6 @@ IntegralCCA::save_data_state(StateOut& s)
   Integral::save_data_state(s);
   s.put(superfactory_type_);
   s.put(buffer_);
-  s.put(use_opaque_);
   s.put(factory_type_);
   s.put(default_subfactory_);
   s.put(std_types_);
@@ -259,12 +223,10 @@ IntegralCCA::IntegralCCA(StateIn& s):
 
   initialize_transforms();
 
-  eval_req_ = Chemistry::CompositeIntegralDescr::_create();
-  fast_deriv_ = false;
+  eval_req_ = CompositeIntegralDescr::_create();
 
   s.get(superfactory_type_);
   s.get(buffer_);
-  s.get(use_opaque_);
   s.get(factory_type_);
   s.get(default_subfactory_);
   s.get(std_types_);
@@ -294,6 +256,8 @@ IntegralCCA::init_factory()
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
   // get a (super) evaluator factory
+  int nsubfac;
+  IntegralSuperFactoryInterface superfac;
   if( factory_type_ == superfactory_type_ ) {
 
     ostringstream fname;
@@ -303,14 +267,20 @@ IntegralCCA::init_factory()
     ++factory_instance_number;
 
     // get the super factory
-    fac_id_ = bs.createInstance(fname.str(),factory_type_,type_map);
-    services.registerUsesPort(fname_port.str(),
-                              "Chemistry.QC.GaussianBasis.IntegralSuperFactory",
+    //fac_id_ = bs.createInstance(fname.str(),factory_type_,type_map);
+    fac_id_ = bs.createInstance(fname.str(),"Chemistry.IntegralSuperFactory",type_map);
+    services.registerUsesPort(
+      fname_port.str(),
+      "Chemistry.QC.GaussianBasis.IntegralSuperFactoryInterface",
                               type_map);
     fac_con_ = bs.connect(my_id,fname_port.str(),
-                          fac_id_,"IntegralSuperFactory");
-    eval_factory_ = services.getPort(fname_port.str());
-    IntegralSuperFactory superfac = services.getPort(fname_port.str());
+                          fac_id_,"IntegralSuperFactoryInterface");
+    eval_factory_ = babel_cast<
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
+        services.getPort(fname_port.str()) );
+    superfac = babel_cast<
+      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
+        services.getPort(fname_port.str()) );
 
     eval_factory_.set_default_subfactory( default_subfactory_ );
     eval_factory_.set_subfactory_config( types_, derivs_, sfacs_ );
@@ -318,7 +288,7 @@ IntegralCCA::init_factory()
     // get sub factories
     set<string> subfac_set;
     map<string,gov::cca::ComponentID> subfac_name_to_id;
-    int nsubfac = sfacs_.length();
+    nsubfac = sfacs_.length();
     for( int i=0; i<nsubfac; ++i)
       subfac_set.insert( sfacs_.get(i) );
     if( !subfac_set.count(default_subfactory_) )
@@ -349,7 +319,9 @@ IntegralCCA::init_factory()
           bs.connect( my_id,intv3_port.str(),
                       subfac_name_to_id[sfname.str()],
                       "IntV3EvaluatorFactory");
-        MPQC::IntV3EvaluatorFactory fac = services.getPort(intv3_port.str());
+        MPQC::IntV3EvaluatorFactory fac = 
+          babel_cast<MPQC::IntV3EvaluatorFactory>(
+            services.getPort(intv3_port.str()) );
         fac.set_reorder(false);
       }    
     }
@@ -362,7 +334,7 @@ IntegralCCA::init_factory()
          miter != subfac_name_to_id.end(); miter++) {
       subfac_conids.push_back(
           bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
-                      (*miter).second, "IntegralEvaluatorFactory") );
+                      (*miter).second, "IntegralEvaluatorFactoryInterface") );
     }
   }
   else { 
@@ -375,28 +347,25 @@ IntegralCCA::init_factory()
 void
 IntegralCCA::init_generators()
 {
-  obgen_ = onebody_generator( this, eval_factory_, use_opaque_,
-                              !intv3_order_ );
+  obgen_ = onebody_generator( this, eval_factory_, !intv3_order_ );
   obgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyInt, onebody_generator>
     ob( obgen_ );
   get_onebody = ob;
 
-  obdgen_ = onebody_deriv_generator( this, eval_factory_, use_opaque_,
-                                     !intv3_order_ );
+  obdgen_ = onebody_deriv_generator( this, eval_factory_, !intv3_order_ );
   obdgen_.set_basis( bs1_, bs2_ );
   sc_eval_factory< OneBodyDerivInt, onebody_deriv_generator >
     obd( obdgen_ );
   get_onebody_deriv = obd;
 
-  tbgen_ = twobody_generator( this, eval_factory_, use_opaque_ );
+  tbgen_ = twobody_generator( this, eval_factory_ );
   tbgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyInt, twobody_generator >
     tb( tbgen_ );
   get_twobody = tb;
 
-  tbdgen_ = twobody_deriv_generator( this, eval_factory_, 
-                                     use_opaque_, fast_deriv_ );
+  tbdgen_ = twobody_deriv_generator( this, eval_factory_ );
   tbdgen_.set_basis( bs1_, bs2_, bs3_, bs4_ );
   sc_eval_factory< TwoBodyDerivInt, twobody_deriv_generator >
     tbd( tbdgen_ );
@@ -411,7 +380,7 @@ IntegralCCA::~IntegralCCA()
 Integral*
 IntegralCCA::clone()
 {
-  return new IntegralCCA( use_opaque_, bs1_, bs2_, bs3_, bs4_,
+  return new IntegralCCA( bs1_, bs2_, bs3_, bs4_,
                           default_subfactory_, factory_type_,
                           types_, derivs_, sfacs_, intv3_order_ );
 }
@@ -420,10 +389,11 @@ Ref<OneBodyInt>
 IntegralCCA::overlap()
 {
   eval_req_.clear();
-  Chemistry::OverlapIntegralDescr desc =
-    Chemistry::OverlapIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  OverlapIntegralDescr desc =
+    OverlapIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
   return get_onebody( eval_req_ );
@@ -433,10 +403,11 @@ Ref<OneBodyInt>
 IntegralCCA::p_dot_nuclear_p()
 {
   eval_req_.clear();
-  Chemistry::PdotNuclearPIntegralDescr desc =
-    Chemistry::PdotNuclearPIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  PdotNuclearPIntegralDescr desc =
+    PdotNuclearPIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
   return get_onebody( eval_req_ );
@@ -446,10 +417,11 @@ Ref<OneBodyInt>
 IntegralCCA::p_cross_nuclear_p()
 {
   eval_req_.clear();
-  Chemistry::PcrossNuclearPIntegralDescr desc =
-    Chemistry::PcrossNuclearPIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  PcrossNuclearPIntegralDescr desc =
+    PcrossNuclearPIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
   // need to make the the (x,y,z) components are correctly ordered
@@ -463,10 +435,11 @@ Ref<OneBodyInt>
 IntegralCCA::kinetic()
 {
   eval_req_.clear();
-  Chemistry::KineticIntegralDescr desc =
-    Chemistry::KineticIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  KineticIntegralDescr desc =
+    KineticIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -476,10 +449,11 @@ Ref<OneBodyInt>
 IntegralCCA::nuclear()
 {
   eval_req_.clear();
-  Chemistry::NuclearIntegralDescr desc =
-    Chemistry::NuclearIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  NuclearIntegralDescr desc =
+    NuclearIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -489,10 +463,11 @@ Ref<OneBodyInt>
 IntegralCCA::hcore()
 {
   eval_req_.clear();
-  Chemistry::HCoreIntegralDescr desc =
-    Chemistry::HCoreIntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  HCoreIntegralDescr desc =
+    HCoreIntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody( eval_req_ );
@@ -524,17 +499,18 @@ IntegralCCA::dipole(const Ref<DipoleData>& dat)
     for(int i=0; i<3; ++i)
       sidl_origin.set(i,0.0);
 
-  Chemistry::DipoleData cca_dat
-    = Chemistry::DipoleData::_create();
+  ChemistryIntegralDescrCXX::DipoleData cca_dat
+    = ChemistryIntegralDescrCXX::DipoleData::_create();
   cca_dat.set_origin( sidl_origin );
 
   eval_req_.clear();
-  Chemistry::DipoleIntegralDescr desc 
-    = Chemistry::DipoleIntegralDescr::_create();
+  DipoleIntegralDescr desc 
+    = DipoleIntegralDescr::_create();
   desc.set_dipole_data( cca_dat );
   desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
   return get_onebody( eval_req_ ); 
@@ -552,17 +528,18 @@ IntegralCCA::quadrupole(const Ref<DipoleData>& dat)
     for(int i=0; i<3; ++i)
       sidl_origin.set(i,0.0);
 
-  Chemistry::DipoleData cca_dat
-    = Chemistry::DipoleData::_create();
+  ChemistryIntegralDescrCXX::DipoleData cca_dat
+    = ChemistryIntegralDescrCXX::DipoleData::_create();
   cca_dat.set_origin( sidl_origin );
 
   eval_req_.clear();
-  Chemistry::QuadrupoleIntegralDescr desc
-    = Chemistry::QuadrupoleIntegralDescr::_create();
+  QuadrupoleIntegralDescr desc
+    = QuadrupoleIntegralDescr::_create();
   desc.set_dipole_data( cca_dat );
   desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
   return get_onebody( eval_req_ );
@@ -572,11 +549,12 @@ Ref<OneBodyDerivInt>
 IntegralCCA::overlap_deriv()
 {
   eval_req_.clear();
-  Chemistry::OverlapIntegralDescr desc =
-    Chemistry::OverlapIntegralDescr::_create();
+  OverlapIntegralDescr desc =
+    OverlapIntegralDescr::_create();
   desc.set_deriv_lvl(1);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -586,11 +564,12 @@ Ref<OneBodyDerivInt>
 IntegralCCA::kinetic_deriv()
 {
   eval_req_.clear();
-  Chemistry::KineticIntegralDescr desc =
-    Chemistry::KineticIntegralDescr::_create();
+  KineticIntegralDescr desc =
+    KineticIntegralDescr::_create();
   desc.set_deriv_lvl(1);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -600,11 +579,12 @@ Ref<OneBodyDerivInt>
 IntegralCCA::nuclear_deriv()
 {
   eval_req_.clear();
-  Chemistry::NuclearIntegralDescr desc =
-    Chemistry::NuclearIntegralDescr::_create();
+  NuclearIntegralDescr desc =
+    NuclearIntegralDescr::_create();
   desc.set_deriv_lvl(1);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -614,11 +594,12 @@ Ref<OneBodyDerivInt>
 IntegralCCA::hcore_deriv()
 {
   eval_req_.clear();
-  Chemistry::HCoreIntegralDescr desc =
-    Chemistry::HCoreIntegralDescr::_create();
+  HCoreIntegralDescr desc =
+    HCoreIntegralDescr::_create();
   desc.set_deriv_lvl(1);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_onebody_deriv( eval_req_ );
@@ -628,10 +609,11 @@ Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
   eval_req_.clear();
-  Chemistry::Eri4IntegralDescr desc =
-    Chemistry::Eri4IntegralDescr::_create();
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  Eri4IntegralDescr desc =
+    Eri4IntegralDescr::_create();
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_twobody( eval_req_ );
@@ -641,11 +623,12 @@ Ref<TwoBodyDerivInt>
 IntegralCCA::electron_repulsion_deriv()
 {
   eval_req_.clear();
-  Chemistry::Eri4IntegralDescr desc =
-    Chemistry::Eri4IntegralDescr::_create();
+  Eri4IntegralDescr desc =
+    Eri4IntegralDescr::_create();
   desc.set_deriv_lvl(1);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
   
   return get_twobody_deriv( eval_req_ );
@@ -655,30 +638,37 @@ Ref<TwoBodyInt>
 IntegralCCA::grt()
 {
   eval_req_.clear();
-  Chemistry::QC::GaussianBasis::IntegralDescr desc =
-    Chemistry::Eri4IntegralDescr::_create();
+  Eri4IntegralDescr desc =
+    Eri4IntegralDescr::_create();
   desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
   eval_req_.add_descr( desc );
 
-  desc = Chemistry::R12IntegralDescr::_create();
-  desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
-  desc.set_deriv_centers( cca_dcs_.back() );
-  eval_req_.add_descr( desc );
+  R12IntegralDescr desc2 = 
+    R12IntegralDescr::_create();
+  desc2.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc2.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc2 );
+  eval_req_.add_descr( desc2 );
 
-  desc = Chemistry::R12T1IntegralDescr::_create();
-  desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
-  desc.set_deriv_centers( cca_dcs_.back() );
-  eval_req_.add_descr( desc );
+  R12T1IntegralDescr desc3 = 
+    R12T1IntegralDescr::_create();
+  desc3.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc3.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc3 );
+  eval_req_.add_descr( desc3 );
 
-  desc = Chemistry::R12T2IntegralDescr::_create();
-  desc.set_deriv_lvl(0);
-  cca_dcs_.push_back( Chemistry::DerivCenters::_create() );
-  desc.set_deriv_centers( cca_dcs_.back() );
-  eval_req_.add_descr( desc );
+  R12T2IntegralDescr desc4 = 
+    R12T2IntegralDescr::_create();
+  desc4.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc4.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc4 );
+  eval_req_.add_descr( desc4 );
 
   return get_twobody( eval_req_ );
 }

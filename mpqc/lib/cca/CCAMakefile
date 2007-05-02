@@ -2,92 +2,28 @@
 # Makefile for cca component code
 #
 
-SIDL_FILES=$(SRCTOPDIR)/lib/cca/sidl/chemistry-mpqc.sidl
 REPO = $(TOPDIR)/lib/cca/repo
-BABEL_ARGS = -E --suppress-timestamp -R$(CCA_SPEC_BABEL_SHARE)/xml \
-  -R$(CCA_CHEM_REPO) -R$(REPO)
-ifeq ($(CLIENT_OR_SERVER),client)
-  BABEL_ARGS += --client=C++
-else
-  BABEL_ARGS += --server=C++
-endif
+EXT_REPOS = -R$(CCA_SPEC_BABEL_SHARE)/xml -R$(CCAFE_SHARE)/xml \
+  -R$(CCA_CHEM_REPO)/Physics -R$(CCA_CHEM_REPO)/Chemistry \
+  -R$(CCA_CHEM_REPO)/ChemistryOpt
+SERVER_DIR = $(SRCTOPDIR)/src/lib/chemistry/cca/server
+MPQC_SIDL = $(SRCTOPDIR)/lib/cca/sidl/chemistry-mpqc.sidl
 
-stamp-repo: $(SIDL_FILES)
-	@rm -f stamp-repo .temp-repo; touch .temp-repo
+babel-mpqc-cxx: $(MPQC_SIDL)
 	$(INSTALL) $(INSTALLDIROPT) $(REPO)
-	/bin/rm -f $(REPO)/MPQC*
-	$(BABEL) -e'^sidl.*' -e'^gov.*' \
-          -R$(CCA_CHEM_REPO) -R$(CCA_SPEC_BABEL_SHARE)/xml \
-          -R$(CCAFE_SHARE)/xml --text=xml -o$(REPO) $(SIDL_FILES)
-	$(PERL) $(SRCTOPDIR)/bin/fix-babel-srcs $(SRCDIR) $(IMPLHDRS) $(IMPLSRCS)
-	@mv -f .temp-repo $@
-
-stamp-babel: stamp-repo
-	@rm -f stamp-babel .temp-babel; touch .temp-babel
-ifeq ($(CLIENT_OR_SERVER),server)
-	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
-          do \
-            if test ! -e $${i}; then \
-              ln -s $(SRCDIR)/$${i}; \
-            fi; \
-          done
-endif
-	$(BABEL) $(BABEL_ARGS) $(BABEL_PACKAGES) $(BABEL_ENUMS) \
-          $(BABEL_CLASSES)
-	$(PERL) $(SRCTOPDIR)/bin/fix-babel-srcs $(SRCDIR) $(IMPLHDRS) $(IMPLSRCS)
-	@mv -f .temp-babel $@
-
-clean-components: oclean targetclean dclean miscclean
-	rm -f $(IORHDRS) $(IORSRCS) $(STUBHDRS) $(STUBSRCS) \
-              $(SKELHDRS) $(SKELSRCS)
-	rm -f babel.make* stamp-babel stamp-repo
-	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
-          do \
-            if test -L $${i}; then \
-              /bin/rm $${i}; \
-            fi; \
-          done
-
-## so we don't have to include babel.make
-PACKAGE_BASES := $(shell echo $(BABEL_PACKAGES) | sed s/\\./\\_/g )
-STUBHDRS = $(PACKAGE_BASES:%=%.hh)
-IORHDRS = $(PACKAGE_BASES:%=%_IOR.h)
-
-ENUM_BASES := $(shell echo $(BABEL_ENUMS) | sed s/\\./\\_/g )
-STUBHDRS += $(ENUM_BASES:%=%.hh)
-IORHDRS  += $(ENUM_BASES:%=%_IOR.h)
-IORSRCS  = $(ENUM_BASES:%=%_IOR.c)
-
-CLASS_BASES := $(shell echo $(BABEL_CLASSES) | sed s/\\./\\_/g )
-IORHDRS += $(CLASS_BASES:%=%_IOR.h)
-STUBHDRS += $(CLASS_BASES:%=%.hh)
-STUBSRCS = $(CLASS_BASES:%=%.cc)
-ifeq ($(CLIENT_OR_SERVER),server)
-  IORSRCS += $(CLASS_BASES:%=%_IOR.c)
-  IMPLHDRS = $(CLASS_BASES:%=%_Impl.hh)
-  IMPLSRCS = $(CLASS_BASES:%=%_Impl.cc)
-  SKELSRCS = $(CLASS_BASES:%=%_Skel.cc)
-endif
-
-GEN_CCA_SRCS = $(IORHDRS) $(IORSRCS) $(STUBHDRS) $(STUBSRCS) \
-           $(IMPLHDRS) $(IMPLSRCS) $(SKELSRCS)
-CCA_CXX_SRCS = $(IMPLSRCS) $(SKELSRCS) $(STUBSRCS) $(EXTRA_CXX_SRCS)
-CCA_CC_SRCS = $(IORSRCS)
-CCA_OBJS = $(CCA_CXX_SRCS:%.cc=%.$(OBJSUF)) $(CCA_CC_SRCS:%.c=%.$(OBJSUF))
-CCA_INCLUDES = $(STUBHDRS) $(IORHDRS) $(EXTRA_INCLUDES)
-
-$(GEN_CCA_SRCS): stamp-babel
-	@if test -f $@; then \
-          touch $@; \
-        else \
-          rm -f stamp-babel; \
-          $(MAKE) stamp-babel; \
-        fi
-
-$(EXTRA_CXX_SRCS): stamp-babel
-
-LIBOBJ = $(CCA_OBJS)
-
-LTLINKLIBOPTS += -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem_cxx_client -lccachem_cxx_server
-CPPFLAGS += -I./ -I$(SRCDIR)
+	$(BABEL) --text=xml $(EXT_REPOS) $(EXCLUDE) -o$(REPO) $(MPQC_SIDL)
+	-rm -rf babel.tmpdir
+	mkdir babel.tmpdir
+	cp -f $(SERVER_DIR)/*Impl* babel.tmpdir
+	$(BABEL) $(EXT_REPOS) $(EXCLUDE) --server=C++ $(MPQC_SIDL) \
+	  -o babel.tmpdir
+	-cd babel.tmpdir; \
+        rm -f Makefile LIBS.h; \
+        if test -e CVS; then \
+          rm -rf CVS; \
+        fi; \
+        $(PERL) $(CCA_CHEM_PREFIX)/bin/fix-babel-srcs ./ `find .`; \
+        mv -f *Impl* $(SERVER_DIR); \
+	mv -f * ../server
+	-rm -rf babel.tmpdir
 

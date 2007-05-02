@@ -39,20 +39,20 @@ CLIENT_OR_SERVER = client
 BABEL_PACKAGES = MPQC
 
 BABEL_CLASSES = \
-  MPQC.Chemistry_MoleculeViewer \
-  MPQC.Chemistry_QC_Model \
-  MPQC.Chemistry_QC_ModelFactory \
-  MPQC.Physics_Units \
-  MPQC.GaussianBasis_Shell \
-  MPQC.GaussianBasis_Atomic \
-  MPQC.GaussianBasis_Molecular \
+  MPQC.MoleculeViewer \
+  MPQC.Model \
+  MPQC.ModelFactory \
+  MPQC.Units \
+  MPQC.GaussianBasisShell \
+  MPQC.GaussianBasisAtomic \
+  MPQC.GaussianBasisMolecular \
   MPQC.IntV3EvaluatorFactory \
   MPQC.CintsEvaluatorFactory \
   MPQC.IntegralEvaluator1 \
   MPQC.IntegralEvaluator2 \
   MPQC.IntegralEvaluator3 \
   MPQC.IntegralEvaluator4 \
-  MPQC.ChemistryOpt_CoordinateModel \
+  MPQC.CoordinateModel \
   MPQC.ComponentClassDescription \
   MPQC.ComponentFactory \
   MPQC.SimpleDriver

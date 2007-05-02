@@ -104,7 +104,7 @@ MKF77SYM= $(PERL) $(TOPDIR)/bin/mkf77sym.pl
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory
 INCLUDE = -I$(TOPDIR)/src/lib -I$(SRCTOPDIR)/include -I$(SRCTOPDIR)/src/lib \
-          -I$(TOPDIR)/src/lib/chemistry/cca/server \
+          -I$(SRCTOPDIR)/src/lib/chemistry/cca/server \
 	  @CPPFLAGS@
 DEFINES = @DEFS@ @EXTRADEFINES@
 
@@ -154,17 +154,12 @@ BABEL=@BABEL_BIN@/babel
 BABEL_INCLUDE=@BABEL_INCLUDE@
 BABEL_LIB=@BABEL_LIB@
 
-# caffeine and classic for parameter ports
+# caffeine 
 CCAFE_LIB=@CCAFE_LIB@
+CCAFE_LIB_L_DIR=@CCAFE_LIB_L_DIR@
 CCAFE_SHARE=@CCAFE_SHARE@
+CCAFE_CORE=@CCAFE_CORE@
 
 # cca-chem libs
 CCA_CHEM_LIB=@CCA_CHEM_LIB@
-
-# intv3 or cca/cints ordering?
-INTV3_ORDER=no
-
-# intv3 or cca/cints ordering?
-INTV3_ORDER=no
-
-
+CCA_CHEM_PREFIX=@CCA_CHEM_PREFIX@

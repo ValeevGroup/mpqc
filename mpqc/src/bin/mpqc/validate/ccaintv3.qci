@@ -3,7 +3,6 @@ test_basis: STO-3G cc-pVTZ
 test_method: scf
 test_symmetry: c2v
 test_calc: opt
-test_integral_buffer: opaque array
 test_default_package: MPQC.IntV3EvaluatorFactory
 
 restart: no

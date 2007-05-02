@@ -33,6 +33,34 @@
 
 using namespace sc;
 
+Ext_CCAFramework::Ext_CCAFramework(gov::cca::Services &services )
+{
+  std::cerr << "initing Ext framework with services: " << &services << std::endl;
+  services_ = services;
+  type_map_ = services_.createTypeMap();
+  my_id_    = services_.getComponentID();
+  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
+  bs_ = babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
+}
+
+gov::cca::Services*
+Ext_CCAFramework::get_services()
+{ return &services_; }
+
+gov::cca::ports::BuilderService*
+Ext_CCAFramework::get_builder_service()
+{ return &bs_; }
+
+gov::cca::TypeMap*
+Ext_CCAFramework::get_type_map()
+{ return &type_map_; }
+
+gov::cca::ComponentID*
+Ext_CCAFramework::get_component_id()
+{ return &my_id_; }
+
+//////////////////////////////////////////////////////////////////////////////
+
 Ref<CCAFramework> CCAEnv::ccafw_;
 
 void 
@@ -44,10 +72,6 @@ CCAEnv::init(const Ref<CCAFramework> &ccafw)
 int
 CCAEnv::initialized() 
 { return ccafw_.nonnull(); }
-
-ccaffeine::AbstractFramework* 
-CCAEnv::get_framework()
-{ return ccafw_->get_framework(); }
 
 gov::cca::Services* 
 CCAEnv::get_services()

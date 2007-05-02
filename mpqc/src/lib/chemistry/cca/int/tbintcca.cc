@@ -33,16 +33,17 @@
 #include <util/class/scexception.h>
 #include <limits.h>
 
-#include <Chemistry_Eri4IntegralDescr.hh>
-#include <Chemistry_R12IntegralDescr.hh>
-#include <Chemistry_R12T1IntegralDescr.hh>
-#include <Chemistry_R12T2IntegralDescr.hh>
-#include <MPQC_IntegralEvaluator4.hh>
+#include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
+#include <MPQC_IntegralEvaluator4.hxx>
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
+using namespace ChemistryIntegralDescrCXX;
 
 ////////////////////////////////////////////////////////////////////////////
 // TwoBodyIntCCA
@@ -52,13 +53,11 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
                              const Ref<GaussianBasisSet> &bs2,
 			     const Ref<GaussianBasisSet> &bs3,
 			     const Ref<GaussianBasisSet> &bs4,
-			     IntegralSuperFactory fac,
-			     CompositeIntegralDescr cdesc,
-                             bool use_opaque ):
+			     IntegralSuperFactoryInterface fac,
+			     CompositeIntegralDescrInterface cdesc ):
   TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
-  eval_factory_(fac), cdesc_(cdesc),
-  use_opaque_(use_opaque)
+  eval_factory_(fac), cdesc_(cdesc)
 {
   ndesc_ = cdesc_.get_n_descr();
   for( int i=0; i<ndesc_; ++i ) {
@@ -68,13 +67,13 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 
   tbtype_to_buf_ = new double*[ndesc_];
 
-  IntegralDescr desc = Chemistry::Eri4IntegralDescr::_create();
+  IntegralDescrInterface desc = Eri4IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::eri;
-  desc = Chemistry::R12IntegralDescr::_create();
+  desc = R12IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12;
-  desc = Chemistry::R12T1IntegralDescr::_create();
+  desc = R12T1IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t1;
-  desc = Chemistry::R12T2IntegralDescr::_create();
+  desc = R12T2IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t2;
 
   int_bound_min_ = SCHAR_MIN;
@@ -87,22 +86,22 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     * bs4_->max_ncartesian_in_shell();
     
   // create cca basis sets
-  cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
+  cca_bs1_ = MPQC::GaussianBasisMolecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
-    cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs2_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;
   if( bs2_.pointer() != bs3_.pointer() ) {
-    cca_bs3_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs3_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs3_.initialize( bs3_.pointer(), bs3_->label() );
   }
   else
     cca_bs3_ = cca_bs2_;
   if( bs3_.pointer() != bs4_.pointer() ) {
-    cca_bs4_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs4_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs4_.initialize( bs4_.pointer(), bs4_->label() );
   }
   else
@@ -111,16 +110,10 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
   for( int i=0; i<ndesc_; ++i ) {
-    IntegralDescr desc = cdesc_.get_descr(i);
+    IntegralDescrInterface desc = cdesc_.get_descr(i);
     segments_.push_back( desc.get_n_segment() );
-    if( use_opaque_ )
-      tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
-        = static_cast<double*>( eval_.get_buffer(desc) );
-    else {
-      tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
-        = new double[scratchsize];
-      void* trash = eval_.get_buffer(desc);
-    }
+    tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
+        = eval_.get_array(desc).first();
   }
 
 }
@@ -147,26 +140,18 @@ void
 TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
 {
   int nfunc;
-  if( !use_opaque_ ) {
-    GaussianShell* s1 = &( bs1_->shell(i) );
-    GaussianShell* s2 = &( bs2_->shell(j) );
-    GaussianShell* s3 = &( bs3_->shell(k) );
-    GaussianShell* s4 = &( bs4_->shell(l) );
-    nfunc = s1->nfunction() * s2->nfunction() * 
-            s3->nfunction() * s4->nfunction();
-  }
+  GaussianShell* s1 = &( bs1_->shell(i) );
+  GaussianShell* s2 = &( bs2_->shell(j) );
+  GaussianShell* s3 = &( bs3_->shell(k) );
+  GaussianShell* s4 = &( bs4_->shell(l) );
+  nfunc = s1->nfunction() * s2->nfunction() * 
+          s3->nfunction() * s4->nfunction();
 
   for( int ii=0; ii<ndesc_; ++ii ) {
 
     buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
 
-    if( use_opaque_ )
-      eval_.compute( i, j, k, l );
-    else {
-      sidl_buffer_ = eval_.compute_array( types_[ii], 0, i, j, k, l );
-      for(int jj=0; jj<(nfunc * segments_[ii]); ++jj)
-        buffer_[jj] = sidl_buffer_.get(jj);
-    }
+    eval_.compute( i, j, k, l );
     
     if( !redundant_ )
       remove_redundant( i, j, k, l );
@@ -218,22 +203,25 @@ TwoBodyIntCCA::num_tbint_types() const
 ////////////////////////////////////////////////////////////////////////////
 // TwoBodyDerivIntCCA
 
-TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
-					const Ref<GaussianBasisSet> &bs1,
-					const Ref<GaussianBasisSet> &bs2,
-					const Ref<GaussianBasisSet> &bs3,
-					const Ref<GaussianBasisSet> &bs4,
-					IntegralSuperFactory fac,
-					CompositeIntegralDescr cdesc,
-					bool use_opaque, bool fast_deriv ) :
+TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( 
+    Integral* integral,
+    const Ref<GaussianBasisSet> &bs1,
+    const Ref<GaussianBasisSet> &bs2,
+    const Ref<GaussianBasisSet> &bs3,
+    const Ref<GaussianBasisSet> &bs4,
+    IntegralSuperFactoryInterface fac,
+    CompositeIntegralDescrInterface cdesc ) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
-  eval_factory_(fac), cdesc_(cdesc),
-  use_opaque_(use_opaque), fast_deriv_(fast_deriv)
+  eval_factory_(fac), cdesc_(cdesc)
 {
   ndesc_ = cdesc_.get_n_descr();
-  for( int i=0; i<ndesc_; ++i )
+  for( int i=0; i<ndesc_; ++i ) {
     descriptors_.push_back( cdesc_.get_descr(i) );
+    types_.push_back( descriptors_.back().get_type() );
+  }
+
+  tbtype_to_buf_ = new double*[ndesc_];
 
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
@@ -258,26 +246,23 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
     throw FeatureNotImplemented("only first order derivatives are available",
                                 __FILE__,__LINE__);
     
-  if( !use_opaque_ ) buff_ = new double[scratchsize];
-
-
   // create cca basis sets
-  cca_bs1_ = MPQC::GaussianBasis_Molecular::_create();
+  cca_bs1_ = MPQC::GaussianBasisMolecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
   if( bs1_.pointer() != bs2_.pointer() ) {
-    cca_bs2_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs2_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs2_.initialize( bs2_.pointer(), bs2_->label() );
   }
   else
     cca_bs2_ = cca_bs1_;
   if( bs2_.pointer() != bs3_.pointer() ) {
-    cca_bs3_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs3_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs3_.initialize( bs3_.pointer(), bs3_->label() );
   }
   else
     cca_bs3_ = cca_bs2_;
   if( bs3_.pointer() != bs4_.pointer() ) {
-    cca_bs4_ = MPQC::GaussianBasis_Molecular::_create();
+    cca_bs4_ = MPQC::GaussianBasisMolecular::_create();
     cca_bs4_.initialize( bs4_.pointer(), bs4_->label() );
   }
   else
@@ -291,20 +276,21 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( Integral* integral,
   eval_factory_.set_source_factories( sidl_factories );
 */
 
-  IntegralDescr idesc = cdesc_.get_descr(0);
-  cca_dc_ = idesc.get_deriv_centers();
-  type_ = idesc.get_type();
-  n_segment_ = idesc.get_n_segment();
-  
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
-  buffer_ = static_cast<double*>( eval_.get_buffer( cdesc_.get_descr(0) ) );
-  // and what happens for multiple buffers???
 
-  if( fast_deriv_ ) {
-    MPQC::IntegralEvaluator4 mpqc_eval = eval_;
-    mpqc_eval.set_opaque_deriv_centers( (void*) &sc_dc_ );
+  for( int i=0; i<ndesc_; ++i ) {
+    IntegralDescrInterface desc = cdesc_.get_descr(i);
+    cca_dcs_.push_back(desc.get_deriv_centers());
+    segments_.push_back( desc.get_n_segment() );
+    tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
+      = eval_.get_array(desc).first();
   }
+
+  // no multiple-buffer deriv types currently
+  // so this is ok
+  buffer_ = eval_.get_array(cdesc_.get_descr(0)).first();
+
 }
 
 TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA() 
@@ -317,45 +303,28 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
                                   sc::DerivCenters &dc )
 {
   int nfunc;
-  if( !use_opaque_ ) {
-    GaussianShell* s1 = &( bs1_->shell(i) );
-    GaussianShell* s2 = &( bs2_->shell(j) );
-    GaussianShell* s3 = &( bs3_->shell(k) );
-    GaussianShell* s4 = &( bs4_->shell(l) );
-    nfunc = s1->nfunction() * s2->nfunction() *
-            s3->nfunction() * s4->nfunction();
-  }
+  GaussianShell* s1 = &( bs1_->shell(i) );
+  GaussianShell* s2 = &( bs2_->shell(j) );
+  GaussianShell* s3 = &( bs3_->shell(k) );
+  GaussianShell* s4 = &( bs4_->shell(l) );
+  nfunc = s1->nfunction() * s2->nfunction() *
+          s3->nfunction() * s4->nfunction();
 
-  if( !fast_deriv_ ) {
-    cca_dc_.clear();
-    if( use_opaque_ )
-      eval_.compute( i, j, k, l );
-    else {   
-      sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
-      for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
-        buffer_[ii] = sidl_buffer_.get(ii);
-    }
+  for( int ii=0; ii<ndesc_; ++ii ) {
 
+    buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
+
+    eval_.compute( i, j, k, l );
+
+    // trouble if deriv centers differ
+    if( ii == 0 ) {
     dc.clear();
-    if( cca_dc_.has_omitted_center() )
-      dc.add_omitted(cca_dc_.omitted_center(),cca_dc_.omitted_atom());
-    for( int i=0; i<cca_dc_.n(); ++i)
-      dc.add_center(cca_dc_.center(i),cca_dc_.atom(i));
-  }
-  else {
-    if( use_opaque_ )
-      eval_.compute( i, j, k, l );
-    else {
-      sidl_buffer_ = eval_.compute_array( type_, 1, i, j, k, l );
-      for(int ii=0; ii<(nfunc * n_segment_ * 9); ++ii)
-        buffer_[ii] = sidl_buffer_.get(ii);
+    if( cca_dcs_[ii].has_omitted_center() )
+      dc.add_omitted( cca_dcs_[ii].omitted_center(),
+                      cca_dcs_[ii].omitted_atom());
+    for( int i=0; i<cca_dcs_[ii].n(); ++i)
+      dc.add_center( cca_dcs_[ii].center(i), cca_dcs_[ii].atom(i) );
     }
-
-    dc.clear();
-    if( sc_dc_.has_omitted_center() )
-      dc.add_omitted(sc_dc_.omitted_center(),sc_dc_.omitted_atom());
-    for( int i=0; i<sc_dc_.n(); ++i)
-      dc.add_center(sc_dc_.center(i),sc_dc_.atom(i));
   }
 
 }
@@ -398,7 +367,7 @@ TwoBodyDerivIntCCA::log2_shell_bound(int i, int j, int k, int l)
 unsigned int
 TwoBodyDerivIntCCA::num_tbint_types() const
 {
-  return 1;
+  return ndesc_;
 }
 
 void

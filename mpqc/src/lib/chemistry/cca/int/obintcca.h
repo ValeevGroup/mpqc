@@ -33,12 +33,12 @@
 #define _chemistry_cca_int_obintcca_h
 
 #include <vector>
-#include <sidl_cxx.hh>
+#include <sidl_cxx.hxx>
 #include <chemistry/qc/basis/obint.h>
-#include <Chemistry_QC_GaussianBasis_IntegralSuperFactory.hh>
-#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
-#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
-#include <MPQC_GaussianBasis_Molecular.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
+#include <MPQC_GaussianBasisMolecular.hxx>
 
 namespace sc {
 
@@ -51,12 +51,11 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
-    bool use_opaque_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     bool reorder_;
-    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
-    Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
+    MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface eval_;
     double* temp_buffer_;
     int n_segment_;
     std::string type_;
@@ -68,9 +67,9 @@ namespace sc {
     OneBodyIntCCA( Integral* integral,
 		   const Ref<GaussianBasisSet>&, 
 		   const Ref<GaussianBasisSet>&,
-		   Chemistry::QC::GaussianBasis::IntegralSuperFactory,
-		   Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-		   bool, bool );
+		   Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+		   Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
+		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
     bool cloneable();
@@ -87,15 +86,14 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactory eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc_;
-    bool use_opaque_;
+    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     bool reorder_;
-    MPQC::GaussianBasis_Molecular cca_bs1_, cca_bs2_;
+    MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
     double* buff_;
     double* temp_buffer_;
-    Chemistry::QC::GaussianBasis::IntegralEvaluator2 eval_;
-    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface eval_;
+    Chemistry::QC::GaussianBasis::DerivCentersInterface cca_dc_;
     int n_segment_;
     std::string type_;
     sidl::array<double> sidl_buffer_;
@@ -104,9 +102,9 @@ namespace sc {
     OneBodyDerivIntCCA( Integral* integral,
 		        const Ref<GaussianBasisSet>&,
 		        const Ref<GaussianBasisSet>&,
-			Chemistry::QC::GaussianBasis::IntegralSuperFactory,
-		        Chemistry::QC::GaussianBasis::CompositeIntegralDescr,
-			bool, bool );
+			Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+		        Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
+			bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);
     void compute_shell(int, int, int);

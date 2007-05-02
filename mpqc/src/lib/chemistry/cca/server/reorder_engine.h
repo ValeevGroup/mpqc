@@ -1,9 +1,9 @@
 #include <vector>
-#include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/intv3.h>
-#include <sidl_SIDLException.hh>
+#include <sidl_SIDLException.hxx>
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
 #include <buffer_size.h>
@@ -41,8 +41,11 @@ namespace MpqcCca {
     
     void check_temp_buffer( int deriv_lvl, int n_segment );
 
-    void add_buffer ( double* buffer,
-                      Chemistry::QC::GaussianBasis::IntegralDescr desc );
+    void
+    add_buffer ( 
+      double* buffer,
+      Chemistry::QC::GaussianBasis::IntegralDescrInterface desc 
+    );
   
     void do_it( int s1, int s2, int s3, int s4 );
  

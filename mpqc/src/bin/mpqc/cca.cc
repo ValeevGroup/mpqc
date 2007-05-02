@@ -37,12 +37,12 @@ using namespace sc;
 MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
 { 
   fw_ = ccaffeine::AbstractFramework::_create();
-  fw_.initialize(args,0); 
+  fw_.initialize(args,0,0); 
   type_map_ = fw_.createTypeMap();
   services_ = fw_.getServices("uber","UberComponent",type_map_);
   my_id_    = services_.getComponentID();
   services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
-  bs_ = services_.getPort("bs");
+  bs_ = babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
 
   component_factory_ = MPQC::ComponentFactory::_create();
   component_factory_.addDescription("Chemistry.IntegralSuperFactory",

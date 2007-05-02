@@ -132,7 +132,6 @@ sub process_file {
     init_var($test_vars, $parse, "molecule", "molecule");
     init_var($test_vars, $parse, "orthog_method", "default");
     init_var($test_vars, $parse, "lindep_tol", "default");
-    init_var($test_vars, $parse, "integral_buffer", "opaque");
     init_var($test_vars, $parse, "default_package",
              "MPQC.IntV3EvaluatorFactory");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
@@ -179,7 +178,6 @@ sub process_file {
         my $followed = $molecule_fixed[$index->{"followed"}];
         my $orthog_method = $test_vars->{"orthog_method"}->[$index->{"orthog_method"}];
         my $lindep_tol = $test_vars->{"lindep_tol"}->[$index->{"lindep_tol"}];
-        my $integral_buffer = $test_vars->{"integral_buffer"}->[$index->{"integral_buffer"}];
         my $default_package = $test_vars->{"default_package"}->[$index->{"default_package"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
@@ -266,7 +264,6 @@ sub process_file {
         $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
-        $parse->set_value("integral_buffer", $integral_buffer);
         $parse->set_value("default_package", $default_package);
         $parse->set_value("fzc", $fzc);
         $parse->set_value("fzv", $fzv);
@@ -338,7 +335,6 @@ sub process_file {
         $auxbasis = tofilename($auxbasis);
         $symmetry = tofilename($symmetry);
         if ($do_cca eq "yes"){
-             $intbuf = tofilename($integral_buffer);
              $intpack = tofilename($default_package);
         }
         else {

@@ -3,26 +3,26 @@
 path set %LIBGENERIC%
 path append %LIBSC%
 
-repository get-global Chemistry.Chemistry_MoleculeFactory
-repository get-global MPQC.Chemistry_QC_ModelFactory
+repository get-global Chemistry.MoleculeFactory
+repository get-global MPQC.ModelFactory
 repository get-global MPQC.SimpleDriver
 
-create Chemistry.Chemistry_MoleculeFactory molfactory
-create MPQC.Chemistry_QC_ModelFactory mpqcfactory
+create Chemistry.MoleculeFactory molfactory
+create MPQC.ModelFactory mpqcfactory
 create MPQC.SimpleDriver driver
 
-connect driver ModelFactory mpqcfactory ModelFactory
-connect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+connect driver ModelFactoryInterface mpqcfactory ModelFactoryInterface
+connect mpqcfactory MoleculeFactoryInterface molfactory MoleculeFactoryInterface
 
 parameter mpqcfactory CONFIG basis cc-pVTZ
 parameter mpqcfactory CONFIG theory HF
 parameter mpqcfactory CONFIG molecule_filename %SCREF%/ccafe_h2o.xyz
-parameter driver CONFIG do_gradient true
+parameter driver CONFIG do_gradient 1
 
 go driver go
 
-disconnect driver ModelFactory mpqcfactory ModelFactory
-disconnect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+disconnect driver ModelFactoryInterface mpqcfactory ModelFactoryInterface
+disconnect mpqcfactory MoleculeFactoryInterface molfactory MoleculeFactoryInterface
 
 remove molfactory
 remove mpqcfactory

@@ -1,4 +1,4 @@
-# Emacs should use -*- Makefile -*- mode.
+
 
 #################################################
 #
@@ -146,6 +146,8 @@ install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.hxx $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) *.hxx $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 
 install_target:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
@@ -184,12 +186,18 @@ ifneq ($(OBJSUF),lo)
 %.$(OBJSUF): %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
+%.$(OBJSUF): %.cxx
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+
 endif
 
 %.lo: %.C
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
 %.lo: %.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+
+%.lo: %.cxx
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
 %.lo: %.f
@@ -252,13 +260,25 @@ else
 endif
 
 ifneq ($(CXXDEPENDSUF),none)
+
 %.d: %.cc
 	$(CXXDEPEND) $(CXXDEPENDFLAGS) -c $(CPPFLAGS) $(CXXFLAGS) $< > /dev/null
 	sed 's/^$*.o/$*.$(OBJSUF) $*.d/g' < $(*F).$(CXXDEPENDSUF) > $(@F)
 	/bin/rm -f $(*F).$(CXXDEPENDSUF)
+
+%.d: %.cxx
+	$(CXXDEPEND) $(CXXDEPENDFLAGS) -c $(CPPFLAGS) $(CXXFLAGS) $< > /dev/null
+	sed 's/^$*.o/$*.$(OBJSUF) $*.d/g' < $(*F).$(CXXDEPENDSUF) > $(@F)
+	/bin/rm -f $(*F).$(CXXDEPENDSUF)
+
 else
+
 %.d: %.cc
 	$(CXXDEPEND) $(CXXDEPENDFLAGS) -c $(CPPFLAGS) $(CXXFLAGS) $< | sed 's/^$*.o/$*.$(OBJSUF) $*.d/g' > $(@F)
+
+%.d: %.cxx
+	$(CXXDEPEND) $(CXXDEPENDFLAGS) -c $(CPPFLAGS) $(CXXFLAGS) $< | sed 's/^$*.o/$*.$(OBJSUF) $*.d/g' > $(@F)
+
 endif
 
 #

@@ -1,9 +1,10 @@
 package MPQC version 0.2 {
 
-  class Chemistry_MoleculeViewer implements-all Chemistry.MoleculeViewer,
+  class MoleculeViewer implements-all Chemistry.MoleculeViewerInterface,
     gov.cca.Component, gov.cca.Port {};
 
-  class Chemistry_QC_Model implements-all Chemistry.QC.Model {
+  class Model implements-all Chemistry.QC.ModelInterface 
+  {
     void initialize_parsedkeyval(in string keyword, in string input);
     void initialize_parsedkeyval_file(in string keyword, in string filename);
     void initialize_aggregatekeyval(in string keyword, in string input,
@@ -11,79 +12,120 @@ package MPQC version 0.2 {
     void initialize_pointer(in opaque ptr);
   };
 
-  class Chemistry_QC_ModelFactory implements-all Chemistry.QC.ModelFactory,
+  class ModelFactory implements-all Chemistry.QC.ModelFactoryInterface,
     gov.cca.Component, gov.cca.Port {};
 
-  class Physics_Units implements-all Physics.Units {};
+  class Units implements-all Physics.UnitsInterface {};
 
-  class GaussianBasis_Shell implements-all 
-    Chemistry.QC.GaussianBasis.Shell{
+  class GaussianBasisShell implements-all 
+    Chemistry.QC.GaussianBasis.ShellInterface
+  {
       void initialize(in opaque scshell);
   };
-  class GaussianBasis_Atomic implements-all 
-    Chemistry.QC.GaussianBasis.Atomic{
+  class GaussianBasisAtomic implements-all 
+    Chemistry.QC.GaussianBasis.AtomicInterface
+  {
       void initialize(in opaque scbasis, in int atomnum);  
   };
-  class GaussianBasis_Molecular implements-all 
-    Chemistry.QC.GaussianBasis.Molecular{
+  class GaussianBasisMolecular implements-all 
+    Chemistry.QC.GaussianBasis.MolecularInterface
+  {
       void initialize(in opaque scbasis, in string label);
       opaque sc_gbs_pointer();
   };
 
-  class IntV3EvaluatorFactory
-    implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
-    gov.cca.Component, gov.cca.Port {
-      void set_reorder(in bool reorder);
+  class IntV3EvaluatorFactory implements-all 
+    Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
+    gov.cca.Component, gov.cca.Port
+  {
+    void set_reorder(in bool reorder);
   };
  
-  class CintsEvaluatorFactory
-    implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
+  class CintsEvaluatorFactory implements-all 
+    Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
     gov.cca.Component, gov.cca.Port {};
 
   class IntegralEvaluator1 implements-all
-    Chemistry.QC.GaussianBasis.IntegralEvaluator1{
-      void add_evaluator(in opaque eval, 
-                         in Chemistry.QC.GaussianBasis.IntegralDescr desc );
-      void set_basis(in Chemistry.QC.GaussianBasis.Molecular bs1);
-      void init_reorder();
-      void set_opaque_deriv_centers( in opaque dc );
-    };
-  class IntegralEvaluator2 implements-all
-    Chemistry.QC.GaussianBasis.IntegralEvaluator2{
-      void add_evaluator( in opaque eval,
-                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
-      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1, 
-                      in Chemistry.QC.GaussianBasis.Molecular bs2);
-      void init_reorder();
-      void set_opaque_deriv_centers( in opaque dc );
-    };
-  class IntegralEvaluator3 implements-all
-    Chemistry.QC.GaussianBasis.IntegralEvaluator3{
-      void add_evaluator( in opaque eval,
-                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
-      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
-                      in Chemistry.QC.GaussianBasis.Molecular bs2,
-                      in Chemistry.QC.GaussianBasis.Molecular bs3);
-      void init_reorder();
-      void set_opaque_deriv_centers( in opaque dc );
-    };
-  class IntegralEvaluator4 implements-all
-    Chemistry.QC.GaussianBasis.IntegralEvaluator4{
-      void add_evaluator( in opaque eval, 
-                          in Chemistry.QC.GaussianBasis.IntegralDescr desc );
-      void add_composite_evaluator( 
-                  in opaque eval,
-                  in Chemistry.QC.GaussianBasis.CompositeIntegralDescr cdesc );
-      void set_basis( in Chemistry.QC.GaussianBasis.Molecular bs1,
-                      in Chemistry.QC.GaussianBasis.Molecular bs2,
-                      in Chemistry.QC.GaussianBasis.Molecular bs3,
-                      in Chemistry.QC.GaussianBasis.Molecular bs4 );
-      void init_reorder();
-      void set_opaque_deriv_centers( in opaque dc );
-    };
+    Chemistry.QC.GaussianBasis.IntegralEvaluator1Interface
+  {
+    void
+    add_evaluator(
+      in opaque eval, 
+      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+    );
  
-  class ChemistryOpt_CoordinateModel 
-    implements-all ChemistryOpt.CoordinateModel,
+    void
+    set_basis(
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs1
+    );
+
+    void init_reorder();
+  };
+
+  class IntegralEvaluator2 implements-all
+    Chemistry.QC.GaussianBasis.IntegralEvaluator2Interface
+  {
+    void
+    add_evaluator( 
+      in opaque eval,
+      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+    );
+    void
+    set_basis( 
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs1, 
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs2
+    );
+ 
+    void init_reorder();
+  };
+
+  class IntegralEvaluator3 implements-all
+    Chemistry.QC.GaussianBasis.IntegralEvaluator3Interface
+  {
+    void
+    add_evaluator( 
+      in opaque eval,
+      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc
+    );
+
+    void
+    set_basis( 
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs1,
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs2,
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs3
+    );
+   
+    void init_reorder();
+  };
+
+  class IntegralEvaluator4 implements-all
+    Chemistry.QC.GaussianBasis.IntegralEvaluator4Interface
+  {
+    void
+    add_evaluator( 
+      in opaque eval, 
+      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+    );
+
+    void
+    add_composite_evaluator( 
+      in opaque eval,
+      in Chemistry.QC.GaussianBasis.CompositeIntegralDescrInterface cdesc 
+    );
+
+    void
+    set_basis( 
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs1,
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs2,
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs3,
+      in Chemistry.QC.GaussianBasis.MolecularInterface bs4 
+    );
+
+    void init_reorder();
+  };
+ 
+  class CoordinateModel 
+    implements-all ChemistryOpt.CoordinateModelInterface,
     gov.cca.Component, gov.cca.Port{};
 
   class ComponentFactory implements-all ccaffeine.ports.ComponentFactory {

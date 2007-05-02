@@ -1,6 +1,6 @@
 #include <vector>
 #include <chemistry/qc/basis/gaussbas.h>
-#include <sidl_SIDLException.hh>
+#include <sidl_SIDLException.hxx>
 
 /**
      This utility class keeps track of what size temporary buffers should be.

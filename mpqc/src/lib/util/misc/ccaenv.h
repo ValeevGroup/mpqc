@@ -33,28 +33,58 @@
 #define _util_misc_ccaenv_h
 
 #include <util/ref/ref.h>
-#include <ccaffeine_AbstractFramework.hh>
-#include <gov_cca.hh>
+//#include <gov_cca_AbstractFramework.hxx>
+#include <ccaffeine_AbstractFramework.hxx>
+#include <gov_cca.hxx>
 
 namespace sc {
 
-/** The CCAFramework class handles embedded CCA frameworks. */
+/** The CCAFramework class defines an interface to CCA frameworks. */
 class CCAFramework: public RefCount {
   public:
     virtual ~CCAFramework();
-    /// Returns pointer to framework
-    virtual ccaffeine::AbstractFramework* get_framework() = 0;
     /// Returns pointer to Services object
     virtual gov::cca::Services* get_services() = 0;
     /// Returns pointer to BuilderService object
     virtual gov::cca::ports::BuilderService* get_builder_service() = 0;
     /// Returns pointer to type map
     virtual gov::cca::TypeMap* get_type_map() = 0;
-    /// Returns pointer to "uber" component's ComponentID
+    /// Returns pointer to framework's ComponentID
     virtual gov::cca::ComponentID* get_component_id() = 0;
 };
 
-/** The CCAEnv class provides a default CCAFramework. */
+/** The AbstractCCAFramework class defines an interface to
+    abstract CCA frameworks. */
+class AbstractCCAFramework: public CCAFramework {
+  public:
+    virtual ~AbstractCCAFramework(){ }
+    /// Returns pointer to abstract framework
+    virtual ccaffeine::AbstractFramework* get_framework() = 0;
+};
+
+/** The Ext_CCAFramework class handles externally initialized 
+    CCA frameworks. */
+class Ext_CCAFramework: public CCAFramework {
+
+    gov::cca::Services services_;
+    gov::cca::ports::BuilderService bs_;
+    gov::cca::TypeMap type_map_;
+    gov::cca::ComponentID my_id_;
+
+  public:
+    /// Initialize the framework.
+    Ext_CCAFramework(gov::cca::Services &services);
+    /// Returns pointer to Services object
+    virtual gov::cca::Services* get_services();
+    /// Returns pointer to BuilderService object
+    virtual gov::cca::ports::BuilderService* get_builder_service();
+    /// Returns pointer to type map
+    virtual gov::cca::TypeMap* get_type_map();
+    /// Returns pointer to framework's ComponentID
+    virtual gov::cca::ComponentID* get_component_id();
+};
+
+/** The CCAEnv class provides a CCA environment. */
 class CCAEnv {
   private:
     static Ref<CCAFramework> ccafw_;
@@ -66,15 +96,13 @@ class CCAEnv {
     static int initialized();
     /// Returns the CCAFramework object.
     static Ref<CCAFramework> ccaframework() { return ccafw_; }
-    /// Returns pointer to framework
-    static ccaffeine::AbstractFramework* get_framework();
     /// Returns pointer to Services object
     static gov::cca::Services* get_services();
     /// Returns pointer to BuilderService object
     static gov::cca::ports::BuilderService* get_builder_service();
     /// Returns pointer to type map
     static gov::cca::TypeMap* get_type_map(); 
-    /// Returns pointer to "uber" component's ComponentID
+    /// Returns pointer to framework's ComponentID
     static gov::cca::ComponentID* get_component_id();
 };
 

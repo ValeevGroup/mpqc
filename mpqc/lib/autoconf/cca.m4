@@ -8,13 +8,13 @@ dnl   ENABLE_PYTHON       enable python bindings (yes/no)
 dnl
 dnl output variables:
 dnl   CCAFE_CONFIG CCAFE_INCLUDE CCAFE_LIB CCAFE_SHARE CCAFE_BIN
-dnl   CCAFE_MPI_ENABLE CCAFE_MPI_INCLUDE CCAFE_MPI_LIB CCAFE_MPI_BIN
+dnl   CCAFE_MPI_ENABLE CCAFE_MPIRUN
 dnl   CCA_SPEC_BABEL_CONFIG CCA_SPEC_BABEL_INCLUDE
 dnl   CCA_SPEC_BABEL_LIB CCA_SPEC_BABEL_SHARE
-dnl   CCA_SPEC_CLASSIC_CONFIG CCA_SPEC_CLASSIC_INCLUDE
-dnl   CCA_SPEC_CLASSIC_LIB CCA_SPEC_CLASSIC_SHARE
 dnl   BABEL_CONFIG BABEL_INCLUDE BABEL_LIB BABEL_SHARE BABEL_BIN
 dnl   BABEL_CC BABEL_CFLAGS BABEL_CXX BABEL_CXXFLAGS
+dnl   BABEL_F77_ENABLE BABEL_F77 BABEL_FFLAGS
+dnl   BABEL_F90_ENABLE BABEL_F90 BABEL_FCFLAGS 
 dnl   BABEL_LIBTOOL
 dnl   BABEL_PYTHON_ENABLE CCAFE_PYTHON_ENABLE
 dnl   BABEL_PYTHON BABEL_PYTHON_VERSION
@@ -38,11 +38,15 @@ AC_DEFUN([AC_CHECK_CCA],[
   CCAFE_LIB=`$CCAFE_CONFIG --var CCAFE_pkglibdir`
   CCAFE_SHARE=`$CCAFE_CONFIG --var CCAFE_pkgdatadir`
   CCAFE_BIN=`$CCAFE_CONFIG --var CCAFE_bindir`
+  CCAFE_CORE=`$CCAFE_CONFIG --var CCAFE_LIB_L`
+  CCAFE_LIB_L_DIR=`$CCAFE_CONFIG --var CCAFE_LIB_L_DIR`
   AC_SUBST(CCAFE_CONFIG)
   AC_SUBST(CCAFE_INCLUDE)
   AC_SUBST(CCAFE_LIB)
   AC_SUBST(CCAFE_SHARE)
   AC_SUBST(CCAFE_BIN)
+  AC_SUBST(CCAFE_CORE)
+  AC_SUBST(CCAFE_LIB_L_DIR)
 
   # check for cca-spec-babel
   CCA_SPEC_BABEL_CONFIG=`$CCAFE_CONFIG --var CCAFE_CCA_SPEC_BABEL_CONFIG`
@@ -56,6 +60,20 @@ AC_DEFUN([AC_CHECK_CCA],[
   AC_SUBST(CCA_SPEC_BABEL_INCLUDE)
   AC_SUBST(CCA_SPEC_BABEL_LIB)
   AC_SUBST(CCA_SPEC_BABEL_SHARE)
+
+  # check for cca-spec-classic
+  #CCA_SPEC_CLASSIC_ROOT=`$CCAFE_CONFIG --var CCAFE_CLASSIC_CCA_ROOT`
+  #CCA_SPEC_CLASSIC_CONFIG="$CCA_SPEC_CLASSIC_ROOT/bin/cca-spec-classic-config"
+  #if test -z $CCA_SPEC_CLASSIC_CONFIG || test ! -e $CCA_SPEC_CLASSIC_CONFIG; then
+  #  AC_MSG_ERROR([can't find cca-spec-classic-config])
+  #fi
+  #CCA_SPEC_CLASSIC_INCLUDE=`$CCA_SPEC_CLASSIC_CONFIG --var CLASSIC_pkgincludedir`
+  #CCA_SPEC_CLASSIC_LIB=`$CCA_SPEC_CLASSIC_CONFIG --var CLASSIC_pkglibdir`
+  #CCA_SPEC_CLASSIC_SHARE=`$CCA_SPEC_CLASSIC_CONFIG --var CLASSIC_pkgdatadir`
+  #AC_SUBST(CCA_SPEC_CLASSIC_CONFIG)
+  #AC_SUBST(CCA_SPEC_CLASSIC_INCLUDE)
+  #AC_SUBST(CCA_SPEC_CLASSIC_LIB)
+  #AC_SUBST(CCA_SPEC_CLASSIC_SHARE)
 
   # check for babel
   BABEL_CONFIG=`$CCA_SPEC_BABEL_CONFIG --var CCASPEC_BABEL_BABEL_CONFIG`
@@ -72,7 +90,7 @@ AC_DEFUN([AC_CHECK_CCA],[
   AC_SUBST(BABEL_SHARE)
   AC_SUBST(BABEL_BIN)
 
-  # check for babel compilers
+  # check for babel c/c++ compilers
   BABEL_CC=`$BABEL_CONFIG --query-var=CC`
   BABEL_CFLAGS=`$BABEL_CONFIG --query-var=CFLAGS`
   BABEL_CXX=`$BABEL_CONFIG --query-var=CXX`
@@ -81,6 +99,20 @@ AC_DEFUN([AC_CHECK_CCA],[
   AC_SUBST(BABEL_CFLAGS)
   AC_SUBST(BABEL_CXX)
   AC_SUBST(BABEL_CXXFLAGS)
+
+  # check for babel fortran compilers
+  BABEL_F77_ENABLE=`$BABEL_CONFIG --query-var=SUPPORT_FORTRAN77`
+  BABEL_F77=`$BABEL_CONFIG --query-var=F77`
+  BABEL_FFLAGS=`$BABEL_CONFIG --query-var=FFLAGS`
+  AC_SUBST(BABEL_F77_ENABLE)
+  AC_SUBST(BABEL_F77)
+  AC_SUBST(BABEL_FFLAGS)
+  BABEL_F90_ENABLE=`$BABEL_CONFIG --query-var=SUPPORT_FORTRAN90`
+  BABEL_F90=`$BABEL_CONFIG --query-var=FC`
+  BABEL_F90FLAGS=`$BABEL_CONFIG --query-var=FCFLAGS`
+  AC_SUBST(BABEL_F90_ENABLE)
+  AC_SUBST(BABEL_F90)
+  AC_SUBST(BABEL_FCFLAGS)
 
   # might as well use babel's libtool
   BABEL_BIN=`$BABEL_CONFIG --bindir`
@@ -91,45 +123,34 @@ AC_DEFUN([AC_CHECK_CCA],[
   AC_SUBST(BABEL_LIBTOOL)
 
   # check mpi configuration
-  CCAFE_MPI_INCLUDE=`$CCAFE_CONFIG --var CCAFE_MPI_INC`
-  CCAFE_MPI_LIB=`$CCAFE_CONFIG --var CCAFE_MPI_LIBDIR`
-  CCAFE_MPI_BIN=`$CCAFE_CONFIG --var CCAFE_MPI_BIN`
-  if test -z "$CCAFE_MPI_INCLUDE"; then
+  CCAFE_USEMPI=`$CCAFE_CONFIG --var CCAFE_USEMPI`
+  CCAFE_MPIRUN=`$CCAFE_CONFIG --var CCAFE_MPIRUN`
+  if test "$CCAFE_USEMPI" = "1"; then
+    CCAFE_MPI_ENABLE="yes"
+  else
     CCAFE_MPI_ENABLE="no"
     AC_MSG_WARN([Ccaffeine not configured for MPI])
-  else
-   CCAFE_MPI_ENABLE="yes"
-   CCAFE_MPI_INCLUDE=`echo $CCAFE_MPI_INCLUDE | sed 's/^\-I//'`
   fi
   AC_SUBST(CCAFE_MPI_ENABLE)
-  AC_SUBST(CCAFE_MPI_INCLUDE)
-  AC_SUBST(CCAFE_MPI_LIB)
-  AC_SUBST(CCAFE_MPI_BIN)
+  AC_SUBST(CCAFE_MPIRUN)
 
-  if test $ENABLE_PYTHON == "yes"; then
-    # check for babel python
-    BABEL_PYTHON_ENABLE=`$BABEL_CONFIG --query-var=SUPPORT_PYTHON`
-    if test $BABEL_PYTHON_ENABLE == "false"; then
-      AC_MSG_ERROR([Babel not properly configured for python])
-    fi
-    # check that ccafe is configured for python
-    if ! test -d $CCAFE_ROOT/lib/python$PYTHON_VERSION/site-packages/ccaffeine; then
-      AC_MSG_ERROR([Ccaffeine not properly configured for Python])
-    else
-      CCAFE_PYTHON_ENABLE="yes"
-    fi
-    BABEL_PYTHON=`$BABEL_CONFIG --query-var=WHICH_PYTHON`
-    BABEL_PYTHON_VERSION=`$BABEL_CONFIG --query-var=PYTHON_VERSION`
-    BABEL_PYTHON_LIB=`$BABEL_CONFIG --query-var=PYTHONLIB`/site-packages
-    BABEL_PYTHON_INCLUDE=`$BABEL_CONFIG --query-var=PYTHONINC`
-    AC_SUBST(BABEL_PYTHON)
-    AC_SUBST(BABEL_PYTHON_VERSION)
-    AC_SUBST(BABEL_PYTHON_LIB)
-    AC_SUBST(BABEL_PYTHON_INCLUDE)
+  # check for babel python
+  BABEL_PYTHON_ENABLE=`$BABEL_CONFIG --query-var=SUPPORT_PYTHON`
+  BABEL_PYTHON=`$BABEL_CONFIG --query-var=WHICH_PYTHON`
+  BABEL_PYTHON_VERSION=`$BABEL_CONFIG --query-var=PYTHON_VERSION`
+  BABEL_PYTHON_LIB=`$BABEL_CONFIG --query-var=PYTHONLIB`/site-packages
+  BABEL_PYTHON_INCLUDE=`$BABEL_CONFIG --query-var=PYTHONINC`
+  # check if ccafe is configured for python
+  if test -d $CCAFE_LIB/../python$BABEL_PYTHON_VERSION/site-packages/ccaffeine; then
+    CCAFE_PYTHON_ENABLE="yes"
   else
-    BABEL_PYTHON_ENABLE="no"
     CCAFE_PYTHON_ENABLE="no"
   fi
+  AC_SUBST(BABEL_PYTHON)
+  AC_SUBST(BABEL_PYTHON_VERSION)
+  AC_SUBST(BABEL_PYTHON_LIB)
+  AC_SUBST(BABEL_PYTHON_INCLUDE)
+  AC_SUBST(CCAFE_PYTHON_ENABLE)
 
   echo -e "\nCCA Tools Configuration:"
   echo -e "---------------------------------------------------------------"
@@ -141,18 +162,12 @@ AC_DEFUN([AC_CHECK_CCA],[
   echo -e "ccafe python enabled:\n  $CCAFE_PYTHON_ENABLE"
   echo -e "ccafe mpi enabled\n  $CCAFE_MPI_ENABLE"
   if test $CCAFE_MPI_ENABLE == "yes"; then
-    echo -e "ccafe mpi include:\n  $CCAFE_MPI_INCLUDE"
-    echo -e "ccafe mpi lib:\n  $CCAFE_MPI_LIB"
-    echo -e "ccafe mpi bin:\n  $CCAFE_MPI_BIN"
+    echo -e "ccafe mpirun:\n  $CCAFE_MPIRUN"
   fi
   echo -e "cca-spec-babel-config:\n $CCA_SPEC_BABEL_CONFIG"
   echo -e "cca-spec-babel include:\n  $CCA_SPEC_BABEL_INCLUDE"
   echo -e "cca-spec-babel lib:\n  $CCA_SPEC_BABEL_LIB"
   echo -e "cca-spec-babel share:\n  $CCA_SPEC_BABEL_SHARE"
-  echo -e "cca-spec-classic-config:\n  $CCA_SPEC_CLASSIC_CONFIG"
-  echo -e "cca-spec-classic include:\n  $CCA_SPEC_CLASSIC_INCLUDE"
-  echo -e "cca-spec-classic lib:\n  $CCA_SPEC_CLASSIC_LIB"
-  echo -e "cca-spec-classic share:\n  $CCA_SPEC_CLASSIC_SHARE"
   echo -e "babel-config:\n  $BABEL_CONFIG"
   echo -e "babel include:\n  $BABEL_INCLUDE"
   echo -e "babel lib:\n  $BABEL_LIB"

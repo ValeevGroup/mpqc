@@ -32,6 +32,8 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
+CPPFLAGS += -I../server
+
 TARGET_TO_MAKE=mpqc
 # This is required to give libtool the right rpath arguments.
 # Without the right rpath arguments, libtool will refuse to install

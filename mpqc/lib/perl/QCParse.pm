@@ -837,16 +837,11 @@ sub input_string() {
     if($do_cca) {
       $integrals = "% using cca integrals";
       $integrals = "$integrals\nintegrals<IntegralCCA>: (";
-      my $buffer_type = $qcparse->value("integral_buffer");
-      if( $buffer_type ne "opaque" && $buffer_type ne "array" ) {
-        $buffer_type = "opaque";
-      }     
       my $int_package = $qcparse->value("default_package");
       if( $int_package ne "MPQC.IntV3EvaluatorFactory" && 
           $int_package ne "MPQC.CintsEvaluatorFactory" ) {
         $int_package = "MPQC.IntV3EvaluatorFactory";
       }
-      $integrals = "$integrals\n  integral_buffer = $buffer_type";
       $integrals = "$integrals\n  default_subfactory = $int_package";
       $integrals = "$integrals\n  molecule = \$:molecule";
       $integrals = "$integrals\n)\n";

@@ -29,60 +29,67 @@ TOPDIR=../../../../..
 ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(TOPDIR)/lib/Makedirlist
 
-default::
-
-clean:: clean-components
-
-CLIENT_OR_SERVER = server
-
-BABEL_PACKAGES = MPQC
-
-BABEL_CLASSES = \
-  MPQC.CCAException \
-  MPQC.Chemistry_MoleculeViewer \
-  MPQC.Chemistry_QC_Model \
-  MPQC.Chemistry_QC_ModelFactory \
-  MPQC.Physics_Units \
-  MPQC.GaussianBasis_Shell \
-  MPQC.GaussianBasis_Atomic \
-  MPQC.GaussianBasis_Molecular \
-  MPQC.IntV3EvaluatorFactory \
-  MPQC.IntegralEvaluator1 \
-  MPQC.IntegralEvaluator2 \
-  MPQC.IntegralEvaluator3 \
-  MPQC.IntegralEvaluator4 \
-  MPQC.ChemistryOpt_CoordinateModel \
-  MPQC.ComponentClassDescription \
-  MPQC.ComponentFactory \
-  MPQC.SimpleDriver
-
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
-  BABEL_CLASSES += MPQC.CintsEvaluatorFactory
+ifeq ($(INTV3_ORDER),yes)
+  DEFINES += -DINTV3_ORDER
 endif
-
-EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc reorder_engine.cc \
-                 buffer_size.cc
-EXTRA_INCLUDES = socket.h except.h ccaiter.h \
-                 integral_evaluator.h reorder_engine.h buffer_size.h
-
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-include $(SRCDIR)/$(TOPDIR)/lib/cca/CCAMakefile
-
-BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libSCccaserver
 
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   DEFINES += -DHAVE_CINTS
 endif
 
-LTLINKLIBOPTS += -L$(libdir) -R$(libdir)
+include babel.make
+
+TARGET_TO_MAKE = libSCccaserver
+BIN_OR_LIB = LIB
+
+CSRC = $(IORSRCS)
+
+CXXSRC = $(IMPLSRCS) $(SKELSRCS) $(STUBSRCS) \
+  basis_cca_to_sc.cc buffer_size.cc except.cc reorder_engine.cc socket.cc
+
+INC = $(STUBHDRS) 
+
+CPPFLAGS += -I./
+
+LTLINKLIBOPTS += \
+  -L$(libdir) -R$(libdir) \
+  -L$(BABEL_LIB) -R$(BABEL_LIB) -lsidl \
+  -L$(CCAFE_LIB) -R$(CCAFE_LIB) $(CCAFE_CORE) \
+  -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem
+
+LIBSRC = $(CXXSRC) $(CSRC)
+LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
+LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
+LIBOBJ := $(LIBOBJ:%.cxx=%.$(OBJSUF))
+
+DISTFILES = $(INC) Makefile
+
+DEPENDINCLUDE = $(INC)
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
+#############################################################
+
+default:: $(DEPENDINCLUDE)
+interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.$(OBJSUF)=.d): $(GEN_CCA_SRCS) $(DEPENDINCLUDE)
+babel.make: $(SRCDIR)/$(TOPDIR)/lib/cca/sidl/chemistry-mpqc.sidl
+	cd ..; $(MAKE) babel-mpqc-cxx
+
+targetclean::
+
+distclean::
+	-rm -f $(IORHDRS) $(IORSRCS) $(SKELSRCS) $(STUBHDRS) $(STUBSRCS)
+	-rm -f babel*
+
+$(TESTOBJ:.$(OBJSUF)=.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
- include $(LIBOBJ:.$(OBJSUF)=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
+

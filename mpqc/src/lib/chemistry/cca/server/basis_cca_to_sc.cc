@@ -3,15 +3,15 @@
 #include <iomanip>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/atominfo.h>
-#include <Chemistry_QC_GaussianBasis_Molecular.hh>
-#include <Chemistry_Molecule.hh>
+#include <Chemistry_QC_GaussianBasis_MolecularInterface.hxx>
+#include <Chemistry_MoleculeInterface.hxx>
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
-Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
+Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
 
   const char* am_to_symbol[] = {"s", "p", "d", "f", "g", "h", "i", "k", "l",
 			       "m", "n", "o", "p", "q", "r", "s", "t", "u",
@@ -19,7 +19,7 @@ Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
 
   //cca_basis.print_molecular();
 
-  Chemistry::Molecule cca_mol = cca_basis.get_molecule();
+  Chemistry::MoleculeInterface cca_mol = cca_basis.get_molecule();
 
   ostringstream input;
 
@@ -57,13 +57,13 @@ Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
   // <atomname>: <basisname>: [
   AtomInfo empty_info;
   for(int i=0; i<cca_mol.get_n_atom(); ++i) {
-    Atomic atomic = cca_basis.get_atomic(i);
+    AtomicInterface atomic = cca_basis.get_atomic(i);
     input << " " << empty_info.name( cca_mol.get_atomic_number(i) ) << ": "
 	  << " basis" << i << ": [\n";
     
     // form shells
     for(int ishell=0; ishell<atomic.get_n_shell(); ++ishell) {
-      Shell shell = atomic.get_shell(ishell);
+      ShellInterface shell = atomic.get_shell(ishell);
       // (type: [ am = <symbol> ...]
       input << "  (normalized = 0\n";
       //input << "  (normalized = 1\n";

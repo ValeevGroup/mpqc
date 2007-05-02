@@ -9,9 +9,9 @@ FILES = $(shell echo `find repo`)
 
 default::
 
-install:: components.cca
+install:: mpqc.cca
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca
-	$(INSTALL) $(INSTALLIBOPT) components.cca $(installroot)$(libdir)/cca
+	$(INSTALL) $(INSTALLIBOPT) mpqc.cca $(installroot)$(libdir)/cca
 
 install_devel:: $(SRCDIR)/sidl/chemistry-mpqc.sidl
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca

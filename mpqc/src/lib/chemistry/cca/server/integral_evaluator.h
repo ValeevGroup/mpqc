@@ -1,27 +1,28 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
-#include <Chemistry_QC_GaussianBasis_IntegralDescr.hh>
-#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescr.hh>
-#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
-#include <Chemistry_QC_GaussianBasis_Molecular.hh>
-#include <Chemistry_CompositeIntegralDescr.hh>
+#include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_MolecularInterface.hxx>
+#include <ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx>
 #include <limits.h>
 #include <vector>
 #include <utility>
-#include <sidl_SIDLException.hh>
+#include <sidl_SIDLException.hxx>
 
 namespace MpqcCca {
 
-  typedef Chemistry::QC::GaussianBasis::IntegralDescr QC_IntegralDescr;
-  typedef Chemistry::QC::GaussianBasis::DerivCenters QC_DerivCenters;
-  typedef Chemistry::QC::GaussianBasis::CompositeIntegralDescr
+  typedef Chemistry::QC::GaussianBasis::IntegralDescrInterface 
+    QC_IntegralDescr;
+  typedef Chemistry::QC::GaussianBasis::DerivCentersInterface
+    QC_DerivCenters;
+  typedef Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
     QC_CompIntegralDescr;
 
   class onebody_onecenter_computer {
 
   private:
     int sh1_;
-    Chemistry::QC::GaussianBasis::Molecular bs1_;
 
   public:
     onebody_onecenter_computer():
@@ -59,7 +60,6 @@ namespace MpqcCca {
 
   private:
     int sh1_;
-    Chemistry::QC::GaussianBasis::Molecular bs1_;
 
   public:
     onebody_onecenter_deriv_computer():
@@ -261,12 +261,6 @@ namespace MpqcCca {
         dc->add_center(sc_dc_.center(i),sc_dc_.atom(i));
     }
 
-    void compute_fast( sc::TwoBodyDerivInt* eval, sc::DerivCenters* sc_dc )
-    {
-      sc_dc->clear();
-      eval->compute_shell(sh1_,sh2_,sh3_,sh4_, *sc_dc );
-    }
-
     double compute_bounds( sc::TwoBodyDerivInt* eval )
     {
       return eval->shell_bound( sh1_, sh2_, sh3_, sh4_ );
@@ -284,7 +278,8 @@ namespace MpqcCca {
     
     IntegralEvaluator( ) { }
     
-    ~IntegralEvaluator( ) { }
+    ~IntegralEvaluator( ) {
+    }
     
   private:
     
@@ -318,11 +313,29 @@ namespace MpqcCca {
 	}
       return NULL;
     }
-    
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
+
+    sidl::array<double> get_array ( QC_IntegralDescr desc,
+                                    int buffer_size )
     {
-      Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc = 
-        Chemistry::CompositeIntegralDescr::_create();
+      for( int i=0; i<evals_.size(); ++i)
+        if( desc.get_type() == types_[i] &&
+            desc.get_deriv_lvl() == deriv_lvls_[i] ) {
+
+          int lower[1] = {0};
+          int upper[1];
+          upper[0] = buffer_size - 1;
+          int stride[1] = {1};
+
+          sidl_buffer_.borrow( buffers_[i], 1, lower, upper, stride);
+          return sidl_buffer_;
+        }
+    }
+    
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    get_descriptor ()
+    {
+      Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc = 
+        ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
       for( int i=0; i<evals_.size(); ++i)
         cdesc.add_descr( evals_[i].second );
       return cdesc;
@@ -337,13 +350,6 @@ namespace MpqcCca {
           computer->compute( evals_[i].first, &(dcs_[i]) );
       }
     }
-
-    void compute_fast ( computer_type* computer, sc::DerivCenters* sc_dc )
-    {
-      for( int i=0; i<evals_.size(); ++i)
-        computer->compute_fast( evals_[i].first, sc_dc );
-    }
-
 
     double compute_bounds( computer_type* computer )
     {
@@ -395,12 +401,13 @@ namespace MpqcCca {
     CompositeIntegralEvaluator( ): 
       have_new_shells_(true), sh1_(-1), sh2_(-1), sh3_(-1), sh4_(-1) { }
 
-    ~CompositeIntegralEvaluator( ) { }
+    ~CompositeIntegralEvaluator( ) {
+    }
 
   private:
 
     std::vector< std::pair<eval_type*,QC_CompIntegralDescr> > evals_;
-    sidl::array<double> sidl_buffer_;
+    std::vector< sidl::array<double> > sidl_buffers_;
     int sh1_, sh2_, sh3_, sh4_;
     bool have_new_shells_;
     std::vector< double* > buffers_;
@@ -456,10 +463,44 @@ namespace MpqcCca {
       return NULL;
     }
 
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescr get_descriptor ()
+    sidl::array<double> get_array ( QC_IntegralDescr desc,
+                                    sc::TwoBodyInt::tbint_type tbt,
+                                    int buffer_size )
     {
-      Chemistry::QC::GaussianBasis::CompositeIntegralDescr cdesc =
-        Chemistry::CompositeIntegralDescr::_create();
+      std::string type = desc.get_type();
+      int deriv_lvl = desc.get_deriv_lvl();
+      for( int i=0; i<evals_.size(); ++i) {
+        for( int j=0; j<evals_[i].second.get_n_descr(); ++ j) {
+          if( type == evals_[i].second.get_descr(j).get_type() &&
+              deriv_lvl == evals_[i].second.get_descr(j).get_deriv_lvl() ) {
+            const double *b = evals_[i].first->buffer( tbt );
+            types_.push_back( type );
+            deriv_lvls_.push_back( deriv_lvl );
+            buffers_.push_back( const_cast<double*>( b ) );
+          }
+        }
+      }
+
+      int lower[1] = {0};
+      int upper[1];
+      upper[0] = buffer_size - 1;
+      int stride[1] = {1};
+
+      for( int i=0; i<buffers_.size(); ++i)
+        if( types_[i] == type && deriv_lvls_[i] == deriv_lvl ) {
+          sidl::array<double> sa;
+          sa.borrow( buffers_[i], 1, lower, upper, stride);
+          sidl_buffers_.push_back(sa);
+          return sidl_buffers_.back();
+        }
+
+    }
+
+    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    get_descriptor ()
+    {
+      Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc =
+        ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
       for( int i=0; i<evals_.size(); ++i)
         for( int j=0; j<evals_[i].second.get_n_descr(); ++j )
           cdesc.add_descr( evals_[i].second.get_descr(j) );
@@ -489,18 +530,12 @@ namespace MpqcCca {
                                         int deriv_lvl,
                                         int buffer_size )
     {
-      int lower[1] = {0};
-      int upper[1];
-      upper[0] = buffer_size - 1;
-      int stride[1] = {1};
-
       if( have_new_shells_ )
         compute( computer );
 
       for( int i=0; i<buffers_.size(); ++i)
         if( types_[i] == type && deriv_lvls_[i] == deriv_lvl ) {
-          sidl_buffer_.borrow( buffers_[i], 1, lower, upper, stride);
-          return sidl_buffer_;
+          return sidl_buffers_[i];
         }
 
       return NULL;

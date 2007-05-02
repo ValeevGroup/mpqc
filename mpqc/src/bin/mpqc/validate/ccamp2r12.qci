@@ -5,7 +5,6 @@ test_method: mp2-r12/a
 test_symmetry: c2v
 test_calc: energy
 test_fzc: 1
-test_integral_buffer: opaque array
 test_default_package: MPQC.CintsEvaluatorFactory
 
 restart: no

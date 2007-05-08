@@ -260,7 +260,7 @@ CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
 
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
-CHECK0BFILTER += %pc2 %pc3 %pc4
+CHECK0BFILTER += %pc2 %pc3 %pc4 %pc2aug %pc3aug %pc4aug
 CHECK0BFILTER += %6311gss
 CHECK0FILTER := $(CHECK0BFILTER:%=%d2h) \
                 $(CHECK0BFILTER:%=%c2v) \
@@ -288,7 +288,7 @@ CHECK0OUTPUTS := $(CHECK0INPUTS:%.$(INSUF)=%.out)
 CHECK1INPUTS := $(ALLINPUTS)
 CHECK1BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK1BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
-CHECK1BFILTER += %pc2 %pc3 %pc4
+CHECK1BFILTER += %pc2 %pc3 %pc4 %pc2aug %pc3aug %pc4aug
 CHECK1BFILTER += %6311gss
 CHECK1FILTER := $(CHECK1BFILTER:%=%d2h) \
                 $(CHECK1BFILTER:%=%c2v) \

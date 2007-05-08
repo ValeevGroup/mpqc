@@ -34,6 +34,7 @@
 
 #include <util/state/stateio.h>
 #include <math/optimize/qnewton.h>
+#include <math/optimize/mcsearch.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 
@@ -50,7 +51,6 @@ static ClassDesc QNewtonOpt_cd(
 QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
-
   if (function_.null()) {
       ExEnv::err0() << "QNewtonOpt requires a function keyword" << endl;
       abort();
@@ -58,9 +58,21 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
 
   init();
 
-  update_ << keyval->describedclassvalue("update");
+  if (keyval->exists("update")) {
+    update_ << keyval->describedclassvalue("update");
+  }
+  else {
+    update_ = new BFGSUpdate;
+  }
   if (update_.nonnull()) update_->set_inverse();
-  lineopt_ << keyval->describedclassvalue("lineopt");
+
+  if (keyval->exists("lineopt")) {
+    lineopt_ << keyval->describedclassvalue("lineopt");
+  }
+  else {
+    lineopt_ = new MCSearch;
+  }
+
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
   print_x_ = keyval->booleanvalue("print_x");
@@ -72,8 +84,6 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   if (keyval->error() != KeyVal::OK) restrict_ = 1;
   dynamic_grad_acc_ = keyval->booleanvalue("dynamic_grad_acc");
   if (keyval->error() != KeyVal::OK) dynamic_grad_acc_ = 1;
-  force_search_ = keyval->booleanvalue("force_search");
-  if (keyval->error() != KeyVal::OK) force_search_ = 0;
   restart_ = keyval->booleanvalue("restart");
   if (keyval->error() != KeyVal::OK) restart_ = 1;
 
@@ -228,23 +238,26 @@ QNewtonOpt::update()
   // either do a lineopt or check stepsize
   double tot;
   if(lineopt_.nonnull()) {
-    if (dynamic_cast<Backtrack*>(lineopt_.pointer()) != 0) {
+    Ref<Backtrack> bt = dynamic_cast<Backtrack*>(lineopt_.pointer());
+    if (bt.nonnull()) {
       // The Backtrack line search is a special case.
+
+      int force_search = bt->force_search();
 
       // perform a search
       double factor;
-      if( n_iterations_ == 0 && force_search_ ) 
-        factor = lineopt_->set_decrease_factor(1.0);
-      lineopt_->init(xdisp,function());
+      if( n_iterations_ == 0 && force_search ) 
+        factor = bt->set_decrease_factor(1.0);
+      bt->init(xdisp,function());
       // reset value acc here so line search "precomputes" are 
       // accurate enough for subsequent gradient evals
       function()->set_desired_value_accuracy(accuracy_/100);
-      int acceptable = lineopt_->update();
-      if( n_iterations_ == 0 && force_search_ )
-        lineopt_->set_decrease_factor( factor );
+      int acceptable = bt->update();
+      if( n_iterations_ == 0 && force_search )
+        bt->set_decrease_factor( factor );
 
       if( !acceptable ) {
-        if( force_search_ ) factor = lineopt_->set_decrease_factor(1.0);
+        if( force_search ) factor = bt->set_decrease_factor(1.0);
 
         // try a new guess hessian
         if( restart_ ) {
@@ -254,8 +267,8 @@ QNewtonOpt::update()
           function()->guess_hessian(hessian);
           ihessian_ = function()->inverse_hessian(hessian);
           xdisp = -1.0 * (ihessian_ * gcurrent);
-          lineopt_->init(xdisp,function());
-          acceptable = lineopt_->update();
+          bt->init(xdisp,function());
+          acceptable = bt->update();
         }
       
         // try steepest descent direction
@@ -263,8 +276,8 @@ QNewtonOpt::update()
           ExEnv::out0() << endl << indent << 
             "Trying steepest descent direction." << endl;
           xdisp = -1.0 * gcurrent;
-          lineopt_->init(xdisp,function());
-          acceptable = lineopt_->update();
+          bt->init(xdisp,function());
+          acceptable = bt->update();
         }
 
         // give up and use steepest descent step
@@ -276,7 +289,7 @@ QNewtonOpt::update()
           apply_transform(t);
         }
 
-        if( force_search_ ) lineopt_->set_decrease_factor( factor );
+        if( force_search ) bt->set_decrease_factor( factor );
       }
     }
     else {
@@ -294,6 +307,7 @@ QNewtonOpt::update()
         double maxabs_gradient = function()->gradient()->maxabs();
 
         int converged = lineopt_->update();
+        msg_->bcast(converged);
 
         ExEnv::out0() << indent
                       << "Completed line optimization step " << ilineopt+1
@@ -374,6 +388,7 @@ QNewtonOpt::update()
   // check for convergence
   conv_->set_nextx(xnext);
   int converged = conv_->converged();
+  msg_->bcast(converged);
   if (converged) return converged;
 
   ExEnv::out0() << indent
@@ -404,6 +419,55 @@ QNewtonOpt::apply_transform(const Ref<NonlinearTransform> &t)
   if (lineopt_.nonnull()) lineopt_->apply_transform(t);
   if (ihessian_.nonnull()) t->transform_ihessian(ihessian_);
   if (update_.nonnull()) update_->apply_transform(t);
+}
+
+void
+QNewtonOpt::print(std::ostream&o) const
+{
+  o << indent
+    << "QNewtonOpt:"
+    << std::endl
+    << incindent
+    << indent << "accuracy         = " << accuracy_
+    << std::endl
+    << indent << "print_x          = " << (print_x_?"yes":"no")
+    << std::endl
+    << indent << "print_hessian    = " << (print_hessian_?"yes":"no")
+    << std::endl
+    << indent << "print_gradient   = " << (print_gradient_?"yes":"no")
+    << std::endl
+    << indent << "linear           = " << (linear_?"yes":"no")
+    << std::endl
+    << indent << "restrict         = " << (restrict_?"yes":"no")
+    << std::endl
+    << indent << "dynamic_grad_acc = " << (dynamic_grad_acc_?"yes":"no")
+    << std::endl
+    << indent << "restart          = " << (restart_?"yes":"no")
+    << std::endl;
+
+  if (update_.null()) {
+    o << indent << "update           = 0 (hessian updates will not be performed)"
+      << std::endl;
+  }
+  else {
+    o << indent << "update           =" << std::endl;
+    o << incindent;
+    update_->print(o);
+    o << decindent;
+  }
+
+  if (lineopt_.null()) {
+    o << indent << "lineopt          = 0 (line optimization will not be performed)"
+      << std::endl;
+  }
+  else {
+    o << indent << "lineopt          =" << std::endl;
+    o << incindent;
+    lineopt_->print(o);
+    o << decindent;
+  }
+  Optimize::print(o);
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

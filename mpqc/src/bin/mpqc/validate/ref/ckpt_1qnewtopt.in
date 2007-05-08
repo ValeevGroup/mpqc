@@ -3,4 +3,9 @@ mpqc: (
   savestate = no
   restart = yes
   restart_file = "ckpt_0qnewtopt.ckpt"
+  override: (
+    opt: (
+      max_iterations = 2
+    )
+  )
 )

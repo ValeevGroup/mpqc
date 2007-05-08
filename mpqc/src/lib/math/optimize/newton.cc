@@ -211,6 +211,26 @@ NewtonOpt::update()
   return converged;
 }
 
+void
+NewtonOpt::print(std::ostream&o) const
+{
+  o << indent
+    << "NewtonOpt:"
+    << std::endl
+    << incindent
+    << indent << "accuracy         = " << accuracy_
+    << std::endl
+    << indent << "print_x          = " << print_x_
+    << std::endl
+    << indent << "print_hessian    = " << print_hessian_
+    << std::endl
+    << indent << "print_gradient   = " << print_gradient_
+    << std::endl;
+
+  Optimize::print(o);
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

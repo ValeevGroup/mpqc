@@ -154,10 +154,6 @@ SCF::compute_vector(double& eelec, double nucrep)
     tim.enter("density");
     delta = new_density();
     tim.exit("density");
-    
-    // check convergence
-    if (delta < desired_value_accuracy()
-        && accuracy < desired_value_accuracy()) break;
 
     // reset the density from time to time
     if (iter_since_reset && !(iter_since_reset%dens_reset_freq_)) {
@@ -191,6 +187,11 @@ SCF::compute_vector(double& eelec, double nucrep)
                   << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                               iter+1, eelec+eother+nucrep, delta)
                   << endl;
+    
+    // check convergence
+    if (delta < desired_value_accuracy()
+        && accuracy < desired_value_accuracy()
+        && iter+1 >= miniter_ ) break;
 
     // now extrapolate the fock matrix
     tim.enter("extrap");

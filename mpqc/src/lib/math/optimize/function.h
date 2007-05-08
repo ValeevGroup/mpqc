@@ -55,6 +55,8 @@ class Function: virtual public SavableState, public Compute {
     AccResultRefSCVector gradient_;     ///< The gradient at x_
     AccResultRefSymmSCMatrix hessian_;  ///< The hessian at x_.
 
+    bool throw_if_tolerance_exceeded_;
+
     /** @name Update Members
         Update the various computable results.
     */
@@ -103,6 +105,10 @@ class Function: virtual public SavableState, public Compute {
 
         <dt><tt>hessian_accuracy</tt><dd> Sets the accuracy to which
         hessians are computed.  The default is the machine accuracy.
+
+        <dt><tt>throw_if_tolerance_exceeded</tt><dd> If this is true,
+        then an exception will be thrown if a result cannot be computed
+        to the desired accuracy.  The default is true.
 
         </dl> */
     Function(const Ref<KeyVal>&, double funcacc = DBL_EPSILON,
@@ -190,6 +196,9 @@ class Function: virtual public SavableState, public Compute {
 
     /// Print information about the object.
     virtual void print(std::ostream& = ExEnv::out0()) const;
+
+    /// Overridden Compute member.
+    virtual bool throw_if_tolerance_exceeded() const;
 };
 
 }

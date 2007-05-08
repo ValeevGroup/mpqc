@@ -63,6 +63,12 @@ Compute::add(ResultInfo*r)
   _results.insert(r);
 }
 
+bool
+Compute::throw_if_tolerance_exceeded() const
+{
+  return true;
+}
+
 void
 Compute::obsolete()
 {
@@ -242,7 +248,8 @@ AccResultInfo::update() {
                        << endl;
           abort();
         }
-      if (_actual_accuracy > _desired_accuracy) {
+      if (_actual_accuracy > _desired_accuracy
+          && _c->throw_if_tolerance_exceeded()) {
           throw ToleranceExceeded("AccResultInfo::update(): "
                                   "desired accuracy not achieved",
                                   __FILE__, __LINE__,

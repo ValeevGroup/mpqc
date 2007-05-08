@@ -62,6 +62,7 @@ class SCF: public OneBodyWavefunction {
     Ref<AccumH> accumddh_;
     
     int maxiter_;
+    int miniter_;
     int dens_reset_freq_;
     int reset_occ_;
     int local_dens_;

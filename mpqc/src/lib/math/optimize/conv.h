@@ -130,6 +130,8 @@ class Convergence: virtual public SavableState {
 
     /// Return nonzero if the optimization has converged.
     virtual int converged();
+
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

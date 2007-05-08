@@ -65,12 +65,14 @@ class MCSearch: public LineOpt {
         the LineOpt KeyVal CTOR for parameters that it takes.
     */
     MCSearch(const Ref<KeyVal>&);
+    MCSearch();
     ~MCSearch();
     int update();
 
     void init(RefSCVector& direction);
     void init(RefSCVector& direction, Ref<Function> function);
 
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

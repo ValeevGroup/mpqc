@@ -212,6 +212,35 @@ Convergence::reset()
   nextx_ = 0;
 }
 
+void
+Convergence::print(std::ostream&o) const
+{
+  o << indent << "Convergence";
+  if (::class_desc<Convergence>() != class_desc()) {
+      o << " (base class of " << class_desc()->name() << ")";
+    }
+  o << ":" << std::endl;
+  o << incindent;
+  o << indent << "The following criteria must be simultaneously satified:"
+    << std::endl;
+  if (use_max_disp_) {
+      o << indent << "max_disp         = " << max_disp_ << std::endl;
+    }
+  if (use_max_grad_) {
+      o << indent << "max_grad         = " << max_grad_ << std::endl;
+    }
+  if (use_rms_disp_) {
+      o << indent << "rms_disp         = " << rms_disp_ << std::endl;
+    }
+  if (use_rms_grad_) {
+      o << indent << "rms_grad         = " << rms_grad_ << std::endl;
+    }
+  if (use_graddisp_) {
+      o << indent << "graddisp         = " << graddisp_ << std::endl;
+    }
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

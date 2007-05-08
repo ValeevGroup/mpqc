@@ -373,10 +373,10 @@ BatchElectronDensity::compute_basis_values(const SCVector3&r)
 }
 
 void
-BatchElectronDensity::compute_spin_density(const double *dmat,
-                                           double *rho,
-                                           double *grad,
-                                           double *hess)
+BatchElectronDensity::compute_spin_density(const double *restrictxx dmat,
+                                           double *restrictxx rho,
+                                           double *restrictxx pgrad,
+                                           double *restrictxx phess)
 {
   int i, j;
 
@@ -385,25 +385,68 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
   double bvi, bvix, bviy, bviz;
   double bvixx, bviyx, bviyy, bvizx, bvizy, bvizz;
 
+  double grad[3];
+  double hess[6];
+
+  double *restrictxx bs_vals = bs_values_;
+  double *restrictxx bsg_vals = bsg_values_;
+  double *restrictxx bsh_vals = bsh_values_;
+
   if (need_gradient_) for (i=0; i<3; i++) grad[i] = 0.0;
   if (need_hessian_) for (i=0; i<6; i++) hess[i] = 0.0;
 
-  if (need_gradient_ || need_hessian_) {
+  if (need_gradient_ && !need_hessian_) {
       for (i=0; i < ncontrib_bf_; i++) {
           int it = contrib_bf_[i];
-          bvi = bs_values_[i];
+          bvi = bs_vals[i];
+          bvix = bsg_vals[i*3+X];
+          bviy = bsg_vals[i*3+Y];
+          bviz = bsg_vals[i*3+Z];
+          int j3 = 0, j6 = 0;
+          int itoff = (it*(it+1))>>1;
+          int itjt;
+          double t = 0.0;
+          for (j=0; j < i; j++) {
+              int jt = contrib_bf_[j];
+              itjt = itoff+jt;
+
+              densij = dmat[itjt];
+              double bvj = bs_vals[j];
+
+              t += densij*bvi*bvj;
+
+              double bvjx, bvjy, bvjz;
+              bvjx = bsg_vals[j3+X];
+              bvjy = bsg_vals[j3+Y];
+              bvjz = bsg_vals[j3+Z];
+              grad[X] += densij*(bvi*bvjx + bvj*bvix);
+              grad[Y] += densij*(bvi*bvjy + bvj*bviy);
+              grad[Z] += densij*(bvi*bvjz + bvj*bviz);
+              j3 += 3;
+            }
+          densij = dmat[itoff+it]*bvi;
+          tmp += t + 0.5*densij*bvi;
+          grad[X] += densij*bvix;
+          grad[Y] += densij*bviy;
+          grad[Z] += densij*bviz;
+        }
+    }
+  else if (need_gradient_ || need_hessian_) {
+      for (i=0; i < ncontrib_bf_; i++) {
+          int it = contrib_bf_[i];
+          bvi = bs_vals[i];
           if (need_gradient_) {
-              bvix = bsg_values_[i*3+X];
-              bviy = bsg_values_[i*3+Y];
-              bviz = bsg_values_[i*3+Z];
+              bvix = bsg_vals[i*3+X];
+              bviy = bsg_vals[i*3+Y];
+              bviz = bsg_vals[i*3+Z];
             }
           if (need_hessian_) {
-              bvixx = bsh_values_[i*6+XX];
-              bviyx = bsh_values_[i*6+YX];
-              bviyy = bsh_values_[i*6+YY];
-              bvizx = bsh_values_[i*6+ZX];
-              bvizy = bsh_values_[i*6+ZY];
-              bvizz = bsh_values_[i*6+ZZ];
+              bvixx = bsh_vals[i*6+XX];
+              bviyx = bsh_vals[i*6+YX];
+              bviyy = bsh_vals[i*6+YY];
+              bvizx = bsh_vals[i*6+ZX];
+              bvizy = bsh_vals[i*6+ZY];
+              bvizz = bsh_vals[i*6+ZZ];
             }
           int j3 = 0, j6 = 0;
           int itoff = (it*(it+1))>>1;
@@ -414,15 +457,15 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
               itjt = itoff+jt;
 
               densij = dmat[itjt];
-              double bvj = bs_values_[j];
+              double bvj = bs_vals[j];
 
               t += densij*bvi*bvj;
 
               double bvjx, bvjy, bvjz;
               if (need_gradient_) {
-                  bvjx = bsg_values_[j3+X];
-                  bvjy = bsg_values_[j3+Y];
-                  bvjz = bsg_values_[j3+Z];
+                  bvjx = bsg_vals[j3+X];
+                  bvjy = bsg_vals[j3+Y];
+                  bvjz = bsg_vals[j3+Z];
                   grad[X] += densij*(bvi*bvjx + bvj*bvix);
                   grad[Y] += densij*(bvi*bvjy + bvj*bviy);
                   grad[Z] += densij*(bvi*bvjz + bvj*bviz);
@@ -430,12 +473,12 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
                 }
 
               if (need_hessian_) {
-                  double bvjxx = bsh_values_[j6+XX];
-                  double bvjyx = bsh_values_[j6+YX];
-                  double bvjyy = bsh_values_[j6+YY];
-                  double bvjzx = bsh_values_[j6+ZX];
-                  double bvjzy = bsh_values_[j6+ZY];
-                  double bvjzz = bsh_values_[j6+ZZ];
+                  double bvjxx = bsh_vals[j6+XX];
+                  double bvjyx = bsh_vals[j6+YX];
+                  double bvjyy = bsh_vals[j6+YY];
+                  double bvjzx = bsh_vals[j6+ZX];
+                  double bvjzy = bsh_vals[j6+ZY];
+                  double bvjzz = bsh_vals[j6+ZZ];
 
                   hess[XX] += densij*(bvi*bvjxx+bvix*bvjx+bvjx*bvix+bvixx*bvj);
                   hess[YX] += densij*(bvi*bvjyx+bviy*bvjx+bvjy*bvix+bviyx*bvj);
@@ -467,7 +510,7 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
   else {
       for (i=0; i < ncontrib_bf_; i++) {
           int it = contrib_bf_[i];
-          bvi = bs_values_[i];
+          bvi = bs_vals[i];
           int itoff = (it*(it+1))>>1;
           int itjt;
           double t = 0.0;
@@ -476,7 +519,7 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
               itjt = itoff+jt;
 
               densij = dmat[itjt];
-              double bvj = bs_values_[j];
+              double bvj = bs_vals[j];
 
               t += densij*bvi*bvj;
             }
@@ -485,7 +528,8 @@ BatchElectronDensity::compute_spin_density(const double *dmat,
         }
     }
   if (rho!=0) *rho = tmp;
-
+  if (need_gradient_) for (i=0; i<3; i++) pgrad[i] = grad[i];
+  if (need_hessian_) for (i=0; i<6; i++) phess[i] = hess[i];
 }
 
 void

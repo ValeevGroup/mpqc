@@ -968,29 +968,39 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
   RefDiagSCMatrix evalsb(oso_dimension(), basis_matrixkit());
 
   double delta = 1.0;
-  int iter;
+  int iter, iter_since_reset = 0;
+  double accuracy = 1.0;
   
   ExEnv::out0() << indent
                 << "Beginning iterations.  Basis is "
                 << basis()->label() << '.' << std::endl;
-  for (iter=0; iter < maxiter_; iter++) {
+  for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
     // form the density from the current vector 
     tim.enter("density");
     delta = new_density();
     tim.exit("density");
-    
-    // check convergence
-    if (delta < desired_value_accuracy())
-      break;
 
     // reset the density from time to time
-    if (iter && !(iter%dens_reset_freq_))
+    if (iter_since_reset && !(iter_since_reset%dens_reset_freq_)) {
       reset_density();
+      iter_since_reset = 0;
+    }
       
     // form the AO basis fock matrix
     tim.enter("fock");
-    double accuracy = 0.01 * delta;
-    if (accuracy > 0.0001) accuracy = 0.0001;
+    double base_accuracy = delta;
+    if (base_accuracy < desired_value_accuracy())
+      base_accuracy = desired_value_accuracy();
+    double new_accuracy = 0.01 * base_accuracy;
+    if (new_accuracy > 0.001) new_accuracy = 0.001;
+    if (iter == 0) accuracy = new_accuracy;
+    else if (new_accuracy < accuracy) {
+      accuracy = new_accuracy/10.0;
+      if (iter_since_reset > 0) {
+        reset_density();
+        iter_since_reset = 0;
+      }
+    }
     ao_fock(accuracy);
     tim.exit("fock");
 
@@ -1000,6 +1010,11 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
          << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                      iter+1, eelec+nucrep, delta)
          << endl;
+    
+    // check convergence
+    if (delta < desired_value_accuracy()
+        && iter+1 >= miniter_)
+      break;
 
     // now extrapolate the fock matrix
     tim.enter("extrap");

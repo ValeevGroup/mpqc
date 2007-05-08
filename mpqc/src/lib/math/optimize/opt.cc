@@ -52,11 +52,14 @@ static ClassDesc Optimize_cd(
 Optimize::Optimize() :
   ckpt_(0), ckpt_file(0)
 {
+  msg_ = MessageGrp::get_default_messagegrp();
 }
 
 Optimize::Optimize(StateIn&s):
   SavableState(s)
 {
+  msg_ = MessageGrp::get_default_messagegrp();
+
   s.get(ckpt_,"checkpoint");
   s.getstring(ckpt_file);
   s.get(max_iterations_,"max_iterations");
@@ -71,6 +74,8 @@ Optimize::Optimize(StateIn&s):
 
 Optimize::Optimize(const Ref<KeyVal>&keyval)
 {
+  msg_ = MessageGrp::get_default_messagegrp();
+
   print_timings_ = keyval->booleanvalue("print_timings");
   if (keyval->error() != KeyVal::OK) print_timings_ = 0;
   ckpt_ = keyval->booleanvalue("checkpoint");
@@ -186,6 +191,37 @@ Optimize::apply_transform(const Ref<NonlinearTransform> &t)
 {
 }
 
+static inline const char *bp(bool b) { return b?"yes":"no"; };
+
+void
+Optimize::print(std::ostream& o) const
+{
+  o << indent << "Optimize";
+  if (::class_desc<Optimize>() != class_desc()) {
+      o << " (base class of " << class_desc()->name() << ")";
+    }
+  o << ":" << std::endl;
+  o << incindent;
+
+  o << indent << "print_timings  = " << bp(print_timings_) << std::endl;
+  o << indent << "checkpoint     = " << bp(ckpt_) << std::endl;
+  o << indent << "max_iterations = " << max_iterations_ << std::endl;
+  o << indent << "max_stepsize   = " << max_stepsize_ << std::endl;
+
+  if (conv_.nonnull()) {
+      o << indent << "convergence    = " << std::endl;
+      o << incindent;
+      conv_->print(o);
+      o << decindent;
+    }
+  else {
+      o << indent << "convergence    = 0 (no Convergence object given)"
+        << std::endl;
+    }
+
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // LineOpt
 
@@ -202,8 +238,10 @@ LineOpt::LineOpt(StateIn&s):
 
 LineOpt::LineOpt(const Ref<KeyVal>&keyval)
 {
-  decrease_factor_ = keyval->doublevalue("decrease_factor");	
-  if (keyval->error() != KeyVal::OK) decrease_factor_ = 0.1;
+}
+
+LineOpt::LineOpt()
+{
 }
 
 LineOpt::~LineOpt()
@@ -238,8 +276,62 @@ LineOpt::init(RefSCVector& direction, Ref<Function> function )
   init(direction);
 }
 
+void
+LineOpt::apply_transform(const Ref<NonlinearTransform> &t)
+{
+  if (t.null()) return;
+  apply_transform(t);
+  t->transform_gradient(search_direction_);
+}
+
+void
+LineOpt::print(std::ostream&o) const
+{
+  Optimize::print(o);
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Backtrack
+
+static ClassDesc Backtrack_cd(
+  typeid(Backtrack),"Backtrack",2,"public LineOpt",
+  0, create<Backtrack>, create<Backtrack>);
+
+Backtrack::Backtrack(const Ref<KeyVal>& keyval) 
+  : LineOpt(keyval)
+{ 
+  backtrack_factor_ = keyval->doublevalue("backtrack_factor");
+  if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.1;
+  decrease_factor_ = keyval->doublevalue("decrease_factor");	
+  if (keyval->error() != KeyVal::OK) decrease_factor_ = 0.1;
+  force_search_ = keyval->booleanvalue("force_search");
+  if (keyval->error() != KeyVal::OK) force_search_ = 0;
+}
+
+Backtrack::Backtrack(StateIn&s):
+  LineOpt(s), SavableState(s)
+{
+  if (s.version(::class_desc<Backtrack>()) > 1) {
+      s.get(backtrack_factor_);
+      s.get(decrease_factor_);
+      s.get(force_search_);
+    }
+}
+
+void
+Backtrack::save_data_state(StateOut&s)
+{
+  s.put(backtrack_factor_);
+  s.put(decrease_factor_);
+  s.put(force_search_);
+}
+
+Backtrack::~Backtrack()
+{
+}
+
 int
-LineOpt::sufficient_decrease(RefSCVector& step) {
+Backtrack::sufficient_decrease(RefSCVector& step) {
 
   double ftarget = initial_value_ + decrease_factor_ *
     initial_grad_.scalar_product(step);
@@ -250,28 +342,6 @@ LineOpt::sufficient_decrease(RefSCVector& step) {
   apply_transform(t);
 
   return function()->value() <= ftarget;
-}
-
-void
-LineOpt::apply_transform(const Ref<NonlinearTransform> &t)
-{
-  if (t.null()) return;
-  apply_transform(t);
-  t->transform_gradient(search_direction_);
-}
-
-/////////////////////////////////////////////////////////////////////////
-// Backtrack
-
-static ClassDesc Backtrack_cd(
-  typeid(Backtrack),"Backtrack",1,"public LineOpt",
-  0, create<Backtrack>, 0);
-
-Backtrack::Backtrack(const Ref<KeyVal>& keyval) 
-  : LineOpt(keyval)
-{ 
-  backtrack_factor_ = keyval->doublevalue("backtrack_factor");
-  if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.1;
 }
 
 int
@@ -371,6 +441,26 @@ Backtrack::update() {
 
   // returning 0 only if search direction is not descent direction
   return acceptable;
+}
+
+void
+Backtrack::print(std::ostream&o) const
+{
+  o << indent
+    << "Backtrack:"
+    << std::endl
+    << incindent
+    << indent << "backtrack_factor = " << backtrack_factor_
+    << std::endl
+    << indent << "decrease_factor  = " << decrease_factor_
+    << std::endl
+    << indent << "force_search     = " << (force_search_?"yes":"no")
+    << std::endl;
+
+  // Parent class parameters are not relevant to Backtrack
+  //LineOpt::print(o);
+
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -56,7 +56,7 @@ using namespace sc;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",6,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",7,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -67,6 +67,12 @@ SCF::SCF(StateIn& s) :
   compute_guess_ = 0;
 
   s.get(maxiter_,"maxiter");
+  if (s.version(::class_desc<SCF>()) >= 7) {
+    s.get(miniter_,"miniter");
+  }
+  else {
+    miniter_ = 0;
+  }
   s.get(dens_reset_freq_);
   s.get(reset_occ_);
   s.get(local_dens_);
@@ -112,6 +118,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   need_vec_(1),
   compute_guess_(0),
   maxiter_(100),
+  miniter_(0),
   dens_reset_freq_(10),
   reset_occ_(0),
   local_dens_(1),
@@ -120,6 +127,9 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
 {
   if (keyval->exists("maxiter"))
     maxiter_ = keyval->intvalue("maxiter");
+
+  if (keyval->exists("miniter"))
+    miniter_ = keyval->intvalue("miniter");
 
   if (keyval->exists("density_reset_frequency"))
     dens_reset_freq_ = keyval->intvalue("density_reset_frequency");
@@ -197,6 +207,7 @@ SCF::save_data_state(StateOut& s)
 {
   OneBodyWavefunction::save_data_state(s);
   s.put(maxiter_);
+  s.put(miniter_);
   s.put(dens_reset_freq_);
   s.put(reset_occ_);
   s.put(local_dens_);
@@ -245,8 +256,11 @@ SCF::print(ostream&o) const
 {
   OneBodyWavefunction::print(o);
   o << indent << "SCF Parameters:\n" << incindent
-    << indent << "maxiter = " << maxiter_ << endl
-    << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
+    << indent << "maxiter = " << maxiter_ << endl;
+  if (miniter_ > 0) {
+    o << indent << "miniter = " << miniter_ << endl;
+  }
+  o << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
     << indent << scprintf("level_shift = %f\n",level_shift_) 
     << decindent << endl;
 }

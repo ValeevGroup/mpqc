@@ -14,8 +14,13 @@
 /* Define if the C++ restrict keyword extension exists.  */
 #undef CXX_RESTRICT
 
-#ifdef CXX_RESTRICT
+/* Define if the C++ __restrict__ keyword extension exists.  */
+#undef CXX___RESTRICT__
+
+#if defined(CXX_RESTRICT)
 #define restrictxx restrict
+#elif defined(CXX___RESTRICT__)
+#define restrictxx __restrict__
 #else
 #define restrictxx
 #endif

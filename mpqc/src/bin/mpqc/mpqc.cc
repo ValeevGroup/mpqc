@@ -773,6 +773,13 @@ try_main(int argc, char *argv[])
     }
 
     if (do_opt && opt.nonnull() && mole->gradient_implemented()) {
+      ExEnv::out0() << std::endl
+                    << indent
+                    << "Optimizing using:"
+                    << std::endl
+                    << incindent;
+      opt->print();
+      ExEnv::out0() << decindent;
       int result = opt->optimize();
       if (result) {
         ExEnv::out0() << indent

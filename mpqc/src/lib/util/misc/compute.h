@@ -58,6 +58,7 @@ class Compute
    friend class AccResultInfo;
   private:
     std::set<ResultInfoP> _results;
+
     void add(ResultInfo*);
 
     // Prohibit copy
@@ -71,6 +72,7 @@ class Compute
   public:
     Compute();
     virtual ~Compute();
+    virtual bool throw_if_tolerance_exceeded() const;
 
     /** Marks all results as being out of date.  Any subsequent access
         to results will cause Compute::compute() to be called. */

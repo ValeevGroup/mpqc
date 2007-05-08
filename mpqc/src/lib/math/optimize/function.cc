@@ -47,7 +47,7 @@ using namespace sc;
 ////////////////////////////////////////////////////////////////////////
 
 static ClassDesc Function_cd(
-  typeid(Function),"Function",1,"virtual public SavableState",
+  typeid(Function),"Function",2,"virtual public SavableState",
   0, 0, 0);
 
 Function::Function():
@@ -59,6 +59,7 @@ Function::Function():
   value_.set_desired_accuracy(DBL_EPSILON);
   gradient_.set_desired_accuracy(DBL_EPSILON);
   hessian_.set_desired_accuracy(DBL_EPSILON);
+  throw_if_tolerance_exceeded_ = true;
 }
 
 Function::Function(const Function& func):
@@ -97,6 +98,10 @@ Function::Function(const Ref<KeyVal>&kv, double funcacc,
                                                 hessaccval));
   if (hessian_.desired_accuracy() < DBL_EPSILON)
     hessian_.set_desired_accuracy(DBL_EPSILON);
+
+  KeyValValueboolean default_throw(true);
+  throw_if_tolerance_exceeded_
+      = kv->booleanvalue("throw_if_tolerance_exceeded", default_throw);
 }
 
 Function::Function(StateIn&s):
@@ -117,6 +122,13 @@ Function::Function(StateIn&s):
   hessian_.result_noupdate() = matrixkit()->symmmatrix(dim_);
   hessian_.restore_state(s);
   hessian_.result_noupdate().restore(s);
+
+  if (s.version(::class_desc<Function>()) > 1) {
+      s.get(throw_if_tolerance_exceeded_);
+    }
+  else {
+      throw_if_tolerance_exceeded_ = true;
+    }
 }
 
 Function::~Function()
@@ -145,6 +157,7 @@ Function::save_data_state(StateOut&s)
   gradient_.result_noupdate().save(s);
   hessian_.save_data_state(s);
   hessian_.result_noupdate().save(s);
+  s.put(throw_if_tolerance_exceeded_);
 }
 
 Ref<SCMatrixKit>
@@ -399,6 +412,12 @@ Function::do_change_coordinates(const Ref<NonlinearTransform> &t)
   
   t->transform_coordinates(x_);
   obsolete();
+}
+
+bool
+Function::throw_if_tolerance_exceeded() const
+{
+  return throw_if_tolerance_exceeded_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

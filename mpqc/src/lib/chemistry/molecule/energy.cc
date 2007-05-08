@@ -48,7 +48,7 @@ using namespace sc;
 // MolecularEnergy
 
 static ClassDesc MolecularEnergy_cd(
-  typeid(MolecularEnergy),"MolecularEnergy",6,"public Function",
+  typeid(MolecularEnergy),"MolecularEnergy",7,"public Function",
   0, 0, 0);
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
@@ -190,6 +190,12 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
     s.get(ckpt_freq_);
   else
     ckpt_freq_ = 1;
+  if (s.version(::class_desc<MolecularEnergy>()) >= 7) {
+      cartesian_gradient_ = matrixkit()->vector(moldim_);
+      cartesian_gradient_.restore(s);
+      cartesian_hessian_ = matrixkit()->symmmatrix(moldim_);
+      cartesian_hessian_.restore(s);
+    }
 }
 
 MolecularEnergy&
@@ -218,7 +224,9 @@ MolecularEnergy::save_data_state(StateOut&s)
   s.put((int)ckpt_);
   s.putstring(ckpt_file_);
   s.put(ckpt_freq_);
-}
+  cartesian_gradient_.save(s);
+  cartesian_hessian_.save(s);
+ }
 
 void
 MolecularEnergy::set_checkpoint()
@@ -868,6 +876,16 @@ int
 MolEnergyConvergence::converged()
 {
   return Convergence::converged();
+}
+
+void
+MolEnergyConvergence::print(std::ostream&o) const
+{
+  o << indent << "MolEnergyConvergence:" << std::endl;
+  o << incindent;
+  o << indent << "cartesian     = " << (cartesian_?"yes":"no") << std::endl;
+  Convergence::print(o);
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

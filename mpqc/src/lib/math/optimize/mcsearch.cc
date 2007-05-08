@@ -33,6 +33,10 @@ MCSearch::MCSearch(const Ref<KeyVal>& keyval)
 { 
 }
 
+MCSearch::MCSearch()
+{
+}
+
 MCSearch::~MCSearch()
 {
 }
@@ -469,6 +473,8 @@ L45:
 	*info = 1;
     }
 
+    msg_->bcast(*info);
+
 //        CHECK FOR TERMINATION. 
 
     if (*info != 0) {
@@ -809,6 +815,20 @@ MCSearch::mcstep(double *stx, double *fx, double *dx,
 //     LAST LINE OF SUBROUTINE MCSTEP. 
 
 } // mcstep_ 
+
+
+void
+MCSearch::print(std::ostream&o) const
+{
+  o << indent
+    << "MCSearch"
+    << std::endl;
+
+  // Parent class parameters are not relevant to MCSearch
+  //o << incindent;
+  //LineOpt::print(o);
+  //o << decindent;
+}
 
 }
 

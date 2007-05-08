@@ -64,7 +64,6 @@ class QNewtonOpt: public Optimize {
     int linear_;
     int restrict_;
     int dynamic_grad_acc_;
-    int force_search_;
     int restart_;
 
   public:
@@ -73,7 +72,7 @@ class QNewtonOpt: public Optimize {
         <dl>
 
         <dt><tt>update</tt><dd> This gives a HessianUpdate object.  The
-        default is to not update the hessian.
+        default is to use BFGSUpdate
 
         <dt><tt>hessian</tt><dd> By default, the guess hessian is obtained
         from the Function object.  This keyword specifies an lower triangle
@@ -82,8 +81,8 @@ class QNewtonOpt: public Optimize {
         are not given, elements from the guess hessian will be used.
 
         <dt><tt>lineopt</tt><dd> This gives a LineOpt object for doing line
-        optimizations in the Newton direction.  The default is to skip the
-        line optimizations.
+        optimizations in the Newton direction.  The default is to use
+        MCSearch.
 
         <dt><tt>accuracy</tt><dd> The accuracy with which the first
         gradient will be computed.  If this is too large, it may be
@@ -113,6 +112,8 @@ class QNewtonOpt: public Optimize {
 
     void init();
     int update();
+
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

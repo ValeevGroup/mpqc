@@ -1,16 +1,19 @@
 
                     MPQC: Massively Parallel Quantum Chemistry
-                             Version 2.1.0-alpha-gcc3
+                                Version 3.0.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       cljanss@aros.ca.sandia.gov
-  Start Time: Sat Apr  6 13:34:12 2002
+  Machine:    x86_64-unknown-linux-gnu
+  User:       cljanss@localhost
+  Start Time: Mon May  7 23:22:44 2007
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 2).
   Using ProcMemoryGrp for distributed shared memory.
   Total number of processors = 2
-  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /usr/local/mpqc/3.0.0-alpha/share/atominfo.kv.
 
   IntCoorGen: generated 3 coordinates.
   Forming optimization coordinates:
@@ -18,8 +21,8 @@
       expected 3 coordinates
       found 2 variable coordinates
       found 0 constant coordinates
-  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
-      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+  Reading file /usr/local/mpqc/3.0.0-alpha/share/basis/sto-3g.kv.
+      Reading file /usr/local/mpqc/3.0.0-alpha/share/basis/sto-3g.kv.
 
       CLSCF::init: total charge = 0
 
@@ -30,12 +33,12 @@
 
   docc = [ 5 ]
   nbasis = 7
-  Using symmetric orthogonalization.
-  n(SO):             7
-  Maximum orthogonalization residual = 1.9104
-  Minimum orthogonalization residual = 0.344888
 
   Molecular formula H2O
+
+  The following keywords in "/home/cljanss/src/mpqc/src/bin/mpqc/validate/ref/h2o_mp200sto3gc1opt.in" were ignored:
+    mpqc:mole:reference:guess_wavefunction:multiplicity
+    mpqc:mole:reference:multiplicity
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
@@ -50,6 +53,42 @@
     write_pdb     = no
     print_mole    = yes
     print_timings = yes
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.9104
+  Minimum orthogonalization residual = 0.344888
+
+  Optimizing using:
+    QNewtonOpt:
+      accuracy         = 0.0001
+      print_x          = no
+      print_hessian    = no
+      print_gradient   = no
+      linear           = no
+      restrict         = yes
+      dynamic_grad_acc = yes
+      restart          = yes
+      update           =
+        Object of type BFGSUpdate
+      lineopt          =
+        MCSearch
+      Optimize (base class of QNewtonOpt):
+        print_timings  = no
+        checkpoint     = no
+        max_iterations = 20
+        max_stepsize   = 0.6
+        convergence    = 
+          MolEnergyConvergence:
+            cartesian     = yes
+            Convergence (base class of MolEnergyConvergence):
+              The following criteria must be simultaneously satified:
+              max_disp         = 0.0001
+              max_grad         = 0.0001
+              graddisp         = 0.0001
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.9104
+  Minimum orthogonalization residual = 0.344888
 
   Entered memgrp based MP2 routine
   nproc = 1
@@ -66,22 +105,25 @@
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 31876 bytes
-  integral cache = 31967676 bytes
+  nuclear repulsion energy =    9.1571164588
+
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.9104
   Minimum orthogonalization residual = 0.344888
   Using guess wavefunction as starting vector
 
       SCF::compute: energy accuracy = 1.0000000e-06
 
-      integral intermediate storage = 31876 bytes
-      integral cache = 31967676 bytes
-      Starting from core Hamiltonian guess
-
       nuclear repulsion energy =    9.1571164588
 
+      integral intermediate storage = 32700 bytes
+      integral cache = 31966852 bytes
+      Starting from core Hamiltonian guess
+
+      Beginning iterations.  Basis is STO-3G.
                        733 integrals
       iter     1 energy =  -74.6468200575 delta = 7.47196e-01
                        733 integrals
@@ -96,63 +138,64 @@
       iter     6 energy =  -74.9607024821 delta = 3.66040e-04
                        733 integrals
       iter     7 energy =  -74.9607024827 delta = 1.47732e-05
+                       733 integrals
+      iter     8 energy =  -74.9607024827 delta = 8.68836e-08
 
       HOMO is     5   A =  -0.386942
       LUMO is     6   A =   0.592900
 
       total scf energy =  -74.9607024827
 
-  nuclear repulsion energy =    9.1571164588
-
+  Beginning iterations.  Basis is STO-3G.
                    733 integrals
   iter     1 energy =  -74.9607024827 delta = 7.72168e-01
                    733 integrals
-  iter     2 energy =  -74.9607024827 delta = 6.14966e-10
+  iter     2 energy =  -74.9607024827 delta = 6.14965e-10
 
   HOMO is     5   A =  -0.386942
   LUMO is     6   A =   0.592900
 
   total scf energy =  -74.9607024827
 
-  Memory used for integral intermediates: 114844 Bytes
-  Memory used for integral storage:       15931766 Bytes
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
   Size of global distributed array:       9800 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of third and fourth q.b.t.
   Done with pass 1
 
   Largest first order coefficients (unique):
      1  -0.05481866  3   A  3   A ->  7   A  7   A (+-+-)
      2  -0.03186323  4   A  4   A ->  6   A  6   A (+-+-)
-     3  -0.03140095  4   A  3   A ->  6   A  7   A (+-+-)
+     3   0.03140095  4   A  3   A ->  6   A  7   A (+-+-)
      4  -0.03056878  3   A  3   A ->  6   A  6   A (+-+-)
      5  -0.02802046  4   A  4   A ->  7   A  7   A (+-+-)
      6  -0.02720709  2   A  2   A ->  6   A  6   A (+-+-)
      7  -0.02397865  3   A  2   A ->  7   A  6   A (+-+-)
-     8  -0.02153057  4   A  2   A ->  6   A  6   A (+-+-)
+     8   0.02153057  4   A  2   A ->  6   A  6   A (+-+-)
      9  -0.01973867  5   A  5   A ->  6   A  6   A (+-+-)
-    10  -0.01868584  4   A  3   A ->  7   A  6   A (+-+-)
+    10   0.01868584  4   A  3   A ->  7   A  6   A (+-+-)
 
   RHF energy [au]:                    -74.960702482710
-  MP2 correlation energy [au]:         -0.035043444833
-  MP2 energy [au]:                    -74.995745927543
+  MP2 correlation energy [au]:         -0.035043444835
+  MP2 energy [au]:                    -74.995745927545
 
   D1(MP2)                =   0.00619445
   S2 matrix 1-norm       =   0.00705024
@@ -160,34 +203,30 @@
   S2 diagnostic          =   0.00213415
 
   Largest S2 values (unique determinants):
-     1   0.00612560  4   A ->  6   A
-     2   0.00267857  3   A ->  7   A
-     3   0.00092097  2   A ->  6   A
-     4   0.00000367  1   A ->  6   A
-     5  -0.00000000  4   A ->  7   A
-     6  -0.00000000  2   A ->  7   A
-     7   0.00000000  3   A ->  6   A
-     8  -0.00000000  1   A ->  7   A
-     9   0.00000000  5   A ->  6   A
-    10   0.00000000  5   A ->  7   A
+     1  -0.00612560    4   A ->    6   A
+     2   0.00267857    3   A ->    7   A
+     3   0.00092097    2   A ->    6   A
+     4   0.00000367    1   A ->    6   A
+     5   0.00000000    3   A ->    6   A
+     6   0.00000000    5   A ->    6   A
+     7  -0.00000000    2   A ->    7   A
+     8  -0.00000000    4   A ->    7   A
+     9  -0.00000000    5   A ->    7   A
+    10  -0.00000000    1   A ->    7   A
 
   D2(MP1) =   0.07895280
 
-  CPHF: iter =  1 rms(P) = 0.0027245993 eps = 0.0000000100
-  CPHF: iter =  2 rms(P) = 0.0001461834 eps = 0.0000000100
-  CPHF: iter =  3 rms(P) = 0.0000006031 eps = 0.0000000100
+  CPHF: iter =  1 rms(P) = 0.0008615939 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0000462272 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000001907 eps = 0.0000000100
   CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
 
   Total MP2 gradient [au]:
-       1   O   0.0000000000   0.0000000000  -0.1043510724
-       2   H  -0.0273216636   0.0000000000   0.0521755362
-       3   H   0.0273216636   0.0000000000   0.0521755362
-
-  Max Gradient     :   0.1043510724   0.0001000000  no
-  Max Displacement :   0.1488884722   0.0001000000  no
-  Gradient*Displace:   0.0238906106   0.0001000000  no
-
-  taking step of size 0.273518
+       1   O   0.0000000000   0.0000000000  -0.1043510725
+       2   H  -0.0273216635  -0.0000000000   0.0521755362
+       3   H   0.0273216635  -0.0000000000   0.0521755362
+  .......................................
+  Starting line optimization.
 
   MBPT2: changing atomic coordinates:
   Molecular formula: H2O
@@ -195,15 +234,17 @@
     symmetry = c1
     unit = "angstrom"
     {  n atoms                        geometry                     }={
-       1     O [   -0.0000000000    -0.0000000000     0.4481613361]
-       2     H [    0.7896469990     0.0000000000    -0.2240806681]
-       3     H [   -0.7896469990     0.0000000000    -0.2240806681]
+       1     O [    0.0000000000     0.0000000000     0.4481613362]
+       2     H [    0.7896469988     0.0000000000    -0.2240806681]
+       3     H [   -0.7896469988     0.0000000000    -0.2240806681]
     }
   )
   Atomic Masses:
      15.99491    1.00783    1.00783
+  Completed line optimization step 1 (not converged)
+  .......................................
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.85038
   Minimum orthogonalization residual = 0.3942
 
@@ -222,14 +263,15 @@
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 31876 bytes
-  integral cache = 31967676 bytes
-  nuclear repulsion energy =    8.4994987009
+  nuclear repulsion energy =    8.4994987016
 
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.85038
   Minimum orthogonalization residual = 0.3942
+  Beginning iterations.  Basis is STO-3G.
                    733 integrals
   iter     1 energy =  -74.9508187755 delta = 7.64023e-01
                    733 integrals
@@ -237,40 +279,42 @@
                    733 integrals
   iter     3 energy =  -74.9611578756 delta = 1.56935e-02
                    733 integrals
-  iter     4 energy =  -74.9613241417 delta = 7.41494e-03
+  iter     4 energy =  -74.9613241418 delta = 7.41494e-03
                    733 integrals
   iter     5 energy =  -74.9613298663 delta = 1.10539e-03
                    733 integrals
-  iter     6 energy =  -74.9613301112 delta = 2.72229e-04
+  iter     6 energy =  -74.9613301113 delta = 2.72229e-04
                    733 integrals
-  iter     7 energy =  -74.9613301112 delta = 1.51422e-06
+  iter     7 energy =  -74.9613301113 delta = 1.51422e-06
+                   733 integrals
+  iter     8 energy =  -74.9613301113 delta = 4.38813e-09
 
   HOMO is     5   A =  -0.391482
   LUMO is     6   A =   0.539403
 
-  total scf energy =  -74.9613301112
+  total scf energy =  -74.9613301113
 
-  Memory used for integral intermediates: 114844 Bytes
-  Memory used for integral storage:       15931766 Bytes
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
   Size of global distributed array:       9800 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of third and fourth q.b.t.
   Done with pass 1
 
@@ -286,9 +330,9 @@
      9   0.02150448  4   A  2   A ->  6   A  6   A (+-+-)
     10  -0.02011542  4   A  3   A ->  7   A  6   A (++++)
 
-  RHF energy [au]:                    -74.961330111246
-  MP2 correlation energy [au]:         -0.043544241417
-  MP2 energy [au]:                    -75.004874352663
+  RHF energy [au]:                    -74.961330111262
+  MP2 correlation energy [au]:         -0.043544241415
+  MP2 energy [au]:                    -75.004874352677
 
   D1(MP2)                =   0.00745342
   S2 matrix 1-norm       =   0.00784567
@@ -296,34 +340,39 @@
   S2 diagnostic          =   0.00258124
 
   Largest S2 values (unique determinants):
-     1  -0.00744272  4   A ->  6   A
-     2   0.00332784  3   A ->  7   A
-     3  -0.00039919  2   A ->  6   A
-     4  -0.00000376  1   A ->  6   A
-     5  -0.00000000  3   A ->  6   A
-     6   0.00000000  2   A ->  7   A
-     7   0.00000000  4   A ->  7   A
-     8  -0.00000000  1   A ->  7   A
-     9  -0.00000000  5   A ->  7   A
-    10  -0.00000000  5   A ->  6   A
+     1  -0.00744272    4   A ->    6   A
+     2   0.00332784    3   A ->    7   A
+     3  -0.00039919    2   A ->    6   A
+     4  -0.00000376    1   A ->    6   A
+     5   0.00000000    2   A ->    7   A
+     6   0.00000000    3   A ->    6   A
+     7  -0.00000000    4   A ->    7   A
+     8  -0.00000000    5   A ->    6   A
+     9   0.00000000    5   A ->    7   A
+    10  -0.00000000    1   A ->    7   A
 
   D2(MP1) =   0.09410996
 
-  CPHF: iter =  1 rms(P) = 0.0037342977 eps = 0.0000000100
-  CPHF: iter =  2 rms(P) = 0.0004164707 eps = 0.0000000100
-  CPHF: iter =  3 rms(P) = 0.0000000711 eps = 0.0000000100
+  CPHF: iter =  1 rms(P) = 0.0011808886 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0001316996 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000000225 eps = 0.0000000100
   CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
 
   Total MP2 gradient [au]:
-       1   O  -0.0000000000   0.0000000000   0.0198561222
-       2   H   0.0216675571   0.0000000000  -0.0099280611
-       3   H  -0.0216675571  -0.0000000000  -0.0099280611
+       1   O   0.0000000000   0.0000000000   0.0198561222
+       2   H   0.0216675570  -0.0000000000  -0.0099280611
+       3   H  -0.0216675570  -0.0000000000  -0.0099280611
+  Completed line optimization step 2 (converged)
+  .......................................
 
-  Max Gradient     :   0.0216675571   0.0001000000  no
-  Max Displacement :   0.0663291257   0.0001000000  no
-  Gradient*Displace:   0.0026380642   0.0001000000  no
-
-  taking step of size 0.080566
+  Max Gradient     :   0.1043510725   0.0001000000  no
+  Max Displacement :   0.1488884723   0.0001000000  no
+  Gradient*Displace:   0.0238906106   0.0001000000  no
+  taking step of size 0.273518
+  Optimization iteration 1 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
 
   MBPT2: changing atomic coordinates:
   Molecular formula: H2O
@@ -331,15 +380,17 @@
     symmetry = c1
     unit = "angstrom"
     {  n atoms                        geometry                     }={
-       1     O [   -0.0000000000    -0.0000000000     0.4523599771]
+       1     O [    0.0000000000     0.0000000000     0.4523599771]
        2     H [    0.7545471347     0.0000000000    -0.2261799886]
        3     H [   -0.7545471347     0.0000000000    -0.2261799886]
     }
   )
   Atomic Masses:
      15.99491    1.00783    1.00783
+  Completed line optimization step 1 (not converged)
+  .......................................
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88917
   Minimum orthogonalization residual = 0.380095
 
@@ -358,14 +409,15 @@
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 31876 bytes
-  integral cache = 31967676 bytes
-  nuclear repulsion energy =    8.6942610115
+  nuclear repulsion energy =    8.6942610118
 
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88917
   Minimum orthogonalization residual = 0.380095
+  Beginning iterations.  Basis is STO-3G.
                    733 integrals
   iter     1 energy =  -74.9637391968 delta = 7.80779e-01
                    733 integrals
@@ -386,44 +438,44 @@
 
   total scf energy =  -74.9640602311
 
-  Memory used for integral intermediates: 114844 Bytes
-  Memory used for integral storage:       15931766 Bytes
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
   Size of global distributed array:       9800 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of third and fourth q.b.t.
   Done with pass 1
 
   Largest first order coefficients (unique):
      1  -0.06422900  3   A  3   A ->  7   A  7   A (+-+-)
      2  -0.04146946  4   A  4   A ->  6   A  6   A (+-+-)
-     3  -0.04079456  4   A  3   A ->  6   A  7   A (+-+-)
+     3   0.04079456  4   A  3   A ->  6   A  7   A (+-+-)
      4  -0.03244808  4   A  4   A ->  7   A  7   A (+-+-)
      5  -0.02939765  3   A  3   A ->  6   A  6   A (+-+-)
      6  -0.02775642  2   A  2   A ->  6   A  6   A (+-+-)
-     7   0.02386669  3   A  2   A ->  7   A  6   A (+-+-)
-     8  -0.02087254  4   A  3   A ->  7   A  6   A (+-+-)
+     7  -0.02386669  3   A  2   A ->  7   A  6   A (+-+-)
+     8   0.02087254  4   A  3   A ->  7   A  6   A (+-+-)
      9   0.02067151  4   A  2   A ->  6   A  6   A (+-+-)
-    10   0.01992201  4   A  3   A ->  7   A  6   A (++++)
+    10  -0.01992201  4   A  3   A ->  7   A  6   A (++++)
 
-  RHF energy [au]:                    -74.964060231058
-  MP2 correlation energy [au]:         -0.042013329982
+  RHF energy [au]:                    -74.964060231061
+  MP2 correlation energy [au]:         -0.042013329979
   MP2 energy [au]:                    -75.006073561040
 
   D1(MP2)                =   0.00682638
@@ -432,34 +484,39 @@
   S2 diagnostic          =   0.00241892
 
   Largest S2 values (unique determinants):
-     1  -0.00681468  4   A ->  6   A
-     2  -0.00345145  3   A ->  7   A
-     3  -0.00039943  2   A ->  6   A
-     4  -0.00000492  1   A ->  6   A
-     5  -0.00000000  4   A ->  7   A
-     6   0.00000000  3   A ->  6   A
-     7  -0.00000000  2   A ->  7   A
-     8  -0.00000000  5   A ->  6   A
-     9   0.00000000  5   A ->  7   A
-    10   0.00000000  1   A ->  7   A
+     1  -0.00681468    4   A ->    6   A
+     2   0.00345145    3   A ->    7   A
+     3  -0.00039943    2   A ->    6   A
+     4  -0.00000492    1   A ->    6   A
+     5   0.00000000    3   A ->    6   A
+     6   0.00000000    4   A ->    7   A
+     7   0.00000000    2   A ->    7   A
+     8   0.00000000    5   A ->    6   A
+     9   0.00000000    1   A ->    7   A
+    10  -0.00000000    5   A ->    7   A
 
   D2(MP1) =   0.09184844
 
-  CPHF: iter =  1 rms(P) = 0.0033350279 eps = 0.0000000100
-  CPHF: iter =  2 rms(P) = 0.0003843243 eps = 0.0000000100
-  CPHF: iter =  3 rms(P) = 0.0000000415 eps = 0.0000000100
+  CPHF: iter =  1 rms(P) = 0.0010546284 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0001215340 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000000131 eps = 0.0000000100
   CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
 
   Total MP2 gradient [au]:
-       1   O   0.0000000000  -0.0000000000   0.0051437290
-       2   H  -0.0017318901   0.0000000000  -0.0025718645
-       3   H   0.0017318901  -0.0000000000  -0.0025718645
+       1   O  -0.0000000000  -0.0000000000   0.0051437290
+       2   H  -0.0017318902   0.0000000000  -0.0025718645
+       3   H   0.0017318902   0.0000000000  -0.0025718645
+  Completed line optimization step 2 (converged)
+  .......................................
 
-  Max Gradient     :   0.0051437290   0.0001000000  no
-  Max Displacement :   0.0120367589   0.0001000000  no
-  Gradient*Displace:   0.0001341252   0.0001000000  no
-
-  taking step of size 0.022750
+  Max Gradient     :   0.0216675570   0.0001000000  no
+  Max Displacement :   0.0663291255   0.0001000000  no
+  Gradient*Displace:   0.0026380641   0.0001000000  no
+  taking step of size 0.080566
+  Optimization iteration 2 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
 
   MBPT2: changing atomic coordinates:
   Molecular formula: H2O
@@ -467,15 +524,17 @@
     symmetry = c1
     unit = "angstrom"
     {  n atoms                        geometry                     }={
-       1     O [   -0.0000000000    -0.0000000000     0.4460204515]
-       2     H [    0.7609167137    -0.0000000000    -0.2230102257]
-       3     H [   -0.7609167137    -0.0000000000    -0.2230102257]
+       1     O [    0.0000000000     0.0000000000     0.4460204515]
+       2     H [    0.7609167137     0.0000000000    -0.2230102258]
+       3     H [   -0.7609167137     0.0000000000    -0.2230102258]
     }
   )
   Atomic Masses:
      15.99491    1.00783    1.00783
+  Completed line optimization step 1 (not converged)
+  .......................................
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88624
   Minimum orthogonalization residual = 0.378909
 
@@ -494,14 +553,15 @@
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 31876 bytes
-  integral cache = 31967676 bytes
   nuclear repulsion energy =    8.7041635390
 
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88624
   Minimum orthogonalization residual = 0.378909
+  Beginning iterations.  Basis is STO-3G.
                    733 integrals
   iter     1 energy =  -74.9644790370 delta = 7.79397e-01
                    733 integrals
@@ -522,27 +582,27 @@
 
   total scf energy =  -74.9645211847
 
-  Memory used for integral intermediates: 114844 Bytes
-  Memory used for integral storage:       15931766 Bytes
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
   Size of global distributed array:       9800 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of third and fourth q.b.t.
   Done with pass 1
 
@@ -558,9 +618,9 @@
      9   0.02085036  4   A  2   A ->  6   A  6   A (+-+-)
     10  -0.01938017  4   A  3   A ->  7   A  6   A (++++)
 
-  RHF energy [au]:                    -74.964521184694
-  MP2 correlation energy [au]:         -0.041614799011
-  MP2 energy [au]:                    -75.006135983705
+  RHF energy [au]:                    -74.964521184693
+  MP2 correlation energy [au]:         -0.041614798996
+  MP2 energy [au]:                    -75.006135983689
 
   D1(MP2)                =   0.00684648
   S2 matrix 1-norm       =   0.00713651
@@ -568,34 +628,38 @@
   S2 diagnostic          =   0.00240986
 
   Largest S2 values (unique determinants):
-     1  -0.00684027  4   A ->  6   A
-     2   0.00334662  3   A ->  7   A
-     3  -0.00029155  2   A ->  6   A
-     4  -0.00000469  1   A ->  6   A
-     5  -0.00000000  4   A ->  7   A
-     6   0.00000000  2   A ->  7   A
-     7  -0.00000000  3   A ->  6   A
-     8  -0.00000000  1   A ->  7   A
-     9  -0.00000000  5   A ->  7   A
-    10   0.00000000  5   A ->  6   A
+     1  -0.00684027    4   A ->    6   A
+     2   0.00334662    3   A ->    7   A
+     3  -0.00029155    2   A ->    6   A
+     4  -0.00000469    1   A ->    6   A
+     5   0.00000000    4   A ->    7   A
+     6  -0.00000000    2   A ->    7   A
+     7  -0.00000000    3   A ->    6   A
+     8   0.00000000    5   A ->    6   A
+     9   0.00000000    5   A ->    7   A
+    10  -0.00000000    1   A ->    7   A
 
   D2(MP1) =   0.09111578
 
-  CPHF: iter =  1 rms(P) = 0.0033314085 eps = 0.0000000100
-  CPHF: iter =  2 rms(P) = 0.0003659506 eps = 0.0000000100
-  CPHF: iter =  3 rms(P) = 0.0000000267 eps = 0.0000000100
-  CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
+  CPHF: iter =  1 rms(P) = 0.0010534839 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0001157237 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000000084 eps = 0.0000000100
 
   Total MP2 gradient [au]:
-       1   O  -0.0000000000   0.0000000000  -0.0005227565
-       2   H  -0.0000161327   0.0000000000   0.0002613783
-       3   H   0.0000161327  -0.0000000000   0.0002613783
+       1   O   0.0000000000  -0.0000000000  -0.0005227448
+       2   H  -0.0000161264  -0.0000000000   0.0002613724
+       3   H   0.0000161264   0.0000000000   0.0002613724
+  Completed line optimization step 2 (converged)
+  .......................................
 
-  Max Gradient     :   0.0005227565   0.0001000000  no
-  Max Displacement :   0.0008612775   0.0001000000  no
-  Gradient*Displace:   0.0000006595   0.0001000000  yes
-
-  taking step of size 0.001516
+  Max Gradient     :   0.0051437290   0.0001000000  no
+  Max Displacement :   0.0120367590   0.0001000000  no
+  Gradient*Displace:   0.0001341252   0.0001000000  no
+  taking step of size 0.022750
+  Optimization iteration 3 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
 
   MBPT2: changing atomic coordinates:
   Molecular formula: H2O
@@ -603,17 +667,19 @@
     symmetry = c1
     unit = "angstrom"
     {  n atoms                        geometry                     }={
-       1     O [   -0.0000000000    -0.0000000000     0.4464762200]
-       2     H [    0.7606568325    -0.0000000000    -0.2232381100]
-       3     H [   -0.7606568325    -0.0000000000    -0.2232381100]
+       1     O [    0.0000000000     0.0000000000     0.4464762148]
+       2     H [    0.7606568272     0.0000000000    -0.2232381074]
+       3     H [   -0.7606568272     0.0000000000    -0.2232381074]
     }
   )
   Atomic Masses:
      15.99491    1.00783    1.00783
+  Completed line optimization step 1 (not converged)
+  .......................................
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88621
-  Minimum orthogonalization residual = 0.379085
+  Minimum orthogonalization residual = 0.379084
 
   Entered memgrp based MP2 routine
   nproc = 1
@@ -630,71 +696,74 @@
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 31876 bytes
-  integral cache = 31967676 bytes
-  nuclear repulsion energy =    8.7021675375
+  nuclear repulsion energy =    8.7021676148
 
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
   Using symmetric orthogonalization.
-  n(SO):             7
+  n(basis):             7
   Maximum orthogonalization residual = 1.88621
-  Minimum orthogonalization residual = 0.379085
+  Minimum orthogonalization residual = 0.379084
+  Beginning iterations.  Basis is STO-3G.
                    733 integrals
-  iter     1 energy =  -74.9644822329 delta = 7.78480e-01
+  iter     1 energy =  -74.9644822338 delta = 7.78480e-01
                    733 integrals
-  iter     2 energy =  -74.9644824367 delta = 2.03721e-04
+  iter     2 energy =  -74.9644824376 delta = 2.03718e-04
                    733 integrals
-  iter     3 energy =  -74.9644824746 delta = 9.55177e-05
+  iter     3 energy =  -74.9644824755 delta = 9.55172e-05
                    733 integrals
-  iter     4 energy =  -74.9644824781 delta = 3.46343e-05
+  iter     4 energy =  -74.9644824790 delta = 3.46335e-05
                    733 integrals
-  iter     5 energy =  -74.9644824782 delta = 3.92881e-06
+  iter     5 energy =  -74.9644824791 delta = 3.92869e-06
                    733 integrals
-  iter     6 energy =  -74.9644824782 delta = 6.15922e-07
+  iter     6 energy =  -74.9644824791 delta = 6.15897e-07
+                   733 integrals
+  iter     7 energy =  -74.9644824791 delta = 1.75904e-11
 
   HOMO is     5   A =  -0.393337
   LUMO is     6   A =   0.563311
 
-  total scf energy =  -74.9644824782
+  total scf energy =  -74.9644824791
 
-  Memory used for integral intermediates: 114844 Bytes
-  Memory used for integral storage:       15931766 Bytes
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
   Size of global distributed array:       9800 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0), 20.0% complete
-    working on shell pair (  1   1), 40.0% complete
-    working on shell pair (  2   1), 60.0% complete
-    working on shell pair (  3   0), 80.0% complete
-    working on shell pair (  3   2), 100.0% complete
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
   End of third and fourth q.b.t.
   Done with pass 1
 
   Largest first order coefficients (unique):
      1  -0.06367087  3   A  3   A ->  7   A  7   A (+-+-)
      2  -0.04102349  4   A  4   A ->  6   A  6   A (+-+-)
-     3  -0.04032414  4   A  3   A ->  6   A  7   A (+-+-)
+     3   0.04032414  4   A  3   A ->  6   A  7   A (+-+-)
      4  -0.03220711  4   A  4   A ->  7   A  7   A (+-+-)
      5  -0.02969912  3   A  3   A ->  6   A  6   A (+-+-)
      6  -0.02772497  2   A  2   A ->  6   A  6   A (+-+-)
-     7   0.02390095  3   A  2   A ->  7   A  6   A (+-+-)
-     8  -0.02090227  4   A  3   A ->  7   A  6   A (+-+-)
+     7  -0.02390095  3   A  2   A ->  7   A  6   A (+-+-)
+     8   0.02090227  4   A  3   A ->  7   A  6   A (+-+-)
      9   0.02084208  4   A  2   A ->  6   A  6   A (+-+-)
-    10   0.01942186  4   A  3   A ->  7   A  6   A (++++)
+    10  -0.01942186  4   A  3   A ->  7   A  6   A (++++)
 
-  RHF energy [au]:                    -74.964482478210
-  MP2 correlation energy [au]:         -0.041653832420
-  MP2 energy [au]:                    -75.006136310631
+  RHF energy [au]:                    -74.964482479116
+  MP2 correlation energy [au]:         -0.041653831515
+  MP2 energy [au]:                    -75.006136310632
 
   D1(MP2)                =   0.00684862
   S2 matrix 1-norm       =   0.00714639
@@ -702,42 +771,186 @@
   S2 diagnostic          =   0.00241141
 
   Largest S2 values (unique determinants):
-     1  -0.00684206  4   A ->  6   A
-     2  -0.00335344  3   A ->  7   A
-     3  -0.00029963  2   A ->  6   A
-     4  -0.00000470  1   A ->  6   A
-     5   0.00000000  4   A ->  7   A
-     6  -0.00000000  3   A ->  6   A
-     7  -0.00000000  2   A ->  7   A
-     8   0.00000000  1   A ->  7   A
-     9   0.00000000  5   A ->  7   A
-    10  -0.00000000  5   A ->  6   A
+     1  -0.00684206    4   A ->    6   A
+     2   0.00335344    3   A ->    7   A
+     3  -0.00029963    2   A ->    6   A
+     4  -0.00000470    1   A ->    6   A
+     5  -0.00000000    4   A ->    7   A
+     6  -0.00000000    3   A ->    6   A
+     7  -0.00000000    2   A ->    7   A
+     8  -0.00000000    1   A ->    7   A
+     9  -0.00000000    5   A ->    6   A
+    10   0.00000000    5   A ->    7   A
 
   D2(MP1) =   0.09118486
 
-  CPHF: iter =  1 rms(P) = 0.0033340799 eps = 0.0000000100
-  CPHF: iter =  2 rms(P) = 0.0003675127 eps = 0.0000000100
-  CPHF: iter =  3 rms(P) = 0.0000000215 eps = 0.0000000100
-  CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
+  CPHF: iter =  1 rms(P) = 0.0010543286 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0001162177 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000000068 eps = 0.0000000100
 
   Total MP2 gradient [au]:
-       1   O   0.0000000000   0.0000000000   0.0000140350
-       2   H   0.0000126351   0.0000000000  -0.0000070175
-       3   H  -0.0000126351  -0.0000000000  -0.0000070175
+       1   O   0.0000000000  -0.0000000000   0.0000140326
+       2   H   0.0000126335   0.0000000000  -0.0000070163
+       3   H  -0.0000126335   0.0000000000  -0.0000070163
+  Completed line optimization step 2 (converged)
+  .......................................
 
-  Max Gradient     :   0.0000140350   0.0001000000  yes
-  Max Displacement :   0.0000301392   0.0001000000  yes
+  Max Gradient     :   0.0005227448   0.0001000000  no
+  Max Displacement :   0.0008612677   0.0001000000  no
+  Gradient*Displace:   0.0000006595   0.0001000000  yes
+  taking step of size 0.001516
+  Optimization iteration 4 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: H2O
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     O [    0.0000000000     0.0000000000     0.4464735983]
+       2     H [    0.7606408798     0.0000000000    -0.2232367991]
+       3     H [   -0.7606408798     0.0000000000    -0.2232367991]
+    }
+  )
+  Atomic Masses:
+     15.99491    1.00783    1.00783
+  Completed line optimization step 1 (not converged)
+  .......................................
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88623
+  Minimum orthogonalization residual = 0.379075
+
+  Entered memgrp based MP2 routine
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Static memory used per node:    1736 Bytes
+  Total memory used per node:     25096 Bytes
+  Memory required for one pass:   25096 Bytes
+  Minimum memory required:        9864 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax
+    1      0     7        4        4  
+   nocc   nvir   nfzc   nfzv
+    5      2      0      0   
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    8.7022949555
+
+  integral intermediate storage = 32700 bytes
+  integral cache = 31966852 bytes
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88623
+  Minimum orthogonalization residual = 0.379075
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -74.9644836796 delta = 7.78558e-01
+                   733 integrals
+  iter     2 energy =  -74.9644836798 delta = 4.73687e-06
+                   733 integrals
+  iter     3 energy =  -74.9644836798 delta = 9.61605e-07
+                   733 integrals
+  iter     4 energy =  -74.9644836798 delta = 3.16301e-07
+                   733 integrals
+  iter     5 energy =  -74.9644836798 delta = 3.68687e-08
+                   733 integrals
+  iter     6 energy =  -74.9644836798 delta = 2.38322e-08
+                     0 integrals
+  iter     7 energy =  -74.9644836798 delta = 4.10494e-15
+
+  HOMO is     5   A =  -0.393338
+  LUMO is     6   A =   0.563325
+
+  total scf energy =  -74.9644836798
+
+  Memory used for integral intermediates: 117668 Bytes
+  Memory used for integral storage:       15928618 Bytes
+  Size of global distributed array:       9800 Bytes
+  Beginning pass 1
+  Begin loop over shells (erep, 1.+2. q.t.)
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
+  End of loop over shells
+  Begin third q.t.
+  End of third q.t.
+  Begin fourth q.t.
+  End of fourth q.t.
+  Begin third and fourth q.b.t.
+    working on shell pair (  0   0),  0.000% complete (0 of 5)
+    working on shell pair (  1   1), 20.000% complete (1 of 5)
+    working on shell pair (  2   1), 40.000% complete (2 of 5)
+    working on shell pair (  3   0), 60.000% complete (3 of 5)
+    working on shell pair (  3   2), 80.000% complete (4 of 5)
+  End of third and fourth q.b.t.
+  Done with pass 1
+
+  Largest first order coefficients (unique):
+     1  -0.06366972  3   A  3   A ->  7   A  7   A (+-+-)
+     2  -0.04102175  4   A  4   A ->  6   A  6   A (+-+-)
+     3   0.04032275  4   A  3   A ->  6   A  7   A (+-+-)
+     4  -0.03220667  4   A  4   A ->  7   A  7   A (+-+-)
+     5  -0.02969814  3   A  3   A ->  6   A  6   A (+-+-)
+     6  -0.02772488  2   A  2   A ->  6   A  6   A (+-+-)
+     7  -0.02390085  3   A  2   A ->  7   A  6   A (+-+-)
+     8   0.02090141  4   A  3   A ->  7   A  6   A (+-+-)
+     9   0.02084172  4   A  2   A ->  6   A  6   A (+-+-)
+    10  -0.01942134  4   A  3   A ->  7   A  6   A (++++)
+
+  RHF energy [au]:                    -74.964483679761
+  MP2 correlation energy [au]:         -0.041652631274
+  MP2 energy [au]:                    -75.006136311034
+
+  D1(MP2)                =   0.00684828
+  S2 matrix 1-norm       =   0.00714597
+  S2 matrix inf-norm     =   0.00684173
+  S2 diagnostic          =   0.00241132
+
+  Largest S2 values (unique determinants):
+     1  -0.00684173    4   A ->    6   A
+     2   0.00335343    3   A ->    7   A
+     3  -0.00029954    2   A ->    6   A
+     4  -0.00000470    1   A ->    6   A
+     5  -0.00000000    3   A ->    6   A
+     6   0.00000000    4   A ->    7   A
+     7   0.00000000    2   A ->    7   A
+     8   0.00000000    1   A ->    7   A
+     9   0.00000000    5   A ->    6   A
+    10  -0.00000000    5   A ->    7   A
+
+  D2(MP1) =   0.09118295
+
+  CPHF: iter =  1 rms(P) = 0.0010542564 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0001162077 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000000068 eps = 0.0000000100
+
+  Total MP2 gradient [au]:
+       1   O  -0.0000000000  -0.0000000000  -0.0000006678
+       2   H  -0.0000008901   0.0000000000   0.0000003339
+       3   H   0.0000008901   0.0000000000   0.0000003339
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0000140326   0.0001000000  yes
+  Max Displacement :   0.0000301363   0.0001000000  yes
   Gradient*Displace:   0.0000000009   0.0001000000  yes
 
   All convergence criteria have been met.
   The optimization has converged.
 
-  Value of the MolecularEnergy:  -75.0061363106
+  Value of the MolecularEnergy:  -75.0061363110
 
   MBPT2:
     Function Parameters:
-      value_accuracy    = 1.759240e-09 (1.000000e-06) (computed)
-      gradient_accuracy = 0.000000e+00 (4.289606e-07) (computed)
+      value_accuracy    = 4.104939e-13 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (8.699469e-08) (computed)
       hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
     Molecular Coordinates:
@@ -760,33 +973,34 @@
         symmetry = c1
         unit = "angstrom"
         {  n atoms                        geometry                     }={
-           1     O [   -0.0000000000    -0.0000000000     0.4464762200]
-           2     H [    0.7606568325    -0.0000000000    -0.2232381100]
-           3     H [   -0.7606568325    -0.0000000000    -0.2232381100]
+           1     O [    0.0000000000     0.0000000000     0.4464735983]
+           2     H [    0.7606408798     0.0000000000    -0.2232367991]
+           3     H [   -0.7606408798     0.0000000000    -0.2232367991]
         }
       )
       Atomic Masses:
          15.99491    1.00783    1.00783
 
       Bonds:
-        STRE       s1     1.01347    1    2         O-H
-        STRE       s2     1.01347    1    3         O-H
+        STRE       s1     1.01345    1    2         O-H
+        STRE       s2     1.01345    1    3         O-H
       Bends:
-        BEND       b1    97.27590    2    1    3      H-O-H
+        BEND       b1    97.27504    2    1    3      H-O-H
 
       SymmMolecularCoor Parameters:
         change_coordinates = no
         transform_hessian = yes
         max_kappa2 = 10.000000
 
-    GaussianBasisSet:
-      nbasis = 7
-      nshell = 4
-      nprim  = 12
-      name = "STO-3G"
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 7
+        nshell = 4
+        nprim  = 12
+        name = "STO-3G"
     Reference Wavefunction:
       Function Parameters:
-        value_accuracy    = 1.759240e-11 (1.000000e-08) (computed)
+        value_accuracy    = 4.104939e-15 (1.000000e-08) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -796,21 +1010,22 @@
           symmetry = c1
           unit = "angstrom"
           {  n atoms                        geometry                     }={
-             1     O [   -0.0000000000    -0.0000000000     0.4464762200]
-             2     H [    0.7606568325    -0.0000000000    -0.2232381100]
-             3     H [   -0.7606568325    -0.0000000000    -0.2232381100]
+             1     O [    0.0000000000     0.0000000000     0.4464735983]
+             2     H [    0.7606408798     0.0000000000    -0.2232367991]
+             3     H [   -0.7606408798     0.0000000000    -0.2232367991]
           }
         )
         Atomic Masses:
            15.99491    1.00783    1.00783
 
-      GaussianBasisSet:
-        nbasis = 7
-        nshell = 4
-        nprim  = 12
-        name = "STO-3G"
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 7
+          nshell = 4
+          nprim  = 12
+          name = "STO-3G"
       SCF Parameters:
-        maxiter = 40
+        maxiter = 100
         density_reset_frequency = 10
         level_shift = 0.000000
 
@@ -820,67 +1035,63 @@
         docc = [ 5 ]
 
 
-  The following keywords in "h2o_mp200sto3gc1opt.in" were ignored:
-    mpqc:mole:reference:guess_wavefunction:multiplicity
-    mpqc:mole:reference:multiplicity
-
                                         CPU Wall
-mpqc:                                  0.62 0.63
-  calc:                                0.48 0.50
-    mp2-mem:                           0.48 0.48
+mpqc:                                  0.46 0.46
+  calc:                                0.41 0.41
+    mp2-mem:                           0.40 0.40
       Laj:                             0.03 0.03
         make_gmat for Laj:             0.02 0.02
           gmat:                        0.02 0.02
       Pab and Wab:                     0.00 0.00
-      Pkj and Wkj:                     0.01 0.01
+      Pkj and Wkj:                     0.01 0.00
         make_gmat for Wkj:             0.00 0.00
           gmat:                        0.00 0.00
-      cphf:                            0.03 0.02
-        gmat:                          0.01 0.01
-      hcore contrib.:                  0.03 0.02
-      mp2 passes:                      0.08 0.08
+      cphf:                            0.00 0.01
+        gmat:                          0.00 0.00
+      hcore contrib.:                  0.01 0.01
+      mp2 passes:                      0.07 0.08
         1. q.b.t.:                     0.00 0.00
         2. q.b.t.:                     0.00 0.00
         3. q.t.:                       0.00 0.00
-        3.qbt+4.qbt+non-sep contrib.:  0.03 0.04
+        3.qbt+4.qbt+non-sep contrib.:  0.04 0.04
         4. q.t.:                       0.00 0.00
         Pab and Wab:                   0.00 0.00
         Pkj and Wkj:                   0.00 0.00
         Waj and Laj:                   0.00 0.00
-        compute ecorr:                 0.01 0.00
+        compute ecorr:                 0.00 0.00
         divide (ia|jb)'s:              0.00 0.00
         erep+1.qt+2.qt:                0.04 0.04
-      overlap contrib.:                0.00 0.01
-      sep 2PDM contrib.:               0.01 0.03
-      vector:                          0.16 0.13
+      overlap contrib.:                0.01 0.00
+      sep 2PDM contrib.:               0.04 0.04
+      vector:                          0.10 0.10
         density:                       0.00 0.00
-        evals:                         0.02 0.01
-        extrap:                        0.01 0.01
-        fock:                          0.05 0.03
+        evals:                         0.01 0.01
+        extrap:                        0.00 0.01
+        fock:                          0.03 0.03
           accum:                       0.00 0.00
-          ao_gmat:                     0.05 0.03
-            start thread:              0.05 0.02
-            stop thread:               0.00 0.00
+          ao_gmat:                     0.02 0.03
+            start thread:              0.00 0.01
+            stop thread:               0.02 0.01
           init pmax:                   0.00 0.00
           local data:                  0.00 0.00
           setup:                       0.00 0.00
           sum:                         0.00 0.00
           symm:                        0.00 0.00
-        vector:                        0.03 0.02
+        vector:                        0.02 0.02
           density:                     0.00 0.00
           evals:                       0.00 0.00
-          extrap:                      0.01 0.00
+          extrap:                      0.00 0.00
           fock:                        0.01 0.01
             accum:                     0.00 0.00
-            ao_gmat:                   0.01 0.01
-              start thread:            0.01 0.00
+            ao_gmat:                   0.00 0.01
+              start thread:            0.00 0.00
               stop thread:             0.00 0.00
             init pmax:                 0.00 0.00
             local data:                0.00 0.00
             setup:                     0.00 0.00
             sum:                       0.00 0.00
             symm:                      0.00 0.00
-  input:                               0.13 0.13
+  input:                               0.04 0.05
 
-  End Time: Sat Apr  6 13:34:13 2002
+  End Time: Mon May  7 23:22:44 2007
 

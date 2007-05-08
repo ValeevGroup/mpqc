@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <util/group/message.h>
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
@@ -54,6 +55,7 @@ class Optimize: virtual public SavableState {
     char *ckpt_file;
     Ref<Function> function_;
     Ref<Convergence> conv_;
+    Ref<MessageGrp> msg_;
   public:
     Optimize();
     /// Restore the state of a Function object.
@@ -115,6 +117,7 @@ class Optimize: virtual public SavableState {
     Ref<SCMatrixKit> matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }
 
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 
@@ -124,14 +127,11 @@ class LineOpt: public Optimize {
 
   protected:
 
-    double decrease_factor_;
     RefSCVector initial_x_;
     double initial_value_;
     RefSCVector initial_grad_;
     RefSCVector search_direction_;
     Ref<Function> function_;
-    
-    int sufficient_decrease(RefSCVector& step);
 
   public:
 
@@ -152,24 +152,34 @@ class LineOpt: public Optimize {
     virtual void init(RefSCVector& direction, Ref<Function> function);
     /// Applies a nonlinear transform.
     void apply_transform(const Ref<NonlinearTransform>&);
-  
-    /// Returns factor for sufficient decrease test
-    double decrease_factor() { return decrease_factor_; }
-    /// Sets factor for sufficient decrease test
-    double set_decrease_factor( double factor ) 
-    { double temp = decrease_factor_; decrease_factor_ = factor; return temp; }
+
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 class Backtrack: public LineOpt {
 
  protected:
+   double decrease_factor_;
    double backtrack_factor_;
+   int force_search_;
+    
+   int sufficient_decrease(RefSCVector& step);
 
  public:
    Backtrack(const Ref<KeyVal>&);
-   ~Backtrack(){}
+   Backtrack(StateIn&s);
+   ~Backtrack();
    int update();
+   void save_data_state(StateOut&s);
+  
+   int force_search() const { return force_search_; }
+   /// Returns factor for sufficient decrease test
+   double decrease_factor() { return decrease_factor_; }
+   /// Sets factor for sufficient decrease test
+   double set_decrease_factor( double factor ) 
+   { double temp = decrease_factor_; decrease_factor_ = factor; return temp; }
 
+   void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

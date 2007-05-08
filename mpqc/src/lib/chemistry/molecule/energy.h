@@ -273,6 +273,8 @@ class MolEnergyConvergence: public Convergence {
 
     // Return nonzero if the optimization has converged.
     int converged();
+
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

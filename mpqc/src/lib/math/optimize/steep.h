@@ -60,6 +60,8 @@ class SteepestDescentOpt: public Optimize {
 
     void init();
     int update();
+
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 }

@@ -374,6 +374,35 @@ EFCOpt::apply_transform(const Ref<NonlinearTransform> &t)
   if (update_.nonnull()) update_->apply_transform(t);
 }
 
+void
+EFCOpt::print(std::ostream&o) const
+{
+  o << indent
+    << "EFCOpt:"
+    << std::endl
+    << incindent
+    << indent << "accuracy         = " << accuracy_
+    << std::endl
+    << indent << "transition_state = " << (tstate?"yes":"no")
+    << std::endl
+    << indent << "mode_following   = " << (modef?"yes":"no")
+    << std::endl;
+
+  if (update_.null()) {
+    o << indent << "update           = 0 (hessian updates will not be performed)"
+      << std::endl;
+  }
+  else {
+    o << indent << "update           =" << std::endl;
+    o << incindent;
+    update_->print(o);
+    o << decindent;
+  }
+
+  Optimize::print(o);
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

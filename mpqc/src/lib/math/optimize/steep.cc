@@ -216,6 +216,35 @@ SteepestDescentOpt::update()
   return conv_->converged();
 }
 
+void
+SteepestDescentOpt::print(std::ostream&o) const
+{
+  o << indent
+    << "SteepestDescentOpt:"
+    << std::endl
+    << incindent
+    << indent << "accuracy         = " << accuracy_
+    << std::endl
+    << indent << "print_x          = " << print_x_
+    << std::endl
+    << indent << "print_gradient   = " << print_gradient_
+    << std::endl;
+
+  if (lineopt_.null()) {
+    o << indent << "lineopt          = 0 (line optimization will not be performed)"
+      << std::endl;
+  }
+  else {
+    o << indent << "lineopt          =" << std::endl;
+    o << incindent;
+    lineopt_->print(o);
+    o << decindent;
+  }
+
+  Optimize::print(o);
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -101,8 +101,10 @@ class BatchElectronDensity: public Volume {
     // either with init_common_data or by copying
     virtual void init_scratch_data();
     void compute_basis_values(const SCVector3&r);
-    void compute_spin_density(const double *dmat,
-                              double *rho, double *grad, double *hess);
+    void compute_spin_density(const double *restrictxx dmat,
+                              double *restrictxx rho,
+                              double *restrictxx grad,
+                              double *restrictxx hess);
 
     virtual void compute();
   public:

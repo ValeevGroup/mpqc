@@ -33,7 +33,7 @@ mpqc: (
   )
   % optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
-    max_iterations = 3
+    max_iterations = 5
     function = $..:mole
     update<BFGSUpdate>: ()
     convergence<MolEnergyConvergence>: (

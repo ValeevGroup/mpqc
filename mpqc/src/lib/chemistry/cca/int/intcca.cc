@@ -275,10 +275,10 @@ IntegralCCA::init_factory()
                               type_map);
     fac_con_ = bs.connect(my_id,fname_port.str(),
                           fac_id_,"IntegralSuperFactoryInterface");
-    eval_factory_ = babel_cast<
+    eval_factory_ = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
         services.getPort(fname_port.str()) );
-    superfac = babel_cast<
+    superfac = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
         services.getPort(fname_port.str()) );
 
@@ -320,7 +320,7 @@ IntegralCCA::init_factory()
                       subfac_name_to_id[sfname.str()],
                       "IntV3EvaluatorFactory");
         MPQC::IntV3EvaluatorFactory fac = 
-          babel_cast<MPQC::IntV3EvaluatorFactory>(
+          sidl::babel_cast<MPQC::IntV3EvaluatorFactory>(
             services.getPort(intv3_port.str()) );
         fac.set_reorder(false);
       }    

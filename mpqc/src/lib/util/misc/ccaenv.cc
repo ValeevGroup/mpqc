@@ -40,7 +40,7 @@ Ext_CCAFramework::Ext_CCAFramework(gov::cca::Services &services )
   type_map_ = services_.createTypeMap();
   my_id_    = services_.getComponentID();
   services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
-  bs_ = babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
+  bs_ = sidl::babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
 }
 
 gov::cca::Services*

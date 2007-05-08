@@ -349,7 +349,7 @@ MPQC::CintsEvaluatorFactory_impl::get_evaluator2_impl (
     else if( itype == "dipole" && ideriv == 0 ) {
       Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface ddesc;
       ddesc = 
-        babel_cast<Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface>(
+        sidl::babel_cast<Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface>(
           idesc );
       Chemistry::QC::GaussianBasis::DipoleDataInterface cca_data;
       cca_data = ddesc.get_dipole_data();
@@ -365,7 +365,7 @@ MPQC::CintsEvaluatorFactory_impl::get_evaluator2_impl (
     else if( itype == "quadrupole" && ideriv == 0 ) {
       Chemistry::QC::GaussianBasis::QuadrupoleIntegralDescrInterface ddesc;
       ddesc = 
-        babel_cast<
+        sidl::babel_cast<
           Chemistry::QC::GaussianBasis::QuadrupoleIntegralDescrInterface>( 
             idesc);
       Chemistry::QC::GaussianBasis::DipoleDataInterface cca_data;

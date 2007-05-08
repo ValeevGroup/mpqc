@@ -700,7 +700,7 @@ MPQC::CoordinateModel_impl::setServices_impl (
       std::cerr << "TypeMap is nill\n";
       abort();
     }
-    ppf_ = babel_cast<gov::cca::ports::ParameterPortFactory>(
+    ppf_ = sidl::babel_cast<gov::cca::ports::ParameterPortFactory>(
              services_.getPort("ppf") );
     ppf_.initParameterData(tm_, "CONFIG");
     ppf_.setBatchTitle(tm_,"MPQC CoordinateModel");
@@ -752,7 +752,7 @@ MPQC::CoordinateModel_impl::setServices_impl (
     ppf_.addParameterPort(tm_, services_);
     services_.releasePort("ppf");
 
-    pp_ = babel_cast<gov::cca::ports::ParameterPort>(
+    pp_ = sidl::babel_cast<gov::cca::ports::ParameterPort>(
             services_.getPort("CONFIG") );
     if (pp_._is_nil()) {
       std::cerr << "getport failed\n";

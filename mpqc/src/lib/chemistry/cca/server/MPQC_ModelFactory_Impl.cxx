@@ -227,7 +227,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
       std::string( tm.getString("molecule_filename", 
 				"failed molecule_filename fetch") );
     molecule_factory_ = 
-      babel_cast<Chemistry::MoleculeFactoryInterface>(
+      sidl::babel_cast<Chemistry::MoleculeFactoryInterface>(
         services_.getPort("MoleculeFactoryInterface") );
     molecule_factory_.set_molecule_filename(molecule_filename_);
     molecule_ = molecule_factory_.get_molecule();
@@ -405,7 +405,7 @@ MPQC::ModelFactory_impl::setServices_impl (
       std::cerr << "TypeMap is nill\n";
       abort();
     }
-    ppf_ = babel_cast<gov::cca::ports::ParameterPortFactory>(
+    ppf_ = sidl::babel_cast<gov::cca::ports::ParameterPortFactory>(
              services_.getPort("ppf") );
     ppf_.initParameterData(tm_, "CONFIG");
     ppf_.setBatchTitle(tm_,"MPQC ModelFactory Options");
@@ -430,7 +430,7 @@ MPQC::ModelFactory_impl::setServices_impl (
     ppf_.addParameterPort(tm_, services_);
     services_.releasePort("ppf");
 
-    pp_ = babel_cast<gov::cca::ports::ParameterPort>( 
+    pp_ = sidl::babel_cast<gov::cca::ports::ParameterPort>( 
             services_.getPort("CONFIG") );
     if (pp_._is_nil()) {
       std::cerr << "getport failed\n";

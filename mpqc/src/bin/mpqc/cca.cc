@@ -42,7 +42,7 @@ MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
   services_ = fw_.getServices("uber","UberComponent",type_map_);
   my_id_    = services_.getComponentID();
   services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
-  bs_ = babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
+  bs_ = sidl::babel_cast<gov::cca::ports::BuilderService>( services_.getPort("bs") );
 
   component_factory_ = MPQC::ComponentFactory::_create();
   component_factory_.addDescription("Chemistry.IntegralSuperFactory",

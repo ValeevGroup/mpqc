@@ -135,7 +135,7 @@ MPQC::SimpleDriver_impl::setServices_impl (
             ex.add(__FILE__,__LINE__,"MPQC::SimpleDriver_impl::setServices");
             throw ex;
           }
-        ppf_ = babel_cast<gov::cca::ports::ParameterPortFactory>(
+        ppf_ = sidl::babel_cast<gov::cca::ports::ParameterPortFactory>(
                  services_.getPort("ppf") );
         if (ppf_._is_nil()) {
             MPQC::CCAException ex = MPQC::CCAException::_create();
@@ -152,7 +152,7 @@ MPQC::SimpleDriver_impl::setServices_impl (
         ppf_.addParameterPort(tm_, services_);
         services_.releasePort("ppf");
 
-        pp_ = babel_cast<gov::cca::ports::ParameterPort>(
+        pp_ = sidl::babel_cast<gov::cca::ports::ParameterPort>(
                 services_.getPort("CONFIG") );
         if (pp_._is_nil()) {
             std::cerr << "getport failed\n";
@@ -189,7 +189,7 @@ MPQC::SimpleDriver_impl::go_impl ()
   std::cout << "----------------------------------\n";
 
   std::cout << "SIMPLE DRIVER: getting model factory\n";
-  factory_ = babel_cast<Chemistry::QC::ModelFactoryInterface>(
+  factory_ = sidl::babel_cast<Chemistry::QC::ModelFactoryInterface>(
                services_.getPort("ModelFactoryInterface") );
   if (factory_._is_nil()) {
       std::cout << "didn't get a model factory\n";

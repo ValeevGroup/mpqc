@@ -261,8 +261,9 @@ MPQC::ModelFactory_impl::get_model_impl ()
   */  
   std::string keyval_filename = 
     std::string( tm.getString("keyval_filename", 
-			      "failed keyval_filename fetch") );
+			      "") );
   if( keyval_filename.size() > 0 ) {
+    std::cout << "opening keyval file: " << keyval_filename << std::endl;
     ifstream infile(keyval_filename.c_str());
     if( !infile ) {
       std::cout << "\nerror: could not open keyval file\n";
@@ -274,11 +275,13 @@ MPQC::ModelFactory_impl::get_model_impl ()
   }
   else {
 
-    theory_ = std::string( tm.getString("theory",
-					"failed theory fetch") );
-    basis_  = std::string( tm.getString("basis",
-					"failed basis fetch") );
-    
+    if( theory_.size() == 0 )
+      theory_ = std::string( tm.getString("theory",
+      					  "failed theory fetch") );
+    if( basis_.size() == 0 )
+      basis_  = std::string( tm.getString("basis",
+					  "failed basis fetch") );
+
     if (theory_ == "HF") {
       input << "  model<CLHF>:(" << std::endl;
     }

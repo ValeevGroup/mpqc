@@ -473,7 +473,7 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
   c1.print("operator<<(MOIndexSpace,MOIndexSpace): c1");
   c2.print("operator<<(MOIndexSpace,MOIndexSpace): c2");
 #endif
-  const unsigned int nao = c1.rowdim().n();
+  const unsigned int nao = c1.coldim().n();
   
   typedef std::vector<unsigned int> maptype;
   maptype map(rank1);

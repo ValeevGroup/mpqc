@@ -96,6 +96,9 @@ namespace MPQC {
       std::string theory_;
       std::string basis_;
       std::string molecule_filename_;
+      std::string keyval_;
+      std::string input_string_;
+      std::string input_filename_;
       bool use_cca_integrals_;
 
       gov::cca::Services services_;
@@ -143,8 +146,30 @@ namespace MPQC {
 
 
     /**
+     *  Set a string for package-specific input.
+     * @param input A string giving package-specific input.
+     */
+    void
+    set_input_string_impl (
+      /* in */const ::std::string& input
+    )
+    ;
+
+
+    /**
+     *  Set package-specific input filename.
+     * @param filename Package-specific input filename.
+     */
+    void
+    set_input_filename_impl (
+      /* in */const ::std::string& input
+    )
+    ;
+
+
+    /**
      *  Set the theory name for Model's created with get_model.
-     * @param theory A string giving the name of the theory, 
+     * @param theory A string giving the name of the theory,
      * for example, B3LYP.
      */
     void

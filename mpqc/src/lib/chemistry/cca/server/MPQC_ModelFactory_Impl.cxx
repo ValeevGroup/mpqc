@@ -130,8 +130,38 @@ void MPQC::ModelFactory_impl::_load() {
 
 // user defined non-static methods:
 /**
+ *  Set a string for package-specific input.
+ * @param input A string giving package-specific input.
+ */
+void
+MPQC::ModelFactory_impl::set_input_string_impl (
+  /* in */const ::std::string& input ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory.set_input_string)
+
+  input_string_ = input;
+
+  // DO-NOT-DELETE splicer.end(MPQC.ModelFactory.set_input_string)
+}
+
+/**
+ *  Set package-specific input filename.
+ * @param filename Package-specific input filename.
+ */
+void
+MPQC::ModelFactory_impl::set_input_filename_impl (
+  /* in */const ::std::string& input ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory.set_input_filename)
+
+  input_filename_ = input;
+
+  // DO-NOT-DELETE splicer.end(MPQC.ModelFactory.set_input_filename)
+}
+
+/**
  *  Set the theory name for Model's created with get_model.
- * @param theory A string giving the name of the theory, 
+ * @param theory A string giving the name of the theory,
  * for example, B3LYP.
  */
 void
@@ -254,17 +284,23 @@ MPQC::ModelFactory_impl::get_model_impl ()
   input << "  )" << std::endl;
 
   /*
-   Currently two possibilities for obtaining model keyval:
-     1) theory and basis are supplied by built-in parameter port 
+   Currently three possibilities for obtaining model keyval:
+     1) keyval string is supplied via set_keyval()
+     2) keyval filename is supplied via parameter port
+     3) theory and basis are supplied by built-in parameter port 
         and we can construct a simple model keyval input
-     2) keyval filename is supplied for us to read from
   */  
-  std::string keyval_filename = 
-    std::string( tm.getString("keyval_filename", 
-			      "") );
-  if( keyval_filename.size() > 0 ) {
-    std::cout << "opening keyval file: " << keyval_filename << std::endl;
-    ifstream infile(keyval_filename.c_str());
+  if( input_filename_.size() ==  0 )
+    input_filename_ = tm.getString("keyval_filename","");
+
+  // option 1
+  if( input_string_.size() > 0 )
+    input << input_string_;
+
+  // option 2
+  else if( input_filename_.size() > 0 ) {
+    std::cout << "opening keyval file: " << input_filename_ << std::endl;
+    ifstream infile(input_filename_.c_str());
     if( !infile ) {
       std::cout << "\nerror: could not open keyval file\n";
       abort();
@@ -273,6 +309,8 @@ MPQC::ModelFactory_impl::get_model_impl ()
     while( (i=infile.get()) && i!=EOF )
       input << char(i);
   }
+
+  // option 3
   else {
 
     if( theory_.size() == 0 )
@@ -301,13 +339,21 @@ MPQC::ModelFactory_impl::get_model_impl ()
 	  << "    )" << std::endl << "  )" << std::endl;
   }    
 
+  /*
+    This factory only runs in the absence of mpqc main,
+    where the CCAEnv is otherwise initialized.
+    IntegralCCA requires CCAEnv, so if cca integrals are desired,
+    a handle to the framework (services_) must be used to initialize
+    CCAEnv here.  This fact is transparent to IntegralCCA. 
+    Only strange side effect is that all code using CCAEnv now
+    appears to the framework as MPQC::ModelFactory.
+  */
   use_cca_integrals_ = bool( tm.getBool("use_cca_integrals",0) ); 
-  if( use_cca_integrals_ ) {
+  if( use_cca_integrals_ )
     if( !CCAEnv::initialized() ) {
       Ref<CCAFramework> fw = new Ext_CCAFramework(services_);
       CCAEnv::init( fw );
     }
-  }
 
   std::cout << "  model input:" << std::endl << input.str() << std::endl;
   
@@ -452,4 +498,3 @@ MPQC::ModelFactory_impl::setServices_impl (
 // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._misc)
 // Insert-Code-Here {MPQC.ModelFactory._misc} (miscellaneous code)
 // DO-NOT-DELETE splicer.end(MPQC.ModelFactory._misc)
-

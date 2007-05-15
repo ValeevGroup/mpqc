@@ -1,87 +1,87 @@
-my rank: 0, my pid: 32374
+my rank: 0, my pid: 12482
 Type: BATCH
 
 
 
 
 
-Loaded Chemistry.Chemistry_MoleculeFactory NOW  GLOBAL .
+Loaded Chemistry.MoleculeFactory NOW  GLOBAL .
 
-Loaded MPQC.Chemistry_QC_ModelFactory NOW  GLOBAL .
+Loaded MPQC.ModelFactory NOW  GLOBAL .
 
 Loaded MPQC.SimpleDriver NOW  GLOBAL .
 
 
-molfactory of type Chemistry.Chemistry_MoleculeFactory 
+molfactory of type Chemistry.MoleculeFactory 
 successfully instantiated
 
-mpqcfactory of type MPQC.Chemistry_QC_ModelFactory 
+mpqcfactory of type MPQC.ModelFactory 
 successfully instantiated
 
 driver of type MPQC.SimpleDriver 
 successfully instantiated
 
 
-driver))))ModelFactory---->ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface---->ModelFactoryInterface((((mpqcfactory
 connection made successfully
 
-mpqcfactory))))MoleculeFactory---->MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface---->MoleculeFactoryInterface((((molfactory
 connection made successfully
 
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 cc-pVTZ
 ------------------------------------
-updated parameter mpqcfactory configure basis
+updated parameter mpqcfactory CONFIG basis
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 HF
 ------------------------------------
-updated parameter mpqcfactory configure theory
+updated parameter mpqcfactory CONFIG theory
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-/home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
 ------------------------------------
-updated parameter mpqcfactory configure molecule_filename
+updated parameter mpqcfactory CONFIG molecule_filename
 
 ------------------------------------
 Instance name: driver
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-true
+1
 ------------------------------------
-updated parameter driver configure do_gradient
+updated parameter driver CONFIG do_gradient
 
 
-  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using MPIMessageGrp for message passing (number of nodes = 1).
 
 SIMPLE CHEMISTRY COMPONENT DRIVER
 ----------------------------------
 SIMPLE DRIVER: getting model factory
 SIMPLE DRIVER: getting model
-  MoleculeFactory: reading /home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+  MoleculeFactory: reading /home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
   units are bohr
   model input:
   molecule<Molecule>: (
     symmetry = auto
     unit = bohr
     {n atoms geometry } = {
-	0	8	[  0  0  0.123932  ]
-	1	1	[  0  1.43052  -0.983447  ]
-	2	1	[  0  -1.43052  -0.983447  ]
+	0	8	[  0  0  0.1239321808  ]
+	1	1	[  0  1.43052  -0.9834468192  ]
+	2	1	[  0  -1.43052  -0.9834468192  ]
     }
   )
   model<CLHF>:(
@@ -92,9 +92,9 @@ SIMPLE DRIVER: getting model
     )
   )
 
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/basis/cc-pvtz.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/basis/cc-pvtz.kv.
 
   CLSCF::init: total charge = 0
 
@@ -145,6 +145,7 @@ SIMPLE DRIVER: Evaluating energy
   n(basis):            23     7    11    17
   Maximum orthogonalization residual = 5.11233
   Minimum orthogonalization residual = 0.00249594
+  Beginning iterations.  Basis is cc-pVTZ.
                 897487 integrals
   iter     1 energy =  -74.1647121057 delta = 4.28554e-02
                 897487 integrals
@@ -163,11 +164,13 @@ SIMPLE DRIVER: Evaluating energy
   iter     8 energy =  -76.0571607458 delta = 1.68734e-05
                 897487 integrals
   iter     9 energy =  -76.0571607633 delta = 5.38983e-06
+                897487 integrals
+  iter    10 energy =  -76.0571607636 delta = 5.96474e-07
 
   HOMO is     1  B1 =  -0.504469
   LUMO is     4  A1 =   0.142259
 
-  total scf energy =  -76.0571607633
+  total scf energy =  -76.0571607636
 SIMPLE DRIVER: Evaluating gradient
 
   SCF::compute: energy accuracy = 1.0000000e-08
@@ -176,12 +179,15 @@ SIMPLE DRIVER: Evaluating gradient
 
   integral intermediate storage = 750623 bytes
   integral cache = 31222001 bytes
+  Beginning iterations.  Basis is cc-pVTZ.
                 897487 integrals
   iter     1 energy =  -76.0571607636 delta = 5.75819e-02
                 897487 integrals
   iter     2 energy =  -76.0571607636 delta = 8.10462e-08
                 897487 integrals
   iter     3 energy =  -76.0571607636 delta = 3.21706e-08
+                897487 integrals
+  iter     4 energy =  -76.0571607636 delta = 8.67003e-09
 
   HOMO is     1  B1 =  -0.504468
   LUMO is     4  A1 =   0.142260
@@ -191,16 +197,19 @@ SIMPLE DRIVER: Evaluating gradient
   SCF::compute: gradient accuracy = 1.0000000e-06
 
   Total Gradient:
-       1   O   0.0000000000  -0.0000000000   0.0241852286
-       2   H  -0.0000000000   0.0131994419  -0.0120926143
-       3   H  -0.0000000000  -0.0131994419  -0.0120926143
+       1   O   0.0000000000   0.0000000000   0.0241851750
+       2   H  -0.0000000000   0.0131994452  -0.0120925875
+       3   H  -0.0000000000  -0.0131994452  -0.0120925875
+revalidate "molfactory"
+revalidate "mpqcfactory"
+revalidate "driver"
 ##specific go command successful
 
 
-driver))))ModelFactory-\ \-ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface-\ \-ModelFactoryInterface((((mpqcfactory
 connection broken successfully
 
-mpqcfactory))))MoleculeFactory-\ \-MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface-\ \-MoleculeFactoryInterface((((molfactory
 connection broken successfully
 
 
@@ -214,8 +223,3 @@ remove driver
 
 bye!
 exit
-
-
-CCACHEM_RESULTS_DIR environment variable not found,
-  don't know where to log results
-

@@ -1,87 +1,87 @@
-my rank: 0, my pid: 32375
+my rank: 0, my pid: 12489
 Type: BATCH
 
 
 
 
 
-Loaded Chemistry.Chemistry_MoleculeFactory NOW  GLOBAL .
+Loaded Chemistry.MoleculeFactory NOW  GLOBAL .
 
-Loaded MPQC.Chemistry_QC_ModelFactory NOW  GLOBAL .
+Loaded MPQC.ModelFactory NOW  GLOBAL .
 
 Loaded MPQC.SimpleDriver NOW  GLOBAL .
 
 
-molfactory of type Chemistry.Chemistry_MoleculeFactory 
+molfactory of type Chemistry.MoleculeFactory 
 successfully instantiated
 
-mpqcfactory of type MPQC.Chemistry_QC_ModelFactory 
+mpqcfactory of type MPQC.ModelFactory 
 successfully instantiated
 
 driver of type MPQC.SimpleDriver 
 successfully instantiated
 
 
-driver))))ModelFactory---->ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface---->ModelFactoryInterface((((mpqcfactory
 connection made successfully
 
-mpqcfactory))))MoleculeFactory---->MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface---->MoleculeFactoryInterface((((molfactory
 connection made successfully
 
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 STO-3G
 ------------------------------------
-updated parameter mpqcfactory configure basis
+updated parameter mpqcfactory CONFIG basis
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 HF
 ------------------------------------
-updated parameter mpqcfactory configure theory
+updated parameter mpqcfactory CONFIG theory
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-/home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
 ------------------------------------
-updated parameter mpqcfactory configure molecule_filename
+updated parameter mpqcfactory CONFIG molecule_filename
 
 ------------------------------------
 Instance name: driver
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-false
+0
 ------------------------------------
-updated parameter driver configure do_gradient
+updated parameter driver CONFIG do_gradient
 
 
-  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using MPIMessageGrp for message passing (number of nodes = 1).
 
 SIMPLE CHEMISTRY COMPONENT DRIVER
 ----------------------------------
 SIMPLE DRIVER: getting model factory
 SIMPLE DRIVER: getting model
-  MoleculeFactory: reading /home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+  MoleculeFactory: reading /home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
   units are bohr
   model input:
   molecule<Molecule>: (
     symmetry = auto
     unit = bohr
     {n atoms geometry } = {
-	0	8	[  0  0  0.123932  ]
-	1	1	[  0  1.43052  -0.983447  ]
-	2	1	[  0  -1.43052  -0.983447  ]
+	0	8	[  0  0  0.1239321808  ]
+	1	1	[  0  1.43052  -0.9834468192  ]
+	2	1	[  0  -1.43052  -0.9834468192  ]
     }
   )
   model<CLHF>:(
@@ -92,9 +92,9 @@ SIMPLE DRIVER: getting model
     )
   )
 
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/basis/sto-3g.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
 
   CLSCF::init: total charge = 0
 
@@ -145,6 +145,7 @@ SIMPLE DRIVER: Evaluating energy
   n(basis):             4     0     1     2
   Maximum orthogonalization residual = 1.93072
   Minimum orthogonalization residual = 0.342284
+  Beginning iterations.  Basis is STO-3G.
                    565 integrals
   iter     1 energy =  -74.6360043626 delta = 7.47911e-01
                    565 integrals
@@ -159,18 +160,23 @@ SIMPLE DRIVER: Evaluating energy
   iter     6 energy =  -74.9629464948 delta = 3.69725e-04
                    565 integrals
   iter     7 energy =  -74.9629464958 delta = 1.92828e-05
+                   565 integrals
+  iter     8 energy =  -74.9629464958 delta = 1.49496e-07
 
   HOMO is     1  B1 =  -0.391243
   LUMO is     4  A1 =   0.605578
 
   total scf energy =  -74.9629464958
+revalidate "molfactory"
+revalidate "mpqcfactory"
+revalidate "driver"
 ##specific go command successful
 
 
-driver))))ModelFactory-\ \-ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface-\ \-ModelFactoryInterface((((mpqcfactory
 connection broken successfully
 
-mpqcfactory))))MoleculeFactory-\ \-MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface-\ \-MoleculeFactoryInterface((((molfactory
 connection broken successfully
 
 
@@ -181,81 +187,76 @@ remove mpqcfactory
 remove driver
 
 
-molfactory of type Chemistry.Chemistry_MoleculeFactory 
+molfactory of type Chemistry.MoleculeFactory 
 successfully instantiated
 
-mpqcfactory of type MPQC.Chemistry_QC_ModelFactory 
+mpqcfactory of type MPQC.ModelFactory 
 successfully instantiated
 
 driver of type MPQC.SimpleDriver 
 successfully instantiated
 
 
-driver))))ModelFactory---->ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface---->ModelFactoryInterface((((mpqcfactory
 connection made successfully
 
-mpqcfactory))))MoleculeFactory---->MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface---->MoleculeFactoryInterface((((molfactory
 connection made successfully
 
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 STO-3G
 ------------------------------------
-updated parameter mpqcfactory configure basis
+updated parameter mpqcfactory CONFIG basis
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
 HF
 ------------------------------------
-updated parameter mpqcfactory configure theory
+updated parameter mpqcfactory CONFIG theory
 
 ------------------------------------
 Instance name: mpqcfactory
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-/home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
 ------------------------------------
-updated parameter mpqcfactory configure molecule_filename
+updated parameter mpqcfactory CONFIG molecule_filename
 
 ------------------------------------
 Instance name: driver
-Port name: configure
+Port name: CONFIG
 ------------------------------------
 New parameters:
-false
+0
 ------------------------------------
-updated parameter driver configure do_gradient
+updated parameter driver CONFIG do_gradient
 
 
-
-
-CCACHEM_RESULTS_DIR environment variable not found,
-  don't know where to log results
-
-  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using MPIMessageGrp for message passing (number of nodes = 1).
 
 SIMPLE CHEMISTRY COMPONENT DRIVER
 ----------------------------------
 SIMPLE DRIVER: getting model factory
 SIMPLE DRIVER: getting model
-  MoleculeFactory: reading /home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+  MoleculeFactory: reading /home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccafe_h2o.xyz
   units are bohr
   model input:
   molecule<Molecule>: (
     symmetry = auto
     unit = bohr
     {n atoms geometry } = {
-	0	8	[  0  0  0.123932  ]
-	1	1	[  0  1.43052  -0.983447  ]
-	2	1	[  0  -1.43052  -0.983447  ]
+	0	8	[  0  0  0.1239321808  ]
+	1	1	[  0  1.43052  -0.9834468192  ]
+	2	1	[  0  -1.43052  -0.9834468192  ]
     }
   )
   model<CLHF>:(
@@ -266,9 +267,9 @@ SIMPLE DRIVER: getting model
     )
   )
 
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/basis/sto-3g.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
 
   CLSCF::init: total charge = 0
 
@@ -319,6 +320,7 @@ SIMPLE DRIVER: Evaluating energy
   n(basis):             4     0     1     2
   Maximum orthogonalization residual = 1.93072
   Minimum orthogonalization residual = 0.342284
+  Beginning iterations.  Basis is STO-3G.
                    565 integrals
   iter     1 energy =  -74.6360043626 delta = 7.47911e-01
                    565 integrals
@@ -333,18 +335,23 @@ SIMPLE DRIVER: Evaluating energy
   iter     6 energy =  -74.9629464948 delta = 3.69725e-04
                    565 integrals
   iter     7 energy =  -74.9629464958 delta = 1.92828e-05
+                   565 integrals
+  iter     8 energy =  -74.9629464958 delta = 1.49496e-07
 
   HOMO is     1  B1 =  -0.391243
   LUMO is     4  A1 =   0.605578
 
   total scf energy =  -74.9629464958
+revalidate "molfactory"
+revalidate "mpqcfactory"
+revalidate "driver"
 ##specific go command successful
 
 
-driver))))ModelFactory-\ \-ModelFactory((((mpqcfactory
+driver))))ModelFactoryInterface-\ \-ModelFactoryInterface((((mpqcfactory
 connection broken successfully
 
-mpqcfactory))))MoleculeFactory-\ \-MoleculeFactory((((molfactory
+mpqcfactory))))MoleculeFactoryInterface-\ \-MoleculeFactoryInterface((((molfactory
 connection broken successfully
 
 
@@ -358,8 +365,3 @@ remove driver
 
 bye!
 exit
-
-
-CCACHEM_RESULTS_DIR environment variable not found,
-  don't know where to log results
-

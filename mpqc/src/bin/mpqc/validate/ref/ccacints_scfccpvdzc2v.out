@@ -1,22 +1,23 @@
+  WARNING: desired MPI_THREAD_MULTIPLE MPI threading support but got MPI_THREAD_SINGLE
 
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
   Machine:    i686-pc-linux-gnu
   User:       jpkenny@localhost
-  Start Time: Wed Feb 14 13:37:54 2007
+  Start Time: Tue May 15 14:42:40 2007
 
-  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using MPIMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
-  Using ProcMemoryGrp for distributed shared memory.
+  Using MTMPIMemoryGrp for distributed shared memory.
   Total number of processors = 1
 
   Initializing CCA framework with args: 
-  --path /home/jpkenny/install/mpqc-babel-1-0/lib/cca:/home/jpkenny/install/cca-chem-generic2/lib --load Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory
+  --path /home/jpkenny/install/mpqc-mpi/lib/cca:/home/jpkenny/install/cca-chem-generic2-mpi/lib --load Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory:MPQC.CintsEvaluatorFactory
 
   Using IntegralV3 by default for molecular integrals evaluation
 
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
 
   IntCoorGen: generated 3 coordinates.
   Forming optimization coordinates:
@@ -24,7 +25,7 @@
       expected 3 coordinates
       found 2 variable coordinates
       found 0 constant coordinates
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
   Default subfactory: MPQC.CintsEvaluatorFactory
   Instantiating: MPQC.CintsEvaluatorFactory
 
@@ -32,34 +33,34 @@
 
   Starting from core Hamiltonian guess
 
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   Using symmetric orthogonalization.
   n(basis):            11     2     7     4
   Maximum orthogonalization residual = 3.66509
   Minimum orthogonalization residual = 0.0352018
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   docc = [ 3 0 1 1 ]
   nbasis = 24
 
   Molecular formula H2O
 
-  The following keywords in "/home/jpkenny/src/mpqc-babel-1-0/src/bin/mpqc/validate/ref/ccacints_scfccpvdzc2v.in" were ignored:
+  The following keywords in "/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccacints_scfccpvdzc2v.in" were ignored:
     mpqc:mole:multiplicity
     integrals:molecule
 
@@ -81,11 +82,11 @@
 
   nuclear repulsion energy =    9.1571164588
 
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/install/mpqc-babel-1-0/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc-mpi/share/mpqc/3.0.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   integral intermediate storage = 0 bytes
   integral cache = 31995200 bytes
@@ -110,6 +111,8 @@
   iter     9 energy =  -76.0258882401 delta = 6.83550e-06
                  31972 integrals
   iter    10 energy =  -76.0258882403 delta = 1.50522e-06
+                 31972 integrals
+  iter    11 energy =  -76.0258882403 delta = 2.17466e-07
 
   HOMO is     1  B2 =  -0.491067
   LUMO is     4  A1 =   0.185922
@@ -185,24 +188,24 @@
     docc = [ 3 0 1 1 ]
 
                           CPU Wall
-mpqc:                    1.21 1.21
-  NAO:                   0.01 0.01
-  calc:                  0.81 0.81
-    vector:              0.81 0.81
+mpqc:                    2.27 2.78
+  NAO:                   0.02 0.02
+  calc:                  1.53 1.58
+    vector:              1.53 1.58
       density:           0.00 0.00
-      evals:             0.00 0.00
+      evals:             0.01 0.01
       extrap:            0.01 0.01
-      fock:              0.69 0.69
+      fock:              1.32 1.36
         accum:           0.00 0.00
-        ao_gmat:         0.67 0.66
-          start thread:  0.67 0.66
+        ao_gmat:         1.27 1.31
+          start thread:  1.26 1.31
           stop thread:   0.00 0.00
         init pmax:       0.00 0.00
         local data:      0.00 0.00
-        setup:           0.01 0.01
+        setup:           0.02 0.02
         sum:             0.00 0.00
-        symm:            0.02 0.01
-  input:                 0.39 0.39
+        symm:            0.03 0.03
+  input:                 0.72 1.18
 
-  End Time: Wed Feb 14 13:37:55 2007
+  End Time: Tue May 15 14:42:43 2007
 

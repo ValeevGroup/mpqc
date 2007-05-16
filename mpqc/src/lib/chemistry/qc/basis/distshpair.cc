@@ -129,6 +129,18 @@ DistShellPair::DistShellPair(const Ref<MessageGrp> & msg,
     incR_ = ncpu_%nsh2;
   }
 
+  long int nsh1 = bs1_->nshell();
+  long int nsh2 = bs2_->nshell();
+  long int nshpairs = (bs1_eq_bs2_ ? (nsh1*(nsh1+1))/2 : nsh1*nsh2);
+  if (task_dynamic_ || thread_dynamic_) {
+    ntask_ = nshpairs;
+    init_dynamic_work();
+    }
+  else {
+    ntask_ = nshpairs/ncpu_;
+    }
+  set_print_percent(print_percent_);
+
   init();
 }
 
@@ -143,16 +155,6 @@ DistShellPair::~DistShellPair()
 void
 DistShellPair::init()
 {
-  long int nsh1 = bs1_->nshell();
-  long int nsh2 = bs2_->nshell();
-  long int nshpairs = (bs1_eq_bs2_ ? (nsh1*(nsh1+1))/2 : nsh1*nsh2);
-
-  if (task_dynamic_ || thread_dynamic_) {
-    ntask_ = nshpairs;
-    init_dynamic_work();
-    }
-  else {
-    ntask_ = nshpairs/ncpu_;
     // Compute starting S_ and R_ for this thread
     if (bs1_eq_bs2_) {
       // This is a slightly nonobvious computation of S_ and R_ from SR = msg_->me()*nthread_ + mythread_
@@ -166,14 +168,12 @@ DistShellPair::init()
       }
     else {
       // Things are simple when basis sets are different
+      long int nsh2 = bs2_->nshell();
       long int absthreadindex = msg_->me()*nthread_ + mythread_;
       S_ = absthreadindex/nsh2;
       R_ = absthreadindex%nsh2;
       }
-    }
-
   current_shellpair_ = 0;
-  set_print_percent(print_percent_);
 }
 
 void

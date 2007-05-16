@@ -118,7 +118,7 @@ class MBPT2_R12: public MBPT2 {
         <dl>
 
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
-        Allowed values are "r12", "g12", and "none". The default is "r12".
+        Allowed values are "r12", "g12", "geng12", and "none". The default is "r12".
       
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
         of the correlation factor. <tt>corr_param</tt> can be a single floating-point value

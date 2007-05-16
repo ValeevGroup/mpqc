@@ -90,13 +90,6 @@ TwoBodyMOIntsTransform_ijxy::compute()
   enum te_types {eri=0, r12=1, r12t1=2};
   const size_t memgrp_blocksize = memgrp_blksize();
 
-  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
-  int tbtype_anti2 = -1;
-  if (num_te_types() == 6)
-    tbtype_anti2 = TwoBodyInt::t2g12;
-  if (num_te_types() == 4)
-    tbtype_anti2 = TwoBodyInt::r12t2;
-
   // log2 of the erep tolerance
   // (erep < 2^tol => discard)
   const int tol = (int) (-10.0/log10(2.0));  // discard ints smaller than 10^-20
@@ -156,6 +149,14 @@ TwoBodyMOIntsTransform_ijxy::compute()
   TwoBodyMOIntsTransform_12Inds** e12thread = new TwoBodyMOIntsTransform_12Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
     e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug_);
+  }
+
+  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
+  int tbtype_anti2 = -1;
+  const unsigned int ntypes = tbints[0]->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      Ref<TwoBodyIntTypeDescr> inttype = tbints[0]->inttype(static_cast<TwoBodyInt::tbint_type>(t));
+      if (inttype->perm_symm(2) == -1) tbtype_anti2 = t;
   }
   
   /*-----------------------------------

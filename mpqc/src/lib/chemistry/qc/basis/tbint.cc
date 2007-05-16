@@ -176,6 +176,13 @@ TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
   return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
+const Ref<TwoBodyIntTypeDescr>&
+TwoBodyInt::inttype(tbint_type type) const
+{
+    static Ref<TwoBodyIntTypeDescr> symm_type = new TwoBodyIntTypeDescr(2,+1,+1,+1);
+    return symm_type;
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,

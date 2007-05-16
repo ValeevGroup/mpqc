@@ -46,7 +46,14 @@ ifeq ($(HAVE_LIBINT2_ERI),yes)
   CXXSRC += eri.cc comp_eri.cc
 endif
 ifeq ($(HAVE_LIBINT2_G12),yes)
-  CXXSRC += g12.cc comp_g12.cc
+  ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+    CXXSRC += g12.cc comp_g12.cc
+  else
+    CXXSRC += g12nc.cc comp_g12nc.cc
+  endif
+endif
+ifeq ($(HAVE_LIBINT2_GENG12),yes)
+  CXXSRC += geng12.cc comp_geng12.cc
 endif
 
 INC = libint2.h obintlibint2.h tbintlibint2.h tform.h cartit.h macros.h primpairs.h shellpairs.h

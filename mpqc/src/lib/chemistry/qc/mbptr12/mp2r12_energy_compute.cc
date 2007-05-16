@@ -74,7 +74,14 @@ MP2R12Energy::compute()
   int me = msg->me();
   int ntasks = msg->n();
   
-  const bool ebc = r12eval()->ebc();
+  const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
+  const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+  const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
+  bool ebc = r12eval()->ebc();
+  if (r12eval()->vir(Alpha)->rank()==0 ||
+      r12eval()->vir(Beta)->rank()==0 ||
+      cabs_empty)
+    ebc = true;
   /// KS approach to EBC-free method differs from mine if std approx != B || C
   const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
                           (stdapprox_ != LinearR12::StdApprox_B &&

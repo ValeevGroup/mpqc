@@ -101,6 +101,8 @@ private:
 
 public:
   MOIndexSpace(StateIn&);
+  /// Copy constructor
+  MOIndexSpace(const MOIndexSpace&);
   /** This function constructs an MOIndexSpace from (blocked) space full_coefs.
       Block i will contain vectors [ offsets[i], offsets[i]+nmopi[i]-1 ] . By default,
       the space maintains the same blocked structure and the same order within blocks
@@ -183,6 +185,8 @@ public:
   void print(std::ostream&o=ExEnv::out0()) const;
   /// Produces a short summary
   void print_summary(std::ostream& os) const;
+  /// Prints out this in details (coefficients, etc.)
+  void print_detail(std::ostream&o=ExEnv::out0()) const;
 
 };
 

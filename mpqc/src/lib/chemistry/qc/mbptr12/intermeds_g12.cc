@@ -123,8 +123,7 @@ R12IntEval::init_intermeds_g12_()
       // 0.5 ( g12*[T,g12'] + [g12,T]*g12' ) = [g12,[t1,g12']] + 0.5 ( g12*[T,g12'] - g12'*[T,g12] )
       //   = [g12,[t1,g12']] - 0.5 ( g12*[g12',T] - g12'*[g12,T] ) = [g12,[t1,g12']] - 0.5 ( (beta-alpha)/(beta+alpha) * [g12*g12',T] ),
       // where the last step valid is for 2 primitive gaussians only (must be contracted otherwise)
-      // The first term is symmetric with respect to permutation of g12 and g12', the second is antisymmetric
-      // the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
+      // The first term is symmetric with respect to permutation of g12 and g12' and computed directly,
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 	  B_[s], corrfactor()->tbint_type_f12t1f12(),
 	  xspace1, xspace1,
@@ -132,23 +131,97 @@ R12IntEval::init_intermeds_g12_()
 	  antisymmetrize,
 	  tforms_f12f12_xmyn
 	  );
-      // Add the antisymmetric part of f12tf12' if # of geminals > 1 (i.e. off diagonal blocks appear)
+      // the second is antisymmetric wrt such permutation and is only needed when number of geminals > 1
       if (r12info()->corrfactor()->nfunctions() > 1) {
 	  RefSCMatrix Banti = B_[s].clone(); Banti.assign(0.0);
-	  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-	      Banti, corrfactor()->tbint_type_t1f12(),
-	      xspace1, xspace1,
-	      xspace2, xspace2,
-	      antisymmetrize,
-	      tforms_f12f12_xmyn
-	      );
-	  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-	      Banti, corrfactor()->tbint_type_t2f12(),
-	      xspace1, xspace1,
-	      xspace2, xspace2,
-	      antisymmetrize,
-	      tforms_f12f12_xmyn
-	      );
+	  // the handling of the second term differs between standard approximations {A,A',B} and {C}
+	  if (stdapprox() != LinearR12::StdApprox_C) {
+	      // 1) in standard approximations A and B the commutators are explicitly evaluated:
+	      //    the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
+	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+		  Banti, corrfactor()->tbint_type_t1f12(),
+		  xspace1, xspace1,
+		  xspace2, xspace2,
+		  antisymmetrize,
+		  tforms_f12f12_xmyn
+		  );
+	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+		  Banti, corrfactor()->tbint_type_t2f12(),
+		  xspace1, xspace1,
+		  xspace2, xspace2,
+		  antisymmetrize,
+		  tforms_f12f12_xmyn
+		  );
+	  }
+	  else {
+	      // 2) in standard approximation C the commutators are evaluated via RI:
+	      // Firstly, instead of T we can use h+J (it will be used later anyway)
+	      // Second let's designate (beta-alpha)/(beta+alpha) * g12*g12 as A12. A12 is computed as anti_f12f12 by G12NCLibint2
+	      // [A12,T] = [A12,h+J] = A12 (hJ_1 + hJ_2) -  (hJ_1 + hJ_2) A12
+	      Ref<MOIndexSpace> hj_x1 = hj_x_P(spin1);
+	      Ref<MOIndexSpace> hj_x2 = hj_x_P(spin2);
+
+	      // <xy|hJ z> tforms
+	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyHz;
+	      {
+		  NewTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true);
+		  fill_container(tform_creator,tforms_xyHz);
+	      }
+	      // <hJ z|xy> tforms
+	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Hzxy;
+	      {
+		  NewTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true);
+		  fill_container(tform_creator,tforms_Hzxy);
+	      }
+
+	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+		  Banti, corrfactor()->tbint_type_f12f12_anti(),
+		  xspace1, hj_x1,
+		  xspace2, xspace2,
+		  antisymmetrize,
+		  tforms_xyHz
+		  );
+	      compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
+		  Banti, corrfactor()->tbint_type_f12f12_anti(),
+		  hj_x1, xspace1,
+		  xspace2, xspace2,
+		  antisymmetrize,
+		  tforms_Hzxy
+		  );
+
+	      if (!x1_eq_x2) {
+		  // <xy|z hJ> tforms
+		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyzH;
+		  {
+		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true);
+		      fill_container(tform_creator,tforms_xyzH);
+		  }
+		  // <z hJ|xy> tforms
+		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_zHxy;
+		  {
+		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true);
+		      fill_container(tform_creator,tforms_zHxy);
+		  }
+		  
+		  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+		      Banti, corrfactor()->tbint_type_f12f12_anti(),
+		      xspace1, xspace2,
+		      xspace2, hj_x2,
+		      antisymmetrize,
+		      tforms_xyzH
+		      );
+		  compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
+		      Banti, corrfactor()->tbint_type_f12f12_anti(),
+		      xspace1, xspace1,
+		      hj_x2, xspace2,
+		      antisymmetrize,
+		      tforms_zHxy
+		      );
+	      }
+	      else {
+		  Banti.scale(2.0);
+	      }
+	  }
 	  Banti.scale(-0.5);
 	  B_[s].accumulate(Banti);
       }

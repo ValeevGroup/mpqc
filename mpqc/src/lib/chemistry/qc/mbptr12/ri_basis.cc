@@ -279,6 +279,10 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
                 << "SVD-projecting out " << space1->name() << " out of " << space2->name()
                 << " to obtain space " << name << endl << incindent;
 
+  // If space1 is void, return a copy of the original space
+  if (space1->rank() == 0)
+      return new MOIndexSpace(id,name,space2->coefs(),space2->basis(),space2->integral());
+
   // C12 = C1 * S12 * C2
   RefSCMatrix C12;
   compute_overlap_ints(space1,space2,C12);

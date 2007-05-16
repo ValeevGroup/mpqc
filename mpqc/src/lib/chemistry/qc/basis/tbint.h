@@ -36,6 +36,7 @@
 #include <util/group/message.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
+#include <chemistry/qc/basis/inttypedescr.h>
 
 namespace sc {
 
@@ -44,7 +45,7 @@ namespace sc {
 class Integral;
 
 /** This is an abstract base type for classes that
-    compute integrals involving two electrons.
+    compute integrals involving two electrons and 2 functions per electron.
  */
 class TwoBodyInt : public RefCount {
 
@@ -111,12 +112,17 @@ class TwoBodyInt : public RefCount {
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
       of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
-      [r12,T2] operators */
-    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3, r12_0_g12 = 1, r12_m1_g12 = 2, t1g12 = 3, t2g12 = 4, g12t1g12 = 5};
+      [r12,T2] operators, etc. */
+    enum tbint_type { eri=0,
+		      r12=1, r12t1=2, r12t2=3,
+		      r12_0_g12 = 1, r12_m1_g12 = 2, t1g12 = 3, t2g12 = 4, g12t1g12 = 5, anti_g12g12 = 6,
+		      r12_0_gg12 = 1, r12_m1_gg12 = 2, gg12t1gg12 = 3};
     /// The max number of such types
     static const int max_num_tbint_types = 12;
     /// The number of types supported by this TwoBodyInt instance
     virtual unsigned int num_tbint_types() const =0;
+    /// Descriptor for integral type i
+    virtual const Ref<TwoBodyIntTypeDescr>& inttype(tbint_type type) const;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than

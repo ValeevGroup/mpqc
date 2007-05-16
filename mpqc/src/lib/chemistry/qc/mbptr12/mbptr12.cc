@@ -163,13 +163,56 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Default is to use R12 factor
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
+
+  // Default method is MBPT2-R12/A'
+  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
+  if ( !strcmp(sa_string,"A") ||
+       !strcmp(sa_string,"a") ) {
+    stdapprox_ = LinearR12::StdApprox_A;
+  }
+  else if ( !strcmp(sa_string,"Ap") ||
+	    !strcmp(sa_string,"ap") ||
+	    !strcmp(sa_string,"A'") ||
+	    !strcmp(sa_string,"a'") ) {
+    stdapprox_ = LinearR12::StdApprox_Ap;
+  }
+  else if ( !strcmp(sa_string,"App") ||
+	    !strcmp(sa_string,"app") ||
+	    !strcmp(sa_string,"A''") ||
+	    !strcmp(sa_string,"a''") ) {
+    stdapprox_ = LinearR12::StdApprox_App;
+  }
+  else if ( !strcmp(sa_string,"B") ||
+	    !strcmp(sa_string,"b") ) {
+    stdapprox_ = LinearR12::StdApprox_B;
+  }
+  else if ( !strcmp(sa_string,"C") ||
+	    !strcmp(sa_string,"c") ) {
+    stdapprox_ = LinearR12::StdApprox_C;
+  }
+  else {
+    delete[] sa_string;
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
+  }
+
+  // if no explicit correlation then set stdapprox to A
+  if (sa_string == "none" || sa_string == "NONE") {
+      stdapprox_ = LinearR12::StdApprox_A;
+  }
+  
+  //
+  // r12 correlation factor?
+  //
   if (corrfactor == "r12" ||
       corrfactor == "R12") {
     corrfactor_ = new LinearR12::R12CorrelationFactor();
   }
+  //
+  // g12 correlation factor?
+  //
   else if (corrfactor == "g12" || corrfactor == "G12") {
     if (keyval->exists("corr_param")) {
-      typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
+      typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
       CorrParams params;
       const int num_f12 = keyval->count("corr_param");
       if (num_f12 != 0) {
@@ -179,7 +222,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
           // Primitive functions only
           for(int f=0; f<num_f12; f++) {
             double exponent = keyval->doublevalue("corr_param", f);
-            LinearR12::CorrelationFactor::ContractedGeminal vtmp;
+            LinearR12::G12CorrelationFactor::ContractedGeminal vtmp;
             vtmp.push_back(std::make_pair(exponent,1.0));
             params.push_back(vtmp);
           }
@@ -190,7 +233,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
             const int nprims = keyval->count("corr_param", f);
             if (nprims == 0)
               throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
-            LinearR12::CorrelationFactor::ContractedGeminal vtmp;
+            LinearR12::G12CorrelationFactor::ContractedGeminal vtmp;
             for(int p=0; p<nprims; p++) {
               if (keyval->count("corr_param", f, p) != 2)
                 throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
@@ -207,11 +250,67 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
         std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(exponent,1.0));
         params.push_back(vtmp);
       }
-      corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+      // If stdapprox_ == C, no need for commutators
+      if (stdapprox_ == LinearR12::StdApprox_C)
+	  corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+      else
+	  corrfactor_ = new LinearR12::G12CorrelationFactor(params);
     }
     else
       throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
   }
+  //
+  // geng12 correlation factor?
+  //
+  else if (corrfactor == "geng12" || corrfactor == "GENG12") {
+    if (keyval->exists("corr_param")) {
+      typedef LinearR12::GenG12CorrelationFactor::CorrelationParameters CorrParams;
+      CorrParams params;
+      const int num_f12 = keyval->count("corr_param");
+      if (num_f12 != 0) {
+        // Do I have contracted functions?
+        bool contracted = (keyval->count("corr_param",0) != 0);
+        if (!contracted) {
+          // Primitive functions only
+          for(int f=0; f<num_f12; f++) {
+            double exponent = keyval->doublevalue("corr_param", f);
+            LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;
+            vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
+            params.push_back(vtmp);
+          }
+        }
+        else {
+          // Contracted functions
+          for(int f=0; f<num_f12; f++) {
+            const int nprims = keyval->count("corr_param", f);
+            if (nprims == 0)
+              throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
+            LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;
+            for(int p=0; p<nprims; p++) {
+              if (keyval->count("corr_param", f, p) != 3)
+                throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
+              double alpha = keyval->Va_doublevalue("corr_param", 3, f, p, 0);
+              double gamma = keyval->Va_doublevalue("corr_param", 3, f, p, 1);
+              double coef = keyval->Va_doublevalue("corr_param", 3, f, p, 2);
+              vtmp.push_back(std::make_pair(std::make_pair(alpha,gamma),coef));
+            }
+            params.push_back(vtmp);
+          }
+        }
+      }
+      else {
+        double exponent = keyval->doublevalue("corr_param");
+        LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;  vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
+        params.push_back(vtmp);
+      }
+      corrfactor_ = new LinearR12::GenG12CorrelationFactor(params);
+    }
+    else
+      throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
+  }
+  //
+  // no explicit correlation
+  //
   else if (corrfactor == "none" || corrfactor == "NONE") {
     corrfactor_ = new LinearR12::NullCorrelationFactor();
   }
@@ -265,44 +364,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
   delete[] abs_method_str;
 
-  // Default method is MBPT2-R12/A'
-  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
-  if ( !strcmp(sa_string,"A") ||
-       !strcmp(sa_string,"a") ) {
-    stdapprox_ = LinearR12::StdApprox_A;
-  }
-  else if ( !strcmp(sa_string,"Ap") ||
-	    !strcmp(sa_string,"ap") ||
-	    !strcmp(sa_string,"A'") ||
-	    !strcmp(sa_string,"a'") ) {
-    stdapprox_ = LinearR12::StdApprox_Ap;
-  }
-  else if ( !strcmp(sa_string,"App") ||
-	    !strcmp(sa_string,"app") ||
-	    !strcmp(sa_string,"A''") ||
-	    !strcmp(sa_string,"a''") ) {
-    stdapprox_ = LinearR12::StdApprox_App;
-  }
-  else if ( !strcmp(sa_string,"B") ||
-	    !strcmp(sa_string,"b") ) {
-    stdapprox_ = LinearR12::StdApprox_B;
-  }
-  else if ( !strcmp(sa_string,"C") ||
-	    !strcmp(sa_string,"c") ) {
-    stdapprox_ = LinearR12::StdApprox_C;
-  }
-  else {
-    delete[] sa_string;
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
-  }
-
-  // if no explicit correlation then set stdapprox to A
-  {
-    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
-    if (nullptr.nonnull())
-      stdapprox_ = LinearR12::StdApprox_A;
-  }
-  
   ansatz_ = require_dynamic_cast<LinearR12Ansatz*>(
     keyval->describedclassvalue("ansatz").pointer(),
     "MBPT2_R12::MBPT2_R12\n"
@@ -326,23 +387,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Default is to not compute MP1 energy
   include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));
-
-  // Klopper and Samson's ABS method is only implemented for certain "old" methods
-  // Make sure that the ABS method is available for the requested MP2-R12 energy
-  const bool must_use_cabs = (!gbc_ ||
-			      !ebc_ ||
-			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs) ||
-			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs) ||
-			      (stdapprox_ == LinearR12::StdApprox_App && !abs_eq_obs) ||
-                              !basis()->equiv(vir_basis_));
-  if (must_use_cabs &&
-      (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
-
-  // Standard approximation A is not valid when gbc_ = false or ebc_ = false
-  if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- stdapprox=A is not valid when gbc_ = false or ebc_ = false");
-    
 
   // Determine how to store MO integrals
   char *r12ints_str = keyval->pcharvalue("r12ints",KeyValValuepchar("mem-posix"));
@@ -374,26 +418,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
   delete[] r12ints_str;
   
-  // Most calculations must use disk for now
-  bool must_use_disk = true;
-  // except MP2
-  {
-    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
-    if (nullptr.nonnull())
-      must_use_disk = false;
-  }
-
-  if (must_use_disk && r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_only)
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
-  if (must_use_disk) {
-    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_posix)
-      r12ints_method_ = R12IntEvalInfo::StoreMethod::posix;
-#if HAVE_MPIIO
-    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_mpi)
-      r12ints_method_ = R12IntEvalInfo::StoreMethod::mpi;
-#endif
-  }
-
   // Get the prefix for the filename to store the integrals
   std::string r12ints_file_default("./");
   r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(r12ints_file_default));
@@ -401,15 +425,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (*(r12ints_file_.rbegin()) == '/')
     r12ints_file_ += std::string(SCFormIO::default_basename()) + ".moints";
 
-  r12eval_ = 0;
-  r12a_energy_ = 0;
-  r12ap_energy_ = 0;
-  r12app_energy_ = 0;
-  r12b_energy_ = 0;
-  r12c_energy_ = 0;
-  mp2_corr_energy_ = 0.0;
-  r12_corr_energy_ = 0.0;
-  
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
                    "MBPT2_R12::MBPT2_R12\n"
@@ -438,6 +453,67 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   else {
       throw InputError("MBPT2_R12::MBPT2_R12 -- invalid value for keyword posdef_B",__FILE__,__LINE__);
   }
+
+  //
+  //
+  // Check that requested features are compatible/allowed
+  //
+  //
+
+  // stdapprox must be C if corrfactor == geng12
+  {
+    Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
+    if (gg12ptr.nonnull() && stdapprox_ != LinearR12::StdApprox_C) {
+	throw InputError("MBPT2_R12::MBPT2_R12() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
+    }
+  }
+  
+  // Klopper and Samson's ABS method is only implemented for certain "old" methods
+  // Make sure that the ABS method is available for the requested MP2-R12 energy
+  const bool must_use_cabs = (!gbc_ ||
+			      !ebc_ ||
+			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs) ||
+			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs) ||
+			      (stdapprox_ == LinearR12::StdApprox_App && !abs_eq_obs) ||
+                              !basis()->equiv(vir_basis_));
+  if (must_use_cabs &&
+      (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
+
+  // Standard approximation A is not valid when gbc_ = false or ebc_ = false
+  if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- stdapprox=A is not valid when gbc_ = false or ebc_ = false");
+    
+
+  // Most calculations must use disk for now
+  bool must_use_disk = true;
+  // except MP2
+  {
+    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
+    if (nullptr.nonnull())
+      must_use_disk = false;
+  }
+
+  if (must_use_disk && r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_only)
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
+  if (must_use_disk) {
+    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_posix)
+      r12ints_method_ = R12IntEvalInfo::StoreMethod::posix;
+#if HAVE_MPIIO
+    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_mpi)
+      r12ints_method_ = R12IntEvalInfo::StoreMethod::mpi;
+#endif
+  }
+
+  r12eval_ = 0;
+  r12a_energy_ = 0;
+  r12ap_energy_ = 0;
+  r12app_energy_ = 0;
+  r12b_energy_ = 0;
+  r12c_energy_ = 0;
+  mp2_corr_energy_ = 0.0;
+  r12_corr_energy_ = 0.0;
+  
 }
 
 MBPT2_R12::~MBPT2_R12()

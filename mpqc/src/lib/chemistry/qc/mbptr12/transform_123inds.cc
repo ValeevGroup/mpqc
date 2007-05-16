@@ -50,7 +50,7 @@ using namespace sc;
 #define PRINT0Q 0
 #define PRINT1Q 0
 #define PRINT2Q 0
-#define PRINT_NUM_TE_TYPES 1
+#define PRINT_NUM_TE_TYPES 3
 
 // The FAST_BUT_WRONG flags is useful for exercising the communications
 // layer.  It causes the first and second quarter transformation to be
@@ -131,18 +131,14 @@ TwoBodyMOIntsTransform_123Inds::run()
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
   
-  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 1
-  int tbtype_anti1 = -1;
-  if (tbint_->num_tbint_types() == 6)
-    tbtype_anti1 = TwoBodyInt::t1g12;
-  if (tbint_->num_tbint_types() == 4)
-    tbtype_anti1 = TwoBodyInt::r12t1;
-  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
-  int tbtype_anti2 = -1;
-  if (tbint_->num_tbint_types() == 6)
-    tbtype_anti2 = TwoBodyInt::t2g12;
-  if (tbint_->num_tbint_types() == 4)
-    tbtype_anti2 = TwoBodyInt::r12t2;
+  //find the type of integrals which is antisymmetric with respect to permuting functions of each particle
+  int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
+  const unsigned int ntypes = tbint_->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      Ref<TwoBodyIntTypeDescr> inttype = tbint_->inttype(static_cast<TwoBodyInt::tbint_type>(t));
+      if (inttype->perm_symm(1) == -1) tbtype_anti1 = t;
+      if (inttype->perm_symm(2) == -1) tbtype_anti2 = t;
+  }
 
   double** vector1 = new double*[nbasis1];
   double** vector2 = new double*[nbasis2];

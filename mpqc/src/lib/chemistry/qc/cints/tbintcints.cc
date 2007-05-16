@@ -30,6 +30,7 @@
 #endif
 
 #include <limits.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/cints/tbintcints.h>
 #include <chemistry/qc/cints/eri.h>
@@ -93,6 +94,23 @@ void
 TwoBodyIntCints::set_integral_storage(size_t storage)
 {
   int2ecints_->init_storage(storage);
+}
+
+const Ref<TwoBodyIntTypeDescr>&
+TwoBodyIntCints::inttype(TwoBodyInt::tbint_type type) const
+{
+    static Ref<TwoBodyIntTypeDescr> t1r12_inttype = new TwoBodyIntTypeDescr(2,-1,+1,0);
+    static Ref<TwoBodyIntTypeDescr> t2r12_inttype = new TwoBodyIntTypeDescr(2,+1,-1,0);
+    switch(type) {
+    case TwoBodyInt::r12t1:
+	return t1r12_inttype;
+    case TwoBodyInt::r12t2:
+	return t2r12_inttype;
+    case TwoBodyInt::eri:
+    case TwoBodyInt::r12:
+	return TwoBodyInt::inttype(type);
+    }
+    throw ProgrammingError("TwoBodyIntCints::inttype() -- incorrect type");
 }
 
 //////////////////////////////////////////////////////////////////////////

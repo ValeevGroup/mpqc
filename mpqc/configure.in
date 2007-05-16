@@ -1688,6 +1688,42 @@ AC_CHECK_HEADERS(libint2/libint2.h,
      AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])]
     )
+  if test X$HAVE_LIBINT2_G12 = Xyes; then
+    AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
+          void libint2_support_t1g12() {}
+          #endif
+        ]],
+        [[
+          libint2_support_t1g12();
+        ]]
+      ),
+      [HAVE_LIBINT2_G12_T1G12=yes
+       AC_SUBST(HAVE_LIBINT2_G12_T1G12)
+       AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])]
+    )
+  fi
+  AC_MSG_CHECKING([if libint2 can compute general G12])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_GENG12
+        void libint2_support_geng12() {}
+        #endif
+      ]],
+      [[
+        libint2_support_geng12();
+      ]]
+      ),
+    [HAVE_LIBINT2_GENG12=yes
+     AC_SUBST(HAVE_LIBINT2_GENG12)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
   )
 AC_LANG_RESTORE
 

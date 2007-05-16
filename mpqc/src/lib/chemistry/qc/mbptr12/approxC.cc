@@ -99,6 +99,7 @@ R12IntEval::compute_BC_()
     Ref<MOIndexSpace> xspace2 = xspace(spin2);
     Ref<MOIndexSpace> vir1 = vir(spin1);
     Ref<MOIndexSpace> vir2 = vir(spin2);
+    bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
 
 #if INCLUDE_Q
     // if can only use 1 RI index, h+J can be resolved by the OBS
@@ -136,7 +137,11 @@ R12IntEval::compute_BC_()
     ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
     tim_exit(Qlabel.c_str());
 
+#if 0
     if (debug_ >= DefaultPrintThresholds::mostO4) {
+#else
+	{
+#endif
       std::string label = prepend_spincase(spincase2,"Q(C) contribution");
       Q.print(label.c_str());
     }
@@ -214,7 +219,7 @@ R12IntEval::compute_BC_()
       }
 #endif // INCLUDE_P_PFP
 #if INCLUDE_P_pFp
-      {
+      if (!empty_vir_space) {
       Ref<MOIndexSpace> forbs1, forbs2;
       forbs1 = F_p_p(spin1);
       forbs2 = F_p_p(spin2);
@@ -339,7 +344,7 @@ R12IntEval::compute_BC_()
         }
 #endif // INCLUDE_P_mFP
 #if INCLUDE_P_pFA
-        {
+        if (!empty_vir_space) {
           Ref<MOIndexSpace> forbs1 = F_p_A(spin1);
           Ref<MOIndexSpace> forbs2 = F_p_A(spin2);
 	  RefSCMatrix Ptmp;

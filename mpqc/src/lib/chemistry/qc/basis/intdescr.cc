@@ -73,4 +73,32 @@ TwoBodyIntDescrG12::inteval() const
   return factory_->g12(params_);
 }
 
+////
+
+TwoBodyIntDescrG12NC::TwoBodyIntDescrG12NC(const Ref<Integral>& IF,
+					   const Ref<IntParamsG12>& params) :
+  TwoBodyIntDescr(), factory_(IF), params_(params)
+{
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntDescrG12NC::inteval() const
+{
+  return factory_->g12nc(params_);
+}
+
+////
+
+TwoBodyIntDescrGenG12::TwoBodyIntDescrGenG12(const Ref<Integral>& IF,
+					     const Ref<IntParamsGenG12>& params) :
+  TwoBodyIntDescr(), factory_(IF), params_(params)
+{
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntDescrGenG12::inteval() const
+{
+  return factory_->geng12(params_);
+}
+
 

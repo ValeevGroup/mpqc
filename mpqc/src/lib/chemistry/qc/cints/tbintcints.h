@@ -56,6 +56,8 @@ class TwoBodyIntCints : public TwoBodyInt {
     unsigned int num_tbint_types() const {
       return num_tbint_types_;
     }
+    /// Implementation of TwoBodyIntTypeDescr::inttype()
+    const Ref<TwoBodyIntTypeDescr>& inttype(TwoBodyInt::tbint_type type) const;
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);

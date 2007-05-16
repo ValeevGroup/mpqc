@@ -49,6 +49,13 @@ static ClassDesc MOIndexSpace_cd(
   typeid(MOIndexSpace),"MOIndexSpace",1,"virtual public SavableState",
   0, 0, create<MOIndexSpace>);
 
+MOIndexSpace::MOIndexSpace(const MOIndexSpace& O) :
+    id_(O.id_), name_(O.name_), basis_(O.basis_), integral_(O.integral_),
+    nmo_(O.nmo_), moorder_(O.moorder_)
+{
+    init();
+}
+
 MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
                            const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
                            const Ref<Integral>& integral,
@@ -393,6 +400,18 @@ MOIndexSpace::print(ostream&o) const
   o << incindent;
   o << indent << "Basis Set:" << endl;
   o << incindent; basis_->print(o); o << decindent << endl;
+  o << decindent;
+}
+
+void
+MOIndexSpace::print_detail(ostream&o) const
+{
+  o << indent << "MOIndexSpace \"" << name_ << "\":" << endl;
+  o << incindent;
+  o << indent << "Basis Set:" << endl;
+  o << incindent; basis_->print(o); o << decindent << endl;
+  evals_.print("Eigenvalues");
+  coefs_.print("Coefficients");
   o << decindent;
 }
 

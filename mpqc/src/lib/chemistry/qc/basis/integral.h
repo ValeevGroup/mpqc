@@ -129,6 +129,18 @@ class Integral : public SavableState {
 					const Ref<GaussianBasisSet> &b3 = 0,
 					const Ref<GaussianBasisSet> &b4 = 0);
   /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12 integrals. */
+    virtual size_t storage_required_g12nc(const Ref<GaussianBasisSet> &b1,
+					  const Ref<GaussianBasisSet> &b2 = 0,
+					  const Ref<GaussianBasisSet> &b3 = 0,
+					  const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for general G12 integrals. */
+    virtual size_t storage_required_geng12(const Ref<GaussianBasisSet> &b1,
+					   const Ref<GaussianBasisSet> &b2 = 0,
+					   const Ref<GaussianBasisSet> &b3 = 0,
+					   const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for derivative electron repulsion integrals. */
     virtual size_t storage_required_eri_deriv(const Ref<GaussianBasisSet> &b1,
 					      const Ref<GaussianBasisSet> &b2 = 0,
@@ -266,10 +278,19 @@ class Integral : public SavableState {
     
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
-        gamma1 and gamma2 specify the exponents of the geminal in bra and ket, respectively.
-        Integrals which only include one geminal assume that geminal's parameter to be gamma1+gamma2.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> g12(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+	This particular implementation does not produce commutator integrals
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12nc(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> geng12(const Ref<IntParamsGenG12>&);
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

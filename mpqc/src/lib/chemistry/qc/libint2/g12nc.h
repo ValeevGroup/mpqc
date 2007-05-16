@@ -1,5 +1,5 @@
 //
-// g12.h
+// g12nc.h
 //
 // Copyright (C) 2001 Edward Valeev
 //
@@ -42,29 +42,30 @@
 #include <libint2/libint2.h>
 
 #if LIBINT2_SUPPORT_G12
-#ifndef _chemistry_qc_libint2_g12_h
-#define _chemistry_qc_libint2_g12_h
+#ifndef _chemistry_qc_libint2_g12nc_h
+#define _chemistry_qc_libint2_g12nc_h
 
 namespace sc {
 
 class Integral;
 
-/** G12Libint2 is a specialization of Int2eLibint2 that computes two-electron integrals specific
-    to explicitly correlated methods which use Gaussian geminals.
+/** G12NCLibint2 is a specialization of Int2eLibint2 that computes two-electron integrals specific
+    to explicitly correlated methods which use Gaussian geminals (formulation without commutators).
 
-    G12Libint2 can compute integrals with 1 or 2 geminals. All 2-geminal integrals can be represented as 1-geminals integrals
+    G12NCLibint2 can compute integrals with 1 or 2 geminals. All 2-geminal integrals can be represented as 1-geminals integrals
     of a product of the original 2 geminals. For example, overlap of 2 geminals (g12*g12') is directly reduced to an integral over 1 geminal (G12)
     whose exponent is a sum of exponents of g12 and g12'. The following integrals over 2 geminals are needed:
     <list type="bullet">
       <item> g12*g12' = G12. Returned as r12_0_g12. </item>
       <item> [g12,[t1,g12']] = -2 exp(g12) * exp(g12') r12^2 G12. Returned as g12t1g12. </item>
-      <item> g12[ti,g12'] - g12'[ti,g12] = [ti,G12] * (exp(g12') - exp(g12))/(exp(g12')+exp(g12)). Returned as t1g12 or t2g12.</item>
+      <item> Since g12[ti,g12'] - g12'[ti,g12] = [ti,G12] * (exp(g12') - exp(g12))/(exp(g12')+exp(g12)), need to compute
+             (exp(g12') - exp(g12))/(exp(g12')+exp(g12)) * G12. Returned as anti_g12g12.</item>
     </list>
  */
-class G12Libint2: public Int2eLibint2 {
+class G12NCLibint2: public Int2eLibint2 {
   private:
-  /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, t1g12, t2g12, and g12t1g12 integrals */
-    static const int num_te_types_ = 6;
+  /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, g12t1g12, anti_g12g12 integrals */
+    static const int num_te_types_ = 5;
 
     typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
     typedef IntParamsG12::ContractedGeminal ContractedGeminal;
@@ -104,8 +105,8 @@ class G12Libint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void g12_quartet_data_(prim_data *Data, double scale, double gamma,
-                           bool eri_only = false);
+    void g12nc_quartet_data_(prim_data *Data, double scale, double gamma,
+			     bool eri_only = false);
     /*--- Compute engines ---*/
     Libint_t Libint_;
     Ref<FJT> Fm_Eval_;
@@ -120,27 +121,27 @@ class G12Libint2: public Int2eLibint2 {
   
   public:
     /// When integrals with 1 geminal are needed, gket should be IntParamsG12::null_geminal
-    G12Libint2(Integral *,
-	     const Ref<GaussianBasisSet>&,
-	     const Ref<GaussianBasisSet>&,
-	     const Ref<GaussianBasisSet>&,
-	     const Ref<GaussianBasisSet>&,
-	     size_t storage,
-             const ContractedGeminal& gbra,
-	     const ContractedGeminal& gket
+    G12NCLibint2(Integral *,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 size_t storage,
+		 const ContractedGeminal& gbra,
+		 const ContractedGeminal& gket
 	);
-    ~G12Libint2();
+    ~G12NCLibint2();
 
     double *buffer(TwoBodyInt::tbint_type te_type) const {
       if (te_type == TwoBodyInt::eri ||
 	  te_type == TwoBodyInt::r12_m1_g12 ||
-	  te_type == TwoBodyInt::r12_0_g12 ||
-	  te_type == TwoBodyInt::g12t1g12 ||
-          te_type == TwoBodyInt::t1g12 ||
-          te_type == TwoBodyInt::t2g12)
+	  te_type == TwoBodyInt::r12_0_g12)
 	return target_ints_buffer_[te_type];
-      else
-	return 0;
+      if (te_type == TwoBodyInt::g12t1g12 ||
+	  te_type == TwoBodyInt::anti_g12g12)
+	return target_ints_buffer_[te_type-2];
+
+      return 0;
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,
@@ -152,7 +153,7 @@ class G12Libint2: public Int2eLibint2 {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/libint2/g12_quartet_data.h>
+#include <chemistry/qc/libint2/g12nc_quartet_data.h>
 
 }
 

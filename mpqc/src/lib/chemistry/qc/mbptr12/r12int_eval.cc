@@ -603,11 +603,13 @@ R12IntEval::init_intermeds_()
     return;
   
   Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
   Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     init_intermeds_r12_();
   }
-  else if (g12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     init_intermeds_g12_();
   }
 }
@@ -1940,7 +1942,7 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
 	  std::string name = "K-weighted space";
-          name = prepend_spincase(spin,name);
+	  name = prepend_spincase(spin,name);
 	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_i_e,
 				intspace->basis());
       }
@@ -2030,6 +2032,7 @@ R12IntEval::compute()
 			    absmethod == LinearR12::ABS_CABSPlus);
   // is CABS space empty? if not sure set to false and allow some crazy runtime error to happen rather than create incorrect result
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
+  const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;
   
   Ref<LinearR12::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
   // if explicit correlation -- compute linear F12 theory intermediates
@@ -2155,7 +2158,7 @@ R12IntEval::compute()
     }
     
 #if INCLUDE_EBC_CODE
-    const bool nonzero_ebc_terms = !ebc() && !cabs_empty;
+    const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty;
     if (nonzero_ebc_terms) {
       
       // compute A, T2, and F12
@@ -2368,11 +2371,13 @@ R12IntEval::compute()
         // F12^2 contribution depends on the type of correlation factor
         //
         RefSCMatrix F12_sq_ijkl;
-        enum {r12corrfactor, g12corrfactor} corrfac;
+        enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
         Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
         Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
+        Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << corrfactor();
         if (r12corrptr.nonnull()) corrfac = r12corrfactor;
         if (g12corrptr.nonnull()) corrfac = g12corrfactor;
+        if (gg12corrptr.nonnull()) corrfac = gg12corrfactor;
     
         switch (corrfac) {
           case r12corrfactor:  // R12^2 reduces to one-electron integrals
@@ -2381,6 +2386,7 @@ R12IntEval::compute()
           break;
           
           case g12corrfactor: // G12^2 involves two-electron integrals
+          case gg12corrfactor: // G12^2 involves two-electron integrals
           {
             // (i k |j l) tforms
             std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;

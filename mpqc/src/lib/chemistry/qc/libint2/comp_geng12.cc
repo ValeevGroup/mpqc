@@ -1,5 +1,5 @@
 //
-// comp_g12.cc
+// comp_geng12.cc
 //
 // Copyright (C) 2005 Edward Valeev
 //
@@ -25,23 +25,18 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#define GENG12_APPLY_GAUSSIAN_PROJECTOR 0
+
 #include <stdarg.h>
 
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/libint2/macros.h>
-#include <chemistry/qc/libint2/g12.h>
+#include <chemistry/qc/libint2/eri.h>
+#include <chemistry/qc/libint2/geng12.h>
 #include <chemistry/qc/libint2/tform.h>
-#ifdef DMALLOC
-#include <dmalloc.h>
-#endif
 
-#if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
-
-// Set to 1 to compute R12_2_G12 instead [g12,[t1,g12]]
-#define COMPUTE_R12_2_G12 0
-// Set to 0 to not include antisymmetric conributions to g12 t g12'
-#define NONSYMMETRIC_G12TG12 0
+#if LIBINT2_SUPPORT_GENG12
 
 using namespace std;
 using namespace sc;
@@ -81,7 +76,7 @@ fail()
 }
 
 void
-G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
+GenG12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 {
 #ifdef EREP_TIMING
   char section[30];
@@ -109,26 +104,6 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   int e12,e13e24,e34;
   int p12,p34,p13p24;
   int eAB;
-
-#ifdef DMALLOC
-  /*--- Test heap before ---*/
-  int
-  heapstate = dmalloc_verify(target_ints_buffer_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(cart_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(sphharm_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(perm_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(tformbuf_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-#endif
 
   osh1 = sh1 = *psh1;
   osh2 = sh2 = *psh2;
@@ -175,7 +150,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   //    minam2 != am2 ||
   //    minam3 != am3 ||
   //    minam4 != am4 ) {
-  //  ExEnv::errn() << scprintf("Int2eLibint2::comp_g12() cannot yet handle fully general contractions") << endl;
+  //  ExEnv::errn() << scprintf("Int2eLibint2::comp_geng12() cannot yet handle fully general contractions") << endl;
   //  fail();
   //}
   
@@ -386,11 +361,12 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     }
 
   //
-  // Need to distinguish 1-geminal and 2-geminal cases, hence don't use geminal_xxx_ directly, via references only
+  // Need to distinguish 1-geminal and 2-geminal cases
+  // hence don't use geminal_xxx_ directly, via references only
   //
-  const bool braonly = (geminal_ket_ == IntParamsG12::null_geminal);
+  const bool braonly = (geminal_ket_ == IntParamsType::null_geminal);
   const ContractedGeminal& gbra = geminal_bra_;
-  const ContractedGeminal& gket = braonly ? IntParamsG12::zero_exponent_geminal : geminal_ket_;
+  const ContractedGeminal& gket = braonly ? IntParamsType::zero_exponent_geminal : geminal_ket_;
   const int nbra_geminal_prims = gbra.size();
   const int nket_geminal_prims = gket.size();
   
@@ -428,79 +404,122 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		quartet_info_.p3 = pk;
 		for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
 		  quartet_info_.p4 = pl;
+
+#if GENG12_APPLY_GAUSSIAN_PROJECTOR
+		  const double a1 = int_shell1_->exponent(quartet_info_.p1);
+		  const double a2 = int_shell2_->exponent(quartet_info_.p2);
+		  const double a3 = int_shell3_->exponent(quartet_info_.p3);
+		  const double a4 = int_shell4_->exponent(quartet_info_.p4);
+
+		  // exponents of the functions prior to permutation -- needed to apply projection operators
+		  double orig_a1, orig_a2, orig_a3, orig_a4;
+		  if (p13p24) {
+		      if (p12) { orig_a1 = a4;  orig_a2 = a3;  }
+		      else { orig_a1 = a3;  orig_a2 = a4;  } 
+		      if (p34) { orig_a3 = a2;  orig_a4 = a1;  }
+		      else { orig_a3 = a1;  orig_a4 = a2;  } 
+		  }
+		  else {
+		      if (p12) { orig_a1 = a2;  orig_a2 = a1;  }
+		      else { orig_a1 = a1;  orig_a2 = a2;  } 
+		      if (p34) { orig_a3 = a4;  orig_a4 = a3;  }
+		      else { orig_a3 = a3;  orig_a4 = a4;  } 
+		  }
+#endif
 		  
                   // Begin loop over Gaussian Geminal primitives
                   for (int ggi=0; ggi<nbra_geminal_prims; ggi++) {
                     const PrimitiveGeminal& gpbra = gbra[ggi];
-                    const double gamma_bra = gpbra.first;
+		    // primitive is exp( - alpha*(r1^2+r2^2) - gamma*r12^2 )
+                    const double alpha_bra = gpbra.first.first;
+                    const double gamma_bra = gpbra.first.second;
                     const double gpcoef_bra = gpbra.second;
                     for (int ggj=0; ggj<nket_geminal_prims; ggj++) {
                       const PrimitiveGeminal& gpket = gket[ggj];
-                      const double gamma_ket = gpket.first;
+                      const double alpha_ket = gpket.first.first;
+                      const double gamma_ket = gpket.first.second;
                       const double gpcoef_ket = gpket.second;
+
+		      //
+		      // Apply the Gaussian projector(s).
+		      //
+		      bool bra_projected_out = false;
+		      bool ket_projected_out = false;
+#if GENG12_APPLY_GAUSSIAN_PROJECTOR
+		      if ( orig_a1+alpha_bra <= 0.0 || orig_a3+alpha_bra <= 0.0 )
+			  bra_projected_out = true;
+		      if ( orig_a2+alpha_ket <= 0.0 || orig_a4+alpha_ket <= 0.0 )
+			  ket_projected_out = true;
+#  if 1
+		      if (bra_projected_out || ket_projected_out) {
+			  ExEnv::out0() << indent << "Gaussian projector filtered a function out" << endl;
+		      }
+#  endif
+#endif
+		      const double eff_alpha_bra = (bra_projected_out ? 0.0 : alpha_bra);
+		      const double eff_alpha_ket = (ket_projected_out ? 0.0 : alpha_ket);
+		      const double eff_gamma_bra = (bra_projected_out ? 0.0 : gamma_bra);
+		      const double eff_gamma_ket = (ket_projected_out ? 0.0 : gamma_ket);
+		      // alpha and gamma of the resulting operator
+		      const double alpha = eff_alpha_bra + eff_alpha_ket;
+		      const double gamma = eff_gamma_bra + eff_gamma_ket;
+
+		      /// WARNING check prefactors here!
+		      const double pfac_r1r2 = -4.0*(eff_alpha_bra*eff_gamma_ket + eff_alpha_ket*eff_gamma_bra);
+		      const double pfac_r1r1 = 4.0*eff_alpha_bra*eff_alpha_ket - pfac_r1r2;
+		      const double pfac_r12_2 = 4.0*eff_gamma_bra*eff_gamma_ket;
                       
                       // Compute primitive data for Libint
-                      g12_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
+                      geng12_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, eff_alpha_bra, eff_alpha_ket, eff_gamma_bra, eff_gamma_ket);
 #if LIBINT2_ACCUM_INTS
 		      // zero out targets in Libint_
 		      Libint_.zero_out_targets = 1;
 #endif
                       // Compute the integrals
-                      LIBINT2_PREFIXED_NAME(libint2_build_r12kg12)[tam1][tam2][tam3][tam4](&Libint_);
+                      LIBINT2_PREFIXED_NAME(libint2_build_geng12)[tam1][tam2][tam3][tam4](&Libint_);
                       
-#if !COMPUTE_R12_2_G12
-                      // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-                      const double g2_4 = gamma_bra*gamma_ket*4.0;
-#else
-                      const double g2_4 = 1.0;
-#endif
-
                       if (quartet_info_.am) {
-                        LIBINT2_REALTYPE* prim_ints = Libint_.targets[4];
-                        for(int ijkl=0; ijkl<size; ijkl++)
-                          prim_ints[ijkl] *= g2_4;
 
-			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
-			if (!braonly && gamma_bra != gamma_ket){
-			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-			    LIBINT2_REALTYPE* t1g12_ints = Libint_.targets[2];
-			    LIBINT2_REALTYPE* t2g12_ints = Libint_.targets[3];
-			    for(int ijkl=0; ijkl<size; ijkl++) {
-				t1g12_ints[ijkl] *= pfac;
-				t2g12_ints[ijkl] *= pfac;
-			    }
-			}
-
-                        for(int te_type = 0; te_type < 5; te_type++) {
-                          // Copy the integrals over to prim_ints_
-                          const LIBINT2_REALTYPE* prim_ints = Libint_.targets[te_type];
+			// Copy over g12 integrals to prim_ints_
+			{
+			  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
                           for(int ijkl=0; ijkl<size; ijkl++)
-                            prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+			    prim_ints_[TwoBodyInt::r12_0_gg12][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                        }
+			// Copy over g12/r12 integrals to prim_ints_
+			{
+			  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[1];
+                          for(int ijkl=0; ijkl<size; ijkl++)
+			    prim_ints_[TwoBodyInt::r12_m1_gg12][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                        }
+			// Compute [g12,[t1,g12]] integrals and copy to prim_ints_
+			{
+			  const LIBINT2_REALTYPE* r1dotr1 = Libint_.targets[2];
+			  const LIBINT2_REALTYPE* r1dotr2 = Libint_.targets[3];
+			  const LIBINT2_REALTYPE* r12_2_g12 = Libint_.targets[4];
+			  LIBINT2_REALTYPE* gg12t1gg12 = prim_ints_[TwoBodyInt::gg12t1gg12];
+                          for(int ijkl=0; ijkl<size; ++ijkl) {
+			      *gg12t1gg12 += pfac_r1r1 * (*r1dotr1) + pfac_r1r2 * (*r1dotr2) + pfac_r12_2 * (*r12_2_g12);
+			    ++r1dotr1;
+			    ++r1dotr2;
+			    ++r12_2_g12;
+			    ++gg12t1gg12;
+			  }
                         }
                       }
                       else {
-                        prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
-                        prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                        prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
-
-			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
-			if (!braonly && gamma_bra != gamma_ket){
-			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += pfac * Libint_.targets[0][0];
-			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += pfac * Libint_.targets[1][0];
-			}
-			else {
-			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
-			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
-			}
-
+                        prim_ints_[TwoBodyInt::r12_0_gg12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
+                        prim_ints_[TwoBodyInt::r12_m1_gg12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+			double gg12t1gg12 = pfac_r12_2 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
+			gg12t1gg12 += pfac_r1r1 * Libint_.targets[0][0] + pfac_r1r2 * Libint_.targets[1][0];
+			prim_ints_[TwoBodyInt::gg12t1gg12][buffer_offset] += gg12t1gg12;
                       }
                       
                     } // end of ket geminal primitive loop
                   } // end of bra geminal primitive loop
                   
                   // Compute primitive data for Libint
-                  g12_quartet_data_(&Libint_, 1.0, 0.0, true);
+                  geng12_quartet_data_(&Libint_, 1.0, 0.0, 0.0, 0.0, 0.0, true);
                   if (quartet_info_.am) {
                     // Compute the integrals
 		    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
@@ -517,40 +536,12 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
               }
             }
           }
-
-          // If permuted bra and ket then need to swap contents of [T1,G12] and [T2,G12] buffers
-          // (usi usj|[T1,g12]|usk usl) = (usk usl|[T2,g12]|usi usj)
-          if (!permute_ && p13p24) {
-            for(int ijkl=0; ijkl<size; ijkl++) {
-              double t1g12 = prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl];
-              double t2g12 = prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl];
-              prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] = t2g12;
-              prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] = t1g12;
-              }
-            }
-          // If permuted bra then [T1,G12] needs -1
-          // If permuted ket then [T2,G12] needs -1
-          if (!permute_ && p12) {
-            for(int ijkl=0; ijkl<size; ijkl++) {
-              prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] *= -1.0;
-              }
-            }
-          if (!permute_ && p34) {
-            for(int ijkl=0; ijkl<size; ijkl++) {
-              prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
-              }
-            }
-          
-          // MBPT2_R12 expects commutators be of [g12,T1] variety -- for now just multiply by -1
-          for(int ijkl=0; ijkl<size; ijkl++) {
-            prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] *= -1.0;
-            }
-          for(int ijkl=0; ijkl<size; ijkl++) {
-            prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
-            }
           
 	  buffer_offset += size;
-          }}}}
+	}
+      }
+    }
+  }
 
   for(int te_type=0; te_type < num_te_types_; te_type++) {
     /*-------------------------------------------
@@ -607,32 +598,13 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
   // Don't know how to extract nonredundant integrals because of non-Hermitian operators
   if (need_unique_ints_only) {
-    throw FeatureNotImplemented("G12Libint2::compute_quartet() -- need_unique_ints_only is not implemented for this evaluator",__FILE__,__LINE__);
+    throw FeatureNotImplemented("GenG12Libint2::compute_quartet() -- need_unique_ints_only is not implemented for this evaluator",__FILE__,__LINE__);
   }
-
-#ifdef DMALLOC
-  /*--- Test heap after ---*/
-  heapstate = dmalloc_verify(target_ints_buffer_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(cart_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(sphharm_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(perm_ints_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-  heapstate = dmalloc_verify(tformbuf_);
-  if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
-#endif
 
   return;
 }
 
-#endif // if LIBINT2_SUPPORT_G12
+#endif // if LIBINT2_SUPPORT_GENG12
 
 /////////////////////////////////////////////////////////////////////////////
 

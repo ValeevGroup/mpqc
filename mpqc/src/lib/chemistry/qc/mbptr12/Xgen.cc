@@ -165,12 +165,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     //
     // F12^2 contribution depends on the type of correlation factor
     //
-    enum {r12corrfactor, g12corrfactor} corrfac;
+    enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
     Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
     Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
+    Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << r12info()->corrfactor();
     if (r12corrptr.nonnull()) corrfac = r12corrfactor;
     if (g12corrptr.nonnull()) corrfac = g12corrfactor;
-    
+    if (gg12corrptr.nonnull()) corrfac = gg12corrfactor;
+
     switch (corrfac) {
       case r12corrfactor:  // R12^2 reduces to one-electron integrals
       {
@@ -187,7 +189,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
       }
       break;
       
-      case g12corrfactor: // G12^2 involves two-electron integrals
+      // G12^2 involves two-electron integrals
+      case g12corrfactor:
+      case gg12corrfactor:
       {
         // (i k |j l) tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;

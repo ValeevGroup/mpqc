@@ -31,6 +31,7 @@
 
 #include <libint2/libint2.h>
 
+#include <util/class/class.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
@@ -38,41 +39,78 @@
 #  include <chemistry/qc/libint2/eri.h>
 #endif
 #if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
+# else
+#  include <chemistry/qc/libint2/g12nc.h>
+# endif
+#endif
+#if LIBINT2_SUPPORT_GENG12
+#  include <chemistry/qc/libint2/geng12.h>
 #endif
 
 using namespace std;
 using namespace sc;
 
-inline void fail()
-{
-  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
-  abort();
+namespace util {
+    template <class To, class From>
+    Ref<To> require_dynamic_cast(const Ref<From>& fptr) {
+	To* tptr = dynamic_cast<To*>(fptr.pointer());
+	if (!tptr)
+	    throw ProgrammingError("Dynamic cast failed",__FILE__,__LINE__);
+	return tptr;
+    }
 }
 
 TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
-				 const Ref<GaussianBasisSet>& b1,
-				 const Ref<GaussianBasisSet>& b2,
-				 const Ref<GaussianBasisSet>& b3,
-				 const Ref<GaussianBasisSet>& b4,
-				 size_t storage, tbinteval int2etype,
-                                 const ContractedGeminal& gbra,
-				 const ContractedGeminal& gket):
-  TwoBodyInt(integral,b1,b2,b3,b4)
+				     const Ref<GaussianBasisSet>& b1,
+				     const Ref<GaussianBasisSet>& b2,
+				     const Ref<GaussianBasisSet>& b3,
+				     const Ref<GaussianBasisSet>& b4,
+				     size_t storage, tbinteval int2etype,
+				     const Ref<IntParams>& params):
+    TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype)
 {
   // Which evaluator to use
-  switch (int2etype) {
+  switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case erieval:
+  {
     int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,storage);
     num_tbint_types_ = 1;
     break;
+  }
 #endif
 #if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
   case g12eval:
-    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gbra,gket);
+  {
+    typedef IntParamsG12 IPType;
+    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
     num_tbint_types_ = 6;
     break;
+  }
+# else
+  case g12nceval:
+  {
+    typedef IntParamsG12 IPType;
+    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+    int2elibint2_ = new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    num_tbint_types_ = 5;
+    break;
+  }
+# endif
+#endif
+#if LIBINT2_SUPPORT_GENG12
+  case geng12eval:
+  {
+    typedef IntParamsGenG12 IPType;
+    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+    int2elibint2_ = new GenG12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    num_tbint_types_ = 4;
+    break;
+  }
 #endif
   default:
     throw FeatureNotImplemented("Tried to construct a two-electron integral \
@@ -107,6 +145,51 @@ TwoBodyIntLibint2::set_integral_storage(size_t storage)
   int2elibint2_->init_storage(storage);
 }
 
+const Ref<TwoBodyIntTypeDescr>&
+TwoBodyIntLibint2::inttype(TwoBodyInt::tbint_type type) const
+{
+    static Ref<TwoBodyIntTypeDescr> t1g12_inttype = new TwoBodyIntTypeDescr(2,-1,+1,0);
+    static Ref<TwoBodyIntTypeDescr> t2g12_inttype = new TwoBodyIntTypeDescr(2,+1,-1,0);
+    switch (int2etype_) {
+    case g12eval:
+	switch(type) {
+	case TwoBodyInt::t1g12:
+	    return t1g12_inttype;
+	case TwoBodyInt::t2g12:
+	    return t2g12_inttype;
+	case TwoBodyInt::eri:
+	case TwoBodyInt::r12_0_g12:
+	case TwoBodyInt::r12_m1_g12:
+	case TwoBodyInt::g12t1g12:
+	    return TwoBodyInt::inttype(type);
+	}
+	break;
+
+    case g12nceval:
+	switch(type) {
+	case TwoBodyInt::eri:
+	case TwoBodyInt::r12_0_g12:
+	case TwoBodyInt::r12_m1_g12:
+	case TwoBodyInt::g12t1g12:
+	case TwoBodyInt::anti_g12g12:
+	    return TwoBodyInt::inttype(type);
+	}
+	break;
+
+    case erieval:
+    case geng12eval:
+	switch(type) {
+	case TwoBodyInt::eri:
+	case TwoBodyInt::r12_0_gg12:
+	case TwoBodyInt::r12_m1_gg12:
+	case TwoBodyInt::gg12t1gg12:
+	    return TwoBodyInt::inttype(type);
+	}
+	break;
+    }
+    throw ProgrammingError("TwoBodyIntLibint2::inttype() -- incorrect type");
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyDerivIntLibint2::TwoBodyDerivIntLibint2(Integral*integral,
@@ -120,8 +203,7 @@ TwoBodyDerivIntLibint2::TwoBodyDerivIntLibint2(Integral*integral,
   // Which evaluator to use
   switch (int2etype) {
   default:
-    ExEnv::errn() << scprintf("Tried to construct a two-electron derivative integral evaluator of unimplemented or unknown type") << endl;
-    fail();
+      throw ProgrammingError("TwoBodyDerivIntLibint2: tried to construct a two-electron derivative integral evaluator of unimplemented or unknown type",__FILE__,__LINE__);
   }
 
   //  int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,1,storage);

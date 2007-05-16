@@ -45,6 +45,8 @@ R12IntEval::contrib_to_VXB_a_()
 
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  // commutators never appear in StdApprox C
+  const bool compute_B = (stdapprox() != LinearR12::StdApprox_C);
 
   if (!obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- can't use this builder if OBS != VBS",__FILE__,__LINE__);
@@ -150,38 +152,41 @@ R12IntEval::contrib_to_VXB_a_()
 	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,true,false>
-          (
-	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      tpcontract,
-	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,true,false>
-          (
-	      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      tpcontract,
-	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-      B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+      if (compute_B) {
+	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
+	      ManyBodyTensors::I_to_T,
+	      ManyBodyTensors::I_to_T,
+	      true,true,false>
+	      (
+		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		  xspace1, xspace2,
+		  orbs1, orbs2,
+		  xspace1, xspace2,
+		  orbs1, orbs2,
+		  tpcontract,
+		  spincase2!=AlphaBeta, tforms_f12, tforms_f12
+	      );
+	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
+	      ManyBodyTensors::I_to_T,
+	      ManyBodyTensors::I_to_T,
+	      true,true,false>
+	      (
+		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		  xspace1, xspace2,
+		  orbs1, orbs2,
+		  xspace1, xspace2,
+		  orbs1, orbs2,
+		  tpcontract,
+		  spincase2!=AlphaBeta, tforms_f12, tforms_f12
+	      );
+	  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+      }
 
       if (debug_ >= DefaultPrintThresholds::O4) {
           V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
-          B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
+	  if (compute_B)
+	      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
       }
 
 
@@ -263,33 +268,35 @@ R12IntEval::contrib_to_VXB_a_()
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
 
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,true,false>
-	      (
-		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-		  xspace1, xspace2,
-		  occ1, rispace2,
-		  xspace1, xspace2,
-		  occ1, rispace2,
-		  tpcontract,
-		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
-	      );
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,true,false>
-	      (
-		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-		  xspace1, xspace2,
-		  occ1, rispace2,
-		  xspace1, xspace2,
-		  occ1, rispace2,
-		  tpcontract,
-		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
-	      );
-	  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+	  if (compute_B) {
+	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+		  ManyBodyTensors::I_to_T,
+		  ManyBodyTensors::I_to_T,
+		  true,true,false>
+		  (
+		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		      xspace1, xspace2,
+		      occ1, rispace2,
+		      xspace1, xspace2,
+		      occ1, rispace2,
+		      tpcontract,
+		      antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
+		  );
+	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+		  ManyBodyTensors::I_to_T,
+		  ManyBodyTensors::I_to_T,
+		  true,true,false>
+		  (
+		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		      xspace1, xspace2,
+		      occ1, rispace2,
+		      xspace1, xspace2,
+		      occ1, rispace2,
+		      tpcontract,
+		      antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
+		  );
+	      B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+	  }
 
 	  // If particles 1 and 2 are not equivalent, also need another set of terms
 	  if (!part1_equiv_part2) {
@@ -353,46 +360,51 @@ R12IntEval::contrib_to_VXB_a_()
 		      tpcontract,
 		      antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,true,false>
-		  (
-		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-		      xspace1, xspace2,
-		      rispace1, occ2,
-		      xspace1, xspace2,
-		      rispace1, occ2,
-		      tpcontract,
-		      antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
+
+	      if (compute_B) {
+		  contract_tbint_tensor<ManyBodyTensors::I_to_T,
+		      ManyBodyTensors::I_to_T,
+		      ManyBodyTensors::I_to_T,
+		      true,true,false>
+		      (
+			  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+			  xspace1, xspace2,
+			  rispace1, occ2,
+			  xspace1, xspace2,
+			  rispace1, occ2,
+			  tpcontract,
+			  antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,true,false>
-		  (
-		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-		      xspace1, xspace2,
-		      rispace1, occ2,
-		      xspace1, xspace2,
-		      rispace1, occ2,
-		      tpcontract,
-		      antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
+		  contract_tbint_tensor<ManyBodyTensors::I_to_T,
+		      ManyBodyTensors::I_to_T,
+		      ManyBodyTensors::I_to_T,
+		      true,true,false>
+		      (
+			  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+			  xspace1, xspace2,
+			  rispace1, occ2,
+			  xspace1, xspace2,
+			  rispace1, occ2,
+			  tpcontract,
+			  antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
 	      
-	      B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+		  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
+	      }
 	  }
 
 	  if (!antisymmetrize && part1_equiv_part2) {
 	      symmetrize<false>(V_[s],V_[s],xspace1,occ1_act);
 	      symmetrize<false>(X_[s],X_[s],xspace1,xspace1);
-	      symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
+	      if (compute_B)
+		  symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
 	  }
 	  
 	  if (debug_ >= DefaultPrintThresholds::O4) {
 	      V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
 	      X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
-	      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
+	      if (compute_B)
+		  B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
 	  }
       }
       

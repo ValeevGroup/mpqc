@@ -128,10 +128,11 @@ TwoBodyMOIntsTransform_12Inds::run()
   
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 1
   int tbtype_anti1 = -1;
-  if (tbint_->num_tbint_types() == 6)
-    tbtype_anti1 = TwoBodyInt::t1g12;
-  if (tbint_->num_tbint_types() == 4)
-    tbtype_anti1 = TwoBodyInt::r12t1;
+  const unsigned int ntypes = tbint_->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      Ref<TwoBodyIntTypeDescr> inttype = tbint_->inttype(static_cast<TwoBodyInt::tbint_type>(t));
+      if (inttype->perm_symm(1) == -1) tbtype_anti1 = t;
+  }
 
   double** vector1 = new double*[nbasis1];
   double** vector2 = new double*[nbasis2];

@@ -162,7 +162,7 @@ void Int1eCints::hcore_full_general_()
       int natom = bs1_->ncenter();
       for(int atom=0; atom<natom; atom++) {
 	// if charge is 0 - skip to the next one
-	int Z = bs1_->molecule()->Z(atom);
+	double Z = bs1_->molecule()->charge(atom);
 	if (Z == 0.0)
 	  continue;
 	PC[0] = P[0] - bs1_->r(atom,0);
@@ -272,7 +272,7 @@ void Int1eCints::hcore_sameam_general_()
       int natom = bs1_->ncenter();
       for(int atom=0; atom<natom; atom++) {
 	// if charge is 0 - skip to the next one
-	int Z = bs1_->molecule()->Z(atom);
+	double Z = bs1_->molecule()->charge(atom);
 	if (Z == 0.0)
 	  continue;
 	PC[0] = P[0] - bs1_->r(atom,0);

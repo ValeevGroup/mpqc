@@ -168,9 +168,11 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
     Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
     Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
+    Ref<LinearR12::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << r12info()->corrfactor();
     Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << r12info()->corrfactor();
     if (r12corrptr.nonnull()) corrfac = r12corrfactor;
     if (g12corrptr.nonnull()) corrfac = g12corrfactor;
+    if (g12nccorrptr.nonnull()) corrfac = g12corrfactor;
     if (gg12corrptr.nonnull()) corrfac = gg12corrfactor;
 
     switch (corrfac) {

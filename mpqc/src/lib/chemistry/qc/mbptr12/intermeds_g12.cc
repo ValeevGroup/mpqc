@@ -164,13 +164,13 @@ R12IntEval::init_intermeds_g12_()
 	      // <xy|hJ z> tforms
 	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyHz;
 	      {
-		  NewTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true);
+		  NewTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true,true);
 		  fill_container(tform_creator,tforms_xyHz);
 	      }
 	      // <hJ z|xy> tforms
 	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Hzxy;
 	      {
-		  NewTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true);
+		  NewTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true,true);
 		  fill_container(tform_creator,tforms_Hzxy);
 	      }
 
@@ -193,13 +193,13 @@ R12IntEval::init_intermeds_g12_()
 		  // <xy|z hJ> tforms
 		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyzH;
 		  {
-		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true);
+		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true,true);
 		      fill_container(tform_creator,tforms_xyzH);
 		  }
 		  // <z hJ|xy> tforms
 		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_zHxy;
 		  {
-		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true);
+		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true,true);
 		      fill_container(tform_creator,tforms_zHxy);
 		  }
 		  

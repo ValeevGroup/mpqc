@@ -497,7 +497,7 @@ GenG12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 			  const LIBINT2_REALTYPE* r1dotr1 = Libint_.targets[2];
 			  const LIBINT2_REALTYPE* r1dotr2 = Libint_.targets[3];
 			  const LIBINT2_REALTYPE* r12_2_g12 = Libint_.targets[4];
-			  LIBINT2_REALTYPE* gg12t1gg12 = prim_ints_[3];
+			  LIBINT2_REALTYPE* gg12t1gg12 = prim_ints_[3] + buffer_offset;
                           for(int ijkl=0; ijkl<size; ++ijkl) {
 			      *gg12t1gg12 += pfac_r1r1 * (*r1dotr1) + pfac_r1r2 * (*r1dotr2) + pfac_r12_2 * (*r12_2_g12);
 			    ++r1dotr1;

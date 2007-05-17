@@ -474,7 +474,7 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 			    const LIBINT2_REALTYPE* g12g12_ints = Libint_.targets[0];
 			    LIBINT2_REALTYPE* anti_g12g12_ints = prim_ints_[4];
 			    for(int ijkl=0; ijkl<size; ijkl++) {
-				anti_g12g12_ints[ijkl] += gamma_perm_pfac * g12g12_ints[ijkl];
+				anti_g12g12_ints[buffer_offset + ijkl] += gamma_perm_pfac * g12g12_ints[ijkl];
 			    }
 			}
 
@@ -487,7 +487,7 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
 			if (!braonly && gamma_bra != gamma_ket){
 			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-			    prim_ints_[4][buffer_offset] += gamma_perm_pfac * Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+			    prim_ints_[4][buffer_offset] += gamma_perm_pfac * Libint_.LIBINT_T_SS_K0G12_SS_0[0];
 			}
 
                       }

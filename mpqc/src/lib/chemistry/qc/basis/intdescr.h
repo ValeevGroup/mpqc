@@ -49,6 +49,12 @@ namespace sc {
     virtual Ref<IntEval> inteval() const =0;
     /// how many integral sets
     virtual unsigned int num_sets() const =0;
+
+    /// Maps integral set t to its index in this set
+    virtual unsigned int intset(TwoBodyInt::tbint_type t) const =0;
+    /// Maps integral set t to its TwoBodyInt::tbint_type
+    virtual TwoBodyInt::tbint_type intset(unsigned int t) const =0;
+
     /// iterator over Property classes for each Integral in the set (Property describes symmetry, labels, etc.)
     //PropertyIterator propiter();
   };
@@ -64,10 +70,18 @@ namespace sc {
     
     /// which factory is used
     Ref<Integral> factory() const { return factory_; }
-    /// implementation of Integral::inteval()
+    /// implementation of TwoBodyIntDescr::inteval()
     Ref<TwoBodyInt> inteval() const;
-    /// implementation of Integral::num_sets()
+    /// implementation of TwoBodyIntDescr::num_sets()
     unsigned int num_sets() const { return 1; }
+    /// Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    /// Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    /// Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    /// Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
 
     private:
     /// which factory is used
@@ -84,10 +98,18 @@ namespace sc {
     
     /// which factory is used
     Ref<Integral> factory() const { return factory_; }
-    /// implementation of Integral::inteval()
+    /// implementation of TwoBodyIntDescr::inteval()
     Ref<TwoBodyInt> inteval() const;
-    /// implementation of Integral::num_sets()
+    /// implementation of TwoBodyIntDescr::num_sets()
     unsigned int num_sets() const { return 4; }
+    /// Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    /// Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    /// Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    /// Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
 
     private:
     /// which factory is used
@@ -106,10 +128,18 @@ namespace sc {
     
     /// which factory is used
     Ref<Integral> factory() const { return factory_; }
-    /// implementation of Integral::inteval()
+    /// implementation of TwoBodyIntDescr::inteval()
     Ref<TwoBodyInt> inteval() const;
-    /// implementation of Integral::num_sets()
+    /// implementation of TwoBodyIntDescr::num_sets()
     unsigned int num_sets() const { return 6; }
+    /// Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    /// Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    /// Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    /// Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
 
     private:
     /// geminal parameters
@@ -133,10 +163,18 @@ namespace sc {
 
     /// which factory is used
     Ref<Integral> factory() const { return factory_; }
-    /// implementation of Integral::inteval()
+    /// implementation of TwoBodyIntDescr::inteval()
     Ref<TwoBodyInt> inteval() const;
-    /// implementation of Integral::num_sets()
+    /// implementation of TwoBodyIntDescr::num_sets()
     unsigned int num_sets() const { return 5; }
+    /// Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    /// Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    /// Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    /// Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
 
     private:
     /// geminal parameters
@@ -158,10 +196,18 @@ namespace sc {
 
     /// which factory is used
     Ref<Integral> factory() const { return factory_; }
-    /// implementation of Integral::inteval()
+    /// implementation of TwoBodyIntDescr::inteval()
     Ref<TwoBodyInt> inteval() const;
-    /// implementation of Integral::num_sets()
-    unsigned int num_sets() const { return 6; }
+    /// implementation of TwoBodyIntDescr::num_sets()
+    unsigned int num_sets() const { return 4; }
+    /// Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    /// Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    /// Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    /// Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
 
     private:
     /// geminal parameters

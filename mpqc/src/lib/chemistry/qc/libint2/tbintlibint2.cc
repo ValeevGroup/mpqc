@@ -34,6 +34,7 @@
 #include <util/class/class.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
@@ -117,7 +118,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 evaluator of unimplemented or unknown type",__FILE__,__LINE__);
   }
 
-  buffer_ = int2elibint2_->buffer();
+  buffer_ = int2elibint2_->buffer(TwoBodyInt::eri);
   integral_->adjust_storage(int2elibint2_->storage_used());
 }
 
@@ -145,50 +146,44 @@ TwoBodyIntLibint2::set_integral_storage(size_t storage)
   int2elibint2_->init_storage(storage);
 }
 
-const Ref<TwoBodyIntTypeDescr>&
+unsigned int
 TwoBodyIntLibint2::inttype(TwoBodyInt::tbint_type type) const
 {
-    static Ref<TwoBodyIntTypeDescr> t1g12_inttype = new TwoBodyIntTypeDescr(2,-1,+1,0);
-    static Ref<TwoBodyIntTypeDescr> t2g12_inttype = new TwoBodyIntTypeDescr(2,+1,-1,0);
     switch (int2etype_) {
-    case g12eval:
-	switch(type) {
-	case TwoBodyInt::t1g12:
-	    return t1g12_inttype;
-	case TwoBodyInt::t2g12:
-	    return t2g12_inttype;
-	case TwoBodyInt::eri:
-	case TwoBodyInt::r12_0_g12:
-	case TwoBodyInt::r12_m1_g12:
-	case TwoBodyInt::g12t1g12:
-	    return TwoBodyInt::inttype(type);
-	}
-	break;
-
-    case g12nceval:
-	switch(type) {
-	case TwoBodyInt::eri:
-	case TwoBodyInt::r12_0_g12:
-	case TwoBodyInt::r12_m1_g12:
-	case TwoBodyInt::g12t1g12:
-	case TwoBodyInt::anti_g12g12:
-	    return TwoBodyInt::inttype(type);
-	}
-	break;
 
     case erieval:
+	return TwoBodyIntDescrERI::intSet(type);
+
+    case g12eval:
+	return TwoBodyIntDescrG12::intSet(type);
+
+    case g12nceval:
+	return TwoBodyIntDescrG12NC::intSet(type);
+
     case geng12eval:
-	switch(type) {
-	case TwoBodyInt::eri:
-	case TwoBodyInt::r12_0_gg12:
-	case TwoBodyInt::r12_m1_gg12:
-	case TwoBodyInt::gg12t1gg12:
-	    return TwoBodyInt::inttype(type);
-	}
-	break;
+	return TwoBodyIntDescrGenG12::intSet(type);
     }
-    throw ProgrammingError("TwoBodyIntLibint2::inttype() -- incorrect type");
 }
+
+TwoBodyInt::tbint_type
+TwoBodyIntLibint2::inttype(unsigned int type) const
+{
+    switch (int2etype_) {
+
+    case erieval:
+	return TwoBodyIntDescrERI::intSet(type);
+
+    case g12eval:
+	return TwoBodyIntDescrG12::intSet(type);
+
+    case g12nceval:
+	return TwoBodyIntDescrG12NC::intSet(type);
+
+    case geng12eval:
+	return TwoBodyIntDescrGenG12::intSet(type);
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 

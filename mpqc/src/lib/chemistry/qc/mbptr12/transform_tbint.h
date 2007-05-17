@@ -161,6 +161,8 @@ public:
   Ref<MemoryGrp> mem() const;
   /// Returns the MessageGrp object
   Ref<MessageGrp> msg() const;
+  /// Returns the integral set descriptor
+  const Ref<TwoBodyIntDescr>& intdescr() const;
   /** Returns the integrals accumulator object. */
   const Ref<R12IntsAcc>& ints_acc();
   /// Returns MOIndexSpace object 1

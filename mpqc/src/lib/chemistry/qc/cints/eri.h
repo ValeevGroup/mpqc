@@ -95,9 +95,8 @@ class EriCints: public Int2eCints {
 	     size_t storage);
     ~EriCints();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri) return target_ints_buffer_;
-      else return 0;
+    double *buffer(unsigned int t) const {
+      return target_ints_buffer_;
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,

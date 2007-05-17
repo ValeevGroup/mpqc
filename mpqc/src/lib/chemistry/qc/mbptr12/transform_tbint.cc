@@ -138,6 +138,9 @@ TwoBodyMOIntsTransform::mem() const {return mem_; }
 Ref<MessageGrp>
 TwoBodyMOIntsTransform::msg() const {return  msg_; }
 
+const Ref<TwoBodyIntDescr>&
+TwoBodyMOIntsTransform::intdescr() const { return tbintdescr_; }
+
 const Ref<R12IntsAcc>&
 TwoBodyMOIntsTransform::ints_acc() {
   if (ints_acc_.nonnull())

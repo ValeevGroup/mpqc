@@ -47,7 +47,7 @@ namespace sc {
             bool CorrFactorInKet>
     void
     R12IntEval::compute_tbint_tensor(RefSCMatrix& T,
-                                     int tbint_type,
+                                     TwoBodyInt::tbint_type tbint_type,
                                      const Ref<MOIndexSpace>& space1_bra,
                                      const Ref<MOIndexSpace>& space1_ket,
                                      const Ref<MOIndexSpace>& space2_bra,
@@ -192,6 +192,8 @@ namespace sc {
         for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket,++fbraket) {
           
           Ref<TwoBodyMOIntsTransform> tform = transforms[fbraket];
+	  const Ref<TwoBodyIntDescr>& intdescr = tform->intdescr();
+	  const unsigned int intsetidx = intdescr->intset(tbint_type);
           
           if (debug_ > DefaultPrintThresholds::diagnostics)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
@@ -225,7 +227,7 @@ namespace sc {
 	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
               tim_enter("MO ints retrieve");
-              const double *ij_buf = accum->retrieve_pair_block(ii,jj,tbint_type);
+              const double *ij_buf = accum->retrieve_pair_block(ii,jj,intsetidx);
               tim_exit("MO ints retrieve");
 	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -263,7 +265,7 @@ namespace sc {
                 }
                 
               } // ket loop
-              accum->release_pair_block(ii,jj,tbint_type);
+              accum->release_pair_block(ii,jj,intsetidx);
               
             } // bra loop
           } // loop over tasks with access

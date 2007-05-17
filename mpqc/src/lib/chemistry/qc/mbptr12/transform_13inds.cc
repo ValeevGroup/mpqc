@@ -125,18 +125,15 @@ TwoBodyMOIntsTransform_13Inds::run()
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
   
-  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 1
-  int tbtype_anti1 = -1;
-  if (tbint_->num_tbint_types() == 6)
-    tbtype_anti1 = TwoBodyInt::t1g12;
-  if (tbint_->num_tbint_types() == 4)
-    tbtype_anti1 = TwoBodyInt::r12t1;
-  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
-  int tbtype_anti2 = -1;
-  if (tbint_->num_tbint_types() == 6)
-    tbtype_anti2 = TwoBodyInt::t2g12;
-  if (tbint_->num_tbint_types() == 4)
-    tbtype_anti2 = TwoBodyInt::r12t2;
+  //find the type of integrals which is antisymmetric with respect to permuting functions of each particle
+  int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
+  const unsigned int ntypes = tbint_->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      const TwoBodyInt::tbint_type ttype = tbint_->inttype(t);
+      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      if (intdescr->perm_symm(1) == -1) tbtype_anti1 = t;
+      if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
+  }
 
   double** vector1 = new double*[nbasis1];
   double** vector3 = new double*[nbasis3];
@@ -153,7 +150,7 @@ TwoBodyMOIntsTransform_13Inds::run()
   const int num_te_types = tform_->num_te_types();
   const double **intbuf = new const double*[num_te_types];
   for(int te_type=0; te_type<num_te_types; te_type++)
-    intbuf[te_type] = tbint_->buffer(static_cast<sc::TwoBodyInt::tbint_type>(te_type));
+    intbuf[te_type] = tbint_->buffer( tbint_->inttype(te_type) );
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals

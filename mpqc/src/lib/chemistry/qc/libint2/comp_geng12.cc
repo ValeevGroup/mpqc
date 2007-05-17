@@ -484,20 +484,20 @@ GenG12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 			{
 			  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
                           for(int ijkl=0; ijkl<size; ijkl++)
-			    prim_ints_[TwoBodyInt::r12_0_gg12][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+			    prim_ints_[1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                         }
 			// Copy over g12/r12 integrals to prim_ints_
 			{
 			  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[1];
                           for(int ijkl=0; ijkl<size; ijkl++)
-			    prim_ints_[TwoBodyInt::r12_m1_gg12][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+			    prim_ints_[2][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                         }
 			// Compute [g12,[t1,g12]] integrals and copy to prim_ints_
 			{
 			  const LIBINT2_REALTYPE* r1dotr1 = Libint_.targets[2];
 			  const LIBINT2_REALTYPE* r1dotr2 = Libint_.targets[3];
 			  const LIBINT2_REALTYPE* r12_2_g12 = Libint_.targets[4];
-			  LIBINT2_REALTYPE* gg12t1gg12 = prim_ints_[TwoBodyInt::gg12t1gg12];
+			  LIBINT2_REALTYPE* gg12t1gg12 = prim_ints_[3];
                           for(int ijkl=0; ijkl<size; ++ijkl) {
 			      *gg12t1gg12 += pfac_r1r1 * (*r1dotr1) + pfac_r1r2 * (*r1dotr2) + pfac_r12_2 * (*r12_2_g12);
 			    ++r1dotr1;
@@ -508,11 +508,11 @@ GenG12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                         }
                       }
                       else {
-                        prim_ints_[TwoBodyInt::r12_0_gg12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                        prim_ints_[TwoBodyInt::r12_m1_gg12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+                        prim_ints_[1][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
+                        prim_ints_[2][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
 			double gg12t1gg12 = pfac_r12_2 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
 			gg12t1gg12 += pfac_r1r1 * Libint_.targets[0][0] + pfac_r1r2 * Libint_.targets[1][0];
-			prim_ints_[TwoBodyInt::gg12t1gg12][buffer_offset] += gg12t1gg12;
+			prim_ints_[3][buffer_offset] += gg12t1gg12;
                       }
                       
                     } // end of ket geminal primitive loop
@@ -526,10 +526,10 @@ GenG12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                     // Copy the integrals over to prim_ints_
                     const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
                     for(int ijkl=0; ijkl<size; ijkl++)
-                      prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                      prim_ints_[0][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }
                   else {
-                    prim_ints_[TwoBodyInt::eri][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
+                    prim_ints_[0][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
                   
                 }

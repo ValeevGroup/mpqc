@@ -128,7 +128,7 @@ class Int2eLibint2: public RefCount {
     /// Evaluate the target quartet of integrals
     virtual void compute_quartet(int *, int*, int*, int*) =0;
     /// Returns the location of the buffer with target integrals
-    virtual double *buffer(TwoBodyInt::tbint_type = TwoBodyInt::eri) const =0;
+    virtual double *buffer(unsigned int) const =0;
 
     Ref<GaussianBasisSet> basis()
     {

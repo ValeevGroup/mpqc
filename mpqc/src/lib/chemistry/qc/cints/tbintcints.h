@@ -42,6 +42,7 @@ class TwoBodyIntCints : public TwoBodyInt {
     unsigned int num_tbint_types_;
 
   protected:
+    tbinteval int2etype_;
     Ref<Int2eCints> int2ecints_;
   
   public:
@@ -57,7 +58,9 @@ class TwoBodyIntCints : public TwoBodyInt {
       return num_tbint_types_;
     }
     /// Implementation of TwoBodyIntTypeDescr::inttype()
-    const Ref<TwoBodyIntTypeDescr>& inttype(TwoBodyInt::tbint_type type) const;
+    unsigned int inttype(tbint_type t) const;
+    /// Implementation of TwoBodyIntTypeDescr::inttype()
+    TwoBodyInt::tbint_type inttype(unsigned int t) const;
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -66,7 +69,7 @@ class TwoBodyIntCints : public TwoBodyInt {
     void set_integral_storage(size_t storage);
 
     const double *buffer(tbint_type te_type) const {
-      return int2ecints_->buffer(te_type);
+      return int2ecints_->buffer( inttype(te_type) );
     }
 };
 

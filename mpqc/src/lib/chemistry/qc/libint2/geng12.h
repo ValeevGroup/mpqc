@@ -133,14 +133,8 @@ class GenG12Libint2: public Int2eLibint2 {
 	);
     ~GenG12Libint2();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri ||
-	  te_type == TwoBodyInt::r12_m1_gg12 ||
-	  te_type == TwoBodyInt::r12_0_gg12 ||
-	  te_type == TwoBodyInt::gg12t1gg12)
-	return target_ints_buffer_[te_type];
-      else
-	return 0;
+    double *buffer(unsigned int t) const {
+	return target_ints_buffer_[t];
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,

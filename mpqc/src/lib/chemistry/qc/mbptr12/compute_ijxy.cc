@@ -155,8 +155,9 @@ TwoBodyMOIntsTransform_ijxy::compute()
   int tbtype_anti2 = -1;
   const unsigned int ntypes = tbints[0]->num_tbint_types();
   for(unsigned int t=0; t<ntypes; ++t) {
-      Ref<TwoBodyIntTypeDescr> inttype = tbints[0]->inttype(static_cast<TwoBodyInt::tbint_type>(t));
-      if (inttype->perm_symm(2) == -1) tbtype_anti2 = t;
+      const TwoBodyInt::tbint_type ttype = tbints[0]->inttype(t);
+      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
   }
   
   /*-----------------------------------

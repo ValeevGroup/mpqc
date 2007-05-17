@@ -135,9 +135,10 @@ TwoBodyMOIntsTransform_123Inds::run()
   int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
   const unsigned int ntypes = tbint_->num_tbint_types();
   for(unsigned int t=0; t<ntypes; ++t) {
-      Ref<TwoBodyIntTypeDescr> inttype = tbint_->inttype(static_cast<TwoBodyInt::tbint_type>(t));
-      if (inttype->perm_symm(1) == -1) tbtype_anti1 = t;
-      if (inttype->perm_symm(2) == -1) tbtype_anti2 = t;
+      const TwoBodyInt::tbint_type ttype = tbint_->inttype(t);
+      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      if (intdescr->perm_symm(1) == -1) tbtype_anti1 = t;
+      if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
   }
 
   double** vector1 = new double*[nbasis1];
@@ -159,7 +160,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   const int num_te_types = tform_->num_te_types();
   const double **intbuf = new const double*[num_te_types];
   for(int te_type=0; te_type<num_te_types; te_type++)
-    intbuf[te_type] = tbint_->buffer(static_cast<sc::TwoBodyInt::tbint_type>(te_type));
+    intbuf[te_type] = tbint_->buffer( tbint_->inttype(te_type) );
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals

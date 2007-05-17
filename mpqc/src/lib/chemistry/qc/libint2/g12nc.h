@@ -132,16 +132,8 @@ class G12NCLibint2: public Int2eLibint2 {
 	);
     ~G12NCLibint2();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri ||
-	  te_type == TwoBodyInt::r12_m1_g12 ||
-	  te_type == TwoBodyInt::r12_0_g12)
-	return target_ints_buffer_[te_type];
-      if (te_type == TwoBodyInt::g12t1g12 ||
-	  te_type == TwoBodyInt::anti_g12g12)
-	return target_ints_buffer_[te_type-2];
-
-      return 0;
+    double *buffer(unsigned int t) const {
+	return target_ints_buffer_[t];
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,

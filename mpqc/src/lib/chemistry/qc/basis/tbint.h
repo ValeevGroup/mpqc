@@ -113,16 +113,19 @@ class TwoBodyInt : public RefCount {
       eri stands for electron repulsion integral, r12 stands for integrals
       of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
       [r12,T2] operators, etc. */
-    enum tbint_type { eri=0,
-		      r12=1, r12t1=2, r12t2=3,
-		      r12_0_g12 = 1, r12_m1_g12 = 2, t1g12 = 3, t2g12 = 4, g12t1g12 = 5, anti_g12g12 = 6,
-		      r12_0_gg12 = 1, r12_m1_gg12 = 2, gg12t1gg12 = 3};
+    enum tbint_type { eri, r12, r12t1, r12t2,
+		      r12_0_g12, r12_m1_g12, t1g12, t2g12, g12t1g12, anti_g12g12,
+		      r12_0_gg12, r12_m1_gg12, gg12t1gg12};
     /// The max number of such types
     static const int max_num_tbint_types = 12;
     /// The number of types supported by this TwoBodyInt instance
     virtual unsigned int num_tbint_types() const =0;
-    /// Descriptor for integral type i
-    virtual const Ref<TwoBodyIntTypeDescr>& inttype(tbint_type type) const;
+    /// Maps integral type t to its index
+    virtual unsigned int inttype(tbint_type t) const =0;
+    /// Maps integral type index t to type
+    virtual TwoBodyInt::tbint_type inttype(unsigned int t) const =0;
+    /// Returns a descriptor for integral type t
+    static const Ref<TwoBodyIntTypeDescr>& inttypedescr(tbint_type t);
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than

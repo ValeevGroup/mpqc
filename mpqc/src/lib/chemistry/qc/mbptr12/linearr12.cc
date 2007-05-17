@@ -91,49 +91,49 @@ CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
   return value(c,r12);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_eri() const
 {
-  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+  return TwoBodyInt::eri;
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_t1f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_t2f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t2f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_f12eri() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_f12f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_f12t1f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-int
+TwoBodyInt::tbint_type
 CorrelationFactor::tbint_type_f12f12_anti() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12f12_anti() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
@@ -158,12 +158,6 @@ NullCorrelationFactor::NullCorrelationFactor() :
 {
 }
 
-int
-NullCorrelationFactor::tbint_type_eri() const
-{
-  return static_cast<int>(TwoBodyInt::eri);
-}
-
 double
 NullCorrelationFactor::value(unsigned int c, double r12) const
 {
@@ -177,28 +171,22 @@ R12CorrelationFactor::R12CorrelationFactor() :
 {
 }
 
-int
-R12CorrelationFactor::tbint_type_eri() const
-{
-  return static_cast<int>(TwoBodyInt::eri);
-}
-
-int
+TwoBodyInt::tbint_type
 R12CorrelationFactor::tbint_type_f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12);
+  return (TwoBodyInt::r12);
 }
 
-int
+TwoBodyInt::tbint_type
 R12CorrelationFactor::tbint_type_t1f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12t1);
+  return (TwoBodyInt::r12t1);
 }
 
-int
+TwoBodyInt::tbint_type
 R12CorrelationFactor::tbint_type_t2f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12t2);
+  return (TwoBodyInt::r12t2);
 }
 
 Ref<TwoBodyIntDescr>
@@ -245,46 +233,40 @@ G12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
 }
 
 
-int
-G12CorrelationFactor::tbint_type_eri() const
-{
-  return static_cast<int>(TwoBodyInt::eri);
-}
-
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_g12);
+  return (TwoBodyInt::r12_0_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_t1f12() const
 {
-  return static_cast<int>(TwoBodyInt::t1g12);
+  return (TwoBodyInt::t1g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_t2f12() const
 {
-  return static_cast<int>(TwoBodyInt::t2g12);
+  return (TwoBodyInt::t2g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_f12eri() const
 {
-  return static_cast<int>(TwoBodyInt::r12_m1_g12);
+  return (TwoBodyInt::r12_m1_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_f12f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_g12);
+  return (TwoBodyInt::r12_0_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12CorrelationFactor::tbint_type_f12t1f12() const
 {
-  return static_cast<int>(TwoBodyInt::g12t1g12);
+  return (TwoBodyInt::g12t1g12);
 }
 
 Ref<TwoBodyIntDescr>
@@ -363,41 +345,34 @@ G12NCCorrelationFactor::primitive(unsigned int c, unsigned int p) const
   return params_.at(c).at(p);
 }
 
-
-int
-G12NCCorrelationFactor::tbint_type_eri() const
-{
-  return static_cast<int>(TwoBodyInt::eri);
-}
-
-int
+TwoBodyInt::tbint_type
 G12NCCorrelationFactor::tbint_type_f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_g12);
+  return (TwoBodyInt::r12_0_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12NCCorrelationFactor::tbint_type_f12eri() const
 {
-  return static_cast<int>(TwoBodyInt::r12_m1_g12);
+  return (TwoBodyInt::r12_m1_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12NCCorrelationFactor::tbint_type_f12f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_g12);
+  return (TwoBodyInt::r12_0_g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12NCCorrelationFactor::tbint_type_f12t1f12() const
 {
-  return static_cast<int>(TwoBodyInt::g12t1g12);
+  return (TwoBodyInt::g12t1g12);
 }
 
-int
+TwoBodyInt::tbint_type
 G12NCCorrelationFactor::tbint_type_f12f12_anti() const
 {
-  return static_cast<int>(TwoBodyInt::anti_g12g12);
+  return (TwoBodyInt::anti_g12g12);
 }
 
 Ref<TwoBodyIntDescr>
@@ -479,34 +454,28 @@ GenG12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
   return params_.at(c).at(p);
 }
 
-int
-GenG12CorrelationFactor::tbint_type_eri() const
-{
-  return static_cast<int>(TwoBodyInt::eri);
-}
-
-int
+TwoBodyInt::tbint_type
 GenG12CorrelationFactor::tbint_type_f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_gg12);
+  return (TwoBodyInt::r12_0_gg12);
 }
 
-int
+TwoBodyInt::tbint_type
 GenG12CorrelationFactor::tbint_type_f12eri() const
 {
-  return static_cast<int>(TwoBodyInt::r12_m1_gg12);
+  return (TwoBodyInt::r12_m1_gg12);
 }
 
-int
+TwoBodyInt::tbint_type
 GenG12CorrelationFactor::tbint_type_f12f12() const
 {
-  return static_cast<int>(TwoBodyInt::r12_0_gg12);
+  return (TwoBodyInt::r12_0_gg12);
 }
 
-int
+TwoBodyInt::tbint_type
 GenG12CorrelationFactor::tbint_type_f12t1f12() const
 {
-  return static_cast<int>(TwoBodyInt::gg12t1gg12);
+  return (TwoBodyInt::gg12t1gg12);
 }
 
 Ref<TwoBodyIntDescr>

@@ -479,19 +479,19 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                         }
                       }
                       else {
-                        prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
-                        prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                        prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
+                        prim_ints_[2][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+                        prim_ints_[1][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
+                        prim_ints_[5][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
 
 			// If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
 			if (!braonly && gamma_bra != gamma_ket){
 			    const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += pfac * Libint_.targets[0][0];
-			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += pfac * Libint_.targets[1][0];
+			    prim_ints_[3][buffer_offset] += pfac * Libint_.targets[0][0];
+			    prim_ints_[4][buffer_offset] += pfac * Libint_.targets[1][0];
 			}
 			else {
-			    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
-			    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
+			    prim_ints_[3][buffer_offset] += Libint_.targets[0][0];
+			    prim_ints_[4][buffer_offset] += Libint_.targets[1][0];
 			}
 
                       }
@@ -507,10 +507,10 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                     // Copy the integrals over to prim_ints_
                     const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
                     for(int ijkl=0; ijkl<size; ijkl++)
-                      prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                      prim_ints_[0][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }
                   else {
-                    prim_ints_[TwoBodyInt::eri][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
+                    prim_ints_[0][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
                   
                 }
@@ -522,31 +522,31 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
           // (usi usj|[T1,g12]|usk usl) = (usk usl|[T2,g12]|usi usj)
           if (!permute_ && p13p24) {
             for(int ijkl=0; ijkl<size; ijkl++) {
-              double t1g12 = prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl];
-              double t2g12 = prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl];
-              prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] = t2g12;
-              prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] = t1g12;
+              double t1g12 = prim_ints_[3][buffer_offset + ijkl];
+              double t2g12 = prim_ints_[4][buffer_offset + ijkl];
+              prim_ints_[3][buffer_offset + ijkl] = t2g12;
+              prim_ints_[4][buffer_offset + ijkl] = t1g12;
               }
             }
           // If permuted bra then [T1,G12] needs -1
           // If permuted ket then [T2,G12] needs -1
           if (!permute_ && p12) {
             for(int ijkl=0; ijkl<size; ijkl++) {
-              prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] *= -1.0;
+              prim_ints_[3][buffer_offset + ijkl] *= -1.0;
               }
             }
           if (!permute_ && p34) {
             for(int ijkl=0; ijkl<size; ijkl++) {
-              prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
+              prim_ints_[4][buffer_offset + ijkl] *= -1.0;
               }
             }
           
           // MBPT2_R12 expects commutators be of [g12,T1] variety -- for now just multiply by -1
           for(int ijkl=0; ijkl<size; ijkl++) {
-            prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] *= -1.0;
+            prim_ints_[3][buffer_offset + ijkl] *= -1.0;
             }
           for(int ijkl=0; ijkl<size; ijkl++) {
-            prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
+            prim_ints_[4][buffer_offset + ijkl] *= -1.0;
             }
           
 	  buffer_offset += size;

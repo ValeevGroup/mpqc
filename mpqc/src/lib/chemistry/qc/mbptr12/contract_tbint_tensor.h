@@ -51,8 +51,8 @@ namespace sc {
     void
     R12IntEval::contract_tbint_tensor(
       RefSCMatrix& T,
-      unsigned int tbint_type_bra,
-      unsigned int tbint_type_ket,
+      TwoBodyInt::tbint_type tbint_type_bra,
+      TwoBodyInt::tbint_type tbint_type_ket,
       const Ref<MOIndexSpace>& space1_bra,
       const Ref<MOIndexSpace>& space2_bra,
       const Ref<MOIndexSpace>& space1_intb,
@@ -360,6 +360,8 @@ namespace sc {
 	for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
 	  const unsigned int fbraint = fbra*nintsets+fint;
 	  Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbraint];
+	  const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
+	  const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
 	  Ref<R12IntsAcc> accumb = tformb->ints_acc();
 	  // if transforms have not been computed yet, compute
@@ -376,6 +378,8 @@ namespace sc {
 	  for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
             const unsigned int fketint = fket*nintsets+fint;
             Ref<TwoBodyMOIntsTransform> tformk = transforms_ket[fketint];
+	    const Ref<TwoBodyIntDescr>& intdescrk = tformk->intdescr();
+	    const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
             
             Ref<R12IntsAcc> accumk = tformk->ints_acc();
             if (accumk.null() || !accumk->is_committed()) {
@@ -426,7 +430,7 @@ namespace sc {
                 const unsigned int jj = map2_bra[j];
 
                 tim_enter("MO ints retrieve");
-                const double *ij_buf = accumb->retrieve_pair_block(ii,jj,tbint_type_bra);
+                const double *ij_buf = accumb->retrieve_pair_block(ii,jj,intsetidx_bra);
                 tim_exit("MO ints retrieve");
 		if (debug_ >= DefaultPrintThresholds::mostO4)
                   ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -447,7 +451,7 @@ namespace sc {
                     ExEnv::outn() << indent << "task " << me << ": working on (i,j | k,l) = ("
                                   << i << "," << j << " | " << k << "," << l << ")" << endl;
                   tim_enter("MO ints retrieve");
-                  const double *kl_buf = accumk->retrieve_pair_block(kk,ll,tbint_type_ket);
+                  const double *kl_buf = accumk->retrieve_pair_block(kk,ll,intsetidx_ket);
                   tim_exit("MO ints retrieve");
 		  if (debug_ >= DefaultPrintThresholds::mostO4)
                     ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
@@ -552,12 +556,12 @@ namespace sc {
                   }
                   Tcontr.accumulate_element(ij+fbraoffset,kl+fketoffset,T_ijkl);
                   
-                  accumk->release_pair_block(kk,ll,tbint_type_ket);
+                  accumk->release_pair_block(kk,ll,intsetidx_ket);
                   
                 } // ket loop
                 
                 if (fetch_ij_block)
-                  accumb->release_pair_block(ii,jj,tbint_type_bra);
+                  accumb->release_pair_block(ii,jj,intsetidx_bra);
 
               } // bra loop
             } // loop over tasks with access

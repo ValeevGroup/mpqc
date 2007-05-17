@@ -133,6 +133,9 @@ R12IntEval::init_intermeds_g12_()
 	  );
       // the second is antisymmetric wrt such permutation and is only needed when number of geminals > 1
       if (r12info()->corrfactor()->nfunctions() > 1) {
+
+          if (debug_ >= DefaultPrintThresholds::mostO4)
+            B_[s].print(prepend_spincase(spincase2,"B(diag;symm)").c_str());
 	  RefSCMatrix Banti = B_[s].clone(); Banti.assign(0.0);
 	  // the handling of the second term differs between standard approximations {A,A',B} and {C}
 	  if (stdapprox() != LinearR12::StdApprox_C) {
@@ -219,10 +222,14 @@ R12IntEval::init_intermeds_g12_()
 		      );
 	      }
 	      else {
+                  // contribution from particle 2 is the same as from particle 1
 		  Banti.scale(2.0);
+                  symmetrize<false>(Banti,Banti,xspace1,xspace1);
 	      }
 	  }
 	  Banti.scale(-0.5);
+          if (debug_ >= DefaultPrintThresholds::mostO4)
+            Banti.print(prepend_spincase(spincase2,"B(diag;antisymm)").c_str());
 	  B_[s].accumulate(Banti);
       }
       // Finally, copy B to BC, since their "diagonal" parts are the same

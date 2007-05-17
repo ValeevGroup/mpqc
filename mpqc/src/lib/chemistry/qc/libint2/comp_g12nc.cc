@@ -435,9 +435,11 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double gpcoef_ket = gpket.second;
 
 		      double gamma_perm_pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
+#if 0
 		      if (!permute_ && p13p24)
 			gamma_perm_pfac *= -1.0;
-                      
+#endif    
+                  
                       // Compute primitive data for Libint
                       g12nc_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
 #if LIBINT2_ACCUM_INTS

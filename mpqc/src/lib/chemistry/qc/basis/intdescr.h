@@ -117,7 +117,59 @@ namespace sc {
     /// which factory is used
     Ref<Integral> factory_;
   };
-  
+
+  /** TwoBodyIntDescrG12NC describes a set of integrals used in MP2-F12 theories
+      using Gaussian geminal correlation factors (without kinetic energy commutators).
+      The following integrals are computed:
+      1) 1/r_{12} 2) g_{12} = exp(-gamma * r_{12}^2)
+      3) g_{12}/r_{12} 4) [g_{12}',[T_1,g_{12}]]
+      5) (exp(g12')-exp(g12))/(exp(g12)+exp(g12')) g12 * g12'
+    */
+  class TwoBodyIntDescrG12NC : public TwoBodyIntDescr {
+    public:
+    /// Compute integrals using geminal parameters params
+    TwoBodyIntDescrG12NC(const Ref<Integral>& IF,
+                         const Ref<IntParamsG12>& g12params);
+
+    /// which factory is used
+    Ref<Integral> factory() const { return factory_; }
+    /// implementation of Integral::inteval()
+    Ref<TwoBodyInt> inteval() const;
+    /// implementation of Integral::num_sets()
+    unsigned int num_sets() const { return 5; }
+
+    private:
+    /// geminal parameters
+    Ref<IntParamsG12> params_;
+    /// which factory is used
+    Ref<Integral> factory_;
+  };
+
+  /** TwoBodyIntDescrGenG12 describes a set of integrals used in MP2-F12 theories
+      using general Gaussian geminal correlation factors. The following integrals are computed:
+      1) 1/r_{12} 2) g_{12} = exp(-gamma * r_{12}^2)
+      3) g_{12}/r_{12} 4) r1.r1 g12*g12' 5) r1.r2 g12*g12'
+      6) [g_{12}',[T_1,g_{12}]] */
+  class TwoBodyIntDescrGenG12 : public TwoBodyIntDescr {
+    public:
+    /// Compute integrals using geminal parameters params
+    TwoBodyIntDescrGenG12(const Ref<Integral>& IF,
+                          const Ref<IntParamsGenG12>& gg12params);
+
+    /// which factory is used
+    Ref<Integral> factory() const { return factory_; }
+    /// implementation of Integral::inteval()
+    Ref<TwoBodyInt> inteval() const;
+    /// implementation of Integral::num_sets()
+    unsigned int num_sets() const { return 6; }
+
+    private:
+    /// geminal parameters
+    Ref<IntParamsGenG12> params_;
+    /// which factory is used
+    Ref<Integral> factory_;
+  };
+
 }
 
 #endif

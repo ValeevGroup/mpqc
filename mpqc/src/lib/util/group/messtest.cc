@@ -39,10 +39,6 @@ using namespace sc;
 
 // Force linkages:
 //#ifndef __PIC__
-#ifndef PUMAGON
-#   include <util/group/messshm.h>
-    static ForceLink<ShmMessageGrp> fl0;
-#endif
 # ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
     static ForceLink<MPIMessageGrp> fl2;
@@ -185,6 +181,9 @@ main(int argc, char**argv)
   if (grp->n() >= 3) {
       test(grp, 2, 1);
     }
+  else if (grp->n() >= 2) {
+      test(grp, 1, 0);
+    }
   else {
       test(grp, 0, 0);
     }
@@ -272,7 +271,7 @@ test(const Ref<MessageGrp>& grp, int source, int target)
       SavableState::save_state(a,so);
       so.flush();
       grp->send(target, ca, nca);
-      if (source != target) grp->recv(target, ca, nca);
+      grp->recv(target, ca, nca);
     }
 
   if (grp->me() == target) {
@@ -280,8 +279,8 @@ test(const Ref<MessageGrp>& grp, int source, int target)
       //si.set_buffer_size(5);
       si.source(source);
       b << SavableState::restore_state(si);
-      if (source != target) grp->send(source, ca, nca);
       grp->recv(source, ca, nca);
+      grp->send(source, ca, nca);
     }
 
   if (grp->me() == target) {

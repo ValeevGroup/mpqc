@@ -109,6 +109,9 @@ void ProcMessageGrp::recvit(message_t *& messages, int source, int type, void* b
         }
       memcpy(buf,i->buf,i->size);
 
+      last_size = i->size;
+      last_type = i->type;
+
       // Remove the message from the list.
       if (last) {
           last->p = i->p;
@@ -143,17 +146,25 @@ ProcMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
 }
 
 void
-ProcMessageGrp::raw_recv(int sender, void* data, int nbyte)
+ProcMessageGrp::raw_recv(int sender, void* data, int nbyte,
+                         MessageInfo *info)
 {
   int last_size, last_type;
   recvit(sync_messages, sender, -1, data, nbyte, last_size, last_type);
+  set_sender(info,0);
+  set_type(info,-1);
+  set_nbyte(info,last_size);
 }
 
 void
-ProcMessageGrp::raw_recvt(int type, void* data, int nbyte)
+ProcMessageGrp::raw_recvt(int sender, int type, void* data, int nbyte,
+                          MessageInfo *info)
 {
   int last_size, last_type;
-  recvit(type_messages, -1, type, data, nbyte, last_size, last_type);
+  recvit(type_messages, sender, type, data, nbyte, last_size, last_type);
+  set_sender(info,0);
+  set_type(info,last_type);
+  set_nbyte(info,last_size);
 }
 
 void
@@ -162,12 +173,15 @@ ProcMessageGrp::raw_bcast(void* data, int nbyte, int from)
 }
 
 int
-ProcMessageGrp::probet(int type)
+ProcMessageGrp::probet(int sender, int type, MessageInfo *info)
 {
   message_t *i;
 
   for (i=type_messages; i!=0; i = i->p) {
       if (i->type == type || type == -1) {
+          set_type(info,i->type);
+          set_sender(info,0);
+          set_nbyte(info,i->size);
           return 1;
         }
     }

@@ -227,7 +227,7 @@ DistShellPair::serve_tasks()
   int nreq_left = nreq;
   while (nreq_left) {
     int node;
-    msg_->recvt(req_type_,&node,1);
+    msg_->recvt(MessageGrp::AnySender,req_type_,&node,1);
     int SR[2];
     if (current_shellpair_ < ntask_) {
       SR[0] = Svec_[Ivec_[current_shellpair_]];
@@ -278,7 +278,7 @@ DistShellPair::get_task(int &S, int &R)
       
       lock_->lock();
       msg_->sendt(0,req_type_,&me,1);
-      msg_->recvt(ans_type_,SR,2);
+      msg_->recvt(MessageGrp::AnySender,ans_type_,SR,2);
       lock_->unlock();
 
       S = SR[0];

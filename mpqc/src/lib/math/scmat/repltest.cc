@@ -27,7 +27,6 @@
 
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
-#include <util/group/messshm.h>
 #include <math/scmat/repl.h>
 
 #include <util/group/linkage.h>

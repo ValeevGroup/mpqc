@@ -39,13 +39,6 @@ static ForceLink<ProcMessageGrp> group_force_link_0_;
 static ForceLink<ProcMemoryGrp> group_force_link_1_;
 }
 
-# ifdef HAVE_SYSV_IPC
-#   include <util/group/messshm.h>
-namespace sc {
-    static ForceLink<ShmMessageGrp> group_force_link_a_;
-}
-# endif
-
 # if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
 namespace sc {

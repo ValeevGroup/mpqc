@@ -41,7 +41,6 @@
 #include <util/group/memproc.h>
 
 #ifdef HAVE_SYSV_IPC
-#  include <util/group/messshm.h>
 #  include <util/group/memshm.h>
 #endif
 
@@ -335,12 +334,6 @@ MemoryGrp::get_default_memorygrp()
 #if defined(HAVE_ARMCI)
   else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
       default_memorygrp = new ARMCIMemoryGrp(msg);
-      return default_memorygrp.pointer();
-    }
-#endif
-#ifdef HAVE_SYSV_IPC
-  else if (msg->class_desc() == ::class_desc<ShmMessageGrp>()) {
-      default_memorygrp = new ShmMemoryGrp(msg);
       return default_memorygrp.pointer();
     }
 #endif

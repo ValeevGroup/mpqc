@@ -456,49 +456,49 @@ MessageGrp::sendt(int target, int type, const signed char* data, int ndata)
 // Typed receive routines
 
 void
-MessageGrp::recvt(int type, double* data, int ndata)
+MessageGrp::recvt(int sender, int type, double* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(double));
+  raw_recvt(sender, type, data, ndata*sizeof(double));
 }
 void
-MessageGrp::recvt(int type, short* data, int ndata)
+MessageGrp::recvt(int sender, int type, short* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(short));
+  raw_recvt(sender, type, data, ndata*sizeof(short));
 }
 void
-MessageGrp::recvt(int type, long* data, int ndata)
+MessageGrp::recvt(int sender, int type, long* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(long));
+  raw_recvt(sender, type, data, ndata*sizeof(long));
 }
 void
-MessageGrp::recvt(int type, float* data, int ndata)
+MessageGrp::recvt(int sender, int type, float* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(float));
+  raw_recvt(sender, type, data, ndata*sizeof(float));
 }
 void
-MessageGrp::recvt(int type, unsigned int* data, int ndata)
+MessageGrp::recvt(int sender, int type, unsigned int* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(int));
+  raw_recvt(sender, type, data, ndata*sizeof(int));
 }
 void
-MessageGrp::recvt(int type, int* data, int ndata)
+MessageGrp::recvt(int sender, int type, int* data, int ndata)
 {
-  raw_recvt(type, data, ndata*sizeof(int));
+  raw_recvt(sender, type, data, ndata*sizeof(int));
 }
 void
-MessageGrp::recvt(int type, char* data, int ndata)
+MessageGrp::recvt(int sender, int type, char* data, int ndata)
 {
-  raw_recvt(type, data, ndata);
+  raw_recvt(sender, type, data, ndata);
 }
 void
-MessageGrp::recvt(int type, unsigned char* data, int ndata)
+MessageGrp::recvt(int sender, int type, unsigned char* data, int ndata)
 {
-  raw_recvt(type, data, ndata);
+  raw_recvt(sender, type, data, ndata);
 }
 void
-MessageGrp::recvt(int type, signed char* data, int ndata)
+MessageGrp::recvt(int sender, int type, signed char* data, int ndata)
 {
-  raw_recvt(type, data, ndata);
+  raw_recvt(sender, type, data, ndata);
 }
 
 // Broadcast operations

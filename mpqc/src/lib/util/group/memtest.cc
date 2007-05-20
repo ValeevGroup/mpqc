@@ -41,10 +41,6 @@ using namespace sc;
 
 // Force linkages:
 //#ifndef __PIC__
-#ifdef HAVE_SYSV_IPC
-#   include <util/group/messshm.h>
-    static ForceLink<ShmMessageGrp> fl0;
-#endif
 #ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
 #   include <util/group/memmtmpi.h>

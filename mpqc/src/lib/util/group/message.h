@@ -111,6 +111,20 @@ class GrpFunctionReduce: public GrpReduce<T> {
     a mechanism for moving data and objects between
     nodes in a parallel machine. */
 class MessageGrp: public DescribedClass {
+  public:
+    class MessageInfo {
+        friend class MessageGrp;
+      private:
+        int sender_;
+        int type_;
+        int nbyte_;
+      public:
+        int sender() const { return sender_; }
+        int type() const { return type_; }
+        int nbyte() const { return nbyte_; }
+    };
+    enum { AnyType = -1 };
+    enum { AnySender = -1 };
   private:
     // These are initialized by the initialize() member (see below).
     int me_;
@@ -131,7 +145,18 @@ class MessageGrp: public DescribedClass {
     Ref<MachineTopology> topology_;
 
     int debug_;
+
+    void set_sender(MessageInfo *info,int sender) {
+      if (info) info->sender_ = sender;
+    }
+    void set_type(MessageInfo *info,int type) {
+      if (info) info->type_ = type;
+    }
+    void set_nbyte(MessageInfo *info,int nbyte) {
+      if (info) info->nbyte_ = nbyte;
+    }
   public:
+
     MessageGrp();
     MessageGrp(const Ref<KeyVal>&);
     virtual ~MessageGrp();
@@ -202,25 +227,31 @@ class MessageGrp: public DescribedClass {
     virtual void recv(int sender, float* data, int ndata);
     void recv(int sender, double& data) { recv(sender,&data,1); }
     void recv(int sender, int& data) { recv(sender,&data,1); }
-    virtual void raw_recv(int sender, void* data, int nbyte) = 0;
+    virtual void raw_recv(int sender, void* data, int nbyte,
+                          MessageInfo *info=0) = 0;
 
     /** Receive messages sent by type.
         Similar members exist for each of the basic types. */
-    virtual void recvt(int type, double* data, int ndata);
-    virtual void recvt(int type, unsigned int* data, int ndata);
-    virtual void recvt(int type, int* data, int ndata);
-    virtual void recvt(int type, char* data, int nbyte);
-    virtual void recvt(int type, unsigned char* data, int nbyte);
-    virtual void recvt(int type, signed char* data, int nbyte);
-    virtual void recvt(int type, short* data, int ndata);
-    virtual void recvt(int type, long* data, int ndata);
-    virtual void recvt(int type, float* data, int ndata);
-    void recvt(int type, double& data) { recvt(type,&data,1); }
-    void recvt(int type, int& data) { recvt(type,&data,1); }
-    virtual void raw_recvt(int type, void* data, int nbyte) = 0;
+    virtual void recvt(int sender, int type, double* data, int ndata);
+    virtual void recvt(int sender, int type, unsigned int* data, int ndata);
+    virtual void recvt(int sender, int type, int* data, int ndata);
+    virtual void recvt(int sender, int type, char* data, int nbyte);
+    virtual void recvt(int sender, int type, unsigned char* data, int nbyte);
+    virtual void recvt(int sender, int type, signed char* data, int nbyte);
+    virtual void recvt(int sender, int type, short* data, int ndata);
+    virtual void recvt(int sender, int type, long* data, int ndata);
+    virtual void recvt(int sender, int type, float* data, int ndata);
+    void recvt(int sender, int type, double& data) {
+      recvt(sender,type,&data,1);
+    }
+    void recvt(int sender, int type, int& data) {
+      recvt(sender,type,&data,1);
+    }
+    virtual void raw_recvt(int sender, int type, void* data, int nbyte,
+                           MessageInfo *info=0) = 0;
 
     /// Ask if a given typed message has been received.
-    virtual int probet(int type) = 0;
+    virtual int probet(int sender, int type, MessageInfo*info=0) = 0;
 
     /** Do broadcasts of various types of data.
         Similar members exist for each of the basic types. */
@@ -349,67 +380,13 @@ class ProcMessageGrp: public MessageGrp {
     
     void raw_send(int target, const void* data, int nbyte);
     void raw_sendt(int target, int type, const void* data, int nbyte);
-    void raw_recv(int sender, void* data, int nbyte);
-    void raw_recvt(int type, void* data, int nbyte);
+    void raw_recv(int sender, void* data, int nbyte,
+                  MessageInfo *info=0);
+    void raw_recvt(int sender, int type, void* data, int nbyte,
+                   MessageInfo *info=0);
     void raw_bcast(void* data, int nbyte, int from);
-    int probet(int type);
+    int probet(int sender, int type, MessageInfo *info=0);
     void sync();
-};
-
-/** Uses integer message types to send and receive messages.
-    Message group specializations that use the MPI library
-    and the Paragon NX can be conveniently implemented in terms
-    of this. */
-class intMessageGrp: public MessageGrp {
-  protected:
-    int msgtype_nbit; // the total number of bits available
-    int ctl_nbit; // control information bits
-    int seq_nbit; // sequence information bits
-    int typ_nbit; // type information bits
-    int src_nbit; // source information bits
-
-    // Masks for the fields in the type.
-    int ctl_mask;
-    int seq_mask;
-    int typ_mask;
-    int src_mask;
-
-    // Shifts to construct a message type.
-    int ctl_shift;
-    int seq_shift;
-    int typ_shift;
-    int src_shift;
-
-    int msgtype_typ(int msgtype);
-    int typ_msgtype(int usrtype);
-    int seq_msgtype(int source, int seq);
-
-    // The next sequence number for each node is stored in these.
-    int *source_seq;
-    int *target_seq;
-    
-    /// Must be implemented by specializations.
-    virtual void basic_send(int target, int type, const void* data, int nbyte) = 0;
-    /// Must be implemented by specializations.
-    virtual void basic_recv(int type, void* data, int nbyte) = 0;
-    /// Must be implemented by specializations.
-    virtual int basic_probe(int type) = 0;
-
-    intMessageGrp();
-    intMessageGrp(const Ref<KeyVal>&);
-
-    void initialize(int me, int n, int nbits);
-  public:
-    ~intMessageGrp();
-
-    void raw_send(int target, const void* data, int nbyte);
-    void raw_recv(int sender, void* data, int nbyte);
-    void raw_sendt(int target, int type, const void* data, int nbyte);
-    void raw_recvt(int type, void* data, int nbyte);
-
-    int probet(int);
-
-    int leftover_ctl_bits();
 };
 
 }

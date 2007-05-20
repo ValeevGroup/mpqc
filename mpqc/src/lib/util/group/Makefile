@@ -32,19 +32,19 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 REQUIREDCXXSRC = mstate.cc \
-         message.cc messimpl.cc messproc.cc messint.cc \
+         message.cc messimpl.cc messproc.cc \
          reduce.cc topology.cc hcube.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc \
          memamsg.cc memproc.cc \
          pregtime.cc thread.cc memiter.cc memrdma.cc
 
-OPTIONALCXXSRC = messshm.cc messmpi.cc memshm.cc \
+OPTIONALCXXSRC = messmpi.cc memshm.cc \
                  memmtmpi.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 
 ifeq ($(HAVE_SYSV_IPC),yes)
-  CXXSRC += messshm.cc memshm.cc globcnt.cc
+  CXXSRC += memshm.cc globcnt.cc
 endif
 
 ifeq ($(HAVE_MPI),yes)

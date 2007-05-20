@@ -160,6 +160,7 @@ class StateSend: public MsgStateSend {
     StateSend(const StateSend&);
     void operator=(const StateSend&);
   private:
+    int type_;
     int target_;
   public:
     /// Create a StateSend given a MessageGrp.
@@ -168,6 +169,12 @@ class StateSend: public MsgStateSend {
     ~StateSend();
     /// Specify the target node.
     void target(int);
+    /// Return the target.
+    int get_target() const { return target_; }
+    /// Specify the type.
+    void type(int);
+    /// Return the type.
+    int get_type() const { return type_; }
     /// Flush the buffer.
     void flush();
 };
@@ -182,6 +189,9 @@ class StateRecv: public MsgStateRecv {
     void operator=(const StateRecv&);
   private:
     int source_;
+    int type_;
+    int last_source_;
+    int last_type_;
   protected:
     void next_buffer();
   public:
@@ -189,6 +199,12 @@ class StateRecv: public MsgStateRecv {
     StateRecv(const Ref<MessageGrp>&);
     /// Specify the source node.
     void source(int);
+    /// Specify the message type.
+    void type(int);
+    /// Return the source of the last message received.
+    int last_source();
+    /// Return the type of the last message received.
+    int last_type();
 };
 
 /** BcastStateSend does the send part of a broadcast of an object

@@ -279,7 +279,8 @@ MPIMessageGrp::raw_send(int target, const void* data, int nbyte)
 }
 
 void
-MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
+MPIMessageGrp::raw_recv(int sender, void* data, int nbyte,
+                        MessageInfo *info)
 {
   MPI_Status status;
   if (sender == -1) sender = MPI_ANY_SOURCE;
@@ -302,16 +303,20 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
           << sender << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  rnode = status.MPI_SOURCE;
-  rtag = status.MPI_TAG;
-  rlen = nbyte;
-  if (debug_) ExEnv::outn() << scprintf("%3d: recvd %d bytes\n", me(), rlen) << endl;
+  set_sender(info,status.MPI_SOURCE);
+  set_type(info,-1);
+  set_nbyte(info,nbyte);
+  if (debug_) {
+      int rnode = status.MPI_SOURCE;
+      int rlen = nbyte;
+      ExEnv::outn() << scprintf("%3d: recvd %d bytes\n", me(), rlen) << endl;
+    }
 }
 
 void
 MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
 {
-  type = (type<<1) + 1;
+  type = type*2 + 1;
   if (debug_) {
       ExEnv::outn() << scprintf("%3d: MPI_Send"
                        "(0x%08x, %5d, MPI_BYTE, %3d, %5d, commgrp)",
@@ -336,23 +341,25 @@ MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
 }
 
 void
-MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
+MPIMessageGrp::raw_recvt(int sender, int type, void* data, int nbyte,
+                         MessageInfo *info)
 {
   MPI_Status status;
+  if (sender == -1) sender = MPI_ANY_SOURCE;
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
   if (debug_) {
       ExEnv::outn() << scprintf("%3d: MPI_Recv(0x%08x, %5d, MPI_BYTE, "
-                       "MPI_ANY_SOURCE, %5d, commgrp,)",
-                       me(), data, nbyte, type)
+                       "%5d, %5d, commgrp,)",
+                       me(), data, nbyte, sender, type)
            << endl;
     }
   int ret;
 #ifndef USE_IMMEDIATE_MODE
-  ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,commgrp,&status);
+  ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,type,commgrp,&status);
 #else
   MPI_Request mpireq;
-  ret = MPI_Irecv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,commgrp,&mpireq);
+  ret = MPI_Irecv(data,nbyte,MPI_BYTE,sender,type,commgrp,&mpireq);
   if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
 #endif // USE_IMMEDIATE_MODE
   if (ret != MPI_SUCCESS) {
@@ -360,43 +367,56 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
           << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  rnode = status.MPI_SOURCE;
-  rtag = status.MPI_TAG;
-  rlen = nbyte;
+  if (info) {
+      set_sender(info,status.MPI_SOURCE);
+      set_type(info,(status.MPI_TAG-1)/2);
+      set_nbyte(info,nbyte);
+    }
   if (debug_) {
+      int rnode = status.MPI_SOURCE;
+      int rtag = status.MPI_TAG;
+      int rlen = nbyte;
       ExEnv::outn() << scprintf("%3d: recvd %d bytes from %d with tag %d\n",
                        me(), rlen, rnode, rtag) << endl;
     }
 }
 
 int
-MPIMessageGrp::probet(int type)
+MPIMessageGrp::probet(int sender, int type,
+                      MessageInfo *info)
 {
   int flag;
   MPI_Status status;
 
+  if (sender == -1) sender = MPI_ANY_SOURCE;
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
   int ret;
   if (debug_) {
-      ExEnv::outn() << scprintf("%3d: MPI_Iprobe(MPI_ANY_SOURCE, %5d, commgrp, "
-                       "&flag, &status)", me(), type)
+      ExEnv::outn() << scprintf("%3d: MPI_Iprobe(%5d, %5d, commgrp, "
+                       "&flag, &status)", me(), sender, type)
            << endl;
     }
-  if ((ret = MPI_Iprobe(MPI_ANY_SOURCE,type,commgrp,&flag,&status))
+  if ((ret = MPI_Iprobe(sender,type,commgrp,&flag,&status))
       != MPI_SUCCESS ) {
       ExEnv::outn() << me() << ": MPIMessageGrp::probet("
           << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   if (flag) {
-    rnode = status.MPI_SOURCE;
-    rtag = status.MPI_TAG;
-    MPI_Get_count(&status, MPI_BYTE, &rlen);
-    return 1;
+      int nbyte;
+      MPI_Get_count(&status, MPI_BYTE, &nbyte);
+      set_sender(info,status.MPI_SOURCE);
+      set_type(info,(status.MPI_TAG-1)/2);
+      set_nbyte(info,nbyte);
+      return 1;
     }
   else {
-    rnode = rtag = rlen = 0;
+      if (info) {
+          set_sender(info,-1);
+          set_type(info,-1);
+          set_nbyte(info,0);
+        }
     }
     
   return 0;

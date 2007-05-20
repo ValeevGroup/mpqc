@@ -43,10 +43,6 @@ class MPIMessageGrp: public MessageGrp {
     void* buf;
     int bufsize;
 
-    int rnode;
-    int rtag;
-    int rlen;
-
     /// If true use the generic collective routines in the base class
     bool use_messagegrp_collectives_;
 
@@ -78,11 +74,13 @@ class MPIMessageGrp: public MessageGrp {
     Ref<MessageGrp> clone(void);
     
     void raw_send(int target, const void* data, int nbyte);
-    void raw_recv(int sender, void* data, int nbyte);
+    void raw_recv(int sender, void* data, int nbyte,
+                  MessageInfo *info=0);
     void raw_sendt(int target, int type, const void* data, int nbyte);
-    void raw_recvt(int type, void* data, int nbyte);
+    void raw_recvt(int sender, int type, void* data, int nbyte,
+                   MessageInfo *info=0);
 
-    int probet(int type);
+    int probet(int sender, int type, MessageInfo *info=0);
 
     void sync();
 

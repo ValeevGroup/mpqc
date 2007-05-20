@@ -359,7 +359,8 @@ MsgStateRecv::get(double*& d)
 
 StateSend::StateSend(const Ref<MessageGrp>&grp_):
   MsgStateSend(grp_),
-  target_(0)
+  target_(0),
+  type_(0)
 {
 }
 
@@ -374,7 +375,7 @@ StateSend::flush()
   if (nbuf == 0) return;
   *nbuf_buffer = nbuf;
   translate_->translator()->to_external(nbuf_buffer,1);
-  grp->raw_send(target_, send_buffer, nbuf + nheader);
+  grp->raw_sendt(target_, type_, send_buffer, nbuf + nheader);
   nbuf = 0;
 }
 
@@ -385,22 +386,34 @@ StateSend::target(int t)
   ps_.clear();
 }
 
+void
+StateSend::type(int t)
+{
+  type_ = t;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // StateRecv member functions
 
 StateRecv::StateRecv(const Ref<MessageGrp>&grp_):
   MsgStateRecv(grp_),
-  source_(0)
+  source_(0),
+  type_(-1),
+  last_type_(-1),
+  last_source_(-1)
 {
 }
 
 void
 StateRecv::next_buffer()
 {
-  grp->raw_recv(source_, send_buffer, bufsize+nheader);
+  MessageGrp::MessageInfo info;
+  grp->raw_recvt(source_, type_, send_buffer, bufsize+nheader,&info);
   translate_->translator()->to_native(nbuf_buffer,1);
   nbuf = *nbuf_buffer;
   ibuf = 0;
+  last_type_ = info.type();
+  last_source_ = info.sender();
 }
 
 void
@@ -408,6 +421,24 @@ StateRecv::source(int s)
 {
   source_ = s;
   ps_.clear();
+}
+
+void
+StateRecv::type(int t)
+{
+  type_ = t;
+}
+
+int
+StateRecv::last_type()
+{
+  return last_type_;
+}
+
+int
+StateRecv::last_source()
+{
+  return last_source_;
 }
 
 ///////////////////////////////////////////////////////////////////////////

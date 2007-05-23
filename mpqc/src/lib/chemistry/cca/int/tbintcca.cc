@@ -53,7 +53,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
                              const Ref<GaussianBasisSet> &bs2,
 			     const Ref<GaussianBasisSet> &bs3,
 			     const Ref<GaussianBasisSet> &bs4,
-			     IntegralSuperFactoryInterface fac,
+			     IntegralEvaluatorFactoryInterface fac,
 			     CompositeIntegralDescrInterface cdesc ):
   TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
@@ -209,7 +209,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
     const Ref<GaussianBasisSet> &bs2,
     const Ref<GaussianBasisSet> &bs3,
     const Ref<GaussianBasisSet> &bs4,
-    IntegralSuperFactoryInterface fac,
+    IntegralEvaluatorFactoryInterface fac,
     CompositeIntegralDescrInterface cdesc ) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),

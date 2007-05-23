@@ -198,8 +198,7 @@ MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
 }
 
 /**
- *  Get buffer pointer for given type.
- * @return Buffer pointer. 
+ *  Deprecated -- do not use !!! 
  */
 void*
 MPQC::IntegralEvaluator4_impl::get_buffer_impl (
@@ -329,13 +328,7 @@ MPQC::IntegralEvaluator4_impl::compute_impl (
 }
 
 /**
- *  Compute a shell quartet of integrals and return as a borrowed
- * sidl array.
- * @param shellnum1 Gaussian shell number 1.
- * @param shellnum2 Gaussian shell number 2.
- * @param shellnum3 Gaussian shell number 3.
- * @param shellnum4 Gaussian shell number 4.
- * @return Borrowed sidl array buffer. 
+ *  Deprecated -- do not use !!! 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator4_impl::compute_array_impl (

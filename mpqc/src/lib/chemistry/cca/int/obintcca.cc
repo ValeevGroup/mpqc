@@ -43,7 +43,7 @@ using namespace Chemistry::QC::GaussianBasis;
 OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 			      const Ref<GaussianBasisSet>& bs1, 
 			      const Ref<GaussianBasisSet>& bs2,
-			      IntegralSuperFactoryInterface fac,
+			      IntegralEvaluatorFactoryInterface fac,
 			      CompositeIntegralDescrInterface cdesc,
                               bool reorder ):
   OneBodyInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
@@ -144,7 +144,7 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(
   Integral *integral,
   const Ref<GaussianBasisSet>&bs1,
   const Ref<GaussianBasisSet>&bs2,
-  IntegralSuperFactoryInterface eval_factory,
+  IntegralEvaluatorFactoryInterface eval_factory,
   CompositeIntegralDescrInterface cdesc,
   bool reorder
 ):

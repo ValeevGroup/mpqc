@@ -62,9 +62,9 @@ class AbstractCCAFramework: public CCAFramework {
     virtual ccaffeine::AbstractFramework* get_framework() = 0;
 };
 
-/** The Ext_CCAFramework class handles externally initialized 
+/** The ExternalCCAFramework class handles externally initialized 
     CCA frameworks. */
-class Ext_CCAFramework: public CCAFramework {
+class ExternalCCAFramework: public CCAFramework {
 
     gov::cca::Services services_;
     gov::cca::ports::BuilderService bs_;
@@ -73,7 +73,7 @@ class Ext_CCAFramework: public CCAFramework {
 
   public:
     /// Initialize the framework.
-    Ext_CCAFramework(gov::cca::Services &services);
+    ExternalCCAFramework(gov::cca::Services &services);
     /// Returns pointer to Services object
     virtual gov::cca::Services* get_services();
     /// Returns pointer to BuilderService object

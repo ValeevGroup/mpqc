@@ -315,10 +315,10 @@ MPQC::ModelFactory_impl::get_model_impl ()
 
     if( theory_.size() == 0 )
       theory_ = std::string( tm.getString("theory",
-      					  "failed theory fetch") );
+                                          "failed theory fetch") );
     if( basis_.size() == 0 )
       basis_  = std::string( tm.getString("basis",
-					  "failed basis fetch") );
+                                          "failed basis fetch") );
 
     if (theory_ == "HF") {
       input << "  model<CLHF>:(" << std::endl;
@@ -351,7 +351,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
   use_cca_integrals_ = bool( tm.getBool("use_cca_integrals",0) ); 
   if( use_cca_integrals_ )
     if( !CCAEnv::initialized() ) {
-      Ref<CCAFramework> fw = new Ext_CCAFramework(services_);
+      Ref<CCAFramework> fw = new ExternalCCAFramework(services_);
       CCAEnv::init( fw );
     }
 
@@ -425,19 +425,19 @@ MPQC::ModelFactory_impl::setServices_impl (
 
   try {
       services_.addProvidesPort( *this, "ModelFactoryInterface", 
-				"Chemistry.QC.ModelFactoryInterface", 0);
+        "Chemistry.QC.ModelFactoryInterface", 0);
       services_.registerUsesPort("ppf",
-				 "gov.cca.ports.ParameterPortFactory", 0);
+        "gov.cca.ports.ParameterPortFactory", 0);
       services_.registerUsesPort("BasisName", 
-				 "Util.StringProvider", 0);
+        "Util.StringProvider", 0);
       services_.registerUsesPort("TheoryName", 
-				 "Util.StringProvider", 0);
+        "Util.StringProvider", 0);
       services_.registerUsesPort("MoleculeFile", 
-				 "Util.StringProvider", 0);
+        "Util.StringProvider", 0);
       services_.registerUsesPort("MoleculeFactoryInterface", 
-				 "Chemistry.MoleculeFactoryInterface", 0);
-  //    services_.registerUsesPort("IntegralEvaluatorFactory",
-  //		     "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",0);
+        "Chemistry.MoleculeFactoryInterface", 0);
+      services_.registerUsesPort("IntegralEvaluatorFactoryInterface",
+        "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface", 0);
   }
   catch (gov::cca::CCAException e) {
       std::cout << "Error using services: "
@@ -498,3 +498,4 @@ MPQC::ModelFactory_impl::setServices_impl (
 // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._misc)
 // Insert-Code-Here {MPQC.ModelFactory._misc} (miscellaneous code)
 // DO-NOT-DELETE splicer.end(MPQC.ModelFactory._misc)
+

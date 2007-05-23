@@ -36,7 +36,7 @@
 #include <map>
 #include <sidl_cxx.hxx>
 #include <chemistry/qc/basis/tbint.h>
-#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactoryInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <MPQC_GaussianBasisMolecular.hxx>
 
@@ -52,7 +52,7 @@ namespace sc {
 
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     std::vector< Chemistry::QC::GaussianBasis::IntegralDescrInterface > descriptors_;
     std::vector< std::string > types_;
@@ -73,7 +73,7 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&b2,
 		   const Ref<GaussianBasisSet>&b3, 
 		   const Ref<GaussianBasisSet>&b4,	   
-		   Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+		   Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
 		   Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface );
     ~TwoBodyIntCCA();
 
@@ -97,7 +97,7 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     std::vector< Chemistry::QC::GaussianBasis::IntegralDescrInterface > descriptors_;
     std::vector< std::string > types_;
@@ -125,7 +125,7 @@ namespace sc {
 			const Ref<GaussianBasisSet>&b2,
 			const Ref<GaussianBasisSet>&b3, 
 			const Ref<GaussianBasisSet>&b4,	   
-			Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+			Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
 			Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface );
     ~TwoBodyDerivIntCCA();
 

@@ -145,8 +145,7 @@ namespace MPQC {
     init_reorder_impl() ;
 
     /**
-     *  Get buffer pointer for given type.
-     * @return Buffer pointer. 
+     *  Deprecated -- do not use !!! 
      */
     void*
     get_buffer_impl (
@@ -196,12 +195,7 @@ namespace MPQC {
 
 
     /**
-     *  Compute a shell triplet of integrals and return as a borrowed
-     * sidl array.
-     * @param shellnum1 Gaussian shell number 1.
-     * @param shellnum2 Gaussian shell number 2.
-     * @param shellnum3 Gaussian shell number 3.
-     * @return Borrowed sidl array buffer. 
+     *  Deprecated -- do not use !!! 
      */
     ::sidl::array<double>
     compute_array_impl (

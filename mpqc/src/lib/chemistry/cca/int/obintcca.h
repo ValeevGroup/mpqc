@@ -35,7 +35,7 @@
 #include <vector>
 #include <sidl_cxx.hxx>
 #include <chemistry/qc/basis/obint.h>
-#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactoryInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <MPQC_GaussianBasisMolecular.hxx>
@@ -51,7 +51,7 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     bool reorder_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
@@ -67,7 +67,7 @@ namespace sc {
     OneBodyIntCCA( Integral* integral,
 		   const Ref<GaussianBasisSet>&, 
 		   const Ref<GaussianBasisSet>&,
-		   Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+		   Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
 		   Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
 		   bool );
     ~OneBodyIntCCA();
@@ -86,7 +86,7 @@ namespace sc {
   private:
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
     bool reorder_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
@@ -102,7 +102,7 @@ namespace sc {
     OneBodyDerivIntCCA( Integral* integral,
 		        const Ref<GaussianBasisSet>&,
 		        const Ref<GaussianBasisSet>&,
-			Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface,
+			Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
 		        Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
 			bool );
     ~OneBodyDerivIntCCA();

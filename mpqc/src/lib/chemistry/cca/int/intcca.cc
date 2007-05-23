@@ -25,8 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
-
 #include <sstream>
 #include <iostream>
 #include <vector>
@@ -38,6 +36,8 @@
 #include <chemistry/cca/int/obintcca.h>
 #include <chemistry/cca/int/tbintcca.h>
 #include <util/class/scexception.h>
+#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
 #include <ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_OverlapIntegralDescr.hxx>
@@ -96,18 +96,16 @@ IntegralCCA::IntegralCCA( const Ref<GaussianBasisSet> &b1,
                           const Ref<GaussianBasisSet> &b3,
                           const Ref<GaussianBasisSet> &b4,
                           std::string default_sf,
-                          std::string factory_type,
+                          bool use_superfac,
                           sidl::array<std::string> types,
                           sidl::array<std::string> derivs,
                           sidl::array<std::string> sfacs,
                           bool intv3_order
                          ):
   Integral(b1,b2,b3,b4),
-  default_subfactory_(default_sf), factory_type_(factory_type),
+  default_subfactory_(default_sf), use_superfac_(use_superfac),
   types_(types), derivs_(derivs), sfacs_(sfacs), intv3_order_(intv3_order)
 {
-  superfactory_type_ = "Chemistry.IntegralSuperFactory";
-
   eval_req_ = CompositeIntegralDescr::_create();
 
   initialize_transforms();
@@ -120,8 +118,6 @@ IntegralCCA::IntegralCCA( const Ref<GaussianBasisSet> &b1,
 IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
 {
-  superfactory_type_ = "Chemistry.IntegralSuperFactory";
-
   eval_req_ = CompositeIntegralDescr::_create();
 
   //------------
@@ -138,14 +134,13 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
                     << "Using intv3 integral ordering by user request\n";
   }
   
-  // get evaluator factory type (default to SuperFactory)
-  factory_type_ = keyval->stringvalue("evaluator_factory");
-  if ( keyval->error() != KeyVal::OK ) {
-    factory_type_ = superfactory_type_;
-  }
+  // use superfactory?
+  use_superfac_ = keyval->booleanvalue("superfactory");
+  if ( keyval->error() != KeyVal::OK )
+    use_superfac_ = true;
 
   // get subfactory configuration
-  if ( factory_type_ == superfactory_type_ ) {
+  if ( use_superfac_ ) {
 
     // get a default
     default_subfactory_ = keyval->stringvalue("default_subfactory");
@@ -208,9 +203,8 @@ void
 IntegralCCA::save_data_state(StateOut& s)
 {
   Integral::save_data_state(s);
-  s.put(superfactory_type_);
+  s.put(use_superfac_);
   s.put(buffer_);
-  s.put(factory_type_);
   s.put(default_subfactory_);
   s.put(std_types_);
   s.put(std_sfacs_);
@@ -225,9 +219,8 @@ IntegralCCA::IntegralCCA(StateIn& s):
 
   eval_req_ = CompositeIntegralDescr::_create();
 
-  s.get(superfactory_type_);
+  s.get(use_superfac_);
   s.get(buffer_);
-  s.get(factory_type_);
   s.get(default_subfactory_);
   s.get(std_types_);
   s.get(std_sfacs_);
@@ -256,9 +249,9 @@ IntegralCCA::init_factory()
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
   // get a (super) evaluator factory
-  int nsubfac;
-  IntegralSuperFactoryInterface superfac;
-  if( factory_type_ == superfactory_type_ ) {
+  if( use_superfac_ ) {
+    int nsubfac;
+    IntegralSuperFactoryInterface superfac;
 
     ostringstream fname;
       fname << "evaluator_factory" << factory_instance_number;
@@ -267,7 +260,6 @@ IntegralCCA::init_factory()
     ++factory_instance_number;
 
     // get the super factory
-    //fac_id_ = bs.createInstance(fname.str(),factory_type_,type_map);
     fac_id_ = bs.createInstance(fname.str(),"Chemistry.IntegralSuperFactory",type_map);
     services.registerUsesPort(
       fname_port.str(),
@@ -276,14 +268,14 @@ IntegralCCA::init_factory()
     fac_con_ = bs.connect(my_id,fname_port.str(),
                           fac_id_,"IntegralSuperFactoryInterface");
     eval_factory_ = sidl::babel_cast<
-      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface> (
         services.getPort(fname_port.str()) );
     superfac = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
         services.getPort(fname_port.str()) );
 
-    eval_factory_.set_default_subfactory( default_subfactory_ );
-    eval_factory_.set_subfactory_config( types_, derivs_, sfacs_ );
+    superfac.set_default_subfactory( default_subfactory_ );
+    superfac.set_subfactory_config( types_, derivs_, sfacs_ );
 
     // get sub factories
     set<string> subfac_set;
@@ -337,8 +329,11 @@ IntegralCCA::init_factory()
                       (*miter).second, "IntegralEvaluatorFactoryInterface") );
     }
   }
+  // else do a straightforward hookup to 1 factory
   else { 
-    //do a straightforward hook up
+    eval_factory_ = sidl::babel_cast<
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface> (
+        services.getPort("IntegralEvaluatorFactoryInterface") );
   }
 
   eval_factory_.set_storage(0);
@@ -381,7 +376,7 @@ Integral*
 IntegralCCA::clone()
 {
   return new IntegralCCA( bs1_, bs2_, bs3_, bs4_,
-                          default_subfactory_, factory_type_,
+                          default_subfactory_, use_superfac_,
                           types_, derivs_, sfacs_, intv3_order_ );
 }
 

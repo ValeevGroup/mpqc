@@ -31,7 +31,6 @@
 #include <gov_cca.hxx>
 #include <chemistry/qc/basis/integral.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactoryInterface.hxx>
-#include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
 #include <ChemistryCXX_Molecule.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <chemistry/molecule/molecule.h>
@@ -57,7 +56,7 @@ namespace sc {
     private:
 
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface factory_;
       bool reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
@@ -67,7 +66,7 @@ namespace sc {
       
       onebody_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac, 
+          Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface fac, 
           bool reorder ):
 	integral_(integral), factory_(fac), reorder_(reorder) 
       { }
@@ -94,7 +93,7 @@ namespace sc {
     private:
 
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface factory_;
       bool reorder_;
       Ref<GaussianBasisSet> bs1_, bs2_;
 
@@ -104,7 +103,7 @@ namespace sc {
 
       onebody_deriv_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac, 
+          Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface fac, 
           bool reorder ):
 	integral_(integral), factory_(fac), reorder_(reorder)
       { }
@@ -132,7 +131,7 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface factory_;
 
     public:
       
@@ -140,7 +139,7 @@ namespace sc {
 
       twobody_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac ):
+          Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface fac ):
 	integral_(integral), factory_(fac)
       { }
 
@@ -169,7 +168,7 @@ namespace sc {
 
       Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
       Integral* integral_;
-      Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface factory_;
+      Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface factory_;
 
     public:
       
@@ -177,7 +176,7 @@ namespace sc {
 
       twobody_deriv_generator(
           Integral* integral,
-          Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface fac ):
+          Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface fac ):
 	integral_(integral), factory_(fac)
       { }
 
@@ -229,6 +228,7 @@ namespace sc {
     
     int maxl_;
     bool intv3_order_;
+    bool use_superfac_;
     gov::cca::ComponentID fac_id_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
@@ -236,10 +236,8 @@ namespace sc {
     std::vector<Chemistry::QC::GaussianBasis::DerivCentersInterface> cca_dcs_;
     std::vector<Chemistry::QC::GaussianBasis::IntegralDescrInterface> descs_;
     std::string buffer_;
-    std::string factory_type_;
-    std::string superfactory_type_;
     std::string default_subfactory_;
-    Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface eval_factory_;
+    Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface eval_req_;
 
     sidl::array<std::string> types_;
@@ -275,17 +273,6 @@ namespace sc {
     
   public:
 
-    /* It'll take a fair bit of work to get superfactory to work in ccafe
-    /* This constructor is used when the framework is not embedded. */
-/*
-    IntegralCCA( IntegralSuperFactory eval_factory, 
-		 bool use_opaque,
-                 const Ref<GaussianBasisSet> &b1=0,
-                 const Ref<GaussianBasisSet> &b2=0,
-                 const Ref<GaussianBasisSet> &b3=0,
-                 const Ref<GaussianBasisSet> &b4=0 );
-*/
-
     /** The KeyVal constructor.
         This constructor is used when the framework is embedded.
         The following keywords are read:
@@ -312,7 +299,7 @@ namespace sc {
                  const Ref<GaussianBasisSet> &b3,
                  const Ref<GaussianBasisSet> &b4,
                  std::string default_sf,
-                 std::string factory_type,
+                 bool use_superfac,
                  sidl::array<std::string> types,
                  sidl::array<std::string> derivs,
                  sidl::array<std::string> sfacs,

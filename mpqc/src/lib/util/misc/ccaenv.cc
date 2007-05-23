@@ -33,9 +33,8 @@
 
 using namespace sc;
 
-Ext_CCAFramework::Ext_CCAFramework(gov::cca::Services &services )
+ExternalCCAFramework::ExternalCCAFramework(gov::cca::Services &services )
 {
-  std::cerr << "initing Ext framework with services: " << &services << std::endl;
   services_ = services;
   type_map_ = services_.createTypeMap();
   my_id_    = services_.getComponentID();
@@ -44,19 +43,19 @@ Ext_CCAFramework::Ext_CCAFramework(gov::cca::Services &services )
 }
 
 gov::cca::Services*
-Ext_CCAFramework::get_services()
+ExternalCCAFramework::get_services()
 { return &services_; }
 
 gov::cca::ports::BuilderService*
-Ext_CCAFramework::get_builder_service()
+ExternalCCAFramework::get_builder_service()
 { return &bs_; }
 
 gov::cca::TypeMap*
-Ext_CCAFramework::get_type_map()
+ExternalCCAFramework::get_type_map()
 { return &type_map_; }
 
 gov::cca::ComponentID*
-Ext_CCAFramework::get_component_id()
+ExternalCCAFramework::get_component_id()
 { return &my_id_; }
 
 //////////////////////////////////////////////////////////////////////////////

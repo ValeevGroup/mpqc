@@ -423,7 +423,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(r12ints_file_default));
   // if the last character of r12ints_file is '/' then append the default basename
   if (*(r12ints_file_.rbegin()) == '/')
-    r12ints_file_ += std::string(SCFormIO::default_basename()) + ".moints";
+    r12ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
@@ -712,6 +712,15 @@ const Ref<LinearR12::CorrelationFactor>&
 MBPT2_R12::corrfactor() const
 {
   return corrfactor_;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+void
+MBPT2_R12::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
+{
+  corrfactor_ = cf;
+  obsolete();
 }
 
 /////////////////////////////////////////////////////////////////////////////

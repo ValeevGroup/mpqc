@@ -33,6 +33,7 @@
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/gaussianfit.h>
 
 using namespace sc;
 using namespace LinearR12;

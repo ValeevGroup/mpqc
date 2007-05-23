@@ -29,17 +29,49 @@
 #pragma interface
 #endif
 
+#ifndef _chemistry_qc_mbptr12_linearr12_h
+#define _chemistry_qc_mbptr12_linearr12_h
+
 #include <string>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/basis/tbint.h>
 
-#ifndef _chemistry_qc_mbptr12_linearr12_h
-#define _chemistry_qc_mbptr12_linearr12_h
-
 namespace sc {
   namespace LinearR12 {
     
+    /**
+      Projector of linear R12 methods:
+      0: Q_{12} = 1
+      1: Q_{12} = (1 - P_1)(1 - P_2)
+      2: Q_{12} = (1 - V_1 V_2)(1 - O_1)(1 - O_2)
+      3: Q_{12} = 1 - P_1 P_2
+    */
+    enum Projector {Projector_0 = 0,
+         Projector_1 = 1,
+	 Projector_2 = 2,
+	 Projector_3 = 3};
+    enum StandardApproximation {StdApprox_A = 0,
+				StdApprox_Ap = 1,
+				StdApprox_App = 2,
+				StdApprox_B = 3,
+                                StdApprox_C = 4};
+    enum ABSMethod {ABS_ABS = 0,
+		    ABS_ABSPlus = 1,
+		    ABS_CABS = 2,
+		    ABS_CABSPlus = 3};
+
+    enum OrbitalProduct {
+	OrbProd_ij = 0,
+	OrbProd_pq = 1
+    };
+
+    enum PositiveDefiniteB {
+      PositiveDefiniteB_no = 0,
+      PositiveDefiniteB_yes = 1,
+      PositiveDefiniteB_weak = 2
+    };
+
     /** CorrelationFactor is a set of one or more two-particle functions
         of the interparticle distance. Each function may be a primitive function
         or a contraction of several functions.
@@ -282,39 +314,11 @@ namespace sc {
       void print_params(std::ostream& os, unsigned int f) const;
 
     };
-    
-    /**
-      Projector of linear R12 methods:
-      0: Q_{12} = 1
-      1: Q_{12} = (1 - P_1)(1 - P_2)
-      2: Q_{12} = (1 - V_1 V_2)(1 - O_1)(1 - O_2)
-      3: Q_{12} = 1 - P_1 P_2
-    */
-    enum Projector {Projector_0 = 0,
-         Projector_1 = 1,
-	 Projector_2 = 2,
-	 Projector_3 = 3};
-    enum StandardApproximation {StdApprox_A = 0,
-				StdApprox_Ap = 1,
-				StdApprox_App = 2,
-				StdApprox_B = 3,
-                                StdApprox_C = 4};
-    enum ABSMethod {ABS_ABS = 0,
-		    ABS_ABSPlus = 1,
-		    ABS_CABS = 2,
-		    ABS_CABSPlus = 3};
 
-    enum OrbitalProduct {
-	OrbProd_ij = 0,
-	OrbProd_pq = 1
-    };
+    /// fits exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
+    template <class CorrFactor, class Fitter>
+      Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma);
 
-    enum PositiveDefiniteB {
-      PositiveDefiniteB_no = 0,
-      PositiveDefiniteB_yes = 1,
-      PositiveDefiniteB_weak = 2
-    };
-			       
   }
 
 }

@@ -57,7 +57,8 @@ CXXSRCS = mbptr12.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxApp.cc ansatz.cc \
-  mp2r12_energy_util.cc compute_VXB_a.cc
+  mp2r12_energy_util.cc compute_VXB_a.cc \
+  gaussianfit.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc
@@ -75,11 +76,6 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
-ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d)
-endif
-
 mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o mbptr12test $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
@@ -94,3 +90,8 @@ f77sym.h: f77sym.in
 
 distclean::
 	/bin/rm -f f77sym.h
+
+mbptr12test.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.$(OBJSUF)=.d) mbptr12test.d
+endif

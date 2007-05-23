@@ -277,6 +277,8 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     const Ref<LinearR12::CorrelationFactor>& corrfactor() const;
+    /// this changes the correlation factor
+    void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
     Ref<GaussianBasisSet> aux_basis() const;
     Ref<GaussianBasisSet> vir_basis() const;
     unsigned int maxnabs() const;

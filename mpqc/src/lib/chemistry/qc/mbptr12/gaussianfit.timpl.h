@@ -111,6 +111,7 @@ namespace sc {
 	template <class Function, class Weight>
 	void eval_f(double* params, double* f, int nparam, int np, void *extraparams) {
 	    typedef ExtraParams<Function,Weight> XPS;
+            typedef GaussianFit<Function,Weight> GaussFit;
 	    XPS* XParams = static_cast<XPS*>(extraparams);
 	    const double lb = XParams->lb;
 	    const double ub = XParams->ub;
@@ -128,15 +129,23 @@ namespace sc {
 		    const double coef = params[i++];
 		    fitvalue += coef * std::pow(x,k) * std::exp(-gamma*x*x);
 		}
-		const double df = fitvalue - F(x);
-		// lm will minimize the difference between the target function (identically 0.0) and the fitting function (Function - fit)
-		// to weigh the sum of squares by W need to multiply this by the square root of W
-		f[p] = df * std::sqrt(W(x));
+
+                if (GaussFit::weigh_F) {
+                  const double df = fitvalue - W(x) * F(x);
+                  f[p] = df;
+                }
+                else {
+		  const double df = fitvalue - F(x);
+		  // lm will minimize the difference between the target function (identically 0.0) and the fitting function (Function - fit)
+		  // to weigh the sum of squares by W need to multiply this by the square root of W
+		  f[p] = df * std::sqrt(W(x));
+                }
 	    }
 	}
 	template <class Function, class Weight>
 	void eval_dfdp(double* params, double* dfdp, int nparam, int np, void *extraparams) {
 	    typedef ExtraParams<Function,Weight> XPS;
+            typedef GaussianFit<Function,Weight> GaussFit;
 	    XPS* XParams = static_cast<XPS*>(extraparams);
 	    const double lb = XParams->lb;
 	    const double ub = XParams->ub;
@@ -156,8 +165,14 @@ namespace sc {
 		    const double gamma = params[p1];
 		    const double coef = params[p2];
 		    const double expgxx =  std::pow(x,k) * std::exp(-gamma*x*x);
-		    dfdp[j++] = - sqrt_W * (x * x * coef * expgxx);
-		    dfdp[j++] = sqrt_W * expgxx;
+                    if (GaussFit::weigh_F) {
+                      dfdp[j++] = - (x * x * coef * expgxx);
+                      dfdp[j++] = expgxx;
+                    }
+                    else {
+		      dfdp[j++] = - sqrt_W * (x * x * coef * expgxx);
+		      dfdp[j++] = sqrt_W * expgxx;
+                    }
 		}
 	    }
 	}
@@ -184,13 +199,13 @@ namespace sc {
 	xp.lb = left_;
 	xp.ub = right_;
 	xp.k = k_;
-	const double ngaussians = gaussians_.size();
+	const int ngaussians = gaussians_.size();
 	
 	extract_params();
 	
 	const int niter = dlevmar_der(mbptr12::__to_extern_C_eval<Function,Weight>::f_ptr,
 				      mbptr12::__to_extern_C_eval<Function,Weight>::dfdp_ptr,
-				      p_, scratch_, 2*ngaussians, npts_, 1000, NULL, NULL, NULL, NULL, static_cast<void*>(&xp));
+				      p_, scratch_, 2*ngaussians, npts_, 100000, NULL, NULL, NULL, NULL, static_cast<void*>(&xp));
 	if (niter > 0) {
 	    if (classdebug_) {
 		std::cout << "GaussianFit() -- converged in " << niter << " iterations" << std::endl;

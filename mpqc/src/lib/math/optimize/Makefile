@@ -62,6 +62,7 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 default:: $(DEPENDINCLUDE)
 
 install_inc::
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)/levmar
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/levmar/lm.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)/levmar
 
 opttest: opttest.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)

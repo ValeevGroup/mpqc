@@ -33,10 +33,29 @@
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/linearr12.timpl.h>
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 
 using namespace sc;
 using namespace LinearR12;
+
+namespace sc {
+  namespace LinearR12 {
+    template <>
+    bool
+    CorrParamCompare<IntParamsG12>::equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B) {
+      return (std::fabs(A.first-B.first) < epsilon && std::fabs(A.second-B.second) < epsilon);
+    }
+    
+    template <>
+    bool
+    CorrParamCompare<IntParamsGenG12>::equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B) {
+      return (std::fabs(A.first.first-B.first.first) < epsilon &&
+	      std::fabs(A.first.second-B.first.second) < epsilon &&
+	      std::fabs(A.second-B.second) < epsilon);
+    }
+  };
+};
 
 CorrelationFactor::CorrelationFactor(const std::string& label) :
   label_(label)
@@ -165,6 +184,13 @@ NullCorrelationFactor::value(unsigned int c, double r12) const
   return 0.0;
 }
 
+bool
+NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<NullCorrelationFactor> cf_null; cf_null << cf;
+  return cf_null.nonnull();
+}
+
 ////
 
 R12CorrelationFactor::R12CorrelationFactor() :
@@ -200,6 +226,13 @@ double
 R12CorrelationFactor::value(unsigned int c, double r12) const
 {
   return r12;
+}
+
+bool
+R12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<R12CorrelationFactor> cf_cast; cf_cast << cf;
+  return cf_cast.nonnull();
 }
 
 ////
@@ -314,6 +347,13 @@ G12CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
   os << " ]" << endl;
 }
 
+bool
+G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<G12CorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
+}
 
 ////
 
@@ -420,6 +460,13 @@ G12NCCorrelationFactor::print_params(std::ostream& os, unsigned int f) const
   os << " ]" << endl;
 }
 
+bool
+G12NCCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<G12NCCorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
+}
 
 ////
 
@@ -529,3 +576,12 @@ GenG12CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
   }
   os << " ]" << endl;
 }
+
+bool
+GenG12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<GenG12CorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return CorrParamCompare<IntParamsGenG12>::equiv(params_,(*cf_cast).params_);
+}
+

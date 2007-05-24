@@ -86,6 +86,9 @@ namespace sc {
 
         CorrelationFactor(const std::string& label);
         virtual ~CorrelationFactor();
+	
+	// return true if this is equivalent to cf
+	virtual bool equiv(const Ref<CorrelationFactor>& cf) const =0;
 
         /// Returns label
         const std::string& label() const;
@@ -147,7 +150,9 @@ namespace sc {
     class NullCorrelationFactor : public CorrelationFactor {
       public:
       NullCorrelationFactor();
-      
+
+      /// Implementation of CorrelationFactor::equiv()
+      bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 1; }
       /// Implementation of CorrelationFactor::value()
@@ -159,6 +164,8 @@ namespace sc {
       public:
       R12CorrelationFactor();
       
+      /// Implementation of CorrelationFactor::equiv()
+      bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 4; }
       /// Reimplementation of CorrelationFactor::tbint_type_f12()
@@ -172,6 +179,22 @@ namespace sc {
       /// Implementation of CorrelationFactor::value()
       double value(unsigned int c, double r12) const;
     };
+
+    /// Compares CorrelationParamaters corresponding to IntParam
+    template <class IntParam>
+    struct CorrParamCompare {
+	typedef typename IntParam::PrimitiveGeminal PrimitiveGeminal;
+	typedef typename IntParam::ContractedGeminal ContractedGeminal;
+	typedef std::vector<ContractedGeminal> ContractedGeminals;
+	
+	// 2 parameters are equivalent if their values differ by less than epsilon
+	static double epsilon;
+	static bool equiv(const ContractedGeminals& A, const ContractedGeminals& B);
+
+    private:
+	static bool equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B);
+    };
+    template <class IntParam> double CorrParamCompare<IntParam>::epsilon(1e-6);
     
     /** G12CorrelationFactor stands for Gaussian geminals correlation factor,
 	usable with methods that require commutator integrals */
@@ -185,6 +208,8 @@ namespace sc {
 
       G12CorrelationFactor(const CorrelationParameters& params);
       
+      /// Implementation of CorrelationFactor::equiv()
+      bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
       unsigned int nfunctions() const;
       /// Returns contracted function c
@@ -234,6 +259,8 @@ namespace sc {
 
       G12NCCorrelationFactor(const CorrelationParameters& params);
       
+      /// Implementation of CorrelationFactor::equiv()
+      bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
       unsigned int nfunctions() const;
       /// Returns contracted function c
@@ -280,6 +307,8 @@ namespace sc {
 
       GenG12CorrelationFactor(const CorrelationParameters& params);
       
+      /// Implementation of CorrelationFactor::equiv()
+      bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
       unsigned int nfunctions() const;
       /// Returns contracted function c
@@ -317,7 +346,11 @@ namespace sc {
 
     /// fits exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
     template <class CorrFactor, class Fitter>
-      Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma);
+    Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma);
+
+    /// fits exp(-gamma*r_{12}) * exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
+    template <class Fitter>
+    Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma);
 
   }
 

@@ -59,6 +59,55 @@ namespace sc {
 	  return cf;
       }
 
+      template <class Fitter>
+      Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma) {
+
+	  const double halfalpha = alpha/2.0;
+
+	  using sc::mbptr12::Slater1D;
+	  typedef typename Fitter::Gaussians Gaussians;
+	  Slater1D stg(gamma);
+	  Gaussians gtgs = fitter(stg);
+
+	  // feed to the constructor of CorrFactor
+	  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+	  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+	  ContractedGeminal geminal;
+	  typedef typename Gaussians::const_iterator citer;
+	  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
+	      const double alpha_i = halfalpha;
+	      const double gamma_i = (*g).first - halfalpha;
+	      const double C_i = (*g).second;
+	      // see basis/intparams.h
+	      PrimitiveGeminal i = std::make_pair(std::make_pair(alpha_i,gamma_i),C_i);
+	      geminal.push_back(i);
+	  }
+	  std::vector<ContractedGeminal> geminals(1,geminal);
+
+	  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+	  return cf;
+      }
+
+      template <class IntParam>
+      bool
+      CorrParamCompare<IntParam>::equiv(const ContractedGeminals& A, const ContractedGeminals& B)
+      {
+	  unsigned int nf = A.size();
+	  if (nf != B.size()) return false;
+
+	  for(unsigned int f=0; f<nf; ++f) {
+	      const ContractedGeminal& Af = A[f];
+	      const ContractedGeminal& Bf = B[f];
+	      unsigned int np = Af.size();
+	      if (np != Bf.size()) return false;
+	      for(unsigned int p=0; p<np; ++p) {
+		  if (!equiv(Af[p],Bf[p])) return false;
+	      }
+	  }
+
+	  return true;
+      }
+	
     };
 
 };

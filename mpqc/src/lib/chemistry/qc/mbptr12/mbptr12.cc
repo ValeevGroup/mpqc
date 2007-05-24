@@ -719,8 +719,10 @@ MBPT2_R12::corrfactor() const
 void
 MBPT2_R12::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
 {
-  corrfactor_ = cf;
-  obsolete();
+  if (!corrfactor_->equiv(cf)) {
+      corrfactor_ = cf;
+      obsolete();
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,6 +27,7 @@
 
 #define MBPTR12TEST_TEST1 1
 #define MBPTR12TEST_TEST2 1
+#define MBPTR12TEST_TEST3 1
 
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
@@ -195,6 +196,28 @@ int main(int argc, char**argv)
 
   tim->exit("test2");
 #endif // MBPTR12TEST_TEST2
+
+  ///////////
+  //
+  // Test 3
+  //
+  ///////////
+
+#if MBPTR12TEST_TEST3
+  tim->enter("test3");
+  {
+      using sc::mbptr12::Slater1D;
+      using sc::mbptr12::PowerGaussian1D;
+      PowerGaussian1D w(0.01,4,0);
+      typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+      GTGFit gtgfit(6, w, 0.0, 10.0, 101);
+      
+      ExEnv::out0() << indent << "Fitting AngSTG(-0.2,1.0) with Gaussians" << std::endl;
+      Ref<CorrelationFactor> cf = sc::LinearR12::angstg_to_geng12<GTGFit>(gtgfit,-0.2,1.0);
+      cf->print(ExEnv::out0());
+  }
+  tim->exit("test3");
+#endif // MBPTR12TEST_TEST3
 
   //
   // Done... clean up now

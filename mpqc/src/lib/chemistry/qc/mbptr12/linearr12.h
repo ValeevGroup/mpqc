@@ -344,13 +344,13 @@ namespace sc {
 
     };
 
-    /// fits exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
+    /// fits r_{12}^k * exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
     template <class CorrFactor, class Fitter>
-    Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma);
+    Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k=0);
 
-    /// fits exp(-gamma*r_{12}) * exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
+    /// fits r_{12}^k * exp(-gamma*r_{12}) * exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
     template <class Fitter>
-    Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma);
+    Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
 
   }
 

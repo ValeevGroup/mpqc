@@ -38,11 +38,11 @@ namespace sc {
     namespace LinearR12 {
 
       template <class CorrFactor, class Fitter>
-        Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma) {
+      Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k) {
 
 	  using sc::mbptr12::Slater1D;
 	  typedef typename Fitter::Gaussians Gaussians;
-	  Slater1D stg(gamma);
+	  Slater1D stg(gamma,k);
 	  Gaussians gtgs = fitter(stg);
 
 	  // feed to the constructor of CorrFactor
@@ -60,13 +60,13 @@ namespace sc {
       }
 
       template <class Fitter>
-      Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma) {
+      Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
 
 	  const double halfalpha = alpha/2.0;
 
 	  using sc::mbptr12::Slater1D;
 	  typedef typename Fitter::Gaussians Gaussians;
-	  Slater1D stg(gamma);
+	  Slater1D stg(gamma,k);
 	  Gaussians gtgs = fitter(stg);
 
 	  // feed to the constructor of CorrFactor

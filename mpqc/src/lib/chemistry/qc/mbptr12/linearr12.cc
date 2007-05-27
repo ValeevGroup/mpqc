@@ -54,6 +54,26 @@ namespace sc {
 	      std::fabs(A.first.second-B.first.second) < epsilon &&
 	      std::fabs(A.second-B.second) < epsilon);
     }
+
+    Ref<CorrelationFactor> ang_to_geng12(double alpha) {
+      
+      const double halfalpha = alpha/2.0;
+      
+      // feed to the constructor of CorrFactor
+      typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+      typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+      ContractedGeminal geminal_ang;
+      
+      // add ang
+      geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
+      
+      std::vector<ContractedGeminal> geminals;
+      geminals.push_back(geminal_ang);
+      
+      Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+      return cf;
+    }
+
   };
 };
 

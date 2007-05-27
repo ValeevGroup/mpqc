@@ -352,6 +352,10 @@ namespace sc {
     template <class Fitter>
     Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
 
+    /// fits separately r_{12}^k * exp(-gamma*r_{12}) and exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
+    template <class Fitter>
+    Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
+
   }
 
 }

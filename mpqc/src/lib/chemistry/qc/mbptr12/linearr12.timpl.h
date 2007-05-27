@@ -88,6 +88,42 @@ namespace sc {
 	  return cf;
       }
 
+      template <class Fitter>
+      Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
+
+	  const double halfalpha = alpha/2.0;
+
+	  using sc::mbptr12::Slater1D;
+	  typedef typename Fitter::Gaussians Gaussians;
+	  Slater1D stg(gamma,k);
+	  Gaussians gtgs = fitter(stg);
+
+	  // feed to the constructor of CorrFactor
+	  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+	  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+	  ContractedGeminal geminal_stg;
+	  ContractedGeminal geminal_ang;
+
+	  // add STG
+	  typedef typename Gaussians::const_iterator citer;
+	  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
+	      const double gamma_i = (*g).first;
+	      const double C_i = (*g).second;
+	      // see basis/intparams.h
+	      PrimitiveGeminal i = std::make_pair(std::make_pair(0.0,gamma_i),C_i);
+	      geminal_stg.push_back(i);
+	  }
+	  // add ang
+	  geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
+
+	  std::vector<ContractedGeminal> geminals;
+	  geminals.push_back(geminal_stg);
+	  geminals.push_back(geminal_ang);
+
+	  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+	  return cf;
+      }
+
       template <class IntParam>
       bool
       CorrParamCompare<IntParam>::equiv(const ContractedGeminals& A, const ContractedGeminals& B)

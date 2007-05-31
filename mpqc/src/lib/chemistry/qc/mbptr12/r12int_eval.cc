@@ -2047,11 +2047,10 @@ R12IntEval::compute()
     }
     
     if (obs_eq_vbs) {
-      // Compute VXB using new code
+#if !USE_TENSOR_CODE
       using LinearR12::TwoParticleContraction;
       using LinearR12::ABS_OBS_Contraction;
       using LinearR12::CABS_OBS_Contraction;
-#if !USE_TENSOR_CODE
       for(int s=0; s<nspincases2(); s++) {
         const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
         const SpinCase1 spin1 = case1(spincase2);
@@ -2133,7 +2132,11 @@ R12IntEval::compute()
 
     }
     else {
+#if !USE_TENSOR_CODE
       contrib_to_VXB_gebc_vbsneqobs_();
+#else
+      contrib_to_VXB_a_();
+#endif
     }
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods

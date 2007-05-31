@@ -57,7 +57,7 @@ CXXSRCS = mbptr12.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxApp.cc ansatz.cc \
-  mp2r12_energy_util.cc compute_VXB_a.cc \
+  mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc
 
 ifeq ($(HAVE_MPIIO),yes)

@@ -256,6 +256,8 @@ class R12IntEval : virtual public SavableState {
                              const Ref<LinearR12::TwoParticleContraction>& tpcontract);
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_();
+  /// New version which uses tensor contract functions
+  void contrib_to_VXB_a_vbsneqobs_();
 
 #if 0
   /// Compute MP2 pair energies of spin case S

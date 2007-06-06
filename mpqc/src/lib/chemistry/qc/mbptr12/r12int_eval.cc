@@ -2132,7 +2132,7 @@ R12IntEval::compute()
 
     }
     else {
-#if !USE_TENSOR_CODE
+#if USE_TENSOR_CODE
       contrib_to_VXB_gebc_vbsneqobs_();
 #else
       contrib_to_VXB_a_();

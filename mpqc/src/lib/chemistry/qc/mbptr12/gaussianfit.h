@@ -45,6 +45,9 @@ namespace sc {
 	      typename Weight>
     class GaussianFit {
     public:
+        // If 1, "weigh" the function, else weigh the square of the error
+        static const bool weigh_F = 0;
+
 	typedef double Exp;
 	typedef double Coef;
 	typedef std::pair<Exp,Coef> Gaussian;

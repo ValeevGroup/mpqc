@@ -32,6 +32,38 @@ namespace {
   typedef Libint_t prim_data;
   inline void assign_FjT(prim_data* Data, const int& jmax, const double* FjT, const double& scale) {
     switch (jmax) {
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(28))
+      case 28:
+      Data->LIBINT_T_SS_EREP_SS(28)[0] = FjT[28] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(27))
+      case 27:
+      Data->LIBINT_T_SS_EREP_SS(27)[0] = FjT[27] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(26))
+      case 26:
+      Data->LIBINT_T_SS_EREP_SS(26)[0] = FjT[26] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(25))
+      case 25:
+      Data->LIBINT_T_SS_EREP_SS(25)[0] = FjT[25] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(24))
+      case 24:
+      Data->LIBINT_T_SS_EREP_SS(24)[0] = FjT[24] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(23))
+      case 23:
+      Data->LIBINT_T_SS_EREP_SS(23)[0] = FjT[23] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(22))
+      case 22:
+      Data->LIBINT_T_SS_EREP_SS(22)[0] = FjT[22] * scale;
+#endif
+#if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(21))
+      case 21:
+      Data->LIBINT_T_SS_EREP_SS(21)[0] = FjT[21] * scale;
+#endif
 #if LIBINT2_DEFINED(eri,LIBINT_T_SS_EREP_SS(20))
       case 20:
       Data->LIBINT_T_SS_EREP_SS(20)[0] = FjT[20] * scale;
@@ -124,6 +156,54 @@ namespace {
 
   inline void assign_ss_r12m1g12_ss(prim_data* Data, const int& jmax, const double* ss_r12m1g12_ss, const double& scale) {
     switch (jmax) {
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(28))
+      case 28:
+      Data->LIBINT_T_SS_Km1G12_SS(28)[0] = ss_r12m1g12_ss[28] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(27))
+      case 27:
+      Data->LIBINT_T_SS_Km1G12_SS(27)[0] = ss_r12m1g12_ss[27] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(26))
+      case 26:
+      Data->LIBINT_T_SS_Km1G12_SS(26)[0] = ss_r12m1g12_ss[26] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(25))
+      case 25:
+      Data->LIBINT_T_SS_Km1G12_SS(25)[0] = ss_r12m1g12_ss[25] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(24))
+      case 24:
+      Data->LIBINT_T_SS_Km1G12_SS(24)[0] = ss_r12m1g12_ss[24] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(23))
+      case 23:
+      Data->LIBINT_T_SS_Km1G12_SS(23)[0] = ss_r12m1g12_ss[23] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(22))
+      case 22:
+      Data->LIBINT_T_SS_Km1G12_SS(22)[0] = ss_r12m1g12_ss[22] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(21))
+      case 21:
+      Data->LIBINT_T_SS_Km1G12_SS(21)[0] = ss_r12m1g12_ss[21] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(20))
+      case 20:
+      Data->LIBINT_T_SS_Km1G12_SS(20)[0] = ss_r12m1g12_ss[20] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(19))
+      case 19:
+      Data->LIBINT_T_SS_Km1G12_SS(19)[0] = ss_r12m1g12_ss[19] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(18))
+      case 18:
+      Data->LIBINT_T_SS_Km1G12_SS(18)[0] = ss_r12m1g12_ss[18] * scale;
+#endif
+#if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(17))
+      case 17:
+      Data->LIBINT_T_SS_Km1G12_SS(17)[0] = ss_r12m1g12_ss[17] * scale;
+#endif
 #if LIBINT2_DEFINED(r12kg12,LIBINT_T_SS_Km1G12_SS(16))
       case 16:
       Data->LIBINT_T_SS_Km1G12_SS(16)[0] = ss_r12m1g12_ss[16] * scale;

@@ -51,7 +51,7 @@ using namespace sc;
 #define SINGLE_THREAD_E123   0
 #define PRINT3Q 0
 #define PRINT4Q 0
-#define PRINT_NUM_TE_TYPES 4
+#define PRINT_NUM_TE_TYPES 6
 #define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
@@ -311,7 +311,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
       if (pass > 0)
         mode = ios_base::app;
       ofstream ints_file(filename.c_str(),mode);
-      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+      const int ntetypes = std::min((int)num_te_types(),PRINT_NUM_TE_TYPES);
+      for(int te_type=0; te_type<ntetypes; te_type++) {
         for (int i = 0; i<ni; i++) {
           for (int j = 0; j<rank3; j++) {
             int ij = i*rank3+j;

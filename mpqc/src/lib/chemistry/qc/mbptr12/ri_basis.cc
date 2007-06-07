@@ -199,15 +199,15 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
 
   if (!refinfo()->ref()->spin_polarized()) {
     Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "CABS", refinfo()->ref()->lindep_tol());
-    tmp = orthog_comp(vir_act_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
+    tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = tmp;
     vir_spaces_[Beta].ri_ = tmp;
   }
   else {
     Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Alpha].ri_ = orthog_comp(vir_act(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+    vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
     Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Beta].ri_ = orthog_comp(vir_act(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
   }
 }
 

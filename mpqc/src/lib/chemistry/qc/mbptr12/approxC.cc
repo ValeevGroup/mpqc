@@ -64,362 +64,360 @@ using namespace sc;
 #define INCLUDE_P_PKP 1
 #define INCLUDE_P_PFP 1
 #define INCLUDE_P_pFp 1
-#define TEST_PFP_plus_pFp 0
 #define INCLUDE_P_mFP 1
-#define TEST_P_mFP 0
 #define INCLUDE_P_pFA 1
 #define INCLUDE_P_mFm 1
-#define TEST_FxF 0
 
 void
 R12IntEval::compute_BC_()
 {
-  if (evaluated_)
-    return;
+    if (evaluated_)
+	return;
   
-  const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
-  const unsigned int maxnabs = r12info()->maxnabs();
+    const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
+    const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+    const unsigned int maxnabs = r12info()->maxnabs();
+
+    // some combinations are not implemented yet or are not sane
+    if (!vbs_eq_obs && ansatz()->projector() == LinearR12::Projector_3)
+	throw FeatureNotImplemented("B(C) cannot be evaluated yet when using ansatz 3 and VBS!=OBS",__FILE__,__LINE__);
   
-  tim_enter("B(app. C) intermediate");
-  ExEnv::out0() << endl << indent
-  << "Entered B(app. C) intermediate evaluator" << endl;
-  ExEnv::out0() << incindent;
+    tim_enter("B(app. C) intermediate");
+    ExEnv::out0() << endl << indent
+		  << "Entered B(app. C) intermediate evaluator" << endl;
+    ExEnv::out0() << incindent;
   
-  for(int s=0; s<nspincases2(); s++) {
-    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-    const SpinCase1 spin1 = case1(spincase2);
-    const SpinCase1 spin2 = case2(spincase2);
+    for(int s=0; s<nspincases2(); s++) {
+	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+	const SpinCase1 spin1 = case1(spincase2);
+	const SpinCase1 spin2 = case2(spincase2);
     
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-    Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-    Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-    Ref<MOIndexSpace> xspace1 = xspace(spin1);
-    Ref<MOIndexSpace> xspace2 = xspace(spin2);
-    Ref<MOIndexSpace> vir1 = vir(spin1);
-    Ref<MOIndexSpace> vir2 = vir(spin2);
-    bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
+	Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+	Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
+	Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
+	Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
+	Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
+	Ref<MOIndexSpace> xspace1 = xspace(spin1);
+	Ref<MOIndexSpace> xspace2 = xspace(spin2);
+	Ref<MOIndexSpace> vir1 = vir(spin1);
+	Ref<MOIndexSpace> vir2 = vir(spin2);
+	bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
 
 #if INCLUDE_Q
-    // if can only use 1 RI index, h+J can be resolved by the OBS
-    Ref<MOIndexSpace> hj_x1, hj_x2;
-    if (maxnabs > 1) {
-	hj_x1 = hj_x_P(spin1);
-	hj_x2 = hj_x_P(spin2);
-    }
-    else {
-	hj_x1 = hj_x_p(spin1);
-	hj_x2 = hj_x_p(spin2);
-    }    
-    std::string Qlabel = prepend_spincase(spincase2,"Q(C) intermediate");
-    tim_enter(Qlabel.c_str());
-    ExEnv::out0() << endl << indent
-                  << "Entered " << Qlabel << " evaluator" << endl;
-    ExEnv::out0() << incindent;
+	// if can only use 1 RI index, h+J can be resolved by the OBS
+	Ref<MOIndexSpace> hj_x1, hj_x2;
+	if (maxnabs > 1) {
+	    hj_x1 = hj_x_P(spin1);
+	    hj_x2 = hj_x_P(spin2);
+	}
+	else {
+	    hj_x1 = hj_x_p(spin1);
+	    hj_x2 = hj_x_p(spin2);
+	}    
+	std::string Qlabel = prepend_spincase(spincase2,"Q(C) intermediate");
+	tim_enter(Qlabel.c_str());
+	ExEnv::out0() << endl << indent
+		      << "Entered " << Qlabel << " evaluator" << endl;
+	ExEnv::out0() << incindent;
     
-    // compute Q = F12^2 (note F2_only = true in compute_X_ calls)
-    RefSCMatrix Q;
-    compute_X_(Q,spincase2,xspace1,xspace2,
-               xspace1,hj_x2,true);
-    if (xspace1 != xspace2) {
-      compute_X_(Q,spincase2,xspace1,xspace2,
-                 hj_x1,xspace2,true);
-    }
-    else {
-      Q.scale(2.0);
-      if (spincase2 == AlphaBeta) {
-	symmetrize<false>(Q,Q,xspace1,xspace1);
-      }
-    }
+	// compute Q = F12^2 (note F2_only = true in compute_X_ calls)
+	RefSCMatrix Q;
+	compute_X_(Q,spincase2,xspace1,xspace2,
+		   xspace1,hj_x2,true);
+	if (xspace1 != xspace2) {
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       hj_x1,xspace2,true);
+	}
+	else {
+	    Q.scale(2.0);
+	    if (spincase2 == AlphaBeta) {
+		symmetrize<false>(Q,Q,xspace1,xspace1);
+	    }
+	}
 
-    ExEnv::out0() << decindent;
-    ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
-    tim_exit(Qlabel.c_str());
+	ExEnv::out0() << decindent;
+	ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
+	tim_exit(Qlabel.c_str());
 
 #if 0
-    if (debug_ >= DefaultPrintThresholds::mostO4) {
+	if (debug_ >= DefaultPrintThresholds::mostO4) {
 #else
-	{
+	    {
 #endif
-      std::string label = prepend_spincase(spincase2,"Q(C) contribution");
-      Q.print(label.c_str());
-    }
-    BC_[s].accumulate(Q); Q = 0;
+		std::string label = prepend_spincase(spincase2,"Q(C) contribution");
+		Q.print(label.c_str());
+	    }
+	    BC_[s].accumulate(Q); Q = 0;
 #endif // INCLUDE_Q
 
 #if INCLUDE_P
-    // compute P
-    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
+	    // compute P
+	    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
       
-      const LinearR12::ABSMethod absmethod = r12info()->abs_method();
-      if (!abs_eq_obs && 
-          absmethod != LinearR12::ABS_CABS &&
-          absmethod != LinearR12::ABS_CABSPlus) {
-            throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
-      }
+	    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+	    if (!abs_eq_obs && 
+		absmethod != LinearR12::ABS_CABS &&
+		absmethod != LinearR12::ABS_CABSPlus) {
+		throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
+	    }
       
-      std::string Plabel = prepend_spincase(spincase2,"P(C) intermediate");
-      tim_enter(Plabel.c_str());
-      ExEnv::out0() << endl << indent
-                    << "Entered " << Plabel << " evaluator" << endl;
-      ExEnv::out0() << incindent;
+	    std::string Plabel = prepend_spincase(spincase2,"P(C) intermediate");
+	    tim_enter(Plabel.c_str());
+	    ExEnv::out0() << endl << indent
+			  << "Entered " << Plabel << " evaluator" << endl;
+	    ExEnv::out0() << incindent;
       
-      Ref<MOIndexSpace> ribs1, ribs2;
-      if (abs_eq_obs) {
-        ribs1 = orbs1;
-        ribs2 = orbs2;
-      }
-      else {
-        ribs1 = r12info()->ribs_space();
-        ribs2 = r12info()->ribs_space();
-      }
-      RefSCMatrix P;
+	    Ref<MOIndexSpace> ribs1, ribs2;
+	    if (abs_eq_obs) {
+		ribs1 = orbs1;
+		ribs2 = orbs2;
+	    }
+	    else {
+		ribs1 = r12info()->ribs_space();
+		ribs2 = r12info()->ribs_space();
+	    }
+	    RefSCMatrix P;
       
 #if INCLUDE_P_PKP
-      // R_klPQ K_QR R_PRij is included with projectors 2 and 3
-      {
-	Ref<MOIndexSpace> kribs1, kribs2;
-	if (abs_eq_obs) {
-	  kribs1 = K_p_p(spin1);
-	  kribs2 = K_p_p(spin2);
-	}
-	else {
-	  kribs1 = K_P_P(spin1);
-	  kribs2 = K_P_P(spin2);
-	}
-      compute_FxF_(P,spincase2,
-                   xspace1,xspace2,
-                   xspace1,xspace2,
-                   ribs1,ribs2,
-                   ribs1,ribs2,
-                   kribs1,kribs2);
-      }
+	    // R_klPQ K_QR R_PRij is included with projectors 2 and 3
+	    {
+		Ref<MOIndexSpace> kribs1, kribs2;
+		if (abs_eq_obs) {
+		    kribs1 = K_p_p(spin1);
+		    kribs2 = K_p_p(spin2);
+		}
+		else {
+		    kribs1 = K_P_P(spin1);
+		    kribs2 = K_P_P(spin2);
+		}
+		compute_FxF_(P,spincase2,
+			     xspace1,xspace2,
+			     xspace1,xspace2,
+			     ribs1,ribs2,
+			     ribs1,ribs2,
+			     kribs1,kribs2);
+	    }
 #endif // INCLUDE_P_PKP
 
-      if (ansatz()->projector() == LinearR12::Projector_2) {
+	    if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
-      {
-      Ref<MOIndexSpace> fribs1,fribs2;
-      if (abs_eq_obs) {
-	  fribs1 = F_p_p(spin1);
-	  fribs2 = F_p_p(spin2);
-      }
-      else {
-	  fribs1 = F_P_P(spin1);
-	  fribs2 = F_P_P(spin2);
-      }
-      // R_klPm F_PQ R_Qmij
-      compute_FxF_(P,spincase2,
-                   xspace1,xspace2,
-                   xspace1,xspace2,
-                   occ1,occ2,
-                   ribs1,ribs2,
-                   fribs1,fribs2);
-      }
+		{
+		    Ref<MOIndexSpace> fribs1,fribs2;
+		    if (abs_eq_obs) {
+			fribs1 = F_p_p(spin1);
+			fribs2 = F_p_p(spin2);
+		    }
+		    else {
+			fribs1 = F_P_P(spin1);
+			fribs2 = F_P_P(spin2);
+		    }
+		    // R_klPm F_PQ R_Qmij
+		    compute_FxF_(P,spincase2,
+				 xspace1,xspace2,
+				 xspace1,xspace2,
+				 occ1,occ2,
+				 ribs1,ribs2,
+				 fribs1,fribs2);
+		}
 #endif // INCLUDE_P_PFP
-#if INCLUDE_P_pFp
-      if (!empty_vir_space) {
-      Ref<MOIndexSpace> forbs1, forbs2;
-      forbs1 = F_p_p(spin1);
-      forbs2 = F_p_p(spin2);
-      // R_klpa F_pq R_qaij
-      compute_FxF_(P,spincase2,
-                   xspace1,xspace2,
-                   xspace1,xspace2,
-                   vir1,vir2,
-                   orbs1,orbs2,
-                   forbs1,forbs2);
-      }
-#endif // INCLUDE_P_pFp
-      }
-      // Ansatz 3
-      else {
-#if INCLUDE_P_pFp
-      {
-      Ref<MOIndexSpace> forbs1, forbs2;
-      forbs1 = F_p_p(spin1);
-      forbs2 = F_p_p(spin2);
-      // R_klpr F_pq R_qrij
-      compute_FxF_(P,spincase2,
-                   xspace1,xspace2,
-                   xspace1,xspace2,
-                   orbs1,orbs2,
-                   orbs1,orbs2,
-                   forbs1,forbs2);
-      }
-#endif // INCLUDE_P_pFp
-      }
+	    }
 
-#if !INCLUDE_P_PKP && TEST_PFP_plus_pFp
-      P.print("PFP + pFp");
-      {
-        RefSCMatrix Ptest;
-	Ref<MOIndexSpace> fribs1,fribs2;
-	if (abs_eq_obs) {
-	    fribs1 = F_p_p(spin1);
-	    fribs2 = F_p_p(spin2);
-	}
-	else {
-	    fribs1 = F_P_P(spin1);
-	    fribs2 = F_P_P(spin2);
-	}
-        // R_klPR F_PQ R_QRij
-        compute_FxF_(Ptest,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     ribs1,ribs2,
-                     ribs1,ribs2,
-                     fribs1,fribs2);
-        Ptest.print("test PFP + pFp");
-      }
-#endif
+	    {
+#if INCLUDE_P_pFp
+		// the form of the pFp term depends on the projector
+		Ref<MOIndexSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
+		Ref<MOIndexSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
 
-#if TEST_FxF
-      {
-        Ref<MOIndexSpace> focc1 = focc_ribs(spin1);
-        Ref<MOIndexSpace> focc2 = focc_ribs(spin2);
-        RefSCMatrix Ptmp;
-        // R_klmp F_mP R_Ppij
-        compute_FxF_(Ptmp,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     orbs1,orbs2,
-                     occ1,occ2,
-                     focc1,focc2);
-        Ptmp.print("R_klmp F_mP R_Ppij");
-        RefSCMatrix Ptest;
-        {
-          Ref<MOIndexSpace> focc1 = focc_occ(spin1);
-          Ref<MOIndexSpace> focc2 = focc_occ(spin2);
-          // R_klmp F_mn R_npij
-          compute_FxF_(Ptest,spincase2,
-                       xspace1,xspace2,
-                       xspace1,xspace2,
-                       orbs1,orbs2,
-                       occ1,occ2,
-                       focc1,focc2);
-          Ptest.print("R_klmp F_mn R_npij");
-        }
-      }
-#endif
+		if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
+		    // and on whether VBS==OBS
+		    if (vbs_eq_obs) {
+			Ref<MOIndexSpace> forbs1, forbs2;
+			forbs1 = F_p_p(spin1);
+			forbs2 = F_p_p(spin2);
+			// R_klpa F_pq R_qaij
+			compute_FxF_(P,spincase2,
+				     xspace1,xspace2,
+				     xspace1,xspace2,
+				     z1,z2,
+				     orbs1,orbs2,
+				     forbs1,forbs2);
+		    }
+		    else {
+			// else it's a sum of
+			// R_klma F_mn R_naij
+			{
+			    Ref<MOIndexSpace> x1 = occ1;
+			    Ref<MOIndexSpace> x2 = occ2;
+			    Ref<MOIndexSpace> fx1 = F_m_m(spin1);
+			    Ref<MOIndexSpace> fx2 = F_m_m(spin2);
+			    compute_FxF_(P,spincase2,
+					 xspace1,xspace2,
+					 xspace1,xspace2,
+					 z1,z2,
+					 x1,x2,
+					 fx1,fx2);
+			}
+			// R_klca F_cd R_daij
+			{
+			    Ref<MOIndexSpace> x1 = vir1;
+			    Ref<MOIndexSpace> x2 = vir2;
+			    Ref<MOIndexSpace> fx1 = F_a_a(spin1);
+			    Ref<MOIndexSpace> fx2 = F_a_a(spin2);
+			    compute_FxF_(P,spincase2,
+					 xspace1,xspace2,
+					 xspace1,xspace2,
+					 z1,z2,
+					 x1,x2,
+					 fx1,fx2);
+			}
+			// 2 R_klca F_cm R_maij
+			{
+			    Ref<MOIndexSpace> x1 = occ1;
+			    Ref<MOIndexSpace> x2 = occ2;
+			    Ref<MOIndexSpace> fx1 = F_m_a(spin1);
+			    Ref<MOIndexSpace> fx2 = F_m_a(spin2);
+			    RefSCMatrix Ptmp;
+			    compute_FxF_(Ptmp,spincase2,
+					 xspace1,xspace2,
+					 xspace1,xspace2,
+					 z1,z2,
+					 x1,x2,
+					 fx1,fx2);
+			    Ptmp.scale(2.0);
+			    P.accumulate(Ptmp);
+			}
+		    } // VBS != OBS
+		} // pFp contributes
+#endif // INCLUDE_P_pFp
+	    }
+
       
-      if (!abs_eq_obs) {
+	    if (!abs_eq_obs) {
         
-        Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
-        Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
+		Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
+		Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
         
-        if (ansatz()->projector() == LinearR12::Projector_2) {
+		if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFP
-        {
-	  Ref<MOIndexSpace> focc1, focc2;
-	  focc1 = F_m_P(spin1);
-	  focc2 = F_m_P(spin2);
-	  RefSCMatrix Ptmp;
-          // R_klmA F_mP R_PAij
-          compute_FxF_(Ptmp,spincase2,
-                       xspace1,xspace2,
-                       xspace1,xspace2,
-                       cabs1,cabs2,
-                       occ1,occ2,
-                       focc1,focc2);
-          Ptmp.scale(2.0);
-          P.accumulate(Ptmp);
-#if TEST_P_mFP
-          Ptmp.print("R_klmA F_mP R_PAij");
-	  RefSCMatrix Ptest;
-	  {
-	    Ref<MOIndexSpace> focc1 = focc_occ(spin1);
-            Ref<MOIndexSpace> focc2 = focc_occ(spin2);
-            // R_klmA F_mn R_nAij
-            compute_FxF_(Ptest,spincase2,
-                         xspace1,xspace2,
-                         xspace1,xspace2,
-                         cabs1,cabs2,
-                         occ1,occ2,
-                         focc1,focc2);
-	    Ptest.print("R_klmA F_mn R_nAij");
-	  }
-#endif // TEST_P_mFP
-        }
+		    {
+			Ref<MOIndexSpace> focc1, focc2;
+			focc1 = F_m_P(spin1);
+			focc2 = F_m_P(spin2);
+			RefSCMatrix Ptmp;
+			// R_klmA F_mP R_PAij
+			compute_FxF_(Ptmp,spincase2,
+				     xspace1,xspace2,
+				     xspace1,xspace2,
+				     cabs1,cabs2,
+				     occ1,occ2,
+				     focc1,focc2);
+			Ptmp.scale(2.0);
+			P.accumulate(Ptmp);
+		    }
 #endif // INCLUDE_P_mFP
-#if INCLUDE_P_pFA
-        if (!empty_vir_space) {
-          Ref<MOIndexSpace> forbs1 = F_p_A(spin1);
-          Ref<MOIndexSpace> forbs2 = F_p_A(spin2);
-	  RefSCMatrix Ptmp;
-          // R_klpa F_pA R_Aaij
-          compute_FxF_(Ptmp,spincase2,
-                       xspace1,xspace2,
-                       xspace1,xspace2,
-                       vir1,vir2,
-                       orbs1,orbs2,
-                       forbs1,forbs2);
-          Ptmp.scale(2.0);
-	  P.accumulate(Ptmp);
-        }
-#endif // INCLUDE_P_pFA
-        P.scale(-1.0);
-#if INCLUDE_P_mFm
-        {
-          Ref<MOIndexSpace> focc1 = F_m_m(spin1);
-          Ref<MOIndexSpace> focc2 = F_m_m(spin2);
-          // R_klmA F_mn R_nAij
-          compute_FxF_(P,spincase2,
-                       xspace1,xspace2,
-                       xspace1,xspace2,
-                       cabs1,cabs2,
-                       occ1,occ2,
-                       focc1,focc2);
-        }
-#endif // INCLUDE_P_mFm
-        }
-        // Ansatz 3
-        else {
-#if INCLUDE_P_pFA
-        {
-          Ref<MOIndexSpace> forbs1 = F_p_A(spin1);
-          Ref<MOIndexSpace> forbs2 = F_p_A(spin2);
-	  RefSCMatrix Ptmp;
-          // R_klpr F_pA R_Arij
-          compute_FxF_(Ptmp,spincase2,
-                       xspace1,xspace2,
-                       xspace1,xspace2,
-                       orbs1,orbs2,
-                       orbs1,orbs2,
-                       forbs1,forbs2);
-          Ptmp.scale(2.0);
-	  P.accumulate(Ptmp);
-        }
-#endif // INCLUDE_P_pFA
-        P.scale(-1.0);
-        }
-        
-      }
-      else {
-        P.scale(-1.0);
-      }
-      
-      ExEnv::out0() << decindent;
-      ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
-      tim_exit(Plabel.c_str());
+		}
 
-      BC_[s].accumulate(P); P = 0;
+		{
+#if INCLUDE_P_pFA
+		    // the form of the pFp term depends on the projector
+		    Ref<MOIndexSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
+		    Ref<MOIndexSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
+		    
+		    // R_klpz F_pA R_Azij
+		    if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
+			// and on whether VBS==OBS
+			if (vbs_eq_obs) {
+			    Ref<MOIndexSpace> forbs1 = F_p_A(spin1);
+			    Ref<MOIndexSpace> forbs2 = F_p_A(spin2);
+			    RefSCMatrix Ptmp;
+			    compute_FxF_(Ptmp,spincase2,
+					 xspace1,xspace2,
+					 xspace1,xspace2,
+					 z1,z2,
+					 orbs1,orbs2,
+					 forbs1,forbs2);
+			    Ptmp.scale(2.0);
+			    P.accumulate(Ptmp);
+			} // VBS == OBS
+			else { // VBS != OBS
+
+			    RefSCMatrix Ptmp;
+			    {
+				Ref<MOIndexSpace> x1 = occ1;
+				Ref<MOIndexSpace> x2 = occ2;
+				Ref<MOIndexSpace> fx1 = F_m_A(spin1);
+				Ref<MOIndexSpace> fx2 = F_m_A(spin2);
+				compute_FxF_(Ptmp,spincase2,
+					     xspace1,xspace2,
+					     xspace1,xspace2,
+					     z1,z2,
+					     x1,x2,
+					     fx1,fx2);
+			    }
+			    {
+				Ref<MOIndexSpace> x1 = vir1;
+				Ref<MOIndexSpace> x2 = vir2;
+				Ref<MOIndexSpace> fx1 = F_a_A(spin1);
+				Ref<MOIndexSpace> fx2 = F_a_A(spin2);
+				compute_FxF_(Ptmp,spincase2,
+					     xspace1,xspace2,
+					     xspace1,xspace2,
+					     z1,z2,
+					     x1,x2,
+					     fx1,fx2);
+			    }
+			    Ptmp.scale(2.0);
+			    P.accumulate(Ptmp);
+				
+			    throw ProgrammingError("not implemented yet!",__FILE__,__LINE__);
+			} // VBS != OBS
+		    } // pFA contributes
+#endif // INCLUDE_P_pFA
+		}
+
+		P.scale(-1.0);
+
+		if (ansatz()->projector() == LinearR12::Projector_2) {
+#if INCLUDE_P_mFm
+		    {
+			Ref<MOIndexSpace> focc1 = F_m_m(spin1);
+			Ref<MOIndexSpace> focc2 = F_m_m(spin2);
+			// R_klmA F_mn R_nAij
+			compute_FxF_(P,spincase2,
+				     xspace1,xspace2,
+				     xspace1,xspace2,
+				     cabs1,cabs2,
+				     occ1,occ2,
+				     focc1,focc2);
+		    }
+#endif // INCLUDE_P_mFm
+		}
+        
+	    } // ABS != OBS
+	    else {
+		P.scale(-1.0);
+	    }
+      
+	    ExEnv::out0() << decindent;
+	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
+	    tim_exit(Plabel.c_str());
+
+	    BC_[s].accumulate(P); P = 0;
 #endif // INCLUDE_P
 
-    // Bra-Ket symmetrize the B(C) contribution
-    BC_[s].scale(0.5);
-    RefSCMatrix BC_t = BC_[s].t();
-    BC_[s].accumulate(BC_t);
-  }
+	    // Bra-Ket symmetrize the B(C) contribution
+	    BC_[s].scale(0.5);
+	    RefSCMatrix BC_t = BC_[s].t();
+	    BC_[s].accumulate(BC_t);
+	}
   
-  globally_sum_intermeds_();
+	globally_sum_intermeds_();
 
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited B(app. C) intermediate evaluator" << endl;
+	ExEnv::out0() << decindent;
+	ExEnv::out0() << indent << "Exited B(app. C) intermediate evaluator" << endl;
 
-  tim_exit("B(app. C) intermediate");
-}
+	tim_exit("B(app. C) intermediate");
+    }
 
 ////////////////////////////////////////////////////////////////////////////
 

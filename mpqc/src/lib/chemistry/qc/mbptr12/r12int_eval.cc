@@ -1835,6 +1835,24 @@ R12IntEval::F_m_m(SpinCase1 spin)
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::F_m_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_m_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_m_a_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_m_a_[s];
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::F_m_P(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -1887,6 +1905,43 @@ R12IntEval::F_i_A(SpinCase1 spin)
 	    extspace,intspace);
   return F_i_A_[s];
 }
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_a_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_a_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = vir_act(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_a_a_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_a_a_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_a_A(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_a_A(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = vir_act(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->ribs_space(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+	    F_a_A_[s],
+	    null,
+	    null,
+	    extspace,intspace);
+  return F_a_A_[s];
+}
+
 
 void
 R12IntEval::f_bra_ket(

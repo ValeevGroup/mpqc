@@ -229,7 +229,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       }
 
       // (im|jA) contribution
-      {
+      // only needed if ansatz == 2
+      if (ansatz()->projector() == LinearR12::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = cabs2;
@@ -318,7 +319,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       }
 
       // (im|jA) contribution
-      {
+      // only needed if ansatz == 2
+      if (ansatz()->projector() == LinearR12::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = cabs2;

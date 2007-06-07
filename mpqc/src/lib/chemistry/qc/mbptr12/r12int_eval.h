@@ -204,9 +204,12 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> F_p_A_[NSpinCases1];
   Ref<MOIndexSpace> F_p_p_[NSpinCases1];
   Ref<MOIndexSpace> F_m_m_[NSpinCases1];
+  Ref<MOIndexSpace> F_m_a_[NSpinCases1];
   Ref<MOIndexSpace> F_m_P_[NSpinCases1];
   Ref<MOIndexSpace> F_m_A_[NSpinCases1];
   Ref<MOIndexSpace> F_i_A_[NSpinCases1];
+  Ref<MOIndexSpace> F_a_a_[NSpinCases1];
+  Ref<MOIndexSpace> F_a_A_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -641,10 +644,16 @@ public:
   const Ref<MOIndexSpace>& F_i_p(SpinCase1 S);
   /// Form <m|F|m> space
   const Ref<MOIndexSpace>& F_m_m(SpinCase1 S);
+  /// Form <a|F|m> space
+  const Ref<MOIndexSpace>& F_m_a(SpinCase1 S);
   /// Form <P|F|m> space
   const Ref<MOIndexSpace>& F_m_P(SpinCase1 S);
   /// Form <A|F|m> space
   const Ref<MOIndexSpace>& F_m_A(SpinCase1 S);
+  /// Form <a|F|a> space
+  const Ref<MOIndexSpace>& F_a_a(SpinCase1 S);
+  /// Form <A|F|a> space
+  const Ref<MOIndexSpace>& F_a_A(SpinCase1 S);
   /// Form <P|F|p> space
   const Ref<MOIndexSpace>& F_p_P(SpinCase1 S);
   /// Form <A|F|p> space

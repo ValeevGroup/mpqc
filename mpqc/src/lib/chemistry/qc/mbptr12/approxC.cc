@@ -369,7 +369,6 @@ R12IntEval::compute_BC_()
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
 				
-			    throw ProgrammingError("not implemented yet!",__FILE__,__LINE__);
 			} // VBS != OBS
 		    } // pFA contributes
 #endif // INCLUDE_P_pFA

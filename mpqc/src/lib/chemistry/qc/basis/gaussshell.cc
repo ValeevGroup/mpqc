@@ -44,8 +44,8 @@
 using namespace std;
 using namespace sc;
 
-const char* GaussianShell::amtypes = "spdfghiklmn";
-const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";
+const char* GaussianShell::amtypes = "spdfghiklmnoqrtuvwxyz";
+const char* GaussianShell::AMTYPES = "SPDFGHIKLMNOQRTUVWXYZ";
 
 static ClassDesc GaussianShell_cd(
   typeid(GaussianShell),"GaussianShell",2,"public SavableState",

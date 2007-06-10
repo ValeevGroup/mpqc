@@ -69,11 +69,12 @@ class GaussianShell: public SavableState
     void convert_coef();
     void normalize_shell();
     PrimitiveType keyval_init(const Ref<KeyVal>&,int,int);
+    int test_monobound(double &r, double &bound) const;
+  public:
+
     static const char* amtypes;
     static const char* AMTYPES;
 
-    int test_monobound(double &r, double &bound) const;
-  public:
     /** A GaussianShell constructor.
         Users of GaussianShell must pass pointers to newed memory that is kept
         by GaussianShell and deleted by the destructor.

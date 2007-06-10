@@ -226,9 +226,9 @@ LSelectBasisSet::lselect(const Ref<GaussianBasisSet>&basis)
 	 shells,
 	 shell_to_center);
 
-   SCFormIO::setverbose(ExEnv::out0(), 1);
-   basis->print();
-   print();
+    //SCFormIO::setverbose(ExEnv::out0(), 1);
+    //basis->print();
+    //print();
 }
 
 /////////////////////////////////////////////////////////////////////////////

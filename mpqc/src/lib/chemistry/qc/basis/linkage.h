@@ -30,11 +30,13 @@
 
 #include <chemistry/qc/basis/uncontract.h>
 #include <chemistry/qc/basis/split.h>
+#include <chemistry/qc/basis/lselect.h>
 
 namespace sc {
 
 static ForceLink<UncontractedBasisSet> basis_force_link_a_;
 static ForceLink<SplitBasisSet> basis_force_link_b_;
+static ForceLink<LSelectBasisSet> basis_force_link_c_;
 
 }
 

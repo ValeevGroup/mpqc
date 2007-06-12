@@ -2690,6 +2690,8 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (stdapprox() == LinearR12::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
+    if (stdapprox() == LinearR12::StdApprox_C)
+      globally_sum_scmatrix_(BC_[s],to_all_tasks);
     if (ebc() == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
       if (ks_ebcfree()) {

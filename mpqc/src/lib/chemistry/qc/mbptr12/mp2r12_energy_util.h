@@ -47,11 +47,11 @@ namespace sc {
     virtual ~MP2R12EnergyUtil_base();
     
     /// Prints A
-    virtual void print(const char* label, const RefSCMatrix& A) const = 0;
+    virtual void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Prints A
-    virtual void print(const char* label, const RefSymmSCMatrix& A) const = 0;
+    virtual void print(const char* label, const RefSymmSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Prints A
-    virtual void print(const char* label, const RefDiagSCMatrix& A) const = 0;
+    virtual void print(const char* label, const RefDiagSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Inverts A in-place
     virtual void invert(RefSymmSCMatrix& A) const = 0;
     /// Computes eigenvalues of A
@@ -89,11 +89,11 @@ namespace sc {
     ~MP2R12EnergyUtil() {}
     
     /// Prints A
-    void print(const char* label, const RefSCMatrix& A) const;
+    void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
     /// Prints A
-    void print(const char* label, const RefSymmSCMatrix& A) const;
+    void print(const char* label, const RefSymmSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
     /// Prints A
-    void print(const char* label, const RefDiagSCMatrix& A) const;
+    void print(const char* label, const RefDiagSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
     /// Inverts A in-place
     void invert(RefSymmSCMatrix& A) const;
     /// Computes eigenvalues of A

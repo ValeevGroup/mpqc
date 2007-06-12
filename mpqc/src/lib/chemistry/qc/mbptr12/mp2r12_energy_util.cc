@@ -362,48 +362,48 @@ namespace sc {
 
 
   template <>
-    void MP2R12EnergyUtil<false>::print(const char* label, const RefSCMatrix& A) const {
-      A.print(label);
+    void MP2R12EnergyUtil<false>::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
+      A.print(label,os);
     }
   template <>
-    void MP2R12EnergyUtil<false>::print(const char* label, const RefSymmSCMatrix& A) const {
-      A.print(label);
+    void MP2R12EnergyUtil<false>::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+      A.print(label,os);
     }
   template <>
-    void MP2R12EnergyUtil<false>::print(const char* label, const RefDiagSCMatrix& A) const {
-      A.print(label);
+    void MP2R12EnergyUtil<false>::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+      A.print(label,os);
     }
   template <>
-    void MP2R12EnergyUtil<true>::print(const char* label, const RefSCMatrix& A) const {
-      ExEnv::out0() << indent << label << ":" << endl;
+    void MP2R12EnergyUtil<true>::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
+      os << indent << label << ":" << endl;
       RefSCVector Aij = A.kit()->vector(gdim_);
       const unsigned int noo = oodim_.n();
       for(unsigned int ij=0; ij<noo; ++ij) {
 	get(ij,A,Aij);
 	ostringstream oss; oss << "Block " << ij;
-	Aij.print(oss.str().c_str());
+	Aij.print(oss.str().c_str(),os);
       }
     }
   template <>
-    void MP2R12EnergyUtil<true>::print(const char* label, const RefSymmSCMatrix& A) const {
-      ExEnv::out0() << indent << label << ":" << endl;
+    void MP2R12EnergyUtil<true>::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+      os << indent << label << ":" << endl;
       RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
       const unsigned int noo = oodim_.n();
       for(unsigned int ij=0; ij<noo; ++ij) {
 	get(ij,A,Aij);
 	ostringstream oss; oss << "Block " << ij;
-	Aij.print(oss.str().c_str());
+	Aij.print(oss.str().c_str(),os);
       }
     }
   template <>
-    void MP2R12EnergyUtil<true>::print(const char* label, const RefDiagSCMatrix& A) const {
-      ExEnv::out0() << indent << label << ":" << endl;
+    void MP2R12EnergyUtil<true>::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+      os << indent << label << ":" << endl;
       RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
       const unsigned int noo = oodim_.n();
       for(unsigned int ij=0; ij<noo; ++ij) {
 	get(ij,A,Aij);
 	ostringstream oss; oss << "Block " << ij;
-	Aij.print(oss.str().c_str());
+	Aij.print(oss.str().c_str(),os);
       }
     }
 

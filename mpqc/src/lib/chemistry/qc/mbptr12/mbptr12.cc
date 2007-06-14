@@ -48,9 +48,17 @@
 #endif
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/gaussianfit.h>
+#include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
+#include <chemistry/qc/mbptr12/linearr12.timpl.h>
+#include <chemistry/qc/mbptr12/print.h>
+
+// set to 1 to include the cusp region in the fit, other use Tew&Klopper's strategy
+#define INCLUDE_CUSP_IN_GTG_FIT 0
 
 using namespace std;
 using namespace sc;
+using namespace sc::LinearR12;
 
 /*--------------------------------
   MBPT2_R12
@@ -307,6 +315,87 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     }
     else
       throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
+  }
+  //
+  // stg-ng correlation factor
+  //
+  else if (corrfactor.find("stg") != string::npos || corrfactor.find("STG") != string::npos) {
+    // how many gaussians?
+    int ng12;
+    {
+	string::size_type pos1;
+	pos1 = corrfactor.find("stg-");
+	if (pos1 != 0)
+	    pos1 = corrfactor.find("STG-");
+	if (pos1 != 0)
+	    throw InputError("Should specify Slater-type geminal correlation factor as STG-NG, where N is the number of Gaussians in the fit",__FILE__,__LINE__);
+	// erage STG-
+	string str1 = corrfactor.erase(0,4);
+	// and trailing G also
+	pos1 = corrfactor.find("G");
+	if (pos1 == string::npos)
+	    pos1 = corrfactor.find("g");
+	if (pos1 == string::npos)
+	    throw InputError("Should specify Slater-type geminal correlation factor as STG-NG, where N is the number of Gaussians in the fit",__FILE__,__LINE__);
+	string ngtg_str = str1.erase(pos1,1);
+	ng12 = std::atoi(ngtg_str.c_str());
+	if (ng12 < 1)
+	    throw InputError("Number of Gaussian geminals must be greater than 0",__FILE__,__LINE__);
+    }
+
+    if (!keyval->exists("corr_param"))
+	throw InputError("keyword corr_param must be given when corrfactor=stg",__FILE__,__LINE__);
+
+    std::vector<double> stg_exponents;
+    typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
+    CorrParams params;
+    int num_f12 = keyval->count("corr_param");
+    if (num_f12 != 0) {
+        // Do I have contracted functions? Can't handle these (yet?)
+        bool contracted = (keyval->count("corr_param",0) != 0);
+        if (contracted)
+	    throw FeatureNotImplemented("Cannot accept contracted STG correlation factors yet",__FILE__,__LINE__);
+	
+	// Primitive functions only
+	for(int f=0; f<num_f12; f++) {
+            double exponent = keyval->doublevalue("corr_param", f);
+	    stg_exponents.push_back(exponent);
+	}
+    }
+    else { // single exponent
+	num_f12 = 1;
+        double exponent = keyval->doublevalue("corr_param");
+	stg_exponents.push_back(exponent);
+    }
+    // convert STGs into combinations of Gaussians
+    for(int f=0; f<num_f12; f++) {
+	using namespace sc::mbptr12;
+#if INCLUDE_CUSP_IN_GTG_FIT
+	// fit using weight r^6 exp(-0.005*r^2), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
+	PowerGaussian1D w(0.005,6,2);
+#else
+	// fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
+	PowerGaussian1D w(2.0,2,2);
+#endif
+	typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+	GTGFit gtgfit(ng12, w, 0.0, 10.0, 1001);
+	// fit r12^k exp(-gamma*r_{12})
+	const int k = 0;
+	const double gamma = stg_exponents[f];
+	Ref<G12CorrelationFactor> cf;
+	cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
+	params.push_back(cf->function(0));
+    }
+
+    // If stdapprox_ == C, no need for commutators
+    if (stdapprox_ == LinearR12::StdApprox_C)
+	corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+    else
+	corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+
+    if (debug_ >= DefaultPrintThresholds::diagnostics) {
+	corrfactor_->print();
+    }
   }
   //
   // no explicit correlation

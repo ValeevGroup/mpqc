@@ -49,32 +49,14 @@ inline void fail()
 }
 
 /*----------------
-  ShellPairsLibint2
+  ShellPairLibint2
   ----------------*/
-static ClassDesc ShellPairLibint2_cd(
-  typeid(ShellPairLibint2),"ShellPairLibint2",1,"virtual public SavableState",
-  0, 0, create<ShellPairLibint2>);
-
-ShellPairLibint2::ShellPairLibint2(Ref<PrimPairsLibint2>& p)
+ShellPairLibint2::ShellPairLibint2(const PrimPairsLibint2& p) : prim_pairs_(p)
 {
-  prim_pairs_ = p;
-}
-
-ShellPairLibint2::ShellPairLibint2(StateIn& si) :
-  SavableState(si)
-{
-  si.get(prim1_offset_);
-  si.get(prim2_offset_);
 }
 
 ShellPairLibint2::~ShellPairLibint2()
 {
-}
-
-void ShellPairLibint2::save_data_state(StateOut& so)
-{
-  so.put(prim1_offset_);
-  so.put(prim2_offset_);
 }
 
 void ShellPairLibint2::init(const int p1_offset, const int p2_offset)
@@ -91,20 +73,16 @@ static ClassDesc ShellPairsLibint2_cd(
   0, 0, create<ShellPairsLibint2>);
 
 ShellPairsLibint2::ShellPairsLibint2(const Ref<GaussianBasisSet>& bs1,
-				 const Ref<GaussianBasisSet>& bs2)
+				     const Ref<GaussianBasisSet>& bs2) :
+    bs1_(bs1), bs2_(bs2), prim_pairs_(new PrimPairsLibint2(bs1_,bs2_)),
+    shell_pair_(new ShellPairLibint2(*prim_pairs_))
 {
-  bs1_ = bs1;
-  bs2_ = bs2;
-  prim_pairs_ = new PrimPairsLibint2(bs1_,bs2_);
-  shell_pair_ = new ShellPairLibint2(prim_pairs_);
 }
 
-ShellPairsLibint2::ShellPairsLibint2(const Ref<ShellPairsLibint2>& sp)
+ShellPairsLibint2::ShellPairsLibint2(const Ref<ShellPairsLibint2>& sp) :
+    bs1_(sp->bs1_), bs2_(sp->bs2_), prim_pairs_(sp->prim_pairs_),
+    shell_pair_(new ShellPairLibint2(*prim_pairs_))
 {
-  bs1_ = sp->bs1_;
-  bs2_ = sp->bs2_;
-  prim_pairs_ = sp->prim_pairs_;
-  shell_pair_ = new ShellPairLibint2(prim_pairs_);
 }
 
 ShellPairsLibint2::ShellPairsLibint2(StateIn& si) :
@@ -113,8 +91,7 @@ ShellPairsLibint2::ShellPairsLibint2(StateIn& si) :
   bs1_ << SavableState::restore_state(si);
   bs2_ << SavableState::restore_state(si);
   prim_pairs_ = new PrimPairsLibint2(bs1_,bs2_);
-  shell_pair_ << SavableState::restore_state(si);
-  init_shell_pair(*this);
+  shell_pair_ = new ShellPairLibint2(*prim_pairs_);
 }
 
 ShellPairsLibint2::~ShellPairsLibint2()
@@ -125,12 +102,6 @@ void ShellPairsLibint2::save_data_state(StateOut& so)
 {
   SavableState::save_state(bs1_.pointer(),so);
   SavableState::save_state(bs2_.pointer(),so);
-  SavableState::save_state(shell_pair_.pointer(),so);
-}
-
-namespace sc {
-void init_shell_pair(ShellPairsLibint2& sp)
-{ sp.shell_pair_->prim_pairs_ = sp.prim_pairs_; }
 }
 
 

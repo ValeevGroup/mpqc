@@ -37,10 +37,12 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/libint2/bounds.h>
 
 namespace sc {
 
 class Integral;
+class Log2Bounds;
 
 /** Int2eLibint2 is an interface to various specializations of two-electron
     integral evaluators implemented in Libint2. It is used by TwoBodyIntLibint2 and TwoBodyDerivIntLibint2 to
@@ -54,6 +56,7 @@ class Int2eLibint2: public RefCount {
     Ref<GaussianBasisSet> bs3_;
     Ref<GaussianBasisSet> bs4_;
 
+    Ref<Log2Bounds> bounds_;
     Ref<MessageGrp> grp_;
 
     GaussianShell *int_shell1_;
@@ -108,6 +111,10 @@ class Int2eLibint2: public RefCount {
 	       size_t storage);
     ~Int2eLibint2();
 
+
+    /// provides the bounds evaluator for log2_bound
+    void bounds(const Ref<Log2Bounds>&);
+
     /// Sets storage limit and starts storage tracking
     void init_storage(size_t);
     /// Finishes storage tracking
@@ -129,6 +136,10 @@ class Int2eLibint2: public RefCount {
     virtual void compute_quartet(int *, int*, int*, int*) =0;
     /// Returns the location of the buffer with target integrals
     virtual double *buffer(unsigned int) const =0;
+    /// Computes log2 bound. By default Int2eLibint2 implementations are not required to compute bounds
+    /// hence usually this will return a large value.
+    virtual int log2_bound(int s1, int s2, int s3, int s4);
+
 
     Ref<GaussianBasisSet> basis()
     {

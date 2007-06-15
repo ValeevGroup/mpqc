@@ -96,6 +96,18 @@ class TwoBodyDerivIntLibint2 : public TwoBodyDerivInt {
     size_t used_storage() const { return int2elibint2_->storage_used(); }
 };
 
+    namespace libint2 {
+	template <class Int2e>
+	Ref<Int2e>
+	create_int2e(Integral*integral,
+		     const Ref<GaussianBasisSet>& b1,
+		     const Ref<GaussianBasisSet>& b2,
+		     const Ref<GaussianBasisSet>& b3,
+		     const Ref<GaussianBasisSet>& b4,
+		     size_t storage,
+		     const Ref<IntParams>& params);
+    }
+
 }
 
 #endif

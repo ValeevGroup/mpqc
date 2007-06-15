@@ -109,11 +109,17 @@ Int2eLibint2::~Int2eLibint2()
   done_storage();
 }
 
+void
+Int2eLibint2::bounds(const Ref<Log2Bounds>& b)
+{
+    bounds_ = b;
+}
+
 size_t
 Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
-			     const Ref<GaussianBasisSet>& b2,
-			     const Ref<GaussianBasisSet>& b3,
-			     const Ref<GaussianBasisSet>& b4)
+				const Ref<GaussianBasisSet>& b2,
+				const Ref<GaussianBasisSet>& b3,
+				const Ref<GaussianBasisSet>& b4)
 {
   size_t storage_required = 0;
   
@@ -164,6 +170,16 @@ Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
   }
 
   return storage_required;
+}
+
+int
+Int2eLibint2::log2_bound(int s1, int s2, int s3, int s4)
+{
+    if (bounds_.nonnull())
+	return bounds_->log2_bound(s1,s2,s3,s4);
+    else
+	// 2^256 ~ 10^26
+	return 256;
 }
 
 /////////////////////////////////////////////////////////////////////////////

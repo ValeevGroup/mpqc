@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
+#include <chemistry/qc/libint2/bounds.h>
+#include <chemistry/qc/libint2/bounds.timpl.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
 #endif
@@ -63,6 +65,78 @@ namespace util {
     }
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+namespace sc {
+    namespace libint2 {
+
+#if LIBINT2_SUPPORT_ERI
+	template<>
+	Ref<EriLibint2>
+	create_int2e(Integral*integral,
+		     const Ref<GaussianBasisSet>& b1,
+		     const Ref<GaussianBasisSet>& b2,
+		     const Ref<GaussianBasisSet>& b3,
+		     const Ref<GaussianBasisSet>& b4,
+		     size_t storage,
+		     const Ref<IntParams>& params)
+	{
+	    return new EriLibint2(integral,b1,b2,b3,b4,storage);
+	}
+#endif
+	
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+	template<>
+	Ref<G12Libint2>
+	create_int2e(Integral*integral,
+		     const Ref<GaussianBasisSet>& b1,
+		     const Ref<GaussianBasisSet>& b2,
+		     const Ref<GaussianBasisSet>& b3,
+		     const Ref<GaussianBasisSet>& b4,
+		     size_t storage,
+		     const Ref<IntParams>& params)
+	{
+	    typedef IntParamsG12 IPType;
+	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+	    return new G12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+	}
+# else
+	template<>
+	Ref<G12NCLibint2>
+	create_int2e(Integral*integral,
+		     const Ref<GaussianBasisSet>& b1,
+		     const Ref<GaussianBasisSet>& b2,
+		     const Ref<GaussianBasisSet>& b3,
+		     const Ref<GaussianBasisSet>& b4,
+		     size_t storage,
+		     const Ref<IntParams>& params)
+	{
+	    typedef IntParamsG12 IPType;
+	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+	    return new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+	}
+# endif
+#endif
+#if LIBINT2_SUPPORT_GENG12
+	template<>
+	Ref<GenG12Libint2>
+	create_int2e(Integral*integral,
+		     const Ref<GaussianBasisSet>& b1,
+		     const Ref<GaussianBasisSet>& b2,
+		     const Ref<GaussianBasisSet>& b3,
+		     const Ref<GaussianBasisSet>& b4,
+		     size_t storage,
+		     const Ref<IntParams>& params)
+	{
+	    typedef IntParamsGenG12 IPType;
+	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+	    return new GenG12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+	}
+#endif
+    }
+}
+
 TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				     const Ref<GaussianBasisSet>& b1,
 				     const Ref<GaussianBasisSet>& b2,
@@ -72,12 +146,17 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				     const Ref<IntParams>& params):
     TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype)
 {
+    using sc::libint2::create_int2e;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case erieval:
   {
-    int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,storage);
+    typedef EriLibint2 Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
     num_tbint_types_ = 1;
     break;
   }
@@ -86,18 +165,14 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case g12eval:
   {
-    typedef IntParamsG12 IPType;
-    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
     num_tbint_types_ = 6;
     break;
   }
 # else
   case g12nceval:
   {
-    typedef IntParamsG12 IPType;
-    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-    int2elibint2_ = new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
     num_tbint_types_ = 5;
     break;
   }
@@ -106,9 +181,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_GENG12
   case geng12eval:
   {
-    typedef IntParamsGenG12 IPType;
-    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-    int2elibint2_ = new GenG12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    int2elibint2_ = create_int2e<GenG12Libint2>(integral,b1,b2,b3,b4,storage,params);
     num_tbint_types_ = 4;
     break;
   }
@@ -137,7 +210,7 @@ TwoBodyIntLibint2::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntLibint2::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 10000000;//int2elibint2_->erep_4bound(is,js,ks,ls);
+  return int2elibint2_->log2_bound(is,js,ks,ls);
 }
 
 void
@@ -226,7 +299,7 @@ TwoBodyDerivIntLibint2::compute_shell(int is, int js, int ks, int ls,
 int
 TwoBodyDerivIntLibint2::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 0;//int2elibint2_->erep_4bound_1der(is,js,ks,ls);
+  return int2elibint2_->log2_bound(is,js,ks,ls);
 }
 
 /////////////////////////////////////////////////////////////////////////////

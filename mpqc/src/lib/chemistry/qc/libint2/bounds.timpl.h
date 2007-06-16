@@ -41,6 +41,7 @@ namespace libint2 {
     struct abs : public std::unary_function<const T&,T> {
 	T operator()(const T& x) {
 	    if (x < 0) return std::negate<T>()(x);
+	    else return x;
 	}
     };
 }
@@ -63,27 +64,29 @@ namespace sc {
 	const int ntasks = msg->n();
 	const int me = msg->me();
 
-	Ref<Int2e> int12 = libint2::create_int2e<Int2e>(integral,b1,b2,b1,b2,storage,params);
 	const int nsh1 = b1->nshell();
 	const int nsh2 = b2->nshell();
 	const int n12 = nsh1*nsh2;
-	Q12_.resize(n12);  for(int i=0; i<n12; ++i) Q12_[i] = 0.0;
-        double* buf12 = int12->buffer(0);
-	int f12 = 0;
-	for(int s1=0; s1<nsh1; ++s1) {
-	    const int nf1 = b1->shell(s1).nfunction();
-	    for(int s2=0; s2<nsh2; ++s2, ++f12) {
-		const int nf2 = b2->shell(s2).nfunction();
-		const int nf12 = nf1*nf2;
-
-		if (f12%ntasks != me)
-		    continue;
-
-		int12->compute_quartet(&s1,&s2,&s1,&s2);
-
-		std::transform(buf12,buf12+nf12,buf12,::libint2::abs<double>());
-		const double max_elem = *(std::max_element(buf12,buf12+nf12));
-		Q12_[f12] = Log2Bounds::bound_cast(max_elem);
+	{
+	    Ref<Int2e> int12 = libint2::create_int2e<Int2e>(integral,b1,b2,b1,b2,storage,params);
+	    Q12_.resize(n12);  for(int i=0; i<n12; ++i) Q12_[i] = 0.0;
+	    double* buf = int12->buffer(0);
+	    int f12 = 0;
+	    for(int s1=0; s1<nsh1; ++s1) {
+		const int nf1 = b1->shell(s1).nfunction();
+		for(int s2=0; s2<nsh2; ++s2, ++f12) {
+		    const int nf2 = b2->shell(s2).nfunction();
+		    const int nf = nf1*nf2*nf1*nf2;
+		    
+		    if (f12%ntasks != me)
+			continue;
+		    
+		    int12->compute_quartet(&s1,&s2,&s1,&s2);
+		    
+		    std::transform(buf,buf+nf,buf,::libint2::abs<double>());
+		    const double max_elem = *(std::max_element(buf,buf+nf));
+		    Q12_[f12] = Log2Bounds::bound_cast(max_elem);
+		}
 	    }
 	}
 	// propagate Q12_ among the nodes
@@ -101,7 +104,7 @@ namespace sc {
 	    if (equiv_12_34_) {
 		Q34_ = Q12_;
 	    }
-	    if (equiv_12_43_) {
+	    else if (equiv_12_43_) {
 		Q34_.resize(n12);
 		int f12 = 0;
 		for(int s2=0; s2<nsh2; ++s2) {

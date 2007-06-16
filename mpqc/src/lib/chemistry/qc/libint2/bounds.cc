@@ -36,8 +36,8 @@ using namespace sc;
 Log2Bounds::int_bound_t
 Log2Bounds::bound_cast(double value)
 {
-  static const double loginv = 1.0/log(2.0);
-  double tol = pow(2.0,double(int_bound_min));
+  static const double loginv = 1.0/std::log(2.0);
+  double tol = std::pow(2.0,double(int_bound_min));
   int_bound_t res;
 
   if (value > tol) res = (int_bound_t) std::ceil(std::log(value)*loginv);

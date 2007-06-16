@@ -33,15 +33,16 @@
 #define _chemistry_qc_libint2_boundstimpl_h
 
 #include <vector>
+#include <cmath>
 #include <util/class/scexception.h>
 #include <chemistry/qc/libint2/int2e.h>
 
 namespace libint2 {
     template <typename T>
-    struct abs : public std::unary_function<const T&,T> {
+    struct abssqrt : public std::unary_function<const T&,T> {
 	T operator()(const T& x) {
-	    if (x < 0) return std::negate<T>()(x);
-	    else return x;
+	    if (x < 0) return std::sqrt(std::negate<T>()(x));
+	    else return std::sqrt(x);
 	}
     };
 }
@@ -55,7 +56,8 @@ namespace sc {
 					const Ref<GaussianBasisSet>& b3,
 					const Ref<GaussianBasisSet>& b4,
 					size_t storage,
-					const Ref<IntParams>& params)
+					const Ref<IntParams>& params) :
+    nsh2_(b2->nshell()), nsh4_(b4->nshell())
     {
 	equiv_12_34_ = b1->equiv(b3) && b2->equiv(b4);
 	equiv_12_43_ = b1->equiv(b4) && b2->equiv(b3);
@@ -69,7 +71,7 @@ namespace sc {
 	const int n12 = nsh1*nsh2;
 	{
 	    Ref<Int2e> int12 = libint2::create_int2e<Int2e>(integral,b1,b2,b1,b2,storage,params);
-	    Q12_.resize(n12);  for(int i=0; i<n12; ++i) Q12_[i] = 0.0;
+	    Q12_.resize(n12);  for(int i=0; i<n12; ++i) Q12_[i] = (int_bound_t)0;
 	    double* buf = int12->buffer(0);
 	    int f12 = 0;
 	    for(int s1=0; s1<nsh1; ++s1) {
@@ -83,7 +85,7 @@ namespace sc {
 		    
 		    int12->compute_quartet(&s1,&s2,&s1,&s2);
 		    
-		    std::transform(buf,buf+nf,buf,::libint2::abs<double>());
+		    std::transform(buf,buf+nf,buf,::libint2::abssqrt<double>());
 		    const double max_elem = *(std::max_element(buf,buf+nf));
 		    Q12_[f12] = Log2Bounds::bound_cast(max_elem);
 		}
@@ -91,7 +93,7 @@ namespace sc {
 	}
 	// propagate Q12_ among the nodes
 	{
-	    double* q12 = new double[n12];
+	    int_bound_t* q12 = new int_bound_t[n12];
 	    std::copy(Q12_.begin(),Q12_.end(),q12);
 	    msg->sum(q12,n12);
 	    std::copy(q12,q12+n12,Q12_.begin());
@@ -114,6 +116,17 @@ namespace sc {
 		}
 	    }
 	}
+
+        if (debugclass_ > 1) {
+            ExEnv::out0() << indent << "BoundsLibint2::Q12 :" << std::endl;
+            int f12 = 0;
+            for(int s1=0; s1<nsh1; ++s1) {
+                for(int s2=0; s2<nsh2; ++s2, ++f12) {
+                    ExEnv::out0() << indent << s1 << " " << s2 << "  "
+                                  << int(Q12_[f12]) << std::endl;
+                }
+            }
+        }
     }
 
     template <class Int2e>

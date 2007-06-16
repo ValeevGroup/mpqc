@@ -40,6 +40,9 @@ namespace sc {
 
     /// Computes log2 bounds
     class Log2Bounds : virtual public RefCount {
+    protected:
+        // Set to non-zero to debug this and derived classes
+        static const int debugclass_ = 2;
     public:
 	typedef signed char int_bound_t;
 	enum { int_bound_min = SCHAR_MIN, int_bound_max = SCHAR_MAX };

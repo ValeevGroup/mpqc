@@ -47,7 +47,8 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
     cutoff_(accuracy), interp_order_(TAYLOR_INTERPOLATION_ORDER),
     ExpMath_(interp_order_+1,2*(mmax + interp_order_ - 1))
 {
-   
+    const double sqrt_pi = std::sqrt(M_PI);
+
   /*---------------------------------------
     We are doing Taylor interpolation with
     n=TAYLOR_ORDER terms here:
@@ -62,24 +63,34 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
   /*--- Figure out T_crit for each m and put into the T_crit ---*/
   for(int m=max_m_; m>=0; --m) {
     /*------------------------------------------
-      Newton-Raphson method to solve
+      Damped Newton-Raphson method to solve
       T^{m-0.5}*exp(-T) = epsilon*Gamma(m+0.5)
       The solution is the max T for which to do
       the interpolation
      ------------------------------------------*/
     double T = -log(cutoff_);
-    const double egamma = cutoff_ * std::sqrt(M_PI) * ExpMath_.df[2*m]/std::pow(2.0,m);
+    const double egamma = cutoff_ * sqrt_pi * ExpMath_.df[2*m]/std::pow(2.0,m);
     double T_new = T;
     double func;
     do {
+      const double damping_factor = 0.2;
       T = T_new;
+      /* f(T) = the difference between LHS and RHS of the equation above */
       func = std::pow(T,m-0.5) * std::exp(-T) - egamma;
       const double dfuncdT = ((m-0.5) * std::pow(T,m-1.5) - std::pow(T,m-0.5)) * std::exp(-T);
-      if (dfuncdT >= 0.0) {
-	T_new *= 2.5;
-	continue;
+      /* f(T) has 2 roots and has a maximum in between. If f'(T) > 0 we are to the left of the hump. Make a big step to the right. */
+      if (dfuncdT > 0.0) {
+	T_new *= 2.0;
       }
-      T_new = T - func/dfuncdT;
+      else {
+	/* damp the step */
+	double deltaT = -func/dfuncdT;
+	const double sign_deltaT = (deltaT > 0.0) ? 1.0 : -1.0;
+	const double max_deltaT = damping_factor * T;
+	if (std::fabs(deltaT) > max_deltaT)
+	  deltaT = sign_deltaT * max_deltaT;
+	T_new = T + deltaT;
+      }
       if ( T_new <= 0.0 ) {
 	T_new = T / 2.0;
       }
@@ -116,13 +127,12 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
 	  --T_idx) {
 	  const double T = T_idx * delT_;
 	  double denom = (m+0.5);
-	  const double T_o_denom = T/denom;
 	  double term = 0.5*std::exp(-T)/denom;
 	  double sum = term;
 	  double rel_error;
 	  do {
 	      denom += 1.0;
-	      term *= T_o_denom;
+	      term *= T/denom;
 	      sum += term;
 	      rel_error = term/sum;
 	  } while (rel_error >= cutoff_);

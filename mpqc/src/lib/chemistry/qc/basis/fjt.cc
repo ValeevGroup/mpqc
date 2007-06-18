@@ -174,27 +174,30 @@ Taylor_Fjt::values(int l, double T)
 {
   static const double sqrt_pio2 = std::sqrt(M_PI/2);
   const double two_T = 2.0*T;
-  double pow_two_T_to_minusjp05 = std::pow(two_T,-l-0.5);
 
+  // since Tcrit grows with l, this condition only needs to be determined once
+  const bool T_gt_Tcrit = T > T_crit_[l];
   // start recursion at j=jrecur
   const int jrecur = TAYLOR_INTERPOLATION_AND_RECURSION ? l : 0;
+  /*-------------------------------------
+     Compute Fj(T) from l down to jrecur
+   -------------------------------------*/
+  if (T_gt_Tcrit) {
+     double pow_two_T_to_minusjp05 = std::pow(two_T,-l-0.5);
+     for(int j=l; j>=jrecur; --j) {
+         /*--- Asymptotic formula ---*/
+          F_[j] = ExpMath_.df[2*j] * sqrt_pio2 * pow_two_T_to_minusjp05;
+          pow_two_T_to_minusjp05 *= two_T;
+     }
+  }
+  else {
+      const int T_ind = (int)std::floor(0.5+T*oodelT_);
+      const double h = T_ind * delT_ - T;
+      const double* F_row = grid_[T_ind] + l;
 
-  for(int j=l; j>=jrecur; --j) {
+      for(int j=l; j>=jrecur; --j, --F_row) {
 
-      const double T_crit = T_crit_[j];
-      /*------------------------
-	Compute Fj(T) ...
-       ------------------------*/
-      if (T > T_crit) {
-	  /*--- Asymptotic formula ---*/
-	  F_[j] = ExpMath_.df[2*j] * sqrt_pio2 * pow_two_T_to_minusjp05;
-	  pow_two_T_to_minusjp05 *= two_T;
-      }
-      else {
 	  /*--- Taylor interpolation ---*/
-	  const int T_ind = (int)std::floor(0.5+T*oodelT_);
-	  const double h = T_ind * delT_ - T;
-	  const double* F_row = grid_[T_ind] + j;
 	  F_[j] =          F_row[0]
 #if TAYLOR_INTERPOLATION_ORDER > 0
 	    +       h*(F_row[1]
@@ -242,12 +245,13 @@ Taylor_Fjt::values(int l, double T)
 		 )
 #endif
 	  ;
-      } // if T < T_crit
-  } // interpolation for F_j(T), jrecur<=j<=l
+     } // interpolation for F_j(T), jrecur<=j<=l
+  } // if T < T_crit
 
   /*------------------------------------
     And then do downward recursion in j
    ------------------------------------*/
+#if TAYLOR_INTERPOLATION_AND_RECURSION
   if (l > 0 && jrecur > 0) {
     double F_jp1 = F_[jrecur];
     const double exp_jT = std::exp(-T);
@@ -257,6 +261,7 @@ Taylor_Fjt::values(int l, double T)
       F_jp1 = F_j;
     }
   }
+#endif
 
   return F_;
 }

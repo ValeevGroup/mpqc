@@ -292,6 +292,20 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
 
   grp_->sum(vec,nsht);
   grp_->max(overall,1);
+
+#if 0
+  {
+    ExEnv::out0() << indent << "Bounds IntV3:" << endl;
+    const int nsh1 = bs1_->nshell();
+    int f12 = 0;
+    for(int s1=0; s1<nsh1; ++s1) {
+      for(int s2=0; s2<=s1; ++s2, ++f12) {
+        ExEnv::out0() << indent << s1 << " " << s2 << "  "
+                      << int(vec[f12]) << endl;
+      }
+    }
+  }
+#endif
   }
 
 /* Compute the partial bound arrays, either Q or R can be computed

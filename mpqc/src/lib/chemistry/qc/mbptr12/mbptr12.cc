@@ -371,8 +371,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     for(int f=0; f<num_f12; f++) {
 	using namespace sc::mbptr12;
 #if INCLUDE_CUSP_IN_GTG_FIT
-	// fit using weight r^6 exp(-0.005*r^2), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
-	PowerGaussian1D w(0.005,6,2);
+	// fit using weight exp(-0.005*r^6), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
+	PowerGaussian1D w(0.005,6,0);
 #else
 	// fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
 	PowerGaussian1D w(2.0,2,2);

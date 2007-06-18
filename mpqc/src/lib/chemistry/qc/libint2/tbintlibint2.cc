@@ -210,7 +210,8 @@ TwoBodyIntLibint2::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntLibint2::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return int2elibint2_->log2_bound(is,js,ks,ls);
+  const int bound = int2elibint2_->log2_bound(is,js,ks,ls);
+  return bound;
 }
 
 void

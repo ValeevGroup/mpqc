@@ -49,7 +49,7 @@ namespace sc {
 	Log2Bounds() {}
 	virtual ~Log2Bounds() {}
 
-	virtual int_bound_t log2_bound(int sh1, int sh2, int sh3, int sh4) const =0;
+	virtual int log2_bound(int sh1, int sh2, int sh3, int sh4) const =0;
 	static int_bound_t bound_cast(double);
     };
 
@@ -69,7 +69,7 @@ namespace sc {
 	~BoundsLibint2();
 
 	/// Implements Log2Bounds::log2_bound()
-	int_bound_t log2_bound(int sh1, int sh2, int sh3, int sh4) const;
+	int log2_bound(int sh1, int sh2, int sh3, int sh4) const;
 
     private:
 	std::vector<int_bound_t> Q12_;
@@ -78,6 +78,8 @@ namespace sc {
 	int nsh4_;
 	bool equiv_12_34_;
 	bool equiv_12_43_;
+        bool equiv_1_2_;
+        bool equiv_3_4_;
 
     };
 

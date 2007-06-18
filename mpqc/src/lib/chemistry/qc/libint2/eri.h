@@ -88,7 +88,7 @@ class EriLibint2: public Int2eLibint2 {
     /*--- Compute engines ---*/
     Libint_t Libint_;
     // set to 1 use taylor interpolation
-    static const bool use_taylor_fjt_ = 0;
+    static const bool use_taylor_fjt_ = 1;
     Ref<Fjt> Fm_Eval_;
   
   public:

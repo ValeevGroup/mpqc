@@ -61,6 +61,8 @@ namespace sc {
     {
 	equiv_12_34_ = b1->equiv(b3) && b2->equiv(b4);
 	equiv_12_43_ = b1->equiv(b4) && b2->equiv(b3);
+        equiv_1_2_ = b1->equiv(b2);
+        equiv_3_4_ = b3->equiv(b4);
 
 	Ref<MessageGrp> msg = integral->messagegrp();
 	const int ntasks = msg->n();
@@ -119,9 +121,10 @@ namespace sc {
 
         if (debugclass_ > 1) {
             ExEnv::out0() << indent << "BoundsLibint2::Q12 :" << std::endl;
-            int f12 = 0;
             for(int s1=0; s1<nsh1; ++s1) {
-                for(int s2=0; s2<nsh2; ++s2, ++f12) {
+                const int s2max = equiv_1_2_ ? s1 : nsh2-1;
+                for(int s2=0; s2<=s2max; ++s2) {
+                    const int f12 = s1*nsh2 + s2;
                     ExEnv::out0() << indent << s1 << " " << s2 << "  "
                                   << int(Q12_[f12]) << std::endl;
                 }
@@ -135,7 +138,7 @@ namespace sc {
     }
 
     template <class Int2e>
-    Log2Bounds::int_bound_t
+    int
     BoundsLibint2<Int2e>::log2_bound(int sh1, int sh2, int sh3, int sh4) const
     {
 	return Q12_[nsh2_*sh1 + sh2] + Q34_[nsh4_*sh3 + sh4];

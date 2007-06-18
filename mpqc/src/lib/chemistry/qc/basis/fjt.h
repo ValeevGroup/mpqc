@@ -49,6 +49,7 @@ namespace sc {
     };
 
 #define TAYLOR_INTERPOLATION_ORDER 4
+#define TAYLOR_INTERPOLATION_AND_RECURSION 1  // compute F_lmax(T) and then iterate down to F_0(T)? Else use interpolation only
     /// Uses Taylor interpolation of up to 8-th order to compute the Boys function
     class Taylor_Fjt : public Fjt {
 	static double relative_zero_;

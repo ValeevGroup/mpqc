@@ -173,22 +173,29 @@ double *
 Taylor_Fjt::values(int l, double T)
 {
   static const double sqrt_pio2 = std::sqrt(M_PI/2);
-  const double T_crit = T_crit_[l];
   const double two_T = 2.0*T;
+  double pow_two_T_to_minusjp05 = std::pow(two_T,-l-0.5);
 
-  /*------------------------
-    First compute Fl(T) ...
-   ------------------------*/
-  if (T > T_crit) {
-    /*--- Asymptotic formula ---*/
-    F_[l] = ExpMath_.df[2*l] * sqrt_pio2 * std::pow(two_T,-l-0.5);
-  }
-  else {
-    /*--- Taylor interpolation ---*/
-      const int T_ind = (int)std::floor(0.5+T*oodelT_);
-      const double h = T_ind * delT_ - T;
-      const double* F_row = grid_[T_ind] + l;
-      F_[l] =          F_row[0]
+  // start recursion at j=jrecur
+  const int jrecur = TAYLOR_INTERPOLATION_AND_RECURSION ? l : 0;
+
+  for(int j=l; j>=jrecur; --j) {
+
+      const double T_crit = T_crit_[j];
+      /*------------------------
+	Compute Fj(T) ...
+       ------------------------*/
+      if (T > T_crit) {
+	  /*--- Asymptotic formula ---*/
+	  F_[j] = ExpMath_.df[2*j] * sqrt_pio2 * pow_two_T_to_minusjp05;
+	  pow_two_T_to_minusjp05 *= two_T;
+      }
+      else {
+	  /*--- Taylor interpolation ---*/
+	  const int T_ind = (int)std::floor(0.5+T*oodelT_);
+	  const double h = T_ind * delT_ - T;
+	  const double* F_row = grid_[T_ind] + j;
+	  F_[j] =          F_row[0]
 #if TAYLOR_INTERPOLATION_ORDER > 0
 	    +       h*(F_row[1]
 #endif
@@ -235,18 +242,19 @@ Taylor_Fjt::values(int l, double T)
 		 )
 #endif
 	  ;
-  }
+      } // if T < T_crit
+  } // interpolation for F_j(T), jrecur<=j<=l
 
   /*------------------------------------
-    And then do downward recursion in m
+    And then do downward recursion in j
    ------------------------------------*/
-  if (l > 0) {
-    double F_mp1 = F_[l];
-    const double exp_mT = std::exp(-T);
-    for(int m=l-1; m>=0; --m) {
-      const double F_m = (exp_mT + two_T*F_mp1)*oo2np1[m];
-      F_[m] = F_m;
-      F_mp1 = F_m;
+  if (l > 0 && jrecur > 0) {
+    double F_jp1 = F_[jrecur];
+    const double exp_jT = std::exp(-T);
+    for(int j=jrecur-1; j>=0; --j) {
+      const double F_j = (exp_jT + two_T*F_jp1)*oo2np1[j];
+      F_[j] = F_j;
+      F_jp1 = F_j;
     }
   }
 

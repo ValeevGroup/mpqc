@@ -32,11 +32,12 @@
 #ifndef _chemistry_qc_intv3_fjt_h
 #define _chemistry_qc_intv3_fjt_h
 
-#include <util/ref/ref.h>
+#include <chemistry/qc/basis/fjt.h>
 
 namespace sc {
 
-class FJT: public RefCount {
+/// Computes F_j(T) using 6-th order Taylor interpolation
+class FJT: public Fjt {
   private:
     double **gtable;
 
@@ -51,9 +52,7 @@ class FJT: public RefCount {
   public:
     FJT(int n);
     ~FJT();
-    // Returns J-1 doubles.  The use may read/write these values.
-    // They will be overwritten with the next call to values.
-    // They will be deleted during the call to ~FJT.
+    /// implementation of Fjt::values()
     double *values(int J, double T);
 };
 

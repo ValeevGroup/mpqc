@@ -87,7 +87,9 @@ class EriLibint2: public Int2eLibint2 {
     void eri_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     Libint_t Libint_;
-    Ref<FJT> Fm_Eval_;
+    // set to 1 use taylor interpolation
+    static const bool use_taylor_fjt_ = 0;
+    Ref<Fjt> Fm_Eval_;
   
   public:
     EriLibint2(Integral *,

@@ -84,7 +84,7 @@ class EriCints: public Int2eCints {
     void eri_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     Libint_t Libint_;
-    Ref<FJT> Fm_Eval_;
+    Ref<Fjt> Fm_Eval_;
   
   public:
     EriCints(Integral *,

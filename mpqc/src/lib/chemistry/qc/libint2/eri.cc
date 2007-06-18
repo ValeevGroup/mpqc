@@ -125,7 +125,10 @@ EriLibint2::EriLibint2(Integral *integral,
     bs2_->max_angular_momentum() +
     bs3_->max_angular_momentum() +
     bs4_->max_angular_momentum();
-  Fm_Eval_ = new FJT(mmax);
+  if (use_taylor_fjt_)
+      Fm_Eval_ = new Taylor_Fjt(mmax,1e-15);
+  else
+      Fm_Eval_ = new FJT(mmax);
 }
 
 

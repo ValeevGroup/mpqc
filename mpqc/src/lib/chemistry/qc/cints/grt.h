@@ -85,7 +85,7 @@ class GRTCints: public Int2eCints {
     void grt_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     Libr12_t Libr12_;
-    Ref<FJT> Fm_Eval_;
+    Ref<Fjt> Fm_Eval_;
   
   public:
     GRTCints(Integral *,

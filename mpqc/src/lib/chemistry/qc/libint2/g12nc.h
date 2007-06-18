@@ -109,7 +109,7 @@ class G12NCLibint2: public Int2eLibint2 {
 			     bool eri_only = false);
     /*--- Compute engines ---*/
     Libint_t Libint_;
-    Ref<FJT> Fm_Eval_;
+    Ref<Fjt> Fm_Eval_;
 
     class ExpensiveMath {
     public:

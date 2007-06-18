@@ -34,31 +34,59 @@
 
 #include <util/ref/ref.h>
 
-class Taylor_Fjt_Eval : public RefCount {
-  private:
-    double **grid;            /* Table of "exact" Fm(T) values. Row index corresponds to
-				 values of T (max_T+1 rows), column index to values
-				 of m (max_m+1 columns) */
-    double delT;              /* The step size for T, depends on cutoff */
-    double cutoff;            /* Tolerance cutoff used in all computations of Fm(T) */
-    int order_interp;         /* Order of (Taylor) interpolation */
-    int max_m;                /* Maximum value of m in the table, depends on cutoff
-				 and the number of terms in Taylor interpolation */
-    int max_T;                /* Maximum index of T in the table, depends on cutoff
-			         and m */
-    double *T_crit;           /* Maximum T for each row, depends on cutoff;
-				 for a given m and T_idx <= max_T_idx[m] use Taylor interpolation,
-				 for a given m and T_idx > max_T_idx[m] use the asymptotic formula */
-    double *Fjt_buffer;       /* Here computed values of Fj(T) are stored */
+namespace sc {
 
-  public:
-    Taylor_Fjt_Eval(unsigned int mmax, double accuracy);
-    ~Taylor_Fjt_Eval();
-    double *compute_Fjt(double T, unsigned int l);  /* The function which computes a set of Fm(T), 0<=m<=l
-						       for given T and l */
-};
+    /// Evaluates the Boys function F_j(T)
+    class Fjt: public RefCount {
+    public:
+	Fjt() {}
+	~Fjt() {}
+	/** Computed F_j(T) for every 0 <= j <= J (total of J+1 doubles).
+	    The user may read/write these values.
+	    The values will be overwritten with the next call to this functions.
+	    The pointer will be invalidated after the call to ~Fjt. */
+	virtual double *values(int J, double T) =0;
+    };
 
-#endif
+#define TAYLOR_INTERPOLATION_ORDER 4
+    /// Uses Taylor interpolation of up to 8-th order to compute the Boys function
+    class Taylor_Fjt : public Fjt {
+    public:
+	static const int max_interp_order = 8;
+	
+	Taylor_Fjt(unsigned int jmax, double accuracy);
+	~Taylor_Fjt();
+	/// Implements Fjt::values()
+	double *values(int J, double T);
+    private:
+	double **grid_;            /* Table of "exact" Fm(T) values. Row index corresponds to
+				      values of T (max_T+1 rows), column index to values
+				      of m (max_m+1 columns) */
+	double delT_;              /* The step size for T, depends on cutoff */
+	double cutoff_;            /* Tolerance cutoff used in all computations of Fm(T) */
+	int interp_order_;         /* Order of (Taylor) interpolation */
+	int max_m_;                /* Maximum value of m in the table, depends on cutoff
+				      and the number of terms in Taylor interpolation */
+	int max_T_;                /* Maximum index of T in the table, depends on cutoff
+				      and m */
+	double *T_crit_;           /* Maximum T for each row, depends on cutoff;
+				      for a given m and T_idx <= max_T_idx[m] use Taylor interpolation,
+				      for a given m and T_idx > max_T_idx[m] use the asymptotic formula */
+	double *F_;                /* Here computed values of Fj(T) are stored */
+
+	class ExpensiveMath {
+	public:
+	    ExpensiveMath(int ifac, int idf);
+	    ~ExpensiveMath();
+	    double *fac;
+	    double *df;
+	};
+	ExpensiveMath ExpMath_;
+    };
+
+} // end of namespace sc
+
+#endif // header guard
 
 // Local Variables:
 // mode: c++

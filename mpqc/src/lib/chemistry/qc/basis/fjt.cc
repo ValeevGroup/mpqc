@@ -39,6 +39,8 @@ using namespace std;
 
 #define SOFT_ZERO 1e-6
 
+double Taylor_Fjt::relative_zero_(1e-6);
+
 /*------------------------------------------------------
   Initialize Taylor_Fm_Eval object (computes incomplete
   gamma function via Taylor interpolation)
@@ -96,7 +98,7 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
       }
     } while (std::fabs(func/egamma) >= SOFT_ZERO);
     T_crit_[m] = T_new;
-    const int T_idx = std::floor(T_new/delT_);
+    const int T_idx = (int)std::floor(T_new/delT_);
     max_T_ = std::max(max_T_,T_idx);
   }
 
@@ -121,6 +123,7 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
        of the row or maybe use downward recursion
    -------------------------------------------------------*/
   /*--- do the mmax first ---*/
+  const double cutoff_o_10 = 0.1 * cutoff_;
   for(int m=0; m<=max_m_; ++m) {
       for(int T_idx = max_T_;
 	  T_idx >= 0;
@@ -130,12 +133,16 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
 	  double term = 0.5*std::exp(-T)/denom;
 	  double sum = term;
 	  double rel_error;
+	  double epsilon;
 	  do {
 	      denom += 1.0;
 	      term *= T/denom;
 	      sum += term;
 	      rel_error = term/sum;
-	  } while (rel_error >= cutoff_);
+	      // stop if adding a term smaller or equal to cutoff_/10 and smaller than relative_zero * sum
+	      // When sum is small in absolute value, the second threshold is more important
+	      epsilon = std::min(cutoff_o_10, sum*relative_zero_);
+	  } while (term >epsilon);
 
 	  grid_[T_idx][m] = sum;
       }

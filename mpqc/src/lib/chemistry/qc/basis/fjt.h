@@ -51,6 +51,7 @@ namespace sc {
 #define TAYLOR_INTERPOLATION_ORDER 4
     /// Uses Taylor interpolation of up to 8-th order to compute the Boys function
     class Taylor_Fjt : public Fjt {
+	static double relative_zero_;
     public:
 	static const int max_interp_order = 8;
 	

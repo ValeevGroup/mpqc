@@ -64,6 +64,7 @@ namespace sc {
 				      values of T (max_T+1 rows), column index to values
 				      of m (max_m+1 columns) */
 	double delT_;              /* The step size for T, depends on cutoff */
+	double oodelT_;            /* 1.0 / delT_, see above */
 	double cutoff_;            /* Tolerance cutoff used in all computations of Fm(T) */
 	int interp_order_;         /* Order of (Taylor) interpolation */
 	int max_m_;                /* Maximum value of m in the table, depends on cutoff

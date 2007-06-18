@@ -39,6 +39,10 @@ using namespace std;
 
 #define SOFT_ZERO 1e-6
 
+namespace {
+#include "static.h"
+};
+
 double Taylor_Fjt::relative_zero_(1e-6);
 
 /*------------------------------------------------------
@@ -59,6 +63,7 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
    ---------------------------------------*/
   delT_ = 2.0*std::pow(cutoff_*ExpMath_.fac[interp_order_+1],
 		       1.0/interp_order_);
+  oodelT_ = 1.0/delT_;
   max_m_ = mmax + interp_order_ - 1;
 
   T_crit_ = new double[max_m_ + 1];   /*--- m=0 is included! ---*/
@@ -167,8 +172,7 @@ Taylor_Fjt::~Taylor_Fjt()
 double *
 Taylor_Fjt::values(int l, double T)
 {
-#include "static.h"
-
+  static const double sqrt_pio2 = std::sqrt(M_PI/2);
   const double T_crit = T_crit_[l];
   const double two_T = 2.0*T;
 
@@ -177,11 +181,11 @@ Taylor_Fjt::values(int l, double T)
    ------------------------*/
   if (T > T_crit) {
     /*--- Asymptotic formula ---*/
-    F_[l] = ExpMath_.df[2*l] * std::sqrt(M_PI/2)/std::pow(two_T,l+0.5);
+    F_[l] = ExpMath_.df[2*l] * sqrt_pio2 * std::pow(two_T,-l-0.5);
   }
   else {
     /*--- Taylor interpolation ---*/
-      const int T_ind = (int)std::floor(0.5+T/delT_);
+      const int T_ind = (int)std::floor(0.5+T*oodelT_);
       const double h = T_ind * delT_ - T;
       const double* F_row = grid_[T_ind] + l;
       F_[l] =          F_row[0]

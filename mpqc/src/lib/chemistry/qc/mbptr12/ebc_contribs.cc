@@ -181,7 +181,7 @@ R12IntEval::AT2_contrib_to_V_()
 {
   if (evaluated_)
     return;
-  if (r12info_->msg()->me() == 0) {
+
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
       
@@ -199,9 +199,10 @@ R12IntEval::AT2_contrib_to_V_()
       }
       if (debug_ >= DefaultPrintThresholds::mostN0)
         print_scmat_norms(V,label.c_str());
-      V_[s].accumulate(V);
+      if (r12info_->msg()->me() == 0)
+        V_[s].accumulate(V);
     }
-  }
+
   globally_sum_intermeds_();
 }
 

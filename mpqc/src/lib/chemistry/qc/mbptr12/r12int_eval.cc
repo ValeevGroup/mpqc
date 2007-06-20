@@ -1691,6 +1691,78 @@ R12IntEval::K_i_p(SpinCase1 spin)
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::K_i_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_i_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_i_m_[s],
+	    extspace,intspace);
+  return K_i_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_i_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_i_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_i_a_[s],
+	    extspace,intspace);
+  return K_i_a_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_m_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_m_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = occ(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_m_a_[s],
+	    extspace,intspace);
+  return K_m_a_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_a_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_a_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = vir_act(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_a_a_[s],
+	    extspace,intspace);
+  return K_a_a_[s];
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::K_p_P(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -1742,6 +1814,42 @@ R12IntEval::K_p_p(SpinCase1 spin)
 	    K_p_p_[s],
 	    extspace,intspace);
   return K_p_p_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_p_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_p_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_p_m_[s],
+	    extspace,intspace);
+  return K_p_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_p_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return K_p_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,false,true,
+	    null,
+	    null,
+	    K_p_a_[s],
+	    extspace,intspace);
+  return K_p_a_[s];
 }
 
 const Ref<MOIndexSpace>&
@@ -2817,6 +2925,32 @@ R12IntEval::K_x_p(SpinCase1 S)
 	return(K_i_p(S));
     case LinearR12::OrbProd_pq:
 	return(K_p_p(S));
+    default:
+	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_x_m(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+	return(K_i_m(S));
+    case LinearR12::OrbProd_pq:
+	return(K_p_m(S));
+    default:
+	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::K_x_a(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+	return(K_i_a(S));
+    case LinearR12::OrbProd_pq:
+	return(K_p_a(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }

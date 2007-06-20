@@ -64,11 +64,6 @@ using namespace sc;
 #define INCLUDE_P_AKB 1
 #define INCLUDE_P_AKb 1
 #define INCLUDE_P_aKB 1
-#define TEST_P_AKB 0
-#define TEST_P_AKb 0
-#define TEST_P_aKB 0
-#define TEST_P_aKb 0
-#define TEST_P_AKb_EXPL 0
 
 void
 R12IntEval::compute_BB_()
@@ -76,6 +71,7 @@ R12IntEval::compute_BB_()
   if (evaluated_)
     return;
   
+  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   
   tim_enter("B(app. B) intermediate");
@@ -99,9 +95,6 @@ R12IntEval::compute_BB_()
     const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
 
 #if INCLUDE_Q
-    Ref<MOIndexSpace> Kxp1 = K_x_p(spin1);
-    Ref<MOIndexSpace> Kxp2 = K_x_p(spin2);
-    
     const LinearR12::ABSMethod absmethod = r12info()->abs_method();
     const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
                              absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
@@ -115,8 +108,19 @@ R12IntEval::compute_BB_()
     // compute Q
     RefSCMatrix Q;
     if (include_Kp) {
-	compute_X_(Q,spincase2,xspace1,xspace2,
- 		               xspace1,Kxp2);
+	if (vbs_eq_obs) {
+	    Ref<MOIndexSpace> Kxp2 = K_x_p(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,Kxp2);
+	} // VBS == OBS
+	else { // VBX != OBS
+	    Ref<MOIndexSpace> Kxm2 = K_x_m(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,Kxm2);
+	    Ref<MOIndexSpace> Kxa2 = K_x_a(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,Kxa2);
+	}
     }
     if (!abs_eq_obs) {
 	Ref<MOIndexSpace> KxA2 = K_x_A(spin2);
@@ -124,21 +128,32 @@ R12IntEval::compute_BB_()
                                xspace1,KxA2);
     }
     if (xspace1 != xspace2) {
-      if (include_Kp) {
-	compute_X_(Q,spincase2,xspace1,xspace2,
-		               Kxp1,xspace2);
-      }
-      if (!abs_eq_obs) {
-	Ref<MOIndexSpace> KxA1 = K_x_A(spin1);
-        compute_X_(Q,spincase2,xspace1,xspace2,
-		               KxA1,xspace2);
-      }
+	if (include_Kp) {
+	    if (vbs_eq_obs) {
+		Ref<MOIndexSpace> Kxp1 = K_x_p(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   Kxp1,xspace2);
+	    } // VBS == OBS
+	    else { // VBS != OBS
+		Ref<MOIndexSpace> Kxm1 = K_x_m(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   Kxm1,xspace2);
+		Ref<MOIndexSpace> Kxa1 = K_x_a(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   Kxa1,xspace2);
+	    }
+	}
+	if (!abs_eq_obs) {
+	    Ref<MOIndexSpace> KxA1 = K_x_A(spin1);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       KxA1,xspace2);
+	}
     }
     else {
-      Q.scale(2.0);
-      if (spincase2 == AlphaBeta) {
-	symmetrize<false>(Q,Q,xspace1,xspace1);
-      }
+	Q.scale(2.0);
+	if (spincase2 == AlphaBeta) {
+	    symmetrize<false>(Q,Q,xspace1,xspace1);
+	}
     }
 
     ExEnv::out0() << decindent;
@@ -175,16 +190,42 @@ R12IntEval::compute_BB_()
       RefSCMatrix P;
       if (r12info()->maxnabs() < 2) {
 
-        Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
-        Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
+	  if (vbs_eq_obs) {
+	      Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
+	      Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
+	      
+	      // R_klpB K_pa R_aBij
+	      compute_FxF_(P,spincase2,
+			   xspace1,xspace2,
+			   xspace1,xspace2,
+			   cabs1,cabs2,
+			   vir1,vir2,
+			   kvir1_obs,kvir2_obs);
+	  } // VBS == OBS
+	  else { // VBS != OBS
+	      Ref<MOIndexSpace> Kma1 = K_m_a(spin1);
+	      Ref<MOIndexSpace> Kma2 = K_m_a(spin2);
+	      
+	      // R_klmB K_ma R_aBij
+	      compute_FxF_(P,spincase2,
+			   xspace1,xspace2,
+			   xspace1,xspace2,
+			   cabs1,cabs2,
+			   occ1,occ2,
+			   Kma1,Kma2);
 
-        // R_klpB K_pa R_aBij
-        compute_FxF_(P,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     cabs1,cabs2,
-                     vir1,vir2,
-                     kvir1_obs,kvir2_obs);
+	      Ref<MOIndexSpace> Kaa1 = K_a_a(spin1);
+	      Ref<MOIndexSpace> Kaa2 = K_a_a(spin2);
+	      
+	      // R_klbB K_ba R_aBij
+	      compute_FxF_(P,spincase2,
+			   xspace1,xspace2,
+			   xspace1,xspace2,
+			   cabs1,cabs2,
+			   vir1,vir2,
+			   Kaa1,Kaa2);
+	  }
+
       }
       else {
 
@@ -202,23 +243,6 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      kcabs1,kcabs2);
 
-#if TEST_P_AKB
-        P.print("R_klPB K_PA R_ABij");
-
-        RefSCMatrix P_AKB = P.clone(); P_AKB.assign(0.0);
-        Ref<MOIndexSpace> kabs1 = kribs_T(spin1);
-        Ref<MOIndexSpace> kabs2 = kribs_T(spin2);
-        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
-        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
-        // R_klAB K_AP R_PBij
-        compute_FxF_(P_AKB,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     cabs1,cabs2,
-                     abs1,abs2,
-                     kabs1,kabs2);
-        P_AKB.print("R_klAB K_AP R_PBij");
-#endif
 #endif // INCLUDE_P_AKB
 
 #if INCLUDE_P_AKb
@@ -230,120 +254,6 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      kcabs1,kcabs2);
 
-#if TEST_P_AKb
-        P.print("R_klPb K_PA R_Abij");
-
-	RefSCMatrix P_AKb = P.clone(); P_AKb.assign(0.0);
-	Ref<MOIndexSpace> kabs1 = kribs_T(spin1);
-        Ref<MOIndexSpace> kabs2 = kribs_T(spin2);
-        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
-        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
-        // R_klAb K_AP R_Pbij
-        compute_FxF_(P_AKb,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     vir1,vir2,
-                     abs1,abs2,
-                     kabs1,kabs2);
-        P_AKb.print("R_klAb K_AP R_Pbij");
-#endif
-
-#if TEST_P_AKb_EXPL
-        Ref<R12IntEval> thisref(this);
-        // (i a |i a') tforms
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiA;
-        {
-          NewTransformCreator tform_creator(thisref,xspace1,vir1,xspace2,cabs2,true);
-          fill_container(tform_creator,tforms_iaiA);
-        }
-        // (i a |i p') tforms
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiP;
-        {
-          NewTransformCreator tform_creator(thisref,xspace1,vir1,xspace2,abs2,true);
-          fill_container(tform_creator,tforms_iaiP);
-        }
-
-        Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-        RefSCDimension dim_aA = new SCDimension(vir1->rank() * cabs2->rank());
-        RefSCDimension dim_aP = new SCDimension(vir1->rank() * abs2->rank());
-        RefSCMatrix F12_ij_aA = localkit->matrix(dim_oo(spincase2),dim_aA);  F12_ij_aA.assign(0.0);
-        RefSCMatrix F12_ij_aP = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_aP.assign(0.0);
-        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
-          F12_ij_aA, corrfactor()->tbint_type_f12(),
-          xspace1, vir1,
-          xspace2, cabs2,
-          spincase2!=AlphaBeta, tforms_iaiA
-        );
-        F12_ij_aA.print("F12 (aA)");
-        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
-          F12_ij_aP, corrfactor()->tbint_type_f12(),
-          xspace1, vir1,
-          xspace2, abs2,
-          spincase2!=AlphaBeta, tforms_iaiP
-        );
-        F12_ij_aP.print("F12 (aP)");
-
-        // Test these too
-        // (i a'|i a) tforms
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iAia;
-        {
-          NewTransformCreator tform_creator(thisref,xspace1,cabs1,xspace2,vir2,true);
-          fill_container(tform_creator,tforms_iAia);
-        }
-        // (i p'|i a) tforms
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iPia;
-        {
-          NewTransformCreator tform_creator(thisref,xspace1,abs1,xspace2,vir2,true);
-          fill_container(tform_creator,tforms_iPia);
-        }
-        RefSCMatrix F12_ij_Aa = localkit->matrix(dim_oo(spincase2),dim_aA);  F12_ij_Aa.assign(0.0);
-        RefSCMatrix F12_ij_Pa = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_Pa.assign(0.0);
-        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
-          F12_ij_Aa, corrfactor()->tbint_type_f12(),
-          xspace1, cabs1,
-          xspace2, vir2,
-          spincase2!=AlphaBeta, tforms_iAia
-        );
-        F12_ij_Aa.print("F12 (Aa)");
-        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
-          F12_ij_Pa, corrfactor()->tbint_type_f12(),
-          xspace1, abs1,
-          xspace2, vir2,
-          spincase2!=AlphaBeta, tforms_iPia
-        );
-        F12_ij_Pa.print("F12 (Pa)");
-
-        RefSCMatrix K_PA = exchange_(occ2,abs2,cabs2);
-        K_PA.print("Exchange (ABS/RI-BS)");
-
-        RefSCMatrix K_PA_local = localkit->matrix(K_PA.rowdim(),K_PA.coldim());
-        double* tmparr = new double[K_PA.rowdim().n() * K_PA.coldim().n()];
-        K_PA.convert(tmparr);
-        K_PA_local.assign(tmparr);
-        delete[] tmparr;
-
-        const unsigned int nij = dim_oo(spincase2).n();
-        RefSCMatrix F12_ij_aAK = F12_ij_aA.clone();  F12_ij_aAK.assign(0.0);
-        double* aP_block = new double[dim_aP.n()];
-        double* aA_block = new double[dim_aA.n()];
-        RefSCMatrix tmp_aP = localkit->matrix(new SCDimension(vir1->rank()), K_PA.rowdim());
-        for(unsigned int ij=0; ij<nij; ij++) {
-          RefSCVector rij_aP = F12_ij_aP.get_row(ij);
-          rij_aP.convert(aP_block);
-          tmp_aP.assign(aP_block);
-          RefSCMatrix tmp_aA = tmp_aP * K_PA_local;
-          tmp_aA.convert(aA_block);
-          RefSCVector rij_aA = F12_ij_aAK.get_row(ij);
-          rij_aA.assign(aA_block);
-          F12_ij_aAK.assign_row(rij_aA,ij);
-        }
-        F12_ij_aAK.print("F12 (aAK)");
-        RefSCMatrix P_AKb_expl = F12_ij_aA * F12_ij_aAK.t();
-        P_AKb_expl.scale(2.0);
-        symmetrize<false>(P_AKb_expl,P_AKb_expl,xspace1,xspace2);
-        P_AKb_expl.print("R_klPb K_PA R_Abij (expl)");
-#endif
-        
 #endif // INCLUDE_P_AKb
 
 #if INCLUDE_P_aKB
@@ -356,40 +266,9 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_ribs,kvir2_ribs);
-#if TEST_P_aKB
-        P.print("R_klPB K_Pa R_aBij");
-
-        RefSCMatrix P_aKB = P.clone(); P_aKB.assign(0.0);
-        Ref<MOIndexSpace> kabs1 = kvir_ribs_T(spin1);
-        Ref<MOIndexSpace> kabs2 = kvir_ribs_T(spin2);
-        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
-        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
-        // R_klaB K_aP R_PBij
-        compute_FxF_(P_aKB,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
-                     cabs1,cabs2,
-                     abs1,abs2,
-                     kabs1,kabs2);
-        P_aKB.print("R_klaB K_aP R_PBij");
-#endif
 
 #endif // INCLUDE_P_aKB
       }
-
-#if TEST_P_aKb
-      RefSCMatrix P_aKb = BB_[s].clone(); P_aKb.assign(0.0);
-      Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
-      Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
-      // R_klPb K_Pa R_abij
-      compute_FxF_(P_aKb,spincase2,
-		   xspace1,xspace2,
-		   xspace1,xspace2,
-                   vir1,vir2,
-                   vir1,vir2,
-                   kvir1_ribs,kvir2_ribs);
-      P_aKb.print("P_aKb test");
-#endif
 
       P.scale(-1.0);
       

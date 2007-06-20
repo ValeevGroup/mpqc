@@ -194,9 +194,15 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> hj_p_P_[NSpinCases1];
   Ref<MOIndexSpace> hj_P_P_[NSpinCases1];
   Ref<MOIndexSpace> K_i_p_[NSpinCases1];
+  Ref<MOIndexSpace> K_i_m_[NSpinCases1];
+  Ref<MOIndexSpace> K_i_a_[NSpinCases1];
   Ref<MOIndexSpace> K_i_A_[NSpinCases1];
   Ref<MOIndexSpace> K_i_P_[NSpinCases1];
+  Ref<MOIndexSpace> K_m_a_[NSpinCases1];
+  Ref<MOIndexSpace> K_a_a_[NSpinCases1];
   Ref<MOIndexSpace> K_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> K_p_m_[NSpinCases1];
+  Ref<MOIndexSpace> K_p_a_[NSpinCases1];
   Ref<MOIndexSpace> K_p_A_[NSpinCases1];
   Ref<MOIndexSpace> K_p_P_[NSpinCases1];
   Ref<MOIndexSpace> K_P_P_[NSpinCases1];
@@ -616,18 +622,34 @@ public:
   const Ref<MOIndexSpace>& K_x_A(SpinCase1 S);
   /// Form <p|K|x> space
   const Ref<MOIndexSpace>& K_x_p(SpinCase1 S);
+  /// Form <i|K|x> space
+  const Ref<MOIndexSpace>& K_x_m(SpinCase1 S);
+  /// Form <a|K|x> space
+  const Ref<MOIndexSpace>& K_x_a(SpinCase1 S);
   /// Form <P|K|i> space
   const Ref<MOIndexSpace>& K_i_P(SpinCase1 S);
   /// Form <A|K|i> space
   const Ref<MOIndexSpace>& K_i_A(SpinCase1 S);
   /// Form <p|K|i> space
   const Ref<MOIndexSpace>& K_i_p(SpinCase1 S);
+  /// Form <m|K|i> space
+  const Ref<MOIndexSpace>& K_i_m(SpinCase1 S);
+  /// Form <a|K|i> space
+  const Ref<MOIndexSpace>& K_i_a(SpinCase1 S);
+  /// Form <a|K|m> space
+  const Ref<MOIndexSpace>& K_m_a(SpinCase1 S);
+  /// Form <a|K|a> space
+  const Ref<MOIndexSpace>& K_a_a(SpinCase1 S);
   /// Form <P|K|p> space
   const Ref<MOIndexSpace>& K_p_P(SpinCase1 S);
   /// Form <A|K|p> space
   const Ref<MOIndexSpace>& K_p_A(SpinCase1 S);
   /// Form <p|K|p> space
   const Ref<MOIndexSpace>& K_p_p(SpinCase1 S);
+  /// Form <m|K|p> space
+  const Ref<MOIndexSpace>& K_p_m(SpinCase1 S);
+  /// Form <a|K|p> space
+  const Ref<MOIndexSpace>& K_p_a(SpinCase1 S);
   /// Form <P|K|P> space
   const Ref<MOIndexSpace>& K_P_P(SpinCase1 S);
   /// Form <P|F|x> space

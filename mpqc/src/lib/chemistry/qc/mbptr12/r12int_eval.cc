@@ -1582,6 +1582,42 @@ R12IntEval::hj_i_p(SpinCase1 spin)
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::hj_i_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_i_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,true,false,
+	    null,
+	    hj_i_m_[s],
+	    null,
+	    extspace,intspace);
+  return hj_i_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::hj_i_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_i_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,true,false,
+	    null,
+	    hj_i_a_[s],
+	    null,
+	    extspace,intspace);
+  return hj_i_a_[s];
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::hj_p_P(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -1635,6 +1671,41 @@ R12IntEval::hj_p_p(SpinCase1 spin)
   return hj_p_p_[s];
 }
 
+const Ref<MOIndexSpace>&
+R12IntEval::hj_p_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_p_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,true,false,
+	    null,
+	    hj_p_m_[s],
+	    null,
+	    extspace,intspace);
+  return hj_p_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::hj_p_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_p_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,false,true,false,
+	    null,
+	    hj_p_a_[s],
+	    null,
+	    extspace,intspace);
+  return hj_p_a_[s];
+}
 
 const Ref<MOIndexSpace>&
 R12IntEval::K_i_P(SpinCase1 spin)

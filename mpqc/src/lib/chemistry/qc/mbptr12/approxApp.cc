@@ -67,6 +67,7 @@ R12IntEval::compute_BApp_()
   if (evaluated_)
     return;
   
+  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const unsigned int maxnabs = r12info()->maxnabs();
   
@@ -84,17 +85,6 @@ R12IntEval::compute_BApp_()
 
 #if INCLUDE_Q
 
-    // if can only use 1 RI index, h+J can be resolved by the OBS
-    Ref<MOIndexSpace> hj_x1, hj_x2;
-    if (maxnabs > 1) {
-	hj_x1 = hj_x_P(spin1);
-	hj_x2 = hj_x_P(spin2);
-    }
-    else {
-	hj_x1 = hj_x_p(spin1);
-	hj_x2 = hj_x_p(spin2);
-    }
-    
     std::string Qlabel = prepend_spincase(spincase2,"Q(A'') intermediate");
     tim_enter(Qlabel.c_str());
     ExEnv::out0() << endl << indent
@@ -103,11 +93,48 @@ R12IntEval::compute_BApp_()
     
     // compute Q = X_{xy}^{xy_{hj}}
     RefSCMatrix Q;
-    compute_X_(Q,spincase2,xspace1,xspace2,
-               xspace1,hj_x2,false);
+    if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
+	Ref<MOIndexSpace> hj_x2 = hj_x_P(spin2);
+	compute_X_(Q,spincase2,xspace1,xspace2,
+		   xspace1,hj_x2);
+    }
+    else { // else do RI in orbital basis...
+	if (vbs_eq_obs) { // which is just p if VBS == OBS
+	    Ref<MOIndexSpace> hj_x2 = hj_x_p(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,hj_x2);
+	}
+	else { // if VBS != OBS, p = m + a
+	    Ref<MOIndexSpace> hj_x2 = hj_x_m(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,hj_x2);
+	    hj_x2 = hj_x_a(spin2);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       xspace1,hj_x2);
+	}
+    }
+
     if (xspace1 != xspace2) {
-      compute_X_(Q,spincase2,xspace1,xspace2,
-                 hj_x1,xspace2,false);
+	if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
+	    Ref<MOIndexSpace> hj_x1 = hj_x_P(spin1);
+	    compute_X_(Q,spincase2,xspace1,xspace2,
+		       hj_x1,xspace2);
+	}
+	else { // else do RI in orbital basis...
+	    if (vbs_eq_obs) { // which is just p if VBS == OBS
+		Ref<MOIndexSpace> hj_x1 = hj_x_p(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   hj_x1,xspace2);
+	    }
+	    else { // if VBS != OBS, p = m + a
+		Ref<MOIndexSpace> hj_x1 = hj_x_m(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   hj_x1,xspace2);
+		hj_x1 = hj_x_a(spin1);
+		compute_X_(Q,spincase2,xspace1,xspace2,
+			   hj_x1,xspace1);
+	    }
+	}
     }
     else {
       Q.scale(2.0);

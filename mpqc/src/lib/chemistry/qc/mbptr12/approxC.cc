@@ -78,6 +78,8 @@ R12IntEval::compute_BC_()
     const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
     const unsigned int maxnabs = r12info()->maxnabs();
 
+    const unsigned int nf12 = corrfactor()->nfunctions();
+
     // some combinations are not implemented yet or are not sane
     if (!vbs_eq_obs && ansatz()->projector() == LinearR12::Projector_3)
 	throw FeatureNotImplemented("B(C) cannot be evaluated yet when using ansatz 3 and VBS!=OBS",__FILE__,__LINE__);
@@ -196,6 +198,9 @@ R12IntEval::compute_BC_()
 			     ribs1,ribs2,
 			     ribs1,ribs2,
 			     kribs1,kribs2);
+
+                if (debug_ >= DefaultPrintThresholds::allO4)
+                  P.print("P(incl R_klPQ K_QR R_PRij)");
 	    }
 #endif // INCLUDE_P_PKP
 
@@ -218,6 +223,8 @@ R12IntEval::compute_BC_()
 				 occ1,occ2,
 				 ribs1,ribs2,
 				 fribs1,fribs2);
+                    if (debug_ >= DefaultPrintThresholds::allO4)
+                      P.print("P(incl R_klPm F_PQ R_Qmij)");
 		}
 #endif // INCLUDE_P_PFP
 	    }
@@ -241,6 +248,8 @@ R12IntEval::compute_BC_()
 				     z1,z2,
 				     orbs1,orbs2,
 				     forbs1,forbs2);
+                        if (debug_ >= DefaultPrintThresholds::allO4)
+                          P.print("P(incl R_klpa F_pq R_qaij)");
 		    }
 		    else {
 			// else it's a sum of
@@ -256,6 +265,8 @@ R12IntEval::compute_BC_()
 					 z1,z2,
 					 x1,x2,
 					 fx1,fx2);
+                            if (debug_ >= DefaultPrintThresholds::allO4)
+                              P.print("P(incl R_klma F_mn R_naij)");
 			}
 			// R_klca F_cd R_daij
 			{
@@ -269,8 +280,10 @@ R12IntEval::compute_BC_()
 					 z1,z2,
 					 x1,x2,
 					 fx1,fx2);
+                            if (debug_ >= DefaultPrintThresholds::allO4)
+                              P.print("P(incl R_klca F_cd R_daij)");
 			}
-			// 2 R_klca F_cm R_maij
+			// R_klca F_cm R_maij + R_klma F_mc R_caij
 			{
 			    Ref<MOIndexSpace> x1 = occ1;
 			    Ref<MOIndexSpace> x2 = occ2;
@@ -283,8 +296,12 @@ R12IntEval::compute_BC_()
 					 z1,z2,
 					 x1,x2,
 					 fx1,fx2);
+                            // bra-ket symmetrization will take care of
+                            // the R_klma F_mc R_caij term
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
+                            if (debug_ >= DefaultPrintThresholds::allO4)
+                              P.print("P(incl 2 R_klca F_cm R_maij");
 			}
 		    } // VBS != OBS
 		} // pFp contributes
@@ -299,20 +316,24 @@ R12IntEval::compute_BC_()
         
 		if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFP
+                    // R_klmA F_mP R_PAij + R_klPA F_Pm R_mAij
 		    {
 			Ref<MOIndexSpace> focc1, focc2;
 			focc1 = F_m_P(spin1);
 			focc2 = F_m_P(spin2);
 			RefSCMatrix Ptmp;
-			// R_klmA F_mP R_PAij
 			compute_FxF_(Ptmp,spincase2,
 				     xspace1,xspace2,
 				     xspace1,xspace2,
 				     cabs1,cabs2,
 				     occ1,occ2,
 				     focc1,focc2);
-			Ptmp.scale(2.0);
+                        // bra-ket symmetrization will take care of
+                        // the R_klma F_mc R_caij term
+                        Ptmp.scale(2.0);
 			P.accumulate(Ptmp);
+                        if (debug_ >= DefaultPrintThresholds::allO4)
+                          P.print("P(incl 2 R_klmA F_mP R_PAij)");
 		    }
 #endif // INCLUDE_P_mFP
 		}
@@ -353,6 +374,8 @@ R12IntEval::compute_BC_()
 					     z1,z2,
 					     x1,x2,
 					     fx1,fx2);
+                                if (debug_ >= DefaultPrintThresholds::allO4)
+                                  Ptmp.print("P(R_klmz F_mA R_Azij)");
 			    }
 			    {
 				Ref<MOIndexSpace> x1 = vir1;
@@ -365,11 +388,15 @@ R12IntEval::compute_BC_()
 					     z1,z2,
 					     x1,x2,
 					     fx1,fx2);
+                                if (debug_ >= DefaultPrintThresholds::allO4)
+                                  Ptmp.print("P(R_klaz F_aA R_Azij)");
 			    }
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
 				
 			} // VBS != OBS
+                        if (debug_ >= DefaultPrintThresholds::allO4)
+                          P.print("P(incl R_klpz F_pA R_Azij)");
 		    } // pFA contributes
 #endif // INCLUDE_P_pFA
 		}
@@ -388,6 +415,8 @@ R12IntEval::compute_BC_()
 				     cabs1,cabs2,
 				     occ1,occ2,
 				     focc1,focc2);
+                        if (debug_ >= DefaultPrintThresholds::allO4)
+                          P.print("P(incl R_klmA F_mn R_nAij)");
 		    }
 #endif // INCLUDE_P_mFm
 		}

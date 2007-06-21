@@ -489,7 +489,7 @@ MP2R12Energy::compute()
 	    B_ij_label = oss.str();
 	  }
           if (debug_ >= DefaultPrintThresholds::mostO4) {
-            util->print(prepend_spincase(spincase2,B_ij_label).c_str(),B_ij);
+            util->print(prepend_spincase(spincase2,B_ij_label).c_str(),B_ij,ExEnv::outn());
 	  }
 
           /// Block in which I compute ef12

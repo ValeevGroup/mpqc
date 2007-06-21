@@ -2963,6 +2963,32 @@ R12IntEval::hj_x_p(SpinCase1 S)
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::hj_x_m(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+        return(hj_i_m(S));
+    case LinearR12::OrbProd_pq:
+        return(hj_p_m(S));
+    default:
+        throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::hj_x_a(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+        return(hj_i_a(S));
+    case LinearR12::OrbProd_pq:
+        return(hj_p_a(S));
+    default:
+        throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::hj_x_A(SpinCase1 S)
 {
     switch(r12info()->ansatz()->orbital_product()) {

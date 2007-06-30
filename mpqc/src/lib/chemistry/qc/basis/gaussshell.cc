@@ -509,11 +509,13 @@ int
 GaussianShell::equiv(const GaussianShell *s)
 {
   if (nprim != s->nprim) return 0;
+  for (int i=0; i<nprim; i++) {
+      if (fabs((exp[i] - s->exp[i])/exp[i]) > 1.0e-13) return 0;
+    }
   if (ncon != s->ncon) return 0;
   for (int i=0; i<ncon; i++) {
       if (l[i] != s->l[i]) return 0;
       if (puream[i] != s->puream[i]) return 0;
-      if (fabs((exp[i] - s->exp[i])/exp[i]) > 1.0e-13) return 0;
       for (int j=0; j<nprim; j++) {
         if (coef[i][j] != 0.0) { 
           if (fabs((coef[i][j] - s->coef[i][j])/coef[i][j]) > 1.0e-13) return 0;

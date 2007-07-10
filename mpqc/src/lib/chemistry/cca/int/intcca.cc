@@ -63,15 +63,13 @@ using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace ChemistryIntegralDescrCXX;
 
+static int factory_instance_number=0;
+
 namespace auxintv3 {
   CartesianIter* new_cartesian_iter(int l);
   RedundantCartesianIter* new_redundant_cartesian_iter(int l);
   RedundantCartesianSubIter* new_redundant_cartesian_sub_iter(int l);
 }
-
-static int factory_instance_number=0;
-static int sfactory_instance_number=0;
-static int intv3port_instance_number=0;
 
 static ClassDesc IntegralCCA_cd(
   typeid(IntegralCCA),"IntegralCCA",1,"public Integral",
@@ -182,7 +180,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     }
    
   }
-
+ 
   initialize_transforms();
 
   //-----------------
@@ -260,83 +258,56 @@ IntegralCCA::init_factory()
     ++factory_instance_number;
 
     // get the super factory
-    fac_id_ = bs.createInstance(fname.str(),"Chemistry.IntegralSuperFactory",type_map);
-    services.registerUsesPort(
-      fname_port.str(),
-      "Chemistry.QC.GaussianBasis.IntegralSuperFactoryInterface",
-                              type_map);
+    services.registerUsesPort( fname_port.str(),
+                    "Chemistry.QC.GaussianBasis.IntegralSuperFactoryInterface",
+                    type_map);
+    fac_id_ = 
+      bs.createInstance(fname.str(),
+                        "Chemistry.IntegralSuperFactory",
+                        type_map);
     fac_con_ = bs.connect(my_id,fname_port.str(),
                           fac_id_,"IntegralSuperFactoryInterface");
     eval_factory_ = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface> (
-        services.getPort(fname_port.str()) );
+        services.getPort( fname_port.str() ) );
     superfac = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralSuperFactoryInterface> (
-        services.getPort(fname_port.str()) );
+        eval_factory_ );
 
-    superfac.set_default_subfactory( default_subfactory_ );
-    superfac.set_subfactory_config( types_, derivs_, sfacs_ );
+    superfac.initialize( default_subfactory_, types_, derivs_, sfacs_ );
+   
+    sidl::array<string> factory_names = superfac.get_factory_names(); 
+    sidl::array<Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface>
+      factories = superfac.get_factories();
 
-    // get sub factories
-    set<string> subfac_set;
-    map<string,gov::cca::ComponentID> subfac_name_to_id;
-    nsubfac = sfacs_.length();
-    for( int i=0; i<nsubfac; ++i)
-      subfac_set.insert( sfacs_.get(i) );
-    if( !subfac_set.count(default_subfactory_) )
-      subfac_set.insert( default_subfactory_ );
-    nsubfac = subfac_set.size();
-    set<string>::iterator iter;
-    for (iter = subfac_set.begin(); iter != subfac_set.end(); iter++) {
-      if( (*iter != "MPQC.IntV3EvaluatorFactory") && intv3_order_ )
-        throw InputError( 
-          "intv3_order can only be used with MPQC.IntV3EvaluatorFactory",
-          __FILE__, __LINE__ );
-      ExEnv::out0() << indent << "Instantiating: " << *iter << std::endl;
-      ostringstream sfname;
-      sfname << "subfactory" << sfactory_instance_number;
-      ++sfactory_instance_number;
-      subfac_name_to_id[sfname.str()] =
-        bs.createInstance(sfname.str(),
-                          *iter,
-                          type_map);
-      if( (*iter == "MPQC.IntV3EvaluatorFactory") && intv3_order_ ) {
-        ostringstream intv3_port;
-        intv3_port << "IntV3Port" << intv3port_instance_number;
-        ++intv3port_instance_number;
-        services.registerUsesPort(intv3_port.str(),
-                                  "MPQC.IntV3EvaluatorFactory",
-                                  type_map);
-        gov::cca::ConnectionID conid = 
-          bs.connect( my_id,intv3_port.str(),
-                      subfac_name_to_id[sfname.str()],
-                      "IntV3EvaluatorFactory");
-        MPQC::IntV3EvaluatorFactory fac = 
-          sidl::babel_cast<MPQC::IntV3EvaluatorFactory>(
-            services.getPort(intv3_port.str()) );
-        fac.set_reorder(false);
-      }    
-    }
-    // connect factories with super factory
-    sidl::array<string> sfac_portnames = superfac.add_uses_ports(nsubfac);
-    map<string,gov::cca::ComponentID>::iterator miter;
-    vector<gov::cca::ConnectionID> subfac_conids;
-    int portname_iter=-1;
-    for( miter = subfac_name_to_id.begin();
-         miter != subfac_name_to_id.end(); miter++) {
-      subfac_conids.push_back(
-          bs.connect( fac_id_, sfac_portnames.get(++portname_iter),
-                      (*miter).second, "IntegralEvaluatorFactoryInterface") );
-    }
+    if( intv3_order_ )
+      for( int i=0; i < factory_names.length(); ++i ) {
+        if( factory_names.get(i) != "MPQC.IntV3EvaluatorFactory")
+          throw InputError(
+            "intv3_order can only be used with MPQC.IntV3EvaluatorFactory",
+            __FILE__, __LINE__ );
+        MPQC::IntV3EvaluatorFactory iv3_fac = 
+          sidl::babel_cast<MPQC::IntV3EvaluatorFactory>(factories.get(i));
+        iv3_fac.set_reorder(false);
+      }
   }
+
   // else do a straightforward hookup to 1 factory
   else { 
     eval_factory_ = sidl::babel_cast<
       Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface> (
         services.getPort("IntegralEvaluatorFactoryInterface") );
+    if( intv3_order_ ) {
+      MPQC::IntV3EvaluatorFactory fac =
+        sidl::babel_cast<MPQC::IntV3EvaluatorFactory>(eval_factory_);
+        if( !fac )
+          throw InputError(
+            "cast of eval factory to  MPQC.IntV3EvaluatorFactory failed",
+            __FILE__, __LINE__ );
+      fac.set_reorder(false);
+    }
   }
 
-  eval_factory_.set_storage(0);
 }
 
 void

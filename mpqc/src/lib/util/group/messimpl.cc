@@ -501,6 +501,120 @@ MessageGrp::recvt(int sender, int type, signed char* data, int ndata)
   raw_recvt(sender, type, data, ndata);
 }
 
+// Nonblocking typed send routines
+
+void
+MessageGrp::nb_sendt(int target, int type, const double* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(double), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const short* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(short), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const long* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(long), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const float* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(float), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const unsigned int* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(int), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const int* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata*sizeof(int), mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata, mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const unsigned char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata, mh);
+}
+void
+MessageGrp::nb_sendt(int target, int type, const signed char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_sendt(target, type, data, ndata, mh);
+}
+
+// Typed receive routines
+
+void
+MessageGrp::nb_recvt(int sender, int type, double* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(double), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, short* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(short), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, long* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(long), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, float* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(float), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, unsigned int* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(int), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, int* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata*sizeof(int), mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata, mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, unsigned char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata, mh);
+}
+void
+MessageGrp::nb_recvt(int sender, int type, signed char* data, int ndata,
+                     MessageHandle& mh)
+{
+  raw_nb_recvt(sender, type, data, ndata, mh);
+}
+
 // Broadcast operations
 
 void

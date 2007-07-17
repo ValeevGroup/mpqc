@@ -125,6 +125,14 @@ class MessageGrp: public DescribedClass {
     };
     enum { AnyType = -1 };
     enum { AnySender = -1 };
+    class MessageHandle {
+        friend class MessageGrp;
+      private:
+        void *id_;
+      public:
+        MessageHandle(): id_(0) {}
+        MessageHandle(const MessageHandle &h): id_(h.id_) {}
+    };
   private:
     // These are initialized by the initialize() member (see below).
     int me_;
@@ -154,6 +162,13 @@ class MessageGrp: public DescribedClass {
     }
     void set_nbyte(MessageInfo *info,int nbyte) {
       if (info) info->nbyte_ = nbyte;
+    }
+
+    void set_id(MessageHandle *handle,void *id) {
+      handle->id_ = id;
+    }
+    void *get_id(const MessageHandle *handle) {
+      return handle->id_;
     }
   public:
 
@@ -249,6 +264,78 @@ class MessageGrp: public DescribedClass {
     }
     virtual void raw_recvt(int sender, int type, void* data, int nbyte,
                            MessageInfo *info=0) = 0;
+
+    virtual void nb_sendt(int target, int type,
+                          const double* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const unsigned int* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const int* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const unsigned char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const signed char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const short* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const long* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_sendt(int target, int type,
+                          const float* data, int ndata,
+                          MessageHandle&);
+    void nb_sendt(int target, int type, double data,
+                  MessageHandle&mh) {
+      nb_sendt(target,type,&data,1,mh);
+    }
+    void nb_sendt(int target, int type, int data,
+                  MessageHandle&mh) {
+      nb_sendt(target,type,&data,1,mh);
+    }
+    virtual void raw_nb_sendt(int target, int type,
+                              const void* data, int nbyte,
+                              MessageHandle&) = 0;
+
+    virtual void nb_recvt(int sender, int type, double* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, unsigned int* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, int* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, unsigned char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, signed char* data, int nbyte,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, short* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, long* data, int ndata,
+                          MessageHandle&);
+    virtual void nb_recvt(int sender, int type, float* data, int ndata,
+                          MessageHandle&);
+    void nb_recvt(int sender, int type, double& data,
+                  MessageHandle&mh) {
+      nb_recvt(sender,type,&data,1,mh);
+    }
+    void nb_recvt(int sender, int type, int& data,
+                  MessageHandle&mh) {
+      nb_recvt(sender,type,&data,1,mh);
+    }
+    virtual void raw_nb_recvt(int sender, int type,
+                              void* data, int nbyte,
+                              MessageHandle&) = 0;
+
+    virtual void wait(const MessageHandle&,
+                      MessageInfo *info=0) = 0;
 
     /// Ask if a given typed message has been received.
     virtual int probet(int sender, int type, MessageInfo*info=0) = 0;
@@ -385,6 +472,16 @@ class ProcMessageGrp: public MessageGrp {
     void raw_recvt(int sender, int type, void* data, int nbyte,
                    MessageInfo *info=0);
     void raw_bcast(void* data, int nbyte, int from);
+
+    void raw_nb_sendt(int sender, int type,
+                      const void* data, int nbyte,
+                      MessageHandle&);
+    void raw_nb_recvt(int sender, int type,
+                      void* data, int nbyte,
+                      MessageHandle&);
+    void wait(const MessageHandle&,
+              MessageInfo *info=0);
+
     int probet(int sender, int type, MessageInfo *info=0);
     void sync();
 };

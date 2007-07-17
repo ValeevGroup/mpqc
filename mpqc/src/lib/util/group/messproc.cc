@@ -172,6 +172,43 @@ ProcMessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
 }
 
+void
+ProcMessageGrp::raw_nb_sendt(int target, int type,
+                             const void* data, int nbyte,
+                             MessageHandle&mh)
+{
+  sendit(type_messages, target, type, data, nbyte);
+  MessageInfo *info = new MessageInfo;
+  set_sender(info,0);
+  set_type(info,type);
+  set_nbyte(info,nbyte);
+  set_id(&mh,info);
+}
+
+void
+ProcMessageGrp::raw_nb_recvt(int sender, int type,
+                             void* data, int nbyte,
+                             MessageHandle&mh)
+{
+  int last_size, last_type;
+  recvit(type_messages, sender, type, data, nbyte, last_size, last_type);
+  MessageInfo *info = new MessageInfo;
+  set_sender(info,0);
+  set_type(info,last_type);
+  set_nbyte(info,last_size);
+  set_id(&mh,info);
+}
+
+void
+ProcMessageGrp::wait(const MessageHandle&mh, MessageInfo *info)
+{
+  MessageInfo *stored_info = static_cast<MessageInfo*>(get_id(&mh));
+  set_sender(info,stored_info->sender());
+  set_type(info,stored_info->type());
+  set_nbyte(info,stored_info->nbyte());
+  delete stored_info;
+}
+
 int
 ProcMessageGrp::probet(int sender, int type, MessageInfo *info)
 {

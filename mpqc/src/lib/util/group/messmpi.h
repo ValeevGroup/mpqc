@@ -57,6 +57,13 @@ class MPIMessageGrp: public MessageGrp {
     
     /// Not thread-safe due to race condition on nmpi_grps variable.
     void init(MPI_Comm comm, int *argc=0, char ***argv=0);
+
+    class MessageHandleData {
+      public:
+        MPI_Request req;
+        size_t nbyte;
+        MessageHandleData(size_t n): nbyte(n) {}
+    };
   public:
     MPIMessageGrp();
     /** Use an MPI communicator to create a MessageGrp.  The comm
@@ -105,6 +112,15 @@ class MPIMessageGrp: public MessageGrp {
                 float*scratch = 0, int target = -1);
     void reduce(long*, int n, GrpReduce<long>&,
                 long*scratch = 0, int target = -1);
+
+    void raw_nb_sendt(int sender, int type,
+                      const void* data, int nbyte,
+                      MessageHandle&);
+    void raw_nb_recvt(int sender, int type,
+                      void* data, int nbyte,
+                      MessageHandle&);
+    void wait(const MessageHandle&,
+              MessageInfo *info=0);
 
     void raw_bcast(void* data, int nbyte, int from);
 };

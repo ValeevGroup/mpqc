@@ -170,8 +170,8 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
       if (debug_) {
           ExEnv::outn() << indent
                << "Calling MPI_Init with";
-          for (int i=0; i<*argc; i++) {
-              ExEnv::outn() << " " << *argv[i];
+          for (int i=0; i<*inits_argc; i++) {
+              ExEnv::outn() << " " << *inits_argv[i];
             }
           ExEnv::outn() << endl;
         }
@@ -378,6 +378,84 @@ MPIMessageGrp::raw_recvt(int sender, int type, void* data, int nbyte,
       int rlen = nbyte;
       ExEnv::outn() << scprintf("%3d: recvd %d bytes from %d with tag %d\n",
                        me(), rlen, rnode, rtag) << endl;
+    }
+}
+
+void
+MPIMessageGrp::raw_nb_sendt(int target, int type, const void* data, int nbyte,
+                            MessageHandle &mh)
+{
+  int tag = type*2 + 1;
+  int ret;
+
+  MessageHandleData *mhd = new MessageHandleData(nbyte);
+
+  ret = MPI_Isend(const_cast<void*>(data),
+                  nbyte,MPI_BYTE,target,tag,commgrp,&mhd->req);
+
+  if (debug_) {
+      ExEnv::outn() << scprintf("%3d: isend %d bytes to %d with tag %d\n",
+                       me(), nbyte, target, tag) << endl;
+    }
+
+  if (ret != MPI_SUCCESS) {
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_nb_sendt("
+          << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
+
+  set_id(&mh, mhd);
+}
+
+void
+MPIMessageGrp::raw_nb_recvt(int sender, int type, void* data, int nbyte,
+                            MessageHandle &mh)
+{
+  if (sender == -1) sender = MPI_ANY_SOURCE;
+
+  int tag;
+  if (type == -1) tag = MPI_ANY_TAG;
+  else tag = (type<<1) + 1;
+
+  MessageHandleData *mhd = new MessageHandleData(nbyte);
+
+  int ret;
+  ret = MPI_Irecv(data,nbyte,MPI_BYTE,sender,tag,commgrp,&mhd->req);
+
+  if (debug_) {
+      ExEnv::outn() << scprintf("%3d: irecv %d bytes from %d with tag %d\n",
+                       me(), nbyte, sender, tag) << endl;
+    }
+
+  if (ret != MPI_SUCCESS) {
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_nb_recvt("
+          << type << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
+
+  set_id(&mh, mhd);
+}
+
+void
+MPIMessageGrp::wait(const MessageHandle&mh,
+                    MessageInfo *info)
+{
+  MessageHandleData *mhd = static_cast<MessageHandleData*>(get_id(&mh));
+  MPI_Status status;
+  if (debug_) {
+      ExEnv::outn() << scprintf("%3d: wait\n",
+                       me()) << endl;
+    }
+  int ret = MPI_Wait(&mhd->req,&status);
+  if (ret != MPI_SUCCESS) {
+      ExEnv::outn() << me() << ": MPIMessageGrp::wait: mpi error:"
+                    << endl;
+      print_error_and_abort(me(), ret);
+    }
+  if (info) {
+      set_sender(info,status.MPI_SOURCE);
+      set_type(info,(status.MPI_TAG-1)/2);
+      set_nbyte(info,mhd->nbyte);
     }
 }
 

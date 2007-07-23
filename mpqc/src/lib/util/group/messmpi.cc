@@ -43,10 +43,6 @@ MPI_Comm global_commgrp;
 using namespace std;
 using namespace sc;
 
-// Define this to use immediate mode.  This was added added to work
-// around bugs in non-immediate mode optimizations in an MPI impl.
-#undef USE_IMMEDIATE_MODE
-
 // OP_COMMUTES is zero to work around a bug in MPI/Pro 1.5b5 and earlier
 #define OP_COMMUTES 1
 
@@ -262,14 +258,7 @@ MPIMessageGrp::raw_send(int target, const void* data, int nbyte)
            << endl;
     }
   int ret;
-#ifndef USE_IMMEDIATE_MODE
   ret = MPI_Send(const_cast<void*>(data),nbyte,MPI_BYTE,target,0,commgrp);
-#else
-  MPI_Request mpireq;
-  MPI_Status status;
-  ret = MPI_Isend(data,nbyte,MPI_BYTE,target,0,commgrp,&mpireq);
-  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
-#endif // USE_IMMEDIATE_MODE
   if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_send("
           << target << ",," << nbyte << "): mpi error:" << endl;
@@ -291,13 +280,7 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte,
            << endl;
     }
   int ret;
-#ifndef USE_IMMEDIATE_MODE
   ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,commgrp,&status);
-#else
-  MPI_Request mpireq;
-  ret = MPI_Irecv(data,nbyte,MPI_BYTE,sender,0,commgrp,&mpireq);
-  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
-#endif // USE_IMMEDIATE_MODE
   if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_recv("
           << sender << ",," << nbyte << "): mpi error:" << endl;
@@ -314,7 +297,8 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte,
 }
 
 void
-MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
+MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte,
+                         bool rcvrdy)
 {
   type = type*2 + 1;
   if (debug_) {
@@ -324,14 +308,12 @@ MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
            << endl;
     }
   int ret;
-#ifndef USE_IMMEDIATE_MODE
-  ret = MPI_Send(const_cast<void*>(data),nbyte,MPI_BYTE,target,type,commgrp);
-#else
-  MPI_Request mpireq;
-  MPI_Status status;
-  ret = MPI_Isend(data,nbyte,MPI_BYTE,target,type,commgrp,&mpireq);
-  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
-#endif
+  if (rcvrdy) {
+      ret = MPI_Rsend(const_cast<void*>(data),nbyte,MPI_BYTE,target,type,commgrp);
+    }
+  else {
+      ret = MPI_Send(const_cast<void*>(data),nbyte,MPI_BYTE,target,type,commgrp);
+    }
   if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_sendt("
           << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
@@ -355,13 +337,7 @@ MPIMessageGrp::raw_recvt(int sender, int type, void* data, int nbyte,
            << endl;
     }
   int ret;
-#ifndef USE_IMMEDIATE_MODE
   ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,type,commgrp,&status);
-#else
-  MPI_Request mpireq;
-  ret = MPI_Irecv(data,nbyte,MPI_BYTE,sender,type,commgrp,&mpireq);
-  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
-#endif // USE_IMMEDIATE_MODE
   if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_recvt("
           << type << ",," << nbyte << "): mpi error:" << endl;
@@ -383,15 +359,22 @@ MPIMessageGrp::raw_recvt(int sender, int type, void* data, int nbyte,
 
 void
 MPIMessageGrp::raw_nb_sendt(int target, int type, const void* data, int nbyte,
-                            MessageHandle &mh)
+                            MessageHandle &mh,
+                            bool rcvrdy)
 {
   int tag = type*2 + 1;
   int ret;
 
   MessageHandleData *mhd = new MessageHandleData(nbyte);
 
-  ret = MPI_Isend(const_cast<void*>(data),
-                  nbyte,MPI_BYTE,target,tag,commgrp,&mhd->req);
+  if (rcvrdy) {
+      ret = MPI_Irsend(const_cast<void*>(data),
+                       nbyte,MPI_BYTE,target,tag,commgrp,&mhd->req);
+    }
+  else {
+      ret = MPI_Isend(const_cast<void*>(data),
+                      nbyte,MPI_BYTE,target,tag,commgrp,&mhd->req);
+    }
 
   if (debug_) {
       ExEnv::outn() << scprintf("%3d: isend %d bytes to %d with tag %d\n",

@@ -140,7 +140,8 @@ ProcMessageGrp::raw_send(int target, const void* data, int nbyte)
 }
 
 void
-ProcMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
+ProcMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte,
+                          bool rcvrdy)
 {
   sendit(type_messages, target, type, data, nbyte);
 }
@@ -175,7 +176,8 @@ ProcMessageGrp::raw_bcast(void* data, int nbyte, int from)
 void
 ProcMessageGrp::raw_nb_sendt(int target, int type,
                              const void* data, int nbyte,
-                             MessageHandle&mh)
+                             MessageHandle&mh,
+                             bool rcvrdy)
 {
   sendit(type_messages, target, type, data, nbyte);
   MessageInfo *info = new MessageInfo;

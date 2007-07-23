@@ -216,18 +216,30 @@ class MessageGrp: public DescribedClass {
 
     /** Send typed messages to the target processor.
         Similar members exist for each of the basic types. */
-    virtual void sendt(int target, int type, const double* data, int ndata);
-    virtual void sendt(int target, int type, const unsigned int* data, int ndata);
-    virtual void sendt(int target, int type, const int* data, int ndata);
-    virtual void sendt(int target, int type, const char* data, int nbyte);
-    virtual void sendt(int target, int type, const unsigned char* data, int nbyte);
-    virtual void sendt(int target, int type, const signed char* data, int nbyte);
-    virtual void sendt(int target, int type, const short* data, int ndata);
-    virtual void sendt(int target, int type, const long* data, int ndata);
-    virtual void sendt(int target, int type, const float* data, int ndata);
-    void sendt(int target, int type, double data) {sendt(target,type,&data,1);}
-    void sendt(int target, int type, int data) {sendt(target,type,&data,1);}
-    virtual void raw_sendt(int target, int type, const void* data, int nbyte) = 0;
+    virtual void sendt(int target, int type, const double* data, int ndata,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const unsigned int* data, int ndata,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const int* data, int ndata,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const char* data, int nbyte,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const unsigned char* data, int nbyte,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const signed char* data, int nbyte,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const short* data, int ndata,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const long* data, int ndata,
+                       bool rcvrdy=false);
+    virtual void sendt(int target, int type, const float* data, int ndata,
+                       bool rcvrdy=false);
+    void sendt(int target, int type, double data,
+               bool rcvrdy=false) {sendt(target,type,&data,1,rcvrdy);}
+    void sendt(int target, int type, int data,
+               bool rcvrdy=false) {sendt(target,type,&data,1,rcvrdy);}
+    virtual void raw_sendt(int target, int type, const void* data, int nbyte,
+                           bool rcvrdy=false) = 0;
 
     /** Receive messages sent sequentually from the sender.
         Similar members exist for each of the basic types. */
@@ -267,42 +279,54 @@ class MessageGrp: public DescribedClass {
 
     virtual void nb_sendt(int target, int type,
                           const double* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const unsigned int* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const int* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const unsigned char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const signed char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const short* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const long* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const float* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&,
+                          bool rcvrdy=false);
     void nb_sendt(int target, int type, double data,
-                  MessageHandle&mh) {
-      nb_sendt(target,type,&data,1,mh);
+                  MessageHandle&mh,
+                  bool rcvrdy=false) {
+      nb_sendt(target,type,&data,1,mh,rcvrdy);
     }
     void nb_sendt(int target, int type, int data,
-                  MessageHandle&mh) {
-      nb_sendt(target,type,&data,1,mh);
+                  MessageHandle&mh,
+                  bool rcvrdy=false) {
+      nb_sendt(target,type,&data,1,mh,rcvrdy);
     }
     virtual void raw_nb_sendt(int target, int type,
                               const void* data, int nbyte,
-                              MessageHandle&) = 0;
+                              MessageHandle&,
+                              bool rcvrdy=false) = 0;
 
     virtual void nb_recvt(int sender, int type, double* data, int ndata,
                           MessageHandle&);
@@ -466,7 +490,8 @@ class ProcMessageGrp: public MessageGrp {
     Ref<MessageGrp> clone(void);
     
     void raw_send(int target, const void* data, int nbyte);
-    void raw_sendt(int target, int type, const void* data, int nbyte);
+    void raw_sendt(int target, int type, const void* data, int nbyte,
+                   bool rcvrdy=false);
     void raw_recv(int sender, void* data, int nbyte,
                   MessageInfo *info=0);
     void raw_recvt(int sender, int type, void* data, int nbyte,
@@ -475,7 +500,8 @@ class ProcMessageGrp: public MessageGrp {
 
     void raw_nb_sendt(int sender, int type,
                       const void* data, int nbyte,
-                      MessageHandle&);
+                      MessageHandle&,
+                      bool rcvrdy=false);
     void raw_nb_recvt(int sender, int type,
                       void* data, int nbyte,
                       MessageHandle&);

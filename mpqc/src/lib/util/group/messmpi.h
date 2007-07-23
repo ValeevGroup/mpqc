@@ -83,7 +83,8 @@ class MPIMessageGrp: public MessageGrp {
     void raw_send(int target, const void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte,
                   MessageInfo *info=0);
-    void raw_sendt(int target, int type, const void* data, int nbyte);
+    void raw_sendt(int target, int type, const void* data, int nbyte,
+                   bool rcvrdy=false);
     void raw_recvt(int sender, int type, void* data, int nbyte,
                    MessageInfo *info=0);
 
@@ -115,7 +116,8 @@ class MPIMessageGrp: public MessageGrp {
 
     void raw_nb_sendt(int sender, int type,
                       const void* data, int nbyte,
-                      MessageHandle&);
+                      MessageHandle&,
+                      bool rcvrdy=false);
     void raw_nb_recvt(int sender, int type,
                       void* data, int nbyte,
                       MessageHandle&);

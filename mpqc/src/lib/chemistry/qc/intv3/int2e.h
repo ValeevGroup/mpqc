@@ -65,10 +65,10 @@ class Int2eV3: public RefCount {
     Ref<GaussianBasisSet> bs4_;
 
     // the permuted bases
-    Ref<GaussianBasisSet> pbs1_;
-    Ref<GaussianBasisSet> pbs2_;
-    Ref<GaussianBasisSet> pbs3_;
-    Ref<GaussianBasisSet> pbs4_;
+    GaussianBasisSet *pbs1_;
+    GaussianBasisSet *pbs2_;
+    GaussianBasisSet *pbs3_;
+    GaussianBasisSet *pbs4_;
 
     Ref<MessageGrp> grp_;
 

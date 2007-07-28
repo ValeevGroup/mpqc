@@ -491,10 +491,10 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
   maxam34 = maxam3 + maxam4;
 
   nc1 = pbs1_->shell(sh1).ncontraction();
-  if (pbs2_.null()) nc2 = 1;
+  if (pbs2_ == 0) nc2 = 1;
   else nc2 = pbs2_->shell(sh2).ncontraction();
   nc3 = pbs3_->shell(sh3).ncontraction();
-  if (pbs4_.null()) nc4 = 1;
+  if (pbs4_ == 0) nc4 = 1;
   else nc4 = pbs4_->shell(sh4).ncontraction();
 
   /* Zero the target contracted integrals that the build routine
@@ -1068,7 +1068,7 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
     build.int_v_r10 = pbs1_->r(pbs1_->shell_to_center(sh1),0);
     build.int_v_r11 = pbs1_->r(pbs1_->shell_to_center(sh1),1);
     build.int_v_r12 = pbs1_->r(pbs1_->shell_to_center(sh1),2);
-    if (pbs2_.null()) {
+    if (pbs2_ == 0) {
         build.int_v_r20 = 0.0;
         build.int_v_r21 = 0.0;
         build.int_v_r22 = 0.0;
@@ -1081,7 +1081,7 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
     build.int_v_r30 = pbs3_->r(pbs3_->shell_to_center(sh3),0);
     build.int_v_r31 = pbs3_->r(pbs3_->shell_to_center(sh3),1);
     build.int_v_r32 = pbs3_->r(pbs3_->shell_to_center(sh3),2);
-    if (pbs4_.null()) {
+    if (pbs4_ == 0) {
         build.int_v_r40 = 0.0;
         build.int_v_r41 = 0.0;
         build.int_v_r42 = 0.0;

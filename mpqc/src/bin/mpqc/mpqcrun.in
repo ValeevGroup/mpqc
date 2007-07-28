@@ -135,6 +135,10 @@ $objdir = 0;
 # unchanged.
 $nodenamesub = "s/(.*)/\\1/";
 
+# Use this to modify all the hostnames for the ifhn flags.  The default leaves the name
+# unchanged.
+$ifhnsub = "s/(.*)/\\1/";
+
 ######################################################################
 
 use Getopt::Long;
@@ -152,6 +156,7 @@ if (!GetOptions("small!" => \$small,
                 "seq=s" => \$seq,
                 "mpqc=s" => \$mpqc,
                 "nodenamesub=s" => \$nodenamesub,
+                "ifhnsub=s" => \$ifhnsub,
                 "readdir=s" => \$readdir,
                 "outputprefix=s" => \$outputprefix,
                 "inputprefix=s" => \$inputprefix,
@@ -222,6 +227,7 @@ if ($help) {
     printf "                     groups can be given as 8-10,12,15-17 for example\n";
     printf "  --nodename fmt     converts node num to name (value: %s)\n", $nodename;
     printf "  --nodenamesub e    substitute hostname using given expression (value: %s)\n", $nodenamesub;
+    printf "  --ifhnsub e        substitution used to get ifhn flag in IFHNFILE (value: %s)\n", $ifhnsub;
     printf "  --seq regex        run inputs matching reqex sequentially (value: %s)\n",
           (("$seq" eq "")?"<not set>":"$seq");
     printf "  --exclude regex    exclude files matching regex (value: %s)\n",
@@ -246,6 +252,7 @@ if ($help) {
     print  "  %NPROC%       The number of processes to start.\n";
     print  "  %NODEFILE%    The name of a file containing the node names.\n";
     print  "  %CONFIGFILE%  The name of a file having lines of the form: node: command.\n";
+    print  "  %IFHNFILE%    The name of a file having lines of the form: node ifhn=value.\n";
     print  "  %NODELIST%    A comma separated list of node names.\n";
     print  "  %MPQC%        The MPQC executable.\n";
     print  "  For %OUTPUT% and %NODELIST%, if they are contained within square brackets\n";
@@ -254,6 +261,7 @@ if ($help) {
     print  "Examples of the launch argument:\n";
     print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%\n";
     print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpiexec -machinefile %IFHNFILE% -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%\n";
     print  "  mpiexec -config %CONFIGFILE%\n";
     exit 0;
 }
@@ -330,6 +338,7 @@ $nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
 %nodelist = {};
 %nodefile = {};
 %configfile = {};
+%ifhnfile = {};
 $maxjobs = 0;
 while (($maxjobs + 1) * $nnodeperjob <= $nnode) {
     $jobnnodes[$maxjobs++] = $nnodeperjob;
@@ -352,13 +361,14 @@ foreach my $i (0..$maxjobs-1) {
     }
     $nodefile{$i} = ".tmp.nodefile.$hostname.$$.$i";
     open(NODEFILE,">" . $nodefile{$i});
-    foreach my $proc (1..$nprocpernode) {
-      foreach my $j (@slice) {
+    foreach my $j (@slice) {
+      foreach my $proc (1..$nprocpernode) {
           printf NODEFILE "%s\n", $j;
       }
     }
     close(NODEFILE);
     $configfile{$i} = ".tmp.configfile.$hostname.$$.$i";
+    $ifhnfile{$i} = ".tmp.ifhnfile.$hostname.$$.$i";
 }
 
 ######################################################################
@@ -485,6 +495,10 @@ foreach $i (values(%configfile)) {
     unlink "$i";
 }
 
+foreach $i (values(%ifhnfile)) {
+    unlink "$i";
+}
+
 sub get_next_file {
     my $jobnum = shift;
     lock(@seqfiles) if ($usingthreads);
@@ -543,12 +557,17 @@ sub jobrunner {
         $configfile_cmd = substitute_optional_parameter($configfile_cmd, "%OUTPUT%", "$out");
 
         open(CONFIGFILE,">" . $configfile{$jobslot});
+        open(IFHNFILE,">" . $ifhnfile{$jobslot});
         open(NODEFILE,"<" . $nodefile{$jobslot});
         my $node;
         while ($node = <NODEFILE>) {
           chomp($node);
           printf CONFIGFILE "%s: %s\n", $node, "$configfile_cmd";
+          my $ifhn = $node;
+          eval "\$ifhn =~ $ifhnsub";
+          printf IFHNFILE "%s ifhn=%s\n", $node, "$ifhn";
         }
+        close(IFHNFILE);
         close(CONFIGFILE);
         close(NODEFILE);
 
@@ -556,6 +575,7 @@ sub jobrunner {
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%CONFIGFILE%", $configfile{$jobslot});
+        $cmd = substitute_optional_parameter($cmd, "%IFHNFILE%", $ifhnfile{$jobslot});
 
         printf "starting in slot %d: %s\n", $jobslot, "$cmd";
         $cmd = "true" if ($debug);

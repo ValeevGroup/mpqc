@@ -29,8 +29,8 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_libint2_fjt_h
-#define _chemistry_qc_libint2_fjt_h
+#ifndef _chemistry_qc_basis_fjt_h
+#define _chemistry_qc_basis_fjt_h
 
 #include <util/ref/ref.h>
 
@@ -39,8 +39,8 @@ namespace sc {
     /// Evaluates the Boys function F_j(T)
     class Fjt: public RefCount {
     public:
-	Fjt() {}
-	~Fjt() {}
+        Fjt();
+        ~Fjt();
 	/** Computed F_j(T) for every 0 <= j <= J (total of J+1 doubles).
 	    The user may read/write these values.
 	    The values will be overwritten with the next call to this functions.
@@ -85,6 +85,27 @@ namespace sc {
 	    double *df;
 	};
 	ExpensiveMath ExpMath_;
+    };
+
+    /// "Old" intv3 code from Curt
+    /// Computes F_j(T) using 6-th order Taylor interpolation
+    class FJT: public Fjt {
+    private:
+	double **gtable;
+	
+	int maxj;
+	double *denomarray;
+	double wval_infinity;
+	int itable_infinity;
+	
+	double *int_fjttable;
+	
+	int ngtable() const { return maxj + 7; }
+    public:
+	FJT(int n);
+	~FJT();
+	/// implementation of Fjt::values()
+	double *values(int J, double T);
     };
 
 } // end of namespace sc

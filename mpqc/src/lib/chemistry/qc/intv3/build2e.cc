@@ -32,7 +32,7 @@
 #include <scconfig.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/int2e.h>
 

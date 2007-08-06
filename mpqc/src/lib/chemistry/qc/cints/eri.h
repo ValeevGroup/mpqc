@@ -37,7 +37,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/cints/shellpairs.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/cints/int2e.h>
 extern "C" {
 #include <libint/libint.h>

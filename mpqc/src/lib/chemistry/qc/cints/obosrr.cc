@@ -30,7 +30,7 @@
 #endif
 
 #include <chemistry/qc/cints/int1e.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 
 using namespace std;
 using namespace sc;

@@ -37,7 +37,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/libint2/shellpairs.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
 

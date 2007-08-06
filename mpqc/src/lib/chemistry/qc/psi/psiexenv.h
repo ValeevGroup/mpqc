@@ -9,6 +9,8 @@
 using namespace std;
 
 #include <string>
+#include <sstream>
+#include <libpsio/psio.hpp>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>
 
@@ -41,6 +43,8 @@ class PsiExEnv: public DescribedClass {
     Ref<PsiInput> psiinput_;
     Ref<PsiFile11> psifile11_;
 
+    psi::PSIO psio_;
+
     // Add the following to the PATH environmental variable
     void add_to_path(const string &);
 
@@ -67,6 +71,9 @@ class PsiExEnv: public DescribedClass {
     int get_nscratch() const { return nscratch_; };
     /// Returns the ith scratch location
     string get_scratch(int i) const { return scratch_[i]; };
+
+    /// Returns an instance of psi::PSIO
+    psi::PSIO& psio() { return psio_; }
     
     void print(std::ostream&o=ExEnv::out0()) const;
 };

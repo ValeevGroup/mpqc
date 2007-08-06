@@ -15,6 +15,7 @@
 #endif
 
 #include <iostream>
+#include <sstream>
 #include <math.h>
 
 #include <util/misc/string.h>
@@ -27,6 +28,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <chemistry/qc/psi/psiinput.h>
+#include <psifiles.h>
 
 using namespace std;
 
@@ -273,7 +275,11 @@ PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *dertype)
   }
   delete[] scrname;
   end_section();
-  write_string("file32: ( nvolume = 1 volume1 = \"./\" )\n");
+  {
+    ostringstream oss;
+    oss << "file" << PSIF_CHKPT << ": ( nvolume = 1 volume1 = \"./\" )" << endl;
+    write_string(oss.str().c_str());
+  }
   end_section();
 
   end_section();

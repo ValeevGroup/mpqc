@@ -20,20 +20,21 @@ concrete implementations of PsiWavefunction.
 class PsiWavefunction: public Wavefunction {
 
     Ref<PsiExEnv> exenv_;
-
-    int* read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep);
+    /// All Psi wave functions can at least compute the energy
+    int value_implemented() const { return 1; }
 
   protected:
     int nirrep_;
-    int *docc_;
-    int *socc_;
-    int *frozen_docc_;
-    int *frozen_uocc_;
+    std::vector<int> docc_;
+    std::vector<int> socc_;
     int multp_;
     int charge_;
     char *memory_;
     /// Prepares a complete Psi input file. The input file is assumed to have been opened.
     virtual void write_input(int conv) =0;
+
+    std::vector<int> read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep);
+
 
   public:
     /** The KeyVal constructor.
@@ -65,7 +66,7 @@ class PsiWavefunction: public Wavefunction {
     int nelectron();
 
     /// Return an associated PsiExEnv object
-    Ref<PsiExEnv> get_psi_exenv() const { return exenv_; };
+    Ref<PsiExEnv> exenv() const { return exenv_; };
     /// Return an associated PsiInput object
     Ref<PsiInput> get_psi_input() const { return exenv_->get_psi_input(); };
 };
@@ -137,10 +138,44 @@ class PsiUHF: public PsiSCF {
 };
 
 ///////////////////////////////////////////////////////////////////
+/// PsiCorrWavefunction is a Psi correlated wave function
+
+class PsiCorrWavefunction: public PsiWavefunction {
+  protected:
+    Ref<PsiSCF> reference_;
+    std::vector<int> frozen_docc_;
+    std::vector<int> frozen_uocc_;
+    void write_input(int conv);
+  public:
+    PsiCorrWavefunction(const Ref<KeyVal>&);
+    PsiCorrWavefunction(StateIn&);
+    ~PsiCorrWavefunction();
+    void save_data_state(StateOut&);
+    int spin_polarized() { return reference_->spin_polarized();};
+};
+
+///////////////////////////////////////////////////////////////////
+/// PsiCC is a Psi coupled cluster wave function
+
+class PsiCC: public PsiCorrWavefunction {
+    std::vector<RefSCMatrix> T_;
+    std::vector<RefSCMatrix> Lambda_;
+  public:
+    PsiCC(const Ref<KeyVal>&);
+    PsiCC(StateIn&);
+    ~PsiCC();
+    void save_data_state(StateOut&);
+
+    /// return T amplitudes of rank i (i >= 1)
+    virtual const RefSCMatrix& T(unsigned int i);
+    /// return Lambda amplitudes of rank i (i >= 1)
+    virtual const RefSCMatrix& Lambda(unsigned int i);
+};
+
+///////////////////////////////////////////////////////////////////
 /// PsiCCSD is a concrete implementation of Psi CCSD wave function
 
-class PsiCCSD: public PsiWavefunction {
-    Ref<PsiSCF> reference_;
+class PsiCCSD: public PsiCC {
   protected:
     void write_input(int conv);
   public:
@@ -148,15 +183,13 @@ class PsiCCSD: public PsiWavefunction {
     PsiCCSD(StateIn&);
     ~PsiCCSD();
     void save_data_state(StateOut&);
-    int spin_polarized() { return reference_->spin_polarized();};
     int gradient_implemented() const;
 };
 
 ///////////////////////////////////////////////////////////////////
 /// PsiCCSD_T is a concrete implementation of Psi CCSD(T) wave function
 
-class PsiCCSD_T: public PsiWavefunction {
-    Ref<PsiSCF> reference_;
+class PsiCCSD_T: public PsiCC {
   protected:
     void write_input(int conv);
   public:
@@ -165,10 +198,24 @@ class PsiCCSD_T: public PsiWavefunction {
     ~PsiCCSD_T();
 
     void save_data_state(StateOut&);
-    int spin_polarized() { return reference_->spin_polarized();};
     int gradient_implemented() const;
 };
 
-}
+///////////////////////////////////////////////////////////////////
+/// PsiCCSD-PT2R12 is a concrete implementation of CCSD-PT2R12 wave function
 
+class PsiCCSD_PT2R12: public PsiCC {
+  protected:
+    void write_input(int conv);
+  public:
+    PsiCCSD_PT2R12(const Ref<KeyVal>&);
+    PsiCCSD_PT2R12(StateIn&);
+    ~PsiCCSD_PT2R12();
+    void save_data_state(StateOut&);
+    int gradient_implemented() const;
+    /// Psi only produces the CCSD wave function
+    void compute();
+};
+
+}
 #endif

@@ -58,6 +58,7 @@ class PsiInput: public RefCount {
     void write_keyword(const char *, const char *);
     void write_keyword(const char *, int);
     void write_keyword(const char *, double);
+    template <typename T> void write_keyword_array(const char *, int, const std::vector<T>&);
     void write_keyword_array(const char *, int, int *);
     void write_keyword_array(const char *, int, double *);
     void write_string(const char *);

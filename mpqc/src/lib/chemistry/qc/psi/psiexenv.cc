@@ -11,6 +11,7 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/psi/psiexenv.h>
+#include <psifiles.h>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ static ClassDesc PsiExEnv_cd(
 
 string PsiExEnv::inputname_("input.dat");
 string PsiExEnv::file11name_("file11.dat");
-int PsiExEnv::ckptfile_(32);
+int PsiExEnv::ckptfile_(PSIF_CHKPT);
 string PsiExEnv::defaultcwd_("/tmp");
 string PsiExEnv::defaultfileprefix_("psi");
 string PsiExEnv::defaultpsiprefix_("/usr/local/psi/bin");
@@ -82,6 +83,21 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
   sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
   psifile11_ = new PsiFile11(s);
   delete[] s;
+
+  // configure libpsio object
+  {
+    psio_.filecfg_kwd("DEFAULT","NAME",-1,fileprefix_.c_str());
+    std::ostringstream oss;
+    oss << nscratch_;
+    psio_.filecfg_kwd("DEFAULT","NVOLUME",-1,oss.str().c_str());
+    for (int i=0; i<nscratch_; i++) {
+      std::ostringstream oss;
+      oss << "VOLUME" << (i+1);
+      psio_.filecfg_kwd("DEFAULT",oss.str().c_str(),-1,scratch_[i].c_str());
+    }
+    psio_.filecfg_kwd("DEFAULT","NVOLUME",PSIF_CHKPT,"1");
+    psio_.filecfg_kwd("DEFAULT","VOLUME1",PSIF_CHKPT,"./");
+  }
 }
 
 PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
@@ -138,10 +154,7 @@ void PsiExEnv::add_to_path(const string& dir)
 int PsiExEnv::run_psi()
 {
   int errcod;
-  if (errcod = run_psi_module("psi3")) {
-    return errcod;
-  }
-  if (errcod = run_psi_module("psiclean")) {
+  if (errcod = run_psi_module("psi3 --messy")) {
     return errcod;
   }
   return 0;
@@ -174,3 +187,5 @@ void PsiExEnv::print(std::ostream&o) const
 }
 
 }
+
+extern "C" char* gprgid() { return "MPQC"; }

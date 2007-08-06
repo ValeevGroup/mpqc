@@ -4,15 +4,20 @@
 #endif
 
 #include <stdexcept>
-#include <math.h>
+#include <cmath>
+
+#include <psifiles.h>
+#include <ccfiles.h>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/psi/psiwfn.h>
+#include <chemistry/qc/psi/psiinput.timpl.h>
 
 using namespace std;
 
@@ -36,8 +41,6 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   nirrep_ = molecule()->point_group()->char_table().order();
   docc_ = read_occ(keyval,"docc",nirrep_);
   socc_ = read_occ(keyval,"socc",nirrep_);
-  frozen_docc_ = read_occ(keyval,"frozen_docc",nirrep_);
-  frozen_uocc_ = read_occ(keyval,"frozen_uocc",nirrep_);
 
   int bytes = keyval->intvalue("memory");
   if (bytes <= 2000000)
@@ -49,6 +52,7 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
 
 PsiWavefunction::~PsiWavefunction()
 {
+    exenv_->run_psi_module("psiclean");
 }
 
 PsiWavefunction::PsiWavefunction(StateIn&s):
@@ -153,10 +157,10 @@ PsiWavefunction::write_basic_input(int conv)
 }
 
 // Shamelessly borrowed from class SCF
-int *
+std::vector<int>
 PsiWavefunction::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep)
 {
-  int *occ = 0;
+  std::vector<int> occ;
   if (keyval->exists(name)) {
     if (keyval->count(name) != nirrep) {
       ExEnv::err0() << indent
@@ -165,7 +169,7 @@ PsiWavefunction::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirre
                    << endl;
       abort();
     }
-    occ = new int[nirrep];
+    occ.resize(nirrep);
     for (int i=0; i<nirrep; i++) {
       occ[i] = keyval->intvalue(name,i);
     }
@@ -182,7 +186,7 @@ static ClassDesc PsiSCF_cd(
 PsiSCF::PsiSCF(const Ref<KeyVal>&keyval):
   PsiWavefunction(keyval)
 {
-  if (!docc_ || !socc_) {
+  if (docc_.empty() || socc_.empty()) {
     if (keyval->exists("total_charge") && keyval->exists("multiplicity")) {
       charge_ = keyval->intvalue("total_charge");
       multp_ = keyval->intvalue("multiplicity");
@@ -225,7 +229,7 @@ static ClassDesc PsiCLHF_cd(
 PsiCLHF::PsiCLHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
-  if (!docc_ && multp_ != 1) {
+  if (docc_.empty() && multp_ != 1) {
     ExEnv::err0() << indent
 		  << "ERROR: PsiCLHF: multiplicity should be 1 for CLHF wave function" << endl;
     abort();
@@ -246,7 +250,7 @@ PsiCLHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->write_keyword("psi:reference","rhf");
-  if (docc_)
+  if (!docc_.empty())
     input->write_keyword_array("psi:docc",nirrep_,docc_);
   else {
     input->write_keyword("psi:multp",multp_);
@@ -274,7 +278,7 @@ static ClassDesc PsiHSOSHF_cd(
 PsiHSOSHF::PsiHSOSHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
-  if ((!docc_ || !socc_) && multp_ == 1) {
+  if ((docc_.empty() || socc_.empty()) && multp_ == 1) {
     ExEnv::err0() << indent
 		  << "ERROR: PsiHSOSHF: multiplicity should be > 1 for HSOSHF wave function" << endl;
     abort();
@@ -295,9 +299,9 @@ PsiHSOSHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->write_keyword("psi:reference","rohf");
-  if (docc_)
+  if (!docc_.empty())
     input->write_keyword_array("psi:docc",nirrep_,docc_);
-  if (socc_)
+  if (!socc_.empty())
     input->write_keyword_array("psi:socc",nirrep_,socc_);
 }
 
@@ -338,9 +342,9 @@ PsiUHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->write_keyword("psi:reference","uhf");
-  if (docc_)
+  if (!docc_.empty())
     input->write_keyword_array("psi:docc",nirrep_,docc_);
-  if (socc_)
+  if (!socc_.empty())
     input->write_keyword_array("psi:socc",nirrep_,socc_);
 }
 
@@ -357,18 +361,253 @@ PsiUHF::write_input(int convergence)
 
 //////////////////////////////////////////////////////////////////////////
 
+static ClassDesc PsiCorrWavefunction_cd(
+  typeid(PsiCorrWavefunction),"PsiCorrWavefunction",1,"public PsiWavefunction",
+  0, create<PsiCorrWavefunction>, create<PsiCorrWavefunction>);
+
+PsiCorrWavefunction::PsiCorrWavefunction(const Ref<KeyVal>&keyval):
+  PsiWavefunction(keyval)
+{
+  frozen_docc_ = read_occ(keyval,"frozen_docc",nirrep_);
+  frozen_uocc_ = read_occ(keyval,"frozen_uocc",nirrep_);
+  if (frozen_docc_.empty()) {
+      frozen_docc_.resize(nirrep_);
+      for(unsigned int h=0; h<nirrep_; ++h)
+	  frozen_docc_[h] = 0;
+  }
+  if (frozen_uocc_.empty()) {
+      frozen_uocc_.resize(nirrep_);
+      for(unsigned int h=0; h<nirrep_; ++h)
+	  frozen_uocc_[h] = 0;
+  }
+
+  reference_ << keyval->describedclassvalue("reference");
+  if (reference_.null()) {
+    ExEnv::err0() << "PsiCorrWavefunction::PsiCorrWavefunction: no reference wavefunction" << endl;
+    abort();
+  }
+}
+
+PsiCorrWavefunction::~PsiCorrWavefunction()
+{
+}
+
+PsiCorrWavefunction::PsiCorrWavefunction(StateIn&s):
+  PsiWavefunction(s)
+{
+  reference_ << SavableState::restore_state(s);
+  s.get(frozen_docc_);
+  s.get(frozen_uocc_);
+}
+
+void
+PsiCorrWavefunction::save_data_state(StateOut&s)
+{
+  PsiWavefunction::save_data_state(s);
+  SavableState::save_state(reference_.pointer(),s);
+  s.put(frozen_docc_);
+  s.put(frozen_uocc_);
+}
+
+void
+PsiCorrWavefunction::write_input(int convergence)
+{
+  if (gradient_needed())
+    reference_->do_gradient(1);
+  else
+    reference_->do_gradient(0);
+    
+  Ref<PsiInput> input = get_psi_input();
+  PsiWavefunction::write_basic_input(convergence);
+  reference_->write_basic_input(convergence);
+  if (!frozen_docc_.empty())
+    input->write_keyword_array("psi:frozen_docc",nirrep_,frozen_docc_);
+  if (!frozen_uocc_.empty())
+    input->write_keyword_array("psi:frozen_uocc",nirrep_,frozen_uocc_);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+static ClassDesc PsiCC_cd(
+  typeid(PsiCC),"PsiCC",1,"public PsiCorrWavefunction",
+  0, create<PsiCC>, create<PsiCC>);
+
+PsiCC::PsiCC(const Ref<KeyVal>&keyval):
+  PsiCorrWavefunction(keyval)
+{
+}
+
+PsiCC::~PsiCC()
+{
+}
+
+PsiCC::PsiCC(StateIn&s):
+  PsiCorrWavefunction(s)
+{
+}
+
+void
+PsiCC::save_data_state(StateOut&s)
+{
+  PsiCorrWavefunction::save_data_state(s);
+}
+
+const RefSCMatrix&
+PsiCC::T(unsigned int rank)
+{
+    if (rank < 1)
+	throw ProgrammingError("PsiCC::T(rank) -- rank must be >= 1", __FILE__, __LINE__);
+    if (rank > 2)
+	throw FeatureNotImplemented("PsiCC::T(rank) -- rank must be > 2 is not supported by Psi yet", __FILE__, __LINE__);
+    if (T_.empty() || T_.size() < rank)
+	T_.resize(rank);
+    if (T_[rank-1].nonnull())
+	return T_[rank-1];
+
+    // For now only handle closed-shell case
+    PsiSCF::RefType reftype = reference_->reftype();
+    if (reftype != PsiSCF::rhf)
+	throw FeatureNotImplemented("PsiCC::T() -- only closed-shell case is implemented",__FILE__,__LINE__);
+    // For now only handle C1 case
+    //if (nirrep_ != 1)
+    //  throw FeatureNotImplemented("PsiCC::T() -- only C1 symmetry can be handled",__FILE__,__LINE__);
+
+    psi::PSIO& psio = exenv()->psio();
+    // grab orbital info
+    int* doccpi = new int[nirrep_];
+    int* mopi = new int[nirrep_];
+    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
+    psio.read_entry(PSIF_CHKPT,"::Closed shells per irrep",reinterpret_cast<char*>(doccpi),nirrep_*sizeof(int));
+    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    psio.close(PSIF_CHKPT,1);
+    std::vector<int> actdoccpi(nirrep_);
+    std::vector<int> actuoccpi(nirrep_);
+    unsigned int ndocc_act = 0;
+    unsigned int nuocc_act = 0;
+    for(unsigned int irrep=0; irrep<nirrep_; ++irrep) {
+	actdoccpi[irrep] = doccpi[irrep] - frozen_docc_[irrep];
+	actuoccpi[irrep] = mopi[irrep] - doccpi[irrep] - frozen_uocc_[irrep];
+	ndocc_act += actdoccpi[irrep];
+	nuocc_act += actuoccpi[irrep];
+    }
+
+    // Grab T matrices
+    if (rank == 1) {
+	// read in the i by a matrix in DPD format
+	unsigned int nia_dpd = 0;
+	for(unsigned int h=0; h<nirrep_; ++h)  nia_dpd += actdoccpi[h] * actuoccpi[h];
+	double* T1 = new double[nia_dpd];
+	psio.open(CC_OEI,PSIO_OPEN_OLD);
+	psio.read_entry(CC_OEI,"tIA",reinterpret_cast<char*>(T1),nia_dpd*sizeof(double));
+	psio.close(CC_OEI,1);
+
+	// form the full matrix
+	T_[rank-1] = matrixkit()->matrix(new SCDimension(ndocc_act),new SCDimension(nuocc_act));
+	RefSCMatrix& T = T_[rank-1];
+	T.assign(0.0);
+	unsigned int ia = 0;
+	unsigned int i_offset = 0;
+	unsigned int a_offset = 0;
+	for(unsigned int h=0; h<nirrep_;
+		i_offset+=actdoccpi[h],
+		a_offset+=actuoccpi[h],
+		++h
+	    ) {
+	    for(int i=0; i<actdoccpi[h]; ++i)
+		for(int a=0; a<actuoccpi[h]; ++a, ++ia)
+		    T.set_element(i+i_offset,a+a_offset,T1[ia]);
+	}
+	delete[] T1;
+	T_[rank-1].print("T1 amplitudes");
+    }
+    else if (rank == 2) {
+	// DPD of orbital product spaces
+	std::vector<int> ijpi(nirrep_);
+	std::vector<int> abpi(nirrep_);
+	unsigned int nijab_dpd = 0;
+	for(unsigned int h=0; h<nirrep_; ++h) {
+	    unsigned int nij = 0;
+	    unsigned int nab = 0;
+	    for(unsigned int g=0; g<nirrep_; ++g) {
+		nij += actdoccpi[g] * actdoccpi[h^g];
+		nab += actuoccpi[g] * actuoccpi[h^g];
+	    }
+	    ijpi[h] = nij;
+	    abpi[h] = nab;
+	    nijab_dpd += nij*nab;
+	}
+
+	// read in T2 in DPD form
+	double* T2 = new double[nijab_dpd];
+	psio.open(CC_TAMPS,PSIO_OPEN_OLD);
+	psio.read_entry(CC_TAMPS,"tIjAb",reinterpret_cast<char*>(T2),nijab_dpd*sizeof(double));
+	psio.close(CC_TAMPS,1);
+
+	// convert to the full form
+	const unsigned int nij = ndocc_act*ndocc_act;
+	const unsigned int nab = nuocc_act*nuocc_act;
+	T_[rank-1] = matrixkit()->matrix(new SCDimension(nij),new SCDimension(nab));
+	RefSCMatrix& T = T_[rank-1];
+	T.assign(0.0);
+	unsigned int ijab = 0;
+	unsigned int ij_offset = 0;
+	unsigned int ab_offset = 0;
+	for(unsigned int h=0; h<nirrep_;
+		ij_offset+=ijpi[h],
+		ab_offset+=abpi[h],
+		++h
+	    ) {
+	    unsigned int ij = 0;
+	    for(unsigned int g=0; g<nirrep_; ++g) {
+		unsigned int gh = g^h;
+		for(int i=0; i<actdoccpi[g]; ++i)
+		    for(int j=0; j<actdoccpi[gh]; ++j, ++ij) {
+		
+			unsigned int ab = 0;
+			for(unsigned int f=0; f<nirrep_; ++f) {
+			    unsigned int fh = f^h;
+			    for(int a=0; a<actuoccpi[f]; ++a)
+				for(int b=0; b<actuoccpi[fh]; ++b, ++ab, ++ijab) {
+				
+				    T.set_element(ij+ij_offset,ab+ab_offset,T2[ijab]);
+				}
+			}
+		    }
+	    }
+	}
+
+	delete[] T2;
+	T_[rank-1].print("T2 amplitudes");
+    }
+
+    return T_[rank-1];
+}
+
+const RefSCMatrix&
+PsiCC::Lambda(unsigned int rank)
+{
+    if (rank < 1)
+	throw ProgrammingError("PsiCC::Lambda(rank) -- rank must be >= 1", __FILE__, __LINE__);
+    if (rank > 2)
+	throw FeatureNotImplemented("PsiCC::Lambda(rank) -- rank must be > 2 is not supported by Psi yet", __FILE__, __LINE__);
+    if (Lambda_.empty() || Lambda_.size() < rank)
+	Lambda_.resize(rank);
+    if (Lambda_[rank-1].nonnull())
+	return Lambda_[rank-1];
+
+    throw FeatureNotImplemented("PsiCC::Lambda() -- cannot read Lambda amplitudes yet",__FILE__,__LINE__);
+    return Lambda_[rank-1];
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 static ClassDesc PsiCCSD_cd(
-  typeid(PsiCCSD),"PsiCCSD",1,"public PsiWavefunction",
+  typeid(PsiCCSD),"PsiCCSD",1,"public PsiCC",
   0, create<PsiCCSD>, create<PsiCCSD>);
 
 PsiCCSD::PsiCCSD(const Ref<KeyVal>&keyval):
-  PsiWavefunction(keyval)
+  PsiCC(keyval)
 {
-  reference_ << keyval->describedclassvalue("reference");
-  if (reference_.null()) {
-    ExEnv::err0() << "PsiCCSD::PsiCCSD: no reference wavefunction" << endl;
-    abort();
-  }
 }
 
 PsiCCSD::~PsiCCSD()
@@ -376,9 +615,8 @@ PsiCCSD::~PsiCCSD()
 }
 
 PsiCCSD::PsiCCSD(StateIn&s):
-  PsiWavefunction(s)
+  PsiCC(s)
 {
-  reference_ << SavableState::restore_state(s);
 }
 
 int
@@ -394,45 +632,28 @@ PsiCCSD::gradient_implemented() const
 void
 PsiCCSD::save_data_state(StateOut&s)
 {
-  PsiWavefunction::save_data_state(s);
-  SavableState::save_state(reference_.pointer(),s);
+  PsiCC::save_data_state(s);
 }
 
 void
 PsiCCSD::write_input(int convergence)
 {
-  if (gradient_needed())
-    reference_->do_gradient(1);
-  else
-    reference_->do_gradient(0);
-    
   Ref<PsiInput> input = get_psi_input();
   input->open();
-  PsiWavefunction::write_basic_input(convergence);
-  reference_->write_basic_input(convergence);
+  PsiCorrWavefunction::write_input(convergence);
   input->write_keyword("psi:wfn","ccsd");
-  if (frozen_docc_)
-    input->write_keyword_array("psi:frozen_docc",nirrep_,frozen_docc_);
-  if (frozen_uocc_)
-    input->write_keyword_array("psi:frozen_uocc",nirrep_,frozen_uocc_);
   input->close();
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 static ClassDesc PsiCCSD_T_cd(
-  typeid(PsiCCSD_T),"PsiCCSD_T",1,"public PsiWavefunction",
+  typeid(PsiCCSD_T),"PsiCCSD_T",1,"public PsiCC",
   0, create<PsiCCSD_T>, create<PsiCCSD_T>);
 
 PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval):
-  PsiWavefunction(keyval)
+  PsiCC(keyval)
 {
-  reference_ << keyval->describedclassvalue("reference");
-  if (reference_.null()) {
-    ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: no reference wavefunction" << endl;
-    abort();
-  }
-
   PsiSCF::RefType reftype = reference_->reftype();
   if (reftype == PsiSCF::hsoshf) {
     ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: HSOSHF-based CCSD(T) has not been implemented yet" << endl;
@@ -445,9 +666,8 @@ PsiCCSD_T::~PsiCCSD_T()
 }
 
 PsiCCSD_T::PsiCCSD_T(StateIn&s):
-  PsiWavefunction(s)
+  PsiCC(s)
 {
-  reference_ << SavableState::restore_state(s);
 }
 
 int
@@ -461,31 +681,77 @@ PsiCCSD_T::gradient_implemented() const
 void
 PsiCCSD_T::save_data_state(StateOut&s)
 {
-  PsiWavefunction::save_data_state(s);
+  PsiCC::save_data_state(s);
   SavableState::save_state(reference_.pointer(),s);
 }
 
 void
 PsiCCSD_T::write_input(int convergence)
 {
-  if (gradient_needed())
-    reference_->do_gradient(1);
-  else
-    reference_->do_gradient(0);
-    
   Ref<PsiInput> input = get_psi_input();
   input->open();
-  PsiWavefunction::write_basic_input(convergence);
-  reference_->write_basic_input(convergence);
-  input->write_keyword("psi:wfn","ccsd");
-  input->begin_section("psi");
-  input->write_keyword("exec","(\"cints\" \"cscf\" \"transqt\" \"ccsort\" \"ccenergy\" \"cchbar\" \"cctriples\")");
-  input->end_section();
-  if (frozen_docc_)
-    input->write_keyword_array("psi:frozen_docc",nirrep_,frozen_docc_);
-  if (frozen_uocc_)
-    input->write_keyword_array("psi:frozen_uocc",nirrep_,frozen_uocc_);
+  PsiCorrWavefunction::write_input(convergence);
+  input->write_keyword("psi:wfn","ccsd_t");
   input->close();
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+static ClassDesc PsiCCSD_PT2R12_cd(
+  typeid(PsiCCSD_PT2R12),"PsiCCSD_PT2R12",1,"public PsiCC",
+  0, create<PsiCCSD_PT2R12>, create<PsiCCSD_PT2R12>);
+
+PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval):
+  PsiCC(keyval)
+{
+}
+
+PsiCCSD_PT2R12::~PsiCCSD_PT2R12()
+{
+}
+
+PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s):
+  PsiCC(s)
+{
+}
+
+int
+PsiCCSD_PT2R12::gradient_implemented() const
+{
+  return 0;
+}
+
+void
+PsiCCSD_PT2R12::save_data_state(StateOut&s)
+{
+  PsiCC::save_data_state(s);
+}
+
+void
+PsiCCSD_PT2R12::write_input(int convergence)
+{
+  Ref<PsiInput> input = get_psi_input();
+  input->open();
+  PsiCorrWavefunction::write_input(convergence);
+  input->write_keyword("psi:wfn","ccsd");
+  input->close();
+}
+
+void
+PsiCCSD_PT2R12::compute()
+{
+    // compute CCSD wave function
+    PsiWavefunction::compute();
+
+    // grab amplitudes
+    RefSCMatrix T1 = T(1);
+    RefSCMatrix T2 = T(2);
+
+    // Compute intermediates
+
+    // Compute Hamiltonian matrix elements
+
+    // compute the second-order correction
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -47,10 +47,11 @@ namespace sc {
     public:
     SingleRefInfo(StateIn&);
     /// Construct using SCF reference object
-    SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv);
+    SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv, bool delayed_initialization = false);
     ~SingleRefInfo();
     
     void save_data_state(StateOut&);
+    void initialize();
     
     /// Returns the reference
     const Ref<SCF>& ref() const;
@@ -103,6 +104,8 @@ namespace sc {
     const Ref<MOIndexSpace>& uocc_act(SpinCase1 spin) const;
     
     private:
+    /// initialized?
+    bool initialized_;
     /// The reference function
     Ref<SCF> ref_;
     /// Number of occupied orbitals not used in correlated method

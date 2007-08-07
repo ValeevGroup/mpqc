@@ -64,13 +64,13 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-  // cast the wavefunction to MBPT2_R12
+  // cast Wavefunction to MBPT2_R12
   MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
   if (r12wfn == 0) {
       throw ProgrammingError(
           "r12info()->wfn() was not an MBPT2_R12 object",
           __FILE__, __LINE__, class_desc());
-    }
+  }
   Ref<SCF> ref = r12wfn->ref();
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
@@ -117,9 +117,9 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
 
   if (r12info()->wfn()->dk() > 0) {
       throw ProgrammingError(
-          "cannot use reference with dk > 0 with old mp2r12 fock algorithm",
-          __FILE__, __LINE__, class_desc());
-    }
+	  "cannot use reference with dk > 0 with old mp2r12 fock algorithm",
+	  __FILE__, __LINE__, class_desc());
+  }
 
   Ref<Integral> localints = r12info_->integral()->clone();
   localints->set_basis(bs1,bs2);

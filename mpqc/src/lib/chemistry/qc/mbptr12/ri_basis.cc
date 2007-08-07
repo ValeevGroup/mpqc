@@ -52,12 +52,12 @@ R12IntEvalInfo::construct_ri_basis_(bool safe)
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
   if (bs_aux_->equiv(obs)) {
     bs_ri_ = obs;
-    if (abs_method_ == LinearR12::ABS_CABS ||
-	abs_method_ == LinearR12::ABS_CABSPlus)
+    if (r12tech()->abs_method() == LinearR12::ABS_CABS ||
+	r12tech()->abs_method() == LinearR12::ABS_CABSPlus)
       throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- ABS methods CABS and CABS+ can only be used when ABS != OBS");
   }
   else {
-    switch(abs_method_) {
+    switch(r12tech()->abs_method()) {
       case LinearR12::ABS_ABS:
 	construct_ri_basis_ks_(safe);
 	break;

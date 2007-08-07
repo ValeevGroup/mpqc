@@ -544,7 +544,7 @@ R12IntEval::checkpoint_() const
   if (me == 0 && wfn->if_to_checkpoint()) {
     StateOutBin stateout(wfn->checkpoint_file());
     SavableState::save_state(wfn,stateout);
-    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
+    ExEnv::out0() << indent << "Checkpointed Wavefunction" << endl;
   }
 }
 

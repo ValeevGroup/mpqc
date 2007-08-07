@@ -46,17 +46,15 @@ MBPT2_R12::compute_energy_()
   //int DebugWait = 1;
   //while (DebugWait) {}
   
-  Ref<R12IntEvalInfo> r12info;
+  const Ref<R12IntEvalInfo>& r12info = r12evalinfo_;
+  r12info->initialize();
   if (r12eval_.null()) {
-    r12info = new R12IntEvalInfo(this);
-    r12info->set_dynamic(dynamic_);
-    r12info->set_print_percent(print_percent_);
-    r12info->set_memory(mem_alloc);
-    r12eval_ = new R12IntEval(r12info);
+    r12evalinfo_->set_dynamic(dynamic_);
+    r12evalinfo_->set_print_percent(print_percent_);
+    r12evalinfo_->set_memory(mem_alloc);
+    r12eval_ = new R12IntEval(r12evalinfo_);
     r12eval_->set_debug(debug_);
   }
-  else
-    r12info = r12eval_->r12info();
   // This will actually compute the intermediates
   r12eval_->compute();
   
@@ -70,13 +68,13 @@ MBPT2_R12::compute_energy_()
   if (r12info->ansatz()->projector() != LinearR12::Projector_3) {
 
     // MP2-F12/A
-    if (stdapprox_ == LinearR12::StdApprox_A ||
-        stdapprox_ == LinearR12::StdApprox_Ap ||
-        stdapprox_ == LinearR12::StdApprox_B) {
+    if (r12info->stdapprox() == LinearR12::StdApprox_A ||
+        r12info->stdapprox() == LinearR12::StdApprox_Ap ||
+        r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a pair energies");
       if (r12a_energy_.null())
         r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
-      r12a_energy_->print_pair_energies(spinadapted_);
+      r12a_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12a_energy_->energy();
       tim_exit("mp2-f12/a pair energies");
     }
@@ -85,32 +83,32 @@ MBPT2_R12::compute_energy_()
     // skip if using diagonal ansatz -- A' is equivalent to A then
     const bool skip_Ap = r12info->ansatz()->diag();
     if (!skip_Ap &&
-	stdapprox_ == LinearR12::StdApprox_Ap ||
-        stdapprox_ == LinearR12::StdApprox_B) {
+	r12info->stdapprox() == LinearR12::StdApprox_Ap ||
+        r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a' pair energies");
       if (r12ap_energy_.null())
         r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
-      r12ap_energy_->print_pair_energies(spinadapted_);
+      r12ap_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12ap_energy_->energy();
       tim_exit("mp2-f12/a' pair energies");
     }
 
     // MP2-F12/B
-    if (stdapprox_ == LinearR12::StdApprox_B) {
+    if (r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/b pair energies");
       if (r12b_energy_.null())
         r12b_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_B,debug_);
-      r12b_energy_->print_pair_energies(spinadapted_);
+      r12b_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12b_energy_->energy();
       tim_exit("mp2-f12/b pair energies");
     }
     
     // MP2-F12/A''
-    if (stdapprox_ == LinearR12::StdApprox_App) {
+    if (r12info->stdapprox() == LinearR12::StdApprox_App) {
       tim_enter("mp2-f12/a'' pair energies");
       if (r12app_energy_.null())
         r12app_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_App,debug_);
-      r12app_energy_->print_pair_energies(spinadapted_);
+      r12app_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12app_energy_->energy();
       tim_exit("mp2-f12/a'' pair energies");
     }
@@ -118,11 +116,11 @@ MBPT2_R12::compute_energy_()
   } // end of != ansatz_3
   
   // MP2-F12/C
-  if (stdapprox_ == LinearR12::StdApprox_C) {
+  if (r12info->stdapprox() == LinearR12::StdApprox_C) {
     tim_enter("mp2-f12/c pair energies");
     if (r12c_energy_.null())
       r12c_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_C,debug_);
-    r12c_energy_->print_pair_energies(spinadapted_);
+    r12c_energy_->print_pair_energies(r12info->spinadapted());
     etotal = r12c_energy_->energy();
     tim_exit("mp2-f12/c pair energies");
   }
@@ -137,7 +135,7 @@ MBPT2_R12::compute_energy_()
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   if (twopdm_grid_.nonnull()) {
     Ref<MP2R12Energy> wfn_to_plot;
-    switch(stdapprox()) {
+    switch(r12info->stdapprox()) {
       case LinearR12::StdApprox_A:    wfn_to_plot = r12a_energy_;   break;
       case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
       case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;

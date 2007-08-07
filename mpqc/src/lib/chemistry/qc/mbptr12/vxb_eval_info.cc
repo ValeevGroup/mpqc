@@ -55,7 +55,18 @@ static ClassDesc R12IntEvalInfo_cd(
   typeid(R12IntEvalInfo),"R12IntEvalInfo",9,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
-R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
+R12IntEvalInfo::R12IntEvalInfo(
+    const Ref<KeyVal>& keyval,
+    Wavefunction* wfn,
+    const Ref<SCF>& ref,
+    unsigned int nfzc,
+    unsigned int nfzv,
+    bool spinadapted,
+    bool delayed_initialization
+    ) :
+    wfn_(wfn), spinadapted_(spinadapted),
+    initialized_(false),
+    refinfo_(new SingleRefInfo(ref,nfzc,nfzv,delayed_initialization))
 {
   // Default values
   memory_ = DEFAULT_SC_MEMORY;
@@ -63,50 +74,68 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   dynamic_ = false;
   print_percent_ = 10.0;
 
-  wfn_ = mbptr12;
-  refinfo_ = new SingleRefInfo(mbptr12->ref(),mbptr12->nfzcore(),mbptr12->nfzvirt());
-  bs_aux_ = mbptr12->aux_basis();
-  bs_vir_ = mbptr12->vir_basis();
+  bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("aux_basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
+  if (bs_aux_.pointer() == NULL)
+      bs_aux_ = ref->basis();
+
+  bs_vir_ = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("vir_basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
+  if (bs_vir_.pointer() == NULL)
+      bs_vir_ = ref->basis();
+
+  // Determine how to store MO integrals
+  char *ints_str = keyval->pcharvalue("store_ints",KeyValValuepchar("posix"));
+  if (!strcmp(ints_str,"posix")) {
+    ints_method_ = MOIntsTransformFactory::StoreMethod::posix;
+  }
+#if HAVE_MPIIO
+  else if (!strcmp(ints_str,"mpi")) {
+    ints_method_ = MOIntsTransformFactory::StoreMethod::mpi;
+  }
+#else
+  else if (!strcmp(ints_str,"mpi")) {
+    throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- the value for keyword store_ints is not valid in this environment (no MPI-I/O detected)");
+  }
+#endif
+  else {
+    delete[] ints_str;
+    throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- invalid value for keyword r12ints");
+  }
+  delete[] ints_str;
+  
+  // Get the prefix for the filename to store the integrals
+  std::string ints_file_default("./");
+  ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(ints_file_default));
+  // if the last character of ints_file is '/' then append the default basename
+  if (*(ints_file_.rbegin()) == '/')
+    ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
+
+  r12tech_ = new R12Technology(keyval,ref->basis(),bs_aux_,bs_vir_);
+  // Make sure can use the integral factory for R12 calcs
+  r12tech_->check_integral_factory(ref->integral());
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  integral()->set_basis(basis());
+  integral()->set_basis(ref->basis());
   Ref<PetiteList> plist = integral()->petite_list();
   RefSCDimension oso_dim = plist->SO_basisdim();
 
-  ints_method_ = mbptr12->r12ints_method();
-  ints_file_ = mbptr12->r12ints_file();
-
-  corrfactor_ = mbptr12->corrfactor();
-  abs_method_ = mbptr12->abs_method();
-  stdapprox_ = mbptr12->stdapprox();
-  ansatz_ = mbptr12->ansatz();
-  ebc_ = mbptr12->ebc();
-  gbc_ = mbptr12->gbc();
-  ks_ebcfree_ = mbptr12->ks_ebcfree();
-  omit_P_ = mbptr12->omit_P();
-  maxnabs_ = mbptr12->maxnabs();
-  include_mp1_ = mbptr12->include_mp1();
-  safety_check_ = mbptr12->safety_check();
-  posdef_B_ = mbptr12->posdef_B();
-
-  construct_ri_basis_(safety_check());
-  construct_orthog_vir_();
-
-  tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
-  tfactory_->set_memory(memory_);
-  tfactory_->set_ints_method(ints_method_);
-  tfactory_->set_file_prefix(ints_file_);
+  if (!delayed_initialization)
+      initialize();
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 {
-  wfn_ = require_dynamic_cast<Wavefunction*>(SavableState::restore_state(si),
-					     "R12IntEvalInfo::R12IntEvalInfo");
-
+  Ref<Wavefunction> wfn; wfn << SavableState::restore_state(si);
+  wfn_ = wfn.pointer();
   bs_aux_ << SavableState::restore_state(si);
   bs_vir_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
@@ -116,7 +145,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  int ints_method; si.get(ints_method); ints_method_ = static_cast<StoreMethod::type>(ints_method);
+  int spinadapted; si.get(spinadapted); spinadapted_ = (bool)spinadapted;
+  int include_mp1; si.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
+  int ints_method; si.get(ints_method);
+  ints_method_ = static_cast<R12IntEvalInfo::StoreMethod::type>(ints_method);
   si.get(ints_file_);
 
   double memory; si.get(memory); memory_ = (size_t) memory;
@@ -125,21 +157,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 2) {
     si.get(print_percent_);
-  }
-
-  if (si.version(::class_desc<R12IntEvalInfo>()) >= 3) {
-    int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
-  }
-  
-  if (si.version(::class_desc<R12IntEvalInfo>()) >= 7) {
-    int gbc; si.get(gbc); gbc_ = (bool) gbc;
-    int ebc; si.get(ebc); ebc_ = (bool) ebc;
-    int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
-    if (si.version(::class_desc<R12IntEvalInfo>()) >= 8) {
-      ansatz_ << SavableState::restore_state(si);
-    }
-    int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
-    int includemp1; si.get(includemp1); include_mp1_ = (bool) includemp1;
   }
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 4) {
@@ -154,22 +171,8 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
     refinfo_ << SavableState::restore_state(si);
   }
-  
-  maxnabs_ = 2;
-  if (si.version(::class_desc<R12IntEvalInfo>()) >= 6) {
-    si.get(maxnabs_);
-  }
-  
-  if (si.version(::class_desc<R12IntEvalInfo>()) >= 7) {
-    int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
-    int omitP; si.get(omitP); omit_P_ = static_cast<bool>(omitP);
-  }
-  if (si.version(::class_desc<R12IntEvalInfo>()) >= 9) {
-    int safety_check; si.get(safety_check);
-    safety_check_ = static_cast<bool>(safety_check);
-    int posdef_B; si.get(posdef_B);
-    posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
-  }
+
+  int initialized; si.get(initialized); initialized_ = (bool)initialized;
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
@@ -183,20 +186,14 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(bs_vir_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
 
+  so.put((int)spinadapted_);
+  so.put((int)include_mp1_);
   so.put((int)ints_method_);
   so.put(ints_file_);
-
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
-  so.put((int)abs_method_);
-  so.put((int)gbc_);
-  so.put((int)ebc_);
-  so.put((int)stdapprox_);
-  SavableState::save_state(ansatz_.pointer(),so);
-  so.put((int)spinadapted_);
-  so.put((int)include_mp1_);
   
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
@@ -205,12 +202,23 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(refinfo_.pointer(),so);
-  
-  so.put(maxnabs_);
-  so.put((int)ks_ebcfree_);
-  so.put((int)omit_P_);
-  so.put((int)safety_check_);
-  so.put((int)posdef_B_);
+  so.put(initialized_);
+}
+
+void
+R12IntEvalInfo::initialize()
+{
+  if (!initialized_) {
+      refinfo_->initialize();
+      construct_ri_basis_(safety_check());
+      construct_orthog_vir_();
+      
+      tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
+      tfactory_->set_memory(memory_);
+      tfactory_->set_ints_method(ints_method_);
+      tfactory_->set_file_prefix(ints_file_);
+      initialized_ = true;
+  }
 }
 
 const Ref<MOIndexSpace>&
@@ -238,16 +246,6 @@ R12IntEvalInfo::set_memory(const size_t memory)
   if (memory > 0)
     memory_ = memory;
   tfactory_->set_memory(memory_);
-}
-
-
-void
-R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
-{
-  if (abs_method != abs_method_) {
-    abs_method = abs_method_;
-    construct_ri_basis_(safety_check());
-  }
 }
 
 void
@@ -362,6 +360,48 @@ R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
     vir_spaces_[Beta].vir_act_ = sp;
     vir_act_ = sp;
   }
+}
+
+void
+R12IntEvalInfo::print(std::ostream& o) const {
+
+  o << indent << "R12IntEvalInfo:" << endl;
+  o << incindent;
+
+  if (bs_vir_->equiv(basis())) {
+      o << indent << "Virtuals Basis Set (VBS):" << endl;
+      o << incindent; bs_vir_->print(o); o << decindent << endl;
+  }
+  if (!bs_aux_->equiv(basis())) {
+      o << indent << "Auxiliary Basis Set (ABS):" << endl;
+      o << incindent; bs_aux_->print(o); o << decindent << endl;
+  }
+
+  r12tech()->print(o);
+
+  o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
+  if (!bs_vir_->equiv(basis()))
+    o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
+
+  std::string ints_str;
+  switch (ints_method_) {
+  case R12IntEvalInfo::StoreMethod::mem_only:
+    ints_str = "mem"; break;
+  case R12IntEvalInfo::StoreMethod::mem_posix:
+    ints_str = "mem_posix"; break;
+  case R12IntEvalInfo::StoreMethod::posix:
+    ints_str = "posix"; break;
+#if HAVE_MPIIO
+  case R12IntEvalInfo::StoreMethod::mem_mpi:
+    ints_str = "mem-mpi"; break;
+  case R12IntEvalInfo::StoreMethod::mpi:
+    ints_str = "mpi"; break;
+#endif
+  default:
+    throw std::runtime_error("R12IntEvalInfo::print -- invalid value of ints_method_");
+  }
+  o << indent << "How to Store Transformed Integrals: " << ints_str << endl << endl;
+  o << indent << "Transformed Integrals file suffix: " << ints_file_ << endl << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

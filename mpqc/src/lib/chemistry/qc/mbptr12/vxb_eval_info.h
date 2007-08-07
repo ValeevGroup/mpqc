@@ -36,6 +36,7 @@
 #include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/ansatz.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
@@ -76,7 +77,9 @@ public:
 
 private:
 
-  Wavefunction* wfn_;     // Wave function that owns this
+  /// R12IntEval must be owned by a Wavefunction
+  Wavefunction* wfn_;
+  Ref<R12Technology> r12tech_;
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
@@ -90,23 +93,10 @@ private:
   double print_percent_;
   int debug_;
 
-  Ref<LinearR12::CorrelationFactor> corrfactor_;
-  LinearR12::StandardApproximation stdapprox_;
-  Ref<LinearR12Ansatz> ansatz_;
-  LinearR12::ABSMethod abs_method_;
-  bool gbc_;
-  bool ebc_;
   bool spinadapted_;
   bool include_mp1_;
   StoreMethod::type ints_method_;
   std::string ints_file_;
-  unsigned int maxnabs_;
-  /// should I follow Klopper-Samson approach in the intermediates formulation for the EBC-free method?
-  bool ks_ebcfree_;
-  /// omit P from intermediate B under standard approximation B? (matters only if OBS != ABS)
-  bool omit_P_;
-  bool safety_check_;
-  LinearR12::PositiveDefiniteB posdef_B_;
 
   int nlindep_aux_;
   int nlindep_vir_;
@@ -124,6 +114,9 @@ private:
   
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
+
+  /// false until initialize() is called
+  bool initialized_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -146,11 +139,46 @@ private:
 
 public:
   R12IntEvalInfo(StateIn&);
-  /// Constructs an R12IntEvalInfo object using data from the MBPT2_R12 object
-  R12IntEvalInfo(MBPT2_R12*);
+    /** KeyVal constructor uses keywords of R12Technology and the following keywords
+        <dl>
+
+	<dt><tt>store_ints</tt><dd> This specifies how to store transformed MO integrals.
+	Valid values are:
+
+	<dl>
+
+	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
+	  This method does not allow all steps to be parallelized but it is most likely to work in all environments.
+
+	  <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method allows
+	  parallelization of all steps.
+
+	</dl>
+
+	If <tt>store_ints</tt> is not specified, then <tt>posix</tt> method will be used.
+	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
+	<tt>store_ints</tt> should be explicitly set to <tt>mpi</tt>.
+
+        <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
+	MO integrals file if <tt>ints</tt> is set to <tt>posix</tt> or <tt>mpi</tt>.
+	If the prefix ends in '/' (slash character) then "<basename>.moints"
+        is appended to it where <basename> is the basename as defined in SCFormIO.
+        The default value for the prefix is "./".
+        If MPI-I/O is used then it is user's responsibility to ensure
+	that the file resides on a file system that supports MPI-I/O.
+    */
+  R12IntEvalInfo(const Ref<KeyVal>& keyval,
+		 Wavefunction* wfn,
+		 const Ref<SCF>& ref,
+		 unsigned int nfzc,
+		 unsigned int nfzv,
+		 bool spinadapted,
+		 bool deflayed_initialization = false);
   ~R12IntEvalInfo();
 
   void save_data_state(StateOut&);
+  /// performs tasks that semantically belong in constructor but can't be performed there
+  void initialize();
 
   /** Sets whether to use dynamic load balancing in parallel MO transformations.
       Default is no */
@@ -168,11 +196,9 @@ public:
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
   void set_memory(const size_t nbytes);
-  /** Sets the ABS approach to be used (ABS or CABS).
-      Default depends on how the object was constructed. */
-  void set_absmethod(LinearR12::ABSMethod abs_method);
 
-  Wavefunction* wfn() const { return wfn_; };
+  Wavefunction* wfn() const { return wfn_; }
+  Ref<R12Technology> r12tech() const { return r12tech_; }
   Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
@@ -195,19 +221,18 @@ public:
   int nvir() const { return vir_->rank();};
   int nvir_act() const { return vir_act_->rank();};
 
-  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
-  LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
-  const Ref<LinearR12Ansatz>& ansatz() const { return ansatz_; }
-  LinearR12::ABSMethod abs_method() const { return abs_method_; }
-  bool gbc() const { return gbc_; }
-  bool ebc() const { return ebc_; }
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12tech()->corrfactor(); }
+  LinearR12::StandardApproximation stdapprox() const { return r12tech()->stdapprox(); }
+  const Ref<LinearR12Ansatz>& ansatz() const { return r12tech()->ansatz(); }
+  LinearR12::ABSMethod abs_method() const { return r12tech()->abs_method(); }
+  bool gbc() const { return r12tech()->gbc(); }
+  bool ebc() const { return r12tech()->ebc(); }
   bool spinadapted() const { return spinadapted_; }
-  bool include_mp1() const { return include_mp1_; }
-  unsigned int maxnabs() const { return maxnabs_; }
-  bool ks_ebcfree() const { return ks_ebcfree_; }
-  bool omit_P() const { return omit_P_; }
-  bool safety_check() const { return safety_check_; }
-  const LinearR12::PositiveDefiniteB& posdef_B() const { return posdef_B_; }
+  unsigned int maxnabs() const { return r12tech()->maxnabs(); }
+  bool ks_ebcfree() const { return r12tech()->ks_ebcfree(); }
+  bool omit_P() const { return r12tech()->omit_P(); }
+  bool safety_check() const { return r12tech()->safety_check(); }
+  const LinearR12::PositiveDefiniteB& posdef_B() const { return r12tech()->posdef_B(); }
 
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
@@ -271,7 +296,8 @@ public:
                               RefSCMatrix& MXX,
                               RefSCMatrix& MYY,
                               RefSCMatrix& MZZ);
-			      
+
+    void print(std::ostream& o) const;
 };
 
 }

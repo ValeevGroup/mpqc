@@ -40,17 +40,18 @@ static ClassDesc R12IntEvalInfo_cd(
   typeid(SingleRefInfo),"SingleRefInfo",ClassVersion,"virtual public SavableState",
   0, 0, create<SingleRefInfo>);
 
-SingleRefInfo::SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv) :
-  ref_(ref), nfzc_(nfzc), nfzv_(nfzv)
+SingleRefInfo::SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv,
+			     bool delayed_initialization) :
+  ref_(ref), nfzc_(nfzc), nfzv_(nfzv), initialized_(false)
 {
-  if (!ref_->spin_polarized())
-    init_spinindependent_spaces();
-  init_spinspecific_spaces();
+  if (!delayed_initialization)
+    initialize();
 }
 
 SingleRefInfo::SingleRefInfo(StateIn& si) :
   SavableState(si)
 {
+  int initialized; si.get(initialized); initialized_ = (bool) initialized;
   ref_ << SavableState::restore_state(si);
   si.get(nfzc_);
   si.get(nfzv_);
@@ -83,6 +84,7 @@ SingleRefInfo::~SingleRefInfo()
 void
 SingleRefInfo::save_data_state(StateOut& so)
 {
+  so.put((int)initialized_);
   SavableState::save_state(ref_.pointer(),so);
   so.put(nfzc_);
   so.put(nfzv_);
@@ -105,6 +107,17 @@ SingleRefInfo::save_data_state(StateOut& so)
     SavableState::save_state(spinspaces_[spin].uocc_sb_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_act_.pointer(),so);
+  }
+}
+
+void
+SingleRefInfo::initialize()
+{
+  if (!initialized_) {
+    if (!ref_->spin_polarized())
+      init_spinindependent_spaces();
+    init_spinspecific_spaces();
+    initialized_ = true;
   }
 }
 

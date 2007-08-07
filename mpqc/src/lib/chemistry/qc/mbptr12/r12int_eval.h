@@ -491,7 +491,6 @@ public:
   bool gbc() const { return r12info()->gbc(); }
   bool ebc() const { return r12info()->ebc(); }
   LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
-  bool include_mp1() const { return r12info()->include_mp1(); }
   bool ks_ebcfree() const { return r12info()->ks_ebcfree(); }
   bool omit_P() const { return r12info()->omit_P(); }
 

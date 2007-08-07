@@ -16,6 +16,7 @@
 #include <math/scmat/matrix.h>
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psiinput.timpl.h>
 
@@ -218,6 +219,48 @@ void
 PsiSCF::save_data_state(StateOut&s)
 {
   PsiWavefunction::save_data_state(s);
+}
+
+const RefSCMatrix&
+PsiSCF::coefs()
+{
+    if (coefs_.nonnull())
+	return coefs_;
+
+    // For now only handle closed-shell case
+    PsiSCF::RefType ref = reftype();
+    if (ref != PsiSCF::rhf)
+	throw FeatureNotImplemented("PsiSCF::coefs() -- only closed-shell case is implemented",__FILE__,__LINE__);
+
+    psi::PSIO& psio = exenv()->psio();
+    // grab orbital info
+    int num_so, num_mo;
+    int* mopi = new int[nirrep_];
+    int* sopi = new int[nirrep_];
+    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
+    psio.read_entry(PSIF_CHKPT,"::Num. SO",reinterpret_cast<char*>(&num_so),sizeof(int));
+    psio.read_entry(PSIF_CHKPT,"::Num. MO's",reinterpret_cast<char*>(&num_mo),sizeof(int));
+    psio.read_entry(PSIF_CHKPT,"::SO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    // get MO coefficients in SO basis
+    const unsigned int nsm = num_so * num_mo;
+    double* C = new double[nsm];
+    psio.read_entry(PSIF_CHKPT,"::MO coefficients",reinterpret_cast<char*>(C),nsm*sizeof(double));
+    // get AO->SO matrix (MPQC AO equiv PSI3 BF)
+    const unsigned int nss = num_so * num_so;
+    double* ao2so = new double[nss];
+    psio.read_entry(PSIF_CHKPT,"::SO->BF transmat",reinterpret_cast<char*>(ao2so),nsm*sizeof(double));
+    psio.close(PSIF_CHKPT,1);
+
+    // convert raw matrices to SCMatrices
+    RefSCDimension sodim_nb = new SCDimension(num_so,1);
+    RefSCDimension sodim = new SCDimension(num_so,nirrep_,sopi);
+    RefSCDimension modim = new SCDimension(num_mo,nirrep_,mopi);
+    RefSCMatrix C_so = basis_matrixkit()->matrix(sodim,modim);  C_so.assign(C);
+    RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim_nb,sodim);
+    coefs_ = aotoso * C_so;
+
+    return coefs_;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -482,6 +525,8 @@ PsiCC::T(unsigned int rank)
     psio.close(PSIF_CHKPT,1);
     std::vector<int> actdoccpi(nirrep_);
     std::vector<int> actuoccpi(nirrep_);
+    std::vector<int> actdoccioff(nirrep_);
+    std::vector<int> actuoccioff(nirrep_);
     unsigned int ndocc_act = 0;
     unsigned int nuocc_act = 0;
     for(unsigned int irrep=0; irrep<nirrep_; ++irrep) {
@@ -489,6 +534,12 @@ PsiCC::T(unsigned int rank)
 	actuoccpi[irrep] = mopi[irrep] - doccpi[irrep] - frozen_uocc_[irrep];
 	ndocc_act += actdoccpi[irrep];
 	nuocc_act += actuoccpi[irrep];
+    }
+    actdoccioff[0] = 0;
+    actuoccioff[0] = 0;
+    for(unsigned int irrep=1; irrep<nirrep_; ++irrep) {
+	actdoccioff[irrep] = actdoccioff[irrep-1] + actdoccpi[irrep-1];
+	actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
     }
 
     // Grab T matrices
@@ -506,13 +557,9 @@ PsiCC::T(unsigned int rank)
 	RefSCMatrix& T = T_[rank-1];
 	T.assign(0.0);
 	unsigned int ia = 0;
-	unsigned int i_offset = 0;
-	unsigned int a_offset = 0;
-	for(unsigned int h=0; h<nirrep_;
-		i_offset+=actdoccpi[h],
-		a_offset+=actuoccpi[h],
-		++h
-	    ) {
+	for(unsigned int h=0; h<nirrep_; ++h) {
+	    const unsigned int i_offset = actdoccioff[h];
+	    const unsigned int a_offset = actuoccioff[h];
 	    for(int i=0; i<actdoccpi[h]; ++i)
 		for(int a=0; a<actuoccpi[h]; ++a, ++ia)
 		    T.set_element(i+i_offset,a+a_offset,T1[ia]);
@@ -557,22 +604,31 @@ PsiCC::T(unsigned int rank)
 		ab_offset+=abpi[h],
 		++h
 	    ) {
-	    unsigned int ij = 0;
 	    for(unsigned int g=0; g<nirrep_; ++g) {
 		unsigned int gh = g^h;
-		for(int i=0; i<actdoccpi[g]; ++i)
-		    for(int j=0; j<actdoccpi[gh]; ++j, ++ij) {
+		for(int i=0; i<actdoccpi[g]; ++i) {
+		    const unsigned int ii = i + actdoccioff[g];
+
+		    for(int j=0; j<actdoccpi[gh]; ++j) {
+			const unsigned int jj = j + actdoccioff[gh];
+
+			const unsigned int ij = ii * ndocc_act + jj;
 		
-			unsigned int ab = 0;
 			for(unsigned int f=0; f<nirrep_; ++f) {
 			    unsigned int fh = f^h;
-			    for(int a=0; a<actuoccpi[f]; ++a)
-				for(int b=0; b<actuoccpi[fh]; ++b, ++ab, ++ijab) {
+			    for(int a=0; a<actuoccpi[f]; ++a) {
+				const unsigned int aa = a + actuoccioff[f];
+
+				for(int b=0; b<actuoccpi[fh]; ++b, ++ijab) {
+				    const unsigned int bb = b + actuoccioff[fh];
+				    const unsigned int ab = aa*nuocc_act + bb;
 				
-				    T.set_element(ij+ij_offset,ab+ab_offset,T2[ijab]);
+				    T.set_element(ij,ab,T2[ijab]);
 				}
+			    }
 			}
 		    }
+		}
 	    }
 	}
 
@@ -704,6 +760,7 @@ static ClassDesc PsiCCSD_PT2R12_cd(
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval):
   PsiCC(keyval)
 {
+    mbptr12_ = new MBPT2_R12(keyval);
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12()
@@ -713,6 +770,7 @@ PsiCCSD_PT2R12::~PsiCCSD_PT2R12()
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s):
   PsiCC(s)
 {
+    mbptr12_ << SavableState::restore_state(s);
 }
 
 int
@@ -725,6 +783,7 @@ void
 PsiCCSD_PT2R12::save_data_state(StateOut&s)
 {
   PsiCC::save_data_state(s);
+  SavableState::save_state(mbptr12_.pointer(),s);
 }
 
 void
@@ -748,6 +807,7 @@ PsiCCSD_PT2R12::compute()
     RefSCMatrix T2 = T(2);
 
     // Compute intermediates
+    const double mp2r12_energy = mbptr12_->value();
 
     // Compute Hamiltonian matrix elements
 

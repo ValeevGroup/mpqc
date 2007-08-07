@@ -75,6 +75,7 @@ class PsiWavefunction: public Wavefunction {
 /// PsiSCF is an abstract base for all Psi SCF wave functions
 
 class PsiSCF: public PsiWavefunction {
+    RefSCMatrix coefs_;
   public:
     PsiSCF(const Ref<KeyVal>&);
     PsiSCF(StateIn&);
@@ -84,6 +85,8 @@ class PsiSCF: public PsiWavefunction {
     enum RefType {rhf, hsoshf, uhf};
     /// Returns the PsiSCF::RefType of this particular Psi SCF wave function
     virtual PsiSCF::RefType reftype() const =0;
+    /// Returns the coefficient matrix
+    virtual const RefSCMatrix& coefs();
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -205,6 +208,7 @@ class PsiCCSD_T: public PsiCC {
 /// PsiCCSD-PT2R12 is a concrete implementation of CCSD-PT2R12 wave function
 
 class PsiCCSD_PT2R12: public PsiCC {
+    Ref<MBPT2_R12> mbptr12_;
   protected:
     void write_input(int conv);
   public:

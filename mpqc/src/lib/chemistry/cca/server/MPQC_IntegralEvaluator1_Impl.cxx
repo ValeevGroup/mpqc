@@ -123,17 +123,17 @@ MPQC::IntegralEvaluator1_impl::init_reorder_impl ()
 }
 
 /**
- *  Deprecated -- do not use !!! 
+ * Method:  get_descriptor[]
  */
-void*
-MPQC::IntegralEvaluator1_impl::get_buffer_impl (
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_buffer)
-  
-  return eval_.get_buffer( desc );
+::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+MPQC::IntegralEvaluator1_impl::get_descriptor_impl () 
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_buffer)
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_descriptor)
+
+  return eval_.get_descriptor();
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_descriptor)
 }
 
 /**
@@ -153,17 +153,26 @@ MPQC::IntegralEvaluator1_impl::get_array_impl (
 }
 
 /**
- * Method:  get_descriptor[]
+ *  Returns array of integral bounds.  When multiple integral
+ * types are supported within an evaluator, the ordering
+ * matches the ordering of descriptors returned by 
+ * get_descriptor().
+ * @return Integral bounds array. 
  */
-::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
-MPQC::IntegralEvaluator1_impl::get_descriptor_impl () 
+::sidl::array<double>
+MPQC::IntegralEvaluator1_impl::get_bounds_array_impl () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_descriptor)
-
-  return eval_.get_descriptor();
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_descriptor)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_bounds_array)
+  // Insert-Code-Here {MPQC.IntegralEvaluator1.get_bounds_array} (get_bounds_array method)
+  // 
+  // This method has not been implemented
+  // 
+    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
+    ex.setNote("This method has not been implemented");
+    ex.add(__FILE__, __LINE__, "get_bounds_array");
+    throw ex;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.get_bounds_array)
 }
 
 /**
@@ -206,32 +215,10 @@ MPQC::IntegralEvaluator1_impl::compute_impl (
 }
 
 /**
- *  Deprecated -- do not use !!! 
- */
-::sidl::array<double>
-MPQC::IntegralEvaluator1_impl::compute_array_impl (
-  /* in */const ::std::string& type,
-  /* in */int32_t deriv_lvl,
-  /* in */int64_t shellnum1 ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_array)
-
-  computer_.set_shells( shellnum1 );
-  sidl::array<double> array = 
-    eval_.compute_array( &computer_, type, deriv_lvl, buffer_size_.size() );
-  if( reorder_ )
-    reorder_engine_.do_it( shellnum1, -1, -1 , -1 );
-
-  return array;
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_array)
-}
-
-/**
- *  Compute integral bounds.
+ *  Compute array of integral bounds.
  * @param shellnum1 Gaussian shell number 1. 
  */
-double
+void
 MPQC::IntegralEvaluator1_impl::compute_bounds_impl (
   /* in */int64_t shellnum1 ) 
 {
@@ -246,27 +233,6 @@ MPQC::IntegralEvaluator1_impl::compute_bounds_impl (
   throw ex;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_bounds)
-}
-
-/**
- *  Compute array of integral bounds.
- * @param shellnum1 Gaussian shell number 1. 
- */
-::sidl::array<double>
-MPQC::IntegralEvaluator1_impl::compute_bounds_array_impl (
-  /* in */int64_t shellnum1 ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.compute_bounds_array)
-
-  sidl::SIDLException ex = sidl::SIDLException::_create();
-  try {
-    ex.setNote("function not implemented yet");
-    ex.add(__FILE__, __LINE__,"");
-  }
-  catch(...) { }
-  throw ex;
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1.compute_bounds_array)
 }
 
 

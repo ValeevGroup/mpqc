@@ -83,6 +83,7 @@ namespace MPQC {
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._implementation)
 
+    int neval_;
     IntegralEvaluator< TwoBodyInt, twobody_computer > eval_;
     IntegralEvaluator< TwoBodyDerivInt, twobody_deriv_computer > deriv_eval_;
     CompositeIntegralEvaluator< TwoBodyInt, twobody_computer > comp_eval_;
@@ -93,6 +94,7 @@ namespace MPQC {
     twobody_computer computer2_;
     twobody_deriv_computer deriv_computer_;
     std::map<std::string,sc::TwoBodyInt::tbint_type> descr_to_tbint_type_;
+    sidl::array<double> bounds_;
     BufferSize buffer_size_;
     std::vector< std::pair< std::string, int > > comp_ids_;
     sc::DerivCenters* sc_dc_;
@@ -163,16 +165,11 @@ namespace MPQC {
      */
     void
     init_reorder_impl() ;
-
     /**
-     *  Deprecated -- do not use !!! 
+     * user defined non-static method.
      */
-    void*
-    get_buffer_impl (
-      /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc
-    )
-    ;
-
+    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    get_descriptor_impl() ;
 
     /**
      *  Get sidl array buffer for given type.
@@ -185,11 +182,16 @@ namespace MPQC {
     )
     ;
 
+
     /**
-     * user defined non-static method.
+     *  Returns array of integral bounds.  When multiple integral
+     * types are supported within an evaluator, the ordering
+     * matches the ordering of descriptors returned by 
+     * get_descriptor().
+     * @return Integral bounds array. 
      */
-    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
-    get_descriptor_impl() ;
+    ::sidl::array<double>
+    get_bounds_array_impl() ;
 
     /**
      *  This should be called when the object is no longer needed.
@@ -217,46 +219,16 @@ namespace MPQC {
 
 
     /**
-     *  Deprecated -- do not use !!! 
-     */
-    ::sidl::array<double>
-    compute_array_impl (
-      /* in */const ::std::string& type,
-      /* in */int32_t deriv_lvl,
-      /* in */int64_t shellnum1,
-      /* in */int64_t shellnum2,
-      /* in */int64_t shellnum3,
-      /* in */int64_t shellnum4
-    )
-    ;
-
-
-    /**
-     *  Compute integral bounds.
+     *  Compute array of integral bounds.  -1 indicates a wild card
+     * and the largest possible bound for given non-wild
+     * card values is returned.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param shellnum4 Gaussian shell number 4. 
      */
-    double
+    void
     compute_bounds_impl (
-      /* in */int64_t shellnum1,
-      /* in */int64_t shellnum2,
-      /* in */int64_t shellnum3,
-      /* in */int64_t shellnum4
-    )
-    ;
-
-
-    /**
-     *  Compute array of integral bounds.
-     * @param shellnum1 Gaussian shell number 1.
-     * @param shellnum2 Gaussian shell number 2.
-     * @param shellnum3 Gaussian shell number 3.
-     * @param shellnum4 Gaussian shell number 4. 
-     */
-    ::sidl::array<double>
-    compute_bounds_array_impl (
       /* in */int64_t shellnum1,
       /* in */int64_t shellnum2,
       /* in */int64_t shellnum3,

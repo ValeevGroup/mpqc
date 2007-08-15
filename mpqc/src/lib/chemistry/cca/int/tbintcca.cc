@@ -115,6 +115,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = eval_.get_array(desc).first();
   }
+  bounds_ = eval_.get_bounds_array();
 
 }
 
@@ -162,7 +163,8 @@ int
 TwoBodyIntCCA::log2_shell_bound( int i, int j, int k, int l )
 {
 
-  double dbound = eval_.compute_bounds(i,j,k,l);
+  eval_.compute_bounds(i,j,k,l);
+  double dbound = bounds_.get(0);
 
   // mpqc shouldn't return close to 0, but other codes might
   if( dbound < tol_ )
@@ -291,6 +293,8 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
   // so this is ok
   buffer_ = eval_.get_array(cdesc_.get_descr(0)).first();
 
+  bounds_ = eval_.get_bounds_array();
+
 }
 
 TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA() 
@@ -332,7 +336,8 @@ TwoBodyDerivIntCCA::compute_shell( int i, int j, int k, int l,
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int i, int j, int k, int l)
 {
-  double dbound = eval_.compute_bounds(i,j,k,l);
+  eval_.compute_bounds(i,j,k,l);
+  double dbound = bounds_.get(0);
 
   // mpqc shouldn't return close to 0, but other codes might
   if( dbound < tol_ )

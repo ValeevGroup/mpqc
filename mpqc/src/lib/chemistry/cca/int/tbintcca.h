@@ -66,6 +66,7 @@ namespace sc {
     double** tbtype_to_buf_;
     sidl::array<double> sidl_buffer_;
     std::vector< int > segments_;
+    sidl::array<double> bounds_;
 
   public:
     TwoBodyIntCCA( Integral* integral,
@@ -118,6 +119,7 @@ namespace sc {
     std::vector<sc::DerivCenters> sc_dcs_;
     std::map< std::string, int > dtype_to_tbtype_;
     double** tbtype_to_buf_;
+    sidl::array<double> bounds_;
 
   public:
     TwoBodyDerivIntCCA( Integral* integral,

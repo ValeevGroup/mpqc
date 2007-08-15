@@ -143,16 +143,11 @@ namespace MPQC {
      */
     void
     init_reorder_impl() ;
-
     /**
-     *  Deprecated -- do not use !!! 
+     * user defined non-static method.
      */
-    void*
-    get_buffer_impl (
-      /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc
-    )
-    ;
-
+    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    get_descriptor_impl() ;
 
     /**
      *  Get sidl array buffer for given type.
@@ -165,11 +160,16 @@ namespace MPQC {
     )
     ;
 
+
     /**
-     * user defined non-static method.
+     *  Returns array of integral bounds.  When multiple integral
+     * types are supported within an evaluator, the ordering
+     * matches the ordering of descriptors returned by 
+     * get_descriptor().
+     * @return Integral bounds array. 
      */
-    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
-    get_descriptor_impl() ;
+    ::sidl::array<double>
+    get_bounds_array_impl() ;
 
     /**
      *  This should be called when the object is no longer needed.
@@ -195,42 +195,15 @@ namespace MPQC {
 
 
     /**
-     *  Deprecated -- do not use !!! 
-     */
-    ::sidl::array<double>
-    compute_array_impl (
-      /* in */const ::std::string& type,
-      /* in */int32_t deriv_lvl,
-      /* in */int64_t shellnum1,
-      /* in */int64_t shellnum2,
-      /* in */int64_t shellnum3
-    )
-    ;
-
-
-    /**
-     *  Compute integral bounds.
+     *  Compute array of integral bounds.  -1 indicates a wild card
+     * and the largest possible bound for given non-wild
+     * card values is returned.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3. 
      */
-    double
+    void
     compute_bounds_impl (
-      /* in */int64_t shellnum1,
-      /* in */int64_t shellnum2,
-      /* in */int64_t shellnum3
-    )
-    ;
-
-
-    /**
-     *  Compute array of integral bounds.
-     * @param shellnum1 Gaussian shell number 1.
-     * @param shellnum2 Gaussian shell number 2.
-     * @param shellnum3 Gaussian shell number 3. 
-     */
-    ::sidl::array<double>
-    compute_bounds_array_impl (
       /* in */int64_t shellnum1,
       /* in */int64_t shellnum2,
       /* in */int64_t shellnum3

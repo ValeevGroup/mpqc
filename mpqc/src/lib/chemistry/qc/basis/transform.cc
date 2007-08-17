@@ -33,6 +33,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <sstream>
 
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
@@ -97,7 +98,13 @@ static inline int icart(int a, int b, int c)
 {
   return (((((a+b+c+1)<<1)-a)*(a+1))>>1)-b-1;
 }
+
+#define USE_OLD_SOLIDHARM_ORDERING 0
+#if USE_OLD_SOLIDHARM_ORDERING
 static inline int ipure(int l, int m) { return m<0?2*-m:(m==0?0:2*m-1); }
+#else  // CCA ordering
+static inline int ipure(int l, int m) { return l+m; }
+#endif
 
 static inline int local_abs(int i) { return i<0? -i:i; }
 
@@ -326,6 +333,13 @@ solidharm(int l, const RefSCMatrix &coefmat)
 
 #ifdef DEBUG
   ExEnv::outn() << coefmat;
+#endif
+#if 0
+  {
+      ostringstream oss;
+      oss << "cart->sph.harm coefficients l=" << l << endl;
+      coefmat.print(oss.str().c_str());
+  }
 #endif
 }
 

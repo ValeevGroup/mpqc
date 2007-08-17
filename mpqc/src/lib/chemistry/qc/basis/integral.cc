@@ -43,13 +43,14 @@ using namespace std;
 using namespace sc;
 
 static ClassDesc Integral_cd(
-  typeid(Integral),"Integral",2,"public SavableState",
+  typeid(Integral),"Integral",3,"public SavableState",
   0, 0, 0);
 
 Integral::Integral(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2,
                    const Ref<GaussianBasisSet> &b3,
-                   const Ref<GaussianBasisSet> &b4)
+                   const Ref<GaussianBasisSet> &b4) :
+    sharmorder_(default_sharmorder_)
 {
   storage_ = 0;
   storage_used_ = 0;
@@ -79,10 +80,19 @@ Integral::Integral(StateIn& s) :
     s.get(istorage);
     storage_ = istorage;
   }
+
+  if (s.version(::class_desc<Integral>()) >= 3) {
+      int ord;  s.get(ord);  sharmorder_ = static_cast<SolidHarmonicsOrdering>(ord);
+  }
+  else {
+      throw FeatureNotImplemented("Integral::Integral() -- cannot construct from Integral with different solid harmonics ordering. Try an order MPQC version instead.");
+  }
+
   grp_ = MessageGrp::get_default_messagegrp();
 }
 
-Integral::Integral(const Ref<KeyVal>&)
+Integral::Integral(const Ref<KeyVal>&) :
+    sharmorder_(default_sharmorder_)
 {
   storage_used_ = 0;
   storage_ = 0;
@@ -98,6 +108,8 @@ Integral::save_data_state(StateOut&o)
   SavableState::save_state(bs4_.pointer(),o);
   double dstorage = storage_;
   o.put(dstorage);
+  const int ord = static_cast<int>(sharmorder_);
+  o.put(ord);
 }
 
 Ref<Integral> default_integral;

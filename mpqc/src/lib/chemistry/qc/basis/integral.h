@@ -69,12 +69,25 @@ class Integral : public SavableState {
     Ref<GaussianBasisSet> bs3_;
     Ref<GaussianBasisSet> bs4_;
 
+    typedef enum {
+	MPQCSolidHarmonicsOrdering,
+	CCASolidHarmonicsOrdering
+    } SolidHarmonicsOrdering;
+    SolidHarmonicsOrdering sharmorder_;
+
     // the maximum number of bytes that should be used for
     // storing intermediates
     size_t storage_;
     size_t storage_used_;
 
     Ref<MessageGrp> grp_;
+  private:
+    /**
+       CCA standard specifies the new ordering (-l ... +l).
+       MPQCSolidHarmonicsOrdering was the old ordering (0, +1, -1, +2, -2, etc.) and can no longer be used.
+    */
+    static const SolidHarmonicsOrdering default_sharmorder_ = CCASolidHarmonicsOrdering;
+
   public:
     /// Restore the Integral object from the given StateIn object.
     Integral(StateIn&);

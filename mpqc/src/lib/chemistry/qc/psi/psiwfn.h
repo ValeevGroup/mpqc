@@ -75,6 +75,7 @@ class PsiWavefunction: public Wavefunction {
 /// PsiSCF is an abstract base for all Psi SCF wave functions
 
 class PsiSCF: public PsiWavefunction {
+    RefDiagSCMatrix evals_;
     RefSCMatrix coefs_;
   public:
     PsiSCF(const Ref<KeyVal>&);
@@ -85,8 +86,15 @@ class PsiSCF: public PsiWavefunction {
     enum RefType {rhf, hsoshf, uhf};
     /// Returns the PsiSCF::RefType of this particular Psi SCF wave function
     virtual PsiSCF::RefType reftype() const =0;
+    /// Returns the eigenvalues matrix
+    virtual const RefDiagSCMatrix& evals();
     /// Returns the coefficient matrix
     virtual const RefSCMatrix& coefs();
+
+    /// number of MOs
+    unsigned int nmo();
+    /// number of occupied MOs of spin
+    unsigned int nocc(SpinCase1 spin);
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -146,6 +154,8 @@ class PsiUHF: public PsiSCF {
 class PsiCorrWavefunction: public PsiWavefunction {
   protected:
     Ref<PsiSCF> reference_;
+    Ref<MOIndexSpace> occ_act_sb_;
+    Ref<MOIndexSpace> vir_act_sb_;
     std::vector<int> frozen_docc_;
     std::vector<int> frozen_uocc_;
     void write_input(int conv);
@@ -155,6 +165,10 @@ class PsiCorrWavefunction: public PsiWavefunction {
     ~PsiCorrWavefunction();
     void save_data_state(StateOut&);
     int spin_polarized() { return reference_->spin_polarized();};
+    /// symmetry-blocked space of active occupied orbitals from Psi3
+    const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
+    /// symmetry-blocked space of active virtual orbitals from Psi3
+    const Ref<MOIndexSpace>& vir_act_sb(SpinCase1);
 };
 
 ///////////////////////////////////////////////////////////////////

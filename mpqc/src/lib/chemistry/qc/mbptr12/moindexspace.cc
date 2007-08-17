@@ -476,7 +476,7 @@ MOIndexSpace::dquicksort(double *item,unsigned int *index,unsigned int n)
 
 /////////////////////////////////////////////////////////////////////////////
 
-std::vector<unsigned int>
+MOIndexMap
 sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
 {
   const unsigned int rank1 = s1.rank();
@@ -543,6 +543,106 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
   }
   
   return map;
+}
+
+sc::SparseMOIndexMap
+sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
+{
+  const unsigned int rank1 = s1.rank();
+  const unsigned int rank2 = s2.rank();
+  if (rank1 > rank2 ||
+      s1.basis() != s2.basis() ||
+      s1.integral()->class_desc() != s2.integral()->class_desc())
+    throw CannotConstructMap();
+  
+  const RefSCMatrix& c1 = s1.coefs().t();
+  const RefSCMatrix& c2 = s2.coefs().t();
+#if 1
+  c1.print("operator<<(MOIndexSpace,MOIndexSpace): c1");
+  c2.print("operator<<(MOIndexSpace,MOIndexSpace): c2");
+#endif
+  const unsigned int nao = c1.coldim().n();
+  
+  typedef SparseMOIndexMap maptype;
+  maptype map(rank1);
+  
+  // if objects are the same, map is trivial
+  if (&s1 == &s2) {
+    for(unsigned int mo1=0; mo1<rank1; mo1++)
+      map[mo1] = make_pair(mo1,1.0);
+    return map;
+  }
+  
+  std::vector<int> has_been_mapped(rank2,-1);
+  // for each MO in 1 find vector in 2
+  for(unsigned int mo1=0; mo1<rank1; mo1++) {
+    bool found_match = false;
+    for(unsigned int mo2=0; mo2<rank2; mo2++) {
+      // if mo2 is not yet mapped by one of MOs in 1
+      if (has_been_mapped[mo2] != -1)
+        continue;
+
+      // compare vectors assuming same phase
+      bool vectors_do_not_match = false;
+      double phase = 1.0;
+      for(unsigned int ao=0; ao<nao; ao++) {
+        if ( fabs(c1.get_element(mo1,ao) - phase*c2.get_element(mo2,ao)) > hardzero ) {
+          vectors_do_not_match = true;
+#if 0
+          ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
+                        << mo1 << "," << mo2 << "," << ao << "," << phase << "  delta = "
+                        << fabs(c1.get_element(mo1,ao)-phase*c2.get_element(mo2,ao)) << std::endl;
+#endif
+          break;
+        }
+      }
+
+      // compare vectors assuming opposite phase
+      if (vectors_do_not_match) {
+	vectors_do_not_match = false;
+	phase = -1.0;
+	for(unsigned int ao=0; ao<nao; ao++) {
+	  if ( fabs(c1.get_element(mo1,ao) - phase*c2.get_element(mo2,ao)) > hardzero ) {
+	    vectors_do_not_match = true;
+#if 0
+	    ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
+			  << mo1 << "," << mo2 << "," << ao << "," << phase << "  delta = "
+			  << fabs(c1.get_element(mo1,ao)-phase*c2.get_element(mo2,ao)) << std::endl;
+#endif
+	    break;
+	  }
+	}
+      }
+
+      // go to next mo1 if found match
+      if (!vectors_do_not_match) {
+        found_match = true;
+#if 1
+        ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): found match (mo1,mo2,phase) = "
+                      << mo1 << "," << mo2 << "," << phase << std::endl;
+#endif
+        map[mo1] = make_pair(mo2,phase);
+        has_been_mapped[mo2] = 1;
+        mo2 = rank2;
+      }
+    }
+    // if this mo1 doesn't match any mo2 -- punt
+    if (!found_match)
+      throw CannotConstructMap();
+  }
+  
+  return map;
+}
+
+bool
+sc::in(const MOIndexSpace& s1, const MOIndexSpace& s2)
+{
+    bool result = true;
+    try {
+	s2<<s1;
+    }
+    catch(CannotConstructMap& e) { result = false; }
+    return result;
 }
 
 /////////////////////////////////////////////////////////////////////////////

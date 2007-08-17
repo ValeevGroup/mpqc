@@ -202,8 +202,24 @@ class CannotConstructMap: public std::logic_error {
     2) s1.rank() <= s2.rank()
     3) for every MO in s1 there is an identical (for now, including phase) MO in s2
   */
-std::vector<unsigned int>
+typedef std::vector<unsigned int> MOIndexMap;
+MOIndexMap
 operator<<(const MOIndexSpace& space2, const MOIndexSpace& space1);
+
+/** sparsemap(s2,s1) returns a sparse one-to-one map from s1 to s2. Throws CannotConstructMap if map cannot be constructed.
+    Map can be constructed if and only if:
+    1) s1.basis() == s2.basis()
+    2) s1.integral() == s2.integral()
+    2) s1.rank() <= s2.rank()
+    3) for every MO in s1 there is an MO in s2 that differs by at most the sign.
+  */
+typedef std::vector< std::pair<unsigned int,double> > SparseMOIndexMap;
+SparseMOIndexMap
+sparsemap(const MOIndexSpace& space2, const MOIndexSpace& space1, double hardzero=1e-12);
+
+/** in(s1,s2) returns true if s1 is in s2 */
+bool
+in(const MOIndexSpace& s1, const MOIndexSpace& s2);
 
 }
 

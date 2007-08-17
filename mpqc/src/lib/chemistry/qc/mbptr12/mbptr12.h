@@ -115,6 +115,7 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     const Ref<R12IntEvalInfo>& r12evalinfo() const { return r12evalinfo_; }
+    const Ref<R12IntEval>& r12eval() const { return r12eval_; }
     /// this changes the correlation factor
     void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
 

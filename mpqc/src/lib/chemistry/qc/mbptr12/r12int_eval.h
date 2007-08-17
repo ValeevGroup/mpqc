@@ -68,9 +68,12 @@ class R12IntEval : virtual public SavableState {
   RefSCMatrix T2_[NSpinCases2];
   RefSCMatrix F12_[NSpinCases2];
 #endif
+
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
+  /// a is any index in a given basis
+  RefSCDimension dim_aa_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
   RefSCDimension dim_xy_[NSpinCases2];
   
@@ -83,10 +86,6 @@ class R12IntEval : virtual public SavableState {
   typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
   TformMap tform_map_;
 
-  /// Returns the number of unique spin cases
-  int nspincases1() const { return ::sc::nspincases1(spin_polarized()); }
-  /// Returns the number of unique combinations of 2 spin cases
-  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
   /// "Spin-adapt" MO space id and name
   void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
   
@@ -231,6 +230,11 @@ class R12IntEval : virtual public SavableState {
   void init_intermeds_g12_();
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
+  /// Compute <space1 space2|space3 space4> matrix
+  RefSCMatrix compute_I_(const Ref<MOIndexSpace>& space1,
+			 const Ref<MOIndexSpace>& space2,
+			 const Ref<MOIndexSpace>& space3,
+			 const Ref<MOIndexSpace>& space4);
   /// Compute <space1 space2|r_{12}^2|space3 space4> matrix
   RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1,
                           const Ref<MOIndexSpace>& space2,
@@ -422,7 +426,7 @@ class R12IntEval : virtual public SavableState {
   /// Compute -2*A*R contribution to B (needed if EBC is not assumed)
   void AF12_contrib_to_B_();
 
-  /** Compute contributions to B that vanishe under GBC */
+  /** Compute contributions to B that vanish under GBC */
   void compute_B_gbc_();
 
   /** Compute contributions to B which appear in standard approximation B and not in A' */
@@ -502,10 +506,16 @@ public:
   RefSCDimension dim_oo(SpinCase2 S) const;
   /// Dimension for active-vir/active-vir pairs of spin case S
   RefSCDimension dim_vv(SpinCase2 S) const;
+  /// Dimension for any/any pairs of spin case S
+  RefSCDimension dim_aa(SpinCase2 S) const;
   /// Dimension for geminal functions of spin case S = # of correlation factors x dim_xy
   RefSCDimension dim_f12(SpinCase2 S) const;
   /// Dimension of orbital product space used to generate geminal functions
   RefSCDimension dim_xy(SpinCase2 S) const;
+  /// Returns the number of unique spin cases
+  int nspincases1() const { return ::sc::nspincases1(spin_polarized()); }
+  /// Returns the number of unique combinations of 2 spin cases
+  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
@@ -531,6 +541,11 @@ public:
   const RefSCMatrix& T2(SpinCase2 S);
   /// Returns S block of intermediate F12
   const RefSCMatrix& F12(SpinCase2 S);
+
+  /** Compute V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy} */
+  RefSCMatrix V(SpinCase2 spincase2,
+		const Ref<MOIndexSpace>& p,
+		const Ref<MOIndexSpace>& q);
   
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);

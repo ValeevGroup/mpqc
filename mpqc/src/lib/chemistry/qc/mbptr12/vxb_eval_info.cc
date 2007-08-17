@@ -115,7 +115,7 @@ R12IntEvalInfo::R12IntEvalInfo(
   if (*(ints_file_.rbegin()) == '/')
     ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
 
-  r12tech_ = new R12Technology(keyval,ref->basis(),bs_aux_,bs_vir_);
+  r12tech_ = new R12Technology(keyval,ref->basis(),bs_vir_,bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(ref->integral());
 

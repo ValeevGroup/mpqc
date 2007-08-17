@@ -117,25 +117,33 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
   int navir_a, navir_b;
+  int nall_a, nall_b;
   if (!spin_polarized()) {
     const int nocc_act = r12info_->refinfo()->docc_act()->rank();
     const int nvir_act = r12info_->vir_act()->rank();
+    const int nall = r12info_->refinfo()->orbs(Alpha)->rank();
     naocc_a = naocc_b = nocc_act;
     navir_a = navir_b = nvir_act;
+    nall_a = nall_b = nall;
   }
   else {
     naocc_a = occ_act(Alpha)->rank();
     naocc_b = occ_act(Beta)->rank();
     navir_a = vir_act(Alpha)->rank();
     navir_b = vir_act(Beta)->rank();
+    nall_a = r12info_->refinfo()->orbs(Alpha)->rank();
+    nall_b = r12info_->refinfo()->orbs(Beta)->rank();
   }
 
   dim_oo_[AlphaAlpha] = new SCDimension((naocc_a*(naocc_a-1))/2);
   dim_vv_[AlphaAlpha] = new SCDimension((navir_a*(navir_a-1))/2);
+  dim_aa_[AlphaAlpha] = new SCDimension((nall_a*(nall_a-1))/2);
   dim_oo_[AlphaBeta] = new SCDimension(naocc_a*naocc_b);
   dim_vv_[AlphaBeta] = new SCDimension(navir_a*navir_b);
+  dim_aa_[AlphaBeta] = new SCDimension(nall_a*nall_b);
   dim_oo_[BetaBeta] = new SCDimension((naocc_b*(naocc_b-1))/2);
   dim_vv_[BetaBeta] = new SCDimension((navir_b*(navir_b-1))/2);
+  dim_aa_[BetaBeta] = new SCDimension((nall_b*(nall_b-1))/2);
 
   switch(r12info()->ansatz()->orbital_product()) {
   case LinearR12::OrbProd_ij:
@@ -618,21 +626,110 @@ void
 R12IntEval::init_intermeds_r12_()
 {
   if (r12info_->msg()->me() == 0) {
+
     for(int s=0; s<nspincases2(); s++) {
+
+	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+	const Ref<MOIndexSpace>& occ1_act = occ_act(case1(spincase2));
+	const Ref<MOIndexSpace>& occ2_act = occ_act(case2(spincase2));
+	const Ref<MOIndexSpace>& xspace1 = xspace(case1(spincase2));
+	const Ref<MOIndexSpace>& xspace2 = xspace(case2(spincase2));
+
 #if NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
-      V_[s]->assign(0.0);
-      B_[s]->assign(0.0);
+	V_[s]->assign(0.0);
+	B_[s]->assign(0.0);
 #else
-      V_[s]->unit();
-      B_[s]->unit();
-      if (stdapprox() == LinearR12::StdApprox_C)
-        BC_[s]->unit();
+
+	// compute identity operator in xc.pair/act.occ.pair basis
+	RefSCMatrix I = compute_I_(xspace1,xspace2,occ1_act,occ2_act);
+	if (spincase2 == AlphaBeta) {
+	    V_[s].accumulate(I);
+	}
+	else {
+	    antisymmetrize(V_[s],I,xspace1,occ1_act);
+	}
+
+	B_[s]->unit();
+	if (stdapprox() == LinearR12::StdApprox_C)
+	    BC_[s]->unit();
 #endif
     }
   }
 #if !NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
   r2_contrib_to_X_new_();
 #endif
+}
+
+/// Compute <space1 space2|space3 space4>
+RefSCMatrix
+R12IntEval::compute_I_(const Ref<MOIndexSpace>& space1,
+		       const Ref<MOIndexSpace>& space2,
+		       const Ref<MOIndexSpace>& space3,
+		       const Ref<MOIndexSpace>& space4)
+{
+  /*--------------------------
+    Compute overlap integrals
+   --------------------------*/
+  RefSCMatrix S_13;
+  r12info_->compute_overlap_ints(space1, space3, S_13);
+  RefSCMatrix S_24;
+  if (space1 == space2 && space3 == space4) {
+    S_24 = S_13;
+  }
+  else {
+    r12info_->compute_overlap_ints(space2, space4, S_24);
+  }
+  const int nproc = r12info_->msg()->n();
+  const int me = r12info_->msg()->me();
+
+  const int n1 = space1->rank();
+  const int n2 = space2->rank();
+  const int n3 = space3->rank();
+  const int n4 = space4->rank();
+  const int n12 = n1*n2;
+  const int n34 = n3*n4;
+  const int n1234 = n12*n34;
+  double* I_array = new double[n1234];
+  memset(I_array,0,n1234*sizeof(double));
+
+  int ij = 0;
+  double* ijkl_ptr = I_array;
+  for(int i=0; i<n1; i++)
+    for(int j=0; j<n2; j++, ij++) {
+
+    int ij_proc = ij%nproc;
+    if (ij_proc != me) {
+      ijkl_ptr += n34;
+      continue;
+    }
+
+    int kl=0;
+    for(int k=0; k<n3; k++)
+      for(int l=0; l<n4; l++, kl++, ijkl_ptr++) {
+
+        double S_ik = S_13.get_element(i,k);
+        double S_jl = S_24.get_element(j,l);
+        
+        double I_ijkl = S_ik * S_jl;
+        *ijkl_ptr = I_ijkl;
+      }
+    }
+
+  r12info_->msg()->sum(I_array,n1234);
+
+  RefSCDimension dim_ij = new SCDimension(n12);
+  RefSCDimension dim_kl = new SCDimension(n34);
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  RefSCMatrix I = local_matrix_kit->matrix(dim_ij, dim_kl);
+  I.assign(I_array);
+  delete[] I_array;
+  
+  // Only task 0 needs I
+  if (me != 0)
+    I.assign(0.0);
+
+  return I;
 }
 
 /// Compute <space1 space2|r_{12}^2|space3 space4>

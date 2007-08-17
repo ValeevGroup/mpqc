@@ -219,7 +219,7 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
           prefixkeyval->errortrace(ExEnv::err0());
           exit(1);
 	}
-      if (l[i] <= 1) puream[i] = 0;
+      if (l[i] < 1) puream[i] = 0;
       else if (havepure) {
           puream[i] = pure;
         }

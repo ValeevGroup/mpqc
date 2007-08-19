@@ -159,6 +159,8 @@ public:
       p' -- all RI functions
   */
   const std::string& id() const;
+  /// returns the dimension correspondign to this space
+  const RefSCDimension& dim() const;
   /// Returns the AO basis set
   const Ref<GaussianBasisSet>& basis() const;  
   /// Returns the integral factory used to instantiate the coefficient matrix
@@ -216,6 +218,26 @@ operator<<(const MOIndexSpace& space2, const MOIndexSpace& space1);
 typedef std::vector< std::pair<unsigned int,double> > SparseMOIndexMap;
 SparseMOIndexMap
 sparsemap(const MOIndexSpace& space2, const MOIndexSpace& space1, double hardzero=1e-12);
+
+/** transform(s2,s1) returns matrix that transforms s1 to s2.
+    Throws CannotConstructMap if the transform cannot be constructed.
+    The transform can only be constructed if
+    1) s1.integral() == s2.integral()
+    2) s1.rank() >= s2.rank()
+    3) overlap of s1.basis() and s2.basis() is not zero
+
+    the returned matrix has dimensions of s2.coefs().coldim() and s1.coefs().coldim() and is allocated using kit.
+  */
+RefSCMatrix
+transform(const MOIndexSpace& space2, const MOIndexSpace& space1, const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit());
+
+/** overlap(s2,s1) returns the overlap matrix between s2 and s1. It can be computed if
+    1) s1.integral() is compatible with s2.integral()
+    The matrix has dimensions of s2.coefs().coldim() and s1.coefs().coldim() and is allocated using kit.
+    Throws if the overlap cannot be computed.
+  */
+RefSCMatrix
+overlap(const MOIndexSpace& space2, const MOIndexSpace& space1, const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit());
 
 /** in(s1,s2) returns true if s1 is in s2 */
 bool

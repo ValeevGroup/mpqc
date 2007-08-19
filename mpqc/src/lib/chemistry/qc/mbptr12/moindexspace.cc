@@ -172,6 +172,9 @@ MOIndexSpace::id() const { return id_; }
 const std::string&
 MOIndexSpace::name() const { return name_; }
 
+const RefSCDimension&
+MOIndexSpace::dim() const { return modim_; }
+
 const Ref<GaussianBasisSet>&
 MOIndexSpace::basis() const { return basis_; }
 
@@ -483,7 +486,7 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
   const unsigned int rank2 = s2.rank();
   if (rank1 > rank2 ||
       s1.basis() != s2.basis() ||
-      s1.integral() != s2.integral())
+      s1.integral()->class_desc() != s2.integral()->class_desc())
     throw CannotConstructMap();
   
   const RefSCMatrix& c1 = s1.coefs().t();
@@ -558,8 +561,8 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
 #if 1
-  c1.print("operator<<(MOIndexSpace,MOIndexSpace): c1");
-  c2.print("operator<<(MOIndexSpace,MOIndexSpace): c2");
+  c1.print("sparsemap(MOIndexSpace,MOIndexSpace): c1");
+  c2.print("sparsemap(MOIndexSpace,MOIndexSpace): c2");
 #endif
   const unsigned int nao = c1.coldim().n();
   
@@ -589,7 +592,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
         if ( fabs(c1.get_element(mo1,ao) - phase*c2.get_element(mo2,ao)) > hardzero ) {
           vectors_do_not_match = true;
 #if 0
-          ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
+          ExEnv::out0() << "sparsemap(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
                         << mo1 << "," << mo2 << "," << ao << "," << phase << "  delta = "
                         << fabs(c1.get_element(mo1,ao)-phase*c2.get_element(mo2,ao)) << std::endl;
 #endif
@@ -605,7 +608,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
 	  if ( fabs(c1.get_element(mo1,ao) - phase*c2.get_element(mo2,ao)) > hardzero ) {
 	    vectors_do_not_match = true;
 #if 0
-	    ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
+	    ExEnv::out0() << "sparsemap(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao,phase) = "
 			  << mo1 << "," << mo2 << "," << ao << "," << phase << "  delta = "
 			  << fabs(c1.get_element(mo1,ao)-phase*c2.get_element(mo2,ao)) << std::endl;
 #endif
@@ -618,7 +621,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
       if (!vectors_do_not_match) {
         found_match = true;
 #if 1
-        ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): found match (mo1,mo2,phase) = "
+        ExEnv::out0() << "sparsemap(MOIndexSpace,MOIndexSpace): found match (mo1,mo2,phase) = "
                       << mo1 << "," << mo2 << "," << phase << std::endl;
 #endif
         map[mo1] = make_pair(mo2,phase);
@@ -632,6 +635,144 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
   }
   
   return map;
+}
+
+RefSCMatrix
+sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrixKit>& kit)
+{
+  const unsigned int rank1 = s1.rank();
+  const unsigned int rank2 = s2.rank();
+  // simple tests for whether the transform can be constructed
+  if (rank1 < rank2 ||
+      s1.integral()->class_desc() != s2.integral()->class_desc())
+    throw CannotConstructMap();
+  Ref<Integral> integral = s1.integral()->clone();
+  const Ref<GaussianBasisSet>& bs1 = s1.basis();
+  const Ref<GaussianBasisSet>& bs2 = s2.basis();
+  
+  const RefSCMatrix& c1 = s1.coefs().t();
+  const RefSCMatrix& c2 = s2.coefs().t();
+#if 1
+  c1.print("transform(MOIndexSpace,MOIndexSpace): c1");
+  c2.print("transform(MOIndexSpace,MOIndexSpace): c2");
+#endif
+
+  RefSCMatrix tform(c2.rowdim(),c1.rowdim(),kit);
+  tform.assign(0.0);
+  
+  // if objects are the same, the transform is trivial
+  if (&s1 == &s2) {
+      RefDiagSCMatrix unit(c2.rowdim(),kit);
+      unit.assign(1.0);
+      tform.accumulate(unit);
+      return tform;
+  }
+
+  // compute the overlap matrix in AO basis
+  RefSCMatrix S21 = overlap(s2,s1,kit);
+
+  // the transform matrix is the inverse of S21
+  RefSCMatrix U21 = S21.gi();
+  
+#if 0
+  // test
+  (S21).print("S21");
+  (U21).print("U21");
+  (U21 * S21).print("U21 * S21");
+  (S21 * U21).print("S21 * U21");
+#endif
+
+  return U21;
+}
+
+RefSCMatrix
+sc::overlap(const MOIndexSpace& space1, const MOIndexSpace& space2,
+	    const Ref<SCMatrixKit>& kit)
+{
+  if (!space1.integral()->equiv(space2.integral()))
+    throw ProgrammingError("sc::overlap(s1,s2) -- s1 and s2 are supported by incompatible Integral factories");
+  const Ref<GaussianBasisSet> bs1 = space1.basis();
+  const Ref<GaussianBasisSet> bs2 = space2.basis();
+  const bool bs1_eq_bs2 = (bs1 == bs2);
+  int nshell1 = bs1->nshell();
+  int nshell2 = bs2->nshell();
+
+  RefSCMatrix vec1t = space1.coefs().t();
+  RefSCMatrix vec2 = space2.coefs();
+
+  Ref<Integral> localints = space1.integral()->clone();
+  localints->set_basis(bs1,bs2);
+  Ref<OneBodyInt> ov_ints = localints->overlap();
+
+  // form AO moment matrices
+  RefSCDimension aodim1 = vec1t.coldim();
+  RefSCDimension aodim2 = vec2.rowdim();
+  RefSCMatrix s(aodim1, aodim2, vec1t.kit());
+  s.assign(0.0);
+
+  for(int sh1=0; sh1<nshell1; sh1++) {
+    int bf1_offset = bs1->shell_to_function(sh1);
+    int nbf1 = bs1->shell(sh1).nfunction();
+
+    int sh2max;
+    if (bs1_eq_bs2)
+      sh2max = sh1;
+    else
+      sh2max = nshell2-1;
+
+    for(int sh2=0; sh2<=sh2max; sh2++) {
+      int bf2_offset = bs2->shell_to_function(sh2);
+      int nbf2 = bs2->shell(sh2).nfunction();
+
+      ov_ints->compute_shell(sh1,sh2);
+      const double *ovintsptr = ov_ints->buffer();
+
+      int bf1_index = bf1_offset;
+      for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, ovintsptr+=nbf2) {
+        int bf2_index = bf2_offset;
+        const double *ptr = ovintsptr;
+        int bf2max;
+        if (bs1_eq_bs2 && sh1 == sh2)
+          bf2max = bf1;
+        else
+          bf2max = nbf2-1;
+        for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++) {
+
+          s.set_element(bf1_index, bf2_index, *(ptr++));
+
+        }
+      }
+    }
+  }
+
+  // and clean up a bit
+  ov_ints = 0;
+
+  // Symmetrize matrices, if necessary
+  if (bs1_eq_bs2) {
+
+    const int nbasis = bs1->nbasis();
+
+    for(int bf1=0; bf1<nbasis; bf1++)
+      for(int bf2=0; bf2<=bf1; bf2++) {
+        s(bf2,bf1) = s(bf1,bf2);
+      }
+
+  }
+
+  // finally, transform
+  RefSCMatrix s12 = vec1t * s * vec2;
+  // and convert to S (kits may differ!)
+  double* ss = new double[s12.rowdim().n() * s12.coldim().n()];
+  s12.convert(ss);
+  s12 = 0;
+  RefSCMatrix S(vec1t.rowdim(), vec2.coldim(), kit);
+  S.assign(ss);
+  
+  // and clean up a bit
+  s = 0;
+
+  return S;
 }
 
 bool

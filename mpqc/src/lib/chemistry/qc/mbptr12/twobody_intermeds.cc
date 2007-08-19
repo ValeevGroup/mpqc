@@ -52,8 +52,8 @@ R12IntEval::V(SpinCase2 spincase2,
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
 
   const bool p1_eq_p2 = (p1 == p2);
-  if (!p1_eq_p2)
-    throw FeatureNotImplemented("R12IntEval::V() -- p1 == p2 must be true",__FILE__,__LINE__);
+  //if (!p1_eq_p2)
+  //  throw FeatureNotImplemented("R12IntEval::V() -- p1 == p2 must be true",__FILE__,__LINE__);
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);

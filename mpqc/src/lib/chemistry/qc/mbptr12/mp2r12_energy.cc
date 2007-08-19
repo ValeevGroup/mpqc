@@ -428,6 +428,12 @@ void MP2R12Energy::print(std::ostream& so) const
 {
 } 
 
+RefSCMatrix
+MP2R12Energy::C(SpinCase2 S)
+{
+  compute();
+  return C_[static_cast<int>(S)];
+}
 
 namespace {
   // Assigns src to dest safely, i.e. by converting to a double*

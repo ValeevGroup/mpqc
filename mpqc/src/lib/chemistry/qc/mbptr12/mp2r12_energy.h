@@ -52,7 +52,7 @@ class MP2R12Energy : virtual public SavableState {
   bool evaluated_;
   
   RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
-  // The coefficients are stored kl by ij, where kl is the r12-multiplied pair
+  // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
   RefSCMatrix C_[NSpinCases2];
 
   double emp2f12tot(SpinCase2 S) const;

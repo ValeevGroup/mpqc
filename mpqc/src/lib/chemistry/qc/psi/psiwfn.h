@@ -179,15 +179,22 @@ class PsiCorrWavefunction: public PsiWavefunction {
 
 class PsiCC: public PsiCorrWavefunction {
     std::vector<RefSCMatrix> T_;
+    RefSCMatrix Tau2_;
     std::vector<RefSCMatrix> Lambda_;
 
   protected:
+    // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
+    static const bool use_sparsemap_only_ = false;
+
     /// set to true to test whether T2 transform from Psi3 to MPQC orbitals works correctly (causes Psi3 to do MP1 instead of CCSD)
     static bool test_t2_phases_;
     static void do_test_t2_phases() { test_t2_phases_ = true; }
 
-    // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
-    static const bool use_sparsemap_only_ = false;
+    /// read in T1-like quantity using DPD label L
+    RefSCMatrix T1(const std::string& L);
+    /// read in T2-like quantity using DPD label L
+    RefSCMatrix T2(const std::string& L);
+
     /// transform T1 to the new basis using sparse maps
     RefSCMatrix transform_T1(const SparseMOIndexMap& occ_act_map,
 			     const SparseMOIndexMap& vir_act_map,
@@ -221,6 +228,8 @@ class PsiCC: public PsiCorrWavefunction {
 
     /// return T amplitudes of rank i (i >= 1). The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
     virtual const RefSCMatrix& T(unsigned int i);
+    /// return Tau2 amplitudes. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
+    virtual const RefSCMatrix& Tau2();
     /// return Lambda amplitudes of rank i (i >= 1)
     virtual const RefSCMatrix& Lambda(unsigned int i);
 };

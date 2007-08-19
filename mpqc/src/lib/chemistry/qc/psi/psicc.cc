@@ -63,6 +63,38 @@ PsiCC::T(unsigned int rank)
     //if (nirrep_ != 1)
     //  throw FeatureNotImplemented("PsiCC::T() -- only C1 symmetry can be handled",__FILE__,__LINE__);
 
+    // Grab T matrices
+    if (rank == 1) {
+      T_[rank-1] = T1("tIA");
+      T_[rank-1].print("T1 amplitudes");
+    }
+    else if (rank == 2) {
+      T_[rank-1] = T2("tIjAb");
+      T_[rank-1].print("T2 amplitudes");
+    }
+
+    return T_[rank-1];
+}
+
+const RefSCMatrix&
+PsiCC::Tau2()
+{
+  if (Tau2_.nonnull())
+    return Tau2_;
+  
+  // For now only handle closed-shell case
+  PsiSCF::RefType reftype = reference_->reftype();
+  if (reftype != PsiSCF::rhf)
+    throw FeatureNotImplemented("PsiCC::T() -- only closed-shell case is implemented",__FILE__,__LINE__);
+
+  Tau2_ = T2("tauIjAb");
+  Tau2_.print("Tau2 amplitudes");
+  return Tau2_;
+}
+
+RefSCMatrix
+PsiCC::T1(const std::string& dpdlabel)
+{
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
     int* doccpi = new int[nirrep_];
@@ -90,104 +122,135 @@ PsiCC::T(unsigned int rank)
 	actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
     }
 
-    // Grab T matrices
-    if (rank == 1) {
-	T_[rank-1] = matrixkit()->matrix(new SCDimension(ndocc_act),new SCDimension(nuocc_act));
-	RefSCMatrix& T = T_[rank-1];
-	T.assign(0.0);
-	// if testing T2 transform, T1 amplitudes are not produced
-	if (!test_t2_phases_) {
-	  // read in the i by a matrix in DPD format
-	  unsigned int nia_dpd = 0;
-	  for(unsigned int h=0; h<nirrep_; ++h)  nia_dpd += actdoccpi[h] * actuoccpi[h];
-	  double* T1 = new double[nia_dpd];
-	  psio.open(CC_OEI,PSIO_OPEN_OLD);
-	  psio.read_entry(CC_OEI,"tIA",reinterpret_cast<char*>(T1),nia_dpd*sizeof(double));
-	  psio.close(CC_OEI,1);
+    RefSCDimension rowdim = new SCDimension(ndocc_act);
+    //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
+    RefSCDimension coldim = new SCDimension(nuocc_act);
+    //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
+    RefSCMatrix T = matrixkit()->matrix(rowdim,coldim);
+    T.assign(0.0);
+    // if testing T2 transform, T1 amplitudes are not produced
+    if (!test_t2_phases_) {
+      // read in the i by a matrix in DPD format
+      unsigned int nia_dpd = 0;
+      for(unsigned int h=0; h<nirrep_; ++h)  nia_dpd += actdoccpi[h] * actuoccpi[h];
+      double* T1 = new double[nia_dpd];
+      psio.open(CC_OEI,PSIO_OPEN_OLD);
+      psio.read_entry(CC_OEI,const_cast<char*>(dpdlabel.c_str()),reinterpret_cast<char*>(T1),nia_dpd*sizeof(double));
+      psio.close(CC_OEI,1);
+      
+      // form the full matrix
+      unsigned int ia = 0;
+      for(unsigned int h=0; h<nirrep_; ++h) {
+	const unsigned int i_offset = actdoccioff[h];
+	const unsigned int a_offset = actuoccioff[h];
+	for(int i=0; i<actdoccpi[h]; ++i)
+	  for(int a=0; a<actuoccpi[h]; ++a, ++ia)
+	    T.set_element(i+i_offset,a+a_offset,T1[ia]);
+      }
+      delete[] T1;
+    }
+    return T;
+}
+
+RefSCMatrix
+PsiCC::T2(const std::string& dpdlabel)
+{
+    psi::PSIO& psio = exenv()->psio();
+    // grab orbital info
+    int* doccpi = new int[nirrep_];
+    int* mopi = new int[nirrep_];
+    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
+    psio.read_entry(PSIF_CHKPT,"::Closed shells per irrep",reinterpret_cast<char*>(doccpi),nirrep_*sizeof(int));
+    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    psio.close(PSIF_CHKPT,1);
+    std::vector<int> actdoccpi(nirrep_);
+    std::vector<int> actuoccpi(nirrep_);
+    std::vector<int> actdoccioff(nirrep_);
+    std::vector<int> actuoccioff(nirrep_);
+    unsigned int ndocc_act = 0;
+    unsigned int nuocc_act = 0;
+    for(unsigned int irrep=0; irrep<nirrep_; ++irrep) {
+	actdoccpi[irrep] = doccpi[irrep] - frozen_docc_[irrep];
+	actuoccpi[irrep] = mopi[irrep] - doccpi[irrep] - frozen_uocc_[irrep];
+	ndocc_act += actdoccpi[irrep];
+	nuocc_act += actuoccpi[irrep];
+    }
+    actdoccioff[0] = 0;
+    actuoccioff[0] = 0;
+    for(unsigned int irrep=1; irrep<nirrep_; ++irrep) {
+	actdoccioff[irrep] = actdoccioff[irrep-1] + actdoccpi[irrep-1];
+	actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
+    }
+
+    // DPD of orbital product spaces
+    std::vector<int> ijpi(nirrep_);
+    std::vector<int> abpi(nirrep_);
+    unsigned int nijab_dpd = 0;
+    for(unsigned int h=0; h<nirrep_; ++h) {
+      unsigned int nij = 0;
+      unsigned int nab = 0;
+      for(unsigned int g=0; g<nirrep_; ++g) {
+	nij += actdoccpi[g] * actdoccpi[h^g];
+	nab += actuoccpi[g] * actuoccpi[h^g];
+      }
+      ijpi[h] = nij;
+      abpi[h] = nab;
+      nijab_dpd += nij*nab;
+    }
+    
+    // read in T2 in DPD form
+    double* T2 = new double[nijab_dpd];
+    psio.open(CC_TAMPS,PSIO_OPEN_OLD);
+    psio.read_entry(CC_TAMPS,const_cast<char*>(dpdlabel.c_str()),reinterpret_cast<char*>(T2),nijab_dpd*sizeof(double));
+    psio.close(CC_TAMPS,1);
+
+    // convert to the full form
+    const unsigned int nij = ndocc_act*ndocc_act;
+    const unsigned int nab = nuocc_act*nuocc_act;
+    RefSCDimension rowdim = new SCDimension(nij);
+    //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
+    RefSCDimension coldim = new SCDimension(nab);
+    //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
+    RefSCMatrix T = matrixkit()->matrix(rowdim,coldim);
+    T.assign(0.0);
+    unsigned int ijab = 0;
+    unsigned int ij_offset = 0;
+    unsigned int ab_offset = 0;
+    for(unsigned int h=0; h<nirrep_;
+	ij_offset+=ijpi[h],
+	  ab_offset+=abpi[h],
+	  ++h
+	) {
+      for(unsigned int g=0; g<nirrep_; ++g) {
+	unsigned int gh = g^h;
+	for(int i=0; i<actdoccpi[g]; ++i) {
+	  const unsigned int ii = i + actdoccioff[g];
 	  
-	  // form the full matrix
-	  unsigned int ia = 0;
-	  for(unsigned int h=0; h<nirrep_; ++h) {
-	    const unsigned int i_offset = actdoccioff[h];
-	    const unsigned int a_offset = actuoccioff[h];
-	    for(int i=0; i<actdoccpi[h]; ++i)
-	      for(int a=0; a<actuoccpi[h]; ++a, ++ia)
-		T.set_element(i+i_offset,a+a_offset,T1[ia]);
-	  }
-	  delete[] T1;
-	}
-	T_[rank-1].print("T1 amplitudes");
-    }
-    else if (rank == 2) {
-	// DPD of orbital product spaces
-	std::vector<int> ijpi(nirrep_);
-	std::vector<int> abpi(nirrep_);
-	unsigned int nijab_dpd = 0;
-	for(unsigned int h=0; h<nirrep_; ++h) {
-	    unsigned int nij = 0;
-	    unsigned int nab = 0;
-	    for(unsigned int g=0; g<nirrep_; ++g) {
-		nij += actdoccpi[g] * actdoccpi[h^g];
-		nab += actuoccpi[g] * actuoccpi[h^g];
-	    }
-	    ijpi[h] = nij;
-	    abpi[h] = nab;
-	    nijab_dpd += nij*nab;
-	}
-
-	// read in T2 in DPD form
-	double* T2 = new double[nijab_dpd];
-	psio.open(CC_TAMPS,PSIO_OPEN_OLD);
-	psio.read_entry(CC_TAMPS,"tIjAb",reinterpret_cast<char*>(T2),nijab_dpd*sizeof(double));
-	psio.close(CC_TAMPS,1);
-
-	// convert to the full form
-	const unsigned int nij = ndocc_act*ndocc_act;
-	const unsigned int nab = nuocc_act*nuocc_act;
-	T_[rank-1] = matrixkit()->matrix(new SCDimension(nij),new SCDimension(nab));
-	RefSCMatrix& T = T_[rank-1];
-	T.assign(0.0);
-	unsigned int ijab = 0;
-	unsigned int ij_offset = 0;
-	unsigned int ab_offset = 0;
-	for(unsigned int h=0; h<nirrep_;
-		ij_offset+=ijpi[h],
-		ab_offset+=abpi[h],
-		++h
-	    ) {
-	    for(unsigned int g=0; g<nirrep_; ++g) {
-		unsigned int gh = g^h;
-		for(int i=0; i<actdoccpi[g]; ++i) {
-		    const unsigned int ii = i + actdoccioff[g];
-
-		    for(int j=0; j<actdoccpi[gh]; ++j) {
-			const unsigned int jj = j + actdoccioff[gh];
-
-			const unsigned int ij = ii * ndocc_act + jj;
+	  for(int j=0; j<actdoccpi[gh]; ++j) {
+	    const unsigned int jj = j + actdoccioff[gh];
+	    
+	    const unsigned int ij = ii * ndocc_act + jj;
+	    
+	    for(unsigned int f=0; f<nirrep_; ++f) {
+	      unsigned int fh = f^h;
+	      for(int a=0; a<actuoccpi[f]; ++a) {
+		const unsigned int aa = a + actuoccioff[f];
 		
-			for(unsigned int f=0; f<nirrep_; ++f) {
-			    unsigned int fh = f^h;
-			    for(int a=0; a<actuoccpi[f]; ++a) {
-				const unsigned int aa = a + actuoccioff[f];
-
-				for(int b=0; b<actuoccpi[fh]; ++b, ++ijab) {
-				    const unsigned int bb = b + actuoccioff[fh];
-				    const unsigned int ab = aa*nuocc_act + bb;
-				
-				    T.set_element(ij,ab,T2[ijab]);
-				}
-			    }
-			}
-		    }
+		for(int b=0; b<actuoccpi[fh]; ++b, ++ijab) {
+		  const unsigned int bb = b + actuoccioff[fh];
+		  const unsigned int ab = aa*nuocc_act + bb;
+		  
+		  T.set_element(ij,ab,T2[ijab]);
 		}
+	      }
 	    }
+	  }
 	}
-
-	delete[] T2;
-	T_[rank-1].print("T2 amplitudes");
+      }
     }
 
-    return T_[rank-1];
+    delete[] T2;
+    return T;
 }
 
 const RefSCMatrix&

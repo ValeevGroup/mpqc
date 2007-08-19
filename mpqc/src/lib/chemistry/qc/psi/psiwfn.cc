@@ -22,6 +22,8 @@
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psiinput.timpl.h>
 
+#define TEST_V 0
+
 using namespace std;
 
 namespace sc {
@@ -697,6 +699,12 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval):
 	keyval->describedclassvalue("mbpt2r12").pointer(),
 	"PsiCCSD_PT2R12::PsiCCSD_PT2R12\n"
 	);
+
+    const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
+    const Ref<R12Technology> r12tech = r12info->r12tech();
+    // cannot do gbc = false yet
+    if (!r12tech->gbc())
+	throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12()
@@ -739,24 +747,33 @@ PsiCCSD_PT2R12::write_input(int convergence)
 void
 PsiCCSD_PT2R12::compute()
 {
+    const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
+    const Ref<R12Technology> r12tech = r12info->r12tech();
+    // params
+    const bool ebc = r12tech->ebc();
+
     // compute CCSD wave function
     PsiWavefunction::compute();
 
     // grab amplitudes
     RefSCMatrix T1_psi = T(1);
     RefSCMatrix T2_psi = T(2);
+    RefSCMatrix Tau2_psi = Tau2();
 
     // Compute intermediates
     const double mp2r12_energy = mbptr12_->value();
     Ref<R12IntEval> r12eval = mbptr12_->r12eval();
     RefSCMatrix Vpq[NSpinCases2];
     RefSCMatrix Vab[NSpinCases2];
+    RefSCMatrix Via[NSpinCases2];
     RefSCMatrix Vij[NSpinCases2];
     RefSymmSCMatrix B[NSpinCases2];
     RefSymmSCMatrix X[NSpinCases2];
     RefSCMatrix T2_MP1[NSpinCases2];
+    RefSCMatrix A[NSpinCases2];
     RefSCMatrix T1[NSpinCases2];
     RefSCMatrix T2[NSpinCases2];
+    RefSCMatrix Tau2[NSpinCases2];
 
     const int nspincases2 = r12eval->nspincases2();
     for(int s=0; s<nspincases2; s++) {
@@ -770,23 +787,38 @@ PsiCCSD_PT2R12::compute()
 	const unsigned int np1 = p1->rank();
 	const unsigned int np2 = p2->rank();
 
+	const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
+	const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
+	const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
+	const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+
 	Vpq[s] = r12eval->V(spincase2,p1,p2);
 	Vij[s] = r12eval->V(spincase2);
 	X[s] = r12eval->X(spincase2);
 	B[s] = r12eval->B(spincase2);
 	T2_MP1[s] = r12eval->T2(spincase2);
+	if (!ebc)
+	    A[s] = r12eval->A(spincase2);
 
-	// extract Vab from Vpq
-	Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(),T2_MP1[s].coldim());
 	const Ref<MOIndexSpace>& v1 = r12eval->vir_act(spin1);
 	const Ref<MOIndexSpace>& v2 = r12eval->vir_act(spin2);
 	const unsigned int nv1 = v1->rank();
 	const unsigned int nv2 = v2->rank();
+	const Ref<MOIndexSpace>& o1 = r12eval->occ_act(spin1);
+	const Ref<MOIndexSpace>& o2 = r12eval->occ_act(spin2);
+	const unsigned int no1 = o1->rank();
+	const unsigned int no2 = o2->rank();
+	const unsigned int no1v2 = no1*nv2;
 	const unsigned int nxy = Vpq[s].rowdim().n();
+
+	// extract Vab and Via from Vpq
+	Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(),T2_MP1[s].coldim());
+	Via[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(),new SCDimension(no1v2));
 
 	typedef MOIndexMap OrbMap;
 	OrbMap v1_to_p1 (*p1<<*v1);
 	OrbMap v2_to_p2 (*p2<<*v2);
+	OrbMap o1_to_p1 (*p1<<*o1);
 
 	for(unsigned int xy=0; xy<nxy; ++xy) {
 	    unsigned int ab = 0;
@@ -801,8 +833,32 @@ PsiCCSD_PT2R12::compute()
 	    }
 	}
 
+	for(unsigned int xy=0; xy<nxy; ++xy) {
+	    unsigned int ia = 0;
+	    for(unsigned int i=0; i<no1; ++i) {
+		const unsigned int p = o1_to_p1[i];
+		for(unsigned int a=0; a<nv2; ++a, ++ia) {
+		    const unsigned int q = v1_to_p1[a];
+		    const unsigned int pq = p*np2 + q;
+		    const double elem = Vpq[s].get_element(xy,pq);
+		    Via[s].set_element(xy,ia,elem);
+		}
+	    }
+	}
+
 	Vpq[s].print("Vpq matrix");
 	Vab[s].print("Vab matrix");
+#if TEST_V
+	RefSCMatrix Vab_test = r12eval->V(spincase2,vir1_act,vir2_act);
+	Vab_test.print("Vab matrix (test)");
+	(Vab[s] - Vab_test).print("Vab - Vab (test): should be 0");
+#endif
+	Via[s].print("Via matrix");
+#if TEST_V
+	RefSCMatrix Via_test = r12eval->V(spincase2,occ1_act,vir2_act);
+	Via_test.print("Via matrix (test)");
+	(Via[s] - Via_test).print("Via - Via (test): should be 0");
+#endif
 	Vij[s].print("Vij matrix");
 	T2_MP1[s].print("MP1 T2 amplitudes");
     }
@@ -856,6 +912,7 @@ PsiCCSD_PT2R12::compute()
     if (use_sparsemap) {
 	T1[AlphaBeta] = transform_T1(MPQC2PSI_occ_act,MPQC2PSI_vir_act,T1_psi,localkit);
 	T2[AlphaBeta] = transform_T2(MPQC2PSI_occ_act,MPQC2PSI_occ_act,MPQC2PSI_vir_act,MPQC2PSI_vir_act,T2_psi,localkit);
+	Tau2[AlphaBeta] = transform_T2(MPQC2PSI_occ_act,MPQC2PSI_occ_act,MPQC2PSI_vir_act,MPQC2PSI_vir_act,Tau2_psi,localkit);
 	if (test_t2_phases_) {
 	    compare_T2(T2[AlphaBeta],T2_MP1[AlphaBeta],
 		       occ1_act->rank(),occ2_act->rank(),
@@ -863,19 +920,22 @@ PsiCCSD_PT2R12::compute()
 	}
 	T1[AlphaBeta].print("CCSD T1 amplitudes from Psi3 (in MPQC orbitals):");
 	T2[AlphaBeta].print("CCSD T2 amplitudes from Psi3 (in MPQC orbitals):");
+	Tau2[AlphaBeta].print("CCSD Tau2 amplitudes from Psi3 (in MPQC orbitals):");
     }
     else {
 	RefSCMatrix MPQC2PSI_tform_oa = transform(*occ_act_sb_psi,*occ_act,localkit);
 	RefSCMatrix MPQC2PSI_tform_va = transform(*vir_act_sb_psi,*vir_act,localkit);
 	T1[AlphaBeta] = transform_T1(MPQC2PSI_tform_oa,MPQC2PSI_tform_va,T1_psi,localkit);
-	T1[AlphaBeta].print("CCSD T1 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):");
 	T2[AlphaBeta] = transform_T2(MPQC2PSI_tform_oa,MPQC2PSI_tform_oa,MPQC2PSI_tform_va,MPQC2PSI_tform_va,T2_psi,localkit);
-	T2[AlphaBeta].print("CCSD T2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):");
+	Tau2[AlphaBeta] = transform_T2(MPQC2PSI_tform_oa,MPQC2PSI_tform_oa,MPQC2PSI_tform_va,MPQC2PSI_tform_va,Tau2_psi,localkit);
 	if (test_t2_phases_) {
 	    compare_T2(T2[AlphaBeta],T2_MP1[AlphaBeta],
 		       occ1_act->rank(),occ2_act->rank(),
 		       vir1_act->rank(),vir2_act->rank());
 	}
+	T1[AlphaBeta].print("CCSD T1 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):");
+	T2[AlphaBeta].print("CCSD T2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):");
+	Tau2[AlphaBeta].print("CCSD Tau2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):");
     }
 
     // Compute Hamiltonian matrix elements
@@ -884,6 +944,13 @@ PsiCCSD_PT2R12::compute()
     RefSymmSCMatrix H0_RR[NSpinCases2];
     for(int s=0; s<nspincases2; s++) {
 	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+	const SpinCase1 spin1 = case1(spincase2);
+	const SpinCase1 spin2 = case2(spincase2);
+
+	const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
+	const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
+	const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
+	const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
 
 	// H1_0R is just Vij
 	H1_0R[s] = Vij[s].clone();
@@ -894,11 +961,64 @@ PsiCCSD_PT2R12::compute()
 	H1_R0[s] = Vij[s].clone();
 	H1_R0[s].assign(Vij[s]);
 
-	// the leading term in <R|(HT)|0> is T2.Vab (* 1/2 ???)
+	// if not testing MP1, compute other terms in <R|Hb|0>
 	if (!mp2_only_) {
-	    RefSCMatrix Vpq_T2 = Vab[s] * (T2[s].t());
-	    H1_R0[s].accumulate(Vpq_T2);
-	    Vpq_T2[s].print(prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
+
+	    // the leading term in <R|(HT)|0> is Tau2.Vab
+	    const bool use_tau2 = true;
+	    RefSCMatrix HT = Vab[s] * (use_tau2 ? Tau2[s].t() : T2[s].t());
+	    H1_R0[s].accumulate(HT);
+
+	    // the next term is T1.Vai
+	    {
+		// store V_xy_ia as V_xyi_a
+		double* tmp = new double[Via[s].rowdim().n() * Via[s].coldim().n()];
+		Via[s].convert(tmp);
+		RefSCMatrix V_xyi_a = Via[s].kit()->matrix( new SCDimension(Via[s].rowdim().n() * T1[s].rowdim().n()), T1[s].coldim());
+		V_xyi_a.assign(tmp);
+		delete[] tmp;
+
+		RefSCMatrix V_xyi_J = V_xyi_a * T1[s].t();
+		// store V_xyi_J as V_xy_iJ
+		tmp = new double[HT.rowdim().n() * HT.coldim().n()];
+		V_xyi_J.convert(tmp);
+		HT.assign(tmp);
+		symmetrize<false>(HT,HT,r12eval->xspace(spin1),occ1_act);
+		HT.print("Via.T1");
+		delete[] tmp;
+		// NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
+		HT.scale(2.0);
+		H1_R0[s].accumulate(HT);
+
+#if TEST_ViaT1
+		// test against V evaluator
+		RefSCMatrix vir2_act_coefs = vir2_act->coefs();
+		RefSCMatrix to_t1;
+		{
+		    RefSCDimension rowdim = vir2_act->dim();
+		    RefSCDimension coldim = occ2_act->dim();
+		    to_t1 = vir2_act_coefs.kit()->matrix(rowdim,coldim);
+		    double* tmp = new double[rowdim.n() * coldim.n()];
+		    T1[s].t().convert(tmp);
+		    to_t1.assign(tmp);
+		    delete[] tmp;
+		}
+		RefSCMatrix Tocc2_act_coefs = vir2_act_coefs * to_t1;
+		Ref<MOIndexSpace> Tocc2_act = new MOIndexSpace("i(t1)", "active occupied orbitals (weighted by T1)",
+							       occ2_act, Tocc2_act_coefs, occ2_act->basis());
+		RefSCMatrix ViJ = r12eval->V(spincase2,occ1_act,Tocc2_act);
+		symmetrize<false>(ViJ,ViJ,r12eval->xspace(spin1),occ1_act);
+		ViJ.print("Via.T1 computed with R12IntEvalInfo::V()");
+		(HT - ViJ).print("Via.T1 - Via.T1 (test): should be zero");
+#endif
+	    }
+
+	    // ebc term is Tau2.A
+	    if (!ebc)
+		HT.accumulate_product(A[s],Tau2[s].t());
+
+	    HT.print(prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
+	    
 	}
 
 	H1_R0[s].print(prepend_spincase(spincase2,"<R|Hb|0>").c_str());

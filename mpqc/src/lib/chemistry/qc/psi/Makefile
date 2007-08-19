@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libSCpsi
 BIN_OR_LIB = LIB
 
-SRCS = psiwfn.cc psiexenv.cc psiinput.cc psifile11.cc
+SRCS = psiwfn.cc psiexenv.cc psiinput.cc psifile11.cc psicc.cc
 CSRCS = 
 
 psitest.testrun: DO_TESTRUN=no

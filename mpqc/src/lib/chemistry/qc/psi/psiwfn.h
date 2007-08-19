@@ -8,6 +8,9 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/psi/psiexenv.h>
+#include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/mbptr12/moindexspace.h>
 
 namespace sc {
 
@@ -177,13 +180,46 @@ class PsiCorrWavefunction: public PsiWavefunction {
 class PsiCC: public PsiCorrWavefunction {
     std::vector<RefSCMatrix> T_;
     std::vector<RefSCMatrix> Lambda_;
+
+  protected:
+    /// set to true to test whether T2 transform from Psi3 to MPQC orbitals works correctly (causes Psi3 to do MP1 instead of CCSD)
+    static bool test_t2_phases_;
+    static void do_test_t2_phases() { test_t2_phases_ = true; }
+
+    // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
+    static const bool use_sparsemap_only_ = false;
+    /// transform T1 to the new basis using sparse maps
+    RefSCMatrix transform_T1(const SparseMOIndexMap& occ_act_map,
+			     const SparseMOIndexMap& vir_act_map,
+			     const RefSCMatrix& T1,
+			     const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
+    /// transform T2 to the new basis using sparse maps
+    RefSCMatrix transform_T2(const SparseMOIndexMap& occ1_act_map, const SparseMOIndexMap& occ2_act_map,
+			     const SparseMOIndexMap& vir1_act_map, const SparseMOIndexMap& vir2_act_map,
+			     const RefSCMatrix& T2,
+			     const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
+    /// transform T1 to the new basis using dense transforms
+    RefSCMatrix transform_T1(const RefSCMatrix& occ_act_tform,
+			     const RefSCMatrix& vir_act_tform,
+			     const RefSCMatrix& T1,
+			     const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
+    /// transform T2 to the new basis using dense transforms
+    RefSCMatrix transform_T2(const RefSCMatrix& occ1_act_tform, const RefSCMatrix& occ2_act_tform,
+			     const RefSCMatrix& vir1_act_tform, const RefSCMatrix& vir2_act_tform,
+			     const RefSCMatrix& T2,
+			     const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
+    /// compare T2 and T2_ref (check that elements < zero are in the same place and elements > soft_zero have the same sign)
+    void compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
+		    unsigned int no1, unsigned int no2, unsigned int nv1, unsigned int nv2,
+		    double zero = 1e-8) const;
+
   public:
     PsiCC(const Ref<KeyVal>&);
     PsiCC(StateIn&);
     ~PsiCC();
     void save_data_state(StateOut&);
 
-    /// return T amplitudes of rank i (i >= 1)
+    /// return T amplitudes of rank i (i >= 1). The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
     virtual const RefSCMatrix& T(unsigned int i);
     /// return Lambda amplitudes of rank i (i >= 1)
     virtual const RefSCMatrix& Lambda(unsigned int i);
@@ -221,18 +257,23 @@ class PsiCCSD_T: public PsiCC {
 ///////////////////////////////////////////////////////////////////
 /// PsiCCSD-PT2R12 is a concrete implementation of CCSD-PT2R12 wave function
 
+class MBPT2_R12;
+
 class PsiCCSD_PT2R12: public PsiCC {
-    Ref<MBPT2_R12> mbptr12_;
-  protected:
-    void write_input(int conv);
-  public:
-    PsiCCSD_PT2R12(const Ref<KeyVal>&);
-    PsiCCSD_PT2R12(StateIn&);
-    ~PsiCCSD_PT2R12();
-    void save_data_state(StateOut&);
-    int gradient_implemented() const;
-    /// Psi only produces the CCSD wave function
-    void compute();
+  /// set to true to test the code against MP2-R12. Will also test the T2 Psi3->MPQC transform
+  static const bool mp2_only_ = false;
+
+  Ref<MBPT2_R12> mbptr12_;
+ protected:
+  void write_input(int conv);
+ public:
+  PsiCCSD_PT2R12(const Ref<KeyVal>&);
+  PsiCCSD_PT2R12(StateIn&);
+  ~PsiCCSD_PT2R12();
+  void save_data_state(StateOut&);
+  int gradient_implemented() const;
+  /// Psi only produces the CCSD wave function
+  void compute();
 };
 
 }

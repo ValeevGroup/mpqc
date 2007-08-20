@@ -66,7 +66,7 @@ R12IntEval::V(SpinCase2 spincase2,
     V = local_matrix_kit->matrix(new SCDimension(nx1*(nx1-1)/2),
 				 new SCDimension(np1*(np1-1)/2));
     RefSCMatrix Vab = this->V(AlphaBeta,p1,p1);
-    antisymmetrize(V,Vab,xspace(Alpha),p1);
+    sc::antisymmetrize(V,Vab,xspace(Alpha),p1);
     return V;
   }
 
@@ -77,6 +77,14 @@ R12IntEval::V(SpinCase2 spincase2,
   const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
   const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
   const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
+
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || p1_eq_p2;
+  // Need to antisymmetrize 1 and 2
+  const bool antisymmetrize = spincase2 != AlphaBeta;
+
+  // some transforms can be skipped if p1/p2 is a subset of x1/x2
+  const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
 
   // The diagonal contribution
   Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
@@ -107,14 +115,6 @@ R12IntEval::V(SpinCase2 spincase2,
       tforms_f12_xmyn);
   }
   
-  // are particles 1 and 2 equivalent?
-  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || p1_eq_p2;
-  // Need to antisymmetrize 1 and 2
-  const bool antisymmetrize = spincase2 != AlphaBeta;
-
-  // some transforms can be skipped if p1/p2 is a subset of x1/x2
-  const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
-
   Ref<TwoParticleContraction> tpcontract;
   const ABSMethod absmethod = r12info()->abs_method();
   // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS

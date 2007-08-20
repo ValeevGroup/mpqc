@@ -47,7 +47,7 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   docc_ = read_occ(keyval,"docc",nirrep_);
   socc_ = read_occ(keyval,"socc",nirrep_);
 
-  int bytes = keyval->intvalue("memory");
+  size_t bytes = keyval->sizevalue("memory");
   if (bytes <= 2000000)
     bytes = 2000000;
   int bytes_str_len = (int)ceil(log10((long double)bytes));

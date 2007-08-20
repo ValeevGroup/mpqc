@@ -21,7 +21,8 @@ namespace sc {
 class PsiExEnv: public DescribedClass {
 
     // Static Psi info
-    static string inputname_;
+    static string defaultinputname_;
+    static string defaultoutputname_;
     static string file11name_;
     static int ckptfile_;
 
@@ -35,6 +36,8 @@ class PsiExEnv: public DescribedClass {
     // Calculation-specific info
     string psiprefix_;
     string cwd_;        // working directory where all files will be placed
+    string inputname_;
+    string outputname_;
     string fileprefix_;
     string stdout_;     // Standard output of psi modules
     string stderr_;     // Standard error of psi modules
@@ -61,7 +64,7 @@ class PsiExEnv: public DescribedClass {
     /// Executes Psi input+driver
     int run_psi();
     /// Executes a Psi module
-    int run_psi_module(char *);
+    int run_psi_module(const char *);
 
     /// Returns current working directory
     string get_cwd() const { return cwd_;};

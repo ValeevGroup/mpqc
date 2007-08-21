@@ -102,7 +102,40 @@ namespace sc {
 	}
 
 	if (!equiv_12_34_ && !equiv_12_43_) {
-	    throw FeatureNotImplemented("general basis set combinations are not handled yet in bounds computation",__FILE__,__LINE__);
+
+        const int nsh3 = b3->nshell();
+        const int nsh4 = b4->nshell();
+        const int n34 = nsh3*nsh4;
+        {
+            Ref<Int2e> int34 = libint2::create_int2e<Int2e>(integral,b3,b4,b3,b4,storage,params);
+            Q34_.resize(n34);  for(int i=0; i<n34; ++i) Q34_[i] = (int_bound_t)0;
+            double* buf = int34->buffer(0);
+            int f34 = 0;
+            for(int s3=0; s3<nsh3; ++s3) {
+                const int nf3 = b3->shell(s3).nfunction();
+                for(int s4=0; s4<nsh4; ++s4, ++f34) {
+                    const int nf4 = b4->shell(s4).nfunction();
+                    const int nf = nf3*nf4*nf3*nf4;
+
+                    if (f34%ntasks != me)
+                        continue;
+
+                    int34->compute_quartet(&s3,&s4,&s3,&s4);
+
+                    std::transform(buf,buf+nf,buf,::libint2::abssqrt<double>());
+                    const double max_elem = *(std::max_element(buf,buf+nf));
+                    Q34_[f34] = Log2Bounds::bound_cast(max_elem);
+                }
+            }
+        }
+        // propagate Q34_ among the nodes
+        {
+            int_bound_t* q34 = new int_bound_t[n34];
+            std::copy(Q34_.begin(),Q34_.end(),q34);
+            msg->sum(q34,n34);
+            std::copy(q34,q34+n34,Q34_.begin());
+        }
+
 	}
 	else {
 	    if (equiv_12_34_) {

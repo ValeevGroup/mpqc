@@ -63,7 +63,7 @@ R12IntEval::V(SpinCase2 spincase2,
   if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
     const unsigned int nx1 = xspace(spin1)->rank();
     const unsigned int np1 = p1->rank();
-    V = local_matrix_kit->matrix(new SCDimension(nx1*(nx1-1)/2),
+    V = local_matrix_kit->matrix(dim_f12(spincase2),
 				 new SCDimension(np1*(np1-1)/2));
     RefSCMatrix Vab = this->V(AlphaBeta,p1,p1);
     sc::antisymmetrize(V,Vab,xspace(Alpha),p1);
@@ -107,6 +107,9 @@ R12IntEval::V(SpinCase2 spincase2,
 					);
       fill_container(tform_creator,tforms_f12_xmyn);
     }
+    V = local_matrix_kit->matrix(dim_f12(spincase2),
+                                 new SCDimension(p1->rank()*p2->rank()));
+    V.assign(0.0);
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       V, corrfactor()->tbint_type_f12eri(),
       xspace1, p1,

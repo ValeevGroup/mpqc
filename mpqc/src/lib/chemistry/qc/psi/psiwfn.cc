@@ -758,7 +758,12 @@ PsiCCSD_PT2R12::compute()
     // grab amplitudes
     RefSCMatrix T1_psi = T(1);
     RefSCMatrix T2_psi = T(2);
-    RefSCMatrix Tau2_psi = Tau2();
+    RefSCMatrix Tau2_psi;
+    if (mp2_only_) {
+      Tau2_psi = T2_psi.clone();  Tau2_psi.assign(T2_psi);
+    }
+    else
+      Tau2_psi = Tau2();
 
     // Compute intermediates
     const double mp2r12_energy = mbptr12_->value();

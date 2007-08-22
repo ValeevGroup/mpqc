@@ -112,6 +112,13 @@ PsiInput::write_keyword(const char *keyword, int value)
 }
 
 void
+PsiInput::write_keyword(const char *keyword, bool value)
+{
+   write_indent();
+   file_ << scprintf("%s = %s",keyword,value?"true":"false") << endl;
+}
+
+void
 PsiInput::write_keyword(const char *keyword, double value)
 {
    write_indent();

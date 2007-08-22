@@ -376,6 +376,7 @@ PsiCLHF::write_basic_input(int convergence)
   else {
     input->write_keyword("psi:multp",multp_);
     input->write_keyword("psi:charge",charge_);
+    input->write_keyword("psi:reset_occupations",true);
   }
 }
 
@@ -424,6 +425,11 @@ PsiHSOSHF::write_basic_input(int convergence)
     input->write_keyword_array("psi:docc",nirrep_,docc_);
   if (!socc_.empty())
     input->write_keyword_array("psi:socc",nirrep_,socc_);
+  if (docc_.empty() && socc_.empty()) {
+    input->write_keyword("psi:multp",multp_);
+    input->write_keyword("psi:charge",charge_);
+    input->write_keyword("psi:reset_occupations",true);
+  }
 }
 
 void
@@ -467,6 +473,11 @@ PsiUHF::write_basic_input(int convergence)
     input->write_keyword_array("psi:docc",nirrep_,docc_);
   if (!socc_.empty())
     input->write_keyword_array("psi:socc",nirrep_,socc_);
+  if (docc_.empty() && socc_.empty()) {
+    input->write_keyword("psi:multp",multp_);
+    input->write_keyword("psi:charge",charge_);
+    input->write_keyword("psi:reset_occupations",true);
+  }
 }
 
 void

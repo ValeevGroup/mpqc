@@ -119,7 +119,7 @@ MPQC::GaussianBasisMolecular_impl::initialize_impl (
   Ref<sc::Molecule> scmol = sc_gbs_->molecule();
   natom_ = scmol->natom();
   molecule_ = ChemistryCXX::Molecule::_create();
-  molecule_.initialize(natom_, "bohr");
+  molecule_.initialize(natom_,0,"bohr");
   for( int i=0; i<natom_; ++i) {
     molecule_.set_atomic_number(i,scmol->Z(i));
     for( int j=0; j<3; ++j) 

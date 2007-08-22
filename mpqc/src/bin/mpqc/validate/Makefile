@@ -152,9 +152,13 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  endif
 endif
 
-CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz
+CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g \
+          $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz \
+          $(SRCDIR)/ref/ccafe_h2oq4scfgrad321g
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
- CCAFEINPUTS = ccafe_h2oscfsto3g.cca ccafe_h2oscfgradccpvtz.cca
+ CCAFEINPUTS = ccafe_h2oscfsto3g.cca \
+               ccafe_h2oscfgradccpvtz.cca \
+               ccafe_h2oq4scfgrad321g.cca
  CCAFEOUTPUTS = $(CCAFEINPUTS:%.cca=%.out)
  CCAFERESULTS = $(CCAFEINPUTS:%.cca=%.results)
 endif

@@ -271,11 +271,26 @@ MPQC::ModelFactory_impl::get_model_impl ()
   input
     << "  molecule<Molecule>: (" << std::endl
     << "    symmetry = auto" << std::endl
-    << "    unit = bohr" << std::endl
-    << "    {n atoms geometry } = {" << std::endl;
+    << "    unit = bohr" << std::endl;
+  if( molecule_.get_n_pcharge() ) {
+    input << "    charge = [ ";
+    for( i=0; i<molecule_.get_n_pcharge(); ++i )
+      input << molecule_.get_point_charge(i) << " ";
+    input << "]" << std::endl
+          << "    include_q = 0" << std::endl
+          << "    include_qq = 0" << std::endl; 
+  }
+  input
+    << "    {atoms geometry } = {" << std::endl;
+  input << setprecision(16);
+  for(i=0;i<molecule_.get_n_pcharge();++i) {
+    input << "\t" << "Q"
+      << "\t[  " << molecule_.get_pcharge_cart_coor(i,0)*conv
+      << "  " << molecule_.get_pcharge_cart_coor(i,1)*conv
+      << "  " << molecule_.get_pcharge_cart_coor(i,2)*conv << "  ]\n";
+  }
   for(i=0;i<molecule_.get_n_atom();++i) {
-    input << setprecision(16);
-    input << "\t" << i << "\t" << molecule_.get_atomic_number(i)
+    input << "\t" << molecule_.get_atomic_number(i)
       << "\t[  " << molecule_.get_cart_coor(i,0)*conv
       << "  " << molecule_.get_cart_coor(i,1)*conv
       << "  " << molecule_.get_cart_coor(i,2)*conv << "  ]\n";
@@ -359,7 +374,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
   
   MPQC::Model model = MPQC::Model::_create();  
   model.initialize_parsedkeyval("model",input.str());
-  model.set_molecule(molecule_);
+  //model.set_molecule(molecule_);
   
   return model;
 

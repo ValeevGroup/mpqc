@@ -211,7 +211,7 @@ MPQC::SimpleDriver_impl::go_impl ()
   }
 
   std::cout << "SIMPLE DRIVER: Evaluating energy\n";
-  int num_coord = molecule_.get_n_atom() * 3;
+  int num_coord = ( molecule_.get_n_atom() + molecule_.get_n_pcharge() ) * 3;
   sidl::array<double> coor = molecule_.get_coor();
   double energy = model_.get_energy();
 

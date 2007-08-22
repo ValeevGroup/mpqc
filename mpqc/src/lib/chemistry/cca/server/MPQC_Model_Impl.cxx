@@ -104,6 +104,10 @@ MPQC::Model_impl::initialize_parsedkeyval_impl (
   }
   wfn_ = dynamic_cast<sc::Wavefunction*>(dc.pointer());
 
+  sc::Molecule* scMol = wfn_->molecule().pointer();
+  molecule_ = ChemistryCXX::Molecule::_create();
+  molecule_.initialize( scMol->n_non_q_atom(), scMol->n_q_atom(), "bohr");
+
   // DO-NOT-DELETE splicer.end(MPQC.Model.initialize_parsedkeyval)
 }
 
@@ -185,16 +189,30 @@ MPQC::Model_impl::set_molecule_impl (
   /* in */::Chemistry::MoleculeInterface molecule ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_molecule)
+  
+  std::cerr << "trying to set molecule\n";
 
+  int i,j;
   molecule_ = molecule;
   double conv = molecule_.get_units().convert_to("bohr");
-  wfn_->molecule()->print();
   sc::Molecule* scMol = wfn_->molecule().pointer();
-  for( int i=0; i<molecule_.get_n_atom(); ++i)
-     for( int j=0; j<3; ++j) 
-        scMol->r(i)[j] = molecule_.get_cart_coor(i,j)*conv;
+  int n_q = molecule_.get_n_atom();
+  int n_non_q = molecule_.get_n_pcharge();
+  for( i=0; i<n_non_q; ++i) {
+     int nqid = scMol->non_q_atom(i);
+     for( j=0; j<3; ++j) 
+        scMol->r(nqid)[j] = molecule_.get_cart_coor(i,j)*conv;
+  }
+  for( i=0; i<n_q; ++i) {
+     int qid = scMol->q_atom(i);
+     for( j=0; j<3; ++j)
+        scMol->r(qid)[j] = molecule_.get_pcharge_cart_coor(i,j)*conv;
+  }
   wfn_->set_x(array_to_vector(molecule_.get_coor(), 
               wfn_->matrixkit()->vector(wfn_->dimension()),conv));
+
+  std::cerr << "molecule set\n";
+
   return;
 
   // DO-NOT-DELETE splicer.end(MPQC.Model.set_molecule)
@@ -208,6 +226,23 @@ MPQC::Model_impl::get_molecule_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Model.get_molecule)
+
+  sc::Molecule* scMol = wfn_->molecule().pointer();
+  
+  int i,j;
+  int n_non_q = molecule_.get_n_atom();
+  int n_q = molecule_.get_n_pcharge();
+  for( i=0; i<n_non_q; ++i ) {
+    int nqid = scMol->non_q_atom(i);
+    for( j=0; j<3; ++j )
+      molecule_.set_cart_coor( i, j, scMol->r(nqid)[j] );
+  }
+  for( i=0; i<n_q; ++i ) {
+    int qid = scMol->q_atom(i);
+    for( j=0; j<3; ++j )
+      molecule_.set_pcharge_cart_coor( i, j, scMol->r(qid)[j] );
+    molecule_.set_point_charge( i, scMol->charge(qid) );
+  } 
 
   return molecule_;
 

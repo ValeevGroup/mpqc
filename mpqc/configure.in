@@ -1753,6 +1753,42 @@ if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 
+dnl ----------- libpsio library checks --------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libpsio/psio.hpp,
+  AC_CHECK_LIB(PSI_psio,psio_init,
+    HAVE_LIBPSIO=yes
+    )
+  dnl -- check if libpsio was configured as a standalone library --
+  if test X$HAVE_LIBPSIO = Xyes; then
+    AC_MSG_CHECKING([if libpsio compiled as a standalone library])
+    AC_LINK_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libpsio/psio.hpp>
+        ]],
+        [[psio_ipv1_config();
+        ]]
+      ),
+    [AC_MSG_RESULT([no])],
+    [AC_MSG_RESULT([yes])
+     AC_DEFINE(HAVE_LIBPSIO)
+     AC_SUBST(HAVE_LIBPSIO)
+     LIBS="-lPSI_psio $LIBS"
+    ]
+    )
+  fi
+  )
+AC_LANG_RESTORE
+
+dnl ----------- make sure we have everything for MPQC-Psi interface ----------
+
+if test ! X$HAVE_LIBPSIO = Xno; then
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
+  AC_DEFINE(HAVE_PSIMPQCIFACE)
+fi
+
 dnl --------- Template instantiation. ---------
 
 if test $template_instantiation = auto; then

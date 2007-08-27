@@ -701,8 +701,11 @@ static ClassDesc PsiCCSD_PT2R12_cd(
   0, create<PsiCCSD_PT2R12>, create<PsiCCSD_PT2R12>);
 
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval):
-  PsiCC(keyval)
+    PsiCC(keyval), eccsd_(1.0)
 {
+    if (!replace_Lambda_with_T_)
+	throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
+
     if (mp2_only_)
 	PsiCC::do_test_t2_phases();
 
@@ -716,6 +719,10 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval):
     // cannot do gbc = false yet
     if (!r12tech->gbc())
 	throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
+    // cannot do ebc=false either
+    if (!r12tech->ebc())
+	throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- ebc = false is not yet implemented",__FILE__,__LINE__);
+
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12()
@@ -726,6 +733,7 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s):
   PsiCC(s)
 {
     mbptr12_ << SavableState::restore_state(s);
+    s.get(eccsd_);
 }
 
 int
@@ -739,6 +747,7 @@ PsiCCSD_PT2R12::save_data_state(StateOut&s)
 {
   PsiCC::save_data_state(s);
   SavableState::save_state(mbptr12_.pointer(),s);
+  s.put(eccsd_);
 }
 
 void
@@ -765,12 +774,18 @@ PsiCCSD_PT2R12::compute()
 
     // compute CCSD wave function
     PsiWavefunction::compute();
+    // read CCSD energy
+    psi::PSIO& psio = exenv()->psio();
+    psio.open(CC_INFO,PSIO_OPEN_OLD);
+    psio.read_entry(CC_INFO,"CCSD Energy",reinterpret_cast<char*>(&eccsd_),sizeof(double));
+    psio.close(CC_INFO,1);
 
     // grab amplitudes
     RefSCMatrix T1_psi = T(1);
     RefSCMatrix T2_psi = T(2);
     RefSCMatrix Tau2_psi;
-    if (mp2_only_) {
+    // Tau = T2 + T1*T1 has same 1st through 3rd order contributions as T2
+    if (mp2_only_ || completeness_order_for_intermediates_ < 4) {
       Tau2_psi = T2_psi.clone();  Tau2_psi.assign(T2_psi);
     }
     else
@@ -877,7 +892,7 @@ PsiCCSD_PT2R12::compute()
 #endif
 	Vij[s].print("Vij matrix");
 	T2_MP1[s].print("MP1 T2 amplitudes");
-    }
+    } // end of spincase2 loop
     Ref<SCMatrixKit> localkit = Vpq[AlphaBeta].kit();
 
     // print out MPQC orbitals to compare to Psi orbitals below;
@@ -981,12 +996,14 @@ PsiCCSD_PT2R12::compute()
 	if (!mp2_only_) {
 
 	    // the leading term in <R|(HT)|0> is Tau2.Vab
-	    const bool use_tau2 = true;
-	    RefSCMatrix HT = Vab[s] * (use_tau2 ? Tau2[s].t() : T2[s].t());
+	    RefSCMatrix HT = Vab[s] * Tau2[s].t();
+	    // If using the symmetric form of the correction, Lambdas are replaced with T
+	    if (replace_Lambda_with_T_)
+		HT.scale(2.0);
 	    H1_R0[s].accumulate(HT);
 
 	    // the next term is T1.Vai
-	    {
+	    if (completeness_order_for_intermediates_ >= 3) {
 		// store V_xy_ia as V_xyi_a
 		double* tmp = new double[Via[s].rowdim().n() * Via[s].coldim().n()];
 		Via[s].convert(tmp);
@@ -1066,6 +1083,14 @@ PsiCCSD_PT2R12::compute()
     ExEnv::out0() << "E2(AA) = " << 2.0*E2[AlphaAlpha] << endl;
     ExEnv::out0() << "E2(s) = " << E2[AlphaBeta] - E2[AlphaAlpha] << endl;
     ExEnv::out0() << "E2(t) = " << 3.0*E2[AlphaAlpha] << endl;
+
+    const double e2 = E2[AlphaBeta] + 2.0*E2[AlphaAlpha];
+    ExEnv::out0() << "E2           = " << e2 << endl;
+    ExEnv::out0() << "ECCSD        = " << eccsd_ << endl;
+    ExEnv::out0() << "ECCSD_PT2R12 = " << e2 + eccsd_ << endl;
+    ExEnv::out0() << "E2(MP2)      = " << mbptr12_->r12_corr_energy() << endl;
+    ExEnv::out0() << "EMP2         = " << mbptr12_->corr_energy() - mbptr12_->r12_corr_energy() << endl;
+    ExEnv::out0() << "EMP2R12      = " << mbptr12_->corr_energy() << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////

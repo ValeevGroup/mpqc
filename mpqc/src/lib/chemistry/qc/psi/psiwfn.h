@@ -271,6 +271,14 @@ class MBPT2_R12;
 class PsiCCSD_PT2R12: public PsiCC {
   /// set to true to test the code against MP2-R12. Will also test the T2 Psi3->MPQC transform
   static const bool mp2_only_ = false;
+  /// set to true to use Ts instead of Lambdas
+  static const bool replace_Lambda_with_T_ = true;
+  /// default is to include up to 3rd-order terms in the energy
+  static const unsigned int completeness_order_for_energy_ = 3;
+  /// the max order for the intermediates is one less
+  static const unsigned int completeness_order_for_intermediates_ = completeness_order_for_energy_ - 1;
+
+  double eccsd_;
 
   Ref<MBPT2_R12> mbptr12_;
  protected:

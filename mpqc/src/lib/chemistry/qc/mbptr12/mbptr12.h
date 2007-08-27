@@ -82,7 +82,6 @@ class MBPT2_R12: public MBPT2 {
 #define ref_to_mp2r12_acc_ 100.0
 
     double mp2_corr_energy_;
-    double r12_corr_energy_;
 
     // calculate the MP2-R12 energy (or energies, depending on which approximation is chosen)
     void compute_energy_();

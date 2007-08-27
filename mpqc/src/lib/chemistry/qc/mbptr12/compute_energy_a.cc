@@ -38,6 +38,13 @@
 using namespace std;
 using namespace sc;
 
+namespace {
+    // returns the sum of all elements of v
+    double sum(const RefSCVector& v);
+    // returns the total R12 energy correction
+    double er12(const Ref<MP2R12Energy>& mp2r12_energy);
+}
+
 void
 MBPT2_R12::compute_energy_()
 {
@@ -59,6 +66,7 @@ MBPT2_R12::compute_energy_()
   r12eval_->compute();
   
   double etotal = 0.0;
+  double ef12 = 0.0;
   
   //
   // Now we can compute and print pair energies
@@ -76,6 +84,7 @@ MBPT2_R12::compute_energy_()
         r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
       r12a_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12a_energy_->energy();
+      ef12 = er12(r12a_energy_);
       tim_exit("mp2-f12/a pair energies");
     }
     
@@ -90,6 +99,7 @@ MBPT2_R12::compute_energy_()
         r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
       r12ap_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12ap_energy_->energy();
+      ef12 = er12(r12ap_energy_);
       tim_exit("mp2-f12/a' pair energies");
     }
 
@@ -100,6 +110,7 @@ MBPT2_R12::compute_energy_()
         r12b_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_B,debug_);
       r12b_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12b_energy_->energy();
+      ef12 = er12(r12b_energy_);
       tim_exit("mp2-f12/b pair energies");
     }
     
@@ -110,6 +121,7 @@ MBPT2_R12::compute_energy_()
         r12app_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_App,debug_);
       r12app_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12app_energy_->energy();
+      ef12 = er12(r12app_energy_);
       tim_exit("mp2-f12/a'' pair energies");
     }
 
@@ -122,11 +134,13 @@ MBPT2_R12::compute_energy_()
       r12c_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_C,debug_);
     r12c_energy_->print_pair_energies(r12info->spinadapted());
     etotal = r12c_energy_->energy();
+    ef12 = er12(r12c_energy_);
     tim_exit("mp2-f12/c pair energies");
   }
   
   tim_exit("mp2-f12 energy");
 
+  mp2_corr_energy_ = etotal - ef12;
   etotal += ref_energy();
   set_energy(etotal);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
@@ -154,6 +168,20 @@ MBPT2_R12::compute_energy_()
   return;
 }
 
+namespace {
+    double sum(const RefSCVector& v) {
+	RefSCVector unit = v.clone();  unit.assign(1.0);
+	return v.dot(unit);
+    }
+    double er12(const Ref<MP2R12Energy>& mp2r12_energy) {
+	double result = 0.0;
+	for(int spin=0; spin<NSpinCases2; spin++) {
+	    const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
+	    result += sum(mp2r12_energy->ef12(spincase2));
+	}
+	return result;
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////
 

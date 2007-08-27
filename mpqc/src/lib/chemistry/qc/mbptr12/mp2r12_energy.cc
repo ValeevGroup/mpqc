@@ -174,6 +174,18 @@ double MP2R12Energy::ef12tot(SpinCase2 s) const
   return ef12_[s].dot(unit);
 }
 
+const RefSCVector&
+MP2R12Energy::ef12(SpinCase2 s) const
+{
+    return ef12_[s];
+}
+
+const RefSCVector&
+MP2R12Energy::emp2f12(SpinCase2 s) const
+{
+    return emp2f12_[s];
+}
+
 static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVector3& r2, double phi_0, double phi_1_mp2, double phi_1_r12)
 {
   fout << scprintf("%9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %25.15lf %25.15lf %25.15lf",

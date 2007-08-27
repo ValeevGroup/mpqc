@@ -100,9 +100,9 @@ public:
 #endif
 
   /// Returns the vector of second-order pair energies of spin case S
-  RefSCVector emp2f12(SpinCase2 S) const;
+  const RefSCVector& emp2f12(SpinCase2 S) const;
   /// Returns the vector of F12 corrections to second-order pair energies of spin case S
-  RefSCVector ef12(SpinCase2 S) const;
+  const RefSCVector& ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy
   double energy();
 

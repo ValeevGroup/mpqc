@@ -1753,8 +1753,36 @@ if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 
+dnl ----------- Psi program checks --------------
+
+HAVE_COMPATIBLE_PSI=no
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(psiconfig.h,
+  dnl -- check if Psi was configured to use CCA integrals standard --
+  AC_MSG_CHECKING([if Psi was configured to use CCA integrals standard])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <psiconfig.h>
+      #if PSI_INTEGRALS_STANDARD == 0
+      #error "not CCA standard"
+      #endif
+      ]],
+      [[]]
+    ),
+    [AC_MSG_RESULT([yes])
+     HAVE_COMPATIBLE_PSI=yes
+    ],
+    [AC_MSG_RESULT([no])
+    ]
+  )
+)
+AC_LANG_RESTORE
+
 dnl ----------- libpsio library checks --------------
 
+HAVE_LIBPSIO=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libpsio/psio.hpp,
@@ -1771,7 +1799,9 @@ AC_CHECK_HEADERS(libpsio/psio.hpp,
         [[psio_ipv1_config();
         ]]
       ),
-    [AC_MSG_RESULT([no])],
+    [AC_MSG_RESULT([no])
+     HAVE_LIBPSIO=no
+    ],
     [AC_MSG_RESULT([yes])
      AC_DEFINE(HAVE_LIBPSIO)
      AC_SUBST(HAVE_LIBPSIO)
@@ -1781,6 +1811,7 @@ AC_CHECK_HEADERS(libpsio/psio.hpp,
   fi
   )
 AC_LANG_RESTORE
+fi
 
 dnl ----------- make sure we have everything for MPQC-Psi interface ----------
 
@@ -2026,6 +2057,7 @@ echo -e "HAVE_LIBINT\t${HAVE_LIBINT:-no}"
 echo -e "HAVE_LIBR12\t${HAVE_LIBR12:-no}"
 echo -e "HAVE_LIBDERIV\t${HAVE_LIBDERIV:-no}"
 echo -e "HAVE_LIBINT2\t${HAVE_LIBINT2:-no}"
+echo -e "Psi interface\t${HAVE_LIBPSIO:-no}"
 echo -en "components\t${components:-<not set>}"
 if test "$components" = yes; then
   echo -ne "\t(CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"

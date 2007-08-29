@@ -310,7 +310,9 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
 	  if (debug_ >= DefaultPrintThresholds::mostO2N2) {
             ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
             << " <ij|ab> = " << ERI_iajb
-            << " denom = " << denom << endl;
+            << " denom = " << denom
+            << " emp2 = " << emp2
+            << endl;
           }
         }
         else {
@@ -324,7 +326,9 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
             ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
             << " <ij|ab> = " << ERI_iajb
             << " <ij|ba> = " << ERI_ibja
-            << " denom = " << denom << endl;
+            << " denom = " << denom
+            << " emp2 = " << emp2
+            << endl;
           }
         }
         

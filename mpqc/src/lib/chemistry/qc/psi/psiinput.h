@@ -65,7 +65,7 @@ class PsiInput: public RefCount {
     void write_string(const char *);
     void write_key_wq(const char *, const char *);
 
-    /// Construct the "basis" keyword for input
+    /// Construct the "basis" keyword for input. All functions with angular momentum >= 1 must be Cartesian or all must be sph. harm.
     void write_basis(const Ref<GaussianBasisSet>&);
     /// Write basis sets explicitly
     void write_basis_sets(const Ref<GaussianBasisSet>&);

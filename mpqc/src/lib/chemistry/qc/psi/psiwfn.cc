@@ -154,7 +154,7 @@ PsiWavefunction::write_basic_input(int conv)
   psiinput->write_keyword("no_reorient","true");
   psiinput->write_keyword("keep_ref_frame","true");
   psiinput->write_basis(basis());
-  if (basis()->max_nfunction_in_shell() != basis()->max_ncartesian_in_shell())
+  if (basis()->has_pure())
     psiinput->write_keyword("puream","true");
   psiinput->write_geom(molecule());
   psiinput->end_section();

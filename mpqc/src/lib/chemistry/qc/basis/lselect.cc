@@ -28,6 +28,7 @@
 #pragma implementation
 #endif
 
+#include <algorithm>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/class/scexception.h>

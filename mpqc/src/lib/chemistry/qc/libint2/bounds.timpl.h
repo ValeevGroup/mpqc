@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include <util/class/scexception.h>
 #include <chemistry/qc/libint2/int2e.h>
 

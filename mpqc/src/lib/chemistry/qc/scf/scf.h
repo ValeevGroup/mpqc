@@ -188,6 +188,16 @@ class SCF: public OneBodyWavefunction {
         print the occupied eigenvalues after the SCF procedure converges.
         The default is false.
 
+        <dt><tt>accumdih</tt><dd>Optional.  Takes an AccumH derivative.
+        This provides additional contributions to the energy and the Fock
+        matrix that are summed in once for the entire SCF procedure.
+        AccumH's that are independent of the density should be given here.
+
+        <dt><tt>accumddh</tt><dd>Optional.  Takes an AccumH derivative.
+        This provides additional contributions to the energy and the Fock
+        matrix that are summed in each iteration SCF procedure.  AccumH's
+        that depend on the density must be given here.
+
         </dl> */
     SCF(const Ref<KeyVal>&);
     ~SCF();

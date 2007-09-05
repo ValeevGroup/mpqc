@@ -38,7 +38,10 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
-// computes additions to H
+/** AccumH computes additions to the one body Hamiltonian.  Specializations
+    of AccumH can be given to derivatives of the SCF class, and there they
+    will be used to modify the one body Hamiltonian.
+ */
 class AccumH: virtual public SavableState {
   protected:
     Ref<Wavefunction> wfn_;
@@ -46,22 +49,47 @@ class AccumH: virtual public SavableState {
   public:
     AccumH();
     AccumH(StateIn&);
+    /** The KeyVal constructor.
+
+        <dl>
+
+        <dt><tt>wavefunction</tt><dd> This gives a Wavefunction object.
+        Sometimes additional contributions to the Hamiltonian depend on the
+        current Wavefunction, and, in these cases, the contribution must be
+        obtained iteratively.  It is usually not necessary to specify this,
+        since it is given in the init call below.
+
+        </dl>
+    */
     AccumH(const Ref<KeyVal>&);
     virtual ~AccumH();
 
     void save_data_state(StateOut&);
     
+    /** Sets the current Wavefunction.  This is needed if the contribution
+        depends on the current Wavefunction.  This would override a
+        Wavefunction givin in the KeyVal CTOR.
+    */
     virtual void init(const Ref<Wavefunction>&);
+    /** Sum the contribution from this object into h. */
     virtual void accum(const RefSymmSCMatrix& h) =0;
+    /** Print information about the contribution. */
     virtual void print_summary();
+    /** Should be called after we are finished with this AccumH.  The
+        reference to current Wavefunction object will be removed, and accum
+        cannot be called until another init call is made.
+    */
     virtual void done();
 
-    // Returns the scalar contribution to the energy.
-    // Available only after accum is called.
+    /** Returns the scalar contribution to the energy.
+        Available only after accum is called.
+    */
     virtual double e();
 };
 
 
+/** This specialization of AccumH does nothing.
+ */
 class AccumHNull: public AccumH {
   public:
     AccumHNull();
@@ -74,6 +102,9 @@ class AccumHNull: public AccumH {
     void accum(const RefSymmSCMatrix& h);
 };
 
+/** This specialization of AccumHNull does nothing.  Sums the
+    results of several AccumH objects.
+ */
 class SumAccumH: public AccumH {
   protected:
     int n_;
@@ -81,6 +112,16 @@ class SumAccumH: public AccumH {
 
   public:
     SumAccumH(StateIn&);
+    /** The KeyVal constructor.
+
+        <dl>
+
+        <dt><tt>accums</tt><dd>This gives an array of
+        AccumH objects that are each called to obtain the total
+        contribution.
+
+        </dl>
+    */
     SumAccumH(const Ref<KeyVal>&);
     ~SumAccumH();
 

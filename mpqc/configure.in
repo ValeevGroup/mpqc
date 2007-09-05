@@ -1815,7 +1815,7 @@ fi
 
 dnl ----------- make sure we have everything for MPQC-Psi interface ----------
 
-if test ! X$HAVE_LIBPSIO = Xno; then
+if test X$HAVE_LIBPSIO = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
   AC_DEFINE(HAVE_PSIMPQCIFACE)
 fi

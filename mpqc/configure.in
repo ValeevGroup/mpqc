@@ -1729,9 +1729,9 @@ AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------
 
-if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
+if test X$HAVE_LIBR12 != Xyes -o X$HAVE_LIBINT != Xyes; then
   HAVE_INTEGRALCINTS=no
-  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS $EXCLUDED_DIRS"
 else
   AC_DEFINE(HAVE_INTEGRALCINTS)
   AC_SUBST(HAVE_INTEGRALCINTS)
@@ -1739,7 +1739,7 @@ fi
 
 dnl ----------- make sure we have everything for libint2 interface ----------
 
-if test ! X$HAVE_LIBINT2 = Xyes; then
+if test X$HAVE_LIBINT2 != Xyes; then
   HAVE_INTEGRALLIBINT2=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_LIBINT2 $EXCLUDED_DIRS"
 else
@@ -1786,37 +1786,68 @@ if test X$HAVE_COMPATIBLE_PSI = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libpsio/psio.hpp,
-  AC_CHECK_LIB(PSI_psio,psio_init,
-    HAVE_LIBPSIO=yes
-    )
-  dnl -- check if libpsio was configured as a standalone library --
-  if test X$HAVE_LIBPSIO = Xyes; then
-    AC_MSG_CHECKING([if libpsio compiled as a standalone library])
-    AC_LINK_IFELSE(
-      AC_LANG_PROGRAM(
-        [[#include <libpsio/psio.hpp>
-        ]],
-        [[psio_ipv1_config();
-        ]]
-      ),
-    [AC_MSG_RESULT([no])
-     HAVE_LIBPSIO=no
-    ],
+  AC_MSG_CHECKING([if libpsio can be used])
+  OLD_LIBS=$LIBS
+  LIBS="-lPSI_psio $LIBS"
+  AC_LINK_IFELSE(
+    AC_LANG_PROGRAM(
+     [[#include <libpsio/psio.hpp>
+       char *gprgid() { return "test"; }
+     ]],
+     [[psi::PSIO psio;
+     ]]
+    ),
     [AC_MSG_RESULT([yes])
+     HAVE_LIBPSIO=yes
      AC_DEFINE(HAVE_LIBPSIO)
-     AC_SUBST(HAVE_LIBPSIO)
-     LIBS="-lPSI_psio $LIBS"
+    ],
+    [AC_MSG_RESULT([no])
+     LIBS=$OLD_LIBS
     ]
-    )
-  fi
   )
+)
+AC_LANG_RESTORE
+fi
+
+dnl ----------- libchkpt library checks --------------
+
+HAVE_LIBCHKPT=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes; then
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libchkpt/chkpt.hpp,
+  AC_MSG_CHECKING([if libchkpt can be used])
+  OLD_LIBS=$LIBS
+  LIBS="-lPSI_chkpt $LIBS"
+  AC_COMPILE_IFELSE(
+   AC_LANG_PROGRAM(
+    [[#include <libpsio/psio.hpp>
+      #include <libchkpt/chkpt.hpp>
+      char *gprgid() { return "test"; }
+    ]],
+    [[psi::PSIO psio;
+      psi::Chkpt chkpt(&psio,1);
+    ]]
+   ),
+   [AC_MSG_RESULT([yes])
+    HAVE_LIBCHKPT=yes
+    AC_DEFINE(HAVE_LIBCHKPT)
+   ],
+   [AC_MSG_RESULT([no])
+    LIBS=$OLD_LIBS
+   ]
+  )
+ )
 AC_LANG_RESTORE
 fi
 
 dnl ----------- make sure we have everything for MPQC-Psi interface ----------
 
-if test X$HAVE_LIBPSIO = Xno; then
+if test X$HAVE_LIBPSIO = Xno -o X$HAVE_LIBCHKPT = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
+  HAVE_PSIMPQCIFACE=no
+else
+  HAVE_PSIMPQCIFACE=yes
   AC_DEFINE(HAVE_PSIMPQCIFACE)
 fi
 
@@ -2057,7 +2088,7 @@ echo -e "HAVE_LIBINT\t${HAVE_LIBINT:-no}"
 echo -e "HAVE_LIBR12\t${HAVE_LIBR12:-no}"
 echo -e "HAVE_LIBDERIV\t${HAVE_LIBDERIV:-no}"
 echo -e "HAVE_LIBINT2\t${HAVE_LIBINT2:-no}"
-echo -e "Psi interface\t${HAVE_LIBPSIO:-no}"
+echo -e "Psi interface\t${HAVE_PSIMPQCIFACE:-no}"
 echo -en "components\t${components:-<not set>}"
 if test "$components" = yes; then
   echo -ne "\t(CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"

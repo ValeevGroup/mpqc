@@ -11,6 +11,7 @@ using namespace std;
 #include <string>
 #include <sstream>
 #include <libpsio/psio.hpp>
+#include <libchkpt/chkpt.hpp>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>
 
@@ -46,7 +47,9 @@ class PsiExEnv: public DescribedClass {
     Ref<PsiInput> psiinput_;
     Ref<PsiFile11> psifile11_;
 
+    void config_psio();
     psi::PSIO psio_;
+    psi::Chkpt* chkpt_;
 
     // Add the following to the PATH environmental variable
     void add_to_path(const string &);
@@ -77,6 +80,8 @@ class PsiExEnv: public DescribedClass {
 
     /// Returns an instance of psi::PSIO
     psi::PSIO& psio() { return psio_; }
+    /// Returns an instance of psi::Chkpt
+    psi::Chkpt& chkpt() { return *chkpt_; }
     
     void print(std::ostream&o=ExEnv::out0()) const;
 };

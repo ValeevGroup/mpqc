@@ -31,7 +31,8 @@ string PsiExEnv::defaultpsiprefix_("/usr/local/psi/bin");
 string PsiExEnv::defaultstdout_("stdout");
 string PsiExEnv::defaultstderr_("stderr");
 
-PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
+PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
+	psio_()
 {
   const std::string prefix(SCFormIO::fileext_to_filename("."));
 
@@ -90,20 +91,8 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
   psifile11_ = new PsiFile11(s);
   delete[] s;
 
-  // configure libpsio object
-  {
-    psio_.filecfg_kwd("DEFAULT","NAME",-1,fileprefix_.c_str());
-    std::ostringstream oss;
-    oss << nscratch_;
-    psio_.filecfg_kwd("DEFAULT","NVOLUME",-1,oss.str().c_str());
-    for (int i=0; i<nscratch_; i++) {
-      std::ostringstream oss;
-      oss << "VOLUME" << (i+1);
-      psio_.filecfg_kwd("DEFAULT",oss.str().c_str(),-1,scratch_[i].c_str());
-    }
-    psio_.filecfg_kwd("DEFAULT","NVOLUME",PSIF_CHKPT,"1");
-    psio_.filecfg_kwd("DEFAULT","VOLUME1",PSIF_CHKPT,"./");
-  }
+  config_psio();
+  chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
 }
 
 PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
@@ -133,11 +122,33 @@ PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
   sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
   psifile11_ = new PsiFile11(s);
   delete[] s;
+
+  config_psio();
+  chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
 }
 
 PsiExEnv::~PsiExEnv()
 {
   delete[] scratch_;
+  delete chkpt_;
+}
+
+void PsiExEnv::config_psio()
+{
+	// configure libpsio object
+	{
+		psio_.filecfg_kwd("DEFAULT", "NAME", -1, fileprefix_.c_str());
+		std::ostringstream oss;
+		oss << nscratch_;
+		psio_.filecfg_kwd("DEFAULT", "NVOLUME", -1, oss.str().c_str());
+		for (int i=0; i<nscratch_; i++) {
+			std::ostringstream oss;
+			oss << "VOLUME"<< (i+1);
+			psio_.filecfg_kwd("DEFAULT", oss.str().c_str(), -1, scratch_[i].c_str());
+		}
+		psio_.filecfg_kwd("DEFAULT", "NVOLUME", PSIF_CHKPT, "1");
+		psio_.filecfg_kwd("DEFAULT", "VOLUME1", PSIF_CHKPT, "./");
+	}
 }
 
 void PsiExEnv::add_to_path(const string& dir)

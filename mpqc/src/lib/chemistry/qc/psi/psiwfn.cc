@@ -228,28 +228,21 @@ PsiSCF::save_data_state(StateOut&s)
 unsigned int
 PsiSCF::nmo()
 {
-    psi::PSIO& psio = exenv()->psio();
-    int num_mo;
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Num. MO's",reinterpret_cast<char*>(&num_mo),sizeof(int));
-    psio.close(PSIF_CHKPT,1);
+    int num_mo = exenv()->chkpt().rd_nmo();
     return num_mo;
 }
 
 unsigned int
 PsiSCF::nocc(SpinCase1 spin)
 {
-    int* doccpi = new int[nirrep_];
-    psi::PSIO& psio = exenv()->psio();
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Closed shells per irrep",reinterpret_cast<char*>(doccpi),nirrep_*sizeof(int));
-    psio.close(PSIF_CHKPT,1);
+    int* doccpi = exenv()->chkpt().rd_clsdpi();
 
     unsigned int nocc = 0;
     for(unsigned int h=0; h<nirrep_; ++h)
 	nocc += doccpi[h];
     delete[] doccpi;
 
+    free(doccpi);
     return nocc;
 }
 
@@ -266,24 +259,19 @@ PsiSCF::evals()
 
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
-    int num_mo;
-    int* mopi = new int[nirrep_];
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Num. MO's",reinterpret_cast<char*>(&num_mo),sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    int num_mo = exenv()->chkpt().rd_nmo();
+    int* mopi = exenv()->chkpt().rd_orbspi();
     // get the eigenvalues
-    double* E = new double[num_mo];
-    psio.read_entry(PSIF_CHKPT,"::MO energies",reinterpret_cast<char*>(E),num_mo*sizeof(double));
-    psio.close(PSIF_CHKPT,1);
+    double* E = exenv()->chkpt().rd_evals();
 
     // convert raw matrices to SCMatrices
     RefSCDimension modim = new SCDimension(num_mo,nirrep_,mopi);
     for(unsigned int h=0; h<nirrep_; ++h)
 	modim->blocks()->set_subdim(h,new SCDimension(mopi[h]));
-    evals_ = basis_matrixkit()->diagmatrix(modim);  evals_.assign(E);
+    evals_ = basis_matrixkit()->diagmatrix(modim);  evals_.assign(E);  free(E);
     evals_.print("Psi3 SCF eigenvalues");
 
-    delete[] mopi;
+    free(mopi);
 
     return evals_;
 }
@@ -301,23 +289,14 @@ PsiSCF::coefs()
 
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
-    int num_so, num_mo;
-    int* mopi = new int[nirrep_];
-    int* sopi = new int[nirrep_];
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Num. SO",reinterpret_cast<char*>(&num_so),sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::Num. MO's",reinterpret_cast<char*>(&num_mo),sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::SO's per irrep",reinterpret_cast<char*>(sopi),nirrep_*sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
+    int num_so = exenv()->chkpt().rd_nso();
+    int num_mo = exenv()->chkpt().rd_nmo();
+    int* mopi = exenv()->chkpt().rd_orbspi();
+    int* sopi = exenv()->chkpt().rd_sopi();
     // get MO coefficients in SO basis
-    const unsigned int nsm = num_so * num_mo;
-    double* C = new double[nsm];
-    psio.read_entry(PSIF_CHKPT,"::MO coefficients",reinterpret_cast<char*>(C),nsm*sizeof(double));
+    double** C = exenv()->chkpt().rd_scf();
     // get AO->SO matrix (MPQC AO equiv PSI3 BF)
-    const unsigned int nss = num_so * num_so;
-    double* ao2so = new double[nss];
-    psio.read_entry(PSIF_CHKPT,"::SO->BF transmat",reinterpret_cast<char*>(ao2so),nsm*sizeof(double));
-    psio.close(PSIF_CHKPT,1);
+    double** ao2so = exenv()->chkpt().rd_usotbf();
 
     // convert raw matrices to SCMatrices
     RefSCDimension sodim_nb = new SCDimension(num_so,1);
@@ -328,15 +307,17 @@ PsiSCF::coefs()
     RefSCDimension modim = new SCDimension(num_mo,nirrep_,mopi);
     for(unsigned int h=0; h<nirrep_; ++h)
 	modim->blocks()->set_subdim(h,new SCDimension(mopi[h]));
-    RefSCMatrix C_so = basis_matrixkit()->matrix(sodim,modim);  C_so.assign(C);
+    RefSCMatrix C_so = basis_matrixkit()->matrix(sodim,modim);  C_so.assign(C[0]);
     C_so.print("Psi3 eigenvector in SO basis");
-    RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim,sodim_nb);  aotoso.assign(ao2so);
+    RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim,sodim_nb);  aotoso.assign(ao2so[0]);
     aotoso.print("Psi3 SO->AO matrix");
     coefs_ = aotoso.t() * C_so;
     coefs_.print("Psi3 eigenvector in AO basis");
 
-    delete[] mopi;
-    delete[] sopi;
+    free(mopi);
+    free(sopi);
+    free(C[0]);  free(C);
+    free(ao2so[0]);  free(ao2so);
 
     return coefs_;
 }

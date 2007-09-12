@@ -97,12 +97,8 @@ PsiCC::T1(const std::string& dpdlabel)
 {
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
-    int* doccpi = new int[nirrep_];
-    int* mopi = new int[nirrep_];
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Closed shells per irrep",reinterpret_cast<char*>(doccpi),nirrep_*sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
-    psio.close(PSIF_CHKPT,1);
+    int* doccpi = exenv()->chkpt().rd_clsdpi();
+    int* mopi = exenv()->chkpt().rd_orbspi();
     std::vector<int> actdoccpi(nirrep_);
     std::vector<int> actuoccpi(nirrep_);
     std::vector<int> actdoccioff(nirrep_);
@@ -141,14 +137,17 @@ PsiCC::T1(const std::string& dpdlabel)
       // form the full matrix
       unsigned int ia = 0;
       for(unsigned int h=0; h<nirrep_; ++h) {
-	const unsigned int i_offset = actdoccioff[h];
-	const unsigned int a_offset = actuoccioff[h];
-	for(int i=0; i<actdoccpi[h]; ++i)
-	  for(int a=0; a<actuoccpi[h]; ++a, ++ia)
-	    T.set_element(i+i_offset,a+a_offset,T1[ia]);
+    	const unsigned int i_offset = actdoccioff[h];
+    	const unsigned int a_offset = actuoccioff[h];
+    	for(int i=0; i<actdoccpi[h]; ++i)
+    		for(int a=0; a<actuoccpi[h]; ++a, ++ia)
+    			T.set_element(i+i_offset,a+a_offset,T1[ia]);
       }
       delete[] T1;
     }
+    free(doccpi);
+    free(mopi);
+    
     return T;
 }
 
@@ -157,12 +156,8 @@ PsiCC::T2(const std::string& dpdlabel)
 {
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
-    int* doccpi = new int[nirrep_];
-    int* mopi = new int[nirrep_];
-    psio.open(PSIF_CHKPT,PSIO_OPEN_OLD);
-    psio.read_entry(PSIF_CHKPT,"::Closed shells per irrep",reinterpret_cast<char*>(doccpi),nirrep_*sizeof(int));
-    psio.read_entry(PSIF_CHKPT,"::MO's per irrep",reinterpret_cast<char*>(mopi),nirrep_*sizeof(int));
-    psio.close(PSIF_CHKPT,1);
+    int* doccpi = exenv()->chkpt().rd_clsdpi();
+    int* mopi = exenv()->chkpt().rd_orbspi();
     std::vector<int> actdoccpi(nirrep_);
     std::vector<int> actuoccpi(nirrep_);
     std::vector<int> actdoccioff(nirrep_);
@@ -250,6 +245,8 @@ PsiCC::T2(const std::string& dpdlabel)
     }
 
     delete[] T2;
+    free(doccpi);
+    free(mopi);
     return T;
 }
 

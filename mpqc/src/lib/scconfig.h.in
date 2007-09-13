@@ -250,6 +250,9 @@
 /* Define if you have the libpsio header file and library.  */
 #undef HAVE_LIBPSIO
 
+/* Define if you have the libchkpt header file and library.  */
+#undef HAVE_LIBCHKPT
+
 /* Define if Psi-MPQC interface can be compiled.  */
 #undef HAVE_PSIMPQCIFACE
 

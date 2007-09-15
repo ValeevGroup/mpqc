@@ -155,7 +155,7 @@ void PsiExEnv::add_to_path(const string& dir)
 {
   if (dir.size()) {
     char *path = getenv("PATH");
-    int newpath_len = strlen(path) + dir.size() + 1;
+    int newpath_len = strlen(path) + dir.size() + 2;
     char *newpath = new char[newpath_len];
     sprintf(newpath,"%s:%s",dir.c_str(),path);
 #ifdef HAVE_SETENV

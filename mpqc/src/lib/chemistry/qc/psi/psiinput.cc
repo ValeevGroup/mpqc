@@ -188,7 +188,7 @@ namespace sc {
       char *basisname = new char[strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 5];
       sprintf(basisname, "\"%s%d\" \n", name, uatom);
       write_string(basisname);
-      delete[] name;
+      free(name);
     }
     decindent(2);
     write_string(")\n");

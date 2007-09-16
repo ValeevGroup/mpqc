@@ -737,7 +737,8 @@ namespace sc {
       Vij[s] = r12eval->V(spincase2);
       X[s] = r12eval->X(spincase2);
       B[s] = r12eval->B(spincase2);
-      T2_MP1[s] = r12eval->T2(spincase2);
+      if (test_t2_phases_)
+        T2_MP1[s] = r12eval->T2(spincase2);
       if (!ebc)
         A[s] = r12eval->A(spincase2);
       
@@ -750,10 +751,11 @@ namespace sc {
       const unsigned int no1 = o1->rank();
       const unsigned int no2 = o2->rank();
       const unsigned int no1v2 = no1*nv2;
+      const unsigned int nv1v2 = nv1*nv2;
       const unsigned int nxy = Vpq[s].rowdim().n();
       
       // extract Vab and Via from Vpq
-      Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), T2_MP1[s].coldim());
+      Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), new SCDimension(nv1v2));
       Via[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), new SCDimension(no1v2));
       
       typedef MOIndexMap OrbMap;
@@ -791,7 +793,8 @@ namespace sc {
         Vpq[s].print("Vpq matrix");
         Vab[s].print("Vab matrix");
         Via[s].print("Via matrix");
-        T2_MP1[s].print("MP1 T2 amplitudes");
+        if (test_t2_phases_)
+          T2_MP1[s].print("MP1 T2 amplitudes");
       }
       if (debug() >= DefaultPrintThresholds::mostO4) {
         Vij[s].print("Vij matrix");

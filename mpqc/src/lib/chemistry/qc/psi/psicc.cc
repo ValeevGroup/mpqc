@@ -9,6 +9,7 @@
 #include <ccfiles.h>
 
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -66,11 +67,13 @@ PsiCC::T(unsigned int rank)
     // Grab T matrices
     if (rank == 1) {
       T_[rank-1] = T1("tIA");
-      T_[rank-1].print("T1 amplitudes");
+      if (debug() >= DefaultPrintThresholds::mostN2)
+        T_[rank-1].print("T1 amplitudes");
     }
     else if (rank == 2) {
       T_[rank-1] = T2("tIjAb");
-      T_[rank-1].print("T2 amplitudes");
+      if (debug() >= DefaultPrintThresholds::mostO2N2)
+        T_[rank-1].print("T2 amplitudes");
     }
 
     return T_[rank-1];
@@ -88,7 +91,8 @@ PsiCC::Tau2()
     throw FeatureNotImplemented("PsiCC::T() -- only closed-shell case is implemented",__FILE__,__LINE__);
 
   Tau2_ = T2("tauIjAb");
-  Tau2_.print("Tau2 amplitudes");
+  if (debug() >= DefaultPrintThresholds::mostO2N2)
+    Tau2_.print("Tau2 amplitudes");
   return Tau2_;
 }
 

@@ -560,7 +560,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
   
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
-#if 1
+#if 0
   c1.print("sparsemap(MOIndexSpace,MOIndexSpace): c1");
   c2.print("sparsemap(MOIndexSpace,MOIndexSpace): c2");
 #endif
@@ -620,7 +620,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
       // go to next mo1 if found match
       if (!vectors_do_not_match) {
         found_match = true;
-#if 1
+#if 0
         ExEnv::out0() << "sparsemap(MOIndexSpace,MOIndexSpace): found match (mo1,mo2,phase) = "
                       << mo1 << "," << mo2 << "," << phase << std::endl;
 #endif
@@ -652,7 +652,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
   
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
-#if 1
+#if 0
   c1.print("transform(MOIndexSpace,MOIndexSpace): c1");
   c2.print("transform(MOIndexSpace,MOIndexSpace): c2");
 #endif

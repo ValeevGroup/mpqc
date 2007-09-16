@@ -790,22 +790,22 @@ namespace sc {
       if (debug() >= DefaultPrintThresholds::mostO2N2) {
         Vpq[s].print("Vpq matrix");
         Vab[s].print("Vab matrix");
+        Via[s].print("Via matrix");
+        T2_MP1[s].print("MP1 T2 amplitudes");
+      }
+      if (debug() >= DefaultPrintThresholds::mostO4) {
+        Vij[s].print("Vij matrix");
       }
 #if TEST_V
       RefSCMatrix Vab_test = r12eval->V(spincase2,vir1_act,vir2_act);
       Vab_test.print("Vab matrix (test)");
       (Vab[s] - Vab_test).print("Vab - Vab (test): should be 0");
 #endif
-      Via[s].print("Via matrix");
 #if TEST_V
       RefSCMatrix Via_test = r12eval->V(spincase2,occ1_act,vir2_act);
       Via_test.print("Via matrix (test)");
       (Via[s] - Via_test).print("Via - Via (test): should be 0");
 #endif
-      if (debug() >= DefaultPrintThresholds::mostO2N2) {
-        Vij[s].print("Vij matrix");
-        T2_MP1[s].print("MP1 T2 amplitudes");
-      }
     } // end of spincase2 loop
     Ref<SCMatrixKit> localkit = Vpq[AlphaBeta].kit();
     

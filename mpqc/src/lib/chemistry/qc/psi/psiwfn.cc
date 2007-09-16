@@ -224,7 +224,7 @@ namespace sc {
     for (unsigned int h=0; h<nirrep_; ++h)
       nocc += doccpi[h];
     
-    exenv()->chkpt().free(doccpi);
+    psi::Chkpt::free(doccpi);
     return nocc;
   }
   
@@ -250,11 +250,11 @@ namespace sc {
       modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
     evals_ = basis_matrixkit()->diagmatrix(modim);
     evals_.assign(E);
-    free(E);
+    psi::Chkpt::free(E);
     if (debug() >= DefaultPrintThresholds::mostN)
       evals_.print("Psi3 SCF eigenvalues");
     
-    free(mopi);
+    psi::Chkpt::free(mopi);
     
     return evals_;
   }
@@ -300,12 +300,11 @@ namespace sc {
     if (debug() >= DefaultPrintThresholds::allN2)
       coefs_.print("Psi3 eigenvector in AO basis");
     
-    free(mopi);
-    free(sopi);
-    free(C[0]);
-    free(C);
-    free(ao2so[0]);
-    free(ao2so);
+    using psi::Chkpt;
+    Chkpt::free(mopi);
+    Chkpt::free(sopi);
+    Chkpt::free(C);
+    Chkpt::free(ao2so);
     
     return coefs_;
   }

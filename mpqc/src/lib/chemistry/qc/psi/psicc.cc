@@ -145,8 +145,8 @@ PsiCC::T1(const std::string& dpdlabel)
       }
       delete[] T1;
     }
-    free(doccpi);
-    free(mopi);
+    psi::Chkpt::free(doccpi);
+    psi::Chkpt::free(mopi);
     
     return T;
 }
@@ -245,8 +245,8 @@ PsiCC::T2(const std::string& dpdlabel)
     }
 
     delete[] T2;
-    free(doccpi);
-    free(mopi);
+    psi::Chkpt::free(doccpi);
+    psi::Chkpt::free(mopi);
     return T;
 }
 

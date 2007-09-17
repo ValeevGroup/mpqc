@@ -66,9 +66,9 @@ namespace sc {
       std::vector<int> read_occ(const Ref<KeyVal> &keyval, const char *name,
                                 int nirrep);
 
-      // return the debug level
+      /// return the debug level
       int debug() const;
-      
+
     public:
       /** The KeyVal constructor.
 
@@ -225,7 +225,8 @@ namespace sc {
       std::vector<int> frozen_docc_;
       std::vector<int> frozen_uocc_;
       void write_input(int conv);
-    public:
+
+public:
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
       ~PsiCorrWavefunction();
@@ -238,6 +239,10 @@ namespace sc {
       const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3
       const Ref<MOIndexSpace>& vir_act_sb(SpinCase1);
+
+      /// reference energy
+      virtual double reference_energy();
+      
   };
   
 }

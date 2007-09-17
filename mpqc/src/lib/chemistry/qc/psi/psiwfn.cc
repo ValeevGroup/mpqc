@@ -148,8 +148,7 @@ namespace sc {
       file11->close();
       file11->remove();
     } else {
-      double energy = 0.0;
-      ;
+      double energy = exenv_->chkpt().rd_etot();
       set_energy(energy);
       set_actual_value_accuracy(energy_acc);
     }
@@ -559,6 +558,12 @@ namespace sc {
         reference_->evals(),nocc,nfzv,MOIndexSpace::symmetry);
     
     return vir_act_sb_;
+  }
+  
+  double
+  PsiCorrWavefunction::reference_energy()
+  {
+    return reference_->value();
   }
 
 //////////////////////////////////////////////////////////////////////////

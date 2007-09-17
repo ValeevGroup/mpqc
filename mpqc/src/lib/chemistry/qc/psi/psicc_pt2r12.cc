@@ -451,5 +451,57 @@ void PsiCCSD_PT2R12::compute() {
   ExEnv::out0() << "EMP2         = "<< mbptr12_->corr_energy()
       - mbptr12_->r12_corr_energy() << endl;
   ExEnv::out0() << "EMP2R12      = "<< mbptr12_->corr_energy() << endl;
+  
+  set_energy(reference_energy() + e2 + eccsd_);
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+static ClassDesc PsiCCSD_PT2R12T_cd(typeid(PsiCCSD_PT2R12T), "PsiCCSD_PT2R12T", 1,
+                                    "public PsiCC", 0, create<PsiCCSD_PT2R12T>,
+                                    create<PsiCCSD_PT2R12T>);
+
+PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(const Ref<KeyVal>&keyval) :
+  PsiCCSD_PT2R12(keyval), e_t_(1.0) {
+  if (!replace_Lambda_with_T_)
+    throw FeatureNotImplemented("PsiCCSD_PT2R12T::PsiCCSD_PT2R12T() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
+}
+
+PsiCCSD_PT2R12T::~PsiCCSD_PT2R12T() {
+}
+
+PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(StateIn&s) :
+  PsiCCSD_PT2R12(s) {
+  s.get(e_t_);
+}
+
+int PsiCCSD_PT2R12T::gradient_implemented() const {
+  return 0;
+}
+
+void PsiCCSD_PT2R12T::save_data_state(StateOut&s) {
+  PsiCCSD_PT2R12::save_data_state(s);
+  s.put(e_t_);
+}
+
+void PsiCCSD_PT2R12T::write_input(int convergence) {
+  Ref<PsiInput> input = get_psi_input();
+  input->open();
+  PsiCorrWavefunction::write_input(convergence);
+  // if testing T2 transform, obtain MP1 amplitudes
+  if (test_t2_phases_)
+    input->write_keyword("psi:wfn", "mp2");
+  else
+    input->write_keyword("psi:wfn", "ccsd_t");
+  input->close();
+}
+
+void PsiCCSD_PT2R12T::compute() {
+  PsiCCSD_PT2R12::compute();
+  const double e_ccsd_pt2r12 = value();
+  e_t_ = exenv()->chkpt().rd_e_t();
+  const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
+  ExEnv::out0() << "E(T) = "<< e_t_ << endl;
+  ExEnv::out0() << "ECCSD_PT2R12T = "<< e_ccsd_pt2r12t << endl;
+  set_energy(e_ccsd_pt2r12t);
+}

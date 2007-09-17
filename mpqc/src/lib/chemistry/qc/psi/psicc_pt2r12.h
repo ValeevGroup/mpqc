@@ -37,12 +37,15 @@
 
 namespace sc {
   
-  ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD-PT2R12 is a concrete implementation of CCSD-PT2R12 wave function
-
   class MBPT2_R12;
   
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCCSD_PT2R12 is a concrete implementation of the \f${\rm CCSD}-(2)_\overline{R12}\f$ method
   class PsiCCSD_PT2R12 : public PsiCC {
+      double eccsd_;
+
+      Ref<MBPT2_R12> mbptr12_;
+    protected:
       /// set to true to test the code against MP2-R12. Will also test the T2 Psi3->MPQC transform
       static const bool mp2_only_ = false;
       /// set to true to use Ts instead of Lambdas
@@ -51,12 +54,9 @@ namespace sc {
       static const unsigned int completeness_order_for_energy_ = 3;
       /// the max order for the intermediates is one less
       static const unsigned int
-          completeness_order_for_intermediates_ = completeness_order_for_energy_ - 1;
+          completeness_order_for_intermediates_ = completeness_order_for_energy_
+              - 1;
 
-      double eccsd_;
-
-      Ref<MBPT2_R12> mbptr12_;
-    protected:
       void write_input(int conv);
     public:
       PsiCCSD_PT2R12(const Ref<KeyVal>&);
@@ -64,7 +64,23 @@ namespace sc {
       ~PsiCCSD_PT2R12();
       void save_data_state(StateOut&);
       int gradient_implemented() const;
-      /// Psi only produces the CCSD wave function
+      void compute();
+      
+      /// CCSD energy
+      double eccsd();
+  };
+  
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCCSD_PT2R12T is a concrete implementation of the \f${\rm CCSD}-(2)_\overline{R12,T}\f$ method
+  class PsiCCSD_PT2R12T : public PsiCCSD_PT2R12 {
+      double e_t_;
+      void write_input(int conv);
+    public:
+      PsiCCSD_PT2R12T(const Ref<KeyVal>&);
+      PsiCCSD_PT2R12T(StateIn&);
+      ~PsiCCSD_PT2R12T();
+      void save_data_state(StateOut&);
+      int gradient_implemented() const;
       void compute();
   };
 

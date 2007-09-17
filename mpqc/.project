@@ -23,7 +23,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>/Users/evaleev/Development/workspace/mpqc-obj</value>
+					<value>/Users/evaleev/Development/workspace/mpqc-obj/src/lib</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.enableFullBuild</key>

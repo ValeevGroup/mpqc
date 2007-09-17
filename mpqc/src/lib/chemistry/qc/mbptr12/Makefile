@@ -59,6 +59,25 @@ CXXSRCS = mbptr12.cc \
   creator.cc approxC.cc approxApp.cc ansatz.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc
+INC = r12ia_memgrp.h \
+ansatz.h                        r12ia_mpiiofile.h \
+r12ia_node0file.h compute_tbint_tensor.h r12int_eval.h \
+container.h                     r12technology.h \
+contract_tbint_tensor.h         singlerefinfo.h \
+creator.h                       spin.h \
+gaussianfit.h gaussianfit.timpl.h transform_123inds.h \
+transform_12inds.h linearr12.h transform_13inds.h \
+linearr12.timpl.h               transform_factory.h \
+linkage.h                       transform_ijxy.h \
+mbptr12.h                       transform_ikjy.h \
+moindexspace.h                  transform_ixjy.h \
+mp2r12_energy.h                 transform_tbint.h \
+mp2r12_energy_util.h            twobodygrid.h \
+pairiter.h                      twoparticlecontraction.h \
+print.h                         utils.h \
+print_scmat_norms.h             utils.impl.h \
+r12_amps.h                      vxb_eval_info.h \
+r12ia.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc
@@ -69,6 +88,9 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
 endif
 
 LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))
+
+DISTFILES = $(INC) Makefile LIBS.h
+DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 

@@ -563,7 +563,7 @@ namespace sc {
   double
   PsiCorrWavefunction::reference_energy()
   {
-    return reference_->value();
+    return exenv()->chkpt().rd_eref();
   }
 
 //////////////////////////////////////////////////////////////////////////

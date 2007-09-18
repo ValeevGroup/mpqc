@@ -438,19 +438,28 @@ void PsiCCSD_PT2R12::compute() {
     RefSCMatrix E2_mat = C_MP1.t() * H1_R0[s];
     E2[s] = E2_mat.trace();
   }
-  ExEnv::out0() << "E2(AB) = "<< E2[AlphaBeta]<< endl;
-  ExEnv::out0() << "E2(AA) = "<< 2.0*E2[AlphaAlpha]<< endl;
-  ExEnv::out0() << "E2(s) = "<< E2[AlphaBeta] - E2[AlphaAlpha]<< endl;
-  ExEnv::out0() << "E2(t) = "<< 3.0*E2[AlphaAlpha]<< endl;
+  ExEnv::out0() << "E2(AB)        = "<< scprintf("%15.10lf",E2[AlphaBeta])
+                << endl;
+  ExEnv::out0() << "E2(AA)        = "<< scprintf("%15.10lf",2.0*E2[AlphaAlpha])
+                << endl;
+  ExEnv::out0() << "E2(s)         = "<< scprintf("%15.10lf",E2[AlphaBeta] - E2[AlphaAlpha])
+                << endl;
+  ExEnv::out0() << "E2(t)         = "<< scprintf("%15.10lf",3.0*E2[AlphaAlpha])
+                << endl;
   
   const double e2 = E2[AlphaBeta] + 2.0*E2[AlphaAlpha];
-  ExEnv::out0() << "E2           = "<< e2 << endl;
-  ExEnv::out0() << "ECCSD        = "<< eccsd_ << endl;
-  ExEnv::out0() << "ECCSD_PT2R12 = "<< e2 + eccsd_ << endl;
-  ExEnv::out0() << "E2(MP2)      = "<< mbptr12_->r12_corr_energy() << endl;
-  ExEnv::out0() << "EMP2         = "<< mbptr12_->corr_energy()
-      - mbptr12_->r12_corr_energy() << endl;
-  ExEnv::out0() << "EMP2R12      = "<< mbptr12_->corr_energy() << endl;
+  ExEnv::out0() << "E2            = "<< scprintf("%15.10lf",e2)
+                << endl;
+  ExEnv::out0() << "ECCSD         = "<< scprintf("%15.10lf",eccsd_)
+                << endl;
+  ExEnv::out0() << "ECCSD_PT2R12  = "<< scprintf("%15.10lf",e2 + eccsd_)
+                << endl;
+  ExEnv::out0() << "E2(MP2)       = "<< scprintf("%15.10lf",mbptr12_->r12_corr_energy())
+                << endl;
+  ExEnv::out0() << "EMP2          = "<< scprintf("%15.10lf",mbptr12_->corr_energy() - mbptr12_->r12_corr_energy())
+                << endl;
+  ExEnv::out0() << "EMP2R12       = "<< scprintf("%15.10lf",mbptr12_->corr_energy())
+                << endl;
   
   set_energy(reference_energy() + e2 + eccsd_);
 }
@@ -498,10 +507,11 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
 
 void PsiCCSD_PT2R12T::compute() {
   PsiCCSD_PT2R12::compute();
-  const double e_ccsd_pt2r12 = value();
+  const double e_ccsd_pt2r12 = value() - reference_energy();
   e_t_ = exenv()->chkpt().rd_e_t();
   const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
-  ExEnv::out0() << "E(T) = "<< e_t_ << endl;
-  ExEnv::out0() << "ECCSD_PT2R12T = "<< e_ccsd_pt2r12t << endl;
+  ExEnv::out0() << "E(T)          = " << scprintf("%15.10lf",e_t_) << endl;
+  ExEnv::out0() << "ECCSD_PT2R12T = " << scprintf("%15.10lf",e_ccsd_pt2r12t)
+                << endl;
   set_energy(e_ccsd_pt2r12t);
 }

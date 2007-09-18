@@ -81,7 +81,7 @@ class PsiExEnv: public DescribedClass {
     /// Returns an instance of psi::PSIO
     psi::PSIO& psio() { return psio_; }
     /// Returns an instance of psi::Chkpt
-    psi::Chkpt& chkpt() { return *chkpt_; }
+    psi::Chkpt& chkpt();
     
     void print(std::ostream&o=ExEnv::out0()) const;
 };

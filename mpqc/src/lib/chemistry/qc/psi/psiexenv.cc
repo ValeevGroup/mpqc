@@ -32,7 +32,7 @@ string PsiExEnv::defaultstdout_("stdout");
 string PsiExEnv::defaultstderr_("stderr");
 
 PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
-	psio_()
+	psio_(), chkpt_(0)
 {
   const std::string prefix(SCFormIO::fileext_to_filename("."));
 
@@ -92,11 +92,10 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
   delete[] s;
 
   config_psio();
-  chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
 }
 
 PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
-    cwd_(cwd), fileprefix_(fileprefix), nscratch_(nscratch)
+    cwd_(cwd), fileprefix_(fileprefix), nscratch_(nscratch), chkpt_(0)
 {
   const std::string prefix(SCFormIO::fileext_to_filename("."));
 
@@ -124,7 +123,6 @@ PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
   delete[] s;
 
   config_psio();
-  chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
 }
 
 PsiExEnv::~PsiExEnv()
@@ -178,7 +176,6 @@ int PsiExEnv::run_psi()
   if (errcod = run_psi_module(oss.str().c_str())) {
     return errcod;
   }
-  chkpt_->rehash();
   return 0;
 }
 
@@ -192,7 +189,6 @@ int PsiExEnv::run_psi_module(const char *module)
       ExEnv::outn() << "PsiExEnv::run_psi_module -- module " << module << " failed" << endl;
       abort();
   }
-  chkpt_->rehash();
   return errcod;
 }
 
@@ -207,6 +203,13 @@ void PsiExEnv::print(std::ostream&o) const
   for(int i=0; i<nscratch_; i++)
     o << indent << "Scratch Group " << i << ": " << scratch_[i] << endl;
   o << endl << decindent;
+}
+
+psi::Chkpt&
+PsiExEnv::chkpt() {
+  if (chkpt_ == 0)
+    chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
+  return *chkpt_;
 }
 
 }

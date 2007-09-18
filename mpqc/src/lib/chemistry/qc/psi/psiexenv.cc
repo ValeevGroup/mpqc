@@ -178,6 +178,7 @@ int PsiExEnv::run_psi()
   if (errcod = run_psi_module(oss.str().c_str())) {
     return errcod;
   }
+  chkpt_->rehash();
   return 0;
 }
 
@@ -191,6 +192,7 @@ int PsiExEnv::run_psi_module(const char *module)
       ExEnv::outn() << "PsiExEnv::run_psi_module -- module " << module << " failed" << endl;
       abort();
   }
+  chkpt_->rehash();
   return errcod;
 }
 

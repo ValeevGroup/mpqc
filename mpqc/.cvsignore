@@ -3,3 +3,4 @@ autom4te.cache
 .cdtconfigure.Preference Configuration
 aclocal.m4
 configure
+.project

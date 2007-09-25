@@ -43,32 +43,94 @@ MP2R12EnergyUtil_base::~MP2R12EnergyUtil_base() {
 
 namespace sc {
   
+  MP2R12EnergyUtil_Diag::MP2R12EnergyUtil_Diag(const RefSCDimension& oodim,
+                       const RefSCDimension& xydim,
+                       const RefSCDimension& f12dim) :
+  oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n())
+  {
+    gdim_ = new SCDimension(nf12_);
+    if (f12dim_.n()%xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+    if (oodim_.n() != xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
+  }
+
+  MP2R12EnergyUtil_Nondiag::MP2R12EnergyUtil_Nondiag(const RefSCDimension& oodim,
+                                                     const RefSCDimension& xydim,
+                                                     const RefSCDimension& f12dim) :
+  oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n())
+  {
+    gdim_ = new SCDimension(nf12_);
+    if (f12dim_.n()%xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+  }
+  
+
+  void MP2R12EnergyUtil_Diag::check_dims(const RefSCMatrix& A) const
+  {
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() && nrow != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- row dimension does not match",__FILE__,__LINE__);
+    if (ncol != f12dim_.n() && ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
+  }
+
+  void MP2R12EnergyUtil_Nondiag::check_dims(const RefSCMatrix& A) const
+  {
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() && nrow != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- row dimension does not match",__FILE__,__LINE__);
+    if (ncol != f12dim_.n() && ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
+  }
+
+  void MP2R12EnergyUtil_Diag::check_dims(const RefSymmSCMatrix& A) const
+  {
+    const int n = A.dim().n();
+    if (n != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
+  }
+
+  void MP2R12EnergyUtil_Nondiag::check_dims(const RefSymmSCMatrix& A) const
+  {
+    const int n = A.dim().n();
+    if (n != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
+  }
+  
   // number of blocks should only be needed for diagonal ansatze
-  template<> unsigned int MP2R12EnergyUtil<true>::nrowblks(const RefSCMatrix& A) const {
+  unsigned int MP2R12EnergyUtil_Diag::nrowblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.rowdim().n()/oodim_.n();
   }
-  template<> unsigned int MP2R12EnergyUtil<true>::ncolblks(const RefSCMatrix& A) const {
+  
+  unsigned int MP2R12EnergyUtil_Diag::ncolblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.coldim().n()/oodim_.n();
   }
-  template<> unsigned int MP2R12EnergyUtil<true>::nblks(const RefSymmSCMatrix& A) const {
+  
+  unsigned int MP2R12EnergyUtil_Diag::nblks(const RefSymmSCMatrix& A) const {
     check_dims(A);
     return A.dim().n()/oodim_.n();
   }
-  template<> unsigned int MP2R12EnergyUtil<false>::nrowblks(const RefSCMatrix& A) const {
-    throw ProgrammingError("MP2R12EnergyUtil<false>::nrowblks -- should not be used when Diag=false",__FILE__,__LINE__);
+  
+  unsigned int MP2R12EnergyUtil_Nondiag::nrowblks(const RefSCMatrix& A) const {
+    throw ProgrammingError("MP2R12EnergyUtil_Nondiag::nrowblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
-  template<> unsigned int MP2R12EnergyUtil<false>::ncolblks(const RefSCMatrix& A) const {
-    throw ProgrammingError("MP2R12EnergyUtil<false>::ncolblks -- should not be used when Diag=false",__FILE__,__LINE__);
+  
+  unsigned int MP2R12EnergyUtil_Nondiag::ncolblks(const RefSCMatrix& A) const {
+    throw ProgrammingError("MP2R12EnergyUtil_Nondiag::ncolblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
-  template<> unsigned int MP2R12EnergyUtil<false>::nblks(
+  
+  unsigned int MP2R12EnergyUtil_Nondiag::nblks(
                                                          const RefSymmSCMatrix& A) const {
-    throw ProgrammingError("MP2R12EnergyUtil<false>::nblks -- should not be used when Diag=false",__FILE__,__LINE__);
+    throw ProgrammingError("MP2R12EnergyUtil_Nondiag::nblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
   
   // put/get can only be implemented when Diag=true
-  template<> void MP2R12EnergyUtil<true>::get(unsigned int ij,
+  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
                                               const RefSCMatrix& A,
                                               const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -82,7 +144,8 @@ namespace sc {
       Aij.set_element(g, A.get_element(g*nij+ij, ij));
     }
   }
-  template<> void MP2R12EnergyUtil<true>::get(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
                                               const RefSCMatrix& A,
                                               const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -98,7 +161,8 @@ namespace sc {
       }
     }
   }
-  template<> void MP2R12EnergyUtil<true>::get(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
                                               const RefSymmSCMatrix& A,
                                               const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -111,7 +175,8 @@ namespace sc {
         Aij.set_element(g, f, A.get_element(g*nij+ij, f*nij+ij));
       }
   }
-  template<> void MP2R12EnergyUtil<true>::get(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
                                               const RefDiagSCMatrix& A,
                                               const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -123,7 +188,8 @@ namespace sc {
     for (unsigned int g=0; g<nf12_; g++, gij+=nij)
       Aij.set_element(g, A.get_element(gij));
   }
-  template<> void MP2R12EnergyUtil<true>::put(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
                                               const RefSCMatrix& A,
                                               const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -137,7 +203,8 @@ namespace sc {
       A.set_element(g*nij+ij, ij, Aij.get_element(g));
     }
   }
-  template<> void MP2R12EnergyUtil<true>::put(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
                                               const RefSCMatrix& A,
                                               const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -153,7 +220,8 @@ namespace sc {
       }
     }
   }
-  template<> void MP2R12EnergyUtil<true>::put(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
                                               const RefSymmSCMatrix& A,
                                               const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -166,7 +234,8 @@ namespace sc {
         A.set_element(g*nij+ij, f*nij+ij, Aij.get_element(g, f));
       }
   }
-  template<> void MP2R12EnergyUtil<true>::put(unsigned int ij,
+  
+  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
                                               const RefDiagSCMatrix& A,
                                               const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
@@ -179,10 +248,11 @@ namespace sc {
       A.set_element(gij, Aij.get_element(g));
   }
   
-  template<> void MP2R12EnergyUtil<false>::invert(RefSymmSCMatrix& A) const {
+  void MP2R12EnergyUtil_Nondiag::invert(RefSymmSCMatrix& A) const {
     A->gen_invert_this();
   }
-  template<> void MP2R12EnergyUtil<true>::invert(RefSymmSCMatrix& A) const {
+  
+  void MP2R12EnergyUtil_Diag::invert(RefSymmSCMatrix& A) const {
     check_dims(A);
     RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
     const int noo = oodim_.n();
@@ -193,11 +263,12 @@ namespace sc {
     }
   }
   
-  template<> RefDiagSCMatrix MP2R12EnergyUtil<false>::eigenvalues(
+  RefDiagSCMatrix MP2R12EnergyUtil_Nondiag::eigenvalues(
                                                                   const RefSymmSCMatrix& A) const {
     return A.eigvals();
   }
-  template<> RefDiagSCMatrix MP2R12EnergyUtil<true>::eigenvalues(
+  
+  RefDiagSCMatrix MP2R12EnergyUtil_Diag::eigenvalues(
                                                                  const RefSymmSCMatrix& A) const {
     check_dims(A);
     RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
@@ -212,7 +283,7 @@ namespace sc {
     return evals;
   }
   
-  template<> void MP2R12EnergyUtil<false>::diagonalize(
+  void MP2R12EnergyUtil_Nondiag::diagonalize(
                                                        const RefSymmSCMatrix& A,
                                                        RefDiagSCMatrix& evals,
                                                        RefSCMatrix& evecs) const {
@@ -220,7 +291,8 @@ namespace sc {
     evecs = A.kit()->matrix(A.dim(), A.dim());
     A.diagonalize(evals, evecs);
   }
-  template<> void MP2R12EnergyUtil<true>::diagonalize(const RefSymmSCMatrix& A,
+  
+  void MP2R12EnergyUtil_Diag::diagonalize(const RefSymmSCMatrix& A,
                                                       RefDiagSCMatrix& evals,
                                                       RefSCMatrix& evecs) const {
     check_dims(A);
@@ -239,13 +311,14 @@ namespace sc {
     }
   }
   
-  template<> void MP2R12EnergyUtil<false>::transform(const RefSymmSCMatrix& B,
+  void MP2R12EnergyUtil_Nondiag::transform(const RefSymmSCMatrix& B,
                                                      const RefDiagSCMatrix& A,
                                                      const RefSCMatrix& U) const {
     B.assign(0.0);
     B.accumulate_transform(U, A);
   }
-  template<> void MP2R12EnergyUtil<true>::transform(const RefSymmSCMatrix& B,
+  
+  void MP2R12EnergyUtil_Diag::transform(const RefSymmSCMatrix& B,
                                                     const RefDiagSCMatrix& A,
                                                     const RefSCMatrix& U) const {
     check_dims(B);
@@ -265,13 +338,14 @@ namespace sc {
   }
   
   // Solves A*X = B
-  template<> void MP2R12EnergyUtil<false>::solve_linear_system(
+  void MP2R12EnergyUtil_Nondiag::solve_linear_system(
                                                                const RefSymmSCMatrix& A,
                                                                RefSCMatrix& X,
                                                                const RefSCMatrix& B) const {
     sc::exp::lapack_linsolv_symmnondef(A, X, B);
   }
-  template<> void MP2R12EnergyUtil<true>::solve_linear_system(
+  
+  void MP2R12EnergyUtil_Diag::solve_linear_system(
                                                               const RefSymmSCMatrix& A,
                                                               RefSCMatrix& X,
                                                               const RefSCMatrix& B) const {
@@ -291,12 +365,13 @@ namespace sc {
   }
   
   // computes y = A x
-  template<> void MP2R12EnergyUtil<false>::times(const RefSymmSCMatrix& A,
+  void MP2R12EnergyUtil_Nondiag::times(const RefSymmSCMatrix& A,
                                                  const RefSCMatrix& x,
                                                  RefSCMatrix& y) const {
     y = A*x;
   }
-  template<> void MP2R12EnergyUtil<true>::times(const RefSymmSCMatrix& A,
+  
+  void MP2R12EnergyUtil_Diag::times(const RefSymmSCMatrix& A,
                                                 const RefSCMatrix& x,
                                                 RefSCMatrix& y) const {
     check_dims(A);
@@ -314,7 +389,7 @@ namespace sc {
     }
   }
   
-  template<> RefSCVector MP2R12EnergyUtil<false>::dot_product(
+  RefSCVector MP2R12EnergyUtil_Nondiag::dot_product(
                                                               const RefSCMatrix& A,
                                                               const RefSCMatrix& B) const {
     check_dims(A);
@@ -328,7 +403,8 @@ namespace sc {
       result(ij) = AB.get_element(ij,ij);
     return result;
   }
-  template<> RefSCVector MP2R12EnergyUtil<true>::dot_product(
+  
+  RefSCVector MP2R12EnergyUtil_Diag::dot_product(
                                                              const RefSCMatrix& A,
                                                              const RefSCMatrix& B) const {
     check_dims(A);
@@ -347,22 +423,25 @@ namespace sc {
     return result;
   }
   
-  template<> void MP2R12EnergyUtil<false>::print(const char* label,
+  void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  template<> void MP2R12EnergyUtil<false>::print(const char* label,
+  
+  void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefSymmSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  template<> void MP2R12EnergyUtil<false>::print(const char* label,
+  
+  void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefDiagSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  template<> void MP2R12EnergyUtil<true>::print(const char* label,
+  
+  void MP2R12EnergyUtil_Diag::print(const char* label,
                                                 const RefSCMatrix& A,
                                                 std::ostream& os) const {
     os << indent << label << ":"<< endl;
@@ -375,7 +454,8 @@ namespace sc {
       Aij.print(oss.str().c_str(), os);
     }
   }
-  template<> void MP2R12EnergyUtil<true>::print(const char* label,
+  
+  void MP2R12EnergyUtil_Diag::print(const char* label,
                                                 const RefSymmSCMatrix& A,
                                                 std::ostream& os) const {
     os << indent << label << ":"<< endl;
@@ -388,7 +468,8 @@ namespace sc {
       Aij.print(oss.str().c_str(), os);
     }
   }
-  template<> void MP2R12EnergyUtil<true>::print(const char* label,
+  
+  void MP2R12EnergyUtil_Diag::print(const char* label,
                                                 const RefDiagSCMatrix& A,
                                                 std::ostream& os) const {
     os << indent << label << ":"<< endl;

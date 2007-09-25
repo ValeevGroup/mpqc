@@ -190,9 +190,9 @@ MP2R12Energy::compute()
       // util class treats abstractly on dense and "diagonal" matrices used in orb-invariant and non-orb-invariant ansatze
       Ref<MP2R12EnergyUtil_base> util;
       if (diag)
-        util = new MP2R12EnergyUtil<true>(dim_oo, dim_oo, dim_xc);
+        util = new MP2R12EnergyUtil_Diag(dim_oo, dim_oo, dim_xc);
       else
-        util = new MP2R12EnergyUtil<false>(dim_oo, dim_xy, dim_xc);
+        util = new MP2R12EnergyUtil_Nondiag(dim_oo, dim_xy, dim_xc);
       
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);

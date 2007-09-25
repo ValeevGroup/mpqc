@@ -114,6 +114,7 @@ R12IntEvalInfo::R12IntEvalInfo(
   // if the last character of ints_file is '/' then append the default basename
   if (*(ints_file_.rbegin()) == '/')
     ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
+  ExEnv::out0() << indent << "ints_file = " << ints_file_ << endl;
 
   r12tech_ = new R12Technology(keyval,ref->basis(),bs_vir_,bs_aux_);
   // Make sure can use the integral factory for R12 calcs

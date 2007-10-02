@@ -33,6 +33,7 @@
 #define _chemistry_qc_psi_psicc_h
 
 #include <chemistry/qc/psi/psiwfn.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
   
@@ -40,9 +41,11 @@ namespace sc {
   /// PsiCC is a Psi coupled cluster wave function
 
   class PsiCC : public PsiCorrWavefunction {
-      std::vector<RefSCMatrix> T_;
-      RefSCMatrix Tau2_;
-      std::vector<RefSCMatrix> Lambda_;
+      RefSCMatrix T1_[NSpinCases1];
+      RefSCMatrix T2_[NSpinCases2];
+      RefSCMatrix Tau2_[NSpinCases2];
+      RefSCMatrix Lambda1_[NSpinCases1];
+      RefSCMatrix Lambda2_[NSpinCases2];
 
     protected:
       // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
@@ -102,12 +105,16 @@ namespace sc {
       ~PsiCC();
       void save_data_state(StateOut&);
 
-      /// return T amplitudes of rank i (i >= 1). The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
-      virtual const RefSCMatrix& T(unsigned int i);
+      /// return T amplitudes of rank 1. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
+      virtual const RefSCMatrix& T1(SpinCase1 spin1);
+      /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
+      virtual const RefSCMatrix& T2(SpinCase2 spin2);
       /// return Tau2 amplitudes. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
-      virtual const RefSCMatrix& Tau2();
-      /// return Lambda amplitudes of rank i (i >= 1)
-      virtual const RefSCMatrix& Lambda(unsigned int i);
+      virtual const RefSCMatrix& Tau2(SpinCase2 spin2);
+      /// return Lambda amplitudes of rank 1
+      virtual const RefSCMatrix& Lambda1(SpinCase1 spin1);
+      /// return Lambda amplitudes of rank 2
+      virtual const RefSCMatrix& Lambda2(SpinCase2 spin2);
   };
   
   ///////////////////////////////////////////////////////////////////

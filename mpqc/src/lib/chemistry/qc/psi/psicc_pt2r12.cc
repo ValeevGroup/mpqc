@@ -110,15 +110,15 @@ void PsiCCSD_PT2R12::compute() {
   psio.close(CC_INFO, 1);
   
   // grab amplitudes
-  RefSCMatrix T1_psi = T(1);
-  RefSCMatrix T2_psi = T(2);
+  RefSCMatrix T1_psi = T1(Alpha);
+  RefSCMatrix T2_psi = T2(AlphaBeta);
   RefSCMatrix Tau2_psi;
   // Tau = T2 + T1*T1 has same 1st through 3rd order contributions as T2
   if (mp2_only_ || completeness_order_for_intermediates_ < 4) {
     Tau2_psi = T2_psi.clone();
     Tau2_psi.assign(T2_psi);
   } else
-    Tau2_psi = Tau2();
+    Tau2_psi = Tau2(AlphaBeta);
   
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();

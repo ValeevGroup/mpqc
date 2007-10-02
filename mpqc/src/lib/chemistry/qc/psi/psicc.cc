@@ -66,51 +66,44 @@ namespace sc {
     PsiCorrWavefunction::save_data_state(s);
   }
   
-  const RefSCMatrix&PsiCC::T(unsigned int rank) {
-    if (rank < 1)
-      throw ProgrammingError("PsiCC::T(rank) -- rank must be >= 1", __FILE__, __LINE__);
-    if (rank > 2)
-      throw FeatureNotImplemented("PsiCC::T(rank) -- rank must be > 2 is not supported by Psi yet", __FILE__, __LINE__);
-    if (T_.empty() || T_.size() < rank)
-      T_.resize(rank);
-    if (T_[rank-1].nonnull())
-      return T_[rank-1];
-    
-    // For now only handle closed-shell case
+  const RefSCMatrix&PsiCC::T1(SpinCase1 spin1) {
+    if (T1_[spin1].nonnull())
+      return T1_[spin1];
     PsiSCF::RefType reftype = reference_->reftype();
-    if (reftype != PsiSCF::rhf)
-      throw FeatureNotImplemented("PsiCC::T() -- only closed-shell case is implemented",__FILE__,__LINE__);
-    // For now only handle C1 case
-    //if (nirrep_ != 1)
-    //  throw FeatureNotImplemented("PsiCC::T() -- only C1 symmetry can be handled",__FILE__,__LINE__);
 
     // Grab T matrices
-    if (rank == 1) {
-      T_[rank-1] = T1("tIA");
-      if (debug() >= DefaultPrintThresholds::mostN2)
-        T_[rank-1].print("T1 amplitudes");
-    } else if (rank == 2) {
-      T_[rank-1] = T2("tIjAb");
-      if (debug() >= DefaultPrintThresholds::mostO2N2)
-        T_[rank-1].print("T2 amplitudes");
-    }
-    
-    return T_[rank-1];
+    const char* kwd = (spin1 == Beta && reftype != PsiSCF::rhf) ? "tia" : "tIA";
+    T1_[spin1] = T1(kwd);
+    if (debug() >= DefaultPrintThresholds::mostN2)
+      T1_[spin1].print(prepend_spincase(spin1,"T1 amplitudes").c_str());
+
+    return T1_[spin1];
   }
-  
-  const RefSCMatrix&PsiCC::Tau2() {
-    if (Tau2_.nonnull())
-      return Tau2_;
-    
-    // For now only handle closed-shell case
+
+  const RefSCMatrix&PsiCC::T2(SpinCase2 spin2) {
+    if (T2_[spin2].nonnull())
+      return T2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
-    if (reftype != PsiSCF::rhf)
-      throw FeatureNotImplemented("PsiCC::T() -- only closed-shell case is implemented",__FILE__,__LINE__);
+
+    // Grab T matrices
+    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB" : "tijab") : "tIjAb";
+    T2_[spin2] = T2(kwd);
+    if (debug() >= DefaultPrintThresholds::mostN2)
+      T2_[spin2].print(prepend_spincase(spin2,"T2 amplitudes").c_str());
+
+    return T2_[spin2];
+  }
+
+  const RefSCMatrix&PsiCC::Tau2(SpinCase2 spin2) {
+    if (Tau2_[spin2].nonnull())
+      return Tau2_[spin2];
+    PsiSCF::RefType reftype = reference_->reftype();
     
-    Tau2_ = T2("tauIjAb");
+    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB" : "tauijab") : "tauIjAb";
+    Tau2_[spin2] = T2(kwd);
     if (debug() >= DefaultPrintThresholds::mostO2N2)
-      Tau2_.print("Tau2 amplitudes");
-    return Tau2_;
+      Tau2_[spin2].print(prepend_spincase(spin2,"Tau2 amplitudes").c_str());
+    return Tau2_[spin2];
   }
   
   RefSCMatrix PsiCC::T1(const std::string& dpdlabel) {
@@ -267,18 +260,20 @@ namespace sc {
     return T;
   }
   
-  const RefSCMatrix&PsiCC::Lambda(unsigned int rank) {
-    if (rank < 1)
-      throw ProgrammingError("PsiCC::Lambda(rank) -- rank must be >= 1", __FILE__, __LINE__);
-    if (rank > 2)
-      throw FeatureNotImplemented("PsiCC::Lambda(rank) -- rank must be > 2 is not supported by Psi yet", __FILE__, __LINE__);
-    if (Lambda_.empty() || Lambda_.size() < rank)
-      Lambda_.resize(rank);
-    if (Lambda_[rank-1].nonnull())
-      return Lambda_[rank-1];
+  const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
+    if (Lambda1_[spin].nonnull())
+      return Lambda1_[spin];
     
-    throw FeatureNotImplemented("PsiCC::Lambda() -- cannot read Lambda amplitudes yet",__FILE__,__LINE__);
-    return Lambda_[rank-1];
+    throw FeatureNotImplemented("PsiCC::Lambda1() -- cannot read Lambda1 amplitudes yet",__FILE__,__LINE__);
+    return Lambda1_[spin];
+  }
+  
+  const RefSCMatrix&PsiCC::Lambda2(SpinCase2 spin) {
+    if (Lambda2_[spin].nonnull())
+      return Lambda2_[spin];
+    
+    throw FeatureNotImplemented("PsiCC::Lambda2() -- cannot read Lambda2 amplitudes yet",__FILE__,__LINE__);
+    return Lambda2_[spin];
   }
   
   RefSCMatrix PsiCC::transform_T1(const SparseMOIndexMap& occ_act_map,

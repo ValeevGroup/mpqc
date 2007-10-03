@@ -207,21 +207,21 @@ namespace sc {
   
   PsiSCF::PsiSCF(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
-    if (docc_.empty() || socc_.empty()) {
-      if (keyval->exists("total_charge") && keyval->exists("multiplicity")) {
-        charge_ = keyval->intvalue("total_charge");
-        multp_ = keyval->intvalue("multiplicity");
-        if (multp_ < 1) {
-          ExEnv::err0() << indent
-              << "ERROR: PsiSCF: valid multiplicity has to be >= 1"<< endl;
-          abort();
-        }
-      } else {
+    if (keyval->exists("total_charge"))
+      charge_ = keyval->intvalue("total_charge");
+    if (keyval->exists("multiplicity")) {
+      multp_ = keyval->intvalue("multiplicity");
+      if (multp_ < 1) {
         ExEnv::err0() << indent
-            << "ERROR: PsiSCF: multiplicity and total_charge need "
-            << "to be specified when docc (socc) are missing"<< endl;
+                      << "ERROR: PsiSCF: valid multiplicity has to be >= 1"<< endl;
         abort();
       }
+    }
+    else {
+      ExEnv::err0() << indent
+          << "ERROR: PsiSCF: multiplicity and total_charge need "
+          << "to be specified when docc (socc) are missing"<< endl;
+      abort();
     }
   }
   
@@ -445,8 +445,8 @@ namespace sc {
       input->write_keyword_array("psi:docc", nirrep_, docc_);
     if (!socc_.empty())
       input->write_keyword_array("psi:socc", nirrep_, socc_);
+    input->write_keyword("psi:multp", multp_);
     if (docc_.empty() && socc_.empty()) {
-      input->write_keyword("psi:multp", multp_);
       input->write_keyword("psi:charge", charge_);
       input->write_keyword("psi:reset_occupations", true);
     }

@@ -252,45 +252,49 @@ namespace sc {
     return nocc;
   }
   
-  const RefDiagSCMatrix&PsiSCF::evals() {
-    if (evals_.nonnull())
-      return evals_;
+  const RefDiagSCMatrix&PsiSCF::evals(SpinCase1 spin) {
+    if (evals_[spin].nonnull())
+      return evals_[spin];
     
-    // For now only handle closed-shell case
     PsiSCF::RefType ref = reftype();
-    if (ref != PsiSCF::rhf)
-      throw FeatureNotImplemented("PsiSCF::coefs() -- only closed-shell case is implemented",__FILE__,__LINE__);
+    if (ref == rhf && spin == Beta)
+      return evals(Alpha);
     
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
     int num_mo = exenv()->chkpt().rd_nmo();
     int* mopi = exenv()->chkpt().rd_orbspi();
     // get the eigenvalues
-    double* E = exenv()->chkpt().rd_evals();
+    double* E;
+    switch (ref) {
+      case rhf:
+        E = exenv()->chkpt().rd_evals(); break;
+      default:
+        E = (spin == Alpha) ? exenv()->chkpt().rd_alpha_evals() : exenv()->chkpt().rd_beta_evals();
+    }
     
     // convert raw matrices to SCMatrices
     RefSCDimension modim = new SCDimension(num_mo,nirrep_,mopi);
     for (unsigned int h=0; h<nirrep_; ++h)
       modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
-    evals_ = basis_matrixkit()->diagmatrix(modim);
-    evals_.assign(E);
-    psi::Chkpt::free(E);
+    evals_[spin] = basis_matrixkit()->diagmatrix(modim);
+    evals_[spin].assign(E);
     if (debug() >= DefaultPrintThresholds::mostN)
-      evals_.print("Psi3 SCF eigenvalues");
+      evals_[spin].print(prepend_spincase(spin,"Psi3 SCF eigenvalues").c_str());
     
+    psi::Chkpt::free(E);
     psi::Chkpt::free(mopi);
-    
-    return evals_;
+
+    return evals_[spin];
   }
   
-  const RefSCMatrix&PsiSCF::coefs() {
-    if (coefs_.nonnull())
-      return coefs_;
+  const RefSCMatrix&PsiSCF::coefs(SpinCase1 spin) {
+    if (coefs_[spin].nonnull())
+      return coefs_[spin];
     
-    // For now only handle closed-shell case
     PsiSCF::RefType ref = reftype();
-    if (ref != PsiSCF::rhf)
-      throw FeatureNotImplemented("PsiSCF::coefs() -- only closed-shell case is implemented",__FILE__,__LINE__);
+    if (ref == rhf && spin == Beta)
+      return coefs(Alpha);
     
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
@@ -299,7 +303,13 @@ namespace sc {
     int* mopi = exenv()->chkpt().rd_orbspi();
     int* sopi = exenv()->chkpt().rd_sopi();
     // get MO coefficients in SO basis
-    double** C = exenv()->chkpt().rd_scf();
+    double** C;
+    switch (ref) {
+      case rhf:
+        C = exenv()->chkpt().rd_scf(); break;
+      default:
+        C = (spin == Alpha) ? exenv()->chkpt().rd_alpha_scf() : exenv()->chkpt().rd_beta_scf();
+    }
     // get AO->SO matrix (MPQC AO equiv PSI3 BF)
     double** ao2so = exenv()->chkpt().rd_usotbf();
     
@@ -315,14 +325,14 @@ namespace sc {
     RefSCMatrix C_so = basis_matrixkit()->matrix(sodim, modim);
     C_so.assign(C[0]);
     if (debug() >= DefaultPrintThresholds::allN2)
-      C_so.print("Psi3 eigenvector in SO basis");
+      C_so.print(prepend_spincase(spin,"Psi3 eigenvector in SO basis").c_str());
     RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim, sodim_nb);
     aotoso.assign(ao2so[0]);
     if (debug() >= DefaultPrintThresholds::allN2)
       aotoso.print("Psi3 SO->AO matrix");
-    coefs_ = aotoso.t() * C_so;
+    coefs_[spin] = aotoso.t() * C_so;
     if (debug() >= DefaultPrintThresholds::allN2)
-      coefs_.print("Psi3 eigenvector in AO basis");
+      coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis").c_str());
     
     using psi::Chkpt;
     Chkpt::free(mopi);
@@ -330,7 +340,7 @@ namespace sc {
     Chkpt::free(C);
     Chkpt::free(ao2so);
     
-    return coefs_;
+    return coefs_[spin];
   }
   
   //////////////////////////////////////////////////////////////////////////

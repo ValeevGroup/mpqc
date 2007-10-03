@@ -114,21 +114,23 @@ namespace sc {
   /// PsiSCF is an abstract base for all Psi SCF wave functions
 
   class PsiSCF : public PsiWavefunction {
-      RefDiagSCMatrix evals_;
-      RefSCMatrix coefs_;
+      RefDiagSCMatrix evals_[NSpinCases1];
+      RefSCMatrix coefs_[NSpinCases1];
     public:
       PsiSCF(const Ref<KeyVal>&);
       PsiSCF(StateIn&);
       ~PsiSCF();
       void save_data_state(StateOut&);
 
+      // use spin datatypes defined in spin.h
+      typedef sc::SpinCase1 SpinCase1;
       enum RefType {rhf, hsoshf, uhf};
       /// Returns the PsiSCF::RefType of this particular Psi SCF wave function
       virtual PsiSCF::RefType reftype() const =0;
       /// Returns the eigenvalues matrix
-      virtual const RefDiagSCMatrix& evals();
+      virtual const RefDiagSCMatrix& evals(SpinCase1 spin = Alpha);
       /// Returns the coefficient matrix
-      virtual const RefSCMatrix& coefs();
+      virtual const RefSCMatrix& coefs(SpinCase1 spin = Alpha);
 
       /// number of MOs
       unsigned int nmo();

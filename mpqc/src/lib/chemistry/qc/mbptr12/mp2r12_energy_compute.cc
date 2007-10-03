@@ -116,6 +116,8 @@ MP2R12Energy::compute()
   for(int spin=0; spin<num_unique_spincases2; spin++) {
     
     const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
     
     Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12info->corrfactor();
     // if no explicit correlation -- just get MP2 energies

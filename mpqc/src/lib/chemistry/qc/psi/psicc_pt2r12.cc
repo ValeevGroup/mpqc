@@ -126,19 +126,9 @@ void PsiCCSD_PT2R12::compute() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
+    if (r12eval->dim_oo(spincase2).n() == 0)
+      continue;
 
-    // grab CC amplitudes
-    RefSCMatrix T1_psi_1 = this->T1(spin1);
-    RefSCMatrix T1_psi_2 = this->T1(spin2);
-    RefSCMatrix T2_psi = this->T2(spincase2);
-    RefSCMatrix Tau2_psi;
-    // Tau = T2 + T1*T1 has same 1st through 3rd order contributions as T2
-    if (mp2_only_ || completeness_order_for_intermediates_ < 4) {
-      Tau2_psi = T2_psi.clone();
-      Tau2_psi.assign(T2_psi);
-    } else
-      Tau2_psi = this->Tau2(spincase2);
-    
     Ref<R12IntEvalInfo> r12info = r12eval->r12info();
     const Ref<MOIndexSpace>& p1 = r12info->refinfo()->orbs(spin1);
     const Ref<MOIndexSpace>& p2 = r12info->refinfo()->orbs(spin2);
@@ -398,6 +388,8 @@ void PsiCCSD_PT2R12::compute() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
+    if (r12eval->dim_oo(spincase2).n() == 0)
+      continue;
     
     const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
     const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);

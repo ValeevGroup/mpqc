@@ -2870,6 +2870,8 @@ R12IntEval::compute()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
+      if (dim_oo(spincase2).n() == 0)
+        continue;
       Ref<MOIndexSpace> occ1_act = occ_act(spin1);
       Ref<MOIndexSpace> occ2_act = occ_act(spin2);
       Ref<MOIndexSpace> vir1_act = vir_act(spin1);

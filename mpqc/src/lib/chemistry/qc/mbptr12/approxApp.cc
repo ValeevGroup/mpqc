@@ -83,6 +83,9 @@ R12IntEval::compute_BApp_()
     Ref<MOIndexSpace> xspace1 = xspace(spin1);
     Ref<MOIndexSpace> xspace2 = xspace(spin2);
 
+    if (dim_oo(spincase2).n() == 0)
+      continue;
+
 #if INCLUDE_Q
 
     std::string Qlabel = prepend_spincase(spincase2,"Q(A'') intermediate");

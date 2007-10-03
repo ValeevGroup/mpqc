@@ -137,7 +137,8 @@ namespace sc {
     RefSCMatrix T = matrixkit()->matrix(rowdim, coldim);
     T.assign(0.0);
     // if testing T2 transform, T1 amplitudes are not produced
-    if (!test_t2_phases_) {
+    // also test that T1 is not empty
+    if (!test_t2_phases_ && rowdim.n() && coldim.n()) {
       // read in the i by a matrix in DPD format
       unsigned int nia_dpd = 0;
       for (unsigned int h=0; h<nirrep_; ++h)
@@ -205,14 +206,6 @@ namespace sc {
       nijab_dpd += nij*nab;
     }
     
-    // read in T2 in DPD form
-    double* T2 = new double[nijab_dpd];
-    psio.open(CC_TAMPS, PSIO_OPEN_OLD);
-    psio.read_entry(CC_TAMPS, const_cast<char*>(dpdlabel.c_str()),
-                    reinterpret_cast<char*>(T2), nijab_dpd*sizeof(double));
-    psio.close(CC_TAMPS, 1);
-    
-    // convert to the full form
     const unsigned int nij = ndocc_act*ndocc_act;
     const unsigned int nab = nuocc_act*nuocc_act;
     RefSCDimension rowdim = new SCDimension(nij);
@@ -221,6 +214,17 @@ namespace sc {
     //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
     RefSCMatrix T = matrixkit()->matrix(rowdim, coldim);
     T.assign(0.0);
+
+    // If not empty...
+    if (nijab_dpd) {
+    // read in T2 in DPD form
+    double* T2 = new double[nijab_dpd];
+    psio.open(CC_TAMPS, PSIO_OPEN_OLD);
+    psio.read_entry(CC_TAMPS, const_cast<char*>(dpdlabel.c_str()),
+                    reinterpret_cast<char*>(T2), nijab_dpd*sizeof(double));
+    psio.close(CC_TAMPS, 1);
+
+    // convert to the full form
     unsigned int ijab = 0;
     unsigned int ij_offset = 0;
     unsigned int ab_offset = 0;
@@ -253,8 +257,9 @@ namespace sc {
         }
       }
     }
-    
     delete[] T2;
+    }
+
     psi::Chkpt::free(doccpi);
     psi::Chkpt::free(mopi);
     return T;

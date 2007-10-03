@@ -61,6 +61,9 @@ R12IntEval::contrib_to_VXB_a_()
       const SpinCase1 spin2 = case2(spincase2);
       Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
+      if (dim_oo(spincase2).n() == 0)
+        continue;
+
       const Ref<MOIndexSpace>& occ1_act = occ_act(spin1);
       const Ref<MOIndexSpace>& occ2_act = occ_act(spin2);
       const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);

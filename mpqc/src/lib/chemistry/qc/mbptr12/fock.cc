@@ -202,6 +202,8 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   const double J_prefactor = (spin_unrestricted ? 1.0 : 2.0);
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 sc = static_cast<SpinCase1>(s);
+    if (occ(sc)->rank() == 0)
+      continue;
     if (scale_J != 0.0) {
       RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
       J.scale(J_prefactor*scale_J);

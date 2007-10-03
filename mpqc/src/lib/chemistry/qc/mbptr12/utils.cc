@@ -44,6 +44,8 @@ sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
   SpatialMOPairIter_eq kl_iter(ket);
   const unsigned int brablock_size_ab = ij_iter.nij_ab();
   const unsigned int ketblock_size_ab = kl_iter.nij_ab();
+  if (brablock_size_ab==0 || ketblock_size_ab==0)
+    return;
   if (A.rowdim().n()%brablock_size_ab)
     throw ProgrammingError("sc::antisymmetrize() -- row dimension is not integer multiple of bra-space rank",__FILE__,__LINE__);
   if (A.coldim().n()%ketblock_size_ab)

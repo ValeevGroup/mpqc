@@ -243,12 +243,18 @@ namespace sc {
   
   unsigned int PsiSCF::nocc(SpinCase1 spin) {
     int* doccpi = exenv()->chkpt().rd_clsdpi();
-    
     unsigned int nocc = 0;
     for (unsigned int h=0; h<nirrep_; ++h)
       nocc += doccpi[h];
-    
     psi::Chkpt::free(doccpi);
+
+    if (reftype() != rhf && spin == Alpha) {
+      int* soccpi = exenv()->chkpt().rd_openpi();
+      for (unsigned int h=0; h<nirrep_; ++h)
+        nocc += soccpi[h];
+      psi::Chkpt::free(soccpi);
+    }
+
     return nocc;
   }
   
@@ -536,8 +542,10 @@ namespace sc {
   }
   
   const Ref<MOIndexSpace>&PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
-    if (occ_act_sb_.nonnull())
-      return occ_act_sb_;
+    if (occ_act_sb_[spin].nonnull())
+      return occ_act_sb_[spin];
+    if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
+      return occ_act_sb(Alpha);
     
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
@@ -545,29 +553,33 @@ namespace sc {
     for (unsigned int h=0; h<nirrep_; ++h)
       nfzc += frozen_docc_[h];
     
-    occ_act_sb_ = new MOIndexSpace("i","active occupied MOs (Psi3)",
-        reference_->coefs(),basis(),integral(),
-        reference_->evals(),nfzc,nmo-nocc,MOIndexSpace::symmetry);
+    const std::string id(spin==Alpha ? "I" : "i");
+    occ_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active occupied MOs (Psi3)"),
+        reference_->coefs(spin),basis(),integral(),
+        reference_->evals(spin),nfzc,nmo-nocc,MOIndexSpace::symmetry);
     
-    return occ_act_sb_;
+    return occ_act_sb_[spin];
   }
   
   const Ref<MOIndexSpace>&
   PsiCorrWavefunction::vir_act_sb(SpinCase1 spin) {
-    if (vir_act_sb_.nonnull())
-      return vir_act_sb_;
-    
+    if (vir_act_sb_[spin].nonnull())
+      return vir_act_sb_[spin];
+    if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
+      return vir_act_sb(Alpha);
+
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
     int nfzv = 0;
     for (unsigned int h=0; h<nirrep_; ++h)
       nfzv += frozen_uocc_[h];
+
+    const std::string id(spin==Alpha ? "A" : "a");    
+    vir_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active virtual MOs (Psi3)"),
+        reference_->coefs(spin),basis(),integral(),
+        reference_->evals(spin),nocc,nfzv,MOIndexSpace::symmetry);
     
-    vir_act_sb_ = new MOIndexSpace("a","active virtual MOs (Psi3)",
-        reference_->coefs(),basis(),integral(),
-        reference_->evals(),nocc,nfzv,MOIndexSpace::symmetry);
-    
-    return vir_act_sb_;
+    return vir_act_sb_[spin];
   }
   
   double

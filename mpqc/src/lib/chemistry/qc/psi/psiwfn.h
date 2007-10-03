@@ -222,8 +222,8 @@ namespace sc {
   class PsiCorrWavefunction : public PsiWavefunction {
     protected:
       Ref<PsiSCF> reference_;
-      Ref<MOIndexSpace> occ_act_sb_;
-      Ref<MOIndexSpace> vir_act_sb_;
+      Ref<MOIndexSpace> occ_act_sb_[NSpinCases1];
+      Ref<MOIndexSpace> vir_act_sb_[NSpinCases1];
       std::vector<int> frozen_docc_;
       std::vector<int> frozen_uocc_;
       void write_input(int conv);

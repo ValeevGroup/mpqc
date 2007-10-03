@@ -30,6 +30,7 @@
 #endif
 
 #include <ccfiles.h>
+#include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
@@ -217,7 +218,7 @@ void PsiCCSD_PT2R12::compute() {
     (Via[s] - Via_test).print("Via - Via (test): should be 0");
 #endif
   } // end of spincase2 loop
-  Ref<SCMatrixKit> localkit = Vpq[AlphaBeta].kit();
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
   //
   // Convert CC amplitudes to MPQC orbitals
@@ -235,8 +236,8 @@ void PsiCCSD_PT2R12::compute() {
     // print out MPQC orbitals to compare to Psi orbitals below;
     const Ref<MOIndexSpace>& orbs_sb_mpqc = r12eval->r12info()->refinfo()->orbs_sb(spin);
     if (debug() >= DefaultPrintThresholds::mostN2) {
-      orbs_sb_mpqc->coefs(spin).print(prepend_spincase(spin,"MPQC eigenvector").c_str());
-      orbs_sb_mpqc->evals(spin).print(prepend_spincase(spin,"MPQC eigenvalues").c_str());
+      orbs_sb_mpqc->coefs().print(prepend_spincase(spin,"MPQC eigenvector").c_str());
+      orbs_sb_mpqc->evals().print(prepend_spincase(spin,"MPQC eigenvalues").c_str());
     }
     const Ref<MOIndexSpace>& occ_act = r12eval->occ_act(spin);
     const Ref<MOIndexSpace>& vir_act = r12eval->vir_act(spin);

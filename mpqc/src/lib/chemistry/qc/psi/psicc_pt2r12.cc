@@ -266,7 +266,11 @@ void PsiCCSD_PT2R12::compute() {
       T1[spin].print(prepend_spincase(spin,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):").c_str());
     }
   }
-  
+  if (nspincases1 == 1) {
+    MPQC2PSI_tform_oa[Beta] = MPQC2PSI_tform_oa[Alpha];
+    MPQC2PSI_tform_va[Beta] = MPQC2PSI_tform_va[Alpha];
+  }
+
 #define TRY_USING_SPARSEMAP 0
 #if TRY_USING_SPARSEMAP
   // map MPQC (energy-ordered) orbitals to Psi (symmetry-ordered) orbitals

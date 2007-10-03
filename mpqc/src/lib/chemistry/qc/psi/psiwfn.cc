@@ -242,19 +242,10 @@ namespace sc {
   }
   
   unsigned int PsiSCF::nocc(SpinCase1 spin) {
-    int* doccpi = exenv()->chkpt().rd_clsdpi();
+    const std::vector<unsigned int>& occpi = this->occpi(spin);
     unsigned int nocc = 0;
     for (unsigned int h=0; h<nirrep_; ++h)
-      nocc += doccpi[h];
-    psi::Chkpt::free(doccpi);
-
-    if (reftype() != rhf && spin == Alpha) {
-      int* soccpi = exenv()->chkpt().rd_openpi();
-      for (unsigned int h=0; h<nirrep_; ++h)
-        nocc += soccpi[h];
-      psi::Chkpt::free(soccpi);
-    }
-
+      nocc += occpi[h];
     return nocc;
   }
   
@@ -348,7 +339,63 @@ namespace sc {
     
     return coefs_[spin];
   }
-  
+
+  const std::vector<unsigned int>& PsiSCF::occpi(SpinCase1 spin) {
+    using psi::Chkpt;
+    if (occpi_[spin].empty())
+      return occpi_[spin];
+    if (spin == Beta && reftype() == rhf)
+      return occpi(Alpha);
+    
+    occpi_[spin].resize(nirrep_);
+    {
+      int* doccpi = exenv()->chkpt().rd_clsdpi();
+      for (unsigned int h=0; h<nirrep_; ++h)
+        occpi_[spin][h] = doccpi[h];
+      Chkpt::free(doccpi);
+    }
+    if (reftype() != rhf) {
+      int* soccpi = exenv()->chkpt().rd_openpi();
+      for (unsigned int h=0; h<nirrep_; ++h)
+        occpi_[spin][h] += soccpi[h];
+      Chkpt::free(soccpi);
+    }
+    
+    return occpi_[spin];
+  }
+
+  const std::vector<unsigned int>& PsiSCF::mopi() {
+    using psi::Chkpt;
+    if (mopi_.empty())
+      return mopi_;
+    
+    mopi_.resize(nirrep_);
+    {
+      int* mopi = exenv()->chkpt().rd_orbspi();
+      for (unsigned int h=0; h<nirrep_; ++h)
+        mopi_[h] = mopi[h];
+      Chkpt::free(mopi);
+    }
+    
+    return mopi_;
+  }
+
+  const std::vector<unsigned int>& PsiSCF::uoccpi(SpinCase1 spin) {
+    using psi::Chkpt;
+    if (uoccpi_[spin].empty())
+      return uoccpi_[spin];
+    if (spin == Beta && reftype() == rhf)
+      return uoccpi(Alpha);
+    
+    const std::vector<unsigned int>& mopi = this->mopi();
+    const std::vector<unsigned int>& occpi = this->occpi(spin);
+    uoccpi_[spin].resize(nirrep_);
+    for (unsigned int h=0; h<nirrep_; ++h)
+      uoccpi_[spin][h] = mopi[h] - occpi[spin];
+    
+    return uoccpi_[spin];
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCLHF_cd(typeid(PsiCLHF), "PsiCLHF", 1, "public PsiSCF",

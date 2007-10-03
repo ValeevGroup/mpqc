@@ -116,6 +116,9 @@ namespace sc {
   class PsiSCF : public PsiWavefunction {
       RefDiagSCMatrix evals_[NSpinCases1];
       RefSCMatrix coefs_[NSpinCases1];
+      std::vector<unsigned int> occpi_[NSpinCases1];
+      std::vector<unsigned int> uoccpi_[NSpinCases1];
+      std::vector<unsigned int> mopi_;
     public:
       PsiSCF(const Ref<KeyVal>&);
       PsiSCF(StateIn&);
@@ -131,6 +134,12 @@ namespace sc {
       virtual const RefDiagSCMatrix& evals(SpinCase1 spin = Alpha);
       /// Returns the coefficient matrix
       virtual const RefSCMatrix& coefs(SpinCase1 spin = Alpha);
+      /// Number of occupied orbitals of spin S per irrep
+      const std::vector<unsigned int>& occpi(SpinCase1 S);
+      /// Number of unoccupied orbitals of spin S per irrep
+      const std::vector<unsigned int>& uoccpi(SpinCase1 S);
+      /// Number of orbitals per irrep
+      const std::vector<unsigned int>& mopi();
 
       /// number of MOs
       unsigned int nmo();
@@ -236,7 +245,7 @@ public:
       int spin_polarized() {
         return reference_->spin_polarized();
       }
-      ;
+      const Ref<PsiSCF>& reference() const { return reference_; }
       /// symmetry-blocked space of active occupied orbitals from Psi3
       const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3

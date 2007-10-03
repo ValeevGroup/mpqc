@@ -73,7 +73,7 @@ namespace sc {
 
     // Grab T matrices
     const char* kwd = (spin1 == Beta && reftype != PsiSCF::rhf) ? "tia" : "tIA";
-    T1_[spin1] = T1(kwd);
+    T1_[spin1] = T1(spin1, kwd);
     if (debug() >= DefaultPrintThresholds::mostN2)
       T1_[spin1].print(prepend_spincase(spin1,"T1 amplitudes").c_str());
 
@@ -87,7 +87,7 @@ namespace sc {
 
     // Grab T matrices
     const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB" : "tijab") : "tIjAb";
-    T2_[spin2] = T2(kwd);
+    T2_[spin2] = T2(spin2, kwd);
     if (debug() >= DefaultPrintThresholds::mostN2)
       T2_[spin2].print(prepend_spincase(spin2,"T2 amplitudes").c_str());
 
@@ -100,37 +100,37 @@ namespace sc {
     PsiSCF::RefType reftype = reference_->reftype();
     
     const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB" : "tauijab") : "tauIjAb";
-    Tau2_[spin2] = T2(kwd);
+    Tau2_[spin2] = T2(spin2, kwd);
     if (debug() >= DefaultPrintThresholds::mostO2N2)
       Tau2_[spin2].print(prepend_spincase(spin2,"Tau2 amplitudes").c_str());
     return Tau2_[spin2];
   }
   
-  RefSCMatrix PsiCC::T1(const std::string& dpdlabel) {
+  RefSCMatrix PsiCC::T1(SpinCase1 spin, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
-    int* doccpi = exenv()->chkpt().rd_clsdpi();
-    int* mopi = exenv()->chkpt().rd_orbspi();
-    std::vector<int> actdoccpi(nirrep_);
-    std::vector<int> actuoccpi(nirrep_);
-    std::vector<int> actdoccioff(nirrep_);
-    std::vector<int> actuoccioff(nirrep_);
-    unsigned int ndocc_act = 0;
+    const std::vector<unsigned int>& occpi = reference()->occpi(spin);
+    const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
+    std::vector<unsigned int> actoccpi(nirrep_);
+    std::vector<unsigned int> actuoccpi(nirrep_);
+    std::vector<unsigned int> actoccioff(nirrep_);
+    std::vector<unsigned int> actuoccioff(nirrep_);
+    unsigned int nocc_act = 0;
     unsigned int nuocc_act = 0;
     for (unsigned int irrep=0; irrep<nirrep_; ++irrep) {
-      actdoccpi[irrep] = doccpi[irrep] - frozen_docc_[irrep];
-      actuoccpi[irrep] = mopi[irrep] - doccpi[irrep]- frozen_uocc_[irrep];
-      ndocc_act += actdoccpi[irrep];
+      actoccpi[irrep] = occpi[irrep] - frozen_docc_[irrep];
+      actuoccpi[irrep] = uoccpi[irrep] - frozen_uocc_[irrep];
+      nocc_act += actoccpi[irrep];
       nuocc_act += actuoccpi[irrep];
     }
-    actdoccioff[0] = 0;
+    actoccioff[0] = 0;
     actuoccioff[0] = 0;
     for (unsigned int irrep=1; irrep<nirrep_; ++irrep) {
-      actdoccioff[irrep] = actdoccioff[irrep-1] + actdoccpi[irrep-1];
+      actoccioff[irrep] = actoccioff[irrep-1] + actoccpi[irrep-1];
       actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
     }
     
-    RefSCDimension rowdim = new SCDimension(ndocc_act);
+    RefSCDimension rowdim = new SCDimension(nocc_act);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nuocc_act);
     //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
@@ -142,7 +142,7 @@ namespace sc {
       // read in the i by a matrix in DPD format
       unsigned int nia_dpd = 0;
       for (unsigned int h=0; h<nirrep_; ++h)
-        nia_dpd += actdoccpi[h] * actuoccpi[h];
+        nia_dpd += actoccpi[h] * actuoccpi[h];
       double* T1 = new double[nia_dpd];
       psio.open(CC_OEI, PSIO_OPEN_OLD);
       psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
@@ -152,42 +152,62 @@ namespace sc {
       // form the full matrix
       unsigned int ia = 0;
       for (unsigned int h=0; h<nirrep_; ++h) {
-        const unsigned int i_offset = actdoccioff[h];
+        const unsigned int i_offset = actoccioff[h];
         const unsigned int a_offset = actuoccioff[h];
-        for (int i=0; i<actdoccpi[h]; ++i)
+        for (int i=0; i<actoccpi[h]; ++i)
           for (int a=0; a<actuoccpi[h]; ++a, ++ia)
             T.set_element(i+i_offset, a+a_offset, T1[ia]);
       }
       delete[] T1;
     }
-    psi::Chkpt::free(doccpi);
-    psi::Chkpt::free(mopi);
     
     return T;
   }
   
-  RefSCMatrix PsiCC::T2(const std::string& dpdlabel) {
+  RefSCMatrix PsiCC::T2(SpinCase2 spin12, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
+    const SpinCase1 spin1 = case1(spin12);
+    const SpinCase1 spin2 = case2(spin12);
+    if (spin12 != AlphaBeta)
+      throw FeatureNotImplemented("PsiCC::T2() -- same-spin case not implemented yet",__FILE__,__LINE__);
+
+    typedef std::vector<unsigned int> uvec;
     // grab orbital info
-    int* doccpi = exenv()->chkpt().rd_clsdpi();
-    int* mopi = exenv()->chkpt().rd_orbspi();
-    std::vector<int> actdoccpi(nirrep_);
-    std::vector<int> actuoccpi(nirrep_);
-    std::vector<int> actdoccioff(nirrep_);
-    std::vector<int> actuoccioff(nirrep_);
-    unsigned int ndocc_act = 0;
-    unsigned int nuocc_act = 0;
+    const uvec& occpi1 = reference()->occpi(spin1);
+    const uvec& occpi2 = reference()->occpi(spin2);
+    const uvec& uoccpi1 = reference()->uoccpi(spin1);
+    const uvec& uoccpi2 = reference()->uoccpi(spin2);
+    uvec actoccpi1(nirrep_);
+    uvec actuoccpi1(nirrep_);
+    uvec actoccioff1(nirrep_);
+    uvec actuoccioff1(nirrep_);
+    uvec actoccpi2(nirrep_);
+    uvec actuoccpi2(nirrep_);
+    uvec actoccioff2(nirrep_);
+    uvec actuoccioff2(nirrep_);
+    unsigned int nocc1_act = 0;
+    unsigned int nuocc1_act = 0;
+    unsigned int nocc2_act = 0;
+    unsigned int nuocc2_act = 0;
     for (unsigned int irrep=0; irrep<nirrep_; ++irrep) {
-      actdoccpi[irrep] = doccpi[irrep] - frozen_docc_[irrep];
-      actuoccpi[irrep] = mopi[irrep] - doccpi[irrep]- frozen_uocc_[irrep];
-      ndocc_act += actdoccpi[irrep];
-      nuocc_act += actuoccpi[irrep];
+      actoccpi1[irrep] = occpi1[irrep] - frozen_docc_[irrep];
+      actuoccpi1[irrep] = uoccpi1[irrep] - frozen_uocc_[irrep];
+      nocc1_act += actoccpi1[irrep];
+      nuocc1_act += actuoccpi1[irrep];
+      actoccpi2[irrep] = occpi2[irrep] - frozen_docc_[irrep];
+      actuoccpi2[irrep] = uoccpi2[irrep] - frozen_uocc_[irrep];
+      nocc2_act += actoccpi2[irrep];
+      nuocc2_act += actuoccpi2[irrep];
     }
-    actdoccioff[0] = 0;
-    actuoccioff[0] = 0;
+    actoccioff1[0] = 0;
+    actuoccioff1[0] = 0;
+    actoccioff2[0] = 0;
+    actuoccioff2[0] = 0;
     for (unsigned int irrep=1; irrep<nirrep_; ++irrep) {
-      actdoccioff[irrep] = actdoccioff[irrep-1] + actdoccpi[irrep-1];
-      actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
+      actoccioff1[irrep] = actoccioff1[irrep-1] + actoccpi1[irrep-1];
+      actuoccioff1[irrep] = actuoccioff1[irrep-1] + actuoccpi1[irrep-1];
+      actoccioff2[irrep] = actoccioff2[irrep-1] + actoccpi2[irrep-1];
+      actuoccioff2[irrep] = actuoccioff2[irrep-1] + actuoccpi2[irrep-1];
     }
     
     // DPD of orbital product spaces
@@ -198,16 +218,16 @@ namespace sc {
       unsigned int nij = 0;
       unsigned int nab = 0;
       for (unsigned int g=0; g<nirrep_; ++g) {
-        nij += actdoccpi[g] * actdoccpi[h^g];
-        nab += actuoccpi[g] * actuoccpi[h^g];
+        nij += actoccpi1[g] * actoccpi2[h^g];
+        nab += actuoccpi2[g] * actuoccpi2[h^g];
       }
       ijpi[h] = nij;
       abpi[h] = nab;
       nijab_dpd += nij*nab;
     }
     
-    const unsigned int nij = ndocc_act*ndocc_act;
-    const unsigned int nab = nuocc_act*nuocc_act;
+    const unsigned int nij = nocc1_act*nocc2_act;
+    const unsigned int nab = nuocc1_act*nuocc2_act;
     RefSCDimension rowdim = new SCDimension(nij);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nab);
@@ -232,22 +252,22 @@ namespace sc {
                                       ++h) {
       for (unsigned int g=0; g<nirrep_; ++g) {
         unsigned int gh = g^h;
-        for (int i=0; i<actdoccpi[g]; ++i) {
-          const unsigned int ii = i + actdoccioff[g];
+        for (int i=0; i<actoccpi1[g]; ++i) {
+          const unsigned int ii = i + actoccioff1[g];
           
-          for (int j=0; j<actdoccpi[gh]; ++j) {
-            const unsigned int jj = j + actdoccioff[gh];
+          for (int j=0; j<actoccpi2[gh]; ++j) {
+            const unsigned int jj = j + actoccioff2[gh];
             
-            const unsigned int ij = ii * ndocc_act + jj;
+            const unsigned int ij = ii * nocc2_act + jj;
             
             for (unsigned int f=0; f<nirrep_; ++f) {
               unsigned int fh = f^h;
-              for (int a=0; a<actuoccpi[f]; ++a) {
-                const unsigned int aa = a + actuoccioff[f];
+              for (int a=0; a<actuoccpi1[f]; ++a) {
+                const unsigned int aa = a + actuoccioff1[f];
                 
-                for (int b=0; b<actuoccpi[fh]; ++b, ++ijab) {
-                  const unsigned int bb = b + actuoccioff[fh];
-                  const unsigned int ab = aa*nuocc_act + bb;
+                for (int b=0; b<actuoccpi2[fh]; ++b, ++ijab) {
+                  const unsigned int bb = b + actuoccioff2[fh];
+                  const unsigned int ab = aa*nuocc2_act + bb;
                   
                   T.set_element(ij, ab, T2[ijab]);
                 }
@@ -260,8 +280,6 @@ namespace sc {
     delete[] T2;
     }
 
-    psi::Chkpt::free(doccpi);
-    psi::Chkpt::free(mopi);
     return T;
   }
   

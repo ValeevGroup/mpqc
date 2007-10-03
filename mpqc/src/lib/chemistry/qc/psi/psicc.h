@@ -57,10 +57,10 @@ namespace sc {
         test_t2_phases_ = true;
       }
       
-      /// read in T1-like quantity using DPD label L
-      RefSCMatrix T1(const std::string& L);
-      /// read in T2-like quantity using DPD label L
-      RefSCMatrix T2(const std::string& L);
+      /// read in T1-like quantity of spincase spin using DPD label L
+      RefSCMatrix T1(SpinCase1 spin, const std::string& L);
+      /// read in T2-like quantity of spincase spin using DPD label L
+      RefSCMatrix T2(SpinCase2 spin, const std::string& L);
 
       /// transform T1 to the new basis using sparse maps
       RefSCMatrix

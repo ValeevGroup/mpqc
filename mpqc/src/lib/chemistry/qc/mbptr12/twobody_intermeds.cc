@@ -94,6 +94,7 @@ R12IntEval::V(SpinCase2 spincase2,
   if (r12ptr.nonnull()) {
     RefSCMatrix I = compute_I_(xspace1,xspace2,p1,p2);
     V = I.clone();
+    V.assign(0.0);
     V.accumulate(I);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
@@ -116,6 +117,9 @@ R12IntEval::V(SpinCase2 spincase2,
       xspace2, p2,
       antisymmetrize,
       tforms_f12_xmyn);
+  }
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS contribution").c_str());
   }
   
   Ref<TwoParticleContraction> tpcontract;

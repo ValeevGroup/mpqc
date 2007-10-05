@@ -1841,9 +1841,32 @@ AC_CHECK_HEADERS(libchkpt/chkpt.hpp,
 AC_LANG_RESTORE
 fi
 
+dnl ----------- other Psi3 library checks --------------
+HAVE_OTHER_PSILIBS=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes -a X$HAVE_LIBCHKPT = Xyes; then
+  SAVELIBS=$LIBS
+  PSILIBS=
+
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  dnl - libciomr doesn't depend on other libraries
+  AC_CHECK_LIB(PSI_ciomr,init_int_matrix,[HAVE_LIBCIOMR=yes;PSILIBS="-lPSI_ciomr $PSILIBS"],HAVE_LIBCIOMR=no)
+  dnl - libdpd's dpd_init requires libciomr
+  LIBS="$PSILIBS $SAVELIBS"
+  AC_CHECK_LIB(PSI_dpd,dpd_init,[HAVE_LIBDPD=yes;PSILIBS="-lPSI_dpd $PSILIBS"],HAVE_LIBDPD=no)
+  AC_LANG_RESTORE
+  
+  if test X$HAVE_LIBCIOMR = Xyes -a X$HAVE_LIBDPD = Xyes; then
+    HAVE_OTHER_PSILIBS=yes
+    LIBS="$PSILIBS $SAVELIBS"
+  else
+    LIBS=$SAVELIBS
+  fi
+fi
+
 dnl ----------- make sure we have everything for MPQC-Psi interface ----------
 
-if test X$HAVE_LIBPSIO = Xno -o X$HAVE_LIBCHKPT = Xno; then
+if test X$HAVE_LIBPSIO = Xno -o X$HAVE_LIBCHKPT = Xno -o X$HAVE_OTHER_PSILIBS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
   HAVE_PSIMPQCIFACE=no
 else

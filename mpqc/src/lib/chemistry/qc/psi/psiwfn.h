@@ -97,6 +97,7 @@ namespace sc {
       void print(std::ostream&o=ExEnv::out0()) const;
       RefSymmSCMatrix density();
       int nelectron();
+      int nirrep() const { return nirrep_; }
 
       /// Return an associated PsiExEnv object
       Ref<PsiExEnv> exenv() const {

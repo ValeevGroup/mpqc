@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <psifiles.h>
 #include <ccfiles.h>
+#include <libdpd/dpd.h>
 
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -40,6 +41,19 @@
 
 using namespace std;
 using namespace sc;
+
+namespace {
+
+  /// convert a std::vector<Source> to a C-type array. Container::size() must be defined
+  template <typename Result, typename Source>
+  Result*
+    to_C(const std::vector<Source>& Cpp) {
+      const unsigned int size = Cpp.size();
+      Result* C = new Result[size];
+      std::copy(Cpp.begin(),Cpp.end(),C);
+      return C;
+    }
+}
 
 namespace sc {
   
@@ -65,6 +79,45 @@ namespace sc {
   void PsiCC::save_data_state(StateOut&s) {
     PsiCorrWavefunction::save_data_state(s);
   }
+
+  void PsiCC::dpd_start() {
+    const int cachelev = 2;
+    int* cachefiles = init_int_array(PSIO_MAXUNIT);
+    int** cachelist = init_int_matrix(32,32);
+
+    const Ref<MOIndexSpace>& aocc = occ_act_sb(Alpha);
+    const Ref<MOIndexSpace>& avir = vir_act_sb(Alpha);
+
+    int* aoccpi = to_C<int>(aocc->nmo());
+    int* avirpi = to_C<int>(avir->nmo());
+    int* aocc_sym = to_C<int>(aocc->mosym());
+    int* avir_sym = to_C<int>(avir->mosym());
+    
+    // UHF/ROHF (ROHF always expected in semicanonical orbitals)
+    if (reference()->reftype() != PsiSCF::rhf) {
+      const Ref<MOIndexSpace>& bocc = occ_act_sb(Beta);
+      const Ref<MOIndexSpace>& bvir = vir_act_sb(Beta);
+      
+      int* boccpi = to_C<int>(bocc->nmo());
+      int* bvirpi = to_C<int>(bvir->nmo());
+      int* bocc_sym = to_C<int>(bocc->mosym());
+      int* bvir_sym = to_C<int>(bvir->mosym());
+      
+      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist, 
+               NULL, 4, aoccpi, aocc_sym, avirpi, avir_sym,
+               boccpi, bocc_sym, bvirpi, bvir_sym);
+    }
+    // RHF
+    else {
+      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist, 
+               NULL, 2, aoccpi, aocc_sym, avirpi, avir_sym);
+    }
+
+  }
+
+  void PsiCC::dpd_stop() {
+    dpd_close(0);
+  }
   
   const RefSCMatrix&PsiCC::T1(SpinCase1 spin1) {
     if (T1_[spin1].nonnull())
@@ -85,8 +138,27 @@ namespace sc {
       return T2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
+    // If requesting AA or BB T2s, create their forms with unrestricted indices and read those
+    if (spin2 != AlphaBeta) {
+      dpd_start();
+
+      if (spin2 == AlphaAlpha) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 0, 5, 1, "tIJAB");
+        dpd_buf4_copy(&D, CC_TAMPS, "tIJAB (IJ,AB)");
+        dpd_buf4_close(&D);
+      }
+      if (spin2 == BetaBeta) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 10, 15, 1, "tijab");
+        dpd_buf4_copy(&D, CC_TAMPS, "tijab (ij,ab)");
+        dpd_buf4_close(&D);
+      }
+      dpd_stop();
+    }
+    
     // Grab T matrices
-    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB" : "tijab") : "tIjAb";
+    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
     T2_[spin2] = T2(spin2, kwd);
     if (debug() >= DefaultPrintThresholds::mostN2)
       T2_[spin2].print(prepend_spincase(spin2,"T2 amplitudes").c_str());
@@ -98,8 +170,27 @@ namespace sc {
     if (Tau2_[spin2].nonnull())
       return Tau2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
-    
-    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB" : "tauijab") : "tauIjAb";
+
+    // If requesting AA or BB Tau2s, create their forms with unrestricted indices and read those
+    if (spin2 != AlphaBeta) {
+      dpd_start();
+
+      if (spin2 == AlphaAlpha) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 0, 5, 1, "tauIJAB");
+        dpd_buf4_copy(&D, CC_TAMPS, "tauIJAB (IJ,AB)");
+        dpd_buf4_close(&D);
+      }
+      if (spin2 == BetaBeta) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 10, 15, 1, "tauijab");
+        dpd_buf4_copy(&D, CC_TAMPS, "tauijab (ij,ab)");
+        dpd_buf4_close(&D);
+      }
+      dpd_stop();
+    }
+
+    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tauIJAB (IJ,AB)" : "tauijab (ij,ab)") : "tauIjAb";
     Tau2_[spin2] = T2(spin2, kwd);
     if (debug() >= DefaultPrintThresholds::mostO2N2)
       Tau2_[spin2].print(prepend_spincase(spin2,"Tau2 amplitudes").c_str());

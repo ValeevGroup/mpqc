@@ -99,6 +99,11 @@ namespace sc {
                       unsigned int no1, unsigned int no2, unsigned int nv1,
                       unsigned int nv2, double zero = 1e-8) const;
 
+      /// initialize Psi3 DPD library
+      void dpd_start();
+      /// stop Psi3 DPD library
+      void dpd_stop();
+      
     public:
       PsiCC(const Ref<KeyVal>&);
       PsiCC(StateIn&);

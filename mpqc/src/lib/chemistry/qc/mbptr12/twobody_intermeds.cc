@@ -86,7 +86,7 @@ R12IntEval::V(SpinCase2 spincase2,
   const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
 
   // allocate V
-  const unsigned int np12 = p1_eq_p2 ? p1->rank()*(p1->rank()-1)/2 : p1->rank()*p2->rank();
+  const unsigned int np12 = p1_eq_p2 && spincase2 != AlphaBeta ? p1->rank()*(p1->rank()-1)/2 : p1->rank()*p2->rank();
   RefSCDimension dim_p12 = new SCDimension(np12);
   V = local_matrix_kit->matrix(dim_f12(spincase2), dim_p12);
   V.assign(0.0);

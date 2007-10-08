@@ -95,7 +95,7 @@ namespace sc {
                        const RefSCMatrix& T2,
                        const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
       /// compare T2 and T2_ref (check that elements < zero are in the same place and elements > soft_zero have the same sign)
-      void compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
+      void compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref, SpinCase2 spin12,
                       unsigned int no1, unsigned int no2, unsigned int nv1,
                       unsigned int nv2, double zero = 1e-8) const;
 

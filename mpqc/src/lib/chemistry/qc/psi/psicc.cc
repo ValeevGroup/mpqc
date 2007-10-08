@@ -35,6 +35,7 @@
 #include <libdpd/dpd.h>
 
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/pairiter.impl.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
@@ -53,6 +54,14 @@ namespace {
       std::copy(Cpp.begin(),Cpp.end(),C);
       return C;
     }
+  
+  /// compare 2 2-body tensors
+  template <sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
+  void
+  compare_tbint_tensors(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
+                        unsigned int nbra1, unsigned int nbra2,
+                        unsigned int nket1, unsigned int nket2,
+                        double zero);
 }
 
 namespace sc {
@@ -565,27 +574,13 @@ namespace sc {
   }
   
   void PsiCC::compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
-                         unsigned int no1, unsigned int no2, unsigned int nv1,
+                         SpinCase2 spin12, unsigned int no1, unsigned int no2, unsigned int nv1,
                          unsigned int nv2, double zero) const {
-    for (unsigned int i=0; i<no1; ++i) {
-      for (unsigned int j=0; j<no2; ++j) {
-        const unsigned int ij = i*no2+j;
-        for (unsigned int a=0; a<nv1; ++a) {
-          for (unsigned int b=0; b<nv2; ++b) {
-            const unsigned int ab = a*nv2+b;
-            
-            const double t2 = T2.get_element(ij, ab);
-            const double t2_ref = T2_ref.get_element(ij, ab);
-            
-            if (fabs(t2_ref - t2) > zero) {
-              T2_ref.print("PsiCC::compare_T2() -- T2(ref)");
-              T2.print("PsiCC::compare_T2() -- T2");
-              throw ProgrammingError("T2 amplitudes do not match",__FILE__,__LINE__);
-            }
-          }
-        }
-      }
-    }
+    using namespace sc::fastpairiter;
+    if (spin12 != AlphaBeta)
+      compare_tbint_tensors<AntiSymm,AntiSymm>(T2,T2_ref,no1,no2,nv1,nv2,zero);
+    else
+      compare_tbint_tensors<ASymm,ASymm>(T2,T2_ref,no1,no2,nv1,nv2,zero);
   }
   
   //////////////////////////////////////////////////////////////////////////
@@ -668,6 +663,39 @@ namespace sc {
   }
 
 } // namespace
+
+//////////////////
+
+namespace {
+  using namespace sc::fastpairiter;
+  template <PairSymm BraSymm, PairSymm KetSymm>
+  void
+  compare_tbint_tensors(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
+                        unsigned int nb1, unsigned int nb2, unsigned int nk1,
+                        unsigned int nk2, double zero)
+  {
+    T2_ref.print("compare_tbint_tensors() -- T2(ref)");
+    T2.print("compare_tbint_tensors() -- T2");
+    sc::fastpairiter::MOPairIter<BraSymm> biter(nb1,nb2);
+    sc::fastpairiter::MOPairIter<KetSymm> kiter(nk1,nk2);
+    for(biter.start(); biter; biter.next()) {
+      const int b12 = biter.ij();
+      for(kiter.start(); kiter; kiter.next()) {
+        const int k12 = kiter.ij();
+      
+        const double t2 = T2.get_element(b12, k12);
+        const double t2_ref = T2_ref.get_element(b12, k12);
+              
+        if (fabs(t2_ref - t2) > zero) {
+          T2_ref.print("compare_tbint_tensors() -- T2(ref)");
+          T2.print("compare_tbint_tensors() -- T2");
+          throw ProgrammingError("2-body tensors do not match",__FILE__,__LINE__);
+        }
+      }
+    }
+  }
+
+} // anonymous namespace
 
 // Local Variables:
 // mode: c++

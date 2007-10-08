@@ -26,7 +26,7 @@
 //
 
 #ifdef __GNUG__
-#pragma interface
+#pragma implementation
 #endif
 
 #ifndef _chemistry_qc_mbptr12_utilsimpl_h

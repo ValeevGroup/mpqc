@@ -147,6 +147,8 @@ void PsiExEnv::config_psio()
 		psio_.filecfg_kwd("DEFAULT", "NVOLUME", PSIF_CHKPT, "1");
 		psio_.filecfg_kwd("DEFAULT", "VOLUME1", PSIF_CHKPT, "./");
 	}
+	// this libpsio object is the default object
+	psi::_default_psio_lib_ = &psio_;
 }
 
 void PsiExEnv::add_to_path(const string& dir)

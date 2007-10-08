@@ -29,14 +29,98 @@
 #pragma interface
 #endif
 
-#include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
-
 #ifndef _chemistry_qc_mbptr12_utilsimpl_h
 #define _chemistry_qc_mbptr12_utilsimpl_h
 
+#include <util/class/scexception.h>
+#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/pairiter.h>
+
 namespace sc {
-  
+
+  template <bool accumulate>
+  void
+  antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
+                 const Ref<MOIndexSpace>& bra1,
+                 const Ref<MOIndexSpace>& bra2,
+                 const Ref<MOIndexSpace>& ket1,
+                 const Ref<MOIndexSpace>& ket2)
+  {
+    const bool bra1_eq_bra2 = (bra1 == bra2);
+    const bool ket1_eq_ket2 = (ket1 == ket2);
+    if (!bra1_eq_bra2 && !ket1_eq_ket2)
+      throw ProgrammingError("sc::antisymmetrize() -- the operation does not make sense: bra1!=bra2, ket1!=ket2",__FILE__,__LINE__);
+
+    SpatialMOPairIter* ij_iter;
+    SpatialMOPairIter* kl_iter;
+    if (!bra1_eq_bra2)
+      ij_iter = new SpatialMOPairIter_neq(bra1,bra2);
+    else
+      ij_iter = new SpatialMOPairIter_eq(bra1);
+    if (!ket1_eq_ket2)
+      kl_iter = new SpatialMOPairIter_neq(ket1,ket2);
+    else
+      kl_iter = new SpatialMOPairIter_eq(ket1);
+
+    const unsigned int brablock_size_ab = ij_iter->nij_ab();
+    const unsigned int ketblock_size_ab = kl_iter->nij_ab();
+    const unsigned int brablock_size_aa = ij_iter->nij_aa();
+    const unsigned int ketblock_size_aa = kl_iter->nij_aa();
+    if (brablock_size_ab==0 || ketblock_size_ab==0)
+      return;
+    if (A.rowdim().n()%brablock_size_ab)
+      throw ProgrammingError("sc::antisymmetrize() -- row dimension of Source is not integer multiple of bra-space rank",__FILE__,__LINE__);
+    if (A.coldim().n()%ketblock_size_ab)
+      throw ProgrammingError("sc::antisymmetrize() -- col dimension of Source is not integer multiple of ket-space rank",__FILE__,__LINE__);
+    if (Aanti.rowdim().n()%brablock_size_aa)
+      throw ProgrammingError("sc::antisymmetrize() -- row dimension of Result is not integer multiple of bra-space rank",__FILE__,__LINE__);
+    if (Aanti.coldim().n()%ketblock_size_aa)
+      throw ProgrammingError("sc::antisymmetrize() -- col dimension of Result is not integer multiple of ket-space rank",__FILE__,__LINE__);
+    const unsigned int nbra_blocks = A.rowdim().n() / brablock_size_ab;
+    const unsigned int nket_blocks = A.coldim().n() / ketblock_size_ab;
+    if (Aanti.rowdim().n() / brablock_size_aa != nbra_blocks)
+      throw ProgrammingError("sc::antisymmetrize() -- bra dimensions of Source and Result do not match",__FILE__,__LINE__);
+    if (Aanti.coldim().n() / ketblock_size_aa != nket_blocks)
+      throw ProgrammingError("sc::antisymmetrize() -- ket dimensions of Source and Result do not match",__FILE__,__LINE__);
+    
+    unsigned int bra_offset_ab = 0;
+    unsigned int bra_offset_aa = 0;
+    for(int brablock=0; brablock<nbra_blocks; brablock++, bra_offset_ab += brablock_size_ab, bra_offset_aa += brablock_size_aa) {
+      for(ij_iter->start();int(*ij_iter);ij_iter->next()) {
+        
+        const int ij_aa = ij_iter->ij_aa();
+        if (ij_aa == -1)
+          continue;
+        const int ij_ab = ij_iter->ij_ab();
+        const int ji_ab = ij_iter->ij_ba();
+        
+        unsigned int ket_offset_ab = 0;
+        unsigned int ket_offset_aa = 0;
+        for(int ketblock=0; ketblock<nket_blocks; ketblock++, ket_offset_ab += ketblock_size_ab, ket_offset_aa += ketblock_size_aa) {
+          for(kl_iter->start();int(*kl_iter);kl_iter->next()) {
+            
+            const int kl_aa = kl_iter->ij_aa();
+            if (kl_aa == -1)
+              continue;
+            const int kl_ab = kl_iter->ij_ab();
+            const int lk_ab = kl_iter->ij_ba();
+            
+            double Aanti_ijkl = (ket1_eq_ket2) ?
+                                                A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab) -
+                                                A.get_element(ij_ab+bra_offset_ab,lk_ab+ket_offset_ab)
+                                               :
+                                               A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab) -
+                                               A.get_element(ji_ab+bra_offset_ab,kl_ab+ket_offset_ab);
+            if (accumulate)
+              Aanti.accumulate_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+            else
+              Aanti.set_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+          }
+        }
+      }
+    }
+  }
+
   template <bool Accumulate>
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
                     const Ref<MOIndexSpace>& bra,

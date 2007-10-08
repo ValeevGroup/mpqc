@@ -52,8 +52,12 @@ R12IntEval::V(SpinCase2 spincase2,
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
 
   const bool p1_eq_p2 = (p1 == p2);
-  //if (!p1_eq_p2)
-  //  throw FeatureNotImplemented("R12IntEval::V() -- p1 == p2 must be true",__FILE__,__LINE__);
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || p1_eq_p2;
+  // Need to antisymmetrize 1 and 2
+  const bool antisymmetrize = spincase2 != AlphaBeta;
+  //if (!p1_eq_p2 && antisymmetrize)
+  //  throw FeatureNotImplemented("R12IntEval::V() -- p1 == p2 must be true if AA or BB spin case",__FILE__,__LINE__);
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
@@ -78,14 +82,15 @@ R12IntEval::V(SpinCase2 spincase2,
   const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
   const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
 
-  // are particles 1 and 2 equivalent?
-  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || p1_eq_p2;
-  // Need to antisymmetrize 1 and 2
-  const bool antisymmetrize = spincase2 != AlphaBeta;
-
   // some transforms can be skipped if p1/p2 is a subset of x1/x2
   const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
 
+  // allocate V
+  const unsigned int np12 = p1_eq_p2 ? p1->rank()*(p1->rank()-1)/2 : p1->rank()*p2->rank();
+  RefSCDimension dim_p12 = new SCDimension(np12);
+  V = local_matrix_kit->matrix(dim_f12(spincase2), dim_p12);
+  V.assign(0.0);
+  
   // The diagonal contribution
   Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
@@ -93,9 +98,10 @@ R12IntEval::V(SpinCase2 spincase2,
   Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     RefSCMatrix I = compute_I_(xspace1,xspace2,p1,p2);
-    V = I.clone();
-    V.assign(0.0);
-    V.accumulate(I);
+    if (!antisymmetrize)
+      V.accumulate(I);
+    else
+      sc::antisymmetrize<true>(V,I,xspace1,xspace2,p1,p2);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyn;
@@ -108,9 +114,6 @@ R12IntEval::V(SpinCase2 spincase2,
 					);
       fill_container(tform_creator,tforms_f12_xmyn);
     }
-    V = local_matrix_kit->matrix(dim_f12(spincase2),
-                                 new SCDimension(p1->rank()*p2->rank()));
-    V.assign(0.0);
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       V, corrfactor()->tbint_type_f12eri(),
       xspace1, p1,

@@ -40,13 +40,29 @@ namespace sc {
   class MOIndexSpace;
   
   /** Antisymmetrizes 4-index quantity <ij|A|kl> -> <ij|A|kl> - <ij|A|lk>
-      and saves to Aanti. Row dimension has to be an integer multiple of
+      and saves to Aanti. Row dimension of A has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket.
     */
   void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
                       const Ref<MOIndexSpace>& bra,
                       const Ref<MOIndexSpace>& ket,
                       bool accumulate = false);
+  /** Generalization of the above.
+      Antisymmetrizes 4-index quantity <ij|A|kl>. antisymmetrize only makes sense
+      if either bra1==bra2 or ket1==ket2.
+      If bra1==bra2: <ij|A|kl> - <ij|A|lk>.
+      If ket1==ket2: <ij|A|kl> - <ji|A|kl>.
+      Row dimension of A has to be an integer multiple of
+      bra1->rank()*bra2->rank(). Same for ket.
+      The row dimension of Aanti: bra1==bra2 ? bra1->rank()*(bra1->rank()-1)/2.
+      The col dimension of Aanti: ket1==ket2 ? ket1->rank()*(ket1->rank()-1)/2
+    */
+  template <bool accumulate>
+    void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
+                        const Ref<MOIndexSpace>& bra1,
+                        const Ref<MOIndexSpace>& bra2,
+                        const Ref<MOIndexSpace>& ket1,
+                        const Ref<MOIndexSpace>& ket2);
   /** Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>)
       and saves to Asymm. Row dimension has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket. Asymm and A can be the same matrix.

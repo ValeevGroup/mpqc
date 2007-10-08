@@ -113,9 +113,13 @@ namespace sc {
                NULL, 2, aoccpi, aocc_sym, avirpi, avir_sym);
     }
 
-  }
+    psi::PSIO& psio = exenv()->psio();
+    for(int i=CC_MIN; i <= CC_MAX; i++) psio.open(i,1);
+}
 
   void PsiCC::dpd_stop() {
+    psi::PSIO& psio = exenv()->psio();
+    for(int i=CC_MIN; i <= CC_MAX; i++) psio.close(i,1);
     dpd_close(0);
   }
   
@@ -144,13 +148,13 @@ namespace sc {
 
       if (spin2 == AlphaAlpha) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 0, 5, 1, "tIJAB");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 2, 7, 0, "tIJAB");
         dpd_buf4_copy(&D, CC_TAMPS, "tIJAB (IJ,AB)");
         dpd_buf4_close(&D);
       }
       if (spin2 == BetaBeta) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 10, 15, 1, "tijab");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 12, 17, 0, "tijab");
         dpd_buf4_copy(&D, CC_TAMPS, "tijab (ij,ab)");
         dpd_buf4_close(&D);
       }
@@ -177,13 +181,13 @@ namespace sc {
 
       if (spin2 == AlphaAlpha) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 0, 5, 1, "tauIJAB");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 2, 7, 0, "tauIJAB");
         dpd_buf4_copy(&D, CC_TAMPS, "tauIJAB (IJ,AB)");
         dpd_buf4_close(&D);
       }
       if (spin2 == BetaBeta) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 10, 15, 1, "tauijab");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 12, 17, 0, "tauijab");
         dpd_buf4_copy(&D, CC_TAMPS, "tauijab (ij,ab)");
         dpd_buf4_close(&D);
       }
@@ -259,8 +263,6 @@ namespace sc {
     psi::PSIO& psio = exenv()->psio();
     const SpinCase1 spin1 = case1(spin12);
     const SpinCase1 spin2 = case2(spin12);
-    if (spin12 != AlphaBeta)
-      throw FeatureNotImplemented("PsiCC::T2() -- same-spin case not implemented yet",__FILE__,__LINE__);
 
     typedef std::vector<unsigned int> uvec;
     // grab orbital info

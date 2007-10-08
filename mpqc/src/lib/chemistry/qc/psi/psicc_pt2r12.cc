@@ -118,11 +118,13 @@ void PsiCCSD_PT2R12::compute() {
   // compute CCSD wave function
   PsiWavefunction::compute();
   // read CCSD energy
-  psi::PSIO& psio = exenv()->psio();
-  psio.open(CC_INFO, PSIO_OPEN_OLD);
-  psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
-                  sizeof(double));
-  psio.close(CC_INFO, 1);
+  if (!mp2_only_) {
+    psi::PSIO& psio = exenv()->psio();
+    psio.open(CC_INFO, PSIO_OPEN_OLD);
+    psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
+                    sizeof(double));
+    psio.close(CC_INFO, 1);
+  }
   
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();
@@ -359,7 +361,7 @@ void PsiCCSD_PT2R12::compute() {
                                    MPQC2PSI_vir1_act, MPQC2PSI_vir2_act,
                                    Tau2_psi, localkit);
     if (test_t2_phases_) {
-      compare_T2(T2[spincase2], T2_MP1[spincase2], occ1_act->rank(),
+      compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
                  occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
     }
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
@@ -427,7 +429,7 @@ void PsiCCSD_PT2R12::compute() {
       const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
       const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
       const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
-      compare_T2(T2[spincase2], T2_MP1[spincase2], occ1_act->rank(),
+      compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
                  occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
     }
     if (debug() >= DefaultPrintThresholds::mostO2N2) {

@@ -31,6 +31,7 @@
 
 #include <stdexcept>
 #include <cmath>
+#include <sstream>
 
 #include <psifiles.h>
 
@@ -76,9 +77,13 @@ namespace sc {
     size_t bytes = keyval->sizevalue("memory");
     if (bytes <= 2000000)
       bytes = 2000000;
-    int bytes_str_len = (int)ceil(log10((long double)bytes));
-    memory_ = new char[bytes_str_len+5];
-    sprintf(memory_, "(%ld B)", bytes);
+    {
+      std::ostringstream oss;
+      oss << "(" << bytes << " B)";
+      const int nchar = oss.str().size();
+      memory_ = new char[nchar+1];
+      strcpy(memory_,oss.str().c_str());
+    }
   }
   
   PsiWavefunction::~PsiWavefunction() {

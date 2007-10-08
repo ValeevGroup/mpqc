@@ -342,7 +342,7 @@ namespace sc {
 
   const std::vector<unsigned int>& PsiSCF::occpi(SpinCase1 spin) {
     using psi::Chkpt;
-    if (occpi_[spin].empty())
+    if (!occpi_[spin].empty())
       return occpi_[spin];
     if (spin == Beta && reftype() == rhf)
       return occpi(Alpha);
@@ -354,7 +354,7 @@ namespace sc {
         occpi_[spin][h] = doccpi[h];
       Chkpt::free(doccpi);
     }
-    if (reftype() != rhf) {
+    if (reftype() != rhf && spin == Alpha) {
       int* soccpi = exenv()->chkpt().rd_openpi();
       for (unsigned int h=0; h<nirrep_; ++h)
         occpi_[spin][h] += soccpi[h];
@@ -366,7 +366,7 @@ namespace sc {
 
   const std::vector<unsigned int>& PsiSCF::mopi() {
     using psi::Chkpt;
-    if (mopi_.empty())
+    if (!mopi_.empty())
       return mopi_;
     
     mopi_.resize(nirrep_);
@@ -382,7 +382,7 @@ namespace sc {
 
   const std::vector<unsigned int>& PsiSCF::uoccpi(SpinCase1 spin) {
     using psi::Chkpt;
-    if (uoccpi_[spin].empty())
+    if (!uoccpi_[spin].empty())
       return uoccpi_[spin];
     if (spin == Beta && reftype() == rhf)
       return uoccpi(Alpha);
@@ -391,7 +391,7 @@ namespace sc {
     const std::vector<unsigned int>& occpi = this->occpi(spin);
     uoccpi_[spin].resize(nirrep_);
     for (unsigned int h=0; h<nirrep_; ++h)
-      uoccpi_[spin][h] = mopi[h] - occpi[spin];
+      uoccpi_[spin][h] = mopi[h] - occpi[h];
     
     return uoccpi_[spin];
   }

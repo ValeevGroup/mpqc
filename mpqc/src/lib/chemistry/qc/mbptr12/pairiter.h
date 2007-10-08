@@ -98,7 +98,7 @@ public:
   virtual int nij_aa() const =0;
   /// Returns the number of functions in alpha-beta space.
   virtual int nij_ab() const =0;
-  /** Returns compound index ij for alpha-alpha case. If the combintaion is
+  /** Returns compound index ij for alpha-alpha case. If the combination is
       not allowed then return -1 */
   virtual int ij_aa() const =0;
   /// Returns compound index ij for alpha-beta case
@@ -320,6 +320,53 @@ class PureSpinPairIter : public MOPairIter
   PureSpinCase2 spin_;
   int IJ_;
 };
+
+namespace fastpairiter {
+  enum PairSymm { Symm = 1, AntiSymm = -1, ASymm = 0};
+  /**
+     SpinMOPairIter iterates over pairs of spinorbitals of spin case Spin12
+     This class differs from other MOPairIter classes:
+     1) cannot start from arbitrary IJ, only IJ=0;
+     2) error checking maximally reduced
+    */
+  template <PairSymm PSymm>
+  class MOPairIter
+  {
+    public:
+    MOPairIter(int nI, int nJ);
+    ~MOPairIter();
+    
+    /// Start the iteration.
+    void start();
+    /// Move to the next pair.
+    void next();
+    /// Returns nonzero if the iterator currently holds valid data.
+    operator int() const;
+    /// current composite index
+    int ij() const { return IJ_; }
+    /// current index 1
+    int i() const { return I_; }
+    /// current index 2
+    int j() const { return J_; }
+    /// returns an ij given i and j. It is slow, don't use it if you don't have to.
+    /// i must be >= j. there's no error checking.
+    int ij(int i, int j) const;
+    
+    private:
+    int nIJ_;
+    int IJ_;
+    int nI_;
+    int nJ_;
+    int I_;
+    int J_;
+    void init();
+  };
+
+  /// Creates a dimension for a pair index space
+  template <PairSymm PSymm>
+  RefSCDimension pairdim(int nI, int nJ);
+  
+} // namespace fastpairiter
 
 /** This class produces MOPairIter objects */
 class MOPairIterFactory {

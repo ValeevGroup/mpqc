@@ -71,11 +71,10 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
           "r12info()->wfn() was not an MBPT2_R12 object",
           __FILE__, __LINE__, class_desc());
   }
-  Ref<SCF> ref = r12wfn->ref();
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
+  Ref<GaussianBasisSet> p_basis = r12wfn->ref()->momentum_basis();
   Ref<GaussianBasisSet> hcore_basis;
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
@@ -85,7 +84,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     }
 
   RefSymmSCMatrix hsymm
-      = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+      = r12wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
 
 
   // convert hsymm to the AO basis

@@ -221,11 +221,10 @@ MP2R12Energy::compute()
 	//
 	if (!diag) {
 	  ExEnv::out0() << indent << "Computing orthonormal " << prepend_spincase(spincase2,"geminal space.",ToLowerCase) << endl << incindent;
-	  Ref<SCF> ref = r12info->refinfo()->ref();
 	  OverlapOrthog orthog(OverlapOrthog::Canonical,
 			       X,
 			       X.kit(),
-			       ref->lindep_tol());
+			       r12info->refinfo()->ref()->lindep_tol());
 	  nlindep_g12 = orthog.nlindep();
 	  UX = orthog.basis_to_orthog_basis();
 	  ExEnv::out0() << decindent;

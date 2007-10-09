@@ -114,7 +114,7 @@ void
 SingleRefInfo::initialize()
 {
   if (!initialized_) {
-    if (!ref_->spin_polarized())
+    if (!ref()->spin_polarized())
       init_spinindependent_spaces();
     init_spinspecific_spaces();
     initialized_ = true;
@@ -142,19 +142,19 @@ SingleRefInfo::nfzv() const
 void
 SingleRefInfo::init_spinspecific_spaces()
 {
-  const Ref<GaussianBasisSet> bs = ref_->basis();
-  const Ref<Integral>& integral = ref_->integral();
+  const Ref<GaussianBasisSet> bs = ref()->basis();
+  const Ref<Integral>& integral = ref()->integral();
   using std::vector;
   vector<double> aocc, bocc;
-  const int nmo = ref_->alpha_eigenvectors().coldim().n();
+  const int nmo = ref()->alpha_eigenvectors().coldim().n();
   for(int mo=0; mo<nmo; mo++) {
-    aocc.push_back(ref_->alpha_occupation(mo));
-    bocc.push_back(ref_->beta_occupation(mo));
+    aocc.push_back(ref()->alpha_occupation(mo));
+    bocc.push_back(ref()->beta_occupation(mo));
   }
-  Ref<PetiteList> plist = ref_->integral()->petite_list();
+  Ref<PetiteList> plist = ref()->integral()->petite_list();
   if (ref()->spin_polarized()) {
-    spinspaces_[0].init("Alpha", bs, integral, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
-    spinspaces_[1].init("Beta", bs, integral, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
+    spinspaces_[0].init("Alpha", bs, integral, ref()->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref()->alpha_eigenvectors()), aocc, nfzc(), nfzv());
+    spinspaces_[1].init("Beta", bs, integral, ref()->beta_eigenvalues(), plist->evecs_to_AO_basis(ref()->beta_eigenvectors()), bocc, nfzc(), nfzv());
   }
   else {
     for(int s=0; s<NSpinCases1; s++) {
@@ -173,10 +173,10 @@ SingleRefInfo::init_spinspecific_spaces()
 void
 SingleRefInfo::init_spinindependent_spaces()
 {
-  const Ref<GaussianBasisSet> bs = ref_->basis();
-  const RefSCMatrix evecs_so = ref_->eigenvectors();
-  const RefDiagSCMatrix evals = ref_->eigenvalues();
-  const Ref<Integral>& integral =  ref_->integral();
+  const Ref<GaussianBasisSet> bs = ref()->basis();
+  const RefSCMatrix evecs_so = ref()->eigenvectors();
+  const RefDiagSCMatrix evals = ref()->eigenvalues();
+  const Ref<Integral>& integral =  ref()->integral();
   Ref<PetiteList> plist = integral->petite_list();
   RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
   
@@ -185,9 +185,9 @@ SingleRefInfo::init_spinindependent_spaces()
   int nuocc = 0;
   const int nmo = evecs_ao.coldim().n();
   for (int i=0; i<nmo; i++) {
-    if (ref_->occupation(i) == 2.0)
+    if (ref()->occupation(i) == 2.0)
       ndocc++;
-    else if (ref_->occupation(i) == 1.0)
+    else if (ref()->occupation(i) == 1.0)
       nsocc++;
     else
       nuocc++;
@@ -327,7 +327,7 @@ SingleRefInfo::uocc_act(SpinCase1 s) const
 void
 SingleRefInfo::throw_if_spin_polarized() const
 {
-  if (ref_->spin_polarized())
+  if (ref()->spin_polarized())
     throw ProgrammingError("SingleRefInfo -- spin-independent space is requested but the reference function is spin-polarized",
         __FILE__,__LINE__);
 }

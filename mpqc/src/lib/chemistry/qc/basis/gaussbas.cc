@@ -867,7 +867,7 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
       am[0] = l;
       coeffs[0][0] = 1.0;
 
-      if (l <= 1)
+      if (l < 1)
         shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Cartesian,coeffs,GaussianShell::Normalized);
       else if (havepure)
         shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Pure,coeffs,GaussianShell::Normalized);

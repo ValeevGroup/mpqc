@@ -197,7 +197,7 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
     ribs_space_->coefs().print("Orthogonal RIBS");
   }
 
-  if (!refinfo()->ref()->spin_polarized()) {
+  if (!refinfo()->spin_polarized()) {
     Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "CABS", refinfo()->ref()->lindep_tol());
     tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = tmp;

@@ -29,12 +29,11 @@
 #pragma interface
 #endif
 
-#include <chemistry/qc/mbptr12/moindexspace.h>
-#include <chemistry/qc/mbptr12/spin.h>
-
 #ifndef _chemistry_qc_mbptr12_singlerefinfo_h
 #define _chemistry_qc_mbptr12_singlerefinfo_h
 
+#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
   
@@ -55,6 +54,8 @@ namespace sc {
     
     /// Returns the reference
     const Ref<SCF>& ref() const;
+    /// Returns true if alpha and beta densities are not equal. Thus only false for CLSCF references.
+    bool spin_polarized() const;
     /// Return number of frozen occupied orbitals
     unsigned int nfzc() const;
     /// Return number of frozen unoccupied orbitals

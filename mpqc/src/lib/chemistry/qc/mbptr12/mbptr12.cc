@@ -39,8 +39,8 @@
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/hsosscf.h>
 
 // set to 1 to include the cusp region in the fit, other use Tew&Klopper's strategy
 #define INCLUDE_CUSP_IN_GTG_FIT 0
@@ -84,13 +84,12 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   MBPT2(keyval)
 {
   // Verify that this is a closed-shell or high-spin open-shell system
-  CLHF* clhfref = dynamic_cast<CLHF*>(ref().pointer());
-  UHF* uhfref = dynamic_cast<UHF*>(ref().pointer());
-  if (clhfref == 0 && uhfref == 0) {
-    throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12: reference wavefunction is neither CLHF nor UHF",
-    __FILE__,__LINE__);
+  CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
+  HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
+  if (roscfref != 0) {
+    ExEnv::out0() << "WARNING: ROHF-based MBPT2-R12 method not complete yet" << endl;
   }
-  const bool closedshell = (clhfref != 0);
+  const bool closedshell = (clscfref != 0);
 
   spinadapted_ = false;
   if (closedshell)

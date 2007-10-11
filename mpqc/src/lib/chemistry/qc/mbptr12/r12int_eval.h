@@ -491,7 +491,7 @@ public:
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12info()->corrfactor(); }
   LinearR12::ABSMethod abs_method() const { return r12info()->abs_method(); }
   const Ref<LinearR12Ansatz>& ansatz() const { return r12info()->ansatz(); }
-  bool spin_polarized() const { return r12info()->refinfo()->ref()->spin_polarized(); }
+  bool spin_polarized() const { return r12info()->refinfo()->spin_polarized(); }
   bool gbc() const { return r12info()->gbc(); }
   bool ebc() const { return r12info()->ebc(); }
   LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }

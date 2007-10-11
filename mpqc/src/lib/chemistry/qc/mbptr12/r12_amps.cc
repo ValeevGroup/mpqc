@@ -109,7 +109,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<SingleRefInfo> refinfo = r12info->refinfo();
   const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-  const bool spin_polarized = refinfo->ref()->spin_polarized();
+  const bool spin_polarized = refinfo->spin_polarized();
   
   const unsigned int s = static_cast<unsigned int>(spincase2);
   const SpinCase1 spin1 = case1(spincase2);

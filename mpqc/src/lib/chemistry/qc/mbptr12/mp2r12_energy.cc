@@ -83,7 +83,7 @@ MP2R12Energy::init_()
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
-    const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+    const bool spin_polarized = r12info->refinfo()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
       RefSCDimension dim_oo = r12eval()->dim_oo(static_cast<SpinCase2>(s));
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
@@ -197,7 +197,7 @@ void
 MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                                     const Ref<TwoBodyGrid>& tbgrid)
 {
-  const bool spin_polarized = r12eval()->r12info()->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12eval()->r12info()->refinfo()->spin_polarized();
   const SpinCase2 sc2 = (!spin_polarized && spincase2 == BetaBeta ? AlphaAlpha : spincase2);
   const SpinCase1 spin1 = case1(sc2);
   const SpinCase1 spin2 = case2(sc2);
@@ -477,7 +477,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   const double escf = r12info->refinfo()->ref()->energy();
   // WARNING assuming only RHF and ROHF
-  const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12info->refinfo()->spin_polarized();
   const int num_unique_spincases2 = (spin_polarized ? 3 : 2);
 
   // only used if spinadapted == true

@@ -59,7 +59,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
   // Figure out which transform to use -- if VBS != OBS then use (ia|jb), else (ip|jq)
   const bool vbs_neq_obs = (refinfo->uocc(Alpha) != r12info()->vir(Alpha));
   // If closed-shell then should compute all pair energies
-  const bool compute_all_spincases = !refinfo->ref()->spin_polarized();
+  const bool compute_all_spincases = !refinfo->spin_polarized();
 
   Ref<MOIndexSpace> xspace, yspace;
   int x_offset, y_offset;

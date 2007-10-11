@@ -55,6 +55,15 @@ class HSOSSCF: public SCF {
     ResultRefSymmSCMatrix cl_fock_;
     ResultRefSymmSCMatrix op_fock_;
 
+    // computes semicanonical orbitals. Uses fock() to get the fock matrix.
+    // Should be overloaded if fock() does not return the correct matrix (e.g. HSOSKS)
+    virtual void semicanonical();
+    bool semicanonical_evaluated_;
+    AccResultRefDiagSCMatrix alpha_semican_evals_;
+    AccResultRefDiagSCMatrix beta_semican_evals_;
+    AccResultRefSCMatrix alpha_semican_evecs_;
+    AccResultRefSCMatrix beta_semican_evecs_;
+
   public:
     HSOSSCF(StateIn&);
     /** The KeyVal constructor.
@@ -112,7 +121,7 @@ class HSOSSCF: public SCF {
     double beta_occupation(int irrep, int vectornum);
 
     int n_fock_matrices() const;
-    /** Returns closed-shell (i==0) or open-shell (i==1) Fock matrix in AO basis
+    /** Returns closed-shell (i==0) or open-shell (i==1) Fock matrix in SO basis
         (excluding XC contribution in KS DFT).
 	Use effective_fock() if you want the full KS Fock matrix.
     */
@@ -127,6 +136,15 @@ class HSOSSCF: public SCF {
     RefSymmSCMatrix density();
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();
+    
+    /// Coefficients of semicanonical alpha-spin orbitals in SO basis
+    RefSCMatrix alpha_semicanonical_eigenvectors();
+    /// Coefficients of semicanonical beta-spin orbitals in SO basis
+    RefSCMatrix beta_semicanonical_eigenvectors();
+    /// Eigenvalues of semicanonical alpha-spin orbitals
+    RefDiagSCMatrix alpha_semicanonical_eigenvalues();
+    /// Eigenvalues of semicanonical beta-spin orbitals
+    RefDiagSCMatrix beta_semicanonical_eigenvalues();
 
   protected:
     // these are temporary data, so they should not be checkpointed

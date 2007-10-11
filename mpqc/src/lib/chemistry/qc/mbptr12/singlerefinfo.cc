@@ -26,7 +26,8 @@
 //
 
 #include <util/class/scexception.h>
-#include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
 
@@ -114,7 +115,7 @@ void
 SingleRefInfo::initialize()
 {
   if (!initialized_) {
-    if (!ref()->spin_polarized())
+    if (!spin_polarized())
       init_spinindependent_spaces();
     init_spinspecific_spaces();
     initialized_ = true;
@@ -125,6 +126,13 @@ const Ref<SCF>&
 SingleRefInfo::ref() const
 {
   return ref_;
+}
+
+bool
+SingleRefInfo::spin_polarized() const
+{
+  // false for closed-shell, true for any open-shell (will use semicanonical orbitals for HSOSHF).
+  return ref()->spin_polarized();
 }
 
 unsigned int
@@ -152,9 +160,34 @@ SingleRefInfo::init_spinspecific_spaces()
     bocc.push_back(ref()->beta_occupation(mo));
   }
   Ref<PetiteList> plist = ref()->integral()->petite_list();
-  if (ref()->spin_polarized()) {
-    spinspaces_[0].init("Alpha", bs, integral, ref()->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref()->alpha_eigenvectors()), aocc, nfzc(), nfzv());
-    spinspaces_[1].init("Beta", bs, integral, ref()->beta_eigenvalues(), plist->evecs_to_AO_basis(ref()->beta_eigenvectors()), bocc, nfzc(), nfzv());
+  if (spin_polarized()) {
+    RefSCMatrix alpha_evecs, beta_evecs;
+    RefDiagSCMatrix alpha_evals, beta_evals;
+    // alpha and beta orbitals are available for UHF
+    if (ref()->spin_unrestricted()) {
+      alpha_evecs = ref()->alpha_eigenvectors();
+      beta_evecs = ref()->beta_eigenvectors();
+      alpha_evals = ref()->alpha_eigenvalues();
+      beta_evals = ref()->beta_eigenvalues();
+    }
+    // use semicanonical orbitals for ROHF
+    else {
+      Ref<HSOSSCF> hsosscf = dynamic_cast<HSOSSCF*>(ref().pointer());
+      if (hsosscf.null())
+        throw ProgrammingError("SingleRefInfo::init_spinspecific_spaces() -- spin-specific spaces not available for this reference function", __FILE__, __LINE__);
+      alpha_evecs = hsosscf->alpha_semicanonical_eigenvectors();
+      beta_evecs = hsosscf->beta_semicanonical_eigenvectors();
+      alpha_evals = hsosscf->alpha_semicanonical_eigenvalues();
+      beta_evals = hsosscf->beta_semicanonical_eigenvalues();
+    }
+#if 1
+    alpha_evals.print("Alpha orbital energies");
+    alpha_evecs.print("Alpha orbitals");
+    beta_evals.print("Beta orbital energies");
+    beta_evecs.print("Beta orbitals");
+#endif
+    spinspaces_[0].init("Alpha", bs, integral, alpha_evals, plist->evecs_to_AO_basis(alpha_evecs), aocc, nfzc(), nfzv());
+    spinspaces_[1].init("Beta", bs, integral, beta_evals, plist->evecs_to_AO_basis(beta_evecs), bocc, nfzc(), nfzv());
   }
   else {
     for(int s=0; s<NSpinCases1; s++) {
@@ -327,7 +360,7 @@ SingleRefInfo::uocc_act(SpinCase1 s) const
 void
 SingleRefInfo::throw_if_spin_polarized() const
 {
-  if (ref()->spin_polarized())
+  if (spin_polarized())
     throw ProgrammingError("SingleRefInfo -- spin-independent space is requested but the reference function is spin-polarized",
         __FILE__,__LINE__);
 }

@@ -252,7 +252,7 @@ R12IntEvalInfo::set_memory(const size_t memory)
 void
 R12IntEvalInfo::throw_if_spin_polarized() const
 {
-  if (refinfo()->ref()->spin_polarized())
+  if (refinfo()->spin_polarized())
     throw ProgrammingError("R12IntEvalInfo -- spin-independent space is requested but the reference function is spin-polarized",__FILE__,__LINE__);
 }
 
@@ -287,7 +287,7 @@ R12IntEvalInfo::construct_orthog_vir_()
   if (vir_.nonnull())
     return;
   
-  const bool spin_polarized = refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = refinfo()->spin_polarized();
 
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
   if (obs == bs_vir_) {
@@ -327,7 +327,7 @@ R12IntEvalInfo::construct_orthog_vir_()
 void
 R12IntEvalInfo::vir(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 {
-  if (refinfo()->ref()->spin_polarized()) {
+  if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_ = sp;
   }
   else {
@@ -340,7 +340,7 @@ R12IntEvalInfo::vir(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 void
 R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 {
-  if (refinfo()->ref()->spin_polarized()) {
+  if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_sb_ = sp;
   }
   else {
@@ -353,7 +353,7 @@ R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 void
 R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 {
-  if (refinfo()->ref()->spin_polarized()) {
+  if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_act_ = sp;
   }
   else {

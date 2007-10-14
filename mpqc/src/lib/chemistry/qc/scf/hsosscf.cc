@@ -954,6 +954,7 @@ HSOSSCF::beta_semicanonical_eigenvalues()
   return beta_semican_evals_.result_noupdate();
 }
 
+#define DEBUG_SEMICANONICAL 0
 void
 HSOSSCF::semicanonical()
 {
@@ -967,14 +968,11 @@ HSOSSCF::semicanonical()
   const RefSCDimension sodim = so_dimension();
   const unsigned int nirrep = molecule()->point_group()->char_table().nirrep();
   
-#if 0
-  RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
-  RefSCMatrix so_eigenvector = so_to_oso_tr * oso_eigenvectors();
-#else
   RefSCMatrix so_eigenvector = eigenvectors();
-#endif
+#if DEBUG_SEMICANONICAL
   eigenvalues().print("HSOSSCF orbital energies");
   so_eigenvector.print("HSOSSCF orbitals");
+#endif
   
   // initialize dimensions for occupied and virtual blocks
   int* aoccpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) aoccpi[h] = 0;
@@ -1039,7 +1037,7 @@ HSOSSCF::semicanonical()
   // Fa = Fc - Go = Fo
   RefSymmSCMatrix afock_so = fock(0).clone(); afock_so.assign(fock(0)); afock_so.scale(0.0);
   afock_so.accumulate(fock(1));
-#if 1
+#if DEBUG_SEMICANONICAL
   RefSymmSCMatrix Fa(oso_dimension(), basis_matrixkit());
   Fa.assign(0.0);
   Fa.accumulate_transform(so_eigenvector, afock_so,
@@ -1068,7 +1066,7 @@ HSOSSCF::semicanonical()
     alpha_semican_evals_.result_noupdate() = eigenvalues().clone();  alpha_semican_evals_.result_noupdate().assign(0.0);
     alpha_semican_evecs_.result_noupdate() = so_eigenvector.clone(); alpha_semican_evecs_.result_noupdate().assign(0.0);
   }
-  RefSCMatrix aevecs(modim, modim, basis_matrixkit());
+  RefSCMatrix aevecs(modim, modim, basis_matrixkit()); aevecs.assign(0.0);
   {
     unsigned int aoccoffset = 0;
     unsigned int aviroffset = 0;
@@ -1096,8 +1094,18 @@ HSOSSCF::semicanonical()
     }
   }
   alpha_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,aevecs);
+#if DEBUG_SEMICANONICAL
+  so_eigenvector.print("Original eigenvector");
+  aevecs.print("Tranform matrix");
+  {
+    RefSymmSCMatrix afock_mo(modim, basis_matrixkit()); afock_mo.assign(0.0);
+    afock_mo.accumulate_transform(alpha_semican_evecs_.result_noupdate(), afock_so,
+                                  SCMatrix::TransposeTransform);
+    afock_mo.print("Alpha Fock matrix in the semicanonical orbitals");
+  }
   alpha_semican_evals_.result_noupdate().print("Alpha semicanonical orbital energies");
   alpha_semican_evecs_.result_noupdate().print("Alpha semicanonical orbitals");
+#endif
   aevecs = 0;
   
   //
@@ -1107,7 +1115,7 @@ HSOSSCF::semicanonical()
   // Fb = Fc + Go = 2*Fc - Fo
   RefSymmSCMatrix bfock_so = fock(0).clone(); bfock_so.assign(fock(0)); bfock_so.scale(-2.0);
   bfock_so.accumulate(fock(1)); bfock_so.scale(-1.0);
-#if 1
+#if DEBUG_SEMICANONICAL
   RefSymmSCMatrix Fb(oso_dimension(), basis_matrixkit());
   Fb.assign(0.0);
   Fb.accumulate_transform(so_eigenvector, bfock_so,
@@ -1135,7 +1143,7 @@ HSOSSCF::semicanonical()
     beta_semican_evals_.result_noupdate() = eigenvalues().clone();  beta_semican_evals_.result_noupdate().assign(0.0);
     beta_semican_evecs_.result_noupdate() = so_eigenvector.clone(); beta_semican_evecs_.result_noupdate().assign(0.0);
   }
-  RefSCMatrix bevecs(modim, modim, basis_matrixkit());
+  RefSCMatrix bevecs(modim, modim, basis_matrixkit()); bevecs.assign(0.0);
   {
     unsigned int boccoffset = 0;
     unsigned int bviroffset = 0;
@@ -1163,8 +1171,10 @@ HSOSSCF::semicanonical()
     }
   }
   beta_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,bevecs);
+#if DEBUG_SEMICANONICAL
   beta_semican_evals_.result_noupdate().print("Beta semicanonical orbital energies");
   beta_semican_evecs_.result_noupdate().print("Beta semicanonical orbitals");
+#endif
   bevecs = 0;
   
   semicanonical_evaluated_ = true;

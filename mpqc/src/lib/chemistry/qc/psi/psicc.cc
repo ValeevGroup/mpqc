@@ -321,7 +321,7 @@ namespace sc {
       unsigned int nab = 0;
       for (unsigned int g=0; g<nirrep_; ++g) {
         nij += actoccpi1[g] * actoccpi2[h^g];
-        nab += actuoccpi2[g] * actuoccpi2[h^g];
+        nab += actuoccpi1[g] * actuoccpi2[h^g];
       }
       ijpi[h] = nij;
       abpi[h] = nab;

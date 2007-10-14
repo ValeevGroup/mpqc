@@ -32,10 +32,13 @@
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/pairiter.impl.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
+
+#define TEST_ViaT1 1
 
 using namespace sc;
 using namespace sc::fastpairiter;
@@ -49,6 +52,8 @@ namespace {
                     const MOIndexMap& b_to_q,
                     const int np,
                     const int nq);
+  RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
+                                const Ref<MOIndexSpace>& i, const Ref<MOIndexSpace>& a, const Ref<MOIndexSpace>& j);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -132,11 +137,11 @@ void PsiCCSD_PT2R12::compute() {
   RefSCMatrix Vpq[NSpinCases2];
   RefSCMatrix Vab[NSpinCases2];
   RefSCMatrix Via[NSpinCases2];
+  RefSCMatrix Vai[NSpinCases2];
   RefSCMatrix Vij[NSpinCases2];
   RefSymmSCMatrix B[NSpinCases2];
   RefSymmSCMatrix X[NSpinCases2];
   RefSCMatrix T2_MP1[NSpinCases2];
-  RefSCMatrix A[NSpinCases2];
   
   const int nspincases2 = r12eval->nspincases2();
   for (int s=0; s<nspincases2; s++) {
@@ -163,8 +168,6 @@ void PsiCCSD_PT2R12::compute() {
     B[s] = r12eval->B(spincase2);
     if (test_t2_phases_)
       T2_MP1[s] = r12eval->T2(spincase2);
-    if (!ebc)
-      A[s] = r12eval->A(spincase2);
     
     const Ref<MOIndexSpace>& v1 = r12eval->vir_act(spin1);
     const Ref<MOIndexSpace>& v2 = r12eval->vir_act(spin2);
@@ -178,18 +181,18 @@ void PsiCCSD_PT2R12::compute() {
     const RefSCDimension o1v2dim = pairdim<ASymm>(no1,nv2);
     
     // extract Vab and Via from Vpq
-    Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1v2dim);
-    Via[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), o1v2dim);
-    
     typedef MOIndexMap OrbMap;
     OrbMap v1_to_p1(*p1<<*v1);
     OrbMap v2_to_p2(*p2<<*v2);
     OrbMap o1_to_p1(*p1<<*o1);
-
+    OrbMap o2_to_p2(*p2<<*o2);
+    Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1v2dim);
+    Via[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), o1v2dim);
     if (spincase2 != AlphaBeta)
       xypq_to_xyab<AntiSymm,AntiSymm>(Vpq[s],Vab[s],v1_to_p1,v2_to_p2,np1,np2);
     else
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vab[s],v1_to_p1,v2_to_p2,np1,np2);
+    
 #if 0
     for (unsigned int xy=0; xy<nxy; ++xy) {
       unsigned int ab = 0;
@@ -209,6 +212,13 @@ void PsiCCSD_PT2R12::compute() {
       xypq_to_xyab<AntiSymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
     else
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
+    // Vai[AlphaBeta] is also needed if spin-polarized reference is used
+    if (spincase2 == AlphaBeta && r12info->refinfo()->spin_polarized()) {
+      const RefSCDimension v1o2dim = pairdim<ASymm>(nv1,no2);
+      Vai[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1o2dim);
+      xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vai[s],v1_to_p1,o2_to_p2,np1,np2);
+      Vai[s].print("Vai");
+    }
 
 #if 0
     for (unsigned int xy=0; xy<nxy; ++xy) {
@@ -229,6 +239,8 @@ void PsiCCSD_PT2R12::compute() {
       Vpq[s].print("Vpq matrix");
       Vab[s].print("Vab matrix");
       Via[s].print("Via matrix");
+      if (Vai[s].nonnull())
+        Vai[s].print("Vai matrix");
       if (test_t2_phases_)
         T2_MP1[s].print("MP1 T2 amplitudes");
     }
@@ -448,11 +460,13 @@ void PsiCCSD_PT2R12::compute() {
     const SpinCase1 spin2 = case2(spincase2);
     if (r12eval->dim_oo(spincase2).n() == 0)
       continue;
-    
+
     const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
     const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
     const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
     const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+    const bool p1_equiv_p2 = (occ1_act == occ2_act) && (vir1_act == vir2_act);
+    
     
     // H1_0R is just Vij
     H1_0R[s] = Vij[s].clone();
@@ -465,72 +479,111 @@ void PsiCCSD_PT2R12::compute() {
     H1_R0[s] = Vij[s].clone();
     H1_R0[s].assign(Vij[s]);
     
-    // if not testing MP1, compute other terms in <R|Hb|0>
+    // if not testing MP2, compute other terms in <R|Hb|0>
     if (!mp2_only_) {
       
       // the leading term in <R|(HT)|0> is Tau2.Vab
-      RefSCMatrix HT = Vab[s] * Tau2[s].t();
+      RefSCMatrix VT2 = Vab[s] * Tau2[s].t();
       // If using the symmetric form of the correction, Lambdas are replaced with T
       if (replace_Lambda_with_T_)
-        HT.scale(2.0);
+        VT2.scale(2.0);
+      RefSCMatrix HT = VT2;  VT2 = 0;
       H1_R0[s].accumulate(HT);
-      
-      // the next term is T1.Vai
-      if (completeness_order_for_intermediates_ >= 3) {
-        if (nspincases2 > 1)
-          throw FeatureNotImplemented("Open-shell calculations with CCSD-(2)_R12 method complete through 4th and higehr order not implememnted yet",
-                                      __FILE__,__LINE__);
-        // store V_xy_ia as V_xyi_a
-        double* tmp = new double[Via[s].rowdim().n() * Via[s].coldim().n()];
-        Via[s].convert(tmp);
-        RefSCMatrix V_xyi_a = Via[s].kit()->matrix(new SCDimension(Via[s].rowdim().n() * T1[s].rowdim().n()), T1[s].coldim());
-        V_xyi_a.assign(tmp);
-        delete[] tmp;
-        
-        RefSCMatrix V_xyi_J = V_xyi_a * T1[s].t();
-        // store V_xyi_J as V_xy_iJ
-        tmp = new double[HT.rowdim().n() * HT.coldim().n()];
-        V_xyi_J.convert(tmp);
-        HT.assign(tmp);
-        symmetrize<false>(HT, HT, r12eval->xspace(spin1), occ1_act);
+
+      // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
+      if ( completeness_order_for_intermediates_ >= 3 ||
+          (completeness_order_for_intermediates_ >= 2 && !r12eval->r12info()->bc()) ) {
+
+        // Via . T1
+        RefSCMatrix VT1_2 = contract_Via_T1ja(true,Via[s],T1[spin2],occ1_act,vir2_act,occ2_act);
+        VT1_2.print("VT1_2");
+        RefSCMatrix VT1 = VT1_2.clone(); VT1.assign(VT1_2);
+        if (p1_equiv_p2) {
+          // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
+          VT1.scale(2.0);
+          const Ref<MOIndexSpace>& xspace1 = r12eval->xspace(spin1);
+          const Ref<MOIndexSpace>& xspace2 = r12eval->xspace(spin2);
+          if (spincase2 == AlphaBeta)
+            symmetrize12<false,ASymm,ASymm>(VT1, VT1, xspace1, xspace2, occ1_act, occ2_act);
+          else
+            symmetrize12<false,AntiSymm,ASymm>(VT1, VT1, xspace1, xspace2, occ1_act, occ2_act);
+        }
+        else {
+          // Vai^t . T1
+          RefSCMatrix VT1_1 = contract_Via_T1ja(false,Vai[s],T1[spin1],occ2_act,vir1_act,occ1_act);
+          VT1_1.print("VT1_1");
+          VT1.accumulate(VT1_1);
+        }
+        // If needed, antisymmetrize VT1
+        if (spincase2 != AlphaBeta) {
+          RefSCMatrix VT1Anti = HT.clone();
+          const Ref<MOIndexSpace>& xspace1 = r12eval->xspace(spin1);
+          const Ref<MOIndexSpace>& xspace2 = r12eval->xspace(spin2);
+          symmetrize<false,AntiSymm,ASymm,AntiSymm,AntiSymm>(VT1Anti,VT1,xspace1,xspace2,occ1_act,occ2_act);
+          VT1 = VT1Anti;
+        }
         if (debug() >= DefaultPrintThresholds::mostO2N2) {
-          HT.print("Via.T1");
+          VT1.print("Via.T1 + T1.Vai");
         }
-        delete[] tmp;
-        // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
-        HT.scale(2.0);
-        H1_R0[s].accumulate(HT);
         
-#if TEST_ViaT1
         // test against V evaluator
-        RefSCMatrix vir2_act_coefs = vir2_act->coefs();
-        RefSCMatrix to_t1;
-        {
-          RefSCDimension rowdim = vir2_act->dim();
-          RefSCDimension coldim = occ2_act->dim();
-          to_t1 = vir2_act_coefs.kit()->matrix(rowdim,coldim);
-          double* tmp = new double[rowdim.n() * coldim.n()];
-          T1[s].t().convert(tmp);
-          to_t1.assign(tmp);
-          delete[] tmp;
+#if TEST_ViaT1
+        if (spincase2 == AlphaBeta) {
+          RefSCMatrix VIj, ViJ;
+          RefSCMatrix vir2_act_coefs = vir2_act->coefs();
+          RefSCMatrix to_t1;
+          {
+            RefSCDimension rowdim = vir2_act->dim();
+            RefSCDimension coldim = occ2_act->dim();
+            to_t1 = vir2_act_coefs.kit()->matrix(rowdim, coldim);
+            double* tmp = new double[rowdim.n() * coldim.n()];
+            T1[spin2].t().convert(tmp);
+            to_t1.assign(tmp);
+            delete[] tmp;
+          }
+          RefSCMatrix Tocc2_act_coefs = vir2_act_coefs * to_t1;
+          Ref<MOIndexSpace> Tocc2_act = new MOIndexSpace("i(t1)", "active occupied orbitals (weighted by T1)",
+              occ2_act, Tocc2_act_coefs, occ2_act->basis());
+          ViJ = r12eval->V(spincase2, occ1_act, Tocc2_act);
+          if (p1_equiv_p2) {
+            // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
+            ViJ.scale(2.0);
+            symmetrize<false>(ViJ, ViJ, r12eval->xspace(spin1), occ1_act);
+          }
+          else {
+            RefSCMatrix vir1_act_coefs = vir1_act->coefs();
+            RefSCMatrix to_t1;
+            {
+              RefSCDimension rowdim = vir1_act->dim();
+              RefSCDimension coldim = occ1_act->dim();
+              to_t1 = vir1_act_coefs.kit()->matrix(rowdim, coldim);
+              double* tmp = new double[rowdim.n() * coldim.n()];
+              T1[spin1].t().convert(tmp);
+              to_t1.assign(tmp);
+              delete[] tmp;
+            }
+            RefSCMatrix Tocc1_act_coefs = vir1_act_coefs * to_t1;
+            Ref<MOIndexSpace> Tocc1_act = new MOIndexSpace("I(t1)", "active occupied orbitals (weighted by T1)",
+                occ1_act, Tocc1_act_coefs, occ1_act->basis());
+            VIj = r12eval->V(spincase2, Tocc1_act, occ2_act);
+          }
+          (VIj+ViJ).print("Via.T1 computed with R12IntEvalInfo::V()");
+          VT1.print("Via.T1 + T1.Vai");
+          //(VT1 - ViJ - VIj).print("Via.T1 - Via.T1 (test): should be zero");
         }
-        RefSCMatrix Tocc2_act_coefs = vir2_act_coefs * to_t1;
-        Ref<MOIndexSpace> Tocc2_act = new MOIndexSpace("i(t1)", "active occupied orbitals (weighted by T1)",
-            occ2_act, Tocc2_act_coefs, occ2_act->basis());
-        RefSCMatrix ViJ = r12eval->V(spincase2,occ1_act,Tocc2_act);
-        symmetrize<false>(ViJ,ViJ,r12eval->xspace(spin1),occ1_act);
-        ViJ.print("Via.T1 computed with R12IntEvalInfo::V()");
-        (HT - ViJ).print("Via.T1 - Via.T1 (test): should be zero");
 #endif
+
+        // If using the symmetric form of the correction, Lambdas are replaced with T
+        if (replace_Lambda_with_T_)
+          VT1.scale(2.0);
+        HT.accumulate(VT1);
+
       }
-      
-      // ebc term is Tau2.A
-      if (!ebc)
-        HT.accumulate_product(A[s], Tau2[s].t());
       
       if (debug() >= DefaultPrintThresholds::mostO2N2) {
-        HT.print(prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
+        (HT).print(prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
       }
+      H1_R0[s].accumulate(HT);
     }
     
     if (debug() >= DefaultPrintThresholds::O2N2) {
@@ -688,5 +741,46 @@ namespace {
     }
   }
 
-}
+  /// if part2 == false, VT1_ji = T1_ja . V_ai
+  /// if part2 == true, VT1_ij = V_ia . (T_ja)^t
+  /// note that the result is not symmetric with respect to permutation of particles 1 and 2
+  RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
+                                const Ref<MOIndexSpace>& i, const Ref<MOIndexSpace>& a, const Ref<MOIndexSpace>& j)
+  {
+    const unsigned int ni = i->rank();
+    const unsigned int nj = j->rank();
+    const unsigned int na = a->rank();
+    // allocate space for the result
+    const unsigned int nij = ni*nj;
+    RefSCMatrix R(V.rowdim(), new SCDimension(nij), V.kit());
+    
+    // Convert T1 to a raw matrix
+    double* T1_raw = new double[j->rank() * a->rank()];
+    T1.convert(T1_raw);
+    
+    const unsigned int nxy = V.rowdim().n();
+    const unsigned int nia = V.coldim().n();
+    double* raw_ia_blk = new double[V.coldim().n()];
+    double* raw_ij_blk = new double[nij];
+    RefSCVector Rrow(R.coldim(), R.kit());
+    
+    for(unsigned int xy=0; xy<nxy; ++xy) {
+      RefSCVector row = V.get_row(xy);
+      row.convert(raw_ia_blk);
+      if (part2) {
+        // V_ia . (T1_ja)^t : raw_ia_blk * T1_raw^t = raw_ij_blk
+        C_DGEMM('n','t',ni,nj,na,1.0,raw_ia_blk,na,T1_raw,na,0.0,raw_ij_blk,nj);
+      }
+      else {
+        // T1_ja . Vai : T1_raw * raw_ia_blk = raw_ij_blk
+        C_DGEMM('n','n',nj,ni,na,1.0,T1_raw,na,raw_ia_blk,ni,0.0,raw_ij_blk,ni);
+      }
+      Rrow.assign(raw_ij_blk);
+      R.assign_row(Rrow,xy);
+    }
+    
+    return R;
+  }
+  
+} // anonymous namespace
 

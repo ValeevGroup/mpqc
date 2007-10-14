@@ -474,9 +474,9 @@ namespace sc {
       input->write_keyword_array("psi:docc", nirrep_, docc_);
     if (!socc_.empty())
       input->write_keyword_array("psi:socc", nirrep_, socc_);
+    input->write_keyword("psi:multp", multp_);
+    input->write_keyword("psi:charge", charge_);
     if (docc_.empty() && socc_.empty()) {
-      input->write_keyword("psi:multp", multp_);
-      input->write_keyword("psi:charge", charge_);
       input->write_keyword("psi:reset_occupations", true);
     }
   }
@@ -514,8 +514,8 @@ namespace sc {
     if (!socc_.empty())
       input->write_keyword_array("psi:socc", nirrep_, socc_);
     input->write_keyword("psi:multp", multp_);
+    input->write_keyword("psi:charge", charge_);
     if (docc_.empty() && socc_.empty()) {
-      input->write_keyword("psi:charge", charge_);
       input->write_keyword("psi:reset_occupations", true);
     }
   }

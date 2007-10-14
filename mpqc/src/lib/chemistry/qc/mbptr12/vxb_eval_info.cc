@@ -147,7 +147,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   thr_ = ThreadGrp::get_default_threadgrp();
 
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool)spinadapted;
-  int include_mp1; si.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
   int ints_method; si.get(ints_method);
   ints_method_ = static_cast<R12IntEvalInfo::StoreMethod::type>(ints_method);
   si.get(ints_file_);
@@ -188,7 +187,6 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(bs_ri_.pointer(),so);
 
   so.put((int)spinadapted_);
-  so.put((int)include_mp1_);
   so.put((int)ints_method_);
   so.put(ints_file_);
   so.put((double)memory_);
@@ -381,8 +379,6 @@ R12IntEvalInfo::print(std::ostream& o) const {
   r12tech()->print(o);
 
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
-  if (!bs_vir_->equiv(basis()))
-    o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
 
   std::string ints_str;
   switch (ints_method_) {
@@ -403,6 +399,16 @@ R12IntEvalInfo::print(std::ostream& o) const {
   }
   o << indent << "How to Store Transformed Integrals: " << ints_str << endl << endl;
   o << indent << "Transformed Integrals file suffix: " << ints_file_ << endl << endl;
+}
+
+bool
+R12IntEvalInfo::bc() const
+{
+  // 1) false if VBS != OBS
+  const bool vbs_neq_obs = !bs_vir_->equiv(basis());
+  // 2) or using ROHF reference
+  const bool open_shell_but_not_uhf = refinfo()->ref()->spin_polarized() && !refinfo()->ref()->spin_unrestricted();
+  return !(vbs_neq_obs || open_shell_but_not_uhf);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -108,11 +108,11 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEval
  -----------------*/
 static ClassDesc R12IntEval_cd(
-  typeid(R12IntEval),"R12IntEval",2,"virtual public SavableState",
+  typeid(R12IntEval),"R12IntEval",3,"virtual public SavableState",
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
-  r12info_(r12i), evaluated_(false), debug_(0)
+  r12info_(r12i), evaluated_(false), debug_(0), emp2_singles_(0.0)
 {
   this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
@@ -224,10 +224,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   // init_intermeds_ may require initialized transforms
   init_intermeds_();
 
-  // compute canonical space of virtuals if VBS != OBS
-  //if (r12info()->basis_vir()->equiv(r12info()->basis())) {
+  // canonicalize virtuals if VBS != OBS
+  if (r12info()->basis_vir()->equiv(r12info()->basis())) {
     form_canonvir_space_();
-  //}
+  }
   
   Amps_ = new F12Amplitudes(this);
 
@@ -306,6 +306,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
 
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
+  if (si.version(::class_desc<R12IntEval>()) >= 3)
+    si.get(emp2_singles_);
 
   init_tforms_();
 }
@@ -351,6 +353,7 @@ R12IntEval::save_data_state(StateOut& so)
 
   so.put((int)evaluated_);
   so.put(debug_);
+  so.put(emp2_singles_);
 }
 
 void
@@ -503,6 +506,13 @@ Ref<F12Amplitudes>
 R12IntEval::amps()
 {
   return Amps_;
+}
+
+double
+R12IntEval::emp2_singles()
+{
+  compute();
+  return emp2_singles_;
 }
 
 const RefSCVector&
@@ -2093,6 +2103,42 @@ R12IntEval::F_p_p(SpinCase1 spin)
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::F_p_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_p_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->refinfo()->occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_p_m_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_p_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_p_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_p_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_p_a_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_p_a_[s];
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::F_m_m(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -2180,6 +2226,60 @@ R12IntEval::F_i_A(SpinCase1 spin)
 	    null,
 	    extspace,intspace);
   return F_i_A_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_i_p(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_i_p(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->refinfo()->orbs(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_i_p_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_i_p_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_i_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_i_m(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->refinfo()->occ(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_i_m_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_i_m_[s];
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_i_a(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_i_a(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<MOIndexSpace>& extspace = r12info()->refinfo()->occ_act(spin);
+  const Ref<MOIndexSpace>& intspace = r12info()->vir_act(spin);
+  Ref<MOIndexSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_i_a_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_i_a_[s];
 }
 
 const Ref<MOIndexSpace>&
@@ -2472,8 +2572,15 @@ R12IntEval::compute()
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods
     // because exchange is completely skipped
-    if (stdapprox() == LinearR12::StdApprox_App)
+    if (stdapprox() == LinearR12::StdApprox_App) {
       compute_BApp_();
+    }
+    // whereas other methods that include X (A' and B) must also make sure to include non-BC piece, if needed
+    else {
+      if (stdapprox() != LinearR12::StdApprox_C) {
+        compute_B_bc_();
+      }
+    }
     
     // This is app B contribution to B -- only valid for projector 2
     if ((stdapprox() == LinearR12::StdApprox_B) &&
@@ -2559,16 +2666,18 @@ R12IntEval::compute()
       }
       
       AT2_contrib_to_V_();
-      // EBC contribution to B only appears in projector 2
-      if (ansatz()->projector() == LinearR12::Projector_2) {
+      // EBC contribution to B only appears in non-StdApproxC projector 2 case
+      if (ansatz()->projector() == LinearR12::Projector_2 && stdapprox() != LinearR12::StdApprox_C) {
         AF12_contrib_to_B_();
       }
     }
 #endif
     
 #if INCLUDE_GBC_CODE
-    // GBC contribution to B only appears in projector 2
-    const bool nonzero_gbc_terms = !gbc() && !cabs_empty && ansatz()->projector() == LinearR12::Projector_2;
+    // GBC contribution to B only appears in non-StdApproxC projector 2 case
+    const bool nonzero_gbc_terms = !gbc() && !cabs_empty &&
+                                   ansatz()->projector() == LinearR12::Projector_2 &&
+                                   stdapprox() != LinearR12::StdApprox_C;
     if (nonzero_gbc_terms) {
       // These functions assume that virtuals are expanded in the same basis
       // as the occupied orbitals
@@ -2902,6 +3011,10 @@ R12IntEval::compute()
                                  tforms[0]);
   }
   
+  // compute singles contribution to the MP2 energy, if needed
+  if (!r12info()->bc())
+    compute_singles_emp2_();
+  
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);
   
@@ -3175,6 +3288,45 @@ R12IntEval::F_x_A(SpinCase1 S)
 	return(F_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_x_p(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+    return(F_i_p(S));
+    case LinearR12::OrbProd_pq:
+    return(F_p_p(S));
+    default:
+    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_x_m(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+    return(F_i_m(S));
+    case LinearR12::OrbProd_pq:
+    return(F_p_m(S));
+    default:
+    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::F_x_a(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+    return(F_i_a(S));
+    case LinearR12::OrbProd_pq:
+    return(F_p_a(S));
+    default:
+    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 

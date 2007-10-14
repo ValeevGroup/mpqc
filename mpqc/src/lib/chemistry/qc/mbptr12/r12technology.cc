@@ -96,6 +96,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {
     stdapprox_ = LinearR12::StdApprox_A;
+    throw FeatureNotImplemented("stdapprox=A is obsolete",__FILE__,__LINE__);
   }
   else if ( !strcmp(sa_string,"Ap") ||
 	    !strcmp(sa_string,"ap") ||

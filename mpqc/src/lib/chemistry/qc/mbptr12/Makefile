@@ -58,7 +58,9 @@ CXXSRCS = mbptr12.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxApp.cc ansatz.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
-  gaussianfit.cc r12technology.cc twobody_intermeds.cc
+  gaussianfit.cc r12technology.cc twobody_intermeds.cc \
+  singles_emp2.cc bc_contrib.cc blas.cc
+  
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \
 r12ia_node0file.h compute_tbint_tensor.h r12int_eval.h \

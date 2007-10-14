@@ -349,8 +349,10 @@ namespace fastpairiter {
     /// current index 2
     int j() const { return J_; }
     /// returns an ij given i and j. It is slow, don't use it if you don't have to.
-    /// i must be >= j. there's no error checking.
+    /// i is assumed >= j, if necessary (i.e. when PSymm is AntiSymm or Symm).
+    /// there's no error checking.
     int ij(int i, int j) const;
+    int nij() const { return nIJ_; }
     
     private:
     int nIJ_;

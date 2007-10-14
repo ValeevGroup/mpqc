@@ -94,7 +94,6 @@ private:
   int debug_;
 
   bool spinadapted_;
-  bool include_mp1_;
   StoreMethod::type ints_method_;
   std::string ints_file_;
 
@@ -225,6 +224,8 @@ public:
   LinearR12::StandardApproximation stdapprox() const { return r12tech()->stdapprox(); }
   const Ref<LinearR12Ansatz>& ansatz() const { return r12tech()->ansatz(); }
   LinearR12::ABSMethod abs_method() const { return r12tech()->abs_method(); }
+  /// return true if the Brillouin condition does not hold (e.g., if ROHF reference is used, or VBS != OBS)
+  bool bc() const;
   bool gbc() const { return r12tech()->gbc(); }
   bool ebc() const { return r12tech()->ebc(); }
   bool spinadapted() const { return spinadapted_; }

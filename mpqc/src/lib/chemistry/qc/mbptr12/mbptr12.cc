@@ -87,7 +87,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
   HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
   if (roscfref != 0) {
-    ExEnv::out0() << "WARNING: ROHF-based MBPT2-R12 method not complete yet" << endl;
+    ExEnv::out0() << "WARNING: ROHF-based MBPT2-R12 method not completely tested yet" << endl;
   }
   const bool closedshell = (clscfref != 0);
 

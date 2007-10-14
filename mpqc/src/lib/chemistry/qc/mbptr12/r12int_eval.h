@@ -79,7 +79,7 @@ class R12IntEval : virtual public SavableState {
   
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
-
+  double emp2_singles_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -212,11 +212,16 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> F_P_P_[NSpinCases1];
   Ref<MOIndexSpace> F_p_A_[NSpinCases1];
   Ref<MOIndexSpace> F_p_p_[NSpinCases1];
+  Ref<MOIndexSpace> F_p_m_[NSpinCases1];
+  Ref<MOIndexSpace> F_p_a_[NSpinCases1];
   Ref<MOIndexSpace> F_m_m_[NSpinCases1];
   Ref<MOIndexSpace> F_m_a_[NSpinCases1];
   Ref<MOIndexSpace> F_m_P_[NSpinCases1];
   Ref<MOIndexSpace> F_m_A_[NSpinCases1];
   Ref<MOIndexSpace> F_i_A_[NSpinCases1];
+  Ref<MOIndexSpace> F_i_m_[NSpinCases1];
+  Ref<MOIndexSpace> F_i_a_[NSpinCases1];
+  Ref<MOIndexSpace> F_i_p_[NSpinCases1];
   Ref<MOIndexSpace> F_a_a_[NSpinCases1];
   Ref<MOIndexSpace> F_a_A_[NSpinCases1];
 
@@ -429,6 +434,9 @@ class R12IntEval : virtual public SavableState {
   /** Compute contributions to B that vanish under GBC */
   void compute_B_gbc_();
 
+  /** Compute contributions to B that vanish under BC */
+  void compute_B_bc_();
+
   /** Compute contributions to B which appear in standard approximation B and not in A' */
   void compute_BB_();
   
@@ -438,8 +446,8 @@ class R12IntEval : virtual public SavableState {
   /** Compute B using standard approximation A'' -- exchange is dropped completely! */
   void compute_BApp_();
 
-  /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
-  void compute_dualEmp1_();
+  /// Compute singles contribution to the MP2 energy
+  void compute_singles_emp2_();
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/
@@ -546,7 +554,9 @@ public:
   RefSCMatrix V(SpinCase2 spincase2,
 		const Ref<MOIndexSpace>& p,
 		const Ref<MOIndexSpace>& q);
-  
+
+  /// Returns the singles MP2 energy
+  double emp2_singles();
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S
@@ -688,12 +698,20 @@ public:
   const Ref<MOIndexSpace>& F_x_A(SpinCase1 S);
   /// Form <p|F|x> space
   const Ref<MOIndexSpace>& F_x_p(SpinCase1 S);
+  /// Form <m|F|x> space
+  const Ref<MOIndexSpace>& F_x_m(SpinCase1 S);
+  /// Form <a|F|x> space
+  const Ref<MOIndexSpace>& F_x_a(SpinCase1 S);
   /// Form <P|F|i> space
   const Ref<MOIndexSpace>& F_i_P(SpinCase1 S);
   /// Form <A|F|i> space
   const Ref<MOIndexSpace>& F_i_A(SpinCase1 S);
   /// Form <p|F|i> space
   const Ref<MOIndexSpace>& F_i_p(SpinCase1 S);
+  /// Form <m|F|i> space
+  const Ref<MOIndexSpace>& F_i_m(SpinCase1 S);
+  /// Form <a|F|i> space
+  const Ref<MOIndexSpace>& F_i_a(SpinCase1 S);
   /// Form <m|F|m> space
   const Ref<MOIndexSpace>& F_m_m(SpinCase1 S);
   /// Form <a|F|m> space
@@ -712,6 +730,10 @@ public:
   const Ref<MOIndexSpace>& F_p_A(SpinCase1 S);
   /// Form <p|F|p> space
   const Ref<MOIndexSpace>& F_p_p(SpinCase1 S);
+  /// Form <m|F|p> space
+  const Ref<MOIndexSpace>& F_p_m(SpinCase1 S);
+  /// Form <a|F|p> space
+  const Ref<MOIndexSpace>& F_p_a(SpinCase1 S);
   /// Form <P|F|P> space
   const Ref<MOIndexSpace>& F_P_P(SpinCase1 S);
   

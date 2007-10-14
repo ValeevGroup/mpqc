@@ -320,14 +320,8 @@ MP2R12Energy::compute()
               const int g_off = g*nxy;
               const int xyg = g_off + xy;
               
-              // contribution from X still appears in approximations C and A'', but in this case the ansatz is diagonal and xy and ij spaces are the same
-              if (stdapprox_ != LinearR12::StdApprox_A) {
-                if (stdapprox_ == LinearR12::StdApprox_C ||
-		    stdapprox_ == LinearR12::StdApprox_App) {
-                  double fx = - (evals_xspace1[x] + evals_xspace2[y]) * X.get_element(xyf,xyg);
-                  B_ij.accumulate_element(xyf,xyg,fx);
-		}
-              }
+              const double fx = - (evals_xspace1[x] + evals_xspace2[y]) * X.get_element(xyf,xyg);
+              B_ij.accumulate_element(xyf,xyg,fx);
                   
               // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
               if (ebc == false) {
@@ -436,21 +430,10 @@ MP2R12Energy::compute()
                   if (ow > kl)
                     continue;
 
-                  // contribution from X vanishes in approximation A
-                  if (stdapprox_ != LinearR12::StdApprox_A) {
-                    double fx;
-                    if (stdapprox_ != LinearR12::StdApprox_C &&
-			stdapprox_ != LinearR12::StdApprox_App
-			)
-                    fx = 0.5 * (evals_xspace1[k] + evals_xspace2[l] + evals_xspace1[o] + evals_xspace2[w]
-				- 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j]
-				)
-		      * X.get_element(kl,ow);
-                    else
-                      fx = - (evals_act_occ1[i] + evals_act_occ2[j]) * X.get_element(kl,ow);
-                    
-                    B_ij.accumulate_element(kl,ow,fx);
-                  }
+                  const double fx = - (evals_act_occ1[i] + evals_act_occ2[j])
+                                      * X.get_element(kl, ow);
+                  
+                  B_ij.accumulate_element(kl,ow,fx);
                   
                   // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
                   if (ebc == false) {

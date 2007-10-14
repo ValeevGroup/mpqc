@@ -190,6 +190,193 @@ namespace sc {
       
     }
     
+  template <bool Accumulate, sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
+    void symmetrize12(RefSCMatrix& Asymm, const RefSCMatrix& A,
+                      const Ref<MOIndexSpace>& bra1,
+                      const Ref<MOIndexSpace>& bra2,
+                      const Ref<MOIndexSpace>& ket1,
+                      const Ref<MOIndexSpace>& ket2)
+    {
+      using namespace sc::fastpairiter;
+      using sc::fastpairiter::MOPairIter;
+      
+      // Detect inputs that violate semantics of this function
+      if ( (BraSymm == AntiSymm && KetSymm == AntiSymm) ||
+           (BraSymm == Symm && KetSymm == Symm) )
+        throw ProgrammingError("sc::symmetrize12() -- the matrix is already symmetric",__FILE__,__LINE__);
+      if ( (BraSymm == AntiSymm || BraSymm == Symm) && bra1 != bra2)
+        throw ProgrammingError("sc::symmetrize12() -- bra dimension is anti/symmetrized, but bra1!=bra2",__FILE__,__LINE__);
+      if ( (KetSymm == AntiSymm || KetSymm == Symm) && ket1 != ket2)
+        throw ProgrammingError("sc::symmetrize12() -- ket dimension is anti/symmetrized, but ket1!=ket2",__FILE__,__LINE__);
+      
+      if (A.rowdim().n() != Asymm.rowdim().n())
+        throw ProgrammingError("sc::symmetrize() -- source and target matrices have different row dimensions",__FILE__,__LINE__);
+      if (A.coldim().n() != Asymm.coldim().n())
+        throw ProgrammingError("sc::symmetrize() -- source and target matrices have different column dimensions",__FILE__,__LINE__);
+      MOPairIter<BraSymm> ij_iter(bra1->rank(),bra2->rank());
+      MOPairIter<KetSymm> kl_iter(ket1->rank(),ket2->rank());
+      const unsigned int brablock_size = ij_iter.nij();
+      const unsigned int ketblock_size = kl_iter.nij();
+      if (A.rowdim().n()%brablock_size)
+        throw ProgrammingError("sc::symmetrize() -- row dimension is not integer multiple of bra-space rank",__FILE__,__LINE__);
+      if (A.coldim().n()%ketblock_size)
+        throw ProgrammingError("sc::symmetrize() -- col dimension is not integer multiple of ket-space rank",__FILE__,__LINE__);
+      const unsigned int nbra_blocks = A.rowdim().n() / brablock_size;
+      const unsigned int nket_blocks = A.coldim().n() / ketblock_size;
+      
+      unsigned int bra_offset = 0;
+      for(int brablock=0; brablock<nbra_blocks; brablock++, bra_offset += brablock_size) {
+        for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+          
+          const unsigned int IJ = ij_iter.ij() + bra_offset;
+          const unsigned int JI = (BraSymm == ASymm) ? ij_iter.ij(ij_iter.j(),ij_iter.i()) + bra_offset
+                                                     : IJ;
+          const double ij_permfac = (BraSymm == AntiSymm) ? -1.0 : 1.0;
+          
+          unsigned int ket_offset = 0;
+          for(int ketblock=0; ketblock<nket_blocks; ketblock++, ket_offset += ketblock_size) {
+            for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+              
+              const unsigned int KL = kl_iter.ij() + ket_offset;
+              const unsigned int LK = (KetSymm == ASymm) ? kl_iter.ij(kl_iter.j(),kl_iter.i()) + ket_offset
+                                                         : KL;
+              const double kl_permfac = (KetSymm == AntiSymm) ? -1.0 : 1.0;
+              
+              const double A_ijkl = A.get_element(IJ,KL);
+              const double A_jilk = A.get_element(JI,LK);
+              const double Asymm_ijkl = 0.5 * (A_ijkl + ij_permfac*kl_permfac*A_jilk);
+
+              if (Accumulate)
+                Asymm.accumulate_element(IJ,KL,Asymm_ijkl);
+              else
+                Asymm.set_element(IJ,KL,Asymm_ijkl);
+              
+            } // end of kl
+          } // end of ket blocks
+        } // end of ij
+      } // end of bra blocks
+      
+    }
+
+  template <bool Accumulate,
+    sc::fastpairiter::PairSymm SrcBraSymm, sc::fastpairiter::PairSymm SrcKetSymm,
+    sc::fastpairiter::PairSymm DstBraSymm, sc::fastpairiter::PairSymm DstKetSymm
+    >
+    void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
+                      const Ref<MOIndexSpace>& bra1,
+                      const Ref<MOIndexSpace>& bra2,
+                      const Ref<MOIndexSpace>& ket1,
+                      const Ref<MOIndexSpace>& ket2)
+    {
+      using namespace sc::fastpairiter;
+      using sc::fastpairiter::MOPairIter;
+      
+      // Detect inputs that violate semantics of this function
+      if (SrcBraSymm == DstBraSymm && SrcKetSymm == DstKetSymm)
+        throw ProgrammingError("sc::symmetrize() -- nothing to be done",__FILE__,__LINE__);
+      if ( (SrcBraSymm != ASymm && SrcKetSymm != ASymm) )
+        throw ProgrammingError("sc::symmetrize() -- either bra of ket must be asymmetric",__FILE__,__LINE__);
+      if ( (SrcBraSymm != ASymm && SrcBraSymm != DstBraSymm) )
+        throw ProgrammingError("sc::symmetrize() -- can only change bra that is asymmetric",__FILE__,__LINE__);
+      if ( (SrcKetSymm != ASymm && SrcKetSymm != DstKetSymm) )
+        throw ProgrammingError("sc::symmetrize() -- can only change ket that is asymmetric",__FILE__,__LINE__);
+      if (DstBraSymm!=ASymm && bra1 != bra2)
+        throw ProgrammingError("sc::symmetrize12() -- bra is to be anti/symmetrized, but bra1!=bra2",__FILE__,__LINE__);
+      if (DstKetSymm!=ASymm && ket1 != ket2)
+        throw ProgrammingError("sc::symmetrize12() -- ket is to be anti/symmetrized, but ket1!=ket2",__FILE__,__LINE__);
+      const bool transform_bra = DstBraSymm != ASymm && DstBraSymm != SrcBraSymm;
+      const bool transform_ket = DstKetSymm != ASymm && DstKetSymm != SrcKetSymm;
+      
+      MOPairIter<SrcBraSymm> ij_srciter(bra1->rank(),bra2->rank());
+      MOPairIter<SrcKetSymm> kl_srciter(ket1->rank(),ket2->rank());
+      MOPairIter<DstBraSymm> ij_dstiter(bra1->rank(),bra2->rank());
+      MOPairIter<DstKetSymm> kl_dstiter(ket1->rank(),ket2->rank());
+      const unsigned int brablock_size_src = ij_srciter.nij();
+      const unsigned int ketblock_size_src = kl_srciter.nij();
+      const unsigned int brablock_size_dst = ij_dstiter.nij();
+      const unsigned int ketblock_size_dst = kl_dstiter.nij();
+      if (A.rowdim().n()%brablock_size_src)
+        throw ProgrammingError("sc::symmetrize() -- row dimension of Source is not integer multiple of bra-space rank",__FILE__,__LINE__);
+      if (A.coldim().n()%ketblock_size_src)
+        throw ProgrammingError("sc::symmetrize() -- col dimension of Source is not integer multiple of ket-space rank",__FILE__,__LINE__);
+      if (Asymm.rowdim().n()%brablock_size_dst)
+        throw ProgrammingError("sc::symmetrize() -- row dimension of Result is not integer multiple of bra-space rank",__FILE__,__LINE__);
+      if (Asymm.coldim().n()%ketblock_size_dst)
+        throw ProgrammingError("sc::symmetrize() -- col dimension of Result is not integer multiple of ket-space rank",__FILE__,__LINE__);
+      const unsigned int nbra_blocks = A.rowdim().n() / brablock_size_src;
+      const unsigned int nket_blocks = A.coldim().n() / ketblock_size_src;
+      if (nbra_blocks != Asymm.rowdim().n() / brablock_size_dst)
+        throw ProgrammingError("sc::symmetrize() -- # of bra blocks in Source and Result do not match",__FILE__,__LINE__);
+      if (nket_blocks != Asymm.coldim().n() / ketblock_size_dst)
+        throw ProgrammingError("sc::symmetrize() -- # of bra blocks in Source and Result do not match",__FILE__,__LINE__);
+      
+      unsigned int bra_offset_src = 0;
+      unsigned int bra_offset_dst = 0;
+      for(int brablock=0; brablock<nbra_blocks;
+          brablock++, bra_offset_src += brablock_size_src, bra_offset_dst += brablock_size_dst) {
+        for(ij_dstiter.start();int(ij_dstiter);ij_dstiter.next()) {
+          
+          const unsigned int IJ_dst = ij_dstiter.ij() + bra_offset_dst;
+          
+          const unsigned int I = ij_srciter.i();
+          const unsigned int J = ij_srciter.j();
+          const unsigned IJ = ij_srciter.ij(I,J) + bra_offset_src;
+          unsigned int JI;
+          double ij_permfac;
+          if (transform_bra) {
+            JI = ij_srciter.ij(J,I) + bra_offset_src;
+            ij_permfac = (DstBraSymm == AntiSymm) ? -1.0 : 1.0;
+          }
+          
+          unsigned int ket_offset_src = 0;
+          unsigned int ket_offset_dst = 0;
+          for(int ketblock=0; ketblock<nket_blocks;
+              ketblock++, ket_offset_src += ketblock_size_src, ket_offset_dst += ketblock_size_dst) {
+            for(kl_dstiter.start();int(kl_dstiter);kl_dstiter.next()) {
+              
+              const unsigned int KL_dst = kl_dstiter.ij() + ket_offset_dst;
+              
+              const unsigned int K = kl_srciter.i();
+              const unsigned int L = kl_srciter.j();
+              const unsigned int KL = kl_srciter.ij(K,L) + ket_offset_src;
+              unsigned int LK;
+              double kl_permfac;
+              if (transform_ket) {
+                LK = kl_srciter.ij(L,K) + ket_offset_src;
+                kl_permfac = (DstKetSymm == AntiSymm) ? -1.0 : 1.0;
+              }
+
+              double Asymm_ijkl;
+              if (transform_bra) {
+                const double A_ijkl = A.get_element(IJ,KL);
+                const double A_jikl = A.get_element(JI,KL);
+                Asymm_ijkl = A_ijkl + ij_permfac*A_jikl;
+              }
+              if (transform_ket) {
+                const double A_ijkl = A.get_element(IJ,KL);
+                const double A_ijlk = A.get_element(IJ,LK);
+                Asymm_ijkl = A_ijkl + kl_permfac*A_ijlk;
+              }
+              if (transform_bra && transform_ket) {
+                const double A_ijkl = A.get_element(IJ,KL);
+                const double A_jikl = A.get_element(JI,KL);
+                const double A_ijlk = A.get_element(IJ,LK);
+                const double A_jilk = A.get_element(JI,LK);
+                Asymm_ijkl = A_ijkl + ij_permfac*A_jikl + kl_permfac*A_ijlk + ij_permfac*kl_permfac*A_jilk;
+              }
+              
+              if (Accumulate)
+                Asymm.accumulate_element(IJ_dst,KL_dst,Asymm_ijkl);
+              else
+                Asymm.set_element(IJ_dst,KL_dst,Asymm_ijkl);
+              
+            } // end of kl
+          } // end of ket blocks
+        } // end of ij
+      } // end of bra blocks
+      
+    }
+  
 }
 
 #endif

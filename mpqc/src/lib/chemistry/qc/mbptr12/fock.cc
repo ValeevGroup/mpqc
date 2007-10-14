@@ -49,6 +49,9 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K)
 {
+  if (bra_space->rank() == 0 || ket_space->rank() == 0)
+    return 0;
+  
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();

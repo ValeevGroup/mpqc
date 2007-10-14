@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <math/scmat/matrix.h>
+#include <chemistry/qc/mbptr12/pairiter.h>
 
 #ifndef _chemistry_qc_mbptr12_utils_h
 #define _chemistry_qc_mbptr12_utils_h
@@ -48,10 +49,11 @@ namespace sc {
                       const Ref<MOIndexSpace>& ket,
                       bool accumulate = false);
   /** Generalization of the above.
-      Antisymmetrizes 4-index quantity <ij|A|kl>. antisymmetrize only makes sense
+      Antisymmetrizes 4-index quantity <ij|A|kl>.
+      antisymmetrize only makes sense
       if either bra1==bra2 or ket1==ket2.
-      If bra1==bra2: <ij|A|kl> - <ij|A|lk>.
-      If ket1==ket2: <ij|A|kl> - <ji|A|kl>.
+      If bra1==bra2: <ij|A|kl> - <ji|A|kl>.
+      If ket1==ket2: <ij|A|kl> - <ij|A|lk>.
       Row dimension of A has to be an integer multiple of
       bra1->rank()*bra2->rank(). Same for ket.
       The row dimension of Aanti: bra1==bra2 ? bra1->rank()*(bra1->rank()-1)/2.
@@ -71,7 +73,46 @@ namespace sc {
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
                     const Ref<MOIndexSpace>& bra,
                     const Ref<MOIndexSpace>& ket);
-  
+
+  /** Generalization of the above. Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>),
+      where either bra or ket may have been antisymmetrized.
+      If BraSymm==ASymm && KetSymm==ASymm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>)
+      If BraSymm==ASymm && KetSymm==AntiSymm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>) = 1/2 * (<ij|A|kl> - <ji|A|kl>)
+      If BraSymm==AntiSymm && KetSymm==ASymm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>) = 1/2 * (<ij|A|kl> - <ij|A|lk>)
+      If BraSymm==ASymm && KetSymm==Symm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>) = 1/2 * (<ij|A|kl> + <ji|A|kl>)
+      If BraSymm==Symm && KetSymm==ASymm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>) = 1/2 * (<ij|A|kl> + <ij|A|lk>)
+      etc.
+      and saves to Asymm. Row dimension of A has to be pairdim<BraSymm>(bra1->rank(),bra2->rank()).n().
+      Same for ket. Asymm and A can be the same matrix.
+    */
+  template <bool Accumulate, sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
+    void symmetrize12(RefSCMatrix& Asymm, const RefSCMatrix& A,
+                      const Ref<MOIndexSpace>& bra1,
+                      const Ref<MOIndexSpace>& bra2,
+                      const Ref<MOIndexSpace>& ket1,
+                      const Ref<MOIndexSpace>& ket2);
+
+  /** Symmetrizes/antisymmetrizes bra and/or ket. Sanity is checked as fully as possible.
+      If DstBraSymm!=ASymm, bra1 must equal bra2.
+      If DstKetSymm!=ASymm, ket1 must equal ket2.
+      Row dimension of A has to be an integer multiple of
+      bra1->rank()*bra2->rank(). Same for ket.
+      Row dimension of A has to be pairdim<SrcBraSymm>(bra1->rank(),bra2->rank()).n().
+      Same for ket, etc.
+      Asymm and A cannot be the same matrix.
+    */
+  template <bool Accumulate,
+    sc::fastpairiter::PairSymm SrcBraSymm,
+    sc::fastpairiter::PairSymm SrcKetSymm,
+    sc::fastpairiter::PairSymm DstBraSymm,
+    sc::fastpairiter::PairSymm DstKetSymm
+    >
+    void symmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
+                    const Ref<MOIndexSpace>& bra1,
+                    const Ref<MOIndexSpace>& bra2,
+                    const Ref<MOIndexSpace>& ket1,
+                    const Ref<MOIndexSpace>& ket2);
+
   /** Converts RefDiagSCMatrix to std::vector<double>
   */
   std::vector<double> convert(const RefDiagSCMatrix& A);

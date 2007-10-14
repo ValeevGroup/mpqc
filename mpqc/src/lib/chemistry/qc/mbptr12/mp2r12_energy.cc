@@ -156,7 +156,7 @@ int MP2R12Energy::get_debug() const { return debug_; };
 
 double MP2R12Energy::energy()
 {
-  double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
+  double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta) + r12eval()->emp2_singles();
   return value;
 }
 
@@ -595,7 +595,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   }
   
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
+  const double emp2f12_corr_energy = energy();
   
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
@@ -603,6 +603,8 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   ///////////////////////////////////////////////////////////////
   
   if (spinadapted) {
+    so <<endl<<indent
+    <<scprintf("Singles MP2 correlation energy [au]:           %17.12lf\n", r12eval()->emp2_singles());
     so <<endl<<indent
     <<scprintf("Singlet MP2 correlation energy [au]:           %17.12lf\n", emp2f12tot_0 - ef12tot_0);
     so <<indent

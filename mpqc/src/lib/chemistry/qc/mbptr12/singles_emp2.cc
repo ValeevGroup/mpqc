@@ -1,7 +1,7 @@
 //
-// dualbasis_mp2.cc
+// singles_emp2.cc
 //
-// Copyright (C) 2004 Edward Valeev
+// Copyright (C) 2007 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -50,7 +50,7 @@ using namespace std;
 using namespace sc;
 
 void
-R12IntEval::compute_dualEmp1_()
+R12IntEval::compute_singles_emp2_()
 {
   if (evaluated_)
     return;
@@ -58,41 +58,39 @@ R12IntEval::compute_dualEmp1_()
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
 
-  tim_enter("dual-basis MP1 energy");
+  tim_enter("singles MP2 energy");
   ExEnv::out0() << endl << indent
-	       << "Entered dual-basis MP1 energy evaluator" << endl;
+	       << "Entered singles MP2 energy evaluator" << endl;
   ExEnv::out0() << incindent;
 
   int me = msg->me();
   int nproc = msg->n();
   
-  // Compute act.occ./aux.virt. Fock matrix
-  form_canonvir_space_();
-  Ref<MOIndexSpace> occ_space = r12info_->refinfo()->docc();
-  const double eref = r12info_->refinfo()->ref()->energy();
-  RefSCMatrix F_aocc_canonvir = fock_(occ_space,occ_space,canonvir_space_);
+  emp2_singles_ = 0.0;
+  for(int s=0; s<nspincases1(); s++) {
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+    
+    Ref<MOIndexSpace> occ_act = r12info_->refinfo()->occ_act(spin);
+    Ref<MOIndexSpace> vir_act = r12info_->vir_act(spin);
+    RefSCMatrix Fia = fock_(occ_act,vir_act,spin);
 
-  int nocc = occ_space->rank();
-  int ncanonvir = canonvir_space_->rank();
-  RefDiagSCMatrix occ_evals = occ_space->evals();
-  RefDiagSCMatrix canonvir_evals = canonvir_space_->evals();
+    const int ni = occ_act->rank();
+    const int na = vir_act->rank();
+    const RefDiagSCMatrix& ievals = occ_act->evals();
+    const RefDiagSCMatrix& aevals = vir_act->evals();
 
-  double emp1 = 0.0;
-  for(int i=0; i<nocc; i++) {
-    for(int a=0; a<ncanonvir; a++) {
-      const double Fia = F_aocc_canonvir.get_element(i,a);
-      emp1 += Fia*Fia/(-occ_evals(i)+canonvir_evals(a));
+    for(int i=0; i<ni; i++) {
+      for(int a=0; a<na; a++) {
+        const double fia = Fia.get_element(i,a);
+        emp2_singles_ -= fia*fia/(-ievals(i)+aevals(a));
+      }
     }
   }
-  ExEnv::out0() << indent << "MP1 energy correction to HF energy [au] :   "
-                << 2.0*emp1 << endl;
-  ExEnv::out0() << indent << "HF energy estimated in new basis [au]   :   "
-                << eref - 2.0*emp1 << endl;
-
+  
   ExEnv::out0() << decindent;
-  ExEnv::out0() << endl << "Exited dual-basis MP1 energy evaluator" << endl;
+  ExEnv::out0() << endl << "Exited singles MP2 energy evaluator" << endl;
 
-  tim_exit("dual-basis MP1 energy");
+  tim_exit("singles MP2 energy");
 }
 
 ////////////////////////////////////////////////////////////////////////////

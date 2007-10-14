@@ -135,7 +135,7 @@ R12IntEval::compute_BApp_()
 			   hj_x1,xspace2);
 		hj_x1 = hj_x_a(spin1);
 		compute_X_(Q,spincase2,xspace1,xspace2,
-			   hj_x1,xspace1);
+			   hj_x1,xspace2);
 	    }
 	}
     }

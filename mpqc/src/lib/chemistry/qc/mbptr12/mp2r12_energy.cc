@@ -464,7 +464,6 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   
   std::string SA_str;
   switch (stdapprox_) {
-    case LinearR12::StdApprox_A:   SA_str = "A";   break;
     case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
     case LinearR12::StdApprox_App: SA_str = "A''";  break;
     case LinearR12::StdApprox_B:   SA_str = "B";   break;
@@ -476,7 +475,6 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
 
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   const double escf = r12info->refinfo()->ref()->energy();
-  // WARNING assuming only RHF and ROHF
   const bool spin_polarized = r12info->refinfo()->spin_polarized();
   const int num_unique_spincases2 = (spin_polarized ? 3 : 2);
 

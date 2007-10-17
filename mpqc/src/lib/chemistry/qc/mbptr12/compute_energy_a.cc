@@ -75,24 +75,8 @@ MBPT2_R12::compute_energy_()
   // can use projector 3 only for app C
   if (r12info->ansatz()->projector() != LinearR12::Projector_3) {
 
-    // MP2-F12/A
-    if (r12info->stdapprox() == LinearR12::StdApprox_A ||
-        r12info->stdapprox() == LinearR12::StdApprox_Ap ||
-        r12info->stdapprox() == LinearR12::StdApprox_B) {
-      tim_enter("mp2-f12/a pair energies");
-      if (r12a_energy_.null())
-        r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
-      r12a_energy_->print_pair_energies(r12info->spinadapted());
-      etotal = r12a_energy_->energy();
-      ef12 = er12(r12a_energy_);
-      tim_exit("mp2-f12/a pair energies");
-    }
-    
     // MP2-F12/A'
-    // skip if using diagonal ansatz -- A' is equivalent to A then
-    const bool skip_Ap = r12info->ansatz()->diag();
-    if (!skip_Ap &&
-	r12info->stdapprox() == LinearR12::StdApprox_Ap ||
+    if (r12info->stdapprox() == LinearR12::StdApprox_Ap ||
         r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a' pair energies");
       if (r12ap_energy_.null())
@@ -150,7 +134,6 @@ MBPT2_R12::compute_energy_()
   if (twopdm_grid_.nonnull()) {
     Ref<MP2R12Energy> wfn_to_plot;
     switch(r12info->stdapprox()) {
-      case LinearR12::StdApprox_A:    wfn_to_plot = r12a_energy_;   break;
       case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
       case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
       case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;

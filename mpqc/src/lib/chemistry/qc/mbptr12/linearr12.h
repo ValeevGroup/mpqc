@@ -48,22 +48,23 @@ namespace sc {
       3: Q_{12} = 1 - P_1 P_2
     */
     enum Projector {Projector_0 = 0,
-         Projector_1 = 1,
-	 Projector_2 = 2,
-	 Projector_3 = 3};
-    enum StandardApproximation {StdApprox_A = 0,
-				StdApprox_Ap = 1,
-				StdApprox_App = 2,
-				StdApprox_B = 3,
-                                StdApprox_C = 4};
+      Projector_1 = 1,
+      Projector_2 = 2,
+      Projector_3 = 3};
+    enum StandardApproximation {
+      //StdApprox_A = 0,
+      StdApprox_Ap = 1,
+      StdApprox_App = 2,
+      StdApprox_B = 3,
+      StdApprox_C = 4};
     enum ABSMethod {ABS_ABS = 0,
-		    ABS_ABSPlus = 1,
-		    ABS_CABS = 2,
-		    ABS_CABSPlus = 3};
-
+      ABS_ABSPlus = 1,
+      ABS_CABS = 2,
+      ABS_CABSPlus = 3};
+    
     enum OrbitalProduct {
-	OrbProd_ij = 0,
-	OrbProd_pq = 1
+      OrbProd_ij = 0,
+      OrbProd_pq = 1
     };
 
     enum PositiveDefiniteB {

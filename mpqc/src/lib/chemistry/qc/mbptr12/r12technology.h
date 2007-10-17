@@ -84,13 +84,9 @@ class R12Technology: virtual public SavableState {
         and is not used. There is no default.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
-        of the values below.  The default is A'.
+        of the values below.  The default is A'. WARNING: standard approximation A is now obsolete.
 
         <dl>
-
-          <dt><tt>A</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation A (MP2-R12/A).
-          Only energies can be computed with the MP2-R12/A method.
 
           <dt><tt>A'</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation A' (MP2-R12/A').

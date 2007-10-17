@@ -552,8 +552,8 @@ public:
 
   /** Compute V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy} */
   RefSCMatrix V(SpinCase2 spincase2,
-		const Ref<MOIndexSpace>& p,
-		const Ref<MOIndexSpace>& q);
+                const Ref<MOIndexSpace>& p,
+                const Ref<MOIndexSpace>& q);
 
   /// Returns the singles MP2 energy
   double emp2_singles();

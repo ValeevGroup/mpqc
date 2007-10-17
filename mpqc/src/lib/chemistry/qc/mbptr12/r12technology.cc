@@ -95,7 +95,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {
-    stdapprox_ = LinearR12::StdApprox_A;
     throw FeatureNotImplemented("stdapprox=A is obsolete",__FILE__,__LINE__);
   }
   else if ( !strcmp(sa_string,"Ap") ||
@@ -123,9 +122,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     throw std::runtime_error("R12Technology::R12Technology() -- unrecognized value for stdapprox");
   }
 
-  // if no explicit correlation then set stdapprox to A
+  // if no explicit correlation then set stdapprox to A'
   if (sa_string == "none" || sa_string == "NONE") {
-      stdapprox_ = LinearR12::StdApprox_A;
+      stdapprox_ = LinearR12::StdApprox_Ap;
   }
   
   //
@@ -427,9 +426,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("R12Technology::R12Technology() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
 
-  // Standard approximation A is not valid when gbc_ = false or ebc_ = false
-  if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )
-    throw std::runtime_error("R12Technology::R12Technology() -- stdapprox=A is not valid when gbc_ = false or ebc_ = false");
 }
 
 R12Technology::~R12Technology()
@@ -486,9 +482,6 @@ R12Technology::print(ostream&o) const
     break;
   }
   switch (stdapprox_) {
-    case LinearR12::StdApprox_A :
-      o << indent << "Standard Approximation: A" << endl;
-    break;
     case LinearR12::StdApprox_Ap :
       o << indent << "Standard Approximation: A'" << endl;
     break;

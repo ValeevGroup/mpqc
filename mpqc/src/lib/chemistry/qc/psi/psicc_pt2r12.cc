@@ -63,7 +63,7 @@ static ClassDesc PsiCCSD_PT2R12_cd(typeid(PsiCCSD_PT2R12), "PsiCCSD_PT2R12", 1,
                                    create<PsiCCSD_PT2R12>);
 
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
-  PsiCC(keyval), eccsd_(1.0) {
+  PsiCC(keyval), eccsd_(NAN) {
   if (!replace_Lambda_with_T_)
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
   
@@ -660,7 +660,7 @@ static ClassDesc PsiCCSD_PT2R12T_cd(typeid(PsiCCSD_PT2R12T), "PsiCCSD_PT2R12T", 
                                     create<PsiCCSD_PT2R12T>);
 
 PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(const Ref<KeyVal>&keyval) :
-  PsiCCSD_PT2R12(keyval), e_t_(1.0) {
+  PsiCCSD_PT2R12(keyval), e_t_(NAN) {
   if (!replace_Lambda_with_T_)
     throw FeatureNotImplemented("PsiCCSD_PT2R12T::PsiCCSD_PT2R12T() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
 }
@@ -697,7 +697,7 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
 void PsiCCSD_PT2R12T::compute() {
   PsiCCSD_PT2R12::compute();
   const double e_ccsd_pt2r12 = value() - reference_energy();
-  e_t_ = exenv()->chkpt().rd_e_t();
+  if (!mp2_only_) e_t_ = exenv()->chkpt().rd_e_t();
   const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
   ExEnv::out0() << "E(T)          = " << scprintf("%15.10lf",e_t_) << endl;
   ExEnv::out0() << "ECCSD_PT2R12T = " << scprintf("%15.10lf",e_ccsd_pt2r12t)

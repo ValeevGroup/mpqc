@@ -55,10 +55,6 @@ namespace sc {
       
     protected:
       int nirrep_;
-      std::vector<int> docc_;
-      std::vector<int> socc_;
-      int multp_;
-      int charge_;
       char *memory_;
       /// Prepares a complete Psi input file. The input file is assumed to have been opened.
       virtual void write_input(int conv) =0;
@@ -96,7 +92,6 @@ namespace sc {
       void compute();
       void print(std::ostream&o=ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int nelectron();
       int nirrep() const { return nirrep_; }
 
       /// Return an associated PsiExEnv object
@@ -120,6 +115,13 @@ namespace sc {
       std::vector<unsigned int> occpi_[NSpinCases1];
       std::vector<unsigned int> uoccpi_[NSpinCases1];
       std::vector<unsigned int> mopi_;
+      
+    protected:
+      std::vector<int> docc_;
+      std::vector<int> socc_;
+      int multp_;
+      int charge_;
+
     public:
       PsiSCF(const Ref<KeyVal>&);
       PsiSCF(StateIn&);
@@ -141,6 +143,8 @@ namespace sc {
       const std::vector<unsigned int>& uoccpi(SpinCase1 S);
       /// Number of orbitals per irrep
       const std::vector<unsigned int>& mopi();
+      /// Number of electrons
+      int nelectron();
 
       /// number of MOs
       unsigned int nmo();
@@ -238,7 +242,7 @@ namespace sc {
       std::vector<int> frozen_uocc_;
       void write_input(int conv);
 
-public:
+    public:
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
       ~PsiCorrWavefunction();
@@ -247,6 +251,8 @@ public:
         return reference_->spin_polarized();
       }
       const Ref<PsiSCF>& reference() const { return reference_; }
+      /// Number of electrons
+      int nelectron();
       /// symmetry-blocked space of active occupied orbitals from Psi3
       const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3

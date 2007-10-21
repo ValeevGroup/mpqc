@@ -52,6 +52,16 @@
 
 using namespace std;
 
+namespace {
+  template <typename T> T sum(const std::vector<T>& vec) {
+    T result(0);
+    size_t size = vec.size();
+    for(size_t i=0; i<size; ++i)
+      result += vec[i];
+    return result;
+  }
+}
+
 namespace sc {
   
   //////////////////////////////////////////////////////////////////////////
@@ -71,8 +81,6 @@ namespace sc {
     }
     
     nirrep_ = molecule()->point_group()->char_table().order();
-    docc_ = read_occ(keyval, "docc", nirrep_);
-    socc_ = read_occ(keyval, "socc", nirrep_);
     
     size_t bytes = keyval->sizevalue("memory");
     if (bytes <= 2000000)
@@ -164,11 +172,6 @@ namespace sc {
     return 0;
   }
   
-  int PsiWavefunction::nelectron() {
-    abort();
-    return 0;
-  }
-  
   void PsiWavefunction::write_basic_input(int conv) {
     const char *dertype = gradient_needed() ? "first" : "none";
     
@@ -212,22 +215,10 @@ namespace sc {
   
   PsiSCF::PsiSCF(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
-    if (keyval->exists("total_charge"))
-      charge_ = keyval->intvalue("total_charge");
-    if (keyval->exists("multiplicity")) {
-      multp_ = keyval->intvalue("multiplicity");
-      if (multp_ < 1) {
-        ExEnv::err0() << indent
-                      << "ERROR: PsiSCF: valid multiplicity has to be >= 1"<< endl;
-        abort();
-      }
-    }
-    else {
-      ExEnv::err0() << indent
-          << "ERROR: PsiSCF: multiplicity and total_charge need "
-          << "to be specified when docc (socc) are missing"<< endl;
-      abort();
-    }
+
+    docc_ = read_occ(keyval, "docc", nirrep_);
+    socc_ = read_occ(keyval, "socc", nirrep_);
+    
   }
   
   PsiSCF::~PsiSCF() {
@@ -239,6 +230,10 @@ namespace sc {
   
   void PsiSCF::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
+  }
+  
+  int PsiSCF::nelectron() {
+    return nocc(Alpha) + nocc(Beta);
   }
   
   unsigned int PsiSCF::nmo() {
@@ -408,11 +403,18 @@ namespace sc {
   
   PsiCLHF::PsiCLHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
-    if (docc_.empty() && multp_ != 1) {
-      ExEnv::err0() << indent
-          << "ERROR: PsiCLHF: multiplicity should be 1 for CLHF wave function"
-          << endl;
-      abort();
+    
+    multp_ = 1;
+    const int nuclear_charge = molecule()->nuclear_charge();
+    if (docc_.empty()) {
+      charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
+      if (nuclear_charge + charge_ % 2 != 0) {
+        throw InputError("PsiCLHF::PsiCLHF -- odd number of electrons, charge keyword is not given or incorrect");
+      }
+    }
+    else {
+      const int nelectron = sum(docc_) * 2;
+      charge_ = nuclear_charge - nelectron;
     }
   }
   
@@ -426,11 +428,11 @@ namespace sc {
   void PsiCLHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "rhf");
+    input->write_keyword("psi:multp", multp_);
+    input->write_keyword("psi:charge", charge_);
     if (!docc_.empty())
       input->write_keyword_array("psi:docc", nirrep_, docc_);
     else {
-      input->write_keyword("psi:multp", multp_);
-      input->write_keyword("psi:charge", charge_);
       input->write_keyword("psi:reset_occupations", true);
     }
   }
@@ -452,12 +454,25 @@ namespace sc {
   
   PsiHSOSHF::PsiHSOSHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
-    if ((docc_.empty() || socc_.empty()) && multp_ == 1) {
-      ExEnv::err0() << indent
-          << "ERROR: PsiHSOSHF: multiplicity should be > 1 for HSOSHF wave function"
-          << endl;
-      abort();
+    
+    if ( (docc_.empty() && !socc_.empty()) ||
+         (!docc_.empty() && socc_.empty()) ) {
+      throw InputError("PsiHSOSHF::PsiHSOSHF -- must give both docc and socc keywords, or neither");
     }
+    const int nuclear_charge = molecule()->nuclear_charge();
+    if (docc_.empty() || socc_.empty()) {
+      charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
+      multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));
+      if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
+        throw InputError("PsiHSOSHF::PsiHSOSHF -- inconsistent total_charge and multiplicty");
+      }
+    }
+    else {
+      const int nelectron = sum(docc_) * 2 + sum(socc_);
+      charge_ = nuclear_charge - nelectron;
+      multp_ = sum(socc_) + 1;
+    }
+    
   }
   
   PsiHSOSHF::~PsiHSOSHF() {
@@ -497,6 +512,25 @@ namespace sc {
   
   PsiUHF::PsiUHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
+
+    if ( (docc_.empty() && !socc_.empty()) ||
+         (!docc_.empty() && socc_.empty()) ) {
+      throw InputError("PsiUHF::PsiUHF -- must give both docc and socc keywords, or neither");
+    }
+    const int nuclear_charge = molecule()->nuclear_charge();
+    if (docc_.empty() || socc_.empty()) {
+      charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
+      multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));
+      if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
+        throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicty");
+      }
+    }
+    else {
+      const int nelectron = sum(docc_) * 2 + sum(socc_);
+      charge_ = nuclear_charge - nelectron;
+      multp_ = sum(socc_) + 1;
+    }
+  
   }
   
   PsiUHF::~PsiUHF() {
@@ -591,6 +625,10 @@ namespace sc {
       input->write_keyword_array("psi:frozen_docc", nirrep_, frozen_docc_);
     if (!frozen_uocc_.empty())
       input->write_keyword_array("psi:frozen_uocc", nirrep_, frozen_uocc_);
+  }
+  
+  int PsiCorrWavefunction::nelectron() {
+    return reference()->nelectron();
   }
   
   const Ref<MOIndexSpace>&PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {

@@ -408,7 +408,7 @@ namespace sc {
     const int nuclear_charge = molecule()->nuclear_charge();
     if (docc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
-      if (nuclear_charge + charge_ % 2 != 0) {
+      if ( (nuclear_charge + charge_) % 2 != 0) {
         throw InputError("PsiCLHF::PsiCLHF -- odd number of electrons, charge keyword is not given or incorrect");
       }
     }

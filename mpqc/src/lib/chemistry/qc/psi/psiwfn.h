@@ -238,8 +238,10 @@ namespace sc {
       Ref<PsiSCF> reference_;
       Ref<MOIndexSpace> occ_act_sb_[NSpinCases1];
       Ref<MOIndexSpace> vir_act_sb_[NSpinCases1];
-      std::vector<int> frozen_docc_;
-      std::vector<int> frozen_uocc_;
+      unsigned int nfzc_;
+      unsigned int nfzv_;
+      std::vector<unsigned int> frozen_docc_;
+      std::vector<unsigned int> frozen_uocc_;
       void write_input(int conv);
 
     public:
@@ -257,6 +259,10 @@ namespace sc {
       const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3
       const Ref<MOIndexSpace>& vir_act_sb(SpinCase1);
+      /// # of frozen doubly-occupied orbitals per irrep
+      const std::vector<unsigned int>& frozen_docc();
+      /// # of frozen unoccupied orbitals per irrep
+      const std::vector<unsigned int>& frozen_uocc();
 
       /// reference energy
       virtual double reference_energy();

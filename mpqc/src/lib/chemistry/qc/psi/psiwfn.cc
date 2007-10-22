@@ -567,24 +567,24 @@ namespace sc {
 
   static ClassDesc PsiCorrWavefunction_cd(typeid(PsiCorrWavefunction),
                                           "PsiCorrWavefunction", 1,
-                                          "public PsiWavefunction", 0, create<
-                                              PsiCorrWavefunction>, create<
-                                              PsiCorrWavefunction>);
+                                          "public PsiWavefunction", 0, create<PsiCorrWavefunction>,
+                                          create<PsiCorrWavefunction>);
   
   PsiCorrWavefunction::PsiCorrWavefunction(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
-    frozen_docc_ = read_occ(keyval, "frozen_docc", nirrep_);
-    frozen_uocc_ = read_occ(keyval, "frozen_uocc", nirrep_);
-    if (frozen_docc_.empty()) {
-      frozen_docc_.resize(nirrep_);
-      for (unsigned int h=0; h<nirrep_; ++h)
-        frozen_docc_[h] = 0;
-    }
-    if (frozen_uocc_.empty()) {
-      frozen_uocc_.resize(nirrep_);
-      for (unsigned int h=0; h<nirrep_; ++h)
-        frozen_uocc_[h] = 0;
-    }
+    
+    std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
+    if (nfzc_str == "auto")
+      nfzc_ = molecule()->n_core_electrons()/2;
+    else if (nfzc_str == "no" || nfzc_str == "false")
+      nfzc_ = 0;
+    else
+      nfzc_ = atoi(nfzc_str.c_str());
+    std::string nfzv_str = keyval->stringvalue("nfzv",KeyValValuestring("0"));
+    if (nfzv_str == "no" || nfzv_str == "false")
+      nfzv_ = 0;
+    else
+      nfzv_ = atoi(nfzv_str.c_str());
     
     reference_ << keyval->describedclassvalue("reference");
     if (reference_.null()) {
@@ -601,15 +601,15 @@ namespace sc {
   PsiCorrWavefunction::PsiCorrWavefunction(StateIn&s) :
     PsiWavefunction(s) {
     reference_ << SavableState::restore_state(s);
-    s.get(frozen_docc_);
-    s.get(frozen_uocc_);
+    int nfzc; s.get(nfzc); nfzc_ = static_cast<unsigned int>(nfzc);
+    int nfzv; s.get(nfzv); nfzv_ = static_cast<unsigned int>(nfzv);
   }
   
   void PsiCorrWavefunction::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
-    s.put(frozen_docc_);
-    s.put(frozen_uocc_);
+    s.put(static_cast<int>(nfzc_));
+    s.put(static_cast<int>(nfzv_));
   }
   
   void PsiCorrWavefunction::write_input(int convergence) {
@@ -621,10 +621,8 @@ namespace sc {
     Ref<PsiInput> input = get_psi_input();
     PsiWavefunction::write_basic_input(convergence);
     reference_->write_basic_input(convergence);
-    if (!frozen_docc_.empty())
-      input->write_keyword_array("psi:frozen_docc", nirrep_, frozen_docc_);
-    if (!frozen_uocc_.empty())
-      input->write_keyword_array("psi:frozen_uocc", nirrep_, frozen_uocc_);
+    input->write_keyword("psi:freeze_core", static_cast<int>(nfzc_));
+    input->write_keyword("psi:freeze_virt", static_cast<int>(nfzv_));
   }
   
   int PsiCorrWavefunction::nelectron() {
@@ -639,14 +637,11 @@ namespace sc {
     
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
-    int nfzc = 0;
-    for (unsigned int h=0; h<nirrep_; ++h)
-      nfzc += frozen_docc_[h];
     
     const std::string id(spin==Alpha ? "I" : "i");
     occ_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active occupied MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
-        reference_->evals(spin),nfzc,nmo-nocc,MOIndexSpace::symmetry);
+        reference_->evals(spin),nfzc_,nmo-nocc,MOIndexSpace::symmetry);
     
     return occ_act_sb_[spin];
   }
@@ -660,16 +655,35 @@ namespace sc {
 
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
-    int nfzv = 0;
-    for (unsigned int h=0; h<nirrep_; ++h)
-      nfzv += frozen_uocc_[h];
 
     const std::string id(spin==Alpha ? "A" : "a");    
     vir_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active virtual MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
-        reference_->evals(spin),nocc,nfzv,MOIndexSpace::symmetry);
+        reference_->evals(spin),nocc,nfzv_,MOIndexSpace::symmetry);
     
     return vir_act_sb_[spin];
+  }
+
+  const std::vector<unsigned int>&
+  PsiCorrWavefunction::frozen_docc() {
+    if (frozen_docc_.empty()) {
+      frozen_docc_.resize(nirrep_);
+      int* frzcpi = exenv()->chkpt().rd_frzcpi();
+      std::copy(frzcpi,frzcpi+nirrep_,frozen_docc_.begin());
+      psi::Chkpt::free(frzcpi);
+    }
+    return frozen_docc_;
+  }
+  
+  const std::vector<unsigned int>&
+  PsiCorrWavefunction::frozen_uocc() {
+    if (frozen_uocc_.empty()) {
+      frozen_uocc_.resize(nirrep_);
+      int* frzvpi = exenv()->chkpt().rd_frzvpi();
+      std::copy(frzvpi,frzvpi+nirrep_,frozen_uocc_.begin());
+      psi::Chkpt::free(frzvpi);
+    }
+    return frozen_uocc_;
   }
   
   double

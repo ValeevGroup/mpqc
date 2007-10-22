@@ -219,6 +219,8 @@ namespace sc {
     std::vector<unsigned int> actuoccpi(nirrep_);
     std::vector<unsigned int> actoccioff(nirrep_);
     std::vector<unsigned int> actuoccioff(nirrep_);
+    const std::vector<unsigned int>& frozen_docc = this->frozen_docc();
+    const std::vector<unsigned int>& frozen_uocc = this->frozen_uocc();
     unsigned int nocc_act = 0;
     unsigned int nuocc_act = 0;
     for (unsigned int irrep=0; irrep<nirrep_; ++irrep) {

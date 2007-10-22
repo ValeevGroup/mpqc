@@ -381,8 +381,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       stdapprox_ != LinearR12::StdApprox_C)
     throw InputError("R12Technology::R12Technology -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);
   
-  // Default is to include all integrals
-  maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(2)));
+  // Default is to include all integrals, unless using A'' method
+  const int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
+  maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(default_maxnabs)));
   
   safety_check_ = keyval->booleanvalue("safety_check",KeyValValueboolean((int)true));
 

@@ -68,6 +68,8 @@ namespace sc {
       
       /// CCSD energy
       double eccsd();
+      /// print
+      void print(std::ostream&o=ExEnv::out0()) const;
   };
   
   ///////////////////////////////////////////////////////////////////

@@ -652,6 +652,11 @@ void PsiCCSD_PT2R12::compute() {
   set_energy(reference_energy() + e2 + eccsd_);
 }
 
+void PsiCCSD_PT2R12::print(ostream&o) const {
+  mbptr12_->r12eval()->r12info()->r12tech()->print(o);
+  PsiWavefunction::print(o);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 static ClassDesc PsiCCSD_PT2R12T_cd(typeid(PsiCCSD_PT2R12T), "PsiCCSD_PT2R12T", 1,

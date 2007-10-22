@@ -405,7 +405,7 @@ namespace sc {
     PsiSCF(keyval) {
     
     multp_ = 1;
-    const int nuclear_charge = molecule()->nuclear_charge();
+    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       if ( (nuclear_charge + charge_) % 2 != 0) {
@@ -459,7 +459,7 @@ namespace sc {
          (!docc_.empty() && socc_.empty()) ) {
       throw InputError("PsiHSOSHF::PsiHSOSHF -- must give both docc and socc keywords, or neither");
     }
-    const int nuclear_charge = molecule()->nuclear_charge();
+    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));
@@ -517,7 +517,7 @@ namespace sc {
          (!docc_.empty() && socc_.empty()) ) {
       throw InputError("PsiUHF::PsiUHF -- must give both docc and socc keywords, or neither");
     }
-    const int nuclear_charge = molecule()->nuclear_charge();
+    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));

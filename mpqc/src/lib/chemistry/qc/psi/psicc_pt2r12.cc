@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbptr12/pairiter.impl.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
 
-#define TEST_ViaT1 1
+#define TEST_ViaT1 0
 
 using namespace sc;
 using namespace sc::fastpairiter;

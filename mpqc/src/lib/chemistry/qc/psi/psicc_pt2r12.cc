@@ -488,7 +488,6 @@ void PsiCCSD_PT2R12::compute() {
       if (replace_Lambda_with_T_)
         VT2.scale(2.0);
       RefSCMatrix HT = VT2;  VT2 = 0;
-      H1_R0[s].accumulate(HT);
 
       // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
       if ( completeness_order_for_intermediates_ >= 3 ||

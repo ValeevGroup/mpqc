@@ -26,18 +26,79 @@
 //
 
 #ifdef __GNUG__
-#pragma implementation
+#pragma interface
 #endif
-
-#ifndef _chemistry_qc_mbptr12_utilsimpl_h
-#define _chemistry_qc_mbptr12_utilsimpl_h
 
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
-namespace sc {
+#ifndef _chemistry_qc_mbptr12_utilsimpl_h
+#define _chemistry_qc_mbptr12_utilsimpl_h
 
+namespace sc {
+  
+  template <PureSpinCase2 spin>
+  RefSCMatrix spinadapt(const RefSCMatrix &A,
+                        const Ref<MOIndexSpace> &bra,
+                        const Ref<MOIndexSpace> &ket){
+    SpatialMOPairIter_eq ij_iter(bra);
+    SpatialMOPairIter_eq kl_iter(ket);
+    const unsigned int brablock_size_ab = ij_iter.nij_ab();
+    const unsigned int ketblock_size_ab = kl_iter.nij_ab();
+    if (A.rowdim().n()%brablock_size_ab)
+      throw ProgrammingError("sc::spinadapt() -- row dimension is not integer multiple of bra-space rank",__FILE__,__LINE__);
+    if (A.coldim().n()%ketblock_size_ab)
+      throw ProgrammingError("sc::spinadapt() -- col dimension is not integer multiple of ket-space rank",__FILE__,__LINE__);
+    const unsigned int nbra_blocks = A.rowdim().n() / brablock_size_ab;
+    const unsigned int nket_blocks = A.coldim().n() / ketblock_size_ab;
+    const unsigned int brablock_size_aa = ij_iter.nij_aa();
+    const unsigned int ketblock_size_aa = kl_iter.nij_aa();
+    RefSCMatrix Aspinadapted(A.rowdim(),A.coldim(),A->kit());
+    const double one_divby_sqrt_two=1.0/sqrt(2.0);
+    unsigned int bra_offset_ab = 0;
+    unsigned int bra_offset_aa = 0;
+    for(int brablock=0; brablock<nbra_blocks; brablock++, bra_offset_ab += brablock_size_ab, bra_offset_aa += brablock_size_aa) {
+      for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+        
+        const int ij_ab = ij_iter.ij_ab();
+              
+        unsigned int ket_offset_ab = 0;
+        unsigned int ket_offset_aa = 0;
+        for(int ketblock=0; ketblock<nket_blocks; ketblock++, ket_offset_ab += ketblock_size_ab, ket_offset_aa += ketblock_size_aa) {
+          for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+            
+            const int kl_ab = kl_iter.ij_ab();
+            const int lk_ab = kl_iter.ij_ba();
+            double Aspinadapted_element;
+            
+            if(spin==Singlet){
+              double prefactor=1.0;
+              if(ij_iter.i()==ij_iter.j()) {
+                prefactor*=one_divby_sqrt_two;
+              }
+              if(kl_iter.i()==kl_iter.j()) {
+                prefactor*=one_divby_sqrt_two;
+              }
+              
+              Aspinadapted_element=prefactor*(A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab)+A.get_element(ij_ab+bra_offset_ab,lk_ab+ket_offset_ab));
+            }
+            else if(spin==Triplet){
+              Aspinadapted_element=A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab)-A.get_element(ij_ab+bra_offset_ab,lk_ab+ket_offset_ab);
+            }
+            else {
+              throw ProgrammingError("sc::spinadapt() -- PureSpinCase2 spin is not adeqate",__FILE__,__LINE__);
+            }
+            
+            Aspinadapted.set_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab,Aspinadapted_element);
+          }
+        }
+      }
+    }
+
+    return(Aspinadapted);
+  }
+  
   template <bool accumulate>
   void
   antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
@@ -120,7 +181,7 @@ namespace sc {
       }
     }
   }
-
+  
   template <bool Accumulate>
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
                     const Ref<MOIndexSpace>& bra,

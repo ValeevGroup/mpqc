@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <math/scmat/matrix.h>
+#include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
 #ifndef _chemistry_qc_mbptr12_utils_h
@@ -40,6 +41,14 @@ namespace sc {
   
   class MOIndexSpace;
   
+  /** Takes the 4-index quantity <ij|A|kl> and returns,
+      depending on the value of the PureSpinCase2 spin,
+      a Singlet or Triplet spinadapted matrix.
+    */
+  template <PureSpinCase2 spin>
+  RefSCMatrix spinadapt(const RefSCMatrix &A,
+                          const Ref<MOIndexSpace> &bra,
+                          const Ref<MOIndexSpace> &ket);
   /** Antisymmetrizes 4-index quantity <ij|A|kl> -> <ij|A|kl> - <ij|A|lk>
       and saves to Aanti. Row dimension of A has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket.

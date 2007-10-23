@@ -80,7 +80,7 @@ MBPT2_R12::compute_energy_()
         r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/a' pair energies");
       if (r12ap_energy_.null())
-        r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
+        r12ap_energy_ = new MP2R12Energy_SpinOrbital(r12eval_,LinearR12::StdApprox_Ap,debug_);
       r12ap_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12ap_energy_->energy();
       ef12 = er12(r12ap_energy_);
@@ -91,7 +91,7 @@ MBPT2_R12::compute_energy_()
     if (r12info->stdapprox() == LinearR12::StdApprox_B) {
       tim_enter("mp2-f12/b pair energies");
       if (r12b_energy_.null())
-        r12b_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_B,debug_);
+        r12b_energy_ = new MP2R12Energy_SpinOrbital(r12eval_,LinearR12::StdApprox_B,debug_);
       r12b_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12b_energy_->energy();
       ef12 = er12(r12b_energy_);
@@ -102,7 +102,7 @@ MBPT2_R12::compute_energy_()
     if (r12info->stdapprox() == LinearR12::StdApprox_App) {
       tim_enter("mp2-f12/a'' pair energies");
       if (r12app_energy_.null())
-        r12app_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_App,debug_);
+        r12app_energy_ = new MP2R12Energy_SpinOrbital(r12eval_,LinearR12::StdApprox_App,debug_);
       r12app_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12app_energy_->energy();
       ef12 = er12(r12app_energy_);
@@ -115,7 +115,7 @@ MBPT2_R12::compute_energy_()
   if (r12info->stdapprox() == LinearR12::StdApprox_C) {
     tim_enter("mp2-f12/c pair energies");
     if (r12c_energy_.null())
-      r12c_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_C,debug_);
+      r12c_energy_ = new MP2R12Energy_SpinOrbital(r12eval_,LinearR12::StdApprox_C,debug_);
     r12c_energy_->print_pair_energies(r12info->spinadapted());
     etotal = r12c_energy_->energy();
     ef12 = er12(r12c_energy_);

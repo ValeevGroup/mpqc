@@ -34,6 +34,7 @@
 namespace sc {
   unsigned int nspincases1(bool spin_polarized) { return spin_polarized ? 2 : 1; }
   unsigned int nspincases2(bool spin_polarized) { return spin_polarized ? 3 : 1; }
+  unsigned int npurespincases2(){ return(NPureSpinCases2); }
   SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
   SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
   

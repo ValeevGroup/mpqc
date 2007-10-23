@@ -31,8 +31,10 @@
 
 #include <util/class/scexception.h>
 #include <math/scmat/local.h>
+#include <math/scmat/matrix.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
+
 
 void
 sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,

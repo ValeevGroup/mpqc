@@ -40,6 +40,7 @@
 #include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/blocked.h>
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -208,6 +209,49 @@ namespace sc {
     return occ;
   }
   
+  std::vector<unsigned int> PsiWavefunction::shell_map() {
+    const Ref<GaussianBasisSet>& bs = basis();
+    const unsigned int nshells = basis()->nshell();
+    std::vector<unsigned int> map(nshells);
+    int* snuc = exenv()->chkpt().rd_snuc();
+    // ordering of shells on an atom is the same in Psi3 and MPQC
+    // but shells si and sj from different atoms (i<j) may be ordered differently (si > sj)
+    int first_shell_on_curr_atom = 0;
+    int atom_curr = snuc[0] - 1;
+    for(unsigned int s=0; s<nshells; ++s) {
+      int atom = snuc[s] - 1;
+      if (atom != atom_curr) {
+        atom_curr = atom;
+        first_shell_on_curr_atom = s;
+      }
+      map[s] = bs->shell_on_center(atom,s-first_shell_on_curr_atom);
+    }
+    psi::Chkpt::free(snuc);
+    return map;
+  }
+
+  std::vector<unsigned int> PsiWavefunction::ao_map() {
+    const Ref<GaussianBasisSet>& bs = basis();
+    const unsigned int nao = bs->nbasis();
+    const unsigned int nshells = bs->nshell();
+    psi::Chkpt& chkpt = exenv()->chkpt();
+    std::vector<unsigned int> smap = shell_map();
+
+    std::vector<unsigned int> map(nao);
+    int* first_ao_from_shell_psi = chkpt.rd_puream() ? chkpt.rd_sloc_new() : chkpt.rd_sloc();
+    for(unsigned int spsi=0; spsi<nshells; ++spsi) {
+      unsigned int smpqc = smap[spsi];
+      unsigned int nbf = bs->shell(smpqc).nfunction();
+      int first_bf_psi = first_ao_from_shell_psi[spsi] - 1;
+      int first_bf_mpqc = bs->shell_to_function(smpqc);
+      for(unsigned int bf=0; bf<nbf; ++bf) {
+        map[first_bf_psi + bf] = first_bf_mpqc + bf;
+      }
+    }
+    psi::Chkpt::free(first_ao_from_shell_psi);
+    return map;
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiSCF_cd(typeid(PsiSCF), "PsiSCF", 1,
@@ -329,7 +373,30 @@ namespace sc {
       aotoso.print("Psi3 SO->AO matrix");
     coefs_[spin] = aotoso.t() * C_so;
     if (debug() >= DefaultPrintThresholds::allN2)
-      coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis").c_str());
+      coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (Psi-ordered)").c_str());
+    // resort AOs from Psi to MPQC order using Psi3->MPQC shell map
+    {
+      std::vector<unsigned int> aomap = ao_map();
+      const int nao = aomap.size();
+      const char* name = "PsiSCF::evecs";
+      RefSCMatrix coefs_mpqc = coefs_[spin].clone();
+      BlockedSCMatrix* coefs_psi_blkd = require_dynamic_cast<BlockedSCMatrix*>(coefs_[spin].pointer(),name);
+      BlockedSCMatrix* coefs_mpqc_blkd = require_dynamic_cast<BlockedSCMatrix*>(coefs_mpqc.pointer(),name);
+      for (unsigned int h=0; h<nirrep_; ++h) {
+        RefSCMatrix coefs_mpqc_blk = coefs_mpqc_blkd->block(h);
+        if (coefs_mpqc_blk.null()) continue;
+        RefSCMatrix coefs_psi_blk = coefs_psi_blkd->block(h);
+        
+        for (unsigned int aopsi=0; aopsi<nao; ++aopsi) {
+          RefSCVector row = coefs_psi_blk.get_row(aopsi);
+          const unsigned int aompqc = aomap[aopsi];
+          coefs_mpqc_blk.assign_row(row, aompqc);
+        }
+      }
+      coefs_[spin] = coefs_mpqc;
+    }
+    if (debug() >= DefaultPrintThresholds::allN2)
+      coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered)").c_str());
     
     using psi::Chkpt;
     Chkpt::free(mopi);

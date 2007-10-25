@@ -285,11 +285,23 @@ void PsiCCSD_PT2R12::compute() {
     // Psi stores amplitudes in Pitzer (symmetry-blocked) order. Construct such spaces for active occupied and virtual spaces
     Ref<MOIndexSpace> occ_act_sb_psi = occ_act_sb(spin);
     Ref<MOIndexSpace> vir_act_sb_psi = vir_act_sb(spin);
+    if (debug() >= DefaultPrintThresholds::mostN2) {
+      occ_act->coefs().print(prepend_spincase(spin,"Active occupied MPQC eigenvector").c_str());
+      occ_act_sb_psi->coefs().print(prepend_spincase(spin,"Active occupied Psi3 eigenvector").c_str());
+      occ_act_sb_psi->evals().print(prepend_spincase(spin,"Active occupied Psi3 eigenvalues").c_str());
+      vir_act->coefs().print(prepend_spincase(spin,"Active virtual MPQC eigenvector").c_str());
+      vir_act_sb_psi->coefs().print(prepend_spincase(spin,"Active virtual Psi3 eigenvector").c_str());
+      vir_act_sb_psi->evals().print(prepend_spincase(spin,"Active virtual Psi3 eigenvalues").c_str());
+    }
     
     MPQC2PSI_tform_oa[spin] = transform(*occ_act_sb_psi, *occ_act,
                                         localkit);
     MPQC2PSI_tform_va[spin] = transform(*vir_act_sb_psi, *vir_act,
                                         localkit);
+    if (debug() >= DefaultPrintThresholds::mostN2) {
+      MPQC2PSI_tform_oa[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active occupied orbitals").c_str());
+      MPQC2PSI_tform_va[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active virtual orbitals").c_str());
+    }
     RefSCMatrix T1_psi = this->T1(spin);
     T1[spin] = transform_T1(MPQC2PSI_tform_oa[spin], MPQC2PSI_tform_va[spin], T1_psi,
                             localkit);

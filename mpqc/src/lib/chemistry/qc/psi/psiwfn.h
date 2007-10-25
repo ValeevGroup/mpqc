@@ -98,12 +98,17 @@ namespace sc {
       Ref<PsiExEnv> exenv() const {
         return exenv_;
       }
-      ;
+      
       /// Return an associated PsiInput object
       Ref<PsiInput> get_psi_input() const {
         return exenv_->get_psi_input();
       }
-      ;
+      
+      /// Returns a map from shells in Psi3 basis to shells in MPQC basis
+      std::vector<unsigned int> shell_map();
+      /// Returns a map from AO in Psi3 basis to AO in MPQC basis
+      std::vector<unsigned int> ao_map();
+      
   };
   
   ///////////////////////////////////////////////////////////////////

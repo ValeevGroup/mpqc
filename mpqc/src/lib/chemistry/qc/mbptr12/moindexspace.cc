@@ -37,6 +37,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 
+#define DEBUG_DENSE_TRANSFORM 0
+
 using namespace std;
 using namespace sc;
 
@@ -652,7 +654,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
   
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
-#if 0
+#if DEBUG_DENSE_TRANSFORM
   c1.print("transform(MOIndexSpace,MOIndexSpace): c1");
   c2.print("transform(MOIndexSpace,MOIndexSpace): c2");
 #endif
@@ -674,7 +676,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
   // the transform matrix is the inverse of S21
   RefSCMatrix U21 = S21.gi();
   
-#if 0
+#if DEBUG_DENSE_TRANSFORM
   // test
   (S21).print("S21");
   (U21).print("U21");

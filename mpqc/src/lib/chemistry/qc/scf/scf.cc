@@ -525,6 +525,12 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
   if (debug_ > 1) vector.print("SO vector");
   
+  // print eigenvector in AO basis
+  if (debug_ > 3) {
+    Ref<PetiteList> pl = integral()->petite_list();
+    pl->evecs_to_AO_basis(vector).print("AO vector");
+  }
+  
   BlockedSCMatrix *bvec = require_dynamic_cast<BlockedSCMatrix*>(
     vector, "SCF::so_density: blocked vector");
 

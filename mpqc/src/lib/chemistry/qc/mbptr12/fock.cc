@@ -33,6 +33,7 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
+#include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -41,7 +42,8 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
-#define NEW_HCORE 0
+#define NEW_HCORE 1
+
 
 RefSCMatrix
 R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
@@ -49,20 +51,19 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K)
 {
-  if (bra_space->rank() == 0 || ket_space->rank() == 0)
-    return 0;
-  
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
   int nshell1 = bs1->nshell();
   int nshell2 = bs2->nshell();
-
+  
   RefSCMatrix vec1t = bra_space->coefs().t();
   RefSCMatrix vec2 = ket_space->coefs();
 
 #if NEW_HCORE
+  ExEnv::out0() << "NEW_HCORE" << endl;
+
   RefSCDimension aodim1 = vec1t.coldim();
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
@@ -74,11 +75,14 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
           "r12info()->wfn() was not an MBPT2_R12 object",
           __FILE__, __LINE__, class_desc());
   }
+
+  Ref<SCF> ref = r12wfn->ref();
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = r12wfn->ref()->momentum_basis();
+  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
   Ref<GaussianBasisSet> hcore_basis;
+
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
     }
@@ -87,9 +91,8 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     }
 
   RefSymmSCMatrix hsymm
-      = r12wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
-
-
+      = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+  
   // convert hsymm to the AO basis
   Ref<Integral> localints = r12info_->integral()->clone();
   localints->set_basis(hcore_basis,hcore_basis);
@@ -98,24 +101,88 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   hsymm = 0;
 
   RefSCMatrix h(aodim1, aodim2, sokit);
+  
   if (bs1_eq_bs2) {
       h.assign(0.0);
       h.accumulate(hsymm_ao);
-    }
+  }
   else {
-      int br = 0;
-      int er = bs1->nbasis() - 1;
-      int bc = 0;
-      int ec = bs2->nbasis() - 1;
-      int source_br = 0;
-      int source_bc = bs1->nbasis();
-      RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
-      hrect_ao.assign(0.0);
-      hrect_ao.accumulate(hsymm_ao);
-      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
-    }
+	  RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+	  hrect_ao.assign(0.0);
+	  hrect_ao.accumulate(hsymm_ao);
+	  
+	  Ref<GaussianBasisSet> sea_basisset;
+	  sea_basisset = hcore_basis;
+	
+	  // find all rows in hsymm belonging to bra_space (bs1)
+	  Ref<GaussianBasisSet> baitingset;
+	  baitingset = bs1;
+	  std::vector<int> bs1_shell_start(nshell1);
+	  std::vector<int> bs1_shell_end(nshell1);
+	  
+	  // loop over bait_shells
+	  for (int ishell=0; ishell<nshell1; ishell++){
+		  
+		  // determine center on which ishell is located
+		  int kcenter =baitingset->shell_to_center(ishell);
+		  GaussianShell *bait_shell = &baitingset->shell(ishell); 
+		  
+		  // find equivalent shell on center kcenter in sea_basis
+		  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+	
+		  // return index of first and last function
+		  bs1_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
+		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	  }
+	  	
+	  // find all columns in hsymm belonging to ket_space (bs2)
+	  baitingset = bs2;
+	  std::vector<int> bs2_shell_start(nshell2);
+	  std::vector<int> bs2_shell_end(nshell2);
+	   
+	  // loop over bait_shells
+	  for (int ishell=0; ishell<nshell2; ishell++){
+	 	  
+		  // determine center on which ishell is located
+		  int kcenter =baitingset->shell_to_center(ishell);
+	 	  GaussianShell *bait_shell = &baitingset->shell(ishell);
+	 	  
+	 	  // find equivalent shell on center kcenter in sea_basis
+	 	  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+	
+	 	  // return index of first and last function
+	 	  bs2_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
+	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	  }
+	  	  
+	  // loop over rows (there are nshell1 blocks of them)
+	  int br=0;
+	  for (int irowblock=0;irowblock<nshell1; irowblock++){
+	
+		  int rowlength = bs1_shell_end[irowblock]-bs1_shell_start[irowblock]+1;
+		  int er = br + rowlength-1;
+	      int source_br = bs1_shell_start[irowblock];
+	
+		  // loop over columns (there are nshell2 blocks of them)
+		  int bc=0;
+		  for (int icolblock=0; icolblock<nshell2; icolblock++){
+			  
+			  int collength=bs2_shell_end[icolblock]-bs2_shell_start[icolblock]+1;
+			  int ec = bc + collength-1;
+		      int source_bc = bs2_shell_start[icolblock];
+			  
+		      // assign row-/col-subblock to h
+		      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
+		      
+		      bc = ec + 1;
+		  }
+		  br = er + 1;
+	  }	
+  }
+
 
 #else // ! NEW_HCORE
+  ExEnv::out0() << "OLD_HCORE" << endl;
 
   if (r12info()->wfn()->dk() > 0) {
       throw ProgrammingError(
@@ -182,7 +249,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   h_ints = 0;
 
 #endif // NEW_HCORE
-
+  
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
   if (debug_ >= DefaultPrintThresholds::allN2)
@@ -204,8 +271,6 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   const double J_prefactor = (spin_unrestricted ? 1.0 : 2.0);
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 sc = static_cast<SpinCase1>(s);
-    if (occ(sc)->rank() == 0)
-      continue;
     if (scale_J != 0.0) {
       RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
       J.scale(J_prefactor*scale_J);
@@ -262,8 +327,173 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   }
 #endif
   
+
   return F;
 }
+
+
+
+RefSCMatrix
+R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
+                   const Ref<MOIndexSpace>& ket_space,
+                   SpinCase1 spin)
+{
+  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+  const Ref<GaussianBasisSet> bs1 = bra_space->basis();
+  const Ref<GaussianBasisSet> bs2 = ket_space->basis();
+  const bool bs1_eq_bs2 = (bs1 == bs2);
+  int nshell1 = bs1->nshell();
+  int nshell2 = bs2->nshell();
+  
+  RefSCMatrix vec1t = bra_space->coefs().t();
+  RefSCMatrix vec2 = ket_space->coefs();
+
+  
+  ExEnv::out0() << "flo1: in dtilde" << endl;
+
+  RefSCDimension aodim1 = vec1t.coldim();
+  RefSCDimension aodim2 = vec2.rowdim();
+  Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
+
+  // cast Wavefunction to MBPT2_R12
+  MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
+  if (r12wfn == 0) {
+      throw ProgrammingError(
+          "r12info()->wfn() was not an MBPT2_R12 object",
+          __FILE__, __LINE__, class_desc());
+  }
+
+  Ref<SCF> ref = r12wfn->ref();
+  // Form the DK correction in the current basis using the momentum
+  // basis of the reference wavefunction.  The momentum basis in the
+  // reference should be a superset of hcore_basis
+  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
+  Ref<GaussianBasisSet> hcore_basis;
+
+  if (bs1_eq_bs2) {
+      hcore_basis = bs1;
+    }
+  else {
+      hcore_basis = bs1 + bs2;
+    }
+
+  RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+  RefSymmSCMatrix h_nr  = ref->core_hamiltonian_nr(hcore_basis);
+//  RefSymmSCMatrix p4    = ref->p4(hcore_basis);
+  throw ProgrammingError(
+            "dtilde is not implemented yet",
+            __FILE__, __LINE__, class_desc());
+  h_nr.scale(-1.0);
+  hsymm.accumulate(h_nr);
+  
+  
+  // convert hsymm to the AO basis
+  Ref<Integral> localints = r12info_->integral()->clone();
+  localints->set_basis(hcore_basis,hcore_basis);
+  Ref<PetiteList> hcore_pl = localints->petite_list();
+  RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
+  hsymm = 0;
+
+  RefSCMatrix h(aodim1, aodim2, sokit);
+  
+  if (bs1_eq_bs2) {
+      h.assign(0.0);
+      h.accumulate(hsymm_ao);
+  }
+  else {
+	  RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+	  hrect_ao.assign(0.0);
+	  hrect_ao.accumulate(hsymm_ao);
+	  
+	  Ref<GaussianBasisSet> sea_basisset;
+	  sea_basisset = hcore_basis;
+	
+	  // find all rows in hsymm belonging to bra_space (bs1)
+	  Ref<GaussianBasisSet> baitingset;
+	  baitingset = bs1;
+	  std::vector<int> bs1_shell_start(nshell1);
+	  std::vector<int> bs1_shell_end(nshell1);
+	  
+	  // loop over bait_shells
+	  for (int ishell=0; ishell<nshell1; ishell++){
+		  
+		  // determine center on which ishell is located
+		  int kcenter =baitingset->shell_to_center(ishell);
+		  GaussianShell *bait_shell = &baitingset->shell(ishell); 
+		  
+		  // find equivalent shell on center kcenter in sea_basis
+		  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+	
+		  // return index of first and last function
+		  bs1_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
+		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	  }
+	  	
+	  // find all columns in hsymm belonging to ket_space (bs2)
+	  baitingset = bs2;
+	  std::vector<int> bs2_shell_start(nshell2);
+	  std::vector<int> bs2_shell_end(nshell2);
+	   
+	  // loop over bait_shells
+	  for (int ishell=0; ishell<nshell2; ishell++){
+	 	  
+		  // determine center on which ishell is located
+		  int kcenter =baitingset->shell_to_center(ishell);
+	 	  GaussianShell *bait_shell = &baitingset->shell(ishell);
+	 	  
+	 	  // find equivalent shell on center kcenter in sea_basis
+	 	  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+	
+	 	  // return index of first and last function
+	 	  bs2_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
+	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	  }
+	  	  
+	  // loop over rows (there are nshell1 blocks of them)
+	  int br=0;
+	  for (int irowblock=0;irowblock<nshell1; irowblock++){
+	
+		  int rowlength = bs1_shell_end[irowblock]-bs1_shell_start[irowblock]+1;
+		  int er = br + rowlength-1;
+	      int source_br = bs1_shell_start[irowblock];
+	
+		  // loop over columns (there are nshell2 blocks of them)
+		  int bc=0;
+		  for (int icolblock=0; icolblock<nshell2; icolblock++){
+			  
+			  int collength=bs2_shell_end[icolblock]-bs2_shell_start[icolblock]+1;
+			  int ec = bc + collength-1;
+		      int source_bc = bs2_shell_start[icolblock];
+			  
+		      // assign row-/col-subblock to h
+		      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
+		      
+		      bc = ec + 1;
+		  }
+		  br = er + 1;
+	  }	
+  }
+
+  
+  // finally, transform
+  RefSCMatrix F = vec1t * h * vec2;
+  if (debug_ >= DefaultPrintThresholds::allN2)
+    F.print("Core Hamiltonian contribution");
+  // and clean up a bit
+  h = 0;
+  
+  const bool spin_unrestricted = spin_polarized();
+  
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    F.print("Fock matrix");
+  }
+   
+
+  return F;
+}
+
+
+
 
 ///////////////////////////////////////////////////////////////
 

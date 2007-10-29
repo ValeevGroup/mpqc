@@ -253,6 +253,13 @@ class R12IntEval : virtual public SavableState {
                     const Ref<MOIndexSpace>& ket_space,
                     SpinCase1 S = Alpha,
                     double scale_J = 1.0, double scale_K = 1.0);
+  /** Compute the relativistic hcore Hamiltonian using DKH2 and substract
+      T, V and the mass-velocity term. Based on wfn::core_hamiltonian_dk and 
+      r12int_eval::fock_.  
+  */
+  RefSCMatrix dtilde_(const Ref<MOIndexSpace>& bra_space,
+                      const Ref<MOIndexSpace>& ket_space,
+                      SpinCase1 S = Alpha);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);

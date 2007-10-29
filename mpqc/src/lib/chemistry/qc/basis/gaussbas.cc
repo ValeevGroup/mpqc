@@ -225,7 +225,7 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
                                    const Ref<Molecule>& molecule,
                                    const Ref<SCMatrixKit>& matrixkit,
                                    const RefSCDimension& basisdim,
-				   const int ncenter,
+                                   const int ncenter,
                                    const int nshell,
                                    GaussianShell** shell,
                                    const std::vector<int>& center_to_nshell) :
@@ -1063,6 +1063,9 @@ GaussianBasisSet::shell_on_center(int icenter, int ishell) const
   return center_to_shell_[icenter] + ishell;
 }
 
+
+
+
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const
 {
@@ -1244,6 +1247,19 @@ GaussianBasisSet::ValueData::~ValueData()
   delete[] sivec_;
 }
 
+int
+sc::ishell_on_center(int icenter, GaussianBasisSet* seaset,
+		             GaussianShell* bait_shell)
+{     
+        for (int jshell=0; jshell < seaset->nshell_on_center(icenter); jshell++){
+                const GaussianShell* sea_shell;
+                sea_shell = &seaset->shell(icenter,jshell);
+                int k=bait_shell->equiv(sea_shell);
+                if (k==1) {
+                        return seaset->shell_on_center(icenter,jshell);
+                }
+        } 
+} 
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

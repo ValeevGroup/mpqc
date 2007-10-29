@@ -118,9 +118,7 @@ class Wavefunction: public MolecularEnergy {
                                       const RefDiagSCMatrix &p2K2_inv,
                                       const RefSCMatrix &so_to_p,
                                       const RefSymmSCMatrix &pxVp);
-    // Compute the non-relativistic core hamiltonian.
-    RefSymmSCMatrix core_hamiltonian_nr(
-      const Ref<GaussianBasisSet> &bas);
+
 
   protected:
 
@@ -195,6 +193,7 @@ class Wavefunction: public MolecularEnergy {
     virtual RefSCMatrix natural_orbitals();
     /// Returns the natural density (a diagonal matrix).
     virtual RefDiagSCMatrix natural_density();
+    
 
     /// Return 1 if the alpha density is not equal to the beta density.
     virtual int spin_polarized() = 0;
@@ -224,6 +223,9 @@ class Wavefunction: public MolecularEnergy {
       const Ref<GaussianBasisSet> &pbas = 0);
     /// Returns the SO core Hamiltonian.
     virtual RefSymmSCMatrix core_hamiltonian();
+    // Compute the non-relativistic core hamiltonian.
+    RefSymmSCMatrix core_hamiltonian_nr(
+      const Ref<GaussianBasisSet> &bas);
 
     /** Returns the nuclear repulsion energy.  This must be used instead of
         Molecule::nuclear_repulsion_energy() since there may be diffuse

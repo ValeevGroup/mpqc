@@ -541,6 +541,12 @@ class GaussianBasisSet: virtual public SavableState
 Ref<GaussianBasisSet>
 operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
 
+/** Return overall shell number of shell in the basis given a reference
+    shell and the center */
+int 
+ishell_on_center(int icenter, GaussianBasisSet* seaset,
+	             GaussianShell* bait_shell);
+
 }
 
 #endif

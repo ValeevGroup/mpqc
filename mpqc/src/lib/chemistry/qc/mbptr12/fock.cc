@@ -44,26 +44,26 @@ using namespace sc;
 #define TEST_FOCKBUILD 0
 #define NEW_HCORE 1
 
-
 RefSCMatrix
 R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
                   const Ref<MOIndexSpace>& ket_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K)
 {
+  if (bra_space->rank() == 0 || ket_space->rank() == 0)
+    return 0;
+  
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
   int nshell1 = bs1->nshell();
   int nshell2 = bs2->nshell();
-  
+
   RefSCMatrix vec1t = bra_space->coefs().t();
   RefSCMatrix vec2 = ket_space->coefs();
 
 #if NEW_HCORE
-  ExEnv::out0() << "NEW_HCORE" << endl;
-
   RefSCDimension aodim1 = vec1t.coldim();
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
@@ -75,14 +75,11 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
           "r12info()->wfn() was not an MBPT2_R12 object",
           __FILE__, __LINE__, class_desc());
   }
-
-  Ref<SCF> ref = r12wfn->ref();
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
+  Ref<GaussianBasisSet> p_basis = r12wfn->ref()->momentum_basis();
   Ref<GaussianBasisSet> hcore_basis;
-
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
     }
@@ -91,8 +88,9 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     }
 
   RefSymmSCMatrix hsymm
-      = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
-  
+      = r12wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
+
+
   // convert hsymm to the AO basis
   Ref<Integral> localints = r12info_->integral()->clone();
   localints->set_basis(hcore_basis,hcore_basis);
@@ -101,7 +99,6 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   hsymm = 0;
 
   RefSCMatrix h(aodim1, aodim2, sokit);
-  
   if (bs1_eq_bs2) {
       h.assign(0.0);
       h.accumulate(hsymm_ao);
@@ -182,7 +179,6 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
 
 
 #else // ! NEW_HCORE
-  ExEnv::out0() << "OLD_HCORE" << endl;
 
   if (r12info()->wfn()->dk() > 0) {
       throw ProgrammingError(
@@ -249,7 +245,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   h_ints = 0;
 
 #endif // NEW_HCORE
-  
+
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
   if (debug_ >= DefaultPrintThresholds::allN2)
@@ -271,6 +267,8 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   const double J_prefactor = (spin_unrestricted ? 1.0 : 2.0);
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 sc = static_cast<SpinCase1>(s);
+    if (occ(sc)->rank() == 0)
+      continue;
     if (scale_J != 0.0) {
       RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
       J.scale(J_prefactor*scale_J);
@@ -327,7 +325,6 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   }
 #endif
   
-
   return F;
 }
 

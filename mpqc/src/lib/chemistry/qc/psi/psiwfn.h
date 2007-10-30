@@ -104,8 +104,8 @@ namespace sc {
         return exenv_->get_psi_input();
       }
       
-      /// Returns a map from shells in Psi3 basis to shells in MPQC basis
-      std::vector<unsigned int> shell_map();
+      /// Returns a map from shells in Psi3 basis to std::pair<shell,contraction> in MPQC basis (note that Psi3 does not handle general contractions)
+      std::vector< std::pair<unsigned int,unsigned int> > shell_map();
       /// Returns a map from AO in Psi3 basis to AO in MPQC basis
       std::vector<unsigned int> ao_map();
       

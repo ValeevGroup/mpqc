@@ -209,41 +209,55 @@ namespace sc {
     return occ;
   }
   
-  std::vector<unsigned int> PsiWavefunction::shell_map() {
+  std::vector< std::pair<unsigned int, unsigned int> > PsiWavefunction::shell_map() {
+    typedef std::vector< std::pair<unsigned int, unsigned int> > ShellMap;
     const Ref<GaussianBasisSet>& bs = basis();
+    // # of MPQC contractions = # of Psi3 shells
+    const unsigned int ncontr = exenv()->chkpt().rd_nshell();
+    // # of MPQC shells
     const unsigned int nshells = basis()->nshell();
-    std::vector<unsigned int> map(nshells);
+    ShellMap map(ncontr);
     int* snuc = exenv()->chkpt().rd_snuc();
     // ordering of shells on an atom is the same in Psi3 and MPQC
     // but shells si and sj from different atoms (i<j) may be ordered differently (si > sj)
     int first_shell_on_curr_atom = 0;
     int atom_curr = snuc[0] - 1;
+    int contr = 0;
     for(unsigned int s=0; s<nshells; ++s) {
-      int atom = snuc[s] - 1;
+      int atom = snuc[contr] - 1;
       if (atom != atom_curr) {
         atom_curr = atom;
         first_shell_on_curr_atom = s;
       }
-      map[s] = bs->shell_on_center(atom,s-first_shell_on_curr_atom);
+      const unsigned int shell_mpqc = bs->shell_on_center(atom,s-first_shell_on_curr_atom);
+      const unsigned int ncontr_in_shell = bs->shell(shell_mpqc).ncontraction();
+      for(unsigned int c=0; c<ncontr_in_shell; ++c, ++contr) {
+        map[contr] = make_pair(shell_mpqc,c);
+      }
     }
     psi::Chkpt::free(snuc);
     return map;
   }
 
   std::vector<unsigned int> PsiWavefunction::ao_map() {
+    typedef std::pair<unsigned int, unsigned int> ShellContrPair;
+    typedef std::vector<ShellContrPair> ShellMap;
     const Ref<GaussianBasisSet>& bs = basis();
     const unsigned int nao = bs->nbasis();
-    const unsigned int nshells = bs->nshell();
     psi::Chkpt& chkpt = exenv()->chkpt();
-    std::vector<unsigned int> smap = shell_map();
+    ShellMap smap = shell_map();
 
     std::vector<unsigned int> map(nao);
+    const unsigned int nshells_psi = chkpt.rd_nshell();
     int* first_ao_from_shell_psi = chkpt.rd_puream() ? chkpt.rd_sloc_new() : chkpt.rd_sloc();
-    for(unsigned int spsi=0; spsi<nshells; ++spsi) {
-      unsigned int smpqc = smap[spsi];
-      unsigned int nbf = bs->shell(smpqc).nfunction();
+    for(unsigned int spsi=0; spsi<nshells_psi; ++spsi) {
+      const ShellContrPair& shellcontr = smap[spsi];
+      unsigned int smpqc = shellcontr.first;
+      unsigned int cmpqc = shellcontr.second;
+      const GaussianShell& shell = bs->shell(smpqc);
+      unsigned int nbf = shell.nfunction(cmpqc);
       int first_bf_psi = first_ao_from_shell_psi[spsi] - 1;
-      int first_bf_mpqc = bs->shell_to_function(smpqc);
+      int first_bf_mpqc = bs->shell_to_function(smpqc) + shell.contraction_to_function(cmpqc);
       for(unsigned int bf=0; bf<nbf; ++bf) {
         map[first_bf_psi + bf] = first_bf_mpqc + bf;
       }

@@ -63,6 +63,8 @@ class GaussianShell: public SavableState
     int max_am_;
     int ncart_;
     int has_pure_;
+    int* contr_to_func_;
+    int* func_to_contr_;
     void init_computed_data();
 
     double shell_normalization(int);
@@ -161,6 +163,10 @@ class GaussianShell: public SavableState
     int is_pure(int con) const { return puream[con]; }
     /// Returns nonzero if any contraction is solid harmonics.
     int has_pure() const { return has_pure_; }
+    /// Returns the number of the first function in the given contraction
+    int contraction_to_function(int c) const { return contr_to_func_[c]; }
+    /// Returns the contraction to which this function belongs
+    int function_to_contraction(int f) const { return func_to_contr_[f]; }
     /// Returns the contraction coef for unnormalized primitives.
     double coefficient_unnorm(int con,int prim) const {return coef[con][prim];}
     /// Returns the contraction coef for normalized primitives.

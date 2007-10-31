@@ -2362,8 +2362,28 @@ R12IntEval::f_bra_ket(
       if (make_K && K.null()) {
 	  const Ref<MOIndexSpace>& occ_space = occ(spin);
 	  K_i_e = exchange_(occ_space,intspace,extspace);
+	  
+      // in case of relativistic corrections substract a modified DKH 
+      // core hamiltonian from the exchange
+	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - p4
+	  // NOTE: DKH core hamiltonian includes the nr core hamiltonian
+      int dk = r12info_->wfn()->dk();
+      ExEnv::out0() << "dk: " << dk<<endl;
+      if (dk>0) {
+          // this is the DKH-Hamilton minus the nr-Hamilton:
+    	  RefSCMatrix dkh_contrib;
+    	  dkh_contrib = dtilde_(intspace,extspace,spin);
+    	  dkh_contrib.scale(-1.0);
+    	  K_i_e.accumulate(dkh_contrib);
+      }
 	  if (debug_ >= DefaultPrintThresholds::allN2) {
-	      std::string label("K matrix in ");
+		  std::string label;
+	      if (dk==0) {
+	    	  label +="K matrix in ";
+	      }
+	      else{
+	    	  label +="K-d~ matrix in ";
+	      } 
 	      label += intspace->id();
 	      label += "/";
 	      label += extspace->id();

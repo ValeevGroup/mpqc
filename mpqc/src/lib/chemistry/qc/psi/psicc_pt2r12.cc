@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cmath>
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
@@ -120,9 +121,9 @@ void PsiCCSD_PT2R12::compute() {
   // params
   const bool ebc = r12tech->ebc();
   
-  // compute CCSD wave function
+  // compute Psi3 CCSD wave function
   PsiWavefunction::compute();
-  // read CCSD energy
+  // read Psi3 CCSD energy
   if (!mp2_only_) {
     psi::PSIO& psio = exenv()->psio();
     psio.open(CC_INFO, PSIO_OPEN_OLD);
@@ -130,7 +131,18 @@ void PsiCCSD_PT2R12::compute() {
                     sizeof(double));
     psio.close(CC_INFO, 1);
   }
-  
+
+  // compare reference energies from Psi3 and MPQC -- abort, if do not agree
+  {
+    const double reference_energy_mpqc = mbptr12_->ref_energy();
+    const double reference_energy_psi3 = reference_energy();
+    const double eref_diff = std::fabs(reference_energy_mpqc - reference_energy_psi3);
+    const double eref_tol = desired_value_accuracy()*100.0;
+    if (eref_diff > eref_tol)
+      throw ToleranceExceeded("PsiCCSD_PT2R12::compute -- MPQC and Psi3 reference energies do not agree",
+                              __FILE__,__LINE__,eref_tol,eref_diff);
+  }
+
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();
   Ref<R12IntEval> r12eval = mbptr12_->r12eval();

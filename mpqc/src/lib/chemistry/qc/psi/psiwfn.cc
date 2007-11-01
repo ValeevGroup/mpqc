@@ -515,6 +515,7 @@ namespace sc {
       input->write_keyword_array("psi:docc", nirrep_, docc_);
     else {
       input->write_keyword("psi:reset_occupations", true);
+      input->write_keyword("psi:hcore_guess", "new");
     }
   }
   
@@ -574,6 +575,7 @@ namespace sc {
     input->write_keyword("psi:charge", charge_);
     if (docc_.empty() && socc_.empty()) {
       input->write_keyword("psi:reset_occupations", true);
+      input->write_keyword("psi:hcore_guess", "new");
     }
   }
   
@@ -632,6 +634,7 @@ namespace sc {
     input->write_keyword("psi:charge", charge_);
     if (docc_.empty() && socc_.empty()) {
       input->write_keyword("psi:reset_occupations", true);
+      input->write_keyword("psi:hcore_guess", "new");
     }
   }
   

@@ -116,7 +116,7 @@ R12IntEvalInfo::construct_ri_basis_evplus_(bool safe)
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
   bs_ri_ = bs_aux_ + obs;
   Ref<GaussianBasisSet> vbs = basis_vir();
-  if (!vbs->equiv(bs_aux_))
+  if (!vbs->equiv(bs_aux_) && !vbs->equiv(obs))
     bs_ri_ = bs_ri_ + vbs;
   construct_ortho_comp_svd_();
 }

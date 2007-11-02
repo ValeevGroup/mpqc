@@ -730,7 +730,7 @@ void PsiCCSD_PT2R12T::compute() {
   ExEnv::out0() << "E(T)          = " << scprintf("%15.10lf",e_t_) << endl;
   ExEnv::out0() << "ECCSD_PT2R12T = " << scprintf("%15.10lf",e_ccsd_pt2r12t)
                 << endl;
-  set_energy(e_ccsd_pt2r12t);
+  set_energy(e_ccsd_pt2r12t + reference_energy());
 }
 
 ////////////////////////

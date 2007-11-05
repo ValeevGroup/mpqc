@@ -81,7 +81,8 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   // cannot do ebc=false either
   if (!r12tech->ebc())
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- ebc = false is not yet implemented",__FILE__,__LINE__);
-  
+
+  set_desired_value_accuracy(desired_value_accuracy());
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
@@ -116,11 +117,6 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
 }
 
 void PsiCCSD_PT2R12::compute() {
-  const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
-  const Ref<R12Technology> r12tech = r12info->r12tech();
-  // params
-  const bool ebc = r12tech->ebc();
-  
   // compute Psi3 CCSD wave function
   PsiWavefunction::compute();
   // read Psi3 CCSD energy
@@ -143,6 +139,11 @@ void PsiCCSD_PT2R12::compute() {
                               __FILE__,__LINE__,eref_tol,eref_diff);
   }
 
+  const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
+  const Ref<R12Technology> r12tech = r12info->r12tech();
+  // params
+  const bool ebc = r12tech->ebc();
+  
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();
   Ref<R12IntEval> r12eval = mbptr12_->r12eval();

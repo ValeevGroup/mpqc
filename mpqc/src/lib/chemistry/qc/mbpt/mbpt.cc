@@ -314,8 +314,8 @@ MBPT2::compute()
 
   init_variables();
 
-  reference_->set_desired_value_accuracy(desired_value_accuracy()
-                                         / ref_to_mp2_acc);
+  set_desired_value_accuracy(desired_value_accuracy());
+  
   if (gradient_needed()) {
       if (nsocc) {
           ExEnv::errn() << "MBPT2: cannot compute open shell gradients" << endl;
@@ -383,6 +383,15 @@ int
 MBPT2::value_implemented() const
 {
   return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+void
+MBPT2::set_desired_value_accuracy(double acc)
+{
+  Function::set_desired_value_accuracy(acc);
+  reference_->set_desired_value_accuracy(acc / ref_to_mp2_acc);
 }
 
 //////////////////////////////////////////////////////////////////////////////

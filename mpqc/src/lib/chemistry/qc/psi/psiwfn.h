@@ -249,6 +249,8 @@ namespace sc {
       std::vector<unsigned int> frozen_uocc_;
       void write_input(int conv);
 
+      double valacc_to_refacc() const { return 100.0; }
+      
     public:
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
@@ -257,6 +259,9 @@ namespace sc {
       int spin_polarized() {
         return reference_->spin_polarized();
       }
+      /// sets the desired value accuracy
+      void set_desired_value_accuracy(double acc);
+      
       const Ref<PsiSCF>& reference() const { return reference_; }
       /// Number of electrons
       int nelectron();

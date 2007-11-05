@@ -695,6 +695,12 @@ namespace sc {
     s.put(static_cast<int>(nfzc_));
     s.put(static_cast<int>(nfzv_));
   }
+
+  void PsiCorrWavefunction::set_desired_value_accuracy(double acc) {
+    Function::set_desired_value_accuracy(acc);
+    reference()->set_desired_value_accuracy( acc /
+                                             valacc_to_refacc() );
+  }
   
   void PsiCorrWavefunction::write_input(int convergence) {
     if (gradient_needed())

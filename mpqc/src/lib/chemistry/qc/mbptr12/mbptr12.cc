@@ -125,6 +125,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   
+  set_desired_value_accuracy(desired_value_accuracy());
 }
 
 MBPT2_R12::~MBPT2_R12()
@@ -194,9 +195,6 @@ MBPT2_R12::compute()
       catch (...) {}
       throw ex;
     }
-
-  reference_->set_desired_value_accuracy(desired_value_accuracy()
-                                         / ref_to_mp2r12_acc_);
 
   compute_energy_();
 }

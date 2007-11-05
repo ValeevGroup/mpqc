@@ -221,8 +221,6 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
     throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
   
   init_tforms_();
-  // init_intermeds_ may require initialized transforms
-  init_intermeds_();
 
   // canonicalize virtuals if VBS != OBS
   if (r12info()->basis_vir()->equiv(r12info()->basis())) {
@@ -2473,6 +2471,8 @@ R12IntEval::compute()
 {
   if (evaluated_)
     return;
+
+  init_intermeds_();
   
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS
   // compare these basis sets here

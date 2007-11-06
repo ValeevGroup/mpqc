@@ -570,7 +570,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("psi:cscf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter);
   }
   
   void PsiCLHF::write_input(int convergence) {
@@ -598,7 +598,9 @@ namespace sc {
     const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
-      multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));
+      // lowest possible multp is 1 (when # of electrons is even) or 2 (odd)
+      const int lowest_possible_multp = 1 + (nuclear_charge - charge_)%2;
+      multp_ = keyval->intvalue("multiplicity",KeyValValueint(lowest_possible_multp));
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiHSOSHF::PsiHSOSHF -- inconsistent total_charge and multiplicty");
       }
@@ -631,7 +633,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("psi:cscf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter);
   }
   
   void PsiHSOSHF::write_input(int convergence) {
@@ -658,7 +660,9 @@ namespace sc {
     const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
-      multp_ = keyval->intvalue("multiplicity",KeyValValueint(1));
+      // lowest possible multp is 1 (when # of electrons is even) or 2 (odd)
+      const int lowest_possible_multp = 1 + (nuclear_charge - charge_)%2;
+      multp_ = keyval->intvalue("multiplicity",KeyValValueint(lowest_possible_multp));
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicty");
       }
@@ -691,7 +695,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("psi:cscf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter);
   }
   
   void PsiUHF::write_input(int convergence) {

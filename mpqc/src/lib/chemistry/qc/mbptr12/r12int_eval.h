@@ -103,10 +103,8 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> kactvir_space_[NSpinCases1];
   /// Exchange-weighted RI space |a'_K> = K_a'^A |A>, where A is a function in ABS
   Ref<MOIndexSpace> kribs_space_[NSpinCases1];
-#if 1
   /// Exchange-weighted ABS space |P_K> = K_P^a' |a'>, where a' is a function in RIBS
   Ref<MOIndexSpace> kribs_T_space_[NSpinCases1];
-#endif
   /// (h+J)-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
   Ref<MOIndexSpace> hjactocc_obs_space_[NSpinCases1];
   /// Exchange-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
@@ -115,10 +113,8 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> kvir_obs_space_[NSpinCases1];
   /// Exchange-weighted (through RIBS) virtual space |a_K> = K_a^P |P>, where P is a function in RIBS
   Ref<MOIndexSpace> kvir_ribs_space_[NSpinCases1];
-#if 1
   /// Exchange-weighted (through virtuals) ABS |P_K> = K_P^a |a>, where P is a function in ABS
   Ref<MOIndexSpace> kvir_ribs_T_space_[NSpinCases1];
-#endif
 
   /// Exchange-weighted (through RIBS) RIBS space for spin case S
   Ref<MOIndexSpace> kribs_ribs_[NSpinCases1];
@@ -141,20 +137,16 @@ class R12IntEval : virtual public SavableState {
   void form_fvir_act(SpinCase1 spin);
   /// Compute kribs space, if needed
   void form_fribs(SpinCase1 spin);
-#if 1
   /// Compute kribsT space, if needed
   void form_fribs_T(SpinCase1 spin);
-#endif
   /// Compute kactocc_obs space, if needed
   void form_focc_act_obs(SpinCase1 spin);
   /// Compute kvir_obs space, if needed
   void form_fvir_obs(SpinCase1 spin);
   /// Compute kvir_ribs space, if needed
   void form_fvir_ribs(SpinCase1 spin);
-#if 1
   /// Compute kvir_ribs space, if needed
   void form_fvir_ribs_T(SpinCase1 spin);
-#endif
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
   
@@ -608,18 +600,14 @@ public:
   const Ref<MOIndexSpace>& kvir_act(SpinCase1 S);
   /// Form exchange-weighted RI space for spin case S
   const Ref<MOIndexSpace>& kribs(SpinCase1 S);
-#if 1
   /// Form exchange-weighted RI space for spin case S
   const Ref<MOIndexSpace>& kribs_T(SpinCase1 S);
-#endif
   /// Form exchange-weighted (through OBS) virtual space for spin case S
   const Ref<MOIndexSpace>& kvir_obs(SpinCase1 S);
   /// Form exchange-weighted (through RIBS) virtual space for spin case S
   const Ref<MOIndexSpace>& kvir_ribs(SpinCase1 S);
-#if 1
   /// Form exchange-weighted (through virtuals) ABS space for spin case S
   const Ref<MOIndexSpace>& kvir_ribs_T(SpinCase1 S);
-#endif
   
   // NOTE Names of these spaces are already consistent with the future convention
   /// Form exchange-weighted (through RIBS) RIBS space for spin case S

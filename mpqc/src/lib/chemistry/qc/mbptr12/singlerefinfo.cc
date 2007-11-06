@@ -180,7 +180,7 @@ SingleRefInfo::init_spinspecific_spaces()
       alpha_evals = hsosscf->alpha_semicanonical_eigenvalues();
       beta_evals = hsosscf->beta_semicanonical_eigenvalues();
     }
-#if 1
+#if 0
     alpha_evals.print("Alpha orbital energies");
     alpha_evecs.print("Alpha orbitals");
     beta_evals.print("Beta orbital energies");

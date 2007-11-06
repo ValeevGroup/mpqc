@@ -1069,7 +1069,6 @@ R12IntEval::form_fribs(SpinCase1 spin)
   }
 }
 
-#if 1
 const Ref<MOIndexSpace>&
 R12IntEval::kribs_T(SpinCase1 spin)
 {
@@ -1108,7 +1107,6 @@ R12IntEval::form_fribs_T(SpinCase1 spin)
     }
   }
 }
-#endif
 
 const Ref<MOIndexSpace>&
 R12IntEval::hjocc_act_obs(SpinCase1 spin)
@@ -1166,13 +1164,8 @@ R12IntEval::form_focc_act_obs(SpinCase1 spin)
       spinadapt_mospace_labels(spin,id,name);
       
       // as a test, use act occ space
-#if 1
       kactocc_obs_space_[s] = new MOIndexSpace(id, name, act_occ_space, obs_space->coefs()*K_obs_ao,
                                            obs_space->basis());
-#else
-      kactocc_obs_space_[s] = new MOIndexSpace(id, name, act_occ_space, act_occ_space->coefs(),
-                                              act_occ_space->basis());
-#endif
     }
   }
 }
@@ -1255,7 +1248,6 @@ R12IntEval::form_fvir_ribs(SpinCase1 spin)
   }
 }
 
-#if 1
 const Ref<MOIndexSpace>&
 R12IntEval::kvir_ribs_T(SpinCase1 spin)
 {
@@ -1294,8 +1286,6 @@ R12IntEval::form_fvir_ribs_T(SpinCase1 spin)
       }
     }
 }
-
-#endif
 
 void
 R12IntEval::form_canonvir_space_()

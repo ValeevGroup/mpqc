@@ -286,7 +286,6 @@ namespace sc {
       tim_exit("Generic tensor");
     }
   
-#if 1
   /// Contains classes used to compute many-body tensors
   namespace ManyBodyTensors {
     
@@ -373,7 +372,6 @@ namespace sc {
     typedef Apply_Inverse_Sqrt_H0minusE0<Plus> ERI_to_S2;
     typedef Apply_Inverse_H0minusE0<Minus> ERI_to_T2;
   }
-#endif
 
 }
 

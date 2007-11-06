@@ -160,12 +160,10 @@ MP2R12Energy_SpinOrbital::compute()
       else {
         B = r12eval()->B(spincase2);
         // in standard approximation B, add up [K1+K2,F12] term
-#if 1
         if (stdapprox_ == LinearR12::StdApprox_B) {
           RefSymmSCMatrix BB = r12eval()->BB(spincase2);
           B.accumulate(BB);
         }
-#endif
       }
       
       // In Klopper-Samson method, two kinds of A are used: app B (I replace with my A) and app XX (my Ac)
@@ -718,12 +716,10 @@ void MP2R12Energy_SpinAdapted::compute() {
     else {
       B = r12eval()->B(spincase2);
       // in standard approximation B, add up [K1+K2,F12] term
-#if 1
       if (stdapprox_ == LinearR12::StdApprox_B) {
         RefSymmSCMatrix BB = r12eval()->BB(spincase2);
         B.accumulate(BB);
       }
-#endif
     }
     dim_oo = V.coldim();
     dim_xc = V.rowdim();

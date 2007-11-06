@@ -481,6 +481,11 @@ namespace sc {
 
     RefSCDimension osodim = oso_dimension();
     const bool spin_unrestricted = obwfn->spin_unrestricted();
+
+    // make sure that the number of electrons is the same
+    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
+    if (charge_ != (nuclear_charge - obwfn->nelectron()) )
+      throw InputError("PsiSCF::import_occupations(obwfn) -- number of electrons in obwfn does not match this");
     
     // extract occupations
     std::vector<int> docc_obwfn(nirrep_);
@@ -519,6 +524,9 @@ namespace sc {
       docc_ = docc_obwfn;
       socc_ = socc_obwfn;
     }
+    
+    // lastly, update multp_
+    multp_ = 1 + sum(socc_);
     
   }
   

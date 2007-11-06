@@ -65,6 +65,9 @@ namespace sc {
       void save_data_state(StateOut&);
       int gradient_implemented() const;
       void compute();
+
+      /// reimplementation of PsiCorrWavefunction::set_desired_value_accuracy
+      void set_desired_value_accuracy(double acc);
       
       /// CCSD energy
       double eccsd();

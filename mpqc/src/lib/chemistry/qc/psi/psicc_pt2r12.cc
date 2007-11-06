@@ -104,6 +104,12 @@ void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
   s.put(eccsd_);
 }
 
+void
+PsiCCSD_PT2R12::set_desired_value_accuracy(double acc) {
+  PsiCorrWavefunction::set_desired_value_accuracy(acc);
+  mbptr12_->set_desired_value_accuracy(acc);
+}
+
 void PsiCCSD_PT2R12::write_input(int convergence) {
   Ref<PsiInput> input = get_psi_input();
   input->open();

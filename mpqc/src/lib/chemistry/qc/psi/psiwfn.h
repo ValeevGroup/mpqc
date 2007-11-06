@@ -33,6 +33,7 @@
 #define _chemistry_qc_psi_psiwfn_h
 
 #include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
@@ -126,6 +127,7 @@ namespace sc {
       std::vector<int> socc_;
       int multp_;
       int charge_;
+      static const int maxiter = 100;
 
     public:
       PsiSCF(const Ref<KeyVal>&);
@@ -133,6 +135,9 @@ namespace sc {
       ~PsiSCF();
       void save_data_state(StateOut&);
 
+      /// imports occupations from obwfn. Will throw if docc_ and socc_ had been initialized
+      /// and do not match obwfn.
+      void import_occupations(const Ref<OneBodyWavefunction>& obwfn);
       // use spin datatypes defined in spin.h
       typedef sc::SpinCase1 SpinCase1;
       enum RefType {rhf, hsoshf, uhf};

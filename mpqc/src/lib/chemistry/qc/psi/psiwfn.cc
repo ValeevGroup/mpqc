@@ -477,6 +477,51 @@ namespace sc {
     return uoccpi_[spin];
   }
 
+  void PsiSCF::import_occupations(const Ref<OneBodyWavefunction>& obwfn) {
+
+    RefSCDimension osodim = oso_dimension();
+    const bool spin_unrestricted = obwfn->spin_unrestricted();
+    
+    // extract occupations
+    std::vector<int> docc_obwfn(nirrep_);
+    std::vector<int> socc_obwfn(nirrep_);
+    for (int h=0; h<nirrep_; ++h) {
+      const int nmo = osodim->blocks()->size(h);
+      for (int mo=0; mo<nmo; ++mo) {
+        int occ;
+        if (spin_unrestricted) {
+          const int aocc = (obwfn->alpha_occupation(h, mo) == 1.0) ? 1 : 0;
+          const int bocc = (obwfn->beta_occupation(h, mo) == 1.0) ? 1 : 0;
+          occ = aocc + bocc;
+        } else {
+          occ = static_cast<int>(obwfn->occupation(h, mo));
+        }
+        switch (occ) {
+          case 2:
+            docc_obwfn[h] += 1;
+            break;
+          case 1:
+            socc_obwfn[h] += 1;
+            break;
+        }
+      }
+    }
+    
+    // if necessary, compare to the existing occupations
+    if ( !(docc_.empty() && socc_.empty()) ) {
+      if (!docc_.empty() && docc_ != docc_obwfn)
+        throw InputError("PsiSCF::import_occupations(obwfn) -- provided docc does not match that from obwfn");
+      if (!socc_.empty() && socc_ != socc_obwfn)
+        throw InputError("PsiSCF::import_occupations(obwfn) -- provided socc does not match that from obwfn");
+    }
+    // or just copy
+    else {
+      docc_ = docc_obwfn;
+      socc_ = socc_obwfn;
+    }
+    
+  }
+  
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCLHF_cd(typeid(PsiCLHF), "PsiCLHF", 1, "public PsiSCF",
@@ -517,6 +562,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
+    input->write_keyword("psi:cscf:maxiter", maxiter);
   }
   
   void PsiCLHF::write_input(int convergence) {
@@ -577,6 +623,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
+    input->write_keyword("psi:cscf:maxiter", maxiter);
   }
   
   void PsiHSOSHF::write_input(int convergence) {
@@ -636,6 +683,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
+    input->write_keyword("psi:cscf:maxiter", maxiter);
   }
   
   void PsiUHF::write_input(int convergence) {

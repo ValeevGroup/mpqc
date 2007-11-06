@@ -111,6 +111,7 @@ PsiCCSD_PT2R12::set_desired_value_accuracy(double acc) {
 }
 
 void PsiCCSD_PT2R12::write_input(int convergence) {
+  import_occupations();
   Ref<PsiInput> input = get_psi_input();
   input->open();
   PsiCorrWavefunction::write_input(convergence);
@@ -120,6 +121,11 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
   else
     input->write_keyword("psi:wfn", "ccsd");
   input->close();
+}
+
+void PsiCCSD_PT2R12::import_occupations() {
+  const double reference_energy_mpqc = mbptr12_->ref_energy();
+  reference()->import_occupations(mbptr12_->ref());
 }
 
 void PsiCCSD_PT2R12::compute() {
@@ -718,6 +724,7 @@ void PsiCCSD_PT2R12T::save_data_state(StateOut&s) {
 }
 
 void PsiCCSD_PT2R12T::write_input(int convergence) {
+  import_occupations();
   Ref<PsiInput> input = get_psi_input();
   input->open();
   PsiCorrWavefunction::write_input(convergence);

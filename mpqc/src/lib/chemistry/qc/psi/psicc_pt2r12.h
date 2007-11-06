@@ -58,6 +58,8 @@ namespace sc {
               - 1;
 
       void write_input(int conv);
+      /// compute MPQC reference and pass occupations from that to Psi
+      void import_occupations();
     public:
       PsiCCSD_PT2R12(const Ref<KeyVal>&);
       PsiCCSD_PT2R12(StateIn&);

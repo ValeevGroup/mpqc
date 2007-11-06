@@ -131,7 +131,11 @@ namespace sc {
     file_ << scprintf("%s = \"%s\"", keyword, value) << endl;
   }
   
-  void PsiInput::write_geom(const Ref<Molecule>& mol) {
+  void PsiInput::write_geom(const Ref<Molecule>& m) {
+    // copy the molecule and rotate to the symmetry frame
+    Ref<Molecule> mol = new Molecule(*m);
+    mol->transform_to_symmetry_frame();
+    
     // If the highest symmetry group is not the actual group - use subgroup keyword
     if (!mol->point_group()->equiv(mol->highest_point_group())) {
       write_keyword("subgroup", mol->point_group()->symbol());

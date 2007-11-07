@@ -43,6 +43,8 @@
 #include <math/scmat/blocked.h>
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -383,11 +385,16 @@ namespace sc {
       C_so.print(prepend_spincase(spin,"Psi3 eigenvector in SO basis").c_str());
     RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim, sodim_nb);
     aotoso.assign(ao2so[0]);
-    if (debug() >= DefaultPrintThresholds::allN2)
+    if (debug() >= DefaultPrintThresholds::allN2) {
       aotoso.print("Psi3 SO->AO matrix");
+      integral()->petite_list()->sotoao().print("MPQC SO->AO matrix");
+      integral()->petite_list()->aotoso().print("MPQC AO->SO matrix");
+    }
     coefs_[spin] = aotoso.t() * C_so;
     if (debug() >= DefaultPrintThresholds::allN2)
       coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (Psi-ordered)").c_str());
+
+    // shells in Psi3 do not have to follow same order as atoms, as they do in MPQC
     // resort AOs from Psi to MPQC order using Psi3->MPQC shell map
     {
       std::vector<unsigned int> aomap = ao_map();
@@ -411,6 +418,56 @@ namespace sc {
     }
     if (debug() >= DefaultPrintThresholds::allN2)
       coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered)").c_str());
+
+    // Psi3 also uses the symmetry frame for the molecule, whereas MPQC may use a different frame
+    // rotate the Psi3 eigenvector from the symmetry frame to the MPQC frame
+    {
+      SymmetryOperation rr = molecule()->point_group()->symm_frame();  rr.transpose();
+      const int nshell = basis()->nshell();
+      const char* name = "PsiSCF::evecs";
+      BlockedSCMatrix* coefs_blkd = require_dynamic_cast<BlockedSCMatrix*>(coefs_[spin].pointer(),name);
+      double* tmpvec_orig = new double[basis()->nbasis()];
+      double* tmpvec_tformed = new double[basis()->nbasis()];
+      for(int s=0; s<nshell; ++s) {
+        const GaussianShell& shell = basis()->shell(s);
+        const int ncontr = shell.ncontraction();
+        // transform each contraction separately
+        for(int c=0; c<ncontr; ++c) {
+          const int am = shell.am(c);
+          // am=0 functions are invariant to rotations
+          if (am == 0) continue;
+          ShellRotation sr = integral()->shell_rotation(am,rr,shell.is_pure(c));
+          const int nf = sr.dim();
+          const int foff = basis()->shell_to_function(s) + shell.contraction_to_function(c);
+          // in each block
+          for (unsigned int h=0; h<nirrep_; ++h) {
+            RefSCMatrix coefs_blk = coefs_blkd->block(h);
+            if (coefs_blk.null()) continue;
+            const int ncol = coefs_blk.coldim().n();
+            // transform each vector
+            for(int col=0; col<ncol; ++col) {
+              // initialize original vector
+              for(int f=0; f<nf; ++f)
+                tmpvec_orig[f] = coefs_blk.get_element(f+foff,col);
+              // transform
+              for(int f=0; f<nf; ++f) {
+                double tmp = 0.0;
+                for(int g=0; g<nf; ++g) {
+                  tmp += sr(f,g) * tmpvec_orig[g];
+                }
+                tmpvec_tformed[f] = tmp;
+              }
+              // copy to the original location
+              for(int f=0; f<nf; ++f)
+                coefs_blk.set_element(f+foff,col,tmpvec_tformed[f]);
+            }
+          }
+        }
+      }
+      delete[] tmpvec_orig; delete[] tmpvec_tformed;
+    }
+    if (debug() >= DefaultPrintThresholds::allN2)
+      coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered, in MPQC frame)").c_str());
     
     using psi::Chkpt;
     Chkpt::free(mopi);

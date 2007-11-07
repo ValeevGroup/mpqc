@@ -323,7 +323,7 @@ void PsiCCSD_PT2R12::compute() {
                                         localkit);
     MPQC2PSI_tform_va[spin] = transform(*vir_act_sb_psi, *vir_act,
                                         localkit);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
+    if (debug() >= DefaultPrintThresholds::diagnostics) {
       MPQC2PSI_tform_oa[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active occupied orbitals").c_str());
       MPQC2PSI_tform_va[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active virtual orbitals").c_str());
     }

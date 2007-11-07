@@ -629,13 +629,6 @@ namespace sc {
   
   PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval) :
     PsiCC(keyval) {
-    PsiSCF::RefType reftype = reference_->reftype();
-    if (reftype == PsiSCF::hsoshf) {
-      ExEnv::err0()
-          << "PsiCCSD_T::PsiCCSD_T: HSOSHF-based CCSD(T) has not been implemented yet"
-          << endl;
-      abort();
-    }
   }
   
   PsiCCSD_T::~PsiCCSD_T() {

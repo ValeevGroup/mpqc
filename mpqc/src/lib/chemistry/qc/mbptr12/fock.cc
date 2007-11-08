@@ -68,17 +68,17 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-  // cast Wavefunction to MBPT2_R12
-  MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
-  if (r12wfn == 0) {
+  // cast Wavefunction to MBPT2
+  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
+  if (mp2wfn == 0) {
       throw ProgrammingError(
-          "r12info()->wfn() was not an MBPT2_R12 object",
+          "r12info()->wfn() was not an MBPT2 object",
           __FILE__, __LINE__, class_desc());
   }
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = r12wfn->ref()->momentum_basis();
+  Ref<GaussianBasisSet> p_basis = mp2wfn->ref()->momentum_basis();
   Ref<GaussianBasisSet> hcore_basis;
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
@@ -88,7 +88,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
     }
 
   RefSymmSCMatrix hsymm
-      = r12wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
+      = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
 
 
   // convert hsymm to the AO basis
@@ -351,11 +351,11 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-  // cast Wavefunction to MBPT2_R12
-  MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
-  if (r12wfn == 0) {
+  // cast Wavefunction to MBPT2
+  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
+  if (mp2wfn == 0) {
       throw ProgrammingError(
-          "r12info()->wfn() was not an MBPT2_R12 object",
+          "r12info()->wfn() was not an MBPT2 object",
           __FILE__, __LINE__, class_desc());
   }
   int dk = r12info()->wfn()->dk();
@@ -365,7 +365,7 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
  	  __FILE__, __LINE__, class_desc());
   }
 */
-  Ref<SCF> ref = r12wfn->ref();
+  Ref<SCF> ref = mp2wfn->ref();
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
@@ -499,12 +499,12 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
                                      const Ref<GaussianBasisSet> &bas,
                                      const Ref<GaussianBasisSet> &p_bas)
 {
-  // cast Wavefunction to MBPT2_R12
-  MBPT2_R12 *r12wfn = dynamic_cast<MBPT2_R12*>(r12info()->wfn());
+  // cast Wavefunction to MBPT2
+  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
 #define DK_DEBUG 0
 
  
-  if (r12wfn->atom_basis().nonnull()) {
+  if (mp2wfn->atom_basis().nonnull()) {
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
@@ -512,15 +512,15 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
 //    throw FeatureNotImplemented("dk must be 2 for using with R12",
 //                                __FILE__, __LINE__, class_desc());
 //  }
-  if (dk > 0 && r12wfn->gradient_needed()) {
+  if (dk > 0 && mp2wfn->gradient_needed()) {
     throw FeatureNotImplemented("gradients not available for dk",
                                 __FILE__, __LINE__, class_desc());
   }
 
   // The one electron integrals will be computed in the momentum basis.
-  r12wfn->integral()->set_basis(p_bas);
+  mp2wfn->integral()->set_basis(p_bas);
   
-  Ref<PetiteList> p_pl = r12wfn->integral()->petite_list();
+  Ref<PetiteList> p_pl = mp2wfn->integral()->petite_list();
 
   RefSCDimension p_so_dim = p_pl->SO_basisdim();
   RefSCDimension p_ao_dim = p_pl->AO_basisdim();
@@ -531,7 +531,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   RefSymmSCMatrix S_skel(p_ao_dim, p_kit);
   S_skel.assign(0.0);
   Ref<SCElementOp> hc =
-    new OneBodyIntOp(new SymmOneBodyIntIter(r12wfn->integral()->overlap(), p_pl));
+    new OneBodyIntOp(new SymmOneBodyIntIter(mp2wfn->integral()->overlap(), p_pl));
   S_skel.element_op(hc);
   hc=0;
   RefSymmSCMatrix S(p_so_dim, p_so_kit);
@@ -548,8 +548,8 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
                 << "Orthogonalizing the momentum basis"
                 << std::endl;
   Ref<OverlapOrthog> p_orthog
-    = new OverlapOrthog(r12wfn->orthog_method(), S, p_so_kit,
-                        r12wfn->lindep_tol(), debug_);
+    = new OverlapOrthog(mp2wfn->orthog_method(), S, p_so_kit,
+                        mp2wfn->lindep_tol(), debug_);
 
   RefSCDimension p_oso_dim = p_orthog->orthog_dim();
 
@@ -558,7 +558,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   T_skel.assign(0.0);
 
   hc =
-    new OneBodyIntOp(new SymmOneBodyIntIter(r12wfn->integral()->kinetic(), p_pl));
+    new OneBodyIntOp(new SymmOneBodyIntIter(mp2wfn->integral()->kinetic(), p_pl));
   T_skel.element_op(hc);
   hc=0;
 
@@ -611,7 +611,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
 #endif
 
   // compute the V integrals
-  Ref<OneBodyInt> V_obi = r12wfn->integral()->nuclear();
+  Ref<OneBodyInt> V_obi = mp2wfn->integral()->nuclear();
   V_obi->reinitialize();
   hc = new OneBodyIntOp(new SymmOneBodyIntIter(V_obi, p_pl));
   RefSymmSCMatrix V_skel(p_ao_dim, p_kit);
@@ -659,11 +659,11 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
 
   // Construct the transform from the momentum basis to the
   // coordinate basis.
-  r12wfn->integral()->set_basis(bas,p_bas);
-  Ref<PetiteList> pl = r12wfn->integral()->petite_list();
+  mp2wfn->integral()->set_basis(bas,p_bas);
+  Ref<PetiteList> pl = mp2wfn->integral()->petite_list();
   RefSCMatrix S_ao_p(pl->AO_basisdim(), p_ao_dim, p_kit);
   S_ao_p.assign(0.0);
-  hc = new OneBodyIntOp(r12wfn->integral()->overlap());
+  hc = new OneBodyIntOp(mp2wfn->integral()->overlap());
   S_ao_p.element_op(hc);
   hc=0;
   // convert s_ao_p into the so ao and so p basis
@@ -680,7 +680,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
                                *p_orthog->overlap_inverse()
                                *p_to_so, h_pbas);
 
-  r12wfn->integral()->set_basis(r12wfn->basis());
+  mp2wfn->integral()->set_basis(mp2wfn->basis());
 
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
@@ -688,7 +688,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = r12wfn->overlap().trace() / pl->SO_basisdim()->n();
+  double S_ao_trace = mp2wfn->overlap().trace() / pl->SO_basisdim()->n();
   ExEnv::out0() << indent
                 << "Tr(orbital basis overlap)/N = "
                 << S_ao_trace
@@ -697,7 +697,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
                 << "Tr(orbital basis overlap projected into momentum basis)/N = "
                 << S_ao_projected_trace
                 << std::endl;
-  if (fabs(S_ao_projected_trace-S_ao_trace)>r12wfn->lindep_tol()) {
+  if (fabs(S_ao_projected_trace-S_ao_trace)>mp2wfn->lindep_tol()) {
     ExEnv::out0() << indent
                   << "WARNING: the momentum basis does not span the orbital basis"
                   << std::endl;

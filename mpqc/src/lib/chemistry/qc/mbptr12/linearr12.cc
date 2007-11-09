@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <strstream>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
@@ -74,11 +75,220 @@ namespace sc {
       return cf;
     }
 
+    /*********************
+     * GeminalDescriptor *
+     *********************/
+    GeminalDescriptor::GeminalDescriptor(){
+      type_ = "invalid";
+    }
+    
+    GeminalDescriptor::GeminalDescriptor(const std::string& type, const std::vector<std::string> &params){
+      type_ = type;
+      params_ = params;
+      //compute_offsets();
+    }
+    
+    GeminalDescriptor::GeminalDescriptor(const GeminalDescriptor& source){
+      type_ = source.type_;
+      params_ = source.params_;
+      //compute_offsets();
+    }
+    
+    //void GeminalDescriptor::compute_offsets() {
+    //  if(type_!=std::string("invalid") && type_!=std::string("r12") && type_!=std::string("R12")){
+    //    int nfunction=atoi(params_[0].c_str());
+    //    offsets_=std::vector<int>(nfunction+1);
+    //    int cumul_ind=nfunction+1;
+    //    int nprimitve;
+    //    for(int i=0; i<nfunction; i++){
+    //      offsets_[i]=cumul_ind;
+    //      nprimitve=atoi(params_[i+1].c_str());
+    //      cumul_ind+=2*nprimitve;
+    //    }
+    //    offsets_[nfunction]=cumul_ind;
+    //  }
+    //}
+    
+    std::string GeminalDescriptor::type() const {
+      return(type_);
+    }
+    
+    std::vector<std::string> GeminalDescriptor::params() const {
+      return(params_);
+    }
+    
+    bool invalid(const Ref<GeminalDescriptor>& gdesc){
+      std::string type=gdesc->type();
+      return((type==std::string("invalid")) ? true : false);
+    }
+    
+    bool R12(const Ref<GeminalDescriptor>& gdesc){
+      std::string type=gdesc->type();
+      return(((type==std::string("R12")) || (type==std::string("r12"))) ? true : false);
+    }
+    
+    bool STG(const Ref<GeminalDescriptor>& gdesc){
+      std::string type=gdesc->type();
+      return(((type==std::string("STG")) || (type==std::string("stg"))) ? true : false);
+    }
+    
+    bool G12(const Ref<GeminalDescriptor>& gdesc){
+      std::string type=gdesc->type();
+      if((type==std::string("G12")) || (type==std::string("g12"))){
+        return(true);
+      }
+      else {
+        return(false);
+      }
+    }
+    
+    double single_slater_exponent(const Ref<GeminalDescriptor>& gdesc) {
+      std::string type=gdesc->type();
+      std::vector<std::string> params=gdesc->params();
+      if(type!=std::string("STG")){
+        throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): Geminal is not not of Slater function type.",__FILE__,__LINE__);
+      }
+      int nfunctions=atoi(params[0].c_str());
+      if(nfunctions!=1){
+        throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): There are more than one Slater type functions.",__FILE__,__LINE__);
+      }
+      int nprimitives=atoi(params[1].c_str());
+      if(nprimitives!=1){
+        throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): The Slater type function is a contracted one.",__FILE__,__LINE__);
+      }
+      double exponent=atof(params[2].c_str());
+      
+      return(exponent);
+    }
+    
+    /****************************
+     * GeminalDescriptorFactory *
+     ****************************/
+    GeminalDescriptorFactory::GeminalDescriptorFactory() 
+      : invalid_id_("invalid"),
+        r12_id_("R12"),
+        stg_id_("STG"),
+        g12_id_("G12") {}
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::null_geminal(){
+      std::vector<std::string> void_vector;
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(invalid_id_),void_vector)));
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::r12_geminal(){
+      std::vector<std::string> void_vector;
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(r12_id_),void_vector)));
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::slater_geminal(double gamma){
+      std::vector<std::string> param_vec(3);
+      int nfunction=1;
+      int nprimitive=1;
+      std::strstream inout;
+      inout << nfunction;
+      inout >> param_vec[0];
+      inout << nprimitive;
+      inout >> param_vec[1];
+      inout << std::setprecision(16) << gamma;
+      inout >> param_vec[2];
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),param_vec)));
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
+      int nfunction=gamma.size();
+      std::vector<std::string> params(1+3*nfunction);
+      std::strstream inout;
+      inout << nfunction;
+      inout >> params[0];
+      int one=1;
+      std::string one_str;
+      inout << one;
+      inout >> one_str;
+      double oned=1.0;
+      std::string oned_str;
+      inout << std::setprecision(16) << oned;
+      inout >> oned_str;
+      
+      for(int i=0; i<nfunction; i++){
+        params[i+1]=one_str;
+        params[nfunction+1+2*i]=oned_str;
+        inout << std::setprecision(16) << gamma[i];
+        inout >> params[nfunction+2+2*i];
+      }
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),params)));
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::gaussian_geminal(double gamma){
+      std::vector<std::string> param_vec(3);
+      int nfunction=1;
+      int nprimitive=1;
+      std::strstream inout;
+      inout << nfunction;
+      inout >> param_vec[0];
+      inout << nprimitive;
+      inout >> param_vec[1];
+      inout << std::setprecision(16) << gamma;
+      inout >> param_vec[2];
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));      
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::contracted_gaussian_geminal(const std::vector<double> &coeff,
+                                                                                 const std::vector<double> &gamma){
+      int nfunction=1;
+      unsigned int ngeminal=coeff.size();
+      std::vector<std::string> param_vec(2*ngeminal+2);
+      std::strstream inout;
+      inout << nfunction;
+      inout >> param_vec[0];
+      inout << ngeminal;
+      inout >> param_vec[1];
+      for(int i=0; i<ngeminal; i++){
+        inout << std::setprecision(16) << coeff[i];
+        inout >> param_vec[2*i+2];
+        inout << std::setprecision(16) << gamma[i];
+        inout >> param_vec[2*i+3];
+      }
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
+    }
+    
+    Ref<GeminalDescriptor> GeminalDescriptorFactory::gaussian_geminal(const LinearR12::G12CorrelationFactor::CorrelationParameters &corrparams){
+      unsigned int nfunction=corrparams.size();
+      std::vector<int> offsets(nfunction+1);
+      int numofparams=nfunction+1;
+      int nprimitive;
+      for(int i=0; i<nfunction; i++){
+        offsets[i]=numofparams;
+        nprimitive=corrparams[i].size();
+        numofparams+=2*nprimitive;
+      }
+      offsets[nfunction]=numofparams;
+      
+      std::vector<std::string> params(numofparams);
+      std::strstream inout;
+      inout << nfunction;
+      inout >> params[0];
+      for(int i=0; i<nfunction; i++){
+        nprimitive=corrparams[i].size();
+        inout << nprimitive;
+        inout >> params[i+1];
+        for(int j=0; j<nprimitive; j++){
+          double coefficient=corrparams[i][j].second;
+          double exponent=corrparams[i][j].first;
+          inout << std::setprecision(16) << coefficient;
+          inout >> params[offsets[i]+2*j];
+          inout << std::setprecision(16) << exponent;
+          inout >> params[offsets[i]+2*j+1];
+        }
+      }
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),params)));
+    }
+
   };
 };
 
-CorrelationFactor::CorrelationFactor(const std::string& label) :
-  label_(label)
+CorrelationFactor::CorrelationFactor(const std::string& label, const Ref<GeminalDescriptor> &geminaldescriptor) :
+  label_(label),
+  geminaldescriptor_(geminaldescriptor)
 {
 }
 
@@ -86,16 +296,25 @@ CorrelationFactor::~CorrelationFactor()
 {
 }
 
+CorrelationFactor::CorrelationFactor()
+{
+  label_=std::string("invalid");
+  Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+  geminaldescriptor_=gdesc_factory->null_geminal();
+}
+
 unsigned int
 CorrelationFactor::nfunctions() const
 {
-  return 1;
+  //return 1;
+  return(atoi(geminaldescriptor_->params()[0].c_str()));
 }
 
 unsigned int
 CorrelationFactor::nprimitives(unsigned int c) const
 {
-  return 1;
+  //return 1;
+  return(atoi(geminaldescriptor_->params()[c+1].c_str()));
 }
 
 const std::string&
@@ -115,9 +334,14 @@ CorrelationFactor::print(std::ostream& os) const
     os << indent << "Function " << f << ":" << endl << incindent;
     os << indent << "Functional form: " << label() << endl;
     print_params(os,f);
+    //geminaldescriptor_->print(os);
     os << decindent;
   }
   os << decindent;
+}
+
+Ref<GeminalDescriptor> CorrelationFactor::geminaldescriptor() {
+  return(geminaldescriptor_);
 }
 
 void
@@ -194,7 +418,7 @@ CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsign
 ////
 
 NullCorrelationFactor::NullCorrelationFactor() :
-  CorrelationFactor("NONE")
+  CorrelationFactor()
 {
 }
 
@@ -213,9 +437,11 @@ NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 
 ////
 
-R12CorrelationFactor::R12CorrelationFactor() :
-  CorrelationFactor("R12")
+R12CorrelationFactor::R12CorrelationFactor()
 {
+  label_=std::string("R12");
+  Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+  geminaldescriptor_=gdesc_factory->r12_geminal();
 }
 
 TwoBodyInt::tbint_type
@@ -257,9 +483,15 @@ R12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 
 ////
 
-G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params) :
-  CorrelationFactor("G12"), params_(params)
-{
+G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
+  label_=std::string("G12");
+  if (geminaldescriptor.nonnull())
+    geminaldescriptor_=geminaldescriptor;
+  else {
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+    geminaldescriptor_=gdesc_factory->gaussian_geminal(params);
+  }
+  params_=params;
 }
 
 unsigned int
@@ -377,9 +609,16 @@ G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 
 ////
 
-G12NCCorrelationFactor::G12NCCorrelationFactor(const CorrelationParameters& params) :
-  CorrelationFactor("G12"), params_(params)
-{
+G12NCCorrelationFactor::G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
+  label_=std::string("G12");
+  if (geminaldescriptor.nonnull()){
+  geminaldescriptor_=geminaldescriptor;
+  }
+  else {
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+    geminaldescriptor_=gdesc_factory->gaussian_geminal(params);
+  }
+  params_=params;
 }
 
 unsigned int
@@ -491,7 +730,7 @@ G12NCCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 ////
 
 GenG12CorrelationFactor::GenG12CorrelationFactor(const CorrelationParameters& params) :
-  CorrelationFactor("GenG12"), params_(params)
+  CorrelationFactor(), params_(params)
 {
   if (params_.size() != 1)
     throw ProgrammingError("GenG12CorrelationFactor::GenG12CorrelationFactor() -- only 1 general Geminal correlation factor can now be handled",__FILE__,__LINE__);

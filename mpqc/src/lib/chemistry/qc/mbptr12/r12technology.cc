@@ -269,23 +269,25 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
     CorrParams params;
     int num_f12 = keyval->count("corr_param");
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
     if (num_f12 != 0) {
         // Do I have contracted functions? Can't handle these (yet?)
         bool contracted = (keyval->count("corr_param",0) != 0);
         if (contracted)
 	    throw FeatureNotImplemented("Cannot accept contracted STG correlation factors yet",__FILE__,__LINE__);
 	
-	// Primitive functions only
-	for(int f=0; f<num_f12; f++) {
-            double exponent = keyval->doublevalue("corr_param", f);
+	  // Primitive functions only
+	  for(int f=0; f<num_f12; f++) {
+        double exponent = keyval->doublevalue("corr_param", f);
 	    stg_exponents.push_back(exponent);
-	}
+	  }
     }
     else { // single exponent
 	num_f12 = 1;
         double exponent = keyval->doublevalue("corr_param");
 	stg_exponents.push_back(exponent);
     }
+    Ref<GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
     // convert STGs into combinations of Gaussians
     for(int f=0; f<num_f12; f++) {
 	using namespace sc::mbptr12;
@@ -308,9 +310,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 
     // If stdapprox_ == C, no need for commutators
     if (stdapprox_ == LinearR12::StdApprox_C)
-	corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+	corrfactor_ = new LinearR12::G12NCCorrelationFactor(params,gdesc);
     else
-	corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+	corrfactor_ = new LinearR12::G12CorrelationFactor(params,gdesc);
   }
   //
   // no explicit correlation

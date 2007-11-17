@@ -36,7 +36,8 @@ REQUIREDCXXSRC = mstate.cc \
          reduce.cc topology.cc hcube.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc \
          memamsg.cc memproc.cc \
-         pregtime.cc thread.cc memiter.cc memrdma.cc
+         pregtime.cc thread.cc memiter.cc memrdma.cc \
+	 actmsg.cc
 
 OPTIONALCXXSRC = messmpi.cc memshm.cc \
                  memmtmpi.cc
@@ -62,11 +63,11 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCgroup
 
-TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc prttest.cc
+TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc prttest.cc actmsgtest.cc
 DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
             Makefile LIBS.h $(TESTCXXSRC)
 
-TESTPROGS = pooltest messtest rnglocktest memtest
+TESTPROGS = pooltest messtest rnglocktest memtest actmsgtest
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
@@ -122,6 +123,19 @@ messtest: messtest.$(OBJSUF) \
 	libSCcontainer.$(LIBSUF) \
 	libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
+
+actmsgtest.$(OBJSUF): actmsgtest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+actmsgtest: actmsgtest.$(OBJSUF) \
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCmisc.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
+	$(LTLINK) $(LD) $(LDFLAGS) -o actmsgtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 thrtest.$(OBJSUF): thrtest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

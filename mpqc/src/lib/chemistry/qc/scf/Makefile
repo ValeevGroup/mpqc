@@ -42,7 +42,8 @@ SRCS = fbclhf.cc scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
        clscf.cc clhf.cc hsosscf.cc hsoshf.cc \
        ossscf.cc osshf.cc tcscf.cc tchf.cc \
        uscf.cc uhf.cc fockbuild.cc clhfcontrib.cc \
-       tmplinst.cc svd.cc
+       tmplinst.cc svd.cc \
+       fockdist.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

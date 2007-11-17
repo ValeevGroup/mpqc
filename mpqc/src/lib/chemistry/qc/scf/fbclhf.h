@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <string>
+
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fockbuild.h>
 
@@ -41,17 +43,20 @@ namespace sc {
 
 /// CLHF is a Hartree-Fock specialization of CLSCF.
 class FockBuildCLHF: public CLHF {
+  protected:
+    Ref<FockDistribution> fockdist_;
+    Ref<FockBuild> fb_;
+    std::string fockbuildmatrixtype_;
+    void ao_fock(double accuracy);
+    bool prefetch_blocks_;
   public:
     FockBuildCLHF(StateIn&);
     FockBuildCLHF(const Ref<KeyVal>&);
     ~FockBuildCLHF();
     void save_data_state(StateOut&);
-
-    Ref<FockBuild> fb_;
     void init_threads();
     void done_threads();
-  protected:
-    void ao_fock(double accuracy);
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 }

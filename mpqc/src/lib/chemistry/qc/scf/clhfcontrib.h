@@ -9,7 +9,8 @@ class CLHFContribution: public GenericFockContribution {
   public:
     CLHFContribution(Ref<GaussianBasisSet> &f_b1,
                      Ref<GaussianBasisSet> &f_b2,
-                     Ref<GaussianBasisSet> &p_b);
+                     Ref<GaussianBasisSet> &p_b,
+                     const std::string &fockbuildmatrixtype);
     CLHFContribution(const CLHFContribution &);
     ~CLHFContribution();
 

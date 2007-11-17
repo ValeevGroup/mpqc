@@ -1,13 +1,15 @@
 
+#include <util/misc/bug.h>
 #include <util/ref/ref.h>
 #include <util/misc/bug.h>
 #include <util/group/pregtime.h>
 #include <util/group/message.h>
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fockbuild.h>
 #include <chemistry/qc/scf/clhfcontrib.h>
-#include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fbclhf.h>
+#include <chemistry/qc/scf/fockdist.h>
 
 #include <chemistry/qc/scf/linkage.h>
 
@@ -19,25 +21,49 @@ using namespace std;
 
 Ref<MessageGrp> grp;
 
-static Ref<MessageGrp>
-init_mp(const Ref<KeyVal>& keyval)
+static Ref<ThreadGrp>
+init_thread(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 {
+  ///////////////////////////////////////////////////////////////
+  // Initialize the thread group
+
+  // get the thread group.  first try the commandline and environment
+  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
+  
+  // if we still don't have a group, try reading the thread group
+  // from the input
+  if (thread.null()) {
+    thread << keyval->describedclassvalue("thread");
+  }
+
+  if (thread.nonnull())
+    ThreadGrp::set_default_threadgrp(thread);
+  else
+    thread = ThreadGrp::get_default_threadgrp();
+
+  return thread;
+}
+
+static Ref<MessageGrp>
+init_message(const Ref<KeyVal>& keyval,int &argc, char **&argv)
+{
+  Ref<MessageGrp> grp;
+
   grp << keyval->describedclassvalue("message");
 
-  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
-  else grp = MessageGrp::get_default_messagegrp();
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  std::cout << "n = " << grp->n()
-            << " me = " << grp->me()
-            << std::endl;
-  
+  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
+
+  MessageGrp::set_default_messagegrp(grp);
+
   RegionTimer::set_default_regiontimer(
       new ParallelRegionTimer(grp,"focktest",1,0));
 
   SCFormIO::set_printnode(0);
 
-  SCFormIO::setindent(cout, 2);
-  SCFormIO::setindent(cerr, 2);
+  SCFormIO::setindent(std::cout, 2);
+  SCFormIO::setindent(std::cerr, 2);
   
   return grp;
 }
@@ -56,7 +82,7 @@ clean_up(void)
 int
 try_main(int argc, char **argv)
 {
-  const char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
+  const char *input =      (argc > 1)? argv[1] : SRCDIR "/focktest.in";
   const char *keyword =    (argc > 2)? argv[2] : "mole";
   const char *optkeyword = (argc > 3)? argv[3] : "opt";
 
@@ -66,32 +92,33 @@ try_main(int argc, char **argv)
   Ref<KeyVal> mole(new PrefixKeyVal(rpkv,"mole"));
 
   ///////////////////////////////////////////////////////////////
-  // Initialize the thread group
 
-  // get the thread group.  first try the commandline and environment
-  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
-  
-  // if we still don't have a group, try reading the thread group
-  // from the input
-  if (thread.null()) {
-    thread << rpkv->describedclassvalue("thread");
-  }
+  Ref<ThreadGrp> thr = init_thread(rpkv,argc,argv);
+  Ref<MessageGrp> msg = init_message(rpkv,argc,argv);
 
-  if (thread.nonnull())
-    ThreadGrp::set_default_threadgrp(thread);
-  else
-    thread = ThreadGrp::get_default_threadgrp();
-
-  std::cout << "nthreads = " << thread->nthread() << std::endl;
+  ExEnv::out0() << indent
+                << "nthread = " << thr->nthread() << std::endl;
+  ExEnv::out0() << indent
+                << "nnode   = " << msg->n() << std::endl;
 
   ///////////////////////////////////////////////////////////////
 
-  init_mp(rpkv);
+  Ref<RegionTimer> regtim;
+  if (rpkv->exists("timer")) regtim << rpkv->describedclassvalue("timer");
+  else                       regtim = new ParallelRegionTimer(msg,"focktest",1,1);
+  RegionTimer::set_default_regiontimer(regtim);
 
   ///////////////////////////////////////////////////////////////
 
   Timer tim;
   tim.enter("input");
+
+  Ref<Debugger> debugger; debugger << rpkv->describedclassvalue("debug");
+  if (debugger.nonnull()) {
+      Debugger::set_default_debugger(debugger);
+      debugger->set_exec(argv[0]);
+      debugger->set_prefix(msg->me());
+    }
   
   if (rpkv->exists("matrixkit")) {
     Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
@@ -117,44 +144,77 @@ try_main(int argc, char **argv)
   Ref<CLHF> clhf;
   //clhf << rpkv->describedclassvalue(keyword);
 
+  std::string fockbuildmatrixtype = rpkv->stringvalue("fockbuildmatrixtype");
+
+  bool prefetch_blocks = false;
+  if (fockbuildmatrixtype == "prefetched_distributed") {
+      prefetch_blocks = true;
+  }
+
 #if !DEBUG
-  std::cout << "computing CLHF energy" << std::endl;
-  tim.enter("CLHF energy/density");
-  clhf = new CLHF(mole);
-  double eclhf = clhf->energy();
-  tim.exit();
 
-  std::cout << "computing FockBuildCLHF energy" << std::endl;
-  tim.enter("New CLHF energy/density");
+  KeyValValueboolean def_compute_clhf_energy(1);
+  bool compute_clhf_energy = rpkv->booleanvalue("compute_clhf_energy",
+                                                def_compute_clhf_energy);
+
+  KeyValValueboolean def_compute_fockbuild_energy(1);
+  bool compute_fockbuild_energy = rpkv->booleanvalue("compute_fockbuild_energy",
+                                                     def_compute_fockbuild_energy);
+
+  double eclhf;
+  if (compute_clhf_energy) {
+      ExEnv::out0() << indent << "computing CLHF energy" << std::endl;
+      tim.enter("CLHF energy/density");
+      clhf = new CLHF(mole);
+      eclhf = clhf->energy();
+      tim.exit();
+    }
+
+  double enewclhf;
   Ref<CLHF> newclhf;
-  newclhf = new FockBuildCLHF(mole);
-  double enewclhf = newclhf->energy();
-  tim.exit();
+  if (compute_fockbuild_energy) {
+      ExEnv::out0() << indent << "computing FockBuildCLHF energy" << std::endl;
+      tim.enter("New CLHF energy/density");
+      newclhf = new FockBuildCLHF(mole);
+      enewclhf = newclhf->energy();
+      tim.exit();
+    }
 
-  std::cout << scprintf("E(CLHF)    = %12.8f", eclhf) << std::endl;
-  std::cout << scprintf("E(NewCLHF) = %12.8f", enewclhf) << std::endl;
-  std::cout << scprintf("DeltaE     = %12.8f", enewclhf-eclhf) << std::endl;
+  if (compute_clhf_energy) {
+      ExEnv::out0() << indent << scprintf("E(CLHF)    = %12.8f", eclhf) << std::endl;
+    }
+  if (compute_fockbuild_energy) {
+      ExEnv::out0() << indent << scprintf("E(NewCLHF) = %12.8f", enewclhf) << std::endl;
+    }
+  if (compute_clhf_energy && compute_fockbuild_energy) {
+      ExEnv::out0() << indent << scprintf("DeltaE     = %12.8f", enewclhf-eclhf) << std::endl;
+    }
+  if (compute_fockbuild_energy) {
+      newclhf->print();
+    }
 
-  std::cout << "building multi-basis Fock matrix" << std::endl;
+  Ref<FockDistribution> fockdist = new FockDistribution;
+
+  ExEnv::out0() << indent << "building multi-basis Fock matrix" << std::endl;
   Ref<GaussianBasisSet> basis2; basis2 << rpkv->describedclassvalue("basis2");
   if (basis2.nonnull()) {
       RefSymmSCMatrix density = clhf->ao_density();
       Ref<GaussianBasisSet> basis1 = clhf->basis();
 
-      std::cout << "basis1:" << std::endl;
+      ExEnv::out0() << indent << "basis1:" << std::endl;
       basis1->print();
 
-      std::cout << "basis2:" << std::endl;
+      ExEnv::out0() << indent << "basis2:" << std::endl;
       basis2->print();
 
       // compute the Fock matrix in the original basis
       RefSymmSCMatrix f11(density.dim(),density.kit());
       f11.assign(0.0);
       Ref<FockContribution> fc11
-          = new CLHFContribution(basis1,basis1,basis1);
+          = new CLHFContribution(basis1,basis1,basis1,fockbuildmatrixtype);
       fc11->set_fmat(0, f11);
       fc11->set_pmat(0, density);
-      Ref<FockBuild> fb11 = new FockBuild(fc11,
+      Ref<FockBuild> fb11 = new FockBuild(fockdist, fc11, prefetch_blocks,
                                           basis1,basis1,basis1);
       fb11->set_accuracy(1e-12);
       fb11->build();
@@ -164,10 +224,10 @@ try_main(int argc, char **argv)
       RefSymmSCMatrix f22(basis2->basisdim(),basis2->matrixkit());
       f22.assign(0.0);
       Ref<FockContribution> fc22
-          = new CLHFContribution(basis2,basis2,basis1);
+          = new CLHFContribution(basis2,basis2,basis1,fockbuildmatrixtype);
       fc22->set_fmat(0, f22);
       fc22->set_pmat(0, density);
-      Ref<FockBuild> fb22 = new FockBuild(fc22,
+      Ref<FockBuild> fb22 = new FockBuild(fockdist, fc22, prefetch_blocks,
                                           basis2,basis2,basis1);
       fb22->set_accuracy(1e-12);
       fb22->build();
@@ -175,7 +235,7 @@ try_main(int argc, char **argv)
     }
 
 #else
-  std::cout << "computing CLHF energy" << std::endl;
+  ExEnv::out0() << indent << "computing CLHF energy" << std::endl;
   tim.enter("CLHF energy/density");
   clhf = new CLHF(mole);
   double eclhf = clhf->energy();
@@ -189,10 +249,10 @@ try_main(int argc, char **argv)
   RefSymmSCMatrix f(density.dim(),density.kit());
   f.assign(0.0);
   Ref<FockContribution> fc
-      = new CLHFContribution(gbs,gbs,gbs);
+      = new CLHFContribution(gbs,gbs,gbs,fockbuildmatrixtype);
   fc->set_fmat(0, f);
   fc->set_pmat(0, density);
-  Ref<FockBuild> fb = new FockBuild(fc,gbs);
+  Ref<FockBuild> fb = new FockBuild(fockdist,fc,prefetch_blocks,gbs);
   fb->set_accuracy(1e-12);
   fb->build();
   tim.exit("CLHF Fock build");
@@ -224,10 +284,13 @@ try_main(int argc, char **argv)
   return 0;
 }
 
+// extern "C" begin_vmon();
+// extern "C" end_vmon();
 
 int
 main(int argc, char *argv[])
 {
+//   begin_vmon();
   try {
       try_main(argc, argv);
     }
@@ -247,5 +310,6 @@ main(int argc, char *argv[])
       cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
       throw;
     }
+//   end_vmon();
   return 0;
 }

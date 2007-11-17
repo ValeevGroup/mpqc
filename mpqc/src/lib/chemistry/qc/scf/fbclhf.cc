@@ -6,6 +6,7 @@
 
 #include <math.h>
 
+#include <util/class/scexception.h>
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
@@ -27,11 +28,36 @@ FockBuildCLHF::FockBuildCLHF(StateIn& s) :
   SavableState(s),
   CLHF(s)
 {
+  fockdist_ << SavableState::restore_state(s);
+  s.get(fockbuildmatrixtype_);
+  s.get(prefetch_blocks_);
 }
 
 FockBuildCLHF::FockBuildCLHF(const Ref<KeyVal>& keyval) :
   CLHF(keyval)
 {
+  fockdist_ << keyval->describedclassvalue("fockdist");
+  if (fockdist_.null()) {
+      fockdist_ = new FockDistribution;
+    }
+  fockbuildmatrixtype_ = keyval->stringvalue("fockbuildmatrixtype");
+  if (fockbuildmatrixtype_ != "replicated"
+      && fockbuildmatrixtype_ != "distributed"
+      && fockbuildmatrixtype_ != "prefetched_distributed") {
+      throw InputError("fockbuildmatrixtype must be \"replicated\","
+                           "\"distributed\", or \"prefetched_distributed\".",
+                           __FILE__,
+                           __LINE__,
+                           "fockbuildmatrixtype",
+                           fockbuildmatrixtype_.c_str(),
+                           class_desc());
+    }
+  if (fockbuildmatrixtype_ == "prefetched_distributed") {
+      prefetch_blocks_ = true;
+  }
+  else {
+      prefetch_blocks_ = false;
+    }
 }
 
 FockBuildCLHF::~FockBuildCLHF()
@@ -42,6 +68,9 @@ void
 FockBuildCLHF::save_data_state(StateOut& s)
 {
   CLHF::save_data_state(s);
+  SavableState::save_state(fockdist_.pointer(),s);
+  s.put(fockbuildmatrixtype_);
+  s.put(prefetch_blocks_);
 }
 
 void
@@ -49,8 +78,10 @@ FockBuildCLHF::init_threads()
 {
   Ref<GaussianBasisSet> gbs(basis());
   Ref<FockContribution> fc
-      = new CLHFContribution(gbs,gbs,gbs);
-  fb_ = new FockBuild(fc,
+      = new CLHFContribution(gbs,gbs,gbs,fockbuildmatrixtype_);
+  fb_ = new FockBuild(fockdist_,
+                      fc,
+                      prefetch_blocks_,
                       gbs, gbs, gbs,
                       scf_grp_, threadgrp_, integral());
 }
@@ -75,8 +106,17 @@ FockBuildCLHF::ao_fock(double accuracy)
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
 
+  // These two lines are needed to get the same cl_dens_diff_
+  // as the old CLHF class has.
+  //cl_dens_diff_->scale(2.0);
+  //cl_dens_diff_->scale_diagonal(0.5);
+
   double gmat_accuracy = accuracy;
   if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
+
+  if (debug_>1) {
+    cl_dens_diff_.print("cl_dens_diff before set_pmat");
+  }
 
   fb_->contrib()->set_fmat(0, cl_gmat_);
   fb_->contrib()->set_pmat(0, cl_dens_diff_);
@@ -91,7 +131,7 @@ FockBuildCLHF::ao_fock(double accuracy)
   fb_->build();
 
   ExEnv::out0() << indent << scprintf("%20.0f integrals\n",
-                                      fb_->contrib()->nint());
+                                                  fb_->contrib()->nint());
 
   step_tim.change("misc");
 
@@ -115,4 +155,14 @@ FockBuildCLHF::ao_fock(double accuracy)
   cl_fock_.result_noupdate().accumulate(dd);
   accumddh_->accum(cl_fock_.result_noupdate());
   cl_fock_.computed()=1;
+}
+
+void
+FockBuildCLHF::print(std::ostream&o) const
+{
+  CLHF::print(o);
+  ExEnv::out0() << indent
+                << "fockbuildmatrixtype = " << fockbuildmatrixtype_
+                << std::endl;
+  fockdist_->print(o);
 }

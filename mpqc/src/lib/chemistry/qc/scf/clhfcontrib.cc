@@ -45,9 +45,10 @@ namespace sc {
 CLHFContribution::CLHFContribution(
     Ref<GaussianBasisSet> &bs1,
     Ref<GaussianBasisSet> &bs2,
-    Ref<GaussianBasisSet> &bs3
+    Ref<GaussianBasisSet> &bs3,
+    const std::string &fockbuildmatrixtype
     ):
-  GenericFockContribution(1,1,bs1,bs2,bs3)
+  GenericFockContribution(1,1,bs1,bs2,bs3,fockbuildmatrixtype)
 {
 }
 
@@ -78,15 +79,17 @@ F_contrib(int I,int J,int K,int L, int i, int j, int k, int l,
   if (fabs(contrib) > 1e-6) {
       int fi = fij/fdim, fj = fij%fdim;
       int pi = pij/pdim, pj = pij%pdim;
-      std::cout << scprintf("%4.1f * ", factor)
+      std::cout << scprintf("%4.1f*", factor)
                 << "I_" << I << J << K << L
                 << "(" << i << j << k << l << ")"
-                << " * P_" << pI << pJ
+                << scprintf("[%12.9f]", integral)
+                << "*P_" << pI << pJ
                 << "(" << pi << pj << ")"
-                << " -> F_" << fI << fJ
+                << scprintf("[%12.9f]", P)
+                << "->F_" << fI << fJ
                 << "(" << fi << fj << ")"
                 << " " << type << " " << scprintf("%12.9f",contrib)
-                << " val = " << scprintf("%12.9f",F)
+                << " val=" << scprintf("%12.9f",F)
                 << std::endl;
     }
 }
@@ -107,10 +110,12 @@ CLHFContribution::contrib_e_J(double factor,
 {
   if (I < J && jmat_symmetric(0)) return;
 
-  double *F_IJ = jmat_block(0, I, J);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
 
   if (K>=L) {
-      const double * restrictxx P_KL = pmat_block(0, K, L);
+      PBlock P_KL_block(this, 0, K, L, nK, nL);
+      const double * restrictxx P_KL = P_KL_block.data();
       int nKL = nK*nL;
       for (int i=0, ijkl=0, ij=0; i<nI; i++) {
           for (int j=0; j<nJ; j++, ij++) {
@@ -126,7 +131,8 @@ CLHFContribution::contrib_e_J(double factor,
         }
     }
   else {
-      const double * restrictxx P_LK = pmat_block(0, L, K);
+      PBlock P_LK_block(this, 0, L, K, nL, nK);
+      const double * restrictxx P_LK = P_LK_block.data();
       int nKL = nK*nL;
       for (int i=0, ijkl=0, ij=0; i<nI; i++) {
           for (int j=0; j<nJ; j++, ij++) {
@@ -134,7 +140,7 @@ CLHFContribution::contrib_e_J(double factor,
               for (int k=0; k<nK; k++) {
                   for (int l=0, lk=k; l<nL; ijkl++, l++, lk+=nK) {
                       double val = buf[ijkl];
-                      F_contrib(I,J,K,L,i,j,kl/nL,kl%nL,factor,val,"J ",
+                      F_contrib(I,J,K,L,i,j,lk/nK,lk%nK,factor,val,"J ",
                                 F_IJ_ij,I,J,ij,nJ,
                                 P_LK[lk],L,K,lk,nK);
                     }
@@ -154,10 +160,12 @@ CLHFContribution::contrib_e_K(double factor,
   if (I < K && kmat_symmetric(0)) return;
 
   double K_factor = factor * -0.5;
-  double *F_IK = kmat_block(0, I, K);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
 
   if (J>=L) {
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
               for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
@@ -172,7 +180,8 @@ CLHFContribution::contrib_e_K(double factor,
         }
     }
   else {
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
           for (int j=0, lj_begin=0; j<nJ; j++, lj_begin += 1) {
               for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
@@ -196,10 +205,14 @@ CLHFContribution::contrib_all_J(double factor,
 {
   double J_factor = factor * 2.0;
 
-  double *F_IJ = jmat_block(0, I, J);
-  double *F_KL = jmat_block(0, K, L);
-  const double * restrictxx P_IJ = pmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
+  JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
+  double *F_KL = F_KL_block.data();
+  PBlock P_IJ_block(this, 0, I, J, nI, nJ);
+  const double * restrictxx P_IJ = P_IJ_block.data();
+  PBlock P_KL_block(this, 0, K, L, nK, nL);
+  const double * restrictxx P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -227,10 +240,14 @@ CLHFContribution::contrib_all_K(double factor,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-  double *F_IL = kmat_block(0, I, L);
-  const double * restrictxx P_IK = pmat_block(0, I, K);
-  const double * restrictxx P_IL = pmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+  JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+  double *F_IL = F_IL_block.data();
+  PBlock P_IK_block(this, 0, I, K, nI, nK);
+  const double * restrictxx P_IK = P_IK_block.data();
+  PBlock P_IL_block(this, 0, I, L, nI, nL);
+  const double * restrictxx P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -241,10 +258,14 @@ CLHFContribution::contrib_all_K(double factor,
   double JL_factor = -0.5*(J==L?2:1)*factor;
 
   if (J >= K) {
-      double *F_JK = kmat_block(0, J, K);
-      double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_JK = pmat_block(0, J, K);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+      double *F_JK = F_JK_block.data();
+      JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+      double *F_JL = F_JL_block.data();
+      PBlock P_JK_block(this, 0, J, K, nJ, nK);
+      const double * restrictxx P_JK = P_JK_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -271,10 +292,14 @@ CLHFContribution::contrib_all_K(double factor,
         }
     }
   else if (J >= L) {
-      double *F_KJ = kmat_block(0, K, J);
-      double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+      JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+      double *F_JL = F_JL_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -302,10 +327,14 @@ CLHFContribution::contrib_all_K(double factor,
         }
     }
   else {
-      double *F_KJ = kmat_block(0, K, J);
-      double *F_LJ = kmat_block(0, L, J);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+      JKBlock<KLocator> F_LJ_block(this, 0, L, J, nL, nJ);
+      double *F_LJ = F_LJ_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -341,10 +370,14 @@ CLHFContribution::contrib_p12_p13p24_J(double factor,
 {
   double factor2 = 2.0 * factor;
 
-  double *F_IJ = jmat_block(0, I, J);
-  double *F_KL = jmat_block(0, K, L);
-  const double * restrictxx P_IJ = pmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
+  JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
+  double *F_KL = F_KL_block.data();
+  PBlock P_IJ_block(this, 0, I, J, nI, nJ);
+  const double * restrictxx P_IJ = P_IJ_block.data();
+  PBlock P_KL_block(this, 0, K, L, nK, nL);
+  const double * restrictxx P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -372,10 +405,14 @@ CLHFContribution::contrib_p12_p13p24_K(double factor,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-//   double *F_IL = kmat_block(0, I, L);
-//   const double * restrictxx P_IK = pmat_block(0, I, K);
-  const double * restrictxx P_IL = pmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+//   JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+//   double *F_IL = F_IL_block.data();
+//   PBlock P_IK_block(this, 0, I, K, nI, nK);
+//   const double * restrictxx P_IK = P_IK_block.data();
+  PBlock P_IL_block(this, 0, I, L, nI, nL);
+  const double * restrictxx P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -386,10 +423,14 @@ CLHFContribution::contrib_p12_p13p24_K(double factor,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-      double *F_JK = kmat_block(0, J, K);
-//       double *F_JL = kmat_block(0, J, L);
-//       const double * restrictxx P_JK = pmat_block(0, J, K);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+      double *F_JK = F_JK_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+//       PBlock P_JK_block(this, 0, J, K, nJ, nK);
+//       const double * restrictxx P_JK = P_JK_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -416,10 +457,14 @@ CLHFContribution::contrib_p12_p13p24_K(double factor,
         }
     }
   else if (J >= L) {
-      double *F_KJ = kmat_block(0, K, J);
-//       double *F_JL = kmat_block(0, J, L);
-//       const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+//       PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+//       const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -447,10 +492,14 @@ CLHFContribution::contrib_p12_p13p24_K(double factor,
         }
     }
   else {
-      double *F_KJ = kmat_block(0, K, J);
-//       double *F_LJ = kmat_block(0, L, J);
-//       const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_LJ_block(this, 0, L, J, nL, nJ);
+//       double *F_LJ = F_LJ_block.data();
+//       PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+//       const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -486,10 +535,14 @@ CLHFContribution::contrib_p34_p13p24_J(double factor,
 {
   double factor2 = 2.0 * factor;
 
-  double *F_IJ = jmat_block(0, I, J);
-  double *F_KL = jmat_block(0, K, L);
-  const double * restrictxx P_IJ = pmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
+  JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
+  double *F_KL = F_KL_block.data();
+  PBlock P_IJ_block(this, 0, I, J, nI, nJ);
+  const double * restrictxx P_IJ = P_IJ_block.data();
+  PBlock P_KL_block(this, 0, K, L, nK, nL);
+  const double * restrictxx P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -517,10 +570,14 @@ CLHFContribution::contrib_p34_p13p24_K(double factor,
                                        int nI, int nJ, int nK, int nL,
                                        const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-  double *F_IL = kmat_block(0, I, L);
-  const double * restrictxx P_IK = pmat_block(0, I, K);
-  const double * restrictxx P_IL = pmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+  JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+  double *F_IL = F_IL_block.data();
+  PBlock P_IK_block(this, 0, I, K, nI, nK);
+  const double * restrictxx P_IK = P_IK_block.data();
+  PBlock P_IL_block(this, 0, I, L, nI, nL);
+  const double * restrictxx P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -531,10 +588,14 @@ CLHFContribution::contrib_p34_p13p24_K(double factor,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-//       double *F_JK = kmat_block(0, J, K);
-//       double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_JK = pmat_block(0, J, K);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+//       JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+//       double *F_JK = F_JK_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+      PBlock P_JK_block(this, 0, J, K, nJ, nK);
+      const double * restrictxx P_JK = P_JK_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -561,10 +622,14 @@ CLHFContribution::contrib_p34_p13p24_K(double factor,
         }
     }
   else if (J >= L) {
-//       double *F_KJ = kmat_block(0, K, J);
-//       double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+//       JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+//       double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -592,10 +657,14 @@ CLHFContribution::contrib_p34_p13p24_K(double factor,
         }
     }
   else {
-//       double *F_KJ = kmat_block(0, K, J);
-//       double *F_LJ = kmat_block(0, L, J);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+//       JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+//       double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_LJ_block(this, 0, L, J, nL, nJ);
+//       double *F_LJ = F_LJ_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -631,8 +700,10 @@ CLHFContribution::contrib_p12_p34_J(double factor,
 {
   double factor2 = 2.0 * factor;
 
-  double *F_IJ = jmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
+  PBlock P_KL_block(this, 0, K, L, nK, nL);
+  const double * restrictxx P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -656,10 +727,14 @@ CLHFContribution::contrib_p12_p34_K(double factor,
                                     int nI, int nJ, int nK, int nL,
                                     const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-  double *F_IL = kmat_block(0, I, L);
-  const double * restrictxx P_IK = pmat_block(0, I, K);
-  const double * restrictxx P_IL = pmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+  JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+  double *F_IL = F_IL_block.data();
+  PBlock P_IK_block(this, 0, I, K, nI, nK);
+  const double * restrictxx P_IK = P_IK_block.data();
+  PBlock P_IL_block(this, 0, I, L, nI, nL);
+  const double * restrictxx P_IL = P_IL_block.data();
 
 
   double IK_factor = -0.5*factor; // IK are always canonical
@@ -668,10 +743,14 @@ CLHFContribution::contrib_p12_p34_K(double factor,
   double JL_factor = -0.5*factor; // JL are always canonical
 
   if (J >= K) {
-      double *F_JK = kmat_block(0, J, K);
-      double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_JK = pmat_block(0, J, K);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+      double *F_JK = F_JK_block.data();
+      JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+      double *F_JL = F_JL_block.data();
+      PBlock P_JK_block(this, 0, J, K, nJ, nK);
+      const double * restrictxx P_JK = P_JK_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -698,10 +777,14 @@ CLHFContribution::contrib_p12_p34_K(double factor,
         }
     }
   else if (J >= L) {
-      double *F_KJ = kmat_block(0, K, J);
-      double *F_JL = kmat_block(0, J, L);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+      JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+      double *F_JL = F_JL_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -729,10 +812,14 @@ CLHFContribution::contrib_p12_p34_K(double factor,
         }
     }
   else {
-      double *F_KJ = kmat_block(0, K, J);
-      double *F_LJ = kmat_block(0, L, J);
-      const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+      JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+      double *F_KJ = F_KJ_block.data();
+      JKBlock<KLocator> F_LJ_block(this, 0, L, J, nL, nJ);
+      double *F_LJ = F_LJ_block.data();
+      PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+      const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -775,16 +862,22 @@ CLHFContribution::contrib_p34_K(double factor,
                                 int nI, int nJ, int nK, int nL,
                                 const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-  double *F_IL = kmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+  JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+  double *F_IL = F_IL_block.data();
 
   double IK_factor = -0.5*factor;
   double IL_factor = -0.5*factor;
 
-  double *F_JK = kmat_block(0, J, K);
-  double *F_JL = kmat_block(0, J, L);
-  const double * restrictxx P_JK = pmat_block(0, J, K);
-  const double * restrictxx P_JL = pmat_block(0, J, L);
+  JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+  double *F_JK = F_JK_block.data();
+  JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+  double *F_JL = F_JL_block.data();
+  PBlock P_JK_block(this, 0, J, K, nJ, nK);
+  const double * restrictxx P_JK = P_JK_block.data();
+  PBlock P_JL_block(this, 0, J, L, nJ, nL);
+  const double * restrictxx P_JL = P_JL_block.data();
   for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
        i++,il_begin+=nL,ik_begin+=nK) {
       for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -811,10 +904,14 @@ CLHFContribution::contrib_p13p24_J(double factor,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
-  double *F_IJ = jmat_block(0, I, J);
-  double *F_KL = jmat_block(0, K, L);
-  const double * restrictxx P_IJ = pmat_block(0, I, J);
-  const double * restrictxx P_KL = pmat_block(0, K, L);
+  JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
+  double *F_IJ = F_IJ_block.data();
+  JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
+  double *F_KL = F_KL_block.data();
+  PBlock P_IJ_block(this, 0, I, J, nI, nJ);
+  const double * restrictxx P_IJ = P_IJ_block.data();
+  PBlock P_KL_block(this, 0, K, L, nK, nL);
+  const double * restrictxx P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -842,10 +939,14 @@ CLHFContribution::contrib_p13p24_K(double factor,
                                    int nI, int nJ, int nK, int nL,
                                    const double * restrictxx buf)
 {
-  double *F_IK = kmat_block(0, I, K);
-//   double *F_IL = kmat_block(0, I, L);
-//   const double * restrictxx P_IK = pmat_block(0, I, K);
-//   const double * restrictxx P_IL = pmat_block(0, I, L);
+  JKBlock<KLocator> F_IK_block(this, 0, I, K, nI, nK);
+  double *F_IK = F_IK_block.data();
+//   JKBlock<KLocator> F_IL_block(this, 0, I, L, nI, nL);
+//   double *F_IL = F_IL_block.data();
+//   PBlock P_IK_block(this, 0, I, K, nI, nK);
+//   const double * restrictxx P_IK = P_IK_block.data();
+//   PBlock P_IL_block(this, 0, I, L, nI, nL);
+//   const double * restrictxx P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -856,10 +957,14 @@ CLHFContribution::contrib_p13p24_K(double factor,
 //   double JL_factor = -0.5*(J==L?2:1);
 
   if (J >= K) {
-//       double *F_JK = kmat_block(0, J, K);
-//       double *F_JL = kmat_block(0, J, L);
-//       const double * restrictxx P_JK = pmat_block(0, J, K);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+//       JKBlock<KLocator> F_JK_block(this, 0, J, K, nJ, nK);
+//       double *F_JK = F_JK_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+//       PBlock P_JK_block(this, 0, J, K, nJ, nK);
+//       const double * restrictxx P_JK = P_JK_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -886,10 +991,14 @@ CLHFContribution::contrib_p13p24_K(double factor,
         }
     }
   else if (J >= L) {
-//       double *F_KJ = kmat_block(0, K, J);
-//       double *F_JL = kmat_block(0, J, L);
-//       const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_JL = pmat_block(0, J, L);
+//       JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+//       double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_JL_block(this, 0, J, L, nJ, nL);
+//       double *F_JL = F_JL_block.data();
+//       PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+//       const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_JL_block(this, 0, J, L, nJ, nL);
+      const double * restrictxx P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -917,10 +1026,14 @@ CLHFContribution::contrib_p13p24_K(double factor,
         }
     }
   else {
-//       double *F_KJ = kmat_block(0, K, J);
-//       double *F_LJ = kmat_block(0, L, J);
-//       const double * restrictxx P_KJ = pmat_block(0, K, J);
-      const double * restrictxx P_LJ = pmat_block(0, L, J);
+//       JKBlock<KLocator> F_KJ_block(this, 0, K, J, nK, nJ);
+//       double *F_KJ = F_KJ_block.data();
+//       JKBlock<KLocator> F_LJ_block(this, 0, L, J, nL, nJ);
+//       double *F_LJ = F_LJ_block.data();
+//       PBlock P_KJ_block(this, 0, K, J, nK, nJ);
+//       const double * restrictxx P_KJ = P_KJ_block.data();
+      PBlock P_LJ_block(this, 0, L, J, nL, nJ);
+      const double * restrictxx P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {

@@ -961,7 +961,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-{ ExEnv::outn() << "MPQC: Illegal character: \""
+{ if (!MPQCIn::checking()) ExEnv::outn() << "MPQC: Illegal character: \""
                                << yytext[0] <<"\"" << endl; }
 	YY_BREAK
 case 48:

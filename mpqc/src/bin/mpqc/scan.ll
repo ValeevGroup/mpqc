@@ -98,7 +98,7 @@ qstring \"[^"\n]+\"
 [ \t]+          ; 
 %.*$            ;
 [\n\r\f]        ;
-.               { ExEnv::outn() << "MPQC: Illegal character: \""
+.               { if (!MPQCIn::checking()) ExEnv::outn() << "MPQC: Illegal character: \""
                                << yytext[0] <<"\"" << endl; }
 %%
 

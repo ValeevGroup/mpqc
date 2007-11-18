@@ -2637,7 +2637,7 @@ FockBuild::build()
     }
   for (int i=0; i<nthread; i++) {
       Ref<RegionTimer> deftimer = RegionTimer::default_regiontimer();
-      deftimer->merge(thread_[i]->get_timer());
+      if (deftimer.nonnull()) deftimer->merge(thread_[i]->get_timer());
       thread_[i]->get_timer()->reset();
     }
   contrib_->accum_remote(msg_);

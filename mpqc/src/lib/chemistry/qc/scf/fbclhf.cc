@@ -40,7 +40,8 @@ FockBuildCLHF::FockBuildCLHF(const Ref<KeyVal>& keyval) :
   if (fockdist_.null()) {
       fockdist_ = new FockDistribution;
     }
-  fockbuildmatrixtype_ = keyval->stringvalue("fockbuildmatrixtype");
+  KeyValValuestring deffbm("replicated");
+  fockbuildmatrixtype_ = keyval->stringvalue("fockbuildmatrixtype",deffbm);
   if (fockbuildmatrixtype_ != "replicated"
       && fockbuildmatrixtype_ != "distributed"
       && fockbuildmatrixtype_ != "prefetched_distributed") {

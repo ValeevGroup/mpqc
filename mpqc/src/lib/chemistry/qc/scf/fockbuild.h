@@ -701,6 +701,9 @@ class FockBuildThread : public Thread {
     const signed char *pmax_;
     Ref<RegionTimer> timer_;
     bool prefetch_blocks_;
+    bool compute_J_;
+    bool compute_K_;
+    double coef_K_;
 
     int can_sym_offset(int i, int j) { return (i*(i+1))/2 + j; }
     int gen_sym_offset(int i, int j) {
@@ -715,7 +718,10 @@ class FockBuildThread : public Thread {
                     int threadnum,
                     bool prefetch_blocks,
                     const Ref<ThreadLock> &lock,
-                    const Ref<Integral> &integral);
+                    const Ref<Integral> &integral,
+                    bool compute_J,
+                    bool compute_K,
+                    double coef_K);
     void set_contrib(const Ref<FockContribution>&c) { contrib_ = c; }
     void set_accuracy(double acc) { accuracy_ = acc; }
     void set_pmax(const signed char *pmax) { pmax_ = pmax; }
@@ -747,10 +753,11 @@ class FockBuildThread_F11_P11 : public FockBuildThread {
                             const Ref<GaussianBasisSet> &basis3/*not used*/,
                             const Ref<FockBlocks> &blocks1,
                             const Ref<FockBlocks> &blocks2/*not used*/,
-                            const Ref<FockBlocks> &blocks3/*not used*/);
+                            const Ref<FockBlocks> &blocks3/*not used*/,
+                            bool compute_J,
+                            bool compute_K,
+                            double coef_K);
     void run();
-    void new_run();
-    void old_run();
 };
 
 /** This is used to build the Fock matrix when none of the
@@ -783,7 +790,10 @@ class FockBuildThread_F12_P33 : public FockBuildThread {
                             const Ref<GaussianBasisSet> &basis3,
                             const Ref<FockBlocks> &blocks1,
                             const Ref<FockBlocks> &blocks2,
-                            const Ref<FockBlocks> &blocks3);
+                            const Ref<FockBlocks> &blocks3,
+                            bool compute_J,
+                            bool compute_K,
+                            double coef_K);
     void run();
 };
 
@@ -810,6 +820,10 @@ class FockBuild: public RefCount {
     Ref<FockBlocks> fb_f2_;
     Ref<FockBlocks> fb_p_;
 
+    bool compute_J_;
+    bool compute_K_;
+    double coef_K_;
+
     typedef FockBuildThread* (*FBT_CTOR)(const Ref<FockDistribution> &fockdist,
                                          const Ref<MessageGrp> &msg,
                                          int nthread,
@@ -823,7 +837,10 @@ class FockBuild: public RefCount {
                                          const Ref<GaussianBasisSet> &basis3,
                                          const Ref<FockBlocks> &blocks1,
                                          const Ref<FockBlocks> &blocks2,
-                                         const Ref<FockBlocks> &blocks3);
+                                         const Ref<FockBlocks> &blocks3,
+                                         bool compute_J,
+                                         bool compute_K,
+                                         double coef_K);
 
 
     // Build for the any case.  The thread constructing function is passed in.
@@ -857,6 +874,13 @@ class FockBuild: public RefCount {
 
     const Ref<FockContribution> &contrib() const { return contrib_; }
     void set_accuracy(double acc) { accuracy_ = acc; }
+
+    void set_compute_J(bool compute_J) { compute_J_ = compute_J; }
+    void set_compute_K(bool compute_K) { compute_K_ = compute_K; }
+    void set_coef_K(double coef_K) { coef_K_ = coef_K; }
+    bool compute_J() const { return compute_J_; }
+    bool compute_K() const { return compute_K_; }
+    double coef_K() const { return coef_K_; }
 };
 
 }

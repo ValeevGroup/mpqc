@@ -1939,7 +1939,10 @@ FockBuildThread::FockBuildThread(const Ref<FockDistribution> &fockdist,
                                  int threadnum,
                                  bool prefetch_blocks,
                                  const Ref<ThreadLock> &lock,
-                                 const Ref<Integral> &integral):
+                                 const Ref<Integral> &integral,
+                                 bool compute_J,
+                                 bool compute_K,
+                                 double coef_K):
   fockdist_(fockdist),
   msg_(msg),
   nthread_(nthread),
@@ -1948,7 +1951,10 @@ FockBuildThread::FockBuildThread(const Ref<FockDistribution> &fockdist,
   lock_(lock),
   integral_(integral),
   accuracy_(DBL_EPSILON),
-  pmax_(0)
+  pmax_(0),
+  compute_J_(compute_J),
+  compute_K_(compute_K),
+  coef_K_(coef_K)
 {
   timer_ = new RegionTimer("FockBuildThreads",1,1);
 }
@@ -1970,9 +1976,13 @@ FockBuildThread_F11_P11::FockBuildThread_F11_P11(
     const Ref<GaussianBasisSet> &basis3,
     const Ref<FockBlocks> &blocks1,
     const Ref<FockBlocks> &blocks2,
-    const Ref<FockBlocks> &blocks3
+    const Ref<FockBlocks> &blocks3,
+    bool compute_J,
+    bool compute_K,
+    double coef_K
     ):
-  FockBuildThread(fockdist,msg,nthread,threadnum,prefetch_blocks,lock,integral),
+  FockBuildThread(fockdist,msg,nthread,threadnum,prefetch_blocks,lock,integral,
+                  compute_J,compute_K,coef_K),
   pl_(pl),
   basis_(basis1),
   blocks_(blocks1)
@@ -1981,13 +1991,6 @@ FockBuildThread_F11_P11::FockBuildThread_F11_P11(
   eri_ = integral_->electron_repulsion();
   eri_->set_redundant(1);
   eri_->set_integral_storage(integral_->storage_unused()/nthread);
-}
-
-void
-FockBuildThread_F11_P11::run()
-{
-//   old_run();
-  new_run();
 }
 
 void
@@ -2007,7 +2010,7 @@ FockBuildThread_F11_P11::prefetch_blocks(const Ref<FockDist> &dist,
 }
 
 void
-FockBuildThread_F11_P11::new_run()
+FockBuildThread_F11_P11::run()
 {
   int l2tol = (int) (log(accuracy_)/log(2.0));
 
@@ -2112,6 +2115,9 @@ FockBuildThread_F11_P11::new_run()
                       int qijkl = pl_->in_p4(oij,okl,i,j,k,l);
                       if (!qijkl) continue;
 
+                      double jfac = qijkl;
+                      double kfac = qijkl*coef_K_;
+
 //                       int pmaxijkl = pmaxijk;
 //                       if ((ptmp=pmax_[okl]) > pmaxijkl) pmaxijkl=ptmp;
 //                       if ((ptmp=pmax_[can_sym_offset(i,l)]-1) > pmaxijkl) pmaxijkl=ptmp;
@@ -2140,11 +2146,11 @@ FockBuildThread_F11_P11::new_run()
                       int intmax = eri_->log2_shell_bound(i,j,k,l);
                       int max_J = intmax + pmax_J;
                       int max_K = intmax + pmax_K - 1;
-                      bool doJ = (max_J >= l2tol);
-                      bool doK = (max_K >= l2tol);
+                      bool doJ = compute_J_ && (max_J >= l2tol);
+                      bool doK = compute_K_ && (max_K >= l2tol);
                       if (!doJ && !doK) continue;
 #else
-                      bool doJ = true, doK = true;
+                      bool doJ = compute_J_, doK = compute_K_;
 #endif
 
 #if DETAILED_TIMINGS
@@ -2168,46 +2174,46 @@ FockBuildThread_F11_P11::new_run()
                           if (e34) {
                               if (e13e24) {
                                   // e12 e34 e13e24
-                                  if (doJ) contrib_->contrib_e_J(qijkl, i, j, k, l,
+                                  if (doJ) contrib_->contrib_e_J(jfac, i, j, k, l,
                                                                  ni, nj, nk, nl, buf);
-                                  if (doK) contrib_->contrib_e_K(qijkl, i, j, k, l,
+                                  if (doK) contrib_->contrib_e_K(kfac, i, j, k, l,
                                                                  ni, nj, nk, nl, buf);
                                 }
                               else {
                                   // e12 e34
-                                  if (doJ) contrib_->contrib_p13p24_J(qijkl, i, j, k, l,
+                                  if (doJ) contrib_->contrib_p13p24_J(jfac, i, j, k, l,
                                                                       ni, nj, nk, nl, buf);
-                                  if (doK) contrib_->contrib_p13p24_K(qijkl, i, j, k, l,
+                                  if (doK) contrib_->contrib_p13p24_K(kfac, i, j, k, l,
                                                                       ni, nj, nk, nl, buf);
                                 }
                             }
                           else {
                               // e12
-                              if (doJ) contrib_->contrib_p34_p13p24_J(qijkl, i, j, k, l,
+                              if (doJ) contrib_->contrib_p34_p13p24_J(jfac, i, j, k, l,
                                                                       ni, nj, nk, nl, buf);
-                              if (doK) contrib_->contrib_p34_p13p24_K(qijkl, i, j, k, l,
+                              if (doK) contrib_->contrib_p34_p13p24_K(kfac, i, j, k, l,
                                                                       ni, nj, nk, nl, buf);
                             }
                         }
                       else if (e34) {
                           // e34
-                          if (doJ) contrib_->contrib_p12_p13p24_J(qijkl, i, j, k, l,
+                          if (doJ) contrib_->contrib_p12_p13p24_J(jfac, i, j, k, l,
                                                                   ni, nj, nk, nl, buf);
-                          if (doK) contrib_->contrib_p12_p13p24_K(qijkl, i, j, k, l,
+                          if (doK) contrib_->contrib_p12_p13p24_K(kfac, i, j, k, l,
                                                                   ni, nj, nk, nl, buf);
                         }
                       else if (e13e24) {
                           // e13e24
-                          if (doJ) contrib_->contrib_p12_p34_J(qijkl, i, j, k, l,
+                          if (doJ) contrib_->contrib_p12_p34_J(jfac, i, j, k, l,
                                                                ni, nj, nk, nl, buf);
-                          if (doK) contrib_->contrib_p12_p34_K(qijkl, i, j, k, l,
+                          if (doK) contrib_->contrib_p12_p34_K(kfac, i, j, k, l,
                                                                ni, nj, nk, nl, buf);
                         }
                       else {
                           // no equivalent indices
-                          if (doJ) contrib_->contrib_all_J(qijkl, i, j, k, l,
+                          if (doJ) contrib_->contrib_all_J(jfac, i, j, k, l,
                                                            ni, nj, nk, nl, buf);
-                          if (doK) contrib_->contrib_all_K(qijkl, i, j, k, l,
+                          if (doK) contrib_->contrib_all_K(kfac, i, j, k, l,
                                                            ni, nj, nk, nl, buf);
                         }
 #if DETAILED_TIMINGS
@@ -2230,149 +2236,6 @@ FockBuildThread_F11_P11::new_run()
     }
 }
 
-void
-FockBuildThread_F11_P11::old_run()
-{
-  int tol = (int) (log(accuracy_)/log(2.0));
-//   std::cout << "WARNING: setting tol to -99" << std::endl;
-//   int tol = -99;
-  
-  GaussianBasisSet& gbs = *basis_;
-  PetiteList& pl = *pl_;
-
-  const double *buf = eri_->buffer();
-
-  int me=msg_->me();
-  int nproc = msg_->n();
-  sc_int_least64_t thread_index=0;
-  sc_int_least64_t task_index=0;
-
-  for (int i=0; i < gbs.nshell(); i++) {
-      if (!pl.in_p1(i))
-          continue;
-
-      int ni=gbs(i).nfunction();
-        
-      for (int j=0; j <= i; j++) {
-          int oij = can_sym_offset(i,j);
-
-          if (!pl.in_p2(oij))
-              continue;
-
-          int nj=gbs(j).nfunction();
-          int pmaxij = pmax_[oij];
-
-          for (int k=0; k <= i; k++, task_index++) {
-              if (task_index%nproc != me)
-                  continue;
-
-              thread_index++;
-              if (thread_index % nthread_ != threadnum_)
-                  continue;
-            
-              int nk=gbs(k).nfunction();
-
-              int pmaxijk=pmaxij, ptmp;
-              if ((ptmp=pmax_[can_sym_offset(i,k)]-1) > pmaxijk) pmaxijk=ptmp;
-              if ((ptmp=pmax_[gen_sym_offset(j,k)]-1) > pmaxijk) pmaxijk=ptmp;
-        
-              int okl = can_sym_offset(k,0);
-              for (int l=0; l <= (k==i?j:k); l++,okl++) {
-                  int pmaxijkl = pmaxijk;
-                  if ((ptmp=pmax_[okl]) > pmaxijkl) pmaxijkl=ptmp;
-                  if ((ptmp=pmax_[can_sym_offset(i,l)]-1) > pmaxijkl) pmaxijkl=ptmp;
-                  if ((ptmp=pmax_[gen_sym_offset(j,l)]-1) > pmaxijkl) pmaxijkl=ptmp;
-
-                  int qijkl = pl.in_p4(oij,okl,i,j,k,l);
-                  if (!qijkl)
-                      continue;
-
-//                   std::cout << "  oldshell: "
-//                             << std::setw(2) << i
-//                             << ", " << std::setw(2) << j
-//                             << ", " << std::setw(2) << k
-//                             << ", " << std::setw(2) << l
-//                             << std::endl;
-
-#if 0
-
-#ifdef SCF_CHECK_BOUNDS
-                  double intbound
-                      = pow(2.0,double(eri_->log2_shell_bound(i,j,k,l)));
-                  double pbound
-                      = pow(2.0,double(pmaxijkl));
-                  intbound *= qijkl;
-                  GBuild<T>::contribution.set_bound(intbound, pbound);
-#else
-#  if SCF_USE_BOUNDS
-                  if (eri_->log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
-                      continue;
-#  endif
-#endif
-
-                  eri_->compute_shell(i,j,k,l);
-
-                  int e12 = (i==j);
-                  int e34 = (k==l);
-                  int e13e24 = (i==k) && (j==l);
-                  int e_any = e12||e34||e13e24;
-                  int nl=gbs(l).nfunction();
-
-                  if (e12) {
-                      if (e34) {
-                          if (e13e24) {
-                              // e12 e34 e13e24
-                              contrib_->contrib_e_J(qijkl, i, j, k, l,
-                                                    ni, nj, nk, nl, buf);
-                              contrib_->contrib_e_K(qijkl, i, j, k, l,
-                                                    ni, nj, nk, nl, buf);
-                            }
-                          else {
-                              // e12 e34
-                              contrib_->contrib_p13p24_J(qijkl, i, j, k, l,
-                                                         ni, nj, nk, nl, buf);
-                              contrib_->contrib_p13p24_K(qijkl, i, j, k, l,
-                                                         ni, nj, nk, nl, buf);
-                            }
-                        }
-                      else {
-                          // e12
-                          contrib_->contrib_p34_p13p24_J(qijkl, i, j, k, l,
-                                                         ni, nj, nk, nl, buf);
-                          contrib_->contrib_p34_p13p24_K(qijkl, i, j, k, l,
-                                                         ni, nj, nk, nl, buf);
-                        }
-                    }
-                  else if (e34) {
-                      // e34
-                      contrib_->contrib_p12_p13p24_J(qijkl, i, j, k, l,
-                                                     ni, nj, nk, nl, buf);
-                      contrib_->contrib_p12_p13p24_K(qijkl, i, j, k, l,
-                                                     ni, nj, nk, nl, buf);
-                    }
-                  else if (e13e24) {
-                      // e13e24
-                      contrib_->contrib_p12_p34_J(qijkl, i, j, k, l,
-                                                ni, nj, nk, nl, buf);
-                      contrib_->contrib_p12_p34_K(qijkl, i, j, k, l,
-                                                 ni, nj, nk, nl, buf);
-                    }
-                  else {
-                      // no equivalent indices
-                      contrib_->contrib_all_J(qijkl, i, j, k, l,
-                                              ni, nj, nk, nl, buf);
-                      contrib_->contrib_all_K(qijkl, i, j, k, l,
-                                              ni, nj, nk, nl, buf);
-                    }
-
-                  contrib_->nint() += (double) ni*nj*nk*nl;
-#endif
-                }
-            }
-        }
-    }
-}
-
 /////////////////////////////////////////////////////////////////
 // FockBuildThread_F12_P33
 
@@ -2390,9 +2253,13 @@ FockBuildThread_F12_P33::FockBuildThread_F12_P33(
     const Ref<GaussianBasisSet> &basis3,
     const Ref<FockBlocks> &blocks1,
     const Ref<FockBlocks> &blocks2,
-    const Ref<FockBlocks> &blocks3
+    const Ref<FockBlocks> &blocks3,
+    bool compute_J,
+    bool compute_K,
+    double coef_K
     ):
-  FockBuildThread(fockdist,msg,nthread,threadnum,prefetch_blocks,lock,integral),
+  FockBuildThread(fockdist,msg,nthread,threadnum,prefetch_blocks,lock,integral,
+                  compute_J,compute_K,coef_K),
   pl_(pl),
   basis1_(basis1),
   basis2_(basis2),
@@ -2412,8 +2279,8 @@ FockBuildThread_F12_P33::FockBuildThread_F12_P33(
 void
 FockBuildThread_F12_P33::run()
 {
-  run_J();
-  run_K();
+  if (compute_J_) run_J();
+  if (compute_K_) run_K();
 }
 
 void
@@ -2498,7 +2365,7 @@ FockBuildThread_F12_P33::run_K()
                   // I, K permutations are ignored since just
                   // the lower triangle of K is needed if I and
                   // K are from the same basis set
-                  contrib_->contrib_e_K(1.0, I, J, K, L,
+                  contrib_->contrib_e_K(coef_K_, I, J, K, L,
                                         nI, nJ, nK, nL, buf);
                 }
             }
@@ -2528,7 +2395,10 @@ FockBuild::FockBuild(const Ref<FockDistribution> &fockdist,
   msg_(msg),
   thr_(thr),
   integral_(integral),
-  thread_(0)
+  thread_(0),
+  compute_J_(true),
+  compute_K_(true),
+  coef_K_(1.0)
 {
   if (b_f2_.null()) b_f2_ = b_f1_;
   if (b_p_.null()) b_p_ = b_f1_;
@@ -2597,10 +2467,15 @@ create_FockBuildThread(const Ref<FockDistribution> &fockdist,
                        const Ref<GaussianBasisSet> &basis3,
                        const Ref<FockBlocks> &blocks1,
                        const Ref<FockBlocks> &blocks2,
-                       const Ref<FockBlocks> &blocks3)
+                       const Ref<FockBlocks> &blocks3,
+                       bool compute_J,
+                       bool compute_K,
+                       double coef_K)
 {
+  if (coef_K == 0.0) compute_K = false;
   return new T(fockdist,msg,nthread,threadnum,prefetch_blocks,lock,integral,
-               pl,basis1,basis2,basis3,blocks1,blocks2,blocks3);
+               pl,basis1,basis2,basis3,blocks1,blocks2,blocks3,
+               compute_J,compute_K,coef_K);
 }
 
 void
@@ -2668,7 +2543,8 @@ FockBuild::init_threads(FBT_CTOR ctor)
                            prefetch_blocks_,
                            lock,integral_,pl_,
                            b_f1_,b_f2_,b_p_,
-                           fb_f1_,fb_f2_,fb_p_);
+                           fb_f1_,fb_f2_,fb_p_,
+                           compute_J_, compute_K_, coef_K_);
     }
 }
 

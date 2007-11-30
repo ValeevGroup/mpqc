@@ -248,7 +248,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	    pos1 = corrfactor.find("STG-");
 	if (pos1 != 0)
 	    throw InputError("Should specify Slater-type geminal correlation factor as STG-NG, where N is the number of Gaussians in the fit",__FILE__,__LINE__);
-	// erage STG-
+	// erase STG-
 	string str1 = corrfactor.erase(0,4);
 	// and trailing G also
 	pos1 = corrfactor.find("G");

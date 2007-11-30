@@ -213,22 +213,6 @@ namespace sc {
     /// Number of oo blocks in dimension of A
     unsigned int nblks(const RefSymmSCMatrix& A) const;
     
-    /// gets ij block of A
-    void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
-    /// gets ij block of A
-    void get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const;
-    /// gets ij block of A
-    void get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
-    /// gets ij block of A
-    void get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
-    /// puts ij block into A
-    void put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
-    /// puts ij block into A
-    void put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const;
-    /// puts ij block into A
-    void put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
-    /// puts ij block into A
-    void put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
   };
   
 }

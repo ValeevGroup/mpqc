@@ -168,15 +168,15 @@ DenIntegratorThread::DenIntegratorThread(int ithread, int nthread,
   ithread_ = ithread;
   nthread_ = nthread;
   integrator_ = integrator;
-  spin_polarized_ = integrator->wavefunction()->spin_polarized();
-  nshell_ = integrator->wavefunction()->basis()->nshell();
-  nbasis_ = integrator->wavefunction()->basis()->nbasis();
-  natom_ = integrator->wavefunction()->molecule()->natom();
+  spin_polarized_ = integrator->spin_polarized();
+  nshell_ = integrator->basis()->nshell();
+  nbasis_ = integrator->basis()->nbasis();
+  natom_ = integrator->basis()->molecule()->natom();
   n_integration_center_
-      = integrator->wavefunction()->molecule()->n_non_q_atom();
+      = integrator->basis()->molecule()->n_non_q_atom();
   need_gradient_ = func->need_density_gradient();
   need_hessian_ = func->need_density_hessian();
-  basis_ = integrator->wavefunction()->basis().pointer();
+  basis_ = integrator->basis().pointer();
   linear_scaling_ = linear_scaling;
   use_dmat_bound_ = use_dmat_bound;
   func_ = func;
@@ -282,11 +282,20 @@ DenIntegrator::set_compute_potential_integrals(int i)
 void
 DenIntegrator::init(const Ref<Wavefunction> &wfn)
 {
-  wfn_ = wfn;
-  den_ = new BatchElectronDensity(wfn,accuracy_);
+  init(wfn->basis(), wfn->integral());
+}
+
+void
+DenIntegrator::init(const Ref<GaussianBasisSet> &basis,
+                    const Ref<Integral> &integral)
+{
+  basis_ = basis;
+  integral_ = integral;
+  den_ = new BatchElectronDensity(basis_, integral_,
+                                  accuracy_);
   den_->set_linear_scaling(linear_scaling_);
   den_->set_use_dmat_bound(use_dmat_bound_);
-  den_->init(false);
+  den_->init();
 }
 
 void
@@ -299,7 +308,8 @@ DenIntegrator::set_accuracy(double a)
 void
 DenIntegrator::done()
 {
-  wfn_ = 0;
+  basis_ = 0;
+  integral_ = 0;
   den_ = 0;
 }
 
@@ -312,20 +322,20 @@ DenIntegrator::init_integration(const Ref<DenFunctional> &func,
   int i;
   value_ = 0.0;
 
+  den_->set_densities(densa,densb);
+  spin_polarized_ = den_->spin_polarized();
+
   func->set_compute_potential(
       compute_potential_integrals_ || nuclear_gradient != 0);
 
-  spin_polarized_ = wfn_->spin_polarized();
   func->set_spin_polarized(spin_polarized_);
 
-  natom_ = wfn_->molecule()->natom();
+  natom_ = basis_->molecule()->natom();
   n_integration_center_
-      = wfn_->molecule()->n_non_q_atom();
+      = basis_->molecule()->n_non_q_atom();
 
-  nshell_ = wfn_->basis()->nshell();
-  nbasis_ = wfn_->basis()->nbasis();
-   
-  den_->set_densities(densa,densb);
+  nshell_ = basis_->nshell();
+  nbasis_ = basis_->nbasis();
 
   delete[] alpha_vmat_;
   delete[] beta_vmat_;
@@ -1454,7 +1464,7 @@ RadialAngularIntegratorThread
   ra_integrator_ = integrator;
   int deriv_order = (need_nuclear_gradient==0?0:1);
 
-  mol_ = integrator_->wavefunction()->molecule().pointer();
+  mol_ = integrator_->basis()->molecule().pointer();
 
   weight_ = ra_integrator_->weight().pointer();
 
@@ -2029,7 +2039,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
 
   init_integration(denfunc, densa, densb, nuclear_gradient);
 
-  weight_->init(wavefunction()->molecule(), DBL_EPSILON);
+  weight_->init(basis()->molecule(), DBL_EPSILON);
 
   int me = messagegrp_->me();
   int nthread = threadgrp_->nthread();
@@ -2105,7 +2115,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
             }
         }
       if (nuclear_gradient != 0) {
-          int natom3 = 3 * wavefunction()->molecule()->natom();
+          int natom3 = 3 * basis()->molecule()->natom();
           double *th_nuclear_gradient = threads[i]->nuclear_gradient();
           for (int j=0; j<natom3; j++) {
               nuclear_gradient[j] += th_nuclear_gradient[j];
@@ -2124,8 +2134,8 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
   ExEnv::out0() << indent
        << "Total integration points = " << point_count_total << endl;
   ExEnv::out0() << indent
-               << "Integrated electron density error = "
-               << scprintf("%14.12f", total_density-wfn_->nelectron())
+               << "Integrated electron density = "
+               << scprintf("%16.12f", total_density)
                << endl;
 
   tim.exit("integrate");

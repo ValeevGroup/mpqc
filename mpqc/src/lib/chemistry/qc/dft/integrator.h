@@ -43,7 +43,9 @@ namespace sc {
 /** An abstract base class for integrating the electron density. */
 class DenIntegrator: virtual public SavableState {
   protected:
-    Ref<Wavefunction> wfn_;
+    Ref<GaussianBasisSet> basis_;
+    Ref<Integral> integral_;
+
 //clj    Ref<ShellExtent> extent_;
     Ref<BatchElectronDensity> den_;
 
@@ -90,8 +92,11 @@ class DenIntegrator: virtual public SavableState {
     ~DenIntegrator();
     void save_data_state(StateOut &);
 
-    /// Returns the wavefunction used for the integration.
-    Ref<Wavefunction> wavefunction() const { return wfn_; }
+    /// Returns the basis set used for the density.
+    const Ref<GaussianBasisSet> &basis() const { return basis_; }
+    /** Returns the integral object that defines the basis
+        function ordering, etc. */
+    const Ref<Integral> &integral() const { return integral_; }
     /// Returns the result of the integration.
     double value() const { return value_; }
 
@@ -108,9 +113,14 @@ class DenIntegrator: virtual public SavableState {
         the lower triangular, row-major format. */
     const double *beta_vmat() const { return beta_vmat_; }
 
+    /** Calls the overloaded init routine with a GaussianBasisSet
+        and a Integral object extracted from the given Wavefunction
+        object. */
+    virtual void init(const Ref<Wavefunction> &);
     /** Called before integrate.  Does not need to be called again
         unless the geometry changes or done is called. */
-    virtual void init(const Ref<Wavefunction> &);
+    virtual void init(const Ref<GaussianBasisSet> &,
+                      const Ref<Integral> &);
     /// Must be called between calls to init.
     virtual void done();
     /** Performs the integration of the given functional using the given
@@ -120,6 +130,9 @@ class DenIntegrator: virtual public SavableState {
                            const RefSymmSCMatrix& densa =0,
                            const RefSymmSCMatrix& densb =0,
                            double *nuclear_grad = 0) = 0;
+
+    /** Return true if the densities are spin polarized. */
+    bool spin_polarized() const { return spin_polarized_; }
 };
 
 

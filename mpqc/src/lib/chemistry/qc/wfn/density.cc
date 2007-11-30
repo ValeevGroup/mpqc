@@ -123,11 +123,13 @@ static ClassDesc BatchElectronDensity_cd(
   typeid(BatchElectronDensity),"BatchElectronDensity",1,"public Volume",
   0, create<BatchElectronDensity>, 0);
 
-BatchElectronDensity::BatchElectronDensity(const Ref<Wavefunction> &wfn,
+BatchElectronDensity::BatchElectronDensity(const Ref<GaussianBasisSet> &basis,
+                                           const Ref<Integral> &integral,
                                            double accuracy):
   Volume()
 {
-  wfn_ = wfn;
+  basis_ = basis;
+  integral_ = integral;
   accuracy_ = accuracy;
   zero_pointers();
   using_shared_data_ = false;
@@ -135,12 +137,38 @@ BatchElectronDensity::BatchElectronDensity(const Ref<Wavefunction> &wfn,
   use_dmat_bound_ = true;
   need_basis_gradient_ = false;
   need_basis_hessian_ = false;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  initialized_ = false;
+}
+
+BatchElectronDensity::BatchElectronDensity(const Ref<Wavefunction> &wfn,
+                                           double accuracy):
+  Volume()
+{
+  wfn_ = wfn;
+
+  basis_ = wfn->basis();
+  integral_ = wfn->integral();
+
+  accuracy_ = accuracy;
+  zero_pointers();
+  using_shared_data_ = false;
+  linear_scaling_ = true;
+  use_dmat_bound_ = true;
+  need_basis_gradient_ = false;
+  need_basis_hessian_ = false;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  initialized_ = false;
 }
 
 BatchElectronDensity::BatchElectronDensity(const Ref<KeyVal> &keyval):
   Volume(keyval)
 {
   wfn_ << keyval->describedclassvalue("wfn");
+  basis_ = wfn_->basis();
+  integral_ = wfn_->integral();
   accuracy_ = keyval->doublevalue("accuracy");
   zero_pointers();
   using_shared_data_ = false;
@@ -148,27 +176,31 @@ BatchElectronDensity::BatchElectronDensity(const Ref<KeyVal> &keyval):
   use_dmat_bound_ = true;
   need_basis_gradient_ = false;
   need_basis_hessian_ = false;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  initialized_ = false;
 }
 
 BatchElectronDensity::BatchElectronDensity(const Ref<BatchElectronDensity>&d,
                                            bool reference_parent_data):
   Volume()
 {
-  wfn_ = d->wfn_;
   zero_pointers();
   using_shared_data_ = reference_parent_data;
   accuracy_ = d->accuracy_;
   need_basis_gradient_ = d->need_basis_gradient_;
   need_basis_hessian_ = d->need_basis_hessian_;
+  initialized_ = d->initialized_;
+  spin_polarized_ = d->spin_polarized_;
   if (using_shared_data_) {
       if (d->alpha_dmat_ == 0) {
           throw std::runtime_error("BatchElectronDensity: attempted to use shared data, but parent data not initialized");
         }
 
-      spin_polarized_ = d->spin_polarized_;
       nshell_ = d->nshell_;
       nbasis_ = d->nbasis_;
       basis_ = d->basis_;
+      integral_ = d->integral_;
       extent_ = d->extent_;
       alpha_dmat_ = d->alpha_dmat_;
       beta_dmat_ = d->beta_dmat_;
@@ -217,48 +249,41 @@ BatchElectronDensity::clear()
   delete[] bsg_values_;
   delete[] bsh_values_;
   delete valdat_;
+  initialized_ = false;
 
   zero_pointers();
 }
 
 void
-BatchElectronDensity::init(bool initialize_density_matrices)
+BatchElectronDensity::init()
 {
   if (using_shared_data_)
       throw std::runtime_error("BatchElectronDensity::init: should not be called if using_shared_data");
 
   clear();
-  init_common_data(initialize_density_matrices);
+  init_common_data();
   init_scratch_data();
+  initialized_ = true;
 }
 
 void
-BatchElectronDensity::init_common_data(bool initialize_density_matrices)
+BatchElectronDensity::init_common_data()
 {
-  spin_polarized_ = wfn_->spin_polarized();
-  nshell_ = wfn_->basis()->nshell();
-  nbasis_ = wfn_->basis()->nbasis();
-  basis_ = wfn_->basis();
+  nshell_ = basis_->nshell();
+  nbasis_ = basis_->nbasis();
 
   if (linear_scaling_) {
       extent_ = new ShellExtent;
-      extent_->init(wfn_->basis());
-    }
-
-  alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
-
-  beta_dmat_ = 0;
-  if (spin_polarized_) {
-      beta_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+      extent_->init(basis_);
     }
 
   dmat_bound_ = new double[(nshell_*(nshell_+1))/2];
+}
 
-  if (initialize_density_matrices) {
-      RefSymmSCMatrix beta_ao_density;
-      if (spin_polarized_) beta_ao_density = wfn_->beta_ao_density();
-      set_densities(wfn_->alpha_ao_density(), beta_ao_density);
-    }
+void
+BatchElectronDensity::set_densities(const Ref<Wavefunction> &wfn)
+{
+  set_densities(wfn->alpha_density(), wfn->beta_density());
 }
 
 void
@@ -267,23 +292,30 @@ BatchElectronDensity::set_densities(const RefSymmSCMatrix &aden,
 {
   RefSymmSCMatrix ad = aden;
   RefSymmSCMatrix bd = bden;
-  if (ad.null()) ad = wfn_->alpha_ao_density();
-  if (bd.null()) bd = wfn_->beta_ao_density();
+
+  if (aden == bden || bden.null()) spin_polarized_ = 0;
+  else spin_polarized_ = 1;
+  
+  alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+  beta_dmat_ = 0;
+  if (spin_polarized_) {
+      beta_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+    }
 
   ad->convert(alpha_dmat_);
   if (spin_polarized_) bd->convert(beta_dmat_);
 
   int ij = 0;
   for (int i=0; i<nshell_; i++) {
-      int ni = wfn_->basis()->shell(i).nfunction();
+      int ni = basis_->shell(i).nfunction();
       for (int j=0; j<=i; j++,ij++) {
-          int nj = wfn_->basis()->shell(j).nfunction();
+          int nj = basis_->shell(j).nfunction();
           double bound = 0.0;
-          int ibf = wfn_->basis()->shell_to_function(i);
+          int ibf = basis_->shell_to_function(i);
           for (int k=0; k<ni; k++,ibf++) {
               int lmax = nj-1;
               if (i==j) lmax = k;
-              int jbf = wfn_->basis()->shell_to_function(j);
+              int jbf = basis_->shell_to_function(j);
               int ijbf = (ibf*(ibf+1))/2 + jbf;
               for (int l=0; l<=lmax; l++,ijbf++) {
                   double a = fabs(alpha_dmat_[ijbf]);
@@ -307,7 +339,7 @@ BatchElectronDensity::init_scratch_data()
   bs_values_ = new double[nbasis_];
   bsg_values_ = new double[3*nbasis_];
   bsh_values_ = new double[6*nbasis_];
-  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
+  valdat_ = new GaussianBasisSet::ValueData(basis_, integral_);
 }
 
 void
@@ -541,7 +573,20 @@ BatchElectronDensity::compute_density(const SCVector3 &r,
                                       double *bgrad,
                                       double *bhess)
 {
-  if (alpha_dmat_ == 0) init();
+  if (alpha_dmat_ == 0) {
+      if (wfn_.null()) {
+          throw ProgrammingError("BatchElectronDensity::compute_density: "
+                                 "set_densities must be used to initialize "
+                                 "object if wfn is not given",
+                                 __FILE__, __LINE__);
+        }
+      else {
+          if (!initialized_) {
+              init();
+            }
+          set_densities(wfn_);
+        }
+    }
 
   need_gradient_ = (agrad!=0) || (bgrad!=0);
   need_hessian_ = (ahess!=0) || (bhess!=0);
@@ -650,7 +695,7 @@ BatchElectronDensity::boundingbox(double valuemin,
   for (int i=0; i<3; i++) p1[i] = extent_->lower(i);
   for (int i=0; i<3; i++) p2[i] = extent_->upper(i);
 #else
-  Molecule& mol = *wfn_->molecule();
+  Molecule& mol = *basis_->molecule();
 
   if (mol.natom() == 0) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
@@ -735,7 +780,7 @@ WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
 void
 WriteElectronDensity::initialize()
 {
-  bed_ = new BatchElectronDensity(wfn_, accuracy_);
+  bed_ = new BatchElectronDensity(wfn_,accuracy_);
 }
 
 void

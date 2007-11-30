@@ -64,9 +64,14 @@ class ElectronDensity: public Volume {
 class BatchElectronDensity: public Volume {
     void zero_pointers();
   protected:
+    // wfn_ might be null in which case basis_ and integral_
+    // must be initialized and set_densities must be used.
     Ref<Wavefunction> wfn_;
 
     Ref<GaussianBasisSet> basis_;
+    Ref<Integral> integral_;
+
+    bool initialized_;
 
     // shared between threads
     double *alpha_dmat_;
@@ -86,7 +91,7 @@ class BatchElectronDensity: public Volume {
 
     int nshell_;
     int nbasis_;
-    int spin_polarized_;
+    bool spin_polarized_;
     int linear_scaling_;
     int use_dmat_bound_;
 
@@ -96,7 +101,7 @@ class BatchElectronDensity: public Volume {
     bool using_shared_data_;
 
     double accuracy_;
-    virtual void init_common_data(bool initialize_density_matrices);
+    virtual void init_common_data();
     // this must be called after common data is initialized,
     // either with init_common_data or by copying
     virtual void init_scratch_data();
@@ -115,7 +120,11 @@ class BatchElectronDensity: public Volume {
     enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
 
     BatchElectronDensity(const Ref<KeyVal>&);
-    BatchElectronDensity(const Ref<Wavefunction>&, double accuracy=DBL_EPSILON);
+    BatchElectronDensity(const Ref<GaussianBasisSet> &basis,
+                         const Ref<Integral> &integral,
+                         double accuracy=DBL_EPSILON);
+    BatchElectronDensity(const Ref<Wavefunction> &wfn,
+                         double accuracy=DBL_EPSILON);
     /** This will construct copies of this.  If reference_parent_data is
         true, then data that do not change, such as the density matrices
         and shell extent, are referenced rather than copied.  In this case,
@@ -148,22 +157,28 @@ class BatchElectronDensity: public Volume {
                          double *beta_density_hessian);
 
     /** This is called to finish initialization of the object.  It must not
-        be called with objects that created in a way that they share parent
-        data, those objects are initialized when they are constructed. This
-        member is usually called automatically, however, if it will be used
-        to initial other objects that share parent data, then it must be
-        initialized first and this return is the way to do that.  If
+        be called with objects created in a way that they share parent
+        data; those objects are initialized when they are constructed. This
+        member is usually called automatically; however, for objects
+        which will be used to provide other BatchElectronDensity objects'
+        data, this must member be called before the other
+        BatchElectronDensity objects are constructed.  If
         initialize_density_matrices is false, then the density matrices
         will be allocated, but not filled in.  They must be later filled in
         with set_densities. */
-    virtual void init(bool initialize_density_matrices = true);
+    virtual void init();
 
-    /** This will fill in the internel copies of the density matrices with
+    /** This will fill in the internal copies of the density matrices with
         new values.  aden is the alpha density matrix and bden is the beta
-        density matrix.  bden is ignored if the wavefunction is not spin
-        polarized. */
+        density matrix.  If bden is not null and does not reference the
+        same matrix that is referenced by bden, then a spin polarized
+        computation of the density is performed. */
     virtual void set_densities(const RefSymmSCMatrix &aden,
-                               const RefSymmSCMatrix &bden);
+                               const RefSymmSCMatrix &bden = 0);
+
+    /** Use the given Wavefunction object to set the electron density
+        matrices. */
+    virtual void set_densities(const Ref<Wavefunction> &wfn);
 
     /** Turn linear scaling algorithm on/off. The effect of this will be
         delayed until the next time init() is called. */
@@ -174,6 +189,10 @@ class BatchElectronDensity: public Volume {
 
     /** Turn use of density matrix bounds on/off. */
     void set_use_dmat_bound(bool b) { use_dmat_bound_ = b; }
+
+    /** Return true if the densities are spin polarized.  Set_densities
+        must have been called, at least implicitly. */
+    bool spin_polarized() const { return spin_polarized_; }
 
     /** @name DFT Support Members.
         These return some of the internal data, some of which is

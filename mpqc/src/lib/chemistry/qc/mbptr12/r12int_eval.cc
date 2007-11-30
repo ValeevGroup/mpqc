@@ -1163,7 +1163,6 @@ R12IntEval::form_focc_act_obs(SpinCase1 spin)
       std::string name = "Exchange-weighted (through OBS) active occupied MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
-      // as a test, use act occ space
       kactocc_obs_space_[s] = new MOIndexSpace(id, name, act_occ_space, obs_space->coefs()*K_obs_ao,
                                            obs_space->basis());
     }

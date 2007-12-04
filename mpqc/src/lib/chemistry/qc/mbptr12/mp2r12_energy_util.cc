@@ -36,36 +36,100 @@ using namespace sc;
 MP2R12EnergyUtil_base::MP2R12EnergyUtil_base() {
 }
 
+MP2R12EnergyUtil_Diag::MP2R12EnergyUtil_Diag() {
+}
+
 MP2R12EnergyUtil_base::~MP2R12EnergyUtil_base() {
+}
+
+MP2R12EnergyUtil_Diag::~MP2R12EnergyUtil_Diag() {
+}
+
+MP2R12EnergyUtil_base::MP2R12EnergyUtil_base(const RefSCDimension& oodim,
+                     const RefSCDimension& xydim,
+                     const RefSCDimension& f12dim,
+                     const unsigned int nocc_act) :
+oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n()), nocc_act_(nocc_act)
+{
+  gdim_ = new SCDimension(nf12_);
+  if (f12dim_.n()%xydim_.n())
+    throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+}
+
+MP2R12EnergyUtil_Diag::MP2R12EnergyUtil_Diag(const RefSCDimension& oodim,
+                     const RefSCDimension& xydim,
+                     const RefSCDimension& f12dim,
+                     const unsigned int nocc_act) :
+oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n()), nocc_act_(nocc_act)
+{
+  gdim_ = new SCDimension(nf12_);
+  if (f12dim_.n()%xydim_.n())
+    throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
 }
 
 ////
 
 namespace sc {
+
+
+  MP2R12EnergyUtil_Diag_DifferentSpin::MP2R12EnergyUtil_Diag_DifferentSpin(const RefSCDimension& oodim,
+                                                                             const RefSCDimension& xydim,
+                                                                             const RefSCDimension& f12dim,
+                                                                             const unsigned int nocc_act) :
+                                                   MP2R12EnergyUtil_base(oodim,xydim,f12dim,nocc_act) {
+    if (oodim_.n() != xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil_Diag_DifferentSpin::MP2R12EnergyUtil_Diag_DifferentSpin -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
+  }
   
-  MP2R12EnergyUtil_Diag::MP2R12EnergyUtil_Diag(const RefSCDimension& oodim,
-                       const RefSCDimension& xydim,
-                       const RefSCDimension& f12dim) :
-  oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n())
-  {
+  MP2R12EnergyUtil_Diag_DifferentSpin_indep::MP2R12EnergyUtil_Diag_DifferentSpin_indep(const RefSCDimension& oodim,
+                                                                             const RefSCDimension& xydim,
+                                                                             const RefSCDimension& f12dim,
+                                                                             const unsigned int nocc_act) :
+    MP2R12EnergyUtil_Diag(oodim,xydim,f12dim,nocc_act) {
     gdim_ = new SCDimension(nf12_);
     if (f12dim_.n()%xydim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
     if (oodim_.n() != xydim_.n())
-      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
+      throw ProgrammingError("MP2R12EnergyUtil_Diag_DifferentSpin_indep::MP2R12EnergyUtil_Diag_DifferentSpin_indep -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
+  }
+
+  MP2R12EnergyUtil_Diag_SameSpin::MP2R12EnergyUtil_Diag_SameSpin(const RefSCDimension& oodim,
+                                                                   const RefSCDimension& xydim,
+                                                                   const RefSCDimension& f12dim,
+                                                                   const unsigned int nocc_act) :
+                                                   MP2R12EnergyUtil_base(oodim,xydim,f12dim,nocc_act) {
+    if (oodim_.n() != xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil_Diag_SameSpin::MP2R12EnergyUtil_Diag_SameSpin -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
+  }
+  
+  MP2R12EnergyUtil_Diag_SameSpin_indep::MP2R12EnergyUtil_Diag_SameSpin_indep(const RefSCDimension& oodim,
+                                                                   const RefSCDimension& xydim,
+                                                                   const RefSCDimension& f12dim,
+                                                                   const unsigned int nocc_act) :
+    MP2R12EnergyUtil_Diag(oodim,xydim,f12dim,nocc_act) {
+    gdim_ = new SCDimension(nf12_);
+    if (f12dim_.n()%xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+    if (oodim_.n() != xydim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil_Diag_SameSpin_indep::MP2R12EnergyUtil_Diag_SameSpin_indep -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
   }
 
   MP2R12EnergyUtil_Nondiag::MP2R12EnergyUtil_Nondiag(const RefSCDimension& oodim,
                                                      const RefSCDimension& xydim,
-                                                     const RefSCDimension& f12dim) :
-  oodim_(oodim), xydim_(xydim), f12dim_(f12dim), nf12_(f12dim.n()/xydim.n())
+                                                     const RefSCDimension& f12dim,
+                                                     const unsigned int nocc_act) :
+                                                       MP2R12EnergyUtil_base(oodim,xydim,f12dim,nocc_act) {}
+  
+  void MP2R12EnergyUtil_base::check_dims(const RefSCMatrix& A) const
   {
-    gdim_ = new SCDimension(nf12_);
-    if (f12dim_.n()%xydim_.n())
-      throw ProgrammingError("MP2R12EnergyUtil::MP2R12EnergyUtil -- rank of f12dim must be divisible by rank of xydim",__FILE__,__LINE__);
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() && nrow != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- row dimension does not match",__FILE__,__LINE__);
+    if (ncol != f12dim_.n() && ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
   }
   
-
   void MP2R12EnergyUtil_Diag::check_dims(const RefSCMatrix& A) const
   {
     const int nrow = A.rowdim().n();
@@ -75,25 +139,15 @@ namespace sc {
     if (ncol != f12dim_.n() && ncol != oodim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
   }
-
-  void MP2R12EnergyUtil_Nondiag::check_dims(const RefSCMatrix& A) const
-  {
-    const int nrow = A.rowdim().n();
-    const int ncol = A.coldim().n();
-    if (nrow != f12dim_.n() && nrow != oodim_.n())
-      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- row dimension does not match",__FILE__,__LINE__);
-    if (ncol != f12dim_.n() && ncol != oodim_.n())
-      throw ProgrammingError("MP2R12EnergyUtil::check_dims -- column dimension does not match",__FILE__,__LINE__);
-  }
-
-  void MP2R12EnergyUtil_Diag::check_dims(const RefSymmSCMatrix& A) const
+  
+  void MP2R12EnergyUtil_base::check_dims(const RefSymmSCMatrix& A) const
   {
     const int n = A.dim().n();
     if (n != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::check_dims -- dimension does not match",__FILE__,__LINE__);
   }
-
-  void MP2R12EnergyUtil_Nondiag::check_dims(const RefSymmSCMatrix& A) const
+  
+  void MP2R12EnergyUtil_Diag::check_dims(const RefSymmSCMatrix& A) const
   {
     const int n = A.dim().n();
     if (n != f12dim_.n())
@@ -101,17 +155,62 @@ namespace sc {
   }
   
   // number of blocks should only be needed for diagonal ansatze
-  unsigned int MP2R12EnergyUtil_Diag::nrowblks(const RefSCMatrix& A) const {
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::nrowblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.rowdim().n()/oodim_.n();
   }
   
-  unsigned int MP2R12EnergyUtil_Diag::ncolblks(const RefSCMatrix& A) const {
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin_indep::nrowblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.rowdim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin::nrowblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.rowdim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin_indep::nrowblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.rowdim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::ncolblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.coldim().n()/oodim_.n();
   }
   
-  unsigned int MP2R12EnergyUtil_Diag::nblks(const RefSymmSCMatrix& A) const {
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin_indep::ncolblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.coldim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin::ncolblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.coldim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin_indep::ncolblks(const RefSCMatrix& A) const {
+    check_dims(A);
+    return A.coldim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::nblks(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    return A.dim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_DifferentSpin_indep::nblks(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    return A.dim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin::nblks(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    return A.dim().n()/oodim_.n();
+  }
+  
+  unsigned int MP2R12EnergyUtil_Diag_SameSpin_indep::nblks(const RefSymmSCMatrix& A) const {
     check_dims(A);
     return A.dim().n()/oodim_.n();
   }
@@ -129,15 +228,64 @@ namespace sc {
     throw ProgrammingError("MP2R12EnergyUtil_Nondiag::nblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
   
-  // put/get can only be implemented when Diag=true
-  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
-                                              const RefSCMatrix& A,
-                                              const RefSCVector& Aij) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
-    if (ij >= nij)
-      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
     const int nrow = A.rowdim().n();
     const int ncol = A.coldim().n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i=ij/nocc_act_;
+    int j=ij%nocc_act_;
+    int ji;
+    if(i!=j){
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        Aij.set_element(goffset  ,A.get_element(g*nij+ij, ij));
+        Aij.set_element(goffset+1,A.get_element(g*nij+ji, ij));
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        Aij.set_element(g, A.get_element(g*nij+ij, ij));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i=ij/nocc_act_;
+    int j=ij%nocc_act_;
+    int ji;
+    if(i!=j){
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        Aij.set_element(goffset  ,A.get_element(g*nij+ij, ij));
+        Aij.set_element(goffset+1,A.get_element(g*nij+ji, ij));
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        Aij.set_element(g, A.get_element(g*nij+ij, ij));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
     if (nrow != f12dim_.n() || ncol != oodim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
     for (unsigned int g=0; g<nf12_; g++) {
@@ -145,53 +293,328 @@ namespace sc {
     }
   }
   
-  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
-                                              const RefSCMatrix& A,
-                                              const RefSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    for (unsigned int g=0; g<nf12_; g++) {
+      Aij.set_element(g, A.get_element(g*nij+ij, ij));
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
     const int nrb = nrowblks(A);
     const int ncb = ncolblks(A);
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::get -- not implemented for case of different number of column and row blocks",__FILE__,__LINE__);
+    }
+    int i=ij/nocc_act_;
+    int j=ij%nocc_act_;
+    int ji;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        int goffset=2*g;
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          int foffset=2*f;
+          Aij.set_element(goffset  ,foffset  ,A.get_element(gij+ij, fij+ij));
+          Aij.set_element(goffset  ,foffset+1,A.get_element(gij+ij, fij+ji));
+          Aij.set_element(goffset+1,foffset  ,A.get_element(gij+ji, fij+ij));
+          Aij.set_element(goffset+1,foffset+1,A.get_element(gij+ji, fij+ji));
+        }
+      }
+    }  // i!=j
+    else {  // i==j
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          //Aij.set_element(g, f, A.get_element(gij, fij));
+          Aij.set_element(g, f, A.get_element(gij+ij, fij+ij));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    const int nrb = nrowblks(A);
+    const int ncb = ncolblks(A);
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::get -- not implemented for case of different number of column and row blocks",__FILE__,__LINE__);
+    }
+    int i=ij/nocc_act_;
+    int j=ij%nocc_act_;
+    int ji;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        int goffset=2*g;
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          int foffset=2*f;
+          Aij.set_element(goffset  ,foffset  ,A.get_element(gij+ij, fij+ij));
+          Aij.set_element(goffset  ,foffset+1,A.get_element(gij+ij, fij+ji));
+          Aij.set_element(goffset+1,foffset  ,A.get_element(gij+ji, fij+ij));
+          Aij.set_element(goffset+1,foffset+1,A.get_element(gij+ji, fij+ji));
+        }
+      }
+    }  // i!=j
+    else {  // i==j
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          //Aij.set_element(g, f, A.get_element(gij, fij));
+          Aij.set_element(g, f, A.get_element(gij+ij, fij+ij));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    const int nrb = nrowblks(A);
+    const int ncb = ncolblks(A);
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::get -- not implemented for case of different number of column and row blocks",__FILE__,__LINE__);
+    }
     unsigned int gij = 0;
     for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
       unsigned int fij = 0;
       for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
-        Aij.set_element(g, f, A.get_element(gij, fij));
+        //Aij.set_element(g, f, A.get_element(gij, fij));
+        Aij.set_element(g, f, A.get_element(gij+ij, fij+ij));
       }
     }
   }
   
-  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
-                                              const RefSymmSCMatrix& A,
-                                              const RefSymmSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    const int nrb = nrowblks(A);
+    const int ncb = ncolblks(A);
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- incorrect dimensions of A",__FILE__,__LINE__);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::get -- not implemented for case of different number of column and row blocks",__FILE__,__LINE__);
+    }
+    unsigned int gij = 0;
+    for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+      unsigned int fij = 0;
+      for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+        //Aij.set_element(g, f, A.get_element(gij, fij));
+        Aij.set_element(g, f, A.get_element(gij+ij, fij+ij));
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
     if (A.dim().n() != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
-    for (unsigned int g=0; g<nf12_; g++)
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        int gij=g*nij;
+        for (unsigned int f=0; f<=g; f++) {
+          int foffset=2*f;
+          int fij=f*nij;
+          Aij.set_element(goffset  ,foffset  ,A.get_element(gij+ij, fij+ij));
+          Aij.set_element(goffset  ,foffset+1,A.get_element(gij+ij, fij+ji));
+          Aij.set_element(goffset+1,foffset  ,A.get_element(gij+ji, fij+ij));
+          Aij.set_element(goffset+1,foffset+1,A.get_element(gij+ji, fij+ji));
+        }
+      }
+    }  // i!=j
+    else{  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        for (unsigned int f=0; f<=g; f++) {
+          Aij.set_element(g, f, A.get_element(g*nij+ij, f*nij+ij));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        int gij=g*nij;
+        for (unsigned int f=0; f<=g; f++) {
+          int foffset=2*f;
+          int fij=f*nij;
+          Aij.set_element(goffset  ,foffset  ,A.get_element(gij+ij, fij+ij));
+          Aij.set_element(goffset  ,foffset+1,A.get_element(gij+ij, fij+ji));
+          Aij.set_element(goffset+1,foffset  ,A.get_element(gij+ji, fij+ij));
+          Aij.set_element(goffset+1,foffset+1,A.get_element(gij+ji, fij+ji));
+        }
+      }
+    }  // i!=j
+    else{  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        for (unsigned int f=0; f<=g; f++) {
+          Aij.set_element(g, f, A.get_element(g*nij+ij, f*nij+ij));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j;
+    for (unsigned int g=0; g<nf12_; g++) {
       for (unsigned int f=0; f<=g; f++) {
         Aij.set_element(g, f, A.get_element(g*nij+ij, f*nij+ij));
       }
+    }
   }
   
-  void MP2R12EnergyUtil_Diag::get(unsigned int ij,
-                                              const RefDiagSCMatrix& A,
-                                              const RefDiagSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
     if (A.dim().n() != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
-    unsigned int gij = ij;
-    for (unsigned int g=0; g<nf12_; g++, gij+=nij)
-      Aij.set_element(g, A.get_element(gij));
+    int i,j;
+    for (unsigned int g=0; g<nf12_; g++) {
+      for (unsigned int f=0; f<=g; f++) {
+        Aij.set_element(g, f, A.get_element(g*nij+ij, f*nij+ij));
+      }
+    }
   }
   
-  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
-                                              const RefSCMatrix& A,
-                                              const RefSCVector& Aij) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    unsigned int gij;
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      gij=0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        int goffset=2*g;
+        Aij.set_element(goffset  ,A.get_element(gij+ij));
+        Aij.set_element(goffset+1,A.get_element(gij+ji));
+      }
+    }  // i!=j
+    else {  // i==j
+      gij=0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        Aij.set_element(g, A.get_element(gij+ij));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    unsigned int gij;
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      gij=0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        int goffset=2*g;
+        Aij.set_element(goffset  ,A.get_element(gij+ij));
+        Aij.set_element(goffset+1,A.get_element(gij+ji));
+      }
+    }  // i!=j
+    else {  // i==j
+      gij=0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        Aij.set_element(g, A.get_element(gij+ij));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    unsigned int gij;
+    int i,j;
+    gij=0;
+    for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+      Aij.set_element(g, A.get_element(gij+ij));
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    unsigned int gij;
+    int i,j;
+    gij=0;
+    for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+      Aij.set_element(g, A.get_element(gij+ij));
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
@@ -199,64 +622,446 @@ namespace sc {
     const int ncol = A.coldim().n();
     if (nrow != f12dim_.n() || ncol != oodim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::put -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    ji=j*nocc_act_+i;
+    if(i!=j) {
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        A.set_element(g*nij+ij, ij, Aij.get_element(goffset));
+        A.set_element(g*nij+ji, ij, Aij.get_element(goffset+1));
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        A.set_element(g*nij+ij, ij, Aij.get_element(g));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    ji=j*nocc_act_+i;
+    if(i!=j) {
+      for (unsigned int g=0; g<nf12_; g++) {
+        int goffset=2*g;
+        A.set_element(g*nij+ij, ij, Aij.get_element(goffset));
+        A.set_element(g*nij+ji, ij, Aij.get_element(goffset+1));
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        A.set_element(g*nij+ij, ij, Aij.get_element(g));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i,j;
     for (unsigned int g=0; g<nf12_; g++) {
       A.set_element(g*nij+ij, ij, Aij.get_element(g));
     }
   }
   
-  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
-                                              const RefSCMatrix& A,
-                                              const RefSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const int nrow = A.rowdim().n();
+    const int ncol = A.coldim().n();
+    if (nrow != f12dim_.n() || ncol != oodim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- incorrect dimensions of A",__FILE__,__LINE__);
+    int i,j;
+    for (unsigned int g=0; g<nf12_; g++) {
+      A.set_element(g*nij+ij, ij, Aij.get_element(g));
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
     const unsigned int nrb = nrowblks(A);
     const unsigned int ncb = ncolblks(A);
-    unsigned int gij = 0;
-    for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
-      unsigned int fij = 0;
-      for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
-        A.set_element(gij, fij, Aij.get_element(g, f));
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::put -- only implemented for the case of same number of row and column blocks.",__FILE__,__LINE__);
+    }
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        int goffset=2*g;
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          int foffset=2*f;
+          A.set_element(gij+ij, fij+ij, Aij.get_element(goffset,foffset));
+          A.set_element(gij+ij, fij+ji, Aij.get_element(goffset,foffset+1));
+          A.set_element(gij+ji, fij+ij, Aij.get_element(goffset+1,foffset));
+          A.set_element(gij+ji, fij+ji, Aij.get_element(goffset+1,foffset+1));
+        }
+      }
+    }
+    else {
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          A.set_element(gij+ij, fij+ij, Aij.get_element(g, f));
+        }
       }
     }
   }
   
-  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
-                                              const RefSymmSCMatrix& A,
-                                              const RefSymmSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const unsigned int nrb = nrowblks(A);
+    const unsigned int ncb = ncolblks(A);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::put -- only implemented for the case of same number of row and column blocks.",__FILE__,__LINE__);
+    }
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        int goffset=2*g;
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          int foffset=2*f;
+          A.set_element(gij+ij, fij+ij, Aij.get_element(goffset,foffset));
+          A.set_element(gij+ij, fij+ji, Aij.get_element(goffset,foffset+1));
+          A.set_element(gij+ji, fij+ij, Aij.get_element(goffset+1,foffset));
+          A.set_element(gij+ji, fij+ji, Aij.get_element(goffset+1,foffset+1));
+        }
+      }
+    }
+    else {
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+        unsigned int fij = 0;
+        for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+          A.set_element(gij+ij, fij+ij, Aij.get_element(g, f));
+        }
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const unsigned int nrb = nrowblks(A);
+    const unsigned int ncb = ncolblks(A);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::put -- only implemented for the case of same number of row and column blocks.",__FILE__,__LINE__);
+    }
+    int i,j;
+    unsigned int gij = 0;
+    for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+      unsigned int fij = 0;
+      for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+        A.set_element(gij+ij, fij+ij, Aij.get_element(g, f));
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    const unsigned int nrb = nrowblks(A);
+    const unsigned int ncb = ncolblks(A);
+    if(nrb!=ncb){
+      throw ProgrammingError("MP2R12EnergyUtil_Diag::put -- only implemented for the case of same number of row and column blocks.",__FILE__,__LINE__);
+    }
+    int i,j;
+    unsigned int gij = 0;
+    for (unsigned int g=0; g<nrb; ++g, gij+=nij) {
+      unsigned int fij = 0;
+      for (unsigned int f=0; f<ncb; ++f, fij+=nij) {
+        A.set_element(gij+ij, fij+ij, Aij.get_element(g, f));
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
     if (A.dim().n() != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::put -- dimension of A does not match",__FILE__,__LINE__);
-    for (unsigned int g=0; g<nf12_; g++)
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {  // i!=j
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int gij=g*nij;
+        int goffset=2*g;
+        for (unsigned int f=0; f<=g; f++) {
+          int fij=f*nij;
+          int foffset=2*f;
+          A.set_element(gij+ij,fij+ij,Aij.get_element(goffset  ,foffset));
+          A.set_element(gij+ij,fij+ji,Aij.get_element(goffset  ,foffset+1));
+          A.set_element(gij+ji,fij+ij,Aij.get_element(goffset+1,foffset));
+          A.set_element(gij+ji,fij+ji,Aij.get_element(goffset+1,foffset+1));
+        }
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        for (unsigned int f=0; f<=g; f++) {
+          A.set_element(g*nij+ij, f*nij+ij, Aij.get_element(g, f));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {  // i!=j
+      ji=j*nocc_act_+i;
+      for (unsigned int g=0; g<nf12_; g++) {
+        int gij=g*nij;
+        int goffset=2*g;
+        for (unsigned int f=0; f<=g; f++) {
+          int fij=f*nij;
+          int foffset=2*f;
+          A.set_element(gij+ij,fij+ij,Aij.get_element(goffset  ,foffset));
+          A.set_element(gij+ij,fij+ji,Aij.get_element(goffset  ,foffset+1));
+          A.set_element(gij+ji,fij+ij,Aij.get_element(goffset+1,foffset));
+          A.set_element(gij+ji,fij+ji,Aij.get_element(goffset+1,foffset+1));
+        }
+      }
+    }  // i!=j
+    else {  // i==j
+      for (unsigned int g=0; g<nf12_; g++) {
+        for (unsigned int f=0; f<=g; f++) {
+          A.set_element(g*nij+ij, f*nij+ij, Aij.get_element(g, f));
+        }
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j;
+    for (unsigned int g=0; g<nf12_; g++) {
       for (unsigned int f=0; f<=g; f++) {
         A.set_element(g*nij+ij, f*nij+ij, Aij.get_element(g, f));
       }
+    }
   }
   
-  void MP2R12EnergyUtil_Diag::put(unsigned int ij,
-                                              const RefDiagSCMatrix& A,
-                                              const RefDiagSCMatrix& Aij) const {
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::put -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::put -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j;
+    for (unsigned int g=0; g<nf12_; g++) {
+      for (unsigned int f=0; f<=g; f++) {
+        A.set_element(g*nij+ij, f*nij+ij, Aij.get_element(g, f));
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
       throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
     if (A.dim().n() != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
-    unsigned int gij = ij;
-    for (unsigned int g=0; g<nf12_; g++, gij+=nij)
-      A.set_element(gij, Aij.get_element(g));
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j){
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        int goffset=2*g;
+        A.set_element(gij+ij, Aij.get_element(goffset));
+        A.set_element(gij+ji, Aij.get_element(goffset+1));
+      }
+    } // i!=j
+    else {  // i==j
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        A.set_element(gij+ij, Aij.get_element(g));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j,ji;
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j){
+      ji=j*nocc_act_+i;
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        int goffset=2*g;
+        A.set_element(gij+ij, Aij.get_element(goffset));
+        A.set_element(gij+ji, Aij.get_element(goffset+1));
+      }
+    } // i!=j
+    else {  // i==j
+      unsigned int gij = 0;
+      for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+        A.set_element(gij+ij, Aij.get_element(g));
+      }
+    }  // i==j
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j;
+    unsigned int gij = 0;
+    for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+      A.set_element(gij+ij, Aij.get_element(g));
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
+    const unsigned int nij = oodim_.n();
+    if (ij >= nij)
+      throw ProgrammingError("MP2R12EnergyUtil::get -- ij >= nij",__FILE__,__LINE__);
+    if (A.dim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::get -- dimension of A does not match",__FILE__,__LINE__);
+    int i,j;
+    unsigned int gij = 0;
+    for (unsigned int g=0; g<nf12_; g++, gij+=nij) {
+      A.set_element(gij+ij, Aij.get_element(g));
+    }
   }
   
   void MP2R12EnergyUtil_Nondiag::invert(RefSymmSCMatrix& A) const {
     A->gen_invert_this();
   }
   
-  void MP2R12EnergyUtil_Diag::invert(RefSymmSCMatrix& A) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::invert(RefSymmSCMatrix& A) const {
     check_dims(A);
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
+      if(i<=j){
+        get(ij, A, Aij);
+        //Aij.print("B_pair");
+        Aij->gen_invert_this();
+        put(ij, A, Aij);
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::invert(RefSymmSCMatrix& A) const {
+    check_dims(A);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
+      if(i<=j){
+        get(ij, A, Aij);
+        //Aij.print("B_pair");
+        Aij->gen_invert_this();
+        put(ij, A, Aij);
+      }
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::invert(RefSymmSCMatrix& A) const {
+    check_dims(A);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      Aij->gen_invert_this();
+      put(ij, A, Aij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::invert(RefSymmSCMatrix& A) const {
+    check_dims(A);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
       get(ij, A, Aij);
       Aij->gen_invert_this();
       put(ij, A, Aij);
@@ -264,46 +1069,224 @@ namespace sc {
   }
   
   RefDiagSCMatrix MP2R12EnergyUtil_Nondiag::eigenvalues(
-                                                                  const RefSymmSCMatrix& A) const {
+                                              const RefSymmSCMatrix& A) const {
     return A.eigvals();
   }
   
-  RefDiagSCMatrix MP2R12EnergyUtil_Diag::eigenvalues(
-                                                                 const RefSymmSCMatrix& A) const {
+  RefDiagSCMatrix MP2R12EnergyUtil_Diag_DifferentSpin::eigenvalues(const RefSymmSCMatrix& A) const {
     check_dims(A);
     RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
       get(ij, A, Aij);
       RefDiagSCMatrix evals_ij = Aij.eigvals();
       put(ij, evals, evals_ij);
     }
-    
+
+    return evals;
+  }
+  
+  RefDiagSCMatrix MP2R12EnergyUtil_Diag_DifferentSpin_indep::eigenvalues(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      RefDiagSCMatrix evals_ij = Aij.eigvals();
+      put(ij, evals, evals_ij);
+    }
+
+    return evals;
+  }
+  
+  RefDiagSCMatrix MP2R12EnergyUtil_Diag_SameSpin::eigenvalues(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      RefDiagSCMatrix evals_ij = Aij.eigvals();
+      put(ij, evals, evals_ij);
+    }
+
+    return evals;
+  }
+  
+  RefDiagSCMatrix MP2R12EnergyUtil_Diag_SameSpin_indep::eigenvalues(const RefSymmSCMatrix& A) const {
+    check_dims(A);
+    RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSymmSCMatrix Aij;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      RefDiagSCMatrix evals_ij = Aij.eigvals();
+      put(ij, evals, evals_ij);
+    }
+
     return evals;
   }
   
   void MP2R12EnergyUtil_Nondiag::diagonalize(
-                                                       const RefSymmSCMatrix& A,
-                                                       RefDiagSCMatrix& evals,
-                                                       RefSCMatrix& evecs) const {
+                                             const RefSymmSCMatrix& A,
+                                             RefDiagSCMatrix& evals,
+                                             RefSCMatrix& evecs) const {
     evals = A.kit()->diagmatrix(A.dim());
     evecs = A.kit()->matrix(A.dim(), A.dim());
     A.diagonalize(evals, evecs);
   }
   
-  void MP2R12EnergyUtil_Diag::diagonalize(const RefSymmSCMatrix& A,
-                                                      RefDiagSCMatrix& evals,
-                                                      RefSCMatrix& evecs) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
     check_dims(A);
     evals = A.kit()->diagmatrix(A.dim());
     evecs = A.kit()->matrix(A.dim(), A.dim());
     
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
-    RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
-    RefSCMatrix evecs_ij = A.kit()->matrix(gdim_, gdim_);
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix evals_ij;
+    //RefSCMatrix evecs_ij = A.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix evecs_ij;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
     const unsigned int nij = oodim_.n();
     for (unsigned int ij=0; ij<nij; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+        evals_ij = A.kit()->diagmatrix(two_gdim);
+        evecs_ij = A.kit()->matrix(two_gdim, two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        evals_ij = A.kit()->diagmatrix(gdim_);
+        evecs_ij = A.kit()->matrix(gdim_, gdim_);
+      }
+      
+      get(ij, A, Aij);
+      Aij.diagonalize(evals_ij, evecs_ij);
+      put(ij, evals, evals_ij);
+      put(ij, evecs, evecs_ij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
+    check_dims(A);
+    evals = A.kit()->diagmatrix(A.dim());
+    evecs = A.kit()->matrix(A.dim(), A.dim());
+    
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix evals_ij;
+    //RefSCMatrix evecs_ij = A.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix evecs_ij;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->symmmatrix(two_gdim);
+        evals_ij = A.kit()->diagmatrix(two_gdim);
+        evecs_ij = A.kit()->matrix(two_gdim, two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        evals_ij = A.kit()->diagmatrix(gdim_);
+        evecs_ij = A.kit()->matrix(gdim_, gdim_);
+      }
+      
+      get(ij, A, Aij);
+      Aij.diagonalize(evals_ij, evecs_ij);
+      put(ij, evals, evals_ij);
+      put(ij, evecs, evecs_ij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
+    check_dims(A);
+    evals = A.kit()->diagmatrix(A.dim());
+    evecs = A.kit()->matrix(A.dim(), A.dim());
+    
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix evals_ij;
+    //RefSCMatrix evecs_ij = A.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix evecs_ij;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      evals_ij = A.kit()->diagmatrix(gdim_);
+      evecs_ij = A.kit()->matrix(gdim_, gdim_);
+      
+      get(ij, A, Aij);
+      Aij.diagonalize(evals_ij, evecs_ij);
+      put(ij, evals, evals_ij);
+      put(ij, evecs, evecs_ij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
+    check_dims(A);
+    evals = A.kit()->diagmatrix(A.dim());
+    evecs = A.kit()->matrix(A.dim(), A.dim());
+    
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix evals_ij;
+    //RefSCMatrix evecs_ij = A.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix evecs_ij;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      evals_ij = A.kit()->diagmatrix(gdim_);
+      evecs_ij = A.kit()->matrix(gdim_, gdim_);
+      
       get(ij, A, Aij);
       Aij.diagonalize(evals_ij, evecs_ij);
       put(ij, evals, evals_ij);
@@ -318,17 +1301,120 @@ namespace sc {
     B.accumulate_transform(U, A);
   }
   
-  void MP2R12EnergyUtil_Diag::transform(const RefSymmSCMatrix& B,
-                                                    const RefDiagSCMatrix& A,
-                                                    const RefSCMatrix& U) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
     check_dims(B);
     check_dims(U);
     B.assign(0.0);
-    RefSymmSCMatrix Bij = B.kit()->symmmatrix(gdim_);
-    RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
-    RefSCMatrix Uij = U.kit()->matrix(gdim_, gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Bij = B.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Bij;
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    //RefSCMatrix Uij = U.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix Uij;
     const unsigned int nij = oodim_.n();
     for (unsigned int ij=0; ij<nij; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Bij = B.kit()->symmmatrix(two_gdim);
+        Aij = A.kit()->diagmatrix(two_gdim);
+        Uij = U.kit()->matrix(two_gdim, two_gdim);
+      }
+      else {
+        Bij = B.kit()->symmmatrix(gdim_);
+        Aij = A.kit()->diagmatrix(gdim_);
+        Uij = U.kit()->matrix(gdim_, gdim_);
+      }
+      
+      get(ij, A, Aij);
+      get(ij, U, Uij);
+      Bij.assign(0.0);
+      Bij.accumulate_transform(Uij, Aij);
+      put(ij, B, Bij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
+    check_dims(B);
+    check_dims(U);
+    B.assign(0.0);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Bij = B.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Bij;
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    //RefSCMatrix Uij = U.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix Uij;
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Bij = B.kit()->symmmatrix(two_gdim);
+        Aij = A.kit()->diagmatrix(two_gdim);
+        Uij = U.kit()->matrix(two_gdim, two_gdim);
+      }
+      else {
+        Bij = B.kit()->symmmatrix(gdim_);
+        Aij = A.kit()->diagmatrix(gdim_);
+        Uij = U.kit()->matrix(gdim_, gdim_);
+      }
+      
+      get(ij, A, Aij);
+      get(ij, U, Uij);
+      Bij.assign(0.0);
+      Bij.accumulate_transform(Uij, Aij);
+      put(ij, B, Bij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
+    check_dims(B);
+    check_dims(U);
+    B.assign(0.0);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Bij = B.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Bij;
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    //RefSCMatrix Uij = U.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix Uij;
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      Bij = B.kit()->symmmatrix(gdim_);
+      Aij = A.kit()->diagmatrix(gdim_);
+      Uij = U.kit()->matrix(gdim_, gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, U, Uij);
+      Bij.assign(0.0);
+      Bij.accumulate_transform(Uij, Aij);
+      put(ij, B, Bij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
+    check_dims(B);
+    check_dims(U);
+    B.assign(0.0);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Bij = B.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Bij;
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    //RefSCMatrix Uij = U.kit()->matrix(gdim_, gdim_);
+    RefSCMatrix Uij;
+    const unsigned int nij = oodim_.n();
+    for (unsigned int ij=0; ij<nij; ++ij) {
+      Bij = B.kit()->symmmatrix(gdim_);
+      Aij = A.kit()->diagmatrix(gdim_);
+      Uij = U.kit()->matrix(gdim_, gdim_);
+      
       get(ij, A, Aij);
       get(ij, U, Uij);
       Bij.assign(0.0);
@@ -339,24 +1425,51 @@ namespace sc {
   
   // Solves A*X = B
   void MP2R12EnergyUtil_Nondiag::solve_linear_system(
-                                                               const RefSymmSCMatrix& A,
-                                                               RefSCMatrix& X,
-                                                               const RefSCMatrix& B) const {
+                                                     const RefSymmSCMatrix& A,
+                                                     RefSCMatrix& X,
+                                                     const RefSCMatrix& B) const {
     sc::exp::lapack_linsolv_symmnondef(A, X, B);
   }
   
-  void MP2R12EnergyUtil_Diag::solve_linear_system(
-                                                              const RefSymmSCMatrix& A,
-                                                              RefSCMatrix& X,
-                                                              const RefSCMatrix& B) const {
+  void MP2R12EnergyUtil_Nondiag::solve_linear_system(unsigned int ij,
+                                                     const RefSymmSCMatrix& A,
+                                                     RefSCMatrix& X,
+                                                     const RefSCMatrix& B) const {
+    RefSCVector Xij = X.get_column(ij);
+    RefSCVector Bij = B.get_column(ij);
+    sc::exp::lapack_linsolv_symmnondef(A,Xij,Bij);
+    X.assign_column(Xij,ij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::solve_linear_system(const RefSymmSCMatrix& A,
+                                                                 RefSCMatrix& X,
+                                                                 const RefSCMatrix& B) const {
     check_dims(A);
     check_dims(X);
     check_dims(B);
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
-    RefSCVector Bij = A.kit()->vector(gdim_);
-    RefSCVector Xij = A.kit()->vector(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+        Bij = A.kit()->vector(two_gdim);
+        Xij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        Bij = A.kit()->vector(gdim_);
+        Xij = A.kit()->vector(gdim_);
+      }
+      
       get(ij, A, Aij);
       get(ij, B, Bij);
       sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
@@ -364,24 +1477,263 @@ namespace sc {
     }
   }
   
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::solve_linear_system(const RefSymmSCMatrix& A,
+                                                                 RefSCMatrix& X,
+                                                                 const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+        Bij = A.kit()->vector(two_gdim);
+        Xij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        Bij = A.kit()->vector(gdim_);
+        Xij = A.kit()->vector(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+      put(ij, X, Xij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::solve_linear_system(unsigned int ij,
+                                                                const RefSymmSCMatrix& A,
+                                                                RefSCMatrix& X,
+                                                                const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      Aij = A.kit()->symmmatrix(two_gdim);
+      Bij = A.kit()->vector(two_gdim);
+      Xij = A.kit()->vector(two_gdim);
+    }
+    else {
+      Aij = A.kit()->symmmatrix(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      Xij = A.kit()->vector(gdim_);
+    }
+    
+    get(ij, A, Aij);
+    get(ij, B, Bij);
+    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    put(ij, X, Xij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::solve_linear_system(unsigned int ij,
+                                                                const RefSymmSCMatrix& A,
+                                                                RefSCMatrix& X,
+                                                                const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      Aij = A.kit()->symmmatrix(two_gdim);
+      Bij = A.kit()->vector(two_gdim);
+      Xij = A.kit()->vector(two_gdim);
+    }
+    else {
+      Aij = A.kit()->symmmatrix(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      Xij = A.kit()->vector(gdim_);
+    }
+    
+    get(ij, A, Aij);
+    get(ij, B, Bij);
+    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    put(ij, X, Xij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::solve_linear_system(const RefSymmSCMatrix& A,
+                                                            RefSCMatrix& X,
+                                                            const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      Xij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+      put(ij, X, Xij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::solve_linear_system(const RefSymmSCMatrix& A,
+                                                            RefSCMatrix& X,
+                                                            const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      Xij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+      put(ij, X, Xij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::solve_linear_system(unsigned int ij,
+                                                           const RefSymmSCMatrix& A,
+                                                           RefSCMatrix& X,
+                                                           const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    Aij = A.kit()->symmmatrix(gdim_);
+    Bij = A.kit()->vector(gdim_);
+    Xij = A.kit()->vector(gdim_);
+    
+    get(ij, A, Aij);
+    get(ij, B, Bij);
+    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    put(ij, X, Xij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::solve_linear_system(unsigned int ij,
+                                                           const RefSymmSCMatrix& A,
+                                                           RefSCMatrix& X,
+                                                           const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(X);
+    check_dims(B);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    //RefSCVector Xij = A.kit()->vector(gdim_);
+    RefSCVector Xij;
+    const int noo = oodim_.n();
+    Aij = A.kit()->symmmatrix(gdim_);
+    Bij = A.kit()->vector(gdim_);
+    Xij = A.kit()->vector(gdim_);
+    
+    get(ij, A, Aij);
+    get(ij, B, Bij);
+    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    put(ij, X, Xij);
+  }
+  
   // computes y = A x
   void MP2R12EnergyUtil_Nondiag::times(const RefSymmSCMatrix& A,
-                                                 const RefSCMatrix& x,
-                                                 RefSCMatrix& y) const {
+                                       const RefSCMatrix& x,
+                                       RefSCMatrix& y) const {
     y = A*x;
   }
   
-  void MP2R12EnergyUtil_Diag::times(const RefSymmSCMatrix& A,
-                                                const RefSCMatrix& x,
-                                                RefSCMatrix& y) const {
+  void MP2R12EnergyUtil_Nondiag::times(unsigned int ij,
+                                       const RefSymmSCMatrix& A,
+                                       const RefSCMatrix& x,
+                                       RefSCMatrix& y) const {
+    RefSCVector xij = x.get_column(ij);
+    RefSCVector yij = A*xij;
+    y.assign_column(yij,ij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::times(const RefSymmSCMatrix& A,
+                                                   const RefSCMatrix& x,
+                                                   RefSCMatrix& y) const {
     check_dims(A);
     check_dims(x);
     check_dims(y);
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
-    RefSCVector xij = A.kit()->vector(gdim_);
-    RefSCVector yij = A.kit()->vector(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+        xij = A.kit()->vector(two_gdim);
+        yij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        xij = A.kit()->vector(gdim_);
+        yij = A.kit()->vector(gdim_);
+      }
+      
       get(ij, A, Aij);
       get(ij, x, xij);
       yij = Aij * xij;
@@ -389,9 +1741,221 @@ namespace sc {
     }
   }
   
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::times(const RefSymmSCMatrix& A,
+                                                   const RefSCMatrix& x,
+                                                   RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+        xij = A.kit()->vector(two_gdim);
+        yij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+        xij = A.kit()->vector(gdim_);
+        yij = A.kit()->vector(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      get(ij, x, xij);
+      yij = Aij * xij;
+      put(ij, y, yij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::times(unsigned int ij,
+                                                  const RefSymmSCMatrix& A,
+                                                  const RefSCMatrix& x,
+                                                  RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      Aij = A.kit()->symmmatrix(two_gdim);
+      xij = A.kit()->vector(two_gdim);
+      yij = A.kit()->vector(two_gdim);
+    }
+    else {
+      Aij = A.kit()->symmmatrix(gdim_);
+      xij = A.kit()->vector(gdim_);
+      yij = A.kit()->vector(gdim_);
+    }
+    
+    get(ij, A, Aij);
+    get(ij, x, xij);
+    yij = Aij * xij;
+    put(ij, y, yij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::times(unsigned int ij,
+                                                  const RefSymmSCMatrix& A,
+                                                  const RefSCMatrix& x,
+                                                  RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    i=ij/nocc_act_;
+    j=ij%nocc_act_;
+    if(i!=j) {
+      Aij = A.kit()->symmmatrix(two_gdim);
+      xij = A.kit()->vector(two_gdim);
+      yij = A.kit()->vector(two_gdim);
+    }
+    else {
+      Aij = A.kit()->symmmatrix(gdim_);
+      xij = A.kit()->vector(gdim_);
+      yij = A.kit()->vector(gdim_);
+    }
+    
+    get(ij, A, Aij);
+    get(ij, x, xij);
+    yij = Aij * xij;
+    put(ij, y, yij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::times(const RefSymmSCMatrix& A,
+                                              const RefSCMatrix& x,
+                                              RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      xij = A.kit()->vector(gdim_);
+      yij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, x, xij);
+      yij = Aij * xij;
+      put(ij, y, yij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::times(const RefSymmSCMatrix& A,
+                                              const RefSCMatrix& x,
+                                              RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      xij = A.kit()->vector(gdim_);
+      yij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, x, xij);
+      yij = Aij * xij;
+      put(ij, y, yij);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::times(unsigned int ij,
+                                             const RefSymmSCMatrix& A,
+                                             const RefSCMatrix& x,
+                                             RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    Aij = A.kit()->symmmatrix(gdim_);
+    xij = A.kit()->vector(gdim_);
+    yij = A.kit()->vector(gdim_);
+    
+    get(ij, A, Aij);
+    get(ij, x, xij);
+    yij = Aij * xij;
+    put(ij, y, yij);
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::times(unsigned int ij,
+                                             const RefSymmSCMatrix& A,
+                                             const RefSCMatrix& x,
+                                             RefSCMatrix& y) const {
+    check_dims(A);
+    check_dims(x);
+    check_dims(y);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    //RefSCVector xij = A.kit()->vector(gdim_);
+    RefSCVector xij;
+    //RefSCVector yij = A.kit()->vector(gdim_);
+    RefSCVector yij;
+    const int noo = oodim_.n();
+    Aij = A.kit()->symmmatrix(gdim_);
+    xij = A.kit()->vector(gdim_);
+    yij = A.kit()->vector(gdim_);
+    
+    get(ij, A, Aij);
+    get(ij, x, xij);
+    yij = Aij * xij;
+    put(ij, y, yij);
+  }
+  
   RefSCVector MP2R12EnergyUtil_Nondiag::dot_product(
-                                                              const RefSCMatrix& A,
-                                                              const RefSCMatrix& B) const {
+                                                    const RefSCMatrix& A,
+                                                    const RefSCMatrix& B) const {
     check_dims(A);
     check_dims(B);
     if (A.coldim().n() != B.coldim().n() ||A.rowdim().n() != B.rowdim().n() ||A.coldim().n() != oodim_.n() ||A.rowdim().n() != f12dim_.n())
@@ -404,22 +1968,123 @@ namespace sc {
     return result;
   }
   
-  RefSCVector MP2R12EnergyUtil_Diag::dot_product(
-                                                             const RefSCMatrix& A,
-                                                             const RefSCMatrix& B) const {
+  RefSCVector MP2R12EnergyUtil_Diag_DifferentSpin::dot_product(const RefSCMatrix& A,
+                                                                const RefSCMatrix& B) const {
     check_dims(A);
     check_dims(B);
     if (A.coldim().n() != B.coldim().n() ||A.rowdim().n() != B.rowdim().n() ||A.coldim().n() != oodim_.n() ||A.rowdim().n() != f12dim_.n())
       throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimentions do not match",__FILE__,__LINE__);
     const int noo = oodim_.n();
     RefSCVector result = A.kit()->vector(oodim_);
-    RefSCVector Aij = A.kit()->vector(gdim_);
-    RefSCVector Bij = A.kit()->vector(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
     for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->vector(two_gdim);
+        Bij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->vector(gdim_);
+        Bij = A.kit()->vector(gdim_);
+      }
+      
       get(ij, A, Aij);
       get(ij, B, Bij);
       result(ij) = Aij.dot(Bij);
     }
+    
+    return result;
+  }
+  
+  RefSCVector MP2R12EnergyUtil_Diag_DifferentSpin_indep::dot_product(const RefSCMatrix& A,
+                                                                const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(B);
+    if (A.coldim().n() != B.coldim().n() ||A.rowdim().n() != B.rowdim().n() ||A.coldim().n() != oodim_.n() ||A.rowdim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimentions do not match",__FILE__,__LINE__);
+    const int noo = oodim_.n();
+    RefSCVector result = A.kit()->vector(oodim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    for (int ij=0; ij<noo; ij++) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->vector(two_gdim);
+        Bij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->vector(gdim_);
+        Bij = A.kit()->vector(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      result(ij) = Aij.dot(Bij);
+    }
+    
+    return result;
+  }
+  
+  RefSCVector MP2R12EnergyUtil_Diag_SameSpin::dot_product(const RefSCMatrix& A,
+                                                           const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(B);
+    if (A.coldim().n() != B.coldim().n() ||A.rowdim().n() != B.rowdim().n() ||A.coldim().n() != oodim_.n() ||A.rowdim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimentions do not match",__FILE__,__LINE__);
+    const int noo = oodim_.n();
+    RefSCVector result = A.kit()->vector(oodim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->vector(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      result(ij) = Aij.dot(Bij);
+    }
+    
+    return result;
+  }
+  
+  RefSCVector MP2R12EnergyUtil_Diag_SameSpin_indep::dot_product(const RefSCMatrix& A,
+                                                           const RefSCMatrix& B) const {
+    check_dims(A);
+    check_dims(B);
+    if (A.coldim().n() != B.coldim().n() ||A.rowdim().n() != B.rowdim().n() ||A.coldim().n() != oodim_.n() ||A.rowdim().n() != f12dim_.n())
+      throw ProgrammingError("MP2R12EnergyUtil::dot_product -- dimentions do not match",__FILE__,__LINE__);
+    const int noo = oodim_.n();
+    RefSCVector result = A.kit()->vector(oodim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
+    //RefSCVector Bij = A.kit()->vector(gdim_);
+    RefSCVector Bij;
+    for (int ij=0; ij<noo; ij++) {
+      Aij = A.kit()->vector(gdim_);
+      Bij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      get(ij, B, Bij);
+      result(ij) = Aij.dot(Bij);
+    }
+    
     return result;
   }
   
@@ -441,13 +2106,23 @@ namespace sc {
     A.print(label, os);
   }
   
-  void MP2R12EnergyUtil_Diag::print(const char* label,
-                                                const RefSCMatrix& A,
-                                                std::ostream& os) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
-    RefSCVector Aij = A.kit()->vector(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->vector(gdim_);
+      }
+      
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
@@ -455,13 +2130,23 @@ namespace sc {
     }
   }
   
-  void MP2R12EnergyUtil_Diag::print(const char* label,
-                                                const RefSymmSCMatrix& A,
-                                                std::ostream& os) const {
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
-    RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j){
+        Aij = A.kit()->vector(two_gdim);
+      }
+      else {
+        Aij = A.kit()->vector(gdim_);
+      }
+      
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
@@ -469,18 +2154,270 @@ namespace sc {
     }
   }
   
-  void MP2R12EnergyUtil_Diag::print(const char* label,
-                                                const RefDiagSCMatrix& A,
-                                                std::ostream& os) const {
+  void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
-    RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->vector(gdim_);
+      
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSCVector Aij = A.kit()->vector(gdim_);
+    RefSCVector Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->vector(gdim_);
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->symmmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->symmmatrix(gdim_);
+      }
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
+    RefSymmSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->symmmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->diagmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->diagmatrix(gdim_);
+      }
+  
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_DifferentSpin_indep::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      i=ij/nocc_act_;
+      j=ij%nocc_act_;
+      if(i!=j) {
+        Aij = A.kit()->diagmatrix(two_gdim);
+      }
+      else {
+        Aij = A.kit()->diagmatrix(gdim_);
+      }
+  
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->diagmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  void MP2R12EnergyUtil_Diag_SameSpin_indep::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
+    os << indent << label << ":"<< endl;
+    int i,j;
+    RefSCDimension two_gdim=new SCDimension(2*gdim_.n());
+    //RefDiagSCMatrix Aij = A.kit()->diagmatrix(gdim_);
+    RefDiagSCMatrix Aij;
+    const unsigned int noo = oodim_.n();
+    for (unsigned int ij=0; ij<noo; ++ij) {
+      Aij = A.kit()->diagmatrix(gdim_);
+      
+      get(ij, A, Aij);
+      ostringstream oss;
+      oss << "Block "<< ij;
+      Aij.print(oss.str().c_str(), os);
+    }
+  }
+  
+  Ref<MP2R12EnergyUtil_Diag> generate_MP2R12EnergyUtil_Diag(SpinCase2 spincase2,
+                                                            const RefSCDimension& oodim,
+                                                            const RefSCDimension& xydim,
+                                                            const RefSCDimension& f12dim,
+                                                            const unsigned int nocc_act){
+    Ref<MP2R12EnergyUtil_Diag> mp2r12energyutil_diag;
+    ExEnv::out0() << "SpinCase2 = " << spincase2 << endl;
+    if(spincase2==AlphaBeta) {
+      ExEnv::out0() << "generate_MP2R12EnergyUtil_Diag -- generate object of type MP2R12EnergyUtil_Diag_DifferentSpin_indep."
+                    << endl;
+      mp2r12energyutil_diag = new MP2R12EnergyUtil_Diag_DifferentSpin_indep(oodim,xydim,f12dim,nocc_act);
+    }
+    else {
+      ExEnv::out0() << "generate_MP2R12EnergyUtil_Diag -- generate object of type MP2R12EnergyUtil_Diag_SameSpin_indep."
+                    << endl;
+      mp2r12energyutil_diag = new MP2R12EnergyUtil_Diag_SameSpin_indep(oodim,xydim,f12dim,nocc_act);
+    }
+    
+    return(mp2r12energyutil_diag);
+  }
+  
+  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(SpinCase2 spincase2,
+                                                       const RefSCDimension& oodim,
+                                                       const RefSCDimension& xydim,
+                                                       const RefSCDimension& f12dim,
+                                                       const unsigned int nocc_act,
+                                                       bool diag) {
+    Ref<MP2R12EnergyUtil_base> mp2r12energyutil;
+    ExEnv::out0() << "diag = " << diag << "   SpinCase2 = " << spincase2 << endl;
+    if(diag) {
+      if(spincase2==AlphaBeta) {
+        ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Diag_DifferentSpin"
+                      << endl;
+        //mp2r12energyutil = new MP2R12EnergyUtil_Diag_DifferentSpin(oodim,xydim,f12dim,nocc_act);
+        mp2r12energyutil = new MP2R12EnergyUtil_Diag_DifferentSpin(oodim,oodim,f12dim,nocc_act);
+      }
+      else {
+        ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Diag_SameSpin"
+                      << endl;
+        //mp2r12energyutil = new MP2R12EnergyUtil_Diag_SameSpin(oodim,xydim,f12dim,nocc_act);
+        mp2r12energyutil = new MP2R12EnergyUtil_Diag_SameSpin(oodim,oodim,f12dim,nocc_act);
+      }
+    }
+    else {
+      ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Nondiag"
+                    << endl;
+      mp2r12energyutil = new MP2R12EnergyUtil_Nondiag(oodim,xydim,f12dim,nocc_act);
+    }
+    
+    return(mp2r12energyutil);
+  }
+  
+  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(const RefSCDimension& oodim,
+                                                       const RefSCDimension& xydim,
+                                                       const RefSCDimension& f12dim,
+                                                       const unsigned int nocc_act,
+                                                       bool diag) {
+    ExEnv::out0() << "diag = " << diag << endl;
+    if(diag){
+      throw ProgrammingError("sc::generate_MP2R12EnergyUtil -- for diagonal version a SpinCase2 has to be defined.",__FILE__,__LINE__);
+    }
+    ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Nondiag"
+                  << endl;
+    Ref<MP2R12EnergyUtil_base> mp2r12energyutil = new MP2R12EnergyUtil_Nondiag(oodim,xydim,f12dim,nocc_act);
+    
+    return(mp2r12energyutil);
   }
 
 }

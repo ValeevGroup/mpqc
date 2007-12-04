@@ -36,15 +36,18 @@ static ClassDesc LinearR12Ansatz_cd(
   typeid(LinearR12Ansatz),"LinearR12Ansatz",3,"virtual public SavableState",
   create<LinearR12Ansatz>, create<LinearR12Ansatz>, create<LinearR12Ansatz>);
 
-LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), wof_(false), orbital_product_(LinearR12::OrbProd_ij) {}
+LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), fixedcoeff_(false), wof_(false), orbital_product_(LinearR12::OrbProd_ij) {}
 
 LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
   projector_ = (LinearR12::Projector)keyval->intvalue("projector",KeyValValueint(2));
-  diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
   const bool default_wof = (projector_ == LinearR12::Projector_0);
   wof_ = keyval->booleanvalue("diag",KeyValValueboolean((int)default_wof));
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
+  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)false));
+  if((diag_==false) && (fixedcoeff_==true)){
+    throw ProgrammingError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
+  }
   std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
   if (op == "ij")
     orbital_product_ = LinearR12::OrbProd_ij;
@@ -62,6 +65,7 @@ LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
 {
   int p; s.get(p); projector_ = (LinearR12::Projector)p;
   int d; s.get(d); diag_ = (bool)d;
+  int f; s.get(f); fixedcoeff_ = (bool)f;
   if (s.version(::class_desc<LinearR12Ansatz>()) >= 3) {
     int w; s.get(w); wof_ = (bool)w;
   }
@@ -77,6 +81,7 @@ LinearR12Ansatz::save_data_state(StateOut& s)
 {
   s.put((int)projector_);
   s.put((int)diag_);
+  s.put((int)fixedcoeff_);
   s.put((int)wof_);
   s.put((int)orbital_product_);
 }
@@ -103,7 +108,8 @@ LinearR12Ansatz::print(std::ostream& o) const
   }
   o << std::endl;
   
-  o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant") << std::endl;
+  o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant") 
+              << (fixedcoeff_ ? " fixed coefficients" : "") << std::endl;
   o << indent << "WOF: " << (wof_ ? "true" : "false") << std::endl;
   o << decindent;
 }
@@ -113,6 +119,10 @@ LinearR12Ansatz::projector() const { return projector_; }
 
 bool
 LinearR12Ansatz::diag() const { return diag_; }
+
+bool LinearR12Ansatz::fixedcoeff() const {
+  return(fixedcoeff_);
+}
 
 bool
 LinearR12Ansatz::wof() const { return wof_; }

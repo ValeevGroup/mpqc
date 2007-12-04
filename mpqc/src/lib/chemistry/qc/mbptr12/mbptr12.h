@@ -64,6 +64,10 @@ class MBPT2_R12: public MBPT2 {
 
     bool spinadapted_;
     bool include_mp1_;
+    
+    bool hylleraas_;
+    
+    bool new_energy_;
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
     Ref<R12IntEvalInfo> r12evalinfo_;   // parameters for r12eval_
@@ -98,16 +102,24 @@ class MBPT2_R12: public MBPT2 {
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
-        systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
-        is not used.
+    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
+    is not used.
 
-        <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
-        plot pair function given by <tt>plot_pair_function</tt>.
+    <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
+    plot pair function given by <tt>plot_pair_function</tt>.
 
-        <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
-        specifies which pair function to plot.
+    <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
+    specifies which pair function to plot.
+    
+    <dt><tt>new_energy</tt><dd> Use new version that has got improved diagonal Ansaetze preserving
+    spin as well as a fixed coefficient version. For the non diagonal ansaetze the old version is to be 
+    preferred since it has many more security checks, such as checks of positive definiteness of B etc.
+    The default value of this variable is false.
+    
+    <dt><tt>hylleraas</tt><dd> If new_energy, diag and fixed_coeff are set to true, this variable
+    tells the new version to compute the F12 energy according to the Hylleraas functional.
 
-        </dl> */
+    </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
     ~MBPT2_R12();
 

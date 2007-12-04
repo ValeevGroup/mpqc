@@ -640,6 +640,7 @@ void PsiCCSD_PT2R12::compute() {
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C_MP1 . H1_R0
   const int debug = 0;
   Ref<MP2R12Energy_SpinOrbital> r12energy = new MP2R12Energy_SpinOrbital(r12eval,r12eval->r12info()->r12tech()->stdapprox(),debug);
+  //Ref<MP2R12Energy_SpinOrbital> r12energy = construct_MP2R12Energy(r12eval,r12eval->r12info()->r12tech()->stdapprox(),debug,use_new_version_);
   std::vector<double> E2(NSpinCases2,0.0);
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (reference_->spin_polarized() ? 3 : 2);

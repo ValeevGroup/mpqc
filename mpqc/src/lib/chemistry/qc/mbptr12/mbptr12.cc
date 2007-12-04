@@ -73,6 +73,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
 
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int incmp1; s.get(incmp1); include_mp1_ = (bool)incmp1;
+  int hylleraas; s.get(hylleraas); hylleraas_ = (bool)hylleraas;
+  int unv; s.get(unv); new_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
 
   twopdm_grid_ << SavableState::restore_state(s);
@@ -98,11 +100,47 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
 
+  bool diag = r12evalinfo()->ansatz()->diag();
+  bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
+  ExEnv::out0() << "diag = "
+                << ((diag==true) ? "true" : "false") << endl;
+  ExEnv::out0() << "fixedcoeff = "
+                << ((fixedcoeff==true) ? "true" : "false") << endl;
+
   // Default is to not compute MP1 energy
   include_mp1_ = false;
   // only check if VBS != OBS
   if (!r12evalinfo()->basis_vir()->equiv(r12evalinfo()->basis()))
       include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));
+  
+  new_energy_=false;
+  new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
+  ExEnv::out0() << "new_energy_ = "
+                << ((new_energy_==true) ? "true" : "false") << endl;
+  
+  if((new_energy_==true) && (diag==false)) {
+    ExEnv::out0() << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
+                  << "because the old version performs many security checks." << endl;
+  }
+  
+  if((new_energy_==false) and (fixedcoeff==true)) {
+    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
+  }
+  
+  if((diag==false) && (fixedcoeff==true)){
+    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
+  }
+  
+  hylleraas_=(fixedcoeff==true) ? true : false;
+  if(keyval->exists("hylleraas")){
+    hylleraas_ = keyval->booleanvalue("hylleraas");
+  }
+  ExEnv::out0() << "hylleraas_ = "
+                << ((hylleraas_==true) ? "true" : "false") << endl;
+  
+  if((fixedcoeff==false) && (hylleraas_==true)){
+    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- Hylleraas functional needn't be calculated if coefficients are optimized (gives the same result as non Hylleraas).",__FILE__,__LINE__);
+  }
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
@@ -146,6 +184,8 @@ MBPT2_R12::save_data_state(StateOut& s)
 
   s.put((int)spinadapted_);
   s.put((int)include_mp1_);
+  s.put((int)hylleraas_);
+  s.put((int)new_energy_);
   s.put(mp2_corr_energy_);
 
   SavableState::save_state(twopdm_grid_.pointer(),s);

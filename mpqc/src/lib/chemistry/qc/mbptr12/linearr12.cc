@@ -30,6 +30,7 @@
 #endif
 
 #include <strstream>
+#include <sstream>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
@@ -117,6 +118,15 @@ namespace sc {
       return(params_);
     }
     
+    void GeminalDescriptor::print(std::ostream &o) {
+      o << "GeminalDescriptor :" << std::endl;
+      o << "type_ = " << type_ << std::endl;
+      o << "params_ :" << std::endl;
+      for(int i=0; i<params_.size(); i++){
+        o << params_[i] << std::endl;
+      }
+    }
+    
     bool invalid(const Ref<GeminalDescriptor>& gdesc){
       std::string type=gdesc->type();
       return((type==std::string("invalid")) ? true : false);
@@ -143,6 +153,7 @@ namespace sc {
     }
     
     double single_slater_exponent(const Ref<GeminalDescriptor>& gdesc) {
+      //gdesc->print();
       std::string type=gdesc->type();
       std::vector<std::string> params=gdesc->params();
       if(type!=std::string("STG")){
@@ -153,10 +164,8 @@ namespace sc {
         throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): There are more than one Slater type functions.",__FILE__,__LINE__);
       }
       int nprimitives=atoi(params[1].c_str());
-      if(nprimitives!=1){
-        throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): The Slater type function is a contracted one.",__FILE__,__LINE__);
-      }
-      double exponent=atof(params[2].c_str());
+      double exponent=atof(params[3].c_str());
+      ExEnv::out0() << "exponent = " << exponent << std::endl;
       
       return(exponent);
     }
@@ -202,19 +211,25 @@ namespace sc {
       inout >> params[0];
       int one=1;
       std::string one_str;
-      inout << one;
-      inout >> one_str;
+      std::ostringstream out;
+      out << one;
+      one_str=out.str();
+      out.str("");
       double oned=1.0;
       std::string oned_str;
-      inout << std::setprecision(16) << oned;
-      inout >> oned_str;
+      out << std::setprecision(16) << oned;
+      oned_str=out.str();
+      out.str("");
+      ExEnv::out0() << "oned_str = " << oned_str << std::endl;
       
       for(int i=0; i<nfunction; i++){
         params[i+1]=one_str;
         params[nfunction+1+2*i]=oned_str;
-        inout << std::setprecision(16) << gamma[i];
-        inout >> params[nfunction+2+2*i];
+        out << std::setprecision(16) << gamma[i];
+        params[nfunction+2+2*i]=out.str();
+        out.str("");
       }
+      
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),params)));
     }
     

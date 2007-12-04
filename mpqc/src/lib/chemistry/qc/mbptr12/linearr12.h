@@ -97,6 +97,7 @@ namespace sc {
         GeminalDescriptor(const GeminalDescriptor& source);
         std::string type() const;
         std::vector<std::string> params() const;
+        void print(std::ostream &o=ExEnv::out0());
     };
 
     bool invalid(const Ref<GeminalDescriptor>& gdesc);

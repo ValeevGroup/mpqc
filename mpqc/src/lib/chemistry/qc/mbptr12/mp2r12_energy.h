@@ -207,12 +207,10 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
                                              const RefSCMatrix &V,
                                              const SpinCase2 &spincase2,
                                              const Ref<MP2R12EnergyUtil_Diag> &util);
-    void compute_MP2R12_old(SpinCase2 &spincase2);
     void compute_MP2R12_nondiag();
     void compute_MP2R12_diag_nonfixed();
     void compute_MP2R12_diag_fixed_hylleraas();
     void compute_MP2R12_diag_fixed_nonhylleraas();
-    void compute_MP2R12(SpinCase2 &spincase2);
   public:
     MP2R12Energy_SpinOrbital_new(StateIn&);
     MP2R12Energy_SpinOrbital_new(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp,

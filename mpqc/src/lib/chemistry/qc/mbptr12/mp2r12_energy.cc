@@ -1225,60 +1225,6 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12
   return(mp2r12energy);
 }
 
-#if 0
-static ClassDesc MP2R12Energy_SpinAdapted_cd(
-                           typeid(MP2R12Energy_SpinAdapted),"MP2R12Energy_SpinAdapted",1,"virtual public MP2R12Energy",
-                           0, 0, create<MP2R12Energy_SpinAdapted>);
-
-MP2R12Energy_SpinAdapted::MP2R12Energy_SpinAdapted(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug)
-   : MP2R12Energy(r12eval,stdapp,debug){
-  init_();
-}
-
-void MP2R12Energy_SpinAdapted::init_()
-{
-  int s=0;    // one of SpinCases2; it should be not relevant which
-              // SpinCases2 is taken.
-  RefSCDimension dim_oo = r12eval()->dim_oo(static_cast<SpinCase2>(s));
-  RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
-  Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
-  for(int ps=0; ps<NPureSpinCases2; ps++){
-    C_[ps] = kit->matrix(dim_f12,dim_oo);
-    ef12_[ps] = kit->vector(dim_oo);
-    emp2f12_[ps] = kit->vector(dim_oo);
-  }
-}
-
-MP2R12Energy_SpinAdapted::MP2R12Energy_SpinAdapted(StateIn &si) :
-  MP2R12Energy(si)
-{
-  init_();
-  
-  for(int ps=0; ps<NPureSpinCases2; ps++){
-    ef12_[ps].restore(si);
-    emp2f12_[ps].restore(si);
-    C_[ps].restore(si);
-  }
-}
-
-MP2R12Energy_SpinAdapted::~MP2R12Energy_SpinAdapted(){
-  r12eval_ = 0;
-}
-
-void MP2R12Energy_SpinAdapted::save_data_state(StateOut &so) {
-  MP2R12Energy::save_data_state(so);
-  
-  for(int ps=0; ps<NPureSpinCases2; ps++){
-    ef12_[ps].save(so);
-    emp2f12_[ps].save(so);
-    C_[ps].save(so);
-  }
-}
-
-double MP2R12Energy_SpinAdapted::emp2f12tot(PureSpinCase2 ps) const {
-}
-#endif
-
 
 /////////////////////////////////////////////////////////////////////////////
 

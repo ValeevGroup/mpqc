@@ -253,39 +253,6 @@ Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::St
                                          bool diag, bool fixed_coeff, bool hylleraas, int debug,
                                          bool use_new_version);
 
-#if 0
-/**
- * The class MP2R12Energy_SpinAdapted is the implementation of MP2R12Energy
- * It supports only the standard orbital-invariant ansatz and the full set of features
- * of R12Technology.
- */
-class MP2R12Energy_SpinAdapted : public MP2R12Energy
-{
-  private:
-    RefSCVector ef12_[NPureSpinCases2], emp2f12_[NPureSpinCases2];
-    // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
-    RefSCMatrix C_[NPureSpinCases2];
-    
-    double emp2f12tot(PureSpinCase2 ps) const;
-    double ef12tot(PureSpinCase2 ps) const;
-    
-    // Initialize SCVectors and SCMatrices
-    void init_();
-  public:
-    MP2R12Energy_SpinAdapted(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug);
-    MP2R12Energy_SpinAdapted(StateIn &si);
-    ~MP2R12Energy_SpinAdapted();
-    
-    void save_data_state(StateOut&);
-    void compute();
-    
-    void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()){}
-    double energy(){}
-    RefSCMatrix C(SpinCase2 S){}
-    RefSCMatrix T2(SpinCase2 S){}
-};
-#endif
-
 }
 
 #endif

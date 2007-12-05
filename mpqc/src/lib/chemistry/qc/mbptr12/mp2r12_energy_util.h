@@ -40,7 +40,7 @@
 
 namespace sc {
   
-  /** Class MP2R12EnergyUtil_base is the abstract interface to some utility functions.
+  /** Class MP2R12EnergyUtil_base is the abstract interface to utility functions used by MP2R12Energy derivatives.
   */
   class MP2R12EnergyUtil_base : virtual public RefCount {
     protected:
@@ -555,18 +555,6 @@ namespace sc {
                                                             const RefSCDimension& xydim,
                                                             const RefSCDimension& f12dim,
                                                             const unsigned int nocc_act);
-  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(SpinCase2 spincase2,
-                                                       const RefSCDimension& oodim,
-                                                       const RefSCDimension& xydim,
-                                                       const RefSCDimension& f12dim,
-                                                       const unsigned int nocc_act,
-                                                       bool diag);
-  
-  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(const RefSCDimension& oodim,
-                                                       const RefSCDimension& xydim,
-                                                       const RefSCDimension& f12dim,
-                                                       const unsigned int nocc_act,
-                                                       bool diag);
   
 }
 

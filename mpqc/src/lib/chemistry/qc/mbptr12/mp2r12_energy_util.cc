@@ -2373,52 +2373,5 @@ namespace sc {
     return(mp2r12energyutil_diag);
   }
   
-  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(SpinCase2 spincase2,
-                                                       const RefSCDimension& oodim,
-                                                       const RefSCDimension& xydim,
-                                                       const RefSCDimension& f12dim,
-                                                       const unsigned int nocc_act,
-                                                       bool diag) {
-    Ref<MP2R12EnergyUtil_base> mp2r12energyutil;
-    ExEnv::out0() << "diag = " << diag << "   SpinCase2 = " << spincase2 << endl;
-    if(diag) {
-      if(spincase2==AlphaBeta) {
-        ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Diag_DifferentSpin"
-                      << endl;
-        //mp2r12energyutil = new MP2R12EnergyUtil_Diag_DifferentSpin(oodim,xydim,f12dim,nocc_act);
-        mp2r12energyutil = new MP2R12EnergyUtil_Diag_DifferentSpin(oodim,oodim,f12dim,nocc_act);
-      }
-      else {
-        ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Diag_SameSpin"
-                      << endl;
-        //mp2r12energyutil = new MP2R12EnergyUtil_Diag_SameSpin(oodim,xydim,f12dim,nocc_act);
-        mp2r12energyutil = new MP2R12EnergyUtil_Diag_SameSpin(oodim,oodim,f12dim,nocc_act);
-      }
-    }
-    else {
-      ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Nondiag"
-                    << endl;
-      mp2r12energyutil = new MP2R12EnergyUtil_Nondiag(oodim,xydim,f12dim,nocc_act);
-    }
-    
-    return(mp2r12energyutil);
-  }
-  
-  Ref<MP2R12EnergyUtil_base> generate_MP2R12EnergyUtil(const RefSCDimension& oodim,
-                                                       const RefSCDimension& xydim,
-                                                       const RefSCDimension& f12dim,
-                                                       const unsigned int nocc_act,
-                                                       bool diag) {
-    ExEnv::out0() << "diag = " << diag << endl;
-    if(diag){
-      throw ProgrammingError("sc::generate_MP2R12EnergyUtil -- for diagonal version a SpinCase2 has to be defined.",__FILE__,__LINE__);
-    }
-    ExEnv::out0() << "generate_MP2R12EnergyUtil -- generate object of type MP2R12EnergyUtil_Nondiag"
-                  << endl;
-    Ref<MP2R12EnergyUtil_base> mp2r12energyutil = new MP2R12EnergyUtil_Nondiag(oodim,xydim,f12dim,nocc_act);
-    
-    return(mp2r12energyutil);
-  }
-
 }
 

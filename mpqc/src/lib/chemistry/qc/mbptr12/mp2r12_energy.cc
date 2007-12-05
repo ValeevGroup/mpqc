@@ -1225,6 +1225,7 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12
   return(mp2r12energy);
 }
 
+#if 0
 static ClassDesc MP2R12Energy_SpinAdapted_cd(
                            typeid(MP2R12Energy_SpinAdapted),"MP2R12Energy_SpinAdapted",1,"virtual public MP2R12Energy",
                            0, 0, create<MP2R12Energy_SpinAdapted>);
@@ -1275,8 +1276,8 @@ void MP2R12Energy_SpinAdapted::save_data_state(StateOut &so) {
 }
 
 double MP2R12Energy_SpinAdapted::emp2f12tot(PureSpinCase2 ps) const {
-  
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

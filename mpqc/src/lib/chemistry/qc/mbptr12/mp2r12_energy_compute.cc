@@ -91,7 +91,7 @@ MP2R12Energy_SpinOrbital::compute()
                            stdapprox_ != LinearR12::StdApprox_C);
   const bool diag=r12info->r12tech()->ansatz()->diag();
   if (diag)
-    throw ProgrammingError("MP2R12Energy_SpinOrbital::comute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
+    throw ProgrammingError("MP2R12Energy_SpinOrbital::compute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
 
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
@@ -189,13 +189,10 @@ MP2R12Energy_SpinOrbital::compute()
       const int nxy = nxc / num_f12;
       RefSCDimension dim_xy = new SCDimension(nxy);
 
-      // util class treats abstractly on dense and "diagonal" matrices used in orb-invariant and non-orb-invariant ansatze
-      Ref<MP2R12EnergyUtil_base> util;
-      util = generate_MP2R12EnergyUtil(spincase2,dim_oo, dim_xy, dim_xc, nocc1_act, diag);
-      //if (diag_)
-      //  util = new MP2R12EnergyUtil_Diag(dim_oo, dim_oo, dim_xc,nocc1_act);
-      //else
-      //  util = new MP2R12EnergyUtil_Nondiag(dim_oo, dim_xy, dim_xc,nocc1_act);
+      // util class treats was supposed to treat abstractly dense and banded matrices used in orb-invariant and diagonal ansatze
+      // this class now does not handle the diagonal ansatz case, hence there is no need to use Util at all
+      // will get rid of it soon.
+      Ref<MP2R12EnergyUtil_base> util = new MP2R12EnergyUtil_Nondiag(dim_oo,dim_xy,dim_xc,nocc1_act);
       
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
@@ -1527,6 +1524,7 @@ void MP2R12Energy_SpinOrbital_new::compute() {
   return;
 }
 
+#if 0
 void MP2R12Energy_SpinAdapted::compute() {
   if (evaluated_)
     return;
@@ -2062,6 +2060,7 @@ void MP2R12Energy_SpinAdapted::compute() {
   }
   
 }
+#endif
 
 namespace {
 

@@ -96,6 +96,11 @@ public:
   virtual RefSCMatrix T2(SpinCase2 S) = 0;
 };
 
+/**
+ * The class MP2R12Energy_SpinOrbital is the original implementation of MP2R12Energy
+ * It supports only the standard orbital-invariant ansatz and the full set of features
+ * of R12Technology.
+ */
 class MP2R12Energy_SpinOrbital : public MP2R12Energy
 {
   private:
@@ -248,6 +253,12 @@ Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::St
                                          bool diag, bool fixed_coeff, bool hylleraas, int debug,
                                          bool use_new_version);
 
+#if 0
+/**
+ * The class MP2R12Energy_SpinAdapted is the implementation of MP2R12Energy
+ * It supports only the standard orbital-invariant ansatz and the full set of features
+ * of R12Technology.
+ */
 class MP2R12Energy_SpinAdapted : public MP2R12Energy
 {
   private:
@@ -273,6 +284,7 @@ class MP2R12Energy_SpinAdapted : public MP2R12Energy
     RefSCMatrix C(SpinCase2 S){}
     RefSCMatrix T2(SpinCase2 S){}
 };
+#endif
 
 }
 

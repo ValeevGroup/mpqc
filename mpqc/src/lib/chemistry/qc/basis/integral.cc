@@ -85,7 +85,7 @@ Integral::Integral(StateIn& s) :
       int ord;  s.get(ord);  sharmorder_ = static_cast<SolidHarmonicsOrdering>(ord);
   }
   else {
-      throw FeatureNotImplemented("Integral::Integral() -- cannot construct from Integral with different solid harmonics ordering. Try an order MPQC version instead.");
+      throw FeatureNotImplemented("Integral::Integral() -- cannot construct from Integral with different solid harmonics ordering. Try an older MPQC version instead.");
   }
 
   grp_ = MessageGrp::get_default_messagegrp();

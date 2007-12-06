@@ -43,13 +43,17 @@ CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 	 keyval.cc keyvalipv2.cc keyvalval.cc keyvalass.cc \
          keyvalstr.cc keyvalagg.cc keyvalpre.cc
 
+XGENCXXSRC =ipv2_parse.cc ipv2_scan.cc
 TESTPROGS = keyvaltest
 
-LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(XGENCXXSRC:%.cc=%.$(OBJSUF))
+XGENSRC = $(XGENCXXSRC)
 
 INC = ipv2.h keyval.h ipv2_scan.h
+XGENINC = ipv2_parse.h
 
-DEPENDINCLUDE = $(INC) $(GENINC)
+
+DEPENDINCLUDE = $(INC) $(XGENINC)
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCkeyval

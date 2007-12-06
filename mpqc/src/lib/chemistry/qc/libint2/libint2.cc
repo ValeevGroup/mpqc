@@ -31,7 +31,6 @@
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/libint2/libint2.h>
-#include <chemistry/qc/libint2/cartit.h>
 #include <chemistry/qc/libint2/tform.h>
 #include <chemistry/qc/libint2/obintlibint2.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
@@ -49,6 +48,20 @@
 #endif
 #if LIBINT2_SUPPORT_GENG12
 #  include <chemistry/qc/libint2/geng12.h>
+#endif
+
+// the old versions of libint2 all use CCA ordering, whereas new ones can use a variety of orderings
+#ifndef LIBINT2_CGSHELL_ORDERING
+#  include <chemistry/qc/basis/cartitercca.h>
+#else
+// see libint2's configure for the hardwired values
+# if LIBINT2_CGSHELL_ORDERING == 1
+#  include <chemistry/qc/basis/cartitercca.h>
+# elif LIBINT2_CGSHELL_ORDERING == 2
+#  include <chemistry/qc/intv3/cartitv3.h>
+# else
+#  error "This version of Libint2 uses unsupported ordering of functions in shells"
+# endif
 #endif
 
 using namespace std;
@@ -157,19 +170,55 @@ IntegralLibint2::storage_required_geng12(const Ref<GaussianBasisSet> &b1,
 CartesianIter *
 IntegralLibint2::new_cartesian_iter(int l)
 {
-  return new CartesianIterLibint2(l);
+#ifndef LIBINT2_CGSHELL_ORDERING
+  typedef CartesianIterCCA iter;
+#else
+# if LIBINT2_CGSHELL_ORDERING == 1
+  typedef CartesianIterCCA iter;
+# elif LIBINT2_CGSHELL_ORDERING == 2
+  typedef CartesianIterV3 iter;
+# else
+#  error "This version of Libint2 uses unsupported ordering of functions in shells"
+# endif
+#endif
+  
+  return new iter(l);
 }
 
 RedundantCartesianIter *
 IntegralLibint2::new_redundant_cartesian_iter(int l)
 {
-  return new RedundantCartesianIterLibint2(l);
+#ifndef LIBINT2_CGSHELL_ORDERING
+  typedef RedundantCartesianIterCCA iter;
+#else
+# if LIBINT2_CGSHELL_ORDERING == 1
+  typedef RedundantCartesianIterCCA iter;
+# elif LIBINT2_CGSHELL_ORDERING == 2
+  typedef RedundantCartesianIterV3 iter;
+# else
+#  error "This version of Libint2 uses unsupported ordering of functions in shells"
+# endif
+#endif
+  
+  return new iter(l);
 }
 
 RedundantCartesianSubIter *
 IntegralLibint2::new_redundant_cartesian_sub_iter(int l)
 {
-  return new RedundantCartesianSubIterLibint2(l);
+#ifndef LIBINT2_CGSHELL_ORDERING
+  typedef RedundantCartesianSubIterCCA iter;
+#else
+# if LIBINT2_CGSHELL_ORDERING == 1
+  typedef RedundantCartesianSubIterCCA iter;
+# elif LIBINT2_CGSHELL_ORDERING == 2
+  typedef RedundantCartesianSubIterV3 iter;
+# else
+#  error "This version of Libint2 uses unsupported ordering of functions in shells"
+# endif
+#endif
+  
+  return new iter(l);
 }
 
 SphericalTransformIter *

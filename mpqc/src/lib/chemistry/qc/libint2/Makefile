@@ -56,7 +56,7 @@ ifeq ($(HAVE_LIBINT2_GENG12),yes)
   CXXSRC += geng12.cc comp_geng12.cc
 endif
 
-INC = libint2.h obintlibint2.h tbintlibint2.h tform.h cartit.h macros.h primpairs.h shellpairs.h
+INC = libint2.h obintlibint2.h tbintlibint2.h tform.h macros.h primpairs.h shellpairs.h
 
 LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))

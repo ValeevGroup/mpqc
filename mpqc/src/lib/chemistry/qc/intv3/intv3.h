@@ -58,6 +58,9 @@ class IntegralV3 : public Integral {
     void save_data_state(StateOut&);
 
     Integral* clone();
+
+    /// implements Integral::cartesian_ordering()
+    CartesianOrdering cartesian_ordering() const { return IntV3CartesianOrdering; }
     
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);

@@ -195,7 +195,7 @@ Integral::initial_integral(int& argc, char ** argv)
 int
 Integral::equiv(const Ref<Integral> &integral)
 {
-  return eq(class_desc(),integral->class_desc());
+  return cartesian_ordering() == integral->cartesian_ordering();
 }
 
 Ref<PetiteList>

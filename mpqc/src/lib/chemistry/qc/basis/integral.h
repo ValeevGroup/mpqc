@@ -116,6 +116,13 @@ class Integral : public SavableState {
     /** Returns nonzero if this and the given Integral object have the same
         integral ordering, normalization conventions, etc.  */
     virtual int equiv(const Ref<Integral> &);
+    /// Describes the ordering of the cartesian functions in a shell
+    typedef enum {
+    IntV3CartesianOrdering,
+    CCACartesianOrdering
+    } CartesianOrdering;
+    /// returns the ordering used by this factory
+    virtual CartesianOrdering cartesian_ordering() const =0;
 
     /// Sets the total amount of storage, in bytes, that is available.
     virtual void set_storage(size_t i) { storage_=i; };

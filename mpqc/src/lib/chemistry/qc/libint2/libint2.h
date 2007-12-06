@@ -63,6 +63,9 @@ class IntegralLibint2 : public Integral {
 
     Integral* clone();
     
+    /// implements Integral::cartesian_ordering()
+    CartesianOrdering cartesian_ordering() const;
+    
     size_t storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,

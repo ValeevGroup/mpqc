@@ -115,6 +115,22 @@ IntegralLibint2::clone()
   return new IntegralLibint2;
 }
 
+Integral::CartesianOrdering
+IntegralLibint2::cartesian_ordering() const
+{
+#ifndef LIBINT2_CGSHELL_ORDERING
+  return Integral::CCACartesianOrdering;
+#else
+# if LIBINT2_CGSHELL_ORDERING == 1
+  return Integral::CCACartesianOrdering;
+# elif LIBINT2_CGSHELL_ORDERING == 2
+  return Integral::IntV3CartesianOrdering;
+# else
+#  error "This version of Libint2 uses unsupported ordering of functions in shells"
+# endif
+#endif
+}
+
 size_t
 IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				    const Ref<GaussianBasisSet> &b2,

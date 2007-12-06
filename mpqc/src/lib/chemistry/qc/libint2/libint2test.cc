@@ -38,9 +38,9 @@
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
+#include <chemistry/qc/basis/cartitercca.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/int2e.h>
-#include <chemistry/qc/libint2/cartit.h>
 #include <chemistry/qc/cints/cints.h>
 
 
@@ -51,6 +51,8 @@ using namespace sc;
 #define GAMMA12 1.0
 // Set to 1 to test R12^2*G12 integrals (only possible if GAMMA12 is 0.0 AND COMPUTE_R12_2_G12 is set to 1 in comp_g12.cc)
 #define TEST_R12_2_G12 0
+#define TEST_ITERATORS 1
+#define TEST_1E_INTEGRALS 1
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
 void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
@@ -125,7 +127,7 @@ int main(int argc, char **argv)
     }
 
   Ref<KeyVal> pkv(new ParsedKeyVal(infile));
-  Ref<KeyVal> tkeyval(new PrefixKeyVal(":test", pkv));
+  Ref<KeyVal> tkeyval(new PrefixKeyVal(pkv, ":test"));
 
   Ref<GaussianBasisSet> basis = require_dynamic_cast<GaussianBasisSet*>(
     tkeyval->describedclassvalue("basis").pointer(),"main\n");
@@ -139,51 +141,6 @@ int main(int argc, char **argv)
 
   int storage = tkeyval->intvalue("storage");
   cout << "storage = " << storage << endl;
-  /*  Ref<Integral> intgrlv3 = new IntegralV3(basis,basis,basis,basis);
-  Ref<Int1eV3> int1ev3 = new Int1eV3(intgrlv3.pointer(),basis,basis,1);
-  Ref<Int2eV3> int2ev3 = new Int2eV3(intgrlv3.pointer(),basis,basis,basis,basis,
-                                   1, storage);
-  
-
-  int permute = tkeyval->booleanvalue("permute");
-  tim->enter("overlap");
-  if (me == tproc && tkeyval->booleanvalue("overlap")) {
-      cout << scprintf("testing overlap:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::overlap, permute);
-    }
-  tim->change("kinetic");
-  if (me == tproc && tkeyval->booleanvalue("kinetic")) {
-      cout << scprintf("testing kinetic:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::kinetic, permute);
-    }
-  tim->change("hcore");
-  if (me == tproc && tkeyval->booleanvalue("hcore")) {
-      cout << scprintf("testing hcore:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::hcore, permute);
-    }
-  tim->change("nuclear");
-  if (me == tproc && tkeyval->booleanvalue("nuclear")) {
-      cout << scprintf("testing nuclear:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::nuclear, permute);
-    }
-  tim->change("3 center");
-  if (me == tproc && tkeyval->booleanvalue("3")) {
-      test_3_center(tkeyval, int2ev3);
-    }
-  tim->change("4 center");
-  if (me == tproc && tkeyval->booleanvalue("4")) {
-      test_4_center(tkeyval, int2ev3);
-    }
-  tim->change("4 center der");
-  if (me == tproc && tkeyval->booleanvalue("4der")) {
-      test_4der_center(tkeyval, int2ev3);
-    }
-  tim->change("bound stats");
-  if (me == tproc && tkeyval->booleanvalue("boundstats")) {
-      do_bounds_stats(tkeyval, int2ev3);
-    }
-
-    tim->change("IntegralV3");*/
 
   tim->enter("Integral");
   Ref<Integral> integral = new IntegralV3(basis);
@@ -214,33 +171,51 @@ int main(int argc, char **argv)
   cout << scprintf("Need %d bytes to create EriLibint2\n",storage_needed);
   Ref<TwoBodyInt> ereplibint2 = integrallibint2->electron_repulsion();
   testint(ereplibint2);
+# if LIBINT2_SUPPORT_G12
   storage_needed = integrallibint2->storage_required_g12(basis);
   cout << scprintf("Need %d bytes to create G12Libint2\n",storage_needed);
   Ref<TwoBodyInt> g12libint2 = integrallibint2->g12(GAMMA12);
   testint(g12libint2);
+# endif
 #endif
   tim->exit();
 
   // Test iterators
-  /*  CartesianIterLibint2 citer(3);
-  cout << "Cartesian f-shell:" << endl;
-  for ( citer.start(); int(citer) ; citer.next() )
-    cout << "nx = " << citer.a() << " ny = " << citer.b() << " nz = " << citer.c() << endl;
-  RedundantCartesianIterLibint2 rciter(3);
-  cout << "Redundant Cartesian f-shell:" << endl;
-  for ( rciter.start(); int(rciter) ; rciter.next() )
-    cout << "nx = " << rciter.a() << " ny = " << rciter.b() << " nz = " << rciter.c() << endl;
-  */
-
-  //cout << "Testing Libint2' overlap integrals against IntV3's" << endl;
-  //  compare_1e_libint2_vs_v3(overlaplibint2,overlapv3);
-  //cout << "Testing Libint2' kinetic energy integrals against IntV3's" << endl;
-  //compare_1e_libint2_vs_v3(kineticlibint2,kineticv3);
-  //cout << "Testing Libint2' nuclear attraction integrals against IntV3's" << endl;
-  //compare_1e_libint2_vs_v3(nuclearlibint2,nuclearv3);
-  //cout << "Testing Libint2' core hamiltonian integrals against IntV3's" << endl;
-  //compare_1e_libint2_vs_v3(hcorelibint2,hcorev3);
-
+#if TEST_ITERATORS
+  for(int l=0; l<=3; ++l) {
+  CartesianIter* citerv[2];
+    citerv[0] = integrallibint2->new_cartesian_iter(l);
+    citerv[1] = integral->new_cartesian_iter(l);
+    for(int i=0; i<2; ++i) {
+      CartesianIter* citer = citerv[i];
+      cout << "Cartesian L=" << l << " shell (" << (i==0 ? "Libint2" : "V3") << "):" << endl;
+      for ( citer->start(); int(*citer); citer->next() )
+      cout << "nx = " << citer->a() << " ny = " << citer->b() << " nz = " << citer->c() << endl;
+    }
+    RedundantCartesianIter* rciterv[2];
+    rciterv[0] = integrallibint2->new_redundant_cartesian_iter(l);
+    rciterv[1] = integral->new_redundant_cartesian_iter(l);
+    for(int i=0; i<2; ++i) {
+      RedundantCartesianIter* rciter = rciterv[i];
+      cout << "Redundant Cartesian L=" << l << " shell (" << (i==0 ? "Libint2" : "V3") << "):" << endl;
+      for ( rciter->start(); int(*rciter); rciter->next() )
+      cout << "nx = " << rciter->a() << " ny = " << rciter->b() << " nz = " << rciter->c() << endl;
+    }
+  }
+#endif
+  
+  // Test 1-e integrals
+#if TEST_1E_INTEGRALS
+  cout << "Testing Libint2' overlap integrals against IntV3's" << endl;
+  compare_1e_libint2_vs_v3(overlaplibint2,overlapv3);
+  cout << "Testing Libint2' kinetic energy integrals against IntV3's" << endl;
+  compare_1e_libint2_vs_v3(kineticlibint2,kineticv3);
+  cout << "Testing Libint2' nuclear attraction integrals against IntV3's" << endl;
+  compare_1e_libint2_vs_v3(nuclearlibint2,nuclearv3);
+  cout << "Testing Libint2' core hamiltonian integrals against IntV3's" << endl;
+  compare_1e_libint2_vs_v3(hcorelibint2,hcorev3);
+#endif
+  
   //  compare_2e_permute(integrallibint2);
 
   bool puream = basis->has_pure();
@@ -250,17 +225,21 @@ int main(int argc, char **argv)
     compare_2e_puream_libint2_vs_v3(ereplibint2,erepv3);
   else
     compare_2e_libint2_vs_v3(ereplibint2,erepv3);
+#if LIBINT2_SUPPORT_G12
   cout << "Testing Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
   if (puream)
     compare_2e_puream_libint2_vs_v3(g12libint2,erepv3);
   else
     compare_2e_libint2_vs_v3(g12libint2,erepv3);
+#endif
 
 #ifdef LIBINT2
   cout << "Testing sums of Libint2' ERIs against IntV3's" << endl;
   compare_2e_bufsum_libint2_vs_v3(ereplibint2,erepv3);
+# if LIBINT2_SUPPORT_G12
   cout << "Testing sums of Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
   compare_2e_bufsum_libint2_vs_v3(g12libint2,erepv3);
+# endif
 
   cout << "Testing sums of unique Libint2' ERIs against IntV3's" << endl;
   ereplibint2->set_redundant(0);
@@ -269,11 +248,14 @@ int main(int argc, char **argv)
   ereplibint2->set_redundant(1);
   cout << "Printing ERI integrals" << endl;
   print_all_ints(ereplibint2,1,"eri");
+#if LIBINT2_SUPPORT_G12
   cout << "Printing G12 integrals" << endl;
   print_all_ints(g12libint2,6,"g12");
+#endif
 
-#if TEST_R12_2_G12
-  if (GAMMA12 == 0.0) {
+#if LIBINT2_SUPPORT_G12
+# if TEST_R12_2_G12
+   if (GAMMA12 == 0.0) {
       cout << "Testing R12^2*G12 integrals (gamma=0) -> R12^2 integrals" << endl;
       cout << "     NOTE: COMPUTE_R12_2_G12 must be set to 1 in comp_g12.cc" << endl;
       Ref<OneBodyInt> s_libint2 = integrallibint2->overlap();
@@ -281,8 +263,8 @@ int main(int argc, char **argv)
       Ref<OneBodyInt> qm_libint2 = integrallibint2->quadrupole(0);
       test_r12_2_integrals(g12libint2,s_libint2,dm_libint2,qm_libint2,5);
     }
-#endif
-  
+#  endif
+# endif
 #endif
 
   //  tim->print();
@@ -304,16 +286,16 @@ compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
       int bf1_offset = 0;
       for (int gc1=0; gc1<basis->shell(sh1).ncontraction(); gc1++) {
 	int am1 = basis->shell(sh1).am(gc1);
-	CartesianIterLibint2 citer1(am1);
-	CartesianIterV3 iter1(am1);
-	for ( citer1.start(); int(citer1) ; citer1.next() ) {
-	  int bf1libint2 = bf1_offset + citer1.bfn();
+	CartesianIter* citer1 = oblibint2->integral()->new_cartesian_iter(am1);
+	CartesianIter* iter1 = obv3->integral()->new_cartesian_iter(am1);
+	for ( citer1->start(); int(*citer1) ; citer1->next() ) {
+	  int bf1libint2 = bf1_offset + citer1->bfn();
 	  int bf1v3;
-	  for( iter1.start(); int(iter1) ; iter1.next() ) {
-	    if (iter1.a() == citer1.a() &&
-		iter1.b() == citer1.b() &&
-		iter1.c() == citer1.c()) {
-	      bf1v3 = bf1_offset + iter1.bfn();
+	  for( iter1->start(); int(*iter1) ; iter1->next() ) {
+	    if (iter1->a() == citer1->a() &&
+		iter1->b() == citer1->b() &&
+		iter1->c() == citer1->c()) {
+	      bf1v3 = bf1_offset + iter1->bfn();
 	      break;
 	    }
 	  }
@@ -321,17 +303,17 @@ compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
 	  int bf2_offset = 0;
 	  for (int gc2=0; gc2<basis->shell(sh2).ncontraction(); gc2++) {
 	    int am2 = basis->shell(sh2).am(gc2);
-	    CartesianIterLibint2 citer2(am2);
-	    CartesianIterV3 iter2(am2);
+	    CartesianIter* citer2 = oblibint2->integral()->new_cartesian_iter(am2);
+	    CartesianIter* iter2 = obv3->integral()->new_cartesian_iter(am2);
 	    
-	    for ( citer2.start(); int(citer2) ; citer2.next() ) {
-	      int bf2libint2 = bf2_offset + citer2.bfn();
+	    for ( citer2->start(); int(*citer2) ; citer2->next() ) {
+	      int bf2libint2 = bf2_offset + citer2->bfn();
 	      int bf2v3;
-	      for( iter2.start(); int(iter2) ; iter2.next() ) {
-		if (iter2.a() == citer2.a() &&
-		    iter2.b() == citer2.b() &&
-		    iter2.c() == citer2.c()) {
-		  bf2v3 = bf2_offset + iter2.bfn();
+	      for( iter2->start(); int(*iter2) ; iter2->next() ) {
+		if (iter2->a() == citer2->a() &&
+		    iter2->b() == citer2->b() &&
+		    iter2->c() == citer2->c()) {
+		  bf2v3 = bf2_offset + iter2->bfn();
 		  break;
 		}
 	      }
@@ -376,16 +358,16 @@ compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3)
 	    int bf1_offset = 0;
 	    for(int gc1=0;gc1<basis->shell(sh1).ncontraction(); gc1++) {
 	      int am1 = basis->shell(sh1).am(gc1);
-	      CartesianIterLibint2 citer1(am1);
-	      CartesianIterV3 iter1(am1);
-	      for ( citer1.start(); int(citer1) ; citer1.next() ) {
-		int bf1libint2 = citer1.bfn();
+	      CartesianIter* citer1 = tblibint2->integral()->new_cartesian_iter(am1);
+	      CartesianIter* iter1 = tbv3->integral()->new_cartesian_iter(am1);
+	      for ( citer1->start(); int(*citer1) ; citer1->next() ) {
+		int bf1libint2 = citer1->bfn();
 		int bf1v3;
-		for( iter1.start(); int(iter1) ; iter1.next() ) {
-		  if (iter1.a() == citer1.a() &&
-		      iter1.b() == citer1.b() &&
-		      iter1.c() == citer1.c()) {
-		    bf1v3 = iter1.bfn();
+		for( iter1->start(); int(*iter1) ; iter1->next() ) {
+		  if (iter1->a() == citer1->a() &&
+		      iter1->b() == citer1->b() &&
+		      iter1->c() == citer1->c()) {
+		    bf1v3 = iter1->bfn();
 		    break;
 		  }
 		}
@@ -395,16 +377,16 @@ compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3)
 		int bf2_offset = 0;
 		for(int gc2=0;gc2<basis->shell(sh2).ncontraction(); gc2++) {
 		  int am2 = basis->shell(sh2).am(gc2);
-		  CartesianIterLibint2 citer2(am2);
-		  CartesianIterV3 iter2(am2);
-		  for ( citer2.start(); int(citer2) ; citer2.next() ) {
-		    int bf2libint2 = citer2.bfn();
+		  CartesianIter* citer2 = tblibint2->integral()->new_cartesian_iter(am2);
+		  CartesianIter* iter2 = tbv3->integral()->new_cartesian_iter(am2);
+		  for ( citer2->start(); int(*citer2) ; citer2->next() ) {
+		    int bf2libint2 = citer2->bfn();
 		    int bf2v3;
-		    for( iter2.start(); int(iter2) ; iter2.next() ) {
-		      if (iter2.a() == citer2.a() &&
-			  iter2.b() == citer2.b() &&
-			  iter2.c() == citer2.c()) {
-			bf2v3 = iter2.bfn();
+		    for( iter2->start(); int(*iter2) ; iter2->next() ) {
+		      if (iter2->a() == citer2->a() &&
+			  iter2->b() == citer2->b() &&
+			  iter2->c() == citer2->c()) {
+			bf2v3 = iter2->bfn();
 			break;
 		      }
 		    }
@@ -414,16 +396,16 @@ compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3)
 		    int bf3_offset = 0;
 		    for(int gc3=0;gc3<basis->shell(sh3).ncontraction(); gc3++) {
 		      int am3 = basis->shell(sh3).am(gc3);
-		      CartesianIterLibint2 citer3(am3);
-		      CartesianIterV3 iter3(am3);
-		      for ( citer3.start(); int(citer3) ; citer3.next() ) {
-			int bf3libint2 = citer3.bfn();
+		      CartesianIter* citer3 = tblibint2->integral()->new_cartesian_iter(am3);
+		      CartesianIter* iter3 = tbv3->integral()->new_cartesian_iter(am3);
+		      for ( citer3->start(); int(*citer3) ; citer3->next() ) {
+			int bf3libint2 = citer3->bfn();
 			int bf3v3;
-			for( iter3.start(); int(iter3) ; iter3.next() ) {
-			  if (iter3.a() == citer3.a() &&
-			      iter3.b() == citer3.b() &&
-			      iter3.c() == citer3.c()) {
-			    bf3v3 = iter3.bfn();
+			for( iter3->start(); int(*iter3) ; iter3->next() ) {
+			  if (iter3->a() == citer3->a() &&
+			      iter3->b() == citer3->b() &&
+			      iter3->c() == citer3->c()) {
+			    bf3v3 = iter3->bfn();
 			    break;
 			  }
 			}
@@ -433,16 +415,16 @@ compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3)
 			int bf4_offset = 0;
 			for(int gc4=0;gc4<basis->shell(sh4).ncontraction(); gc4++) {
 			  int am4 = basis->shell(sh4).am(gc4);
-			  CartesianIterLibint2 citer4(am4);
-			  CartesianIterV3 iter4(am4);
-			  for ( citer4.start(); int(citer4) ; citer4.next() ) {
-			    int bf4libint2 = citer4.bfn();
+			  CartesianIter* citer4 = tblibint2->integral()->new_cartesian_iter(am4);
+			  CartesianIter* iter4 = tbv3->integral()->new_cartesian_iter(am4);
+			  for ( citer4->start(); int(*citer4) ; citer4->next() ) {
+			    int bf4libint2 = citer4->bfn();
 			    int bf4v3;
-			    for( iter4.start(); int(iter4) ; iter4.next() ) {
-			      if (iter4.a() == citer4.a() &&
-				  iter4.b() == citer4.b() &&
-				  iter4.c() == citer4.c()) {
-				bf4v3 = iter4.bfn();
+			    for( iter4->start(); int(*iter4) ; iter4->next() ) {
+			      if (iter4->a() == citer4->a() &&
+				  iter4->b() == citer4->b() &&
+				  iter4->c() == citer4->c()) {
+				bf4v3 = iter4->bfn();
 				break;
 			      }
 			    }

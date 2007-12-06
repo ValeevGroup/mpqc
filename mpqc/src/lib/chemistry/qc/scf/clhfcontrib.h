@@ -1,4 +1,7 @@
 
+#ifndef _chemistry_qc_scf_clhfcontrib_h
+#define _chemistry_qc_scf_clhfcontrib_h
+
 #include <scconfig.h>
 #include <util/misc/exenv.h>
 #include <chemistry/qc/scf/fockbuild.h>
@@ -93,3 +96,5 @@ class CLHFContribution: public GenericFockContribution {
 };
 
 }
+
+#endif

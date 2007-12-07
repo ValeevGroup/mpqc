@@ -730,7 +730,7 @@ namespace sc {
       const int lowest_possible_multp = 1 + (nuclear_charge - charge_)%2;
       multp_ = keyval->intvalue("multiplicity",KeyValValueint(lowest_possible_multp));
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
-        throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicty");
+        throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicity");
       }
     }
     else {

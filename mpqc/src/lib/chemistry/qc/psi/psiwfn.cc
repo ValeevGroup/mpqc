@@ -284,6 +284,10 @@ namespace sc {
     docc_ = read_occ(keyval, "docc", nirrep_);
     socc_ = read_occ(keyval, "socc", nirrep_);
     
+    guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
+    if (guess_wfn_.nonnull()) {
+      import_occupations(guess_wfn_);
+    }
   }
   
   PsiSCF::~PsiSCF() {

@@ -133,7 +133,7 @@ namespace sc {
       static const int maxiter = 100;
       
       /// guess wave function is only used to get the occupations
-      //Ref<OneBodyWavefunction> guess_wfn_;
+      Ref<OneBodyWavefunction> guess_wfn_;
 
     public:
       PsiSCF(const Ref<KeyVal>&);

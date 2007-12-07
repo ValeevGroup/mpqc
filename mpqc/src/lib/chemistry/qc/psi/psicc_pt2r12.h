@@ -32,6 +32,7 @@
 #ifndef _chemistry_qc_psi_psiccpt2r12_h
 #define _chemistry_qc_psi_psiccpt2r12_h
 
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/psi/psicc.h>
 

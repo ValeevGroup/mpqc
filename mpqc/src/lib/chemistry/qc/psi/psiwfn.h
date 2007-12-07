@@ -86,6 +86,9 @@ namespace sc {
       ~PsiWavefunction();
 
       void save_data_state(StateOut&);
+      
+      /// returns the Psi3 convention for the ordering of the cartesian functions
+      static Integral::CartesianOrdering cartesian_ordering();
 
       /** Writes out Psi input file entries specific to this PsiWavefunction.
        The input file is assumed to have been opened. */
@@ -128,6 +131,9 @@ namespace sc {
       int multp_;
       int charge_;
       static const int maxiter = 100;
+      
+      /// guess wave function is only used to get the occupations
+      //Ref<OneBodyWavefunction> guess_wfn_;
 
     public:
       PsiSCF(const Ref<KeyVal>&);

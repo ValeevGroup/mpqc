@@ -106,6 +106,11 @@ namespace sc {
     throw std::runtime_error("PsiWavefunction::PsiWavefunction(StateIn&) -- cannot restore state of Psi wave functions");
   }
   
+  Integral::CartesianOrdering
+  PsiWavefunction::cartesian_ordering() {
+    return Integral::CCACartesianOrdering;
+  }
+  
   void PsiWavefunction::save_data_state(StateOut&s) {
     throw std::runtime_error("PsiWavefunction::save_data_state -- cannot save state of Psi wave functions, set savestate = no in your input file");
   }

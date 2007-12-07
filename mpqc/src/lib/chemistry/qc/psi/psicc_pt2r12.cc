@@ -72,6 +72,10 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
     PsiCC::do_test_t2_phases();
   
   mbptr12_ = require_dynamic_cast<MBPT2_R12*>(keyval->describedclassvalue("mbpt2r12").pointer(), "PsiCCSD_PT2R12::PsiCCSD_PT2R12\n");
+  // test that Psi3 is compatible to the integral factory used by mbptr12_ object
+  if (mbptr12_->integral()->cartesian_ordering() != PsiWavefunction::cartesian_ordering()) {
+    throw InputError("PsiCCSD_PT2R12 -- ordering of functions in shells differs between the provided mbpt2r12 and Psi3. Use different Integral factory to construct mbpt2r12.",__FILE__,__LINE__);
+  }
   
   const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
   const Ref<R12Technology> r12tech = r12info->r12tech();

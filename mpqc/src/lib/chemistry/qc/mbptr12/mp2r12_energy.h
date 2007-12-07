@@ -43,57 +43,103 @@
 #define MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION 1
 
 namespace sc {
+  /**
+   * The class R12EnergyIntermediates stores all intermediates
+   * for F12 calculations and administrates their computation
+   * and / or provision.
+   */
+  class R12EnergyIntermediates : virtual public SavableState {
+    private:
+      LinearR12::StandardApproximation stdapprox_;
+      Ref<R12IntEval> r12eval_;
+      bool V_computed_;
+      RefSCMatrix V_[NSpinCases2];
+      bool X_computed_;
+      RefSymmSCMatrix X_[NSpinCases2];
+      bool B_computed_;
+      RefSymmSCMatrix B_[NSpinCases2];
+      bool A_computed_;
+      RefSCMatrix A_[NSpinCases2];
+    public:
+      typedef enum { V=0, X=1, B=2, A=3 } IntermediateType;
+      R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
+                             const LinearR12::StandardApproximation stdapp);
+      R12EnergyIntermediates(StateIn &si);
+      void save_data_state(StateOut &so);
+      ~R12EnergyIntermediates(){}
+      Ref<R12IntEval> r12eval() const;
+      void set_r12eval(Ref<R12IntEval> &r12eval);
+      LinearR12::StandardApproximation stdapprox() const;
+      bool V_computed() const;
+      bool X_computed() const;
+      bool B_computed() const;
+      bool A_computed() const;
+      void V_computed(const bool computed);
+      void X_computed(const bool computed);
+      void B_computed(const bool computed);
+      void A_computed(const bool computed);
+      const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
+      void assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V);
+      const RefSymmSCMatrix& get_X(const SpinCase2 &spincase2) const;
+      void assign_X(const SpinCase2 &spincase2, const RefSymmSCMatrix& X);
+      const RefSymmSCMatrix& get_B(const SpinCase2 &spincase2) const;
+      void assign_B(const SpinCase2 &spincase2, const RefSymmSCMatrix& B);
+      const RefSCMatrix& get_A(const SpinCase2 &spincase2) const;
+      void assign_A(const SpinCase2 &spincase2, const RefSCMatrix& A);
+  };
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
 class MP2R12Energy : virtual public SavableState {
   protected:
-  Ref<R12IntEval> r12eval_;
-  LinearR12::StandardApproximation stdapprox_;
-  bool ebc_;
-  int debug_;
-  bool evaluated_;
-
-  // Initialize SCVectors and SCMatrices
-  virtual void init_() = 0;
-public:
-
-  MP2R12Energy(StateIn&);
-  MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug);
-  ~MP2R12Energy();
-
-  void save_data_state(StateOut&);
-  void obsolete();
-  void print(std::ostream&o=ExEnv::out0()) const;
-
-  Ref<R12IntEval> r12eval() const;
-  LinearR12::StandardApproximation stdapp() const;
-  /** Returns whether Generalized Brillouin Condition (GBC) was used in evaluation of
-      the MP2-R12 intermediates */
-  bool gbc() const;
-  /** Returns whether Extended Brillouin Condition (EBC) was used in evaluation of
-      the MP2-R12 intermediates and the MP2-R12 energy */
-  bool ebc() const;
-  void set_debug(int debug);
-  int get_debug() const;
+    Ref<R12EnergyIntermediates> r12intermediates_;
+    Ref<R12IntEval> r12eval_;
+    bool ebc_;
+    int debug_;
+    bool evaluated_;
   
-  virtual void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()) = 0;
-  virtual double energy() = 0;
-  virtual const RefSCVector& ef12(SpinCase2 S) const {};
+    // Initialize SCVectors and SCMatrices
+    virtual void init_() = 0;
+  public:
+  
+    MP2R12Energy(StateIn&);
+    MP2R12Energy(const Ref<R12EnergyIntermediates>& r12intermediates,
+                 int debug);
+    ~MP2R12Energy();
+  
+    void save_data_state(StateOut&);
+    void obsolete();
+    void print(std::ostream&o=ExEnv::out0()) const;
+  
+    Ref<R12IntEval> r12eval() const;
+    const Ref<R12EnergyIntermediates>& r12intermediates() const;
+    LinearR12::StandardApproximation stdapprox() const;
+    /** Returns whether Generalized Brillouin Condition (GBC) was used in evaluation of
+        the MP2-R12 intermediates */
+    bool gbc() const;
+    /** Returns whether Extended Brillouin Condition (EBC) was used in evaluation of
+        the MP2-R12 intermediates and the MP2-R12 energy */
+    bool ebc() const;
+    void set_debug(int debug);
+    int get_debug() const;
+    
+    virtual void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()) = 0;
+    virtual double energy() = 0;
+    virtual const RefSCVector& ef12(SpinCase2 S) const {};
   
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  /** Computes values of pair function ij on tbgrid */
-  virtual void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
-                             const Ref<TwoBodyGrid>& tbgrid) {};
+    /** Computes values of pair function ij on tbgrid */
+    virtual void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
+                               const Ref<TwoBodyGrid>& tbgrid) {};
 #endif
   
-  /// Computes the first-order R12 wave function and MP2-R12 energy
-  virtual void compute() = 0;
-  /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
-    */
-  virtual RefSCMatrix C(SpinCase2 S) = 0;
-  /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
-   */
-  virtual RefSCMatrix T2(SpinCase2 S) = 0;
+    /// Computes the first-order R12 wave function and MP2-R12 energy
+    virtual void compute() = 0;
+    /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
+      */
+    virtual RefSCMatrix C(SpinCase2 S) = 0;
+    /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
+     */
+    virtual RefSCMatrix T2(SpinCase2 S) = 0;
 };
 
 /**
@@ -122,7 +168,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
                                       const SCVector3& r1, const SCVector3& r2) const;
   public:
     MP2R12Energy_SpinOrbital(StateIn&);
-    MP2R12Energy_SpinOrbital(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug);
+    MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
     ~MP2R12Energy_SpinOrbital();
     
     void save_data_state(StateOut&);
@@ -163,9 +209,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
 class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 {
   private:
-    /** Bool variable diag_ gotten from the one in class LinearR12Ansatz
-     */
-    bool diag_, fixed_coeff_, hylleraas_;
+    bool hylleraas_;
     RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
     // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
     RefSCMatrix C_[NSpinCases2];
@@ -213,8 +257,8 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
     void compute_MP2R12_diag_fixed_nonhylleraas();
   public:
     MP2R12Energy_SpinOrbital_new(StateIn&);
-    MP2R12Energy_SpinOrbital_new(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp,
-                                 bool diag, bool fixed_coeff, bool hylleraas, int debug);
+    MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
+                                 bool hylleraas, int debug);
     ~MP2R12Energy_SpinOrbital_new();
     
     void save_data_state(StateOut&);
@@ -247,8 +291,8 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
   RefSCMatrix T2(SpinCase2 S);
 };
 
-Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp,
-                                         bool diag, bool fixed_coeff, bool hylleraas, int debug,
+Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
+                                         bool hylleraas, int debug,
                                          bool use_new_version);
 
 }

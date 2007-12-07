@@ -57,6 +57,132 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
 
 #define USE_INVERT 0
 
+
+/********************************
+ * class R12EnergyIntermediates *
+ ********************************/
+
+static ClassDesc R12EnergyIntermediates_cd(typeid(R12EnergyIntermediates),"R12EnergyIntermediates",
+                                           1,"virtual public SavableState",0,0,
+                                           create<R12EnergyIntermediates>);
+
+R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
+                                               const LinearR12::StandardApproximation stdapp) {
+  stdapprox_=stdapp;
+  r12eval_=r12eval;
+  V_computed_=false;
+  X_computed_=false;
+  B_computed_=false;
+  A_computed_=false;
+}
+
+R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
+  int stdapprox; si.get(stdapprox); stdapprox_=(LinearR12::StandardApproximation)stdapprox;
+  r12eval_ << SavableState::restore_state(si);
+  int V_computed; si.get(V_computed); V_computed_=(bool)V_computed;
+  int X_computed; si.get(X_computed); X_computed_=(bool)X_computed;
+  int B_computed; si.get(B_computed); B_computed_=(bool)B_computed;
+  int A_computed; si.get(A_computed); A_computed_=(bool)A_computed;
+  for(int i=0; i<NSpinCases2; i++){
+    V_[i].restore(si);
+    X_[i].restore(si);
+    B_[i].restore(si);
+    A_[i].restore(si);
+  }
+}
+
+void R12EnergyIntermediates::save_data_state(StateOut &so) {
+  so.put((int)stdapprox_);
+  SavableState::save_state(r12eval_.pointer(),so);
+  so.put((int)V_computed_);
+  so.put((int)X_computed_);
+  so.put((int)B_computed_);
+  so.put((int)A_computed_);
+  for(int i=0; i<NSpinCases2; i++){
+    V_[i].save(so);
+    X_[i].save(so);
+    B_[i].save(so);
+    A_[i].save(so);
+  }
+}
+
+Ref<R12IntEval> R12EnergyIntermediates::r12eval() const {
+  return(r12eval_);
+}
+
+void R12EnergyIntermediates::set_r12eval(Ref<R12IntEval> &r12eval) {
+  r12eval_=r12eval;
+}
+
+LinearR12::StandardApproximation R12EnergyIntermediates::stdapprox() const {
+  return(stdapprox_);
+}
+
+bool R12EnergyIntermediates::V_computed() const {
+  return(V_computed_);
+}
+
+bool R12EnergyIntermediates::X_computed() const {
+  return(X_computed_);
+}
+
+bool R12EnergyIntermediates::B_computed() const {
+  return(B_computed_);
+}
+
+bool R12EnergyIntermediates::A_computed() const {
+  return(A_computed_);
+}
+
+void R12EnergyIntermediates::V_computed(const bool computed) {
+  V_computed_=computed;
+}
+
+void R12EnergyIntermediates::X_computed(const bool computed) {
+  X_computed_=computed;
+}
+
+void R12EnergyIntermediates::B_computed(const bool computed) {
+  B_computed_=computed;
+}
+
+void R12EnergyIntermediates::A_computed(const bool computed) {
+  A_computed_=computed;
+}
+
+const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
+  return(V_[spincase2]); 
+}
+
+void R12EnergyIntermediates::assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V) {
+  V_[spincase2]=V;
+}
+
+const RefSymmSCMatrix& R12EnergyIntermediates::get_X(const SpinCase2 &spincase2) const {
+  return(X_[spincase2]);
+}
+
+void R12EnergyIntermediates::assign_X(const SpinCase2 &spincase2, const RefSymmSCMatrix& X) {
+  X_[spincase2]=X;
+}
+
+const RefSymmSCMatrix& R12EnergyIntermediates::get_B(const SpinCase2 &spincase2) const {
+  return(B_[spincase2]);
+}
+
+void R12EnergyIntermediates::assign_B(const SpinCase2 &spincase2, const RefSymmSCMatrix& B) {
+  B_[spincase2]=B;
+}
+
+const RefSCMatrix& R12EnergyIntermediates::get_A(const SpinCase2 &spincase2) const {
+  return(A_[spincase2]);
+}
+
+void R12EnergyIntermediates::assign_A(const SpinCase2 &spincase2, const RefSCMatrix& A) {
+  A_[spincase2]=A;
+}
+
+
 /*-------------
   MP2R12Energy
  -------------*/
@@ -64,24 +190,31 @@ static ClassDesc MP2R12Energy_cd(
   typeid(MP2R12Energy),"MP2R12Energy",2,"virtual public SavableState",
   0, 0, 0);
 
-MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug)
+//MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug)
+//{
+//  r12eval_ = r12eval;
+//  stdapprox_ = stdapp;
+//  if (debug >= 0)
+//    debug_ = debug;
+//  else
+//    debug_ = 0;
+//  evaluated_ = false;
+//}
+
+MP2R12Energy::MP2R12Energy(const Ref<R12EnergyIntermediates>& r12intermediates,
+                           int debug) :
+                             r12intermediates_(r12intermediates),
+                             r12eval_(r12intermediates->r12eval()),
+                             debug_(debug>=0 ? debug : 0)
 {
-  r12eval_ = r12eval;
-  stdapprox_ = stdapp;
-  if (debug >= 0)
-    debug_ = debug;
-  else
-    debug_ = 0;
   evaluated_ = false;
 }
 
 MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 {
   r12eval_ << SavableState::restore_state(si);
+  r12intermediates_ << SavableState::restore_state(si);
   
-  int stdapprox;
-  si.get(stdapprox);
-  stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   si.get(debug_);
   int evaluated;
   si.get(evaluated);
@@ -91,13 +224,14 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 MP2R12Energy::~MP2R12Energy()
 {
   r12eval_ = 0;
+  r12intermediates_ = 0;
 }
 
 void MP2R12Energy::save_data_state(StateOut& so)
 {
   SavableState::save_state(r12eval_.pointer(),so);
+  SavableState::save_state(r12intermediates_.pointer(),so);
   
-  so.put((int)stdapprox_);
   so.put(debug_);
   so.put((int)evaluated_);
 }
@@ -108,9 +242,10 @@ void MP2R12Energy::obsolete()
 }
 
 Ref<R12IntEval> MP2R12Energy::r12eval() const { return r12eval_; };
+const Ref<R12EnergyIntermediates>& MP2R12Energy::r12intermediates() const { return(r12intermediates_); };
+LinearR12::StandardApproximation MP2R12Energy::stdapprox() const { return(r12intermediates_->stdapprox()); };
 bool MP2R12Energy::ebc() const { return ebc_; };
 bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
-LinearR12::StandardApproximation MP2R12Energy::stdapp() const { return stdapprox_; };
 void MP2R12Energy::set_debug(int debug) { debug_ = debug; };
 int MP2R12Energy::get_debug() const { return debug_; };
 
@@ -142,8 +277,9 @@ static ClassDesc MP2R12Energy_SpinOrbital_cd(
                            typeid(MP2R12Energy_SpinOrbital),"MP2R12Energy_SpinOrbital",1,"virtual public MP2R12Energy",
                            0, 0, create<MP2R12Energy_SpinOrbital>);
 
-MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug) :
-  MP2R12Energy(r12eval,stdapp,debug) {
+MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates,
+                                                   int debug) :
+  MP2R12Energy(r12intermediates,debug) {
   init_();
 }
 
@@ -184,6 +320,7 @@ MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(StateIn &si) :
 MP2R12Energy_SpinOrbital::~MP2R12Energy_SpinOrbital()
 {
   r12eval_ = 0;
+  r12intermediates_ = 0;
 }
 
 void MP2R12Energy_SpinOrbital::save_data_state(StateOut &so){
@@ -213,7 +350,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
   compute();
   
   std::string SA_str;
-  switch (stdapprox_) {
+  switch (stdapprox()) {
     case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
     case LinearR12::StdApprox_App: SA_str = "A''";  break;
     case LinearR12::StdApprox_B:   SA_str = "B";   break;
@@ -672,12 +809,9 @@ static ClassDesc MP2R12Energy_SpinOrbital_new_cd(
                            typeid(MP2R12Energy_SpinOrbital_new),"MP2R12Energy_SpinOrbital_new",1,"virtual public MP2R12Energy",
                            0, 0, create<MP2R12Energy_SpinOrbital_new>);
 
-MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp,
-                                                           bool diag, bool fixed_coeff, bool hylleraas, int debug) :
-  MP2R12Energy(r12eval,stdapp,debug) {
-  diag_ = diag;
-  fixed_coeff_ = fixed_coeff;
-  hylleraas_ = hylleraas;
+MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
+                                                           bool hylleraas, int debug) :
+  MP2R12Energy(r12intermediates,debug), hylleraas_(hylleraas) {
   init_();
 }
 
@@ -714,6 +848,8 @@ MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(StateIn &si) :
   MP2R12Energy(si)
 {
   init_();
+
+  int hylleraas; si.get(hylleraas); hylleraas_=(bool)hylleraas;
   
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].restore(si);
@@ -726,11 +862,14 @@ MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(StateIn &si) :
 
 MP2R12Energy_SpinOrbital_new::~MP2R12Energy_SpinOrbital_new()
 {
+  r12intermediates_ = 0;
   r12eval_ = 0;
 }
 
 void MP2R12Energy_SpinOrbital_new::save_data_state(StateOut &so){
   MP2R12Energy::save_data_state(so);
+  
+  so.put((int)hylleraas_);
   
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].save(so);
@@ -754,11 +893,11 @@ double MP2R12Energy_SpinOrbital_new::ef12tot(SpinCase2 s) const {
 }
 
 bool MP2R12Energy_SpinOrbital_new::diag() const {
-  return(diag_);
+  return(r12eval_->r12info()->r12tech()->ansatz()->diag());
 }
 
 bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
-  return(fixed_coeff_);
+  return(r12eval_->r12info()->r12tech()->ansatz()->fixedcoeff());
 }
 
 void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::ostream& so)
@@ -766,12 +905,12 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
   
   compute();
   
-  so << "diag = " << ((diag_==true) ? "true" : "false") << endl;
-  so << "fixed_coeff = " << ((fixed_coeff_==true) ? "true" : "false") << endl;
+  so << "diag = " << ((diag()==true) ? "true" : "false") << endl;
+  so << "fixedcoeff = " << ((fixedcoeff()==true) ? "true" : "false") << endl;
   so << "hylleraas = " << ((hylleraas_==true) ? "true" : "false") << endl;
   
   std::string SA_str;
-  switch (stdapprox_) {
+  switch (stdapprox()) {
     case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
     case LinearR12::StdApprox_App: SA_str = "A''";  break;
     case LinearR12::StdApprox_B:   SA_str = "B";   break;
@@ -1221,15 +1360,15 @@ RefSCMatrix MP2R12Energy_SpinOrbital_new::T2(SpinCase2 S)
   return(T2mat);
 }
 
-Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp,
-                                             bool diag, bool fixed_coeff, bool hylleraas, int debug,
+Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
+                                             bool hylleraas, int debug,
                                              bool use_new_version) {
   Ref<MP2R12Energy> mp2r12energy;
   if(use_new_version){
-    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12eval,stdapp,diag,fixed_coeff,hylleraas,debug);
+    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,hylleraas,debug);
   }
   else {
-    mp2r12energy = new MP2R12Energy_SpinOrbital(r12eval,stdapp,debug);
+    mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);
   }
   return(mp2r12energy);
 }

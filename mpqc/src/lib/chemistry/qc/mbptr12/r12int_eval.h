@@ -61,7 +61,6 @@ class R12IntEval : virtual public SavableState {
   // that computes asymmetric form of B
   RefSCMatrix B_[NSpinCases2];
   RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
-  RefSCMatrix BC_[NSpinCases2];  // B intermediate of approximation C
   RefSCMatrix A_[NSpinCases2];
   RefSCMatrix Ac_[NSpinCases2];
 #if 0
@@ -542,8 +541,6 @@ public:
   RefSymmSCMatrix B(SpinCase2 S);
   /// Returns S block of the difference between intermediate B of approximations B and A'
   RefSymmSCMatrix BB(SpinCase2 S);
-  /// Returns S block of intermediate B in approximation C
-  RefSymmSCMatrix BC(SpinCase2 S);
   /// Returns S block of intermediate A
   const RefSCMatrix& A(SpinCase2 S);
   /// Returns S block of intermediate A computed using commutator method

@@ -233,8 +233,8 @@ R12IntEval::init_intermeds_g12_()
 	  B_[s].accumulate(Banti);
       }
       // Finally, copy B to BC, since their "diagonal" parts are the same
-      if (stdapprox() == LinearR12::StdApprox_C)
-	  BC_[s].assign(B_[s]);
+      //if (stdapprox() == LinearR12::StdApprox_C)
+	  //BC_[s].assign(B_[s]);
   }
 
   ExEnv::out0() << decindent;

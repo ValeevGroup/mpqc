@@ -181,7 +181,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_C)
-        BC_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
+        B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         if (ks_ebcfree()) {
@@ -199,7 +199,6 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       X_[BetaBeta] = X_[AlphaAlpha];
       B_[BetaBeta] = B_[AlphaAlpha];
       BB_[BetaBeta] = BB_[AlphaAlpha];
-      BC_[BetaBeta] = BC_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
       Ac_[BetaBeta] = Ac_[AlphaAlpha];
 #if 0
@@ -251,7 +250,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_C)
-        BC_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
+        B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         if (ks_ebcfree()) {
@@ -268,7 +267,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       X_[s].restore(si);
       B_[s].restore(si);
       BB_[s].restore(si);
-      BC_[s].restore(si);
       A_[s].restore(si);
       Ac_[s].restore(si);
 #if 0
@@ -329,7 +327,6 @@ R12IntEval::save_data_state(StateOut& so)
       X_[s].save(so);
       B_[s].save(so);
       BB_[s].save(so);
-      BC_[s].save(so);
       A_[s].save(so);
       Ac_[s].save(so);
 #if 0
@@ -438,18 +435,6 @@ R12IntEval::BB(SpinCase2 S) {
                    xspace(Alpha),
                    xspace(Alpha));
   return to_lower_triangle(BB_[S]);
-}
-
-RefSymmSCMatrix
-R12IntEval::BC(SpinCase2 S) {
-  if (stdapprox() != LinearR12::StdApprox_C)
-    throw ProgrammingError("R12IntEval::BC() -- called but standard approximation is not C",__FILE__,__LINE__);
-  compute();
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(BC_[AlphaAlpha],BC_[AlphaBeta],
-                   xspace(Alpha),
-                   xspace(Alpha));
-  return to_lower_triangle(BC_[S]);
 }
 
 const RefSCMatrix&
@@ -599,7 +584,7 @@ R12IntEval::init_intermeds_()
     if (stdapprox() == LinearR12::StdApprox_B)
       BB_[s].assign(0.0);
     if (stdapprox() == LinearR12::StdApprox_C)
-      BC_[s].assign(0.0);
+      B_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
     if (ebc() == false) {
       A_[s].assign(0.0);
@@ -658,8 +643,6 @@ R12IntEval::init_intermeds_r12_()
 	}
 
 	B_[s]->unit();
-	if (stdapprox() == LinearR12::StdApprox_C)
-	    BC_[s]->unit();
 #endif
     }
   }
@@ -2604,7 +2587,7 @@ R12IntEval::compute()
       compute_BC_();
       if (debug_ >= DefaultPrintThresholds::O4)
         for(int s=0; s<nspincases2(); s++)
-          BC_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
+          B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
     }
     
 #if INCLUDE_EBC_CODE
@@ -3091,7 +3074,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     if (stdapprox() == LinearR12::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
     if (stdapprox() == LinearR12::StdApprox_C)
-      globally_sum_scmatrix_(BC_[s],to_all_tasks);
+      globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (ebc() == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
       if (ks_ebcfree()) {

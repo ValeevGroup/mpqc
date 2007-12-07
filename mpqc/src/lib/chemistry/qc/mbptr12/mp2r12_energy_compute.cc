@@ -92,8 +92,8 @@ MP2R12Energy_SpinOrbital::compute()
     ebc = true;
   /// KS approach to EBC-free method differs from mine if std approx != B || C
   const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
-                          (stdapprox_ != LinearR12::StdApprox_B &&
-                           stdapprox_ != LinearR12::StdApprox_C);
+                          (stdapprox() != LinearR12::StdApprox_B &&
+                           stdapprox() != LinearR12::StdApprox_C);
   const bool diag=r12info->r12tech()->ansatz()->diag();
   if (diag)
     throw ProgrammingError("MP2R12Energy_SpinOrbital::compute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
@@ -158,29 +158,55 @@ MP2R12Energy_SpinOrbital::compute()
       const std::vector<double> evals_xspace2  = convert(xspace2->evals());
       
       // Get the intermediates V and X
-      RefSCMatrix V = r12eval()->V(spincase2);
-      RefSymmSCMatrix X = r12eval()->X(spincase2);
-      // The choice of B depends intricately on approximations
-      RefSymmSCMatrix B;
-      if (stdapprox_ == LinearR12::StdApprox_C) {
-        B = r12eval()->BC(spincase2);
+      RefSCMatrix V;
+      if(r12intermediates_->V_computed()){
+        ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
+        V = r12intermediates_->get_V(spincase2);
       }
       else {
-        B = r12eval()->B(spincase2);
-        // in standard approximation B, add up [K1+K2,F12] term
-        if (stdapprox_ == LinearR12::StdApprox_B) {
-          RefSymmSCMatrix BB = r12eval()->BB(spincase2);
-          B.accumulate(BB);
+        V = r12eval()->V(spincase2);
+      }
+      
+      RefSymmSCMatrix X;
+      if(r12intermediates_->X_computed()){
+        X = r12intermediates_->get_X(spincase2);
+      }
+      else {
+        X = r12eval()->X(spincase2);
+      }
+      // The choice of B depends intricately on approximations
+      RefSymmSCMatrix B;
+      if(r12intermediates_->B_computed()){
+        B = r12intermediates_->get_B(spincase2);
+      }
+      else {
+        if (stdapprox() == LinearR12::StdApprox_C) {
+          B = r12eval()->B(spincase2);
+        }
+        else if (stdapprox() == LinearR12::StdApprox_B) {
+          // in standard approximation B, add up [K1+K2,F12] term
+          B = r12eval()->B(spincase2).clone();
+          B.assign(r12eval()->B(spincase2));
+          B.accumulate(r12eval()->BB(spincase2));
+        }
+        else {
+          B = r12eval()->B(spincase2);
         }
       }
       
       // In Klopper-Samson method, two kinds of A are used: app B (I replace with my A) and app XX (my Ac)
       RefSCMatrix A, Ac;
       if (ebc == false) {
-        A = r12eval()->A(spincase2);
-        if (ks_ebcfree) {
-          Ac = r12eval()->Ac(spincase2);
+        if(r12intermediates_->A_computed()){
+          A = r12intermediates_->get_A(spincase2);
         }
+        else {
+          A = r12eval()->A(spincase2);
+        }
+      }
+      
+      if((ebc == false) && (ks_ebcfree)) {
+        Ac = r12eval()->Ac(spincase2);
       }
       
       // Prepare total and R12 pairs
@@ -921,25 +947,51 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
     // 1) the B matrix is the same if the ansatz is diagonal
     // 2) in approximations A', A'', B, and C the B matrix is pair-specific
-    const bool same_B_for_all_pairs = diag_;
+    const bool same_B_for_all_pairs = diag();
   
     // Get the intermediates V and X
-    RefSCMatrix V = r12eval()->V(spincase2);
-    RefSymmSCMatrix X = r12eval()->X(spincase2);
-    RefSymmSCMatrix B;
-    if(stdapprox_==LinearR12::StdApprox_B){
-      B = r12eval()->BB(spincase2);
-    }
-    else if(stdapprox_==LinearR12::StdApprox_C) {
-      B = r12eval()->BC(spincase2);
+    RefSCMatrix V;
+    if(r12intermediates_->V_computed()){
+      ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
+      V = r12intermediates_->get_V(spincase2);
     }
     else {
-      B = r12eval()->B(spincase2);
+      V = r12eval()->V(spincase2);
+    }
+    
+    RefSymmSCMatrix X;
+    if(r12intermediates_->X_computed()){
+      X = r12intermediates_->get_X(spincase2);
+    }
+    else {
+      X = r12eval()->X(spincase2);
+    }
+    RefSymmSCMatrix B;
+    if(r12intermediates_->B_computed()){
+      B = r12intermediates_->get_B(spincase2);
+    }
+    else {
+      if(stdapprox()==LinearR12::StdApprox_B){
+        B = r12eval()->B(spincase2).clone();
+        B.assign(r12eval()->B(spincase2));
+        B.accumulate(r12eval()->BB(spincase2));
+      }
+      else if(stdapprox()==LinearR12::StdApprox_C) {
+        B = r12eval()->B(spincase2);
+      }
+      else {
+        B = r12eval()->B(spincase2);
+      }
     }
   
     RefSCMatrix A, Ac;
     if (ebc == false) {
-      A = r12eval()->A(spincase2);
+      if(r12intermediates_->A_computed()){
+        A = r12intermediates_->get_A(spincase2);
+      }
+      else {
+        A = r12eval()->A(spincase2);
+      }
     }
   
     // Prepare total and R12 pairs
@@ -997,25 +1049,52 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
     // 1) the B matrix is the same if the ansatz is diagonal
     // 2) in approximations A', A'', B, and C the B matrix is pair-specific
-    const bool same_B_for_all_pairs = diag_;
+    const bool same_B_for_all_pairs = diag();
 
     // Get the intermediates V and X
-    RefSCMatrix V = r12eval()->V(spincase2);
-    RefSymmSCMatrix X = r12eval()->X(spincase2);
-    RefSymmSCMatrix B;
-    if(stdapprox_==LinearR12::StdApprox_B){
-      B = r12eval()->BB(spincase2);
-    }
-    else if(stdapprox_==LinearR12::StdApprox_C) {
-      B = r12eval()->BC(spincase2);
+    RefSCMatrix V;
+    if(r12intermediates_->V_computed()){
+      ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
+      V = r12intermediates_->get_V(spincase2);
     }
     else {
-      B = r12eval()->B(spincase2);
+      V = r12eval()->V(spincase2);
+    }
+    
+    RefSymmSCMatrix X;
+    if(r12intermediates_->X_computed()){
+      X = r12intermediates_->get_X(spincase2);
+    }
+    else {
+      X = r12eval()->X(spincase2);
+    }
+    
+    RefSymmSCMatrix B;
+    if(r12intermediates_->B_computed()){
+      B = r12intermediates_->get_B(spincase2);
+    }
+    else {
+      if(stdapprox()==LinearR12::StdApprox_B){
+        B = r12eval()->B(spincase2).clone();
+        B.assign(r12eval()->B(spincase2));
+        B.accumulate(r12eval()->BB(spincase2));
+      }
+      else if(stdapprox()==LinearR12::StdApprox_C) {
+        B = r12eval()->B(spincase2);
+      }
+      else {
+        B = r12eval()->B(spincase2);
+      }
     }
 
     RefSCMatrix A, Ac;
     if (ebc == false) {
-      A = r12eval()->A(spincase2);
+      if(r12intermediates_->A_computed()){
+        A = r12intermediates_->get_A(spincase2);
+      }
+      else {
+        A = r12eval()->A(spincase2);
+      }
     }
 
     // Prepare total and R12 pairs
@@ -1069,25 +1148,51 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
     // 1) the B matrix is the same if the ansatz is diagonal
     // 2) in approximations A', A'', B, and C the B matrix is pair-specific
-    const bool same_B_for_all_pairs = diag_;
+    const bool same_B_for_all_pairs = diag();
 
     // Get the intermediates V and X
-    RefSCMatrix V = r12eval()->V(spincase2);
-    RefSymmSCMatrix X = r12eval()->X(spincase2);
-    RefSymmSCMatrix B;
-    if(stdapprox_==LinearR12::StdApprox_B){
-      B = r12eval()->BB(spincase2);
-    }
-    else if(stdapprox_==LinearR12::StdApprox_C) {
-      B = r12eval()->BC(spincase2);
+    RefSCMatrix V;
+    if(r12intermediates_->V_computed()){
+      ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
+      V = r12intermediates_->get_V(spincase2);
     }
     else {
-      B = r12eval()->B(spincase2);
+      V = r12eval()->V(spincase2);
+    }
+    
+    RefSymmSCMatrix X;
+    if(r12intermediates_->X_computed()){
+      X = r12intermediates_->get_X(spincase2);
+    }
+    else {
+      X = r12eval()->X(spincase2);
+    }
+    RefSymmSCMatrix B;
+    if(r12intermediates_->B_computed()){
+      B = r12intermediates_->get_B(spincase2);
+    }
+    else {
+      if(stdapprox()==LinearR12::StdApprox_B){
+        B = r12eval()->B(spincase2).clone();
+        B.assign(r12eval()->B(spincase2));
+        B.accumulate(r12eval()->BB(spincase2));
+      }
+      else if(stdapprox()==LinearR12::StdApprox_C) {
+        B = r12eval()->B(spincase2);
+      }
+      else {
+        B = r12eval()->B(spincase2);
+      }
     }
 
     RefSCMatrix A, Ac;
     if (ebc == false) {
-      A = r12eval()->A(spincase2);
+      if(r12intermediates_->A_computed()){
+        A = r12intermediates_->get_A(spincase2);
+      }
+      else {
+        A = r12eval()->A(spincase2);
+      }
     }
 
     // Prepare total and R12 pairs
@@ -1134,26 +1239,25 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
     // 1) the B matrix is the same if the ansatz is diagonal
     // 2) in approximations A', A'', B, and C the B matrix is pair-specific
-    const bool same_B_for_all_pairs = diag_;
+    const bool same_B_for_all_pairs = diag();
 
     // Get the intermediates V and X
-    RefSCMatrix V = r12eval()->V(spincase2);
-    RefSymmSCMatrix X = r12eval()->X(spincase2);
-    //RefSymmSCMatrix B;
-    //if(stdapprox_==LinearR12::StdApprox_B){
-    //  B = r12eval()->BB(spincase2);
-    //}
-    //else if(stdapprox_==LinearR12::StdApprox_C) {
-    //  B = r12eval()->BC(spincase2);
-    //}
-    //else {
-    // B = r12eval()->B(spincase2);
-    //}
-
-    //RefSCMatrix A, Ac;
-    //if (ebc == false) {
-    //  A = r12eval()->A(spincase2);
-    //}
+    RefSCMatrix V;
+    if(r12intermediates_->V_computed()){
+      ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
+      V = r12intermediates_->get_V(spincase2);
+    }
+    else {
+      V = r12eval()->V(spincase2);
+    }
+    
+    RefSymmSCMatrix X;
+    if(r12intermediates_->X_computed()){
+      X = r12intermediates_->get_X(spincase2);
+    }
+    else {
+      X = r12eval()->X(spincase2);
+    }
 
     // Prepare total and R12 pairs
     const RefSCDimension dim_oo = V.coldim();
@@ -1178,8 +1282,8 @@ void MP2R12Energy_SpinOrbital_new::compute() {
     return;
   }
 
-  if(diag_){
-    if(fixed_coeff_){
+  if(diag()){
+    if(fixedcoeff()){
       if(hylleraas_) {
         ExEnv::out0() << "Calling MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas()" << endl;
         compute_MP2R12_diag_fixed_hylleraas();

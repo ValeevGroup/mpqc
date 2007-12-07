@@ -149,7 +149,7 @@ R12IntEval::compute_BC_()
 		std::string label = prepend_spincase(spincase2,"Q(C) contribution");
 		Q.print(label.c_str());
 	    }
-	    BC_[s].accumulate(Q); Q = 0;
+	    B_[s].accumulate(Q); Q = 0;
 #endif // INCLUDE_Q
 
 #if INCLUDE_P
@@ -430,13 +430,13 @@ R12IntEval::compute_BC_()
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
 	    tim_exit(Plabel.c_str());
 
-	    BC_[s].accumulate(P); P = 0;
+	    B_[s].accumulate(P); P = 0;
 #endif // INCLUDE_P
 
 	    // Bra-Ket symmetrize the B(C) contribution
-	    BC_[s].scale(0.5);
-	    RefSCMatrix BC_t = BC_[s].t();
-	    BC_[s].accumulate(BC_t);
+	    B_[s].scale(0.5);
+	    RefSCMatrix B_t = B_[s].t();
+	    B_[s].accumulate(B_t);
 	}
   
 	globally_sum_intermeds_();

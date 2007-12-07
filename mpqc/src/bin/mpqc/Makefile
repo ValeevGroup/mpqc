@@ -16,14 +16,14 @@ CXXINCLUDE += -I. -I$(SRCDIR)
 TARGET_TO_MAKE = mpqc
 
 CXXSRC = mpqc.cc mpqcin.cc
-GENCXXSRC = parse.cc scan.cc
+XGENCXXSRC = parse.cc scan.cc
 CSRC =
 INC =
-GENINC = parse.h
+XGENINC = parse.h
 
 DEPENDINCLUDE = $(INC)
 
-BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
+BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(XGENCXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
@@ -101,7 +101,7 @@ clean::
 distclean::
 	/bin/rm -f mpqc
 	/bin/rm -f parse.tmp*
-	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
+	/bin/rm -f parse.output
 	/bin/rm -f mpqcrun
 
 ifneq ($(BUILDING_IN_SRCDIR),yes)

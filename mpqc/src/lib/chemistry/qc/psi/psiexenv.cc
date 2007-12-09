@@ -189,6 +189,9 @@ int PsiExEnv::run_psi_module(const char *module)
   int errcod;
   if (errcod = system(oss.str().c_str())) {
       ExEnv::outn() << "PsiExEnv::run_psi_module -- module " << module << " failed" << endl;
+      // clean up if wasn't a cleanup attempt already
+      if (strcmp(module,"psiclean"))
+        run_psi_module("psiclean");
       abort();
   }
   return errcod;

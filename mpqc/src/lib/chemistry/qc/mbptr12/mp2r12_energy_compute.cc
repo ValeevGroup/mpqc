@@ -927,6 +927,9 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
+    
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
@@ -1028,6 +1031,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
@@ -1127,6 +1132,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
@@ -1218,6 +1225,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));

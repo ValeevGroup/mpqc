@@ -156,6 +156,7 @@ namespace sc {
   namespace {
     /// return false if bs has a mixture of pure and cart functions of am >= 1
     bool consistent_puream(const Ref<GaussianBasisSet>& bs) {
+      bs->print();
       const int has_pure = bs->has_pure();
       const unsigned int nshell = bs->nshell();
       for (unsigned int s=0; s<nshell; ++s) {

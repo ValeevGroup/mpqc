@@ -71,6 +71,11 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   if (mp2_only_)
     PsiCC::do_test_t2_phases();
   
+  new_approach_ = false;
+  if(keyval->exists("new_approach")) {
+    new_approach_ = keyval->booleanvalue("new_approach");
+  }
+  
   mbptr12_ = require_dynamic_cast<MBPT2_R12*>(keyval->describedclassvalue("mbpt2r12").pointer(), "PsiCCSD_PT2R12::PsiCCSD_PT2R12\n");
   // test that Psi3 is compatible to the integral factory used by mbptr12_ object
   if (mbptr12_->integral()->cartesian_ordering() != PsiWavefunction::cartesian_ordering()) {
@@ -96,6 +101,7 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
   PsiCC(s) {
   mbptr12_ << SavableState::restore_state(s);
   s.get(eccsd_);
+  int new_approach; s.get(new_approach); new_approach_ = (bool)new_approach;
 }
 
 int PsiCCSD_PT2R12::gradient_implemented() const {
@@ -106,6 +112,7 @@ void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
   PsiCC::save_data_state(s);
   SavableState::save_state(mbptr12_.pointer(), s);
   s.put(eccsd_);
+  s.put((int)new_approach_);
 }
 
 void
@@ -494,7 +501,6 @@ void PsiCCSD_PT2R12::compute() {
   // Compute Hamiltonian matrix elements
   RefSCMatrix H1_0R[NSpinCases2];
   RefSCMatrix H1_R0[NSpinCases2];
-  RefSymmSCMatrix H0_RR[NSpinCases2];
   for (int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
@@ -525,8 +531,9 @@ void PsiCCSD_PT2R12::compute() {
       
       // the leading term in <R|(HT)|0> is Tau2.Vab
       RefSCMatrix VT2 = Vab[s] * Tau2[s].t();
-      // If using the symmetric form of the correction, Lambdas are replaced with T
-      if (replace_Lambda_with_T_)
+      // If using the old approach, compute the energy as V B^-1 Vtilde, where Vtilde = V + 2 VT
+      // else compute as Vbar B^-1 Vbar, where Vbar = V + VT
+      if (!new_approach_)
         VT2.scale(2.0);
       RefSCMatrix HT = VT2;  VT2 = 0;
 
@@ -614,7 +621,7 @@ void PsiCCSD_PT2R12::compute() {
 #endif
 
         // If using the symmetric form of the correction, Lambdas are replaced with T
-        if (replace_Lambda_with_T_)
+        if (!new_approach_)
           VT1.scale(2.0);
         HT.accumulate(VT1);
 
@@ -629,10 +636,6 @@ void PsiCCSD_PT2R12::compute() {
     if (debug() >= DefaultPrintThresholds::O2N2) {
       H1_R0[s].print(prepend_spincase(spincase2,"<R|Hb|0>").c_str());
     }
-    
-    // H0_RR is just B
-    H0_RR[s] = B[s].clone();
-    H0_RR[s].assign(B[s]);
   }
   // Make H1_R0[AlphaAlpha] if this is a closed-shell case (it isn't computed then)
   if (nspincases2 == 1) {
@@ -642,25 +645,54 @@ void PsiCCSD_PT2R12::compute() {
   }
 
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C_MP1 . H1_R0
+  // H0_RR is the usual B of the standard MP-R12 theory
   const int debug = 0;
-  const bool diag=r12eval->r12info()->r12tech()->ansatz()->diag();
-  const bool fixedcoeff=r12eval->r12info()->r12tech()->ansatz()->fixedcoeff();
-  const bool hylleraas=((diag==true) && (fixedcoeff==true)) ? true : false;
-  const bool new_energy=(diag==true) ? true : false;
+  const bool hylleraas=false;   // In any case, a non hylleraas functional is computed here.
+  bool diag=r12eval->r12info()->r12tech()->ansatz()->diag();
+  bool fixedcoeff=r12eval->r12info()->r12tech()->ansatz()->fixedcoeff();
   Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12info()->r12tech()->stdapprox());
+  if(new_approach_) {
+    diag=true;
+    //fixedcoeff=true;
+    for(int i=0; i<NSpinCases2; i++) {
+      SpinCase2 spincase2i=static_cast<SpinCase2>(i);
+      if (r12eval->dim_oo(spincase2i).n() == 0)
+        continue;
+      r12intermediates->assign_V(spincase2i,H1_R0[spincase2i]);
+    }
+    r12intermediates->V_computed(true);
+  }
+  const bool new_energy=(diag==true) ? true : false;
   Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,hylleraas,debug,new_energy);
   
   std::vector<double> E2(NSpinCases2,0.0);
-  // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (reference_->spin_polarized() ? 3 : 2);
-  for (int s=0; s<num_unique_spincases2; s++) {
-    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-    if (r12eval->dim_oo(spincase2).n() == 0)
-      continue;
-    
-    RefSCMatrix C_MP1 = r12energy->C(spincase2);
-    RefSCMatrix E2_mat = C_MP1.t() * H1_R0[s];
-    E2[s] = E2_mat.trace();
+  // WARNING only RHF and UHF are considered
+  if(!new_approach_){
+    for (int s=0; s<num_unique_spincases2; s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      if (r12eval->dim_oo(spincase2).n() == 0)
+        continue;
+      
+      // matrix operations below only valid for nondiagonal case
+      if(diag) {
+        throw ProgrammingError("PsiCCSD_PT2R12::compute() -- old approach only works with nondiagonal ansatz.",__FILE__,__LINE__);
+      }
+      
+      RefSCMatrix C_MP1 = r12energy->C(spincase2);
+      RefSCMatrix E2_mat = C_MP1.t() * H1_R0[s];   // ?? correct for diag case
+      E2[s] = E2_mat.trace();
+    }
+  }
+  else {
+    r12energy->compute();
+    for (int s=0; s<num_unique_spincases2; s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      if (r12eval->dim_oo(spincase2).n() == 0)
+        continue;
+      
+      E2[s]=r12energy->ef12tot(spincase2);
+    }
   }
   
   double e2;

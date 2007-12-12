@@ -100,8 +100,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
 
-  bool diag = r12evalinfo()->ansatz()->diag();
-  bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
+  const bool diag = r12evalinfo()->ansatz()->diag();
+  const bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
   ExEnv::out0() << indent << "diag = "
                 << ((diag==true) ? "true" : "false") << endl;
   ExEnv::out0() << indent << "fixedcoeff = "
@@ -131,8 +131,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
   }
   
-  bool hyll_default = (fixedcoeff==true) ? true : false;
-  hylleraas_ = keyval->booleanvalue("hylleraas"KeyValValueboolean((int)hyll_default));
+  const bool hyll_default = (fixedcoeff==true) ? true : false;
+  hylleraas_ = keyval->booleanvalue("hylleraas",KeyValValueboolean((int)hyll_default));
   ExEnv::out0() << indent << "hylleraas_ = "
                 << ((hylleraas_==true) ? "true" : "false") << endl;
   

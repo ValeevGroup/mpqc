@@ -141,11 +141,13 @@ namespace sc {
       energy_acc = grad_acc/10.0;
     
     write_input((int)-log10(energy_acc));
-    exenv_->run_psi();
+    if (debug_ > 1)
+      exenv()->get_psi_input()->print();
+    exenv()->run_psi();
     
     // read output
     if (gradient_needed()) {
-      Ref<PsiFile11> file11 = exenv_->get_psi_file11();
+      Ref<PsiFile11> file11 = exenv()->get_psi_file11();
       file11->open();
       
       set_energy(file11->get_energy(0));
@@ -154,10 +156,7 @@ namespace sc {
       int natom_mpqc = molecule()->natom();
       int natom = file11->get_natom(0);
       if (natom != natom_mpqc) {
-        ExEnv::out0()
-            << scprintf("Number of atoms in MPQC and Psi3 do not match")
-            << endl;
-        abort();
+        throw ProgrammingError("Number of atoms in MPQC and Psi3 do not match",__FILE__,__LINE__);
       }
       RefSCVector gradientvec = basis()->matrixkit()->vector(moldim());
       for (int atom=0; atom<natom; atom++) {
@@ -169,7 +168,7 @@ namespace sc {
       file11->close();
       file11->remove();
     } else {
-      double energy = exenv_->chkpt().rd_etot();
+      const double energy = exenv()->chkpt().rd_etot();
       set_energy(energy);
       set_actual_value_accuracy(energy_acc);
     }

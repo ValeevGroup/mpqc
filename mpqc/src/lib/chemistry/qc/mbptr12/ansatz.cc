@@ -109,7 +109,7 @@ LinearR12Ansatz::print(std::ostream& o) const
   o << std::endl;
   
   o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant") 
-              << (fixedcoeff_ ? " fixed coefficients" : "") << std::endl;
+              << (fixedcoeff_ ? " with fixed coefficients" : "") << std::endl;
   o << indent << "WOF: " << (wof_ ? "true" : "false") << std::endl;
   o << decindent;
 }

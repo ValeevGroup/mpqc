@@ -1,14 +1,29 @@
-/*
- **
- ** PSI Input Class
- **
- ** This helper class will set up input decks for the PSI suite of
- ** ab initio quantum chemistry programs.
- **
- ** David Sherrill & Justin Fermann
- ** Center for Computational Quantum Chemistry, University of Georgia
- **
- */
+//
+// psiinput.cc
+//
+// Copyright (C) 2002 Edward Valeev
+//
+// Author: Edward Valeev <evaleev@vt.edu>
+// Maintainer: EV
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUG__
 #pragma implementation
@@ -16,7 +31,7 @@
 
 #include <iostream>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
@@ -277,7 +292,19 @@ namespace sc {
     end_section();
   }
   
-  void PsiInput::print(ostream& o) {
+  void PsiInput::print(std::ostream& o) {
+    o << indent << "PsiInput:" << std::endl;
+    o << indent; for(int i=0; i<7; ++i) { o << "----------"; }  o << endl;
+    o << sc::incindent;
+    std::ifstream f; f.open(filename_.c_str(), ios::in);
+    while(!f.eof()) {
+      char buf[256];
+      f.getline(buf,256);
+      o << indent << buf << endl;
+    }
+    f.close();
+    o << sc::decindent << endl;
+    o << indent; for(int i=0; i<7; ++i) { o << "----------"; } o << endl;
   }
 
 }

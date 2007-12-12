@@ -124,11 +124,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
   
   if((new_energy_==false) and (fixedcoeff==true)) {
-    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
+    throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
   }
   
   if((diag==false) && (fixedcoeff==true)){
-    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
+    throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
   }
   
   bool hyll_default = (fixedcoeff==true) ? true : false;
@@ -137,7 +137,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
                 << ((hylleraas_==true) ? "true" : "false") << endl;
   
   if((fixedcoeff==false) && (hylleraas_==true)){
-    throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- Hylleraas functional needn't be calculated if coefficients are optimized (gives the same result as non Hylleraas).",__FILE__,__LINE__);
+    throw InputError("MBPT2_R12::MBPT2_R12 -- Hylleraas functional needn't be calculated if coefficients are optimized (gives the same result as non Hylleraas).",__FILE__,__LINE__);
   }
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(

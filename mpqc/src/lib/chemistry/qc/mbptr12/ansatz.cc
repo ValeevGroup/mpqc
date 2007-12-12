@@ -46,7 +46,7 @@ LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
   fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)false));
   if((diag_==false) && (fixedcoeff_==true)){
-    throw ProgrammingError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
   }
   std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
   if (op == "ij")

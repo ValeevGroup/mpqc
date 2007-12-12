@@ -279,14 +279,8 @@ namespace sc {
   
   PsiSCF::PsiSCF(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
-
     docc_ = read_occ(keyval, "docc", nirrep_);
     socc_ = read_occ(keyval, "socc", nirrep_);
-    
-    guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
-    if (guess_wfn_.nonnull()) {
-      import_occupations(guess_wfn_);
-    }
   }
   
   PsiSCF::~PsiSCF() {
@@ -610,6 +604,12 @@ namespace sc {
       if ( (nuclear_charge + charge_) % 2 != 0) {
         throw InputError("PsiCLHF::PsiCLHF -- odd number of electrons, charge keyword is not given or incorrect");
       }
+
+      // try guess wavefunction
+      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
+      if (guess_wfn_.nonnull()) {
+        import_occupations(guess_wfn_);
+      }
     }
     else {
       const int nelectron = sum(docc_) * 2;
@@ -668,6 +668,11 @@ namespace sc {
       multp_ = keyval->intvalue("multiplicity",KeyValValueint(lowest_possible_multp));
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiHSOSHF::PsiHSOSHF -- inconsistent total_charge and multiplicty");
+      }
+      // try guess wavefunction
+      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
+      if (guess_wfn_.nonnull()) {
+        import_occupations(guess_wfn_);
       }
     }
     else {
@@ -730,6 +735,11 @@ namespace sc {
       multp_ = keyval->intvalue("multiplicity",KeyValValueint(lowest_possible_multp));
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicity");
+      }
+      // try guess wavefunction
+      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
+      if (guess_wfn_.nonnull()) {
+        import_occupations(guess_wfn_);
       }
     }
     else {

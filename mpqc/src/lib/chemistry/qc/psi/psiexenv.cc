@@ -4,9 +4,11 @@
 #endif
 
 #include <string>
-#include <string.h>
-#include <stdlib.h>
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
 #include <scconfig.h>
+#include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
@@ -188,11 +190,11 @@ int PsiExEnv::run_psi_module(const char *module)
       << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;
   int errcod;
   if (errcod = system(oss.str().c_str())) {
-      ExEnv::outn() << "PsiExEnv::run_psi_module -- module " << module << " failed" << endl;
+      std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
       if (strcmp(module,"psiclean"))
         run_psi_module("psiclean");
-      abort();
+      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
   }
   return errcod;
 }

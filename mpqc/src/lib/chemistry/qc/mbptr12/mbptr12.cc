@@ -89,7 +89,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
   HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
   if (roscfref != 0) {
-    ExEnv::out0() << "WARNING: ROHF-based MBPT2-R12 method not completely tested yet" << endl;
+    ExEnv::out0() << indent << "WARNING: ROHF-based MBPT2-R12 method not completely tested yet" << endl;
   }
   const bool closedshell = (clscfref != 0);
 
@@ -102,9 +102,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   bool diag = r12evalinfo()->ansatz()->diag();
   bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
-  ExEnv::out0() << "diag = "
+  ExEnv::out0() << indent << "diag = "
                 << ((diag==true) ? "true" : "false") << endl;
-  ExEnv::out0() << "fixedcoeff = "
+  ExEnv::out0() << indent << "fixedcoeff = "
                 << ((fixedcoeff==true) ? "true" : "false") << endl;
 
   // Default is to not compute MP1 energy
@@ -115,12 +115,12 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   
   new_energy_=false;
   new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
-  ExEnv::out0() << "new_energy_ = "
+  ExEnv::out0() << indent << "new_energy_ = "
                 << ((new_energy_==true) ? "true" : "false") << endl;
   
   if((new_energy_==true) && (diag==false)) {
-    ExEnv::out0() << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
-                  << "because the old version performs many security checks." << endl;
+    ExEnv::out0() << indent << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
+                  << indent << "because the old version performs many security checks." << endl;
   }
   
   if((new_energy_==false) and (fixedcoeff==true)) {
@@ -131,11 +131,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     throw ProgrammingError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
   }
   
-  hylleraas_=(fixedcoeff==true) ? true : false;
-  if(keyval->exists("hylleraas")){
-    hylleraas_ = keyval->booleanvalue("hylleraas");
-  }
-  ExEnv::out0() << "hylleraas_ = "
+  bool hyll_default = (fixedcoeff==true) ? true : false;
+  hylleraas_ = keyval->booleanvalue("hylleraas"KeyValValueboolean((int)hyll_default));
+  ExEnv::out0() << indent << "hylleraas_ = "
                 << ((hylleraas_==true) ? "true" : "false") << endl;
   
   if((fixedcoeff==false) && (hylleraas_==true)){

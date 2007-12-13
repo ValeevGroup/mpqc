@@ -647,13 +647,12 @@ void PsiCCSD_PT2R12::compute() {
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C_MP1 . H1_R0
   // H0_RR is the usual B of the standard MP-R12 theory
   const int debug = 0;
-  const bool hylleraas=false;   // In any case, a non hylleraas functional is computed here.
-  bool diag=r12eval->r12info()->r12tech()->ansatz()->diag();
-  bool fixedcoeff=r12eval->r12info()->r12tech()->ansatz()->fixedcoeff();
+  const bool hylleraas = mbptr12_->hylleraas();
+  const bool diag = r12eval->r12info()->r12tech()->ansatz()->diag();
   Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12info()->r12tech()->stdapprox());
+  // In the new approach E2 = - Vbar . B^{-1} . Vbar, where Vbar = V + VT
+  // In the old approach E2 = - V . B^{-1} . Vtilde, where Vtilde = V + 2 VT
   if(new_approach_) {
-    diag=true;
-    //fixedcoeff=true;
     for(int i=0; i<NSpinCases2; i++) {
       SpinCase2 spincase2i=static_cast<SpinCase2>(i);
       if (r12eval->dim_oo(spincase2i).n() == 0)

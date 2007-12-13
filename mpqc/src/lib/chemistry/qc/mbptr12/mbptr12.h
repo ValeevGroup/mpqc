@@ -116,8 +116,9 @@ class MBPT2_R12: public MBPT2 {
     preferred since it has many more security checks, such as checks of positive definiteness of B etc.
     The default value of this variable is false.
     
-    <dt><tt>hylleraas</tt><dd> If new_energy, diag and fixed_coeff are set to true, this variable
-    tells the new version to compute the F12 energy according to the Hylleraas functional.
+    <dt><tt>hylleraas</tt><dd> If new_energy = true, and the ansatz sets diag and fixed_coeff to true, this variable
+    tells the new version to compute the F12 energy according to the Hylleraas functional. The default
+    is to use the Hylleraas functional if the ansatz defines fixedcoef = true.
 
     </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
@@ -130,6 +131,9 @@ class MBPT2_R12: public MBPT2 {
     /// this changes the correlation factor
     void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
 
+    // use Hylleraas functional?
+    bool hylleraas() const;
+    
     double corr_energy();
     double r12_corr_energy();
 

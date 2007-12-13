@@ -423,7 +423,7 @@ class AggregateKeyVal : public KeyVal {
     modified keys.  This is convenient for reading keys grouped together
     with a common prefix.  Consider the following code:
     <pre>
-    sc::Ref<sc::KeyVal> keyval = new sc::PrefixKeyVal("A",original_keyval);
+    sc::Ref<sc::KeyVal> keyval = new sc::PrefixKeyVal(original_keyval,"A");
     int r = keyval->intvalue("x");
     </pre>
     This code will assign to r the value associated with "x" in keyval.

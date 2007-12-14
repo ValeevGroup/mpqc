@@ -2337,8 +2337,7 @@ R12IntEval::f_bra_ket(
       // core hamiltonian from the exchange
 	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - p4
 	  // NOTE: DKH core hamiltonian includes the nr core hamiltonian
-      int dk = r12info_->wfn()->dk();
-      ExEnv::out0() << "dk: " << dk<<endl;
+      int dk = r12info_->refinfo()->ref()->dk();
       if (dk>0) {
           // this is the DKH-Hamilton minus the nr-Hamilton:
     	  RefSCMatrix dkh_contrib;

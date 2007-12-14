@@ -118,7 +118,8 @@ R12IntEvalInfo::R12IntEvalInfo(
 
   r12tech_ = new R12Technology(keyval,ref->basis(),bs_vir_,bs_aux_);
   // Make sure can use the integral factory for R12 calcs
-  r12tech_->check_integral_factory(ref->integral());
+  r12tech_->check_integral_factory(integral());
+
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();

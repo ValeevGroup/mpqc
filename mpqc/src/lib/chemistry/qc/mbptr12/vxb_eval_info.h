@@ -198,7 +198,8 @@ public:
 
   Wavefunction* wfn() const { return wfn_; }
   Ref<R12Technology> r12tech() const { return r12tech_; }
-  Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
+//  Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
+  Ref<Integral> integral() const { return wfn()->integral(); };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
   /// Returns the virtuals basis set (VBS) obje19ct

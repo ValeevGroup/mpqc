@@ -47,7 +47,7 @@ LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
   // coefficients should be fixed by default if the diagonal ansatz is used
   const bool default_fixedcoeff = diag_ ? true : false;
-  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)default_fixed));
+  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)default_fixedcoeff));
   if((diag_==false) && (fixedcoeff_==true)){
     throw InputError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
   }

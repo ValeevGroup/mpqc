@@ -127,10 +127,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
   }
   
-  if((diag==false) && (fixedcoeff==true)){
-    throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients non consistent with a non diagonal ansatz",__FILE__,__LINE__);
-  }
-  
   const bool hyll_default = (fixedcoeff==true) ? true : false;
   hylleraas_ = keyval->booleanvalue("hylleraas",KeyValValueboolean((int)hyll_default));
   ExEnv::out0() << indent << "hylleraas_ = "

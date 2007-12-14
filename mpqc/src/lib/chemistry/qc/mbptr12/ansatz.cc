@@ -42,12 +42,16 @@ LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
   projector_ = (LinearR12::Projector)keyval->intvalue("projector",KeyValValueint(2));
   const bool default_wof = (projector_ == LinearR12::Projector_0);
-  wof_ = keyval->booleanvalue("diag",KeyValValueboolean((int)default_wof));
+  wof_ = keyval->booleanvalue("wof",KeyValValueboolean((int)default_wof));
+
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
-  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)false));
+  // coefficients should be fixed by default if the diagonal ansatz is used
+  const bool default_fixedcoeff = diag_ ? true : false;
+  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)default_fixed));
   if((diag_==false) && (fixedcoeff_==true)){
     throw InputError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
   }
+
   std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
   if (op == "ij")
     orbital_product_ = LinearR12::OrbProd_ij;

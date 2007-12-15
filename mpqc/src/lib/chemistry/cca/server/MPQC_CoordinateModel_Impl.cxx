@@ -679,7 +679,7 @@ MPQC::CoordinateModel_impl::setServices_impl (
       services_.registerUsesPort("ModelFactoryInterface",
                                  "Chemistry.QC.ModelFactoryInterface",
                                  0);
-      services_.registerUsesPort("BackupModelFactory",
+      services_.registerUsesPort("BackupModelFactoryInterface",
                                  "Chemistry.QC.ModelFactoryInterface",
                                  0);
       services_.registerUsesPort("MoleculeViewerInterface",

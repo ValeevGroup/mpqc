@@ -13,7 +13,7 @@ ifneq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   EXCLUDE = --exclude='.*CintsEvaluatorFactory.*'
 endif
 
-SUBDIRS = server int
+SUBDIRS = server int molecule
 
 ifeq ($(ENABLESHARED),yes)
   SUBDIRS += module

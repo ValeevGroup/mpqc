@@ -190,14 +190,12 @@ MPQC::Model_impl::set_molecule_impl (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_molecule)
   
-  std::cerr << "trying to set molecule\n";
-
   int i,j;
   molecule_ = molecule;
   double conv = molecule_.get_units().convert_to("bohr");
   sc::Molecule* scMol = wfn_->molecule().pointer();
-  int n_q = molecule_.get_n_atom();
-  int n_non_q = molecule_.get_n_pcharge();
+  int n_non_q = molecule_.get_n_atom();
+  int n_q = molecule_.get_n_pcharge();
   for( i=0; i<n_non_q; ++i) {
      int nqid = scMol->non_q_atom(i);
      for( j=0; j<3; ++j) 
@@ -210,8 +208,6 @@ MPQC::Model_impl::set_molecule_impl (
   }
   wfn_->set_x(array_to_vector(molecule_.get_coor(), 
               wfn_->matrixkit()->vector(wfn_->dimension()),conv));
-
-  std::cerr << "molecule set\n";
 
   return;
 

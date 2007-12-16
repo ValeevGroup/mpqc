@@ -62,6 +62,7 @@ class MolecularEnergyCCA: public MolecularEnergy {
     gov::cca::ConnectionID con1_;
     gov::cca::ConnectionID con2_;
     sidl::array<double> sidlx_;
+    sidl::array<double> sidlg_;
     RefSCDimension scdim_;
 
     

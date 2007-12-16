@@ -99,13 +99,13 @@ MolecularEnergyCCA::init_model()
       services.getPort("CoorModelPort") );
   }
   catch(...) {
-    std::cerr << "no coordinate model yet\n";
+    // no coor model yet, must be embedded framework
   }
 
   if( !coor_model_ ) {
-    // this happens in the embedded framework case
-    std::cerr << "using bs to wire up the app\n";
 
+    // this happens in the embedded framework case
+   
     cca_molecule_ = ChemistryCXX::Molecule::_create();
     cca_molecule_.initialize(molecule()->natom(),0,"bohr");
     for( int i=0; i<molecule()->natom(); ++i) {
@@ -134,14 +134,12 @@ MolecularEnergyCCA::init_model()
     coor_model_.initialize();
   }
 
-  std::cerr << "number of coordinates is " << coor_model_.get_n_coor() << std::endl;
   scdim_ = new SCDimension( coor_model_.get_n_coor() );
   sidlx_ = coor_model_.get_coor();
-  RefSCVector v( scdim_, matrixkit_);
-  for( int i=0; i<scdim_.n(); ++i ) {
+  sidlg_ = sidl::array<double>::create1d(scdim_.n());
+  RefSCVector v( scdim_, matrixkit_ );
+  for( int i=0; i<scdim_.n(); ++i )
     v[i] = sidlx_.get(i);
-  }
-  v.print();
   MolecularEnergy::set_x( v );
 
 }
@@ -151,20 +149,21 @@ MolecularEnergyCCA::set_x(const RefSCVector& v)
 {
   MolecularEnergy::set_x( v );
 
-  for( int i=0; i<coor_model_.get_n_coor(); ++i ) {
+  for( int i=0; i<coor_model_.get_n_coor(); ++i )
     sidlx_.set(i,v[i]); 
-    std::cerr << "sidlx_[" << i << "] = " << sidlx_.get(i) << std::endl;
-  }
 
 }
 
 void
 MolecularEnergyCCA::compute()
 {
-  std::cerr << "MolecularEnergyCCA computing\n";
   double energy;
-  energy = coor_model_.get_energy(sidlx_);
-  std::cerr << "energy is " << energy << std::endl;
+  RefSCVector g( scdim_, matrixkit_ );
+  coor_model_.get_energy_and_gradient(sidlx_,energy,sidlg_);
+  set_energy(energy);
+  for( int i=0; i<scdim_.n(); ++i )
+    g[i] = sidlg_.get(i);
+  set_gradient( g );
 }
 
 

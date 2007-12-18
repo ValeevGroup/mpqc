@@ -849,7 +849,7 @@ R12IntEval::focc(SpinCase1 spin)
     const Ref<MOIndexSpace>& occ_space = occ(spin);
     const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
     
-    RefSCMatrix F_ri_o = fock_(cabs_space,occ_space,spin);
+    RefSCMatrix F_ri_o = fock(cabs_space,occ_space,spin);
     if (debug_ >= DefaultPrintThresholds::allN2)
       F_ri_o.print("Fock matrix (CABS/occ.)");
 
@@ -908,7 +908,7 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     const Ref<MOIndexSpace>& act_occ_space = r12info()->refinfo()->occ_act(spin);
     const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
     
-    RefSCMatrix FmK_ri_ao = fock_(cabs_space,act_occ_space,spin,1.0,0.0);
+    RefSCMatrix FmK_ri_ao = fock(cabs_space,act_occ_space,spin,1.0,0.0);
     RefSCMatrix K_ri_ao = exchange_(occ_space,cabs_space,act_occ_space);
     K_ri_ao.scale(-1.0);
     RefSCMatrix F_ri_ao = FmK_ri_ao.clone(); F_ri_ao.assign(FmK_ri_ao); F_ri_ao.accumulate(K_ri_ao);
@@ -982,7 +982,7 @@ R12IntEval::form_fvir_act(SpinCase1 spin)
     const Ref<MOIndexSpace>& act_vir_space = vir_act(spin);
     const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
     
-    RefSCMatrix FmK_ri_av = fock_(cabs_space,act_vir_space,spin,1.0,0.0);
+    RefSCMatrix FmK_ri_av = fock(cabs_space,act_vir_space,spin,1.0,0.0);
     RefSCMatrix K_ri_av = exchange_(occ_space,cabs_space,act_vir_space);
     K_ri_av.scale(-1.0);
     RefSCMatrix F_ri_av = FmK_ri_av; F_ri_av.accumulate(K_ri_av);
@@ -1124,7 +1124,7 @@ R12IntEval::form_focc_act_obs(SpinCase1 spin)
     const Ref<MOIndexSpace>& act_occ_space = r12info()->refinfo()->occ_act(spin);
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     
-    RefSCMatrix hJ_obs_ao = fock_(obs_space,act_occ_space,spin,1.0,0.0);;
+    RefSCMatrix hJ_obs_ao = fock(obs_space,act_occ_space,spin,1.0,0.0);;
     RefSCMatrix K_obs_ao = exchange_(occ_space,act_occ_space,obs_space).t();
     if (debug_ >= DefaultPrintThresholds::allN2) {
       hJ_obs_ao.print("(h+J) matrix (OBS/act.occ.)");
@@ -1283,7 +1283,7 @@ R12IntEval::form_canonvir_space_()
     
     const Ref<MOIndexSpace>& mo_space = r12info()->refinfo()->orbs(spincase);
     const Ref<MOIndexSpace>& vir_space = r12info()->vir_sb(spincase);
-    RefSCMatrix F_vir = fock_(vir_space,vir_space,spincase);
+    RefSCMatrix F_vir = fock(vir_space,vir_space,spincase);
     
     int nrow = vir_space->rank();
     double* F_full = new double[nrow*nrow];
@@ -1371,7 +1371,7 @@ R12IntEval::form_fribs_ribs(SpinCase1 spin)
       ribs_space = r12info()->refinfo()->orbs(spin);
     }
     
-    RefSCMatrix hJ_ribs_ribs = fock_(ribs_space,ribs_space,spin,1.0,0.0);
+    RefSCMatrix hJ_ribs_ribs = fock(ribs_space,ribs_space,spin,1.0,0.0);
     RefSCMatrix K_ribs_ribs = exchange_(occ_space,ribs_space,ribs_space);
     K_ribs_ribs.scale(-1.0);
     RefSCMatrix F_ribs_ribs = hJ_ribs_ribs; F_ribs_ribs.accumulate(K_ribs_ribs);
@@ -1429,7 +1429,7 @@ R12IntEval::form_hjactocc_ribs(SpinCase1 spin)
       ribs_space = r12info()->refinfo()->orbs(spin);
     }
     
-    RefSCMatrix hJ_ribs_aocc = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
+    RefSCMatrix hJ_ribs_aocc = fock(ribs_space,act_occ_space,spin,1.0,0.0);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       hJ_ribs_aocc.print("h+J matrix (RIBS/act.occ.)");
     }
@@ -1466,7 +1466,7 @@ R12IntEval::form_focc_occ(SpinCase1 spin)
   if (focc_occ_[s].null()) {
     const Ref<MOIndexSpace>& occ_space = occ(spin);
     
-    RefSCMatrix F_occ = fock_(occ_space,occ_space,spin);
+    RefSCMatrix F_occ = fock(occ_space,occ_space,spin);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       F_occ.print("Fock matrix (occ./occ.)");
     }
@@ -1504,7 +1504,7 @@ R12IntEval::form_fobs_obs(SpinCase1 spin)
   if (fobs_obs_[s].null()) {
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     
-    RefSCMatrix F_obs = fock_(obs_space,obs_space,spin);
+    RefSCMatrix F_obs = fock(obs_space,obs_space,spin);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       F_obs.print("Fock matrix (OBS/OBS)");
     }
@@ -1549,7 +1549,7 @@ R12IntEval::form_focc_ribs(SpinCase1 spin)
       ribs_space = r12info()->refinfo()->orbs(spin);
     }
     
-    RefSCMatrix F_ribs_occ = fock_(ribs_space,occ_space,spin);
+    RefSCMatrix F_ribs_occ = fock(ribs_space,occ_space,spin);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       F_ribs_occ.print("Fock matrix (RIBS/occ.)");
     }
@@ -1587,7 +1587,7 @@ R12IntEval::form_fobs_cabs(SpinCase1 spin)
     const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
     const Ref<MOIndexSpace>& cabs_space = r12info()->ribs_space(spin);
     
-    RefSCMatrix F_cabs_obs = fock_(cabs_space,obs_space,spin);
+    RefSCMatrix F_cabs_obs = fock(cabs_space,obs_space,spin);
     if (debug_ >= DefaultPrintThresholds::allN2) {
       F_cabs_obs.print("Fock matrix (CABS/OBS)");
     }
@@ -2311,7 +2311,7 @@ R12IntEval::f_bra_ket(
 
       RefSCMatrix hJ_i_e;
       if (make_hJ && hJ.null()) {
-	  hJ_i_e = fock_(intspace,extspace,spin,1.0,0.0);
+	  hJ_i_e = fock(intspace,extspace,spin,1.0,0.0);
 	  if (debug_ >= DefaultPrintThresholds::allN2) {
 	      std::string label("(h+J) matrix in ");
 	      label += intspace->id();
@@ -2384,11 +2384,11 @@ R12IntEval::f_bra_ket(
 	  else {
 	      if (make_K) {
 		  F_i_e = K_i_e.clone();  F_i_e.assign(K_i_e);  F_i_e.scale(-1.0);
-		  RefSCMatrix hJ_i_e = fock_(intspace,extspace,spin,1.0,0.0);
+		  RefSCMatrix hJ_i_e = fock(intspace,extspace,spin,1.0,0.0);
 		  F_i_e.accumulate(hJ_i_e);
 	      }
 	      else {
-		  F_i_e = fock_(intspace,extspace,spin,1.0,1.0);
+		  F_i_e = fock(intspace,extspace,spin,1.0,1.0);
 	      }
 	  }
 	  if (debug_ >= DefaultPrintThresholds::allN2) {

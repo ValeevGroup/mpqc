@@ -45,7 +45,7 @@ using namespace sc;
 #define NEW_HCORE 1
 
 RefSCMatrix
-R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
+R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
                   const Ref<MOIndexSpace>& ket_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K)
@@ -386,7 +386,7 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
   TVmv.scale(-1.0);
   hsymm.assign(TVmv);
   
-  // from now on proceed as in fock_
+  // from now on proceed as in fock
   
   // convert hsymm to the AO basis
   Ref<Integral> localints = r12info_->integral()->clone();

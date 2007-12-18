@@ -236,16 +236,8 @@ class R12IntEval : virtual public SavableState {
                           const Ref<MOIndexSpace>& space2,
                           const Ref<MOIndexSpace>& space3,
                           const Ref<MOIndexSpace>& space4);
-  /** Compute the Fock matrix between bra_ and ket_ spaces of spin S.
-      scale_J and scale_K are used to scale Coulomb
-      and exchange contributions, T12IntEval::occ() is used for the occupied spaces.
-      */
-  RefSCMatrix fock_(const Ref<MOIndexSpace>& bra_space,
-                    const Ref<MOIndexSpace>& ket_space,
-                    SpinCase1 S = Alpha,
-                    double scale_J = 1.0, double scale_K = 1.0);
   /** Compute the relativistic hcore Hamiltonian using DKH2 and substract
-      T, V and the mass-velocity term. Based on r12int_eval::fock_. In file fock.cc
+      T, V and the mass-velocity term. Based on r12int_eval::fock. In file fock.cc
   */
   RefSCMatrix dtilde_(const Ref<MOIndexSpace>& bra_space,
                       const Ref<MOIndexSpace>& ket_space,
@@ -784,6 +776,14 @@ public:
                      = std::vector< Ref<TwoBodyMOIntsTransform> >(),
                    const std::vector< Ref<TwoBodyIntDescr> >& descrvec
                      = std::vector< Ref<TwoBodyIntDescr> >() );
+
+  /** Compute the Fock matrix between bra_ and ket_ spaces of spin S.
+      scale_J and scale_K are used to scale Coulomb
+      and exchange contributions, T12IntEval::occ() is used for the occupied spaces.
+      */
+  RefSCMatrix fock(const Ref<MOIndexSpace>& bra_space,
+                   const Ref<MOIndexSpace>& ket_space, SpinCase1 S = Alpha,
+                   double scale_J = 1.0, double scale_K = 1.0);
 
 };
 

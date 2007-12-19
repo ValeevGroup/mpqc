@@ -321,15 +321,13 @@ CorrelationFactor::CorrelationFactor()
 unsigned int
 CorrelationFactor::nfunctions() const
 {
-  //return 1;
-  return(atoi(geminaldescriptor_->params()[0].c_str()));
+  return 1;
 }
 
 unsigned int
 CorrelationFactor::nprimitives(unsigned int c) const
 {
-  //return 1;
-  return(atoi(geminaldescriptor_->params()[c+1].c_str()));
+  return 1;
 }
 
 const std::string&
@@ -740,6 +738,13 @@ G12NCCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
   Ref<G12NCCorrelationFactor> cf_cast; cf_cast << cf;
   if (cf_cast.null()) return false;
   return CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
+}
+
+G12NCCorrelationFactor::ContractedGeminal
+G12NCCorrelationFactor::product(const ContractedGeminal& A,
+                                       const ContractedGeminal& B)
+{
+  return IntParamsG12::product(A,B);
 }
 
 ////

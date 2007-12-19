@@ -36,6 +36,20 @@
 namespace sc {
 
     namespace LinearR12 {
+      
+      template<class CF>
+      Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B) {
+        const unsigned int nf_A = A->nfunctions();
+        const unsigned int nf_B = B->nfunctions();
+        typedef typename CF::CorrelationParameters CorrParams;
+        CorrParams corrparams;
+        for(int f=0; f<nf_A; ++f) {
+          for(int g=0; g<nf_B; ++g) {
+            corrparams.push_back( CF::product(A->function(f),B->function(g)) );
+          }
+        }
+        return new CF(corrparams);
+      }
 
       template <class CorrFactor, class Fitter>
       Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k) {

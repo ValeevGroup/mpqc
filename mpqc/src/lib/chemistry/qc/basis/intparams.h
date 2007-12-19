@@ -81,6 +81,11 @@ namespace sc {
 
       const ContractedGeminal& bra() const;
       const ContractedGeminal& ket() const;
+
+      static PrimitiveGeminal product(const PrimitiveGeminal& A,
+                                      const PrimitiveGeminal& B);
+      static ContractedGeminal product(const ContractedGeminal& A,
+                                       const ContractedGeminal& B);
       
     private:
       /// An invalid exponent (exponent of null_geminal)

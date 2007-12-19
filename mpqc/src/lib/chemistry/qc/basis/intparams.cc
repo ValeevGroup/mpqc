@@ -111,6 +111,26 @@ IntParamsG12::null_exponent(DBL_MAX);
 IntParamsG12::ContractedGeminal
 IntParamsG12::null_geminal(1,std::make_pair(null_exponent,1.0));
 
+IntParamsG12::PrimitiveGeminal
+IntParamsG12::product(const PrimitiveGeminal& A,
+                      const PrimitiveGeminal& B) {
+  return std::make_pair(A.first+B.first,A.second*B.second);
+}
+
+IntParamsG12::ContractedGeminal
+IntParamsG12::product(const ContractedGeminal& A,
+                      const ContractedGeminal& B) {
+  const unsigned int na = A.size();
+  const unsigned int nb = B.size();
+  ContractedGeminal result;
+  for(unsigned int a=0; a<na; ++a) {
+    for(unsigned int b=0; b<nb; ++b) {
+      result.push_back( product(A[a],B[b]) );
+    }
+  }
+  return result;
+}
+
 /////////////////////////////
 
 IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra) :

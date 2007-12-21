@@ -912,14 +912,15 @@ Wavefunction::core_hamiltonian_dk(int dk,
                                *p_to_so, h_pbas);
 
   integral()->set_basis(basis());
-
+  Ref<PetiteList> bas_pl = integral()->petite_list();
+  
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
   // analysis would be desirable.
   double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = overlap().trace() / pl->SO_basisdim()->n();
+  double S_ao_trace = overlap().trace() / bas_pl->SO_basisdim()->n();
   ExEnv::out0() << indent
                 << "Tr(orbital basis overlap)/N = "
                 << S_ao_trace

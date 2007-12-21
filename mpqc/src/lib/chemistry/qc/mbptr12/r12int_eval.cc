@@ -2341,7 +2341,7 @@ R12IntEval::f_bra_ket(
       if (dk>0) {
           // this is the DKH-Hamilton minus the nr-Hamilton:
     	  RefSCMatrix dkh_contrib;
-    	  dkh_contrib = dtilde_(intspace,extspace,spin);
+    	  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
     	  dkh_contrib.scale(-1.0);
     	  K_i_e.accumulate(dkh_contrib);
       }

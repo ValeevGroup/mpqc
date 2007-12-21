@@ -331,12 +331,13 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
 
 RefSCMatrix
-R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
-                   const Ref<MOIndexSpace>& ket_space,
-                   SpinCase1 spin)
+R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
+                          const Ref<MOIndexSpace>& ket_space,
+                          SpinCase1 spin) 
 {
   const double c = 137.03599911;  // speed of light according to CRC
 
+  ExEnv::out0() << indent<< "florian: Entering Delta_DKH" <<incindent << endl;
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
@@ -358,20 +359,16 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
           "r12info()->wfn() was not an MBPT2 object",
           __FILE__, __LINE__, class_desc());
   }
-  int dk = r12info()->wfn()->dk();
-/*  if (dk != 2) {
+  int dk = r12info()->refinfo()->ref()->dk();
+  if (dk != 2) {
        throw ProgrammingError(
- 	  "dtilde can only be used with dk = 2",
+ 	  "Delta_DKH can only be used with dk = 2",
  	  __FILE__, __LINE__, class_desc());
   }
-*/
+
   Ref<SCF> ref = mp2wfn->ref();
-  // Form the DK correction in the current basis using the momentum
-  // basis of the reference wavefunction.  The momentum basis in the
-  // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = ref->momentum_basis();
-  Ref<GaussianBasisSet> hcore_basis;
- 
+  
+  Ref<GaussianBasisSet> hcore_basis; 
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
   }
@@ -379,12 +376,22 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
       hcore_basis = bs1 + bs2;
   }
 
+  // Form the DK correction in the current basis using the momentum
+  // basis of the reference wavefunction.  The momentum basis in the
+  // reference should be a superset of hcore_basis
+  Ref<GaussianBasisSet> p_basis = ref->momentum_basis()+hcore_basis;
+
   // compute the relativistic core Hamiltonian  
   RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+  
   // compute T+V+mass-velocity
-  RefSymmSCMatrix TVmv = core_hamiltonian_dtilde_(dk,hcore_basis,p_basis); 
+  RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis); 
+  TVmv.print("florian: TVmv in Delta_DKH_");
+
+  // calculate H_DKH - H_tvp to get the difference Hamiltonian
   TVmv.scale(-1.0);
-  hsymm.assign(TVmv);
+  hsymm.accumulate(TVmv);
+  throw ProgrammingError("p^4 not yet tested '_'",__FILE__,__LINE__);
   
   // from now on proceed as in fock
   
@@ -488,36 +495,36 @@ R12IntEval::dtilde_(const Ref<MOIndexSpace>& bra_space,
   if (debug_ >= DefaultPrintThresholds::allN2) {
     F.print("Fock matrix");
   }
-
+  ExEnv::out0() << decindent << indent << "florian: Leaving Delta_DKH" << endl;
   return F;
 }
 
 
 
 RefSymmSCMatrix
-R12IntEval::core_hamiltonian_dtilde_(int dk,
-                                     const Ref<GaussianBasisSet> &bas,
-                                     const Ref<GaussianBasisSet> &p_bas)
+R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
+                          const Ref<GaussianBasisSet> &p_bas)
 {
   // cast Wavefunction to MBPT2
   MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
 #define DK_DEBUG 0
 
- 
+  ExEnv::out0() << indent << "florian: Entering tvp_"<< incindent << endl;
   if (mp2wfn->atom_basis().nonnull()) {
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
-//  if (dk != 2) {
-//    throw FeatureNotImplemented("dk must be 2 for using with R12",
-//                                __FILE__, __LINE__, class_desc());
-//  }
+  if (dk != 2) {
+    throw FeatureNotImplemented("dk must be 2 for using with R12",
+                                __FILE__, __LINE__, class_desc());
+  }
   if (dk > 0 && mp2wfn->gradient_needed()) {
     throw FeatureNotImplemented("gradients not available for dk",
                                 __FILE__, __LINE__, class_desc());
   }
 
   // The one electron integrals will be computed in the momentum basis.
+  // Use mbptr12's integrals.
   mp2wfn->integral()->set_basis(p_bas);
   
   Ref<PetiteList> p_pl = mp2wfn->integral()->petite_list();
@@ -586,9 +593,13 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   Tval.print("Tval");
 #endif
 
-  // Compute the kinematic factors
+  // Compute the kinetic energy and the mass-velocity term
   RefDiagSCMatrix p2(p_oso_dim, p_so_kit);
-//  const double c = 137.0359895; // speed of light in a vacuum in a.u.
+  RefSymmSCMatrix kinetic_energy(p_oso_dim, p_so_kit);
+  RefSymmSCMatrix mass_velocity(p_oso_dim, p_so_kit);
+  kinetic_energy.assign(0.0);
+  mass_velocity.assign(0.0);
+  //  const double c = 137.0359895; // speed of light in a vacuum in a.u.
   const double c = 137.03599911;  // speed of light according to CRC
   int noso = p_oso_dim.n();
   for (int i=0; i<noso; i++) {
@@ -599,6 +610,8 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
     if (T_val < DBL_EPSILON) T_val = 0.0;
     double p = sqrt(2.0*T_val);
     p2(i) = p*p;
+    kinetic_energy(i,i) = 0.5*p2(i);
+    mass_velocity(i,i)  = 1.0/(8.0*c*c)*p2(i)*p2(i);
   }
 
   // Construct the transform from the coordinate to the momentum
@@ -632,21 +645,21 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   V_pbas.assign(0.0);
   V_pbas.accumulate_transform(so_to_p, V);
 
-
-  // This is the modification for r12: calculate T+V+mass-velocity
-  RefSymmSCMatrix TVmv(p_oso_dim, p_so_kit);
-  TVmv.assign(0.0);
-  for (int i=0; i<noso; i++) {
-	  TVmv(i,i) = p2(i)+1.0/(8.0*c*c)*p2(i)*p2(i);
-  }
-  TVmv.accumulate(V_pbas);
-  TVmv.scale(-1.0);
+  // calculate tvp
+  RefSymmSCMatrix tvp(p_oso_dim, p_so_kit);
+  tvp.assign(0.0);
+  tvp.accumulate(kinetic_energy);
+  tvp.accumulate(mass_velocity);
+  tvp.accumulate(V_pbas);
 
   V_pbas = 0;
-  
+  kinetic_energy=0;
+  mass_velocity=0;
+
   // form the momentum basis hamiltonian
   RefSymmSCMatrix h_pbas(p_oso_dim, p_so_kit);
-  h_pbas.accumulate(TVmv);
+  h_pbas.assign(0.0);
+  h_pbas.accumulate(tvp);
 
 #if DK_DEBUG
   h_pbas.print("h_pbas");
@@ -681,6 +694,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
                                *p_to_so, h_pbas);
 
   mp2wfn->integral()->set_basis(mp2wfn->basis());
+  Ref<PetiteList> bas_pl = mp2wfn->integral()->petite_list();
 
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
@@ -688,7 +702,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = mp2wfn->overlap().trace() / pl->SO_basisdim()->n();
+  double S_ao_trace = mp2wfn->overlap().trace() / bas_pl->SO_basisdim()->n();
   ExEnv::out0() << indent
                 << "Tr(orbital basis overlap)/N = "
                 << S_ao_trace
@@ -712,6 +726,7 @@ R12IntEval::core_hamiltonian_dtilde_(int dk,
   h_dk_so.print("h_dk_so");
 #endif
 
+  ExEnv::out0() << decindent << indent << "florian: Leaving tvp_" << endl;
   return h_dk_so;
 }
 

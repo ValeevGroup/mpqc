@@ -608,6 +608,8 @@ namespace sc {
       // try guess wavefunction
       guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
       if (guess_wfn_.nonnull()) {
+        // get energy to make sure that it's computed.
+        const double energy = guess_wfn_->value();
         import_occupations(guess_wfn_);
       }
     }

@@ -239,14 +239,13 @@ class R12IntEval : virtual public SavableState {
   /** Compute the relativistic hcore Hamiltonian using DKH2 and substract
       T, V and the mass-velocity term. Based on r12int_eval::fock. In file fock.cc
   */
-  RefSCMatrix dtilde_(const Ref<MOIndexSpace>& bra_space,
-                      const Ref<MOIndexSpace>& ket_space,
-                      SpinCase1 S = Alpha);
-  // Computes the DKH2 contributions minus T, V and mass-velocity term. 
+  RefSCMatrix Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
+                         const Ref<MOIndexSpace>& ket_space,
+                         SpinCase1 S = Alpha);
+  // Computes T, V and the mass-velocity term in the momentum basis. 
   // It's a modified version of Wavefunction::core_hamiltonian_dk
-  RefSymmSCMatrix core_hamiltonian_dtilde_(int dk,
-                                       const Ref<GaussianBasisSet> &bas,
-                                       const Ref<GaussianBasisSet> &p_bas);
+  RefSymmSCMatrix tvp_(int dk,const Ref<GaussianBasisSet> &bas,
+                       const Ref<GaussianBasisSet> &p_bas);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);

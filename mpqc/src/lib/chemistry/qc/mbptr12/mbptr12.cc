@@ -216,7 +216,9 @@ MBPT2_R12::density()
 void
 MBPT2_R12::compute()
 {
-  if (std::string(reference_->integral()->class_name()) != integral()->class_name()) {
+  ExEnv::out0() << "switched off integral check in mbptr12.cc/compute" << endl;
+
+/*  if (std::string(reference_->integral()->class_name()) != integral()->class_name()) {
       FeatureNotImplemented ex(
           "cannot use a reference with a different Integral specialization",
           __FILE__, __LINE__, class_desc());
@@ -229,7 +231,7 @@ MBPT2_R12::compute()
       catch (...) {}
       throw ex;
     }
-
+*/
   compute_energy_();
 }
 

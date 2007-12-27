@@ -85,6 +85,9 @@ PointInputData::compute_derived(int spin_polarized,
       b.rho_13 = pow(b.rho, 1.0/3.0);
       if (need_gradient) {
           b.gamma = dot(b.del_rho,b.del_rho);
+          gamma_ab = a.del_rho[0]*b.del_rho[0]
+                   + a.del_rho[1]*b.del_rho[1] 
+                   + a.del_rho[2]*b.del_rho[2];
         }
       if (need_hessian) {
           b.lap_rho = b.hes_rho[XX] + b.hes_rho[YY] + b.hes_rho[ZZ];
@@ -92,15 +95,10 @@ PointInputData::compute_derived(int spin_polarized,
     }
   else {
       b = a;
-      if (need_gradient) gamma_ab = a.gamma;
+      if (need_gradient) {
+          gamma_ab = a.gamma;
+        }
     }
-
-  if (spin_polarized && need_gradient) {
-      gamma_ab = a.del_rho[0]*b.del_rho[0]
-               + a.del_rho[1]*b.del_rho[1] 
-               + a.del_rho[2]*b.del_rho[2];
-    }
-
 }
 
 
@@ -326,6 +324,35 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
     }
 }
 
+static void
+compute_derived_without_del_rho(PointInputData &id,
+                                int spin_polarized,
+                                int need_gradient,
+                                int need_hessian)
+{
+  id.a.rho_13 = pow(id.a.rho, 1.0/3.0);
+
+  if (!spin_polarized) {
+      id.b.rho = id.a.rho;
+      id.b.gamma = id.a.gamma;
+      id.gamma_ab = id.a.gamma;
+    }
+
+  id.b.rho_13 = pow(id.b.rho, 1.0/3.0);
+
+  // These quantities are not initialized and so are set to nonsense
+  // values.  Since no functional of which I am uses del_rho directly, this
+  // should not affect the results.
+  for (int i=0; i<3; i++) {
+      id.a.del_rho[i] = 1e99;
+      id.b.del_rho[i] = 1e99;
+    }
+  for (int i=0; i<6; i++) {
+      id.a.hes_rho[i] = 1e99;
+      id.b.hes_rho[i] = 1e99;
+    }
+}
+
 void
 DenFunctional::do_fd_point(PointInputData&id,
                            double&in,double&out,
@@ -338,41 +365,44 @@ DenFunctional::do_fd_point(PointInputData&id,
   point(id,tod);
   double outsave = tod.energy;
 
-  int spin_polarized_save = spin_polarized_;
-  set_spin_polarized(1);
-
   if (insave-delta>=lower_bound && insave+delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double plus = tod.energy;
 
       in = insave-delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double minu = tod.energy;
       out = 0.5*(plus-minu)/delta;
     }
   else if (insave+2*delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double plus = tod.energy;
 
       in = insave+2*delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double plus2 = tod.energy;
       out = 0.5*(4.0*plus-plus2-3.0*outsave)/delta;
     }
   else if (insave-2*delta>=lower_bound) {
       in = insave-delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double minu = tod.energy;
 
       in = insave-2*delta;
-      id.compute_derived(1, need_density_gradient(), false);
+      compute_derived_without_del_rho(id, spin_polarized_,
+                                      need_density_gradient(), false);
       point(id,tod);
       double minu2 = tod.energy;
       out = -0.5*(4.0*minu-minu2-3.0*outsave)/delta;
@@ -382,9 +412,8 @@ DenFunctional::do_fd_point(PointInputData&id,
       out = -135711.;
     }
   in = insave;
-  id.compute_derived(1, need_density_gradient(), false);
-
-  set_spin_polarized(spin_polarized_save);
+  compute_derived_without_del_rho(id, spin_polarized_,
+                                  need_density_gradient(), false);
 }
 
 void
@@ -395,55 +424,117 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
   // fill in the energy at the initial density values
   point(id,od);
 
-  ExEnv::out0() << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
+  ExEnv::out0() << scprintf("ra=%7.5f rb=%7.5f gaa=%9.7f gbb=%9.7f gab= % 9.7f",
                    id.a.rho, id.b.rho, id.a.gamma, id.b.gamma, id.gamma_ab)
        << endl;
 
-  double ga = tid.a.gamma;
-  double gb = tid.b.gamma;
-  double gab = tid.gamma_ab;
-  double sga = sqrt(ga);
-  double sgb = sqrt(gb);
+  if (spin_polarized_) {
+      double ga = tid.a.gamma;
+      double gb = tid.b.gamma;
+      double gab = tid.gamma_ab;
+      double sga = sqrt(ga);
+      double sgb = sqrt(gb);
 
-  double g_a_lbound = -2*gab - gb;
-  if (gb > 0 && gab*gab/gb > g_a_lbound) g_a_lbound = gab*gab/gb;
-  if (g_a_lbound < 0) g_a_lbound = 0.0;
+      double g_a_lbound = -2*gab - gb;
+      if (gb > 0 && gab*gab/gb > g_a_lbound) g_a_lbound = gab*gab/gb;
+      if (g_a_lbound < 0) g_a_lbound = 0.0;
 
-  double g_b_lbound = -2*gab - ga;
-  if (ga > 0 && gab*gab/ga > g_b_lbound) g_b_lbound = gab*gab/ga;
-  if (g_b_lbound < 0) g_b_lbound = 0.0;
+      double g_b_lbound = -2*gab - ga;
+      if (ga > 0 && gab*gab/ga > g_b_lbound) g_b_lbound = gab*gab/ga;
+      if (g_b_lbound < 0) g_b_lbound = 0.0;
 
-  double g_ab_lbound = -0.5*(ga+gb);
-  if (-sga*sgb > g_ab_lbound) g_ab_lbound = -sga*sgb;
-  // if (-sga*sgb < g_ab_lbound) g_ab_lbound = -sga*sgb;
-  double g_ab_ubound = sga*sgb;
+      double g_ab_lbound = -0.5*(ga+gb);
+      if (-sga*sgb > g_ab_lbound) g_ab_lbound = -sga*sgb;
+      // if (-sga*sgb < g_ab_lbound) g_ab_lbound = -sga*sgb;
+      double g_ab_ubound = sga*sgb;
 
-  do_fd_point(tid, tid.a.rho, od.df_drho_a, 0.0, 10.0);
-  do_fd_point(tid, tid.b.rho, od.df_drho_b, 0.0, 10.0);
-  do_fd_point(tid, tid.a.gamma, od.df_dgamma_aa, g_a_lbound, 10.0);
-  do_fd_point(tid, tid.b.gamma, od.df_dgamma_bb, g_b_lbound, 10.0);
-  do_fd_point(tid, tid.gamma_ab, od.df_dgamma_ab, g_ab_lbound, g_ab_ubound);
+      do_fd_point(tid, tid.a.rho, od.df_drho_a, 0.0, 10.0);
+      do_fd_point(tid, tid.b.rho, od.df_drho_b, 0.0, 10.0);
+      do_fd_point(tid, tid.a.gamma, od.df_dgamma_aa, g_a_lbound, 10.0);
+      do_fd_point(tid, tid.b.gamma, od.df_dgamma_bb, g_b_lbound, 10.0);
+      do_fd_point(tid, tid.gamma_ab, od.df_dgamma_ab, g_ab_lbound, g_ab_ubound);
+    }
+  else {
+      double delta = 0.0000000001;
+      PointOutputData tod;
+      double plus, plus2;
+
+      // Do the rho displacements.
+      // Use two positive displacements to obtain good accuracy
+      // and to avoid negative values.
+      // Since the alpha displacement is copied to beta, the
+      // delta must be divided by 2 to get the desired displacement
+      // in rho = rho_alpha + rho_beta.
+      tid.a.rho += (delta/2.0);
+      compute_derived_without_del_rho(tid, spin_polarized_,
+                                      need_density_gradient(), false);
+      point(tid,tod);
+      plus = tod.energy;
+      tid.a.rho = id.a.rho;
+      tid.a.rho += 2.0*(delta/2.0);
+      compute_derived_without_del_rho(tid, spin_polarized_,
+                                      need_density_gradient(), false);
+      point(tid,tod);
+      plus2 = tod.energy;
+      double df_drho = 0.5*(4.0*plus-plus2-3.0*od.energy)/delta;
+      od.df_drho_a = df_drho;
+      od.df_drho_b = df_drho;
+      tid.a.rho = id.a.rho;
+
+      // Do the gamma displacements.
+      // Use two positive displacements to obtain good accuracy
+      // and to avoid negative values.
+      // Since the alpha, alpha displacement is copied to beta, beta and
+      // alpha, beta, the delta must be divided by 4 to get the desired
+      // displacement in gamma = gamma_alpha,alpha + gamma_beta,beta +
+      // 2 gamma_alpha,beta.
+      tid.a.gamma += (delta/4.0);
+      compute_derived_without_del_rho(tid, spin_polarized_,
+                                      need_density_gradient(), false);
+      point(tid,tod);
+      plus = tod.energy;
+      tid.a.gamma = id.a.gamma;
+      tid.a.gamma += 2.0*(delta/4.0);
+      compute_derived_without_del_rho(tid, spin_polarized_,
+                                      need_density_gradient(), false);
+      point(tid,tod);
+      plus2 = tod.energy;
+      tid.a.gamma = id.a.gamma;
+      double df_dgamma = 0.5*(4.0*plus-plus2-3.0*od.energy)/delta;
+      od.df_dgamma_aa =    df_dgamma;
+      od.df_dgamma_bb =    df_dgamma;
+      od.df_dgamma_ab = 2.*df_dgamma;
+      compute_derived_without_del_rho(tid, spin_polarized_,
+                                      need_density_gradient(), false);
+    }
 }
 
 static int
 check(const char *name, double fd, double an, const char *class_name)
 {
-  // -135711. flags an undefined FD
-  if (fd == -135711.) return 0;
-
+  double threshold = 1.e-4;
+  double tolerance = 5.e-2;
   double err = fabs(fd - an);
-  ExEnv::out0() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
-       << endl;
-  if ((fabs(an) > 0.03 && err/fabs(an) > 0.03)
-      || ((fabs(an) <= 0.03) && err > 0.03)
+  // -135711. flags an undefined FD
+  if (fd == -135711.) {
+      ExEnv::out0() << scprintf("%20s: fd = %12s an = % 12.8f",
+                                name, "undefined", an)
+                    << endl;
+    }
+  else if ((fabs(an) > threshold && err/fabs(an) > tolerance)
+      || ((fabs(an) <= threshold) && err > tolerance)
 #ifdef HAVE_ISNAN
       || isnan(an)
 #endif
       ) {
-      ExEnv::out0() << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
+      ExEnv::out0() << scprintf("\033[31mERROR: %13s: fd = % 12.8f an = % 12.8f (%s)\033[30m",
                        name, fd, an, class_name)
            << endl;
       return 1;
+    }
+  else {
+      ExEnv::out0() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
+                    << endl;
     }
   return 0;
 }
@@ -456,6 +547,7 @@ DenFunctional::test(const PointInputData &id)
   PointOutputData an_od;
   point(id,an_od);
   int r = 0;
+  ExEnv::out0() << scprintf("%20s  f = % 12.8f", "", an_od.energy) << std::endl;
   r+=check("df_drho_a", fd_od.df_drho_a, an_od.df_drho_a, class_name());
   r+=check("df_drho_b", fd_od.df_drho_b, an_od.df_drho_b, class_name());
   r+=check("df_dgamma_aa",fd_od.df_dgamma_aa,an_od.df_dgamma_aa,class_name());
@@ -469,68 +561,94 @@ DenFunctional::test()
 {
   int i, j, k, l, m;
   set_compute_potential(1);
-  set_spin_polarized(0);
   SCVector3 r = 0.0;
   PointInputData id(r);
 
-  for (i=0; i<6; i++) id.a.hes_rho[i] = 0.0;
+  for (i=0; i<6; i++) {
+      id.a.hes_rho[i] = 0.0;
+      id.b.hes_rho[i] = 0.0;
+    }
   id.a.lap_rho = 0.0;
+  id.b.lap_rho = 0.0;
 
-  // del rho should not be used by any of the functionals
-  for (i=0; i<3; i++) id.a.del_rho[i] = id.b.del_rho[i] = 0.0;
-
-  double testrho[] = { 0.0, 0.001, 0.5, -1 };
-  double testgamma[] = { 0.0, 0.001, 0.5, -1 };
-  double testgammaab[] = { -0.5, 0.0, 0.5, -1 };
+  std::vector<double> testrho(6);
+  testrho[0] = 0.000;
+  testrho[1] = 0.001;
+  testrho[2] = 0.010;
+  testrho[3] = 0.100;
+  testrho[4] = 0.500;
+  testrho[5] = 1.000;
+  std::vector<std::vector<double> > testdelrho(3);
+  for (int i=0; i<testdelrho.size(); i++)
+      testdelrho[i].resize(3);
+  testdelrho[0][0] = 0.000;
+  testdelrho[0][1] = 0.000;
+  testdelrho[0][2] = 0.000;
+  testdelrho[1][0] = 0.001;
+  testdelrho[1][1] = 0.000;
+  testdelrho[1][2] = 0.000;
+  testdelrho[2][0] = 0.000;
+  testdelrho[2][1] = 0.500;
+  testdelrho[2][2] = 0.000;
 
   int ret = 0;
 
   ExEnv::out0() << "Testing with rho_a == rho_b" << endl;
-  for (i=0; testrho[i] != -1.0; i++) {
+  set_spin_polarized(0);
+  for (i=0; i < testrho.size(); i++) {
       if (testrho[i] == 0.0) continue;
       id.a.rho=testrho[i];
-      for (j=0; testgamma[j] != -1.0; j++) {
-          if (testgamma[j] > testrho[i]) continue;
-          id.a.gamma = testgamma[j];
+      id.b.rho=testrho[i];
+      for (j=0; j < testdelrho.size(); j++) {
+          for (int k=0; k<3; k++) id.a.del_rho[k] = testdelrho[j][k];
           id.compute_derived(0, need_density_gradient(), false);
+          // constrain gamma to be more or less physically reasonable
+          if (sqrt(id.a.gamma) > 1.e3*id.a.rho) continue;
+          ExEnv::out0() << "testing rho = " << id.a.rho
+                        << " delrho = {" << id.a.del_rho[0]
+                        << ", " << id.a.del_rho[1]
+                        << ", " << id.a.del_rho[2]
+                        << "} gamma = " << id.a.gamma
+                        << std::endl;
           ret += test(id);
         }
     }
 
-  set_spin_polarized(1);
-  ExEnv::out0() << "Testing with rho_a != rho_b" << endl;
-  for (i=0; testrho[i] != -1.0; i++) {
-      id.a.rho=testrho[i];
-      for (j=0; testrho[j] != -1.0; j++) {
-          id.b.rho=testrho[j];
-          if (testrho[i]+testrho[j] == 0.0) continue;
-          for (k=0; testgamma[k] != -1.0; k++) {
-              if (testgamma[k] > testrho[i]) continue;
-              id.a.gamma = testgamma[k];
-              double sqrt_gamma_a = sqrt(id.a.gamma);
-              for (l=0; testgamma[l] != -1.0; l++) {
-                  if (testgamma[l] > testrho[j]) continue;
-                  id.b.gamma = testgamma[l];
-                  double sqrt_gamma_b = sqrt(id.b.gamma);
-                  for (m=0; testgammaab[m] != -1.0; m++) {
-                      // constrain gamma_ab to values allowed by the
-                      // current gamma_a and gamma_b
-                      id.gamma_ab = testgammaab[m];
-                      if (id.gamma_ab > sqrt_gamma_a*sqrt_gamma_b) {
-                          id.gamma_ab = sqrt_gamma_a*sqrt_gamma_b;
-                        }
-                      if (id.gamma_ab < -0.5*(id.a.gamma+id.b.gamma)) {
-                          id.gamma_ab = -0.5*(id.a.gamma+id.b.gamma);
-                        }
-                      if (id.gamma_ab < -sqrt_gamma_a*sqrt_gamma_b) {
-                          id.gamma_ab = -sqrt_gamma_a*sqrt_gamma_b;
-                        }
+  try {
+      set_spin_polarized(1);
+      ExEnv::out0() << "Testing with rho_a != rho_b" << endl;
+      for (i=0; i<testrho.size(); i++) {
+          id.a.rho=testrho[i];
+          for (j=0; j<testrho.size(); j++) {
+              id.b.rho=testrho[j];
+              if (testrho[i]+testrho[j] == 0.0) continue;
+              for (k=0; k<testdelrho.size(); k++) {
+                  for (int xyz=0;xyz<3;xyz++)
+                      id.a.del_rho[xyz] = testdelrho[k][xyz];
+                  for (l=0; l < testdelrho.size(); l++) {
+                      for (int xyz=0;xyz<3;xyz++)
+                          id.b.del_rho[xyz] = testdelrho[l][xyz];
                       id.compute_derived(1, need_density_gradient(), false);
+                      // constrain gamma to be more or less physically reasonable
+                      if (sqrt(id.a.gamma) > 2.*id.a.rho) continue;
+                      if (sqrt(id.b.gamma) > 2.*id.b.rho) continue;
                       ret += test(id);
                     }
                 }
             }
         }
+    }
+  catch(std::exception&e) {
+      ExEnv::out0() << indent
+                    << "Caught an exception when testing with rho_a != rho_b"
+                    << endl
+                    << indent
+                    << e.what()
+                    << endl
+                    << indent
+                    << "skipping test"
+                    << endl;
+
     }
   return ret;
 }
@@ -3839,7 +3957,12 @@ PW91XFunctional::point(const PointInputData &id,
   else {
       od.energy += mpw;
       od.df_drho_b = od.df_drho_a;
+      //Previously, we used just this:
+      //od.df_dgamma_bb = od.df_dgamma_aa;
+      //To be consistent with the other functionals, we use this:
+      od.df_dgamma_aa *= 0.5;
       od.df_dgamma_bb = od.df_dgamma_aa;
+      od.df_dgamma_ab = 2.*od.df_dgamma_aa;
     }
 }
 

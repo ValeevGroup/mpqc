@@ -35,6 +35,7 @@
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
 #include <chemistry/qc/dft/functional.h>
+#include <chemistry/qc/dft/am05.h>
 #include <chemistry/qc/dft/integrator.h>
 
 #include <chemistry/qc/dft/linkage.h>
@@ -549,6 +550,7 @@ main(int argc, char**argv)
 
   cout << "=========== FD df/drho Tests ===========" << endl;
   Ref<DenFunctional> funcs[] = {
+    new AM05Functional,
     new PBECFunctional,
     new PW91CFunctional,
     new PW91XFunctional,
@@ -567,7 +569,7 @@ main(int argc, char**argv)
     new VWN5LCFunctional,
     new PZ81LCFunctional,
     new P86CFunctional,
-    new NewP86CFunctional,
+//     new NewP86CFunctional,
     new XalphaFunctional,
     new LYPCFunctional,
     new PW86XFunctional,

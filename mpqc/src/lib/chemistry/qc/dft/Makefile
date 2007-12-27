@@ -38,10 +38,11 @@ TESTPROGS = dfttest lebedev
 
 SRCS = functional.cc integrator.cc \
        clks.cc uks.cc hsosks.cc lebedev.c \
-       tmplinst.cc
+       tmplinst.cc am05.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ:= $(LIBOBJ:%.c=%.$(OBJSUF))
+LIBOBJ:= $(LIBOBJ:%.f=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
 
@@ -58,8 +59,9 @@ dfttest.$(OBJSUF): dfttest.cc
 lebedev: lebedev.c
 	$(LTLINK) $(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $< $(LTLINKBINOPTS) -lm
 
-$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
-ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d) dfttest.d
-endif
+DEPFILES:=$(LIBOBJ:.$(OBJSUF)=.d)
 
+$(DEPFILES): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(DEPFILES) dfttest.d
+endif

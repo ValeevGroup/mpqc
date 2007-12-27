@@ -52,6 +52,7 @@ class SCException: public std::exception {
     int line_;
     const ClassDesc* class_desc_;
     const char *exception_type_;
+    mutable char *elaboration_c_str_;
     std::ostringstream *elaboration_;
 
   public:

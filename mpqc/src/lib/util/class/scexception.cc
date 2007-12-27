@@ -52,7 +52,8 @@ SCException::SCException(const char *description,
   file_(file),
   line_(line),
   class_desc_(class_desc),
-  exception_type_(exception_type)
+  exception_type_(exception_type),
+  elaboration_c_str_(0)
 {
   try {
       elaboration_ = new ostringstream;
@@ -87,6 +88,7 @@ SCException::SCException(const SCException& ref) throw():
   line_(ref.line_),
   class_desc_(ref.class_desc_)
 {
+  elaboration_c_str_ = 0;
   elaboration_ = 0;
   if (ref.elaboration_) {
       try {
@@ -105,15 +107,29 @@ SCException::~SCException() throw()
   try{ ExEnv::out0().flush(); ExEnv::err0().flush(); }
   catch(...) {}
   delete elaboration_;
+  delete elaboration_c_str_;
 }
 
 const char* 
 SCException::what() const throw()
 {
-  if (elaboration_) {
-      return elaboration_->str().c_str();
+  try {
+      if (elaboration_) {
+          std::string elab(elaboration_->str());
+          delete[] elaboration_c_str_;
+          elaboration_c_str_ = 0;
+          elaboration_c_str_ = new char[1+elab.size()];
+          for (int i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
+          return elaboration_c_str_;
+        }
     }
-  return description_;
+  catch (...) {
+      // Ignore the exception and return the next available string.
+    }
+  if (description_) {
+      return description_;
+    }
+  return "No information available for SCException";
 }
 
 std::ostream &

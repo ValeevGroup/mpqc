@@ -92,6 +92,8 @@ namespace sc {
       void save_data_state(StateOut&);
       int gradient_implemented() const;
       void compute();
+      /// print
+      void print(std::ostream&o=ExEnv::out0()) const;
   };
 
 }

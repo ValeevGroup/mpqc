@@ -160,7 +160,6 @@ MP2R12Energy_SpinOrbital::compute()
       // Get the intermediates V and X
       RefSCMatrix V;
       if(r12intermediates_->V_computed()){
-        ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
         V = r12intermediates_->get_V(spincase2);
       }
       else {

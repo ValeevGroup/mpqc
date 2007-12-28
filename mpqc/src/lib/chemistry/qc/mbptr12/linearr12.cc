@@ -220,7 +220,6 @@ namespace sc {
       out << std::setprecision(16) << oned;
       oned_str=out.str();
       out.str("");
-      ExEnv::out0() << "oned_str = " << oned_str << std::endl;
       
       for(int i=0; i<nfunction; i++){
         params[i+1]=one_str;

@@ -102,10 +102,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   const bool diag = r12evalinfo()->ansatz()->diag();
   const bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
-  ExEnv::out0() << indent << "diag = "
-                << ((diag==true) ? "true" : "false") << endl;
-  ExEnv::out0() << indent << "fixedcoeff = "
-                << ((fixedcoeff==true) ? "true" : "false") << endl;
 
   // Default is to not compute MP1 energy
   include_mp1_ = false;
@@ -113,24 +109,18 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (!r12evalinfo()->basis_vir()->equiv(r12evalinfo()->basis()))
       include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));
   
-  new_energy_=false;
+  new_energy_ = diag ? true : false;
   new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
-  ExEnv::out0() << indent << "new_energy_ = "
-                << ((new_energy_==true) ? "true" : "false") << endl;
-  
   if((new_energy_==true) && (diag==false)) {
     ExEnv::out0() << indent << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
                   << indent << "because the old version performs many security checks." << endl;
   }
-  
   if((new_energy_==false) and (fixedcoeff==true)) {
     throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
   }
   
   const bool hyll_default = (fixedcoeff==true) ? true : false;
   hylleraas_ = keyval->booleanvalue("hylleraas",KeyValValueboolean((int)hyll_default));
-  ExEnv::out0() << indent << "hylleraas_ = "
-                << ((hylleraas_==true) ? "true" : "false") << endl;
   
   if((fixedcoeff==false) && (hylleraas_==true)){
     throw InputError("MBPT2_R12::MBPT2_R12 -- Hylleraas functional needn't be calculated if coefficients are optimized (gives the same result as non Hylleraas).",__FILE__,__LINE__);
@@ -196,6 +186,9 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
   if (!r12evalinfo()->basis_vir()->equiv(r12evalinfo()->basis()))
     o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
+  o << indent << "Use new MP2R12Energy: " << (new_energy_ ? "true" : "false") << endl;
+  o << indent << "Compute Hylleraas functional: " << (hylleraas_ ? "true" : "false") << endl;
+  
 
   r12evalinfo()->r12tech()->print(o);
 

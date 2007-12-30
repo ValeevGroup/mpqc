@@ -733,7 +733,7 @@ void PsiCCSD_PT2R12::compute() {
 void PsiCCSD_PT2R12::print(ostream&o) const {
   o << indent << "PsiCCSD_PT2R12:" << std::endl;
   o << incindent;
-  o << "New (symmetric) approach: " << (new_approach_ ? "true" : "false") << std::endl;
+  o << indent << "New (symmetric) approach: " << (new_approach_ ? "true" : "false") << std::endl;
   PsiWavefunction::print(o);
   mbptr12_->r12eval()->r12info()->r12tech()->print(o);
   o << decindent;

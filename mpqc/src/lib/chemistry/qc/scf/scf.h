@@ -146,7 +146,11 @@ class SCF: public OneBodyWavefunction {
         for molecules with higher than \f$C_1\f$ symmetry.  The default is
         false.
 
-        <dt><tt>level_shift</tt><dd> The default is 0.
+        <dt><tt>level_shift</tt><dd> Specificies a shift for the diagonal
+        Fock matrix elements.  Doubly occupied orbitals are shifted by this
+        amount and singly occupied orbitals are shifted by half this
+        amount. This can improve convergence in difficult cases.  The units
+        are hartrees and the default is 0.
 
         <dt><tt>extrap</tt><dd> This specifies an object of type
         SelfConsistentExtrapolation.  The default is a DIIS object.

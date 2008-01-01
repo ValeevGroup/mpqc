@@ -73,6 +73,10 @@ class ExEnv {
     /// Return the user name.
     static const char *username() { return username_; }
 
+    /** Return the value of an environment variable. If it does not
+        exist, then an empty string is returned. */
+    static std::string getenv_string(const char *name);
+
     static void set_out(std::ostream *o) { SCFormIO::init_ostream(*o);out_=o; }
     /// Return an ostream that writes from all nodes.
     static std::ostream &outn() { if (!out_)set_out(&std::cout);return *out_; }

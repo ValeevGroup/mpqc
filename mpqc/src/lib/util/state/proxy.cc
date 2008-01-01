@@ -18,14 +18,13 @@ SavableStateProxy::SavableStateProxy(const Ref<KeyVal> &keyval)
 {
   Ref<StateIn> statein; statein << keyval->describedclassvalue("statein");
   if (statein.nonnull()) {
-      char *objectname = keyval->pcharvalue("object");
+      std::string objectname = keyval->stringvalue("object");
       StateIn &si = *(statein.pointer());
       if (keyval->exists("override")) {
           si.set_override(new PrefixKeyVal(keyval,"override"));
         }
-      if (objectname) {
-          object_ = SavableState::dir_restore_state(si, objectname);
-          delete[] objectname;
+      if (!objectname.empty()) {
+          object_ = SavableState::dir_restore_state(si, objectname.c_str());
         }
       else {
           object_= SavableState::restore_state(si);

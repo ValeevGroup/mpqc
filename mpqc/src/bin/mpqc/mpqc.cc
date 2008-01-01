@@ -576,23 +576,23 @@ try_main(int argc, char *argv[])
   
   // check for a molecular energy and optimizer
   KeyValValueString molnamedef(basename);
-  char * molname = keyval->pcharvalue("filename", molnamedef);
-  if (strcmp(molname, basename))
-    SCFormIO::set_default_basename(molname);
+  std::string molname = keyval->stringvalue("filename", molnamedef);
+  if (molname != basename)
+    SCFormIO::set_default_basename(molname.c_str());
 
-  char * ckptfile = new char[strlen(molname)+6];
-  sprintf(ckptfile,"%s.ckpt",molname);
+  std::string ckptfile = molname;
+  ckptfile += ".ckpt";
   
-  KeyValValueString restartfiledef(ckptfile);
-  char * restartfile = keyval->pcharvalue("restart_file", restartfiledef);
+  std::string restartfile = keyval->stringvalue("restart_file",
+                                                KeyValValuestring(ckptfile));
   
-  char * wfn_file = keyval->pcharvalue("wfn_file");
-  if (wfn_file == 0) {
-    wfn_file = new char[strlen(molname)+6];
-    sprintf(wfn_file,"%s.wfn",molname);
+  std::string wfn_file = keyval->stringvalue("wfn_file");
+  if (wfn_file.empty()) {
+    wfn_file = molname;
+    wfn_file += ".wfn";
   }
-  char *mole_ckpt_file = new char[strlen(wfn_file)+1];
-  sprintf(mole_ckpt_file,"%s",wfn_file);
+  std::string mole_ckpt_file;
+  mole_ckpt_file = wfn_file;
 
   int restart = keyval->booleanvalue("restart",truevalue);
 
@@ -608,18 +608,18 @@ try_main(int argc, char *argv[])
   int statresult, statsize;
   if (restart) {
     if (grp->me() == 0) {
-      statresult = stat(restartfile,&sb);
+      statresult = stat(restartfile.c_str(),&sb);
       statsize = (statresult==0) ? sb.st_size : 0;
     }
     grp->bcast(statresult);
     grp->bcast(statsize);
   }
   if (restart && statresult==0 && statsize) {
-    BcastStateInBin si(grp,restartfile);
+    BcastStateInBin si(grp,restartfile.c_str());
     if (keyval->exists("override")) {
       si.set_override(new PrefixKeyVal(keyval,"override"));
     }
-    char *suf = strrchr(restartfile,'.');
+    char *suf = strrchr(restartfile.c_str(),'.');
     if (!strcmp(suf,".wfn")) {
       mole << SavableState::key_restore_state(si,"mole");
       ExEnv::out0() << endl
@@ -649,16 +649,15 @@ try_main(int argc, char *argv[])
          << "Molecular formula " << mf.formula() << endl;
     if (checkpoint) {
       mole->set_checkpoint();
-      if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file);
+      if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file.c_str());
       else mole->set_checkpoint_file(devnull);
       mole->set_checkpoint_freq(checkpoint_freq);
     }
   }
-  delete[] mole_ckpt_file;
 
   if (checkpoint && opt.nonnull()) {
     opt->set_checkpoint();
-    if (grp->me() == 0) opt->set_checkpoint_file(ckptfile);
+    if (grp->me() == 0) opt->set_checkpoint_file(ckptfile.c_str());
     else opt->set_checkpoint_file(devnull);
   }
 
@@ -758,9 +757,6 @@ try_main(int argc, char *argv[])
        << indent << "print_timings = " << (print_timings ? "yes" : "no")
        << endl << decindent;
 
-  delete[] restartfile;
-  delete[] ckptfile;
-
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if (((do_opt && opt.nonnull()) || do_grad)
@@ -840,41 +836,29 @@ try_main(int argc, char *argv[])
   if (savestate) {
     if (opt.nonnull()) {
       if (grp->me() == 0) {
-        ckptfile = new char[strlen(molname)+6];
-        sprintf(ckptfile,"%s.ckpt",molname);
+        ckptfile = molname;
+        ckptfile += ".ckpt";
       }
       else {
-        ckptfile = new char[strlen(devnull)+1];
-        strcpy(ckptfile, devnull);
+        ckptfile = devnull;
       }
 
-      StateOutBin so(ckptfile);
+      StateOutBin so(ckptfile.c_str());
       SavableState::save_state(opt.pointer(),so);
       so.close();
-
-      delete[] ckptfile;
     }
 
     if (mole.nonnull()) {
-      if (grp->me() == 0) {
-        if (wfn_file == 0) {
-          wfn_file = new char[strlen(molname)+6];
-          sprintf(wfn_file,"%s.wfn",molname);
-        }
-      }
-      else {
-        delete[] wfn_file;
-        wfn_file = new char[strlen(devnull)+1];
-        strcpy(wfn_file, devnull);
+      if (grp->me() != 0) {
+        wfn_file = devnull;
       }
   
-      StateOutBin so(wfn_file);
+      StateOutBin so(wfn_file.c_str());
       SavableState::save_state(mole.pointer(),so);
       so.close();
 
     }
   }
-  delete[] wfn_file;
 
   // Frequency calculation.
   if (ready_for_freq && molfreq.nonnull()) {
@@ -979,11 +963,10 @@ try_main(int argc, char *argv[])
       mole->print(ExEnv::out0());
 
     if (do_pdb && grp->me() == 0) {
-      ckptfile = new char[strlen(molname)+5];
-      sprintf(ckptfile, "%s.pdb", molname);
-      ofstream pdbfile(ckptfile);
+      ckptfile = molname;
+      ckptfile += ".pdb";
+      ofstream pdbfile(ckptfile.c_str());
       mole->molecule()->print_pdb(pdbfile);
-      delete[] ckptfile;
     }
     
   }
@@ -999,7 +982,6 @@ try_main(int argc, char *argv[])
     timer.print(ExEnv::out0());
 
   delete[] basename;
-  delete[] molname;
   SCFormIO::set_default_basename(0);
 
   renderer = 0;

@@ -64,6 +64,19 @@ SCFormIO::fileext_to_filename(const char *ext)
   return res;
 }
 
+std::string
+SCFormIO::fileext_to_filename_string(const char *ext)
+{
+  std::string basename;
+
+  if (default_basename_) basename = default_basename_;
+  else basename = "SC";
+
+  std::string res = basename + ext;
+
+  return res;
+}
+
 void
 SCFormIO::set_default_basename(const char *basename)
 {

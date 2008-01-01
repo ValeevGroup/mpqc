@@ -85,31 +85,11 @@ handler(int sig)
 }
 
 static void
-append(char *cmd, const char *a, int len)
-{
-  int l = strlen(cmd) + strlen(a)+1;
-  if (l > len) {
-      ExEnv::outn() << "Debugger: command string too long" << endl;
-      abort();
-    }
-  strcat(cmd,a);
-}
-
-static void
-append(char *cmd, char a, int len)
-{
-  char aa[2];
-  aa[0] = a;
-  aa[1] = '\0';
-  append(cmd, aa, len);
-}
-
-static void
-append(char *cmd, int i, int len)
+append(std::string &cmd, int i)
 {
   char a[128];
   sprintf(a,"%d",i);
-  append(cmd, a, len);
+  cmd += a;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -124,9 +104,6 @@ static ClassDesc Debugger_cd(
 Debugger::Debugger(const char *exec)
 {
   init();
-
-  prefix_ = new char[1];
-  prefix_[0] = '\0';
 
   set_exec(exec);
 
@@ -152,9 +129,9 @@ Debugger::Debugger(const Ref<KeyVal> &keyval)
   wait_for_debugger_ = keyval->booleanvalue("wait_for_debugger");
   if (keyval->error() != KeyVal::OK) wait_for_debugger_ = 1;
 
-  cmd_ = keyval->pcharvalue("cmd");
+  cmd_ = keyval->stringvalue("cmd");
 
-  prefix_ = keyval->pcharvalue("prefix");
+  prefix_ = keyval->stringvalue("prefix");
 
   handle_sigint_ = keyval->booleanvalue("handle_sigint");
   if (keyval->error() != KeyVal::OK) handle_sigint_=1;
@@ -162,19 +139,12 @@ Debugger::Debugger(const Ref<KeyVal> &keyval)
   if (keyval->booleanvalue("handle_defaults")) handle_defaults();
   if (keyval->error() != KeyVal::OK) handle_defaults();
 
-  if (cmd_ == 0) default_cmd();
+  if (cmd_.empty()) default_cmd();
 
-  if (prefix_ == 0) {
-      prefix_ = new char[1];
-      prefix_[0] = '\0';
-    }
 }
 
 Debugger::~Debugger()
 {
-  delete[] prefix_;
-  delete[] exec_;
-  delete[] cmd_;
   for (int i=0; i<NSIG; i++) {
       if (mysigs_[i]) signals[i] = 0;
     }
@@ -186,9 +156,9 @@ Debugger::Debugger(StateIn&s):
 {
   init();
 
-  s.getstring(prefix_);
-  s.getstring(exec_);
-  s.getstring(cmd_);
+  s.get(prefix_);
+  s.get(exec_);
+  s.get(cmd_);
   s.get(sleep_);
   s.get(debug_);
   s.get(traceback_);
@@ -207,9 +177,9 @@ Debugger::Debugger(StateIn&s):
 void
 Debugger::save_data_state(StateOut&s)
 {
-  s.putstring(prefix_);
-  s.putstring(exec_);
-  s.putstring(cmd_);
+  s.put(prefix_);
+  s.put(exec_);
+  s.put(cmd_);
   s.put(sleep_);
   s.put(debug_);
   s.put(traceback_);
@@ -226,9 +196,9 @@ Debugger::save_data_state(StateOut&s)
 void
 Debugger::init()
 {
-  exec_ = 0;
-  prefix_ = 0;
-  cmd_ = 0;
+  exec_.resize(0);
+  prefix_.resize(0);
+  cmd_.resize(0);
   sleep_ = 0;
 
   exit_on_signal_ = 1;
@@ -283,26 +253,22 @@ Debugger::handle_defaults()
 void
 Debugger::set_exec(const char *exec)
 {
-  delete[] exec_;
   if (exec) {
-      exec_ = new char[strlen(exec)+1];
-      strcpy(exec_, exec);
+      exec_ = exec;
     }
   else {
-      exec_ = 0;
+      exec_.resize(0);
     }
 }
 
 void
 Debugger::set_prefix(const char *p)
 {
-  delete[] prefix_;
   if (p) {
-      prefix_ = new char[strlen(p)+1];
-      strcpy(prefix_, p);
+      prefix_ = p;
     }
   else {
-      prefix_ = 0;
+      prefix_.resize(0);
     }
 }
 
@@ -338,13 +304,11 @@ Debugger::default_cmd()
 void
 Debugger::set_cmd(const char *cmd)
 {
-  delete[] cmd_;
   if (cmd) {
-      cmd_ = new char[strlen(cmd)+1];
-      strcpy(cmd_, cmd);
+      cmd_ = cmd;
     }
   else {
-      cmd_ = 0;
+      cmd_.resize(0);
     }
 }
 
@@ -359,34 +323,32 @@ Debugger::debug(const char *reason)
 #ifndef HAVE_SYSTEM
   abort();
 #else
-  if (cmd_) {
+  if (!cmd_.empty()) {
       int pid = getpid();
       // contruct the command name
-      const int cmdlen = 512;
-      char cmd[cmdlen];
-      cmd[0] = '\0';
-      for (char *c=cmd_; *c;) {
-          if (!strncmp("$(PID)",c,6)) {
-              append(cmd,pid,cmdlen);
-              c += 6;
-            }
-          else if (!strncmp("$(EXEC)",c,7)) {
-              if (exec_) append(cmd,exec_,cmdlen);
-              c += 7;
-            }
-          else if (!strncmp("$(PREFIX)",c,9)) {
-              if (prefix_) append(cmd,prefix_,cmdlen);
-              c += 9;
-            }
-          else {
-              append(cmd,*c,cmdlen);
-              c++;
-            }
+      std::string cmd = cmd_;
+      std::string::size_type pos;
+      std::string pidvar("$(PID)");
+      while ((pos = cmd.find(pidvar))
+             != std::string::npos) {
+          std::string pidstr;
+          append(pidstr,pid);
+          cmd.replace(pos,pidvar.size(),pidstr);
+        }
+      std::string execvar("$(EXEC)");
+      while ((pos = cmd.find(execvar))
+             != std::string::npos) {
+          cmd.replace(pos,execvar.size(),exec_);
+        }
+      std::string prefixvar("$(PREFIX)");
+      while ((pos = cmd.find(prefixvar))
+             != std::string::npos) {
+          cmd.replace(pos,prefixvar.size(),prefix_);
         }
       // start the debugger
       ExEnv::outn() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
       debugger_ready_ = 0;
-      system(cmd);
+      system(cmd.c_str());
       // wait until the debugger is ready
       if (sleep_) {
           ExEnv::outn() << prefix_ << "Sleeping " << sleep_

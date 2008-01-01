@@ -741,17 +741,17 @@ WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
     }
   
   if (keyval->exists("type")) {
-      type_ = keyval->pcharvalue("type");
-      if (strcmp(type_,"alpha")==0) {
+      type_ = keyval->stringvalue("type");
+      if (type_ == "alpha") {
           density_function_ = &WriteElectronDensity::df_alpha;
         }
-      else if (strcmp(type_,"beta")==0) {
+      else if (type_ == "beta") {
           density_function_ = &WriteElectronDensity::df_beta;
         }
-      else if (strcmp(type_,"sum")==0) {
+      else if (type_ == "sum") {
           density_function_ = &WriteElectronDensity::df_sum;
         }
-      else if (strcmp(type_,"spin")==0) {
+      else if (type_ == "spin") {
           density_function_ = &WriteElectronDensity::df_spin;
         }
       else {
@@ -786,7 +786,7 @@ WriteElectronDensity::initialize()
 void
 WriteElectronDensity::label(char* buffer)
 {
-  sprintf(buffer, "WriteElectronDensity_%s", type_);
+  sprintf(buffer, "WriteElectronDensity_%s", type_.c_str());
 }
 
 Ref<Molecule>

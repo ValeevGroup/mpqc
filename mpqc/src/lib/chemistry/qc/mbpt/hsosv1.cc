@@ -832,23 +832,23 @@ MBPT2::compute_hsos_v1()
   msg_->bcast(eopt2);
   msg_->bcast(ezapt2);
 
-  if (method_ && !strcmp(method_,"opt1")) {
+  if (method_ == "opt1") {
     set_energy(eopt1);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
-  else if (method_ && !strcmp(method_,"opt2")) {
+  else if (method_ == "opt2") {
     set_energy(eopt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
-  else if (method_ && nsocc == 0 && !strcmp(method_,"mp")) {
+  else if (nsocc == 0 && method_ == "mp") {
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
   else {
-    if (!(!method_ || !strcmp(method_,"zapt"))) {
+    if (method_ != "zapt") {
       ExEnv::out0() << indent
            << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }

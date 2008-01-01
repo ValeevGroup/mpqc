@@ -45,7 +45,7 @@ class Render;
 
 class RenderedObject: public DescribedClass {
   protected:
-    char* name_;
+    std::string name_;
     Ref<Material> material_;
     Ref<Appearance> appearance_;
     Ref<Transform> transform_;
@@ -55,7 +55,7 @@ class RenderedObject: public DescribedClass {
     RenderedObject(const Ref<Material>& = 0);
     RenderedObject(const Ref<KeyVal>&);
     ~RenderedObject();
-    const char* name() const { return name_; }
+    const char* name() const { return name_.c_str(); }
     void set_name(const char *);
     Ref<Material> material() const { return material_; }
     Ref<Appearance> appearance() const { return appearance_; }

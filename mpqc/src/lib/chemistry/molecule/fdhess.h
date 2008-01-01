@@ -64,11 +64,11 @@ class FinDispMolecularHessian: public MolecularHessian {
     // whether or not to attempt a restart
     int restart_;
     // the name of the restart file
-    char *restart_file_;
+    std::string restart_file_;
     // whether or not to checkpoint
     int checkpoint_;
     // the name of the checkpoint file
-    char *checkpoint_file_;
+    std::string checkpoint_file_;
     // only do the totally symmetric displacements
     int only_totally_symmetric_;
     // eliminate the cubic terms by doing an extra displacement for

@@ -336,7 +336,8 @@ AtomInfo::load_values(std::map<int,double>&values,
                       const Ref<Units> &units)
 {
   Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval,keyword);
-  Ref<Units> fileunits = new Units(pkeyval->pcharvalue("unit"), Units::Steal);
+  std::string unit = pkeyval->stringvalue("unit");
+  Ref<Units> fileunits = new Units(unit.c_str());
   double f = 1.0;
   if (fileunits.nonnull() && units.nonnull()) {
       f = fileunits->to(units);
@@ -370,12 +371,12 @@ AtomInfo::load_values(std::map<int,double>&values,
                     }
                   have_overridden = 1;
                 }
-              char *strval = pkeyval->pcharvalue(elements_[elem].symbol);
-              char assignment[256];
-              sprintf(assignment,"%s%s=%s", prefix,
-                      elements_[elem].symbol, strval);
-              delete[] strval;
-              add_overridden_value(assignment);
+              std::string assignment;
+              assignment += prefix;
+              assignment += elements_[elem].symbol;
+              assignment += '=';
+              assignment += pkeyval->stringvalue(elements_[elem].symbol);
+              add_overridden_value(assignment.c_str());
             }
         }
     }
@@ -391,11 +392,11 @@ AtomInfo::load_values(std::map<int,double>&values,
                   have_overridden = 1;
                   prefix = "";
                 }
-              char *strval = pkeyval->pcharvalue("scale_factor");
-              char assignment[256];
-              sprintf(assignment,"%sscale_factor=%s", prefix, strval);
-              delete[] strval;
-              add_overridden_value(assignment);
+              std::string assignment;
+              assignment += prefix;
+              assignment += "scale_factor=";
+              assignment += pkeyval->stringvalue("scale_factor");
+              add_overridden_value(assignment.c_str());
             }
         }
     }

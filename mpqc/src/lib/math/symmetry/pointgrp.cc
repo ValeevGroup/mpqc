@@ -105,9 +105,8 @@ PointGroup::PointGroup(const Ref<KeyVal>& kv)
   : symb(0)
 {
   if (kv->exists("symmetry")) {
-    char *tmp = kv->pcharvalue("symmetry");
-    set_symbol(tmp);
-    delete[] tmp;
+    std::string tmp = kv->stringvalue("symmetry");
+    set_symbol(tmp.c_str());
   }
   else
     set_symbol("c1");

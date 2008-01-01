@@ -52,7 +52,7 @@ class Optimize: virtual public SavableState {
     int ckpt_;
     int print_timings_;
     double max_stepsize_;
-    char *ckpt_file;
+    std::string ckpt_file_;
     Ref<Function> function_;
     Ref<Convergence> conv_;
     Ref<MessageGrp> msg_;

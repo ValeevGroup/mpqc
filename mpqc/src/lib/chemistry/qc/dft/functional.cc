@@ -849,14 +849,12 @@ static ClassDesc StdDenFunctional_cd(
 
 StdDenFunctional::StdDenFunctional(StateIn& s):
   SavableState(s),
-  SumDenFunctional(s),
-  name_(0)
+  SumDenFunctional(s)
 {
-  s.getstring(name_);
+  s.get(name_);
 }
 
-StdDenFunctional::StdDenFunctional():
-  name_(0)
+StdDenFunctional::StdDenFunctional()
 {
 }
 
@@ -871,94 +869,94 @@ StdDenFunctional::init_arrays(int n)
 
 StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
 {
-  name_ = keyval->pcharvalue("name");
-  if (name_) {
-      if (!strcmp(name_,"HFK")) {
+  name_ = keyval->stringvalue("name");
+  if (!name_.empty()) {
+      if (name_ == "HFK") {
           n_ = 0;
           a0_ = 1.0;
         }
-      else if (!strcmp(name_,"XALPHA")) {
+      else if (name_ == "XALPHA") {
           init_arrays(1);
           funcs_[0] = new XalphaFunctional;
         }
-      else if (!strcmp(name_,"HFS")) {
+      else if (name_ == "HFS") {
           init_arrays(1);
           funcs_[0] = new SlaterXFunctional;
         }
-      else if (!strcmp(name_,"HFB")) {
+      else if (name_ == "HFB") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
         }
-      else if (!strcmp(name_,"HFG96")) {
+      else if (name_ == "HFG96") {
           init_arrays(1);
           funcs_[0] = new G96XFunctional;
         }
-      else if (!strcmp(name_,"G96LYP")) {
+      else if (name_ == "G96LYP") {
           init_arrays(2);
           funcs_[0] = new G96XFunctional;
           funcs_[1] = new LYPCFunctional;
         }
-      else if (!strcmp(name_,"BLYP")) {
+      else if (name_ == "BLYP") {
           init_arrays(3);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new LYPCFunctional;
         }
-      else if (!strcmp(name_,"SVWN1")) {
+      else if (name_ == "SVWN1") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN1LCFunctional;
         }
-      else if (!strcmp(name_,"SVWN1RPA")) {
+      else if (name_ == "SVWN1RPA") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN1LCFunctional(1);
         }
-      else if (!strcmp(name_,"SVWN2")) {
+      else if (name_ == "SVWN2") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN2LCFunctional;
         }
-      else if (!strcmp(name_,"SVWN3")) {
+      else if (name_ == "SVWN3") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN3LCFunctional;
         }
-      else if (!strcmp(name_,"SVWN4")) {
+      else if (name_ == "SVWN4") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN4LCFunctional;
         }
-      else if (!strcmp(name_,"SVWN5")) {
+      else if (name_ == "SVWN5") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN5LCFunctional;
         }
-      else if (!strcmp(name_,"SPZ81")) {
+      else if (name_ == "SPZ81") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new PZ81LCFunctional;
         }
-      else if (!strcmp(name_,"SPW92")) {
+      else if (name_ == "SPW92") {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new PW92LCFunctional;
         }
-      else if (!strcmp(name_,"BPW91")) {
+      else if (name_ == "BPW91") {
           init_arrays(3);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new PW91CFunctional;
         }
-      else if (!strcmp(name_,"BP86")) {
+      else if (name_ == "BP86") {
           init_arrays(4);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new P86CFunctional;
           funcs_[3] = new PZ81LCFunctional;
         }
-      else if (!strcmp(name_,"B3LYP")) {
+      else if (name_ == "B3LYP") {
           init_arrays(4);
           a0_ = 0.2;
           coefs_[0] = 0.8;
@@ -970,7 +968,7 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[2] = new VWN1LCFunctional(1);
           funcs_[3] = new LYPCFunctional;
         }
-      else if (!strcmp(name_,"KMLYP")) {
+      else if (name_ == "KMLYP") {
           init_arrays(3);
           a0_ = 0.557;
           coefs_[0] = 0.443;
@@ -980,7 +978,7 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[1] = new VWN1LCFunctional(1);
           funcs_[2] = new LYPCFunctional;
         }
-      else if (!strcmp(name_,"B3PW91")) {
+      else if (name_ == "B3PW91") {
           init_arrays(4);
           a0_ = 0.2;
           coefs_[0] = 0.8;
@@ -992,7 +990,7 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[2] = new PW91CFunctional;
           funcs_[3] = new PW92LCFunctional;
         }
-      else if (!strcmp(name_,"B3P86")) {
+      else if (name_ == "B3P86") {
           init_arrays(4);
           a0_ = 0.2;
           coefs_[0] = 0.8;
@@ -1004,27 +1002,27 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[2] = new P86CFunctional;
           funcs_[3] = new VWN1LCFunctional(1);
         }
-      else if (!strcmp(name_,"PBE")) {
+      else if (name_ == "PBE") {
           init_arrays(2);
           funcs_[0] = new PBEXFunctional;
           funcs_[1] = new PBECFunctional;
         }
-      else if (!strcmp(name_,"PW91")) {
+      else if (name_ == "PW91") {
           init_arrays(2);
           funcs_[0] = new PW91XFunctional;
           funcs_[1] = new PW91CFunctional;
         }
-      else if (!strcmp(name_,"mPW(PW91)PW91")) {
+      else if (name_ == "mPW(PW91)PW91") {
           init_arrays(2);
           funcs_[0] = new mPW91XFunctional(mPW91XFunctional::PW91);
           funcs_[1] = new PW91CFunctional;
         }
-      else if (!strcmp(name_,"mPWPW91")) {
+      else if (name_ == "mPWPW91") {
           init_arrays(2);
           funcs_[0] = new mPW91XFunctional(mPW91XFunctional::mPW91);
           funcs_[1] = new PW91CFunctional;
         }
-      else if (!strcmp(name_,"mPW1PW91")) {
+      else if (name_ == "mPW1PW91") {
           init_arrays(2);
           a0_ = 0.16;
           coefs_[0] = 0.84;
@@ -1041,24 +1039,20 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
 
 StdDenFunctional::~StdDenFunctional()
 {
-  delete[] name_;
 }
 
 void
 StdDenFunctional::save_data_state(StateOut& s)
 {
   SumDenFunctional::save_data_state(s);
-  s.putstring(name_);
+  s.put(name_);
 }
 
 void
 StdDenFunctional::print(ostream& o) const
 {
-  const char *n = name_;
-  if (!n) n = "Null";
-
   o
-    << indent << "Standard Density Functional: " << n << endl;
+    << indent << "Standard Density Functional: " << name_ << endl;
   SumDenFunctional::print(o);
 }
 
@@ -4134,22 +4128,21 @@ mPW91XFunctional::mPW91XFunctional(mPW91XFunctional::Func f)
 mPW91XFunctional::mPW91XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
-  char *t = keyval->pcharvalue("constants");
-  if (t) {
-      if (!strcmp(t,"B88")) {
+  if (keyval->exists("constants")) {
+      std::string t = keyval->stringvalue("constants");
+      if (t == "B88") {
           init_constants(B88);
         }
-      else if (!strcmp(t,"PW91")) {
+      else if (t == "PW91") {
           init_constants(PW91);
         }
-      else if (!strcmp(t,"mPW91")) {
+      else if (t == "mPW91") {
           init_constants(mPW91);
         }
       else {
           ExEnv::outn() << "mPW91XFunctional: bad \"constants\": " << t << endl;
           abort();
         }
-      delete[] t;
     }
   else {
       init_constants(mPW91);

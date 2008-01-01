@@ -71,7 +71,7 @@ main(int argc, char **argv)
   d->set_exec(argv[0]);
 
   d->traceback("no particular problem");
-  //d->debug("no particular problem");
+  d->debug("no particular problem");
   x(d);
 
   StateOutText o("state.dat");

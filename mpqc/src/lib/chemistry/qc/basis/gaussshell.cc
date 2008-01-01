@@ -200,7 +200,7 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
   for (i=0; i<ncon; i++) {
       Ref<KeyVal> prefixkeyval = new PrefixKeyVal(keyval,"type",i);
       coef[i] = new double[nprim];
-      char* am = prefixkeyval->pcharvalue("am");
+      std::string am = prefixkeyval->stringvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {
           ExEnv::err0() << indent
                << scprintf("GaussianShell: error reading am: \"%s\"\n",
@@ -209,13 +209,15 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
           exit(1);
         }
       l[i] = -1;
-      for (int li=0; amtypes[li] != '\0'; li++) {
-	  if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
-	}
-      if (l[i] == -1 || strlen(am) != 1) {
+      if (am.size() > 0) {
+          for (int li=0; amtypes[li] != '\0'; li++) {
+              if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
+            }
+        }
+      if (l[i] == -1) {
           ExEnv::err0() << indent
                << scprintf("GaussianShell: bad angular momentum: \"%s\"\n",
-                           am);
+                           am.c_str());
           prefixkeyval->errortrace(ExEnv::err0());
           exit(1);
 	}
@@ -243,7 +245,6 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
             exit(1);
             }
         }
-      delete[] am;
     }
 
   if (normalized) return Normalized;

@@ -101,7 +101,7 @@ class MolecularHessian: virtual public SavableState {
     that reads the hessian from a file. */
 class ReadMolecularHessian: public MolecularHessian {
   protected:
-    char *filename_;
+    std::string filename_;
   public:
     /** The ReadMolecularHessian KeyVal constructor is used to generate a
         ReadMolecularHessian object from the input.  It reads the keywords

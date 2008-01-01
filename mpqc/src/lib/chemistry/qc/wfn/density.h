@@ -230,7 +230,7 @@ class WriteElectronDensity: public WriteGrid {
     Ref<Wavefunction> wfn_;
     Ref<BatchElectronDensity> bed_;
     double accuracy_;
-    char *type_;
+    std::string type_;
     double (WriteElectronDensity::*density_function_)(double, double);
     
     void initialize();

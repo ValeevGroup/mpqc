@@ -396,33 +396,32 @@ ReadMolecularHessian::ReadMolecularHessian(const Ref<KeyVal>&keyval):
 {
   KeyValValueString default_filename(SCFormIO::fileext_to_filename(".hess"),
                                      KeyValValueString::Steal);
-  filename_ = keyval->pcharvalue("filename", default_filename);
+  filename_ = keyval->stringvalue("filename", default_filename);
 }
 
 ReadMolecularHessian::ReadMolecularHessian(StateIn&s):
   SavableState(s),
   MolecularHessian(s)
 {
-  s.getstring(filename_);
+  s.get(filename_);
 }
 
 ReadMolecularHessian::~ReadMolecularHessian()
 {
-  delete[] filename_;
 }
 
 void
 ReadMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
-  s.putstring(filename_);
+  s.put(filename_);
 }
 
 RefSymmSCMatrix
 ReadMolecularHessian::cartesian_hessian()
 {
   RefSymmSCMatrix hess = matrixkit()->symmmatrix(d3natom());
-  read_cartesian_hessian(filename_, mol_, hess);
+  read_cartesian_hessian(filename_.c_str(), mol_, hess);
   return hess;
 }
 

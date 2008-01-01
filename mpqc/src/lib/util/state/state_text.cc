@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <util/class/scexception.h>
 #include <util/state/state_text.h>
 
 using namespace std;
@@ -98,12 +99,14 @@ StateInText::StateInText(const Ref<KeyVal> &keyval):
   no_newline_(0),
   no_array_(0)
 {
-  char *path = keyval->pcharvalue("file");
-  if (!path) {
-      ExEnv::errn() << "StateInText(const Ref<KeyVal>&): no path given" << endl;
+  std::string path = keyval->stringvalue("file");
+  if (path.empty()) {
+      throw InputError("StateInText(const Ref<KeyVal> &keyval) "
+                       "requires that a path be given",
+                       __FILE__, __LINE__, "file", path.c_str(),
+                       class_desc());
     }
-  open(path);
-  delete[] path;
+  open(path.c_str());
 }
 
 StateInText::~StateInText()

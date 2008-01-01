@@ -30,6 +30,7 @@
 #endif
 
 #include <scconfig.h>
+#include <util/class/scexception.h>
 #include <util/state/state_bin.h>
 
 using namespace std;
@@ -153,12 +154,14 @@ StateInBin::StateInBin(const char *path) :
 
 StateInBin::StateInBin(const Ref<KeyVal> &keyval)
 {
-  char *path = keyval->pcharvalue("file");
-  if (!path) {
-      ExEnv::errn() << "StateInBin(const Ref<KeyVal>&): no path given" << endl;
+  std::string path = keyval->stringvalue("file");
+  if (path.empty()) {
+      throw InputError("StateInBin(const Ref<KeyVal> &keyval) "
+                       "requires that a path be given",
+                       __FILE__, __LINE__, "file", path.c_str(),
+                       class_desc());
     }
-  open(path);
-  delete[] path;
+  open(path.c_str());
 }
 
 StateInBin::~StateInBin()

@@ -73,7 +73,13 @@ IntCoor::IntCoor(const IntCoor& c):
 
 IntCoor::IntCoor(const Ref<KeyVal>&keyval)
 {
-  label_ = keyval->pcharvalue("label");
+  if (keyval->exists("label")) {
+    std::string label = keyval->stringvalue("label");
+    label_ = strcpy(new char[label.size()+1],label.c_str());
+    }
+  else {
+    label_ = 0;
+    }
   value_ = keyval->doublevalue("value");
 
   if (keyval->exists("unit")) {

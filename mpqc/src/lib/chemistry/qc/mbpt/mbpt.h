@@ -82,8 +82,8 @@ class MBPT2: public Wavefunction {
     int *symorb_irrep_;
     int *symorb_num_;
 
-    char *method_;
-    char *algorithm_;
+    std::string method_;
+    std::string algorithm_;
     // if do_d1_ is true, D1(MP2) will be computed even if the gradient is not
     int do_d1_;
     // if do_d2_ is true, D2(MP1) will be computed 

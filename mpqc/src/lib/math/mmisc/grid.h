@@ -89,9 +89,9 @@ class WriteGrid: public Runnable {
     void wf_vtk2(std::ostream &out);
     void wf_mpqc_raw(std::ostream &out);
   protected:
-    char *filename_;
+    std::string filename_;
     Ref<Grid> grid_;
-    char *format_;
+    std::string format_;
     void (WriteGrid::*write_format_)(std::ostream &out);
     /** Prepares some pre-caculated values before the repetitive grid
         calculations are perfomed. */

@@ -45,9 +45,9 @@ produce a stack traceback showing roughly where the program died.  These
 attempts will not always succeed.  */
 class Debugger: public SavableState {
   protected:
-    char *prefix_;
-    char *exec_;
-    char *cmd_;
+    std::string prefix_;
+    std::string exec_;
+    std::string cmd_;
     volatile int debugger_ready_;
 
     int debug_;

@@ -329,8 +329,8 @@ RegionTimer::RegionTimer(const Ref<KeyVal> &keyval)
     }
 #endif
 
-  char *topname = keyval->pcharvalue("name", defname);
-  top_ = new TimedRegion(topname);
+  std::string topname = keyval->stringvalue("name", defname);
+  top_ = new TimedRegion(topname.c_str());
   if (cpu_time_) top_->cpu_enter(get_cpu_time());
   if (wall_time_) top_->wall_enter(get_wall_time());
   if (flops_) top_->flops_enter(get_flops());

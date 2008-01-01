@@ -107,8 +107,8 @@ MBPT2::MBPT2(StateIn& s):
       s.get(imem_alloc);
       mem_alloc = imem_alloc;
     }
-  s.getstring(method_);
-  s.getstring(algorithm_);
+  s.get(method_);
+  s.get(algorithm_);
 
   if (s.version(::class_desc<MBPT2>()) <= 6) {
       int debug_old;
@@ -183,8 +183,8 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
     }
   copy_orthog_info(reference_);
   nfzc = keyval->intvalue("nfzc");
-  char *nfzc_charval = keyval->pcharvalue("nfzc");
-  if (nfzc_charval && !strcmp(nfzc_charval, "auto")) {
+  std::string nfzc_charval = keyval->stringvalue("nfzc");
+  if (nfzc_charval == "auto") {
       if (molecule()->max_z() > 30) {
           ExEnv::err0()
                << "MBPT2: cannot use \"nfzc = auto\" for Z > 30" << endl;
@@ -194,7 +194,6 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
       ExEnv::out0() << indent
            << "MBPT2: auto-freezing " << nfzc << " core orbitals" << endl;
     }
-  delete[] nfzc_charval;
   nfzv = keyval->intvalue("nfzv");
   mem_alloc = keyval->sizevalue("memory");
   if (keyval->error() != KeyVal::OK) {
@@ -211,9 +210,9 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  method_ = keyval->pcharvalue("method");
+  method_ = keyval->stringvalue("method");
 
-  algorithm_ = keyval->pcharvalue("algorithm");
+  algorithm_ = keyval->stringvalue("algorithm");
 
   do_d1_ = keyval->booleanvalue("compute_d1");
   do_d2_ = keyval->booleanvalue("compute_d2",KeyValValueboolean(1));
@@ -242,8 +241,6 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
 
 MBPT2::~MBPT2()
 {
-  delete[] method_;
-  delete[] algorithm_;
   delete[] symorb_irrep_;
   delete[] symorb_num_;
 }
@@ -257,8 +254,8 @@ MBPT2::save_data_state(StateOut& s)
   s.put(nfzv);
   double dmem_alloc = mem_alloc;
   s.put(dmem_alloc);
-  s.putstring(method_);
-  s.putstring(algorithm_);
+  s.put(method_);
+  s.put(algorithm_);
   s.put(do_d1_);
   s.put(dynamic_);
   s.put(print_percent_);
@@ -327,22 +324,22 @@ MBPT2::compute()
       compute_cs_grad();
     }
   else {
-      if (nsocc && algorithm_ && !strcmp(algorithm_,"memgrp")) {
+      if (nsocc && algorithm_ == "memgrp") {
           ExEnv::errn() << "MBPT2: memgrp algorithm cannot compute open shell energy"
                << endl;
           abort();
         }
-      if (!nsocc && (!algorithm_ || !strcmp(algorithm_,"memgrp"))) {
+      if (!nsocc && (algorithm_.empty() || algorithm_ == "memgrp")) {
           compute_cs_grad();
         }
-      else if ((!algorithm_ && msg_->n() <= 32)
-               || (algorithm_ && !strcmp(algorithm_,"v1"))) {
+      else if ((algorithm_.empty() && msg_->n() <= 32)
+               || (!algorithm_.empty() && algorithm_ == "v1")) {
           compute_hsos_v1();
         }
-      else if (!algorithm_ || !strcmp(algorithm_,"v2")) {
+      else if (algorithm_.empty() || algorithm_ == "v2") {
           compute_hsos_v2();
         }
-      else if (!strcmp(algorithm_,"v2lb")) {
+      else if (algorithm_ == "v2lb") {
           compute_hsos_v2_lb();
         }
       else {

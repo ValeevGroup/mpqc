@@ -75,8 +75,8 @@ Grid::Grid(const Ref<KeyVal> &keyval):
     }
 
   if (keyval->exists("unit")) {
-      unit = new Units(keyval->pcharvalue("unit"),
-                  Units::Steal);
+      std::string tmp = keyval->stringvalue("unit");
+      unit = new Units(tmp.c_str());
     }
   else {
       unit = new Units("bohr");
@@ -107,24 +107,24 @@ WriteGrid::WriteGrid(const Ref<KeyVal> &keyval)
     }
     
   if (keyval->exists("filename")) {
-      filename_ = keyval->pcharvalue("filename");
+      filename_ = keyval->stringvalue("filename");
     }
   else {
       filename_ = "-";
     }
 
   if (keyval->exists("format")) {
-      format_ = keyval->pcharvalue("format");
-      if (strcmp(format_, "mpqc")==0) {
+      format_ = keyval->stringvalue("format");
+      if (format_ == "mpqc") {
           write_format_ = &WriteGrid::wf_mpqc;
         }
-      else if (strcmp(format_, "gaussian_cube")==0) {
+      else if (format_ == "gaussian_cube") {
           write_format_ = &WriteGrid::wf_gaussian_cube;
         }
-      else if (strcmp(format_, "vtk2")==0) {
+      else if (format_ == "vtk2") {
           write_format_ = &WriteGrid::wf_vtk2;
         }
-      else if (strcmp(format_, "mpqc_raw")==0) {
+      else if (format_ == "mpqc_raw") {
           write_format_ = &WriteGrid::wf_mpqc_raw;
         }
       else {
@@ -154,7 +154,7 @@ WriteGrid::run()
   initialize();
   
   std::ostream *out;
-  if (strcmp(filename_, "-")==0) {
+  if (filename_ == "-") {
       out = &(ExEnv::out0());
     }
   else {
@@ -165,12 +165,12 @@ WriteGrid::run()
                     << "\" using the \"" << format_
                     << "\" format." << std::endl;
       ExEnv::out0() << decindent;
-      out = new std::ofstream(filename_);
+      out = new std::ofstream(filename_.c_str());
     }
 
   (*this.*write_format_)(*out);
 
-  if (strcmp(filename_, "-")==0) {
+  if (filename_ == "-") {
       *out << decindent;
     }
   else {

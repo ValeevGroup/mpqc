@@ -59,7 +59,7 @@ class MolecularEnergy: public Function {
     /// Whether to do intermediate checkpointing of this object
     bool ckpt_;
     /// Name of the file into which to checkpoint this object
-    char *ckpt_file_;
+    std::string ckpt_file_;
     /// How often this object should be checkpointed (only matters in iterative methods)
     int ckpt_freq_;
     

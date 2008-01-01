@@ -51,16 +51,9 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
   nbasissets_ = 0;
   basissets_ = 0;
 
-  dir_[0] = keyval->pcharvalue("basisdir");
-  dir_[1] = getenv("SCLIBDIR");
-  if (dir_[1]) {
-      char *tmp = strchr(dir_[1],'=');
-      if (!tmp) tmp = dir_[1];
-      else tmp = &tmp[1];
-      dir_[1] = strcpy(new char[strlen(tmp)+6+1], tmp);
-      strcat(dir_[1], "/basis");
-    }
-  else {
+  dir_[0] = keyval->stringvalue("basisdir");
+  dir_[1] = ExEnv::getenv_string("SCLIBDIR");
+  if (dir_[1].empty()) {
       struct stat sb;
       const char *bdir = SCDATADIR "/basis";
 #ifdef SRC_SCLIBDIR
@@ -68,7 +61,7 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
           bdir = SRC_SCLIBDIR "/basis";
         }
 #endif
-      dir_[1] = strcpy(new char[strlen(bdir)+1], bdir);
+      dir_[1] = bdir;
     }
 }
 
@@ -77,8 +70,6 @@ BasisFileSet::~BasisFileSet()
   int i;
   for (i=0; i<nbasissets_; i++) delete[] basissets_[i];
   delete[] basissets_;
-  delete[] dir_[0];
-  delete[] dir_[1];
 }
 
 Ref<KeyVal>
@@ -124,10 +115,10 @@ BasisFileSet::keyval(const Ref<KeyVal> &keyval, const char *basisname)
   // find the basis file
   Ref<KeyVal> newkeyval(keyval);
   for (i=0; i<2; i++) {
-      if (!dir_[i]) continue;
+      if (dir_[i].empty()) continue;
       if (grp->me() == 0) {
-          char *path = new char[strlen(dir_[i]) + strlen(filename) + 5];
-          strcpy(path, dir_[i]);
+          char *path = new char[dir_[i].size() + strlen(filename) + 5];
+          strcpy(path, dir_[i].c_str());
           strcat(path, "/");
           strcat(path, filename);
           strcat(path, ".kv");

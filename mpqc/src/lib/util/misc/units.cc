@@ -57,7 +57,10 @@ static ClassDesc Units_cd(typeid(Units),"Units",1,"public SavableState",
 
 Units::Units(const char *strrep)
 {
-  if (strrep) strrep_ = strcpy(new char[strlen(strrep)+1], strrep);
+  if (strrep) {
+      if (strrep[0] == '\0') strrep_ = 0;
+      else strrep_ = strcpy(new char[strlen(strrep)+1], strrep);
+    }
   else strrep_ = 0;
   parse_unit();
 }

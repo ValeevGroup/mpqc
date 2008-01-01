@@ -170,12 +170,12 @@ FileRender::FileRender(ostream &o)
 FileRender::FileRender(const Ref<KeyVal>& keyval):
   Render(keyval)
 {
-  char *filename = keyval->pcharvalue("filename");
-  char *basename = keyval->pcharvalue("basename");
-  if (!filename && !basename) {
+  std::string filename = keyval->stringvalue("filename");
+  std::string basename = keyval->stringvalue("basename");
+  if (filename.empty() && basename.empty()) {
       const char *cbasename = SCFormIO::default_basename();
       if (cbasename) {
-          basename = strcpy(new char[strlen(cbasename)+1],cbasename);
+          basename = cbasename;
         }
     }
   depth_ = 0;
@@ -183,14 +183,12 @@ FileRender::FileRender(const Ref<KeyVal>& keyval):
   delete_sbuf_ = 0;
   filename_ = 0;
   basename_ = 0;
-  if (basename) {
-      set_basename(basename);
-      delete[] basename;
+  if (!basename.empty()) {
+      set_basename(basename.c_str());
     }
   // filename overrides basename
-  if (filename) {
-      set_filename(filename);
-      delete[] filename;
+  if (!filename.empty()) {
+      set_filename(filename.c_str());
     }
 }
 

@@ -50,7 +50,7 @@ static ClassDesc Optimize_cd(
   0, 0, 0);
 
 Optimize::Optimize() :
-  ckpt_(0), ckpt_file(0)
+  ckpt_(0)
 {
   msg_ = MessageGrp::get_default_messagegrp();
 }
@@ -61,7 +61,7 @@ Optimize::Optimize(StateIn&s):
   msg_ = MessageGrp::get_default_messagegrp();
 
   s.get(ckpt_,"checkpoint");
-  s.getstring(ckpt_file);
+  s.get(ckpt_file_);
   s.get(max_iterations_,"max_iterations");
   s.get(max_stepsize_,"max_stepsize");
   if (s.version(::class_desc<Optimize>()) > 1) {
@@ -80,10 +80,9 @@ Optimize::Optimize(const Ref<KeyVal>&keyval)
   if (keyval->error() != KeyVal::OK) print_timings_ = 0;
   ckpt_ = keyval->booleanvalue("checkpoint");
   if (keyval->error() != KeyVal::OK) ckpt_ = 0;
-  ckpt_file = keyval->pcharvalue("checkpoint_file");
+  ckpt_file_ = keyval->stringvalue("checkpoint_file");
   if (keyval->error() != KeyVal::OK) {
-    ckpt_file = new char[13];
-    strcpy(ckpt_file,"opt_ckpt.dat");
+    ckpt_file_ = "opt_ckpt.dat";
   }
 
   max_iterations_ = keyval->intvalue("max_iterations");
@@ -113,15 +112,13 @@ Optimize::Optimize(const Ref<KeyVal>&keyval)
 
 Optimize::~Optimize()
 {
-  if (ckpt_file) delete[] ckpt_file;
-  ckpt_file=0;
 }
 
 void
 Optimize::save_data_state(StateOut&s)
 {
   s.put(ckpt_);
-  s.putstring(ckpt_file);
+  s.put(ckpt_file_);
   s.put(max_iterations_);
   s.put(max_stepsize_);
   s.put(print_timings_);
@@ -150,12 +147,12 @@ Optimize::set_max_iterations(int mi)
 void
 Optimize::set_checkpoint_file(const char *path)
 {
-  if (ckpt_file) delete[] ckpt_file;
   if (path) {
-    ckpt_file = new char[strlen(path)+1];
-    strcpy(ckpt_file,path);
-  } else
-    ckpt_file=0;
+    ckpt_file_ = path;
+    }
+  else {
+    ckpt_file_.resize(0);
+    }
 }
   
 void
@@ -175,7 +172,7 @@ Optimize::optimize()
   while((n_iterations_ < max_iterations_) && (!(result = update()))) {
       ++n_iterations_;
       if (ckpt_) {
-        OPTSTATEOUT so(ckpt_file);
+        OPTSTATEOUT so(ckpt_file_.c_str());
         this->save_state(so);
       }
       if (print_timings_) {

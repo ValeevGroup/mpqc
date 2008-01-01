@@ -38,13 +38,13 @@ namespace sc {
 
 class AnimatedObject: public DescribedClass {
   protected:
-    char *name_;
+    std::string name_;
   public:
     AnimatedObject();
     AnimatedObject(const Ref<KeyVal>&);
     virtual ~AnimatedObject();
 
-    const char *name() const { return name_; }
+    const char *name() const { return name_.c_str(); }
     void set_name(const char *name);
 
     virtual int nobject() = 0;

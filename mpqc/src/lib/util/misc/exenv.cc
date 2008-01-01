@@ -74,6 +74,21 @@ ExEnv::program_name()
   return start;
 }
 
+std::string
+ExEnv::getenv_string(const char *name)
+{
+  const char *env = getenv(name);
+  std::string value;
+  if (env) {
+      value = env;
+      std::string::size_type offset = value.find('=');
+      if (offset != std::string::npos) {
+          value.erase(0,offset+1);
+        }
+    }
+  return value;
+}
+
 std::ostream &
 ExEnv::out0()
 {

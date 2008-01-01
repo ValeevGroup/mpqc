@@ -34,7 +34,7 @@ namespace sc {
 
 class BasisFileSet {
   private:
-    char *dir_[2];
+    std::string dir_[2];
     char **basissets_;
     int nbasissets_;
   public:

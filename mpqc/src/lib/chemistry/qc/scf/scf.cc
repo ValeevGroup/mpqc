@@ -177,10 +177,10 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     compute_guess_=1;
     if (guess_wfn_.null()) {
       compute_guess_=0;
-      char *path = keyval->pcharvalue("guess_wavefunction");
+      std::string path = keyval->stringvalue("guess_wavefunction");
       struct stat sb;
-      if (path && stat(path, &sb)==0 && sb.st_size) {
-        BcastStateInBin s(scf_grp_, path);
+      if (!path.empty() && stat(path.c_str(), &sb)==0 && sb.st_size) {
+        BcastStateInBin s(scf_grp_, path.c_str());
 
         // reset the default matrixkit so that the matrices in the guess
         // wavefunction will match those in this wavefunction
@@ -191,7 +191,6 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
 
         // go back to the original default matrixkit
         SCMatrixKit::set_default_matrixkit(oldkit);
-        delete[] path;
       }
     }
     ExEnv::out0() << decindent << decindent;

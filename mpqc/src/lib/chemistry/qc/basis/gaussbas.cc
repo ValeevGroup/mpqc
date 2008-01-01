@@ -150,8 +150,8 @@ GaussianBasisSet::GaussianBasisSet(UnitType)
                       0.0,           // no mass
                       1, 0.0         // no charge
       );
-  name_ = new_string("Unit");
-  label_ = new_string(name_);
+  name_ = "Unit";
+  label_ = name_;
   shell_ = new GaussianShell*[1];
 
   double *exp = new double[1];
@@ -182,8 +182,8 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
 {
   int i,j;
   
-  name_ = new_string(gbs.name_);
-  label_ = new_string(gbs.label_);
+  name_ = gbs.name_;
+  label_ = gbs.label_;
 
   center_to_nshell_.resize(ncenter_);
   for (i=0; i < ncenter_; i++) {
@@ -237,8 +237,8 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
   shell_(shell),
   center_to_nshell_(center_to_nshell)
 {
-  name_ = new_string(name);
-  label_ = new_string(label);
+  name_ = name;
+  label_ = label;
   
   init2();
 }
@@ -356,8 +356,8 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
 
 
   ncenter_ = center_to_nshell_.size();
-  s.getstring(name_);
-  s.getstring(label_);
+  s.get(name_);
+  s.get(label_);
 
   nshell_ = 0;
   int i;
@@ -381,8 +381,8 @@ GaussianBasisSet::save_data_state(StateOut&s)
   SavableState::save_state(molecule_.pointer(),s);
   SavableState::save_state(basisdim_.pointer(),s);
   
-  s.putstring(name_);
-  s.putstring(label_);
+  s.put(name_);
+  s.put(label_);
   for (int i=0; i<nshell_; i++) {
       shell_[i]->save_object_state(s);
     }
@@ -408,7 +408,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   bool missing_ok = keyval->booleanvalue("missing_ok");
   bool include_q = keyval->booleanvalue("include_q");
 
-  name_ = keyval->pcharvalue("name");
+  name_ = keyval->stringvalue("name");
   int have_custom, nelement;
 
   if (keyval->exists("basis")) {
@@ -418,7 +418,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   else {
       have_custom = 0;
       nelement = 0;
-      if (!name_) {
+      if (name_.empty()) {
           ExEnv::err0() << indent
                << "GaussianBasisSet: No name given for basis set\n";
           abort();
@@ -426,8 +426,8 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
     }
 
   // Construct label_
-  if (name_)
-    label_ = new_string(name_);
+  if (!name_.empty())
+    label_ = name_;
   else {
     if (have_custom) {
       ostringstream oss;
@@ -456,9 +456,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
         oss << "]";
       }
-      std::string label = oss.str();
-      label_ = new char[label.size() + 1];
-      strcpy(label_,label.c_str());
+      label_ = oss.str();
     }
   }
 
@@ -490,7 +488,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
             }
         }
       if (!sbasisname) {
-          if (!name_) {
+          if (name_.empty()) {
               ExEnv::err0()
                   << indent << "GaussianBasisSet: no basis name for atom "
                   << iatom
@@ -498,7 +496,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
                   << std::endl;
               abort();
             }
-          sbasisname = strcpy(new char[strlen(name_)+1],name_);
+          sbasisname = strcpy(new char[name_.size()+1],name_.c_str());
         }
       std::string name(molecule->atominfo()->name(Z));
       ishell += count_shells_(keyval, name.c_str(),
@@ -533,7 +531,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
             }
         }
       if (!sbasisname) {
-          if (!name_) {
+          if (name_.empty()) {
               ExEnv::err0()
                   << indent << "GaussianBasisSet: no basis name for atom "
                   << iatom
@@ -541,7 +539,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
                   << std::endl;
               abort();
             }
-          sbasisname = strcpy(new char[strlen(name_)+1],name_);
+          sbasisname = strcpy(new char[name_.size()+1],name_.c_str());
         }
 
       int ishell_old = ishell;
@@ -556,8 +554,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
 
   // delete the name_ if the basis set is customized
   if (have_custom) {
-      delete[] name_;
-      name_ = 0;
+      name_.resize(0);
     }
 
   // finish with the initialization steps that don't require any
@@ -918,16 +915,15 @@ GaussianBasisSet::
 	      element,basisname);
       Ref<KeyVal> prefixkeyval = new PrefixKeyVal(keyval,prefix,j);
       if (prefixkeyval->exists("get")) {
-          char* newbasis = prefixkeyval->pcharvalue("get");
-          if (!newbasis) {
+          std::string newbasis = prefixkeyval->stringvalue("get");
+          if (newbasis.empty()) {
 	      ExEnv::err0() << indent << "GaussianBasisSet: "
                    << scprintf("error processing get for \"%s\"\n", prefix);
               keyval->errortrace(ExEnv::err0());
 	      exit(1);
 	    }
-	  recursively_get_shell(ishell,keyval,element,newbasis,bases,
+	  recursively_get_shell(ishell,keyval,element,newbasis.c_str(),bases,
                                 havepure,pure,get,missing_ok);
-          delete[] newbasis;
 	}
       else {
           if (get) {
@@ -941,9 +937,6 @@ GaussianBasisSet::
 
 GaussianBasisSet::~GaussianBasisSet()
 {
-  delete[] name_;
-  delete[] label_;
-
   int ii;
   for (ii=0; ii<nshell_; ii++) {
       delete shell_[ii];
@@ -1093,7 +1086,7 @@ GaussianBasisSet::print_brief(ostream& os) const
      << indent << "nbasis = " << nbasis_ << endl
      << indent << "nshell = " << nshell_ << endl
      << indent << "nprim  = " << nprim_ << endl;
-  if (name_) {
+  if (!name_.empty()) {
       os << indent
          << "name = \"" << name_ << "\"" << endl;
   }

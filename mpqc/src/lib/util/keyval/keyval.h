@@ -154,8 +154,9 @@ class KeyVal: public RefCount {
     size_t sizevalue(const char* key = 0,
                      const KeyValValue& def=KeyValValuesize());
     /** Returns a copy of the string representation of the key's
-        value. Storage for the copy is obtained with new. */
-    char*  pcharvalue(const char* key = 0,
+        value. Storage for the copy is obtained with new.
+        This is deprecated--use stringvalue instead. */
+    DEPRECATED char*  pcharvalue(const char* key = 0,
                       const KeyValValue& def=KeyValValuepchar());
     /** Returns a string representation of the key's value. */
     std::string stringvalue(const char* key = 0,
@@ -530,6 +531,8 @@ class ParsedKeyVal : public StringKeyVal {
 
     /// Read input data from the given filename
     void read(const char*);
+    /// Read input data from the given filename
+    void read(const std::string &);
     /// Read input data from the given stream.
     void read(std::istream&);
     /// Read input data from the given string.

@@ -287,7 +287,7 @@ class SumDenFunctional: public DenFunctional {
 </table> */
 class StdDenFunctional: public SumDenFunctional {
   protected:
-    char *name_;
+    std::string name_;
     void init_arrays(int n);
   public:
     StdDenFunctional();

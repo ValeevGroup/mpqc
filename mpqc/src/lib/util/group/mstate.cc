@@ -583,13 +583,12 @@ BcastStateInBin::BcastStateInBin(const Ref<MessageGrp>&grp_,
 
 BcastStateInBin::BcastStateInBin(const Ref<KeyVal> &keyval)
 {
-  char *path = keyval->pcharvalue("file");
-  if (!path) {
+  std::string path = keyval->stringvalue("file");
+  if (path.empty()) {
       ExEnv::errn() << "StateInBin(const Ref<KeyVal>&): no path given" << endl;
     }
   opened_ = 0;
-  open(path);
-  delete[] path;
+  open(path.c_str());
 }
 
 BcastStateInBin::~BcastStateInBin()

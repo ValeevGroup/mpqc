@@ -49,7 +49,7 @@ RenderedObject::RenderedObject(const Ref<Material>& material):
 
 RenderedObject::RenderedObject(const Ref<KeyVal>& keyval)
 {
-  name_ = keyval->pcharvalue("name");
+  name_ = keyval->stringvalue("name");
   material_ << keyval->describedclassvalue("material");
   appearance_ << keyval->describedclassvalue("appearance");
   transform_ << keyval->describedclassvalue("transform");
@@ -57,16 +57,13 @@ RenderedObject::RenderedObject(const Ref<KeyVal>& keyval)
 
 RenderedObject::~RenderedObject()
 {
-  
-  if (name_) delete[] name_;
 }
 
 void
 RenderedObject::set_name(const char *name)
 {
-  delete[] name_;
-  if (name) name_ = strcpy(new char[strlen(name)+1],name);
-  else name_ = 0;
+  if (name) name_ = name;
+  else name_.resize(0);
 }
 
 void

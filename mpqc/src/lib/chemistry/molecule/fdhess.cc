@@ -69,10 +69,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e):
   accuracy_ = disp_/1000;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
-  checkpoint_file_ = 0;
-  restart_file_ = 0;
-  checkpoint_file_ = SCFormIO::fileext_to_filename(".ckpt.hess");
-  restart_file_ = SCFormIO::fileext_to_filename(".ckpt.hess");
+  checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
+  restart_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
@@ -94,9 +92,9 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
   restart_ = keyval->booleanvalue("restart", def_restart);
   char *def_file = SCFormIO::fileext_to_filename(".ckpt.hess");
   KeyValValueString def_restart_file(def_file,KeyValValueString::Steal);
-  restart_file_ = keyval->pcharvalue("restart_file", def_restart_file);
+  restart_file_ = keyval->stringvalue("restart_file", def_restart_file);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
-  checkpoint_file_ = keyval->pcharvalue("checkpoint_file", def_restart_file);
+  checkpoint_file_ = keyval->stringvalue("checkpoint_file", def_restart_file);
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  falsevalue);
   eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
@@ -120,8 +118,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
   s.get(checkpoint_);
   s.get(debug_);
   s.get(accuracy_);
-  s.getstring(checkpoint_file_);
-  s.getstring(restart_file_);
+  s.get(checkpoint_file_);
+  s.get(restart_file_);
 
   gradients_ = 0;
   restore_displacements(s);
@@ -130,8 +128,6 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
 FinDispMolecularHessian::~FinDispMolecularHessian()
 {
   delete[] gradients_;
-  delete[] checkpoint_file_;
-  delete[] restart_file_;
 }
 
 void
@@ -143,8 +139,8 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
   s.put(checkpoint_);
   s.put(debug_);
   s.put(accuracy_);
-  s.putstring(checkpoint_file_);
-  s.putstring(restart_file_);
+  s.put(checkpoint_file_);
+  s.put(restart_file_);
 
   checkpoint_displacements(s);
 }
@@ -200,12 +196,12 @@ FinDispMolecularHessian::restart()
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
     struct stat sb;
-    statresult = stat(restart_file_,&sb);
+    statresult = stat(restart_file_.c_str(),&sb);
     statsize = (statresult==0) ? sb.st_size : 0;
     }
   grp->bcast(statsize);
   if (statsize) {
-    BcastStateInBin si(grp,restart_file_);
+    BcastStateInBin si(grp,restart_file_.c_str());
     restore_displacements(si);
     mol_ = mole_->molecule();
 
@@ -578,7 +574,7 @@ FinDispMolecularHessian::cartesian_hessian()
     if (checkpoint_) {
       const char *hessckptfile;
       if (MessageGrp::get_default_messagegrp()->me() == 0) {
-        hessckptfile = checkpoint_file_;
+        hessckptfile = checkpoint_file_.c_str();
         }
       else {
         hessckptfile = "/dev/null";

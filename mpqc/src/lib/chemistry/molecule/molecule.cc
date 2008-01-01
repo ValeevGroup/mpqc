@@ -139,9 +139,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   q_Z_ = atominfo_->string_to_Z("Q");
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");
-      char* filename = input->pcharvalue("pdb_file");
-      read_pdb(filename);
-      delete[] filename;
+      std::string filename = input->stringvalue("pdb_file");
+      read_pdb(filename.c_str());
     }
   else {
       // check for old style units input first
@@ -153,8 +152,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
         }
       // check for new style units input
       else {
-          geometry_units_ = new Units(input->pcharvalue("unit"),
-                                      Units::Steal);
+          std::string tmp = input->stringvalue("unit");
+          geometry_units_ = new Units(tmp.c_str());
         }
         
       double conv = geometry_units_->to_atomic_units();
@@ -194,14 +193,14 @@ Molecule::Molecule(const Ref<KeyVal>&input):
         }
     }
 
-  char *symmetry = input->pcharvalue("symmetry");
+  std::string symmetry = input->stringvalue("symmetry");
   double symtol = input->doublevalue("symmetry_tolerance",
                                      KeyValValuedouble(1.0e-4));
   nuniq_ = 0;
   equiv_ = 0;
   nequiv_ = 0;
   atom_to_uniq_ = 0;
-  if (symmetry && !strcmp(symmetry,"auto")) {
+  if (symmetry == "auto") {
       set_point_group(highest_point_group(symtol), symtol*10.0);
     }
   else {
@@ -226,7 +225,6 @@ Molecule::Molecule(const Ref<KeyVal>&input):
           cleanup_molecule(symtol);
         }
     }
-  delete[] symmetry;
 }
 
 Molecule&

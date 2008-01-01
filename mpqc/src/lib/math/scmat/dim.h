@@ -108,7 +108,7 @@ class SCBlockInfo: public SavableState {
     SCBlockInfo.  */
 class SCDimension: public SavableState {
   protected:
-    char *name_;
+    std::string name_;
     int n_;
     Ref<SCBlockInfo> blocks_;
     SCDimension(const char* name = 0);
@@ -142,7 +142,7 @@ class SCDimension: public SavableState {
     int n() const { return n_; }
     /** Return the name of the dimension.  If no name was given to the
         constructor, then return 0. */
-    const char* name() const { return name_; }
+    const char* name() const { return name_.c_str(); }
 
     /// Return the blocking information for this dimension.
     Ref<SCBlockInfo> blocks() { return blocks_; }

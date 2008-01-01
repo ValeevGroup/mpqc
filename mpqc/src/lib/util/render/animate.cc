@@ -44,25 +44,22 @@ static ClassDesc AnimatedObject_cd(
 
 AnimatedObject::AnimatedObject()
 {
-  name_ = 0;
 }
 
 AnimatedObject::AnimatedObject(const Ref<KeyVal>& keyval)
 {
-  name_ = keyval->pcharvalue("name");
+  name_ = keyval->stringvalue("name");
 }
 
 AnimatedObject::~AnimatedObject()
 {
-  delete[] name_;
 }
 
 void
 AnimatedObject::set_name(const char *name)
 {
-  delete[] name_;
-  if (name) name_ = strcpy(new char[strlen(name)+1],name);
-  else name_ = 0;
+  if (name) name_ = name;
+  else name_.resize(0);
 }
 
 /////////////////////////////////////////////////////////////////////////////

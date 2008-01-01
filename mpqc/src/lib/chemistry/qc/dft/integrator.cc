@@ -1688,20 +1688,17 @@ RadialAngularIntegrator::init_parameters(void)
 void
 RadialAngularIntegrator::init_parameters(const Ref<KeyVal>& keyval)
 {
-  char *grid = 0;
-  
   max_gridtype_ = 6;
   natomic_rows_ = 5;
-  
-  grid = keyval->pcharvalue("grid");
 
-  if (grid) {
-      if (!strcmp(grid,"xcoarse"))        gridtype_ = 0;
-      else if (!strcmp(grid,"coarse"))    gridtype_ = 1;
-      else if (!strcmp(grid,"medium"))    gridtype_ = 2;
-      else if (!strcmp(grid,"fine"))      gridtype_ = 3;
-      else if (!strcmp(grid,"xfine"))     gridtype_ = 4;
-      else if (!strcmp(grid,"ultrafine")) gridtype_ = 5;
+  if (keyval->exists("grid")) {
+      std::string grid = keyval->stringvalue("grid");
+      if (grid == "xcoarse")        gridtype_ = 0;
+      else if (grid == "coarse")    gridtype_ = 1;
+      else if (grid == "medium")    gridtype_ = 2;
+      else if (grid == "fine")      gridtype_ = 3;
+      else if (grid == "xfine")     gridtype_ = 4;
+      else if (grid == "ultrafine") gridtype_ = 5;
       else {
           ExEnv::out0()
                        << indent
@@ -1736,7 +1733,6 @@ RadialAngularIntegrator::init_parameters(const Ref<KeyVal>& keyval)
   
   init_pruning_coefficients(keyval);
 
-  delete[] grid;
 }
 
 

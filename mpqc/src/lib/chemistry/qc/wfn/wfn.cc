@@ -187,17 +187,17 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
       }
   }
   else {
-    char *orthog_name = keyval->pcharvalue("orthog_method");
-    if (!orthog_name) {
+    std::string orthog_name = keyval->stringvalue("orthog_method");
+    if (orthog_name.empty()) {
       orthog_method_ = OverlapOrthog::Symmetric;
     }
-    else if (::strcmp(orthog_name, "canonical") == 0) {
+    else if (orthog_name == "canonical") {
       orthog_method_ = OverlapOrthog::Canonical;
     }
-    else if (::strcmp(orthog_name, "symmetric") == 0) {
+    else if (orthog_name == "symmetric") {
       orthog_method_ = OverlapOrthog::Symmetric;
     }
-    else if (::strcmp(orthog_name, "gramschmidt") == 0) {
+    else if (orthog_name == "gramschmidt") {
       orthog_method_ = OverlapOrthog::GramSchmidt;
     }
     else {
@@ -205,7 +205,6 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
                    << orthog_name << "\"" << endl;
       abort();
     }
-    delete[] orthog_name;
   }
 
   debug_ = keyval->intvalue("debug");

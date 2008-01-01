@@ -60,7 +60,7 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   mol_ = mole.mol_;
   initial_pg_ = new PointGroup(mol_->point_group());
   ckpt_ = mole.ckpt_;
-  ckpt_file_ = strdup(mole.ckpt_file_);
+  ckpt_file_ = mole.ckpt_file_;
   ckpt_freq_ = mole.ckpt_freq_;
 }
 
@@ -132,11 +132,9 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
   ckpt_ = keyval->booleanvalue("checkpoint");
   if (keyval->error() != KeyVal::OK) ckpt_ = false;
-  ckpt_file_ = keyval->pcharvalue("checkpoint_file");
+  ckpt_file_ = keyval->stringvalue("checkpoint_file");
   if (keyval->error() != KeyVal::OK) {
-    char* filename = SCFormIO::fileext_to_filename(".wfn.ckpt");
-    ckpt_file_ = strdup(filename);
-    delete[] filename;
+    ckpt_file_ = SCFormIO::fileext_to_filename_string(".wfn.ckpt");
   }
   ckpt_freq_ = keyval->intvalue("checkpoint_freq");
   if (keyval->error() != KeyVal::OK) {
@@ -152,8 +150,6 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
 MolecularEnergy::~MolecularEnergy()
 {
-  if (ckpt_file_) free(ckpt_file_);
-  ckpt_file_ = 0;
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
@@ -175,16 +171,11 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   else initial_pg_ = new PointGroup(mol_->point_group());
   if (s.version(::class_desc<MolecularEnergy>()) >= 5) {
     int ckpt; s.get(ckpt); ckpt_ = (bool)ckpt;
-    char *tmp;
-    s.getstring(tmp);
-    ckpt_file_ = strdup(tmp);
-    delete[] tmp;
+    s.get(ckpt_file_);
   }
   else {
     ckpt_ = false;
-    char* filename = SCFormIO::fileext_to_filename(".wfn.ckpt");
-    ckpt_file_ = strdup(filename);
-    delete[] filename;
+    ckpt_file_ = SCFormIO::fileext_to_filename_string(".wfn.ckpt");
   }
   if (s.version(::class_desc<MolecularEnergy>()) >= 6)
     s.get(ckpt_freq_);
@@ -222,7 +213,7 @@ MolecularEnergy::save_data_state(StateOut&s)
   SavableState::save_state(guesshess_.pointer(),s);
   SavableState::save_state(initial_pg_.pointer(),s);
   s.put((int)ckpt_);
-  s.putstring(ckpt_file_);
+  s.put(ckpt_file_);
   s.put(ckpt_freq_);
   cartesian_gradient_.save(s);
   cartesian_hessian_.save(s);
@@ -237,11 +228,12 @@ MolecularEnergy::set_checkpoint()
 void
 MolecularEnergy::set_checkpoint_file(const char *path)
 {
-  if (ckpt_file_) free(ckpt_file_);
   if (path) {
-    ckpt_file_ = strdup(path);
-  } else
-    ckpt_file_ = 0;
+      ckpt_file_ = path;
+    }
+  else {
+      ckpt_file_.resize(0);
+    }
 }
 
 void
@@ -262,7 +254,7 @@ MolecularEnergy::if_to_checkpoint() const
 const char*
 MolecularEnergy::checkpoint_file() const
 {
-  return strdup(ckpt_file_);
+  return ckpt_file_.c_str();
 }
 
 int

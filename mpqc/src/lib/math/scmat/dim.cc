@@ -281,23 +281,20 @@ static ClassDesc SCDimension_cd(
 SCDimension::SCDimension(const char* name):
   n_(0)
 {
-  if (name) name_ = strcpy(new char[strlen(name)+1], name);
-  else name_ = 0;
+  if (name) name_ = name;
 }
 
 SCDimension::SCDimension(int n, const char* name):
   n_(n)
 {
-  if (name) name_ = strcpy(new char[strlen(name)+1], name);
-  else name_ = 0;
+  if (name) name_ = name;
   blocks_ = new SCBlockInfo(n, 1);
 }
 
 SCDimension::SCDimension(const Ref<SCBlockInfo>& b, const char* name):
   n_(b->nelem()), blocks_(b)
 {
-  if (name) name_ = strcpy(new char[strlen(name)+1], name);
-  else name_ = 0;
+  if (name) name_ = name;
 }
 
 SCDimension::SCDimension(int n,
@@ -305,8 +302,7 @@ SCDimension::SCDimension(int n,
                          const char* name):
   n_(n)
 {
-  if (name) name_ = strcpy(new char[strlen(name)+1], name);
-  else name_ = 0;
+  if (name) name_ = name;
   blocks_ = new SCBlockInfo(n, nblocks, blocksizes);
 }
 
@@ -326,13 +322,13 @@ SCDimension::SCDimension(const Ref<KeyVal>& keyval)
         }
       n_ = blocks_->nelem();
     }
-  name_ = keyval->pcharvalue("name");
+  name_ = keyval->stringvalue("name");
 }
 
 SCDimension::SCDimension(StateIn&s):
   SavableState(s)
 {
-  s.getstring(name_);
+  s.get(name_);
   s.get(n_);
   blocks_ << SavableState::restore_state(s);
 }
@@ -340,14 +336,13 @@ SCDimension::SCDimension(StateIn&s):
 void
 SCDimension::save_data_state(StateOut&s)
 {
-  s.putstring(name_);
+  s.put(name_);
   s.put(n_);
   SavableState::save_state(blocks_.pointer(), s);
 }
 
 SCDimension::~SCDimension()
 {
-  if (name_) delete[] name_;
 }
 
 int
@@ -364,7 +359,7 @@ void
 SCDimension::print(ostream&o) const
 {
   indent(o); o << "n = " << n_;
-  if (name_) {
+  if (!name_.empty()) {
       o << ", name = " << name_;
     }
   o << endl;

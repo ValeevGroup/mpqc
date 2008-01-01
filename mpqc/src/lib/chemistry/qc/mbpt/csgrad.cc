@@ -1656,7 +1656,7 @@ MBPT2::compute_cs_grad()
         <<scprintf("MP2 energy [au]:                   %17.12lf\n", emp2);
     ExEnv::out0().flush();
     }
-  if (method_ && strcmp(method_,"mp")) {
+  if (method_ == "mp") {
     ExEnv::out0() << indent
          << "MBPT2: bad method for closed shell case: " << method_
          << ", using mp" << endl;

@@ -25,13 +25,6 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/am05.h>
-#include <chemistry/qc/dft/f77sym.h>
-
-extern "C" {
-    void F77_AM05(double *n,double *s,double *u,
-              double *t,double *ex,double *ec,
-              double *vx,double *vc,int *pot);
-}
 
 using namespace std;
 using namespace sc;

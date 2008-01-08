@@ -34,6 +34,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/uncontract.h> 
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -379,19 +380,21 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the
   // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = ref->momentum_basis()+hcore_basis;
 
+  // be precise, it's a critical step
+  //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(ref->momentum_basis());   
+  Ref<GaussianBasisSet> uncontract_p = ref->momentum_basis(); // for consistency
+  Ref<GaussianBasisSet> p_basis = uncontract_p+hcore_basis;
+   
   // compute the relativistic core Hamiltonian  
   RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
   
   // compute T+V+mass-velocity
   RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis); 
-  TVmv.print("florian: TVmv in Delta_DKH_");
 
-  // calculate H_DKH - H_tvp to get the difference Hamiltonian
+  // calculate delta_DKH = H_DKH - H_tvp to get the difference Hamiltonian
   TVmv.scale(-1.0);
   hsymm.accumulate(TVmv);
-  throw ProgrammingError("p^4 not yet tested '_'",__FILE__,__LINE__);
   
   // from now on proceed as in fock
   
@@ -599,8 +602,9 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
   RefSymmSCMatrix mass_velocity(p_oso_dim, p_so_kit);
   kinetic_energy.assign(0.0);
   mass_velocity.assign(0.0);
-  //  const double c = 137.0359895; // speed of light in a vacuum in a.u.
-  const double c = 137.03599911;  // speed of light according to CRC
+  const double c = 137.0359895; // speed of light in a vacuum in a.u.
+  //  const double c = 137.035999679;  // speed of light according to CODATA (2006)
+  //  const double c = 137.03599911;  // speed of light according to CRC
   int noso = p_oso_dim.n();
   for (int i=0; i<noso; i++) {
     double T_val = Tval(i);

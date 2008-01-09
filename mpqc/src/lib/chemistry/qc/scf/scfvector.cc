@@ -114,7 +114,6 @@ SCF::savestate_iter(int iter)
     const char *filename = checkpoint_file();
     sstr << filename << "." << iter+1 << ".tmp";
     savestate_to_file(sstr.str());
-    free((void*)filename);
   }
 }
 
@@ -409,7 +408,6 @@ SCF::compute_vector(double& eelec, double nucrep)
   if (if_to_checkpoint()) {
     const char *checkpoint_filename = checkpoint_file();
     std::string state_filename = checkpoint_filename;
-    free((void*)checkpoint_filename);
     state_filename += ".tmp";
     savestate_to_file(state_filename);
   }

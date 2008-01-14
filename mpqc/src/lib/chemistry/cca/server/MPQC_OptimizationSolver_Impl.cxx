@@ -292,6 +292,7 @@ MPQC::OptimizationSolver_impl::go_impl ()
   initialize();
   std::cerr << "solver initialized\n";
   solve();
+  coor_model_.finalize();
     
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver.go)
 }

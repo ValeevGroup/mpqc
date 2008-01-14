@@ -91,7 +91,7 @@ void MPQC::CoordinateModel_impl::_load() {
 
 // user defined non-static methods:
 /**
- *  Registers and gets ports, and requests Model object(s) from the 
+ *  Gets ports, and requests Model object(s) from the 
  * ModelFactory component(s). This must be the first method called 
  * following instantiation.
  */

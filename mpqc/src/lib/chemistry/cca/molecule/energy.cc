@@ -92,11 +92,10 @@ MolecularEnergyCCA::init_model()
   gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
   gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
-  // coor_model already exists in  external framework case
-  services.registerUsesPort( "CoorModelPort", "ChemistryOpt.CoordinateModelInterface", type_map );
   try{
+    // coor_model already exists and registered in external framework case
     coor_model_ = sidl::babel_cast<ChemistryOpt::CoordinateModelInterface>(
-      services.getPort("CoorModelPort") );
+      services.getPort("CoordinateModelInterface") );
   }
   catch(...) {
     // no coor model yet, must be embedded framework
@@ -105,6 +104,7 @@ MolecularEnergyCCA::init_model()
   if( !coor_model_ ) {
 
     // this happens in the embedded framework case
+    services.registerUsesPort("CoorModelPort", "ChemsitryOpt.CoordinateModelInterface", type_map );
    
     cca_molecule_ = ChemistryCXX::Molecule::_create();
     cca_molecule_.initialize(molecule()->natom(),0,"bohr");

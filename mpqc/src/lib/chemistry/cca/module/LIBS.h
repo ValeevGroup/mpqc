@@ -17,6 +17,7 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA
 #  include <chemistry/cca/int/LIBS.h>
 #  include <chemistry/cca/server/LIBS.h>
+#  include <chemistry/cca/molecule/LIBS.h>
 #  include <util/misc/LIBS.h>
 #endif
 #include <chemistry/qc/mbpt/LIBS.h>

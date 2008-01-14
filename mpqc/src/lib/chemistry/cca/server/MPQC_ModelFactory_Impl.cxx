@@ -374,7 +374,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
   
   MPQC::Model model = MPQC::Model::_create();  
   model.initialize_parsedkeyval("model",input.str());
-  //model.set_molecule(molecule_);
+  model.set_molecule(molecule_);
   
   return model;
 

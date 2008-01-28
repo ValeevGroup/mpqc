@@ -34,7 +34,7 @@
 namespace sc {
 
 // Types of available 2-electron integral evaluators
-    typedef enum {erieval, grteval, g12eval, g12nceval, geng12eval} tbinteval;
+    typedef enum {erieval, grteval, g12eval, g12nceval, g12dkheval, geng12eval} tbinteval;
 
 /** This implements electron repulsion integrals in the IntLibint2 library. */
 class TwoBodyIntLibint2 : public TwoBodyInt {

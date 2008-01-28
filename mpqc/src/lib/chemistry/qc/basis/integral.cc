@@ -290,6 +290,17 @@ Integral::storage_required_g12nc(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
+Integral::storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
+                                  const Ref<GaussianBasisSet> &b2,
+                                  const Ref<GaussianBasisSet> &b3,
+                                  const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
 Integral::storage_required_geng12(const Ref<GaussianBasisSet> &b1,
 				  const Ref<GaussianBasisSet> &b2,
 				  const Ref<GaussianBasisSet> &b3,
@@ -379,6 +390,12 @@ Ref<TwoBodyInt>
 Integral::g12nc(const Ref<IntParamsG12>& p)
 {
   throw std::runtime_error("Integral::g12nc(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::g12dkh(const Ref<IntParamsG12>& p)
+{
+  throw FeatureNotImplemented("Integral::g12dkh(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
 }
 
 Ref<TwoBodyInt>

@@ -267,6 +267,55 @@ TwoBodyIntDescrG12NC::intSet(unsigned int t)
 
 ////
 
+TwoBodyIntDescrG12DKH::TwoBodyIntDescrG12DKH(const Ref<Integral>& IF,
+                                             const Ref<IntParamsG12>& params) :
+  TwoBodyIntDescr(), factory_(IF), params_(params)
+{
+  // currently implemented only when bra and ket functions are the same
+  if (params_->bra() != params_->ket())
+    throw FeatureNotImplemented("TwoBodyIntDescrG12DKH -- g12dkh integrals only implemented when only 1 correlation factor is used");
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntDescrG12DKH::inteval() const
+{
+  return factory_->g12dkh(params_);
+}
+
+unsigned int
+TwoBodyIntDescrG12DKH::intset(TwoBodyInt::tbint_type t) const
+{
+  return TwoBodyIntDescrG12DKH::intSet(t);
+}
+
+TwoBodyInt::tbint_type
+TwoBodyIntDescrG12DKH::intset(unsigned int t) const
+{
+  return TwoBodyIntDescrG12DKH::intSet(t);
+}
+
+unsigned int
+TwoBodyIntDescrG12DKH::intSet(TwoBodyInt::tbint_type t)
+{
+  switch(t) {
+  case TwoBodyInt::g12p4g12_m_g12t1g12t1:
+    return 0;
+  }
+  throw ProgrammingError("TwoBodyIntDescrG12DKH::intSet() -- this type not recognized");
+}
+
+TwoBodyInt::tbint_type
+TwoBodyIntDescrG12DKH::intSet(unsigned int t)
+{
+  switch(t) {
+  case 0:
+    return TwoBodyInt::g12p4g12_m_g12t1g12t1;
+  }
+  throw ProgrammingError("TwoBodyIntDescrG12DKH::intSet() -- this type not recognized");
+}
+
+////
+
 TwoBodyIntDescrGenG12::TwoBodyIntDescrGenG12(const Ref<Integral>& IF,
 					     const Ref<IntParamsGenG12>& params) :
   TwoBodyIntDescr(), factory_(IF), params_(params)

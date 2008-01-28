@@ -51,6 +51,9 @@
 #if LIBINT2_SUPPORT_GENG12
 #  include <chemistry/qc/libint2/geng12.h>
 #endif
+#if LIBINT2_SUPPORT_G12DKH
+#  include <chemistry/qc/libint2/g12dkh.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -134,6 +137,22 @@ namespace sc {
 	    return new GenG12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
 	}
 #endif
+#if LIBINT2_SUPPORT_G12DKH
+	   template<>
+	    Ref<G12DKHLibint2>
+	    create_int2e(Integral*integral,
+	             const Ref<GaussianBasisSet>& b1,
+	             const Ref<GaussianBasisSet>& b2,
+	             const Ref<GaussianBasisSet>& b3,
+	             const Ref<GaussianBasisSet>& b4,
+	             size_t storage,
+	             const Ref<IntParams>& params)
+	    {
+	        typedef IntParamsG12 IPType;
+	        Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+	        return new G12DKHLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+	    }
+#endif
     }
 }
 
@@ -157,7 +176,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
-    num_tbint_types_ = 1;
+    num_tbint_types_ = TwoBodyIntDescrERI::num_intsets;
     break;
   }
 #endif
@@ -166,14 +185,14 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
   case g12eval:
   {
     int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    num_tbint_types_ = 6;
+    num_tbint_types_ = TwoBodyIntDescrG12::num_intsets;
     break;
   }
 # else
   case g12nceval:
   {
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
-    num_tbint_types_ = 5;
+    num_tbint_types_ = TwoBodyIntDescrG12NC::num_intsets;
     break;
   }
 # endif
@@ -182,7 +201,16 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
   case geng12eval:
   {
     int2elibint2_ = create_int2e<GenG12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    num_tbint_types_ = 4;
+    num_tbint_types_ = TwoBodyIntDescrGenG12::num_intsets;
+    break;
+  }
+#endif
+
+#if LIBINT2_SUPPORT_G12DKH
+  case g12dkheval:
+  {
+    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    num_tbint_types_ = TwoBodyIntDescrG12DKH::num_intsets;
     break;
   }
 #endif
@@ -234,6 +262,9 @@ TwoBodyIntLibint2::inttype(TwoBodyInt::tbint_type type) const
     case g12nceval:
 	return TwoBodyIntDescrG12NC::intSet(type);
 
+    case g12dkheval:
+    return TwoBodyIntDescrG12DKH::intSet(type);
+
     case geng12eval:
 	return TwoBodyIntDescrGenG12::intSet(type);
     }
@@ -252,6 +283,9 @@ TwoBodyIntLibint2::inttype(unsigned int type) const
 
     case g12nceval:
 	return TwoBodyIntDescrG12NC::intSet(type);
+
+    case g12dkheval:
+    return TwoBodyIntDescrG12DKH::intSet(type);
 
     case geng12eval:
 	return TwoBodyIntDescrGenG12::intSet(type);

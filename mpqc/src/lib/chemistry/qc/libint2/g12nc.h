@@ -36,6 +36,7 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/intparams.h>
+#include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/libint2/shellpairs.h>
 #include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
@@ -65,7 +66,7 @@ class Integral;
 class G12NCLibint2: public Int2eLibint2 {
   private:
   /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, g12t1g12, anti_g12g12 integrals */
-    static const int num_te_types_ = 5;
+    static const int num_te_types_ = TwoBodyIntDescrG12NC::num_intsets;
 
     typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
     typedef IntParamsG12::ContractedGeminal ContractedGeminal;

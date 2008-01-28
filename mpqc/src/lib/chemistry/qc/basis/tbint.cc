@@ -302,7 +302,7 @@ TwoBodyThreeCenterInt::basis3()
 const double *
 TwoBodyThreeCenterInt::buffer(tbint_type i) const
 {
-  if (i==eri) return buffer_;
+  if (i==TwoBodyInt::eri) return buffer_;
   return 0;
 }
 
@@ -399,7 +399,7 @@ TwoBodyTwoCenterInt::basis2()
 const double *
 TwoBodyTwoCenterInt::buffer(tbint_type i) const
 {
-  if (i==eri) return buffer_;
+  if (i==TwoBodyInt::eri) return buffer_;
   return 0;
 }
 

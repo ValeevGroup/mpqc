@@ -1,5 +1,5 @@
 //
-// geng12.h
+// g12dkh.h
 //
 // Copyright (C) 2001 Edward Valeev
 //
@@ -42,35 +42,26 @@
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
 
-#if LIBINT2_SUPPORT_GENG12
-#ifndef _chemistry_qc_libint2_geng12_h
-#define _chemistry_qc_libint2_geng12_h
+#if LIBINT2_SUPPORT_G12DKH
+#ifndef _chemistry_qc_libint2_g12dkh_h
+#define _chemistry_qc_libint2_g12dkh_h
 
 namespace sc {
 
 class Integral;
 
-/** GenG12Libint2 is a specialization of Int2eLibint2 that computes two-electron integrals specific
-    to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
+/** G12DKHLibint2 is a specialization of Int2eLibint2 that computes two-electron integrals specific
+    to relativistic explicitly correlated methods which use Gaussian geminals.
 
-    GenG12Libint2 can compute integrals with one general geminals, both in bra and ket, or in bra only. All 2-geminal integrals can be represented as 1-geminals integrals
-    of a product of the original 2 geminals. For example, overlap of 2 geminals (g12*g12') is directly reduced to an integral over 1 geminal (G12)
-    whose exponent is a sum of exponents of g12 and g12'. The following integrals over 2 geminals are needed:
-    <list type="bullet">
-      <item> g12*g12' = G12. Returned as r12_0_g12. </item>
-      <item> [g12,[t1,g12']] = - 2 a a' r1^2 G12 - 2 g g' r12^2 G12 + 2 (a g' + a' g) r1 \dot r12 G12. Returned as g12t1g12. </item>
-    </list>
-
-    [t1,g12] integrals are also needed when bra and ket are not identical. Hence the constructor will throw if bra!=ket.
+    G12DKHLibint2 can compute integrals with the same geminal factor in bra and ket.
  */
-class GenG12Libint2: public Int2eLibint2 {
+class G12DKHLibint2: public Int2eLibint2 {
   private:
-  /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, and g12t1g12 integrals */
-    static const int num_te_types_ = TwoBodyIntDescrR12::num_intsets;
+  /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, g12t1g12, anti_g12g12 integrals */
+    static const int num_te_types_ = TwoBodyIntDescrG12DKH::num_intsets;
 
-    typedef IntParamsGenG12 IntParamsType;
-    typedef IntParamsType::PrimitiveGeminal PrimitiveGeminal;
-    typedef IntParamsType::ContractedGeminal ContractedGeminal;
+    typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
     // the geminal in the bra
     ContractedGeminal geminal_bra_;
     // the geminal in the ket (can be null)
@@ -107,8 +98,8 @@ class GenG12Libint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void geng12_quartet_data_(prim_data *Data, double scale, double alpha_bra, double alpha_ket, double gamma_bra, double gamma_ket,
-			      bool eri_only = false);
+    void g12dkh_quartet_data_(prim_data *Data, double scale, double gamma,
+                              bool eri_only = false);
     /*--- Compute engines ---*/
     Libint_t Libint_;
     Ref<Fjt> Fm_Eval_;
@@ -122,17 +113,17 @@ class GenG12Libint2: public Int2eLibint2 {
     ExpensiveMath ExpMath_;
   
   public:
-    /// When integrals with 1 geminal are needed, gket should be IntParamsGenG12::null_geminal
-    GenG12Libint2(Integral *,
-		  const Ref<GaussianBasisSet>&,
-		  const Ref<GaussianBasisSet>&,
-		  const Ref<GaussianBasisSet>&,
-		  const Ref<GaussianBasisSet>&,
-		  size_t storage,
-		  const ContractedGeminal& gbra,
-		  const ContractedGeminal& gket
+    ///
+    G12DKHLibint2(Integral *,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 const Ref<GaussianBasisSet>&,
+		 size_t storage,
+		 const ContractedGeminal& gbra,
+		 const ContractedGeminal& gket
 	);
-    ~GenG12Libint2();
+    ~G12DKHLibint2();
 
     double *buffer(unsigned int t) const {
 	return target_ints_buffer_[t];
@@ -147,12 +138,12 @@ class GenG12Libint2: public Int2eLibint2 {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/libint2/geng12_quartet_data.h>
+#include <chemistry/qc/libint2/g12dkh_quartet_data.h>
 
 }
 
 #endif // header guard
-#endif // if LIBINT2_SUPPORT_GENG12
+#endif // if LIBINT2_SUPPORT_G12DKH
 
 // Local Variables:
 // mode: c++

@@ -1724,6 +1724,23 @@ AC_CHECK_HEADERS(libint2/libint2.h,
      AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])]
     )
+  AC_MSG_CHECKING([if libint2 can compute G12DKH])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_G12DKH
+        void libint2_support_g12dkh() {}
+        #endif
+      ]],
+      [[
+        libint2_support_g12dkh();
+      ]]
+      ),
+    [HAVE_LIBINT2_G12DKH=yes
+     AC_SUBST(HAVE_LIBINT2_G12DKH)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
   )
 AC_LANG_RESTORE
 

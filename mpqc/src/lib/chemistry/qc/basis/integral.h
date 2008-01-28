@@ -149,11 +149,17 @@ class Integral : public SavableState {
 					const Ref<GaussianBasisSet> &b3 = 0,
 					const Ref<GaussianBasisSet> &b4 = 0);
   /** Returns how much storage will be needed to initialize a two-body integrals
-      evaluator for G12 integrals. */
+      evaluator for G12NC integrals. */
     virtual size_t storage_required_g12nc(const Ref<GaussianBasisSet> &b1,
 					  const Ref<GaussianBasisSet> &b2 = 0,
 					  const Ref<GaussianBasisSet> &b3 = 0,
 					  const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12DKH integrals. */
+    virtual size_t storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
+                                           const Ref<GaussianBasisSet> &b2 = 0,
+                                           const Ref<GaussianBasisSet> &b3 = 0,
+                                           const Ref<GaussianBasisSet> &b4 = 0);
   /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for general G12 integrals. */
     virtual size_t storage_required_geng12(const Ref<GaussianBasisSet> &b1,
@@ -282,7 +288,8 @@ class Integral : public SavableState {
         integrals. If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyTwoCenterDerivInt> electron_repulsion2_deriv();
 
-    /// Return a TwoBodyInt that computes electron repulsion integrals.
+    /** Return a TwoBodyInt that computes electron repulsion integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrERI. */
     virtual Ref<TwoBodyInt> electron_repulsion();
 
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
@@ -292,23 +299,34 @@ class Integral : public SavableState {
         to linear R12 methods.  According to the convention in the
         literature, "g" stands for electron repulsion integral, "r" for the
         integral of r12 operator, and "t" for the commutator
-        integrals. Implementation for this kind of TwoBodyInt is
+        integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrR12.
+        Implementation for this kind of TwoBodyInt is
         optional. */
     virtual Ref<TwoBodyInt> grt();
     
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> g12(const Ref<IntParamsG12>&);
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
-	This particular implementation does not produce commutator integrals
+	    This particular implementation does not produce commutator integrals.
+	    This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> g12nc(const Ref<IntParamsG12>&);
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
+        to relativistic explicitly correlated methods which use Gaussian geminals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12DKH.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12dkh(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrGenG12.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> geng12(const Ref<IntParamsGenG12>&);
     

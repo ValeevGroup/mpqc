@@ -54,10 +54,9 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
 			   const Ref<GaussianBasisSet>& b3,
 			   const Ref<GaussianBasisSet>& b4,
 			   size_t storage,
-			   const ContractedGeminal& geminal_bra,
-			   const ContractedGeminal& geminal_ket) :
+			   const ContractedGeminal& geminal) :
   Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(),
-  geminal_bra_(geminal_bra), geminal_ket_(geminal_ket)
+  geminal_bra_(geminal), geminal_ket_(geminal)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();
@@ -65,9 +64,9 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
   int l3 = bs3_->max_angular_momentum();
   int l4 = bs4_->max_angular_momentum();
   int lmax = max(max(l1,l2),max(l3,l4));
-  if (lmax > LIBINT2_MAX_AM_R12_24_G12) {
+  if (lmax > LIBINT2_MAX_AM_R12_024_G12) {
     throw LimitExceeded<int>("G12DKHLibint2::G12DKHLibint2() -- maxam of the basis is too high,\
- not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_R12_24_G12,lmax);
+ not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_R12_024_G12,lmax);
   }
 
   /*--- Initialize storage ---*/
@@ -79,8 +78,8 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
     bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
   int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
-  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_r12_24_g12)(lmax) * sizeof(LIBINT2_REALTYPE);
-  LIBINT2_PREFIXED_NAME(libint2_init_r12_24_g12)(&Libint_,lmax,0);
+  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_r12_024_g12)(lmax) * sizeof(LIBINT2_REALTYPE);
+  LIBINT2_PREFIXED_NAME(libint2_init_r12_024_g12)(&Libint_,lmax,0);
   target_ints_buffer_[0]= new double[num_te_types_*max_target_size];
   cart_ints_[0] = new double[num_te_types_*max_cart_target_size];
   for(int te_type=1; te_type<num_te_types_; te_type++) {
@@ -132,7 +131,7 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
 
 G12DKHLibint2::~G12DKHLibint2()
 { 
-  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12_24_g12)(&Libint_);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12_024_g12)(&Libint_);
   delete[] target_ints_buffer_[0];
   delete[] cart_ints_[0];
   if (sphharm_ints_)
@@ -179,7 +178,7 @@ G12DKHLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
   int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
     bs3->max_nfunction_in_shell()*bs4->max_nfunction_in_shell();
 
-  storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_r12_24_g12)(lmax) * sizeof(LIBINT2_REALTYPE);
+  storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_r12_024_g12)(lmax) * sizeof(LIBINT2_REALTYPE);
 
   if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
       bs1->max_ncontraction() != 1 || bs2->max_ncontraction() != 1 ||
@@ -203,7 +202,7 @@ G12DKHLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
 
 G12DKHLibint2::ExpensiveMath::ExpensiveMath()
 {
-  const unsigned int imax = 4*LIBINT2_MAX_AM_R12_24_G12;
+  const unsigned int imax = 4*LIBINT2_MAX_AM_R12_024_G12;
   fac[0] = 1.0;
   for(int i=1; i<=imax; i++) {
     fac[i] = i*fac[i-1];

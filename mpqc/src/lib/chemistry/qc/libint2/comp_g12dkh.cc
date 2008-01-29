@@ -356,11 +356,10 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   }
 
   //
-  // Need to distinguish 1-geminal and 2-geminal cases, hence don't use geminal_xxx_ directly, via references only
+  // Only symmetric case (bra == ket) is supported, but may generalize in the future. Will use geminals indirectly, via references
   //
-  const bool braonly = (geminal_ket_ == IntParamsG12::null_geminal);
   const ContractedGeminal& gbra = geminal_bra_;
-  const ContractedGeminal& gket = braonly ? IntParamsG12::zero_exponent_geminal : geminal_ket_;
+  const ContractedGeminal& gket = geminal_ket_;
   const int nbra_geminal_prims = gbra.size();
   const int nket_geminal_prims = gket.size();
 
@@ -409,80 +408,53 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double gamma_ket = gpket.first;
                       const double gpcoef_ket = gpket.second;
 
-                      double gamma_perm_pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-#if 0
-                      if (!permute_ && p13p24)
-                      gamma_perm_pfac *= -1.0;
-#endif    
-                      
                       // Compute primitive data for Libint
                       g12dkh_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
 #if LIBINT2_ACCUM_INTS
                       // zero out targets in Libint_
                       Libint_.zero_out_targets = 1;
 #endif
-#if !COMPUTE_R12_2_G12
-                      // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-                      const double g2_4 = gamma_bra*gamma_ket*4.0;
-#else
-                      const double g2_4 = 1.0;
-#endif
+                      
+                      // from the article by FAB+EV:
+                      // M2H + M3H = 16 * \sum_a,b c_a c_b
+                      //             (27 g_a g_b +
+                      //              28 (g_a^2 g_b + g_a g_b^2) r12^2
+                      //              4 (g_a^3 g_b + g_a g_b^3) r12^4
+                      //             )
+                      
+                      // scale g12 integrals by 27 * gamma_bra * gamma_ket
+                      const double Gb_Gk = gamma_bra * gamma_ket;
+                      const double pfac0 = 27.0 * Gb_Gk;
+                      // scale r12^2 * g12 integrals by 28 * (gamma_bra^2 * gamma_ket + gamma_bra * gamma_ket^2)
+                      const double Gb2_Gk = gamma_bra * Gb_Gk;
+                      const double Gb_Gk2 = gamma_ket * Gb_Gk;
+                      const double pfac2 = 28.0 * (Gb2_Gk + Gb_Gk2);
+                      // scale r12^4 * g12 integrals by 4 * (gamma_bra^3 * gamma_ket + gamma_bra * gamma_ket^3 + 3*gamma_bra^2*gamma_ket^2)
+                      const double Gb3_Gk = gamma_bra * Gb2_Gk;
+                      const double Gb_Gk3 = gamma_ket * Gb_Gk2;
+                      const double pfac4 = 4.0 * (Gb3_Gk + Gb_Gk3 + Gb_Gk*Gb_Gk);
                       
                       if (quartet_info_.am) {
                         // Compute the integrals
-                        LIBINT2_PREFIXED_NAME(libint2_build_r12_24_g12)[tam1][tam2][tam3][tam4](&Libint_);
+                        LIBINT2_PREFIXED_NAME(libint2_build_r12_024_g12)[tam1][tam2][tam3][tam4](&Libint_);
 
-                        // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-                        LIBINT2_REALTYPE* prim_ints = Libint_.targets[2];
+                        // add, scale, and copy the integrals over to prim_ints_
+                        const LIBINT2_REALTYPE* prim_ints0 = Libint_.targets[0];
+                        const LIBINT2_REALTYPE* prim_ints2 = Libint_.targets[1];
+                        const LIBINT2_REALTYPE* prim_ints4 = Libint_.targets[2];
                         for(int ijkl=0; ijkl<size; ijkl++)
-                        prim_ints[ijkl] *= g2_4;
-
-                        for(int te_type = 0; te_type < 3; te_type++) {
-                          // Copy the integrals over to prim_ints_
-                          const LIBINT2_REALTYPE* prim_ints = Libint_.targets[te_type];
-                          for(int ijkl=0; ijkl<size; ijkl++)
-                          prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
-                        }
-
-                        // If using 2 geminals and g12!=g12' generate g12g12' * (beta-alpha)/(beta+alpha) needed to compute g12[ti,g12'] - g12'[ti,g12]
-                        if (!braonly && gamma_bra != gamma_ket) {
-                          const LIBINT2_REALTYPE* g12g12_ints = Libint_.targets[0];
-                          LIBINT2_REALTYPE* anti_g12g12_ints = prim_ints_[4];
-                          for(int ijkl=0; ijkl<size; ijkl++) {
-                            anti_g12g12_ints[buffer_offset + ijkl] += gamma_perm_pfac * g12g12_ints[ijkl];
-                          }
-                        }
+                          prim_ints_[0][buffer_offset + ijkl] += (double) 16.0 * ( pfac0*prim_ints0[ijkl] + pfac2*prim_ints2[ijkl] + pfac4*prim_ints4[ijkl] );
 
                       }
                       else {
-                        prim_ints_[2][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
-                        prim_ints_[1][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                        prim_ints_[3][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
-
-                        // If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
-                        if (!braonly && gamma_bra != gamma_ket) {
-                          const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-                          prim_ints_[4][buffer_offset] += gamma_perm_pfac * Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                        }
-
+                        prim_ints_[0][buffer_offset] += (double) 16.0 *
+                          (pfac0*Libint_.LIBINT_T_SS_K0G12_SS_0[0] +
+                           pfac2*Libint_.LIBINT_T_SS_K2G12_SS_0[0] +
+                           pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0]);
                       }
 
                     } // end of ket geminal primitive loop
                   } // end of bra geminal primitive loop
-
-                  // Compute primitive data for Libint
-                  g12dkh_quartet_data_(&Libint_, 1.0, 0.0);
-                  if (quartet_info_.am) {
-                    // Compute the integrals
-                    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
-                    // Copy the integrals over to prim_ints_
-                    const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
-                    for(int ijkl=0; ijkl<size; ijkl++)
-                    prim_ints_[0][buffer_offset + ijkl] += (double) prim_ints[ijkl];
-                  }
-                  else {
-                    prim_ints_[0][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
-                  }
 
                 }
               }

@@ -150,7 +150,9 @@ namespace sc {
 	    {
 	        typedef IntParamsG12 IPType;
 	        Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-	        return new G12DKHLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+	        if (params_cast->bra() != params_cast->ket())
+	          throw FeatureNotImplemented("G12DKH integrals are currently available for 1 correlation factor only",__FILE__,__LINE__);
+	        return new G12DKHLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra());
 	    }
 #endif
     }

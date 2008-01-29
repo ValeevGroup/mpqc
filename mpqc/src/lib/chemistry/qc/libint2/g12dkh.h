@@ -64,7 +64,7 @@ class G12DKHLibint2: public Int2eLibint2 {
     typedef IntParamsG12::ContractedGeminal ContractedGeminal;
     // the geminal in the bra
     ContractedGeminal geminal_bra_;
-    // the geminal in the ket (can be null)
+    // the geminal in the ket -- must be equal to bra at the moment
     ContractedGeminal geminal_ket_;
     
     // Storage for target integrals
@@ -119,8 +119,7 @@ class G12DKHLibint2: public Int2eLibint2 {
 		 const Ref<GaussianBasisSet>&,
 		 const Ref<GaussianBasisSet>&,
 		 size_t storage,
-		 const ContractedGeminal& gbra,
-		 const ContractedGeminal& gket
+		 const ContractedGeminal& gbra
 	);
     ~G12DKHLibint2();
 

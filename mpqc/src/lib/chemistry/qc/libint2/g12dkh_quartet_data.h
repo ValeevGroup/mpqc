@@ -38,7 +38,7 @@
 
   gamma is the exponent of the Gaussian geminal in the integral
  --------------------------------------------------------------------------------*/
-inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, double gamma, bool eri_only)
+inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, double gamma)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -128,66 +128,17 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
                            int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
                            int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
   const double pfac_normovlp = pfac_norm * pair12->ovlp * pair34->ovlp * scale;
-
-  if (eri_only) {
-      double T = rho*PQ2;
-      double pfac = 2.0*sqrt(rho*M_1_PI)*pfac_normovlp;
-      if(T < small_T){
-          assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
-        }
-      else {
-          double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-          assign_FjT(Data,quartet_info_.am,fjttable,pfac);
-        }
-      return;
-    }
-
-  // else, if need other integrals
   double T = rho2 * oorhog * PQ2;
 
   //
-  // (00|0|00) and (00|2|00) need to start recursion for (ab|0|cd), (ab|2|cd)
+  // (00|0|00), (00|2|00), and (00|4|00) need to start recursion for (ab|0|cd), (ab|2|cd), (ab|4|cd)
   //
   double rorg = rho * oorhog;
   double sqrt_rorg = sqrt(rorg);
   Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * exp(-gamma*rorg*PQ2) * pfac_normovlp;
-  Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
-
-  //
-  // compute (00|-1|00)^m from Fj(x)
-  //
-  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->LIBINT_T_SS_K0G12_SS_0[0];
-
-  const double *F;
-  if(T < small_T){ 
-    F = oo2np1;
-  }
-  else {
-    F = Fm_Eval_->values(quartet_info_.am,T);
-  }
-
-  double ss_m1_ss[4*LIBINT2_MAX_AM_R12kG12+1];
-  double g_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  double r_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  double oorhog_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  g_i[0] = 1.0;
-  r_i[0] = 1.0;
-  oorhog_i[0] = 1.0;
-  for(int i=1; i<=quartet_info_.am; i++) {
-      g_i[i] = g_i[i-1] * gamma;
-      r_i[i] = r_i[i-1] * rho;
-      oorhog_i[i] = oorhog_i[i-1] * oorhog;
-    }
-  for(int m=0; m<=quartet_info_.am; m++) {
-      double ssss = 0.0;
-      for(int k=0; k<=m; k++) {
-          ssss += ExpMath_.bc[m][k] * r_i[k] * g_i[m-k] * F[k];
-        }
-      ss_m1_ss[m] = ssss * oorhog_i[m];
-    }
-  
-  assign_ss_r12m1g12_ss(Data,quartet_info_.am,ss_m1_ss,pfac);
-
+  const double ssss_o_rhog = Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
+  Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * ssss_o_rhog;
+  Data->LIBINT_T_SS_K4G12_SS_0[0] = (15.0/4.0 + 5.0*T + T*T) * ssss_o_rhog * oorhog;
 
   //
   // prefactors for (a0|k|c0) (k!=-1) VRR

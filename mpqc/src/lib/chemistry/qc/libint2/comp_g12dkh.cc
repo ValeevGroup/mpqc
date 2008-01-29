@@ -30,7 +30,7 @@
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/libint2/macros.h>
-#include <chemistry/qc/libint2/g12nc.h>
+#include <chemistry/qc/libint2/g12dkh.h>
 #include <chemistry/qc/libint2/tform.h>
 
 #if LIBINT2_SUPPORT_G12DKH
@@ -471,7 +471,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                   } // end of bra geminal primitive loop
 
                   // Compute primitive data for Libint
-                  g12dkh_quartet_data_(&Libint_, 1.0, 0.0, true);
+                  g12dkh_quartet_data_(&Libint_, 1.0, 0.0);
                   if (quartet_info_.am) {
                     // Compute the integrals
                     LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);

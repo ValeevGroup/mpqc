@@ -65,9 +65,9 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
   int l3 = bs3_->max_angular_momentum();
   int l4 = bs4_->max_angular_momentum();
   int lmax = max(max(l1,l2),max(l3,l4));
-  if (lmax > LIBINT2_MAX_AM_G12DKH) {
+  if (lmax > LIBINT2_MAX_AM_R12_24_G12) {
     throw LimitExceeded<int>("G12DKHLibint2::G12DKHLibint2() -- maxam of the basis is too high,\
- not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_G12DKH,lmax);
+ not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_R12_24_G12,lmax);
   }
 
   /*--- Initialize storage ---*/
@@ -132,7 +132,7 @@ G12DKHLibint2::G12DKHLibint2(Integral *integral,
 
 G12DKHLibint2::~G12DKHLibint2()
 { 
-  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12k_24_g12)(&Libint_);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12_24_g12)(&Libint_);
   delete[] target_ints_buffer_[0];
   delete[] cart_ints_[0];
   if (sphharm_ints_)

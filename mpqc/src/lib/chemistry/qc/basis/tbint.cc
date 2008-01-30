@@ -201,7 +201,8 @@ TwoBodyInt::inttypedescr(TwoBodyInt::tbint_type type)
     case TwoBodyInt::r12_0_gg12:
     case TwoBodyInt::r12_m1_gg12:
     case TwoBodyInt::gg12t1gg12:
-	return symm_type;
+    case g12p4g12_m_g12t1g12t1:
+    return symm_type;
     }
     throw ProgrammingError("TwoBodyInt::inttype() -- incorrect type");
 }

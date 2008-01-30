@@ -33,6 +33,9 @@
 #include <chemistry/qc/libint2/g12dkh.h>
 #include <chemistry/qc/libint2/tform.h>
 
+// set to 1 to produce the double commutator with kinetic energy instead of p^4
+#define COMPUTE_g12t1g12 0
+
 #if LIBINT2_SUPPORT_G12DKH
 
 using namespace std;
@@ -421,7 +424,13 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       //              28 (g_a^2 g_b + g_a g_b^2) r12^2
                       //              4 (g_a^3 g_b + g_a g_b^3) r12^4
                       //             )
-                      
+
+#if COMPUTE_g12t1g12
+                      const double pfac0 = 0.0;
+                      // note the extra factor of 16 below
+                      const double pfac2 = 0.25 * gamma_bra * gamma_ket;
+                      const double pfac4 = 0.0;
+#else
                       // scale g12 integrals by 27 * gamma_bra * gamma_ket
                       const double Gb_Gk = gamma_bra * gamma_ket;
                       const double pfac0 = 27.0 * Gb_Gk;
@@ -433,6 +442,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double Gb3_Gk = gamma_bra * Gb2_Gk;
                       const double Gb_Gk3 = gamma_ket * Gb_Gk2;
                       const double pfac4 = 4.0 * (Gb3_Gk + Gb_Gk3 + Gb_Gk*Gb_Gk);
+#endif
                       
                       if (quartet_info_.am) {
                         // Compute the integrals

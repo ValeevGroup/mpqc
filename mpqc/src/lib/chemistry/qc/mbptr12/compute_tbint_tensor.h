@@ -83,11 +83,16 @@ namespace sc {
           unsigned int fbraket = 0;
           for(unsigned int fbra=0; fbra<nbrasets; ++fbra) {
             for(unsigned int fket=0; fket<nketsets; ++fket, ++fbraket) {
+              
+              // is this appropriate here? If user didn't give transforms, create them anew then!
+#define SEARCH_EXISTING_TRANSFORMS 0
               std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,fbra,fket));
+#if SEARCH_EXISTING_TRANSFORMS
               try {
                 transforms.push_back(get_tform_(tlabel));
               }
               catch (TransformNotFound& a){
+#endif
                 Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
                 tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
                 Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
@@ -96,17 +101,21 @@ namespace sc {
                                                       intdescrs[fbraket]
                                                     );
                 transforms.push_back(tform);
+#if SEARCH_EXISTING_TRANSFORMS
               }
+#endif
             }
           }
         }
         else {
           for(int f=0; f<nsets; f++) {
             std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,f));
+#if SEARCH_EXISTING_TRANSFORMS
             try {
               transforms.push_back(get_tform_(tlabel));
             }
             catch (TransformNotFound& a){
+#endif
               Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
               tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
               Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
@@ -115,7 +124,9 @@ namespace sc {
                                                     intdescrs[f]
                                                   );
               transforms.push_back(tform);
+#if SEARCH_EXISTING_TRANSFORMS
             }
+#endif
           }
         }
       }

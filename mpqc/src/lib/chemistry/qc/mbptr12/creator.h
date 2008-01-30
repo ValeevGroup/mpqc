@@ -58,6 +58,7 @@ namespace sc {
       unsigned int ncreated_;
     };
 
+#if 0
   /** Creates TwoBodyMOIntsTransforms using transforms known by name to R12IntEval */
   class NamedTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
   {
@@ -88,6 +89,7 @@ namespace sc {
     
     void increment_indices();
   };
+#endif
   
   /** Creates new TwoBodyMOIntsTransforms and adds them to the transform map (R12IntEval, at the moment) */
   class NewTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >

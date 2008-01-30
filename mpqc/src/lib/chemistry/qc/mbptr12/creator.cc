@@ -33,6 +33,7 @@
 
 using namespace sc;
 
+#if 0
 NamedTransformCreator::NamedTransformCreator(
   Ref<R12IntEval>& r12eval,
   const Ref<MOIndexSpace>& space1,
@@ -86,6 +87,7 @@ NamedTransformCreator::increment_indices()
   }
   next();
 }
+#endif
 
 ////
 

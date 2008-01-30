@@ -439,6 +439,9 @@ class R12IntEval : virtual public SavableState {
   /** Compute B using standard approximation A'' -- exchange is dropped completely! */
   void compute_BApp_();
 
+  /** Compute the mass-velocity contributions to B that appear when DKH-based R12 calculations are requested */
+  void compute_B_DKH_();
+
   /// Compute singles contribution to the MP2 energy
   void compute_singles_emp2_();
 
@@ -734,20 +737,23 @@ public:
   std::string transform_label(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4) const;
+                              const Ref<MOIndexSpace>& space4,
+                              const std::string& operator_label = std::string()) const;
   /// Generates canonical id for transform. f12 is the index of the correlation function
   std::string transform_label(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3,
                               const Ref<MOIndexSpace>& space4,
-                              unsigned int f12) const;
+                              unsigned int f12,
+                              const std::string& operator_label = std::string()) const;
   /// version of transform_label() applicable when left and right correlation factors differ
   std::string transform_label(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3,
                               const Ref<MOIndexSpace>& space4,
                               unsigned int f12_left,
-                              unsigned int f12_right) const;
+                              unsigned int f12_right,
+                              const std::string& operator_label = std::string()) const;
   
   /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
       AlphaBeta amplitudes are computed.

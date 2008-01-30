@@ -613,6 +613,16 @@ R12IntEval::init_intermeds_()
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     init_intermeds_g12_();
   }
+  
+  // add in the relativistic contribution, if needed
+  // can only use stdapprox C and 1 correlation factor (but pq ansatz should work!)
+  if (r12info()->refinfo()->ref()->dk() > 0) {
+    if (g12ncptr.nonnull() && corrfactor()->nfunctions() == 1) {
+      compute_B_DKH_();
+    }
+    else
+      throw FeatureNotImplemented("Relativistic R12 method only implemented when stdapprox=C and there is only 1 correlation factor",__FILE__,__LINE__);
+  }
 }
 
 void
@@ -2611,7 +2621,7 @@ R12IntEval::compute()
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
         Ref<R12IntEval> thisref(this);
         if (obs_eq_vbs) {
-          NamedTransformCreator tform_creator(thisref,
+          NewTransformCreator tform_creator(thisref,
                                               xspace1,
                                               refinfo->orbs(spin1),
                                               xspace2,
@@ -2619,7 +2629,7 @@ R12IntEval::compute()
           fill_container(tform_creator,tforms);
         }
         else {
-          NamedTransformCreator tform_creator(thisref,
+          NewTransformCreator tform_creator(thisref,
                                               xspace1,
                                               vir1_act,
                                               xspace2,
@@ -2692,7 +2702,7 @@ R12IntEval::compute()
       
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       Ref<R12IntEval> thisref(this);
-      NamedTransformCreator tform_creator(
+      NewTransformCreator tform_creator(
         thisref,
         occ_act(spin1),
         refinfo->orbs(spin1),
@@ -2776,7 +2786,7 @@ R12IntEval::compute()
         
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
         Ref<R12IntEval> thisref(this);
-        NamedTransformCreator tform_creator(
+        NewTransformCreator tform_creator(
           thisref,
           occ_act(spin1),
           refinfo->orbs(spin1),
@@ -2911,7 +2921,7 @@ R12IntEval::compute()
       
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       Ref<R12IntEval> thisref(this);
-      NamedTransformCreator tform_creator(
+      NewTransformCreator tform_creator(
         thisref,
         occ_act(Alpha),
         refinfo->orbs(Alpha),
@@ -3352,11 +3362,13 @@ std::string
 R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,
                             const Ref<MOIndexSpace>& space3,
-                            const Ref<MOIndexSpace>& space4) const
+                            const Ref<MOIndexSpace>& space4,
+                            const std::string& operator_label) const
 {
   std::ostringstream oss;
   // use physicists' notation
-  oss << "<" << space1->id() << " " << space3->id() << "|" << space2->id() << " " << space4->id() << ">";
+  oss << "<" << space1->id() << " " << space3->id() << (operator_label.empty() ? "|" : operator_label)
+    << space2->id() << " " << space4->id() << ">";
   // for case-insensitive file systems append spincase
   oss << "_" << id(spincase2(space1,space3));
   return oss.str();
@@ -3367,11 +3379,12 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,
                             const Ref<MOIndexSpace>& space3,
                             const Ref<MOIndexSpace>& space4,
-                            unsigned int f12) const
+                            unsigned int f12,
+                            const std::string& operator_label) const
 {
   std::ostringstream oss;
   // use physicists' notation
-  oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
+  oss << "<" << space1->id() << " " << space3->id() << "| " << (operator_label.empty() ? corrfactor()->label() : operator_label)
       << "[" << f12 << "] |" << space2->id() << " " << space4->id() << ">";
   // for case-insensitive file systems append spincase
   oss << "_" << id(spincase2(space1,space3));
@@ -3384,11 +3397,12 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space3,
                             const Ref<MOIndexSpace>& space4,
                             unsigned int f12_left,
-                            unsigned int f12_right) const
+                            unsigned int f12_right,
+                            const std::string& operator_label) const
 {
   std::ostringstream oss;
   // use physicists' notation
-  oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
+  oss << "<" << space1->id() << " " << space3->id() << "| " << (operator_label.empty() ? corrfactor()->label() : operator_label)
       << "[" << f12_left << "," << f12_right << "] |" << space2->id()
       << " " << space4->id() << ">";
   // for case-insensitive file systems append spincase

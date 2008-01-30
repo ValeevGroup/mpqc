@@ -29,6 +29,7 @@
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
+#include <chemistry/qc/basis/petite.h>
 
 using namespace std;
 using namespace sc;
@@ -50,8 +51,71 @@ void R12IntEval::compute_B_DKH_() {
   ExEnv::out0() << endl << indent
       << "Entered analytic B(DKH2) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
+
+  const double c = 137.0359895;
+  const double one_over_8c2 = 1.0 / (8.0 * c * c);
+
+  //
+  // Compute kinetic energy integrals and obtain geminal-generator spaces transformed with them
+  //
+  Ref<MOIndexSpace> t_x_P[NSpinCases1];
+  // first need kinetic energy matrix between OBS and RIBS
+  Ref<GaussianBasisSet> obs = r12info()->basis();
+  const unsigned int maxnabs = r12info()->maxnabs();
+  Ref<MOIndexSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
+  Ref<GaussianBasisSet> ribs = rispace->basis();
+  // Symmetry blocked 
+  RefSCMatrix t_obs_ribs;
+  {
+    Ref<Integral> ref_integral = r12info()->refinfo()->ref()->integral();
+    ref_integral->set_basis(obs, ribs);
+    Ref<SCElementOp> op = new OneBodyIntOp(ref_integral->kinetic());
+    //Ref<SCElementOp> op = new OneBodyIntOp(ref_integral->overlap());
+    RefSCMatrix t_obs_ribs_ao(obs->basisdim(), ribs->basisdim(),
+                              ribs->matrixkit());
+    t_obs_ribs_ao.assign(0.0);
+    t_obs_ribs_ao.element_op(op);
+    op = 0;
+    //t_obs_ribs_ao.print("T(OBS/RIBS) in AO basis");
+    
+    // now must the OBS dimension into the SO basis
+    ref_integral->set_basis(ribs);
+    Ref<PetiteList> pl_ribs = ref_integral->petite_list();
+    RefSCDimension ribs_aodim_sb = pl_ribs->AO_basisdim();
+    ref_integral->set_basis(obs);
+    Ref<PetiteList> pl_obs = ref_integral->petite_list();
+    RefSCDimension obs_aodim_sb = pl_obs->AO_basisdim();
+    // first convert to a blocked matrix
+    RefSCMatrix blocked_t_obs_ribs_ao(obs_aodim_sb, ribs_aodim_sb,
+                                      ribs->so_matrixkit());
+    blocked_t_obs_ribs_ao->convert(t_obs_ribs_ao);  t_obs_ribs_ao = 0;
+    // now must transform the RIBS dimension with S^-1 = U . Ut, where U = rispace->coefs()
+    RefSCMatrix U = rispace->coefs();
+    t_obs_ribs = blocked_t_obs_ribs_ao * U * U.t();
+    //t_obs_ribs.print("T(OBS/RIBS) * S(RIBS/RIBS)^-1 in AO basis");
+  }
+  for(int s=0; s<NSpinCases1; ++s) {
+    using namespace sc::LinearR12;
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+    // t_x_P = xspace.coef() * t_obs_ribs
+    Ref<MOIndexSpace> x = xspace(spin);
+    if (x->basis() != r12info()->basis())
+      throw FeatureNotImplemented("Cannot handle geminal generating spaces supported by non-orbital basis sets",__FILE__,__LINE__);
+    RefSCMatrix t_x_P_coefs = t_obs_ribs.t() * x->coefs();
+    //x->coefs().print("xspace coefficients");
+    //t_x_P_coefs.print("T-weighted xspace coefficients");
+    std::string id = x->id();  id += "_T(";  id += rispace->id();  id += ")";
+    ExEnv::out0() << "id = " << id << endl;
+    std::string name = "(T)-weighted space";
+    name = prepend_spincase(spin,name);
+    t_x_P[s] = new MOIndexSpace(id, name, x, t_x_P_coefs, ribs);
+  }
   
-  // Test new tensor compute function
+  //
+  // Compute transformed integrals
+  //
+  
+  // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {
     using namespace sc::LinearR12;
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
@@ -71,20 +135,8 @@ void R12IntEval::compute_B_DKH_() {
     RefSCMatrix B_DKH = B_[s].clone();
     B_DKH.assign(0.0);
 
-    const unsigned int maxnabs = r12info()->maxnabs();
-    Ref<MOIndexSpace> t_x1, t_x2;
-    if (maxnabs < 1) {
-      //t_x1 = t_x_p(spin1);
-      //t_x2 = t_x_p(spin2);
-      t_x1 = xspace1;
-      t_x2 = xspace2;
-    }
-    else {
-      //t_x1 = t_x_P(spin1);
-      //t_x2 = t_x_P(spin2);
-      t_x1 = xspace1;
-      t_x2 = xspace2;
-    }
+    Ref<MOIndexSpace> t_x1 = t_x_P[spin1];
+    Ref<MOIndexSpace> t_x2 = t_x_P[spin2];
 
     // <xy|T z> tforms
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms_xyTz;
@@ -131,12 +183,12 @@ void R12IntEval::compute_B_DKH_() {
     // M1 = 3/2 ( f12(T1+T2)f12 (T1 + T2) + (T1 + T2) f12(T1+T2)f12 ) = 3 * ( f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12 )
     // what I have computed so far is 1/2 * (f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12)
     // hence multiply by 6
-    B_DKH.scale(6.0);
+    B_DKH.scale(6.0 * one_over_8c2);
     
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M1)").c_str());
     }
-    //B_[s].accumulate(B_DKH);
+    B_[s].accumulate(B_DKH);
     B_DKH.assign(0.0);
     
     // Transforms for this type of integrals does not yet exists
@@ -165,10 +217,11 @@ void R12IntEval::compute_B_DKH_() {
                                                               antisymmetrize,
                                                               tforms_g12dkh,
                                                               descrs_g12dkh);
+    B_DKH.scale(one_over_8c2);
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M2+M3)").c_str());
     }
-    //B_[s].accumulate(B_DKH);
+    B_[s].accumulate(B_DKH);
     B_DKH.assign(0.0);
         
   } // end of spincase2 loop

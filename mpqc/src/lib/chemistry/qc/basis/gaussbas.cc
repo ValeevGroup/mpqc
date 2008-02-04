@@ -40,6 +40,7 @@
 #endif
 
 #include <util/keyval/keyval.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <util/state/stateio.h>
@@ -1248,18 +1249,16 @@ GaussianBasisSet::ValueData::~ValueData()
 }
 
 int
-sc::ishell_on_center(int icenter, GaussianBasisSet* seaset,
-		             GaussianShell* bait_shell)
-{     
-        for (int jshell=0; jshell < seaset->nshell_on_center(icenter); jshell++){
-                const GaussianShell* sea_shell;
-                sea_shell = &seaset->shell(icenter,jshell);
-                int k=bait_shell->equiv(sea_shell);
-                if (k==1) {
-                        return seaset->shell_on_center(icenter,jshell);
-                }
-        } 
-} 
+sc::ishell_on_center(int icenter, const Ref<GaussianBasisSet>& bs,
+		             const GaussianShell& A)
+{
+  for (int jshell=0; jshell < bs->nshell_on_center(icenter); jshell++) {
+    const GaussianShell& B = bs->shell(icenter, jshell);
+    if (A.equiv(B))
+      return bs->shell_on_center(icenter, jshell);
+  }
+  throw ProgrammingError("ishell_on_center() -- did not find the given shell",__FILE__,__LINE__);
+}
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

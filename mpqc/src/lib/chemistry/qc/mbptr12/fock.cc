@@ -108,33 +108,30 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 	  RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
 	  hrect_ao.assign(0.0);
 	  hrect_ao.accumulate(hsymm_ao);
-	  
-	  Ref<GaussianBasisSet> sea_basisset;
-	  sea_basisset = hcore_basis;
+
+	  // bs12 = bs1 + bs2
+	  Ref<GaussianBasisSet> bs12 = hcore_basis;
 	
 	  // find all rows in hsymm belonging to bra_space (bs1)
-	  Ref<GaussianBasisSet> baitingset;
-	  baitingset = bs1;
 	  std::vector<int> bs1_shell_start(nshell1);
 	  std::vector<int> bs1_shell_end(nshell1);
 	  
 	  // loop over bait_shells
-	  for (int ishell=0; ishell<nshell1; ishell++){
+	  for (int ishell=0; ishell<nshell1; ishell++) {
 		  
 		  // determine center on which ishell is located
-		  int kcenter =baitingset->shell_to_center(ishell);
-		  GaussianShell *bait_shell = &baitingset->shell(ishell); 
+	      const int kcenter = bs1->shell_to_center(ishell);
+		  const GaussianShell& s1 = bs1->shell(ishell); 
 		  
 		  // find equivalent shell on center kcenter in sea_basis
-		  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+		  const int s1_in_bs12 = ishell_on_center(kcenter,bs12,s1);
 	
 		  // return index of first and last function
-		  bs1_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+		  bs1_shell_start.at(ishell)=bs12->shell_to_function(s1_in_bs12);
+		  bs1_shell_end.at(ishell)=bs12->shell_to_function(s1_in_bs12) + s1.nfunction() - 1;
 	  }
 	  	
 	  // find all columns in hsymm belonging to ket_space (bs2)
-	  baitingset = bs2;
 	  std::vector<int> bs2_shell_start(nshell2);
 	  std::vector<int> bs2_shell_end(nshell2);
 	   
@@ -142,32 +139,32 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 	  for (int ishell=0; ishell<nshell2; ishell++){
 	 	  
 		  // determine center on which ishell is located
-		  int kcenter =baitingset->shell_to_center(ishell);
-	 	  GaussianShell *bait_shell = &baitingset->shell(ishell);
+	      const int kcenter = bs2->shell_to_center(ishell);
+	 	  const GaussianShell& s2 = bs2->shell(ishell);
 	 	  
 	 	  // find equivalent shell on center kcenter in sea_basis
-	 	  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
+	 	  int s2_in_bs12 = ishell_on_center(kcenter,bs12,s2);
 	
 	 	  // return index of first and last function
-	 	  bs2_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	 	  bs2_shell_start.at(ishell) = bs12->shell_to_function(s2_in_bs12);
+	 	  bs2_shell_end.at(ishell) = bs12->shell_to_function(s2_in_bs12) + s2.nfunction() - 1;
 	  }
 	  	  
 	  // loop over rows (there are nshell1 blocks of them)
 	  int br=0;
 	  for (int irowblock=0;irowblock<nshell1; irowblock++){
 	
-		  int rowlength = bs1_shell_end[irowblock]-bs1_shell_start[irowblock]+1;
+		  int rowlength = bs1_shell_end.at(irowblock)-bs1_shell_start.at(irowblock)+1;
 		  int er = br + rowlength-1;
-	      int source_br = bs1_shell_start[irowblock];
+	      int source_br = bs1_shell_start.at(irowblock);
 	
 		  // loop over columns (there are nshell2 blocks of them)
 		  int bc=0;
 		  for (int icolblock=0; icolblock<nshell2; icolblock++){
 			  
-			  int collength=bs2_shell_end[icolblock]-bs2_shell_start[icolblock]+1;
+			  int collength=bs2_shell_end.at(icolblock)-bs2_shell_start.at(icolblock)+1;
 			  int ec = bc + collength-1;
-		      int source_bc = bs2_shell_start[icolblock];
+		      int source_bc = bs2_shell_start.at(icolblock);
 			  
 		      // assign row-/col-subblock to h
 		      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
@@ -430,14 +427,14 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
 		  
 		  // determine center on which ishell is located
 		  int kcenter =baitingset->shell_to_center(ishell);
-		  GaussianShell *bait_shell = &baitingset->shell(ishell); 
+		  const GaussianShell& bait_shell = baitingset->shell(ishell); 
 		  
 		  // find equivalent shell on center kcenter in sea_basis
 		  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
 	
 		  // return index of first and last function
 		  bs1_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell) + bait_shell.nfunction() - 1;
 	  }
 	  	
 	  // find all columns in hsymm belonging to ket_space (bs2)
@@ -450,14 +447,14 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
 	 	  
 		  // determine center on which ishell is located
 		  int kcenter =baitingset->shell_to_center(ishell);
-	 	  GaussianShell *bait_shell = &baitingset->shell(ishell);
+	 	  const GaussianShell& bait_shell = baitingset->shell(ishell);
 	 	  
 	 	  // find equivalent shell on center kcenter in sea_basis
 	 	  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
 	
 	 	  // return index of first and last function
 	 	  bs2_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1)-1;
+	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1) + bait_shell.nfunction() - 1;
 	  }
 	  	  
 	  // loop over rows (there are nshell1 blocks of them)
@@ -597,7 +594,6 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
 #endif
 
   // Compute the kinetic energy and the mass-velocity term
-  RefDiagSCMatrix p2(p_oso_dim, p_so_kit);
   RefSymmSCMatrix kinetic_energy(p_oso_dim, p_so_kit);
   RefSymmSCMatrix mass_velocity(p_oso_dim, p_so_kit);
   kinetic_energy.assign(0.0);
@@ -612,10 +608,10 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
     // have T_val approximately equal to zero.  These can be
     // negative, which will cause a SIGFPE in sqrt.
     if (T_val < DBL_EPSILON) T_val = 0.0;
-    double p = sqrt(2.0*T_val);
-    p2(i) = p*p;
-    kinetic_energy(i,i) = 0.5*p2(i);
-    mass_velocity(i,i)  = -1.0/(8.0*c*c)*p2(i)*p2(i);
+    const double p = sqrt(2.0*T_val);
+    const double p2 = p*p;
+    kinetic_energy(i,i) = 0.5*p2;
+    mass_velocity(i,i)  = p2*p2 * (-1.0)/(8.0*c*c);
   }
 
   // Construct the transform from the coordinate to the momentum

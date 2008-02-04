@@ -615,7 +615,7 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
     double p = sqrt(2.0*T_val);
     p2(i) = p*p;
     kinetic_energy(i,i) = 0.5*p2(i);
-    mass_velocity(i,i)  = 1.0/(8.0*c*c)*p2(i)*p2(i);
+    mass_velocity(i,i)  = -1.0/(8.0*c*c)*p2(i)*p2(i);
   }
 
   // Construct the transform from the coordinate to the momentum

@@ -53,8 +53,7 @@ void R12IntEval::compute_B_DKH_() {
   ExEnv::out0() << incindent;
 
   const double c = 137.0359895;
-  const double one_over_8c2 = 1.0 / (8.0 * c * c);
-
+  const double minus_one_over_8c2 = -1.0 / (8.0 * c * c);
   //
   // Compute kinetic energy integrals and obtain geminal-generator spaces transformed with them
   //
@@ -183,7 +182,7 @@ void R12IntEval::compute_B_DKH_() {
     // M1 = 3/2 ( f12(T1+T2)f12 (T1 + T2) + (T1 + T2) f12(T1+T2)f12 ) = 3 * ( f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12 )
     // what I have computed so far is 1/2 * (f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12)
     // hence multiply by 6
-    B_DKH.scale(6.0 * one_over_8c2);
+    B_DKH.scale(6.0 * minus_one_over_8c2);
     
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M1)").c_str());
@@ -217,7 +216,7 @@ void R12IntEval::compute_B_DKH_() {
                                                               antisymmetrize,
                                                               tforms_g12dkh,
                                                               descrs_g12dkh);
-    B_DKH.scale(one_over_8c2);
+    B_DKH.scale(minus_one_over_8c2);
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M2+M3)").c_str());
     }

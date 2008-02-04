@@ -205,7 +205,13 @@ class GaussianShell: public SavableState
                             int a2, int b2, int c2) const;
 
     /// Returns true if this and the argument are equivalent.
-    int equiv(const GaussianShell *s);
+    int equiv(const GaussianShell* s) const;
+    /// Returns true if this and the argument are equivalent.
+    int equiv(const GaussianShell& s) const
+    {
+      return equiv(&s);
+    }
+
 
     /** Returns a radius.  All functions in the shell are below
         threshold outside this radius. */

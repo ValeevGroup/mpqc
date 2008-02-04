@@ -520,7 +520,7 @@ GaussianShell::nfunction(int con) const
 }
 
 int
-GaussianShell::equiv(const GaussianShell *s)
+GaussianShell::equiv(const GaussianShell* s) const
 {
   if (nprim != s->nprim) return 0;
   if (ncon != s->ncon) return 0;

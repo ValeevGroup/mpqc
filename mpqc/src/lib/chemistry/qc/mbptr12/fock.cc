@@ -81,12 +81,14 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
   // reference should be a superset of hcore_basis
   Ref<GaussianBasisSet> p_basis = mp2wfn->ref()->momentum_basis();
   Ref<GaussianBasisSet> hcore_basis;
+  Ref<GaussianBasisSetSum> bs1_plus_bs2;
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
     }
   else {
-      hcore_basis = bs1 + bs2;
-    }
+    bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
+    hcore_basis = bs1_plus_bs2->bs12();
+  }
 
   RefSymmSCMatrix hsymm
       = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
@@ -105,74 +107,41 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
       h.accumulate(hsymm_ao);
   }
   else {
-	  RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
-	  hrect_ao.assign(0.0);
-	  hrect_ao.accumulate(hsymm_ao);
+    RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+    hrect_ao.assign(0.0);
+    hrect_ao.accumulate(hsymm_ao);
 
-	  // bs12 = bs1 + bs2
-	  Ref<GaussianBasisSet> bs12 = hcore_basis;
-	
-	  // find all rows in hsymm belonging to bra_space (bs1)
-	  std::vector<int> bs1_shell_start(nshell1);
-	  std::vector<int> bs1_shell_end(nshell1);
-	  
-	  // loop over bait_shells
-	  for (int ishell=0; ishell<nshell1; ishell++) {
-		  
-		  // determine center on which ishell is located
-	      const int kcenter = bs1->shell_to_center(ishell);
-		  const GaussianShell& s1 = bs1->shell(ishell); 
-		  
-		  // find equivalent shell on center kcenter in sea_basis
-		  const int s1_in_bs12 = ishell_on_center(kcenter,bs12,s1);
-	
-		  // return index of first and last function
-		  bs1_shell_start.at(ishell)=bs12->shell_to_function(s1_in_bs12);
-		  bs1_shell_end.at(ishell)=bs12->shell_to_function(s1_in_bs12) + s1.nfunction() - 1;
-	  }
-	  	
-	  // find all columns in hsymm belonging to ket_space (bs2)
-	  std::vector<int> bs2_shell_start(nshell2);
-	  std::vector<int> bs2_shell_end(nshell2);
-	   
-	  // loop over bait_shells
-	  for (int ishell=0; ishell<nshell2; ishell++){
-	 	  
-		  // determine center on which ishell is located
-	      const int kcenter = bs2->shell_to_center(ishell);
-	 	  const GaussianShell& s2 = bs2->shell(ishell);
-	 	  
-	 	  // find equivalent shell on center kcenter in sea_basis
-	 	  int s2_in_bs12 = ishell_on_center(kcenter,bs12,s2);
-	
-	 	  // return index of first and last function
-	 	  bs2_shell_start.at(ishell) = bs12->shell_to_function(s2_in_bs12);
-	 	  bs2_shell_end.at(ishell) = bs12->shell_to_function(s2_in_bs12) + s2.nfunction() - 1;
-	  }
-	  	  
-	  // loop over rows (there are nshell1 blocks of them)
-	  int br=0;
-	  for (int irowblock=0;irowblock<nshell1; irowblock++){
-	
-		  int rowlength = bs1_shell_end.at(irowblock)-bs1_shell_start.at(irowblock)+1;
-		  int er = br + rowlength-1;
-	      int source_br = bs1_shell_start.at(irowblock);
-	
-		  // loop over columns (there are nshell2 blocks of them)
-		  int bc=0;
-		  for (int icolblock=0; icolblock<nshell2; icolblock++){
-			  
-			  int collength=bs2_shell_end.at(icolblock)-bs2_shell_start.at(icolblock)+1;
-			  int ec = bc + collength-1;
-		      int source_bc = bs2_shell_start.at(icolblock);
-			  
-		      // assign row-/col-subblock to h
-		      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
-		      
-		      bc = ec + 1;
-		  }
-		  br = er + 1;
-	  }	
+    // extract the bs1 by bs2 block:
+    //   loop over all bs1 fblocks
+    //     loop over all bs2 fblocks
+    //       copy block to h
+    //     end loop
+    //   end loop
+    const int nbf = hcore_basis->nbasis();
+    const int nfblock = bs1_plus_bs2->nfblock();
+    for(int rb=0; rb<nfblock; ++rb) {
+      const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
+      if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
+      continue;
+      const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
+
+      const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
+      const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
+
+      for(int cb=0; cb<nfblock; ++cb) {
+        const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
+        if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
+        continue;
+        const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
+
+        const int cf_start2 = bs1_plus_bs2->function12_to_function(cf_start12);
+        const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
+
+        // assign row-/col-subblock to h
+        h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2, rf_start12, cf_start12);
+      }
+    }
+    
   }
 
 
@@ -366,11 +335,13 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   Ref<SCF> ref = mp2wfn->ref();
   
   Ref<GaussianBasisSet> hcore_basis; 
+  Ref<GaussianBasisSetSum> bs1_plus_bs2;
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
-  }
+    }
   else {
-      hcore_basis = bs1 + bs2;
+    bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
+    hcore_basis = bs1_plus_bs2->bs12();
   }
 
   // Form the DK correction in the current basis using the momentum
@@ -436,81 +407,45 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   RefSCMatrix h(aodim1, aodim2, sokit);
   
   if (bs1_eq_bs2) {
-      h.assign(0.0);
-      h.accumulate(hsymm_ao);
-  }
-  else {
-	  RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
-	  hrect_ao.assign(0.0);
-	  hrect_ao.accumulate(hsymm_ao);
-	  
-	  Ref<GaussianBasisSet> sea_basisset;
-	  sea_basisset = hcore_basis;
-	
-	  // find all rows in hsymm belonging to bra_space (bs1)
-	  Ref<GaussianBasisSet> baitingset;
-	  baitingset = bs1;
-	  std::vector<int> bs1_shell_start(nshell1);
-	  std::vector<int> bs1_shell_end(nshell1);
-	  
-	  // loop over bait_shells
-	  for (int ishell=0; ishell<nshell1; ishell++){
-		  
-		  // determine center on which ishell is located
-		  int kcenter =baitingset->shell_to_center(ishell);
-		  const GaussianShell& bait_shell = baitingset->shell(ishell); 
-		  
-		  // find equivalent shell on center kcenter in sea_basis
-		  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
-	
-		  // return index of first and last function
-		  bs1_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-		  bs1_shell_end[ishell]=sea_basisset->shell_to_function(iseashell) + bait_shell.nfunction() - 1;
-	  }
-	  	
-	  // find all columns in hsymm belonging to ket_space (bs2)
-	  baitingset = bs2;
-	  std::vector<int> bs2_shell_start(nshell2);
-	  std::vector<int> bs2_shell_end(nshell2);
-	   
-	  // loop over bait_shells
-	  for (int ishell=0; ishell<nshell2; ishell++){
-	 	  
-		  // determine center on which ishell is located
-		  int kcenter =baitingset->shell_to_center(ishell);
-	 	  const GaussianShell& bait_shell = baitingset->shell(ishell);
-	 	  
-	 	  // find equivalent shell on center kcenter in sea_basis
-	 	  int iseashell=ishell_on_center(kcenter,sea_basisset,bait_shell);
-	
-	 	  // return index of first and last function
-	 	  bs2_shell_start[ishell]=sea_basisset->shell_to_function(iseashell);
-	 	  bs2_shell_end[ishell]=sea_basisset->shell_to_function(iseashell+1) + bait_shell.nfunction() - 1;
-	  }
-	  	  
-	  // loop over rows (there are nshell1 blocks of them)
-	  int br=0;
-	  for (int irowblock=0;irowblock<nshell1; irowblock++){
-	
-		  int rowlength = bs1_shell_end[irowblock]-bs1_shell_start[irowblock]+1;
-		  int er = br + rowlength-1;
-	      int source_br = bs1_shell_start[irowblock];
-	
-		  // loop over columns (there are nshell2 blocks of them)
-		  int bc=0;
-		  for (int icolblock=0; icolblock<nshell2; icolblock++){
-			  
-			  int collength=bs2_shell_end[icolblock]-bs2_shell_start[icolblock]+1;
-			  int ec = bc + collength-1;
-		      int source_bc = bs2_shell_start[icolblock];
-			  
-		      // assign row-/col-subblock to h
-		      h.assign_subblock(hrect_ao, br, er, bc, ec, source_br, source_bc);
-		      
-		      bc = ec + 1;
-		  }
-		  br = er + 1;
-	  }	
+    h.assign(0.0);
+    h.accumulate(hsymm_ao);
+  } else {
+    RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+    hrect_ao.assign(0.0);
+    hrect_ao.accumulate(hsymm_ao);
+    
+    // extract the bs1 by bs2 block:
+    //   loop over all bs1 fblocks
+    //     loop over all bs2 fblocks
+    //       copy block to h
+    //     end loop
+    //   end loop
+    const int nbf = hcore_basis->nbasis();
+    const int nfblock = bs1_plus_bs2->nfblock();
+    for (int rb=0; rb<nfblock; ++rb) {
+      const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
+      if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
+        continue;
+      const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
+      
+      const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
+      const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
+      
+      for (int cb=0; cb<nfblock; ++cb) {
+        const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
+        if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
+          continue;
+        const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
+        
+        const int cf_start2 = bs1_plus_bs2->function12_to_function(cf_start12);
+        const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
+        
+        // assign row-/col-subblock to h
+        h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2,
+                          rf_start12, cf_start12);
+      }
+    }
+    
   }
 
   

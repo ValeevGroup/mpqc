@@ -1195,6 +1195,8 @@ GaussianBasisSetSum::GaussianBasisSetSum(StateIn&s):
   // maps
   s.get(shell_to_basis_);
   s.get(function_to_basis_);
+  s.get(shell12_to_shell_);
+  s.get(function12_to_function_);
   s.get(fblock_to_function_);
   s.get(fblock_size_);
 }
@@ -1213,6 +1215,8 @@ GaussianBasisSetSum::save_data_state(StateOut&s)
   // maps
   s.put(shell_to_basis_);
   s.put(function_to_basis_);
+  s.put(shell12_to_shell_);
+  s.put(function12_to_function_);
   s.put(fblock_to_function_);
   s.put(fblock_size_);
 }
@@ -1232,6 +1236,7 @@ GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
   const int nshell = a->nshell() + b->nshell();
   std::vector<int> center_to_nshell(ncenter);
   shell_to_basis_.resize(nshell);
+  shell12_to_shell_.resize(nshell);
 
   GaussianShell** shell = new GaussianShell*[nshell];
   int* func_per_shell = new int[nshell];
@@ -1252,12 +1257,16 @@ GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
       const int ii = soff + i;
       const GaussianShell* gsi;
       if (i < ns1) {
-        gsi = &a->shell(s1off + i);
+        const int s1 = s1off + i;
+        gsi = &a->shell(s1);
         shell_to_basis_[ii] = 1;
+        shell12_to_shell_[ii] = s1;
       }
       else {
+        const int s2 = s2off + i - ns1;
         gsi = &b->shell(s2off + i - ns1);
-        shell_to_basis_[ii] = 1;
+        shell_to_basis_[ii] = 2;
+        shell12_to_shell_[ii] = s2;
       }
 
       int nc=gsi->ncontraction();
@@ -1324,12 +1333,18 @@ GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
   //
   const int nbasis = a->nbasis() + b->nbasis();
   function_to_basis_.resize(nbasis);
+  function12_to_function_.resize(nbasis);
   for(int s=0; s<nshell; ++s) {
     const int bs = shell_to_basis_[s];
+    const Ref<GaussianBasisSet>& bsi = (bs == 1) ? bs1_ : bs2_;
+    const int si = shell12_to_shell_[s];
     const int nf = bs12_->shell(s).nfunction();
     const int foff = bs12_->shell_to_function(s);
-    for(int f=0; f<nf; ++f)
-      function_to_basis_[f + foff] = bs;
+    int ff = foff;
+    for(int f=0; f<nf; ++f, ++ff) {
+      function_to_basis_[ff] = bs;
+      function12_to_function_[ff] = bsi->shell_to_function(si) + f;
+    }
   }
   {
     int curr_basis = function_to_basis_[0];
@@ -1345,7 +1360,7 @@ GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
         // finalize this fblock
         curr_basis = basis;
         fblock_size_.push_back(nf_in_curr_fblock);
-        nf_in_curr_fblock = 0;
+        nf_in_curr_fblock = 1;
         // move onto the new fblock
         fblock_to_function_.push_back(f);
       }
@@ -1364,6 +1379,26 @@ GaussianBasisSetSum::bs2() const { return bs2_; }
 const Ref<GaussianBasisSet>&
 GaussianBasisSetSum::bs12() const { return bs12_; }
 
+int
+GaussianBasisSetSum::shell_to_basis(int s) const { return shell_to_basis_[s]; }
+
+int
+GaussianBasisSetSum::function_to_basis(int f) const { return function_to_basis_[f]; }
+
+int
+GaussianBasisSetSum::shell12_to_shell(int f12) const { return shell12_to_shell_[f12]; }
+
+int
+GaussianBasisSetSum::function12_to_function(int f12) const { return function12_to_function_[f12]; }
+
+int
+GaussianBasisSetSum::nfblock() const { return fblock_size_.size(); }
+
+int
+GaussianBasisSetSum::fblock_to_function(int b) const { return fblock_to_function_[b]; }
+
+int
+GaussianBasisSetSum::fblock_size(int b) const { return fblock_size_[b]; }
 
 
 /////////////////////////////////////////////////////////////////////////////

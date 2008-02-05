@@ -572,16 +572,20 @@ class GaussianBasisSetSum : virtual public SavableState {
     /// return 1 (shell of the composite basis came from bs1_) or 2
     int shell_to_basis(int s) const;
     /// return 1 (function of the composite basis came from bs1_) or 2
-    int function_to_basis(int s) const;
+    int function_to_basis(int f) const;
+    /// maps the shell in bs12 to its location in bs1/bs2
+    int shell12_to_shell(int s12) const;
+    /// maps the function in bs12 to its location in bs1/bs2
+    int function12_to_function(int f12) const;
     /** it is useful to block the basis functions of the composite basis
         according to which basis, bs1 or bs2, they belonged originally.
         These blocks will be termed fblocks.
         This returns the number of such blocks. */
-    const int nfblocks() const;
+    int nfblock() const;
     /// the first basis function in fblock b. Whether the fblock refers to bs1 or bs2 can be deduced via function_to_basis().
-    const int fblock_to_function(int b) const;
+    int fblock_to_function(int b) const;
     /// the number of basis function in fblock b
-    const int fblock_size(int b) const;
+    int fblock_size(int b) const;
     
   private:
     Ref<GaussianBasisSet> bs1_;
@@ -595,11 +599,14 @@ class GaussianBasisSetSum : virtual public SavableState {
     std::vector<int> shell_to_basis_;
     /// return 1 (function of the composite basis came from bs1_) or 2
     std::vector<int> function_to_basis_;
+    /// maps the shell in bs12 to its location in bs1/bs2
+    std::vector<int> shell12_to_shell_;
+    /// maps the function in bs12 to its location in bs1/bs2
+    std::vector<int> function12_to_function_;
     /// return the first bf in fblock
     std::vector<int> fblock_to_function_;
     /// return the size of fblock
     std::vector<int> fblock_size_;
-    
     
     /// sets bs12_ = A + B
     void sum(const Ref<GaussianBasisSet>& A,

@@ -333,7 +333,6 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
                           const Ref<MOIndexSpace>& ket_space,
                           SpinCase1 spin) 
 {
-  const double c = 137.03599911;  // speed of light according to CRC
 
   ExEnv::out0() << indent<< "florian: Entering Delta_DKH" <<incindent << endl;
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
@@ -389,6 +388,38 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // compute T+V+mass-velocity
   RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis); 
 
+  // compute Darwin term in coordinate space
+  mp2wfn->integral()->set_basis(hcore_basis);
+
+  const int natom=mp2wfn->molecule()->natom();
+  GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(hcore_basis,mp2wfn->integral());
+  const int nbasis1 = hcore_basis->nbasis();
+  const double c = 137.0359895; // speed of light in a vacuum in a.u.
+  const double darwin_prefac=3.14159265358979323846/(c*c*2.0);
+  RefSymmSCMatrix Darwin(hsymm.dim(), sokit);
+  Darwin.assign(0.0);
+  double* values1=new double[nbasis1];
+  
+  for (int iatom=0; iatom<natom; iatom++){  
+
+	  SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
+	  // this puts values of basis functions evaluated at R_iatom into values1
+	  hcore_basis->values(R_iatom,vdata1,values1);
+	  const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
+		  
+	  for (int ibasis=0; ibasis<hcore_basis->nbasis(); ibasis++){
+		  for (int jbasis=0; jbasis<=ibasis; jbasis++){
+
+			  const double d=values1[ibasis]*values1[jbasis]*prefac;
+			  Darwin.accumulate_element(ibasis,jbasis,d);	
+		  }
+	  }	
+  }
+  delete[] values1;
+  delete vdata1;
+ 
+  TVmv.accumulate(Darwin);
+  Darwin=0;
   // calculate delta_DKH = H_DKH - H_tvp to get the difference Hamiltonian
   TVmv.scale(-1.0);
   hsymm.accumulate(TVmv);

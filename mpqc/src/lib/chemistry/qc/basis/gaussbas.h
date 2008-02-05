@@ -145,6 +145,8 @@ J. Chem. Phys. 121 (2004) 3463.
 class GaussianBasisSet: virtual public SavableState
 {
   private:
+    friend class GaussianBasisSetSum;
+    
     // nonnull if keyword "name" was provided
     char* name_;
     // same as name_ if name_!=0, else something else
@@ -402,10 +404,7 @@ class GaussianBasisSet: virtual public SavableState
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
 
-    /** Returns a GaussianBasisSet object that consists of the basis
-        functions for each atom in this followed by the basis functions in
-        B for the corresponding atom.  The Molecule object for the two
-        basis sets must be identical.  */
+    /** Uses GaussianBasisSetSum to construct the sum of this and B.  */
     Ref<GaussianBasisSet> operator+(const Ref<GaussianBasisSet>& B);
 
     void save_data_state(StateOut&);
@@ -545,6 +544,68 @@ operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
 int 
 ishell_on_center(int icenter, const Ref<GaussianBasisSet>& bs,
 	             const GaussianShell& A);
+
+/** GaussianBasisSetSum constructs a sum of 2 basis sets formed by GaussianBasisSet::operator+()
+    as well as various maps from the constituent basis sets to the sum.
+    The "sum" basis  on atom i includes the basis
+    functions of A centered on i followed by the basis functions of B
+    centered on i.  The Molecule object for the two
+    basis sets must be identical.
+    */
+class GaussianBasisSetSum : virtual public SavableState {
+  public:
+    GaussianBasisSetSum(const Ref<GaussianBasisSet>& bs1,
+                        const Ref<GaussianBasisSet>& bs2);
+    GaussianBasisSetSum(StateIn&);
+    virtual ~GaussianBasisSetSum();
+    
+    void save_data_state(StateOut&);
+
+    /// return bs1
+    const Ref<GaussianBasisSet>& bs1() const;
+    /// return bs2
+    const Ref<GaussianBasisSet>& bs2() const;
+    /// return bs1 + bs2
+    const Ref<GaussianBasisSet>& bs12() const;
+    
+    
+    /// return 1 (shell of the composite basis came from bs1_) or 2
+    int shell_to_basis(int s) const;
+    /// return 1 (function of the composite basis came from bs1_) or 2
+    int function_to_basis(int s) const;
+    /** it is useful to block the basis functions of the composite basis
+        according to which basis, bs1 or bs2, they belonged originally.
+        These blocks will be termed fblocks.
+        This returns the number of such blocks. */
+    const int nfblocks() const;
+    /// the first basis function in fblock b. Whether the fblock refers to bs1 or bs2 can be deduced via function_to_basis().
+    const int fblock_to_function(int b) const;
+    /// the number of basis function in fblock b
+    const int fblock_size(int b) const;
+    
+  private:
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs12_;
+    
+    /////////
+    // maps
+    /////////
+    /// return 1 (shell of the composite basis came from bs1_) or 2
+    std::vector<int> shell_to_basis_;
+    /// return 1 (function of the composite basis came from bs1_) or 2
+    std::vector<int> function_to_basis_;
+    /// return the first bf in fblock
+    std::vector<int> fblock_to_function_;
+    /// return the size of fblock
+    std::vector<int> fblock_size_;
+    
+    
+    /// sets bs12_ = A + B
+    void sum(const Ref<GaussianBasisSet>& A,
+             const Ref<GaussianBasisSet>& B);
+    
+};
 
 }
 

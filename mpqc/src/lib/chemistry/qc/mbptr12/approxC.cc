@@ -430,6 +430,15 @@ R12IntEval::compute_BC_()
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
 	    tim_exit(Plabel.c_str());
 
+#if 0
+	    if (debug_ >= DefaultPrintThresholds::mostO4) {
+#else
+        {
+#endif
+        std::string label = prepend_spincase(spincase2,"P(C) contribution");
+        P.print(label.c_str());
+        }
+
 	    B_[s].accumulate(P); P = 0;
 #endif // INCLUDE_P
 

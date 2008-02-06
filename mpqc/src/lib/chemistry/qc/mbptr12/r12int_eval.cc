@@ -2593,6 +2593,12 @@ R12IntEval::compute()
     }
     
     if (stdapprox() == LinearR12::StdApprox_C) {
+#define TEST_DARWIN 0
+#if TEST_DARWIN
+      {
+        RefSCMatrix tmp = Delta_DKH_(occ(Alpha),occ(Alpha),Alpha);
+      }
+#endif
       compute_BC_();
       if (debug_ >= DefaultPrintThresholds::O4)
         for(int s=0; s<nspincases2(); s++)

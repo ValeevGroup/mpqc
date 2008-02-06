@@ -43,6 +43,7 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
+#define TEST_DELTA_DKH 0
 #define NEW_HCORE 1
 
 RefSCMatrix
@@ -326,12 +327,14 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
           __FILE__, __LINE__, class_desc());
   }
   int dk = r12info()->refinfo()->ref()->dk();
+#if !TEST_DELTA_DKH
   if (dk != 2) {
        throw ProgrammingError(
  	  "Delta_DKH can only be used with dk = 2",
  	  __FILE__, __LINE__, class_desc());
   }
-
+#endif
+  
   Ref<SCF> ref = mp2wfn->ref();
   
   Ref<GaussianBasisSet> hcore_basis; 
@@ -356,42 +359,64 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // compute the relativistic core Hamiltonian  
   RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
   
-  // compute T+V+mass-velocity
-  RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis); 
-
   // compute Darwin term in coordinate space
-  mp2wfn->integral()->set_basis(hcore_basis);
-
-  const int natom=mp2wfn->molecule()->natom();
-  GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(hcore_basis,mp2wfn->integral());
-  const int nbasis1 = hcore_basis->nbasis();
-  const double c = 137.0359895; // speed of light in a vacuum in a.u.
-  const double darwin_prefac=3.14159265358979323846/(c*c*2.0);
   RefSymmSCMatrix Darwin(hsymm.dim(), sokit);
   Darwin.assign(0.0);
-  double* values1=new double[nbasis1];
-  
-  for (int iatom=0; iatom<natom; iatom++){  
-
-	  SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
-	  // this puts values of basis functions evaluated at R_iatom into values1
-	  hcore_basis->values(R_iatom,vdata1,values1);
-	  const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
-		  
-	  for (int ibasis=0; ibasis<hcore_basis->nbasis(); ibasis++){
-		  for (int jbasis=0; jbasis<=ibasis; jbasis++){
-
-			  const double d=values1[ibasis]*values1[jbasis]*prefac;
-			  Darwin.accumulate_element(ibasis,jbasis,d);	
-		  }
-	  }	
+  {
+    const double c = 137.0359895; // speed of light in a vacuum in a.u.
+    const double darwin_prefac = M_PI/(c*c*2.0);
+    
+    mp2wfn->integral()->set_basis(hcore_basis);
+    GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(hcore_basis,mp2wfn->integral());
+    const int nbasis1 = hcore_basis->nbasis();
+    double* values1=new double[nbasis1];
+    const int natom=mp2wfn->molecule()->natom();
+    
+    for (int iatom=0; iatom<natom; iatom++) {
+      
+      SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
+      // this puts values of basis functions evaluated at R_iatom into values1
+      hcore_basis->values(R_iatom, vdata1, values1);
+      const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
+      
+      for (int ibasis=0; ibasis<hcore_basis->nbasis(); ibasis++) {
+        for (int jbasis=0; jbasis<=ibasis; jbasis++) {
+          
+          const double d=values1[ibasis]*values1[jbasis]*prefac;
+          Darwin.accumulate_element(ibasis, jbasis, d);
+        }
+      }
+    }
+    delete[] values1;
+    delete vdata1;
   }
-  delete[] values1;
-  delete vdata1;
- 
+  
+  // calculate delta_DKH = H_DKH - H_tvmvd to get the difference Hamiltonian
+  // H_tvmvd = T+V+mass-velocity ...
+#if TEST_DELTA_DKH
+  //RefSymmSCMatrix TVmv = tvp_(0,hcore_basis,hcore_basis);
+  RefSymmSCMatrix TVmv = tvp_(0,hcore_basis,r12info()->basis_ri());
+#else
+  RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis);
+#endif
+
+#if TEST_DELTA_DKH
+  {
+    Ref<MOIndexSpace> occ1 = occ(Alpha);
+    if (occ1->basis() == hcore_basis) {
+      // to the 1-e Darwin correction to the energy at the HF level, contract with the HF density
+      RefSCMatrix occ1_coefs = occ1->coefs();
+      RefSCMatrix Darwin_mo = occ1_coefs.t() * Darwin * occ1_coefs;
+      ExEnv::out0() << indent << "R12IntEval::tvp_() -- 1-e Darwin term = " << 2.0 * Darwin_mo.trace() << endl;
+      RefSCMatrix TVmvd_mo = occ1_coefs.t() * TVmv * occ1_coefs;
+      ExEnv::out0() << indent << "R12IntEval::tvp_() -- core + mass-velocity + 1-e Darwin term = " << 2.0 * TVmvd_mo.trace() << endl;
+    }
+  }
+#endif
+  //         + Darwin
   TVmv.accumulate(Darwin);
   Darwin=0;
-  // calculate delta_DKH = H_DKH - H_tvp to get the difference Hamiltonian
+  
   TVmv.scale(-1.0);
   hsymm.accumulate(TVmv);
   
@@ -480,6 +505,7 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
+#if !TEST_DELTA_DKH
   if (dk != 2) {
     throw FeatureNotImplemented("dk must be 2 for using with R12",
                                 __FILE__, __LINE__, class_desc());
@@ -488,7 +514,8 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
     throw FeatureNotImplemented("gradients not available for dk",
                                 __FILE__, __LINE__, class_desc());
   }
-
+#endif
+  
   // The one electron integrals will be computed in the momentum basis.
   // Use mbptr12's integrals.
   mp2wfn->integral()->set_basis(p_bas);

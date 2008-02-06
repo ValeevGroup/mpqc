@@ -437,7 +437,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       // scale r12^2 * g12 integrals by 28 * (gamma_bra^2 * gamma_ket + gamma_bra * gamma_ket^2)
                       const double Gb2_Gk = gamma_bra * Gb_Gk;
                       const double Gb_Gk2 = gamma_ket * Gb_Gk;
-                      const double pfac2 = 28.0 * (Gb2_Gk + Gb_Gk2);
+                      const double pfac2 = -28.0 * (Gb2_Gk + Gb_Gk2);
                       // scale r12^4 * g12 integrals by 4 * (gamma_bra^3 * gamma_ket + gamma_bra * gamma_ket^3 + 3*gamma_bra^2*gamma_ket^2)
                       const double Gb3_Gk = gamma_bra * Gb2_Gk;
                       const double Gb_Gk3 = gamma_ket * Gb_Gk2;
@@ -457,7 +457,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
                       }
                       else {
-                        prim_ints_[0][buffer_offset] += (double) 16.0 *
+                    	prim_ints_[0][buffer_offset] += (double) 16.0 *
                           (pfac0*Libint_.LIBINT_T_SS_K0G12_SS_0[0] +
                            pfac2*Libint_.LIBINT_T_SS_K2G12_SS_0[0] +
                            pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0]);

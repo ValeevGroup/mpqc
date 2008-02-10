@@ -2318,7 +2318,25 @@ R12IntEval::f_bra_ket(
       (make_hJ && hJ.null()) ||
       (make_K && K.null());
   if (not_yet_computed) {
-
+  	
+	  // in case of relativistic corrections set up a difference DKH
+	  // core Hamilonian to be added only to K and hJ, not to F.
+	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - MVD
+	  RefSCMatrix dkh_contrib;
+	  int dk = r12info_->refinfo()->ref()->dk();
+	  if (dk>0 && (make_K || make_hJ)) {
+		  ExEnv::out0() << "florian: dkh_contrib" << endl;
+		  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
+		  if (debug_ >= DefaultPrintThresholds::allN2) {
+		      std::string label("(Delta_DKH) matrix in ");
+		      label += intspace->id();
+		      label += "/";
+		      label += extspace->id();
+		      label += " basis";
+		      dkh_contrib.print(label.c_str());
+		  }
+	  } 
+	  
       RefSCMatrix hJ_i_e;
       if (make_hJ && hJ.null()) {
 	  hJ_i_e = fock(intspace,extspace,spin,1.0,0.0);
@@ -2333,8 +2351,21 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_hJ(";  id += intspace->id();  id += ")";
 	  std::string name = "(h+J)-weighted space";
+	  if (dk>0) {
+		  ExEnv::out0() << "florian: hJ-d" << endl;
+		  id = extspace->id();  id += "_hJ-d(";  id += intspace->id();  id += ")";
+		  name = "(h+J-d)-weighted space";
+		  dkh_contrib.scale(-1.0);
+	  } else {
+	  	  dkh_contrib = hJ_i_e.clone();  
+		  dkh_contrib.assign(0.0);
+	  }
 	  name = prepend_spincase(spin,name);
-	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_i_e,
+	  
+	  // keep hJ_i_e unchanged for possible later use in F
+	  RefSCMatrix hJ_trafo = hJ_i_e.copy();
+	  hJ_trafo.accumulate(dkh_contrib);
+	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_trafo,
 				intspace->basis());
       }
 
@@ -2343,26 +2374,9 @@ R12IntEval::f_bra_ket(
 	  const Ref<MOIndexSpace>& occ_space = occ(spin);
 	  K_i_e = exchange_(occ_space,intspace,extspace);
 	  
-      // in case of relativistic corrections substract a modified DKH 
-      // core hamiltonian from the exchange
-	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - p4
-	  // NOTE: DKH core hamiltonian includes the nr core hamiltonian
-      int dk = r12info_->refinfo()->ref()->dk();
-      if (dk>0) {
-          // this is the DKH-Hamilton minus the nr-Hamilton:
-    	  RefSCMatrix dkh_contrib;
-    	  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
-    	  dkh_contrib.scale(-1.0);
-    	  K_i_e.accumulate(dkh_contrib);
-      }
 	  if (debug_ >= DefaultPrintThresholds::allN2) {
 		  std::string label;
-	      if (dk==0) {
-	    	  label +="K matrix in ";
-	      }
-	      else{
-	    	  label +="K-d~ matrix in ";
-	      } 
+		  label +="K matrix in ";
 	      label += intspace->id();
 	      label += "/";
 	      label += extspace->id();
@@ -2372,8 +2386,23 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
 	  std::string name = "K-weighted space";
+
+	  if (dk>0) {
+		  ExEnv::out0() << "florian: K-d" << endl;
+		  id = extspace->id();  id += "_K-d(";  id += intspace->id();  id += ")";
+		  name = "(K-d)-weighted space";
+		  dkh_contrib.scale(-1.0);
+	  } else {
+	  	  dkh_contrib = K_i_e.clone();  
+		  dkh_contrib.assign(0.0);
+	  }
 	  name = prepend_spincase(spin,name);
-	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_i_e,
+	  
+	  // keep K_i_e unchanged for possible later use in F
+	  RefSCMatrix K_trafo = K_i_e.copy();
+	  K_trafo.accumulate(dkh_contrib);
+	  name = prepend_spincase(spin,name);
+	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_trafo,
 				intspace->basis());
       }
 

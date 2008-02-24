@@ -55,6 +55,7 @@ public:
 
   TwoBodyMOIntsTransform_ixjy(StateIn&);
   TwoBodyMOIntsTransform_ixjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                              const Ref<TwoBodyIntDescr>& tbintdescr,
                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   ~TwoBodyMOIntsTransform_ixjy();
@@ -71,7 +72,7 @@ public:
   /// Computes transformed integrals
   void compute();
   /// Check symmetry of transformed integrals
-  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError);
+  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
 };
 
 }

@@ -69,12 +69,25 @@ class Integral : public SavableState {
     Ref<GaussianBasisSet> bs3_;
     Ref<GaussianBasisSet> bs4_;
 
+    typedef enum {
+	MPQCSolidHarmonicsOrdering,
+	CCASolidHarmonicsOrdering
+    } SolidHarmonicsOrdering;
+    SolidHarmonicsOrdering sharmorder_;
+
     // the maximum number of bytes that should be used for
     // storing intermediates
     size_t storage_;
     size_t storage_used_;
 
     Ref<MessageGrp> grp_;
+  private:
+    /**
+       CCA standard specifies the new ordering (-l ... +l).
+       MPQCSolidHarmonicsOrdering was the old ordering (0, +1, -1, +2, -2, etc.) and can no longer be used.
+    */
+    static const SolidHarmonicsOrdering default_sharmorder_ = CCASolidHarmonicsOrdering;
+
   public:
     /// Restore the Integral object from the given StateIn object.
     Integral(StateIn&);
@@ -103,6 +116,13 @@ class Integral : public SavableState {
     /** Returns nonzero if this and the given Integral object have the same
         integral ordering, normalization conventions, etc.  */
     virtual int equiv(const Ref<Integral> &);
+    /// Describes the ordering of the cartesian functions in a shell
+    typedef enum {
+    IntV3CartesianOrdering,
+    CCACartesianOrdering
+    } CartesianOrdering;
+    /// returns the ordering used by this factory
+    virtual CartesianOrdering cartesian_ordering() const =0;
 
     /// Sets the total amount of storage, in bytes, that is available.
     virtual void set_storage(size_t i) { storage_=i; };
@@ -128,6 +148,24 @@ class Integral : public SavableState {
 					const Ref<GaussianBasisSet> &b2 = 0,
 					const Ref<GaussianBasisSet> &b3 = 0,
 					const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12NC integrals. */
+    virtual size_t storage_required_g12nc(const Ref<GaussianBasisSet> &b1,
+					  const Ref<GaussianBasisSet> &b2 = 0,
+					  const Ref<GaussianBasisSet> &b3 = 0,
+					  const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12DKH integrals. */
+    virtual size_t storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
+                                           const Ref<GaussianBasisSet> &b2 = 0,
+                                           const Ref<GaussianBasisSet> &b3 = 0,
+                                           const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for general G12 integrals. */
+    virtual size_t storage_required_geng12(const Ref<GaussianBasisSet> &b1,
+					   const Ref<GaussianBasisSet> &b2 = 0,
+					   const Ref<GaussianBasisSet> &b3 = 0,
+					   const Ref<GaussianBasisSet> &b4 = 0);
   /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for derivative electron repulsion integrals. */
     virtual size_t storage_required_eri_deriv(const Ref<GaussianBasisSet> &b1,
@@ -250,7 +288,8 @@ class Integral : public SavableState {
         integrals. If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyTwoCenterDerivInt> electron_repulsion2_deriv();
 
-    /// Return a TwoBodyInt that computes electron repulsion integrals.
+    /** Return a TwoBodyInt that computes electron repulsion integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrERI. */
     virtual Ref<TwoBodyInt> electron_repulsion();
 
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
@@ -260,16 +299,36 @@ class Integral : public SavableState {
         to linear R12 methods.  According to the convention in the
         literature, "g" stands for electron repulsion integral, "r" for the
         integral of r12 operator, and "t" for the commutator
-        integrals. Implementation for this kind of TwoBodyInt is
+        integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrR12.
+        Implementation for this kind of TwoBodyInt is
         optional. */
     virtual Ref<TwoBodyInt> grt();
     
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
-        gamma1 and gamma2 specify the exponents of the geminal in bra and ket, respectively.
-        Integrals which only include one geminal assume that geminal's parameter to be gamma1+gamma2.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> g12(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+	    This particular implementation does not produce commutator integrals.
+	    This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12nc(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to relativistic explicitly correlated methods which use Gaussian geminals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12DKH.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12dkh(const Ref<IntParamsG12>&);
+
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrGenG12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> geng12(const Ref<IntParamsGenG12>&);
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

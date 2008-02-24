@@ -43,6 +43,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
@@ -246,97 +247,7 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
 Ref<GaussianBasisSet>
 GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
 {
-  GaussianBasisSet* b = B.pointer();
-  if (molecule_.pointer() != b->molecule_.pointer())
-    throw std::runtime_error("GaussianBasisSet::concatenate -- cannot concatenate basis sets, molecules are different");
-
-  Ref<Molecule> molecule = molecule_;
-  Ref<SCMatrixKit> matrixkit = matrixkit_;
-  const int ncenter = ncenter_;
-  const int nshell = nshell_ + b->nshell_;
-  std::vector<int> center_to_nshell(ncenter);
-
-  GaussianShell** shell = new GaussianShell*[nshell];
-  int* func_per_shell = new int[nshell];
-
-  for(int c=0; c<ncenter; c++) {
-
-    int ns1 = center_to_nshell_[c];
-    int ns2 = b->center_to_nshell_[c];
-    int ns = ns1+ns2;
-    int s1off = center_to_shell_[c];
-    int s2off = b->center_to_shell_[c];
-    int soff = s1off + s2off;
-    center_to_nshell[c] = ns;
-
-    for (int i=0; i<ns; i++) {
-      const GaussianShell* gsi;
-      if (i < ns1)
-        gsi = shell_[s1off + i];
-      else
-        gsi = b->shell_[s2off + i - ns1];
-
-      int nc=gsi->ncontraction();
-      int np=gsi->nprimitive();
-      func_per_shell[soff + i] = gsi->nfunction();
-
-      int *ams = new int[nc];
-      int *pure = new int[nc];
-      double *exps = new double[np];
-      double **coefs = new double*[nc];
-      
-      for (int j=0; j < nc; j++) {
-        ams[j] = gsi->am(j);
-        pure[j] = gsi->is_pure(j);
-        coefs[j] = new double[np];
-        for (int k=0; k < np; k++)
-          coefs[j][k] = gsi->coefficient_unnorm(j,k);
-      }
-      
-      for (int j=0; j < np; j++)
-        exps[j] = gsi->exponent(j);
-      
-      shell[soff + i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
-                                          GaussianShell::Unnormalized);
-    }
-  }
-
-  int nbas = nbasis() + b->nbasis();
-  RefSCDimension basisdim
-      = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
-
-  const char* A_name = name();
-  const char* B_name = B->name();
-  const char* AplusB_name = 0;
-  if (!A_name && !B_name) {
-    ostringstream oss;
-    oss << "[" << A_name << "]+[" << B_name << "]";
-    std::string tmpname = oss.str();
-    AplusB_name = strcpy(new char[tmpname.size()+1],tmpname.c_str());
-  }
-  const char* AplusB_label = 0;
-  if (AplusB_name) {
-    AplusB_label = AplusB_name;
-  }
-  else {
-    ostringstream oss;
-    const char* A_label = label();
-    const char* B_label = B->label();
-    oss << "[" << A_label << "]+[" << B_label << "]";
-    std::string tmpname = oss.str();
-    AplusB_label = strcpy(new char[tmpname.size()+1],tmpname.c_str());
-  }
-  Ref<GaussianBasisSet> AplusB
-      = new GaussianBasisSet(AplusB_name, AplusB_label, molecule,
-                             matrixkit, basisdim, ncenter,
-                             nshell, shell, center_to_nshell);
-
-  delete[] func_per_shell;
-  delete[] AplusB_name;
-  if (AplusB_name != AplusB_label)
-    delete[] AplusB_label;
-
-  return AplusB;
+  return (GaussianBasisSetSum(this,B)).bs12();
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
@@ -864,7 +775,7 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
       am[0] = l;
       coeffs[0][0] = 1.0;
 
-      if (l <= 1)
+      if (l < 1)
         shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Cartesian,coeffs,GaussianShell::Normalized);
       else if (havepure)
         shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Pure,coeffs,GaussianShell::Normalized);
@@ -1236,6 +1147,249 @@ GaussianBasisSet::ValueData::~ValueData()
   delete[] civec_;
   delete[] sivec_;
 }
+
+int
+sc::ishell_on_center(int icenter, const Ref<GaussianBasisSet>& bs,
+		             const GaussianShell& A)
+{
+  for (int jshell=0; jshell < bs->nshell_on_center(icenter); jshell++) {
+    const GaussianShell& B = bs->shell(icenter, jshell);
+    if (A.equiv(B))
+      return bs->shell_on_center(icenter, jshell);
+  }
+  throw ProgrammingError("ishell_on_center() -- did not find the given shell",__FILE__,__LINE__);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+static ClassDesc GaussianBasisSetSum_cd(
+  typeid(GaussianBasisSetSum),"GaussianBasisSetSum",1,
+  "virtual public SavableState",
+  0, 0, create<GaussianBasisSetSum>);
+
+
+GaussianBasisSetSum::GaussianBasisSetSum(const Ref<GaussianBasisSet>& bs1,
+                                         const Ref<GaussianBasisSet>& bs2) :
+  bs1_(bs1), bs2_(bs2)
+{
+  sum(bs1,bs2);
+}
+
+GaussianBasisSetSum::GaussianBasisSetSum(StateIn&s):
+  SavableState(s)
+{
+  bs1_ << SavableState::restore_state(s);
+  bs2_ << SavableState::restore_state(s);
+  bs12_ << SavableState::restore_state(s);
+
+  // maps
+  s.get(shell_to_basis_);
+  s.get(function_to_basis_);
+  s.get(shell12_to_shell_);
+  s.get(function12_to_function_);
+  s.get(fblock_to_function_);
+  s.get(fblock_size_);
+}
+
+GaussianBasisSetSum::~GaussianBasisSetSum()
+{
+}
+
+void
+GaussianBasisSetSum::save_data_state(StateOut&s)
+{
+  SavableState::save_state(bs1_.pointer(),s);
+  SavableState::save_state(bs2_.pointer(),s);
+  SavableState::save_state(bs12_.pointer(),s);
+  
+  // maps
+  s.put(shell_to_basis_);
+  s.put(function_to_basis_);
+  s.put(shell12_to_shell_);
+  s.put(function12_to_function_);
+  s.put(fblock_to_function_);
+  s.put(fblock_size_);
+}
+
+void
+GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
+                         const Ref<GaussianBasisSet>& B)
+{
+  GaussianBasisSet* a = A.pointer();
+  GaussianBasisSet* b = B.pointer();
+  if (a->molecule_.pointer() != b->molecule_.pointer())
+  throw std::runtime_error("GaussianBasisSetSum::sum -- cannot sum basis sets, molecules are different");
+
+  Ref<Molecule> molecule = a->molecule();
+  const int ncenter = a->ncenter();
+  Ref<SCMatrixKit> matrixkit = a->matrixkit();
+  const int nshell = a->nshell() + b->nshell();
+  std::vector<int> center_to_nshell(ncenter);
+  shell_to_basis_.resize(nshell);
+  shell12_to_shell_.resize(nshell);
+
+  GaussianShell** shell = new GaussianShell*[nshell];
+  int* func_per_shell = new int[nshell];
+
+  for(int c=0; c<ncenter; c++) {
+
+    int ns1 = a->nshell_on_center(c);
+    int ns2 = b->nshell_on_center(c);
+    int ns = ns1+ns2;
+    int s1off = a->shell_on_center(c,0);
+    int s2off = b->shell_on_center(c,0);
+    int soff = s1off + s2off;
+    center_to_nshell[c] = ns;
+
+    // i is the shell index on this center in the composite basis
+    // ii is the absolute index
+    for (int i=0; i<ns; i++) {
+      const int ii = soff + i;
+      const GaussianShell* gsi;
+      if (i < ns1) {
+        const int s1 = s1off + i;
+        gsi = &a->shell(s1);
+        shell_to_basis_[ii] = 1;
+        shell12_to_shell_[ii] = s1;
+      }
+      else {
+        const int s2 = s2off + i - ns1;
+        gsi = &b->shell(s2off + i - ns1);
+        shell_to_basis_[ii] = 2;
+        shell12_to_shell_[ii] = s2;
+      }
+
+      int nc=gsi->ncontraction();
+      int np=gsi->nprimitive();
+      func_per_shell[ii] = gsi->nfunction();
+
+      int *ams = new int[nc];
+      int *pure = new int[nc];
+      double *exps = new double[np];
+      double **coefs = new double*[nc];
+
+      for (int j=0; j < nc; j++) {
+        ams[j] = gsi->am(j);
+        pure[j] = gsi->is_pure(j);
+        coefs[j] = new double[np];
+        for (int k=0; k < np; k++)
+        coefs[j][k] = gsi->coefficient_unnorm(j,k);
+      }
+
+      for (int j=0; j < np; j++)
+      exps[j] = gsi->exponent(j);
+
+      shell[soff + i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+          GaussianShell::Unnormalized);
+    }
+  }
+
+  int nbas = a->nbasis() + b->nbasis();
+  RefSCDimension basisdim = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
+
+  const char* A_name = a->name();
+  const char* B_name = b->name();
+  const char* AplusB_name = 0;
+  if (!A_name && !B_name) {
+    ostringstream oss;
+    oss << "[" << A_name << "]+[" << B_name << "]";
+    std::string tmpname = oss.str();
+    AplusB_name = strcpy(new char[tmpname.size()+1],tmpname.c_str());
+  }
+  const char* AplusB_label = 0;
+  if (AplusB_name) {
+    AplusB_label = AplusB_name;
+  }
+  else {
+    ostringstream oss;
+    const char* A_label = a->label();
+    const char* B_label = b->label();
+    oss << "[" << A_label << "]+[" << B_label << "]";
+    std::string tmpname = oss.str();
+    AplusB_label = strcpy(new char[tmpname.size()+1],tmpname.c_str());
+  }
+
+  bs12_ = new GaussianBasisSet(AplusB_name, AplusB_label, molecule,
+      matrixkit, basisdim, ncenter,
+      nshell, shell, center_to_nshell);
+
+  delete[] func_per_shell;
+  delete[] AplusB_name;
+  if (AplusB_name != AplusB_label)
+  delete[] AplusB_label;
+
+  //
+  // compute the rest of the maps using shell_to_basis_
+  //
+  const int nbasis = a->nbasis() + b->nbasis();
+  function_to_basis_.resize(nbasis);
+  function12_to_function_.resize(nbasis);
+  for(int s=0; s<nshell; ++s) {
+    const int bs = shell_to_basis_[s];
+    const Ref<GaussianBasisSet>& bsi = (bs == 1) ? bs1_ : bs2_;
+    const int si = shell12_to_shell_[s];
+    const int nf = bs12_->shell(s).nfunction();
+    const int foff = bs12_->shell_to_function(s);
+    int ff = foff;
+    for(int f=0; f<nf; ++f, ++ff) {
+      function_to_basis_[ff] = bs;
+      function12_to_function_[ff] = bsi->shell_to_function(si) + f;
+    }
+  }
+  {
+    int curr_basis = function_to_basis_[0];
+    fblock_to_function_.push_back(0);
+    int nf_in_curr_fblock = 1;
+    for(int f=1; f<nbasis; ++f) {
+      const int basis = function_to_basis_[f];
+      if (basis == curr_basis) {
+        // still in the current fblock
+        ++nf_in_curr_fblock;
+      }
+      else {
+        // finalize this fblock
+        curr_basis = basis;
+        fblock_size_.push_back(nf_in_curr_fblock);
+        nf_in_curr_fblock = 1;
+        // move onto the new fblock
+        fblock_to_function_.push_back(f);
+      }
+    }
+    // finalize the last fblock
+    fblock_size_.push_back(nf_in_curr_fblock);
+  }
+}
+
+const Ref<GaussianBasisSet>&
+GaussianBasisSetSum::bs1() const { return bs1_; }
+
+const Ref<GaussianBasisSet>&
+GaussianBasisSetSum::bs2() const { return bs2_; }
+
+const Ref<GaussianBasisSet>&
+GaussianBasisSetSum::bs12() const { return bs12_; }
+
+int
+GaussianBasisSetSum::shell_to_basis(int s) const { return shell_to_basis_[s]; }
+
+int
+GaussianBasisSetSum::function_to_basis(int f) const { return function_to_basis_[f]; }
+
+int
+GaussianBasisSetSum::shell12_to_shell(int f12) const { return shell12_to_shell_[f12]; }
+
+int
+GaussianBasisSetSum::function12_to_function(int f12) const { return function12_to_function_[f12]; }
+
+int
+GaussianBasisSetSum::nfblock() const { return fblock_size_.size(); }
+
+int
+GaussianBasisSetSum::fblock_to_function(int b) const { return fblock_to_function_[b]; }
+
+int
+GaussianBasisSetSum::fblock_size(int b) const { return fblock_size_[b]; }
+
 
 /////////////////////////////////////////////////////////////////////////////
 

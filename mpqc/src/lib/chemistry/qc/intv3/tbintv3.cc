@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 
+#include <util/class/scexception.h>
 #include <chemistry/qc/intv3/tbintv3.h>
 #include <chemistry/qc/basis/integral.h>
 
@@ -67,6 +68,24 @@ void
 TwoBodyIntV3::set_integral_storage(size_t storage)
 {
   int2ev3_->init_storage(storage);
+}
+
+unsigned int
+TwoBodyIntV3::inttype(TwoBodyInt::tbint_type t) const
+{
+    if (t == TwoBodyInt::eri) {
+	return 0;
+    }
+    throw ProgrammingError("TwoBodyIntV3::inttype() -- this type not recognized",__FILE__,__LINE__);
+}
+
+TwoBodyInt::tbint_type
+TwoBodyIntV3::inttype(unsigned int t) const
+{
+    if (t == 0) {
+	return TwoBodyInt::eri;
+    }
+    throw ProgrammingError("TwoBodyIntV3::inttype() -- this type not recognized",__FILE__,__LINE__);
 }
 
 //////////////////////////////////////////////////////////////////////////

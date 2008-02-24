@@ -47,11 +47,13 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
+#include <chemistry/qc/mbptr12/ansatz.h>
 
 namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+class R12Technology;
 class R12IntEval;
 class R12IntEvalInfo;
 class MP2R12Energy;
@@ -60,42 +62,33 @@ class MP2R12Energy;
 methods. */
 class MBPT2_R12: public MBPT2 {
 
+    bool spinadapted_;
+    bool include_mp1_;
+    
+    bool hylleraas_;
+    
+    bool new_energy_;
+
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
+    Ref<R12IntEvalInfo> r12evalinfo_;   // parameters for r12eval_
 
     /** These are MP2-R12 energy objects for each MP2-R12 method, since several different energies
         can be evaluated with the same set of intermediates */
     Ref<MP2R12Energy> r12a_energy_;
     Ref<MP2R12Energy> r12ap_energy_;
+    Ref<MP2R12Energy> r12app_energy_;
     Ref<MP2R12Energy> r12b_energy_;
+    Ref<MP2R12Energy> r12c_energy_;
 
-    Ref<GaussianBasisSet> aux_basis_;   // This is the auxiliary basis set (ABS)
-    Ref<GaussianBasisSet> vir_basis_;   // This is the virtuals basis set (VBS)
-    Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
-                                        // Alpha-beta/alpha-alpha pair energies if spin-orbital
-
-    Ref<TwoBodyGrid> twopdm_grid_aa_;     // The set of 2 particle positions on which to compute values of alpha-alpha 2-PDM
-    Ref<TwoBodyGrid> twopdm_grid_ab_;     // The set of 2 particle positions on which to compute values of alpha-beta 2-PDM
+    Ref<TwoBodyGrid> twopdm_grid_;      // The set of 2 particle positions on which to compute values of pair function
+    unsigned int plot_pair_function_[2];// Which pair function to plot
 
 #define ref_to_mp2r12_acc_ 100.0
 
     double mp2_corr_energy_;
-    double r12_corr_energy_;
-    LinearR12::StandardApproximation stdapprox_;
-    LinearR12::ABSMethod abs_method_;
-    R12IntEvalInfo::StoreMethod r12ints_method_;
-    std::string r12ints_file_;
-    bool gbc_;
-    bool ebc_;
-    bool spinadapted_;
-    bool include_mp1_;
 
-    void init_variables_();
-
-    // This checks if the integral factory is suitable for R12 calculations
-    void check_integral_factory_();
-
-    // calculate the MP2-R12 energy in std approximations A and A'
-    void compute_energy_a_();
+    // calculate the MP2-R12 energy (or energies, depending on which approximation is chosen)
+    void compute_energy_();
 
   protected:
     // implement the Compute::compute() function,
@@ -104,133 +97,43 @@ class MBPT2_R12: public MBPT2 {
 
   public:
     MBPT2_R12(StateIn&);
-    /** The KeyVal constructor.
+    /** The KeyVal constructor uses keywords of MBPT2 and R12IntEvalInfo and the following keywords
         <dl>
-
-        <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
-        Condition (GBC) is assumed to hold. The default is "true". This keyword is
-        only valid if stdapprox=A'.
-        The effect of setting this keyword to true is rather small --
-        hence it is not recommended to use this keyword.
-
-        <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
-        Condition (EBC) is assumed to hold. The default is "true". This keyword
-        is only valid if stdapprox=A'.
-        The effect of setting this keyword to true is rather small --
-        hence it is not recommended to use this keyword.
-      
-        <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
-        of the values below.  The default is A'.
-
-        <dl>
-
-          <dt><tt>A</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation A (MP2-R12/A).
-          Only energies can be computed with the MP2-R12/A method.
-
-          <dt><tt>A'</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation A' (MP2-R12/A').
-          This will cause MP2-R12/A energies to be computed also.
-          Only energies can be computed with the MP2-R12/A' method.
-
-          <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation B. 
-	  This method is not implemented yet.
-
-        </dl>
-        
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
-	or spin-orbital pair energies. Default is to compute spin-adapted energies.
+	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
+    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
+    is not used.
 
-	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
-	of the identity. Default is to use the same basis as for the orbital expansion.
+    <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
+    plot pair function given by <tt>plot_pair_function</tt>.
 
-	<dt><tt>vir_basis</tt><dd> This specifies the basis to be used for the virtual orbitals.
-	Default is to use the same basis as for the orbital expansion.
+    <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
+    specifies which pair function to plot.
+    
+    <dt><tt>new_energy</tt><dd> Use new version that has got improved diagonal Ansaetze preserving
+    spin as well as a fixed coefficient version. For the non diagonal ansaetze the old version is to be 
+    preferred since it has many more security checks, such as checks of positive definiteness of B etc.
+    The default value of this variable is false.
+    
+    <dt><tt>hylleraas</tt><dd> If new_energy = true, and the ansatz sets diag and fixed_coeff to true, this variable
+    tells the new version to compute the F12 energy according to the Hylleraas functional. The default
+    is to use the Hylleraas functional if the ansatz defines fixedcoef = true.
 
-        <dt><tt>include_mp1</tt><dd> This specifies whether to compute MP1 correction to
-        the MP2 and MP2-R12 energies. This option only has effect if vir_basis is not the same as basis.
-        MP1 correction is a perturbative estimate of the difference between the HF energy computed
-        in vir_basis and basis. Usually, it is a very poor estimate -- therefore this keyword should
-        be avoided by non-experts. Default is false.
-
-        <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
-        by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
-	Valid values are "ABS" (Klopper and Samson), "ABS+", "CABS", and "CABS+", where the "+" labels
-	a method where the union of OBS and ABS is used to construct the RI basis. The default is "ABS".
-        The default in 2.3.0 and later will be "CABS+".
-
-        <dt><tt>lindep_tol</tt><dd> The tolerance used to detect linearly
-        dependent basis functions in the RI basis set.
-        The precise meaning depends on the
-        orthogonalization method.  The default value is 1e-8.
-
-	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
-	Valid values are:
-
-	<dl>
-
-	  <dt><tt>mem-posix</tt><dd> Store integrals in memory for single-pass situations
-	  and in a binary file on task 0's node using POSIX I/O for multipass situations.
-	  <tt>posix</tt> is usually less efficient than <tt>mpi</tt> for distributed
-	  parallel multipass runs since the I/O is performed by one task only. However, this method is guaranteed to
-          work in all types of environments, hence <tt>mem-posix</tt> is the default.
-
-	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
-	  This method is different from <tt>mem-posix</tt> in that it forces the integrals out to disk
-          even if they could be stored in memory. <tt>posix</tt> should only be used for benchmarking
-          and testing purposes.
-
-	  <dt><tt>mem-mpi</tt><dd> Store integrals in memory for single-pass situations
-	  and in a binary file using MPI-I/O for multipass situations. This method
-	  assumes the availability of MPI-I/O. <tt>mem-mpi</tt> is the preferred choice
-	  in distributed environments which have MPI-I/O available.
-
-	  <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method
-	  is different from <tt>mem-mpi</tt> in that it forces the integrals out to disk
-	  even if they could be stored in memory. <tt>mpi</tt> should only be used for benchmarking
-	  and testing purposes.
-
-	  <dt><tt>mem</tt><dd> Store integrals in memory. Can only be used with single-pass
-	  transformations for MP2-R12/A and MP2-R12/A' methods.
-          This method should only be used for testing purposes.
-
-	</dl>
-
-	If <tt>r12ints</tt> is not specified, then <tt>mem-posix</tt> method will be used.
-	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
-	<tt>r12ints</tt> should be explicitly set to <tt>mem-mpi</tt>.
-
-        <dt><tt>r12ints_file</tt><dd> This specifies the prefix for the transformed
-	MO integrals file if <tt>r12ints</tt> is set to <tt>posix</tt>, <tt>mpi</tt>, <tt>mem-posix</tt>
-        or <tt>mem-mpi</tt> is used.
-	Default is "./<i>inputbasename</i>.r12ints", where <i>inputbasename</i> is the name of the input
-	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
-	that the file resides on a file system that supports MPI-I/O.
-
-        <dt><tt>twopdm_grid_aa</tt><dd> This optional keyword specifies a TwoBodyGrid object which to
-        use for coordinates at which to compute alpha-alpha part of 2-PDM.
-
-        <dt><tt>twopdm_grid_ab</tt><dd> This optional keyword specifies a TwoBodyGrid object which to
-        use for coordinates at which to compute alpha-beta part of 2-PDM.
-
-        </dl> */
+    </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
     ~MBPT2_R12();
 
     void save_data_state(StateOut&);
 
-    Ref<GaussianBasisSet> aux_basis() const;
-    Ref<GaussianBasisSet> vir_basis() const;
-    bool gbc() const;
-    bool ebc() const;
-    LinearR12::ABSMethod abs_method() const;
-    LinearR12::StandardApproximation stdapprox() const;
-    bool spinadapted() const;
-    R12IntEvalInfo::StoreMethod r12ints_method() const;
-    const std::string& r12ints_file() const;
+    const Ref<R12IntEvalInfo>& r12evalinfo() const { return r12evalinfo_; }
+    const Ref<R12IntEval>& r12eval() const { return r12eval_; }
+    /// this changes the correlation factor
+    void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
 
+    // use Hylleraas functional?
+    bool hylleraas() const;
+    
     double corr_energy();
     double r12_corr_energy();
 

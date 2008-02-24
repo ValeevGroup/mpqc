@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <float.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/intparams.h>
 
@@ -50,6 +51,26 @@ IntParams::nparams() const
 }
 
 /////////////////////////////
+
+IntParamsVoid::IntParamsVoid() : IntParams(0) {}
+
+IntParamsVoid::~IntParamsVoid() {}
+
+/////////////////////////////
+
+IntParamsG12::IntParamsG12(const ContractedGeminal& bra) :
+  IntParams(2), bra_(bra), ket_(null_geminal)
+{
+  if (bra_.size() == 0)
+    throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal contractions of zero length",__FILE__,__LINE__);
+  
+  typedef ContractedGeminal::const_iterator citer;
+  citer end = bra_.end();
+  for(citer i=bra_.begin(); i<end; i++) {
+    if ( (*i).first < 0.0)
+      throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  }
+}
 
 IntParamsG12::IntParamsG12(const ContractedGeminal& bra,
                            const ContractedGeminal& ket) :
@@ -84,3 +105,84 @@ IntParamsG12::ket() const { return ket_; }
 IntParamsG12::ContractedGeminal
 IntParamsG12::zero_exponent_geminal(1,std::make_pair(0.0,1.0));
 
+double
+IntParamsG12::null_exponent(DBL_MAX);
+
+IntParamsG12::ContractedGeminal
+IntParamsG12::null_geminal(1,std::make_pair(null_exponent,1.0));
+
+IntParamsG12::PrimitiveGeminal
+IntParamsG12::product(const PrimitiveGeminal& A,
+                      const PrimitiveGeminal& B) {
+  return std::make_pair(A.first+B.first,A.second*B.second);
+}
+
+IntParamsG12::ContractedGeminal
+IntParamsG12::product(const ContractedGeminal& A,
+                      const ContractedGeminal& B) {
+  const unsigned int na = A.size();
+  const unsigned int nb = B.size();
+  ContractedGeminal result;
+  for(unsigned int a=0; a<na; ++a) {
+    for(unsigned int b=0; b<nb; ++b) {
+      result.push_back( product(A[a],B[b]) );
+    }
+  }
+  return result;
+}
+
+/////////////////////////////
+
+IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra) :
+  IntParams(2), bra_(bra), ket_(null_geminal)
+{
+  if (bra_.size() == 0)
+    throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal contractions of zero length",__FILE__,__LINE__);
+
+#if 0  
+  typedef ContractedGeminal::const_iterator citer;
+  citer end = bra_.end();
+  for(citer i=bra_.begin(); i<end; i++) {
+    if ( (*i).second < 0.0)
+      throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  }
+#endif
+}
+
+IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra,
+                           const ContractedGeminal& ket) :
+  IntParams(2), bra_(bra), ket_(ket)
+{
+  if (bra != ket)
+    throw ProgrammingError("IntParamsGenG12::IntParamsGenG12(bra,ket) -- bra != ket",__FILE__,__LINE__);
+
+  if (bra_.size() == 0)
+    throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal contractions of zero length",__FILE__,__LINE__);
+
+#if 0  
+  typedef ContractedGeminal::const_iterator citer;
+  citer end = bra_.end();
+  for(citer i=bra_.begin(); i<end; i++) {
+    if ( (*i).first < 0.0)
+      throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  }
+#endif
+}
+
+IntParamsGenG12::~IntParamsGenG12()
+{}
+
+const IntParamsGenG12::ContractedGeminal&
+IntParamsGenG12::bra() const { return bra_; }
+
+const IntParamsGenG12::ContractedGeminal&
+IntParamsGenG12::ket() const { return ket_; }
+
+IntParamsGenG12::ContractedGeminal
+IntParamsGenG12::zero_exponent_geminal(1,std::make_pair(std::make_pair(0.0,0.0),1.0));
+
+double
+IntParamsGenG12::null_exponent(DBL_MAX);
+
+IntParamsGenG12::ContractedGeminal
+IntParamsGenG12::null_geminal(1,std::make_pair(std::make_pair(null_exponent,null_exponent),1.0));

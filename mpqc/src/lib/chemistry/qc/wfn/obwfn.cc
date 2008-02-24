@@ -378,6 +378,10 @@ OneBodyWavefunction::hcore_guess(RefDiagSCMatrix &val)
     // always give a better initial guess.  I don't understand
     // why it works better.
     core_hamiltonian().diagonalize(val,vec);
+    if (debug_ > 1) {
+	  val.print("hcore eigenvalues in SO basis");
+      vec.print("hcore eigenvectors in SO basis");
+    }
   }
   else {
     RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());

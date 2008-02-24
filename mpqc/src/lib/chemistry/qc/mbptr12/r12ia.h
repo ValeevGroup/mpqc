@@ -38,6 +38,7 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/group/memory.h>
+#include <chemistry/qc/basis/tbint.h>
 
 using namespace std;
 
@@ -69,6 +70,8 @@ namespace sc {
 
 class R12IntsAcc: virtual public SavableState {
 
+    /// Set to nonzero to debug this and derived classes
+    static const int classdebug_ = 0;
     int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- usually 3)
 
    protected:
@@ -88,16 +91,18 @@ class R12IntsAcc: virtual public SavableState {
     virtual int taskid() const =0;
     /// The index of the first orbital in the next integrals batch to be stored
     void inc_next_orbital(int ni);
+    /// return debug level for this class
+    int classdebug() const { return classdebug_; }
 
   public:
     R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc(StateIn&);
-    ~R12IntsAcc();
+    virtual ~R12IntsAcc();
     void save_data_state(StateOut&);
 
     /// Types of two-body operators that R12IntsAcc understands
-    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
-    static const int max_num_te_types_ = 4;
+    typedef unsigned int tbint_type;
+    static const unsigned int max_num_te_types_ = TwoBodyInt::max_num_tbint_types;
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
@@ -110,7 +115,7 @@ class R12IntsAcc: virtual public SavableState {
     /// Rank of index space y
     int ny() const { return ny_; }
     /// Size of each block of the integrals of one type, in double words
-    size_t blocksize() const { return blksize_; };
+    size_t blocksize() const { return nxy_; };
     /// The index of the first orbital in the next integrals batch to be stored
     int next_orbital() const;
 

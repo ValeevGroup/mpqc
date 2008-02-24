@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -46,7 +46,14 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
+#include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
+#include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/container.h>
+#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -59,622 +66,180 @@ using namespace sc;
 //
 // these are for testing purposes only
 //
-// use the commutator form A
-#define USE_A_COMM_IN_B_EBC 0
 #define ACOMM_INCLUDE_TR_ONLY 0
 #define ACOMM_INCLUDE_R_ONLY 0
 
-void
-R12IntEval::compute_T2_()
-{
-  if (evaluated_)
-    return;
-
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
-  if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
-  if (!ijpq_acc->is_active())
-    ijpq_acc->activate();
-
-  Timer tim("mp2 t2 amplitudes");
-
-  ExEnv::out0() << endl << indent
-                << "Entered MP2 T2 amplitude evaluator" << endl;
-  ExEnv::out0() << incindent;
-
-  Ref<MessageGrp> msg = r12info_->msg();
-  int me = msg->me();
-  int nproc = msg->n();
-
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
-  const int nfzv = r12info_->nfzv();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
-  
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq ab_iter(act_vir_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
-  }
-  
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
-  
-  //////////////////////////////////////////////////////////////
-  //
-  // Evaluation of the MP2 T2 amplitudes proceeds as follows:
-  //
-  //    loop over batches of ij,
-  //      load (ijxy)=(ix|jy) into memory
-  //
-  //      loop over xy, 0<=x<nvir_act, 0<=y<nvir_act
-  //        compute T2_aa[ij][xy] = [ (ijxy) - (ijyx) ] / denom
-  //        compute T2_ab[ij][xy] = [ (ijxy) ] / denom
-  //      end xy loop
-  //    end ij loop
-  //
-  /////////////////////////////////////////////////////////////////////////////////
-
-  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-    const int ij = ij_iter.ij();
-    // Figure out if this task will handle this ij
-    int ij_proc = ij%nproc_with_ints;
-    if (ij_proc != proc_with_ints[me])
-      continue;
-    const int i = ij_iter.i();
-    const int j = ij_iter.j();
-    const int ij_aa = ij_iter.ij_aa();
-    const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ij_ba();
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-    // Get (|1/r12|) integrals
-    tim.enter("MO ints retrieve");
-    double *ijxy_buf_eri = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::eri);
-    tim.exit("MO ints retrieve");
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-    // Compute MP2 energies
-    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
-    double T2_aa_ijab = 0.0;
-    double T2_ab_ijab = 0.0;
-
-    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
-
-      const int a = ab_iter.i();
-      const int b = ab_iter.j();
-      const int ab_aa = ab_iter.ij_aa();
-      const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ij_ba();
-
-      const int aa = a + nocc;
-      const int bb = b + nocc;
-
-      const int ab_offset = aa*noso+bb;
-      const int ba_offset = bb*noso+aa;
-#if TEST_T2
-      const double oo_delta_ijab = -1.0/sqrt(-act_occ_evals(i)-act_occ_evals(j)+all_evals(aa)+all_evals(bb));
-#else
-      const double oo_delta_ijab = -1.0/(-act_occ_evals(i)-act_occ_evals(j)+all_evals(aa)+all_evals(bb));
-#endif
-      const double eri_iajb = ijxy_buf_eri[ab_offset];
-      const double eri_ibja = ijxy_buf_eri[ba_offset];
-      const double T2_ab_ijab = eri_iajb * oo_delta_ijab;
-      const double T2_ab_ijba = eri_ibja * oo_delta_ijab;
-      T2ab_.set_element(ij_ab,ab_ab,T2_ab_ijab);
-      T2ab_.set_element(ji_ab,ba_ab,T2_ab_ijab);
-      T2ab_.set_element(ji_ab,ab_ab,T2_ab_ijba);
-      T2ab_.set_element(ij_ab,ba_ab,T2_ab_ijba);
-
-      if (ij_aa != -1 && ab_aa != -1) {
-        const double T2_aa_ijab = (eri_iajb - eri_ibja) * oo_delta_ijab;
-        T2aa_.set_element(ij_aa,ab_aa,T2_aa_ijab);
-      }
-
-    }
-    
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::eri);
-  }
-
-  globally_sum_intermeds_();
-
-#if TEST_T2
-  // As a test -- compute MP2 energies
-  RefSCMatrix emp2pair_aa = T2aa_*T2aa_.t();
-  RefSCMatrix emp2pair_ab = T2ab_*T2ab_.t();
-  emp2pair_aa.scale(-2.0);
-  emp2pair_ab.scale(-1.0);
-  emp2pair_aa.print("Alpha-alpha MP2 energies");
-  emp2pair_ab.print("Alpha-beta MP2 energies");
-#endif
-
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
-
-  tim.exit("mp2 t2 amplitudes");
-}
-
 
 void
-R12IntEval::compute_R_()
+R12IntEval::compute_A_direct_(RefSCMatrix& A,
+                              const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              const Ref<MOIndexSpace>& fspace2,
+                              const Ref<MOIndexSpace>& fspace4,
+                              bool antisymmetrize)
 {
-  if (evaluated_)
-    return;
-
-  // This functions assumes that virtuals are expanded in the same basis
-  // as the occupied orbitals
-  if (!r12info_->basis_vir()->equiv(r12info_->basis()))
-    throw std::runtime_error("R12IntEval::compute_R_() -- should not be called when the basis set for virtuals \
-differs from the basis set for occupieds");
-
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
-  if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
-  if (!ijpq_acc->is_active())
-    ijpq_acc->activate();
-
-  Timer tim("R intermediate");
-
-  Ref<MessageGrp> msg = r12info_->msg();
-  int me = msg->me();
-  int nproc = msg->n();
-  ExEnv::out0() << endl << indent
-    << "Entered R amplitude evaluator" << endl;
-  ExEnv::out0() << incindent;
-
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
-  const int nfzv = r12info_->nfzv();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
-
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq ab_iter(act_vir_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
-  }
-
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
-
-  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-    const int ij = ij_iter.ij();
-    // Figure out if this task will handle this ij
-    int ij_proc = ij%nproc_with_ints;
-    if (ij_proc != proc_with_ints[me])
-      continue;
-    const int i = ij_iter.i();
-    const int j = ij_iter.j();
-    const int ij_aa = ij_iter.ij_aa();
-    const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ij_ba();
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-    // Get (|1/r12|) integrals
-    tim.enter("MO ints retrieve");
-    double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-    tim.exit("MO ints retrieve");
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-    // Compute MP2 energies
-    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
-    double R_aa_ijab = 0.0;
-    double R_ab_ijab = 0.0;
-
-    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
-
-      const int a = ab_iter.i();
-      const int b = ab_iter.j();
-      const int ab_aa = ab_iter.ij_aa();
-      const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ij_ba();
-
-      const int aa = a + nocc;
-      const int bb = b + nocc;
-
-      const int ab_offset = aa*noso+bb;
-      const int ba_offset = bb*noso+aa;
-      const double r12_iajb = ijxy_buf_r12[ab_offset];
-      const double r12_ibja = ijxy_buf_r12[ba_offset];
-      Rab_.set_element(ij_ab,ab_ab,r12_iajb);
-      Rab_.set_element(ji_ab,ba_ab,r12_iajb);
-      Rab_.set_element(ji_ab,ab_ab,r12_ibja);
-      Rab_.set_element(ij_ab,ba_ab,r12_ibja);
-
-      if (ij_aa != -1 && ab_aa != -1) {
-        const double R_aa_ijab = (r12_iajb - r12_ibja);
-        Raa_.set_element(ij_aa,ab_aa,R_aa_ijab);
-      }
-
-    }
-
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
-  }
-
-  globally_sum_intermeds_();
-
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited R amplitude evaluator" << endl;
-
-  tim.exit("R intermediate");
-}
-
-
-void
-R12IntEval::compute_A_simple_()
-{
-  if (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus)
-    throw std::runtime_error("R12IntEval::compute_A_simple_() -- A intermediate can only be computed using a CABS (or CABS+) approach");
-
-  if (evaluated_)
-    return;
-
-  Timer tim("A intermediate");
-
-  const int num_te_types = 2;
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
   
-  Ref<MessageGrp> msg = r12info_->msg();
-  int me = msg->me();
-  int nproc = msg->n();
-  ExEnv::out0() << endl << indent
-    << "Entered A intermediate evaluator" << endl;
-  ExEnv::out0() << incindent;
-
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
-  const int nfzv = r12info_->nfzv();
-  const int nvir_act = noso - nocc - nfzv;
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
-
-  // compute the Fock matrix between the complement and virtuals and
-  // create the new Fock-weighted space
-  Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
-#if A_DIRECT_EXCLUDE_K
-  RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space,1.0,0.0);
-#else
-  RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space);
-#endif
-  if (debug_ > 1)
-    F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
-  if (debug_ > 0)
-    print_scmat_norms(F_ri_v,"Fock matrix (RI-BS/act.virt.)");
-
-  Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
-                                                      act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
-
-  // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(act_occ_space,act_vir_space,
-                       act_occ_space,act_fvir_space);
-  Ref<TwoBodyMOIntsTransform> iajBf_tform = tfactory->twobody_transform_13("(ia|jB_f)");
-  iajBf_tform->set_num_te_types(num_te_types);
-  iajBf_tform->compute();
-  Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
+  const unsigned int nf12 = corrfactor()->nfunctions();
+  // create transforms, if needed
+  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4_f
+  TwoBodyIntDescrCreator descr_creator(corrfactor(),
+                                       r12info()->integral(),
+                                       true,false);
+  fill_container(descr_creator,descrs);
   
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq ab_iter(act_vir_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
+  tim_enter("A intermediate (direct)");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|A|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
+  ExEnv::out0() << endl << indent
+                << "Entered \"direct\" A intermediate (" << label << ") evaluator" << endl
+                << incindent;
+  //
+  // ij|A|kl = ij|f12|kl_f, symmetrized if part1_equiv_part2
+  //
+  std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
+  compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tforms4f,descrs);
+  if (part1_equiv_part2) {
+    // no need to symmetrize if computing antisymmetric matrix -- compute_tbint_tensor takes care of that
+    if (!antisymmetrize)
+      symmetrize<false>(A,A,space1,space2);
+    A.scale(2.0);
+  }
+  else {
+    std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
+    compute_F12_(A,space1,fspace2,space3,space4,antisymmetrize,tforms2f,descrs);
   }
 
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijaBf_acc,proc_with_ints);
-
-  //////////////////////////////////////////////////////////////
-  //
-  // Evaluation of A intermedates proceeds as follows:
-  //
-  //    loop over batches of ij,
-  //      load (ijxy)=(ix|jy) into memory
-  //
-  //      loop over xy, 0<=x<nvir_act, 0<=y<nvir_act
-  //        compute T2_aa[ij][xy] = [ (ijxy) - (ijyx) ] / denom
-  //        compute T2_ab[ij][xy] = [ (ijxy) ] / denom
-  //      end xy loop
-  //    end ij loop
-  //
-  /////////////////////////////////////////////////////////////////////////////////
-
-  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-    const int ij = ij_iter.ij();
-    // Figure out if this task will handle this ij
-    int ij_proc = ij%nproc_with_ints;
-    if (ij_proc != proc_with_ints[me])
-      continue;
-    const int i = ij_iter.i();
-    const int j = ij_iter.j();
-    const int ij_aa = ij_iter.ij_aa();
-    const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ij_ba();
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-    // Get (|r12|) integrals
-    tim.enter("MO ints retrieve");
-    double *ijaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-    double *jiaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
-    tim.exit("MO ints retrieve");
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-    // Compute contributions to A
-    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
-
-      const int a = ab_iter.i();
-      const int b = ab_iter.j();
-      const int ab_aa = ab_iter.ij_aa();
-      const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ij_ba();
-
-      const int ab_offset = a*nvir_act+b;
-      const int ba_offset = b*nvir_act+a;
-
-      const double r12_iajBf = ijaBf_buf_r12[ab_offset];
-      const double r12_jaiBf = jiaBf_buf_r12[ab_offset];
-      const double r12_ibjAf = ijaBf_buf_r12[ba_offset];
-      const double r12_jbiAf = jiaBf_buf_r12[ba_offset];
-
-      const double A_ab_ijab = 0.5*(r12_jbiAf + r12_iajBf);
-      const double A_ab_ijba = 0.5*(r12_ibjAf + r12_jaiBf);
-      Aab_.set_element(ij_ab,ab_ab,A_ab_ijab);
-      Aab_.set_element(ji_ab,ba_ab,A_ab_ijab);
-      Aab_.set_element(ji_ab,ab_ab,A_ab_ijba);
-      Aab_.set_element(ij_ab,ba_ab,A_ab_ijba);
-
-      if (ij_aa != -1 && ab_aa != -1) {
-        const double A_aa_ijab = 0.5*(r12_jbiAf - r12_ibjAf + r12_iajBf - r12_jaiBf);
-        Aaa_.set_element(ij_aa,ab_aa,A_aa_ijab);
-      }
-
-    }
-
-    ijaBf_acc->release_pair_block(i,j,R12IntsAcc::r12);
-    ijaBf_acc->release_pair_block(j,i,R12IntsAcc::r12);
-  }
-
-  globally_sum_intermeds_();
-
-#if TEST_A
-  Aaa_.print("Alpha-alpha A intermediate");
-  Aab_.print("Alpha-beta A intermediate");
-#endif
-
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited A intermediate evaluator" << endl;
-
-  tim.exit("A intermediate");
+  ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
+  tim_exit("A intermediate (direct)");
 }
 
 void
-R12IntEval::compute_A_via_commutator_()
+R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
+                               const Ref<MOIndexSpace>& space1,
+                               const Ref<MOIndexSpace>& space2,
+                               const Ref<MOIndexSpace>& space3,
+                               const Ref<MOIndexSpace>& space4,
+                               bool antisymmetrize,
+                               const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms)
 {
-  if (evaluated_)
-    return;
-
-  // This functions assumes that virtuals are expanded in the same basis
-  // as the occupied orbitals
-  if (!r12info_->basis_vir()->equiv(r12info_->basis()))
-    throw std::runtime_error("R12IntEval::compute_A_via_commutator_() -- should not be called when the basis set for virtuals \
-differs from the basis set for occupieds");
-
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
-  if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
-  if (!ijpq_acc->is_active())
-    ijpq_acc->activate();
-
-  Timer tim("A intermediate via [T,r]");
-
-  Ref<MessageGrp> msg = r12info_->msg();
-  int me = msg->me();
-  int nproc = msg->n();
+  tim_enter("A intermediate (via commutator)");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|A|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
   ExEnv::out0() << endl << indent
-    << "Entered A amplitude (via [T,r]) evaluator" << endl;
-  ExEnv::out0() << incindent;
-
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
-  const int nfzv = r12info_->nfzv();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
-
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq ab_iter(act_vir_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
+                << "Entered \"commutator\" A intermediate (" << label << ") evaluator" << endl
+                << incindent;
+  
+  // create descriptors, if needed
+  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4
+  if (tforms.empty()) {
+    TwoBodyIntDescrCreator descr_creator(corrfactor(),
+                                         r12info()->integral(),
+                                         true,false);
+    fill_container(descr_creator,descrs);
   }
-
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
-
-  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-    const int ij = ij_iter.ij();
-    // Figure out if this task will handle this ij
-    int ij_proc = ij%nproc_with_ints;
-    if (ij_proc != proc_with_ints[me])
-      continue;
-    const int i = ij_iter.i();
-    const int j = ij_iter.j();
-    const int ij_aa = ij_iter.ij_aa();
-    const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ij_ba();
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-    // Get (|1/r12|) integrals
-    tim.enter("MO ints retrieve");
-    double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-    double *ijxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t1);
-    double *jixy_buf_r12t1 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12t1);
-    tim.exit("MO ints retrieve");
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
-    double R_aa_ijab = 0.0;
-    double R_ab_ijab = 0.0;
-    double TR_aa_ijab = 0.0;
-    double TR_ab_ijab = 0.0;
-
-    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
-
-      const int a = ab_iter.i();
-      const int b = ab_iter.j();
-      const int ab_aa = ab_iter.ij_aa();
-      const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ij_ba();
-
-      const int aa = a + nocc;
-      const int bb = b + nocc;
-
-      const int ab_offset = aa*noso+bb;
-      const int ba_offset = bb*noso+aa;
-      const double r12_iajb = ijxy_buf_r12[ab_offset];
-      const double r12_ibja = ijxy_buf_r12[ba_offset];
-      const double t1r12_iajb = -ijxy_buf_r12t1[ab_offset];
-      const double t1r12_ibja = -ijxy_buf_r12t1[ba_offset];
-      const double t2r12_iajb = -jixy_buf_r12t1[ba_offset];
-      const double t2r12_ibja = -jixy_buf_r12t1[ab_offset];
-#if ACOMM_INCLUDE_TR_ONLY
-      double Aab_ij_ab = 0.5 * ( -(t1r12_iajb + t2r12_iajb) );
-      double Aab_ij_ba = 0.5 * ( -(t1r12_ibja + t2r12_ibja) );
-#elif ACOMM_INCLUDE_R_ONLY
-      double Aab_ij_ab = 0.5 * ( r12_iajb );
-      double Aab_ij_ba = 0.5 * ( r12_ibja );
-#else
-      double Aab_ij_ab = 0.5 * ( -(t1r12_iajb + t2r12_iajb) - (all_evals(aa) + all_evals(bb) -
-                                                              act_occ_evals(i) - act_occ_evals(j))*r12_iajb );
-      double Aab_ij_ba = 0.5 * ( -(t1r12_ibja + t2r12_ibja) - (all_evals(aa) + all_evals(bb) -
-                                                              act_occ_evals(i) - act_occ_evals(j))*r12_ibja );
+  
+  //
+  // ij|A|ab = ij|[t1+t2,f12]|ab - (e_a+e_b-e_i-e_j) * ij|f12|ab
+  //
+  using ManyBodyTensors::Plus;
+  using ManyBodyTensors::Minus;
+#if !ACOMM_INCLUDE_TR_ONLY
+  // Minus!
+  compute_tbint_tensor<ManyBodyTensors::Apply_H0minusE0<Minus>,true,false>(
+    A, corrfactor()->tbint_type_f12(),
+    space1, space2, space3, space4,
+    antisymmetrize, tforms, descrs
+  );
 #endif
-      Ac_ab_.set_element(ij_ab,ab_ab,Aab_ij_ab);
-      Ac_ab_.set_element(ji_ab,ba_ab,Aab_ij_ab);
-      Ac_ab_.set_element(ji_ab,ab_ab,Aab_ij_ba);
-      Ac_ab_.set_element(ij_ab,ba_ab,Aab_ij_ba);
-
-      if (ij_aa != -1 && ab_aa != -1) {
-        Ac_aa_.set_element(ij_aa,ab_aa,Aab_ij_ab - Aab_ij_ba);
-      }
-
-    }
-
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12t1);
-    ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12t1);
-  }
-
-  globally_sum_intermeds_();
-
-#if TEST_A
-  Ac_aa_.print("Alpha-alpha A intermediate");
-  Ac_ab_.print("Alpha-beta A intermediate");
+#if !ACOMM_INCLUDE_R_ONLY
+  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
+    A, corrfactor()->tbint_type_t1f12(),
+    space1, space2, space3, space4,
+    antisymmetrize, tforms, descrs
+  );
+  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
+    A, corrfactor()->tbint_type_t2f12(),
+    space1, space2, space3, space4,
+    antisymmetrize, tforms, descrs
+  );
 #endif
 
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited A amplitude (via [T,r]) evaluator" << endl;
-
-  tim.exit("A intermediate via [T,r]");
+  ExEnv::out0() << decindent << indent << "Exited \"commutator\" A intermediate (" << label << ") evaluator" << endl;
+  tim_exit("A intermediate (via commutator)");
 }
-
 
 void
 R12IntEval::AT2_contrib_to_V_()
 {
   if (evaluated_)
     return;
-  if (r12info_->msg()->me() == 0) {
-    RefSCMatrix Vaa = Aaa_*T2aa_.t();
-    Vaa_.accumulate(Vaa);
-    RefSCMatrix Vab = Aab_*T2ab_.t();
-    Vab_.accumulate(Vab);  
-    if (debug_ > 0) {
-      print_scmat_norms(Vaa,"Alpha-alpha AT2 contribution to V");
-      print_scmat_norms(Vab,"Alpha-beta AT2 contribution to V");
+
+    for(unsigned int s=0; s<nspincases2(); s++) {
+      SpinCase2 spin = static_cast<SpinCase2>(s);
+      
+      // Use normal or commutator form of A, depending on the approach
+      RefSCMatrix A;
+      if (ks_ebcfree())
+        A = Ac_[s];
+      else
+        A = A_[s];
+      RefSCMatrix V = A * amps()->T2(spin).t();
+      
+      std::string label = prepend_spincase(spin,"AT2 contribution to V");
+      if (debug_ >= DefaultPrintThresholds::O4) {
+        V.print(label.c_str());
+      }
+      if (debug_ >= DefaultPrintThresholds::mostN0)
+        print_scmat_norms(V,label.c_str());
+      if (r12info_->msg()->me() == 0)
+        V_[s].accumulate(V);
     }
-  }
+
   globally_sum_intermeds_();
 }
 
 void
-R12IntEval::AR_contrib_to_B_()
+R12IntEval::AF12_contrib_to_B_()
 {
   if (evaluated_)
     return;
   if (r12info_->msg()->me() == 0) {
-#if USE_A_COMM_IN_B_EBC
-    RefSCMatrix AR_aa = Ac_aa_*Raa_.t();
-    RefSCMatrix AR_ab = Ac_ab_*Rab_.t();
-    double scale = -0.5;
-#else
-    RefSCMatrix AR_aa = Aaa_*Raa_.t();
-    RefSCMatrix AR_ab = Aab_*Rab_.t();
-    double scale = -0.5;
-#endif
-    RefSCMatrix Baa = Baa_.clone();  Baa.assign(0.0);
-    RefSCMatrix Bab = Bab_.clone();  Bab.assign(0.0);
-    AR_aa.scale(scale); Baa.accumulate(AR_aa);
-    RefSCMatrix AR_aa_t = AR_aa.t();
-    Baa.accumulate(AR_aa_t);
-    AR_ab.scale(scale); Bab.accumulate(AR_ab);
-    RefSCMatrix AR_ab_t = AR_ab.t();
-    Bab.accumulate(AR_ab_t);
-    if (debug_ > 1) {
-      Baa.print("Alpha-alpha B^{EBC} contribution");
-      Bab.print("Alpha-beta B^{EBC} contribution");
-    }
-    Baa_.accumulate(Baa);
-    Bab_.accumulate(Bab);
-    if (debug_ > 0) {
-      print_scmat_norms(Baa,"Alpha-alpha AR contribution to B");
-      print_scmat_norms(Bab,"Alpha-beta AR contribution to B");
+    for(unsigned int s=0; s<nspincases2(); s++) {
+      SpinCase2 spin = static_cast<SpinCase2>(s);
+      
+      // Use normal or commutator form of A, depending on the approach
+      RefSCMatrix A;
+      if (ks_ebcfree())
+        A = Ac_[s];
+      else
+        A = A_[s];
+      RefSCMatrix AF = A * amps()->Fvv(spin).t();
+
+      // B^{EBC} implies summation over all ab, not just unique ones, hence a factor of 2
+      const double spin_pfac = 2.0;
+      // minus 1/2 for Symmetrize AND -1/2 factor in B^{EBC} expression: B^{EBC} = -0.5 A . F12^t
+      const double scale = -0.25 * spin_pfac;
+      RefSCMatrix B = B_[s].clone();  B.assign(0.0);
+      AF.scale(scale); B.accumulate(AF);
+      RefSCMatrix AFt = AF.t();
+      B.accumulate(AFt);
+      
+      const std::string label = prepend_spincase(spin,"B^{EBC} contribution");
+      if (debug_ >= DefaultPrintThresholds::O4) {
+        B.print(label.c_str());
+      }
+      B_[s].accumulate(B);
+      if (debug_ >= DefaultPrintThresholds::mostN0) {
+        print_scmat_norms(B,label.c_str());
+      }
     }
   }
   globally_sum_intermeds_();

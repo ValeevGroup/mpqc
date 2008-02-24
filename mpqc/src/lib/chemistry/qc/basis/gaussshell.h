@@ -63,17 +63,20 @@ class GaussianShell: public SavableState
     int max_am_;
     int ncart_;
     int has_pure_;
+    int* contr_to_func_;
+    int* func_to_contr_;
     void init_computed_data();
 
     double shell_normalization(int);
     void convert_coef();
     void normalize_shell();
     PrimitiveType keyval_init(const Ref<KeyVal>&,int,int);
+    int test_monobound(double &r, double &bound) const;
+  public:
+
     static const char* amtypes;
     static const char* AMTYPES;
 
-    int test_monobound(double &r, double &bound) const;
-  public:
     /** A GaussianShell constructor.
         Users of GaussianShell must pass pointers to newed memory that is kept
         by GaussianShell and deleted by the destructor.
@@ -160,6 +163,10 @@ class GaussianShell: public SavableState
     int is_pure(int con) const { return puream[con]; }
     /// Returns nonzero if any contraction is solid harmonics.
     int has_pure() const { return has_pure_; }
+    /// Returns the number of the first function in the given contraction
+    int contraction_to_function(int c) const { return contr_to_func_[c]; }
+    /// Returns the contraction to which this function belongs
+    int function_to_contraction(int f) const { return func_to_contr_[f]; }
     /// Returns the contraction coef for unnormalized primitives.
     double coefficient_unnorm(int con,int prim) const {return coef[con][prim];}
     /// Returns the contraction coef for normalized primitives.
@@ -198,7 +205,13 @@ class GaussianShell: public SavableState
                             int a2, int b2, int c2) const;
 
     /// Returns true if this and the argument are equivalent.
-    int equiv(const GaussianShell *s);
+    int equiv(const GaussianShell* s) const;
+    /// Returns true if this and the argument are equivalent.
+    int equiv(const GaussianShell& s) const
+    {
+      return equiv(&s);
+    }
+
 
     /** Returns a radius.  All functions in the shell are below
         threshold outside this radius. */

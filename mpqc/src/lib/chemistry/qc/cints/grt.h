@@ -37,7 +37,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/cints/shellpairs.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/cints/int2e.h>
 #include <libr12/libr12.h>
 
@@ -85,7 +85,7 @@ class GRTCints: public Int2eCints {
     void grt_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     Libr12_t Libr12_;
-    Ref<FJT> Fm_Eval_;
+    Ref<Fjt> Fm_Eval_;
   
   public:
     GRTCints(Integral *,
@@ -96,14 +96,8 @@ class GRTCints: public Int2eCints {
 	     size_t storage);
     ~GRTCints();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri ||
-	  te_type == TwoBodyInt::r12 ||
-	  te_type == TwoBodyInt::r12t1 ||
-	  te_type == TwoBodyInt::r12t2)
-	return target_ints_buffer_[te_type];
-      else
-	return 0;
+    double *buffer(unsigned int t) const {
+	return target_ints_buffer_[t];
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,

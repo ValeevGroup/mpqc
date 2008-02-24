@@ -388,6 +388,15 @@ MBPT2::value_implemented() const
 //////////////////////////////////////////////////////////////////////////////
 
 void
+MBPT2::set_desired_value_accuracy(double acc)
+{
+  Function::set_desired_value_accuracy(acc);
+  reference_->set_desired_value_accuracy(acc / ref_to_mp2_acc);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+void
 MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
 {
   int i, j;

@@ -29,83 +29,154 @@
 #include <scconfig.h>
 #include <util/misc/math.h>
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <math/scmat/abstract.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 using namespace std;
 using namespace sc;
 
+namespace {
+    // returns the sum of all elements of v
+    double sum(const RefSCVector& v);
+    // returns the total R12 energy correction
+    double er12(const Ref<MP2R12Energy>& mp2r12_energy);
+}
 
 void
-MBPT2_R12::compute_energy_a_()
+MBPT2_R12::compute_energy_()
 {
-  Timer tim("mp2-r12/a energy");
+  tim_enter("mp2-f12 energy");
 
+  //int DebugWait = 1;
+  //while (DebugWait) {}
+  
+  const Ref<R12IntEvalInfo>& r12info = r12evalinfo_;
+  r12info->initialize();
   if (r12eval_.null()) {
-    Ref<R12IntEvalInfo> r12info = new R12IntEvalInfo(this);
-    r12info->set_dynamic(dynamic_);
-    r12info->set_print_percent(print_percent_);
-    r12info->set_memory(mem_alloc);
-    r12eval_ = new R12IntEval(r12info,gbc_,ebc_,abs_method_,stdapprox_);
-    r12eval_->include_mp1(include_mp1_);
+    r12evalinfo_->set_dynamic(dynamic_);
+    r12evalinfo_->set_print_percent(print_percent_);
+    r12evalinfo_->set_memory(mem_alloc);
+    r12eval_ = new R12IntEval(r12evalinfo_);
     r12eval_->set_debug(debug_);
   }
   // This will actually compute the intermediates
   r12eval_->compute();
-
-  double etotal = 0.0;
   
+  Ref<R12EnergyIntermediates> r12intermediates;
+  
+  double etotal = 0.0;
+  double ef12 = 0.0;
+  
+  bool diag = r12info->ansatz()->diag();
+  bool fixedcoeff = r12info->ansatz()->fixedcoeff();
+  //
   // Now we can compute and print pair energies
-  tim.enter("mp2-r12/a pair energies");
-  if (r12a_energy_.null())
-    r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
-  r12a_energy_->print_pair_energies(spinadapted_);
-  etotal = r12a_energy_->energy();
-  tim.exit("mp2-r12/a pair energies");
-  if (stdapprox_ == LinearR12::StdApprox_Ap) {
-    tim.enter("mp2-r12/a' pair energies");
-    if (r12ap_energy_.null())
-      r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
-    r12ap_energy_->print_pair_energies(spinadapted_);
+  //
+  
+  // can use projector 3 only for app C
+  if (r12info->ansatz()->projector() != LinearR12::Projector_3) {
 
-    /*const double radius = 1.0;
-    SCVector3 r1(0.0,0.0,radius);
-    r12ap_energy_->compute_pair_function_ab(0,r1,r1);
-    ExEnv::out0() << endl<<endl;
-    const int nintervals = 100;
-    const double Phi_start = -(M_PI);
-    const double Phi_end = M_PI;
-    const double dPhi = (Phi_end - Phi_start) / nintervals;
-    const int npts = nintervals + 1;
-    for(int i=-nintervals/2; i<=nintervals/2; i++) {
-      const double Phi = i*dPhi;
-      const double z = radius * cos(Phi);
-      const double x = radius * sin(Phi);
-      SCVector3 r2(x,0.0,z);
-      ExEnv::out0() << indent << Phi;
-      r12ap_energy_->compute_pair_function_ab(0,r1,r2);
-      }*/
-    if (twopdm_grid_aa_.nonnull())
-      r12ap_energy_->compute_pair_function_aa(0,twopdm_grid_aa_);
-    if (twopdm_grid_ab_.nonnull())
-      r12ap_energy_->compute_pair_function_ab(0,twopdm_grid_ab_);
+    // MP2-F12/A'
+    if (r12info->stdapprox() == LinearR12::StdApprox_Ap ||
+        r12info->stdapprox() == LinearR12::StdApprox_B) {
+      tim_enter("mp2-f12/a' pair energies");
+      if (r12ap_energy_.null()){
+        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_Ap);
+        r12ap_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
+      }
+      r12ap_energy_->print_pair_energies(r12info->spinadapted());
+      etotal = r12ap_energy_->energy();
+      ef12 = er12(r12ap_energy_);
+      tim_exit("mp2-f12/a' pair energies");
+    }
 
-    etotal = r12ap_energy_->energy();
-    tim.exit("mp2-r12/a' pair energies");
+    // MP2-F12/B
+    if (r12info->stdapprox() == LinearR12::StdApprox_B) {
+      tim_enter("mp2-f12/b pair energies");
+      if (r12b_energy_.null()){
+        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_B);
+        r12b_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
+      }
+      r12b_energy_->print_pair_energies(r12info->spinadapted());
+      etotal = r12b_energy_->energy();
+      ef12 = er12(r12b_energy_);
+      tim_exit("mp2-f12/b pair energies");
+    }
+    
+    // MP2-F12/A''
+    if (r12info->stdapprox() == LinearR12::StdApprox_App) {
+      tim_enter("mp2-f12/a'' pair energies");
+      if (r12app_energy_.null()){
+        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_App);
+        r12app_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
+      }
+      r12app_energy_->print_pair_energies(r12info->spinadapted());
+      etotal = r12app_energy_->energy();
+      ef12 = er12(r12app_energy_);
+      tim_exit("mp2-f12/a'' pair energies");
+    }
+
+  } // end of != ansatz_3
+  
+  // MP2-F12/C
+  if (r12info->stdapprox() == LinearR12::StdApprox_C) {
+    tim_enter("mp2-f12/c pair energies");
+    if (r12c_energy_.null()){
+      r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_C);
+      r12c_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
+    }
+    r12c_energy_->print_pair_energies(r12info->spinadapted());
+    etotal = r12c_energy_->energy();
+    ef12 = er12(r12c_energy_);
+    tim_exit("mp2-f12/c pair energies");
   }
+  
+  tim_exit("mp2-f12 energy");
 
-  tim.exit("mp2-r12/a energy");
-
+  mp2_corr_energy_ = etotal - ef12;
   etotal += ref_energy();
   set_energy(etotal);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
                             *ref_to_mp2_acc);
   
+#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
+  if (twopdm_grid_.nonnull()) {
+    Ref<MP2R12Energy> wfn_to_plot;
+    switch(r12info->stdapprox()) {
+      case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
+      case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
+      case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;
+      case LinearR12::StdApprox_C:    wfn_to_plot = r12c_energy_;   break;
+    }
+    for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
+      wfn_to_plot->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],
+                                         static_cast<SpinCase2>(sc2),
+                                         twopdm_grid_);
+    }
+  }
+#endif
+    
+  
   return;
 }
 
+namespace {
+    double sum(const RefSCVector& v) {
+	RefSCVector unit = v.clone();  unit.assign(1.0);
+	return v.dot(unit);
+    }
+    double er12(const Ref<MP2R12Energy>& mp2r12_energy) {
+	double result = 0.0;
+	for(int spin=0; spin<NSpinCases2; spin++) {
+	    const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
+	    result += sum(mp2r12_energy->ef12(spincase2));
+	}
+	return result;
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////
 

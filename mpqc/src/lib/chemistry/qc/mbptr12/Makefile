@@ -31,6 +31,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 
 TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
@@ -46,28 +47,58 @@ CXXSRCS = mbptr12.cc \
   transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
   transform_123inds.cc transform_13inds.cc transform_12inds.cc \
   compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
-  r12int_eval.cc compute_a_gebc.cc compute_a_gebc_abs1.cc \
-  coulomb.cc exchange.cc fock.cc ebc_contribs.cc gbc_contribs.cc \
-  compute_a_gebc_vbs.cc compute_vxb_a_symm.cc compute_vxb_a_asymm.cc \
-  dualbasis_mp2.cc r12_amps.cc compute_amps.cc \
-  twobodygrid.cc svd.cc
+  r12int_eval.cc \
+  coulomb.cc exchange.cc fock.cc \
+  compute_a_gebc_vbs.cc \
+  r12_amps.cc compute_amps.cc \
+  twobodygrid.cc svd.cc linearr12.cc intermeds_g12.cc \
+  singlerefinfo.cc utils.cc compute_vxb_a_new.cc \
+  twoparticlecontraction.cc spin.cc \
+  mp2r12_energy_compute.cc mp2_pair_energies.cc \
+  ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
+  creator.cc approxC.cc approxApp.cc ansatz.cc \
+  mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
+  gaussianfit.cc r12technology.cc twobody_intermeds.cc \
+  singles_emp2.cc bc_contrib.cc blas.cc dkh.cc
+  
+INC = r12ia_memgrp.h \
+ansatz.h                        r12ia_mpiiofile.h \
+r12ia_node0file.h compute_tbint_tensor.h r12int_eval.h \
+container.h                     r12technology.h \
+contract_tbint_tensor.h         singlerefinfo.h \
+creator.h                       spin.h \
+gaussianfit.h gaussianfit.timpl.h transform_123inds.h \
+transform_12inds.h linearr12.h transform_13inds.h \
+linearr12.timpl.h               transform_factory.h \
+linkage.h                       transform_ijxy.h \
+mbptr12.h                       transform_ikjy.h \
+moindexspace.h                  transform_ixjy.h \
+mp2r12_energy.h                 transform_tbint.h \
+mp2r12_energy_util.h            twobodygrid.h \
+pairiter.h                      twoparticlecontraction.h \
+print.h                         utils.h \
+print_scmat_norms.h             utils.impl.h \
+r12_amps.h                      vxb_eval_info.h \
+r12ia.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc
 endif
 
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  DEFINES += -DHAVE_CHEMISTRY_CCA
+endif
+
 LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))
+
+DISTFILES = $(INC) Makefile LIBS.h
+DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
-ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d)
-endif
-
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o mbptr12test $^ $(SYSLIBS) $(LTLINKBINOPTS)
@@ -83,3 +114,8 @@ f77sym.h: f77sym.in
 
 distclean::
 	/bin/rm -f f77sym.h
+
+mbptr12test.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.$(OBJSUF)=.d) mbptr12test.d
+endif

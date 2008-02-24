@@ -37,7 +37,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/cints/shellpairs.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/cints/int2e.h>
 extern "C" {
 #include <libint/libint.h>
@@ -84,7 +84,7 @@ class EriCints: public Int2eCints {
     void eri_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     Libint_t Libint_;
-    Ref<FJT> Fm_Eval_;
+    Ref<Fjt> Fm_Eval_;
   
   public:
     EriCints(Integral *,
@@ -95,9 +95,8 @@ class EriCints: public Int2eCints {
 	     size_t storage);
     ~EriCints();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri) return target_ints_buffer_;
-      else return 0;
+    double *buffer(unsigned int t) const {
+      return target_ints_buffer_;
     }
 
     static size_t storage_required(const Ref<GaussianBasisSet>& b1,

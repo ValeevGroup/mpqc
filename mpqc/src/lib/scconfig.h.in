@@ -261,6 +261,24 @@
 /* Define if IntegralLibint2 can be compiled.  */
 #undef HAVE_INTEGRALLIBINT2
 
+/* Define if you have the libint2 header file and library.  */
+#undef HAVE_LIBINT2
+
+/* Define if IntegralCints can be compiled.  */
+#undef HAVE_INTEGRALCINTS
+
+/* Define if IntegralLibint2 can be compiled.  */
+#undef HAVE_INTEGRALLIBINT2
+
+/* Define if you have the libpsio header file and library.  */
+#undef HAVE_LIBPSIO
+
+/* Define if you have the libchkpt header file and library.  */
+#undef HAVE_LIBCHKPT
+
+/* Define if Psi-MPQC interface can be compiled.  */
+#undef HAVE_PSIMPQCIFACE
+
 /* Define if your MPI implementation has MPI-IO functions */
 #undef HAVE_MPIIO
 

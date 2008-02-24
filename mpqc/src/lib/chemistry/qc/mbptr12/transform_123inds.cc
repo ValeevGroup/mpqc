@@ -35,20 +35,22 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_123inds.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
 
+#define PRINT0Q 0
 #define PRINT1Q 0
 #define PRINT2Q 0
-#define PRINT_NUM_TE_TYPES 1
+#define PRINT_NUM_TE_TYPES 3
 
 // The FAST_BUT_WRONG flags is useful for exercising the communications
 // layer.  It causes the first and second quarter transformation to be
@@ -90,7 +92,6 @@ TwoBodyMOIntsTransform_123Inds::~TwoBodyMOIntsTransform_123Inds()
 void
 TwoBodyMOIntsTransform_123Inds::run()
 {
-  Timer tim(timer_);
   Ref<MemoryGrp> mem = tform_->mem();
   Ref<MessageGrp> msg = tform_->msg();
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
@@ -129,9 +130,16 @@ TwoBodyMOIntsTransform_123Inds::run()
   const int nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
-
-  const int tbtype_anti1 = TwoBodyInt::r12t1;
-  const int tbtype_anti2 = TwoBodyInt::r12t2;
+  
+  //find the type of integrals which is antisymmetric with respect to permuting functions of each particle
+  int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
+  const unsigned int ntypes = tbint_->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      const TwoBodyInt::tbint_type ttype = tbint_->inttype(t);
+      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      if (intdescr->perm_symm(1) == -1) tbtype_anti1 = t;
+      if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
+  }
 
   double** vector1 = new double*[nbasis1];
   double** vector2 = new double*[nbasis2];
@@ -147,14 +155,12 @@ TwoBodyMOIntsTransform_123Inds::run()
   space3->coefs().convert(vector3);
 
   /*-------------------------------------------------------------
-    Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
+    Get pointers to integral buffers
    -------------------------------------------------------------*/
   const int num_te_types = tform_->num_te_types();
-  const double *intbuf[TwoBodyInt::max_num_tbint_types];
-  intbuf[TwoBodyInt::eri] = tbint_->buffer(TwoBodyInt::eri);
-  intbuf[TwoBodyInt::r12] = tbint_->buffer(TwoBodyInt::r12);
-  intbuf[TwoBodyInt::r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
-  intbuf[TwoBodyInt::r12t2] = tbint_->buffer(TwoBodyInt::r12t2);
+  const double **intbuf = new const double*[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    intbuf[te_type] = tbint_->buffer( tbint_->inttype(te_type) );
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
@@ -223,17 +229,17 @@ TwoBodyMOIntsTransform_123Inds::run()
     
     int nrs = nr*ns;
 
-    if (debug_ > 1 && (print_index++)%print_interval == 0) {
+    if (debug_ >= DefaultPrintThresholds::fine && (print_index++)%print_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("%d:%d: (PQ|%d %d) %d%%",
 			       me,mythread_,R,S,(100*print_index)/work_per_thread)
 		   << endl;
       lock_->unlock();
     }
-    if (debug_ > 1 && (print_index)%time_interval == 0) {
+    if (debug_ >= DefaultPrintThresholds::fine && (print_index)%time_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread_) << endl;
-      tim.print();
+      timer_->print();
       lock_->unlock();
     }
 
@@ -263,11 +269,44 @@ TwoBodyMOIntsTransform_123Inds::run()
 
         aoint_computed_++;
 
-        tim.enter("AO integrals");
+        timer_->enter("AO integrals");
         tbint_->compute_shell(P,Q,R,S);
-        tim.exit("AO integrals");
+        timer_->exit("AO integrals");
 
-        tim.enter("1. q.t.");
+#if PRINT0Q
+    {
+      if ( me == 0 ) {
+        lock_->lock();
+        string filename = tform_->type() + "." + tform_->name() + ".0q.dat";
+        ios_base::openmode mode = ios_base::app;
+        if (RS_count == 0)
+          mode = ios_base::trunc;
+        ofstream ints_file(filename.c_str(),mode);
+
+        for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+          for (int p = 0; p<np; p++) {
+            int pp = p + p_offset;
+            for (int q = 0; q<nq; q++) {
+              int qq = q + q_offset;
+              for (int r = 0; r<nr; r++) {
+                int rr = r+r_offset;
+                for (int s = 0; s<ns; s++) {
+                  int ss = s+s_offset;
+                  double value = intbuf[te_type][s+ns*(r+nr*(q+nq*p))];
+                  ints_file << scprintf("0Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                        te_type,pp,qq,rr,ss,value);
+                }
+              }
+            }
+          }
+        }
+        ints_file.close();
+        lock_->unlock();
+      }
+    }
+#endif
+    
+        timer_->enter("1. q.t.");
 
         // Begin first quarter transformation;
         // generate (iq|rs) for i active
@@ -347,7 +386,7 @@ TwoBodyMOIntsTransform_123Inds::run()
           }       // exit bf1 loop
 	  // end of first quarter transformation
 	}
-	tim.exit("1. q.t.");
+	timer_->exit("1. q.t.");
 
         }           // exit P loop
       }             // exit Q loop
@@ -387,7 +426,7 @@ TwoBodyMOIntsTransform_123Inds::run()
     const int nix = ni*rank2;
     const int niq = ni*nbasis2;
     
-    tim.enter("2. q.t.");
+    timer_->enter("2. q.t.");
     // Begin second quarter transformation;
     // generate (ix|rs) stored as rsix
 
@@ -416,7 +455,7 @@ TwoBodyMOIntsTransform_123Inds::run()
         }
       }
     }
-    tim.exit("2. q.t.");
+    timer_->exit("2. q.t.");
 
 #if PRINT2Q
     {
@@ -449,7 +488,7 @@ TwoBodyMOIntsTransform_123Inds::run()
     }
 #endif    
     
-    tim.enter("3. q.t.");
+    timer_->enter("3. q.t.");
     // Begin third quarter transformation;
     // generate (ix|js) stored as ijsx (also generate (ix|jr), if needed)
 
@@ -552,7 +591,7 @@ TwoBodyMOIntsTransform_123Inds::run()
         } // endif j
       } // endif i
     }  // endif te_type
-    tim.exit("3. q.t.");
+    timer_->exit("3. q.t.");
           
     ++RS_count;  
   }         // exit while get_task
@@ -575,6 +614,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   delete[] vector1[0]; delete[] vector1;
   delete[] vector2[0]; delete[] vector2;
   delete[] vector3[0]; delete[] vector3;
+  delete[] intbuf;
 }
 
 ////////////////////////////////////////////////////////////////////////////

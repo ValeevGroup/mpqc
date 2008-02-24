@@ -29,9 +29,6 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
-#define _chemistry_qc_mbptr12_vxbevalinfo_h
-
 #include <string>
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
@@ -39,9 +36,15 @@
 #include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/ansatz.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/singlerefinfo.h>
+
+#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
+#define _chemistry_qc_mbptr12_vxbevalinfo_h
 
 namespace sc {
 
@@ -55,14 +58,28 @@ class R12IntEvalInfo : virtual public SavableState {
 public:
 
   /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
-  enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
+  typedef MOIntsTransformFactory::StoreMethod StoreMethod;
+
+  /// Maintains virtual orbitals and RI space info if VBS != OBS
+  typedef struct {
+    //Ref<MOIndexSpace> vbs_sb_;
+    //Ref<MOIndexSpace> vbs_;
+    Ref<MOIndexSpace> vir_sb_;
+    Ref<MOIndexSpace> vir_;
+    Ref<MOIndexSpace> vir_act_;
+    // RI space
+    Ref<MOIndexSpace> ri_;
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase);
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<MOIndexSpace>& vbs);
+  } SpinSpaces;
 
 private:
 
-  Wavefunction* wfn_;     // Wavefunction that owns this
-  Ref<SCF> ref_;
-  Ref<Integral> integral_;
-  Ref<GaussianBasisSet> bs_;
+  /// R12IntEval must be owned by a Wavefunction
+  Wavefunction* wfn_;
+  Ref<R12Technology> r12tech_;
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
@@ -71,33 +88,34 @@ private:
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
 
-  int nocc_;
-  int nfzc_;
-  int nfzv_;
-
   size_t memory_;
   bool dynamic_;
   double print_percent_;
   int debug_;
-  StoreMethod ints_method_;
+
+  bool spinadapted_;
+  StoreMethod::type ints_method_;
   std::string ints_file_;
-  LinearR12::ABSMethod abs_method_;
 
   int nlindep_aux_;
   int nlindep_vir_;
   int nlindep_ri_;
   
-  Ref<MOIndexSpace> mo_space_;   // symblocked MO space
-  Ref<MOIndexSpace> obs_space_;  // energy-sorted MO space
-  Ref<MOIndexSpace> abs_space_;
-  Ref<MOIndexSpace> ribs_space_;
-  Ref<MOIndexSpace> act_occ_space_;
-  Ref<MOIndexSpace> occ_space_;
-  Ref<MOIndexSpace> occ_space_symblk_;
-  Ref<MOIndexSpace> act_vir_space_;
-  Ref<MOIndexSpace> vir_space_;
-  Ref<MOIndexSpace> vir_space_symblk_;
+  /// This space depends only on the orbital basis set
+  Ref<MOIndexSpace> abs_space_;  // ABS space
+  Ref<MOIndexSpace> ribs_space_; // RIBS basis  
+  SpinSpaces vir_spaces_[NSpinCases1];
+  Ref<MOIndexSpace> vir_act_;
+  Ref<MOIndexSpace> vir_;
+  Ref<MOIndexSpace> vir_sb_;
+  /// Initializes all spaces that relate to the reference determinant
+  Ref<SingleRefInfo> refinfo_;
+  
+  /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
+
+  /// false until initialize() is called
+  bool initialized_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -109,22 +127,57 @@ private:
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
-  // Construct eigenvector and eigenvalues sorted by energy
-  void eigen2_();
   // Construct orthog_aux_
   void construct_orthog_aux_();
   // Construct orthog_vir_
   void construct_orthog_vir_();
   // Construct orthog_ri_
   void construct_orthog_ri_();
+  // Throw ProgrammingError if reference is spin_polarized()
+  void throw_if_spin_polarized() const;
 
 public:
   R12IntEvalInfo(StateIn&);
-  /// Constructs an R12IntEvalInfo object using data from the MBPT2_R12 object
-  R12IntEvalInfo(MBPT2_R12*);
+    /** KeyVal constructor uses keywords of R12Technology and the following keywords
+        <dl>
+
+	<dt><tt>store_ints</tt><dd> This specifies how to store transformed MO integrals.
+	Valid values are:
+
+	<dl>
+
+	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
+	  This method does not allow all steps to be parallelized but it is most likely to work in all environments.
+
+	  <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method allows
+	  parallelization of all steps.
+
+	</dl>
+
+	If <tt>store_ints</tt> is not specified, then <tt>posix</tt> method will be used.
+	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
+	<tt>store_ints</tt> should be explicitly set to <tt>mpi</tt>.
+
+        <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
+	MO integrals file if <tt>ints</tt> is set to <tt>posix</tt> or <tt>mpi</tt>.
+	If the prefix ends in '/' (slash character) then "<basename>.moints"
+        is appended to it where <basename> is the basename as defined in SCFormIO.
+        The default value for the prefix is "./".
+        If MPI-I/O is used then it is user's responsibility to ensure
+	that the file resides on a file system that supports MPI-I/O.
+    */
+  R12IntEvalInfo(const Ref<KeyVal>& keyval,
+		 Wavefunction* wfn,
+		 const Ref<SCF>& ref,
+		 unsigned int nfzc,
+		 unsigned int nfzv,
+		 bool spinadapted,
+		 bool deflayed_initialization = false);
   ~R12IntEvalInfo();
 
   void save_data_state(StateOut&);
+  /// performs tasks that semantically belong in constructor but can't be performed there
+  void initialize();
 
   /** Sets whether to use dynamic load balancing in parallel MO transformations.
       Default is no */
@@ -135,23 +188,21 @@ public:
   void set_debug_level(int debug) { debug_ = debug; };
   /** Sets the method of storing transformed MO integrals. Default depends on
       how the object was constructed. */
-  void set_ints_method(const StoreMethod method) { ints_method_ = method; };
+  void set_ints_method(const StoreMethod::type method) { ints_method_ = method; };
   /** Sets name of the file used to store transformed integrals.
       Default depends on how the object was constructed. */
   void set_ints_file(const std::string& filename) { ints_file_ = filename; };
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
   void set_memory(const size_t nbytes);
-  /** Sets the ABS approach to be used (ABS or CABS).
-      Default depends on how the object was constructed. */
-  void set_absmethod(LinearR12::ABSMethod abs_method);
 
-  Wavefunction* wfn() const { return wfn_; };
-  Ref<SCF> ref() const { return ref_; };
-  Ref<Integral> integral() const { return integral_; };
+  Wavefunction* wfn() const { return wfn_; }
+  Ref<R12Technology> r12tech() const { return r12tech_; }
+//  Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
+  Ref<Integral> integral() const { return wfn()->integral(); };
   /// Returns the orbital basis set (OBS) object
-  Ref<GaussianBasisSet> basis() const { return bs_; };
-  /// Returns the virtuals basis set (VBS) object
+  Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
+  /// Returns the virtuals basis set (VBS) obje19ct
   Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
@@ -163,55 +214,76 @@ public:
   bool dynamic() const { return dynamic_; };
   double print_percent() const { return print_percent_; };
   int debug_level() const { return debug_; };
-  const StoreMethod ints_method() const { return ints_method_; };
+  const StoreMethod::type ints_method() const { return ints_method_; };
   const std::string& ints_file() const;
   const size_t memory() const { return memory_; };
 
-  const int nocc() const { return nocc_;};
-  const int nocc_act() const { return nocc_ - nfzc_;};
-  const int nfzc() const { return nfzc_;};
-  const int nvir() const { return vir_space_->rank();};
-  const int nvir_act() const { return act_vir_space_->rank();};
-  const int nfzv() const { return nfzv_;};
+  int nvir() const { return vir_->rank();};
+  int nvir_act() const { return vir_act_->rank();};
 
-  LinearR12::ABSMethod abs_method() const { return abs_method_; };
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12tech()->corrfactor(); }
+  LinearR12::StandardApproximation stdapprox() const { return r12tech()->stdapprox(); }
+  const Ref<LinearR12Ansatz>& ansatz() const { return r12tech()->ansatz(); }
+  LinearR12::ABSMethod abs_method() const { return r12tech()->abs_method(); }
+  /// return true if the Brillouin condition does not hold (e.g., if ROHF reference is used, or VBS != OBS)
+  bool bc() const;
+  bool gbc() const { return r12tech()->gbc(); }
+  bool ebc() const { return r12tech()->ebc(); }
+  bool spinadapted() const { return spinadapted_; }
+  unsigned int maxnabs() const { return r12tech()->maxnabs(); }
+  bool ks_ebcfree() const { return r12tech()->ks_ebcfree(); }
+  bool omit_P() const { return r12tech()->omit_P(); }
+  bool safety_check() const { return r12tech()->safety_check(); }
+  const LinearR12::PositiveDefiniteB& posdef_B() const { return r12tech()->posdef_B(); }
 
-  /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS
-  Ref<MOIndexSpace> mo_space() const { return mo_space_; };  
-  /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
-  Ref<MOIndexSpace> obs_space() const { return obs_space_; };
-  /// Returns the MOIndexSpace object for the active occupied MOs
-  Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
-  /// Returns the MOIndexSpace object for the active unoccupied MOs
-  Ref<MOIndexSpace> act_vir_space() const { return act_vir_space_; };
-  /// Returns the MOIndexSpace object for all occupied MOs sorted by energy
-  Ref<MOIndexSpace> occ_space() const { return occ_space_; };
-  /// Returns the MOIndexSpace object for all occupied MOs symmetry-blocked
-  Ref<MOIndexSpace> occ_space_symblk() const { return occ_space_symblk_; };
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
-  Ref<MOIndexSpace> vir_space() const { return vir_space_; };
+  const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
-  Ref<MOIndexSpace> vir_space_symblk() const { return vir_space_symblk_; };
-  /// Returns the MOIndexSpace object for ABS
-  Ref<MOIndexSpace> abs_space() const { return abs_space_; };
-  /// Returns the MOIndexSpace object for RI-BS
-  Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
-  /// Returns the MOIntsTransformFactory object
-  Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
+  const Ref<MOIndexSpace>& vir_sb() const { throw_if_spin_polarized(); return vir_sb_; };
+  /// Returns the MOIndexSpace object for the active unoccupied MOs
+  const Ref<MOIndexSpace>& vir_act() const { throw_if_spin_polarized(); return vir_act_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
+  const Ref<MOIndexSpace>& vir(const SpinCase1& S) const { return vir_spaces_[S].vir_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
+  const Ref<MOIndexSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
+  /// Returns the MOIndexSpace object for the active unoccupied MOs
+  const Ref<MOIndexSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
+
+  /// Cheating! fock() is not available yet standalone, thus these spaces must be modified after canonicalization
+  void vir(const SpinCase1& S, const Ref<MOIndexSpace>& space);
+  void vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& space);
+  void vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& space);
   
-  /// Compute subspace of space2 which is orthogonal complement to space1
-  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                const std::string& name, double lindep_tol);
+  /// Returns the MOIndexSpace object for ABS
+  const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
+  /// Returns the MOIndexSpace object for RI-BS: approximates the identity
+  const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
+  /** Returns the MOIndexSpace object for RI-BS:
+      if CABS/CABS+ -- approximates the complement to OBS,
+      if ABS/ABS+   -- throw
+  */
+  const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const;
+  /// Returns the MOIntsTransformFactory object
+  const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
+  /// Return the SingleRefInfo object
+  const Ref<SingleRefInfo>& refinfo() const;
+  
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
-  static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs, const Ref<Integral>& integral,
-                                  OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
-                                  int& nlindep);
+  static Ref<MOIndexSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
+                                         const Ref<Integral>& integral, OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
+                                         int& nlindep);
 
   /** Project space1 on space2. This routine computes X2 such that C1.S12.X2 = I,
-      where I is identity matrix and X2 spans subspace of space2. X2 is returned. */
+      where I is identity matrix, C1 is space1, and X2 spans
+      subspace of space2. X2 is returned. */
   static Ref<MOIndexSpace> gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                       const std::string& name, double lindep_tol);
+                                       const std::string& id, const std::string& name, double lindep_tol);
+  /** Compute subspace X2 of space2 which is orthogonal complement to space1, i.e.,
+      C1.S12.X2=0, where 0 is the null matrix.
+  */
+  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                const std::string& id, const std::string& name, double lindep_tol);
                                        
   /// Compute overlap matrices in the basis of space1 and space2
   static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
@@ -226,7 +298,8 @@ public:
                               RefSCMatrix& MXX,
                               RefSCMatrix& MYY,
                               RefSCMatrix& MZZ);
-			      
+
+    void print(std::ostream& o) const;
 };
 
 }

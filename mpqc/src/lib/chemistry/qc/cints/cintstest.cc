@@ -147,7 +147,7 @@ int main(int argc, char **argv)
     }
 
   Ref<KeyVal> pkv(new ParsedKeyVal(infile));
-  Ref<KeyVal> tkeyval(new PrefixKeyVal(":test", pkv));
+  Ref<KeyVal> tkeyval(new PrefixKeyVal(pkv, ":test"));
 
   Ref<GaussianBasisSet> basis = require_dynamic_cast<GaussianBasisSet*>(
     tkeyval->describedclassvalue("basis").pointer(),"main\n");

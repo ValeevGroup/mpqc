@@ -1702,14 +1702,67 @@ AC_CHECK_HEADERS(libint2/libint2.h,
      AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])]
     )
+  if test X$HAVE_LIBINT2_G12 = Xyes; then
+    AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
+          void libint2_support_t1g12() {}
+          #endif
+        ]],
+        [[
+          libint2_support_t1g12();
+        ]]
+      ),
+      [HAVE_LIBINT2_G12_T1G12=yes
+       AC_SUBST(HAVE_LIBINT2_G12_T1G12)
+       AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])]
+    )
+  fi
+  AC_MSG_CHECKING([if libint2 can compute general G12])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_GENG12
+        void libint2_support_geng12() {}
+        #endif
+      ]],
+      [[
+        libint2_support_geng12();
+      ]]
+      ),
+    [HAVE_LIBINT2_GENG12=yes
+     AC_SUBST(HAVE_LIBINT2_GENG12)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
+  AC_MSG_CHECKING([if libint2 can compute G12DKH])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_SUPPORT_G12DKH
+        void libint2_support_g12dkh() {}
+        #endif
+      ]],
+      [[
+        libint2_support_g12dkh();
+      ]]
+      ),
+    [HAVE_LIBINT2_G12DKH=yes
+     AC_SUBST(HAVE_LIBINT2_G12DKH)
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    )
   )
 AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------
 
-if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
+if test X$HAVE_LIBR12 != Xyes -o X$HAVE_LIBINT != Xyes; then
   HAVE_INTEGRALCINTS=no
-  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS $EXCLUDED_DIRS"
 else
   AC_DEFINE(HAVE_INTEGRALCINTS)
   AC_SUBST(HAVE_INTEGRALCINTS)
@@ -1717,7 +1770,7 @@ fi
 
 dnl ----------- make sure we have everything for libint2 interface ----------
 
-if test ! X$HAVE_LIBINT2 = Xyes; then
+if test X$HAVE_LIBINT2 != Xyes; then
   HAVE_INTEGRALLIBINT2=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_LIBINT2 $EXCLUDED_DIRS"
 else
@@ -1729,6 +1782,127 @@ dnl ----------- make sure we have everything for mbptr12 ----------
 
 if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
+fi
+
+dnl ----------- Psi program checks --------------
+
+HAVE_COMPATIBLE_PSI=no
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(psiconfig.h,
+  dnl -- check if Psi was configured to use CCA integrals standard --
+  AC_MSG_CHECKING([if Psi was configured to use CCA integrals standard])
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <psiconfig.h>
+      #if PSI_INTEGRALS_STANDARD == 0
+      #error "not CCA standard"
+      #endif
+      ]],
+      [[]]
+    ),
+    [AC_MSG_RESULT([yes])
+     HAVE_COMPATIBLE_PSI=yes
+    ],
+    [AC_MSG_RESULT([no])
+    ]
+  )
+)
+AC_LANG_RESTORE
+
+dnl ----------- libpsio library checks --------------
+
+HAVE_LIBPSIO=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes; then
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libpsio/psio.hpp,
+  AC_MSG_CHECKING([if libpsio can be used])
+  OLD_LIBS=$LIBS
+  LIBS="-lPSI_psio $LIBS"
+  AC_LINK_IFELSE(
+    AC_LANG_PROGRAM(
+     [[#include <libpsio/psio.hpp>
+       char *gprgid() { return "test"; }
+     ]],
+     [[psi::PSIO psio;
+     ]]
+    ),
+    [AC_MSG_RESULT([yes])
+     HAVE_LIBPSIO=yes
+     AC_DEFINE(HAVE_LIBPSIO)
+    ],
+    [AC_MSG_RESULT([no])
+     LIBS=$OLD_LIBS
+    ]
+  )
+)
+AC_LANG_RESTORE
+fi
+
+dnl ----------- libchkpt library checks --------------
+
+HAVE_LIBCHKPT=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes; then
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libchkpt/chkpt.hpp,
+  AC_MSG_CHECKING([if libchkpt can be used])
+  OLD_LIBS=$LIBS
+  LIBS="-lPSI_chkpt $LIBS"
+  AC_COMPILE_IFELSE(
+   AC_LANG_PROGRAM(
+    [[#include <libpsio/psio.hpp>
+      #include <libchkpt/chkpt.hpp>
+      char *gprgid() { return "test"; }
+    ]],
+    [[psi::PSIO psio;
+      psi::Chkpt chkpt(&psio,1);
+    ]]
+   ),
+   [AC_MSG_RESULT([yes])
+    HAVE_LIBCHKPT=yes
+    AC_DEFINE(HAVE_LIBCHKPT)
+   ],
+   [AC_MSG_RESULT([no])
+    LIBS=$OLD_LIBS
+   ]
+  )
+ )
+AC_LANG_RESTORE
+fi
+
+dnl ----------- other Psi3 library checks --------------
+HAVE_OTHER_PSILIBS=no
+if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes -a X$HAVE_LIBCHKPT = Xyes; then
+  SAVELIBS=$LIBS
+  PSILIBS=
+
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  dnl - libciomr doesn't depend on other libraries
+  AC_CHECK_LIB(PSI_ciomr,init_int_matrix,[HAVE_LIBCIOMR=yes;PSILIBS="-lPSI_ciomr $PSILIBS"],HAVE_LIBCIOMR=no)
+  dnl - libdpd's dpd_init requires libciomr
+  LIBS="$PSILIBS $SAVELIBS"
+  AC_CHECK_LIB(PSI_dpd,dpd_init,[HAVE_LIBDPD=yes;PSILIBS="-lPSI_dpd $PSILIBS"],HAVE_LIBDPD=no)
+  AC_LANG_RESTORE
+  
+  if test X$HAVE_LIBCIOMR = Xyes -a X$HAVE_LIBDPD = Xyes; then
+    HAVE_OTHER_PSILIBS=yes
+    LIBS="$PSILIBS $SAVELIBS"
+  else
+    LIBS=$SAVELIBS
+  fi
+fi
+
+dnl ----------- make sure we have everything for MPQC-Psi interface ----------
+
+if test X$HAVE_LIBPSIO = Xno -o X$HAVE_LIBCHKPT = Xno -o X$HAVE_OTHER_PSILIBS = Xno; then
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
+  HAVE_PSIMPQCIFACE=no
+else
+  HAVE_PSIMPQCIFACE=yes
+  AC_DEFINE(HAVE_PSIMPQCIFACE)
 fi
 
 dnl --------- Template instantiation. ---------
@@ -1976,6 +2150,7 @@ echo -e "HAVE_LIBINT\t${HAVE_LIBINT:-no}"
 echo -e "HAVE_LIBR12\t${HAVE_LIBR12:-no}"
 echo -e "HAVE_LIBDERIV\t${HAVE_LIBDERIV:-no}"
 echo -e "HAVE_LIBINT2\t${HAVE_LIBINT2:-no}"
+echo -e "Psi interface\t${HAVE_PSIMPQCIFACE:-no}"
 echo -en "components\t${components:-<not set>}"
 if test "$components" = yes; then
   echo -ne "\t(CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"

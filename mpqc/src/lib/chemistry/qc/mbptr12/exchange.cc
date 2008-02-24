@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -55,10 +56,8 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
                       const Ref<MOIndexSpace>& ket_space)
 {
   Ref<MessageGrp> msg = r12info()->msg();
-  const int num_te_types = 1;
-  enum te_types {eri=0};
 
-  Timer tim("exchange");
+  tim_enter("exchange");
 
   int me = msg->me();
   int nproc = msg->n();
@@ -71,8 +70,8 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   // Gaussians are real, hence occ_space and bra_space can be swapped
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);
+  // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
-  mxny_tform->set_num_te_types(num_te_types);
   mxny_tform->compute();
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 
@@ -82,7 +81,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   const int nbraket = nbra*nket;
 
   ExEnv::out0() << indent << "Begin computation of exchange matrix" << endl;
-  if (debug_) {
+  if (debug_ >= DefaultPrintThresholds::fine) {
     ExEnv::out0() << indent << "nbra = " << nbra << endl;
     ExEnv::out0() << indent << "nket = " << nket << endl;
     ExEnv::out0() << indent << "nocc = " << nocc << endl;
@@ -118,27 +117,27 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
       if (mm_proc != proc_with_ints[me])
         continue;
 
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::fine)
         ExEnv::outn() << indent << "task " << me << ": working on (m) = " << m << " " << endl;
 
       // Get (|1/r12|) integrals
-      tim.enter("MO ints retrieve");
-      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,R12IntsAcc::eri);
-      tim.exit("MO ints retrieve");
+      tim_enter("MO ints retrieve");
+      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor()->tbint_type_eri());
+      tim_exit("MO ints retrieve");
 
-      if (debug_)
+      if (debug_ >= DefaultPrintThresholds::fine)
         ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
 
       const double one = 1.0;
       const int unit_stride = 1;
       F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,K_xy,&unit_stride);
 
-      mnxy_acc->release_pair_block(m,m,R12IntsAcc::eri);
+      mnxy_acc->release_pair_block(m,m,corrfactor()->tbint_type_eri());
     }
   }
   // Tasks that don't do any work here still need to create these timers
-  tim.enter("MO ints retrieve");
-  tim.exit("MO ints retrieve");
+  tim_enter("MO ints retrieve");
+  tim_exit("MO ints retrieve");
 
   ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
   mnxy_acc->deactivate();
@@ -148,10 +147,14 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
   K.assign(K_xy);
   delete[] K_xy;
+
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    K.print("Exchange matrix");
+  }
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
-  tim.exit("exchange");
+  tim_exit("exchange");
 
   return K;
 }

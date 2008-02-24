@@ -53,6 +53,10 @@ using namespace sc;
 static const char * (sc::SCException::*force_except_link)() const
     = &sc::SCException::description;
 
+#include <util/class/scexception.h>
+static const char * (sc::SCException::*force_except_link)() const
+    = &sc::SCException::description;
+
 // this is needed for debugging
 #ifdef HAVE_NX
 extern "C" {

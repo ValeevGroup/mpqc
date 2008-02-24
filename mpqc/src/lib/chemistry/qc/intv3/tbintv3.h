@@ -48,6 +48,8 @@ class TwoBodyIntV3 : public TwoBodyInt {
     ~TwoBodyIntV3();
 
     unsigned int num_tbint_types() const { return 1; }
+    unsigned int inttype(tbint_type t) const;
+    TwoBodyInt::tbint_type inttype(unsigned int t) const;
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);

@@ -608,6 +608,20 @@ MTMPIMemoryGrp::done_buffers()
   databufs_mpireq_.resize(0);
 }
 
+Ref<MemoryGrp>
+MTMPIMemoryGrp::clone()
+{
+  if (class_desc() != ClassDesc::name_to_class_desc("MTMPIMemoryGrp")) {
+      // this will throw
+      return MemoryGrp::clone();
+    }
+
+  Ref<MemoryGrp> ret;
+  ret = new MTMPIMemoryGrp(msg_->clone(), th_->clone(), comp_comm_);
+
+  return ret;
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

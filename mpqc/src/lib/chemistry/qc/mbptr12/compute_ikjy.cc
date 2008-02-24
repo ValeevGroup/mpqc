@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -43,6 +43,7 @@
 #include <chemistry/qc/mbptr12/transform_ikjy.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_123inds.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -50,7 +51,7 @@ using namespace sc;
 #define SINGLE_THREAD_E123   0
 #define PRINT3Q 0
 #define PRINT4Q 0
-#define PRINT_NUM_TE_TYPES 1
+#define PRINT_NUM_TE_TYPES 6
 #define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
@@ -95,7 +96,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
   std::string tim_label("tbint_tform_");
   tim_label += type(); tim_label += " "; tim_label += name();
-  Timer tim(tim_label);
+  tim_enter(tim_label.c_str());
 
   print_header();
   
@@ -107,10 +108,10 @@ TwoBodyMOIntsTransform_ikjy::compute()
   const int restart_orb = restart_orbital();
   int nijmax = compute_nij(batchsize_,rank3,nproc,me);
   
-  vector<int> mosym1 = space1_->mosym();
-  vector<int> mosym2 = space2_->mosym();
-  vector<int> mosym3 = space3_->mosym();
-  vector<int> mosym4 = space4_->mosym();
+  vector<unsigned int> mosym1 = space1_->mosym();
+  vector<unsigned int> mosym2 = space2_->mosym();
+  vector<unsigned int> mosym3 = space3_->mosym();
+  vector<unsigned int> mosym4 = space4_->mosym();
   double** vector4 = new double*[nbasis4];
   vector4[0] = new double[rank4*nbasis4];
   for(int i=1; i<nbasis4; i++) vector4[i] = vector4[i-1] + rank4;
@@ -121,7 +122,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
   /////////////////////////////////////
 
   // debug print
-  if (debug_ >= 2) {
+  if (debug_ >= DefaultPrintThresholds::fine) {
     ExEnv::outn() << indent
 		  << scprintf("node %i, begin loop over i-batches",me) << endl;
   }
@@ -132,9 +133,9 @@ TwoBodyMOIntsTransform_ikjy::compute()
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = integral->grt();
+    tbints[i] = tbintdescr_->inteval();
   }
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
 
@@ -149,7 +150,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     Start the integrals transformation
 
    -----------------------------------*/
-  tim.enter("mp2-r12/a passes");
+  tim_enter("mp2-r12/a passes");
   if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
@@ -170,7 +171,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     int nij = compute_nij(ni,rank3,nproc,me);;
 
     // debug print
-    if (debug_)
+    if (debug_ >= DefaultPrintThresholds::fine)
       ExEnv::outn() << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 
@@ -181,15 +182,15 @@ TwoBodyMOIntsTransform_ikjy::compute()
     // Allocate (and initialize) some arrays
 
     double* integral_ijsx = (double*) mem_->localdata();
-    //bzerofast(integral_ijsx, (num_te_types_*nij*memgrp_blocksize));
-    memset(integral_ijsx, 0, num_te_types_*nij*memgrp_blocksize);
+    //bzerofast(integral_ijsx, (num_te_types()*nij*memgrp_blocksize));
+    memset(integral_ijsx, 0, num_te_types()*nij*memgrp_blocksize);
     integral_ijsx = 0;
     mem_->sync();
     ExEnv::out0() << indent
 		  << scprintf("Begin loop over shells (ints, 1+2+3 q.t.)") << endl;
 
     // Do the two electron integrals and the first three quarter transformations
-    tim.enter("ints+1qt+2qt+3qt");
+    tim_enter("ints+1qt+2qt+3qt");
     shell_pair_data()->init();
     for (int i=0; i<thr_->nthread(); i++) {
       e123thread[i]->set_i_offset(i_offset);
@@ -203,7 +204,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     thr_->start_threads();
     thr_->wait_threads();
 #   endif
-    tim.exit("ints+1qt+2qt+3qt");
+    tim_exit("ints+1qt+2qt+3qt");
     ExEnv::out0() << indent << "End of loop over shells" << endl;
 
     mem_->sync();  // Make sure ijsx is complete on each node before continuing
@@ -224,7 +225,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
             if (ij%nproc != me)
               continue;
             for (int x = 0; x<rank2; x++) {
-              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int s = 0; s<nbasis4; s++) {
                 double value = ijsx_ints[s*rank2+x];
                 ints_file << scprintf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
@@ -240,7 +241,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
     // Fourth quarter transform
     ExEnv::out0() << indent << "Begin fourth q.t." << endl;
-    tim.enter("4. q.t.");
+    tim_enter("4. q.t.");
     // Begin fourth quarter transformation;
     // generate (ix|jy) stored as ijxy
 
@@ -252,8 +253,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
         int ij_local = ij/nproc;
         if (ij%nproc == me) {
 
-          for(int te_type=0; te_type<num_te_types_; te_type++) {
-            const double *sx_ptr = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+          for(int te_type=0; te_type<num_te_types(); te_type++) {
+            const double *sx_ptr = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
 
             // fourth quarter transform
             // yx = ys * sx
@@ -271,7 +272,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
       }
     }
     delete[] ijxy_ints;
-    tim.exit("4. q.t.");
+    tim_exit("4. q.t.");
     ExEnv::out0() << indent << "End of fourth q.t." << endl;
 
     integral_ijsx = 0;
@@ -285,8 +286,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
             const int ij_sym = mosym1[i+i_offset] ^ mosym3[j];
-            for(int te_type=0; te_type<num_te_types_; te_type++) {
-              double* ijxy_ptr = (double *)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            for(int te_type=0; te_type<num_te_types(); te_type++) {
+              double* ijxy_ptr = (double *)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank2; x++) {
                 const int ijx_sym = ij_sym ^ mosym2[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
@@ -310,7 +311,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
       if (pass > 0)
         mode = ios_base::app;
       ofstream ints_file(filename.c_str(),mode);
-      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+      const int ntetypes = std::min((int)num_te_types(),PRINT_NUM_TE_TYPES);
+      for(int te_type=0; te_type<ntetypes; te_type++) {
         for (int i = 0; i<ni; i++) {
           for (int j = 0; j<rank3; j++) {
             int ij = i*rank3+j;
@@ -318,7 +320,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
             if (ij%nproc != me)
               continue;
             for (int x = 0; x<rank2; x++) {
-              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int y = 0; y<rank4; y++) {
                 double value = ijxy_ints[x*rank4+y];
                 ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
@@ -334,9 +336,9 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
-    tim.enter("MO ints store");
+    tim_enter("MO ints store");
     ints_acc_->store_memorygrp(mem_,ni,memgrp_blocksize);
-    tim.exit("MO ints store");
+    tim_exit("MO ints store");
     mem_->sync();
 
     if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
@@ -346,9 +348,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     }
 
   } // end of loop over passes
-  tim.exit("mp2-r12/a passes");
-  if (debug_)
-    ExEnv::out0() << indent << "End of mp2-r12/a transformation" << endl;
+  tim_exit("mp2-r12/a passes");
   // Done storing integrals - commit the content
   // WARNING: it is not safe to use mem until deactivate has been called on the accumulator
   //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]
@@ -362,7 +362,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
   delete[] tbints; tbints = 0;
   delete[] vector4[0]; delete[] vector4;
 
-  tim.exit(tim_label);
+  tim_exit(tim_label.c_str());
 
   if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());

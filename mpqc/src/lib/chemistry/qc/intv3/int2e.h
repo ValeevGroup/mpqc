@@ -37,7 +37,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/oint3/build.h>
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/storage.h>
 #include <chemistry/qc/intv3/array.h>

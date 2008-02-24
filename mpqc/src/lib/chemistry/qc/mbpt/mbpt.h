@@ -248,7 +248,8 @@ class MBPT2: public Wavefunction {
 
     int gradient_implemented() const;
     int value_implemented() const;
-
+    /// set the value accuracy
+    void set_desired_value_accuracy(double);
     void symmetry_changed();
 
     // override compute's obsolete so we can call the reference's obsolete

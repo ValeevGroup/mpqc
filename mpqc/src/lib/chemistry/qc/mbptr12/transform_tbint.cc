@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -52,17 +53,21 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   typeid(TwoBodyMOIntsTransform),"TwoBodyMOIntsTransform",1,"virtual public SavableState",
   0, 0, 0);
 
+double
+TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
+
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                                               const Ref<TwoBodyIntDescr>& tbintdescr,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  name_(name), factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  name_(name), factory_(factory), tbintdescr_(tbintdescr),
+  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
   // Default values
-  num_te_types_ = 1;
   memory_ = factory_->memory();
   debug_ = factory_->debug();
   dynamic_ = factory_->dynamic();
@@ -75,6 +80,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 {
   si.get(name_);
   factory_ << SavableState::restore_state(si);
+  // tbintdescr_ << SavableState::restore_state(si);
   ints_acc_ << SavableState::restore_state(si);
   
   space1_ << SavableState::restore_state(si);
@@ -86,12 +92,11 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  si.get(num_te_types_);
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = (MOIntsTransformFactory::StoreMethod) ints_method;
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransformFactory::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
 }
 
@@ -104,6 +109,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 {
   so.put(name_);
   SavableState::save_state(factory_.pointer(),so);
+  //SavableState::save_state(tbintdescr_.pointer(),so);
   SavableState::save_state(ints_acc_.pointer(),so);
   
   SavableState::save_state(space1_.pointer(),so);
@@ -111,23 +117,12 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
-  so.put(num_te_types_);
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
-}
-
-void
-TwoBodyMOIntsTransform::set_num_te_types(const int num_te_types)
-{
-  // need to figure out how to determine the number of te types supported by this TwoBodyInt
-  if (num_te_types < 1 || num_te_types > TwoBodyInt::max_num_tbint_types)
-    throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- ");
-  num_te_types_ = num_te_types;
-  init_vars();
 }
 
 void
@@ -143,19 +138,29 @@ TwoBodyMOIntsTransform::mem() const {return mem_; }
 Ref<MessageGrp>
 TwoBodyMOIntsTransform::msg() const {return  msg_; }
 
-Ref<R12IntsAcc>
-TwoBodyMOIntsTransform::ints_acc() const {return ints_acc_; }
+const Ref<TwoBodyIntDescr>&
+TwoBodyMOIntsTransform::intdescr() const { return tbintdescr_; }
 
-Ref<MOIndexSpace>
+const Ref<R12IntsAcc>&
+TwoBodyMOIntsTransform::ints_acc() {
+  if (ints_acc_.nonnull())
+    return ints_acc_;
+  else {
+    init_acc();
+    return ints_acc_;
+  }
+}
+
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space1() const {return space1_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space2() const {return space2_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space3() const {return space3_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space4() const {return space4_;}
 
 double
@@ -170,8 +175,8 @@ TwoBodyMOIntsTransform::debug() const {return debug_; }
 bool
 TwoBodyMOIntsTransform::dynamic() const {return dynamic_; }
 
-int
-TwoBodyMOIntsTransform::num_te_types() const { return num_te_types_; }
+unsigned int
+TwoBodyMOIntsTransform::num_te_types() const { return tbintdescr_->num_sets(); }
 
 unsigned int
 TwoBodyMOIntsTransform::restart_orbital() const {
@@ -235,8 +240,10 @@ TwoBodyMOIntsTransform::init_vars()
                   space4_->memory_in_use(); // scf vector
     int nthreads = thr_->nthread();
     // ... plus the integrals evaluators
-    mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
-                                                            space3_->basis(),space4_->basis());
+    //mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
+    //                                                        space3_->basis(),space4_->basis());
+    // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
+    mem_static_ += 1000000;
     batchsize_ = compute_transform_batchsize_(mem_static_,rank_i); 
   }
 
@@ -282,7 +289,7 @@ TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
   if (mem_.null())
     throw std::runtime_error("TwoBodyMOIntsTransform::alloc_mem() -- memory group not initialized");
   mem_->set_localsize(localmem);
-  if (debug_ >= 1) {
+  if (debug_ >= DefaultPrintThresholds::diagnostics) {
     ExEnv::out0() << indent
                   << "Size of global distributed array:       "
                   << mem_->totalsize()
@@ -363,15 +370,15 @@ TwoBodyMOIntsTransform::mospace_report(std::ostream& os) const
 void
 TwoBodyMOIntsTransform::print_header(std::ostream& os) const
 {
-  if (debug_ >= 0)
+  if (debug_ >= DefaultPrintThresholds::terse)
     os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
   os << incindent;
 
   int nproc = msg_->n();
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     os << indent << scprintf("nproc = %i", nproc) << endl;
   
-  if (restart_orbital() && debug_ >= 1) {
+  if (restart_orbital() && debug_ >= DefaultPrintThresholds::diagnostics) {
     os << indent
        << scprintf("Restarting at orbital %d",
                    restart_orbital()) << endl;
@@ -380,7 +387,7 @@ TwoBodyMOIntsTransform::print_header(std::ostream& os) const
   memory_report(os);
   if (dynamic_)
     os << indent << "Using dynamic load balancing." << endl;
-  if (debug_ >= 1)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     mospace_report(os);
 }
 
@@ -388,9 +395,19 @@ void
 TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
 {
   os << decindent;
-  if (debug_ >= 0)
+  if (debug_ >= DefaultPrintThresholds::diagnostics)
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
+
+#if 0
+void
+TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
+{
+  if (num_te_types_ > tbint->num_tbint_types())
+    throw AlgorithmException("TwoBodyMOIntsTransform::check_tbint() -- number of integral types supported by \
+current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -40,20 +40,21 @@
 namespace sc {
 
 /////////////////////////////////////////////////////////////////////
-// R12IntsAcc_Node0File handles transformed integrals stored in file
-// on node 0 (file is a usual POSIX binary file)
-//
-// Transfering integrals to the file from nodes is done via MemoryGrp
-//   given as an argument to store_memorygrp
-// Remote retrieval is not possible
-//
-// The ordering of integrals in blocks is not specified
-// to avoid having to reorder integrals
-// Each pair block has size of num_te_types*nbasis1*nbasis2
+/** R12IntsAcc_Node0File handles transformed integrals stored in file
+    on node 0 (file is a usual POSIX binary file)
+
+    Transfering integrals to the file from nodes is done via MemoryGrp
+    given as an argument to store_memorygrp
+    Remote retrieval is not possible
+
+    The ordering of integrals in blocks is not specified
+    to avoid having to reorder integrals
+    Each pair block has size of num_te_types*nbasis1*nbasis2
+*/
 
 class R12IntsAcc_Node0File: public R12IntsAcc {
 
-    Ref<MemoryGrp> mem_; // The MemoryGrp associated with this accumulator
+    Ref<MemoryGrp> mem_; /// The MemoryGrp associated with this accumulator
     char *filename_;
     int datafile_;
 
@@ -63,7 +64,7 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
       off_t offset_;      // location in file (in bytes)
     } *pairblk_;
     
-    // Initialization tasks common to all constructors
+    /// Initialization tasks common to all constructors
     void init(bool restart);
     // Check if the file operation went OK
     void check_filedescr_();

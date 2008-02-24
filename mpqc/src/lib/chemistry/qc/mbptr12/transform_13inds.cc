@@ -33,7 +33,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/misc/regtime.h>
+#include <util/misc/timer.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
@@ -87,7 +87,6 @@ TwoBodyMOIntsTransform_13Inds::~TwoBodyMOIntsTransform_13Inds()
 void
 TwoBodyMOIntsTransform_13Inds::run()
 {
-  Timer tim(timer_);
   Ref<MemoryGrp> mem = tform_->mem();
   Ref<MessageGrp> msg = tform_->msg();
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
@@ -125,9 +124,16 @@ TwoBodyMOIntsTransform_13Inds::run()
   const int nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
-
-  const int tbtype_anti1 = TwoBodyInt::r12t1;
-  const int tbtype_anti2 = TwoBodyInt::r12t2;
+  
+  //find the type of integrals which is antisymmetric with respect to permuting functions of each particle
+  int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
+  const unsigned int ntypes = tbint_->num_tbint_types();
+  for(unsigned int t=0; t<ntypes; ++t) {
+      const TwoBodyInt::tbint_type ttype = tbint_->inttype(t);
+      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      if (intdescr->perm_symm(1) == -1) tbtype_anti1 = t;
+      if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
+  }
 
   double** vector1 = new double*[nbasis1];
   double** vector3 = new double*[nbasis3];
@@ -139,14 +145,12 @@ TwoBodyMOIntsTransform_13Inds::run()
   space3->coefs().convert(vector3);
 
   /*-------------------------------------------------------------
-    Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
+    Get pointers to integral buffers
    -------------------------------------------------------------*/
   const int num_te_types = tform_->num_te_types();
-  const double *intbuf[TwoBodyInt::max_num_tbint_types];
-  intbuf[TwoBodyInt::eri] = tbint_->buffer(TwoBodyInt::eri);
-  intbuf[TwoBodyInt::r12] = tbint_->buffer(TwoBodyInt::r12);
-  intbuf[TwoBodyInt::r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
-  intbuf[TwoBodyInt::r12t2] = tbint_->buffer(TwoBodyInt::r12t2);
+  const double **intbuf = new const double*[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    intbuf[te_type] = tbint_->buffer( tbint_->inttype(te_type) );
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
@@ -180,7 +184,7 @@ TwoBodyMOIntsTransform_13Inds::run()
   if (print_interval == 0) print_interval = 1;
   if (time_interval == 0) time_interval = 1;
   if (work_per_thread == 0) work_per_thread = 1;
-
+  
   if (debug_) {
     lock_->lock();
     ExEnv::outn() << scprintf("%d:%d: starting get_task loop",me,mythread_) << endl;
@@ -221,7 +225,7 @@ TwoBodyMOIntsTransform_13Inds::run()
     if (debug_ > 1 && (print_index)%time_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread_) << endl;
-      tim.print();
+      timer_->print();
       lock_->unlock();
     }
 
@@ -251,11 +255,11 @@ TwoBodyMOIntsTransform_13Inds::run()
 
         aoint_computed_++;
 
-        tim.enter("AO integrals");
+        timer_->enter("AO integrals");
         tbint_->compute_shell(P,Q,R,S);
-        tim.exit("AO integrals");
+        timer_->exit("AO integrals");
 
-        tim.enter("1. q.t.");
+        timer_->enter("1. q.t.");
 
         // Begin first quarter transformation;
         // generate (iq|rs) for i active
@@ -335,7 +339,7 @@ TwoBodyMOIntsTransform_13Inds::run()
           }       // exit bf1 loop
 	  // end of first quarter transformation
 	}
-	tim.exit("1. q.t.");
+	timer_->exit("1. q.t.");
 
         }           // exit P loop
       }             // exit Q loop
@@ -365,7 +369,7 @@ TwoBodyMOIntsTransform_13Inds::run()
 
     const int niq = ni*nbasis2;
 
-    tim.enter("2. q.t.");
+    timer_->enter("2. q.t.");
     // Begin second quarter transformation;
     // generate (iq|js) stored as ijsq (also generate (iq|jr), if needed)
 
@@ -386,7 +390,7 @@ TwoBodyMOIntsTransform_13Inds::run()
           if (bs3_eq_bs4) {
 
             const double ket_perm_pfac = (te_type == tbtype_anti2) ? -1.0 : 1.0;
-
+            
             for (int bf3 = 0; bf3 < nr; bf3++) {
               int r = r_offset + bf3;
               int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
@@ -469,7 +473,7 @@ TwoBodyMOIntsTransform_13Inds::run()
         } // endif j
       } // endif i
     }  // endif te_type
-    tim.exit("2. q.t.");
+    timer_->exit("2. q.t.");
 	  
   }         // exit while get_task
 
@@ -488,6 +492,7 @@ TwoBodyMOIntsTransform_13Inds::run()
     mem->free_local_double(ijrq_contrib);
   delete[] vector1[0]; delete[] vector1;
   delete[] vector3[0]; delete[] vector3;
+  delete[] intbuf;
 }
 
 ////////////////////////////////////////////////////////////////////////////

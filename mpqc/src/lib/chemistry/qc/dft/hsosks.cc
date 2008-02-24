@@ -35,6 +35,7 @@
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 
 #include <math/optimize/scextrapmat.h>
 
@@ -514,6 +515,12 @@ HSOSKS::done_vector()
 {
   integrator_->done();
   HSOSSCF::done_vector();
+}
+
+void
+HSOSKS::semicanonical()
+{
+  throw FeatureNotImplemented("Semicanonical orbitals cannot yet be computed for HSOSKS wave function",__FILE__,__LINE__);
 }
 
 /////////////////////////////////////////////////////////////////////////////

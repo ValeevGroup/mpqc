@@ -29,6 +29,7 @@ TOPDIR=../../../..
 ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
+VPATH+=$(SRCDIR)/levmar
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
@@ -38,12 +39,13 @@ CXXSRC = function.cc opt.cc update.cc qnewton.cc newton.cc \
          gdiis.cc efc.cc steep.cc dfp.cc powell.cc \
          scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc \
          mcsearch.cc
-CSRC = 
+CSRC = lm.c Axb.c misc.c lmlec.c lmbc.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 INC = function.h opt.h gdiis.h efc.h update.h qnewton.h newton.h \
-      scextrap.h scextrapmat.h diis.h transform.h conv.h mcsearch.h
+      scextrap.h scextrapmat.h diis.h transform.h conv.h \
+      lm.h mcsearch.h
 
 DEPENDINCLUDE =
 
@@ -52,13 +54,17 @@ TARGET_TO_MAKE = libSCoptimize
 
 kvopt.testrun: DO_TESTRUN=no
 
-TESTPROGS = kvopt opttest scextest
+TESTPROGS = kvopt opttest scextest lmdemo
 
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 default:: $(DEPENDINCLUDE)
+
+install_inc::
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)/levmar
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/levmar/lm.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)/levmar
 
 opttest: opttest.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o opttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
@@ -76,10 +82,20 @@ scextest.$(OBJSUF): scextest.cc
 kvopt: kvopt.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o kvopt $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
+lmdemo: lmdemo.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o lmdemo $^ $(SYSLIBS) $(LTLINKBINOPTS)
+
+Axb.$(OBJSUF) Axb.d: f77sym.h
+lmlec.$(OBJSUF) lmlec.d: f77sym.h
+misc.$(OBJSUF) misc.d: f77sym.h
+
+f77sym.h: f77sym.in
+	$(MKF77SYM) $< $@
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-kvopt.d opttest.d scextest.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+kvopt.d opttest.d scextest.d lmdemo.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d) kvopt.d opttest.d scextest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) kvopt.d opttest.d scextest.d lmdemo.d
 endif
 

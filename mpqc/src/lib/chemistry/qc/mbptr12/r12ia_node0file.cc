@@ -108,14 +108,13 @@ R12IntsAcc_Node0File::init(bool restart)
   int i, j, ij;
   for(i=0,ij=0;i<ni_;i++)
     for(j=0;j<nj_;j++,ij++) {
-      pairblk_[ij].ints_[eri] = NULL;
-      pairblk_[ij].ints_[r12] = NULL;
-      pairblk_[ij].ints_[r12t1] = NULL;
-      pairblk_[ij].ints_[r12t2] = NULL;
-      pairblk_[ij].refcount_[eri] = 0;
-      pairblk_[ij].refcount_[r12] = 0;
-      pairblk_[ij].refcount_[r12t1] = 0;
-      pairblk_[ij].refcount_[r12t2] = 0;
+      for(int type=0; type<num_te_types(); type++) {
+        pairblk_[ij].ints_[type] = NULL;
+        pairblk_[ij].refcount_[type] = 0;
+        if (classdebug() > 0)
+          ExEnv::outn() << indent << mem_->me() << ":refcount=" << pairblk_[ij].refcount_[type]
+                        << ": i = " << i << " j = " << j << " tbint_type = " << type << endl;
+        }
       pairblk_[ij].offset_ = (off_t)ij*blocksize_;
     }
 
@@ -207,15 +206,15 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
 	if (proc != me) {
 	  distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp*num_te_types() + mem->offset(proc);
           for(int te_type=0; te_type < num_te_types(); te_type++) {
-	    data = (double *) mem->obtain_readonly(moffset, blksize_);
-	    ssize_t wrote_this_much = write(datafile_, data, blksize_);
+            data = (double *) mem->obtain_readonly(moffset, blksize_);
+            ssize_t wrote_this_much = write(datafile_, data, blksize_);
             if (wrote_this_much != blksize_)
               throw FileOperationFailed("R12IntsAcc_Node0File::store_memorygrp() failed",
                                         __FILE__,
                                         __LINE__,
                                         filename_,
                                         FileOperationFailed::Write);
-	    mem->release_readonly(data, moffset, blksize_);
+            mem->release_readonly(data, moffset, blksize_);
             moffset += blksize_memgrp;
           }
 	}
@@ -264,6 +263,8 @@ R12IntsAcc_Node0File::activate()
   if (taskid() == 0)
 #endif
     datafile_ = open(filename_, O_RDONLY);
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 void
@@ -275,6 +276,8 @@ R12IntsAcc_Node0File::deactivate()
 #endif
     close(datafile_);
   R12IntsAcc::deactivate();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 double *
@@ -286,6 +289,10 @@ R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
     struct PairBlkInfo *pb = &pairblk_[ij];
     // Always first check if it's already in memory
     if (pb->ints_[oper_type] == 0) {
+
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "retrieving block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+
       off_t offset = pb->offset_ + (off_t)oper_type*blksize_;
       off_t result_offset = lseek(datafile_,offset,SEEK_SET);
       if (offset == (off_t)-1 || result_offset != offset)
@@ -304,6 +311,9 @@ R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
                                   FileOperationFailed::Read);
     }
     pb->refcount_[oper_type] += 1;
+    if (classdebug() > 0)
+      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                    << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
     return pb->ints_[oper_type];
   }
   else
@@ -323,10 +333,15 @@ R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type)
       throw std::runtime_error("Logic error: R12IntsAcc_Node0File::release_pair_block: refcount is already zero!");
     }
     if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
+      if (classdebug() > 0)
+	ExEnv::out0() << indent << "releasing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
       delete[] pb->ints_[oper_type];
       pb->ints_[oper_type] = NULL;
     }
     pb->refcount_[oper_type] -= 1;
+    if (classdebug() > 0)
+      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                    << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
   }
 }
 

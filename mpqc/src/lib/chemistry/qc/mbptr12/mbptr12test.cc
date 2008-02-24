@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#define MBPTR12TEST_TEST1 1
+#define MBPTR12TEST_TEST2 1
+#define MBPTR12TEST_TEST3 1
+
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
@@ -33,7 +37,6 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
-#include <new>
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
@@ -52,9 +55,14 @@
 #include <chemistry/qc/scf/clhf.h>
 
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/gaussianfit.h>
+#include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
+#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/linearr12.timpl.h>
 
 using namespace std;
 using namespace sc;
+using namespace sc::LinearR12;
 
 // Force linkages:
 #ifndef __PIC__
@@ -74,8 +82,13 @@ static ForceLink<ProcMessageGrp> fl9;
 #  include <util/group/messpgon.h>
     static ForceLink<ParagonMessageGrp> fl10;
 # endif
+
+#else
+static ForceLink<MBPT2_R12> fl0e;
+
 #endif
 
+Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
 static Ref<MessageGrp>
@@ -96,8 +109,8 @@ init_mp(const Ref<KeyVal>& keyval)
     debugger->debug("curt is a hog");
   }
   
-  RegionTimer::set_default_regiontimer(
-    new ParallelRegionTimer(grp,"mbptr12test",1,0));
+  tim = new ParallelRegionTimer(grp,"mbptr12test",1,0);
+  RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
   SCFormIO::init_mp(grp->me());
@@ -109,7 +122,7 @@ init_mp(const Ref<KeyVal>& keyval)
   return grp;
 }
 
-main(int argc, char**argv)
+int main(int argc, char**argv)
 {
   const char *input =      (argc > 1)? argv[1] : SRCDIR "/mbptr12test.in";
   const char *keyword =    (argc > 2)? argv[2] : "mole";
@@ -120,17 +133,21 @@ main(int argc, char**argv)
 
   init_mp(rpkv);
 
-  Timer tim;
-  tim.enter("input");
-  
+  ///////////
+  //
+  // Test 1
+  //
+  ///////////
+
+#if MBPTR12TEST_TEST1
+  tim->enter("test1");
+  tim->enter("input");
   if (rpkv->exists("matrixkit")) {
     Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
     SCMatrixKit::set_default_matrixkit(kit);
   }
-  
   struct stat sb;
   Ref<MolecularEnergy> mole;
-
   if (stat("mbptr12test.ckpt",&sb)==0 && sb.st_size) {
     StateInBin si("mbptr12test.ckpt");
     //    opt << SavableState::restore_state(si);
@@ -138,8 +155,7 @@ main(int argc, char**argv)
   } else {
     mole << rpkv->describedclassvalue(keyword);
   }
-
-  tim.exit("input");
+  tim->exit("input");
 
   if (mole.nonnull()) {
     ExEnv::out0() << indent << "energy: " << mole->energy() << endl;
@@ -153,9 +169,62 @@ main(int argc, char**argv)
 
   StateOutBin so("mbptr12test.wfn");
   SavableState::save_state(mole.pointer(),so);
-  
-  tim.print(ExEnv::out0());
 
+  tim->exit("test1");
+#endif // MBPTR12TEST_TEST1
+
+  ///////////
+  //
+  // Test 2
+  //
+  ///////////
+
+#if MBPTR12TEST_TEST2
+  tim->enter("test2");
+  using sc::mbptr12::Slater1D;
+  using sc::mbptr12::Gaussian1D;
+  using sc::mbptr12::PowerGaussian1D;
+  Slater1D stg(1.0);
+  PowerGaussian1D w(0.01,4,0);
+  typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+  GTGFit gtgfit(6, w, 0.0, 10.0, 101);
+  GTGFit::Gaussians stg_fit = gtgfit(stg);
+
+  ExEnv::out0() << indent << "Fitting STG(1.0) with Gaussians" << std::endl;
+  Ref<CorrelationFactor> cf = sc::LinearR12::stg_to_g12<G12NCCorrelationFactor,GTGFit>(gtgfit,1.0);
+  cf->print(ExEnv::out0());
+
+  tim->exit("test2");
+#endif // MBPTR12TEST_TEST2
+
+  ///////////
+  //
+  // Test 3
+  //
+  ///////////
+
+#if MBPTR12TEST_TEST3
+  tim->enter("test3");
+  {
+      using sc::mbptr12::Slater1D;
+      using sc::mbptr12::PowerGaussian1D;
+      PowerGaussian1D w(0.01,4,0);
+      typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+      GTGFit gtgfit(6, w, 0.0, 10.0, 101);
+      
+      ExEnv::out0() << indent << "Fitting AngSTG(-0.2,1.0) with Gaussians" << std::endl;
+      Ref<CorrelationFactor> cf = sc::LinearR12::angstg_to_geng12<GTGFit>(gtgfit,-0.2,1.0);
+      cf->print(ExEnv::out0());
+  }
+  tim->exit("test3");
+#endif // MBPTR12TEST_TEST3
+
+  //
+  // Done... clean up now
+  //
+  tim->print(ExEnv::out0());
+
+  tim = 0;
   grp = 0;
   RegionTimer::set_default_regiontimer(0);
   MessageGrp::set_default_messagegrp(0);

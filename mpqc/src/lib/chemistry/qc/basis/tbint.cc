@@ -31,6 +31,7 @@
 
 #include <limits.h>
 
+#include <util/class/scexception.h>
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>
@@ -176,6 +177,36 @@ TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
   return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
+const Ref<TwoBodyIntTypeDescr>&
+TwoBodyInt::inttypedescr(TwoBodyInt::tbint_type type)
+{
+    static Ref<TwoBodyIntTypeDescr> symm_type = new TwoBodyIntTypeDescr(2,+1,+1,+1);
+    static Ref<TwoBodyIntTypeDescr> t1r12_inttype = new TwoBodyIntTypeDescr(2,-1,+1,0);
+    static Ref<TwoBodyIntTypeDescr> t2r12_inttype = new TwoBodyIntTypeDescr(2,+1,-1,0);
+    switch(type) {
+    case TwoBodyInt::r12t1:
+    case TwoBodyInt::t1g12:
+	return t1r12_inttype;
+
+    case TwoBodyInt::r12t2:
+    case TwoBodyInt::t2g12:
+	return t2r12_inttype;
+
+    case TwoBodyInt::eri:
+    case TwoBodyInt::r12:
+    case TwoBodyInt::r12_0_g12:
+    case TwoBodyInt::r12_m1_g12:
+    case TwoBodyInt::g12t1g12:
+    case TwoBodyInt::anti_g12g12:
+    case TwoBodyInt::r12_0_gg12:
+    case TwoBodyInt::r12_m1_gg12:
+    case TwoBodyInt::gg12t1gg12:
+    case g12p4g12_m_g12t1g12t1:
+    return symm_type;
+    }
+    throw ProgrammingError("TwoBodyInt::inttype() -- incorrect type");
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,
@@ -272,7 +303,7 @@ TwoBodyThreeCenterInt::basis3()
 const double *
 TwoBodyThreeCenterInt::buffer(tbint_type i) const
 {
-  if (i==eri) return buffer_;
+  if (i==TwoBodyInt::eri) return buffer_;
   return 0;
 }
 
@@ -369,7 +400,7 @@ TwoBodyTwoCenterInt::basis2()
 const double *
 TwoBodyTwoCenterInt::buffer(tbint_type i) const
 {
-  if (i==eri) return buffer_;
+  if (i==TwoBodyInt::eri) return buffer_;
   return 0;
 }
 

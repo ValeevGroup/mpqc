@@ -40,6 +40,9 @@
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
 #include <chemistry/qc/mbptr12/transform_ikjy.h>
 
+// Set to 1 if want to use ixjy transforms only
+#define USE_IXJY_ALWAYS 0
+
 using namespace std;
 using namespace sc;
 
@@ -55,7 +58,8 @@ static ClassDesc MOIntsTransformFactory_cd(
 MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  integral_(integral), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  integral_(integral), tbintdescr_(new DefaultTwoBodyIntDescr(integral)),
+  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   if (space2.null())
     space2_ = space1_;
@@ -73,13 +77,14 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
   debug_ = 0;
   dynamic_ = false;
   print_percent_ = 10.0;
-  ints_method_ = mem_posix;
+  ints_method_ = StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
 }
 
 MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
 {
   integral_ << SavableState::restore_state(si);
+  //tbintdescr_ << SavableState::restore_state(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
@@ -93,7 +98,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<StoreMethod::type>(ints_method);
   si.get(file_prefix_);
 }
 
@@ -105,6 +110,7 @@ void
 MOIntsTransformFactory::save_data_state(StateOut& so)
 {
   SavableState::save_state(integral_.pointer(),so);
+  //SavableState::save_state(tbintdescr_.pointer(),so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
@@ -138,35 +144,65 @@ MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MO
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform_13(const std::string& name)
+MOIntsTransformFactory::twobody_transform_13(const std::string& name,
+                                             const Ref<TwoBodyIntDescr>& descrarg)
 {
   Ref<TwoBodyMOIntsTransform> result;
-
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
   
   if (space2_->rank() <= space2_->basis()->nbasis()) {
-    result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
+#if USE_IXJY_ALWAYS
+    result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
+#else
+    result = new TwoBodyMOIntsTransform_ikjy(name,this,descr,space1_,space2_,space3_,space4_);
+#endif
   }
   else {
-    result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
   }
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
+
+  result->set_debug(debug());
   
   return result;
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform_12(const std::string& name)
+MOIntsTransformFactory::twobody_transform_12(const std::string& name,
+                                             const Ref<TwoBodyIntDescr>& descrarg)
 {
   Ref<TwoBodyMOIntsTransform> result;
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
 
-  result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
+  result = new TwoBodyMOIntsTransform_ijxy(name,this,descr,space1_,space2_,space3_,space4_);
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
 
+  result->set_debug(debug());
+  
   return result;
+}
+
+Ref<TwoBodyMOIntsTransform>
+MOIntsTransformFactory::twobody_transform(StorageType storage,
+                                          const std::string& name,
+                                          const Ref<TwoBodyIntDescr>& descrarg)
+{
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
+  
+  switch (storage) {
+    case StorageType_12:
+    return twobody_transform_12(name,descr);
+    
+    case StorageType_13:
+    return twobody_transform_13(name,descr);
+    
+    default:
+    throw ProgrammingError("MOIntsTransformFactory::twobody_transform() -- unknown storage type requested",__FILE__,__LINE__);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

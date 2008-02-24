@@ -44,8 +44,8 @@
 using namespace std;
 using namespace sc;
 
-const char* GaussianShell::amtypes = "spdfghiklmn";
-const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";
+const char* GaussianShell::amtypes = "spdfghiklmnoqrtuvwxyz";
+const char* GaussianShell::AMTYPES = "SPDFGHIKLMNOQRTUVWXYZ";
 
 static ClassDesc GaussianShell_cd(
   typeid(GaussianShell),"GaussianShell",2,"public SavableState",
@@ -221,7 +221,7 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
           prefixkeyval->errortrace(ExEnv::err0());
           exit(1);
 	}
-      if (l[i] <= 1) puream[i] = 0;
+      if (l[i] < 1) puream[i] = 0;
       else if (havepure) {
           puream[i] = pure;
         }
@@ -259,6 +259,7 @@ GaussianShell::init_computed_data()
   int nc = 0;
   int nf = 0;
   has_pure_ = 0;
+  contr_to_func_ = new int[ncontraction()];
   for (int i=0; i<ncontraction(); i++) {
       int maxi = l[i];
       if (max < maxi) max = maxi;
@@ -268,6 +269,7 @@ GaussianShell::init_computed_data()
 
       nc += ncartesian(i);
 
+      contr_to_func_[i] = nf;
       nf += nfunction(i);
 
       if (is_pure(i)) has_pure_ = 1;
@@ -276,6 +278,16 @@ GaussianShell::init_computed_data()
   min_am_ = min;
   ncart_ = nc;
   nfunc = nf;
+  
+  // map functions back to contractions
+  func_to_contr_ = new int[nfunc];
+  int f_offset=0;
+  for (int i=0; i<ncontraction(); i++) {
+    const int nf = nfunction(i);
+    for(int f=0; f<nf; ++f)
+      func_to_contr_[f+f_offset] = i;
+    f_offset += nf;
+  }
 }
 
 int GaussianShell::max_cartesian() const
@@ -490,6 +502,8 @@ GaussianShell::~GaussianShell()
   delete[] l;
   delete[] puream;
   delete[] exp;
+  delete[] contr_to_func_;
+  delete[] func_to_contr_;
 
   for (int i=0; i<ncon; i++) {
       delete[] coef[i];
@@ -507,7 +521,7 @@ GaussianShell::nfunction(int con) const
 }
 
 int
-GaussianShell::equiv(const GaussianShell *s)
+GaussianShell::equiv(const GaussianShell* s) const
 {
   if (nprim != s->nprim) return 0;
   for (int i=0; i<nprim; i++) {

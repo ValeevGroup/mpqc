@@ -96,6 +96,9 @@ class HSOSKS: public HSOSSCF {
     void two_body_deriv(double*);
 
     RefSymmSCMatrix lagrangian();
+    
+    // overload of HSOSSCF::semicanonical
+    void semicanonical();
 };
 
 }

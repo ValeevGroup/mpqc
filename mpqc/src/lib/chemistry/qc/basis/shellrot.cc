@@ -78,7 +78,7 @@ ShellRotation::ShellRotation(int a, SymmetryOperation& so,
   am_(0),
   r(0)
 {
-  if (a > 1 && pure)
+  if (a > 0 && pure)
     init_pure(a,so,ints);
   else
     init(a,so,ints);
@@ -171,7 +171,7 @@ ShellRotation::init(int a, SymmetryOperation& so, const Ref<Integral>& ints)
 void
 ShellRotation::init_pure(int a, SymmetryOperation&so, const Ref<Integral>& ints)
 {
-  if (a < 2) {
+  if (a < 1) {
     init(a,so,ints);
     return;
   }

@@ -35,6 +35,7 @@
 #include <string>
 #include <util/ref/ref.h>
 #include <util/class/scexception.h>
+#include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
@@ -50,6 +51,10 @@ class MOIntsTransformFactory;
       using parallel integrals-direct AO->MO transformation. */
 
 class TwoBodyMOIntsTransform : virtual public SavableState {
+public:
+  typedef MOIntsTransformFactory::StorageType StorageType;
+
+private:
 
   // Construct the integrals accumulator object
   // This function depends on the particulars of the transformation
@@ -61,7 +66,7 @@ class TwoBodyMOIntsTransform : virtual public SavableState {
 protected:
   /** By default, integrals smaller than zero_integral are considered zero.
       This constant is only used in checking integrals, not computing them. */
-  static const double zero_integral = 1.0e-12;
+  static double zero_integral;
   /// Predefined enumerated type for the MO spaces
   typedef struct {
     enum {Space1, Space2, Space3, Space4};
@@ -74,6 +79,7 @@ protected:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
+  Ref<TwoBodyIntDescr> tbintdescr_;
   // Integrals accumulator
   Ref<R12IntsAcc> ints_acc_;
 
@@ -82,13 +88,12 @@ protected:
   Ref<MOIndexSpace> space3_;
   Ref<MOIndexSpace> space4_;
 
-  int num_te_types_;
   size_t memory_;
   bool dynamic_;
   double print_percent_;
   DistShellPair::SharedData spdata_;
   int debug_;
-  MOIntsTransformFactory::StoreMethod ints_method_;
+  MOIntsTransformFactory::StoreMethod::type ints_method_;
   std::string file_prefix_;
 
   // These variables are never saved but computed every time in case environment
@@ -124,24 +129,30 @@ protected:
       Assumes formatting info from ExEnv::out0().
    */
   void mospace_report(std::ostream& os = ExEnv::out0()) const;
-
+  
   /** Prints out standard header. Call at the beginning of compute().
    */
   void print_header(std::ostream& os = ExEnv::out0()) const;
   /** Prints out standard footer. Call at the end of compute().
    */
   void print_footer(std::ostream& os = ExEnv::out0()) const;
-    
+  
+#if 0
+  /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
+  void check_tbint(const Ref<TwoBodyInt>& tbint) const;
+#endif
+  
 public:
-
+  
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                         const Ref<TwoBodyIntDescr>& tbintdescr,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
-  ~TwoBodyMOIntsTransform();
-
+  virtual ~TwoBodyMOIntsTransform();
+  
   void save_data_state(StateOut&);
-
+  
   /// Returns the name of the transform
   std::string name() const {return name_;}
   /// Returns a short label which uniquely identifies the type of transform
@@ -150,16 +161,18 @@ public:
   Ref<MemoryGrp> mem() const;
   /// Returns the MessageGrp object
   Ref<MessageGrp> msg() const;
-  /// Returns the integrals accumulator object
-  Ref<R12IntsAcc> ints_acc() const;
+  /// Returns the integral set descriptor
+  const Ref<TwoBodyIntDescr>& intdescr() const;
+  /** Returns the integrals accumulator object. */
+  const Ref<R12IntsAcc>& ints_acc();
   /// Returns MOIndexSpace object 1
-  Ref<MOIndexSpace> space1() const;
+  const Ref<MOIndexSpace>& space1() const;
   /// Returns MOIndexSpace object 2
-  Ref<MOIndexSpace> space2() const;
+  const Ref<MOIndexSpace>& space2() const;
   /// Returns MOIndexSpace object 3
-  Ref<MOIndexSpace> space3() const;
+  const Ref<MOIndexSpace>& space3() const;
   /// Returns MOIndexSpace object 4
-  Ref<MOIndexSpace> space4() const;
+  const Ref<MOIndexSpace>& space4() const;
 
   /// Returns the update print frequency
   double print_percent() const;
@@ -170,7 +183,7 @@ public:
   /// Returns whether to use dynamic load balancing
   bool dynamic() const;
   /// Returns the number of types of two body integrals computed
-  int num_te_types() const;
+  unsigned int num_te_types() const;
   /** Returns the number of bytes allocated for each ij-block of integrals of one type
       in MemoryGrp. It's guaranteed to be divisible by sizeof(double).
     */
@@ -178,26 +191,23 @@ public:
   
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
-
-  /** Specifies how many integral types computed by TwoBodyInt to be transformed
-      Default is 1. */
-  void set_num_te_types(const int num_te_types);
+  
   void set_memory(const size_t memory);
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
-
+  
   /// Computes transformed integrals
   virtual void compute() = 0;
   /// Check symmetry of transformed integrals
-  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError) =0;
+  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
-
+  
   /** Returns a that data that must be shared between all DistShellPair
    * objects. */
   DistShellPair::SharedData *shell_pair_data() { return &spdata_; }
-
+  
 };
 
 }

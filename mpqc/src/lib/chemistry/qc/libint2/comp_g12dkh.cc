@@ -457,7 +457,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
                       }
                       else {
-                    	prim_ints_[0][buffer_offset] += (double) 16.0 *
+                        prim_ints_[0][buffer_offset] += (double) 16.0 *
                           (pfac0*Libint_.LIBINT_T_SS_K0G12_SS_0[0] +
                            pfac2*Libint_.LIBINT_T_SS_K2G12_SS_0[0] +
                            pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0]);

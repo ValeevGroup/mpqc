@@ -522,20 +522,6 @@ MTMPIMemoryGrp::sync()
     }
 }
 
-Ref<MemoryGrp>
-MTMPIMemoryGrp::clone()
-{
-  if (class_desc() != ClassDesc::name_to_class_desc("MTMPIMemoryGrp")) {
-      // this will throw
-      return MemoryGrp::clone();
-    }
-
-  Ref<MemoryGrp> ret;
-  ret = new MTMPIMemoryGrp(msg_->clone(), th_->clone(), comp_comm_);
-
-  return ret;
-}
-
 // nbuffer_ must be set and > 0 before this is called.
 void
 MTMPIMemoryGrp::init_buffer()

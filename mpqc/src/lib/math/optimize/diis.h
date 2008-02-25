@@ -45,17 +45,16 @@ class DIIS: public SelfConsistentExtrapolation {
     int ngroup;
     int ngroupdiis;
     double damping_factor;
+    double mixing_fraction;
 
     double * btemp;
     double ** bold;
     double ** bmat;
 
-    Ref<SCExtrapData> dtemp_data;
-    Ref<SCExtrapError> dtemp_error;
-
     Ref<SCExtrapData> Ldata;
 
     Ref<SCExtrapData> *diism_data;
+    Ref<SCExtrapData> *diism_datain;
     Ref<SCExtrapError> *diism_error;
 
     void init();
@@ -75,6 +74,12 @@ class DIIS: public SelfConsistentExtrapolation {
         <dt><tt>damping_factor</tt><dd> This nonnegative floating point
         number is used to dampen the DIIS extrapolation.  The default is
         0.0.
+
+        <dt><tt>mixing_fraction</tt><dd> This floating point number in
+        [0,1] is used to dampen the DIIS extrapolation by mixing the input
+        data with the output data for each iteration. The default is 0.0,
+        which performs no mixing. The approach described in
+        Kerker, Phys. Rev. B, 23, p3082, 1981.
 
         <dt><tt>ngroup</tt><dd> The number of iterations in a DIIS group.
         DIIS extrapolation is only used for the first ngroupdiis of these

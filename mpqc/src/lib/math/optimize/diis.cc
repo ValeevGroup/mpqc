@@ -39,7 +39,7 @@
 using namespace sc;
 
 static ClassDesc DIIS_cd(
-  typeid(DIIS),"DIIS",3,"public SelfConsistentExtrapolation",
+  typeid(DIIS),"DIIS",4,"public SelfConsistentExtrapolation",
   0, create<DIIS>, create<DIIS>);
 
 void
@@ -68,14 +68,18 @@ DIIS::init()
   
   diism_data = new Ref<SCExtrapData>[ndiis];
   diism_error = new Ref<SCExtrapError>[ndiis];
+  // diism_datain is on bigger than the other because
+  // it must hold data associated with the next iteration
+  diism_datain = new Ref<SCExtrapData>[ndiis+1];
 }
 
 DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis) :
-  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0), diism_datain(0)
 {
   start = strt;
   ndiis = ndi;
   damping_factor = dmp;
+  mixing_fraction = 0.0;
 
   ngroup = ngr;
   ngroupdiis = ngrdiis;
@@ -85,7 +89,7 @@ DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis) :
 
 DIIS::DIIS(StateIn& s) :
   SelfConsistentExtrapolation(s),
-  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0), diism_datain(0)
 {
   int i;
 
@@ -97,6 +101,9 @@ DIIS::DIIS(StateIn& s) :
     s.get(ngroupdiis);
   }
   s.get(damping_factor);
+  if (s.version(::class_desc<DIIS>()) >= 4) {
+    s.get(mixing_fraction);
+  }
 
   // alloc storage for arrays
   btemp = new double[ndiis+1];
@@ -129,11 +136,16 @@ DIIS::DIIS(StateIn& s) :
     diism_data[i] << SavableState::restore_state(s);
     diism_error[i] << SavableState::restore_state(s);
   }
+  if (s.version(::class_desc<DIIS>()) >= 4) {
+    for (i=0; i <= ndat; i++) {
+      diism_datain[i] << SavableState::restore_state(s);
+    }
+  }
 }
 
 DIIS::DIIS(const Ref<KeyVal>& keyval):
   SelfConsistentExtrapolation(keyval),
-  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0), diism_datain(0)
 {
   ndiis = keyval->intvalue("n");
   if (keyval->error() != KeyVal::OK) ndiis = 5;
@@ -149,6 +161,9 @@ DIIS::DIIS(const Ref<KeyVal>& keyval):
 
   damping_factor = keyval->doublevalue("damping_factor");
   if (keyval->error() != KeyVal::OK) damping_factor = 0;
+
+  mixing_fraction = keyval->doublevalue("mixing_fraction");
+  if (keyval->error() != KeyVal::OK) mixing_fraction = 0;
   
   if (ndiis <= 0) {
     ExEnv::err0() << indent
@@ -189,6 +204,11 @@ DIIS::~DIIS()
     diism_data=0;
   }
 
+  if (diism_datain) {
+    delete[] diism_datain;
+    diism_datain=0;
+  }
+
   if (diism_error) {
     delete[] diism_error;
     diism_error=0;
@@ -207,6 +227,7 @@ DIIS::save_data_state(StateOut& s)
   s.put(ngroup);
   s.put(ngroupdiis);
   s.put(damping_factor);
+  s.put(mixing_fraction);
 
   int ndat = iter;
   if (iter > ndiis) ndat = ndiis;
@@ -222,6 +243,9 @@ DIIS::save_data_state(StateOut& s)
   for (i=0; i < ndat; i++) {
     SavableState::save_state(diism_data[i].pointer(),s);
     SavableState::save_state(diism_error[i].pointer(),s);
+  }
+  for (i=0; i <= ndat; i++) {
+    SavableState::save_state(diism_datain[i].pointer(),s);
   }
 }
 
@@ -255,14 +279,13 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
   if (iter > ndiis) {
       last = ndiis-1;
       col = ndiis+1;
-      dtemp_data = diism_data[0];
-      dtemp_error = diism_error[0];
       for (i=0; i < last ; i++) {
           diism_data[i] = diism_data[i+1];
           diism_error[i] = diism_error[i+1];
         }
-      diism_data[last] = dtemp_data;
-      diism_error[last] = dtemp_error;
+      for (i=0; i <= last ; i++) {
+          diism_datain[i] = diism_datain[i+1];
+      }
     }
 
   diism_data[last] = data->copy();
@@ -345,17 +368,58 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
         return -1;
       }
 
+  //////////////////////////////////////////////////////////////
+  // In the following, F_{in} is the F matrix we produce as the
+  // input to the next iteration. F_{out} is the F matrix we
+  // were given.
+
+  // Charge mixing:
+  // F_{in,i+1} = f F_{in,i} + (1-f) F_{out,i}
+  // P_{i+1} <- F_{in,i+1}
+  // F_{out,i+1} <- P_{i+1}
+
+  // DIIS:
+  // for (k=0; k<=i; k++) F_{in,i+1} = C_{k,i} F_{out,k}
+
+  // DIIS + charge mixing:
+  // for (k=0; k<=i; k++)
+  //   F_{in,i+1} += C_{k,i} ( (1-f) F_{out,k} + f F_{in,k} )
+  //
+  // The problem with the above is that in the case of HF, we start with an
+  // initial density and don't necessarily have anything like an initial
+  // Fock matrix that generates that density. So we do not do density
+  // mixing on the initial item:
+  // F_{in,1} = C_{k,1} F_{out,0}
+  // for (k=0; k<=i; k++)
+  //   F_{in,i+1} += C_{k,i} ( (1-f) F_{out,k} + f F_{in,k} )
+
       if (iter >= start && (((iter-start)%ngroup) < ngroupdiis)) {
           int kk=1;
 
           data->zero();
 
-          for (k=trial; k < last+1 ; k++) {
-              data->accumulate_scaled(btemp[kk], diism_data[k]);
+          // This is the code before mixing_fraction was implemented.
+//           for (k=trial; k < last+1 ; k++) {
+//               data->accumulate_scaled(btemp[kk], diism_data[k]);
+//               kk++;
+//             }
+
+          for (k=trial; k < last+1; k++) {
+              if (diism_datain[k].null()) {
+                data->accumulate_scaled(btemp[kk], diism_data[k]);
+              }
+              else {
+                data->accumulate_scaled(btemp[kk]*(1.0-mixing_fraction),
+                                        diism_data[k]);
+                data->accumulate_scaled(btemp[kk]*mixing_fraction,
+                                        diism_datain[k]);
+              }
               kk++;
             }
         }
     }
+
+  diism_datain[last+1] = data->copy();
 
   return 0;
 }
@@ -370,6 +434,7 @@ DIIS::print(std::ostream& o) const
     << ", ngroup=" << ngroup
     << ", ngroupdiis=" << ngroupdiis
     << ", damping_factor=" << damping_factor
+    << ", mixing_fraction=" << mixing_fraction
     << std::endl;
 }
 

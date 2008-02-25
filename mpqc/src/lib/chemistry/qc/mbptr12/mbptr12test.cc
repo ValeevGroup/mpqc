@@ -73,10 +73,6 @@ static ForceLink<MBPT2_R12> fl0e;
 static ForceLink<ReplSCMatrixKit> fl6;
 static ForceLink<DistSCMatrixKit> fl7;
 
-# ifdef HAVE_SYSV_IPC
-#   include <util/group/messshm.h>
-    static ForceLink<ShmMessageGrp> fl8;
-# endif
 static ForceLink<ProcMessageGrp> fl9;
 # ifdef HAVE_NX_H
 #  include <util/group/messpgon.h>

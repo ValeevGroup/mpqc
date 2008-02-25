@@ -30,7 +30,6 @@
 
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
-#include <util/group/messshm.h>
 #include <math/scmat/dist.h>
 
 #include <util/group/linkage.h>

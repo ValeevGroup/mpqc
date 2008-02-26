@@ -73,13 +73,14 @@ DIIS::init()
   diism_datain = new Ref<SCExtrapData>[ndiis+1];
 }
 
-DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis) :
-  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0), diism_datain(0)
+DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis, double mf) :
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0), diism_datain(0),
+  mixing_fraction(mf)
 {
   start = strt;
   ndiis = ndi;
   damping_factor = dmp;
-  mixing_fraction = 0.0;
+  mixing_fraction = mf;
 
   ngroup = ngr;
   ngroupdiis = ngrdiis;

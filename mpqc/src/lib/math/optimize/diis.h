@@ -59,7 +59,8 @@ class DIIS: public SelfConsistentExtrapolation {
 
     void init();
   public:
-    DIIS(int strt=1, int ndi=5, double dmp =0, int ngr=1, int ngrdiis=1);
+    DIIS(int strt=1, int ndi=5, double dmp =0, int ngr=1, int ngrdiis=1,
+         double mf=0);
     DIIS(StateIn&);
     /** The DIIS KeyVal constructor recognizes the following keywords:
 

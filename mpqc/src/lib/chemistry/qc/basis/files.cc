@@ -63,6 +63,9 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
 #endif
       dir_[1] = bdir;
     }
+  else {
+      dir_[1] += "/basis";
+    }
 }
 
 BasisFileSet::~BasisFileSet()

@@ -120,7 +120,11 @@ class SelfConsistentExtrapolation: public SavableState {
     // do nothing in some implementations.
     virtual void start_extrapolation();
 
-    virtual void reinitialize() =0;
+    /// This must be called if the extrapolation object is to be used
+    /// again. It should also be called before the first use of the object,
+    /// if initial data needs to be given to the algorithm.  The data
+    /// object will be copied.
+    virtual void reinitialize(Ref<SCExtrapData> data=0) =0;
 };
 
 }

@@ -251,9 +251,12 @@ DIIS::save_data_state(StateOut& s)
 }
 
 void
-DIIS::reinitialize()
+DIIS::reinitialize(Ref<SCExtrapData> data)
 {
   iter=0;
+  if (data.nonnull()) {
+    diism_datain[0] = data->copy();
+  }
 }
 
 void
@@ -419,6 +422,19 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
             }
         }
     }
+  else {
+      //first iteration
+      data->zero();
+      if (diism_datain[0].null()) {
+          data->accumulate_scaled(1.0, diism_data[0]);
+      }
+      else {
+          data->accumulate_scaled((1.0-mixing_fraction),
+                                        diism_data[0]);
+          data->accumulate_scaled(mixing_fraction,
+                                  diism_datain[0]);
+      }
+  }
 
   diism_datain[last+1] = data->copy();
 

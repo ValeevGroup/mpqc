@@ -103,7 +103,7 @@ class DIIS: public SelfConsistentExtrapolation {
 
     void start_extrapolation();
 
-    void reinitialize();
+    void reinitialize(Ref<SCExtrapData> data=0);
 
     /// Override DescribedClass::print.
     void print(std::ostream& = ExEnv::out0()) const;

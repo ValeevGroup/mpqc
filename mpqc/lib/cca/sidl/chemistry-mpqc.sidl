@@ -128,6 +128,10 @@ package MPQC version 0.2 {
     implements-all ChemistryOpt.CoordinateModelInterface,
     gov.cca.Component, gov.cca.Port{};
 
+  class OptimizationSolver
+    implements-all ChemistryOpt.SolverInterface,
+    gov.cca.Component, gov.cca.Port, gov.cca.ports.GoPort {};
+
   class ComponentFactory implements-all ccaffeine.ports.ComponentFactory {
     void addDescription(in string className, in string classAlias);
   };

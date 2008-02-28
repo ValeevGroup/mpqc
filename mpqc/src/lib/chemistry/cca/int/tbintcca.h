@@ -62,11 +62,13 @@ namespace sc {
     int ndesc_;
     double tol_;
     double loginv_;
-    std::map< std::string, int > dtype_to_tbtype_;
+    std::map< std::string, tbint_type > dtype_to_tbtype_;
     double** tbtype_to_buf_;
+    tbint_type* tbtype_list_;
     sidl::array<double> sidl_buffer_;
     std::vector< int > segments_;
     sidl::array<double> bounds_;
+    unsigned int num_tbint_types_;
 
   public:
     TwoBodyIntCCA( Integral* integral,
@@ -85,6 +87,8 @@ namespace sc {
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
     unsigned int num_tbint_types() const;
+    unsigned int inttype(tbint_type t) const;
+    TwoBodyInt::tbint_type inttype(unsigned int t) const;
     void remove_redundant(int,int,int,int);
 };
 

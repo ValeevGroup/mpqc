@@ -367,6 +367,8 @@ namespace sc {
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,
                    const Ref<GaussianBasisSet> &b4 = 0);
+
+Integral::CartesianOrdering cartesian_ordering() const;
 		    
 };
 

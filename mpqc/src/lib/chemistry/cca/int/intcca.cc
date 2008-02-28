@@ -802,6 +802,12 @@ IntegralCCA::initialize_transforms()
 
 }
 
+Integral::CartesianOrdering
+IntegralCCA::cartesian_ordering() const
+{
+  return Integral::CCACartesianOrdering;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

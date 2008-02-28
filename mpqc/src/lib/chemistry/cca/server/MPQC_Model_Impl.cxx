@@ -191,23 +191,23 @@ MPQC::Model_impl::set_molecule_impl (
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_molecule)
   
   int i,j;
-  molecule_ = molecule;
-  double conv = molecule_.get_units().convert_to("bohr");
+  double conv = molecule.get_units().convert_to("bohr");
   sc::Molecule* scMol = wfn_->molecule().pointer();
   int n_non_q = molecule_.get_n_atom();
   int n_q = molecule_.get_n_pcharge();
+
   for( i=0; i<n_non_q; ++i) {
      int nqid = scMol->non_q_atom(i);
      for( j=0; j<3; ++j) 
-        scMol->r(nqid)[j] = molecule_.get_cart_coor(i,j)*conv;
+        scMol->r(nqid)[j] = molecule.get_cart_coor(i,j);
   }
   for( i=0; i<n_q; ++i) {
      int qid = scMol->q_atom(i);
      for( j=0; j<3; ++j)
-        scMol->r(qid)[j] = molecule_.get_pcharge_cart_coor(i,j)*conv;
+        scMol->r(qid)[j] = molecule.get_pcharge_cart_coor(i,j);
   }
-  wfn_->set_x(array_to_vector(molecule_.get_coor(), 
-              wfn_->matrixkit()->vector(wfn_->dimension()),conv));
+  wfn_->set_x(array_to_vector(molecule.get_coor(), 
+              wfn_->matrixkit()->vector(wfn_->dimension()),1.0));
 
   return;
 
@@ -224,6 +224,7 @@ MPQC::Model_impl::get_molecule_impl ()
   // DO-NOT-DELETE splicer.begin(MPQC.Model.get_molecule)
 
   sc::Molecule* scMol = wfn_->molecule().pointer();
+  scMol->print();
   
   int i,j;
   int n_non_q = molecule_.get_n_atom();

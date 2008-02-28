@@ -32,6 +32,7 @@
 #include "tbintcca.h"
 #include <util/class/scexception.h>
 #include <limits.h>
+#include <chemistry/qc/basis/tbint.h>
 
 #include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
@@ -66,6 +67,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   }
 
   tbtype_to_buf_ = new double*[ndesc_];
+  tbtype_list_ = new tbint_type[ndesc_];
 
   IntegralDescrInterface desc = Eri4IntegralDescr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::eri;
@@ -114,6 +116,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     segments_.push_back( desc.get_n_segment() );
     tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = eval_.get_array(desc).first();
+    tbtype_list_[i] = dtype_to_tbtype_[desc.get_type()];
   }
   bounds_ = eval_.get_bounds_array();
 
@@ -200,6 +203,20 @@ unsigned int
 TwoBodyIntCCA::num_tbint_types() const
 {
   return ndesc_;
+}
+
+unsigned int 
+TwoBodyIntCCA::inttype(tbint_type t) const
+{
+  for( int i=0; i<ndesc_; ++i )
+    if( t == tbtype_list_[i] )
+      return i;  
+}
+
+TwoBodyInt::tbint_type 
+TwoBodyIntCCA::inttype(unsigned int t) const
+{
+  return tbtype_list_[t];
 }
 
 ////////////////////////////////////////////////////////////////////////////

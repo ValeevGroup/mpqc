@@ -12,6 +12,7 @@
     <class name="MPQC.GaussianBasisMolecular" desc="ior/impl" />
     <class name="MPQC.Model" desc="ior/impl" />
     <class name="MPQC.CoordinateModel" desc="ior/impl" />
+    <class name="MPQC.OptimizationSolver" desc="ior/impl" />
     <class name="MPQC.IntV3EvaluatorFactory" desc="ior/impl" />
     <class name="MPQC.CintsEvaluatorFactory" desc="ior/impl" />
     <class name="MPQC.SimpleDriver" desc="ior/impl" />
@@ -59,6 +60,21 @@
              files="MPQC_CoordinateModel" />
   </environment>
 </componentDeployment>
+
+<componentDeployment
+  name="MPQC.OptimizationSolver"
+  paletteClassAlias="MPQC.OptimizationSolver" >
+  <environment>
+    <ccaSpec binding="babel" />
+    <library loading="dynamic"
+             name="@prefix@/lib/cca/mpqc.so"
+             libtool-archive="@prefix@/lib/cca/mpqc.la"
+             shared-archive="@prefix@/lib/cca/mpqc.so" />
+    <headers path="@prefix@/include/chemistry/cca"
+             files="MPQC_OptimizationModel" />
+  </environment>
+</componentDeployment>
+
 
 <componentDeployment
   name="MPQC.IntV3EvaluatorFactory"

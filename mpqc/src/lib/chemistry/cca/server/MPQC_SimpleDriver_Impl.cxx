@@ -183,7 +183,7 @@ MPQC::SimpleDriver_impl::go_impl ()
   // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver.go)
 
   gov::cca::TypeMap tm = pp_.readConfigurationMap();
-  do_grad_ = tm.getBool("do_gradient",0);
+  do_grad_ = tm.getBool("do_gradient","failed do_gradient fetch");
 
   std::cout << "\nSIMPLE CHEMISTRY COMPONENT DRIVER\n";
   std::cout << "----------------------------------\n";

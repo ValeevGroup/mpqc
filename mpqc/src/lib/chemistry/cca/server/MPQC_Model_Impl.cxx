@@ -231,6 +231,7 @@ MPQC::Model_impl::get_molecule_impl ()
   int n_q = molecule_.get_n_pcharge();
   for( i=0; i<n_non_q; ++i ) {
     int nqid = scMol->non_q_atom(i);
+    molecule_.set_atomic_number(i,scMol->Z(nqid));
     for( j=0; j<3; ++j )
       molecule_.set_cart_coor( i, j, scMol->r(nqid)[j] );
   }

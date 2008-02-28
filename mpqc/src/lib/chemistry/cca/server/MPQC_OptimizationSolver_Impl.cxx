@@ -50,7 +50,7 @@ MPQC::OptimizationSolver_impl::OptimizationSolver_impl() : StubBase(
 // user defined constructor
 void MPQC::OptimizationSolver_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._ctor)
-  // Insert-Code-Here {MPQC.OptimizationSolver._ctor} (constructor)
+
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._ctor)
 }
 
@@ -91,13 +91,9 @@ MPQC::OptimizationSolver_impl::initialize_impl ()
   if( opt_model_._is_nil() ) {
     coor_model_ = sidl::babel_cast<ChemistryOpt::CoordinateModelInterface>(
                     services_.getPort("CoordinateModelInterface") );
-    std::cerr << "got cm interface\n";
     coor_model_.initialize();
     model_ = coor_model_.get_model();
-    std::cerr << "got model\n";
     molecule_ = model_.get_molecule();
-    std::cerr << "got molecule\n";
-    std::cerr << "test an: " << molecule_.get_atomic_number(0) << std::endl;
   }
 
   // form keyval for QNewtonOpt
@@ -155,8 +151,6 @@ MPQC::OptimizationSolver_impl::initialize_impl ()
   }
   opt_ = dynamic_cast<sc::QNewtonOpt*>(dc.pointer());
   
-  std::cerr << "got opt\n";
-    
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver.initialize)
 }
 
@@ -249,6 +243,7 @@ MPQC::OptimizationSolver_impl::setServices_impl (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver.setServices)
     
+  std::cerr << "in solver setServices\n";
   services_ = services;
   if (services_._is_nil()) return;
 
@@ -271,6 +266,8 @@ MPQC::OptimizationSolver_impl::setServices_impl (
     Ref<CCAFramework> fw = new ExternalCCAFramework(services_);
     CCAEnv::init( fw );
   }
+
+  std::cerr << "solver setServices complete\n";
     
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver.setServices)
 }
@@ -288,9 +285,7 @@ MPQC::OptimizationSolver_impl::go_impl ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver.go)
 
-  std::cerr << "in go impl\n ";
   initialize();
-  std::cerr << "solver initialized\n";
   solve();
   coor_model_.finalize();
     

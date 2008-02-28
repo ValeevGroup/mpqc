@@ -257,6 +257,10 @@ class SCF: public OneBodyWavefunction {
     // return the scf electronic energy
     virtual double scf_energy() =0;
     
+    // return the initial extrapolation data. Used when the mixing_fraction
+    // input for DIIS is nonzero. By default null is returned.
+    virtual Ref<SCExtrapData> initial_extrap_data();
+    
     // return the DIIS data matrices
     virtual Ref<SCExtrapData> extrap_data() =0;
     

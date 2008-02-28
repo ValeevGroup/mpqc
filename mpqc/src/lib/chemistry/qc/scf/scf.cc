@@ -769,6 +769,12 @@ SCF::obsolete()
   if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
 }
 
+Ref<SCExtrapData>
+SCF::initial_extrap_data()
+{
+  return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

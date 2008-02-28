@@ -124,7 +124,7 @@ SCF::compute_vector(double& eelec, double nucrep)
   int i;
 
   // reinitialize the extrapolation object
-  extrap_->reinitialize();
+  extrap_->reinitialize(initial_extrap_data());
   
   // create level shifter
   LevelShift *level_shift = new LevelShift(this);

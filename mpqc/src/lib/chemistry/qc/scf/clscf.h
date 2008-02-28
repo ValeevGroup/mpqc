@@ -107,6 +107,7 @@ class CLSCF: public SCF {
     double new_density();
     double scf_energy();
 
+    Ref<SCExtrapData> initial_extrap_data();
     Ref<SCExtrapData> extrap_data();
     
     // gradient things

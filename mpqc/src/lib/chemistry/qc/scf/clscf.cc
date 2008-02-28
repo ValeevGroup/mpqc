@@ -469,6 +469,17 @@ CLSCF::scf_energy()
 }
 
 Ref<SCExtrapData>
+CLSCF::initial_extrap_data()
+{
+  Ref<SCExtrapData> data;
+  // If there is an old fock matrix around, use that.
+  if (cl_fock_.result_noupdate().nonnull()) {
+    data = new SymmSCMatrixSCExtrapData(cl_fock_.result_noupdate());
+  }
+  return data;
+}
+
+Ref<SCExtrapData>
 CLSCF::extrap_data()
 {
   Ref<SCExtrapData> data =

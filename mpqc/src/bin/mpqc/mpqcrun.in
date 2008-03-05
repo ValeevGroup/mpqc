@@ -672,25 +672,22 @@ sub outfile {
 
     my $outbase = "$in";
     $outbase =~ s/\.[^.]*$//;
-    if ($simpout) {
-        $outbase = sprintf "%s.out", "$outbase";
-    }
-    else {
-        $outbase = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
-                           $nnodeperjob, $nprocpernode, $nthreadperproc;
+    if (!$simpout) {
+        $outbase = sprintf "%s-%03d.%02d.%02d", "$outbase",
+                             $nnodeperjob, $nprocpernode, $nthreadperproc;
     }
 
     my $out;
     if ($uniqout) {
-        $out = "$outbase";
+        $out = sprintf "%s.out", "$outbase";
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.%02d", "$outbase", $outversion;
+            $out = sprintf "%s-%02d.out", "$outbase", $outversion;
         }
     }
     elsif ($autoout) {
-        $out = "$outbase";
+        $out = sprintf "%s.out", "$outbase";
     }
     else {
         $out = "";

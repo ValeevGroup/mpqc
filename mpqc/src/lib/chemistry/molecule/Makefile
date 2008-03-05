@@ -65,7 +65,7 @@ default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
 
-LIBS: = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 LD = $(CXX)
 

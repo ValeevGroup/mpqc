@@ -1290,7 +1290,7 @@ GaussianBasisSetSum::sum(const Ref<GaussianBasisSet>& A,
   const char* A_name = a->name();
   const char* B_name = b->name();
   const char* AplusB_name = 0;
-  if (!A_name && !B_name) {
+  if (A_name && B_name) {
     ostringstream oss;
     oss << "[" << A_name << "]+[" << B_name << "]";
     std::string tmpname = oss.str();

@@ -157,7 +157,10 @@ class HSOSSCF: public SCF {
 
     RefSymmSCMatrix cl_hcore_;
 
+    /** Implementation of SCF::set_occupations(const RefDiagSCMatrix&).
+        Implemented in terms of set_occupations(const RefDiagSCMatrix&,bool). */
     void set_occupations(const RefDiagSCMatrix& evals);
+    virtual void set_occupations(const RefDiagSCMatrix& evals, bool can_change_multiplicity);    
 
     // scf things
     void init_vector();

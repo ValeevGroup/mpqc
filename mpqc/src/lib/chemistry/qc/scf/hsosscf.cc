@@ -34,6 +34,7 @@
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
@@ -51,6 +52,7 @@
 
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/hsoshftmpl.h>
+#include <chemistry/qc/wfn/femo.h>
 
 using namespace std;
 using namespace sc;
@@ -162,11 +164,13 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   double charge = keyval->doublevalue("total_charge");
   int nelectrons = (int)(Znuc-charge+1.0e-4);
 
+  bool multiplicity_given = false;
   // first let's try to figure out how many open shells there are
   if (keyval->exists("nsocc")) {
     tnsocc_ = keyval->intvalue("nsocc");
   } else if (keyval->exists("multiplicity")) {
     tnsocc_ = keyval->intvalue("multiplicity")-1;
+    multiplicity_given = true;
   } else {
     // if there's an odd number of electrons, then do a doublet, otherwise
     // do a triplet
@@ -217,7 +221,8 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     initial_ndocc_=0;
     initial_nsocc_=0;
     user_occupations_=0;
-    set_occupations(0);
+    // second argument: allow to change multiplicity?
+    set_occupations(0, multiplicity_given? false : true);
   }
 
   ExEnv::out0() << indent << "docc = [";
@@ -366,6 +371,13 @@ HSOSSCF::print(ostream&o) const
 void
 HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
+  // set_occupations preserves multiplicity
+  set_occupations(ev,false);
+}
+
+void
+HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity)
+{
   if (user_occupations_ || (initial_ndocc_ && initial_nsocc_ && ev.null())) {
     if (form_occupations(ndocc_, initial_ndocc_)
         &&form_occupations(nsocc_, initial_nsocc_)) {
@@ -410,77 +422,30 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
   else
     evals = ev;
 
-  // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
-                                                 "HSOSSCF::set_occupations");
-  
-  double **vals = new double*[nirrep_];
-  for (i=0; i < nirrep_; i++) {
-    int nf=oso_dimension()->blocks()->size(i);
-    if (nf) {
-      vals[i] = new double[nf];
-      evalsb->block(i)->convert(vals[i]);
-    } else {
-      vals[i] = 0;
-    }
+  //
+  // populate orbitals
+  //
+  // if can change the multiplicity, use HundsFEMOSeeker to get the FEMO with maximum multiplicity
+  Ref<FEMO> femo;
+  if (can_change_multiplicity) {
+    //                            # electron,       Etol, allow closed-shell?
+    HundsFEMOSeeker femoseeker(tndocc_*2 + tnsocc_, 1e-3, false,
+                               evals);
+    femo = femoseeker.result();
   }
-
-  // now loop to find the tndocc_ lowest eigenvalues and populate those
-  // MO's
+  else {
+    femo = new FEMO(tndocc_ + tnsocc_, tndocc_,evals);
+  }
+  // copy into local arrays
   int *newdocc = new int[nirrep_];
-  memset(newdocc,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tndocc_; i++) {
-    // find lowest eigenvalue
-    int lir=0,ln=0;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=oso_dimension()->blocks()->size(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (vals[ir][j] < lowest) {
-          lowest=vals[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    vals[lir][ln]=999999999;
-    newdocc[lir]++;
-  }
-
   int *newsocc = new int[nirrep_];
-  memset(newsocc,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tnsocc_; i++) {
-    // find lowest eigenvalue
-    int lir=0,ln=0;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=oso_dimension()->blocks()->size(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (vals[ir][j] < lowest) {
-          lowest=vals[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    vals[lir][ln]=999999999;
-    newsocc[lir]++;
+  for(int g=0; g<nirrep_; ++g) {
+    const int na = femo->nalpha(g);
+    const int nb = femo->nbeta(g);
+    newdocc[g] = nb;
+    newsocc[g] = na - nb;
   }
-
-  // get rid of vals
-  for (i=0; i < nirrep_; i++)
-    if (vals[i])
-      delete[] vals[i];
-  delete[] vals;
-
+  
   if (!ndocc_) {
     ndocc_=newdocc;
     nsocc_=newsocc;

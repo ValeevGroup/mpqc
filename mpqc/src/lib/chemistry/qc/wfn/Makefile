@@ -38,7 +38,7 @@ BIN_OR_LIB = LIB
 TESTPROGS = wfntest
 
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \
-       accum.cc nao.cc orbital.cc solvent.cc eht.cc esp.cc
+       accum.cc nao.cc orbital.cc solvent.cc eht.cc esp.cc femo.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

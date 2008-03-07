@@ -57,6 +57,9 @@ class R12Technology: virtual public SavableState {
     bool safety_check_;
     LinearR12::PositiveDefiniteB posdef_B_;
 
+    // for debugging purposes only
+    bool omit_B_;
+
   public:
     R12Technology(StateIn&);
     /** The KeyVal constructor.
@@ -171,6 +174,12 @@ class R12Technology: virtual public SavableState {
     bool safety_check() const;
     const LinearR12::PositiveDefiniteB& posdef_B() const;
 
+    //
+    // these are for debugging only
+    //
+    // omit expensive parts of B
+    bool omit_B() const;
+    
     // This checks if ints is suitable for R12 calculations. Throws, if false.
     void check_integral_factory(const Ref<Integral>& ints);
 

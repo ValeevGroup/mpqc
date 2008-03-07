@@ -57,7 +57,7 @@ using namespace sc::LinearR12;
  --------------------------------*/
 
 static ClassDesc R12Technology_cd(
-  typeid(R12Technology),"R12Technology",8,"public MBPT2",
+  typeid(R12Technology),"R12Technology",9,"virtual public SavableState",
   0, 0, create<R12Technology>);
 
 R12Technology::R12Technology(StateIn& s)
@@ -78,6 +78,10 @@ R12Technology::R12Technology(StateIn& s)
   safety_check_ = static_cast<bool>(safety_check);
   int posdef_B; s.get(posdef_B);
   posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
+  
+  if (s.version(::class_desc<R12Technology>()) >= 9) {
+    int omit_B; s.get(omit_B); omit_B_ = (bool)omit_B;
+  }
 }
 
 R12Technology::R12Technology(const Ref<KeyVal>& keyval,
@@ -429,6 +433,11 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("R12Technology::R12Technology() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
 
+  //
+  // These are for debugging only
+  //
+  // Do not compute expensive parts of B?
+  omit_B_ = keyval->booleanvalue("omit_B",KeyValValueboolean((int)false));
 }
 
 R12Technology::~R12Technology()
@@ -448,6 +457,7 @@ R12Technology::save_data_state(StateOut& s)
   s.put((int)safety_check_);
   s.put((int)posdef_B_);
 
+  s.put((int)omit_B_);
 }
 
 void
@@ -601,6 +611,14 @@ const LinearR12::PositiveDefiniteB&
 R12Technology::posdef_B() const
 {
   return posdef_B_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+R12Technology::omit_B() const
+{
+  return omit_B_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

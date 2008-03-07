@@ -50,7 +50,6 @@
 using namespace std;
 using namespace sc;
 
-#define TEST_FOCK 0
 #define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 #define INCLUDE_EBC_CODE 1
 #define INCLUDE_GBC_CODE 1
@@ -2613,15 +2612,15 @@ R12IntEval::compute()
     }
     
     // This is app B contribution to B -- only valid for projector 2
-    if ((stdapprox() == LinearR12::StdApprox_B) &&
-         ansatz()->projector() == LinearR12::Projector_2) {
+    if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() == LinearR12::Projector_2 && !r12info()->r12tech()->omit_B()) {
       compute_BB_();
       if (debug_ >= DefaultPrintThresholds::O4)
-        for(int s=0; s<nspincases2(); s++)
+        for (int s=0; s<nspincases2(); s++)
           BB_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. B) contribution").c_str());
     }
     
-    if (stdapprox() == LinearR12::StdApprox_C) {
+    if (stdapprox() == LinearR12::StdApprox_C &&
+        !r12info()->r12tech()->omit_B()) {
 #define TEST_DARWIN 0
 #if TEST_DARWIN
       {
@@ -2635,7 +2634,7 @@ R12IntEval::compute()
     }
     
 #if INCLUDE_EBC_CODE
-    const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty;
+    const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty && !r12info()->r12tech()->omit_B();
     if (nonzero_ebc_terms) {
       
       // compute A, T2, and F12
@@ -2713,7 +2712,8 @@ R12IntEval::compute()
     // GBC contribution to B only appears in non-StdApproxC projector 2 case
     const bool nonzero_gbc_terms = !gbc() && !cabs_empty &&
                                    ansatz()->projector() == LinearR12::Projector_2 &&
-                                   stdapprox() != LinearR12::StdApprox_C;
+                                   stdapprox() != LinearR12::StdApprox_C &&
+                                   !r12info()->r12tech()->omit_B();
     if (nonzero_gbc_terms) {
       // These functions assume that virtuals are expanded in the same basis
       // as the occupied orbitals

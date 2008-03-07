@@ -158,6 +158,19 @@ CLKS::effective_fock()
 }
 
 Ref<SCExtrapData>
+CLKS::initial_extrap_data()
+{
+  Ref<SCExtrapData> data;
+  // If there is an old fock matrix and v_xc around, use that.
+  if (cl_fock_.result_noupdate().nonnull()
+      && vxc_.nonnull()) {
+    data = new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(),
+                                         vxc_);
+  }
+  return data;
+}
+
+Ref<SCExtrapData>
 CLKS::extrap_data()
 {
   Ref<SCExtrapData> data =

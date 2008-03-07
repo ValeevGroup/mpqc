@@ -82,6 +82,7 @@ class CLKS: public CLSCF {
     void ao_fock(double accuracy);
     double exc_;
     double scf_energy();
+    Ref<SCExtrapData> initial_extrap_data();
     Ref<SCExtrapData> extrap_data();
     RefSymmSCMatrix effective_fock();
 

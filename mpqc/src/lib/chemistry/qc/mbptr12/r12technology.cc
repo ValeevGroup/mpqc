@@ -67,7 +67,6 @@ R12Technology::R12Technology(StateIn& s)
 
   int gbc; s.get(gbc); gbc_ = (bool)gbc;
   int ebc; s.get(ebc); ebc_ = (bool)ebc;
-  int ks_ebcfree; s.get(ks_ebcfree); ks_ebcfree_ = (bool)ks_ebcfree;
   int omit_P; s.get(omit_P); omit_P_ = (bool)omit_P;
   int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
@@ -331,14 +330,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
   // Default is to assume EBC
   ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
-  
-  // Default is not to use Klopper-Samson approach to EBC
-  const bool ks_ebcfree_default = false;
-  if (!ebc_)
-    ks_ebcfree_ = keyval->booleanvalue("ks_ebcfree",KeyValValueboolean((int)ks_ebcfree_default));
-  else
-    ks_ebcfree_ = ks_ebcfree_default;
-  
+    
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
   
@@ -449,7 +441,6 @@ R12Technology::save_data_state(StateOut& s)
 {
   s.put((int)gbc_);
   s.put((int)ebc_);
-  s.put((int)ks_ebcfree_);
   s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
@@ -471,7 +462,7 @@ R12Technology::print(ostream&o) const
   corrfactor()->print(o); o << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
-  o << indent << "EBC-free method: " << (!ks_ebcfree_ ? "Valeev" : "Klopper and Samson") << endl;
+  o << indent << "EBC-free method: Valeev" << endl;
   switch (posdef_B()) {
     case LinearR12::PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;      
     case LinearR12::PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;      
@@ -531,14 +522,6 @@ R12Technology::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
   if (!corrfactor_->equiv(cf)) {
       corrfactor_ = cf;
   }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-bool
-R12Technology::ks_ebcfree() const
-{
-  return ks_ebcfree_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

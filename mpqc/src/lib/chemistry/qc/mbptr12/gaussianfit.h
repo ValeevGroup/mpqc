@@ -81,7 +81,7 @@ namespace sc {
 	double* scratch_;
 
 	/// Change to nonzero to debug
-	static const int classdebug_ = 1;
+	static const int classdebug_ = 0;
 
 	/// only changes representation, hence logically const
 	void extract_params() const;

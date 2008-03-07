@@ -53,55 +53,8 @@ using namespace sc;
 #define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 #define INCLUDE_EBC_CODE 1
 #define INCLUDE_GBC_CODE 1
-#define USE_TENSOR_CODE 1
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
-
-// Remove when gcc has gotten rid of the bug which causes missing ERI_to_T2::I2T body when
-// including definition from compute_tbint_tensor.h
-#if 0
-    /// Tensor elements are <pq||rs>
-    class I_to_T {
-    public:
-      static double I2T(double I, int i1, int i3, int i2, int i4,
-      const RefDiagSCMatrix& evals1,
-      const RefDiagSCMatrix& evals2,
-      const RefDiagSCMatrix& evals3,
-      const RefDiagSCMatrix& evals4)
-      {
-        return I;
-      }
-    };
-    
-    /// MP2 T2 tensor elements are <ij||ab> /(e_i + e_j - e_a - e_b)
-    class ERI_to_T2 {
-    public:
-      static double I2T(double I, int i1, int i3, int i2, int i4,
-      const RefDiagSCMatrix& evals1,
-      const RefDiagSCMatrix& evals2,
-      const RefDiagSCMatrix& evals3,
-      const RefDiagSCMatrix& evals4)
-      {
-        const double denom = 1.0/(evals1(i1) + evals3(i3) - evals2(i2) - evals4(i4));
-        return I*denom;
-      }
-    };
-    
-    /// MP2 pseudo-T2 (S2) tensor elements are <ij||ab> /sqrt(|e_i + e_j - e_a - e_b|) such
-    /// that MP2 pair energies are the diagonal elements of S2 * S2.t()
-    class ERI_to_S2 {
-    public:
-      static double I2T(double I, int i1, int i3, int i2, int i4,
-                 const RefDiagSCMatrix& evals1,
-                 const RefDiagSCMatrix& evals2,
-                 const RefDiagSCMatrix& evals3,
-                 const RefDiagSCMatrix& evals4)
-      {
-        const double denom = 1.0/sqrt(fabs(evals2(i2) + evals4(i4) - evals1(i1) - evals3(i3)));
-        return I*denom;
-      }
-    };
-#endif
 
 /*-----------------
   R12IntEval
@@ -183,13 +136,6 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
         B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        if (ks_ebcfree()) {
-          Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        }
-#if 0
-        T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
-        F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-#endif
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
     }
@@ -199,11 +145,6 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       B_[BetaBeta] = B_[AlphaAlpha];
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
-      Ac_[BetaBeta] = Ac_[AlphaAlpha];
-#if 0
-      T2_[BetaBeta] = T2_[AlphaAlpha];
-      F12_[BetaBeta] = F12_[AlphaAlpha];
-#endif
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
@@ -252,13 +193,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
         B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        if (ks_ebcfree()) {
-          Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        }
-#if 0
-        T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
-        F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-#endif
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
       
@@ -267,11 +201,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       B_[s].restore(si);
       BB_[s].restore(si);
       A_[s].restore(si);
-      Ac_[s].restore(si);
-#if 0
-      T2_[s].restore(si);
-      F12_[s].restore(si);
-#endif
       emp2pair_[s].restore(si);
     }
     else {
@@ -280,11 +209,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       B_[BetaBeta] = B_[AlphaAlpha];
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
-      Ac_[BetaBeta] = Ac_[AlphaAlpha];
-#if 0
-      T2_[BetaBeta] = T2_[AlphaAlpha];
-      F12_[BetaBeta] = F12_[AlphaAlpha];
-#endif
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
@@ -327,11 +251,6 @@ R12IntEval::save_data_state(StateOut& so)
       B_[s].save(so);
       BB_[s].save(so);
       A_[s].save(so);
-      Ac_[s].save(so);
-#if 0
-      T2_[s].save(so);
-      F12_[s].save(so);
-#endif
       emp2pair_[s].save(so);
     }
   }
@@ -447,41 +366,15 @@ R12IntEval::A(SpinCase2 S) {
 }
 
 const RefSCMatrix&
-R12IntEval::Ac(SpinCase2 S) {
-  compute();
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(Ac_[AlphaAlpha],Ac_[AlphaBeta],
-                   xspace(Alpha),
-                   vir_act(Alpha));
-  return Ac_[S];
-}
-
-const RefSCMatrix&
 R12IntEval::T2(SpinCase2 S) {
   compute();
-#if 0
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],
-                   occ_act(Alpha),
-                   vir_act(Alpha));
-  return T2_[S];
-#else
   return amps()->T2(S);
-#endif
 }
 
 const RefSCMatrix&
 R12IntEval::F12(SpinCase2 S) {
   compute();
-#if 0
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(F12_[AlphaAlpha],F12_[AlphaBeta],
-                   xspace(Alpha),
-                   vir_act(Alpha));
-  return F12_[S];
-#else
   return amps()->Fvv(S);
-#endif
 }
 
 Ref<F12Amplitudes>
@@ -587,13 +480,6 @@ R12IntEval::init_intermeds_()
     emp2pair_[s].assign(0.0);
     if (ebc() == false) {
       A_[s].assign(0.0);
-      if (ks_ebcfree()) {
-        Ac_[s].assign(0.0);
-      }
-#if 0
-      T2_[s].assign(0.0);
-      F12_[s].assign(0.0);
-#endif
     }
   }
   
@@ -2507,96 +2393,11 @@ R12IntEval::compute()
     }
     
     if (obs_eq_vbs) {
-#if !USE_TENSOR_CODE
-      using LinearR12::TwoParticleContraction;
-      using LinearR12::ABS_OBS_Contraction;
-      using LinearR12::CABS_OBS_Contraction;
-      for(int s=0; s<nspincases2(); s++) {
-        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-        const SpinCase1 spin1 = case1(spincase2);
-        const SpinCase1 spin2 = case2(spincase2);
-        
-        // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-        Ref<TwoParticleContraction> tpcontract;
-        if ((absmethod == LinearR12::ABS_ABS ||
-             absmethod == LinearR12::ABS_ABSPlus) &&
-            !obs_eq_ribs &&
-            ansatz()->projector() == LinearR12::Projector_2)
-          tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
-                                               r12info()->refinfo()->occ(spin1)->rank(),
-                                               r12info()->refinfo()->occ(spin2)->rank());
-        else
-          tpcontract = new CABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank());
-        contrib_to_VXB_a_new_(occ_act(spin1),
-                              r12info()->refinfo()->orbs(spin1),
-                              occ_act(spin2),
-                              r12info()->refinfo()->orbs(spin2),
-                              spincase2,tpcontract);
-	if (debug_ >= DefaultPrintThresholds::O4) {
-          V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
-          X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
-          B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
-        }
-      }
-      
-      // These terms don't contribute to projector 3
-      if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
-        // Compute VXB using new code
-        using LinearR12::Direct_Contraction;
-        for(int s=0; s<nspincases2(); s++) {
-          const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-          const SpinCase1 spin1 = case1(spincase2);
-          const SpinCase1 spin2 = case2(spincase2);
-	  Ref<MOIndexSpace> xspace1, xspace2;
-	  if (cabs_method) {
-	    xspace1 = r12info()->ribs_space(spin1);
-	    xspace2 = r12info()->ribs_space(spin2);
-	  }
-	  else {
-	    xspace1 = r12info()->ribs_space();
-	    xspace2 = r12info()->ribs_space();
-	  }
-          Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(
-                                                         r12info()->refinfo()->occ(spin1)->rank(),
-                                                         xspace2->rank(),-1.0
-                                                       );
-          contrib_to_VXB_a_new_(occ_act(spin1),
-                                r12info()->refinfo()->occ(spin1),
-                                occ_act(spin2),
-                                xspace2,
-                                spincase2,tpcontract);
-          
-          if (spincase2 == AlphaBeta && occ_act(spin1) != occ_act(spin2)) {
-            Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(
-                                                           xspace1->rank(),
-                                                           r12info()->refinfo()->occ(spin2)->rank(),-1.0
-                                                         );
-            contrib_to_VXB_a_new_(occ_act(spin1),
-                                  xspace1,
-                                  occ_act(spin2),
-                                  r12info()->refinfo()->occ(spin2),
-                                  spincase2,tpcontract);
-          }
-          
-	  if (debug_ >= DefaultPrintThresholds::O4) {
-            V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
-            X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
-            B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
-          }
-        }
-      }
-      
-#else
       contrib_to_VXB_a_();
-#endif
 
     }
     else {
-#if !USE_TENSOR_CODE
-      contrib_to_VXB_gebc_vbsneqobs_();
-#else
       contrib_to_VXB_a_vbsneqobs_();
-#endif
     }
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods
@@ -2676,12 +2477,6 @@ R12IntEval::compute()
                           xspace2, vir2_act,
                           fvir1_act, fvir2_act,
                           spincase2!=AlphaBeta);
-        if (ks_ebcfree()) {
-          compute_A_viacomm_(Ac_[s],
-                             xspace1, vir1_act,
-                             xspace2, vir2_act,
-                             spincase2!=AlphaBeta, tforms);
-        }
       }
       
       if (debug_ >= DefaultPrintThresholds::O2N2) {
@@ -2693,10 +2488,6 @@ R12IntEval::compute()
           amps()->Fvv(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
-          if (ks_ebcfree()) {
-            std::string label = prepend_spincase(spincase2,"A(comm) matrix");
-            Ac_[s].print(label.c_str());
-          }
         }
       }
       
@@ -2721,289 +2512,6 @@ R12IntEval::compute()
         throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
       
       compute_B_gbc_();
-    }
-#endif
-
-#if 0
-    // Test new tensor compute function
-    for(int s=0; s<nspincases2(); s++) {
-      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-      const SpinCase1 spin1 = case1(spincase2);
-      const SpinCase1 spin2 = case2(spincase2);
-      Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      RefSCMatrix S2 = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
-      S2.assign(0.0);
-      
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-      Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
-        thisref,
-        occ_act(spin1),
-        refinfo->orbs(spin1),
-        occ_act(spin2),
-        refinfo->orbs(spin2)
-      );
-      fill_container(tform_creator,tforms);
-      
-      // compute S2 = <ij||ab>/sqrt(e_a+e_b-e_i-e_j) and "square" it
-      compute_tbint_tensor<ManyBodyTensors::ERI_to_S2,false,false>(
-        S2, corrfactor()->tbint_type_eri(),
-        occ_act(spin1), vir_act(spin1),
-        occ_act(spin2), vir_act(spin2),
-        spincase2!=AlphaBeta, tforms
-      );
-      RefSCMatrix mp2pe = S2*S2.t(); mp2pe.scale(-1.0);
-      mp2pe.print("S2 * S2.t : Diagonal elements should be pair energies");
-      
-      // another way to compute pair energies is G*T2.t()
-      RefSCMatrix T2 = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
-      RefSCMatrix G = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
-      T2.assign(0.0); G.assign(0.0);
-      // compute T2 and G
-      compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(
-        T2, corrfactor()->tbint_type_eri(),
-        occ_act(spin1), vir_act(spin1),
-        occ_act(spin2), vir_act(spin2),
-        spincase2!=AlphaBeta, tforms
-      );
-      compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(
-        G, corrfactor()->tbint_type_eri(),
-        occ_act(spin1), vir_act(spin1),
-        occ_act(spin2), vir_act(spin2),
-        spincase2!=AlphaBeta, tforms
-      );
-      if (debug_ >= DefaultPrintThresholds::mostO2N2)
-        T2.print("T2 amplitudes");
-      mp2pe = G*T2.t();
-      mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
-
-      // here instead of computing G and T2 explicitly, use contract function
-      {
-        using namespace sc::LinearR12;
-        mp2pe.assign(0.0);
-        Ref<TwoParticleContraction> dircontract =
-          new Direct_Contraction(vir_act(spin1)->rank(),
-                                 vir_act(spin2)->rank(),
-                                 1.0);
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::ERI_to_T2,
-                              ManyBodyTensors::I_to_T,
-                              false,false,false>
-          (
-            mp2pe, corrfactor()->tbint_type_eri(), corrfactor()->tbint_type_eri(),
-            occ_act(spin1), occ_act(spin2),
-            vir_act(spin1), vir_act(spin2),
-            occ_act(spin1), occ_act(spin2),
-            vir_act(spin1), vir_act(spin2),
-            dircontract,
-            spincase2!=AlphaBeta, tforms, tforms
-          );
-        mp2pe.print("contract(G,T2) : Diagonal elements should be pair energies");
-      }
-      
-      // Try computing VXB (diag+OBS) using contract function
-      {
-        using namespace sc::LinearR12;
-        RefSCMatrix V = V_[s].clone(); V->unit();
-        RefSCMatrix X = X_[s].clone(); X->assign(0.0);
-        RefSCMatrix B = B_[s].clone(); B->unit();
-        const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-        Ref<TwoParticleContraction> tpcontract;
-        const ABSMethod absmethod = r12info()->abs_method();
-        if ((absmethod == LinearR12::ABS_ABS ||
-          absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs)
-          tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
-                                               refinfo->occ(spin1)->rank(),
-                                               refinfo->occ(spin2)->rank());
-        else
-          tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
-        
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
-        Ref<R12IntEval> thisref(this);
-        NewTransformCreator tform_creator(
-          thisref,
-          occ_act(spin1),
-          refinfo->orbs(spin1),
-          occ_act(spin2),
-          refinfo->orbs(spin2),true
-        );
-        fill_container(tform_creator,tforms_f12);
-        
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              true,false,false>
-          (
-            V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_f12, tforms
-          );
-        V.print("contract(F12,G) + I = V(diag+OBS) if F12=R12");
-        
-        
-        //
-        // F12^2 contribution depends on the type of correlation factor
-        //
-        RefSCMatrix F12_sq_ijkl;
-        enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
-        Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
-        Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
-        Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << corrfactor();
-        if (r12corrptr.nonnull()) corrfac = r12corrfactor;
-        if (g12corrptr.nonnull()) corrfac = g12corrfactor;
-        if (gg12corrptr.nonnull()) corrfac = gg12corrfactor;
-    
-        switch (corrfac) {
-          case r12corrfactor:  // R12^2 reduces to one-electron integrals
-          F12_sq_ijkl = compute_r2_(occ_act(spin1), occ_act(spin2),
-                                    occ_act(spin1), occ_act(spin2));
-          break;
-          
-          case g12corrfactor: // G12^2 involves two-electron integrals
-          case gg12corrfactor: // G12^2 involves two-electron integrals
-          {
-            // (i k |j l) tforms
-            std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;
-            {
-              NewTransformCreator tform_creator(thisref,
-                                                occ_act(spin1), occ_act(spin1),
-                                                occ_act(spin2), occ_act(spin2),
-                                                true,true);
-              fill_container(tform_creator,tforms_ikjl);
-            }
-            F12_sq_ijkl = X.clone();
-            F12_sq_ijkl.assign(0.0);
-            compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-              F12_sq_ijkl, corrfactor()->tbint_type_f12f12(),
-              occ_act(spin1), occ_act(spin2),
-              occ_act(spin1), occ_act(spin2),
-              spincase2!=AlphaBeta,
-              tforms_ikjl
-            );
-          }
-          break;
-          
-          default:
-          throw ProgrammingError("R12IntEval::compute_X_() -- unrecognized type of correlation factor",__FILE__,__LINE__);
-        }
-        
-        if (spincase2 == AlphaAlpha || spincase2 == BetaBeta)
-          antisymmetrize(X,F12_sq_ijkl,
-                         occ_act(spin1),
-                         occ_act(spin2));
-        else
-          X.accumulate(F12_sq_ijkl);
-
-        X.print("F12^2 = X(diag)");
-
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              true,true,false>
-          (
-            X, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-        X.print("contract(F12,F12) + F12^2 = X(diag+OBS)");
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              true,true,false>
-          (
-            B, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              ManyBodyTensors::I_to_T,
-                              true,true,false>
-          (
-            B, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            occ_act(spin1), occ_act(spin2),
-            refinfo->orbs(spin1), refinfo->orbs(spin2),
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-        B.scale(0.5); RefSCMatrix Bt = B.t(); B.accumulate(Bt);
-        B.print("contract(F12,[T1+T2,F12]) + I = B(diag+OBS)");
-      }
-      
-    }
-    
-    // test F12 evaluator
-    {
-      const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      RefSCMatrix F12 = localkit->matrix(dim_f12(AlphaBeta),dim_vv(AlphaBeta));
-      F12.assign(0.0);
-      
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-      Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
-        thisref,
-        occ_act(Alpha),
-        refinfo->orbs(Alpha),
-        occ_act(Beta),
-        refinfo->orbs(Beta),true
-      );
-      fill_container(tform_creator,tforms);
-      
-      compute_F12_(F12,occ_act(Alpha), vir_act(Alpha),
-                   occ_act(Beta), vir_act(Beta), false, tforms);
-    }
-    
-#endif
-
-#if 0
-    // test generic X evaluator
-    {
-      for(int s=0; s<nspincases2(); s++) {
-        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-        const SpinCase1 spin1 = case1(spincase2);
-        const SpinCase1 spin2 = case2(spincase2);
-        RefSCMatrix X;
-        compute_X_(X,spincase2,occ_act(spin1),occ_act(spin2),
-                               occ_act(spin1),occ_act(spin2));
-        X.print("X <ii|ii>  test");
-      }
-    }
-#endif
-
-#if 0
-    // test generic FxF evaluator
-    {
-      for(int s=0; s<nspincases2(); s++) {
-        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-        const SpinCase1 spin1 = case1(spincase2);
-        const SpinCase1 spin2 = case2(spincase2);
-        RefSCMatrix Bebc;
-        compute_FxF_(Bebc,spincase2,
-                     occ_act(spin1),occ_act(spin2),
-                     occ_act(spin1),occ_act(spin2),
-                     vir(spin1),vir(spin2),
-                     vir(spin1),vir(spin2),
-                     fvir_act(spin1),fvir_act(spin2));
-        // -r f1 r, not r f1+f2 r computed by FxF
-        Bebc.scale(-1.0);
-        Bebc.print("B_{EBC} from generic FxF evaluator");
-      }
     }
 #endif
 
@@ -3121,13 +2629,6 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
       globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (ebc() == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
-      if (ks_ebcfree()) {
-        globally_sum_scmatrix_(Ac_[s],to_all_tasks);
-      }
-#if 0
-      globally_sum_scmatrix_(T2_[s],to_all_tasks);
-      globally_sum_scmatrix_(F12_[s],to_all_tasks);
-#endif
     }
     globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }

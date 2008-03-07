@@ -63,13 +63,6 @@ using namespace sc;
 // if set to 1 then use f+k rather than f to compute A
 #define A_DIRECT_EXCLUDE_K 0
 
-//
-// these are for testing purposes only
-//
-#define ACOMM_INCLUDE_TR_ONLY 0
-#define ACOMM_INCLUDE_R_ONLY 0
-
-
 void
 R12IntEval::compute_A_direct_(RefSCMatrix& A,
                               const Ref<MOIndexSpace>& space1,
@@ -120,63 +113,6 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
 }
 
 void
-R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
-                               const Ref<MOIndexSpace>& space1,
-                               const Ref<MOIndexSpace>& space2,
-                               const Ref<MOIndexSpace>& space3,
-                               const Ref<MOIndexSpace>& space4,
-                               bool antisymmetrize,
-                               const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms)
-{
-  tim_enter("A intermediate (via commutator)");
-  std::ostringstream oss;
-  oss << "<" << space1->id() << " " << space3->id() << "|A|"
-      << space2->id() << " " << space4->id() << ">";
-  const std::string label = oss.str();
-  ExEnv::out0() << endl << indent
-                << "Entered \"commutator\" A intermediate (" << label << ") evaluator" << endl
-                << incindent;
-  
-  // create descriptors, if needed
-  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4
-  if (tforms.empty()) {
-    TwoBodyIntDescrCreator descr_creator(corrfactor(),
-                                         r12info()->integral(),
-                                         true,false);
-    fill_container(descr_creator,descrs);
-  }
-  
-  //
-  // ij|A|ab = ij|[t1+t2,f12]|ab - (e_a+e_b-e_i-e_j) * ij|f12|ab
-  //
-  using ManyBodyTensors::Plus;
-  using ManyBodyTensors::Minus;
-#if !ACOMM_INCLUDE_TR_ONLY
-  // Minus!
-  compute_tbint_tensor<ManyBodyTensors::Apply_H0minusE0<Minus>,true,false>(
-    A, corrfactor()->tbint_type_f12(),
-    space1, space2, space3, space4,
-    antisymmetrize, tforms, descrs
-  );
-#endif
-#if !ACOMM_INCLUDE_R_ONLY
-  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
-    A, corrfactor()->tbint_type_t1f12(),
-    space1, space2, space3, space4,
-    antisymmetrize, tforms, descrs
-  );
-  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
-    A, corrfactor()->tbint_type_t2f12(),
-    space1, space2, space3, space4,
-    antisymmetrize, tforms, descrs
-  );
-#endif
-
-  ExEnv::out0() << decindent << indent << "Exited \"commutator\" A intermediate (" << label << ") evaluator" << endl;
-  tim_exit("A intermediate (via commutator)");
-}
-
-void
 R12IntEval::AT2_contrib_to_V_()
 {
   if (evaluated_)
@@ -185,13 +121,7 @@ R12IntEval::AT2_contrib_to_V_()
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
       
-      // Use normal or commutator form of A, depending on the approach
-      RefSCMatrix A;
-      if (ks_ebcfree())
-        A = Ac_[s];
-      else
-        A = A_[s];
-      RefSCMatrix V = A * amps()->T2(spin).t();
+      RefSCMatrix V = A_[s] * amps()->T2(spin).t();
       
       std::string label = prepend_spincase(spin,"AT2 contribution to V");
       if (debug_ >= DefaultPrintThresholds::O4) {
@@ -215,13 +145,7 @@ R12IntEval::AF12_contrib_to_B_()
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
       
-      // Use normal or commutator form of A, depending on the approach
-      RefSCMatrix A;
-      if (ks_ebcfree())
-        A = Ac_[s];
-      else
-        A = A_[s];
-      RefSCMatrix AF = A * amps()->Fvv(spin).t();
+      RefSCMatrix AF = A_[s] * amps()->Fvv(spin).t();
 
       // B^{EBC} implies summation over all ab, not just unique ones, hence a factor of 2
       const double spin_pfac = 2.0;

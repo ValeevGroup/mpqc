@@ -49,10 +49,9 @@ CXXSRCS = mbptr12.cc \
   compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
   r12int_eval.cc \
   coulomb.cc exchange.cc fock.cc \
-  compute_a_gebc_vbs.cc \
   r12_amps.cc compute_amps.cc \
   twobodygrid.cc svd.cc linearr12.cc intermeds_g12.cc \
-  singlerefinfo.cc utils.cc compute_vxb_a_new.cc \
+  singlerefinfo.cc utils.cc \
   twoparticlecontraction.cc spin.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \

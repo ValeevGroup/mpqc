@@ -52,7 +52,6 @@ class R12Technology: virtual public SavableState {
     unsigned int maxnabs_;
     bool gbc_;
     bool ebc_;
-    bool ks_ebcfree_;
     bool omit_P_;
     bool safety_check_;
     LinearR12::PositiveDefiniteB posdef_B_;
@@ -168,7 +167,6 @@ class R12Technology: virtual public SavableState {
     LinearR12::StandardApproximation stdapprox() const;
     const Ref<LinearR12Ansatz>& ansatz() const;
     bool spinadapted() const;
-    bool ks_ebcfree() const;
     bool omit_P() const;
     bool include_mp1() const;
     bool safety_check() const;

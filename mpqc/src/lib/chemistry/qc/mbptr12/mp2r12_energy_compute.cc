@@ -90,10 +90,6 @@ MP2R12Energy_SpinOrbital::compute()
       r12eval()->vir(Beta)->rank()==0 ||
       cabs_empty)
     ebc = true;
-  /// KS approach to EBC-free method differs from mine if std approx != B || C
-  const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
-                          (stdapprox() != LinearR12::StdApprox_B &&
-                           stdapprox() != LinearR12::StdApprox_C);
   const bool diag=r12info->r12tech()->ansatz()->diag();
   if (diag)
     throw ProgrammingError("MP2R12Energy_SpinOrbital::compute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
@@ -193,8 +189,7 @@ MP2R12Energy_SpinOrbital::compute()
         }
       }
       
-      // In Klopper-Samson method, two kinds of A are used: app B (I replace with my A) and app XX (my Ac)
-      RefSCMatrix A, Ac;
+      RefSCMatrix A;
       if (ebc == false) {
         if(r12intermediates_->A_computed()){
           A = r12intermediates_->get_A(spincase2);
@@ -202,10 +197,6 @@ MP2R12Energy_SpinOrbital::compute()
         else {
           A = r12eval()->A(spincase2);
         }
-      }
-      
-      if((ebc == false) && (ks_ebcfree)) {
-        Ac = r12eval()->Ac(spincase2);
       }
       
       // Prepare total and R12 pairs
@@ -355,26 +346,14 @@ MP2R12Energy_SpinOrbital::compute()
               if (ebc == false) {
                 double fy = 0.0;
                 SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
-                if (ks_ebcfree) {
-                  for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                    const int cd = cd_iter.ij();
-                    const int c = cd_iter.i();
-                    const int d = cd_iter.j();
-                    
-                    fy -= 0.5*( A.get_element(xyf,cd)*Ac.get_element(xyg,cd) + Ac.get_element(xyf,cd)*A.get_element(xyg,cd) )/
-                    (evals_act_vir1[c] + evals_act_vir2[d]
-                    - evals_xspace1[x] - evals_xspace2[y]);
-                  }
-                }
-                else {
-                  for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                    const int cd = cd_iter.ij();
-                    const int c = cd_iter.i();
-                    const int d = cd_iter.j();
-                    
-                    fy -= A.get_element(xyf,cd)*A.get_element(xyg,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                    - evals_act_occ1[x] - evals_act_occ2[y]);
-                  }
+                for (cd_iter.start(); cd_iter; cd_iter.next()) {
+                  const int cd = cd_iter.ij();
+                  const int c = cd_iter.i();
+                  const int d = cd_iter.j();
+                  
+                  fy -= A.get_element(xyf, cd)*A.get_element(xyg, cd)
+                        /(evals_act_vir1[c] + evals_act_vir2[d]
+                          - evals_act_occ1[x] - evals_act_occ2[y]);
                 }
                 
                 B_ij.accumulate_element(xyf,xyg,fy);
@@ -467,26 +446,13 @@ MP2R12Energy_SpinOrbital::compute()
                   if (ebc == false) {
                     double fy = 0.0;
                     SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
-                    if (ks_ebcfree) {
-                      for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                        const int cd = cd_iter.ij();
-                        const int c = cd_iter.i();
-                        const int d = cd_iter.j();
+                    for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                      const int cd = cd_iter.ij();
+                      const int c = cd_iter.i();
+                      const int d = cd_iter.j();
                         
-                        fy -= 0.5*( A.get_element(kl,cd)*Ac.get_element(ow,cd) + Ac.get_element(kl,cd)*A.get_element(ow,cd) )/
-                          (evals_act_vir1[c] + evals_act_vir2[d]
-                           - evals_act_occ1[i] - evals_act_occ2[j]);
-                      }
-                    }
-                    else {
-                      for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                        const int cd = cd_iter.ij();
-                        const int c = cd_iter.i();
-                        const int d = cd_iter.j();
-                        
-                        fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                                                                         - evals_act_occ1[i] - evals_act_occ2[j]);
-                      }
+                      fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
+                                                                       - evals_act_occ1[i] - evals_act_occ2[j]);
                     }
                     
                     B_ij.accumulate_element(kl,ow,fy);
@@ -986,7 +952,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
       }
     }
   
-    RefSCMatrix A, Ac;
+    RefSCMatrix A;
     if (ebc == false) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);
@@ -1091,7 +1057,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
       }
     }
 
-    RefSCMatrix A, Ac;
+    RefSCMatrix A;
     if (ebc == false) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);
@@ -1191,7 +1157,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
       }
     }
 
-    RefSCMatrix A, Ac;
+    RefSCMatrix A;
     if (ebc == false) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);

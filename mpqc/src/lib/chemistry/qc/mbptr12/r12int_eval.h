@@ -62,11 +62,6 @@ class R12IntEval : virtual public SavableState {
   RefSCMatrix B_[NSpinCases2];
   RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
   RefSCMatrix A_[NSpinCases2];
-  RefSCMatrix Ac_[NSpinCases2];
-#if 0
-  RefSCMatrix T2_[NSpinCases2];
-  RefSCMatrix F12_[NSpinCases2];
-#endif
 
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
@@ -262,22 +257,11 @@ class R12IntEval : virtual public SavableState {
       (or -1 if the task doesn't have access to the integrals) */
   const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
 
-  /// New, all-encompassing version
-  void contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
-                             const Ref<MOIndexSpace>& xspace,
-                             const Ref<MOIndexSpace>& jspace,
-                             const Ref<MOIndexSpace>& yspace,
-                             SpinCase2 spincase,
-                             const Ref<LinearR12::TwoParticleContraction>& tpcontract);
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_();
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_vbsneqobs_();
 
-#if 0
-  /// Compute MP2 pair energies of spin case S
-  void compute_mp2_pair_energies_(SpinCase2 S);
-#endif
   /// Compute MP2 pair energies of spin case S using < space1 space3|| space2 space4> integrals
   void compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                   SpinCase2 S,
@@ -286,9 +270,7 @@ class R12IntEval : virtual public SavableState {
                                   const Ref<MOIndexSpace>& space3,
                                   const Ref<MOIndexSpace>& space4,
                                   const Ref<TwoBodyMOIntsTransform>& transform);
-  /// Compute VXB intermeds when VBS is not the same as OBS
-  void contrib_to_VXB_gebc_vbsneqobs_();
-
+  
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
       AlphaBeta amplitudes are computed.
@@ -302,19 +284,6 @@ class R12IntEval : virtual public SavableState {
                          const Ref<MOIndexSpace>& rispace2,
                          const Ref<MOIndexSpace>& rispace4,
                          bool antisymmetrize);
-  
-  /** Compute A intermediate using "commutator" formula in basis <space1, space3 | f12 | space2, space4>.
-      Bra (rows) are blocked by correlation function index.
-      AlphaBeta amplitudes are computed.
-      If tform is not given (it should be!), this function will construct a generic
-      transform. */
-  void compute_A_viacomm_(RefSCMatrix& A,
-                          const Ref<MOIndexSpace>& space1,
-                          const Ref<MOIndexSpace>& space2,
-                          const Ref<MOIndexSpace>& space3,
-                          const Ref<MOIndexSpace>& space4,
-                          bool antisymmetrize,
-                          const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms);
   
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
       Computed tensor T is added to its previous contents.
@@ -475,13 +444,11 @@ class R12IntEval : virtual public SavableState {
   
 public:
   R12IntEval(StateIn&);
-  /** Constructs R12IntEval. If follow_ks_ebcfree is true then follow formalism of Klopper and Samson
-      to compute EBC-free MP2-R12 energy. */
+  /** Constructs R12IntEval. */
   R12IntEval(const Ref<R12IntEvalInfo>& info);
   /*R12IntEval(const Ref<R12IntEvalInfo>& info, bool gbc = true, bool ebc = true,
              LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
-             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
-             bool follow_ks_ebcfree = false);*/
+             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);*/
   ~R12IntEval();
 
   void save_data_state(StateOut&);
@@ -499,7 +466,6 @@ public:
   bool gbc() const { return r12info()->gbc(); }
   bool ebc() const { return r12info()->ebc(); }
   LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
-  bool ks_ebcfree() const { return r12info()->ks_ebcfree(); }
   bool omit_P() const { return r12info()->omit_P(); }
 
   const Ref<R12IntEvalInfo>& r12info() const;
@@ -537,8 +503,6 @@ public:
   RefSymmSCMatrix BB(SpinCase2 S);
   /// Returns S block of intermediate A
   const RefSCMatrix& A(SpinCase2 S);
-  /// Returns S block of intermediate A computed using commutator method
-  const RefSCMatrix& Ac(SpinCase2 S);
   /// Returns S block of intermediate T2
   const RefSCMatrix& T2(SpinCase2 S);
   /// Returns S block of intermediate F12

@@ -231,7 +231,6 @@ public:
   bool ebc() const { return r12tech()->ebc(); }
   bool spinadapted() const { return spinadapted_; }
   unsigned int maxnabs() const { return r12tech()->maxnabs(); }
-  bool ks_ebcfree() const { return r12tech()->ks_ebcfree(); }
   bool omit_P() const { return r12tech()->omit_P(); }
   bool safety_check() const { return r12tech()->safety_check(); }
   const LinearR12::PositiveDefiniteB& posdef_B() const { return r12tech()->posdef_B(); }

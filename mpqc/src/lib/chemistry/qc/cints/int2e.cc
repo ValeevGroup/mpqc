@@ -51,7 +51,8 @@ Int2eCints::Int2eCints(Integral *integral,
 		 size_t storage) :
   integral_(integral),
   grp_(integral->messagegrp()),
-  permute_(0)
+  permute_(0),
+  redundant_(1)
 {
   bs1_ = b1;
   bs2_ = b2;

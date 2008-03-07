@@ -177,3 +177,6 @@ HundsFEMOSeeker::HundsFEMOSeeker(int nelectron, double Etol, bool allow_closed_s
   else
     result_ = femo_prev;
 }
+
+double
+HundsFEMOSeeker::tolerance(0.001);

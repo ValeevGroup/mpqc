@@ -57,6 +57,7 @@
 #include <chemistry/qc/scf/uscf.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/uhftmpl.h>
+#include <chemistry/qc/wfn/femo.h>
 
 using namespace std;
 using namespace sc;
@@ -152,14 +153,17 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
   double charge = keyval->doublevalue("total_charge");
   int nelectrons = (int)(Znuc-charge+1.0e-4);
 
+  bool multiplicity_given = false;
   // first let's try to figure out how many open shells there are
   if (keyval->exists("multiplicity")) {
     int mult = keyval->intvalue("multiplicity");
     if (mult < 1) {
       ExEnv::err0() << endl << indent
            << "USCF::init: bad value for multiplicity: " << mult << endl
-           << indent << "assuming singlet" << endl;
-      mult=1;
+           << indent << "will guess automatically" << endl;
+    }
+    else {
+      multiplicity_given = true;
     }
     
     // for singlet, triplet, etc. we need an even number of electrons
@@ -218,7 +222,8 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
     nalpha_=0;
     nbeta_=0;
     user_occupations_=0;
-    set_occupations(0,0);
+    // if multiplicity was not given, guess
+    set_occupations(0,0, multiplicity_given ? false : true);
   }
 
   ExEnv::out0() << indent << "alpha = [";
@@ -488,7 +493,8 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& ev)
 
 void
 UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
-                                 const RefDiagSCMatrix& evb)
+                                 const RefDiagSCMatrix& evb,
+                                 bool can_change_multiplicity)
 {
   if (user_occupations_ || (initial_nalpha_ && eva.null())) {
     if (form_occupations(nalpha_, initial_nalpha_)) {
@@ -498,24 +504,6 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     }
     ExEnv::out0() << indent
          << "UnrestrictedSCF: WARNING: reforming occupation vector from scratch" << endl;
-  }
-  
-  if (nirrep_==1) {
-    delete[] nalpha_;
-    nalpha_=new int[1];
-    nalpha_[0] = tnalpha_;
-    delete[] nbeta_;
-    nbeta_=new int[1];
-    nbeta_[0] = tnbeta_;
-    if (!initial_nalpha_ && initial_pg_->equiv(molecule()->point_group())) {
-      initial_nalpha_=new int[1];
-      initial_nalpha_[0] = tnalpha_;
-    }
-    if (!initial_nbeta_ && initial_pg_->equiv(molecule()->point_group())) {
-      initial_nbeta_=new int[1];
-      initial_nbeta_[0] = tnbeta_;
-    }
-    return;
   }
   
   int i,j;
@@ -531,87 +519,30 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     evalsa = eva;
     evalsb = evb;
   }
-
-  // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *bevalsa = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsa,
-                                "UnrestrictedSCF::set_occupations");
-  BlockedDiagSCMatrix *bevalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsb,
-                                "UnrestrictedSCF::set_occupations");
   
-  double **valsa = new double*[nirrep_];
-  double **valsb = new double*[nirrep_];
-  for (i=0; i < nirrep_; i++) {
-    int nf=oso_dimension()->blocks()->size(i);
-    if (nf) {
-      valsa[i] = new double[nf];
-      valsb[i] = new double[nf];
-      bevalsa->block(i)->convert(valsa[i]);
-      bevalsb->block(i)->convert(valsb[i]);
-    } else {
-      valsa[i] = 0;
-      valsb[i] = 0;
-    }
+  // if can change the multiplicity, use HundsFEMOSeeker to get the FEMO with maximum multiplicity
+  Ref<FEMO> femo;
+  if (can_change_multiplicity) {
+    //                            # electron,       Etol, allow closed-shell?
+    HundsFEMOSeeker femoseeker(tnalpha_ + tnbeta_, HundsFEMOSeeker::tolerance, true,
+                               evalsa, evalsb);
+    femo = femoseeker.result();
   }
-
-  // now loop to find the tnalpha_ lowest eigenvalues and populate those
-  // MO's
+  else {
+    femo = new FEMO(tnalpha_, tnbeta_,evalsa, evalsb);
+  }
+  // copy into local arrays
   int *newalpha = new int[nirrep_];
-  memset(newalpha,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tnalpha_; i++) {
-    // find lowest eigenvalue
-    int lir=0,ln=0;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=oso_dimension()->blocks()->size(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (valsa[ir][j] < lowest) {
-          lowest=valsa[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    valsa[lir][ln]=999999999;
-    newalpha[lir]++;
-  }
-
   int *newbeta = new int[nirrep_];
-  memset(newbeta,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tnbeta_; i++) {
-    // find lowest eigenvalue
-    int lir=0,ln=0;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=oso_dimension()->blocks()->size(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (valsb[ir][j] < lowest) {
-          lowest=valsb[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    valsb[lir][ln]=999999999;
-    newbeta[lir]++;
+  tnalpha_ = tnbeta_ = 0;
+  for(int g=0; g<nirrep_; ++g) {
+    const int na = femo->nalpha(g);
+    const int nb = femo->nbeta(g);
+    newalpha[g] = na;
+    newbeta[g] = nb;
+    tnalpha_ += na;
+    tnbeta_ += nb;
   }
-
-  // get rid of vals
-  for (i=0; i < nirrep_; i++) {
-    if (valsa[i])
-      delete[] valsa[i];
-    if (valsb[i])
-      delete[] valsb[i];
-  }
-  delete[] valsa;
-  delete[] valsb;
 
   if (!nalpha_) {
     nalpha_=newalpha;
@@ -668,7 +599,8 @@ UnrestrictedSCF::symmetry_changed()
   eigenvalues_beta_.result_noupdate() = 0;
   focka_.result_noupdate() = 0;
   fockb_.result_noupdate() = 0;
-  set_occupations(0,0);
+  // do not change multiplicity
+  set_occupations(0,0,false);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1075,7 +1007,8 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     evalsb.element_op(blevel_shift);
     
     if (reset_occ_)
-      set_occupations(evalsa, evalsb);
+      // Maintain multiplicity
+      set_occupations(evalsa, evalsb, false);
 
     savestate_iter(iter);
     }

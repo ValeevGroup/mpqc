@@ -31,6 +31,7 @@
 #include <math/scmat/blocked.h>
 
 #include <chemistry/qc/wfn/eht.h>
+#include <chemistry/qc/wfn/femo.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
 
@@ -208,9 +209,7 @@ ExtendedHuckelWfn::oso_eigenvectors()
 
     if (!user_occ_) {
       int nelectron = int(molecule()->nuclear_charge()) - total_charge_;
-      int ndocc = nelectron/2;
-      int nsocc = nelectron%2;
-      fill_occ(val, ndocc, docc_, nsocc, socc_);
+      fill_occ(val, nelectron, docc_, socc_);
 
       ExEnv::out0() << indent << "docc = [";
       for (int i=0; i<nirrep_; i++) ExEnv::out0() << " " << docc_[i];
@@ -331,46 +330,15 @@ ExtendedHuckelWfn::value_implemented() const
 }
 
 void
-ExtendedHuckelWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
-                   int nsocc, int *socc)
+ExtendedHuckelWfn::fill_occ(const RefDiagSCMatrix &evals,int nelectron,int *docc, int *socc)
 {
-  BlockedDiagSCMatrix *bval
-    = require_dynamic_cast<BlockedDiagSCMatrix*>(evals.pointer(),
-                                           "ExtendedHuckelWfn: getting occupations");
-  int nblock = bval->nblocks();
-  if (nblock != nirrep_) {
-    ExEnv::errn() << "ERROR: ExtendedHuckelWfn: fill_occ: nblock != nirrep" << endl
-                 << "  nblock = " << nblock << endl
-                 << "  nirrep = " << nirrep_ << endl;
-    abort();
-  }
-  memset(docc,0,sizeof(docc[0])*nblock);
-  memset(socc,0,sizeof(socc[0])*nblock);
-  for (int i=0; i<ndocc; i++) {
-    double lowest;
-    int lowest_j = -1;
-    for (int j=0; j<nblock; j++) {
-      RefDiagSCMatrix block = bval->block(j);
-      if (block.null()) continue;
-      double current = block->get_element(docc[j]);
-      if (lowest_j < 0 || lowest > current) {
-        lowest = current;
-        lowest_j = j;
-      }
-    }
-    docc[lowest_j]++;
-  }
-  for (int i=0; i<nsocc; i++) {
-    double lowest;
-    int lowest_j = -1;
-    for (int j=0; j<nblock; j++) {
-      double current = bval->block(j)->get_element(docc[j]+socc[j]);
-      if (lowest_j < 0 || lowest > current) {
-        lowest = current;
-        lowest_j = j;
-      }
-    }
-    socc[lowest_j]++;
+  HundsFEMOSeeker femoseeker(nelectron, HundsFEMOSeeker::tolerance, false, evals);
+  Ref<FEMO> femo = femoseeker.result();
+  for(int g=0; g<nirrep_; ++g) {
+    const int na = femo->nalpha(g);
+    const int nb = femo->nbeta(g);
+    docc[g] = nb;
+    socc[g] = na - nb;
   }
 }
 

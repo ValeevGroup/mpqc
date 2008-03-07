@@ -49,6 +49,7 @@
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
+#include <chemistry/qc/wfn/femo.h>
 
 using namespace std;
 using namespace sc;
@@ -236,17 +237,6 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
          << "CLSCF: WARNING: reforming occupation vector from scratch" << endl;
   }
   
-  if (nirrep_==1) {
-    delete[] ndocc_;
-    ndocc_=new int[1];
-    ndocc_[0]=tndocc_;
-    if (!initial_ndocc_) {
-      initial_ndocc_=new int[1];
-      initial_ndocc_[0]=tndocc_;
-    }
-    return;
-  }
-  
   int i,j;
   
   RefDiagSCMatrix evals;
@@ -258,52 +248,16 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   else
     evals = ev;
 
-  // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
-                                                 "CLSCF::set_occupations");
-  
-  double **vals = new double*[nirrep_];
-  for (i=0; i < nirrep_; i++) {
-    int nf=oso_dimension()->blocks()->size(i);
-    if (nf) {
-      vals[i] = new double[nf];
-      evalsb->block(i)->convert(vals[i]);
-    } else {
-      vals[i] = 0;
-    }
-  }
-
-  // now loop to find the tndocc_ lowest eigenvalues and populate those
-  // MO's
+  //
+  // populate orbitals
+  //
+  Ref<FEMO> femo = new FEMO(tndocc_, tndocc_,evals);
+  // copy into local arrays
   int *newocc = new int[nirrep_];
-  memset(newocc,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tndocc_; i++) {
-    // find lowest eigenvalue
-    int lir=0,ln=0;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=oso_dimension()->blocks()->size(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (vals[ir][j] < lowest) {
-          lowest=vals[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    vals[lir][ln]=999999999;
-    newocc[lir]++;
+  for(int g=0; g<nirrep_; ++g) {
+    const int na = femo->nalpha(g);
+    newocc[g] = na;
   }
-
-  // get rid of vals
-  for (i=0; i < nirrep_; i++)
-    if (vals[i])
-      delete[] vals[i];
-  delete[] vals;
 
   if (!ndocc_) {
     ndocc_=newocc;

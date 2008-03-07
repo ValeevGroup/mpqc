@@ -391,26 +391,6 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
          << endl;
   }
   
-  if (nirrep_==1) {
-    delete[] ndocc_;
-    ndocc_=new int[1];
-    ndocc_[0]=tndocc_;
-    if (!initial_ndocc_) {
-      initial_ndocc_=new int[1];
-      initial_ndocc_[0]=tndocc_;
-    }
-
-    delete[] nsocc_;
-    nsocc_=new int[1];
-    nsocc_[0]=tnsocc_;
-    if (!initial_nsocc_) {
-      initial_nsocc_=new int[1];
-      initial_nsocc_[0]=tnsocc_;
-    }
-
-    return;
-  }
-  
   int i,j;
   
   RefDiagSCMatrix evals;
@@ -429,7 +409,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
   Ref<FEMO> femo;
   if (can_change_multiplicity) {
     //                            # electron,       Etol, allow closed-shell?
-    HundsFEMOSeeker femoseeker(tndocc_*2 + tnsocc_, 1e-3, false,
+    HundsFEMOSeeker femoseeker(tndocc_*2 + tnsocc_, HundsFEMOSeeker::tolerance, false,
                                evals);
     femo = femoseeker.result();
   }
@@ -439,11 +419,14 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
   // copy into local arrays
   int *newdocc = new int[nirrep_];
   int *newsocc = new int[nirrep_];
+  tndocc_ = tnsocc_ = 0;
   for(int g=0; g<nirrep_; ++g) {
     const int na = femo->nalpha(g);
     const int nb = femo->nbeta(g);
     newdocc[g] = nb;
     newsocc[g] = na - nb;
+    tndocc_ += nb;
+    tnsocc_ += (na - nb);
   }
   
   if (!ndocc_) {

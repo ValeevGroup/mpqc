@@ -191,8 +191,9 @@ class HCoreWfn: public OneBodyWavefunction {
     int total_charge_;
     int user_occ_;
 
+    /// guesses occupations by minimizing total energy of free-electron model and maximizing multiplicity
     void fill_occ(const RefDiagSCMatrix &evals,
-                  int ndocc, int *docc, int nsocc = 0, int *socc = 0);
+                  int nelectron, int *docc, int *socc);
 
     void compute();
 

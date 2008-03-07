@@ -81,6 +81,9 @@ namespace sc {
                       const RefDiagSCMatrix& evalsa, const RefDiagSCMatrix& evalsb = 0);
       ~HundsFEMOSeeker() {}
       const Ref<FEMO>& result() const { return result_; }
+
+      // the default tolerance
+      static double tolerance;
     private:
       Ref<FEMO> result_;
   };

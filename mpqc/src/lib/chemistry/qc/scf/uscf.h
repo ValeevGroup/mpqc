@@ -120,8 +120,9 @@ class UnrestrictedSCF: public SCF {
     RefSymmSCMatrix diff_densa_;
     RefSymmSCMatrix diff_densb_;
 
+    // implementation of SCF::set_occupations that always throws
     void set_occupations(const RefDiagSCMatrix&);
-    void set_occupations(const RefDiagSCMatrix&, const RefDiagSCMatrix&);
+    void set_occupations(const RefDiagSCMatrix&, const RefDiagSCMatrix&, bool can_change_multiplicity);
 
     void init_vector();
     void done_vector();

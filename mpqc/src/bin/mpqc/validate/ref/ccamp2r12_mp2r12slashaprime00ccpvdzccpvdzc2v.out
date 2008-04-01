@@ -1,0 +1,545 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    x86_64-unknown-linux-gnu
+  User:       jpkenny@ulester
+  Start Time: Wed Mar 26 13:09:01 2008
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Initializing CCA framework with args: 
+  --path /home/jpkenny/install/mpqc/lib/cca:/home/jpkenny/install/cca-chem-generic2/lib --load Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory:MPQC.CintsEvaluatorFactory
+  Default subfactory: MPQC.CintsEvaluatorFactory
+
+  Using IntegralCCA by default for molecular integrals evaluation
+
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/basis/dz_LdunningR.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Using symmetric orthogonalization.
+      n(basis):             8     0     4     2
+      Maximum orthogonalization residual = 3.50763
+      Minimum orthogonalization residual = 0.0574104
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      docc = [ 3 0 1 1 ]
+      nbasis = 14
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    9.1571164588
+
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      integral intermediate storage = 0 bytes
+      integral cache = 31998320 bytes
+      Beginning iterations.  Basis is DZ (Dunning).
+                      4284 integrals
+      iter     1 energy =  -75.6929826973 delta = 2.35942e-01
+                      4284 integrals
+      iter     2 energy =  -75.9969199201 delta = 5.90609e-02
+                      4284 integrals
+      iter     3 energy =  -76.0095041153 delta = 1.43489e-02
+                      4284 integrals
+      iter     4 energy =  -76.0104942081 delta = 5.95029e-03
+                      4284 integrals
+      iter     5 energy =  -76.0106554883 delta = 1.61684e-03
+                      4284 integrals
+      iter     6 energy =  -76.0106673002 delta = 6.25926e-04
+                      4284 integrals
+      iter     7 energy =  -76.0106682882 delta = 2.13656e-04
+                      4284 integrals
+      iter     8 energy =  -76.0106683083 delta = 3.37517e-05
+                      4284 integrals
+      iter     9 energy =  -76.0106683092 delta = 6.20338e-06
+                      4284 integrals
+      iter    10 energy =  -76.0106683092 delta = 1.59873e-06
+                      4284 integrals
+      iter    11 energy =  -76.0106683092 delta = 6.46999e-08
+
+      HOMO is     1  B2 =  -0.504005
+      LUMO is     4  A1 =   0.218660
+
+      total scf energy =  -76.0106683092
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+        Molecule: setting point group to c2v
+        Using symmetric orthogonalization.
+        n(basis):            11     2     7     4
+        Maximum orthogonalization residual = 3.66509
+        Minimum orthogonalization residual = 0.0352018
+        The number of electrons in the projected density = 9.99253
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 24
+  ints_file = ./ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.moints
+
+  Molecular formula H2O
+
+  The following keywords in "/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.in" were ignored:
+    mpqc:mole:reference:guess_wavefunction:multiplicity
+    mpqc:mole:reference:multiplicity
+    integrals:molecule
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v
+    restart_file  = ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+switched off integral check in mbptr12.cc/compute
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    9.1571164588
+
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  integral intermediate storage = 0 bytes
+  integral cache = 31995200 bytes
+  Beginning iterations.  Basis is cc-pVDZ.
+                 31972 integrals
+  iter     1 energy =  -75.9894459794 delta = 1.63329e-01
+                 31972 integrals
+  iter     2 energy =  -76.0251605458 delta = 1.17686e-02
+                 31972 integrals
+  iter     3 energy =  -76.0258587094 delta = 1.94238e-03
+                 31972 integrals
+  iter     4 energy =  -76.0258857767 delta = 4.37786e-04
+                 31972 integrals
+  iter     5 energy =  -76.0258879700 delta = 1.05751e-04
+                 31972 integrals
+  iter     6 energy =  -76.0258882354 delta = 4.25537e-05
+                 31972 integrals
+  iter     7 energy =  -76.0258882399 delta = 5.95036e-06
+                 31972 integrals
+  iter     8 energy =  -76.0258882402 delta = 2.04017e-06
+                 31972 integrals
+  iter     9 energy =  -76.0258882403 delta = 3.87940e-07
+                 31972 integrals
+  iter    10 energy =  -76.0258882403 delta = 5.58931e-08
+                 31972 integrals
+  iter    11 energy =  -76.0258882403 delta = 1.32428e-08
+                 31972 integrals
+  iter    12 energy =  -76.0258882403 delta = 1.71870e-09
+
+  HOMO is     1  B2 =  -0.491067
+  LUMO is     4  A1 =   0.185922
+
+  total scf energy =  -76.0258882403
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Entered <i i| R12[0] |p p>_bb integrals evaluator (transform type ikjy)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    1011136 Bytes
+      Total memory used per node:     1669504 Bytes
+      Memory required for one pass:   1669504 Bytes
+      Minimum memory required:        1147264 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+      Molecule: setting point group to c2v
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2+3 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 66)
+        working on shell pair (  3   1), 10.606% complete (7 of 66)
+        working on shell pair (  4   4), 21.212% complete (14 of 66)
+        working on shell pair (  6   0), 31.818% complete (21 of 66)
+        working on shell pair (  7   0), 42.424% complete (28 of 66)
+        working on shell pair (  7   7), 53.030% complete (35 of 66)
+        working on shell pair (  8   6), 63.636% complete (42 of 66)
+        working on shell pair (  9   4), 74.242% complete (49 of 66)
+        working on shell pair ( 10   1), 84.848% complete (56 of 66)
+        working on shell pair ( 10   8), 95.455% complete (63 of 66)
+      End of loop over shells
+      Begin fourth q.t.
+      End of fourth q.t.
+    Detecting non-totally-symmetric integrals ... none
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered B(BC) intermediate evaluator
+  Exited B(BC) intermediate evaluator
+
+  Entered MP2 pair energies (<i i|a a>) evaluator
+    Computing intermediates on 1 processors
+  Exited MP2 pair energies (<i i|a a>) evaluator
+
+  Entered MP2 pair energies (<i i|a a>) evaluator
+    Computing intermediates on 1 processors
+  Exited MP2 pair energies (<i i|a a>) evaluator
+  Computing orthonormal alpha-beta geminal space.
+    Using canonical orthogonalization.
+    n(basis):            25
+    n(orthog basis):      2
+    WARNING: 23 basis functions discarded.
+    Maximum orthogonalization residual = 4.88579
+    Minimum orthogonalization residual = 0.16775
+  WARNING: Alpha-beta B matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(1) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(2) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(3) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(4) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(5) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(6) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(7) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(8) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(9) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(10) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(11) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(12) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(13) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(14) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(15) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(16) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(17) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(18) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(19) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(20) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-beta ~B(21) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(22) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(23) matrix in orthonormal basis has 2 negative eigenvalues
+  WARNING: Alpha-beta ~B(24) matrix in orthonormal basis has 2 negative eigenvalues
+  Computing orthonormal alpha-alpha geminal space.
+    Using canonical orthogonalization.
+    n(basis):            10
+    n(orthog basis):      1
+    WARNING: 9 basis functions discarded.
+    Maximum orthogonalization residual = 3.50485
+    Minimum orthogonalization residual = 0.16775
+  WARNING: Alpha-alpha B matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(2) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(4) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(5) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(7) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(8) matrix in orthonormal basis has 1 negative eigenvalues
+  WARNING: Alpha-alpha ~B(9) matrix in orthonormal basis has 1 negative eigenvalues
+
+  Singlet MBPT2-F12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.000427901   -0.006633654   -0.007061555
+      2       1     -0.000248588    0.003397171    0.003148583
+      2       2     -0.008947046    0.000005880   -0.008941166
+      3       1     -0.000115154    0.000004191   -0.000110963
+      3       2     -0.012272428    0.000006362   -0.012266065
+      3       3     -0.019751020    0.000000479   -0.019750541
+      4       1     -0.000167369    0.000126922   -0.000040447
+      4       2     -0.009466858    0.000002229   -0.009464629
+      4       3     -0.012722847    0.000007208   -0.012715639
+      4       4     -0.017329041    0.000019293   -0.017309748
+      5       1     -0.000158942    0.000014846   -0.000144095
+      5       2     -0.009075206    0.000000724   -0.009074482
+      5       3     -0.008904392    0.000003244   -0.008901148
+      5       4     -0.010041762    0.000014814   -0.010026947
+      5       5     -0.016925640    0.000000598   -0.016925041
+
+  Triplet MBPT2-F12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.000033665   -0.000340957   -0.000374622
+      3       1     -0.000352091   -0.000386133   -0.000738225
+      3       2     -0.005940691    0.000003669   -0.005937022
+      4       1     -0.000396662   -0.001199979   -0.001596642
+      4       2     -0.005621228    0.000005363   -0.005615864
+      4       3     -0.018814377    0.000000184   -0.018814193
+      5       1     -0.000433560   -0.000203219   -0.000636779
+      5       2     -0.005854165    0.000001780   -0.005852385
+      5       3     -0.019864522    0.000000219   -0.019864303
+      5       4     -0.019849686    0.000001272   -0.019848414
+
+  Singlet MP2 correlation energy [au]:             -0.126554193108
+  Triplet MP2 correlation energy [au]:             -0.077160648691
+  Singlet (MP2)-F12/ A' correlation energy [au]:   -0.003029691997
+  Triplet (MP2)-F12/ A' correlation energy [au]:   -0.002117800389
+  Singlet MP2-F12/ A' correlation energy [au]:     -0.129583885104
+  Triplet MP2-F12/ A' correlation energy [au]:     -0.079278449080
+
+  RHF energy [au]:                                -76.025888240260
+  MP2 correlation energy [au]:                     -0.203714841798
+  (MBPT2)-F12/ A' correlation energy [au]:         -0.005147492386
+  MBPT2-F12/ A' correlation energy [au]:           -0.208862334184
+  MBPT2-F12/ A' energy [au]:                      -76.234750574444
+
+
+  Value of the MolecularEnergy:  -76.2347505744
+
+  MBPT2_R12:
+    Spin-adapted algorithm: true
+    Use new MP2R12Energy: false
+    Compute Hylleraas functional: false
+    R12Technology:
+      CorrelationFactor:
+        Function 0:
+          Functional form: R12
+
+      GBC assumed: true
+      EBC assumed: true
+      EBC-free method: Valeev
+      Enforce positive definiteness of B, but not ~B(ij)
+      ABS method variant: ABS  (Klopper and Samson)
+      Standard Approximation: A'
+      LinearR12Ansatz:
+        Orbital Product Space: ij
+        Projector: 2  , i.e. (1-P1)(1-P2)-V1V2
+        Ansatz: orbital-invariant
+        WOF: false
+      Max # ABS indices: 2
+    MBPT2:
+      Function Parameters:
+        value_accuracy    = 1.718705e-07 (1.000000e-06) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecular Coordinates:
+        IntMolecularCoor Parameters:
+          update_bmat = no
+          scale_bonds = 1
+          scale_bends = 1
+          scale_tors = 1
+          scale_outs = 1
+          symmetry_tolerance = 1.000000e-05
+          simple_tolerance = 1.000000e-03
+          coordinate_tolerance = 1.000000e-07
+          have_fixed_values = 0
+          max_update_steps = 100
+          max_update_disp = 0.500000
+          have_fixed_values = 0
+
+        Molecular formula: H2O
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     O [    0.0000000000     0.0000000000     0.3693729440]
+             2     H [    0.7839758990     0.0000000000    -0.1846864720]
+             3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+          }
+        )
+        Atomic Masses:
+           15.99491    1.00783    1.00783
+
+        Bonds:
+          STRE       s1     0.96000    1    2         O-H
+          STRE       s2     0.96000    1    3         O-H
+        Bends:
+          BEND       b1   109.50000    2    1    3      H-O-H
+
+        SymmMolecularCoor Parameters:
+          change_coordinates = no
+          transform_hessian = yes
+          max_kappa2 = 10.000000
+
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 24
+          nshell = 11
+          nprim  = 24
+          name = "cc-pVDZ"
+      Reference Wavefunction:
+        Function Parameters:
+          value_accuracy    = 1.718705e-09 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+        Molecule:
+          Molecular formula: H2O
+          molecule<Molecule>: (
+            symmetry = c2v
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     O [    0.0000000000     0.0000000000     0.3693729440]
+               2     H [    0.7839758990     0.0000000000    -0.1846864720]
+               3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+            }
+          )
+          Atomic Masses:
+             15.99491    1.00783    1.00783
+
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 24
+            nshell = 11
+            nprim  = 24
+            name = "cc-pVDZ"
+        SCF Parameters:
+          maxiter = 100
+          density_reset_frequency = 10
+          level_shift = 0.000000
+
+        CLSCF Parameters:
+          charge = 0
+          ndocc = 5
+          docc = [ 3 0 1 1 ]
+
+
+                                                    CPU Wall
+mpqc:                                              2.01 2.01
+  calc:                                            1.40 1.40
+    mp2-f12 energy:                                1.40 1.40
+      B(BC) intermediate:                          0.00 0.00
+      MP2 pair energies:                           0.01 0.01
+        MO ints retrieve:                          0.00 0.00
+      mp2-f12/a' pair energies:                    0.01 0.01
+      mp2-f12a intermeds (tensor contract):        0.69 0.69
+        Generic tensor contract:                   0.68 0.69
+          MO ints retrieve:                        0.04 0.01
+          tbint_tform_ikjy <i i| R12[0] |p p>_bb:  0.63 0.63
+            mp2-r12/a passes:                      0.58 0.58
+              4. q.t.:                             0.00 0.01
+              MO ints store:                       0.00 0.00
+              ints+1qt+2qt+3qt:                    0.58 0.57
+      vector:                                      0.46 0.46
+        density:                                   0.00 0.00
+        evals:                                     0.00 0.00
+        extrap:                                    0.01 0.01
+        fock:                                      0.41 0.40
+          accum:                                   0.00 0.00
+          ao_gmat:                                 0.38 0.38
+            start thread:                          0.38 0.38
+            stop thread:                           0.00 0.00
+          init pmax:                               0.00 0.00
+          local data:                              0.00 0.00
+          setup:                                   0.01 0.01
+          sum:                                     0.00 0.00
+          symm:                                    0.02 0.01
+  input:                                           0.61 0.61
+    vector:                                        0.13 0.13
+      density:                                     0.00 0.00
+      evals:                                       0.00 0.00
+      extrap:                                      0.01 0.00
+      fock:                                        0.07 0.07
+        accum:                                     0.00 0.00
+        ao_gmat:                                   0.07 0.06
+          start thread:                            0.06 0.06
+          stop thread:                             0.00 0.00
+        init pmax:                                 0.00 0.00
+        local data:                                0.00 0.00
+        setup:                                     0.00 0.00
+        sum:                                       0.00 0.00
+        symm:                                      0.00 0.01
+
+  End Time: Wed Mar 26 13:09:03 2008
+

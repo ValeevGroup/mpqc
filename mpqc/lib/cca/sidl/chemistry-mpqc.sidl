@@ -1,7 +1,7 @@
 package MPQC version 0.2 {
 
   class MoleculeViewer implements-all Chemistry.MoleculeViewerInterface,
-    gov.cca.Component, gov.cca.Port {};
+    gov.cca.Component {};
 
   class Model implements-all Chemistry.QC.ModelInterface 
   {
@@ -13,7 +13,7 @@ package MPQC version 0.2 {
   };
 
   class ModelFactory implements-all Chemistry.QC.ModelFactoryInterface,
-    gov.cca.Component, gov.cca.Port {};
+    gov.cca.Component {};
 
   class Units implements-all Physics.UnitsInterface {};
 
@@ -36,14 +36,14 @@ package MPQC version 0.2 {
 
   class IntV3EvaluatorFactory implements-all 
     Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
-    gov.cca.Component, gov.cca.Port
+    gov.cca.Component
   {
     void set_reorder(in bool reorder);
   };
  
   class CintsEvaluatorFactory implements-all 
     Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
-    gov.cca.Component, gov.cca.Port {};
+    gov.cca.Component {};
 
   class IntegralEvaluator1 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator1Interface
@@ -126,11 +126,11 @@ package MPQC version 0.2 {
  
   class CoordinateModel 
     implements-all ChemistryOpt.CoordinateModelInterface,
-    gov.cca.Component, gov.cca.Port{};
+    gov.cca.Component {};
 
   class OptimizationSolver
     implements-all ChemistryOpt.SolverInterface,
-    gov.cca.Component, gov.cca.Port, gov.cca.ports.GoPort {};
+    gov.cca.Component, gov.cca.ports.GoPort {};
 
   class ComponentFactory implements-all ccaffeine.ports.ComponentFactory {
     void addDescription(in string className, in string classAlias);

@@ -29,9 +29,6 @@
 #ifndef included_gov_cca_Component_hxx
 #include "gov_cca_Component.hxx"
 #endif
-#ifndef included_gov_cca_Port_hxx
-#include "gov_cca_Port.hxx"
-#endif
 #ifndef included_gov_cca_Services_hxx
 #include "gov_cca_Services.hxx"
 #endif

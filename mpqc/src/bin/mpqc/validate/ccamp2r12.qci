@@ -1,10 +1,10 @@
 
 test_basis: cc-pVDZ
 test_auxbasis: cc-pVDZ
-test_method: mp2-r12/a
+test_method: mp2-r12/a'
 test_symmetry: c2v
 test_calc: energy
-test_fzc: 1
+test_fzc: 0
 test_default_package: MPQC.CintsEvaluatorFactory
 
 restart: no

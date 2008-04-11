@@ -29,11 +29,11 @@
 
 // the old versions of libint2 all use CCA ordering, whereas new ones can use a variety of orderings
 #ifndef LIBINT2_CGSHELL_ORDERING
-#  include <chemistry/qc/basis/cartitercca_macros.h>
+#  include <chemistry/cca/int/macros.h>
 #else
 // see libint2's configure for the hardwired values
 # if LIBINT2_CGSHELL_ORDERING == 1
-#  include <chemistry/qc/basis/cartitercca_macros.h>
+#  include <chemistry/int/cca/macros.h>
 # elif LIBINT2_CGSHELL_ORDERING == 2
 #  include <chemistry/qc/intv3/macros.h>
 # else

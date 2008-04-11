@@ -55,11 +55,11 @@
 
 // the old versions of libint2 all use CCA ordering, whereas new ones can use a variety of orderings
 #ifndef LIBINT2_CGSHELL_ORDERING
-#  include <chemistry/qc/basis/cartitercca.h>
+#  include <chemistry/cca/int/cartit.h>
 #else
 // see libint2's configure for the hardwired values
 # if LIBINT2_CGSHELL_ORDERING == 1
-#  include <chemistry/qc/basis/cartitercca.h>
+#  include <chemistry/cca/int/cartit.h>
 # elif LIBINT2_CGSHELL_ORDERING == 2
 #  include <chemistry/qc/intv3/cartitv3.h>
 # else

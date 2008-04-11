@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _ccaiter_h
 #define _ccaiter_h
 

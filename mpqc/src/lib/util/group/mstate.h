@@ -255,9 +255,11 @@ class BcastState {
 
     ~BcastState();
 
-    /** Broadcast data to all nodes.  After these are called
+    /** @name Broadcast Members
+        Broadcast data to all nodes.  After these are called
         for a group of data the flush member must be called
         to force the source node to actually write the data. */
+    //@{
     void bcast(int &);
     void bcast(double &);
     void bcast(int *&, int);
@@ -271,6 +273,7 @@ class BcastState {
               SavableState::save_state(a.pointer(),*send_);
             }
         }
+    //@}
 
     /** Force data to be written.  Data is not otherwise written
         until the buffer is full. */

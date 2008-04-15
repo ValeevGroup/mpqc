@@ -41,7 +41,7 @@ namespace sc {
   class MBPT2_R12;
   
   ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD_PT2R12 is a concrete implementation of the \f${\rm CCSD}-(2)_\overline{R12}\f$ method
+  /// PsiCCSD_PT2R12 is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12}}\f$ method
   class PsiCCSD_PT2R12 : public PsiCC {
       double eccsd_;
 
@@ -81,7 +81,7 @@ namespace sc {
   };
   
   ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD_PT2R12T is a concrete implementation of the \f${\rm CCSD}-(2)_\overline{R12,T}\f$ method
+  /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12,T}}\f$ method
   class PsiCCSD_PT2R12T : public PsiCCSD_PT2R12 {
       double e_t_;
       void write_input(int conv);

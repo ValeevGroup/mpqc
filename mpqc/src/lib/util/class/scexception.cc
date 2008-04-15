@@ -62,7 +62,7 @@ SCException::SCException(const char *description,
                       << std::endl;
         }
       if (description_) {
-          elaborate() << "description: " << description
+           elaborate() << "description: " << description
                       << std::endl;
         }
       if (file_) {

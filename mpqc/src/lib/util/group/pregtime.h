@@ -38,6 +38,9 @@
 
 namespace sc {
 
+/// This is a parallel-away derivative of RegionTimer. It will compute
+/// region timings by summing them across nodes. Timings will be printed by
+/// node zero only.
 class ParallelRegionTimer: public RegionTimer {
   protected:
     Ref<MessageGrp> msg_;

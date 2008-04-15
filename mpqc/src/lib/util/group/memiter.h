@@ -37,6 +37,10 @@
 
 namespace sc {
 
+/// This iterates through data in a global array. Given an offset and size
+/// for data in a globally distributed array, this iterates through the
+/// nodes that store the block, giving the size and location of the
+/// subblocks resident on each of these nodes.
 class MemoryIter {
   private:
     distsize_t *offsets_;
@@ -54,20 +58,37 @@ class MemoryIter {
     distsize_t offset_;
     int size_;
   public:
+    /** Create the MemoryIter.
+        @param data an array with n bytes. It is up to the programmer
+        to read/write this array, MemoryIter only maintains the
+        current pointer within this array (see the data() member).
+        @param offsets the global offset for part stored on each node.
+        This has one entry for each node.
+        @param n the number of nodes
+    */
     MemoryIter(void *data, distsize_t *offsets, int n);
 
-    // iteration control
+    /** Initialize the iterator to a block of the global array.
+        @param offset the offset for the block.
+        @param size the number of bytes in the block.
+    */
     void begin(distsize_t offset, int size);
+    /// Returns true if there is more data to process.
     int ready() { return ready_; }
+    /// Advance to the next subblock.
     void next();
 
-    // info about the current piece of data
+    /// The local offset for the current block within the \p data
+    /// array given to the constructor.
     void *data() { return (void*) current_data_; }
+    /// The node on which the current subblock resides.
     int node() { return node_; }
+    /// The local offset of the current subblock on the node.
     int offset() { return current_offset_; }
+    /// The size of the current subblock.
     int size() { return current_size_; }
 
-    // returns true if all data is local to node
+    /// Returns true if all data is local to node.
     int local(distsize_t offset, int size, int node);
 };
 

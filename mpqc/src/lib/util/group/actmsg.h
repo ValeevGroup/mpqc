@@ -57,6 +57,8 @@ class ActiveMessage: virtual public SavableState {
     virtual void run(int sender, int type, ActiveMessageGrp *context) = 0;
 };
 
+/// This is an ActiveMessage derivative used for testing. It writes an
+/// integer to the output.
 class ActiveMessageEcho: public ActiveMessage {
     int i_;
   public:
@@ -66,6 +68,8 @@ class ActiveMessageEcho: public ActiveMessage {
     void run(int sender, int type, ActiveMessageGrp *context);
 };
 
+/// This is a help class that is used by ActiveMessageGrp. It is used to
+/// receive and execute ActiveMessage objects.
 class ActiveMessageThread: public Thread {
   private:
     ActiveMessageGrp *context_;

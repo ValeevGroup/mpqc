@@ -199,8 +199,13 @@ class MessageGrp: public DescribedClass {
         null, it is up to the programmer to create a MessageGrp. */
     static MessageGrp* initial_messagegrp(int &argc, char** &argv);
 
-    /** Send messages sequentially to the target processor.
-        Similar members exist for each of the basic types. */
+    /** @name Send Members
+
+        @param target the recipent node number.
+        @param data the data.
+        @param ndata the number of data.
+    */
+    //@{
     virtual void send(int target, const double* data, int ndata);
     virtual void send(int target, const unsigned int* data, int ndata);
     virtual void send(int target, const int* data, int ndata);
@@ -210,12 +215,21 @@ class MessageGrp: public DescribedClass {
     virtual void send(int target, const short* data, int ndata);
     virtual void send(int target, const long* data, int ndata);
     virtual void send(int target, const float* data, int ndata);
+    /// This sends a single double datum.
     void send(int target, double data) { send(target,&data,1); }
+    /// This sends a single integer datum.
     void send(int target, int data) { send(target,&data,1); }
     virtual void raw_send(int target, const void* data, int nbyte) = 0;
+    //@}
 
-    /** Send typed messages to the target processor.
-        Similar members exist for each of the basic types. */
+    /** @name Send Members for Typed Messages
+
+        @param target the recipent node number.
+        @param type the user-chosen type which is used to match the receive.
+        @param data the data.
+        @param ndata the number of data.
+    */
+    //@{
     virtual void sendt(int target, int type, const double* data, int ndata,
                        bool rcvrdy=false);
     virtual void sendt(int target, int type, const unsigned int* data, int ndata,
@@ -234,15 +248,22 @@ class MessageGrp: public DescribedClass {
                        bool rcvrdy=false);
     virtual void sendt(int target, int type, const float* data, int ndata,
                        bool rcvrdy=false);
+    /// This sends a single double datum.
     void sendt(int target, int type, double data,
                bool rcvrdy=false) {sendt(target,type,&data,1,rcvrdy);}
+    /// This sends a single integer datum.
     void sendt(int target, int type, int data,
                bool rcvrdy=false) {sendt(target,type,&data,1,rcvrdy);}
     virtual void raw_sendt(int target, int type, const void* data, int nbyte,
                            bool rcvrdy=false) = 0;
+    //@}
 
-    /** Receive messages sent sequentually from the sender.
-        Similar members exist for each of the basic types. */
+    /** @name Receive Members
+        @param sender the sending node number (if -1, any sender will match).
+        @param data the data.
+        @param ndata the number of data.
+     */
+    //@{
     virtual void recv(int sender, double* data, int ndata);
     virtual void recv(int sender, unsigned int* data, int ndata);
     virtual void recv(int sender, int* data, int ndata);
@@ -252,13 +273,21 @@ class MessageGrp: public DescribedClass {
     virtual void recv(int sender, short* data, int ndata);
     virtual void recv(int sender, long* data, int ndata);
     virtual void recv(int sender, float* data, int ndata);
+    /// This receives a single double datum.
     void recv(int sender, double& data) { recv(sender,&data,1); }
+    /// This receives a single integer datum.
     void recv(int sender, int& data) { recv(sender,&data,1); }
     virtual void raw_recv(int sender, void* data, int nbyte,
                           MessageInfo *info=0) = 0;
+    //@}
 
-    /** Receive messages sent by type.
-        Similar members exist for each of the basic types. */
+    /** @name Receive Members for Typed Messages
+        @param sender the sending node number (if -1, any sender will match).
+        @param type the user-chosen type which is used to match the send.
+        @param data the data.
+        @param ndata the number of data.
+     */
+    //@{
     virtual void recvt(int sender, int type, double* data, int ndata);
     virtual void recvt(int sender, int type, unsigned int* data, int ndata);
     virtual void recvt(int sender, int type, int* data, int ndata);
@@ -268,104 +297,149 @@ class MessageGrp: public DescribedClass {
     virtual void recvt(int sender, int type, short* data, int ndata);
     virtual void recvt(int sender, int type, long* data, int ndata);
     virtual void recvt(int sender, int type, float* data, int ndata);
+    /// This receives a single double datum.
     void recvt(int sender, int type, double& data) {
       recvt(sender,type,&data,1);
     }
+    /// This receives a single integer datum.
     void recvt(int sender, int type, int& data) {
       recvt(sender,type,&data,1);
     }
     virtual void raw_recvt(int sender, int type, void* data, int nbyte,
                            MessageInfo *info=0) = 0;
+    //@}
 
+    /** @name Non-blocking Send Members
+        These send routines are nonblocking. The operation
+        is not complete and the \p data buffer cannot be reused
+        until a wait completes on the \p handle.
+
+        @param target the recipent node number.
+        @param type the user-chosen type which is used to match the receive.
+        @param data the data.
+        @param ndata the number of data.
+        @param handle set to the handle which must be used with wait
+        to check for completion.
+        @param rcvrdy if true, the receive is guaranteed to have been issued.
+        The default is false.
+
+        \sa wait
+     */
+    //@{
     virtual void nb_sendt(int target, int type,
                           const double* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const unsigned int* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const int* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const char* data, int nbyte,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const unsigned char* data, int nbyte,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const signed char* data, int nbyte,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const short* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const long* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     virtual void nb_sendt(int target, int type,
                           const float* data, int ndata,
-                          MessageHandle&,
+                          MessageHandle&handle,
                           bool rcvrdy=false);
     void nb_sendt(int target, int type, double data,
-                  MessageHandle&mh,
+                  MessageHandle&handle,
                   bool rcvrdy=false) {
-      nb_sendt(target,type,&data,1,mh,rcvrdy);
+      nb_sendt(target,type,&data,1,handle,rcvrdy);
     }
     void nb_sendt(int target, int type, int data,
-                  MessageHandle&mh,
+                  MessageHandle&handle,
                   bool rcvrdy=false) {
-      nb_sendt(target,type,&data,1,mh,rcvrdy);
+      nb_sendt(target,type,&data,1,handle,rcvrdy);
     }
     virtual void raw_nb_sendt(int target, int type,
                               const void* data, int nbyte,
                               MessageHandle&,
                               bool rcvrdy=false) = 0;
+    //@}
 
+    /** @name Non-blocking Receive Members
+        These receive routines are nonblocking. The operation
+        is not complete and the \p data buffer cannot be used
+        until a wait completes on the \p handle.
+
+        @param sender the sending node number (if -1, any sender will match).
+        @param type the user-chosen type which is used to match the send.
+        @param data the data.
+        @param ndata the number of data.
+        @param handle set to the handle which must be used with wait
+        to check for completion.
+
+        \sa wait
+     */
+    //@{
     virtual void nb_recvt(int sender, int type, double* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, unsigned int* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, int* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, unsigned char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, signed char* data, int nbyte,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, short* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, long* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
     virtual void nb_recvt(int sender, int type, float* data, int ndata,
-                          MessageHandle&);
+                          MessageHandle&handle);
+    /// This receives a single double datum.
     void nb_recvt(int sender, int type, double& data,
-                  MessageHandle&mh) {
-      nb_recvt(sender,type,&data,1,mh);
+                  MessageHandle&handle) {
+      nb_recvt(sender,type,&data,1,handle);
     }
+    /// This receives a single integer datum.
     void nb_recvt(int sender, int type, int& data,
-                  MessageHandle&mh) {
-      nb_recvt(sender,type,&data,1,mh);
+                  MessageHandle&handle) {
+      nb_recvt(sender,type,&data,1,handle);
     }
     virtual void raw_nb_recvt(int sender, int type,
                               void* data, int nbyte,
                               MessageHandle&) = 0;
+    //@}
 
-    virtual void wait(const MessageHandle&,
+    /** Wait for an operation to complete.
+        @param handle the handle initialized by, for example, nb_recvt.
+        @param info if non-null, this will be filled in with information
+        about the operation that completed.
+    */
+    virtual void wait(const MessageHandle&handle,
                       MessageInfo *info=0) = 0;
 
     /// Ask if a given typed message has been received.
     virtual int probet(int sender, int type, MessageInfo*info=0) = 0;
 
-    /** Do broadcasts of various types of data.
-        Similar members exist for each of the basic types. */
+    /** @name Broadcast Members
+        Do broadcasts of various types of data. */
+    //@{
     virtual void bcast(double* data, int ndata, int from = 0);
     virtual void bcast(unsigned int* data, int ndata, int from = 0);
     virtual void bcast(int* data, int ndata, int from = 0);
@@ -378,15 +452,19 @@ class MessageGrp: public DescribedClass {
     virtual void raw_bcast(void* data, int nbyte, int from = 0);
     void bcast(double& data, int from = 0) { bcast(&data, 1, from); }
     void bcast(int& data, int from = 0) { bcast(&data, 1, from); }
+    //@}
 
-    /** Collect data distributed on the nodes to a big array replicated
+    /** @name Data Collection Members
+        Collect data distributed on the nodes to a big array replicated
         on each node. */
+    //@{
     virtual void raw_collect(const void *part, const int *lengths,
                              void *whole, int bytes_per_datum=1);
     void collect(const double *part, const int *lengths, double *whole);
+    //@}
 
-    /** Global sum reduction.
-        Similar members exist for each of the basic types. */
+    /** @name Global Sum Reduction Members */
+    //@{
     virtual void sum(double* data, int n, double* = 0, int target = -1);
     virtual void sum(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void sum(int* data, int n, int* = 0, int target = -1);
@@ -398,8 +476,10 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void sum(double& data) { sum(&data, 1); }
     void sum(int& data) { sum(&data, 1); }
-    /** Global maximization.
-        Similar members exist for each of the basic types. */
+    //@}
+
+    /** @name Global Maximization Members */
+    //@{
     virtual void max(double* data, int n, double* = 0, int target = -1);
     virtual void max(int* data, int n, int* = 0, int target = -1);
     virtual void max(unsigned int* data, int n, unsigned int* = 0, int target = -1);
@@ -410,8 +490,10 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void max(double& data) { max(&data, 1); }
     void max(int& data) { max(&data, 1); }
-    /** Global minimization.
-        Similar members exist for each of the basic types. */
+    //@}
+
+    /** @name Global Minimization Members */
+    //@{
     virtual void min(double* data, int n, double* = 0, int target = -1);
     virtual void min(int* data, int n, int* = 0, int target = -1);
     virtual void min(unsigned int* data, int n, unsigned int* = 0, int target = -1);
@@ -422,8 +504,10 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void min(double& data) { min(&data, 1); }
     void min(int& data) { min(&data, 1); }
-    /** Global generic reduction.
-        Similar members exist for each of the basic types. */
+    //@}
+
+    /** @name Global Generic Reduction Members. */
+    //@{
     virtual void reduce(double*, int n, GrpReduce<double>&,
                         double*scratch = 0, int target = -1);
     virtual void reduce(int*, int n, GrpReduce<int>&,
@@ -444,6 +528,7 @@ class MessageGrp: public DescribedClass {
                         long*scratch = 0, int target = -1);
     void reduce(double& data, GrpReduce<double>& r) { reduce(&data, 1, r); }
     void reduce(int& data, GrpReduce<int>& r) { reduce(&data, 1, r); }
+    //@}
 
     /// Synchronize all of the processors.
     virtual void sync();
@@ -451,14 +536,17 @@ class MessageGrp: public DescribedClass {
     /// Return the MachineTopology object.
     Ref<MachineTopology> topology() { return topology_; }
 
-    /** Each message group maintains an association of ClassDesc with
+    /** @name Global Class Information Members
+        Each message group maintains an association of ClassDesc with
         a global index so SavableState information can be sent between
         nodes without needing to send the classname and look up the
         ClassDesc with each transfer.  These routines return information
         about that mapping. */
+    //@{
     int classdesc_to_index(const ClassDesc*);
     const ClassDesc* index_to_classdesc(int);
     int nclass() const { return nclass_; }
+    //@}
 };
 
 struct message_struct {

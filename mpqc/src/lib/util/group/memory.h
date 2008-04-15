@@ -192,7 +192,19 @@ class MemoryGrp: public DescribedClass {
         The memory will be unlocked. */
     virtual void release_readwrite(void *data, distsize_t offset, int size)=0;
 
+    /** Perform a sum reduction on double data.
+        @param data the contribution to sum into the global array.
+        @param doffset the global offset in terms of doubles.
+        @param dsize the size in terms of doubles.
+    */
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
+    /** Perform a sum reduction on double data localized to a single node.
+        @param data the contribution to sum into the global array.
+        @param doffset the local offset on the node in terms of doubles.
+        @param dsize the size in terms of doubles.
+        @param node the node holding the data. The default is the local
+        node.
+    */
     virtual void sum_reduction_on_node(double *data, size_t doffset, int dsize,
                                        int node = -1);
 
@@ -202,14 +214,18 @@ class MemoryGrp: public DescribedClass {
     virtual void sync() = 0;
 
     /** Allocate data that will be accessed locally only.  Using this
-        for data that will be used for global operation can improve
+        for data that will be used for global operations can improve
         efficiency.  Data allocated in this way must be freed with
         free_local_double.  */
     virtual void* malloc_local(size_t nbyte);
+    /** Allocate double data that will be accessed locally only.
+        \sa malloc_local
+    */
     virtual double* malloc_local_double(size_t ndouble);
 
-    /** Free data that was allocated with malloc_local_double. */
+    /** Free data that was allocated with malloc_local. */
     virtual void free_local(void *data);
+    /** Free data that was allocated with malloc_local_double. */
     virtual void free_local_double(double *data);
 
     /** Processes outstanding requests. Some memory group implementations
@@ -236,6 +252,7 @@ class MemoryGrp: public DescribedClass {
         classname.  The default ThreadGrp and MessageGrp objects should be
         initialized before this is called. */
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
+    /// Create a memory group. \sa initial_memorygrp(int&,char**)
     static MemoryGrp* initial_memorygrp();
     /** The default memory group contains the primary memory group to
         be used by an application. */
@@ -282,11 +299,17 @@ class MemoryGrpBuf {
         specified region without an intervening sync of the MemoryGrp
         will have undefined results. */
     const data_t *readonly(distsize_t offset, int length);
-    /** These behave like writeonly, readwrite, and readonly, except the
+    /** This behaves like writeonly, except the
         offset is local to the node specified by node.  If node = -1, then
         the local node is used. */
     data_t *writeonly_on_node(size_t offset, int length, int node = -1);
+    /** This behaves like readwrite, except the
+        offset is local to the node specified by node.  If node = -1, then
+        the local node is used. */
     data_t *readwrite_on_node(size_t offset, int length, int node = -1);
+    /** This behaves like readonly, except the
+        offset is local to the node specified by node.  If node = -1, then
+        the local node is used. */
     const data_t *readonly_on_node(size_t offset, int length, int node = -1);
     /** Release the access to the chunk of global memory that was obtained
         with writeonly, readwrite, readonly, writeonly_on_node,

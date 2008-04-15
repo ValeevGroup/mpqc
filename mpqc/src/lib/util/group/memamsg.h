@@ -38,6 +38,7 @@
 
 namespace sc {
     
+/// This is a help class used by ActiveMsgMemoryGrp.
 class MemoryDataRequest {
   public:
     enum Request { Deactivate, Sync, Retrieve, Replace, DoubleSum };
@@ -78,6 +79,7 @@ class MemoryDataRequest {
     void print(const char* msg = 0, std::ostream & o = ExEnv::out0()) const;
 };
 
+/// This is a help class used by ActiveMsgMemoryGrp.
 class MemoryDataRequestQueue {
   public:
     enum { MaxDepth = 1024 };

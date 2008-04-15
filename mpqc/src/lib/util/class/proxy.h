@@ -32,8 +32,13 @@
 
 namespace sc {
     
+/** Classes deriving from this are used to generate objects of
+    DescribedClass type.
+*/
 class DescribedClassProxy: public DescribedClass {
   public:
+    /// Returns an object of DescribedClass type. How this is down depends
+    /// entirely on the derived type implementing this member.
     virtual Ref<DescribedClass> object() = 0;
 };
 

@@ -127,8 +127,19 @@ class ThreadGrp: public DescribedClass {
         number of threads in the current group will be used. */
     virtual ThreadGrp* clone(int nthread = -1);
 
+    /// Sets the default ThreadGrp. This will be returned
+    /// by future calls to get_default_threadgrp.
     static void set_default_threadgrp(const Ref<ThreadGrp>&);
+    /// Returns the default ThreadGrp. If set_default_threadgrp
+    /// has not already been called to set a default, this will
+    /// construct a new ThreadGrp.
     static ThreadGrp * get_default_threadgrp();
+    /// Create a ThreadGrp. First, this will determine if the -threadgrp
+    /// option has been given with \p argc and \p argv. If so, then
+    /// the argument should be ParsedKeyVal input for a ThreadGrp. If the
+    /// argument is not found, then the THREADGRP environment variable
+    /// is examined. If found, then its value should be a ParsedKeyVal
+    /// input for a ThreadGrp. Otherwise null is returned.
     static ThreadGrp * initial_threadgrp(int &argc, char ** argv);
 };
 

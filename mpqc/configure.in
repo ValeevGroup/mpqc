@@ -678,7 +678,7 @@ case $target in
     if test X$GXX != Xyes; then
       CXXOPTIONS_OPT="-O -qnolm -qrtti"
     fi
-    AC_MSG_RESULT("rs6000 or powerpc")
+    AC_MSG_RESULT([rs6000 or powerpc])
   ;;
   alphaev6-*)
     if test X$GCC = Xyes; then
@@ -691,7 +691,7 @@ case $target in
     else
       CXXOPTIONS_OPT="-O5 -arch ev6"
     fi
-    AC_MSG_RESULT("alphaev6")
+    AC_MSG_RESULT([alphaev6])
   ;;
   alphaev56-*)
     if test X$GCC = Xyes; then
@@ -704,13 +704,13 @@ case $target in
     else
       CXXOPTIONS_OPT="-O5 -arch ev56"
     fi
-    AC_MSG_RESULT("alphaev56")
+    AC_MSG_RESULT([alphaev56])
   ;;
   mips*-sgi-irix5*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O -Olimit 2000"
     fi
-    AC_MSG_RESULT("mips*-sgi-irix5")
+    AC_MSG_RESULT([mips*-sgi-irix5])
   ;;
 changequote(<<, >>)dnl
   mips*-sgi-irix6.[01]*)
@@ -723,7 +723,7 @@ changequote([, ])dnl
       CXXOPTIONS_OPT="-O2 -TENV:use_fp \
         -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
     fi
-    AC_MSG_RESULT("mips*-sgi-irix6.0 or mips*-sgi-irix6.1")
+    AC_MSG_RESULT([mips*-sgi-irix6.0 or mips*-sgi-irix6.1])
   ;;
   mips*-sgi-irix*)
     if test X$GCC != Xyes; then
@@ -732,27 +732,34 @@ changequote([, ])dnl
     if test X$GXX != Xyes; then
       CXXOPTIONS_OPT="-O2 -OPT:Olimit=0"
     fi
-    AC_MSG_RESULT("mips*-sgi-irix")
+    AC_MSG_RESULT([mips*-sgi-irix])
   ;;
-changequote(<<, >>)dnl
-  i[56]86-*)
-changequote([, ])dnl
+  i586-* | i686-*)
     if test X$GCC = Xyes; then
       COPTIONS_OPT="-O2"
     fi
     if test X$GXX = Xyes; then
       CXXOPTIONS_OPT="-O2"
     fi
-    AC_MSG_RESULT("i586 or i686")
+    AC_MSG_RESULT([i586 or i686])
+  ;;
+  x86_64-*)
+    if test X$GCC = Xyes; then
+      COPTIONS_OPT="-O2"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_OPT="-O2"
+    fi
+  AC_MSG_RESULT([x86_64])
   ;;
   i860-intel-*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O3 -Knoieee"
     fi
-    AC_MSG_RESULT("i860")
+    AC_MSG_RESULT([i860])
   ;;
   *)
-    AC_MSG_RESULT("none")
+    AC_MSG_RESULT([none])
   ;;
 esac
 
@@ -802,7 +809,7 @@ case $target in
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
     fi
-    AC_MSG_RESULT(rs6000 or powerpc)
+    AC_MSG_RESULT([rs6000 or powerpc])
   ;;
   i686-intel-cougar*)
     COPTIONS_MISC="$COPTIONS_MISC -mcougar"
@@ -811,7 +818,7 @@ case $target in
     if test X$cross_compiling = Xyes; then
       AR=tflop-ar
     fi
-    AC_MSG_RESULT(teraflop cougar)
+    AC_MSG_RESULT([teraflop cougar])
   ;;
 changequote(<<, >>)dnl
   i[4567]86-* | pentium-* | pentium4-* | pentiumpro-* | k6-* | athlon-*)
@@ -830,7 +837,7 @@ changequote([, ])dnl
     if test X$GXX = Xyes; then
       CXXOPTIONS_OPT="$CXXOPTIONS_OPT $cxx_cpu_arch_option"
     fi
-    AC_MSG_RESULT(IA-32: $cpu_arch_option)
+    AC_MSG_RESULT([IA-32: $cpu_arch_option])
   ;;
   i860-intel-puma*)
     if test X$GCC = Xyes; then
@@ -848,7 +855,7 @@ changequote([, ])dnl
     if test X$cross_compiling = Xyes; then
       AR=ar860
     fi
-    AC_MSG_RESULT(paragon puma)
+    AC_MSG_RESULT([paragon puma])
   ;;
   i860-intel-sunmos*)
     if test X$GCC = Xyes; then
@@ -866,7 +873,7 @@ changequote([, ])dnl
     if test X$cross_compiling = Xyes; then
       AR=ar860
     fi
-    AC_MSG_RESULT(paragon sunmos)
+    AC_MSG_RESULT([paragon sunmos])
   ;;
   i860-intel-osf*)
     if test X$GCC = Xyes; then
@@ -878,10 +885,10 @@ changequote([, ])dnl
     if test X$cross_compiling = Xyes; then
       AR=ar860
     fi
-    AC_MSG_RESULT(paragon osf)
+    AC_MSG_RESULT([paragon osf])
   ;;
   *)
-    AC_MSG_RESULT("none")
+    AC_MSG_RESULT([none])
   ;;
 esac
 
@@ -889,12 +896,12 @@ dnl -- check for overriden optimization options --
 
 if test -n "$GIVEN_COPTIONS_OPT"; then
   COPTIONS_OPT=$GIVEN_COPTIONS_OPT
-  AC_MSG_NOTICE("overriding C optimization flags with $COPTIONS_OPT")
+  AC_MSG_NOTICE([overriding C optimization flags with $COPTIONS_OPT])
 fi
 
 if test -n "$GIVEN_CXXOPTIONS_OPT"; then
   CXXOPTIONS_OPT=$GIVEN_CXXOPTIONS_OPT
-  AC_MSG_NOTICE("overriding C++ optimization flags with $CXXOPTIONS_OPT")
+  AC_MSG_NOTICE([overriding C++ optimization flags with $CXXOPTIONS_OPT])
 fi
 
 dnl ----------- check for C++ typename ---------------
@@ -903,7 +910,7 @@ dnl undefined symbol problems.
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for C++ typename keyword")
+AC_MSG_CHECKING([for C++ typename keyword])
 AC_TRY_LINK([
   class X { public: typedef int t; X(){} };
   template <class T> void f(T i) {typename T::t x;}
@@ -912,9 +919,9 @@ AC_TRY_LINK([
   f(g);
 ],[
 AC_DEFINE(HAVE_TYPENAME)
-AC_MSG_RESULT("yes")
+AC_MSG_RESULT([yes])
 ],
-AC_MSG_RESULT("no")
+AC_MSG_RESULT([no])
 );
 AC_LANG_RESTORE
 
@@ -946,7 +953,7 @@ AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(iostream sstream)
 AC_LANG_RESTORE
 
-AC_MSG_CHECKING(iostream name)
+AC_MSG_CHECKING([iostream name])
 if test x$ac_cv_header_iostream = xyes; then
   iostream=iostream
 else
@@ -958,7 +965,7 @@ dnl ----------- check for namespace std ---------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for namespace std")
+AC_MSG_CHECKING([for namespace std])
 AC_TRY_LINK([
 #include <$iostream>
 using namespace std;
@@ -968,10 +975,10 @@ using namespace std;
 ],[
 AC_DEFINE(USING_NAMESPACE_STD)
 NAMESPACE_STD=std::
-AC_MSG_RESULT("yes")
+AC_MSG_RESULT([yes])
 ],
 NAMESPACE_STD=
-AC_MSG_RESULT("no")
+AC_MSG_RESULT([no])
 );
 AC_LANG_RESTORE
 
@@ -980,16 +987,16 @@ dnl ----------- check for GNU libc++-v3 prerelease bug ---------------
 if test X$GXX = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for GNU libc++-v3 prerelease bug")
+AC_MSG_CHECKING([for GNU libc++-v3 prerelease bug])
 AC_TRY_LINK([
 #include <stdio.h>
 #include <$iostream>
 ],[
 ],[
-AC_MSG_RESULT("no")
+AC_MSG_RESULT([no])
 ],
 EXTRADEFINES="$EXTRADEFINES -D_ISOC99_SOURCE=1"
-AC_MSG_RESULT("yes")
+AC_MSG_RESULT([yes])
 );
 AC_LANG_RESTORE
 fi
@@ -1190,7 +1197,7 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
-  AC_MSG_CHECKING(for mpi.h)
+  AC_MSG_CHECKING([for mpi.h])
   AC_TRY_LINK([#include <mpi.h>],[],have_mpi_h=yes,have_mpi_h=no)
   AC_MSG_RESULT($have_mpi_h)
   if test "$have_mpi_h" = yes; then
@@ -1279,7 +1286,7 @@ dnl --------- Check for an isnan and make sure it can be used
 dnl           with iostream (it can't on OS X)
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING(isnan and iostream)
+AC_MSG_CHECKING([isnan and iostream])
 AC_LINK_IFELSE([
   #include <iostream>
   #include <math.h>
@@ -1332,7 +1339,7 @@ dnl --------- check for long long  ---------
 if test X"$LONGLONG" = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING(long long)
+AC_MSG_CHECKING([long long])
 AC_TRY_COMPILE([],[
 long long i;
 ],[AC_DEFINE(HAVE_LONG_LONG)
@@ -1455,7 +1462,7 @@ AC_TRY_LINK([
 ],[
 case $target in
   *-sgi-irix*)
-    AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(sgi-irix -- yes)
+    AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT([sgi-irix -- yes])
   ;;
   *)
     AC_MSG_RESULT(no)
@@ -1467,7 +1474,7 @@ AC_LANG_RESTORE
 
 dnl ----------- See if Fortran works --------------
 
-AC_MSG_CHECKING(if fortran compiler works)
+AC_MSG_CHECKING([if fortran compiler works])
 if test -n "$F77" -a "$F77" != no ; then
   /bin/rm -f ffunc.f flink.c
   echo "      program main" > ffunc.f
@@ -1476,14 +1483,14 @@ if test -n "$F77" -a "$F77" != no ; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
-    AC_MSG_FAILURE(fortran compiler does not work)
+    AC_MSG_FAILURE([fortran compiler does not work])
   fi
   /bin/rm -f ffunc ffunc.f
 fi
 
 dnl ----------- Fortran symbol names --------------
 
-AC_MSG_CHECKING(fortran symbols)
+AC_MSG_CHECKING([fortran symbols])
 if test -n "$F77" -a "$F77" != no ; then
   /bin/rm -f ffunc.f flink.c
   echo "      subroutine ffunc()" > ffunc.f
@@ -1492,25 +1499,25 @@ if test -n "$F77" -a "$F77" != no ; then
   $F77 -c ffunc.f 1>/dev/null 2>/dev/null
   echo "main(){ FF(); return 0; }" > flink.c
   if $CC -o flink -DFF=ffunc flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
-    AC_MSG_RESULT(same as C)
+    AC_MSG_RESULT([same as C])
     F77_SYMBOLS=symbol
   elif $CC -o flink -DFF=ffunc_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
-    AC_MSG_RESULT(lowercase with underscore)
+    AC_MSG_RESULT([lowercase with underscore])
     F77_SYMBOLS=symbol_
   elif $CC -o flink -DFF=FFUNC flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
-    AC_MSG_RESULT(uppercase)
+    AC_MSG_RESULT([uppercase])
     F77_SYMBOLS=SYMBOL
   elif $CC -o flink -DFF=FFUNC_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
-    AC_MSG_RESULT(uppercase with underscore)
+    AC_MSG_RESULT([uppercase with underscore])
     F77_SYMBOLS=SYMBOL_
   else
-    AC_MSG_RESULT(giving up)
-    AC_MSG_ERROR(could not determine F77 symbol names)
+    AC_MSG_RESULT([giving up])
+    AC_MSG_ERROR([could not determine F77 symbol names])
   fi
   /bin/rm -f ffunc.f ffunc.o flink flink.c flink.o ffunc
 else
   F77_SYMBOLS=symbol_
-  AC_MSG_RESULT(guessing lowercase with underscore)
+  AC_MSG_RESULT([guessing lowercase with underscore])
 fi
 AC_SUBST(F77_SYMBOLS)
 
@@ -1665,7 +1672,7 @@ AC_CHECK_HEADERS(libint2/libint2.h,
     AC_DEFINE(HAVE_LIBINT2)
     AC_SUBST(HAVE_LIBINT2)
     REF_LIBS="-lint2 $LIBS"
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT(yes)
     )
   LIBS=$REF_LIBS
   AC_MSG_CHECKING([if libint2 can compute ERI])
@@ -1682,8 +1689,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       ),
     [HAVE_LIBINT2_ERI=yes
      AC_SUBST(HAVE_LIBINT2_ERI)
-     AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
     )
   AC_MSG_CHECKING([if libint2 can compute G12])
   AC_COMPILE_IFELSE(
@@ -1699,8 +1706,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       ),
     [HAVE_LIBINT2_G12=yes
      AC_SUBST(HAVE_LIBINT2_G12)
-     AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
     )
   if test X$HAVE_LIBINT2_G12 = Xyes; then
     AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
@@ -1717,8 +1724,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       ),
       [HAVE_LIBINT2_G12_T1G12=yes
        AC_SUBST(HAVE_LIBINT2_G12_T1G12)
-       AC_MSG_RESULT([yes])],
-      [AC_MSG_RESULT([no])]
+       AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)]
     )
   fi
   AC_MSG_CHECKING([if libint2 can compute general G12])
@@ -1735,8 +1742,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       ),
     [HAVE_LIBINT2_GENG12=yes
      AC_SUBST(HAVE_LIBINT2_GENG12)
-     AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
     )
   AC_MSG_CHECKING([if libint2 can compute G12DKH])
   AC_COMPILE_IFELSE(
@@ -1752,8 +1759,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       ),
     [HAVE_LIBINT2_G12DKH=yes
      AC_SUBST(HAVE_LIBINT2_G12DKH)
-     AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
     )
   )
 AC_LANG_RESTORE
@@ -1801,10 +1808,10 @@ AC_CHECK_HEADERS(psiconfig.h,
       ]],
       [[]]
     ),
-    [AC_MSG_RESULT([yes])
+    [AC_MSG_RESULT(yes)
      HAVE_COMPATIBLE_PSI=yes
     ],
-    [AC_MSG_RESULT([no])
+    [AC_MSG_RESULT(no)
     ]
   )
 )
@@ -1828,11 +1835,11 @@ AC_CHECK_HEADERS(libpsio/psio.hpp,
      [[psi::PSIO psio;
      ]]
     ),
-    [AC_MSG_RESULT([yes])
+    [AC_MSG_RESULT(yes)
      HAVE_LIBPSIO=yes
      AC_DEFINE(HAVE_LIBPSIO)
     ],
-    [AC_MSG_RESULT([no])
+    [AC_MSG_RESULT(no)
      LIBS=$OLD_LIBS
     ]
   )
@@ -1908,36 +1915,36 @@ fi
 dnl --------- Template instantiation. ---------
 
 if test $template_instantiation = auto; then
-AC_MSG_CHECKING(choosing template instantiation method)
+AC_MSG_CHECKING([choosing template instantiation method])
   if test X$GXX = Xyes; then
-    AC_MSG_RESULT("gcc (none)")
+    AC_MSG_RESULT([gcc (none)])
   else
     case $target in
       *-sgi-irix6.0*)
-        AC_MSG_RESULT("*-sgi-irix6.0* (none)")
+        AC_MSG_RESULT([*-sgi-irix6.0* (none)])
         ;;
       *-sgi-irix*)
         template_instantiation=ptused
-        AC_MSG_RESULT("*-sgi-irix* (ptused)")
+        AC_MSG_RESULT([*-sgi-irix* (ptused)])
         ;;
       *-cray-unicos*)
         template_instantiation=craysimp
-        AC_MSG_RESULT("*-cray-unicos* (craysimp)")
+        AC_MSG_RESULT([*-cray-unicos* (craysimp)])
         ;;
       *-dec-osf*)
         template_instantiation=repodir
-        AC_MSG_RESULT("*-dec-osf* (repodir)")
+        AC_MSG_RESULT([*-dec-osf* (repodir)])
         ;;
       alpha*)
         template_instantiation=repodir
-        AC_MSG_RESULT("alpha* non-GNU C++ (repodir)")
+        AC_MSG_RESULT([alpha* non-GNU C++ (repodir)])
         ;;
       *-solaris*)
         template_instantiation=sunexpl
-        AC_MSG_RESULT("*-solaris* (sunexpl)")
+        AC_MSG_RESULT([*-solaris* (sunexpl)])
         ;;
       *)
-        AC_MSG_RESULT("generic non GNU (none)")
+        AC_MSG_RESULT([generic non GNU (none)])
         ;;
     esac
   fi
@@ -1947,7 +1954,7 @@ if test $template_instantiation = auto; then
   template_instantiation=none
 fi
 
-AC_MSG_CHECKING(template instantiation flags)
+AC_MSG_CHECKING([template instantiation flags])
 TMPLINST=no
 TMPLREPO=
 TMPLINLIB=no
@@ -1962,7 +1969,7 @@ case $template_instantiation in
   gnurepo)
     TMPLINST=yes
     CXXFLAGS="$CXXFLAGS -frepo"
-    AC_MSG_RESULT(gnurepo)
+    AC_MSG_RESULT([gnurepo])
     ;;
   gnuexpl)
     # automatic template instantiation causes problems with libstc++-v3
@@ -1978,11 +1985,11 @@ case $template_instantiation in
     CXXFLAGS="$CXXFLAGS -ptused"
     ;;
   none)
-    AC_MSG_RESULT(none)
+    AC_MSG_RESULT([none])
     ;;
   *)
     AC_MSG_RESULT($template_instantiation)
-    AC_MSG_ERROR(unknown template instantiation method)
+    AC_MSG_ERROR([unknown template instantiation method])
 esac
 
 AC_SUBST(TMPLINST)
@@ -1995,22 +2002,22 @@ AC_MSG_CHECKING([for special flags that must be set last])
 case $target in
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"
-    AC_MSG_RESULT(paragon puma)
+    AC_MSG_RESULT([paragon puma])
   ;;
   i686-intel-cougar*)
     LDFLAGS="$LDFLAGS -mcougar -mnoieee"
-    AC_MSG_RESULT(teraflop cougar)
+    AC_MSG_RESULT([teraflop cougar])
   ;;
   i860-intel-sunmos*)
     LDFLAGS="$LDFLAGS -msunmos -mnoieee"
-    AC_MSG_RESULT(paragon sunmos)
+    AC_MSG_RESULT([paragon sunmos])
   ;;
   i860-intel-osf*)
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
-    AC_MSG_RESULT(osf paragon)
+    AC_MSG_RESULT([osf paragon])
   ;;
   *)
-    AC_MSG_RESULT(none)
+    AC_MSG_RESULT([none])
   ;;
 esac
 

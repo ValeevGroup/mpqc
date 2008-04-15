@@ -37,6 +37,7 @@
 
 namespace sc {
 
+/// Represents the value of a keyword.
 class KeyValValue: public RefCount {
   public:
     enum KeyValValueError { OK, WrongType };
@@ -44,7 +45,6 @@ class KeyValValue: public RefCount {
     KeyValValue() {}
     KeyValValue(const KeyValValue&);
     virtual ~KeyValValue();
-    // return 1 for success 0, if the datum is of the wrong type
     virtual KeyValValue::KeyValValueError doublevalue(double&) const;
     virtual KeyValValue::KeyValValueError booleanvalue(int&) const;
     virtual KeyValValue::KeyValValueError floatvalue(float&) const;
@@ -60,6 +60,7 @@ std::ostream& operator<<(std::ostream&,const KeyValValue&);
 
 
 
+/// Represents a double value.
 class KeyValValuedouble: public KeyValValue {
   private:
     double _val;
@@ -72,6 +73,7 @@ class KeyValValuedouble: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a boolean value.
 class KeyValValueboolean: public KeyValValue {
   private:
     int _val;
@@ -84,6 +86,7 @@ class KeyValValueboolean: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a float value.
 class KeyValValuefloat: public KeyValValue {
   private:
     float _val;
@@ -96,6 +99,7 @@ class KeyValValuefloat: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a char value.
 class KeyValValuechar: public KeyValValue {
   private:
     char _val;
@@ -108,6 +112,7 @@ class KeyValValuechar: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents an int value.
 class KeyValValueint: public KeyValValue {
   private:
     int _val;
@@ -120,6 +125,7 @@ class KeyValValueint: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a size_t value.
 class KeyValValuesize: public KeyValValue {
   private:
     size_t _val;
@@ -132,6 +138,7 @@ class KeyValValuesize: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a pointer to char value (deprecated, use KeyValValuestring).
 class KeyValValuepchar: public KeyValValue {
   private:
     char* _val;
@@ -145,6 +152,8 @@ class KeyValValuepchar: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a std::string value.
+/// This can convert the string to a variety of other types.
 class KeyValValuestring: public KeyValValue {
   private:
     std::string _val;
@@ -153,11 +162,27 @@ class KeyValValuestring: public KeyValValue {
     KeyValValuestring(const std::string&);
     KeyValValuestring(const KeyValValuestring&);
     ~KeyValValuestring();
+    /// Converts the string to double.
+    KeyValValue::KeyValValueError doublevalue(double&) const;
+    /// Converts the string to boolean. True can be given as
+    /// 1, true, or yes. False can be given as 0, false, or no.
+    KeyValValue::KeyValValueError booleanvalue(int&) const;
+    /// Converts the string to float.
+    KeyValValue::KeyValValueError floatvalue(float&) const;
+    /// Converts the string to char.
+    KeyValValue::KeyValValueError charvalue(char&) const;
+    /// Converts the string to int.
+    KeyValValue::KeyValValueError intvalue(int&) const;
+    /// Converts the string to size_t. Various suffices are
+    /// recognized: KB, MB, GB, KIB, MIB, and GIB.
+    KeyValValue::KeyValValueError sizevalue(size_t&) const;
+    /// Converts the string to a pointer to char (deprecated).
     KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a Ref<DescribedClass> value.
 class KeyValValueRefDescribedClass: public KeyValValue {
   private:
     Ref<DescribedClass> _val;
@@ -170,6 +195,7 @@ class KeyValValueRefDescribedClass: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a pointer to char value (deprecated, use KeyValValuestring).
 class KeyValValueString: public KeyValValue {
   private:
     const char* _val;

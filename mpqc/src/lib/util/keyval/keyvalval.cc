@@ -323,6 +323,109 @@ KeyValValuestring::~KeyValValuestring()
 {
 }
 KeyValValue::KeyValValueError
+KeyValValuestring::doublevalue(double&val) const
+{
+  val = atof(_val.c_str());
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::booleanvalue(int&val) const
+{
+  char lc_kv[20];
+  strncpy(lc_kv,_val.c_str(),20);
+  for (int i=0; i<20; i++) {
+      if (isupper(lc_kv[i])) lc_kv[i] = tolower(lc_kv[i]);
+    }
+  if (!strcmp(lc_kv,"yes")) val = 1;
+  else if (!strcmp(lc_kv,"true")) val = 1;
+  else if (!strcmp(lc_kv,"1")) val = 1;
+  else if (!strcmp(lc_kv,"no")) val = 0;
+  else if (!strcmp(lc_kv,"false")) val = 0;
+  else if (!strcmp(lc_kv,"0")) val = 0;
+  else {
+      val = 0;
+      return KeyValValue::WrongType;
+    }
+
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::floatvalue(float&val) const
+{
+  val = (float) atof(_val.c_str());
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::charvalue(char&val) const
+{
+  val = _val[0];
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::intvalue(int&val) const
+{
+  val = atoi(_val.c_str());
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::sizevalue(size_t&val) const
+{
+  int n = ::strlen(_val.c_str());
+  int gotdigitspace = 0;
+  int gotdigit = 0;
+  int gotdecimal = 0;
+  int denom = 1;
+  double dval = 0;
+  for (int i=0; i<n; i++) {
+      if (isdigit(_val[i]) && !gotdigitspace) {
+          char tmp[2]; tmp[0] = _val[i]; tmp[1] = '\0';
+          dval = dval * 10 + atoi(tmp);
+          gotdigit = 1;
+          if (gotdecimal) denom *= 10;
+        }
+      else if (_val[i] == '.' && !gotdigitspace && !gotdecimal) {
+          gotdecimal = 1;
+        }
+      else if (_val[i] == ' ') {
+          if (gotdigit) gotdigitspace = 1;
+        }
+      else if (strcmp(&_val[i],"KIB") == 0
+               || strcmp(&_val[i],"KiB") == 0) {
+          dval *= 1024;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"MIB") == 0
+               || strcmp(&_val[i],"MiB") == 0) {
+          dval *= 1048576;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"GIB") == 0
+               ||strcmp(&_val[i],"GiB") == 0) {
+          dval *= 1073741824;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"KB") == 0) {
+          dval *= 1000;
+          i++;
+        }
+      else if (strcmp(&_val[i],"MB") == 0) {
+          dval *= 1000000;
+          i++;
+        }
+      else if (strcmp(&_val[i],"GB") == 0) {
+          dval *= 1000000000;
+          i++;
+        }
+      else {
+          val = 0;
+          return KeyValValue::WrongType;
+        }
+    }
+  dval /= denom;
+  val = size_t(dval);
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
 KeyValValuestring::pcharvalue(const char*&val) const
 {
   val = _val.c_str();

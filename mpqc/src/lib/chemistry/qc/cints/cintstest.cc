@@ -42,13 +42,15 @@
 #include <chemistry/qc/cints/int2e.h>
 #include <chemistry/qc/cints/cartit.h>
 
+#define TEST_ITER 1
+#define TEST_1E 1
+#define TEST_2E 1
 
 using namespace std;
 using namespace sc;
 
-#define CINTS
-
 void compare_1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3);
+void compare_dipole1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3);
 void compare_2e_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3);
 void compare_2e_puream_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3);
 void compare_2e_bufsum_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3);
@@ -161,64 +163,17 @@ int main(int argc, char **argv)
 
   int storage = tkeyval->intvalue("storage");
   cout << "storage = " << storage << endl;
-  /*  Ref<Integral> intgrlv3 = new IntegralV3(basis,basis,basis,basis);
-  Ref<Int1eV3> int1ev3 = new Int1eV3(intgrlv3.pointer(),basis,basis,1);
-  Ref<Int2eV3> int2ev3 = new Int2eV3(intgrlv3.pointer(),basis,basis,basis,basis,
-                                   1, storage);
   
-
-  int permute = tkeyval->booleanvalue("permute");
-  timer.enter("overlap");
-  if (me == tproc && tkeyval->booleanvalue("overlap")) {
-      cout << scprintf("testing overlap:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::overlap, permute);
-    }
-  timer.change("kinetic");
-  if (me == tproc && tkeyval->booleanvalue("kinetic")) {
-      cout << scprintf("testing kinetic:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::kinetic, permute);
-    }
-  timer.change("hcore");
-  if (me == tproc && tkeyval->booleanvalue("hcore")) {
-      cout << scprintf("testing hcore:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::hcore, permute);
-    }
-  timer.change("nuclear");
-  if (me == tproc && tkeyval->booleanvalue("nuclear")) {
-      cout << scprintf("testing nuclear:\n");
-      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::nuclear, permute);
-    }
-  timer.change("3 center");
-  if (me == tproc && tkeyval->booleanvalue("3")) {
-      test_3_center(tkeyval, int2ev3);
-    }
-  timer.change("4 center");
-  if (me == tproc && tkeyval->booleanvalue("4")) {
-      test_4_center(tkeyval, int2ev3);
-    }
-  timer.change("4 center der");
-  if (me == tproc && tkeyval->booleanvalue("4der")) {
-      test_4der_center(tkeyval, int2ev3);
-    }
-  timer.change("bound stats");
-  if (me == tproc && tkeyval->booleanvalue("boundstats")) {
-      do_bounds_stats(tkeyval, int2ev3);
-    }
-
-    timer.change("IntegralV3");*/
-
   timer.enter("Integral");
   Ref<Integral> integral = new IntegralV3(basis);
-#ifdef CINTS
   Ref<Integral> integralcints = new IntegralCints(basis);
-#endif
 
   Ref<OneBodyInt> overlapv3 = integral->overlap();
   Ref<OneBodyInt> kineticv3 = integral->kinetic();
   Ref<OneBodyInt> nuclearv3 = integral->nuclear();
   Ref<OneBodyInt> hcorev3 = integral->hcore();
+  Ref<OneBodyInt> edipolev3 = integral->dipole(0);
 
-#ifdef CINTS
   Ref<OneBodyInt> overlapcints = integralcints->overlap();
   testint(overlapcints);
   Ref<OneBodyInt> kineticcints = integralcints->kinetic();
@@ -227,11 +182,10 @@ int main(int argc, char **argv)
   testint(nuclearcints);
   Ref<OneBodyInt> hcorecints = integralcints->hcore();
   testint(hcorecints);
-#endif
+  Ref<OneBodyInt> edipolecints = integralcints->dipole(0);
+  testint(edipolecints);
 
   Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
-
-#ifdef CINTS
   int storage_needed = integralcints->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriCints\n",storage_needed);
   Ref<TwoBodyInt> erepcints = integralcints->electron_repulsion();
@@ -240,11 +194,11 @@ int main(int argc, char **argv)
   cout << scprintf("Need %d bytes to create GRTCints\n",storage_needed);
   Ref<TwoBodyInt> grtcints = integralcints->grt();
   testint(grtcints);
-#endif
   timer.exit();
 
   // Test iterators
-  /*  CartesianIterCints citer(3);
+#if TEST_ITER
+  CartesianIterCints citer(3);
   cout << "Cartesian f-shell:" << endl;
   for ( citer.start(); int(citer) ; citer.next() )
     cout << "nx = " << citer.a() << " ny = " << citer.b() << " nz = " << citer.c() << endl;
@@ -252,18 +206,23 @@ int main(int argc, char **argv)
   cout << "Redundant Cartesian f-shell:" << endl;
   for ( rciter.start(); int(rciter) ; rciter.next() )
     cout << "nx = " << rciter.a() << " ny = " << rciter.b() << " nz = " << rciter.c() << endl;
-  */
-
-  //cout << "Testing Cints' overlap integrals against IntV3's" << endl;
-  //  compare_1e_cints_vs_v3(overlapcints,overlapv3);
-  //cout << "Testing Cints' kinetic energy integrals against IntV3's" << endl;
-  //compare_1e_cints_vs_v3(kineticcints,kineticv3);
-  //cout << "Testing Cints' nuclear attraction integrals against IntV3's" << endl;
-  //compare_1e_cints_vs_v3(nuclearcints,nuclearv3);
-  //cout << "Testing Cints' core hamiltonian integrals against IntV3's" << endl;
-  //compare_1e_cints_vs_v3(hcorecints,hcorev3);
-
-  //  compare_2e_permute(integralcints);
+#endif
+  
+#if TEST_1E
+  cout << "Testing Cints' overlap integrals against IntV3's" << endl;
+  compare_1e_cints_vs_v3(overlapcints,overlapv3);
+  cout << "Testing Cints' kinetic energy integrals against IntV3's" << endl;
+  compare_1e_cints_vs_v3(kineticcints,kineticv3);
+  cout << "Testing Cints' nuclear attraction integrals against IntV3's" << endl;
+  compare_1e_cints_vs_v3(nuclearcints,nuclearv3);
+  cout << "Testing Cints' core hamiltonian integrals against IntV3's" << endl;
+  compare_1e_cints_vs_v3(hcorecints,hcorev3);
+  cout << "Testing Cints' electric dipole integrals against IntV3's" << endl;
+  compare_dipole1e_cints_vs_v3(edipolecints,edipolev3);
+#endif
+  
+#if TEST_2E
+  compare_2e_permute(integralcints);
 
   cout << "Testing Cints' ERIs against IntV3's" << endl;
   compare_2e_cints_vs_v3(erepcints,erepv3);
@@ -271,7 +230,6 @@ int main(int argc, char **argv)
   cout << "Testing Cints' ERIs (from GRTCints) against IntV3's" << endl;
   compare_2e_cints_vs_v3(grtcints,erepv3);
 
-#ifdef CINTS
   cout << "Testing sums of Cints' ERIs against IntV3's" << endl;
   compare_2e_bufsum_cints_vs_v3(erepcints,erepv3);
   cout << "Testing sums of Cints' ERIs (from GRTCints) against IntV3's" << endl;
@@ -288,7 +246,7 @@ int main(int argc, char **argv)
   cout << "Printing GRT integrals" << endl;
   print_grt_ints(grtcints);
 #endif
-
+  
   //  timer.print();
   return 0;
 }
@@ -332,26 +290,96 @@ compare_1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3)
 	      int bf2cints = bf2_offset + citer2.bfn();
 	      int bf2v3;
 	      for( iter2.start(); int(iter2) ; iter2.next() ) {
-		if (iter2.a() == citer2.a() &&
-		    iter2.b() == citer2.b() &&
-		    iter2.c() == citer2.c()) {
-		  bf2v3 = bf2_offset + iter2.bfn();
-		  break;
-		}
+	        if (iter2.a() == citer2.a() &&
+	          iter2.b() == citer2.b() &&
+	          iter2.c() == citer2.c()) {
+	          bf2v3 = bf2_offset + iter2.bfn();
+	          break;
+	        }
 	      }
 	      
 	      double valuecints = buffercints[bf1cints*nbf2 + bf2cints];
 	      double valuev3 = bufferv3[bf1v3*nbf2 + bf2v3];
 	      if (fabs(valuecints-valuev3) > 1E-13) {
-		cout << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",sh1,sh2);
-		cout << scprintf("bf1 = %d   bf2 = %d  OEIntegral(cints) = %20.15lf\n",bf1cints,bf2cints,valuecints);
-		cout << scprintf("bf1 = %d   bf2 = %d  OEIntegral(V3)    = %20.15lf\n\n",bf1v3,bf2v3,valuev3);
+	        cout << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",sh1,sh2);
+	        cout << scprintf("bf1 = %d   bf2 = %d   OEIntegral(cints) = %20.15lf\n",bf1cints,bf2cints,valuecints);
+	        cout << scprintf("bf1 = %d   bf2 = %d   OEIntegral(V3)    = %20.15lf\n\n",bf1v3,bf2v3,valuev3);
 	      }
 	    }
 	    bf2_offset += basis->shell(sh2).nfunction(gc2);
 	  }
 	}
 	bf1_offset += basis->shell(sh1).nfunction(gc1);
+      }
+    }
+}
+
+void compare_dipole1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3) {
+  Ref<GaussianBasisSet> basis = obcints->basis();
+  for (int sh1=4; sh1<basis->nshell(); sh1++)
+    for (int sh2=0; sh2<basis->nshell(); sh2++) {
+      int nbf2 = basis->shell(sh2).nfunction();
+      obv3->compute_shell(sh1, sh2);
+      obcints->compute_shell(sh1, sh2);
+      const double *buffercints = obcints->buffer();
+      const double *bufferv3 = obv3->buffer();
+      
+      int bf1_offset = 0;
+      for (int gc1=0; gc1<basis->shell(sh1).ncontraction(); gc1++) {
+        int am1 = basis->shell(sh1).am(gc1);
+        CartesianIterCints citer1(am1);
+        CartesianIterV3 iter1(am1);
+        for (citer1.start(); int(citer1); citer1.next() ) {
+          int bf1cints = bf1_offset + citer1.bfn();
+          int bf1v3;
+          for (iter1.start(); int(iter1); iter1.next() ) {
+            if (iter1.a() == citer1.a() && iter1.b() == citer1.b() && iter1.c()
+                == citer1.c()) {
+              bf1v3 = bf1_offset + iter1.bfn();
+              break;
+            }
+          }
+          
+          int bf2_offset = 0;
+          for (int gc2=0; gc2<basis->shell(sh2).ncontraction(); gc2++) {
+            int am2 = basis->shell(sh2).am(gc2);
+            CartesianIterCints citer2(am2);
+            CartesianIterV3 iter2(am2);
+            
+            for (citer2.start(); int(citer2); citer2.next() ) {
+              int bf2cints = bf2_offset + citer2.bfn();
+              int bf2v3;
+              for (iter2.start(); int(iter2); iter2.next() ) {
+                if (iter2.a() == citer2.a() && iter2.b() == citer2.b()
+                    && iter2.c() == citer2.c()) {
+                  bf2v3 = bf2_offset + iter2.bfn();
+                  break;
+                }
+              }
+              
+              for (int xyz=0; xyz<3; ++xyz) {
+                double valuecints = buffercints[(bf1cints*nbf2 + bf2cints)*3+xyz];
+                // WARNING: Cints and V3 seem to have opposite sign convention
+                double valuev3 = (-1.0) * bufferv3[(bf1v3*nbf2 + bf2v3)*3+xyz];
+                if (fabs(valuecints-valuev3)> 1E-13) {
+                  cout
+                      << scprintf("Discrepancy in OEIntDipole(sh1 = %d, sh2 = %d)\n",
+                                  sh1, sh2);
+                  cout
+                      << scprintf(
+                                  "bf1 = %d   bf2 = %d   xyz = %d   OEIntegral(cints) = %20.15lf\n",
+                                  bf1cints, bf2cints, xyz, valuecints);
+                  cout
+                      << scprintf(
+                                  "bf1 = %d   bf2 = %d   xyz = %d   OEIntegral(V3)    = %20.15lf\n\n",
+                                  bf1v3, bf2v3, xyz, valuev3);
+                }
+              }
+            }
+            bf2_offset += basis->shell(sh2).nfunction(gc2);
+          }
+        }
+        bf1_offset += basis->shell(sh1).nfunction(gc1);
       }
     }
 }

@@ -47,14 +47,15 @@
 using namespace std;
 using namespace sc;
 
-#define LIBINT2
 #define GAMMA12 1.0
 // Set to 1 to test R12^2*G12 integrals (only possible if GAMMA12 is 0.0 AND COMPUTE_R12_2_G12 is set to 1 in comp_g12.cc)
 #define TEST_R12_2_G12 0
 #define TEST_ITERATORS 1
 #define TEST_1E_INTEGRALS 1
+#define TEST_2E_INTEGRALS 1
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
+void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
 void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_puream_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
@@ -144,16 +145,14 @@ int main(int argc, char **argv)
 
   tim->enter("Integral");
   Ref<Integral> integral = new IntegralV3(basis);
-#ifdef LIBINT2
   Ref<Integral> integrallibint2 = new IntegralLibint2(basis);
-#endif
 
   Ref<OneBodyInt> overlapv3 = integral->overlap();
   Ref<OneBodyInt> kineticv3 = integral->kinetic();
   Ref<OneBodyInt> nuclearv3 = integral->nuclear();
   Ref<OneBodyInt> hcorev3 = integral->hcore();
+  Ref<OneBodyInt> edipolev3 = integral->dipole(0);
 
-#ifdef LIBINT2
   Ref<OneBodyInt> overlaplibint2 = integrallibint2->overlap();
   testint(overlaplibint2);
   Ref<OneBodyInt> kineticlibint2 = integrallibint2->kinetic();
@@ -162,11 +161,11 @@ int main(int argc, char **argv)
   testint(nuclearlibint2);
   Ref<OneBodyInt> hcorelibint2 = integrallibint2->hcore();
   testint(hcorelibint2);
-#endif
+  Ref<OneBodyInt> edipolelibint2 = integrallibint2->dipole(0);
+  testint(edipolelibint2);
 
   Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
 
-#ifdef LIBINT2
   int storage_needed = integrallibint2->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriLibint2\n",storage_needed);
   Ref<TwoBodyInt> ereplibint2 = integrallibint2->electron_repulsion();
@@ -177,7 +176,6 @@ int main(int argc, char **argv)
   Ref<TwoBodyInt> g12libint2 = integrallibint2->g12(GAMMA12);
   testint(g12libint2);
 # endif
-#endif
   tim->exit();
 
   // Test iterators
@@ -214,10 +212,13 @@ int main(int argc, char **argv)
   compare_1e_libint2_vs_v3(nuclearlibint2,nuclearv3);
   cout << "Testing Libint2' core hamiltonian integrals against IntV3's" << endl;
   compare_1e_libint2_vs_v3(hcorelibint2,hcorev3);
+  cout << "Testing Libint2' electric dipole moment integrals against IntV3's" << endl;
+  compare_1e3_libint2_vs_v3(edipolelibint2,edipolev3);
 #endif
   
   //  compare_2e_permute(integrallibint2);
 
+#if TEST_2E_INTEGRALS
   bool puream = basis->has_pure();
   cout << "spherical harmonics " << (puream ? "" : "not") << " present in the basis" << endl;
   cout << "Testing Libint2' ERIs against IntV3's" << endl;
@@ -233,7 +234,6 @@ int main(int argc, char **argv)
     compare_2e_libint2_vs_v3(g12libint2,erepv3);
 #endif
 
-#ifdef LIBINT2
   cout << "Testing sums of Libint2' ERIs against IntV3's" << endl;
   compare_2e_bufsum_libint2_vs_v3(ereplibint2,erepv3);
 # if LIBINT2_SUPPORT_G12
@@ -330,6 +330,76 @@ compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
 	  }
 	}
 	bf1_offset += basis->shell(sh1).nfunction(gc1);
+      }
+    }
+}
+
+void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3) {
+  Ref<GaussianBasisSet> basis = oblibint2->basis();
+  for (int sh1=4; sh1<basis->nshell(); sh1++)
+    for (int sh2=0; sh2<basis->nshell(); sh2++) {
+      int nbf2 = basis->shell(sh2).nfunction();
+      obv3->compute_shell(sh1, sh2);
+      oblibint2->compute_shell(sh1, sh2);
+      const double *bufferlibint2 = oblibint2->buffer();
+      const double *bufferv3 = obv3->buffer();
+      
+      int bf1_offset = 0;
+      for (int gc1=0; gc1<basis->shell(sh1).ncontraction(); gc1++) {
+        int am1 = basis->shell(sh1).am(gc1);
+        CartesianIter* citer1 = oblibint2->integral()->new_cartesian_iter(am1);
+        CartesianIter* iter1 = obv3->integral()->new_cartesian_iter(am1);
+        for (citer1->start(); int(*citer1); citer1->next() ) {
+          int bf1libint2 = bf1_offset + citer1->bfn();
+          int bf1v3;
+          for (iter1->start(); int(*iter1); iter1->next() ) {
+            if (iter1->a() == citer1->a() && iter1->b() == citer1->b()
+                && iter1->c() == citer1->c()) {
+              bf1v3 = bf1_offset + iter1->bfn();
+              break;
+            }
+          }
+          
+          int bf2_offset = 0;
+          for (int gc2=0; gc2<basis->shell(sh2).ncontraction(); gc2++) {
+            int am2 = basis->shell(sh2).am(gc2);
+            CartesianIter* citer2 = oblibint2->integral()->new_cartesian_iter(am2);
+            CartesianIter* iter2 = obv3->integral()->new_cartesian_iter(am2);
+            
+            for (citer2->start(); int(*citer2); citer2->next() ) {
+              int bf2libint2 = bf2_offset + citer2->bfn();
+              int bf2v3;
+              for (iter2->start(); int(*iter2); iter2->next() ) {
+                if (iter2->a() == citer2->a() && iter2->b() == citer2->b()
+                    && iter2->c() == citer2->c()) {
+                  bf2v3 = bf2_offset + iter2->bfn();
+                  break;
+                }
+              }
+
+              for(int xyz=0; xyz<3; ++xyz) {
+                double valuelibint2 = bufferlibint2[(bf1libint2*nbf2 + bf2libint2)*3 + xyz];
+                // IntV3 electric dipole integrals do not include electron charge
+                double valuev3 = (-1) * bufferv3[(bf1v3*nbf2 + bf2v3)*3 + xyz];
+                if (fabs(valuelibint2-valuev3) > 1E-13) {
+                  cout << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",
+                                   sh1, sh2);
+                  cout
+                  << scprintf(
+                              "bf1 = %d   bf2 = %d   xyz = %d   OEIntegral(libint2) = %20.15lf\n",
+                              bf1libint2, bf2libint2, xyz, valuelibint2);
+                  cout
+                  << scprintf(
+                              "bf1 = %d   bf2 = %d   xyz = %d   OEIntegral(V3)    = %20.15lf\n\n",
+                              bf1v3, bf2v3, xyz, valuev3);
+                }
+              }
+            }
+            
+            bf2_offset += basis->shell(sh2).nfunction(gc2);
+          }
+        }
+        bf1_offset += basis->shell(sh1).nfunction(gc1);
       }
     }
 }

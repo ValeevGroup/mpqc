@@ -3,6 +3,7 @@
 #endif
 
 #include <errno.h>
+#include <string.h>
 
 #include "except.h"
 

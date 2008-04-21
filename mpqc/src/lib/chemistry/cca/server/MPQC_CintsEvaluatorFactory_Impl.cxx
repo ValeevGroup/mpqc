@@ -55,6 +55,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include "basis_cca_to_sc.h"
 
 #include "MPQC_IntegralEvaluator1.hxx"
 #include "MPQC_IntegralEvaluator2.hxx"
@@ -77,9 +78,6 @@
 #include "ChemistryIntegralDescrCXX_Eri2IntegralDescr.hxx"
 #include "ChemistryIntegralDescrCXX_Eri3IntegralDescr.hxx"
 #include "ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx"
-
-sc::Ref<sc::GaussianBasisSet>
-basis_cca_to_sc( Chemistry::QC::GaussianBasis::MolecularInterface& );
 
 using namespace std;
 using namespace sc;

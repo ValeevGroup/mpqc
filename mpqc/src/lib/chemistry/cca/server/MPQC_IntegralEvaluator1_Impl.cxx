@@ -32,8 +32,7 @@
 #endif
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._includes)
 
-sc::Ref<sc::GaussianBasisSet>
-basis_cca_to_sc( Chemistry::QC::GaussianBasis::MolecularInterface& );
+#include "basis_cca_to_sc.h"
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._includes)
 

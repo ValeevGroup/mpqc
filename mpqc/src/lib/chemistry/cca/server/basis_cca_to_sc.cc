@@ -5,12 +5,15 @@
 #include <chemistry/molecule/atominfo.h>
 #include <Chemistry_QC_GaussianBasis_MolecularInterface.hxx>
 #include <Chemistry_MoleculeInterface.hxx>
+#include "basis_cca_to_sc.h"
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
+namespace MPQC {
+  
 Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
 
   const char* am_to_symbol[] = {"s", "p", "d", "f", "g", "h", "i", "k", "l",
@@ -115,3 +118,5 @@ Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
 
   return gbs;
 }
+
+} // end of namespace

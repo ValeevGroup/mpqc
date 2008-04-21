@@ -33,14 +33,12 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 
 #include <algorithm>
+#include "basis_cca_to_sc.h"
 
 #include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
-
-sc::Ref<sc::GaussianBasisSet>
-basis_cca_to_sc( Chemistry::QC::GaussianBasis::MolecularInterface& );
 
 using namespace ChemistryIntegralDescrCXX;
 

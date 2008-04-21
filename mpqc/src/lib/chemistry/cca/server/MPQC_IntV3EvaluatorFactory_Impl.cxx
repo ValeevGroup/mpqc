@@ -60,6 +60,7 @@
 #include "MPQC_IntegralEvaluator4.hxx"
 #include <sstream>
 #include <stdexcept>
+#include "basis_cca_to_sc.h"
 
 #include "ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx"
 #include "ChemistryIntegralDescrCXX_OverlapIntegralDescr.hxx"
@@ -82,9 +83,6 @@ using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace ChemistryIntegralDescrCXX;
-
-Ref<GaussianBasisSet> 
-basis_cca_to_sc( MolecularInterface& );
 
 // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._includes)
 

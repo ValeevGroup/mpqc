@@ -33,7 +33,7 @@
 #else
 // see libint2's configure for the hardwired values
 # if LIBINT2_CGSHELL_ORDERING == 1
-#  include <chemistry/int/cca/macros.h>
+#  include <chemistry/cca/int/macros.h>
 # elif LIBINT2_CGSHELL_ORDERING == 2
 #  include <chemistry/qc/intv3/macros.h>
 # else

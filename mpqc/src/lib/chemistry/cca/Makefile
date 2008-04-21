@@ -12,6 +12,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/cca/CCAMakefile
 ifneq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   EXCLUDE = --exclude='.*CintsEvaluatorFactory.*'
 endif
+ifneq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+  EXCLUDE = --exclude='.*Libint2EvaluatorFactory.*'
+endif
 
 SUBDIRS = server int molecule
 

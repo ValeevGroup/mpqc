@@ -48,6 +48,7 @@ BABEL_CLASSES = \
   MPQC.GaussianBasisMolecular \
   MPQC.IntV3EvaluatorFactory \
   MPQC.CintsEvaluatorFactory \
+  MPQC.Libint2EvaluatorFactory \
   MPQC.IntegralEvaluator1 \
   MPQC.IntegralEvaluator2 \
   MPQC.IntegralEvaluator3 \

@@ -40,6 +40,9 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   DEFINES += -DHAVE_CINTS
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+  DEFINES += -DHAVE_LIBINT2
+endif
 
 include babel.make
 

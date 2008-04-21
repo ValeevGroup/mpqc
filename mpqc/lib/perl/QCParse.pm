@@ -839,7 +839,8 @@ sub input_string() {
       $integrals = "$integrals\nintegrals<IntegralCCA>: (";
       my $int_package = $qcparse->value("default_package");
       if( $int_package ne "MPQC.IntV3EvaluatorFactory" && 
-          $int_package ne "MPQC.CintsEvaluatorFactory" ) {
+          $int_package ne "MPQC.CintsEvaluatorFactory" &&
+	  $int_package ne "MPQC.Libint2EvaluatorFactory" ) {
         $int_package = "MPQC.IntV3EvaluatorFactory";
       }
       $integrals = "$integrals\n  default_subfactory = $int_package";

@@ -41,6 +41,9 @@
 #ifdef HAVE_CINTS
   #include "MPQC_CintsEvaluatorFactory.hxx"
 #endif
+#ifdef HAVE_LIBINT2
+  #include "MPQC_Libint2EvaluatorFactory.hxx"
+#endif
 // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
 
 // speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
@@ -154,6 +157,15 @@ MPQC::ComponentFactory_impl::createComponentInstance_impl (
   else if (className == "MPQC.CintsEvaluatorFactory") {
     MPQC::CintsEvaluatorFactory x =
       MPQC::CintsEvaluatorFactory::_create();
+    gov::cca::Component c = x;
+    return c;
+  }
+#endif
+
+#ifdef HAVE_LIBINT2
+  else if (className == "MPQC.Libint2EvaluatorFactory") {
+    MPQC::Libint2EvaluatorFactory x =
+      MPQC::Libint2EvaluatorFactory::_create();
     gov::cca::Component c = x;
     return c;
   }

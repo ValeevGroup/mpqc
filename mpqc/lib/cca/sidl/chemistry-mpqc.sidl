@@ -45,6 +45,10 @@ package MPQC version 0.2 {
     Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
     gov.cca.Component {};
 
+  class Libint2EvaluatorFactory implements-all 
+    Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface,
+    gov.cca.Component {};
+
   class IntegralEvaluator1 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator1Interface
   {

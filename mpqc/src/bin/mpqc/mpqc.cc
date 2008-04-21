@@ -529,6 +529,9 @@ try_main(int argc, char *argv[])
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
     cca_load += ":MPQC.CintsEvaluatorFactory";
 #endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+    cca_load += ":MPQC.Libint2EvaluatorFactory";
+#endif
   }
 
   if( cca_load.size() > 0 && cca_path.size() > 0 && do_cca ) {

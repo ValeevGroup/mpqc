@@ -53,6 +53,10 @@ MPQC_CCAFramework::MPQC_CCAFramework(const std::string &args)
   component_factory_.addDescription("MPQC.CintsEvaluatorFactory",
                                     "MPQC.CintsEvaluatorFactory");
 #endif
+#ifdef HAVE_LIBINT2
+  component_factory_.addDescription("MPQC.Libint2EvaluatorFactory",
+                                    "MPQC.Libint2EvaluatorFactory");
+#endif
   services_.addProvidesPort(component_factory_, 
                             "ccaffeine.ports.ComponentFactory",
                             "ccaffeine.ports.ComponentFactory",

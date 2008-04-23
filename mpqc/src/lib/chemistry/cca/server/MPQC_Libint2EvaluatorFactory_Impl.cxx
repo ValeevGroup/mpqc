@@ -54,6 +54,36 @@
 // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory._includes)
 
 #include <string>
+#include <stdexcept>
+#include <vector>
+#include "basis_cca_to_sc.h"
+
+#include "MPQC_IntegralEvaluator1.hxx"
+#include "MPQC_IntegralEvaluator2.hxx"
+#include "MPQC_IntegralEvaluator3.hxx"
+#include "MPQC_IntegralEvaluator4.hxx"
+
+#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#include "Chemistry_QC_GaussianBasis_DipoleIntegralDescrInterface.hxx"
+#include "Chemistry_QC_GaussianBasis_QuadrupoleIntegralDescrInterface.hxx"
+
+#include "ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_OverlapIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_KineticIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_NuclearIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_HCoreIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_PointChargeIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_EfieldDotVectorIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_DipoleIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_QuadrupoleIntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_Eri2IntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_Eri3IntegralDescr.hxx"
+#include "ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx"
+
+using namespace sc;
+using namespace Chemistry;
+using namespace Chemistry::QC::GaussianBasis;
+using namespace ChemistryIntegralDescrCXX;
 
 // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory._includes)
 
@@ -69,7 +99,69 @@ MPQC::Libint2EvaluatorFactory_impl::Libint2EvaluatorFactory_impl() : StubBase(
 // user defined constructor
 void MPQC::Libint2EvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory._ctor)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory._ctor} (constructor)
+
+  integral_ = new sc::IntegralLibint2();
+  IntegralDescrInterface desc;
+
+  //
+  // Create registry of integral types which can be computed 
+  //
+  cdesc_ = ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
+
+  desc = OverlapIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = KineticIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = DipoleIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = QuadrupoleIntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cdesc_.add_descr( desc );
+
+  //
+  // Create registry of integral types for which derivatives cannot be computed 
+  //
+  cdesc_no_deriv_ = CompositeIntegralDescr::_create();
+
+  desc = OverlapIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = KineticIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = NuclearIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = HCoreIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = DipoleIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = QuadrupoleIntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
+  desc = Eri4IntegralDescr::_create();
+  cdesc_no_deriv_.add_descr( desc );
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory._ctor)
 }
 
@@ -113,17 +205,9 @@ MPQC::Libint2EvaluatorFactory_impl::get_descriptor_impl ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.get_descriptor)
   // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.get_descriptor} (get_descriptor method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "get_descriptor");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  return cdesc_no_deriv_;
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.get_descriptor)
 }
 
@@ -135,18 +219,17 @@ MPQC::Libint2EvaluatorFactory_impl::is_supported_impl (
   /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.is_supported)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.is_supported} (is_supported method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "is_supported");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  const std::string type = desc.get_type();
+  int dlevel = desc.get_deriv_lvl();
+  for( int i=0; i<cdesc_.get_n_descr(); ++i ) {
+    if( type == cdesc_.get_descr(i).get_type() &&
+        dlevel == cdesc_.get_descr(i).get_deriv_lvl() )
+      return true;
+  }
+
+  return false;
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.is_supported)
 }
 
@@ -159,18 +242,10 @@ MPQC::Libint2EvaluatorFactory_impl::set_storage_impl (
   /* in */int64_t storage ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.set_storage)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.set_storage} (set_storage method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "set_storage");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  storage_ = storage;
+  integral_->set_storage( storage_ );
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.set_storage)
 }
 
@@ -185,18 +260,9 @@ MPQC::Libint2EvaluatorFactory_impl::get_evaluator1_impl (
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.get_evaluator1)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.get_evaluator1} (get_evaluator1 method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "get_evaluator1");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator1 type");
+ 
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.get_evaluator1)
 }
 
@@ -212,18 +278,100 @@ MPQC::Libint2EvaluatorFactory_impl::get_evaluator2_impl (
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.get_evaluator2)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.get_evaluator2} (get_evaluator2 method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "get_evaluator2");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  //
+  // Copied over from CintsEvaluatorFactory
+  //
+
+  using std::vector;
+  vector< Ref<OneBodyInt> > obint_vec;
+  vector< Ref<OneBodyDerivInt> > obderivint_vec;
+  vector< Ref<TwoBodyTwoCenterInt> > tbtcint_vec;
+
+  bool is_ob, is_obderiv, is_tbtc;
+
+  MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
+  eval.set_basis( bs1, bs2 );
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  integral_->set_basis(sc_bs1,sc_bs2);
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    is_ob = is_obderiv = is_tbtc = false;
+
+    IntegralDescrInterface idesc = desc.get_descr(i);
+    const int ideriv = idesc.get_deriv_lvl();
+    std::string itype = idesc.get_type();
+
+    if( itype == "overlap"  && ideriv == 0 ) {
+      obint_vec.push_back( integral_->overlap() );
+      is_ob = true;
+    }
+    else if( itype == "kinetic" && ideriv == 0 ) {
+      obint_vec.push_back( integral_->kinetic() );
+      is_ob = true;
+    }
+    else if( itype == "nuclear" && ideriv == 0 ) {
+      obint_vec.push_back( integral_->nuclear() );
+      is_ob = true;
+    }
+    else if( itype == "hcore" && ideriv == 0 ) {
+      obint_vec.push_back( integral_->hcore() );
+      is_ob = true;
+    }
+    else if( itype == "dipole" && ideriv == 0 ) {
+      Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface ddesc;
+      ddesc = 
+        sidl::babel_cast<Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface>(
+          idesc );
+      Chemistry::QC::GaussianBasis::DipoleDataInterface cca_data;
+      cca_data = ddesc.get_dipole_data();
+      sidl::array<double> origin = cca_data.get_origin();
+      double sc_origin[3];
+      sc_origin[0] = origin.get(0);
+      sc_origin[1] = origin.get(1);
+      sc_origin[2] = origin.get(2);
+      dipole_data_ = new sc::DipoleData(sc_origin);
+      obint_vec.push_back( integral_->dipole(dipole_data_) );
+      is_ob = true;
+    }
+    else if( itype == "quadrupole" && ideriv == 0 ) {
+      Chemistry::QC::GaussianBasis::QuadrupoleIntegralDescrInterface ddesc;
+      ddesc = 
+        sidl::babel_cast<
+          Chemistry::QC::GaussianBasis::QuadrupoleIntegralDescrInterface>( 
+            idesc);
+      Chemistry::QC::GaussianBasis::DipoleDataInterface cca_data;
+      cca_data = ddesc.get_dipole_data();
+      sidl::array<double> origin = cca_data.get_origin();
+      double sc_origin[3];
+      sc_origin[0] = origin.get(0);
+      sc_origin[1] = origin.get(1);
+      sc_origin[2] = origin.get(2);
+      quad_data_ = new sc::DipoleData(sc_origin);
+      obint_vec.push_back( integral_->quadrupole(quad_data_) );
+      is_ob = true;
+    }
+    else
+      throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator2 type");
+
+    // multiple types could be a problem here
+    if( obint_vec.size() && is_ob  ) {
+      eval.add_evaluator( (void*) obint_vec.back().pointer(),
+                          idesc );
+      obint_vec_.push_back( obint_vec );
+    }
+    else
+      throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator2 type");
+      
+  }
+
+  return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.get_evaluator2)
 }
 
@@ -240,18 +388,9 @@ MPQC::Libint2EvaluatorFactory_impl::get_evaluator3_impl (
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.get_evaluator3)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.get_evaluator3} (get_evaluator3 method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "get_evaluator3");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator3 type");
+ 
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.get_evaluator3)
 }
 
@@ -269,18 +408,70 @@ MPQC::Libint2EvaluatorFactory_impl::get_evaluator4_impl (
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs4 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.get_evaluator4)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.get_evaluator4} (get_evaluator4 method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "get_evaluator4");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  //
+  // Copied over from CintsEvaluatorFactory and modified
+  //
+  
+  bool is_tb, is_tbderiv;
+  using std::vector;
+  vector< Ref<TwoBodyInt> > tbint_vec;
+  vector< Ref<TwoBodyDerivInt> > tbderivint_vec;
+
+  //
+  // Decide if the requested integrals can computed usign a composite evaluator
+  //
+  CompositeIntegralDescrInterface comp
+    = CompositeIntegralDescr::_create();
+  bool need_comp = false;
+  for( int i=0; i<desc.get_n_descr(); ++i) {
+    std::string tp = desc.get_descr(i).get_type();
+    // insert the logic here, perhaps it needs to be encapsulated in a separate Libint2-specific class
+    //if( tp != "eri")
+    //  need_comp = true;
+  }
+
+  MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
+  eval.set_basis( bs1, bs2, bs3, bs4 );
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1 = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2, sc_bs3, sc_bs4;
+  if( bs1.isSame(bs2) ) sc_bs2.assign_pointer(sc_bs1.pointer());
+  else sc_bs2 = basis_cca_to_sc( bs2 );
+  if( bs2.isSame(bs3) ) sc_bs3.assign_pointer(sc_bs2.pointer());
+  else sc_bs3 = basis_cca_to_sc( bs3 );
+  if( bs3.isSame(bs4) ) sc_bs4.assign_pointer(sc_bs3.pointer());
+  else sc_bs4 = basis_cca_to_sc( bs4);
+  integral_->set_basis(sc_bs1,sc_bs2,sc_bs3,sc_bs4);
+
+  for( int i=0; i<desc.get_n_descr(); ++i ) {
+
+    is_tb = is_tbderiv = false;
+
+    IntegralDescrInterface idesc = desc.get_descr(i);
+    const int ideriv = idesc.get_deriv_lvl();
+    std::string itype = idesc.get_type();
+
+    if( itype == "eri4"  && ideriv == 0 ) {
+      tbint_vec.push_back( integral_->electron_repulsion() );
+      is_tb = true;
+    }
+    else
+      throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator4 type");
+
+    if( tbint_vec.size() && is_tb ) {
+      // turning off integral caching for now -- need update to interface?
+      //tbint_vec.back().pointer()->set_integral_storage(storage_);
+      tbint_vec.back().pointer()->set_integral_storage(0);
+      eval.add_evaluator( (void*) tbint_vec.back().pointer(), idesc );
+      tbint_vec_.push_back( tbint_vec );
+    }
+    else
+      throw std::runtime_error("Libint2EvaluatorFactory: unsupported evaluator4 type");
+  }
+
+  return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.get_evaluator4)
 }
 
@@ -293,17 +484,8 @@ MPQC::Libint2EvaluatorFactory_impl::finalize_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.finalize)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.finalize} (finalize method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "finalize");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
+
+  // don't think need to do anything here
     
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.finalize)
 }
@@ -333,18 +515,24 @@ MPQC::Libint2EvaluatorFactory_impl::setServices_impl (
 //     ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Libint2EvaluatorFactory.setServices)
-  // Insert-Code-Here {MPQC.Libint2EvaluatorFactory.setServices} (setServices method)
-    
-    // DO-DELETE-WHEN-IMPLEMENTING exception.begin()
-    /*
-     * This method has not been implemented
-     */
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "setServices");
-    throw ex;
-    // DO-DELETE-WHEN-IMPLEMENTING exception.end()
-    
+
+  //
+  // Copied over from CintsEvaluatorFactory
+  //
+  
+  services_ = services;
+  if (services_._is_nil()) return;
+
+  try {
+      services_.addProvidesPort( 
+        *this, "IntegralEvaluatorFactoryInterface",
+        "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface", 0);
+  }
+  catch (gov::cca::CCAException e) {
+    std::cout << "Error using services: "
+              << e.getNote() << std::endl;
+  }
+
   // DO-NOT-DELETE splicer.end(MPQC.Libint2EvaluatorFactory.setServices)
 }
 

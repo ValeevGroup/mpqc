@@ -94,10 +94,14 @@ namespace MPQC {
 
     Chemistry::QC::GaussianBasis::MolecularInterface 
       basis1_, basis2_, basis3_, basis4_;
+    
+    /// registry of known integral types
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
       cdesc_;
+    /// registry of known integral types for which derivatives cannot be computed
     Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
       cdesc_no_deriv_;
+    
     std::vector< Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface > 
       comps_;
     std::vector< sc::Ref<sc::TwoBodyInt> > grts_;

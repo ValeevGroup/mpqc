@@ -142,7 +142,7 @@ This code is experimental, currently supported integrals include first nuclear d
 
 \subsection evalfacparam Parameters
 <ul>
-  <li><b>package</b> Integral package, either <tt>intv3</tt> or <tt>cints</tt>. 
+  <li><b>package</b> Integral package, either <tt>intv3</tt>, <tt>cints</tt>, or <tt>libint2</tt>. 
       Defaults to <tt>intv3</tt>.
   <li><b>integral_buffer</b> Integral buffer type, either <tt>opaque</tt> or <tt>array</tt>.
       The <tt>opaque</tt> option uses pointers and is therefore higher performance. 

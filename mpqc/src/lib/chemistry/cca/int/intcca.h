@@ -286,7 +286,7 @@ namespace sc {
         <dt><tt>integral_package</tt><dd> If the default 
         <tt>MPQC.IntegralEvaluatorFactory</tt> is used, then this 
         option may be used to specify the integrals package to use
-        (<tt>intv3</tt> or <tt>cints</tt>).  The default is <tt>intv3</tt>.
+        (<tt>intv3</tt>, <tt>cints</tt>, or <tt>libint2</tt>).  The default is <tt>intv3</tt>.
 
         <dt><tt>molecule</tt><dd> This gives a molecule object, it is required.
         </dl>

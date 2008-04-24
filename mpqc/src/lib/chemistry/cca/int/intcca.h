@@ -363,6 +363,9 @@ namespace sc {
 
     Ref<TwoBodyInt> grt();
 
+    /// Implementation of Integral::g12nc().
+    Ref<TwoBodyInt> g12nc();
+
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,

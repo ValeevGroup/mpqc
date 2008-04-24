@@ -52,6 +52,9 @@
 #include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_G12IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_R12sqG12IntegralDescr.hxx>
+#include <ChemistryIntegralDescrCXX_G12R12invIntegralDescr.hxx>
 #include <ChemistryIntegralDescrCXX_DerivCenters.hxx>
 #include <ChemistryIntegralDescrCXX_DipoleData.hxx>
 #include <chemistry/cca/int/cartit.h>
@@ -630,6 +633,45 @@ IntegralCCA::grt()
 
   R12T2IntegralDescr desc4 = 
     R12T2IntegralDescr::_create();
+  desc4.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc4.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc4 );
+  eval_req_.add_descr( desc4 );
+
+  return get_twobody( eval_req_ );
+}
+
+Ref<TwoBodyInt>
+IntegralCCA::g12nc()
+{
+  eval_req_.clear();
+  Eri4IntegralDescr desc =
+    Eri4IntegralDescr::_create();
+  desc.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
+  eval_req_.add_descr( desc );
+
+  G12IntegralDescr desc2 = 
+    G12IntegralDescr::_create();
+  desc2.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc2.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc2 );
+  eval_req_.add_descr( desc2 );
+
+  G12R12invIntegralDescr desc3 = 
+    G12R12invIntegralDescr::_create();
+  desc3.set_deriv_lvl(0);
+  cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
+  desc3.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc3 );
+  eval_req_.add_descr( desc3 );
+
+  R12sqG12IntegralDescr desc4 = 
+    R12sqG12IntegralDescr::_create();
   desc4.set_deriv_lvl(0);
   cca_dcs_.push_back( ChemistryIntegralDescrCXX::DerivCenters::_create() );
   desc4.set_deriv_centers( cca_dcs_.back() );

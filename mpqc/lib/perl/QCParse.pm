@@ -1,4 +1,3 @@
-#
 eval 'exec perl $0 $*'
     if 0;
 
@@ -639,6 +638,7 @@ package MPQCInputWriter;
 @ISA = qw( InputWriter );
 %methodmap = ("MP2-R12/A" => "MBPT2_R12",
               "MP2-R12/A'" => "MBPT2_R12",
+              "MP2-R12/B" => "MBPT2_R12",
               "MP2" => "MBPT2",
               "OPT1[2]" => "MBPT2",
               "OPT2[2]" => "MBPT2",
@@ -724,6 +724,7 @@ package MPQCInputWriter;
              );
 %mbpt2r12stdapproxmap = ("MP2-R12/A" => "A",
                          "MP2-R12/A'" => "A'",
+                         "MP2-R12/B" => "B",
                          );
 %mbpt2map = ("MP2" => "mp",
              "OPT1[2]" => "opt1",

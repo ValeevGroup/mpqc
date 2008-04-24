@@ -30,8 +30,8 @@ Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
   double conv = cca_mol.get_units().convert_to("bohr");
   input
     << "molecule<Molecule>: (\n"
-    << "  symmetry = auto\n"
     << "  unit = bohr\n"
+    << "  symmetry = C1\n"
     << "  {n atoms geometry } = {\n";
   for( int i=0; i<cca_mol.get_n_atom(); ++i ) {
     input << setprecision(16);
@@ -112,6 +112,9 @@ Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
 
   Ref<GaussianBasisSet> gbs;
   gbs.assign_pointer(sc_basis);
+
+  //std::cerr << "basis converter's molcule:\n";
+  //gbs->molecule()->print();
   
   //for(int i=0; i<gbs->nshell(); ++i)
   //  gbs->shell(i).print();

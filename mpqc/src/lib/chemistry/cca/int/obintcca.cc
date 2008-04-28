@@ -91,15 +91,6 @@ OneBodyIntCCA::compute_shell(int i, int j)
 
   eval_.compute( i, j );
 
-  // reorder for mpqc's wacky 1-body multi-segment ordering
-  if( n_segment_ > 1 && reorder_ ) {
-    for(int ii=0; ii<nfunc*n_segment_; ++ii)
-      temp_buffer_[ii] = buffer_[ii];
-    for(int ii=0; ii<nfunc; ++ii)
-      for( int si=0; si<n_segment_; ++si)
-        buffer_[ii*n_segment_+si] = temp_buffer_[si*nfunc+ii];
-  }
-
   // temporary debugging stuff for cca integrals comparison
 /*
   if( 1 ) {

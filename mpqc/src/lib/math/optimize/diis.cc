@@ -119,6 +119,8 @@ DIIS::DIIS(StateIn& s) :
 
   diism_data = new Ref<SCExtrapData>[ndiis];
   diism_error = new Ref<SCExtrapError>[ndiis];
+  // see DIIS::init() for why ndiis+1
+  diism_datain = new Ref<SCExtrapData>[ndiis+1];
 
   // read arrays
   int ndat = iter;

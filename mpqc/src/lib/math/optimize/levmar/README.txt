@@ -1,4 +1,4 @@
-lib/math/optimizelevmar is an import of LEVMAR (see http://www.ics.forth.gr/~lourakis/levmar/).
+lib/math/optimize/levmar is an import of LEVMAR (see http://www.ics.forth.gr/~lourakis/levmar/).
 LEVMAR is distributed under GPL. This file contains LEVMAR's README.txt.
 ----------------
 

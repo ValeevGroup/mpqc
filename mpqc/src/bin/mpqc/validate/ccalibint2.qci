@@ -1,15 +1,15 @@
 
-test_basis: cc-pVDZ cc-pVDZ
-test_auxbasis: cc-pVDZ aug-cc-pVDZ
-test_method: mp2-r12/a' mp2-r12/a'' mp2-r12/b mp2-r12/c
+test_basis: cc-pVDZ
+test_method: scf
 test_symmetry: c2v
 test_calc: energy
-test_fzc: 0 1
+test_default_package: MPQC.Libint2EvaluatorFactory
 
 restart: no
 checkpoint: no
+do_cca: yes
 
-label: water mp2-r12 test series
+label: cca integrals test
 
 molecule:
   O  0.000000000 0  0.369372944

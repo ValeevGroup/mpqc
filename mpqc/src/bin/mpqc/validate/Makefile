@@ -59,6 +59,9 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 ifeq ($(MPQCRUN_INTEGRAL),cints)
 HAVE_MBPTR12=yes
 endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+HAVE_MBPTF12=yes
+endif
 endif
 
 ########################################################################
@@ -78,6 +81,14 @@ else
   MP2R12INPUTS=
 endif
 MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
+
+MP2F12MASTER=mp2f12.qci
+ifeq ($(HAVE_MBPTF12),yes)
+  MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER))
+else
+  MP2F12INPUTS=
+endif
+MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
 
 H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OFRQMASTER))
@@ -144,11 +155,21 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  endif
 endif
 
+CCALIBINT2MASTER=ccalibint2.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+  CCALIBINT2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCALIBINT2MASTER))
+  CCALIBINT2OUTPUTS = $(CCALIBINT2INPUTS:%.$(INSUF)=%.out)
+ endif
+endif
+
 CCAMP2R12MASTER=ccamp2r12.qci
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
-  CCAMP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAMP2R12MASTER))
-  CCAMP2R12OUTPUTS = $(CCAMP2R12INPUTS:%.$(INSUF)=%.out)
+  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+   CCAMP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAMP2R12MASTER))
+   CCAMP2R12OUTPUTS = $(CCAMP2R12INPUTS:%.$(INSUF)=%.out)
+  endif
  endif
 endif
 
@@ -199,12 +220,14 @@ MBPTINPUTS = \
  mbpt_mp2mem_dyn.in
 
 ifeq ($(HAVE_MBPTR12),yes)
- MBPTINPUTS += \
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+  MBPTINPUTS += \
     mbpt_mp2r12_ne2.in            mbpt_mp2r12_ne2_posix.in \
     mbpt_mp2r12_ne2_tz.in         mbpt_mp2r12_ne2_dyn.in \
     mbpt_mp2r12_c6h6_multipass.in
- ifeq ($(MPQCRUN_NTHREADPERPROC),1)
-  MBPTINPUTS += mbpt_mp2r12_ne2_multipass.in
+  ifeq ($(MPQCRUN_NTHREADPERPROC),1)
+   MBPTINPUTS += mbpt_mp2r12_ne2_multipass.in
+  endif
  endif
 endif
 
@@ -223,11 +246,13 @@ qmmm2.in       clhfdk1.in            clhfdk2.in \
 clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
 ifeq ($(HAVE_MBPTR12),yes)
- METHODSINPUTS += \
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+  METHODSINPUTS += \
     mp2r12ap_+gbc.in mp2r12ap_abs+.in \
     mp2r12ap_abs.in  mp2r12ap_cabs+.in \
     mp2r12ap_cabs.in mp2r12ap_nogebc.in \
     mp2r12ap_+ebc.in mp2r12ap_+gbc+ebc.in
+ endif
 endif
 
 METHODSINPUTS := $(METHODSINPUTS:%=$(INP)/methods_%)
@@ -237,30 +262,31 @@ rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
 hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in \
 mp2h2o.in zapt2ch2.in
 ifeq ($(HAVE_MBPTR12),yes)
-  INPUTINPUTS += mp2r12ah2o.in mp2r12aph2o.in
+  INPUTINPUTS += mp2r12aph2o.in
 endif
 INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 
 ##############################################################################
 
-# cints will not run all test cases.  This filter can be used to select
-# just cases that cints can run
+# cints and libint2 will not run all test cases.  These filters can be used to select
+# just cases that these can run
 CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12%
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12%
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
-	    $(MP2R12INPUTS) \
+	    $(MP2R12INPUTS) $(MP2F12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
-            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) \
+            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) \
             $(CCAMP2R12INPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
-                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS)
+                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS)
 
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
@@ -282,6 +308,9 @@ CHECK0FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
 CHECK0INPUTS := $(filter-out $(CHECK0FILTER),$(CHECK0INPUTS))
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK0INPUTS := $(filter $(LIBINT2FILTER),$(CHECK0INPUTS))
 endif
 CHECK0OUTPUTS := $(CHECK0INPUTS:%.$(INSUF)=%.out)
 #printcheck0:
@@ -311,6 +340,9 @@ CHECK1INPUTS := $(filter-out $(CHECK1FILTER),$(CHECK1INPUTS))
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK1INPUTS := $(filter $(CINTSFILTER),$(CHECK1INPUTS))
 endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK1INPUTS := $(filter $(LIBINT2FILTER),$(CHECK1INPUTS))
+endif
 CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)
 #printcheck1:
 #	@echo CHECK1BFILTER = $(CHECK1BFILTER)
@@ -320,6 +352,9 @@ CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)
 CHECK2INPUTS := $(ALLINPUTS)
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK2INPUTS := $(filter $(CINTSFILTER),$(CHECK2INPUTS))
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK2INPUTS := $(filter $(LIBINT2FILTER),$(CHECK2INPUTS))
 endif
 CHECK2OUTPUTS := $(CHECK2INPUTS:%.$(INSUF)=%.out)
 #printcheck2:
@@ -405,13 +440,13 @@ check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
-	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%) $(CCAMP2R12INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%) $(CCALIBINT2INPUTS:$(INP)/%=%) $(CCAMP2R12INPUTS:$(INP)/%=%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_run
 endif
 
 checkcca_chk:
-	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%) $(CCAMP2R12OUTPUTS:$(INP)/%=$(RUN)/%)
+	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%) $(CCALIBINT2OUTPUTS:$(INP)/%=$(RUN)/%)  $(CCAMP2R12OUTPUTS:$(INP)/%=$(RUN)/%)
 ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
 endif
@@ -427,7 +462,7 @@ checkccafe_chk:
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs
-inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: h2o h2omp2 mp2r12 mp2f12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
 inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
 
 .PHONY: h2o
@@ -438,6 +473,9 @@ h2omp2: stamp-h2omp2
 
 .PHONY: mp2r12
 mp2r12: stamp-mp2r12
+
+.PHONY: mp2f12
+mp2f12: stamp-mp2f12
 
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
@@ -511,6 +549,10 @@ stamp-mp2r12: $(INP) $(MP2R12MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(MP2R12MASTER)
 	touch stamp-mp2r12
 
+stamp-mp2f12: $(INP) $(MP2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(MP2F12MASTER)
+	touch stamp-mp2f12
+
 stamp-h2ofrq: $(INP) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(H2OFRQMASTER)
 	touch stamp-h2ofrq
@@ -573,6 +615,10 @@ stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
 
 stamp-ccacints: $(INP) $(CCACINTSMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCACINTSMASTER)
+	touch stamp-ccacints
+
+stamp-ccalibint2: $(INP) $(CCALIBINT2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCALIBINT2MASTER)
 	touch stamp-ccacints
 
 stamp-ccamp2r12: $(INP) $(CCAMP2R12MASTER) $(INPUTGENDEPS)

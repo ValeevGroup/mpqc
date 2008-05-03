@@ -636,9 +636,14 @@ sub write_qcinput {
 
 package MPQCInputWriter;
 @ISA = qw( InputWriter );
-%methodmap = ("MP2-R12/A" => "MBPT2_R12",
-              "MP2-R12/A'" => "MBPT2_R12",
+%methodmap = ("MP2-R12/A'" => "MBPT2_R12",
+              "MP2-R12/A''" => "MBPT2_R12",
               "MP2-R12/B" => "MBPT2_R12",
+              "MP2-R12/C" => "MBPT2_R12",
+              "MP2-F12/A'" => "MBPT2_R12",
+              "MP2-F12/A''" => "MBPT2_R12",
+              "MP2-F12/B" => "MBPT2_R12",
+              "MP2-F12/C" => "MBPT2_R12",
               "MP2" => "MBPT2",
               "OPT1[2]" => "MBPT2",
               "OPT2[2]" => "MBPT2",
@@ -722,9 +727,23 @@ package MPQCInputWriter;
               "UBP86"    => "DFT",
               "UBPW91"   => "DFT",
              );
-%mbpt2r12stdapproxmap = ("MP2-R12/A" => "A",
-                         "MP2-R12/A'" => "A'",
+%mbpt2r12stdapproxmap = ("MP2-R12/A'" => "A'",
+                         "MP2-R12/A''" => "A''",
                          "MP2-R12/B" => "B",
+                         "MP2-R12/C" => "C",
+                         "MP2-F12/A'" => "A'",
+                         "MP2-F12/A''" => "A''",
+                         "MP2-F12/B" => "B",
+                         "MP2-F12/C" => "C",
+                         );
+%mbpt2r12corrfactormap = ("MP2-R12/A'" => "R12",
+                          "MP2-R12/A''" => "R12",
+                          "MP2-R12/B" => "R12",
+                          "MP2-R12/C" => "R12",
+                         "MP2-F12/A'" => "STG-3G",
+                         "MP2-F12/A''" => "STG-3G",
+                         "MP2-F12/B" => "STG-3G",
+                         "MP2-F12/C" => "STG-3G",
                          );
 %mbpt2map = ("MP2" => "mp",
              "OPT1[2]" => "opt1",
@@ -799,7 +818,7 @@ sub input_string() {
     my $qcinput = $self->{"qcinput"};
     my $qcparse = $qcinput->{"parser"};
 
-    my $use_cints = 0;
+    my $use_r12ints = "none";
     my $do_cca = $qcparse->value("do_cca");
 
     printf "molecule = %s\n", $qcparse->value("molecule") if ($debug);
@@ -975,12 +994,21 @@ sub input_string() {
     }
     if ($method eq "MBPT2_R12") {
         my $stdapprox = $mbpt2r12stdapproxmap{uc($qcinput->method())};
+        my $corrfactor = $mbpt2r12corrfactormap{uc($qcinput->method())};
         my $auxbasis = $qcinput->auxbasis();
         my $fzc = $qcinput->fzc();
 
-        $mole = sprintf "%s\n    stdapprox = \"%s\"", $mole, $stdapprox;
+        $mole = sprintf "%s\n    stdapprox = \"%s\"\n    corr_factor = \"%s\"",
+                  $mole, $stdapprox, $corrfactor;
         if($do_cca ne "yes") {
-          $mole = "$mole\n    integrals<IntegralCints>: ()";
+        	if ($corrfactor eq "R12") {
+              $mole = "$mole\n    integrals<IntegralCints>: ()";
+              $use_r12ints = "cints";
+        	}
+        	else {
+              $mole = "$mole\n    corr_param = 1.5\n    integrals<IntegralLibint2>: ()";
+              $use_r12ints = "libint2";
+        	}
         }
         $mole = "$mole\n    nfzc = $fzc";
         # don't write an auxbasis if the auxbasis is the same as the basis set.
@@ -993,7 +1021,6 @@ sub input_string() {
         }
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
                                  $lindep_tol,$docc,$socc,"DZ (Dunning)");
-        $use_cints = 1;
     }
     elsif ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
@@ -1098,12 +1125,17 @@ sub input_string() {
                           $mpqcstart,bool_to_yesno($qcinput->checkpoint()));
     $mpqcstart = sprintf ("%s  restart = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->restart()));
-    if ($use_cints) {
+    if ($use_r12ints ne "none") {
         if ( $do_cca ) {
           $mpqcstart = "$mpqcstart  integrals = \$:integrals\n";
         }
         else {
-          $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+          if ($use_r12ints eq "r12") {
+            $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+          }
+          else {
+          	$mpqcstart = "$mpqcstart  integrals<IntegralLibint2>: ()\n";
+          }
         }
     }
     my $mpqcstop = ")\n";

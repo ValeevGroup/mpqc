@@ -26,6 +26,8 @@
      basis = $:basis
      aux_basis = $:abasis
      abs_method = abs
+     % this ABS is not complete enough, hence turn off the check
+     safety_check = false
      spinadapted = true
      stdapprox = "a'"
      ebc = true

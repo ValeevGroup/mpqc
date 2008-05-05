@@ -253,7 +253,7 @@
     Spin-adapted algorithm: true
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file: mp2r12ap_cabs.r12ints.dat
+    Transformed Integrals file: mp2r12ap_cabs.moints.dat
 
     Auxiliary Basis Set (ABS):
       GaussianBasisSet:

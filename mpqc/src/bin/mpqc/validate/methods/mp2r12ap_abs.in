@@ -33,7 +33,7 @@
      ebc = true
      gebc = true
      memory = 10000000
-     r12ints = posix
+     store_ints = posix
      nfzc = 1
      integrals<IntegralCints>: ()
      reference<CLHF>: (

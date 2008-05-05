@@ -396,7 +396,7 @@ Value of the MolecularEnergy: -257.5783113619
     Spin-adapted algorithm: false
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file: ./mbpt_mp2r12_ne2_multipass.r12ints.dat
+    Transformed Integrals file: ./mbpt_mp2r12_ne2_multipass.moints.dat
 
     Auxiliary Basis:
       GaussianBasisSet:

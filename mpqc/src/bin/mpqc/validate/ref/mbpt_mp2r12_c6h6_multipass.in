@@ -47,8 +47,8 @@ mpqc: (
     memory = 36000000
     stdapprox = "A"
     nfzc = 0
-    r12ints = posix 
-    r12ints_file = "./mbpt_mp2r12_c6h6_multipass.r12ints.dat"
+    store_ints = posix 
+    ints_file = "./mbpt_mp2r12_c6h6_multipass.moints.dat"
     aux_basis<GaussianBasisSet>: (
       name = "cc-pVDZ"
       molecule = $:molecule

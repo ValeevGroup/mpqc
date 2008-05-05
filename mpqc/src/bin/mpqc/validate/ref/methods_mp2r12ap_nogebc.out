@@ -661,7 +661,7 @@ Value of the MolecularEnergy: -128.7857703340
     Spin-adapted algorithm: true
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file suffix: ./methods_mp2r12ap_nogebc.r12ints
+    Transformed Integrals file suffix: ./methods_mp2r12ap_nogebc.moints
 
     Auxiliary Basis Set (ABS):
       GaussianBasisSet:

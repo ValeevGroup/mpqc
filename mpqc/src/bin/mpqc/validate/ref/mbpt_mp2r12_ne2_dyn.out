@@ -291,7 +291,7 @@
     Spin-adapted algorithm: true
     How to Store Transformed Integrals: mem_posix
 
-    Transformed Integrals file: mbpt_mp2r12_ne2_dyn.r12ints.dat
+    Transformed Integrals file: mbpt_mp2r12_ne2_dyn.moints.dat
 
     Auxiliary Basis Set (ABS):
       GaussianBasisSet:

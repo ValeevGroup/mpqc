@@ -908,7 +908,7 @@
     Spin-adapted algorithm: false
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file: ./mbpt_mp2r12_c6h6_multipass.r12ints.dat
+    Transformed Integrals file: ./mbpt_mp2r12_c6h6_multipass.moints.dat
 
     Auxiliary Basis:
       GaussianBasisSet:

@@ -283,7 +283,7 @@ Value of the MolecularEnergy:  -76.2880667102
   MBPT2_R12:
     Standard Approximation: A'
     Spin-adapted algorithm: false
-    Transformed Integrals file: /tmp/r12ints.dat
+    Transformed Integrals file: /tmp/moints.dat
 
     Auxiliary Basis:
       GaussianBasisSet:

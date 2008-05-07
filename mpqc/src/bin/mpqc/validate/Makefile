@@ -222,7 +222,7 @@ MBPTINPUTS = \
 ifeq ($(HAVE_MBPTR12),yes)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   MBPTINPUTS += \
-    mbpt_mp2r12_ne2.in            mbpt_mp2r12_ne2_posix.in \
+    mbpt_mp2r12_ne2.in \
     mbpt_mp2r12_ne2_tz.in         mbpt_mp2r12_ne2_dyn.in \
     mbpt_mp2r12_c6h6_multipass.in
   ifeq ($(MPQCRUN_NTHREADPERPROC),1)

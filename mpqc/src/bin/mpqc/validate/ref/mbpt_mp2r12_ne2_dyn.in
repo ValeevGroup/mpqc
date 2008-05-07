@@ -35,7 +35,7 @@ mpqc: (
     basis = $:basis
     coor = $..:coor
     memory = 32000000
-    stdapprox = "A"
+    stdapprox = "A'"
     nfzc = 2
     aux_basis<GaussianBasisSet>: (
       name = "aug-cc-pVDZ"

@@ -35,10 +35,9 @@ mpqc: (
     basis = $:basis
     coor = $..:coor
     memory = 2250000
-    stdapprox = "A"
+    stdapprox = "A'"
     nfzc = 2
-    store_ints = posix 
-    ints_file = "./mbpt_mp2r12_ne2_multipass.moints.dat"
+    store_ints = posix
     aux_basis<GaussianBasisSet>: (
       name = "aug-cc-pVDZ"
       molecule = $:molecule

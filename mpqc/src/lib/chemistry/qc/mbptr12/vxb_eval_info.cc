@@ -108,7 +108,7 @@ R12IntEvalInfo::R12IntEvalInfo(
   delete[] ints_str;
   
   // Get the prefix for the filename to store the integrals
-  std::string ints_file_default("./");
+  std::string ints_file_default("");
   ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(ints_file_default));
   // if the last character of ints_file is '/' then append the default basename
   if (*(ints_file_.rbegin()) == '/')

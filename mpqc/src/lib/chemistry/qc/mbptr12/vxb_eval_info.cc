@@ -107,12 +107,12 @@ R12IntEvalInfo::R12IntEvalInfo(
   }
   delete[] ints_str;
   
-  // Get the prefix for the filename to store the integrals
-  std::string ints_file_default("");
+  // Get the filename prefix to store the integrals
+  const std::string ints_file_default = SCFormIO::fileext_to_filename(".moints");
   ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(ints_file_default));
   // if the last character of ints_file is '/' then append the default basename
   if (*(ints_file_.rbegin()) == '/')
-    ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
+    ints_file_ += ints_file_default;
   ExEnv::out0() << indent << "ints_file = " << ints_file_ << endl;
 
   // dynamic load balancing?

@@ -299,6 +299,15 @@ DistShellPair::get_task(int &S, int &R)
       S = R = -1;
       return 0;
       }
+    if (my_shellpair%print_interval_ == 0) {
+      if (print_percent_ <= 100.0 && msg_->me() == 0) {
+        ExEnv::outn() << indent 
+             << scprintf("  working on shell pair (%3d %3d), %6.3f%% complete",
+                 S,R,((double)my_shellpair*100.0)/ntask_)
+                     << " (" << my_shellpair << " of " << ntask_ << ")"
+             << endl;
+      }
+    }
   }
   else { // static load balancing
     int nsh1 = bs1_->nshell();

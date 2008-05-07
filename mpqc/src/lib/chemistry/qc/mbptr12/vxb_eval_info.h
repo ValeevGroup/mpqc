@@ -158,13 +158,17 @@ public:
 	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
 	<tt>store_ints</tt> should be explicitly set to <tt>mpi</tt>.
 
-        <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
+    <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
 	MO integrals file if <tt>ints</tt> is set to <tt>posix</tt> or <tt>mpi</tt>.
 	If the prefix ends in '/' (slash character) then "<basename>.moints"
-        is appended to it where <basename> is the basename as defined in SCFormIO.
-        The default value for the prefix is "./".
-        If MPI-I/O is used then it is user's responsibility to ensure
+    is appended to it where <basename> is the basename as defined in SCFormIO.
+    The default value for the prefix is "./".
+    If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
+	
+	<dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
+	is used by MO integrals transforms. The default is false.
+	
     */
   R12IntEvalInfo(const Ref<KeyVal>& keyval,
 		 Wavefunction* wfn,
@@ -179,8 +183,7 @@ public:
   /// performs tasks that semantically belong in constructor but can't be performed there
   void initialize();
 
-  /** Sets whether to use dynamic load balancing in parallel MO transformations.
-      Default is no */
+  /** Sets whether to use dynamic load balancing in parallel MO transformations. */
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; };
   /// Sets how frequently updates of progress are printed out. Default is 10%
   void set_print_percent(double print_percent) { print_percent_ = print_percent; };

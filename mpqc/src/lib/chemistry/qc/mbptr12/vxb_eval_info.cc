@@ -71,7 +71,6 @@ R12IntEvalInfo::R12IntEvalInfo(
   // Default values
   memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
-  dynamic_ = false;
   print_percent_ = 10.0;
 
   bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
@@ -116,10 +115,12 @@ R12IntEvalInfo::R12IntEvalInfo(
     ints_file_ += std::string(SCFormIO::fileext_to_filename(".moints"));
   ExEnv::out0() << indent << "ints_file = " << ints_file_ << endl;
 
+  // dynamic load balancing?
+  dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(0)));
+  
   r12tech_ = new R12Technology(keyval,ref->basis(),bs_vir_,bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
-
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -215,6 +216,7 @@ R12IntEvalInfo::initialize()
       
       tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
       tfactory_->set_memory(memory_);
+      tfactory_->set_dynamic(dynamic_);
       tfactory_->set_ints_method(ints_method_);
       tfactory_->set_file_prefix(ints_file_);
       initialized_ = true;

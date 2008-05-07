@@ -56,7 +56,7 @@ MBPT2_R12::compute_energy_()
   const Ref<R12IntEvalInfo>& r12info = r12evalinfo_;
   r12info->initialize();
   if (r12eval_.null()) {
-    r12evalinfo_->set_dynamic(dynamic_);
+    // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
     r12evalinfo_->set_print_percent(print_percent_);
     r12evalinfo_->set_memory(mem_alloc);
     r12eval_ = new R12IntEval(r12evalinfo_);

@@ -226,6 +226,10 @@ class MBPT2: public Wavefunction {
         algorithm.  If this is not given the program will try to find an
         appropriate default.
 
+        <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
+        is used. The default is false.
+    
+        
         </dl> */
     MBPT2(const Ref<KeyVal>&);
     ~MBPT2();

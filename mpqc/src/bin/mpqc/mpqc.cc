@@ -47,6 +47,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <libgen.h>
 
 #include <scconfig.h>
 #ifdef HAVE_SSTREAM
@@ -401,10 +402,17 @@ try_main(int argc, char *argv[])
   if (options.retrieve("k")) parsedkv->verbose(1);
   Ref<KeyVal> keyval = new PrefixKeyVal(parsedkv.pointer(),"mpqc");
 
-  // get the basename for output files
+  // get the basename for output files:
+  // 1) if output filename is given, use it minus the suffix
+  // 2) if output filename is not given, use its basename minus the suffix
   const char *basename_source;
   if (output) basename_source = output;
-  else        basename_source = input;
+  else {
+    // get the basename(input). basename() in libgen.h is in POSIX standard
+    char* input_copy = ::strdup(input);
+    basename_source = basename(input_copy);
+    free(input_copy);
+  }
   int nfilebase = (int) (::strrchr(basename_source, '.') - basename_source);
   char *basename = new char[nfilebase + 1];
   strncpy(basename, basename_source, nfilebase);

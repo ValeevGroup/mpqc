@@ -1018,6 +1018,7 @@ sub input_string() {
             $mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
             $mole = "$mole\n      molecule = \$:molecule";
             $mole = "$mole\n    )\n";
+            $mole = "$mole\n    abs_method = CABS\n";
         }
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
                                  $lindep_tol,$docc,$socc,"DZ (Dunning)");

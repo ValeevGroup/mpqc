@@ -52,6 +52,8 @@ mpqc: (
       name = "cc-pVDZ"
       molecule = $:molecule
     )
+    % this ABS is not complete enough, hence turn off the check
+    safety_check = false
 
     reference<CLHF>: (
       molecule = $:molecule

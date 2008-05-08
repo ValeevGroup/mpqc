@@ -55,12 +55,14 @@ ifeq ($(filter --mpqc%, $(ALL_MPQCRUN_ARGS)),)
 ALL_MPQCRUN_ARGS:=--mpqc ../../mpqc $(ALL_MPQCRUN_ARGS)
 endif
 
+# MP2-R12 tests are only run when 1) appropriate factories are specified via MPQCRUN_ARGS
+# and 2) MPQC was configured with MP2-R12 capabilities
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 ifeq ($(MPQCRUN_INTEGRAL),cints)
-HAVE_MBPTR12=yes
+RUN_MBPTR12=yes
 endif
 ifeq ($(MPQCRUN_INTEGRAL),libint2)
-HAVE_MBPTF12=yes
+RUN_MBPTF12=yes
 endif
 endif
 
@@ -75,7 +77,7 @@ H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OMP2MA
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
 
 MP2R12MASTER=mp2r12.qci
-ifeq ($(HAVE_MBPTR12),yes)
+ifeq ($(RUN_MBPTR12),yes)
   MP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2R12MASTER))
 else
   MP2R12INPUTS=
@@ -83,7 +85,7 @@ endif
 MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
 
 MP2F12MASTER=mp2f12.qci
-ifeq ($(HAVE_MBPTF12),yes)
+ifeq ($(RUN_MBPTF12),yes)
   MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER))
 else
   MP2F12INPUTS=
@@ -219,8 +221,7 @@ MBPTINPUTS = \
  mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in \
  mbpt_mp2mem_dyn.in
 
-ifeq ($(HAVE_MBPTR12),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+ifeq ($(RUN_MBPTR12),yes)
   MBPTINPUTS += \
     mbpt_mp2r12_ne2.in \
     mbpt_mp2r12_ne2_tz.in         mbpt_mp2r12_ne2_dyn.in \
@@ -228,7 +229,6 @@ ifeq ($(HAVE_MBPTR12),yes)
   ifeq ($(MPQCRUN_NTHREADPERPROC),1)
    MBPTINPUTS += mbpt_mp2r12_ne2_multipass.in
   endif
- endif
 endif
 
 MBPTINPUTS := $(MBPTINPUTS:%=$(INP)/%)
@@ -245,14 +245,12 @@ hsoshf.in      osshf.in              qmmm1.in \
 qmmm2.in       clhfdk1.in            clhfdk2.in \
 clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
-ifeq ($(HAVE_MBPTR12),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+ifeq ($(RUN_MBPTR12),yes)
   METHODSINPUTS += \
     mp2r12ap_+gbc.in mp2r12ap_abs+.in \
     mp2r12ap_abs.in  mp2r12ap_cabs+.in \
     mp2r12ap_cabs.in mp2r12ap_nogebc.in \
     mp2r12ap_+ebc.in mp2r12ap_+gbc+ebc.in
- endif
 endif
 
 METHODSINPUTS := $(METHODSINPUTS:%=$(INP)/methods_%)
@@ -261,7 +259,7 @@ INPUTINPUTS = \
 rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
 hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in \
 mp2h2o.in zapt2ch2.in
-ifeq ($(HAVE_MBPTR12),yes)
+ifeq ($(RUN_MBPTR12),yes)
   INPUTINPUTS += mp2r12aph2o.in
 endif
 INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
@@ -271,7 +269,12 @@ INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 # cints and libint2 will not run all test cases.  These filters can be used to select
 # just cases that these can run
 CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12%
-LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12%
+# use libint2 configuration to determine which MP2-F12 set to run
+ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
+else
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc%
+endif
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
 	    $(MP2R12INPUTS) $(MP2F12INPUTS) \
@@ -283,6 +286,7 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
             $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) \
             $(CCAMP2R12INPUTS)
+
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \

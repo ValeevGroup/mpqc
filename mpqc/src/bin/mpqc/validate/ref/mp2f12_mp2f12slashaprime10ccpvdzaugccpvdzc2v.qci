@@ -1,0 +1,53 @@
+test_auxbasis:
+aug-cc-pVDZ
+fixed:
+
+test_symmetry:
+c2v
+followed:
+
+state:
+1
+fzc:
+1
+basis:
+cc-pVDZ
+method:
+mp2-f12/a'
+auxbasis:
+aug-cc-pVDZ
+test_calc:
+energy
+test_fzc:
+0 1
+restart:
+no
+grid:
+default
+frequencies:
+no
+docc:
+auto
+test_basis:
+cc-pVDZ
+default_package:
+MPQC.IntV3EvaluatorFactory
+checkpoint:
+no
+symmetry:
+c2v
+socc:
+auto
+fzv:
+0
+test_method:
+mp2-f12/a' mp2-f12/a'' mp2-f12/b mp2-f12/c
+label:
+water mp2-r12 test series
+optimize:
+no
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+

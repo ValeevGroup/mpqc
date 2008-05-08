@@ -1,35 +1,26 @@
 % Emacs should use -*- KeyVal -*- mode
 % this file was automatically generated
-% label: ne dimer mp2-r12 test series
+% label: water mp2-r12 test series
 % molecule specification
 molecule<Molecule>: (
-  symmetry = D2H
+  symmetry = C2V
   unit = angstrom
   { atoms geometry } = {
-   C [-0.000000000000    -0.000000000000     1.391500000000 ]
-   H [-0.000000000000    -0.000000000000     2.471500000000 ]
-   C [ 1.205074349366    -0.000000000000     0.695750000000 ]
-   H [ 2.140381785453    -0.000000000000     1.235750000000 ]
-   C [ 1.205074349366    -0.000000000000    -0.695750000000 ]
-   H [ 2.140381785453     0.000000000000    -1.235750000000 ]
-   C [-0.000000000000     0.000000000000    -1.391500000000 ]
-   H [-0.000000000000     0.000000000000    -2.471500000000 ]
-   C [-1.205074349366     0.000000000000    -0.695750000000 ]
-   H [-2.140381785453     0.000000000000    -1.235750000000 ]
-   C [-1.205074349366    -0.000000000000     0.695750000000 ]
-   H [-2.140381785453     0.000000000000     1.235750000000 ]
+     O     [     0.000000000000     0.000000000000     0.369372944000 ]
+     H     [     0.783975899000     0.000000000000    -0.184686472000 ]
+     H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
   }
 )
 % basis set specification
 basis<GaussianBasisSet>: (
-  name = "DZ (Dunning)"
+  name = "cc-pVDZ"
   molecule = $:molecule
 )
 mpqc: (
-  integrals<IntegralCints>: ()
   checkpoint = no
   savestate = no
   restart = no
+  integrals<IntegralLibint2>: ()
   % molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
@@ -44,23 +35,24 @@ mpqc: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
-    memory = 36000000
-    stdapprox = "A'"
+    memory = 32000000
+    stdapprox = "B"
+    corr_factor = "R12"
+    integrals<IntegralCints>: ()
     nfzc = 0
-    store_ints = posix
     aux_basis<GaussianBasisSet>: (
-      name = "cc-pVDZ"
+      name = "aug-cc-pVDZ"
       molecule = $:molecule
     )
-    % this ABS is not complete enough, hence turn off the check
-    safety_check = false
+
+    abs_method = CABS
 
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       total_charge = 0
       multiplicity = 1
-      memory = 20000000
+      memory = 32000000
       guess_wavefunction<CLHF>: (
         molecule = $:molecule
         total_charge = 0
@@ -69,7 +61,7 @@ mpqc: (
           molecule = $:molecule
           name = "DZ (Dunning)"
         )
-        memory = 20000000
+        memory = 32000000
       )
     )
   )

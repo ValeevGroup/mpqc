@@ -1,0 +1,661 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin8.11.1
+  User:       evaleev@h80ad9188.dhcp.vt.edu
+  Start Time: Thu May  8 11:11:56 2008
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralCints by default for molecular integrals evaluation
+
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca+comm/share/mpqc/3.0.0-alpha/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca+comm/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+      Reading file /Users/evaleev/Development/workspace/mpqc-install-cca+comm/share/mpqc/3.0.0-alpha/basis/dz_LdunningR.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             8     0     4     2
+      Maximum orthogonalization residual = 3.50763
+      Minimum orthogonalization residual = 0.0574104
+      docc = [ 3 0 1 1 ]
+      nbasis = 14
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    9.1571164588
+
+      integral intermediate storage = 643784 bytes
+      integral cache = 31354536 bytes
+      Beginning iterations.  Basis is DZ (Dunning).
+                      4284 integrals
+      iter     1 energy =  -75.6929826973 delta = 2.35942e-01
+                      4284 integrals
+      iter     2 energy =  -75.9969199201 delta = 5.90609e-02
+                      4284 integrals
+      iter     3 energy =  -76.0095041153 delta = 1.43489e-02
+                      4284 integrals
+      iter     4 energy =  -76.0104942081 delta = 5.95029e-03
+                      4284 integrals
+      iter     5 energy =  -76.0106554883 delta = 1.61684e-03
+                      4284 integrals
+      iter     6 energy =  -76.0106673002 delta = 6.25926e-04
+                      4284 integrals
+      iter     7 energy =  -76.0106682882 delta = 2.13656e-04
+                      4284 integrals
+      iter     8 energy =  -76.0106683083 delta = 3.37517e-05
+                      4284 integrals
+      iter     9 energy =  -76.0106683092 delta = 6.20338e-06
+                      4284 integrals
+      iter    10 energy =  -76.0106683092 delta = 1.59873e-06
+                      4284 integrals
+      iter    11 energy =  -76.0106683092 delta = 6.46999e-08
+
+      HOMO is     1  B2 =  -0.504005
+      LUMO is     4  A1 =   0.218660
+
+      total scf energy =  -76.0106683092
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(basis):            11     2     7     4
+        Maximum orthogonalization residual = 3.66509
+        Minimum orthogonalization residual = 0.0352018
+        The number of electrons in the projected density = 9.99253
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 24
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca+comm/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
+  ints_file = mp2r12_mp2r12slashaprimeprime00ccpvdzaugccpvdzc2v.moints
+
+  Molecular formula H2O
+
+  The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/mp2r12_mp2r12slashaprimeprime00ccpvdzaugccpvdzc2v.in" were ignored:
+    mpqc:mole:reference:guess_wavefunction:multiplicity
+    mpqc:mole:reference:multiplicity
+    mpqc:integrals
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = mp2r12_mp2r12slashaprimeprime00ccpvdzaugccpvdzc2v
+    restart_file  = mp2r12_mp2r12slashaprimeprime00ccpvdzaugccpvdzc2v.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+switched off integral check in mbptr12.cc/compute
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    9.1571164588
+
+  integral intermediate storage = 1997536 bytes
+  integral cache = 29997664 bytes
+  Beginning iterations.  Basis is cc-pVDZ.
+                 31972 integrals
+  iter     1 energy =  -75.9894459794 delta = 1.63329e-01
+                 31972 integrals
+  iter     2 energy =  -76.0251605458 delta = 1.17686e-02
+                 31972 integrals
+  iter     3 energy =  -76.0258587094 delta = 1.94238e-03
+                 31972 integrals
+  iter     4 energy =  -76.0258857767 delta = 4.37786e-04
+                 31972 integrals
+  iter     5 energy =  -76.0258879700 delta = 1.05751e-04
+                 31972 integrals
+  iter     6 energy =  -76.0258882354 delta = 4.25537e-05
+                 31972 integrals
+  iter     7 energy =  -76.0258882399 delta = 5.95036e-06
+                 31972 integrals
+  iter     8 energy =  -76.0258882402 delta = 2.04017e-06
+                 31972 integrals
+  iter     9 energy =  -76.0258882403 delta = 3.87940e-07
+                 31972 integrals
+  iter    10 energy =  -76.0258882403 delta = 5.58931e-08
+                 31972 integrals
+  iter    11 energy =  -76.0258882403 delta = 1.32428e-08
+                 31972 integrals
+  iter    12 energy =  -76.0258882403 delta = 1.71870e-09
+
+  HOMO is     1  B2 =  -0.491067
+  LUMO is     4  A1 =   0.185922
+
+  total scf energy =  -76.0258882403
+  Orthogonalizing basis for space RIBS:
+    Using symmetric orthogonalization.
+    n(basis):            18     4    12     7
+    Maximum orthogonalization residual = 5.65442
+    Minimum orthogonalization residual = 0.00288355
+  Orthogonalizing basis for space OBS+ABS:
+    WARNING: 24 basis functions ignored in symmetric orthogonalization.
+    Using symmetric orthogonalization.
+    n(basis):            29     6    19    11
+    Maximum orthogonalization residual = 9.13819
+    Minimum orthogonalization residual = 0.00397789
+  SVD-projecting out doubly-occupied symmetry-blocked MOs out of RIBS to obtain space CABS
+    5 basis functions projected out of RIBS.
+    n(basis):            15     4    11     6
+    Maximum singular value = 1
+    Minimum singular value = 1
+  SVD-projecting out unoccupied symmetry-blocked MOs out of CABS to obtain space CABS
+    19 basis functions projected out of CABS.
+    n(basis):             7     2     5     3
+    Maximum singular value = 1
+    Minimum singular value = 1
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Entered <i i| R12[0] |p p>_bb integrals evaluator (transform type ikjy)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    1011136 Bytes
+      Total memory used per node:     1669504 Bytes
+      Memory required for one pass:   1669504 Bytes
+      Minimum memory required:        1147264 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2+3 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 66)
+        working on shell pair (  3   1), 10.606% complete (7 of 66)
+        working on shell pair (  4   4), 21.212% complete (14 of 66)
+        working on shell pair (  6   0), 31.818% complete (21 of 66)
+        working on shell pair (  7   0), 42.424% complete (28 of 66)
+        working on shell pair (  7   7), 53.030% complete (35 of 66)
+        working on shell pair (  8   6), 63.636% complete (42 of 66)
+        working on shell pair (  9   4), 74.242% complete (49 of 66)
+        working on shell pair ( 10   1), 84.848% complete (56 of 66)
+        working on shell pair ( 10   8), 95.455% complete (63 of 66)
+      End of loop over shells
+      Begin fourth q.t.
+      End of fourth q.t.
+    Detecting non-totally-symmetric integrals ... none
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+    Entered <i i| R12[0] |m a'>_bb integrals evaluator (transform type ikjy)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    1008456 Bytes
+      Total memory used per node:     1290296 Bytes
+      Memory required for one pass:   1290296 Bytes
+      Minimum memory required:        1066296 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2+3 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 198)
+        working on shell pair (  1   9), 10.101% complete (20 of 198)
+        working on shell pair (  3   7), 20.202% complete (40 of 198)
+        working on shell pair (  5   5), 30.303% complete (60 of 198)
+        working on shell pair (  7   3), 40.404% complete (80 of 198)
+        working on shell pair (  9   1), 50.505% complete (100 of 198)
+        working on shell pair ( 10  10), 60.606% complete (120 of 198)
+        working on shell pair ( 12   8), 70.707% complete (140 of 198)
+        working on shell pair ( 14   6), 80.808% complete (160 of 198)
+        working on shell pair ( 16   4), 90.909% complete (180 of 198)
+      End of loop over shells
+      Begin fourth q.t.
+      End of fourth q.t.
+    Detecting non-totally-symmetric integrals ... none
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+
+  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+    Computing intermediates on 1 processors
+  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
+
+  Entered B(app. A'') intermediate evaluator
+
+    Entered Alpha-beta Q(A'') intermediate evaluator
+
+      Entered Coulomb matrix evaluator
+        Entered (mn|xy) integrals evaluator (transform type ijxy)
+          Memory available per node:      32000000 Bytes
+          Static memory used per node:    1007488 Bytes
+          Total memory used per node:     1156296 Bytes
+          Memory required for one pass:   1156296 Bytes
+          Minimum memory required:        1040936 Bytes
+          Number of passes:               1
+          Batch size:                     5
+          Beginning pass 1
+          Begin loop over shells (ints, 1+2 q.t.)
+            working on shell pair (  0   0),  0.000% complete (0 of 66)
+            working on shell pair (  3   1), 10.606% complete (7 of 66)
+            working on shell pair (  4   4), 21.212% complete (14 of 66)
+            working on shell pair (  6   0), 31.818% complete (21 of 66)
+            working on shell pair (  7   0), 42.424% complete (28 of 66)
+            working on shell pair (  7   7), 53.030% complete (35 of 66)
+            working on shell pair (  8   6), 63.636% complete (42 of 66)
+            working on shell pair (  9   4), 74.242% complete (49 of 66)
+            working on shell pair ( 10   1), 84.848% complete (56 of 66)
+            working on shell pair ( 10   8), 95.455% complete (63 of 66)
+          End of loop over shells
+          Begin third q.t.
+          End of third q.t.
+          Begin fourth q.t.
+          End of fourth q.t.
+        Detecting non-totally-symmetric integrals ... none
+        Begin computation of Coulomb matrix
+        Computing intermediates on 1 processors
+        End of computation of Coulomb matrix
+      Exited Coulomb matrix evaluator
+      Entered generic X intermediate evaluator
+
+        Entered generic contraction (<i i|i i_hJ(p)> = <i i|p p> . <i i_hJ(p)|p p>^T)
+          Entered <i i_hJ(p)| R12[0] |p p>_bb integrals evaluator (transform type ikjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    1011136 Bytes
+            Total memory used per node:     1669504 Bytes
+            Memory required for one pass:   1669504 Bytes
+            Minimum memory required:        1147264 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Begin loop over shells (ints, 1+2+3 q.t.)
+              working on shell pair (  0   0),  0.000% complete (0 of 66)
+              working on shell pair (  3   1), 10.606% complete (7 of 66)
+              working on shell pair (  4   4), 21.212% complete (14 of 66)
+              working on shell pair (  6   0), 31.818% complete (21 of 66)
+              working on shell pair (  7   0), 42.424% complete (28 of 66)
+              working on shell pair (  7   7), 53.030% complete (35 of 66)
+              working on shell pair (  8   6), 63.636% complete (42 of 66)
+              working on shell pair (  9   4), 74.242% complete (49 of 66)
+              working on shell pair ( 10   1), 84.848% complete (56 of 66)
+              working on shell pair ( 10   8), 95.455% complete (63 of 66)
+            End of loop over shells
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+          Computing intermediates on 1 processors
+        Exited generic contraction (<i i|i i_hJ(p)> = <i i|p p> . <i i_hJ(p)|p p>^T)
+
+        Entered generic contraction (<i i|i i_hJ(p)> = <i i|m a'> . <i i_hJ(p)|m a'>^T)
+          Entered <i i_hJ(p)| R12[0] |m a'>_bb integrals evaluator (transform type ikjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    1008456 Bytes
+            Total memory used per node:     1290296 Bytes
+            Memory required for one pass:   1290296 Bytes
+            Minimum memory required:        1066296 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Begin loop over shells (ints, 1+2+3 q.t.)
+              working on shell pair (  0   0),  0.000% complete (0 of 198)
+              working on shell pair (  1   9), 10.101% complete (20 of 198)
+              working on shell pair (  3   7), 20.202% complete (40 of 198)
+              working on shell pair (  5   5), 30.303% complete (60 of 198)
+              working on shell pair (  7   3), 40.404% complete (80 of 198)
+              working on shell pair (  9   1), 50.505% complete (100 of 198)
+              working on shell pair ( 10  10), 60.606% complete (120 of 198)
+              working on shell pair ( 12   8), 70.707% complete (140 of 198)
+              working on shell pair ( 14   6), 80.808% complete (160 of 198)
+              working on shell pair ( 16   4), 90.909% complete (180 of 198)
+            End of loop over shells
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+          Computing intermediates on 1 processors
+        Exited generic contraction (<i i|i i_hJ(p)> = <i i|m a'> . <i i_hJ(p)|m a'>^T)
+
+        Entered generic contraction (<i i|i i_hJ(p)> = <i i|a' m> . <i i_hJ(p)|a' m>^T)
+          Entered <i i| R12[0] |a' m>_bb integrals evaluator (transform type ikjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    1008456 Bytes
+            Total memory used per node:     1570800 Bytes
+            Memory required for one pass:   1570800 Bytes
+            Minimum memory required:        1124080 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Begin loop over shells (ints, 1+2+3 q.t.)
+              working on shell pair (  0   0),  0.000% complete (0 of 66)
+              working on shell pair (  3   1), 10.606% complete (7 of 66)
+              working on shell pair (  4   4), 21.212% complete (14 of 66)
+              working on shell pair (  6   0), 31.818% complete (21 of 66)
+              working on shell pair (  7   0), 42.424% complete (28 of 66)
+              working on shell pair (  7   7), 53.030% complete (35 of 66)
+              working on shell pair (  8   6), 63.636% complete (42 of 66)
+              working on shell pair (  9   4), 74.242% complete (49 of 66)
+              working on shell pair ( 10   1), 84.848% complete (56 of 66)
+              working on shell pair ( 10   8), 95.455% complete (63 of 66)
+            End of loop over shells
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+          Entered <i i_hJ(p)| R12[0] |a' m>_bb integrals evaluator (transform type ikjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    1008456 Bytes
+            Total memory used per node:     1570800 Bytes
+            Memory required for one pass:   1570800 Bytes
+            Minimum memory required:        1124080 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Begin loop over shells (ints, 1+2+3 q.t.)
+              working on shell pair (  0   0),  0.000% complete (0 of 66)
+              working on shell pair (  3   1), 10.606% complete (7 of 66)
+              working on shell pair (  4   4), 21.212% complete (14 of 66)
+              working on shell pair (  6   0), 31.818% complete (21 of 66)
+              working on shell pair (  7   0), 42.424% complete (28 of 66)
+              working on shell pair (  7   7), 53.030% complete (35 of 66)
+              working on shell pair (  8   6), 63.636% complete (42 of 66)
+              working on shell pair (  9   4), 74.242% complete (49 of 66)
+              working on shell pair ( 10   1), 84.848% complete (56 of 66)
+              working on shell pair ( 10   8), 95.455% complete (63 of 66)
+            End of loop over shells
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+          Computing intermediates on 1 processors
+        Exited generic contraction (<i i|i i_hJ(p)> = <i i|a' m> . <i i_hJ(p)|a' m>^T)
+      Exited generic X intermediate evaluator
+    Exited Alpha-beta Q(A'') intermediate evaluator
+  Exited B(app. A'') intermediate evaluator
+
+  Entered MP2 pair energies (<i i|a a>) evaluator
+    Computing intermediates on 1 processors
+  Exited MP2 pair energies (<i i|a a>) evaluator
+
+  Entered MP2 pair energies (<i i|a a>) evaluator
+    Computing intermediates on 1 processors
+  Exited MP2 pair energies (<i i|a a>) evaluator
+  Computing orthonormal alpha-beta geminal space.
+    Using canonical orthogonalization.
+    n(basis):            25
+    Maximum orthogonalization residual = 0.0925979
+    Minimum orthogonalization residual = 0.00346582
+  WARNING: Alpha-beta B matrix in orthonormal basis has 1 negative eigenvalues
+  Computing orthonormal alpha-alpha geminal space.
+    Using canonical orthogonalization.
+    n(basis):            10
+    Maximum orthogonalization residual = 0.0671432
+    Minimum orthogonalization residual = 0.00549207
+  WARNING: Alpha-alpha B matrix in orthonormal basis has 1 negative eigenvalues
+
+  Singlet MBPT2-F12/A'' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.000427901   -0.089603240   -0.090031141
+      2       1     -0.000248588   -0.013732674   -0.013981262
+      2       2     -0.008947046   -0.003287829   -0.012234875
+      3       1     -0.000115154   -0.002091412   -0.002206566
+      3       2     -0.012272428   -0.007230216   -0.019502643
+      3       3     -0.019751020   -0.004282177   -0.024033197
+      4       1     -0.000167369   -0.004347801   -0.004515171
+      4       2     -0.009466858   -0.007299763   -0.016766621
+      4       3     -0.012722847   -0.002548198   -0.015271045
+      4       4     -0.017329041   -0.006449455   -0.023778496
+      5       1     -0.000158942   -0.003593881   -0.003752823
+      5       2     -0.009075206   -0.009846611   -0.018921817
+      5       3     -0.008904392   -0.003717827   -0.012622219
+      5       4     -0.010041762   -0.005205774   -0.015247535
+      5       5     -0.016925640   -0.006313361   -0.023239001
+
+  Triplet MBPT2-F12/A'' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.000033665   -0.005739956   -0.005773621
+      3       1     -0.000352091   -0.002619301   -0.002971392
+      3       2     -0.005940691   -0.001685104   -0.007625796
+      4       1     -0.000396662   -0.003853233   -0.004249896
+      4       2     -0.005621228   -0.002185202   -0.007806429
+      4       3     -0.018814377   -0.001967381   -0.020781758
+      5       1     -0.000433560   -0.004001060   -0.004434621
+      5       2     -0.005854165   -0.003198507   -0.009052672
+      5       3     -0.019864522   -0.002053670   -0.021918192
+      5       4     -0.019849686   -0.002454160   -0.022303846
+
+  Singlet MP2 correlation energy [au]:             -0.126554193108
+  Triplet MP2 correlation energy [au]:             -0.077160648691
+  Singlet (MP2)-F12/A'' correlation energy [au]:   -0.169550216889
+  Triplet (MP2)-F12/A'' correlation energy [au]:   -0.029757572934
+  Singlet MP2-F12/A'' correlation energy [au]:     -0.296104409997
+  Triplet MP2-F12/A'' correlation energy [au]:     -0.106918221624
+
+  RHF energy [au]:                                -76.025888240260
+  MP2 correlation energy [au]:                     -0.203714841798
+  (MBPT2)-F12/A'' correlation energy [au]:         -0.199307789823
+  MBPT2-F12/A'' correlation energy [au]:           -0.403022631621
+  MBPT2-F12/A'' energy [au]:                      -76.428910871881
+
+
+  Value of the MolecularEnergy:  -76.4289108719
+
+  MBPT2_R12:
+    Spin-adapted algorithm: true
+    Use new MP2R12Energy: false
+    Compute Hylleraas functional: false
+    R12Technology:
+      CorrelationFactor:
+        Function 0:
+          Functional form: R12
+
+      GBC assumed: true
+      EBC assumed: true
+      EBC-free method: Valeev
+      Enforce positive definiteness of B, but not ~B(ij)
+      ABS method variant: CABS  (Valeev)
+      Standard Approximation: A''
+      LinearR12Ansatz:
+        Orbital Product Space: ij
+        Projector: 2  , i.e. (1-P1)(1-P2)-V1V2
+        Ansatz: orbital-invariant
+        WOF: false
+      Max # ABS indices: 1
+    MBPT2:
+      Function Parameters:
+        value_accuracy    = 1.718702e-07 (1.000000e-06) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecular Coordinates:
+        IntMolecularCoor Parameters:
+          update_bmat = no
+          scale_bonds = 1
+          scale_bends = 1
+          scale_tors = 1
+          scale_outs = 1
+          symmetry_tolerance = 1.000000e-05
+          simple_tolerance = 1.000000e-03
+          coordinate_tolerance = 1.000000e-07
+          have_fixed_values = 0
+          max_update_steps = 100
+          max_update_disp = 0.500000
+          have_fixed_values = 0
+
+        Molecular formula: H2O
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     O [    0.0000000000     0.0000000000     0.3693729440]
+             2     H [    0.7839758990     0.0000000000    -0.1846864720]
+             3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+          }
+        )
+        Atomic Masses:
+           15.99491    1.00783    1.00783
+
+        Bonds:
+          STRE       s1     0.96000    1    2         O-H
+          STRE       s2     0.96000    1    3         O-H
+        Bends:
+          BEND       b1   109.50000    2    1    3      H-O-H
+
+        SymmMolecularCoor Parameters:
+          change_coordinates = no
+          transform_hessian = yes
+          max_kappa2 = 10.000000
+
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 24
+          nshell = 11
+          nprim  = 24
+          name = "cc-pVDZ"
+      Reference Wavefunction:
+        Function Parameters:
+          value_accuracy    = 1.718702e-09 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+        Molecule:
+          Molecular formula: H2O
+          molecule<Molecule>: (
+            symmetry = c2v
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     O [    0.0000000000     0.0000000000     0.3693729440]
+               2     H [    0.7839758990     0.0000000000    -0.1846864720]
+               3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+            }
+          )
+          Atomic Masses:
+             15.99491    1.00783    1.00783
+
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 24
+            nshell = 11
+            nprim  = 24
+            name = "cc-pVDZ"
+        SCF Parameters:
+          maxiter = 100
+          density_reset_frequency = 10
+          level_shift = 0.000000
+
+        CLSCF Parameters:
+          charge = 0
+          ndocc = 5
+          docc = [ 3 0 1 1 ]
+
+
+                                                               CPU  Wall
+mpqc:                                                         5.18 12.00
+  calc:                                                       4.71  8.95
+    mp2-f12 energy:                                           4.71  8.94
+      B(app. A'') intermediate:                               2.28  2.85
+        Alpha-beta Q(A'') intermediate:                       2.28  2.85
+          coulomb:                                            0.14  0.22
+            MO ints retrieve:                                 0.00  0.00
+            tbint_tform_ijxy (mn|xy):                         0.14  0.22
+              mp2-r12/a passes:                               0.14  0.19
+                3. q.t.:                                      0.00  0.00
+                4. q.t.:                                      0.00  0.00
+                MO ints store:                                0.00  0.00
+                ints+1qt+2qt:                                 0.14  0.18
+          generic X intermediate:                             2.13  2.62
+            Generic tensor contract:                          2.08  2.53
+              MO ints retrieve:                               0.02  0.02
+              tbint_tform_ikjy <i i_hJ(p)| R12[0] |a' m>_bb:  0.56  0.62
+                mp2-r12/a passes:                             0.56  0.62
+                  4. q.t.:                                    0.00  0.00
+                  MO ints store:                              0.00  0.00
+                  ints+1qt+2qt+3qt:                           0.56  0.61
+              tbint_tform_ikjy <i i_hJ(p)| R12[0] |m a'>_bb:  0.57  0.66
+                mp2-r12/a passes:                             0.57  0.66
+                  4. q.t.:                                    0.00  0.00
+                  MO ints store:                              0.00  0.00
+                  ints+1qt+2qt+3qt:                           0.57  0.66
+              tbint_tform_ikjy <i i_hJ(p)| R12[0] |p p>_bb:   0.30  0.40
+                mp2-r12/a passes:                             0.29  0.39
+                  4. q.t.:                                    0.00  0.00
+                  MO ints store:                              0.00  0.01
+                  ints+1qt+2qt+3qt:                           0.29  0.38
+              tbint_tform_ikjy <i i| R12[0] |a' m>_bb:        0.57  0.64
+                mp2-r12/a passes:                             0.56  0.64
+                  4. q.t.:                                    0.00  0.00
+                  MO ints store:                              0.00  0.00
+                  ints+1qt+2qt+3qt:                           0.56  0.64
+      MP2 pair energies:                                      0.02  0.03
+        MO ints retrieve:                                     0.00  0.00
+      mp2-f12/a'' pair energies:                              0.04  0.31
+      mp2-f12a intermeds (tensor contract):                   1.20  3.71
+        Generic tensor contract:                              1.14  1.98
+          MO ints retrieve:                                   0.05  0.07
+          tbint_tform_ikjy <i i| R12[0] |m a'>_bb:            0.57  0.95
+            mp2-r12/a passes:                                 0.57  0.94
+              4. q.t.:                                        0.00  0.00
+              MO ints store:                                  0.00  0.01
+              ints+1qt+2qt+3qt:                               0.57  0.93
+          tbint_tform_ikjy <i i| R12[0] |p p>_bb:             0.30  0.44
+            mp2-r12/a passes:                                 0.30  0.44
+              4. q.t.:                                        0.00  0.00
+              MO ints store:                                  0.00  0.00
+              ints+1qt+2qt+3qt:                               0.29  0.43
+      vector:                                                 1.02  1.45
+        density:                                              0.00  0.00
+        evals:                                                0.01  0.01
+        extrap:                                               0.01  0.02
+        fock:                                                 0.99  1.42
+          accum:                                              0.00  0.00
+          ao_gmat:                                            0.94  1.36
+            start thread:                                     0.94  1.36
+            stop thread:                                      0.00  0.00
+          init pmax:                                          0.00  0.00
+          local data:                                         0.00  0.00
+          setup:                                              0.02  0.02
+          sum:                                                0.00  0.00
+          symm:                                               0.03  0.03
+  input:                                                      0.46  3.02
+    vector:                                                   0.20  0.45
+      density:                                                0.00  0.00
+      evals:                                                  0.00  0.00
+      extrap:                                                 0.01  0.06
+      fock:                                                   0.17  0.22
+        accum:                                                0.00  0.00
+        ao_gmat:                                              0.15  0.19
+          start thread:                                       0.15  0.18
+          stop thread:                                        0.00  0.00
+        init pmax:                                            0.00  0.00
+        local data:                                           0.00  0.00
+        setup:                                                0.01  0.01
+        sum:                                                  0.00  0.00
+        symm:                                                 0.01  0.02
+
+  End Time: Thu May  8 11:12:08 2008
+

@@ -910,7 +910,37 @@ Wavefunction::core_hamiltonian_dk(int dk,
                                *p_orthog->overlap_inverse()
                                *p_to_so, h_pbas);
 
+  // Compute the overlap in bas
+  integral()->set_basis(bas);
+  RefSymmSCMatrix S_bas;
+  {
+    Ref<SCMatrixKit> kit = bas->matrixkit();
+    Ref<SCMatrixKit> so_kit = bas->so_matrixkit();
+    RefSCDimension so_dim = pl->SO_basisdim();
+    RefSCDimension ao_dim = pl->AO_basisdim();
+    RefSymmSCMatrix S_skel(ao_dim, kit);
+    S_skel.assign(0.0);
+    hc = new OneBodyIntOp(new SymmOneBodyIntIter(integral()->overlap(), pl));
+    S_skel.element_op(hc);
+    hc=0;
+    S_bas = so_kit->symmmatrix(so_dim);
+    pl->symmetrize(S_skel, S_bas);
+  }
+  
   integral()->set_basis(basis());
+
+#if DK_DEBUG
+  {
+    RefSCMatrix tmp = S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t();
+    tmp.print("S(OBS,pbasis) * S(pbasis)^-1 * S(pbasis,OBS)");
+    ExEnv::out0() << indent << " trace = " << tmp.trace() << endl;
+    S_bas.print("S(OBS)");
+    
+    ExEnv::out0() << indent << " trace = " << S_bas.trace() << endl;    
+  
+    ExEnv::out0() << indent << "nso = " << pl->SO_basisdim()->n() << endl;
+  }
+#endif
 
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
@@ -918,7 +948,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
   double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = overlap().trace() / pl->SO_basisdim()->n();
+  double S_ao_trace = S_bas.trace() / pl->SO_basisdim()->n();
   ExEnv::out0() << indent
                 << "Tr(orbital basis overlap)/N = "
                 << S_ao_trace

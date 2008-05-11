@@ -90,6 +90,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
     bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
     hcore_basis = bs1_plus_bs2->bs12();
   }
+  p_basis = p_basis + hcore_basis;
 
   RefSymmSCMatrix hsymm
       = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
@@ -355,7 +356,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(ref->momentum_basis());   
   Ref<GaussianBasisSet> uncontract_p = ref->momentum_basis(); // for consistency
   Ref<GaussianBasisSet> p_basis = uncontract_p+hcore_basis;
-   
+  
   // compute the relativistic core Hamiltonian  
   RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
   

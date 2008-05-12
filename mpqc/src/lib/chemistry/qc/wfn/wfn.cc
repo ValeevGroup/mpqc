@@ -945,19 +945,16 @@ Wavefunction::core_hamiltonian_dk(int dk,
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
   // analysis would be desirable.
-  double S_ao_projected_trace
+  const double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = S_bas.trace() / pl->SO_basisdim()->n();
+  const double S_ao_trace = S_bas.trace() / pl->SO_basisdim()->n();
+  const double completeness_diagnostic = S_ao_projected_trace / S_ao_trace;
   ExEnv::out0() << indent
-                << "Tr(orbital basis overlap)/N = "
-                << S_ao_trace
+                << "Tr(basis overlap projected into momentum basis)/Tr(basis overlap) = "
+                << completeness_diagnostic
                 << std::endl;
-  ExEnv::out0() << indent
-                << "Tr(orbital basis overlap projected into momentum basis)/N = "
-                << S_ao_projected_trace
-                << std::endl;
-  if (fabs(S_ao_projected_trace-S_ao_trace)>lindep_tol_) {
+  if (fabs(1.0 - completeness_diagnostic)>lindep_tol_) {
     ExEnv::out0() << indent
                   << "WARNING: the momentum basis does not span the orbital basis"
                   << std::endl;

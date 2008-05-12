@@ -90,7 +90,10 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
     bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
     hcore_basis = bs1_plus_bs2->bs12();
   }
-  p_basis = p_basis + hcore_basis;
+  // momentum basis in DKH calculations must span both bra and ket basis sets.
+  // easiest to achieve if both are included in p_basis
+  if (r12info()->refinfo()->ref()->dk() > 0)
+    p_basis = p_basis + hcore_basis;
 
   RefSymmSCMatrix hsymm
       = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);

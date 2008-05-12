@@ -2219,8 +2219,12 @@ R12IntEval::f_bra_ket(
 	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - MVD
 	  RefSCMatrix dkh_contrib;
 	  const int dk = this->dk();
-	  if (dk>0 && (make_K || make_hJ)) {
-		  ExEnv::out0() << "florian: dkh_contrib" << endl;
+          bool include_Q=r12info_->r12tech()->include_DKH_in_Q();
+          if (dk==0) {include_Q=false;}
+          ExEnv::out0() << "florian: DKH in Q: " << (include_Q ? "true" : "false") << endl;
+
+	  //if (include_Q && (make_hJ )) {
+	  if (include_Q && (make_hJ || make_F)) {
 		  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
 		  if (debug_ >= DefaultPrintThresholds::allN2) {
 		      std::string label("(Delta_DKH) matrix in ");
@@ -2246,7 +2250,7 @@ R12IntEval::f_bra_ket(
 
 	  std::string id = extspace->id();  id += "_hJ(";  id += intspace->id();  id += ")";
 	  std::string name = "(h+J)-weighted space";
-	  if (dk>0) {
+	  if (include_Q) {
 		  ExEnv::out0() << "florian: hJ-d" << endl;
 		  id = extspace->id();  id += "_hJ-d(";  id += intspace->id();  id += ")";
 		  name = "(h+J-d)-weighted space";
@@ -2282,7 +2286,7 @@ R12IntEval::f_bra_ket(
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
 	  std::string name = "K-weighted space";
 
-	  if (dk>0) {
+	  if (-1>0) {  // no Delta_DKH in K for now
 		  ExEnv::out0() << "florian: K-d" << endl;
 		  id = extspace->id();  id += "_K-d(";  id += intspace->id();  id += ")";
 		  name = "(K-d)-weighted space";

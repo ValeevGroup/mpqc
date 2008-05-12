@@ -54,6 +54,10 @@ using namespace sc;
 #define INCLUDE_EBC_CODE 1
 #define INCLUDE_GBC_CODE 1
 
+// Set this to 1 to evaluate MV contribution by RI
+// also change the identical macro in fock.cc
+#define EVALUATE_MV_VIA_RI 0
+
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
 /*-----------------
@@ -513,7 +517,9 @@ R12IntEval::init_intermeds_()
   // can only use stdapprox C and 1 correlation factor (but pq ansatz should work!)
   if (this->dk() > 0) {
     if (g12ncptr.nonnull() && corrfactor()->nfunctions() == 1) {
+#if !EVALUATE_MV_VIA_RI
       compute_B_DKH_();
+#endif
     }
     else
       throw FeatureNotImplemented("Relativistic R12 method only implemented when stdapprox=C and there is only 1 correlation factor",__FILE__,__LINE__);
@@ -2221,11 +2227,14 @@ R12IntEval::f_bra_ket(
 	  const int dk = this->dk();
           bool include_Q=r12info_->r12tech()->include_DKH_in_Q();
           if (dk==0) {include_Q=false;}
+#if EVALUATE_MV_VIA_RI
+          include_Q = true;
+#endif
           ExEnv::out0() << "florian: DKH in Q: " << (include_Q ? "true" : "false") << endl;
 
-	  //if (include_Q && (make_hJ )) {
-	  if (include_Q && (make_hJ || make_F)) {
+	  if (include_Q && (make_hJ || make_F || make_K)) {
 		  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
+		  dkh_contrib.scale(-1.0);
 		  if (debug_ >= DefaultPrintThresholds::allN2) {
 		      std::string label("(Delta_DKH) matrix in ");
 		      label += intspace->id();
@@ -2254,7 +2263,6 @@ R12IntEval::f_bra_ket(
 		  ExEnv::out0() << "florian: hJ-d" << endl;
 		  id = extspace->id();  id += "_hJ-d(";  id += intspace->id();  id += ")";
 		  name = "(h+J-d)-weighted space";
-		  dkh_contrib.scale(-1.0);
 	  } else {
 	  	  dkh_contrib = hJ_i_e.clone();  
 		  dkh_contrib.assign(0.0);
@@ -2286,11 +2294,14 @@ R12IntEval::f_bra_ket(
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
 	  std::string name = "K-weighted space";
 
-	  if (-1>0) {  // no Delta_DKH in K for now
+#if EVALUATE_MV_VIA_RI
+	  if (include_Q) {
+#else
+	  if (0) {  // no Delta_DKH in K for now
+#endif
 		  ExEnv::out0() << "florian: K-d" << endl;
 		  id = extspace->id();  id += "_K-d(";  id += intspace->id();  id += ")";
 		  name = "(K-d)-weighted space";
-		  dkh_contrib.scale(-1.0);
 	  } else {
 	  	  dkh_contrib = K_i_e.clone();  
 		  dkh_contrib.assign(0.0);

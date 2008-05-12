@@ -239,8 +239,11 @@ class R12IntEval : virtual public SavableState {
                          SpinCase1 S = Alpha);
   // Computes T, V and the mass-velocity term in the momentum basis. 
   // It's a modified version of Wavefunction::core_hamiltonian_dk
-  RefSymmSCMatrix tvp_(int dk,const Ref<GaussianBasisSet> &bas,
-                       const Ref<GaussianBasisSet> &p_bas);
+  RefSymmSCMatrix hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas,
+                                           const Ref<GaussianBasisSet> &p_bas,
+                                           bool include_T = true,
+                                           bool include_V = true,
+                                           bool include_MV = true);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);

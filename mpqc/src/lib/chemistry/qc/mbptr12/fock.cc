@@ -43,7 +43,11 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
+// set to 1 to test MVD integrals
 #define TEST_DELTA_DKH 0
+// set to 1 to set Delta_DKH to mass-velocity
+// also see the same macro in r12int_eval.cc
+#define EVALUATE_MV_VIA_RI 0
 #define NEW_HCORE 1
 
 RefSCMatrix
@@ -399,12 +403,20 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // calculate delta_DKH = H_DKH - H_tvmvd to get the difference Hamiltonian
   // H_tvmvd = T+V+mass-velocity ...
 #if TEST_DELTA_DKH
-  //RefSymmSCMatrix TVmv = tvp_(0,hcore_basis,hcore_basis);
-  RefSymmSCMatrix TVmv = tvp_(0,hcore_basis,r12info()->basis_ri());
+  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,r12info()->basis_ri());
 #else
-  RefSymmSCMatrix TVmv = tvp_(dk,hcore_basis,p_basis);
+  
+#if EVALUATE_MV_VIA_RI
+  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis,false,false,true);
+#else
+  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis);
+#endif
+  
 #endif
 
+#if !EVALUATE_MV_VIA_RI
+  //         + Darwin
+  TVmv.accumulate(Darwin);
 #if TEST_DELTA_DKH
   {
     Ref<MOIndexSpace> occ1 = occ(Alpha);
@@ -412,18 +424,19 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
       // to the 1-e Darwin correction to the energy at the HF level, contract with the HF density
       RefSCMatrix occ1_coefs = occ1->coefs();
       RefSCMatrix Darwin_mo = occ1_coefs.t() * Darwin * occ1_coefs;
-      ExEnv::out0() << indent << "R12IntEval::tvp_() -- 1-e Darwin term = " << 2.0 * Darwin_mo.trace() << endl;
+      ExEnv::out0() << indent << "R12IntEval::hcore_plus_massvelocity_() -- 1-e Darwin term = " << 2.0 * Darwin_mo.trace() << endl;
       RefSCMatrix TVmvd_mo = occ1_coefs.t() * TVmv * occ1_coefs;
-      ExEnv::out0() << indent << "R12IntEval::tvp_() -- core + mass-velocity + 1-e Darwin term = " << 2.0 * TVmvd_mo.trace() << endl;
+      ExEnv::out0() << indent << "R12IntEval::hcore_plus_massvelocity_() -- core + mass-velocity + 1-e Darwin term = " << 2.0 * TVmvd_mo.trace() << endl;
     }
   }
 #endif
-  //         + Darwin
-  TVmv.accumulate(Darwin);
   Darwin=0;
   
   TVmv.scale(-1.0);
   hsymm.accumulate(TVmv);
+#else
+  hsymm.assign(TVmv);
+#endif
   
   // from now on proceed as in fock
   
@@ -498,28 +511,17 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
 
 
 RefSymmSCMatrix
-R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
-                          const Ref<GaussianBasisSet> &p_bas)
+R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas,
+                                     bool include_T, bool include_V, bool include_MV)
 {
   // cast Wavefunction to MBPT2
   MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
 #define DK_DEBUG 0
 
-  ExEnv::out0() << indent << "florian: Entering tvp_"<< incindent << endl;
-  if (mp2wfn->atom_basis().nonnull()) {
-    throw FeatureNotImplemented("atom_basis given and dk > 0",
-                                __FILE__, __LINE__, class_desc());
-  }
-#if !TEST_DELTA_DKH
-  if (dk != 2) {
-    throw FeatureNotImplemented("dk must be 2 for using with R12",
-                                __FILE__, __LINE__, class_desc());
-  }
-  if (dk > 0 && mp2wfn->gradient_needed()) {
-    throw FeatureNotImplemented("gradients not available for dk",
-                                __FILE__, __LINE__, class_desc());
-  }
-#endif
+  ExEnv::out0() << indent << "florian: Entering hcore_plus_massvelocity_"<< incindent << endl;
+  ExEnv::out0() << indent << "include_T = " << (include_T ? "true" : "false") << endl;
+  ExEnv::out0() << indent << "include_V = " << (include_V ? "true" : "false") << endl;
+  ExEnv::out0() << indent << "include_MV = " << (include_MV ? "true" : "false") << endl;
   
   // The one electron integrals will be computed in the momentum basis.
   // Use mbptr12's integrals.
@@ -646,9 +648,12 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
   // calculate tvp
   RefSymmSCMatrix tvp(p_oso_dim, p_so_kit);
   tvp.assign(0.0);
-  tvp.accumulate(kinetic_energy);
-  tvp.accumulate(mass_velocity);
-  tvp.accumulate(V_pbas);
+  if (include_T)
+    tvp.accumulate(kinetic_energy);
+  if (include_MV)
+    tvp.accumulate(mass_velocity);
+  if (include_V)
+    tvp.accumulate(V_pbas);
 
   V_pbas = 0;
   kinetic_energy=0;
@@ -694,6 +699,7 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
   mp2wfn->integral()->set_basis(mp2wfn->basis());
   Ref<PetiteList> bas_pl = mp2wfn->integral()->petite_list();
 
+#if 0
   // Check to see if the momentum basis spans the coordinate basis.  The
   // following approach seems reasonable, but a more careful mathematical
   // analysis would be desirable.
@@ -714,7 +720,8 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
                   << "WARNING: the momentum basis does not span the orbital basis"
                   << std::endl;
   }
-
+#endif
+  
 #if DK_DEBUG
   S_ao_p_so.print("S_ao_p_so");
   p_to_so.print("p_to_so");
@@ -724,7 +731,7 @@ R12IntEval::tvp_(int dk,const Ref<GaussianBasisSet> &bas,
   h_dk_so.print("h_dk_so");
 #endif
 
-  ExEnv::out0() << decindent << indent << "florian: Leaving tvp_" << endl;
+  ExEnv::out0() << decindent << indent << "florian: Leaving hcore_plus_massvelocity_" << endl;
   return h_dk_so;
 }
 

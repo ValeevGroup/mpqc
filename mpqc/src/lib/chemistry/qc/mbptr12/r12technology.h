@@ -53,6 +53,7 @@ class R12Technology: virtual public SavableState {
     bool gbc_;
     bool ebc_;
     bool omit_P_;
+    bool include_DKH_in_Q_;
     bool safety_check_;
     LinearR12::PositiveDefiniteB posdef_B_;
 
@@ -168,6 +169,7 @@ class R12Technology: virtual public SavableState {
     const Ref<LinearR12Ansatz>& ansatz() const;
     bool spinadapted() const;
     bool omit_P() const;
+    bool include_DKH_in_Q() const;
     bool include_mp1() const;
     bool safety_check() const;
     const LinearR12::PositiveDefiniteB& posdef_B() const;

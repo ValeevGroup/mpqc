@@ -458,6 +458,9 @@ public:
   void set_dynamic(bool dynamic);
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
+  
+  /// Indicates whether Douglas-Kroll Hamiltonian is used. For output values see Wavefunction::dk().
+  int dk() const;
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12info()->corrfactor(); }
   LinearR12::ABSMethod abs_method() const { return r12info()->abs_method(); }

@@ -289,6 +289,16 @@ void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
 void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp); };
 void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
 
+int R12IntEval::dk() const {
+#define OMIT_DKH_TERMS 0
+  
+#if OMIT_DKH_TERMS
+  return 0;
+#else
+  return r12info()->refinfo()->ref()->dk();
+#endif
+}
+
 const Ref<R12IntEvalInfo>& R12IntEval::r12info() const { return r12info_; };
 RefSCDimension R12IntEval::dim_oo_s() const { return dim_ij_s_; };
 RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
@@ -501,7 +511,7 @@ R12IntEval::init_intermeds_()
   
   // add in the relativistic contribution, if needed
   // can only use stdapprox C and 1 correlation factor (but pq ansatz should work!)
-  if (r12info()->refinfo()->ref()->dk() > 0) {
+  if (this->dk() > 0) {
     if (g12ncptr.nonnull() && corrfactor()->nfunctions() == 1) {
       compute_B_DKH_();
     }
@@ -2208,7 +2218,7 @@ R12IntEval::f_bra_ket(
 	  // core Hamilonian to be added only to K and hJ, not to F.
 	  // dkh_contrib = core_hamiltonian_dk - core_hamiltonian_nr - MVD
 	  RefSCMatrix dkh_contrib;
-	  int dk = r12info_->refinfo()->ref()->dk();
+	  const int dk = this->dk();
 	  if (dk>0 && (make_K || make_hJ)) {
 		  ExEnv::out0() << "florian: dkh_contrib" << endl;
 		  dkh_contrib = Delta_DKH_(intspace,extspace,spin);

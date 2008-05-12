@@ -333,6 +333,10 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
+
+  // Default is to omit DKD term in Q
+  include_DKH_in_Q_ = keyval->booleanvalue("include_DKH_in_Q",KeyValValueboolean((int)false));
+  ExEnv::out0() << "include_DKH_in_Q: " << (include_DKH_in_Q_ ? "true" : "false") << endl;
   
   // For now the default is to use the old ABS method, of Klopper and Samson
   char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ABS"));
@@ -530,6 +534,14 @@ bool
 R12Technology::omit_P() const
 {
   return omit_P_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+R12Technology::include_DKH_in_Q() const
+{
+  return include_DKH_in_Q_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -149,7 +149,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
 #else // ! NEW_HCORE
 
-  if (this->dk() > 0) {
+  if (r12info()->refinfo()->ref()->dk() > 0) {
       throw ProgrammingError(
 	  "cannot use reference with dk > 0 with old mp2r12 fock algorithm",
 	  __FILE__, __LINE__, class_desc());
@@ -327,6 +327,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
           "r12info()->wfn() was not an MBPT2 object",
           __FILE__, __LINE__, class_desc());
   }
+  // use R12IntEval::dk() here because deltaDKH is only needed if the MV term is treated analytically
   const int dk = this->dk();
 #if !TEST_DELTA_DKH
   if (dk != 2) {

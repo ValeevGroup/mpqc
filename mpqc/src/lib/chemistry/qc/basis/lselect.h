@@ -79,6 +79,9 @@ class LSelectBasisSet: public GaussianBasisSet {
     std::vector<int> l_;
 
     void lselect(const Ref<GaussianBasisSet>&);
+    
+    // set to 1 to debug
+    static int debug() { return 0; }
 
 };
 

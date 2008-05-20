@@ -109,11 +109,13 @@ namespace {
 	__shell_selector(const std::vector<int>& l) : lbegin_(l.begin()), lend_(l.end()) {}
 
 	// return true if this contraction is in l_
-	int selected(const GaussianShell& shell, int contraction) {
+	bool selected(const GaussianShell& shell, int contraction) {
 	    const int l=shell.am(contraction);
 	    const std::vector<int>::const_iterator v = find(lbegin_,lend_,l);
 	    if (v != lend_)
-		return true;
+	      return true;
+	    else
+	      return false;
 	}
 
 	// return the number of contractions from shell that are found in l_
@@ -122,7 +124,7 @@ namespace {
 	    int nselected = 0;
 	    // check every angular momentum, if some are found in l_, return true
 	    for(int c=0; c<nc; ++c) {
-		if (selected(shell,c)) ++nselected;
+	      if (selected(shell,c)) ++nselected;
 	    }
 	    return nselected;
 	}
@@ -227,9 +229,12 @@ LSelectBasisSet::lselect(const Ref<GaussianBasisSet>&basis)
 	 shells,
 	 shell_to_center);
 
-    //SCFormIO::setverbose(ExEnv::out0(), 1);
-    //basis->print();
-    //print();
+    if (debug()) {
+      SCFormIO::setverbose(ExEnv::out0(), 1);
+      basis->print();
+      print();
+      SCFormIO::setverbose(ExEnv::out0(), 0);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

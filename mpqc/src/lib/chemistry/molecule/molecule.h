@@ -274,7 +274,7 @@ class Molecule: public SavableState
 
     /// Add an AtomicCenter to the Molecule.
     void add_atom(int Z,double x,double y,double z,
-                  const char * = 0, double mass = 0.0,
+                  const std::string & label = "", double mass = 0.0,
                   int have_charge = 0, double charge = 0.0);
 
     /// Print information about the molecule.
@@ -303,7 +303,7 @@ class Molecule: public SavableState
 
     /** Returns the index of the atom with the given label.
         If the label cannot be found -1 is returned. */
-    int atom_label_to_index(const char *label) const;
+    int atom_label_to_index(const std::string &label) const;
 
     /** Returns a double* containing the nuclear
         charges of the atoms.  The caller is responsible for

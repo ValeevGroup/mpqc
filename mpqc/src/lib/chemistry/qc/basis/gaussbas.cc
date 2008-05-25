@@ -348,10 +348,10 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
       if (nelement) {
         oss << "{ ";
         for(int e=0; e<nelement; e++) {
-          char* tmpelementname = keyval->pcharvalue("element", e);
-          int Z = atominfo->string_to_Z(tmpelementname);
+          std::string elementname = keyval->stringvalue("element", e);
+          int Z = atominfo->string_to_Z(elementname);
           std::string elemsymbol = atominfo->symbol(Z);
-          char* basisname = keyval->pcharvalue("basis", e);
+          std::string basisname = keyval->stringvalue("basis", e);
           oss << "[" << elemsymbol << " " << basisname << "] ";
         }
         oss << "}";
@@ -362,7 +362,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         int natom = molecule->natom();
         oss << "[ ";
         for(int a=0; a<natom; a++) {
-          char* basisname = keyval->pcharvalue("basis", a);
+          std::string basisname = keyval->stringvalue("basis", a);
           oss << basisname << " ";
         }
         oss << "]";
@@ -382,23 +382,22 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
       if (skip_atom(skip_ghosts,include_q,molecule,iatom)) continue;
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
-      char* sbasisname = 0;
+      std::string sbasisname;
       if (have_custom && !nelement) {
-          sbasisname = keyval->pcharvalue("basis",iatom);
+          sbasisname = keyval->stringvalue("basis",iatom);
         }
       else if (nelement) {
           int i;
           for (i=0; i<nelement; i++) {
-              char *tmpelementname = keyval->pcharvalue("element", i);
-              int tmpZ = molecule->atominfo()->string_to_Z(tmpelementname);
+              std::string elementname = keyval->stringvalue("element", i);
+              int tmpZ = molecule->atominfo()->string_to_Z(elementname);
               if (tmpZ == Z) {
-                  sbasisname = keyval->pcharvalue("basis", i);
+                  sbasisname = keyval->stringvalue("basis", i);
                   break;
                 }
-              delete[] tmpelementname;
             }
         }
-      if (!sbasisname) {
+      if (sbasisname.size() == 0) {
           if (name_.empty()) {
               ExEnv::err0()
                   << indent << "GaussianBasisSet: no basis name for atom "
@@ -407,12 +406,11 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
                   << std::endl;
               abort();
             }
-          sbasisname = strcpy(new char[name_.size()+1],name_.c_str());
+          sbasisname = name_;
         }
       std::string name(molecule->atominfo()->name(Z));
       ishell += count_shells_(keyval, name.c_str(),
-                              sbasisname, bases, havepure, pure, missing_ok);
-      delete[] sbasisname;
+                              sbasisname.c_str(), bases, havepure, pure, missing_ok);
     }
   nshell_ = ishell;
   shell_ = new GaussianShell*[nshell_];
@@ -425,23 +423,22 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
-      char* sbasisname = 0;
+      std::string sbasisname;
       if (have_custom && !nelement) {
-          sbasisname = keyval->pcharvalue("basis",iatom);
+          sbasisname = keyval->stringvalue("basis",iatom);
         }
       else if (nelement) {
           int i;
           for (i=0; i<nelement; i++) {
-              char *tmpelementname = keyval->pcharvalue("element", i);
-              int tmpZ = molecule->atominfo()->string_to_Z(tmpelementname);
+              std::string elementname = keyval->stringvalue("element", i);
+              int tmpZ = molecule->atominfo()->string_to_Z(elementname);
               if (tmpZ == Z) {
-                  sbasisname = keyval->pcharvalue("basis", i);
+                  sbasisname = keyval->stringvalue("basis", i);
                   break;
                 }
-              delete[] tmpelementname;
             }
         }
-      if (!sbasisname) {
+      if (sbasisname.size() == 0) {
           if (name_.empty()) {
               ExEnv::err0()
                   << indent << "GaussianBasisSet: no basis name for atom "
@@ -450,17 +447,15 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
                   << std::endl;
               abort();
             }
-          sbasisname = strcpy(new char[name_.size()+1],name_.c_str());
+          sbasisname = name_;
         }
 
       int ishell_old = ishell;
       std::string name(molecule->atominfo()->name(Z));
       get_shells_(ishell, keyval, name.c_str(),
-                  sbasisname, bases, havepure, pure, missing_ok);
+                  sbasisname.c_str(), bases, havepure, pure, missing_ok);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
-
-      delete[] sbasisname;
      }
 
   // delete the name_ if the basis set is customized

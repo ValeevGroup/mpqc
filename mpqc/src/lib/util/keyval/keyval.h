@@ -109,7 +109,7 @@ class KeyVal: public RefCount {
     /// Ultimately called by sizevalue.
     virtual size_t key_sizevalue(const char* key,const KeyValValue& def);
     /// Ultimately called by pcharvalue.
-    virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
+    DEPRECATED virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by stringvalue.
     virtual std::string key_stringvalue(const char* key,
                                         const KeyValValue& def);
@@ -157,7 +157,7 @@ class KeyVal: public RefCount {
         value. Storage for the copy is obtained with new.
         This is deprecated--use stringvalue instead. */
     DEPRECATED char*  pcharvalue(const char* key = 0,
-                      const KeyValValue& def=KeyValValuepchar());
+                      const KeyValValue& def=KeyValValuestring());
     /** Returns a string representation of the key's value. */
     std::string stringvalue(const char* key = 0,
                             const KeyValValue& def=KeyValValuestring());
@@ -187,8 +187,8 @@ class KeyVal: public RefCount {
                     const KeyValValue& def=KeyValValueint());
     size_t sizevalue(const char* key,int i,
                      const KeyValValue& def=KeyValValuesize());
-    char*  pcharvalue(const char* key,int i,
-                      const KeyValValue& def=KeyValValuepchar());
+    DEPRECATED char*  pcharvalue(const char* key,int i,
+                      const KeyValValue& def=KeyValValuestring());
     std::string stringvalue(const char* key,int i,
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(const char* key,int,
@@ -208,8 +208,8 @@ class KeyVal: public RefCount {
                     const KeyValValue& def=KeyValValueint());
     size_t sizevalue(int i,
                      const KeyValValue& def=KeyValValuesize());
-    char*  pcharvalue(int i,
-                      const KeyValValue& def=KeyValValuepchar());
+    DEPRECATED char*  pcharvalue(int i,
+                      const KeyValValue& def=KeyValValuestring());
     std::string stringvalue(int i,
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,
@@ -237,8 +237,8 @@ class KeyVal: public RefCount {
                     const KeyValValue& def=KeyValValueint());
     size_t sizevalue(const char* key,int,int,
                      const KeyValValue& def=KeyValValuesize());
-    char*  pcharvalue(const char* key,int,int,
-                      const KeyValValue& def=KeyValValuepchar());
+    DEPRECATED char*  pcharvalue(const char* key,int,int,
+                      const KeyValValue& def=KeyValValuestring());
     std::string stringvalue(const char* key,int,int,
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(const char* key,int,int,
@@ -258,8 +258,8 @@ class KeyVal: public RefCount {
                     const KeyValValue& def=KeyValValueint());
     size_t sizevalue(int i,int j,
                      const KeyValValue& def=KeyValValuesize());
-    char*  pcharvalue(int i,int j,
-                      const KeyValValue& def=KeyValValuepchar());
+    DEPRECATED char*  pcharvalue(int i,int j,
+                      const KeyValValue& def=KeyValValuestring());
     std::string stringvalue(int i,int j,
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,int j,
@@ -280,7 +280,7 @@ class KeyVal: public RefCount {
     char   Va_charvalue(const char* key,int nindex,...);
     int    Va_intvalue(const char* key,int nindex,...);
     size_t Va_sizevalue(const char* key,int nindex,...);
-    char*  Va_pcharvalue(const char* key,int nindex,...);
+    DEPRECATED char*  Va_pcharvalue(const char* key,int nindex,...);
     std::string Va_stringvalue(const char* key,int nindex,...);
     Ref<DescribedClass> Va_describedclassvalue(const char* key,int nindex,...);
     //@}
@@ -366,7 +366,7 @@ class StringKeyVal: public KeyVal {
   public:
     virtual ~StringKeyVal();
     /// Returns the string representation of the value assigned to key.
-    virtual const char* stringrep(const char *key) = 0;
+    virtual std::string stringrep(const char *key) = 0;
     /** Returns the name of the exact class of the object at the keyword.
         If no classname is assigned then 0 is returned. */
     virtual const char* classname(const char*);
@@ -541,7 +541,7 @@ class ParsedKeyVal : public StringKeyVal {
     /** @name Overrides of parent members.
         See parent class documentation. */
     //@{
-    const char* stringrep(const char*);
+    std::string stringrep(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);
     void errortrace(std::ostream&fp=ExEnv::err0());

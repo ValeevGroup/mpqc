@@ -158,7 +158,7 @@ MPQCIn::add_atom(char *sym, char *xs, char *ys, char *zs)
   if (zse == zs) yerror2("bad z coordinate", zs);
   free(zs);
 
-  mol_->add_atom(Z, x, y, z, 0, 0, atom_charge_.set(), atom_charge_.val());
+  mol_->add_atom(Z, x, y, z, "", 0, atom_charge_.set(), atom_charge_.val());
   atom_charge_.reset(0);
 }
 

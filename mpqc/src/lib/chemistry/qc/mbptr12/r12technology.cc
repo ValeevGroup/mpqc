@@ -95,33 +95,32 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
 
   // Default method is MBPT2-R12/A'
-  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
-  if ( !strcmp(sa_string,"A") ||
-       !strcmp(sa_string,"a") ) {
+  std::string sa_string = keyval->stringvalue("stdapprox",KeyValValuestring("A'"));
+  if ( sa_string == "A" ||
+       sa_string == "a" ) {
     throw FeatureNotImplemented("stdapprox=A is obsolete",__FILE__,__LINE__);
   }
-  else if ( !strcmp(sa_string,"Ap") ||
-	    !strcmp(sa_string,"ap") ||
-	    !strcmp(sa_string,"A'") ||
-	    !strcmp(sa_string,"a'") ) {
+  else if ( sa_string == "Ap" ||
+	    sa_string == "ap" ||
+	    sa_string == "A'" ||
+	    sa_string == "a'" ) {
     stdapprox_ = LinearR12::StdApprox_Ap;
   }
-  else if ( !strcmp(sa_string,"App") ||
-	    !strcmp(sa_string,"app") ||
-	    !strcmp(sa_string,"A''") ||
-	    !strcmp(sa_string,"a''") ) {
+  else if ( sa_string == "App" ||
+	    sa_string == "app" ||
+	    sa_string == "A''" ||
+	    sa_string == "a''" ) {
     stdapprox_ = LinearR12::StdApprox_App;
   }
-  else if ( !strcmp(sa_string,"B") ||
-	    !strcmp(sa_string,"b") ) {
+  else if ( sa_string == "B" ||
+	    sa_string == "b" ) {
     stdapprox_ = LinearR12::StdApprox_B;
   }
-  else if ( !strcmp(sa_string,"C") ||
-	    !strcmp(sa_string,"c") ) {
+  else if ( sa_string == "C" ||
+	    sa_string == "c" ) {
     stdapprox_ = LinearR12::StdApprox_C;
   }
   else {
-    delete[] sa_string;
     throw std::runtime_error("R12Technology::R12Technology() -- unrecognized value for stdapprox");
   }
 
@@ -339,36 +338,34 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   ExEnv::out0() << "include_DKH_in_Q: " << (include_DKH_in_Q_ ? "true" : "false") << endl;
   
   // For now the default is to use the old ABS method, of Klopper and Samson
-  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ABS"));
-  if ( !strcmp(abs_method_str,"KS") ||
-       !strcmp(abs_method_str,"ks") ||
-       !strcmp(abs_method_str,"ABS") ||
-       !strcmp(abs_method_str,"abs") ) {
+  std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("ABS"));
+  if ( abs_method_str == "KS" ||
+       abs_method_str == "ks" ||
+       abs_method_str == "ABS" ||
+       abs_method_str == "abs" ) {
     abs_method_ = LinearR12::ABS_ABS;
   }
-  else if ( !strcmp(abs_method_str,"KS+") ||
-	    !strcmp(abs_method_str,"ks+") ||
-            !strcmp(abs_method_str,"ABS+") ||
-	    !strcmp(abs_method_str,"abs+") ) {
+  else if ( abs_method_str == "KS+" ||
+	    abs_method_str == "ks+" ||
+            abs_method_str == "ABS+" ||
+	    abs_method_str == "abs+" ) {
     abs_method_ = LinearR12::ABS_ABSPlus;
   }
-  else if ( !strcmp(abs_method_str,"EV") ||
-	    !strcmp(abs_method_str,"ev") ||
-            !strcmp(abs_method_str,"CABS") ||
-	    !strcmp(abs_method_str,"cabs") ) {
+  else if ( abs_method_str == "EV" ||
+	    abs_method_str == "ev" ||
+            abs_method_str == "CABS" ||
+	    abs_method_str == "cabs" ) {
     abs_method_ = LinearR12::ABS_CABS;
   }
-  else if ( !strcmp(abs_method_str,"EV+") ||
-	    !strcmp(abs_method_str,"ev+") ||
-            !strcmp(abs_method_str,"CABS+") ||
-	    !strcmp(abs_method_str,"cabs+") ) {
+  else if ( abs_method_str == "EV+" ||
+	    abs_method_str == "ev+" ||
+            abs_method_str == "CABS+" ||
+	    abs_method_str == "cabs+" ) {
     abs_method_ = LinearR12::ABS_CABSPlus;
   }
   else {
-    delete[] abs_method_str;
     throw std::runtime_error("R12Technology::R12Technology -- unrecognized value for abs_method");
   }
-  delete[] abs_method_str;
 
   ansatz_ = require_dynamic_cast<LinearR12Ansatz*>(
     keyval->describedclassvalue("ansatz").pointer(),

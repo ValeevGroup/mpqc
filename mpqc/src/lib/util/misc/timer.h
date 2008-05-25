@@ -30,8 +30,15 @@
 
 #include <scconfig.h>
 
-#ifndef _util_misc_regtime_cc
-#warning "util/misc/timer.h is deprecated"
+#define DEPRECATE_TIMER 1
+
+#if DEPRECATE_TIMER
+# ifndef _util_misc_regtime_cc
+#  warning "util/misc/timer.h is deprecated"
+# endif
+# define TIMER_DEPRECATED DEPRECATED
+#else
+# define TIMER_DEPRECATED
 #endif
 
 namespace sc {
@@ -40,13 +47,13 @@ namespace sc {
   // and Region Timers" section in the MPQC manual
   // (http://www.mpqc.org/mpqc-html/develop.html#scexcepttimer) for
   // information on how to do timing calls in an exception-safe manner.
-  void tim_enter(const char *) DEPRECATED;
-  void tim_exit(const char *) DEPRECATED;
-  void tim_change(const char *) DEPRECATED;
-  void tim_set_default(const char *) DEPRECATED;
-  void tim_enter_default() DEPRECATED;
-  void tim_exit_default() DEPRECATED;
-  void tim_print(int) DEPRECATED;
+  void tim_enter(const char *) TIMER_DEPRECATED;
+  void tim_exit(const char *) TIMER_DEPRECATED;
+  void tim_change(const char *) TIMER_DEPRECATED;
+  void tim_set_default(const char *) TIMER_DEPRECATED;
+  void tim_enter_default() TIMER_DEPRECATED;
+  void tim_exit_default() TIMER_DEPRECATED;
+  void tim_print(int) TIMER_DEPRECATED;
 
 }
 

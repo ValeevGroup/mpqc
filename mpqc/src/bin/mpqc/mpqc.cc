@@ -586,7 +586,7 @@ try_main(int argc, char *argv[])
        << " by default for molecular integrals evaluation" << endl << endl;
   
   // check for a molecular energy and optimizer
-  KeyValValueString molnamedef(basename);
+  KeyValValuestring molnamedef(basename);
   std::string molname = keyval->stringvalue("filename", molnamedef);
   if (molname != basename)
     SCFormIO::set_default_basename(molname.c_str());

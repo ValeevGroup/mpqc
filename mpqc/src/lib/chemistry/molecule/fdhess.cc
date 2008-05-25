@@ -91,7 +91,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
 
   restart_ = keyval->booleanvalue("restart", def_restart);
   char *def_file = SCFormIO::fileext_to_filename(".ckpt.hess");
-  KeyValValueString def_restart_file(def_file,KeyValValueString::Steal);
+  KeyValValuestring def_restart_file(def_file);
   restart_file_ = keyval->stringvalue("restart_file", def_restart_file);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
   checkpoint_file_ = keyval->stringvalue("checkpoint_file", def_restart_file);

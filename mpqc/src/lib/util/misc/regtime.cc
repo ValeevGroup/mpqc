@@ -306,7 +306,7 @@ RegionTimer::RegionTimer(const Ref<KeyVal> &keyval)
 {
   KeyValValueboolean yes(1);
   KeyValValueboolean no(0);
-  KeyValValuepchar defname("total");
+  KeyValValuestring defname("total");
 
   wall_time_ = keyval->booleanvalue("wall_time",yes);
   cpu_time_ = keyval->booleanvalue("cpu_time",yes);

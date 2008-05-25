@@ -88,24 +88,22 @@ R12IntEvalInfo::R12IntEvalInfo(
       bs_vir_ = ref->basis();
 
   // Determine how to store MO integrals
-  char *ints_str = keyval->pcharvalue("store_ints",KeyValValuepchar("posix"));
-  if (!strcmp(ints_str,"posix")) {
+  std::string ints_str = keyval->stringvalue("store_ints",KeyValValuestring("posix"));
+  if (ints_str == "posix") {
     ints_method_ = MOIntsTransformFactory::StoreMethod::posix;
   }
 #if HAVE_MPIIO
-  else if (!strcmp(ints_str,"mpi")) {
+  else if (ints_str == "mpi") {
     ints_method_ = MOIntsTransformFactory::StoreMethod::mpi;
   }
 #else
-  else if (!strcmp(ints_str,"mpi")) {
+  else if (ints_str == "mpi") {
     throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- the value for keyword store_ints is not valid in this environment (no MPI-I/O detected)");
   }
 #endif
   else {
-    delete[] ints_str;
     throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- invalid value for keyword r12ints");
   }
-  delete[] ints_str;
   
   // Get the filename prefix to store the integrals
   const std::string ints_file_default = SCFormIO::fileext_to_filename(".moints");

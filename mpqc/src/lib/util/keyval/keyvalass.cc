@@ -103,7 +103,7 @@ AssignedKeyVal::assign(const char*key,int val)
 void
 AssignedKeyVal::assign(const char*key,const char* val)
 {
-  assign(key,new KeyValValuepchar(val));
+  assign(key,new KeyValValuestring(val));
 }
 void
 AssignedKeyVal::assign(const char*key,const Ref<DescribedClass>&val)

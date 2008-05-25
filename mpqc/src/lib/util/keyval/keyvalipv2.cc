@@ -237,14 +237,15 @@ static KeyVal::KeyValError maperr(IPV2::Status err)
   return KeyVal::OperationFailed;
   }
 
-const char* ParsedKeyVal::stringrep(const char* key)
+std::string ParsedKeyVal::stringrep(const char* key)
 {
   const char* result;
   seterror(maperr(ipv2->value_v((char *)key,&result,0,0)));
-  if (error() != OK) {
-      result = 0;
+  std::string retval;
+  if (error() == OK) {
+      retval = result;
     }
-  return result;
+  return retval;
 }
 
 const char*

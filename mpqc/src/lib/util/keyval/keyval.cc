@@ -515,7 +515,7 @@ char* KeyVal::Va_pcharvalue(const char* key,int narg,...)
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_pcharvalue(newkey,KeyValValuepchar());
+  return key_pcharvalue(newkey,KeyValValuestring());
   }
 std::string KeyVal::Va_stringvalue(const char* key,int narg,...)
   {

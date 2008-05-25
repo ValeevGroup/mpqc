@@ -172,7 +172,6 @@ Molecule::Molecule(const Ref<KeyVal>&input):
 
       int i;
       for (i=0; i<natom; i++) {
-          char *name, *label;
           int ghost = input->booleanvalue("ghost",i);
           double charge = input->doublevalue("charge",i);
           int have_charge = input->error() == KeyVal::OK;
@@ -180,16 +179,14 @@ Molecule::Molecule(const Ref<KeyVal>&input):
               have_charge = 1;
               charge = 0.0;
             }
-          add_atom(atominfo_->string_to_Z(name = input->pcharvalue("atoms",i)),
+          add_atom(atominfo_->string_to_Z(input->stringvalue("atoms",i)),
                    input->doublevalue("geometry",i,0)*conv,
                    input->doublevalue("geometry",i,1)*conv,
                    input->doublevalue("geometry",i,2)*conv,
-                   label = input->pcharvalue("atom_labels",i),
+                   input->stringvalue("atom_labels",i),
                    input->doublevalue("mass",i),
                    have_charge, charge
               );
-          delete[] name;
-          delete[] label;
         }
     }
 
@@ -280,7 +277,7 @@ Molecule::operator=(const Molecule& mol)
 
 void
 Molecule::add_atom(int Z,double x,double y,double z,
-                   const char *label,double mass,
+                   const std::string &label,double mass,
                    int have_charge, double charge)
 {
   int i;
@@ -290,7 +287,7 @@ Molecule::add_atom(int Z,double x,double y,double z,
   double **newr = new double*[natoms_+1];
   double *newr0 = new double[(natoms_+1)*3];
   char **newlabels = 0;
-  if (label || labels_) {
+  if (label.size() > 0 || labels_) {
       newlabels = new char*[natoms_+1];
     }
   double *newcharges = 0;
@@ -354,8 +351,8 @@ Molecule::add_atom(int Z,double x,double y,double z,
   r_[natoms_][1] = y;
   r_[natoms_][2] = z;
   if (mass_) mass_[natoms_] = mass;
-  if (label) {
-      labels_[natoms_] = strcpy(new char[strlen(label)+1],label);
+  if (label.size() > 0) {
+      labels_[natoms_] = strcpy(new char[label.size()+1],label.c_str());
     }
   else if (labels_) {
       labels_[natoms_] = 0;
@@ -467,11 +464,11 @@ Molecule::print(ostream& os) const
 }
 
 int
-Molecule::atom_label_to_index(const char *l) const
+Molecule::atom_label_to_index(const std::string &l) const
 {
   int i;
   for (i=0; i<natom(); i++) {
-      if (label(i) && !strcmp(l,label(i))) return i;
+      if (label(i) && l == label(i)) return i;
     }
   return -1;
 }

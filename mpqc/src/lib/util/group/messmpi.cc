@@ -114,7 +114,9 @@ MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
       char **argv = new char*[argc+1];
       argv[argc] = 0;
       for (int arg=0; arg<argc; arg++) {
-          argv[arg] = keyval->pcharvalue("argv",arg);
+          std::string str = keyval->stringvalue("argv",arg);
+          // this is a minor memory leak
+          argv[arg] = strcpy(new char[str.size()+1], str.c_str());
         }
       init(MPI_COMM_WORLD, &argc, &argv);
     }

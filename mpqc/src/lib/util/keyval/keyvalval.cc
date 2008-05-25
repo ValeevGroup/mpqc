@@ -99,7 +99,7 @@ KeyValValue::sizevalue(size_t& val) const
 KeyValValue::KeyValValueError
 KeyValValue::pcharvalue(const char*& val) const
 {
-  KeyValValuepchar def;
+  KeyValValuestring def;
   def.pcharvalue(val);
   return KeyValValue::WrongType;
 }
@@ -312,10 +312,12 @@ KeyValValuepchar::print(ostream&o) const
 /////////////////////////////////////////////////////////////////////////
 
 KeyValValuestring::KeyValValuestring(const std::string &val):
+  _defined(true),
   _val(val)
 {
 }
 KeyValValuestring::KeyValValuestring(const KeyValValuestring&val):
+  _defined(true),
   _val(val._val)
 {
 }
@@ -428,7 +430,8 @@ KeyValValuestring::sizevalue(size_t&val) const
 KeyValValue::KeyValValueError
 KeyValValuestring::pcharvalue(const char*&val) const
 {
-  val = _val.c_str();
+  if (!_defined) val = 0;
+  else val = _val.c_str();
   return KeyValValue::OK;
 }
 KeyValValue::KeyValValueError

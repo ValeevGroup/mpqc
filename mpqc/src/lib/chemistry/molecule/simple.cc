@@ -78,10 +78,9 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
           Ref<Molecule> mol; mol << kv->describedclassvalue("molecule");
           if (mol.nonnull()) {
               for (i=0; i<na; i++) {
-                  char *label = kv->pcharvalue("atom_labels", i);
+                  std::string label = kv->stringvalue("atom_labels", i);
                   if (kv->error() != KeyVal::OK) break;
                   atoms[i] = mol->atom_label_to_index(label) + 1;
-                  delete[] label;
                   if (atoms[i] == 0) break;
                 }
             }
@@ -102,7 +101,8 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
       // This is a shorthand form for the input that doesn't allow
       // the specification of a value.
       if (label_) delete[] label_;
-      label_=kv->pcharvalue(0);
+      std::string tmplabel = kv->stringvalue(0);
+      label_=strcpy(new char[tmplabel.size()+1],tmplabel.c_str());
       for (int i=0; i<na; i++) {
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {

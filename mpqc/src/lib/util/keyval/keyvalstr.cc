@@ -131,9 +131,13 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
             }
         }
       else {
-          const char* string = stringrep(tkw);
-          if (string) result = new KeyValValueString(string);
-          else result = 0;
+          std::string str = stringrep(tkw);
+          if (error() != OK) {
+              result = 0;
+            }
+          else {
+              result = new KeyValValuestring(str);
+            }
         }
     }
 

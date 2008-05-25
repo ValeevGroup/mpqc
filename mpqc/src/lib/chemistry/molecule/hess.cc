@@ -394,8 +394,7 @@ static ClassDesc ReadMolecularHessian_cd(
 ReadMolecularHessian::ReadMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
-  KeyValValueString default_filename(SCFormIO::fileext_to_filename(".hess"),
-                                     KeyValValueString::Steal);
+  KeyValValuestring default_filename(SCFormIO::fileext_to_filename(".hess"));
   filename_ = keyval->stringvalue("filename", default_filename);
 }
 

@@ -439,11 +439,11 @@ AtomInfo::load_values(std::map<int,std::vector<double> >&values,
                       prefix = "";
                       have_overridden = 1;
                     }
-                  char *strval = pkeyval->pcharvalue(elements_[elem].symbol,j);
+                  std::string strval
+                      = pkeyval->stringvalue(elements_[elem].symbol,j);
                   char assignment[256];
                   sprintf(assignment,"%s%s:%d=%s",
-                          prefix, elements_[elem].symbol, j, strval);
-                  delete[] strval;
+                          prefix, elements_[elem].symbol, j, strval.c_str());
                   add_overridden_value(assignment);
                 }
             }

@@ -51,7 +51,7 @@ class KeyValValue: public RefCount {
     virtual KeyValValue::KeyValValueError charvalue(char&) const;
     virtual KeyValValue::KeyValValueError intvalue(int&) const;
     virtual KeyValValue::KeyValValueError sizevalue(size_t&) const;
-    virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    DEPRECATED virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     virtual KeyValValue::KeyValValueError stringvalue(std::string&) const;
     virtual KeyValValue::KeyValValueError describedclassvalue(Ref<DescribedClass>&) const;
     virtual void print(std::ostream &o=ExEnv::out0()) const;
@@ -143,11 +143,11 @@ class KeyValValuepchar: public KeyValValue {
   private:
     char* _val;
   public:
-    KeyValValuepchar(): _val(0) {}
-    KeyValValuepchar(const char*);
-    KeyValValuepchar(const KeyValValuepchar&);
+    DEPRECATED KeyValValuepchar(): _val(0) {}
+    DEPRECATED KeyValValuepchar(const char*);
+    DEPRECATED KeyValValuepchar(const KeyValValuepchar&);
     ~KeyValValuepchar();
-    KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
@@ -156,9 +156,11 @@ class KeyValValuepchar: public KeyValValue {
 /// This can convert the string to a variety of other types.
 class KeyValValuestring: public KeyValValue {
   private:
+    // This is used to provide compatibility with KeyValValuepchar:
+    bool _defined;
     std::string _val;
   public:
-    KeyValValuestring() {}
+    KeyValValuestring():_defined(false) {}
     KeyValValuestring(const std::string&);
     KeyValValuestring(const KeyValValuestring&);
     ~KeyValValuestring();
@@ -177,7 +179,7 @@ class KeyValValuestring: public KeyValValue {
     /// recognized: KB, MB, GB, KIB, MIB, and GIB.
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
     /// Converts the string to a pointer to char (deprecated).
-    KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
@@ -206,11 +208,11 @@ class KeyValValueString: public KeyValValue {
     // Use = use the passed pointer but do not delete it
     enum Storage { Copy, Steal, Use };
 
-    KeyValValueString(const char*,
+    DEPRECATED KeyValValueString(const char*,
                       KeyValValueString::Storage s = KeyValValueString::Use);
-    KeyValValueString(char*,
+    DEPRECATED KeyValValueString(char*,
                       KeyValValueString::Storage s = KeyValValueString::Use);
-    KeyValValueString(const KeyValValueString&);
+    DEPRECATED KeyValValueString(const KeyValValueString&);
     ~KeyValValueString();
     KeyValValue::KeyValValueError doublevalue(double&) const;
     KeyValValue::KeyValValueError booleanvalue(int&) const;
@@ -218,7 +220,7 @@ class KeyValValueString: public KeyValValue {
     KeyValValue::KeyValValueError charvalue(char&) const;
     KeyValValue::KeyValValueError intvalue(int&) const;
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
-    KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };

@@ -946,28 +946,13 @@ AC_LANG_CPLUSPLUS
 AC_TRY_LINK(,[double *__restrict__ x=0;],AC_DEFINE(CXX___RESTRICT__))
 AC_LANG_RESTORE
 
-dnl ---------- Checks for C++ header files. -----------
-
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-AC_CHECK_HEADERS(iostream sstream)
-AC_LANG_RESTORE
-
-AC_MSG_CHECKING([iostream name])
-if test x$ac_cv_header_iostream = xyes; then
-  iostream=iostream
-else
-  iostream=iostream.h
-fi
-AC_MSG_RESULT($iostream)
-
 dnl ----------- check for namespace std ---------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([for namespace std])
 AC_TRY_LINK([
-#include <$iostream>
+#include <iostream>
 using namespace std;
 ],[
   ostream &o = cout;
@@ -990,7 +975,7 @@ AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([for GNU libc++-v3 prerelease bug])
 AC_TRY_LINK([
 #include <stdio.h>
-#include <$iostream>
+#include <iostream>
 ],[
 ],[
 AC_MSG_RESULT([no])
@@ -1323,7 +1308,7 @@ dnl --------- Check for ios::fmtflags. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([ios::fmtflags])
-AC_TRY_COMPILE([#include <$iostream>],[
+AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD ios::fmtflags flags;
 ],[HAVE_IOS_FMTFLAGS=yes
 AC_DEFINE(HAVE_IOS_FMTFLAGS)
@@ -1354,7 +1339,7 @@ dnl --------- Check for sgetn. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([sgetn])
-AC_TRY_COMPILE([#include <$iostream>],[
+AC_TRY_COMPILE([#include <iostream>],[
 char *c=0;
 $NAMESPACE_STD streambuf *s=0; s->sgetn(c,0);
 ],[HAVE_SGETN=yes
@@ -1371,7 +1356,7 @@ dnl --------- Check for pubseekoff. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([pubseekoff])
-AC_TRY_COMPILE([#include <$iostream>],[
+AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD cout.rdbuf()->pubseekoff(0,$NAMESPACE_STD ios::beg,
                                         $NAMESPACE_STD ios::out);
 ],[HAVE_PUBSEEKOFF=yes
@@ -1388,7 +1373,7 @@ dnl --------- Check for seekoff. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([seekoff])
-AC_TRY_COMPILE([#include <$iostream>],[
+AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD cout.rdbuf()->seekoff(0,$NAMESPACE_STD ios::beg,
                                      $NAMESPACE_STD ios::out);
 ],[HAVE_SEEKOFF=yes

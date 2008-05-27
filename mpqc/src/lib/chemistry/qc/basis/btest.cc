@@ -26,11 +26,7 @@
 //
 
 #include <scconfig.h>
-#ifdef HAVE_SSTREAM
-#  include <sstream>
-#else
-#  include <strstream.h>
-#endif
+#include <sstream>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -516,11 +512,7 @@ main(int, char *argv[])
   int i, j;
 
   char o[10000];
-#ifdef HAVE_SSTREAM
   ostringstream perlout(o);
-#else
-  ostrstream perlout(o,sizeof(o));
-#endif
 
   const char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
   
@@ -692,12 +684,7 @@ main(int, char *argv[])
 
       perlout << ")" << endl;
 
-#ifdef HAVE_SSTREAM
       const char *perlout_s = perlout.str().c_str();
-#else
-      perlout << ")" << ends;
-      char *perlout_s = perlout.str();
-#endif
       cout << perlout_s;
     }
 

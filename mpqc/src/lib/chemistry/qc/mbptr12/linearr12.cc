@@ -29,7 +29,6 @@
 #pragma implementation
 #endif
 
-#include <strstream>
 #include <sstream>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
@@ -193,7 +192,7 @@ namespace sc {
       std::vector<std::string> param_vec(3);
       int nfunction=1;
       int nprimitive=1;
-      std::strstream inout;
+      std::stringstream inout;
       inout << nfunction;
       inout >> param_vec[0];
       inout << nprimitive;
@@ -206,7 +205,7 @@ namespace sc {
     Ref<GeminalDescriptor> GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
       int nfunction=gamma.size();
       std::vector<std::string> params(1+3*nfunction);
-      std::strstream inout;
+      std::stringstream inout;
       inout << nfunction;
       inout >> params[0];
       int one=1;
@@ -236,7 +235,7 @@ namespace sc {
       std::vector<std::string> param_vec(3);
       int nfunction=1;
       int nprimitive=1;
-      std::strstream inout;
+      std::stringstream inout;
       inout << nfunction;
       inout >> param_vec[0];
       inout << nprimitive;
@@ -251,7 +250,7 @@ namespace sc {
       int nfunction=1;
       unsigned int ngeminal=coeff.size();
       std::vector<std::string> param_vec(2*ngeminal+2);
-      std::strstream inout;
+      std::stringstream inout;
       inout << nfunction;
       inout >> param_vec[0];
       inout << ngeminal;
@@ -278,7 +277,7 @@ namespace sc {
       offsets[nfunction]=numofparams;
       
       std::vector<std::string> params(numofparams);
-      std::strstream inout;
+      std::stringstream inout;
       inout << nfunction;
       inout >> params[0];
       for(int i=0; i<nfunction; i++){

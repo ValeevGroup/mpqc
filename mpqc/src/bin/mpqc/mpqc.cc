@@ -50,11 +50,7 @@
 #include <libgen.h>
 
 #include <scconfig.h>
-#ifdef HAVE_SSTREAM
-#  include <sstream>
-#else
-#  include <strstream.h>
-#endif
+#include <sstream>
 
 #ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>
@@ -348,18 +344,10 @@ try_main(int argc, char *argv[])
   char *in_char_array;
   if (grp->me() == 0) {
     ifstream is(input);
-#ifdef HAVE_SSTREAM
     ostringstream ostrs;
     is >> ostrs.rdbuf();
     int n = 1 + strlen(ostrs.str().c_str());
     in_char_array = strcpy(new char[n],ostrs.str().c_str());
-#else
-    ostrstream ostrs;
-    is >> ostrs.rdbuf();
-    ostrs << ends;
-    in_char_array = ostrs.str();
-    int n = ostrs.pcount();
-#endif
     grp->bcast(n);
     grp->bcast(in_char_array, n);
     }

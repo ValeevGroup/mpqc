@@ -27,11 +27,7 @@
 
 #include <scconfig.h>
 #include <iostream>
-#ifdef HAVE_SSTREAM
-#  include <sstream>
-#else
-#  include <strstream.h>
-#endif
+#include <sstream>
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
@@ -206,13 +202,9 @@ void ParsedKeyVal::read(istream&infp)
 }
 
 void
-ParsedKeyVal::parse_string(const char *str)
+ParsedKeyVal::parse_string(const std::string &str)
 {
-#ifdef HAVE_SSTREAM
   istringstream in(str);
-#else
-  istrstream in(str);
-#endif
   ipv2->read(in,ExEnv::errn(),"<string>");
 }
 

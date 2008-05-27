@@ -29,12 +29,6 @@
 
 #include <math.h>
 
-#ifdef HAVE_SSTREAM
-#  include <sstream>
-#else
-#  include <strstream.h>
-#endif
-
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>

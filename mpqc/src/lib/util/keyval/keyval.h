@@ -536,7 +536,7 @@ class ParsedKeyVal : public StringKeyVal {
     /// Read input data from the given stream.
     void read(std::istream&);
     /// Read input data from the given string.
-    void parse_string(const char *);
+    void parse_string(const std::string&);
 
     /** @name Overrides of parent members.
         See parent class documentation. */

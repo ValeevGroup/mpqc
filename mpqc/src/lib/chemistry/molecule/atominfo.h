@@ -49,8 +49,8 @@ class AtomInfo: public SavableState {
     struct atom
     {
       int Z;
-      char *name;
-      char *symbol;
+      const char *name;
+      const char *symbol;
     };
 
     static struct atom elements_[Nelement];

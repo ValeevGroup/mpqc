@@ -214,7 +214,7 @@ SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
       os << scprintf(" %4d", atoms[i]);
 
   if (mol.nonnull()) {
-      char *separator = " ";
+      const char *separator = " ";
       os << "  ";
       for (i=0; i<(4-natoms()); i++) {
           os << "   ";

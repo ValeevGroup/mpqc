@@ -406,6 +406,10 @@ BlockedSymmSCMatrix::accumulate(const SymmSCMatrix*a)
   if (!dim()->equiv(la->dim())) {
     ExEnv::errn() << indent << "BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a): "
          << "dimensions don't match\n";
+    ExEnv::errn() << indent << "this->dim():" << std::endl;
+    dim()->print(ExEnv::errn());
+    ExEnv::errn() << indent << "la->dim():" << std::endl;
+    la->dim()->print(ExEnv::errn());
     abort();
   }
 

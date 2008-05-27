@@ -494,7 +494,7 @@ AtomInfo::string_to_Z(const std::string &name, int allow_exceptions)
   if (iname != symbol_to_Z_.end()) return iname->second;
 
   if (allow_exceptions) {
-      ExEnv::err0() << sprintf("AtomInfo: invalid name: %s\n",name.c_str());
+      ExEnv::err0() << scprintf("AtomInfo: invalid name: %s\n",name.c_str());
       throw std::runtime_error("invalid atom name");
     }
 

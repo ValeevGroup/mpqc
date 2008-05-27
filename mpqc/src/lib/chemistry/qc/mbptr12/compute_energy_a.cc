@@ -29,7 +29,7 @@
 #include <scconfig.h>
 #include <util/misc/math.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <math/scmat/abstract.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
@@ -48,7 +48,7 @@ namespace {
 void
 MBPT2_R12::compute_energy_()
 {
-  tim_enter("mp2-f12 energy");
+  Timer tim("mp2-f12 energy");
 
   //int DebugWait = 1;
   //while (DebugWait) {}
@@ -82,7 +82,7 @@ MBPT2_R12::compute_energy_()
     // MP2-F12/A'
     if (r12info->stdapprox() == LinearR12::StdApprox_Ap ||
         r12info->stdapprox() == LinearR12::StdApprox_B) {
-      tim_enter("mp2-f12/a' pair energies");
+      Timer tim2("mp2-f12/a' pair energies");
       if (r12ap_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_Ap);
         r12ap_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
@@ -90,12 +90,11 @@ MBPT2_R12::compute_energy_()
       r12ap_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12ap_energy_->energy();
       ef12 = er12(r12ap_energy_);
-      tim_exit("mp2-f12/a' pair energies");
     }
 
     // MP2-F12/B
     if (r12info->stdapprox() == LinearR12::StdApprox_B) {
-      tim_enter("mp2-f12/b pair energies");
+      Timer tim2("mp2-f12/b pair energies");
       if (r12b_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_B);
         r12b_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
@@ -103,12 +102,11 @@ MBPT2_R12::compute_energy_()
       r12b_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12b_energy_->energy();
       ef12 = er12(r12b_energy_);
-      tim_exit("mp2-f12/b pair energies");
     }
     
     // MP2-F12/A''
     if (r12info->stdapprox() == LinearR12::StdApprox_App) {
-      tim_enter("mp2-f12/a'' pair energies");
+      Timer tim2("mp2-f12/a'' pair energies");
       if (r12app_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_App);
         r12app_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
@@ -116,14 +114,13 @@ MBPT2_R12::compute_energy_()
       r12app_energy_->print_pair_energies(r12info->spinadapted());
       etotal = r12app_energy_->energy();
       ef12 = er12(r12app_energy_);
-      tim_exit("mp2-f12/a'' pair energies");
     }
 
   } // end of != ansatz_3
   
   // MP2-F12/C
   if (r12info->stdapprox() == LinearR12::StdApprox_C) {
-    tim_enter("mp2-f12/c pair energies");
+    Timer tim2("mp2-f12/c pair energies");
     if (r12c_energy_.null()){
       r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_C);
       r12c_energy_ = construct_MP2R12Energy(r12intermediates,hylleraas_,debug_,new_energy_);
@@ -131,10 +128,9 @@ MBPT2_R12::compute_energy_()
     r12c_energy_->print_pair_energies(r12info->spinadapted());
     etotal = r12c_energy_->energy();
     ef12 = er12(r12c_energy_);
-    tim_exit("mp2-f12/c pair energies");
   }
   
-  tim_exit("mp2-f12 energy");
+  tim.exit();
 
   mp2_corr_energy_ = etotal - ef12;
   etotal += ref_energy();

@@ -27,7 +27,7 @@
 
 #include <sstream>
 
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -258,7 +258,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   if (!accum->is_active())
     accum->activate();
   
-  tim_enter("MP2 pair energies");
+  Timer tim_mp2_pair_energies("MP2 pair energies");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|"
       << space2->id() << " " << space4->id() << ">";
@@ -288,9 +288,9 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       
       if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-      tim_enter("MO ints retrieve");
+      Timer tim_intsretrieve("MO ints retrieve");
       const double *ij_buf_eri = accum->retrieve_pair_block(ii,jj,corrfactor()->tbint_type_eri());
-      tim_exit("MO ints retrieve");
+      tim_intsretrieve.exit();
       if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
       
@@ -341,6 +341,5 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   accum->deactivate();
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited MP2 pair energies (" << label << ") evaluator" << endl;
-  tim_exit("MP2 pair energies");
 }
 

@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -71,7 +71,7 @@ R12IntEval::compute_BApp_()
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const unsigned int maxnabs = r12info()->maxnabs();
   
-  tim_enter("B(app. A'') intermediate");
+  Timer tim_B_app_App("B(app. A'') intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(app. A'') intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -89,7 +89,7 @@ R12IntEval::compute_BApp_()
 #if INCLUDE_Q
 
     std::string Qlabel = prepend_spincase(spincase2,"Q(A'') intermediate");
-    tim_enter(Qlabel.c_str());
+    Timer tim_Q(Qlabel);
     ExEnv::out0() << endl << indent
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
@@ -148,7 +148,7 @@ R12IntEval::compute_BApp_()
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
-    tim_exit(Qlabel.c_str());
+    tim_Q.exit();
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2,"Q(A'') contribution");
@@ -168,7 +168,7 @@ R12IntEval::compute_BApp_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(app. A'') intermediate evaluator" << endl;
 
-  tim_exit("B(app. A'') intermediate");
+  tim_B_app_App.exit();
 }
 
 ////////////////////////////////////////////////////////////////////////////

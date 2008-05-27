@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -57,7 +57,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
 {
   Ref<MessageGrp> msg = r12info()->msg();
 
-  tim_enter("exchange");
+  Timer tim_exchange("exchange");
 
   int me = msg->me();
   int nproc = msg->n();
@@ -108,6 +108,8 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
 
   double* K_xy = new double[nbraket];
   memset(K_xy,0,nbraket*sizeof(double));
+  Timer tim_mo_ints_retrieve;
+  tim_mo_ints_retrieve.set_default("MO ints retrieve");
   if (mnxy_acc->has_access(me)) {
 
     for(int m=0; m<nocc; m++) {
@@ -121,9 +123,9 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
         ExEnv::outn() << indent << "task " << me << ": working on (m) = " << m << " " << endl;
 
       // Get (|1/r12|) integrals
-      tim_enter("MO ints retrieve");
+      tim_mo_ints_retrieve.enter_default();
       const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor()->tbint_type_eri());
-      tim_exit("MO ints retrieve");
+      tim_mo_ints_retrieve.exit_default();
 
       if (debug_ >= DefaultPrintThresholds::fine)
         ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
@@ -135,9 +137,6 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
       mnxy_acc->release_pair_block(m,m,corrfactor()->tbint_type_eri());
     }
   }
-  // Tasks that don't do any work here still need to create these timers
-  tim_enter("MO ints retrieve");
-  tim_exit("MO ints retrieve");
 
   ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
   mnxy_acc->deactivate();
@@ -154,7 +153,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
-  tim_exit("exchange");
+  tim_exchange.exit();
 
   return K;
 }

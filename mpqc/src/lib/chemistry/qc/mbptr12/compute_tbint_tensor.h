@@ -30,7 +30,7 @@
 #endif
 
 #include <cmath>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
@@ -131,7 +131,7 @@ namespace sc {
         }
       }
       
-      tim_enter("Generic tensor");
+      Timer tim_generic_tensor("Generic tensor");
       std::ostringstream oss;
       oss << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
       << space1_ket->id() << " " << space2_ket->id() << ">";
@@ -237,9 +237,9 @@ namespace sc {
               
 	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-              tim_enter("MO ints retrieve");
+              Timer tim_intsretrieve("MO ints retrieve");
               const double *ij_buf = accum->retrieve_pair_block(ii,jj,intsetidx);
-              tim_exit("MO ints retrieve");
+              tim_intsretrieve.exit();
 	      if (debug_ > DefaultPrintThresholds::mostO2N2)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
               
@@ -294,7 +294,7 @@ namespace sc {
       
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited generic tensor (" << label << ") evaluator" << endl;
-      tim_exit("Generic tensor");
+      tim_generic_tensor.exit();
     }
   
   /// Contains classes used to compute many-body tensors

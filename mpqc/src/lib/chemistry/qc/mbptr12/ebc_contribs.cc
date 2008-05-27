@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -84,7 +84,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
                                        true,false);
   fill_container(descr_creator,descrs);
   
-  tim_enter("A intermediate (direct)");
+  Timer tim_A_direct("A intermediate (direct)");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|A|"
       << space2->id() << " " << space4->id() << ">";
@@ -109,7 +109,6 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   }
 
   ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
-  tim_exit("A intermediate (direct)");
 }
 
 void

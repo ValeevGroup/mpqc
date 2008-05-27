@@ -47,7 +47,7 @@ void R12IntEval::compute_B_DKH_() {
   if (!obs_eq_vbs)
     throw FeatureNotImplemented("OBS!=VBS is not supported yet in relativistic calculations",__FILE__,__LINE__);
   
-  tim_enter("Analytic B(DKH2) intermediate");
+  Timer tim_B_DKH2("Analytic B(DKH2) intermediate");
   ExEnv::out0() << endl << indent
       << "Entered analytic B(DKH2) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -229,7 +229,7 @@ void R12IntEval::compute_B_DKH_() {
   ExEnv::out0() << indent << "Exited analytic B(DKH2) intermediate evaluator"
       << endl;
   
-  tim_exit("Analytic B(DKH2) intermediate");
+  tim_B_DKH2.exit();
   checkpoint_();
   
   return;

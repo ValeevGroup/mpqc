@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -90,7 +90,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   if (part1_equiv_part2 ^ int_1_equiv_2)
     throw ProgrammingError("R12IntEval::compute_FxF_() -- contraction spaces must have same permutational symmetry as outer spaces",__FILE__,__LINE__);
   
-  tim_enter("generic FxF intermediate");
+  Timer tim("generic FxF intermediate");
   ExEnv::out0() << indent << "Entered generic FxF intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
   
@@ -219,8 +219,6 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited generic FxF intermediate evaluator" << endl;
-
-  tim_exit("generic FxF intermediate");
 }
 
 ////////////////////////////////////////////////////////////////////////////

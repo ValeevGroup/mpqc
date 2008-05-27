@@ -34,7 +34,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -122,7 +122,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     ////////////////////////////////
     // Game begins
     ////////////////////////////////
-    tim_enter("generic X intermediate");
+    Timer tim("generic X intermediate");
     ExEnv::out0() << indent << "Entered generic X intermediate evaluator" << endl;
     ExEnv::out0() << incindent;
     
@@ -436,7 +436,6 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     globally_sum_scmatrix_(X);
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited generic X intermediate evaluator" << endl;
-    tim_exit("generic X intermediate");
 }
 
 ////////////////////////////////////////////////////////////////////////////

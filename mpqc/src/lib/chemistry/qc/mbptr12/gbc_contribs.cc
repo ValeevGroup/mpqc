@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -71,7 +71,7 @@ R12IntEval::compute_B_gbc_()
   if (evaluated_)
     return;
   
-  tim_enter("B(GBC) intermediate");
+  Timer tim_B_GBC("B(GBC) intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(GBC) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -179,8 +179,6 @@ R12IntEval::compute_B_gbc_()
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(GBC) intermediate evaluator" << endl;
-
-  tim_exit("B(GBC) intermediate");
 }
 
 ////////////////////////////////////////////////////////////////////////////

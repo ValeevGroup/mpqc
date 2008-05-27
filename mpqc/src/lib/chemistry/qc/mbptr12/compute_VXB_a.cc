@@ -51,7 +51,7 @@ R12IntEval::contrib_to_VXB_a_()
   if (!obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- can't use this builder if OBS != VBS",__FILE__,__LINE__);
 
-  tim_enter("mp2-f12a intermeds (tensor contract)");
+  Timer tim("mp2-f12a intermeds (tensor contract)");
 
   // Test new tensor compute function
   for(int s=0; s<nspincases2(); s++) {
@@ -412,8 +412,6 @@ R12IntEval::contrib_to_VXB_a_()
       }
       
   }
-
-  tim_exit("mp2-f12a intermeds (tensor contract)");
 }
 
 ////////////////////////////////////////////////////////////////////////////

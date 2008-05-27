@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -74,7 +74,7 @@ R12IntEval::compute_BB_()
   const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   
-  tim_enter("B(app. B) intermediate");
+  Timer tim_B_app_B("B(app. B) intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(app. B) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -100,7 +100,7 @@ R12IntEval::compute_BB_()
                              absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
     
     std::string Qlabel = prepend_spincase(spincase2,"Q intermediate");
-    tim_enter(Qlabel.c_str());
+    Timer tim_Q(Qlabel);
     ExEnv::out0() << endl << indent
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
@@ -158,7 +158,7 @@ R12IntEval::compute_BB_()
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
-    tim_exit(Qlabel.c_str());
+    tim_Q.exit();
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2,"B(Q) contribution");
@@ -179,7 +179,7 @@ R12IntEval::compute_BB_()
       }
       
       std::string Plabel = prepend_spincase(spincase2,"P intermediate");
-      tim_enter(Plabel.c_str());
+      Timer tim_P(Plabel);
       ExEnv::out0() << endl << indent
                     << "Entered " << Plabel << " evaluator" << endl;
       ExEnv::out0() << incindent;
@@ -274,7 +274,7 @@ R12IntEval::compute_BB_()
       
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
-      tim_exit(Plabel.c_str());
+      tim_P.exit();
 
       BB_[s].accumulate(P); P = 0;
     }
@@ -291,7 +291,7 @@ R12IntEval::compute_BB_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(app. B) intermediate evaluator" << endl;
 
-  tim_exit("B(app. B) intermediate");
+  tim_B_app_B.exit();
 }
 
 ////////////////////////////////////////////////////////////////////////////

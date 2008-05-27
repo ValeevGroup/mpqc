@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -96,7 +96,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
   std::string tim_label("tbint_tform_");
   tim_label += type(); tim_label += " "; tim_label += name();
-  tim_enter(tim_label.c_str());
+  Timer tim(tim_label);
 
   print_header();
   
@@ -150,7 +150,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     Start the integrals transformation
 
    -----------------------------------*/
-  tim_enter("mp2-r12/a passes");
+  Timer tim_passes("mp2-r12/a passes");
   if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
@@ -190,7 +190,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 		  << scprintf("Begin loop over shells (ints, 1+2+3 q.t.)") << endl;
 
     // Do the two electron integrals and the first three quarter transformations
-    tim_enter("ints+1qt+2qt+3qt");
+    Timer tim123("ints+1qt+2qt+3qt");
     shell_pair_data()->init();
     for (int i=0; i<thr_->nthread(); i++) {
       e123thread[i]->set_i_offset(i_offset);
@@ -204,7 +204,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     thr_->start_threads();
     thr_->wait_threads();
 #   endif
-    tim_exit("ints+1qt+2qt+3qt");
+    tim123.exit();
     ExEnv::out0() << indent << "End of loop over shells" << endl;
 
     mem_->sync();  // Make sure ijsx is complete on each node before continuing
@@ -241,7 +241,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
     // Fourth quarter transform
     ExEnv::out0() << indent << "Begin fourth q.t." << endl;
-    tim_enter("4. q.t.");
+    Timer tim4("4. q.t.");
     // Begin fourth quarter transformation;
     // generate (ix|jy) stored as ijxy
 
@@ -272,7 +272,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
       }
     }
     delete[] ijxy_ints;
-    tim_exit("4. q.t.");
+    tim4.exit();
     ExEnv::out0() << indent << "End of fourth q.t." << endl;
 
     integral_ijsx = 0;
@@ -336,9 +336,9 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
-    tim_enter("MO ints store");
+    Timer tim_intstore("MO ints store");
     ints_acc_->store_memorygrp(mem_,ni,memgrp_blocksize);
-    tim_exit("MO ints store");
+    tim_intstore.exit();
     mem_->sync();
 
     if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
@@ -348,7 +348,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     }
 
   } // end of loop over passes
-  tim_exit("mp2-r12/a passes");
+  tim_passes.exit();
   // Done storing integrals - commit the content
   // WARNING: it is not safe to use mem until deactivate has been called on the accumulator
   //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]
@@ -362,7 +362,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
   delete[] tbints; tbints = 0;
   delete[] vector4[0]; delete[] vector4;
 
-  tim_exit(tim_label.c_str());
+  tim.exit();
 
   if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());

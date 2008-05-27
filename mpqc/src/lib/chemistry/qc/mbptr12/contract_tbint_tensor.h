@@ -33,7 +33,7 @@
 #define _chemistry_qc_mbptr12_contracttbinttensor_h
 
 #include <cmath>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
@@ -229,7 +229,7 @@ namespace sc {
       //
       // Generate contract label
       //
-      tim_enter("Generic tensor contract");
+      Timer tim_gen_tensor_contract("Generic tensor contract");
       std::string label;
       {
         std::ostringstream oss_bra;
@@ -429,9 +429,9 @@ namespace sc {
                 const unsigned int ii = map1_bra[i];
                 const unsigned int jj = map2_bra[j];
 
-                tim_enter("MO ints retrieve");
+                Timer tim_intsretrieve("MO ints retrieve");
                 const double *ij_buf = accumb->retrieve_pair_block(ii,jj,intsetidx_bra);
-                tim_exit("MO ints retrieve");
+                tim_intsretrieve.exit();
 		if (debug_ >= DefaultPrintThresholds::mostO4)
                   ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
                 
@@ -450,9 +450,9 @@ namespace sc {
 		  if (debug_ >= DefaultPrintThresholds::mostO4)
                     ExEnv::outn() << indent << "task " << me << ": working on (i,j | k,l) = ("
                                   << i << "," << j << " | " << k << "," << l << ")" << endl;
-                  tim_enter("MO ints retrieve");
+                  tim_intsretrieve.enter("MO ints retrieve");
                   const double *kl_buf = accumk->retrieve_pair_block(kk,ll,intsetidx_ket);
-                  tim_exit("MO ints retrieve");
+                  tim_intsretrieve.exit();
 		  if (debug_ >= DefaultPrintThresholds::mostO4)
                     ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
                   
@@ -591,7 +591,7 @@ namespace sc {
       
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited generic contraction (" << label << ")" << endl;
-      tim_exit("Generic tensor contract");
+      tim_gen_tensor_contract.exit();
     }
               
 }         

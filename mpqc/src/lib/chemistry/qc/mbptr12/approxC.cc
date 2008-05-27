@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -84,7 +84,7 @@ R12IntEval::compute_BC_()
     if (!vbs_eq_obs && ansatz()->projector() == LinearR12::Projector_3)
 	throw FeatureNotImplemented("B(C) cannot be evaluated yet when using ansatz 3 and VBS!=OBS",__FILE__,__LINE__);
   
-    tim_enter("B(app. C) intermediate");
+    Timer tim_B_app_C("B(app. C) intermediate");
     ExEnv::out0() << endl << indent
 		  << "Entered B(app. C) intermediate evaluator" << endl;
     ExEnv::out0() << incindent;
@@ -117,7 +117,7 @@ R12IntEval::compute_BC_()
 	    hj_x2 = hj_x_p(spin2);
 	}    
 	std::string Qlabel = prepend_spincase(spincase2,"Q(C) intermediate");
-	tim_enter(Qlabel.c_str());
+	Timer tim_Q(Qlabel);
 	ExEnv::out0() << endl << indent
 		      << "Entered " << Qlabel << " evaluator" << endl;
 	ExEnv::out0() << incindent;
@@ -139,7 +139,7 @@ R12IntEval::compute_BC_()
 
 	ExEnv::out0() << decindent;
 	ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
-	tim_exit(Qlabel.c_str());
+	tim_Q.exit();
 
 #if 0
 	if (debug_ >= DefaultPrintThresholds::mostO4) {
@@ -164,7 +164,7 @@ R12IntEval::compute_BC_()
 	    }
       
 	    std::string Plabel = prepend_spincase(spincase2,"P(C) intermediate");
-	    tim_enter(Plabel.c_str());
+	    Timer tim_P(Plabel);
 	    ExEnv::out0() << endl << indent
 			  << "Entered " << Plabel << " evaluator" << endl;
 	    ExEnv::out0() << incindent;
@@ -428,7 +428,7 @@ R12IntEval::compute_BC_()
       
 	    ExEnv::out0() << decindent;
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
-	    tim_exit(Plabel.c_str());
+	    tim_P.exit();
 
 #if 0
 	    if (debug_ >= DefaultPrintThresholds::mostO4) {
@@ -453,7 +453,7 @@ R12IntEval::compute_BC_()
 	ExEnv::out0() << decindent;
 	ExEnv::out0() << indent << "Exited B(app. C) intermediate evaluator" << endl;
 
-	tim_exit("B(app. C) intermediate");
+	tim_B_app_C.exit();
     }
 
 ////////////////////////////////////////////////////////////////////////////

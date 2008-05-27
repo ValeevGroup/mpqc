@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -70,7 +70,7 @@ R12IntEval::compute_B_bc_()
   int ntasks = msg->n();
   const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
   
-  tim_enter("B(BC) intermediate");
+  Timer tim("B(BC) intermediate");
   ExEnv::out0() << endl << indent << "Entered B(BC) intermediate evaluator"
       << endl;
   ExEnv::out0() << incindent;
@@ -174,8 +174,6 @@ R12IntEval::compute_B_bc_()
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited B(BC) intermediate evaluator" << endl;
-  
-  tim_exit("B(BC) intermediate");
 }
 
 ////////////////////////////////////////////////////////////////////////////

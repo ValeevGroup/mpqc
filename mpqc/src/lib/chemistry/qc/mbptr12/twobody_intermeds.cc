@@ -75,7 +75,7 @@ R12IntEval::V(SpinCase2 spincase2,
   }
 
 
-  tim_enter("R12 intermeds (tensor contract): Vpqxy");
+  Timer tim("R12 intermeds (tensor contract): Vpqxy");
   
   const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
   const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
@@ -308,6 +308,4 @@ R12IntEval::V(SpinCase2 spincase2,
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS+ABS contribution").c_str());
   }
-  
-  tim_exit("R12 intermeds (tensor contract): Vpqxy");
 }

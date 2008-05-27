@@ -32,7 +32,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -58,7 +58,7 @@ R12IntEval::compute_singles_emp2_()
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
 
-  tim_enter("singles MP2 energy");
+  Timer tim("singles MP2 energy");
   ExEnv::out0() << endl << indent
 	       << "Entered singles MP2 energy evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -89,8 +89,6 @@ R12IntEval::compute_singles_emp2_()
   
   ExEnv::out0() << decindent;
   ExEnv::out0() << endl << "Exited singles MP2 energy evaluator" << endl;
-
-  tim_exit("singles MP2 energy");
 }
 
 ////////////////////////////////////////////////////////////////////////////

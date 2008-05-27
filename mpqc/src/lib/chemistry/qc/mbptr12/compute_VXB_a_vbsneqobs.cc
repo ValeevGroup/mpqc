@@ -60,7 +60,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       absmethod == LinearR12::ABS_ABSPlus)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if absmethod != CABS/CABS+",__FILE__,__LINE__);
 
-  tim_enter("mp2-f12a intermeds (tensor contract)");
+  Timer tim("mp2-f12a intermeds (tensor contract)");
 
   // Test new tensor compute function
   for(int s=0; s<nspincases2(); s++) {
@@ -379,8 +379,6 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       }
       
   }
-
-  tim_exit("mp2-f12a intermeds (tensor contract)");
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -33,7 +33,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -63,7 +63,7 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
                         bool antisymmetrize,
                         const Ref<TwoBodyMOIntsTransform>& transform)
 {
-  tim_enter("T2 amplitudes");
+  Timer tim("T2 amplitudes");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|T2|"
       << space2->id() << " " << space4->id() << ">";
@@ -86,7 +86,6 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   );
   
   ExEnv::out0() << decindent << indent << "Exited MP2 T2 amplitude (" << label << ") evaluator" << endl;
-  tim_exit("T2 amplitudes");
 }
 
 
@@ -100,7 +99,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
                         const std::vector< Ref<TwoBodyIntDescr> >& descrvec)
 {
-  tim_enter("F12 amplitudes");
+  Timer tim("F12 amplitudes");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|F12|"
       << space2->id() << " " << space4->id() << ">";
@@ -118,7 +117,6 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
   );
 
   ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;
-  tim_exit("F12 amplitudes");
 }
 
 ////////////////////////////////////////////////////////////////////////////

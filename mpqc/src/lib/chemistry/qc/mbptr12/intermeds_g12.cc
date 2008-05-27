@@ -45,7 +45,7 @@ R12IntEval::init_intermeds_g12_()
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
 
-  tim_enter("\"diagonal\" part of G12 intermediates");
+  Timer tim_diagonal("\"diagonal\" part of G12 intermediates");
   ExEnv::out0() << endl << indent
 		<< "Entered G12 diagonal intermediates evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -240,7 +240,7 @@ R12IntEval::init_intermeds_g12_()
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited G12 diagonal intermediates evaluator" << endl;
 
-  tim_exit("\"diagonal\" part of G12 intermediates");
+  tim_diagonal.exit();
   checkpoint_();
   
   return;

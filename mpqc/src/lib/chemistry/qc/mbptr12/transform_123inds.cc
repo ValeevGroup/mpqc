@@ -35,7 +35,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>

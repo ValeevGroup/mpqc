@@ -259,6 +259,9 @@ DIIS::reinitialize(Ref<SCExtrapData> data)
   if (data.nonnull()) {
     diism_datain[0] = data->copy();
   }
+  else {
+    diism_datain[0] = 0;
+  }
 }
 
 void

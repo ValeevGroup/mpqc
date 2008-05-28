@@ -70,11 +70,9 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   
   if (mp2_only_)
     PsiCC::do_test_t2_phases();
-  
-  new_approach_ = false;
-  if(keyval->exists("new_approach")) {
-    new_approach_ = keyval->booleanvalue("new_approach");
-  }
+
+  // by default use new (symmetric) approach?
+  new_approach_ = keyval->booleanvalue("new_approach",KeyValValueboolean(true));
   
   mbptr12_ = require_dynamic_cast<MBPT2_R12*>(keyval->describedclassvalue("mbpt2r12").pointer(), "PsiCCSD_PT2R12::PsiCCSD_PT2R12\n");
   // test that Psi3 is compatible to the integral factory used by mbptr12_ object

@@ -82,6 +82,12 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
     throw InputError("PsiCCSD_PT2R12 -- ordering of functions in shells differs between the provided mbpt2r12 and Psi3. Use different Integral factory to construct mbpt2r12.",__FILE__,__LINE__);
   }
   
+  // currently I don't use keyval input inheritance to couple this class and MBPT2_R12. Thus must check consistency
+  if (nfzc() != mbptr12_->nfzcore())
+    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- nfzc here differs from that in mbpt2r12");
+  if (nfzv() != mbptr12_->nfzvirt())
+    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- nfzc here differs from that in mbpt2r12");
+  
   const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
   const Ref<R12Technology> r12tech = r12info->r12tech();
   // cannot do gbc = false yet

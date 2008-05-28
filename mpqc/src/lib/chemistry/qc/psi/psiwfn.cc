@@ -856,7 +856,8 @@ namespace sc {
     return reference()->nelectron();
   }
   
-  const Ref<MOIndexSpace>&PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
+  const Ref<MOIndexSpace>&
+  PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
     if (occ_act_sb_[spin].nonnull())
       return occ_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
@@ -891,8 +892,13 @@ namespace sc {
     return vir_act_sb_[spin];
   }
 
+  unsigned int
+  PsiCorrWavefunction::nfzc() const { return nfzc_; }
+  unsigned int
+  PsiCorrWavefunction::nfzv() const { return nfzv_; }
+  
   const std::vector<unsigned int>&
-  PsiCorrWavefunction::frozen_docc() {
+  PsiCorrWavefunction::frozen_docc() const {
     if (frozen_docc_.empty()) {
       frozen_docc_.resize(nirrep_);
       int* frzcpi = exenv()->chkpt().rd_frzcpi();
@@ -903,7 +909,7 @@ namespace sc {
   }
   
   const std::vector<unsigned int>&
-  PsiCorrWavefunction::frozen_uocc() {
+  PsiCorrWavefunction::frozen_uocc() const {
     if (frozen_uocc_.empty()) {
       frozen_uocc_.resize(nirrep_);
       int* frzvpi = exenv()->chkpt().rd_frzvpi();

@@ -74,6 +74,16 @@ namespace sc {
                         const Ref<MOIndexSpace>& bra2,
                         const Ref<MOIndexSpace>& ket1,
                         const Ref<MOIndexSpace>& ket2);
+  /** Specialization of the above to symmetric matrices. bra2 must be equal to bra1, hence not needed.
+      Antisymmetrizes 4-index quantity <ij|A|kl>.
+      <ij|Aanti|kl> = <ij|A|kl> - <ij|A|lk>.
+      Dimension of A has to be an integer multiple of
+      bra1->rank()*bra1->rank().
+      The dimension of Aanti: bra1->rank()*(bra1->rank()-1)/2.
+    */
+  template <bool accumulate>
+    void antisymmetrize(RefSymmSCMatrix& Aanti, const RefSymmSCMatrix& A,
+                        const Ref<MOIndexSpace>& bra1);
   /** Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>)
       and saves to Asymm. Row dimension has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket. Asymm and A can be the same matrix.
@@ -132,6 +142,10 @@ namespace sc {
                      unsigned int nrow,
                      unsigned int ncol,
                      bool transpose = false);
+  
+  /// Returns the lower triangle of the matrix B (which should be symmetric)
+  RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B);
+  
 }
 
 #endif

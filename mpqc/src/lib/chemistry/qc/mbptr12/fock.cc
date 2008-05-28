@@ -38,6 +38,7 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/debug.h>
 
 using namespace std;
 using namespace sc;
@@ -45,9 +46,6 @@ using namespace sc;
 #define TEST_FOCKBUILD 0
 // set to 1 to test MVD integrals
 #define TEST_DELTA_DKH 0
-// set to 1 to set Delta_DKH to mass-velocity
-// also see the same macro in r12int_eval.cc
-#define EVALUATE_MV_VIA_RI 0
 #define NEW_HCORE 1
 
 RefSCMatrix
@@ -407,7 +405,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
 #else
   
 #if EVALUATE_MV_VIA_RI
-  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis,false,false,true);
+  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis,true,false,false);
 #else
   RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis);
 #endif
@@ -661,8 +659,7 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
 
   // form the momentum basis hamiltonian
   RefSymmSCMatrix h_pbas(p_oso_dim, p_so_kit);
-  h_pbas.assign(0.0);
-  h_pbas.accumulate(tvp);
+  h_pbas.assign(tvp);
 
 #if DK_DEBUG
   h_pbas.print("h_pbas");
@@ -727,6 +724,7 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
   p_to_so.print("p_to_so");
   //(p_to_so*so_to_p).print("p_to_so*so_to_p");
   (S_ao_p_so*S.gi()*p_to_so).print("S_ao_p_so*S.gi()*p_to_so");
+  T.print("T");
   (T+V).print("T+V");
   h_dk_so.print("h_dk_so");
 #endif

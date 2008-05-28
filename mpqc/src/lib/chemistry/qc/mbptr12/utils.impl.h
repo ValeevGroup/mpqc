@@ -180,6 +180,66 @@ namespace sc {
         }
       }
     }
+
+    delete ij_iter;
+    delete kl_iter;
+  }
+  
+  template <bool accumulate>
+  void
+  antisymmetrize(RefSymmSCMatrix& Aanti, const RefSymmSCMatrix& A,
+                 const Ref<MOIndexSpace>& bra1)
+  {
+    SpatialMOPairIter* ij_iter = new SpatialMOPairIter_eq(bra1);
+    SpatialMOPairIter* kl_iter = new SpatialMOPairIter_eq(bra1);
+
+    const unsigned int block_size_ab = ij_iter->nij_ab();
+    const unsigned int block_size_aa = ij_iter->nij_aa();
+    if (block_size_ab==0)
+      return;
+    if (A.dim().n()%block_size_ab)
+      throw ProgrammingError("sc::antisymmetrize() -- dimension of Source is not integer multiple of (bra1->rank)^2",__FILE__,__LINE__);
+    if (Aanti.dim().n()%block_size_aa)
+      throw ProgrammingError("sc::antisymmetrize() -- dimension of Result is not integer multiple of (bra1->rank * (bra1->rank-1)/2)",__FILE__,__LINE__);
+    const unsigned int nblocks = A.dim().n() / block_size_ab;
+    if (Aanti.dim().n() / block_size_aa != nblocks)
+      throw ProgrammingError("sc::antisymmetrize() -- dimensions of Source and Result do not match",__FILE__,__LINE__);
+    
+    unsigned int bra_offset_ab = 0;
+    unsigned int bra_offset_aa = 0;
+    for(unsigned int brablock=0; brablock<nblocks; brablock++, bra_offset_ab += block_size_ab, bra_offset_aa += block_size_aa) {
+      for(ij_iter->start();int(*ij_iter);ij_iter->next()) {
+        
+        const int ij_aa = ij_iter->ij_aa();
+        if (ij_aa == -1)
+          continue;
+        const int ij_ab = ij_iter->ij_ab();
+        const int ji_ab = ij_iter->ij_ba();
+        
+        unsigned int ket_offset_ab = 0;
+        unsigned int ket_offset_aa = 0;
+        for(unsigned int ketblock=0; ketblock<nblocks; ketblock++, ket_offset_ab += block_size_ab, ket_offset_aa += block_size_aa) {
+          for(kl_iter->start();int(*kl_iter);kl_iter->next()) {
+            
+            const int kl_aa = kl_iter->ij_aa();
+            if (kl_aa == -1)
+              continue;
+            const int kl_ab = kl_iter->ij_ab();
+            const int lk_ab = kl_iter->ij_ba();
+            
+            double Aanti_ijkl = A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab) -
+                                A.get_element(ij_ab+bra_offset_ab,lk_ab+ket_offset_ab);
+            if (accumulate)
+              Aanti.accumulate_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+            else
+              Aanti.set_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+          }
+        }
+      }
+    }
+    
+    delete ij_iter;
+    delete kl_iter;
   }
   
   template <bool Accumulate>

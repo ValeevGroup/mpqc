@@ -116,3 +116,18 @@ sc::print_f77_mat(const std::string& comment,
   amat.print(comment.c_str());
 }
 
+/// Returns the lower triangle of the matrix B (which should be symmetric)
+sc::RefSymmSCMatrix
+sc::to_lower_triangle(const RefSCMatrix& B) {
+  RefSymmSCMatrix Bs = B.kit()->symmmatrix(B.rowdim());
+  int n = B.nrow();
+  double* b = new double[n*n];
+  B.convert(b);
+  const double* b_ptr = b;
+  for(int i=0; i<n; i++, b_ptr += i)
+    for(int j=i; j<n; j++, b_ptr++)
+      Bs.set_element(i,j,*b_ptr);
+  delete[] b;
+  return Bs;
+}
+

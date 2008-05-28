@@ -55,6 +55,7 @@
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/debug.h>
 
 using namespace std;
 using namespace sc;
@@ -62,11 +63,19 @@ using namespace sc;
 #define INCLUDE_Q 1
 #define INCLUDE_P 1
 #define INCLUDE_P_PKP 1
-#define INCLUDE_P_PFP 1
-#define INCLUDE_P_pFp 1
-#define INCLUDE_P_mFP 1
-#define INCLUDE_P_pFA 1
-#define INCLUDE_P_mFm 1
+#if !EVALUATE_MV_VIA_RI
+# define INCLUDE_P_PFP 1
+# define INCLUDE_P_pFp 1
+# define INCLUDE_P_mFP 1
+# define INCLUDE_P_pFA 1
+# define INCLUDE_P_mFm 1
+#else
+# define INCLUDE_P_PFP 0
+# define INCLUDE_P_pFp 0
+# define INCLUDE_P_mFP 0
+# define INCLUDE_P_pFA 0
+# define INCLUDE_P_mFm 0
+#endif
 
 void
 R12IntEval::compute_BC_()

@@ -74,7 +74,6 @@ R12IntEval::V(SpinCase2 spincase2,
     return V;
   }
 
-
   Timer tim("R12 intermeds (tensor contract): Vpqxy");
   
   const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
@@ -122,7 +121,7 @@ R12IntEval::V(SpinCase2 spincase2,
       tforms_f12_xmyn);
   }
   if (debug_ >= DefaultPrintThresholds::O4) {
-    V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS contribution").c_str());
+    V.print(prepend_spincase(spincase2,"Vpqxy: diag contribution").c_str());
   }
   
   Ref<TwoParticleContraction> tpcontract;
@@ -308,4 +307,297 @@ R12IntEval::V(SpinCase2 spincase2,
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS+ABS contribution").c_str());
   }
+}
+
+
+RefSymmSCMatrix
+R12IntEval::P(SpinCase2 spincase2)
+{
+  using namespace sc::LinearR12;
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+
+  const bool obs_eq_vbs = r12info()->basis_vir()->equiv(r12info_->basis());
+  const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+
+  const SpinCase1 spin1 = case1(spincase2);
+  const SpinCase1 spin2 = case2(spincase2);
+  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+  const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
+  const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
+  const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
+  const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<MOIndexSpace>& occ1 = occ(spin1);
+  const Ref<MOIndexSpace>& occ2 = occ(spin2);
+  const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+  if (absmethod == LinearR12::ABS_ABS ||
+      absmethod == LinearR12::ABS_ABSPlus)
+    throw InputError("R12IntEval::P() -- cannot use if abs_method = abs/abs+. Try cabs or cabs+.");
+  const Ref<MOIndexSpace>& cabs1 = r12info()->ribs_space(spin1);
+  const Ref<MOIndexSpace>& cabs2 = r12info()->ribs_space(spin2);
+  const RefSCDimension dimf12 = dim_f12(spincase2);
+
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || (xspace1 == xspace2);
+  // Need to antisymmetrize 1 and 2
+  const bool antisymmetrize = spincase2 != AlphaBeta;
+  // For RHF compute alpha-alpha and beta-beta P from alpha-beta P
+  if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
+    RefSymmSCMatrix Paa = local_matrix_kit->symmmatrix(dimf12);
+    RefSymmSCMatrix Pab = this->P(AlphaBeta);
+    sc::antisymmetrize<false>(Paa,Pab,xspace1);
+    return Paa;
+  }
+
+  Timer tim("R12 intermeds (tensor contract): Pxyow");
+  
+  // allocate P
+  RefSCMatrix P = local_matrix_kit->matrix(dimf12,dimf12);
+  P.assign(0.0);
+
+  //
+  // Several contributions depend on the form of the correlation factor:
+  // 1) the diagonal contribution = RGR, i.e. f(r12) * f(r12) / r12
+  // 2) RG = f(r12) / r12
+  //
+  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+
+  //
+  // Diagonal contribution: P_{xy}^{wz} = (RGR)_{xy}^{wz}
+  //
+  if (r12ptr.nonnull()) {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xoyw;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(thisref,
+                    xspace1,orbs1,
+                    xspace2,orbs2,
+                    true
+                    );
+      fill_container(tform_creator,tforms_f12_xoyw);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      P, corrfactor()->tbint_type_f12(),
+      xspace1, xspace1,
+      xspace2, xspace2,
+      antisymmetrize,
+      tforms_f12_xoyw);
+  }
+  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xoyw;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(
+        thisref,
+        xspace1,
+        xspace1,
+        xspace2,
+        xspace2,true,true
+        );
+      fill_container(tform_creator,tforms_f12f12_xoyw);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+      P, corrfactor()->tbint_type_f12eri(),
+      xspace1, xspace1,
+      xspace2, xspace2,
+      antisymmetrize,
+      tforms_f12f12_xoyw);
+  }
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    P.print(prepend_spincase(spincase2,"Pxyow: diag contribution").c_str());
+  }
+
+  //
+  // OBS contribution: P_{xy}^{wz} -= 1/2 ( V_{xy}^{pq} + (RG)_{xy}^{pq} ) r_{pq}^{wz}
+  //
+  RefSCMatrix V_pp = V(spincase2,orbs1,orbs2);
+  V_pp.print(prepend_spincase(spincase2,"Pxyow: V_pp").c_str());
+  // accumulate RG into V
+  if (r12ptr.nonnull()) {
+    RefSCMatrix I = compute_I_(xspace1,xspace2,orbs1,orbs2);
+    if (!antisymmetrize)
+      V_pp.accumulate(I);
+    else
+      sc::antisymmetrize<true>(V_pp,I,xspace1,xspace2,orbs1,orbs2);
+  }
+  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(
+        thisref,
+        xspace1,
+        orbs1,
+        xspace2,
+        orbs2,true,false
+        );
+      fill_container(tform_creator,tforms_f12_xpyq);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      V_pp, corrfactor()->tbint_type_f12eri(),
+      xspace1, orbs1,
+      xspace2, orbs2,
+      antisymmetrize,
+      tforms_f12_xpyq);
+  }
+  V_pp.print(prepend_spincase(spincase2,"Pxyow: V_pp + RG_pp").c_str());
+  // get R_pp
+  RefSCMatrix R_pp = local_matrix_kit->matrix(dimf12,dim_aa(spincase2));  R_pp.assign(0.0);
+  {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(
+        thisref,
+        xspace1,
+        orbs1,
+        xspace2,
+        orbs2,true,false
+        );
+      fill_container(tform_creator,tforms_f12_xpyq);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      R_pp, corrfactor()->tbint_type_f12(),
+      xspace1, orbs1,
+      xspace2, orbs2,
+      antisymmetrize,
+      tforms_f12_xpyq);
+  }
+  V_pp.scale(-1.0);
+  P.accumulate(V_pp * R_pp.t());
+  V_pp = 0;  R_pp = 0;
+  
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    P.print(prepend_spincase(spincase2,"Pxyow: diag+OBS contribution").c_str());
+  }
+  
+  //
+  // ABS contribution: P_{xy}^{wz} -= (V_{xy}^{ma'} + (RG)_{xy}^{ma'} ) r_{ma'}^{wz}
+  //
+  RefSCMatrix V_iA = V(spincase2,occ1,cabs2);
+  V_iA.print(prepend_spincase(spincase2,"Pxyow: V_iA").c_str());
+  // accumulate RG into V
+  if (r12ptr.nonnull()) {
+    RefSCMatrix I = compute_I_(xspace1,xspace2,occ1,cabs2);
+    if (!antisymmetrize)
+      V_iA.accumulate(I);
+    else
+      sc::antisymmetrize<true>(V_iA,I,xspace1,xspace2,occ1,cabs2);
+  }
+  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(
+        thisref,
+        xspace1,
+        occ1,
+        xspace2,
+        cabs2,true,false
+        );
+      fill_container(tform_creator,tforms_f12_xiyA);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      V_iA, corrfactor()->tbint_type_f12eri(),
+      xspace1, occ1,
+      xspace2, cabs2,
+      antisymmetrize,
+      tforms_f12_xiyA);
+  }
+  V_iA.print(prepend_spincase(spincase2,"Pxyow: V_iA + RG_iA").c_str());
+  // get R_iA
+  const unsigned int niA = occ1->rank() * cabs2->rank();
+  RefSCMatrix R_iA = local_matrix_kit->matrix(dimf12,new SCDimension(niA));  R_iA.assign(0.0);
+  {
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
+    {
+      Ref<R12IntEval> thisref(this);
+      NewTransformCreator tform_creator(
+        thisref,
+        xspace1,
+        occ1,
+        xspace2,
+        cabs2,true,false
+        );
+      fill_container(tform_creator,tforms_f12_xiyA);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      R_iA, corrfactor()->tbint_type_f12(),
+      xspace1, occ1,
+      xspace2, cabs2,
+      antisymmetrize,
+      tforms_f12_xiyA);
+  }
+  // if particles 1 and 2 are equivalent, iA and Ai contributions are identical, hence just scale iA contribution by 2
+  V_iA.scale(part1_equiv_part2 ? -2.0 : -1.0);
+  P.accumulate(V_iA * R_iA.t());
+  V_iA = 0;  R_iA = 0;
+  if (!part1_equiv_part2) {
+    RefSCMatrix V_Ai = V(spincase2,cabs1,occ2);
+    V_Ai.print(prepend_spincase(spincase2,"Pxyow: V_Ai").c_str());
+    // accumulate RG into V
+    if (r12ptr.nonnull()) {
+      RefSCMatrix I = compute_I_(xspace1,xspace2,cabs1,occ2);
+      if (!antisymmetrize)
+        V_Ai.accumulate(I);
+      else
+        sc::antisymmetrize<true>(V_Ai,I,xspace1,xspace2,cabs1,occ2);
+    }
+    else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
+      {
+        Ref<R12IntEval> thisref(this);
+        NewTransformCreator tform_creator(
+          thisref,
+          xspace1,
+          cabs1,
+          xspace2,
+          occ2,true,false
+          );
+        fill_container(tform_creator,tforms_f12_xAyi);
+      }
+      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+        V_Ai, corrfactor()->tbint_type_f12eri(),
+        xspace1, cabs1,
+        xspace2, occ2,
+        antisymmetrize,
+        tforms_f12_xAyi);
+    }
+    V_Ai.print(prepend_spincase(spincase2,"Pxyow: V_Ai + RG_Ai").c_str());
+    // get R_Ai
+    const unsigned int nAi = cabs1->rank() * occ2->rank();
+    RefSCMatrix R_Ai = local_matrix_kit->matrix(dimf12,new SCDimension(nAi));  R_Ai.assign(0.0);
+    {
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
+      {
+        Ref<R12IntEval> thisref(this);
+        NewTransformCreator tform_creator(
+          thisref,
+          xspace1,
+          cabs1,
+          xspace2,
+          occ2,true,false
+          );
+        fill_container(tform_creator,tforms_f12_xAyi);
+      }
+      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+        R_Ai, corrfactor()->tbint_type_f12(),
+        xspace1, cabs1,
+        xspace2, occ2,
+        antisymmetrize,
+        tforms_f12_xAyi);
+    }
+    V_Ai.scale(-1.0);
+    P.accumulate(V_Ai * R_Ai.t());
+    V_Ai = 0;  R_Ai = 0;    
+  }
+  
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    P.print(prepend_spincase(spincase2,"Pxyow: diag+OBS+ABS contribution").c_str());
+  }
+
+  return to_lower_triangle(P);
 }

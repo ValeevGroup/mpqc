@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/debug.h>
 
 using namespace std;
 using namespace sc;
@@ -53,10 +54,6 @@ using namespace sc;
 #define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 #define INCLUDE_EBC_CODE 1
 #define INCLUDE_GBC_CODE 1
-
-// Set this to 1 to evaluate MV contribution by RI
-// also change the identical macro in fock.cc
-#define EVALUATE_MV_VIA_RI 0
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -308,6 +305,7 @@ RefSCDimension R12IntEval::dim_oo_s() const { return dim_ij_s_; };
 RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
 RefSCDimension R12IntEval::dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
 RefSCDimension R12IntEval::dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
+RefSCDimension R12IntEval::dim_aa(SpinCase2 S) const { return dim_aa_[S]; }
 RefSCDimension R12IntEval::dim_f12(SpinCase2 S) const { return dim_f12_[S]; }
 RefSCDimension R12IntEval::dim_xy(SpinCase2 S) const { return dim_xy_[S]; }
 
@@ -319,22 +317,6 @@ R12IntEval::V(SpinCase2 S) {
                    xspace(Alpha),
                    occ_act(Alpha));
   return V_[S];
-}
-
-namespace {
-  /// Returns the lower triangle of the matrix B (which should be symmetric)
-  RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B) {
-    RefSymmSCMatrix Bs = B.kit()->symmmatrix(B.rowdim());
-    int n = B.nrow();
-    double* b = new double[n*n];
-    B.convert(b);
-    const double* b_ptr = b;
-    for(int i=0; i<n; i++, b_ptr += i)
-      for(int j=i; j<n; j++, b_ptr++)
-        Bs.set_element(i,j,*b_ptr);
-    delete[] b;
-    return Bs;
-  }
 }
 
 RefSymmSCMatrix
@@ -517,9 +499,7 @@ R12IntEval::init_intermeds_()
   // can only use stdapprox C and 1 correlation factor (but pq ansatz should work!)
   if (this->dk() > 0) {
     if (g12ncptr.nonnull() && corrfactor()->nfunctions() == 1) {
-#if !EVALUATE_MV_VIA_RI
       compute_B_DKH_();
-#endif
     }
     else
       throw FeatureNotImplemented("Relativistic R12 method only implemented when stdapprox=C and there is only 1 correlation factor",__FILE__,__LINE__);
@@ -2230,9 +2210,12 @@ R12IntEval::f_bra_ket(
 #if EVALUATE_MV_VIA_RI
           include_Q = true;
 #endif
-          ExEnv::out0() << "florian: DKH in Q: " << (include_Q ? "true" : "false") << endl;
+          ExEnv::out0() << indent << "florian: DKH in Q: " << (include_Q ? "true" : "false") << endl;
+          ExEnv::out0() << indent << "florian: make_F = " << (make_F ? "true" : "false") << endl;
+          ExEnv::out0() << indent << "florian: make_hJ = " << (make_hJ ? "true" : "false") << endl;
+          ExEnv::out0() << indent << "florian: make_K = " << (make_K ? "true" : "false") << endl;
 
-	  if (include_Q && (make_hJ || make_F || make_K)) {
+	  if (include_Q && (make_hJ || make_K)) {
 		  dkh_contrib = Delta_DKH_(intspace,extspace,spin);
 		  dkh_contrib.scale(-1.0);
 		  if (debug_ >= DefaultPrintThresholds::allN2) {
@@ -2271,7 +2254,11 @@ R12IntEval::f_bra_ket(
 	  
 	  // keep hJ_i_e unchanged for possible later use in F
 	  RefSCMatrix hJ_trafo = hJ_i_e.copy();
-	  hJ_trafo.accumulate(dkh_contrib);
+#if !EVALUATE_MV_VIA_RI
+      hJ_trafo.accumulate(dkh_contrib);
+#else
+      hJ_trafo.assign(dkh_contrib);  hJ_trafo.scale(-1.0);
+#endif
 	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_trafo,
 				intspace->basis());
       }
@@ -2310,7 +2297,11 @@ R12IntEval::f_bra_ket(
 	  
 	  // keep K_i_e unchanged for possible later use in F
 	  RefSCMatrix K_trafo = K_i_e.copy();
+#if !EVALUATE_MV_VIA_RI
 	  K_trafo.accumulate(dkh_contrib);
+#else
+	  K_trafo.assign(dkh_contrib);  K_trafo.scale(-1.0);
+#endif
 	  name = prepend_spincase(spin,name);
 	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_trafo,
 				intspace->basis());

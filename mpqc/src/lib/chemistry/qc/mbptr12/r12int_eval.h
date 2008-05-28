@@ -518,6 +518,8 @@ public:
   RefSCMatrix V(SpinCase2 spincase2,
                 const Ref<MOIndexSpace>& p,
                 const Ref<MOIndexSpace>& q);
+  /// Compute P = RgR
+  RefSymmSCMatrix P(SpinCase2 S);
 
   /// Returns the singles MP2 energy
   double emp2_singles();

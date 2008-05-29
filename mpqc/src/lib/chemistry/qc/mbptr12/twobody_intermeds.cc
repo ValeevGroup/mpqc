@@ -595,6 +595,10 @@ R12IntEval::P(SpinCase2 spincase2)
     V_Ai = 0;  R_Ai = 0;    
   }
   
+  // Because we skipped Ai term if particles 1 and 2 are equivalent, must make particles equivalent explicitly
+  if (part1_equiv_part2)
+    symmetrize<false>(P,P,xspace1,xspace1);
+  
   if (debug_ >= DefaultPrintThresholds::O4) {
     P.print(prepend_spincase(spincase2,"Pxyow: diag+OBS+ABS contribution").c_str());
   }

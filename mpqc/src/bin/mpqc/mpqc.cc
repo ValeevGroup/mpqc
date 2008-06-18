@@ -401,8 +401,12 @@ try_main(int argc, char *argv[])
     basename_source = basename(input_copy);
     free(input_copy);
   }
-  int nfilebase = (int) (::strrchr(basename_source, '.') - basename_source);
-  char *basename = new char[nfilebase + 1];
+  // if basename_source does not contain '.' this will return a null pointer
+  const char* dot_position = ::strrchr(basename_source, '.');
+  const int nfilebase =  (dot_position) ?
+                           (int) (dot_position - basename_source) :
+                           strlen(basename_source);
+  char* basename = new char[nfilebase + 1];
   strncpy(basename, basename_source, nfilebase);
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);

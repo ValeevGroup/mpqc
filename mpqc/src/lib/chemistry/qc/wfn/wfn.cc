@@ -213,6 +213,8 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     keyval->describedclassvalue("basis").pointer(),
     "Wavefunction::Wavefunction\n"
     );
+  if (gbs_.null())
+    throw InputError("Wavefunction::Wavefunction -- basis is missing");
 
   atom_basis_ << keyval->describedclassvalue("atom_basis");
   if (atom_basis_.nonnull()) {

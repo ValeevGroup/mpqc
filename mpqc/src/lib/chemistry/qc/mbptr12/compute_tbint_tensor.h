@@ -235,12 +235,12 @@ namespace sc {
               const unsigned int ii = map1_bra[i];
               const unsigned int jj = map2_bra[j];
               
-	      if (debug_ > DefaultPrintThresholds::mostO2N2)
+	      if (debug_ > DefaultPrintThresholds::allO2N2)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
               Timer tim_intsretrieve("MO ints retrieve");
               const double *ij_buf = accum->retrieve_pair_block(ii,jj,intsetidx);
               tim_intsretrieve.exit();
-	      if (debug_ > DefaultPrintThresholds::mostO2N2)
+	      if (debug_ > DefaultPrintThresholds::allO2N2)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
               
               for(iterket.start(); iterket; iterket.next()) {
@@ -254,7 +254,7 @@ namespace sc {
                 const double I_ijab = ij_buf[AB];
                 
                 if (alphabeta) {
-		  if (debug_ > DefaultPrintThresholds::mostO2N2) {
+		  if (debug_ > DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << endl;
                   }
@@ -266,7 +266,7 @@ namespace sc {
                   const int bb = map12_ket[b];
                   const int BA = bb*tblock_ncols+aa;
                   const double I_ijba = ij_buf[BA];
-		  if (debug_ > DefaultPrintThresholds::mostO2N2) {
+		  if (debug_ > DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << " <ij|ba> = " << I_ijba << endl;
                   }

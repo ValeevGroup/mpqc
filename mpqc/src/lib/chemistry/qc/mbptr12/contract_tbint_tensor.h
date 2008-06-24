@@ -432,7 +432,7 @@ namespace sc {
                 Timer tim_intsretrieve("MO ints retrieve");
                 const double *ij_buf = accumb->retrieve_pair_block(ii,jj,intsetidx_bra);
                 tim_intsretrieve.exit();
-		if (debug_ >= DefaultPrintThresholds::mostO4)
+		if (debug_ >= DefaultPrintThresholds::allO2N2)
                   ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
                 
                 for(iterket.start(); iterket; iterket.next(),ijkl++) {
@@ -447,20 +447,20 @@ namespace sc {
                   const unsigned int kk = map1_ket[k];
                   const unsigned int ll = map2_ket[l];
                 
-		  if (debug_ >= DefaultPrintThresholds::mostO4)
+		  if (debug_ >= DefaultPrintThresholds::allO2N2)
                     ExEnv::outn() << indent << "task " << me << ": working on (i,j | k,l) = ("
                                   << i << "," << j << " | " << k << "," << l << ")" << endl;
                   tim_intsretrieve.enter("MO ints retrieve");
                   const double *kl_buf = accumk->retrieve_pair_block(kk,ll,intsetidx_ket);
                   tim_intsretrieve.exit();
-		  if (debug_ >= DefaultPrintThresholds::mostO4)
+		  if (debug_ >= DefaultPrintThresholds::allO2N2)
                     ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
                   
                   // zero out intblocks
                   memset(T_ij, 0, blksize_int*sizeof(double));
                   memset(T_kl, 0, blksize_int*sizeof(double));
                   
-		  if (debug_ >= DefaultPrintThresholds::mostO4) {
+		  if (debug_ >= DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << indent << "i = " << i << " j = " << j << " k = " << k << " l = " << l
                                   << incindent << endl;
                   }
@@ -545,13 +545,13 @@ namespace sc {
                   
                   // contract matrices
                   double T_ijkl = tpcontract->contract(T_ij,T_kl);
-		  if (debug_ >= DefaultPrintThresholds::mostO4) {
+		  if (debug_ >= DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << decindent << indent
                                   << " <ij|kl> = " << T_ijkl << endl;
                   }
                   T_ijkl = DataProcess_BraKet::I2T(T_ijkl,i,j,k,l,
                                                    evals1_bra,evals1_ket,evals2_bra,evals2_ket);
-		  if (debug_ >= DefaultPrintThresholds::mostO4) {
+		  if (debug_ >= DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << indent << " <ij|T|kl> = " << T_ijkl << endl;
                   }
                   Tcontr.accumulate_element(ij+fbraoffset,kl+fketoffset,T_ijkl);

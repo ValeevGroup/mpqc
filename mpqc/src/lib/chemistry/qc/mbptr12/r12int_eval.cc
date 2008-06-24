@@ -51,7 +51,6 @@
 using namespace std;
 using namespace sc;
 
-#define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 #define INCLUDE_EBC_CODE 1
 #define INCLUDE_GBC_CODE 1
 
@@ -509,9 +508,7 @@ R12IntEval::init_intermeds_()
 void
 R12IntEval::init_intermeds_r12_()
 {
-  if (r12info_->msg()->me() == 0) {
-
-    for(int s=0; s<nspincases2(); s++) {
+  for(int s=0; s<nspincases2(); s++) {
 
 	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
 	const Ref<MOIndexSpace>& occ1_act = occ_act(case1(spincase2));
@@ -519,27 +516,19 @@ R12IntEval::init_intermeds_r12_()
 	const Ref<MOIndexSpace>& xspace1 = xspace(case1(spincase2));
 	const Ref<MOIndexSpace>& xspace2 = xspace(case2(spincase2));
 
-#if NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
-	V_[s]->assign(0.0);
-	B_[s]->assign(0.0);
-#else
-
 	// compute identity operator in xc.pair/act.occ.pair basis
 	RefSCMatrix I = compute_I_(xspace1,xspace2,occ1_act,occ2_act);
 	if (spincase2 == AlphaBeta) {
-	    V_[s].accumulate(I);
+	  V_[s].accumulate(I);
 	}
 	else {
-	    antisymmetrize(V_[s],I,xspace1,occ1_act);
+	  antisymmetrize(V_[s],I,xspace1,occ1_act);
 	}
-
-	B_[s]->unit();
-#endif
-    }
+	
+	if (r12info_->msg()->me() == 0)
+	  B_[s]->unit();
   }
-#if !NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
   r2_contrib_to_X_new_();
-#endif
 }
 
 /// Compute <space1 space2|space3 space4>

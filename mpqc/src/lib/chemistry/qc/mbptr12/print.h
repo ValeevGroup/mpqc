@@ -65,6 +65,8 @@ namespace sc {
     static const unsigned int O2N2 = 5;
     /// Print most o^2N^2 quantities
     static const unsigned int mostO2N2 = 6;
+    /// Print all o^2N^2 quantities
+    static const unsigned int allO2N2 = 7;
     /// Print essential N^4 quantities, e.g., fully transformed integrals of any kind
     static const unsigned int N4 = 6;
     /// Print most N^4 quantities, e.g., partially transformed integrals

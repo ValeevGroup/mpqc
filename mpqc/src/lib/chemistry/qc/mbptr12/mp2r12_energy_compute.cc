@@ -175,10 +175,7 @@ MP2R12Energy_SpinOrbital::compute()
         B = r12intermediates_->get_B(spincase2);
       }
       else {
-        if (stdapprox() == LinearR12::StdApprox_C) {
-          B = r12eval()->B(spincase2);
-        }
-        else if (stdapprox() == LinearR12::StdApprox_B) {
+        if (stdapprox() == LinearR12::StdApprox_B) {
           // in standard approximation B, add up [K1+K2,F12] term
           B = r12eval()->B(spincase2).clone();
           B.assign(r12eval()->B(spincase2));

@@ -123,6 +123,9 @@ R12IntEval::compute_B_bc_()
       const int nxy = dim_xy(spincase2).n();
       RefDiagSCMatrix evals_xspace1 = xspace1->evals();
       RefDiagSCMatrix evals_xspace2 = xspace2->evals();
+
+      // replicate X on all nodes (don't forget to zero out all instances except on node 0)
+      globally_sum_scmatrix_(X_[s],true);
       const RefSCMatrix& X = X_[s];
       
       for(int f=0; f<num_f12; f++) {
@@ -155,6 +158,10 @@ R12IntEval::compute_B_bc_()
           }
         }
       }
+
+      // remember -- X got replicated
+      if (me != 0)
+        X.assign(0.0);
     }
     
     if (debug_ >= DefaultPrintThresholds::mostO4) {

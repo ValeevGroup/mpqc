@@ -419,48 +419,54 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 #endif
                       
                       // from the article by FAB+EV:
-                      // M2H + M3H = 16 * \sum_a,b c_a c_b
-                      //             (27 g_a g_b +
-                      //              28 (g_a^2 g_b + g_a g_b^2) r12^2
-                      //              4 (g_a^3 g_b + g_a g_b^3) r12^4
+                      // M2H + M3H = -8 * \sum_a,b c_a c_b
+                      //             (18 g_a g_b -
+                      //              32 (g_a^2 g_b + g_a g_b^2) r12^2 +
+                      //              8 (g_a^3 g_b + g_a g_b^3 + g_a^2 g_b^2) r12^4
                       //             )
 
 #if COMPUTE_g12t1g12
                       const double pfac0 = 0.0;
-                      // note the extra factor of 16 below
-                      const double pfac2 = 0.25 * gamma_bra * gamma_ket;
+                      // note the extra factor of -8 below
+                      const double pfac2 = -0.5 * gamma_bra * gamma_ket;
                       const double pfac4 = 0.0;
 #else
-                      // scale g12 integrals by 27 * gamma_bra * gamma_ket
+                      // scale g12 integrals by 18 * gamma_bra * gamma_ket
                       const double Gb_Gk = gamma_bra * gamma_ket;
-                      const double pfac0 = 27.0 * Gb_Gk;
-                      // scale r12^2 * g12 integrals by 28 * (gamma_bra^2 * gamma_ket + gamma_bra * gamma_ket^2)
+                      const double pfac0 = 18.0 * Gb_Gk;
+                      // scale r12^2 * g12 integrals by 32 * (gamma_bra^2 * gamma_ket + gamma_bra * gamma_ket^2)
                       const double Gb2_Gk = gamma_bra * Gb_Gk;
                       const double Gb_Gk2 = gamma_ket * Gb_Gk;
-                      const double pfac2 = -28.0 * (Gb2_Gk + Gb_Gk2);
-                      // scale r12^4 * g12 integrals by 4 * (gamma_bra^3 * gamma_ket + gamma_bra * gamma_ket^3 + 3*gamma_bra^2*gamma_ket^2)
+                      const double pfac2 = -32.0 * (Gb2_Gk + Gb_Gk2);
+                      // scale r12^4 * g12 integrals by 8 * (gamma_bra^3 * gamma_ket + gamma_bra * gamma_ket^3 + gamma_bra^2*gamma_ket^2)
                       const double Gb3_Gk = gamma_bra * Gb2_Gk;
                       const double Gb_Gk3 = gamma_ket * Gb_Gk2;
-                      const double pfac4 = 4.0 * (Gb3_Gk + Gb_Gk3 + 3.0*Gb_Gk*Gb_Gk);
+                      const double pfac4 = 8.0 * (Gb3_Gk + Gb_Gk3 + Gb_Gk*Gb_Gk);
 #endif
                       
                       if (quartet_info_.am) {
                         // Compute the integrals
-                        LIBINT2_PREFIXED_NAME(libint2_build_r12_024_g12)[tam1][tam2][tam3][tam4](&Libint_);
+                        LIBINT2_PREFIXED_NAME(libint2_build_g12dkh)[tam1][tam2][tam3][tam4](&Libint_);
 
                         // add, scale, and copy the integrals over to prim_ints_
                         const LIBINT2_REALTYPE* prim_ints0 = Libint_.targets[0];
                         const LIBINT2_REALTYPE* prim_ints2 = Libint_.targets[1];
                         const LIBINT2_REALTYPE* prim_ints4 = Libint_.targets[2];
+                        const LIBINT2_REALTYPE* prim_ints_G12pDiv_sq = Libint_.targets[3];
                         for(int ijkl=0; ijkl<size; ijkl++)
-                          prim_ints_[0][buffer_offset + ijkl] += (double) 16.0 * ( pfac0*prim_ints0[ijkl] + pfac2*prim_ints2[ijkl] + pfac4*prim_ints4[ijkl] );
+                          prim_ints_[0][buffer_offset + ijkl] +=
+                            (double) (-8.0) * ( pfac0*prim_ints0[ijkl] + pfac2*prim_ints2[ijkl] + pfac4*prim_ints4[ijkl] )
+                            + (double) 16.0 * prim_ints_G12pDiv_sq[ijkl];
 
                       }
                       else {
-                    	prim_ints_[0][buffer_offset] += (double) 16.0 *
+                        const LIBINT2_REALTYPE* prim_ints_G12pDiv_sq = Libint_.targets[0];
+                    	prim_ints_[0][buffer_offset] +=
+                    	  (double) (-8.0) *
                           (pfac0*Libint_.LIBINT_T_SS_K0G12_SS_0[0] +
                            pfac2*Libint_.LIBINT_T_SS_K2G12_SS_0[0] +
-                           pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0]);
+                           pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0])
+                          + (double) 16.0 * prim_ints_G12pDiv_sq[0];
                       }
 
                     } // end of ket geminal primitive loop

@@ -57,7 +57,7 @@ class Integral;
  */
 class G12DKHLibint2: public Int2eLibint2 {
   private:
-  /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, g12t1g12, anti_g12g12 integrals */
+  /** Number of integral types produced. Produces g12p4g12_m_g12t1g12t1 integrals */
     static const int num_te_types_ = TwoBodyIntDescrG12DKH::num_intsets;
 
     typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
@@ -106,8 +106,8 @@ class G12DKHLibint2: public Int2eLibint2 {
     class ExpensiveMath {
     public:
       ExpensiveMath();
-      double fac[4*LIBINT2_MAX_AM_R12kG12+1];
-      double bc[4*LIBINT2_MAX_AM_R12kG12+1][4*LIBINT2_MAX_AM_R12kG12+1];
+      double fac[4*LIBINT2_MAX_AM_G12DKH+1];
+      double bc[4*LIBINT2_MAX_AM_G12DKH+1][4*LIBINT2_MAX_AM_G12DKH+1];
     };
     ExpensiveMath ExpMath_;
   

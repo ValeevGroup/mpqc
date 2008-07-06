@@ -72,15 +72,34 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   //
   // Prefactors for [T_i,g12] integrals
   //
+#if LIBINT2_DEFINED(g12,zeta_A)
   Data->zeta_A[0] = a1;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_B)
   Data->zeta_B[0] = a2;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_C)
   Data->zeta_C[0] = a3;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_D)
   Data->zeta_D[0] = a4;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_A_2)
   Data->zeta_A_2[0] = a1*a1;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_B_2)
   Data->zeta_B_2[0] = a2*a2;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_C_2)
   Data->zeta_C_2[0] = a3*a3;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_D_2)
   Data->zeta_D_2[0] = a4*a4;
-
+#endif
+#if LIBINT2_DEFINED(g12,gamma)
+  Data->gamma[0] = gamma;
+#endif
+  
   //
   // prefactors for (ab|-1|cd) are same as for OSRR, only (00|-1|00)^m are different
   //
@@ -126,6 +145,27 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   Data->WQ_x[0] = W[0] - Q[0];
   Data->WQ_y[0] = W[1] - Q[1];
   Data->WQ_z[0] = W[2] - Q[2];
+
+  /* AC */
+#if LIBINT2_DEFINED(g12,AC_x)
+  Data->AC_x[0] = quartet_info_.A[0] - quartet_info_.C[0];
+#endif
+#if LIBINT2_DEFINED(g12,AC_y)
+  Data->AC_y[0] = quartet_info_.A[1] - quartet_info_.C[1];
+#endif
+#if LIBINT2_DEFINED(g12,AC_z)
+  Data->AC_z[0] = quartet_info_.A[2] - quartet_info_.C[2];
+#endif
+  /* BD */
+#if LIBINT2_DEFINED(g12,BD_x)
+  Data->BD_x[0] = quartet_info_.B[0] - quartet_info_.D[0];
+#endif
+#if LIBINT2_DEFINED(g12,BD_y)
+  Data->BD_y[0] = quartet_info_.B[1] - quartet_info_.D[1];
+#endif
+#if LIBINT2_DEFINED(g12,BD_z)
+  Data->BD_z[0] = quartet_info_.B[2] - quartet_info_.D[2];
+#endif
 
   PQ[0] = P[0] - Q[0];
   PQ[1] = P[1] - Q[1];

@@ -27,16 +27,11 @@
 
 #include <libint2/libint2.h>
 
-// the old versions of libint2 all use CCA ordering, whereas new ones can use a variety of orderings
-#ifndef LIBINT2_CGSHELL_ORDERING
-#  include <chemistry/cca/int/macros.h>
-#else
 // see libint2's configure for the hardwired values
-# if LIBINT2_CGSHELL_ORDERING == 1
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
 #  include <chemistry/cca/int/macros.h>
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
 #  include <chemistry/qc/intv3/macros.h>
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif

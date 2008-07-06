@@ -179,10 +179,10 @@ void R12IntEval::compute_B_DKH_() {
     B_DKH.accumulate(B_DKH_t);  B_DKH_t = 0;
     
     // and scale by the prefactor
-    // M1 = 6 ( f12(T1+T2)f12 (T1 + T2) + (T1 + T2) f12(T1+T2)f12 ) = 12 * ( f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12 )
+    // M1 = 2 ( f12(T1+T2)f12 (T1 + T2) + (T1 + T2) f12(T1+T2)f12 ) = 4 * ( f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12 )
     // what I have computed so far is 1/2 * (f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12)
-    // hence multiply by 24
-    B_DKH.scale(24.0 * minus_one_over_8c2);
+    // hence multiply by 8
+    B_DKH.scale(8.0 * minus_one_over_8c2);
     
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M1)").c_str());

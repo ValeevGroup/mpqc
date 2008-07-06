@@ -116,6 +116,27 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   Data->WQ_y[0] = W[1] - Q[1];
   Data->WQ_z[0] = W[2] - Q[2];
 
+  /* AC */
+#if LIBINT2_DEFINED(g12,BD_x)
+  Data->BD_x[0] = quartet_info_.B[0] - quartet_info_.D[0];
+#endif
+#if LIBINT2_DEFINED(g12,BD_y)
+  Data->BD_y[0] = quartet_info_.B[1] - quartet_info_.D[1];
+#endif
+#if LIBINT2_DEFINED(g12,BD_z)
+  Data->BD_z[0] = quartet_info_.B[2] - quartet_info_.D[2];
+#endif
+  /* BD */
+#if LIBINT2_DEFINED(g12,BD_x)
+  Data->BD_x[0] = quartet_info_.B[0] - quartet_info_.D[0];
+#endif
+#if LIBINT2_DEFINED(g12,BD_y)
+  Data->BD_y[0] = quartet_info_.B[1] - quartet_info_.D[1];
+#endif
+#if LIBINT2_DEFINED(g12,BD_z)
+  Data->BD_z[0] = quartet_info_.B[2] - quartet_info_.D[2];
+#endif
+
   PQ[0] = P[0] - Q[0];
   PQ[1] = P[1] - Q[1];
   PQ[2] = P[2] - Q[2];

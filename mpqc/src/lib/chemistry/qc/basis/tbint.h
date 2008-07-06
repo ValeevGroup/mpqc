@@ -118,7 +118,7 @@ class TwoBodyInt : public RefCount {
       tig12 -- integral of \f$[\hat{T}_i,g_{12}]\f$,
       g12t1g12 -- integral of \f$[g_{12},[\hat{T}_1,g_{12}]]\f$,
       g12p4g12_m_g12t1g12t1 -- integral of
-         \f$[g_{12}, [\hat{p}^4_1 + \hat{p}^4_2, g_{12}']] + 12 [g_{12}, [\hat{T}_1 + \hat{T}_2, g_{12}']](\hat{T}_1 + \hat{T}_2)\f$,
+         \f$[g_{12}, [\hat{p}^4_1 + \hat{p}^4_2, g_{12}]] - 2 [g_{12}, [\hat{T}_1 + \hat{T}_2, g_{12}]](\hat{T}_1 + \hat{T}_2)\f$,
       anti_g12g12 -- integral of 
        */
     enum tbint_type { eri =0, r12 =1, r12t1 =2, r12t2 =3,

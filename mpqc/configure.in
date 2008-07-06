@@ -1660,6 +1660,60 @@ AC_CHECK_HEADERS(libint2/libint2.h,
     AC_MSG_RESULT(yes)
     )
   LIBS=$REF_LIBS
+  AC_MSG_CHECKING([libint2 ordering of cartesian gaussians in shells])
+  libint2_cgshell_ordering=none
+  dnl -- try libint = cca --
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
+        void present_if_defined() {}
+        #endif
+      ]],
+      [[
+        present_if_defined();
+      ]]
+    ),
+    [libint2_cgshell_ordering=cca
+     AC_MSG_RESULT(cca)]
+  )
+  if test X$libint2_cgshell_ordering = Xnone; then
+  dnl -- else try intv3 --
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
+        void present_if_defined() {}
+        #endif
+      ]],
+      [[
+        present_if_defined();
+      ]]
+    ),
+    [libint2_cgshell_ordering=intv3
+     AC_MSG_RESULT(intv3)]
+  )
+  fi
+  if test X$libint2_cgshell_ordering = Xnone; then
+  dnl -- else try gamess --
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM(
+      [[#include <libint2/libint2.h>
+        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+        void present_if_defined() {}
+        #endif
+      ]],
+      [[
+        present_if_defined();
+      ]]
+    ),
+    [libint2_cgshell_ordering=gamess
+     AC_MSG_RESULT(gamess)]
+  )
+  fi
+  if test X$libint2_cgshell_ordering = Xnone; then
+    AC_MSG_ERROR([could not determine -- this libint2 library is too old])
+  fi
   AC_MSG_CHECKING([if libint2 can compute ERI])
   AC_COMPILE_IFELSE(
     AC_LANG_PROGRAM(

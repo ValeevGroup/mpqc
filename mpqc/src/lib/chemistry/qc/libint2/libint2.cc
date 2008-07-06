@@ -54,18 +54,14 @@
 #endif
 
 // the old versions of libint2 all use CCA ordering, whereas new ones can use a variety of orderings
-#ifndef LIBINT2_CGSHELL_ORDERING
-#  include <chemistry/cca/int/cartit.h>
-#else
 // see libint2's configure for the hardwired values
-# if LIBINT2_CGSHELL_ORDERING == 1
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
 #  include <chemistry/cca/int/cartit.h>
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
 #  include <chemistry/qc/intv3/cartitv3.h>
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif
 
 using namespace std;
 using namespace sc;
@@ -121,17 +117,13 @@ IntegralLibint2::clone()
 Integral::CartesianOrdering
 IntegralLibint2::cartesian_ordering() const
 {
-#ifndef LIBINT2_CGSHELL_ORDERING
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
   return Integral::CCACartesianOrdering;
-#else
-# if LIBINT2_CGSHELL_ORDERING == 1
-  return Integral::CCACartesianOrdering;
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   return Integral::IntV3CartesianOrdering;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif
 }
 
 size_t
@@ -202,17 +194,13 @@ IntegralLibint2::storage_required_geng12(const Ref<GaussianBasisSet> &b1,
 CartesianIter *
 IntegralLibint2::new_cartesian_iter(int l)
 {
-#ifndef LIBINT2_CGSHELL_ORDERING
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
   typedef CartesianIterCCA iter;
-#else
-# if LIBINT2_CGSHELL_ORDERING == 1
-  typedef CartesianIterCCA iter;
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef CartesianIterV3 iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif
   
   return new iter(l);
 }
@@ -220,17 +208,13 @@ IntegralLibint2::new_cartesian_iter(int l)
 RedundantCartesianIter *
 IntegralLibint2::new_redundant_cartesian_iter(int l)
 {
-#ifndef LIBINT2_CGSHELL_ORDERING
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
   typedef RedundantCartesianIterCCA iter;
-#else
-# if LIBINT2_CGSHELL_ORDERING == 1
-  typedef RedundantCartesianIterCCA iter;
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef RedundantCartesianIterV3 iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif
   
   return new iter(l);
 }
@@ -238,17 +222,13 @@ IntegralLibint2::new_redundant_cartesian_iter(int l)
 RedundantCartesianSubIter *
 IntegralLibint2::new_redundant_cartesian_sub_iter(int l)
 {
-#ifndef LIBINT2_CGSHELL_ORDERING
+# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
   typedef RedundantCartesianSubIterCCA iter;
-#else
-# if LIBINT2_CGSHELL_ORDERING == 1
-  typedef RedundantCartesianSubIterCCA iter;
-# elif LIBINT2_CGSHELL_ORDERING == 2
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef RedundantCartesianSubIterV3 iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-#endif
   
   return new iter(l);
 }

@@ -189,7 +189,7 @@ namespace sc {
 
   /** TwoBodyIntDescrG12DKH describes a particular set of integrals used in Gaussian geminal-based
       R12 methods based on Douglas-Kroll-Hess references. Currently, only integrals of the operators involved
-      in the evaluation of the [g12,[p4,g12']] integral are included:
+      in the evaluation of the [g12,[p4,g12]] integral are included:
       1) g12p4g12_m_g12t1g12t1 -- see TwoBodyInt::g12p4g12_m_g12t1g12t1
     */
   class TwoBodyIntDescrG12DKH : public TwoBodyIntDescr {

@@ -444,11 +444,10 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double pfac4 = 8.0 * (Gb3_Gk + Gb_Gk3 + Gb_Gk*Gb_Gk);
 #endif
                       
+                      // Compute the integrals
+                      LIBINT2_PREFIXED_NAME(libint2_build_g12dkh)[tam1][tam2][tam3][tam4](&Libint_);
+                      // add, scale, and copy the integrals over to prim_ints_
                       if (quartet_info_.am) {
-                        // Compute the integrals
-                        LIBINT2_PREFIXED_NAME(libint2_build_g12dkh)[tam1][tam2][tam3][tam4](&Libint_);
-
-                        // add, scale, and copy the integrals over to prim_ints_
                         const LIBINT2_REALTYPE* prim_ints0 = Libint_.targets[0];
                         const LIBINT2_REALTYPE* prim_ints2 = Libint_.targets[1];
                         const LIBINT2_REALTYPE* prim_ints4 = Libint_.targets[2];

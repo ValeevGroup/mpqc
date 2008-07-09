@@ -412,7 +412,7 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double gpcoef_ket = gpket.second;
 
                       // Compute primitive data for Libint
-                      g12dkh_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
+                      g12dkh_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra, gamma_ket);
 #if LIBINT2_ACCUM_INTS
                       // zero out targets in Libint_
                       Libint_.zero_out_targets = 1;

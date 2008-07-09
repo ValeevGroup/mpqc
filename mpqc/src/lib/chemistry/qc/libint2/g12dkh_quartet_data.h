@@ -38,7 +38,7 @@
 
   gamma is the exponent of the Gaussian geminal in the integral
  --------------------------------------------------------------------------------*/
-inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, double gamma)
+inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, double gamma_bra, double gamma_ket)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -80,6 +80,7 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   double ooze = 1.0/(zeta+eta);
   Data->roz[0] = eta*ooze;
   double rho = zeta*Data->roz[0];
+  const double gamma = gamma_bra + gamma_ket;
   double rhog = rho + gamma;
   double oorhog = 1.0/rhog;
   double rho2 = rho*rho;
@@ -117,14 +118,14 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   Data->WQ_z[0] = W[2] - Q[2];
 
   /* AC */
-#if LIBINT2_DEFINED(g12,BD_x)
-  Data->BD_x[0] = quartet_info_.B[0] - quartet_info_.D[0];
+#if LIBINT2_DEFINED(g12,AC_x)
+  Data->BD_x[0] = quartet_info_.A[0] - quartet_info_.C[0];
 #endif
-#if LIBINT2_DEFINED(g12,BD_y)
-  Data->BD_y[0] = quartet_info_.B[1] - quartet_info_.D[1];
+#if LIBINT2_DEFINED(g12,AC_y)
+  Data->BD_y[0] = quartet_info_.A[1] - quartet_info_.C[1];
 #endif
-#if LIBINT2_DEFINED(g12,BD_z)
-  Data->BD_z[0] = quartet_info_.B[2] - quartet_info_.D[2];
+#if LIBINT2_DEFINED(g12,AC_z)
+  Data->BD_z[0] = quartet_info_.A[2] - quartet_info_.C[2];
 #endif
   /* BD */
 #if LIBINT2_DEFINED(g12,BD_x)
@@ -135,6 +136,12 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
 #endif
 #if LIBINT2_DEFINED(g12,BD_z)
   Data->BD_z[0] = quartet_info_.B[2] - quartet_info_.D[2];
+#endif
+#if LIBINT2_DEFINED(g12,gamma_bra)
+  Data->gamma_bra[0] = gamma_bra;
+#endif
+#if LIBINT2_DEFINED(g12,gamma_ket)
+  Data->gamma_ket[0] = gamma_ket;
 #endif
 
   PQ[0] = P[0] - Q[0];

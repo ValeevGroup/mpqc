@@ -394,12 +394,11 @@ try_main(int argc, char *argv[])
   // 1) if output filename is given, use it minus the suffix
   // 2) if output filename is not given, use its basename minus the suffix
   const char *basename_source;
+  char *input_copy = ::strdup(input);
   if (output) basename_source = output;
   else {
     // get the basename(input). basename() in libgen.h is in POSIX standard
-    char* input_copy = ::strdup(input);
     basename_source = basename(input_copy);
-    free(input_copy);
   }
   // if basename_source does not contain '.' this will return a null pointer
   const char* dot_position = ::strrchr(basename_source, '.');
@@ -410,6 +409,7 @@ try_main(int argc, char *argv[])
   strncpy(basename, basename_source, nfilebase);
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);
+  free(input_copy);
 
   // set up output classes
   SCFormIO::setindent(ExEnv::outn(), 2);

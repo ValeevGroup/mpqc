@@ -107,7 +107,7 @@ ReorderEngine::check_temp_buffer( int deriv_lvl, int n_segment )
 }
 
 void
-ReorderEngine::add_buffer ( double* buffer, IntegralDescrInterface desc )
+ReorderEngine::add_buffer ( double* buffer, DescrInterface desc )
 {
   buffers_.push_back( buffer );
   int deriv_lvl = desc.get_deriv_lvl();

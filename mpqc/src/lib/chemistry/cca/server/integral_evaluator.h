@@ -1,10 +1,10 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
-#include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
-#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_DescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_MolecularInterface.hxx>
-#include <ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx>
+#include <ChemistryDescrCXX_CompositeDescr.hxx>
 #include <limits.h>
 #include <vector>
 #include <utility>
@@ -12,11 +12,11 @@
 
 namespace MpqcCca {
 
-  typedef Chemistry::QC::GaussianBasis::IntegralDescrInterface 
+  typedef Chemistry::QC::GaussianBasis::DescrInterface 
     QC_IntegralDescr;
   typedef Chemistry::QC::GaussianBasis::DerivCentersInterface
     QC_DerivCenters;
-  typedef Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+  typedef Chemistry::QC::GaussianBasis::CompositeDescrInterface
     QC_CompIntegralDescr;
 
   class onebody_onecenter_computer {
@@ -331,11 +331,11 @@ namespace MpqcCca {
         }
     }
     
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface
     get_descriptor ()
     {
-      Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc = 
-        ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
+      Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc = 
+        ChemistryDescrCXX::CompositeDescr::_create();
       for( int i=0; i<evals_.size(); ++i)
         cdesc.add_descr( evals_[i].second );
       return cdesc;
@@ -496,11 +496,11 @@ namespace MpqcCca {
 
     }
 
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface
     get_descriptor ()
     {
-      Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc =
-        ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
+      Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc =
+        ChemistryDescrCXX::CompositeDescr::_create();
       for( int i=0; i<evals_.size(); ++i)
         for( int j=0; j<evals_[i].second.get_n_descr(); ++j )
           cdesc.add_descr( evals_[i].second.get_descr(j) );

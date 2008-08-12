@@ -12,11 +12,11 @@
 // 
 // Includes for all method dependencies.
 // 
-#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_DescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_MolecularInterface_hxx
 #include "Chemistry_QC_GaussianBasis_MolecularInterface.hxx"
@@ -35,12 +35,12 @@
 #include <algorithm>
 #include "basis_cca_to_sc.h"
 
-#include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
+#include <ChemistryDescrCXX_Eri4Descr.hxx>
+#include <ChemistryDescrCXX_R12Descr.hxx>
+#include <ChemistryDescrCXX_R12T1Descr.hxx>
+#include <ChemistryDescrCXX_R12T2Descr.hxx>
 
-using namespace ChemistryIntegralDescrCXX;
+using namespace ChemistryDescrCXX;
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._includes)
 
@@ -61,13 +61,13 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
 
   reorder_ = false;
 
-  IntegralDescrInterface desc = Eri4IntegralDescr::_create();
+  DescrInterface desc = Eri4Descr::_create();
   descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::eri;
-  desc = R12IntegralDescr::_create();
+  desc = R12Descr::_create();
   descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12;
-  desc = R12T1IntegralDescr::_create();
+  desc = R12T1Descr::_create();
   descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12t1;
-  desc = R12T2IntegralDescr::_create();
+  desc = R12T2Descr::_create();
   descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12t2;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._ctor)
@@ -95,7 +95,7 @@ void MPQC::IntegralEvaluator4_impl::_load() {
 void
 MPQC::IntegralEvaluator4_impl::add_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_evaluator)
 
@@ -119,14 +119,13 @@ MPQC::IntegralEvaluator4_impl::add_evaluator_impl (
 void
 MPQC::IntegralEvaluator4_impl::add_composite_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc 
-    ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_composite_evaluator)
   comp_eval_.add_evaluator(eval,cdesc);
 
   for( int i=0; i<cdesc.get_n_descr(); ++i ) {
-    Chemistry::QC::GaussianBasis::IntegralDescrInterface desc = 
+    Chemistry::QC::GaussianBasis::DescrInterface desc = 
       cdesc.get_descr(i);
     buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
     std::pair< std::string, int > p(desc.get_type(),desc.get_deriv_lvl());
@@ -183,21 +182,21 @@ MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
   reorder_ = true;
   reorder_engine_.init( 4, bs1_, bs2_, bs3_, bs4_ );
 
-  CompositeIntegralDescrInterface desc = eval_.get_descriptor();
+  CompositeDescrInterface desc = eval_.get_descriptor();
   for( int i=0; i < desc.get_n_descr(); ++i) {
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     reorder_engine_.add_buffer( eval_.get_buffer( idesc ), idesc );
   }
 
-  CompositeIntegralDescrInterface deriv_desc = deriv_eval_.get_descriptor();
+  CompositeDescrInterface deriv_desc = deriv_eval_.get_descriptor();
   for( int i=0; i < deriv_desc.get_n_descr(); ++i) {
-    IntegralDescrInterface idesc = deriv_desc.get_descr(i);
+    DescrInterface idesc = deriv_desc.get_descr(i);
     reorder_engine_.add_buffer( deriv_eval_.get_buffer( idesc ), idesc );
   }
 
-  CompositeIntegralDescrInterface cdesc = comp_eval_.get_descriptor();
+  CompositeDescrInterface cdesc = comp_eval_.get_descriptor();
   for( int i=0; i < cdesc.get_n_descr(); ++i ) {
-    IntegralDescrInterface idesc = deriv_desc.get_descr(i);
+    DescrInterface idesc = deriv_desc.get_descr(i);
     reorder_engine_.add_buffer( 
       comp_eval_.get_buffer( idesc, descr_to_tbint_type_[idesc.get_type()] ), 
       idesc );
@@ -209,17 +208,17 @@ MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
 /**
  * Method:  get_descriptor[]
  */
-::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+::Chemistry::QC::GaussianBasis::CompositeDescrInterface
 MPQC::IntegralEvaluator4_impl::get_descriptor_impl () 
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_descriptor)
 
-  CompositeIntegralDescrInterface cdesc = 
-    ChemistryIntegralDescrCXX::CompositeIntegralDescr::_create();
-  CompositeIntegralDescrInterface desc =  eval_.get_descriptor();
-  CompositeIntegralDescrInterface deriv_desc = deriv_eval_.get_descriptor();
-  CompositeIntegralDescrInterface comp_desc = comp_eval_.get_descriptor();
+  CompositeDescrInterface cdesc = 
+    ChemistryDescrCXX::CompositeDescr::_create();
+  CompositeDescrInterface desc =  eval_.get_descriptor();
+  CompositeDescrInterface deriv_desc = deriv_eval_.get_descriptor();
+  CompositeDescrInterface comp_desc = comp_eval_.get_descriptor();
   for( int i=0; i<desc.get_n_descr(); ++i)
     cdesc.add_descr( desc.get_descr(i) );
   for( int i=0; i<deriv_desc.get_n_descr(); ++i)
@@ -239,7 +238,7 @@ MPQC::IntegralEvaluator4_impl::get_descriptor_impl ()
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator4_impl::get_array_impl (
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_array)
 

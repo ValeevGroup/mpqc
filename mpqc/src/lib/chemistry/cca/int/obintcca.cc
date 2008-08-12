@@ -44,7 +44,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
 			      const Ref<GaussianBasisSet>& bs1, 
 			      const Ref<GaussianBasisSet>& bs2,
 			      IntegralEvaluatorFactoryInterface fac,
-			      CompositeIntegralDescrInterface cdesc,
+			      CompositeDescrInterface cdesc,
                               bool reorder ):
   OneBodyInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
   eval_factory_(fac), cdesc_(cdesc), reorder_(reorder)
@@ -62,7 +62,7 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
   // there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
 
-  IntegralDescrInterface desc = cdesc_.get_descr(0);
+  DescrInterface desc = cdesc_.get_descr(0);
   n_segment_ = desc.get_n_segment();
   type_ = desc.get_type();
   int scratchsize = bs1_->max_ncartesian_in_shell()
@@ -136,7 +136,7 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(
   const Ref<GaussianBasisSet>&bs1,
   const Ref<GaussianBasisSet>&bs2,
   IntegralEvaluatorFactoryInterface eval_factory,
-  CompositeIntegralDescrInterface cdesc,
+  CompositeDescrInterface cdesc,
   bool reorder
 ):
   OneBodyDerivInt(integral,bs1,bs2), bs1_(bs1), bs2_(bs2),
@@ -155,7 +155,7 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(
   // there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
 
-  IntegralDescrInterface desc = cdesc_.get_descr(0);
+  DescrInterface desc = cdesc_.get_descr(0);
   n_segment_ = desc.get_n_segment();
   type_ = desc.get_type();
   int scratchsize = bs1_->max_ncartesian_in_shell()

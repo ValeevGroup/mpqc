@@ -1,5 +1,5 @@
 #include <vector>
-#include <Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_DescrInterface.hxx>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -44,7 +44,7 @@ namespace MpqcCca {
     void
     add_buffer ( 
       double* buffer,
-      Chemistry::QC::GaussianBasis::IntegralDescrInterface desc 
+      Chemistry::QC::GaussianBasis::DescrInterface desc 
     );
   
     void do_it( int s1, int s2, int s3, int s4 );

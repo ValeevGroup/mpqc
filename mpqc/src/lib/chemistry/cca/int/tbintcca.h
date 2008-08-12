@@ -53,8 +53,8 @@ namespace sc {
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
-    std::vector< Chemistry::QC::GaussianBasis::IntegralDescrInterface > descriptors_;
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc_;
+    std::vector< Chemistry::QC::GaussianBasis::DescrInterface > descriptors_;
     std::vector< std::string > types_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator4Interface eval_;
@@ -77,7 +77,7 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&b3, 
 		   const Ref<GaussianBasisSet>&b4,	   
 		   Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
-		   Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface );
+		   Chemistry::QC::GaussianBasis::CompositeDescrInterface );
     ~TwoBodyIntCCA();
 
     void compute_shell(int,int,int,int);
@@ -103,8 +103,8 @@ namespace sc {
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_, bs3_, bs4_;
     Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
-    std::vector< Chemistry::QC::GaussianBasis::IntegralDescrInterface > descriptors_;
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc_;
+    std::vector< Chemistry::QC::GaussianBasis::DescrInterface > descriptors_;
     std::vector< std::string > types_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_;
     double* buff_;
@@ -132,7 +132,7 @@ namespace sc {
 			const Ref<GaussianBasisSet>&b3, 
 			const Ref<GaussianBasisSet>&b4,	   
 			Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
-			Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface );
+			Chemistry::QC::GaussianBasis::CompositeDescrInterface );
     ~TwoBodyDerivIntCCA();
 
     void compute_shell(int,int,int,int,DerivCenters&);

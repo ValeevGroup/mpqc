@@ -17,11 +17,11 @@
 #ifndef included_MPQC_CintsEvaluatorFactory_IOR_h
 #include "MPQC_CintsEvaluatorFactory_IOR.h"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_DescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface_hxx
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface.hxx"
@@ -96,11 +96,11 @@ namespace MPQC {
    
     Chemistry::QC::GaussianBasis::MolecularInterface 
       basis1_, basis2_, basis3_, basis4_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface 
       cdesc_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface 
       cdesc_no_deriv_;
-    std::vector< Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface > 
+    std::vector< Chemistry::QC::GaussianBasis::CompositeDescrInterface > 
       comps_;
     std::vector< sc::Ref<sc::TwoBodyInt> > grts_;
     gov::cca::Services services_;
@@ -160,14 +160,14 @@ namespace MPQC {
     /**
      * user defined non-static method.
      */
-    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    ::Chemistry::QC::GaussianBasis::CompositeDescrInterface
     get_descriptor_impl() ;
     /**
      * user defined non-static method.
      */
     bool
     is_supported_impl (
-      /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
     )
     ;
 
@@ -190,8 +190,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator1Interface
     get_evaluator1_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
-        desc,
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1
     )
     ;
@@ -204,8 +203,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface
     get_evaluator2_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
-        desc,
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2
     )
@@ -219,8 +217,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3Interface
     get_evaluator3_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
-        desc,
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3
@@ -235,8 +232,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4Interface
     get_evaluator4_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface 
-        desc,
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
       /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3,
@@ -255,7 +251,7 @@ namespace MPQC {
     /**
      *  Starts up a component presence in the calling framework.
      * @param services the component instance's handle on the framework world.
-     * Contracts concerning services and setServices:
+     * Contracts concerning Svc and setServices:
      * 
      * The component interaction with the CCA framework
      * and Ports begins on the call to setServices by the framework.
@@ -263,7 +259,7 @@ namespace MPQC {
      * This function is called exactly once for each instance created
      * by the framework.
      * 
-     * The argument services will never be nil/null.
+     * The argument Svc will never be nil/null.
      * 
      * Those uses ports which are automatically connected by the framework
      * (so-called service-ports) may be obtained via getPort during

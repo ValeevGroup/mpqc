@@ -17,11 +17,11 @@
 #ifndef included_MPQC_IntegralEvaluator1_IOR_h
 #include "MPQC_IntegralEvaluator1_IOR.h"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_DescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface_hxx
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface.hxx"
@@ -112,7 +112,7 @@ namespace MPQC {
     void
     add_evaluator_impl (
       /* in */void* eval,
-      /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
     )
     ;
 
@@ -133,7 +133,7 @@ namespace MPQC {
     /**
      * user defined non-static method.
      */
-    ::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+    ::Chemistry::QC::GaussianBasis::CompositeDescrInterface
     get_descriptor_impl() ;
 
     /**
@@ -143,7 +143,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_array_impl (
-      /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
     )
     ;
 

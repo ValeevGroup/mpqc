@@ -36,7 +36,7 @@
 #include <sidl_cxx.hxx>
 #include <chemistry/qc/basis/obint.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactoryInterface.hxx>
-#include <Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx>
+#include <Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <MPQC_GaussianBasisMolecular.hxx>
 
@@ -52,7 +52,7 @@ namespace sc {
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc_;
     bool reorder_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface eval_;
@@ -68,7 +68,7 @@ namespace sc {
 		   const Ref<GaussianBasisSet>&, 
 		   const Ref<GaussianBasisSet>&,
 		   Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
-		   Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
+		   Chemistry::QC::GaussianBasis::CompositeDescrInterface,
 		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
@@ -87,7 +87,7 @@ namespace sc {
     Integral* integral_;
     Ref<GaussianBasisSet> bs1_, bs2_;
     Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc_;
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc_;
     bool reorder_;
     MPQC::GaussianBasisMolecular cca_bs1_, cca_bs2_;
     double* buff_;
@@ -103,7 +103,7 @@ namespace sc {
 		        const Ref<GaussianBasisSet>&,
 		        const Ref<GaussianBasisSet>&,
 			Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface,
-		        Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface,
+		        Chemistry::QC::GaussianBasis::CompositeDescrInterface,
 			bool );
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);

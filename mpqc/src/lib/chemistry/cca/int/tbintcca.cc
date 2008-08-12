@@ -34,17 +34,17 @@
 #include <limits.h>
 #include <chemistry/qc/basis/tbint.h>
 
-#include <ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12T1IntegralDescr.hxx>
-#include <ChemistryIntegralDescrCXX_R12T2IntegralDescr.hxx>
+#include <ChemistryDescrCXX_Eri4Descr.hxx>
+#include <ChemistryDescrCXX_R12Descr.hxx>
+#include <ChemistryDescrCXX_R12T1Descr.hxx>
+#include <ChemistryDescrCXX_R12T2Descr.hxx>
 #include <MPQC_IntegralEvaluator4.hxx>
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
-using namespace ChemistryIntegralDescrCXX;
+using namespace ChemistryDescrCXX;
 
 ////////////////////////////////////////////////////////////////////////////
 // TwoBodyIntCCA
@@ -55,7 +55,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     const Ref<GaussianBasisSet> &bs3,
 			     const Ref<GaussianBasisSet> &bs4,
 			     IntegralEvaluatorFactoryInterface fac,
-			     CompositeIntegralDescrInterface cdesc ):
+			     CompositeDescrInterface cdesc ):
   TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
   eval_factory_(fac), cdesc_(cdesc)
@@ -69,13 +69,13 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   tbtype_to_buf_ = new double*[ndesc_];
   tbtype_list_ = new tbint_type[ndesc_];
 
-  IntegralDescrInterface desc = Eri4IntegralDescr::_create();
+  DescrInterface desc = Eri4Descr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::eri;
-  desc = R12IntegralDescr::_create();
+  desc = R12Descr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12;
-  desc = R12T1IntegralDescr::_create();
+  desc = R12T1Descr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t1;
-  desc = R12T2IntegralDescr::_create();
+  desc = R12T2Descr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t2;
 
   int_bound_min_ = SCHAR_MIN;
@@ -112,7 +112,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
 					cca_bs3_, cca_bs4_ );
   for( int i=0; i<ndesc_; ++i ) {
-    IntegralDescrInterface desc = cdesc_.get_descr(i);
+    DescrInterface desc = cdesc_.get_descr(i);
     segments_.push_back( desc.get_n_segment() );
     tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]
         = eval_.get_array(desc).first();
@@ -229,7 +229,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
     const Ref<GaussianBasisSet> &bs3,
     const Ref<GaussianBasisSet> &bs4,
     IntegralEvaluatorFactoryInterface fac,
-    CompositeIntegralDescrInterface cdesc ) :
+    CompositeDescrInterface cdesc ) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
   eval_factory_(fac), cdesc_(cdesc)
@@ -299,7 +299,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
 					cca_bs3_, cca_bs4_ );
 
   for( int i=0; i<ndesc_; ++i ) {
-    IntegralDescrInterface desc = cdesc_.get_descr(i);
+    DescrInterface desc = cdesc_.get_descr(i);
     cca_dcs_.push_back(desc.get_deriv_centers());
     segments_.push_back( desc.get_n_segment() );
     tbtype_to_buf_[ dtype_to_tbtype_[desc.get_type()] ]

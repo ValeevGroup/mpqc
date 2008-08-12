@@ -76,7 +76,7 @@ namespace sc {
       { bs1_ = bs1, bs2_ = bs2; }
       
       Ref<OneBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
+          Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
       {
 	Ref<OneBodyIntCCA> eval;
 	eval = new OneBodyIntCCA( integral_, bs1_, bs2_, 
@@ -113,7 +113,7 @@ namespace sc {
       { bs1_ = bs1, bs2_ = bs2; }
 
       Ref<OneBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
+          Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
       {
 	Ref<OneBodyDerivIntCCA> eval;
 	eval = new OneBodyDerivIntCCA( integral_, bs1_, bs2_, 
@@ -150,7 +150,7 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
+          Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
       {
 	Ref<TwoBodyIntCCA> eval;
 	eval = new TwoBodyIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
@@ -187,7 +187,7 @@ namespace sc {
       { bs1_ = bs1; bs2_ = bs2; bs3_ = bs3; bs4_ = bs4; }
 
       Ref<TwoBodyDerivIntCCA> generate(
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
+          Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
       {
 	Ref<TwoBodyDerivIntCCA> eval;
 	eval = new TwoBodyDerivIntCCA( integral_, bs1_, bs2_, bs3_, bs4_,
@@ -217,7 +217,7 @@ namespace sc {
       { }
 
       Ref<eval_type> operator() (
-          Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface cdesc )
+          Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
       {
 	return generator_.generate( cdesc );
       }
@@ -234,11 +234,11 @@ namespace sc {
     Ref<Molecule> sc_molecule_;
     ChemistryCXX::Molecule molecule_;
     std::vector<Chemistry::QC::GaussianBasis::DerivCentersInterface> cca_dcs_;
-    std::vector<Chemistry::QC::GaussianBasis::IntegralDescrInterface> descs_;
+    std::vector<Chemistry::QC::GaussianBasis::DescrInterface> descs_;
     std::string buffer_;
     std::string default_subfactory_;
     Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface eval_factory_;
-    Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface eval_req_;
+    Chemistry::QC::GaussianBasis::CompositeDescrInterface eval_req_;
 
     sidl::array<std::string> types_;
     sidl::array<std::string> derivs_;

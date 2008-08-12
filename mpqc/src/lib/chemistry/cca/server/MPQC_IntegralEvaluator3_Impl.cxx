@@ -12,11 +12,11 @@
 // 
 // Includes for all method dependencies.
 // 
-#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_DescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_MolecularInterface_hxx
 #include "Chemistry_QC_GaussianBasis_MolecularInterface.hxx"
@@ -75,7 +75,7 @@ void MPQC::IntegralEvaluator3_impl::_load() {
 void
 MPQC::IntegralEvaluator3_impl::add_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.add_evaluator)
 
@@ -122,9 +122,9 @@ MPQC::IntegralEvaluator3_impl::init_reorder_impl ()
 
   reorder_ = true;
   reorder_engine_.init( 3, bs1_, bs2_, bs3_, bs4_ );
-  CompositeIntegralDescrInterface desc = eval_.get_descriptor();
+  CompositeDescrInterface desc = eval_.get_descriptor();
   for( int i=0; i < desc.get_n_descr(); ++i) {
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     reorder_engine_.add_buffer( eval_.get_buffer( idesc ), idesc );
   }
 
@@ -134,7 +134,7 @@ MPQC::IntegralEvaluator3_impl::init_reorder_impl ()
 /**
  * Method:  get_descriptor[]
  */
-::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+::Chemistry::QC::GaussianBasis::CompositeDescrInterface
 MPQC::IntegralEvaluator3_impl::get_descriptor_impl () 
 
 {
@@ -152,7 +152,7 @@ MPQC::IntegralEvaluator3_impl::get_descriptor_impl ()
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator3_impl::get_array_impl (
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_array)
 

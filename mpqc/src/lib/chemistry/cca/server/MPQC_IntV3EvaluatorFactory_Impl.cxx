@@ -12,11 +12,11 @@
 // 
 // Includes for all method dependencies.
 // 
-#ifndef included_Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_CompositeIntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_IntegralDescrInterface_hxx
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#ifndef included_Chemistry_QC_GaussianBasis_DescrInterface_hxx
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface_hxx
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator1Interface.hxx"
@@ -52,7 +52,7 @@
 #include "sidl_NotImplementedException.hxx"
 #endif
 // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory._includes)
-#include "Chemistry_QC_GaussianBasis_IntegralDescrInterface.hxx"
+#include "Chemistry_QC_GaussianBasis_DescrInterface.hxx"
 
 #include "MPQC_IntegralEvaluator1.hxx"
 #include "MPQC_IntegralEvaluator2.hxx"
@@ -62,27 +62,27 @@
 #include <stdexcept>
 #include "basis_cca_to_sc.h"
 
-#include "ChemistryIntegralDescrCXX_CompositeIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_OverlapIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_KineticIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_NuclearIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_HCoreIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_PointChargeIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_EfieldDotVectorIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_DipoleIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_QuadrupoleIntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_Eri2IntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_Eri3IntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_Eri4IntegralDescr.hxx"
-#include "ChemistryIntegralDescrCXX_BaseIntegralDescr.hxx"
+#include "ChemistryDescrCXX_CompositeDescr.hxx"
+#include "ChemistryDescrCXX_OverlapDescr.hxx"
+#include "ChemistryDescrCXX_KineticDescr.hxx"
+#include "ChemistryDescrCXX_NuclearDescr.hxx"
+#include "ChemistryDescrCXX_HCoreDescr.hxx"
+#include "ChemistryDescrCXX_PointChargeDescr.hxx"
+#include "ChemistryDescrCXX_EfieldDotVectorDescr.hxx"
+#include "ChemistryDescrCXX_DipoleDescr.hxx"
+#include "ChemistryDescrCXX_QuadrupoleDescr.hxx"
+#include "ChemistryDescrCXX_Eri2Descr.hxx"
+#include "ChemistryDescrCXX_Eri3Descr.hxx"
+#include "ChemistryDescrCXX_Eri4Descr.hxx"
+#include "ChemistryDescrCXX_BaseDescr.hxx"
 
-#include "Chemistry_QC_GaussianBasis_DipoleIntegralDescrInterface.hxx"
+#include "Chemistry_QC_GaussianBasis_MultipoleDescrInterface.hxx"
 
 using namespace std;
 using namespace sc;
 using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
-using namespace ChemistryIntegralDescrCXX;
+using namespace ChemistryDescrCXX;
 
 // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._includes)
 
@@ -102,88 +102,88 @@ void MPQC::IntV3EvaluatorFactory_impl::_ctor() {
   reorder_ = true;
 
   integral_ = new sc::IntegralV3();
-  IntegralDescrInterface desc;
+  DescrInterface desc;
 
-  cdesc_ = CompositeIntegralDescr::_create();
+  cdesc_ = CompositeDescr::_create();
 
-  desc = OverlapIntegralDescr::_create();
+  desc = OverlapDescr::_create();
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = KineticIntegralDescr::_create();
+  desc = KineticDescr::_create();
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = NuclearIntegralDescr::_create();
+  desc = NuclearDescr::_create();
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = HCoreIntegralDescr::_create(); 
+  desc = HCoreDescr::_create(); 
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = DipoleIntegralDescr::_create();
+  desc = DipoleDescr::_create();
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = Eri4IntegralDescr::_create();
+  desc = Eri4Descr::_create();
   desc.set_deriv_lvl(0);
   cdesc_.add_descr( desc );
 
-  desc = OverlapIntegralDescr::_create();
+  desc = OverlapDescr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
 
-  desc = KineticIntegralDescr::_create();
+  desc = KineticDescr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
 
-  desc = NuclearIntegralDescr::_create();
+  desc = NuclearDescr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
 
-  desc = HCoreIntegralDescr::_create();
+  desc = HCoreDescr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
 
-  desc = Eri4IntegralDescr::_create();
+  desc = Eri4Descr::_create();
   desc.set_deriv_lvl(1);
   cdesc_.add_descr(desc);
 
 
-  cdesc_no_deriv_ = CompositeIntegralDescr::_create();
+  cdesc_no_deriv_ = CompositeDescr::_create();
 
-  desc = OverlapIntegralDescr::_create();
+  desc = OverlapDescr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = KineticIntegralDescr::_create();
+  desc = KineticDescr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = NuclearIntegralDescr::_create();
+  desc = NuclearDescr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = HCoreIntegralDescr::_create();
+  desc = HCoreDescr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = DipoleIntegralDescr::_create();
+  desc = DipoleDescr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = Eri4IntegralDescr::_create();
+  desc = Eri4Descr::_create();
   cdesc_no_deriv_.add_descr( desc );
 
-  desc = OverlapIntegralDescr::_create();
+  desc = OverlapDescr::_create();
   cdesc_no_deriv_.add_descr(desc);
 
-  desc = KineticIntegralDescr::_create();
+  desc = KineticDescr::_create();
   cdesc_no_deriv_.add_descr(desc);
 
-  desc = NuclearIntegralDescr::_create();
+  desc = NuclearDescr::_create();
   cdesc_no_deriv_.add_descr(desc);
 
-  desc = HCoreIntegralDescr::_create();
+  desc = HCoreDescr::_create();
   cdesc_no_deriv_.add_descr(desc);
 
-  desc = Eri4IntegralDescr::_create();
+  desc = Eri4Descr::_create();
   cdesc_no_deriv_.add_descr(desc);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._ctor)
@@ -236,7 +236,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_name_impl ()
 /**
  * Method:  get_descriptor[]
  */
-::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface
+::Chemistry::QC::GaussianBasis::CompositeDescrInterface
 MPQC::IntV3EvaluatorFactory_impl::get_descriptor_impl () 
 
 {
@@ -252,7 +252,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_descriptor_impl ()
  */
 bool
 MPQC::IntV3EvaluatorFactory_impl::is_supported_impl (
-  /* in */::Chemistry::QC::GaussianBasis::IntegralDescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.is_supported)
 
@@ -292,7 +292,7 @@ MPQC::IntV3EvaluatorFactory_impl::set_storage_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator1Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator1_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface desc,
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator1)
@@ -309,7 +309,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator1_impl (
   
     is_oboc = false;
     
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
@@ -340,7 +340,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator1_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface desc,
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2 ) 
 {
@@ -369,7 +369,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
    
     is_ob = is_obderiv = is_tbtc = false;
     
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
@@ -390,13 +390,11 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
       is_ob = true;
     }
     else if( itype == "dipole" && ideriv == 0 ) {
-      Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface ddesc;
+      Chemistry::QC::GaussianBasis::MultipoleDescrInterface ddesc;
       ddesc = 
-        sidl::babel_cast<Chemistry::QC::GaussianBasis::DipoleIntegralDescrInterface>(
+        sidl::babel_cast<Chemistry::QC::GaussianBasis::MultipoleDescrInterface>(
           idesc);
-      Chemistry::QC::GaussianBasis::DipoleDataInterface cca_data;
-      cca_data = ddesc.get_dipole_data();
-      sidl::array<double> origin = cca_data.get_origin();
+      sidl::array<double> origin = ddesc.get_origin();
       double sc_origin[3];
       sc_origin[0] = origin.get(0);
       sc_origin[1] = origin.get(1);
@@ -480,7 +478,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator3Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator3_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface desc,
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3 ) 
@@ -508,7 +506,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator3_impl (
  
     is_tb3c = false;
     
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
@@ -543,7 +541,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator3_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator4Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator4_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeIntegralDescrInterface desc,
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3,
@@ -575,7 +573,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator4_impl (
  
     is_tb = is_tbderiv = false;
     
-    IntegralDescrInterface idesc = desc.get_descr(i);
+    DescrInterface idesc = desc.get_descr(i);
     int ideriv = idesc.get_deriv_lvl();
     string itype = idesc.get_type();
 
@@ -630,7 +628,7 @@ MPQC::IntV3EvaluatorFactory_impl::finalize_impl ()
 /**
  *  Starts up a component presence in the calling framework.
  * @param services the component instance's handle on the framework world.
- * Contracts concerning services and setServices:
+ * Contracts concerning Svc and setServices:
  * 
  * The component interaction with the CCA framework
  * and Ports begins on the call to setServices by the framework.
@@ -638,7 +636,7 @@ MPQC::IntV3EvaluatorFactory_impl::finalize_impl ()
  * This function is called exactly once for each instance created
  * by the framework.
  * 
- * The argument services will never be nil/null.
+ * The argument Svc will never be nil/null.
  * 
  * Those uses ports which are automatically connected by the framework
  * (so-called service-ports) may be obtained via getPort during

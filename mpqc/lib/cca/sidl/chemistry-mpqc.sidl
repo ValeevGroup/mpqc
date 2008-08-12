@@ -55,7 +55,7 @@ package MPQC version 0.2 {
     void
     add_evaluator(
       in opaque eval, 
-      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+      in Chemistry.QC.GaussianBasis.DescrInterface desc 
     );
  
     void
@@ -72,7 +72,7 @@ package MPQC version 0.2 {
     void
     add_evaluator( 
       in opaque eval,
-      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+      in Chemistry.QC.GaussianBasis.DescrInterface desc 
     );
     void
     set_basis( 
@@ -89,7 +89,7 @@ package MPQC version 0.2 {
     void
     add_evaluator( 
       in opaque eval,
-      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc
+      in Chemistry.QC.GaussianBasis.DescrInterface desc
     );
 
     void
@@ -108,13 +108,13 @@ package MPQC version 0.2 {
     void
     add_evaluator( 
       in opaque eval, 
-      in Chemistry.QC.GaussianBasis.IntegralDescrInterface desc 
+      in Chemistry.QC.GaussianBasis.DescrInterface desc 
     );
 
     void
     add_composite_evaluator( 
       in opaque eval,
-      in Chemistry.QC.GaussianBasis.CompositeIntegralDescrInterface cdesc 
+      in Chemistry.QC.GaussianBasis.CompositeDescrInterface cdesc 
     );
 
     void

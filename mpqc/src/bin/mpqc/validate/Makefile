@@ -66,6 +66,11 @@ RUN_MBPTF12=yes
 endif
 endif
 
+# PSI tests are only run when MPQC-PSI inetrface was configured
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
+RUN_PSI=yes
+endif
+
 ########################################################################
 
 H2OMASTER=h2o.qci
@@ -77,20 +82,36 @@ H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OMP2MA
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
 
 MP2R12MASTER=mp2r12.qci
+MP2R12INPUTS=
 ifeq ($(RUN_MBPTR12),yes)
   MP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2R12MASTER))
-else
-  MP2R12INPUTS=
 endif
 MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
 
 MP2F12MASTER=mp2f12.qci
+MP2F12INPUTS=
 ifeq ($(RUN_MBPTF12),yes)
   MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER))
-else
-  MP2F12INPUTS=
 endif
 MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
+
+PSICCSDPT2R12MASTER=psiccsdpt2r12.qci
+PSICCSDPT2R12INPUTS=
+ifeq ($(RUN_MBPTR12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSICCSDPT2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(PSICCSDPT2R12MASTER))
+  endif
+endif
+PSICCSDPT2R12OUTPUTS = $(PSICCSDPT2R12INPUTS:%.$(INSUF)=%.out)
+
+PSICCSDPT2F12MASTER=psiccsdpt2f12.qci
+PSICCSDPT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSICCSDPT2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(PSICCSDPT2F12MASTER))
+  endif
+endif
+PSICCSDPT2F12OUTPUTS = $(PSICCSDPT2F12INPUTS:%.$(INSUF)=%.out)
 
 H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OFRQMASTER))
@@ -268,16 +289,17 @@ INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 
 # cints and libint2 will not run all test cases.  These filters can be used to select
 # just cases that these can run
-CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12%
+CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12% $(INP)/psiccsdpt2r12%
 # use libint2 configuration to determine which MP2-F12 set to run
 ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else
-LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc%
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc% $(INP)/psiccsdpt2f12%
 endif
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
 	    $(MP2R12INPUTS) $(MP2F12INPUTS) \
+	    $(PSICCSDPT2R12INPUTS) $(PSICCSDPT2F12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
@@ -405,6 +427,7 @@ check_clean: check_clean_scratch
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
 	/bin/rm -rf $(RUN)/*.ckpt $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+	/bin/rm -rf $(RUN)/*.moints.* $(RUN)/*.psi.*
 
 check: check0
 
@@ -466,7 +489,7 @@ checkccafe_chk:
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs
-inputs:: h2o h2omp2 mp2r12 mp2f12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: h2o h2omp2 mp2r12 mp2f12 psiccsdpt2r12 psiccsdpt2f12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
 inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
 
 .PHONY: h2o
@@ -480,6 +503,12 @@ mp2r12: stamp-mp2r12
 
 .PHONY: mp2f12
 mp2f12: stamp-mp2f12
+
+.PHONY: psiccsdpt2r12
+psiccsdpt2r12: stamp-psiccsdpt2r12
+
+.PHONY: psiccsdpt2f12
+psiccsdpt2f12: stamp-psiccsdpt2f12
 
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
@@ -556,6 +585,14 @@ stamp-mp2r12: $(INP) $(MP2R12MASTER) $(INPUTGENDEPS)
 stamp-mp2f12: $(INP) $(MP2F12MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(MP2F12MASTER)
 	touch stamp-mp2f12
+
+stamp-psiccsdpt2r12: $(INP) $(PSICCSDPT2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(PSICCSDPT2R12MASTER)
+	touch stamp-psiccsdpt2r12
+
+stamp-psiccsdpt2f12: $(INP) $(PSICCSDPT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(PSICCSDPT2F12MASTER)
+	touch stamp-psiccsdpt2f12
 
 stamp-h2ofrq: $(INP) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(H2OFRQMASTER)

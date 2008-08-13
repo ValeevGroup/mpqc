@@ -1832,6 +1832,18 @@ fi
 
 dnl ----------- Psi program checks --------------
 
+PSIROOTDIR=
+AC_ARG_WITH(psi,
+[  --with-psi                   Psi root directory (i.e. prefix/bin is location for the binaries)],
+PSIROOTDIR=$withval
+)
+dnl -- find psi3 using given PSIDROOTDIR, do rest of checks only if found --
+AC_CHECK_PROG([VALID_PSIROOTDIR], [psi3], [yes], [no], [$PSIROOTDIR/bin])
+if test X$VALID_PSIROOTDIR = Xyes; then
+AC_SUBST(PSIROOTDIR)
+LIBS="-L$PSIROOTDIR/lib  $LIBS"
+CPPFLAGS="-I$PSIROOTDIR/include $CPPFLAGS"
+
 HAVE_COMPATIBLE_PSI=no
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
@@ -1949,6 +1961,9 @@ if test X$HAVE_LIBPSIO = Xno -o X$HAVE_LIBCHKPT = Xno -o X$HAVE_OTHER_PSILIBS = 
 else
   HAVE_PSIMPQCIFACE=yes
   AC_DEFINE(HAVE_PSIMPQCIFACE)
+  AC_DEFINE_UNQUOTED(PSIROOTDIR, "$PSIROOTDIR")
+fi
+
 fi
 
 dnl --------- Template instantiation. ---------

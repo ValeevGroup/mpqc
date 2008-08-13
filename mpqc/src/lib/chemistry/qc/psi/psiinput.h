@@ -52,12 +52,16 @@ class PsiInput: public RefCount {
 
   string filename_;
   std::ofstream file_;
+  int me_;                // task id
 
   int indentation_;
   
   // No default constructor
   PsiInput() {};
 
+  // can run on me_?
+  bool can_run_on_me() { return me_ == 0; }
+  
   public:
     PsiInput(const string& name);
     ~PsiInput();

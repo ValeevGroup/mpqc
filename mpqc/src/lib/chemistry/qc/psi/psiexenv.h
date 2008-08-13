@@ -79,10 +79,13 @@ class PsiExEnv: public DescribedClass {
 
     // Add the following to the PATH environmental variable
     void add_to_path(const string &);
+    
+    // task id
+    int me_;
 
   public:
+    PsiExEnv();
     PsiExEnv(const Ref<KeyVal>&);
-    PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch);
     ~PsiExEnv();
 
     /// Returns the PsiInput object which PsiExEnv uses
@@ -91,9 +94,9 @@ class PsiExEnv: public DescribedClass {
     Ref<PsiFile11> get_psi_file11() const { return psifile11_;};
     
     /// Executes Psi input+driver
-    int run_psi();
-    /// Executes a Psi module
-    int run_psi_module(const char *);
+    void run_psi();
+    /// Executes a Psi module. Throws if psi fails.
+    void run_psi_module(const char *);
 
     /// Returns current working directory
     string get_cwd() const { return cwd_;};

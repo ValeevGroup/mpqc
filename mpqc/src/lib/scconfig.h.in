@@ -276,6 +276,9 @@
 /* Define if Psi-MPQC interface can be compiled.  */
 #undef HAVE_PSIMPQCIFACE
 
+/* The location of Psi root directory. */
+#undef PSIROOTDIR
+
 /* Define if your MPI implementation has MPI-IO functions */
 #undef HAVE_MPIIO
 

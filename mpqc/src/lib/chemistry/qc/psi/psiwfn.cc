@@ -77,10 +77,7 @@ namespace sc {
     Wavefunction(keyval) {
     exenv_ << keyval->describedclassvalue("psienv");
     if (exenv_.null()) {
-      ExEnv::err0()
-          << "PsiWavefunction::PsiWavefunction: no Psi execution environment object (psienv)"
-          << endl;
-      abort();
+      exenv_ = new PsiExEnv;
     }
     
     nirrep_ = molecule()->point_group()->char_table().order();

@@ -51,7 +51,7 @@ using namespace std;
 namespace sc {
   
   PsiInput::PsiInput(const string& name) :
-    file_() {
+    file_(), me_(MessageGrp::get_default_messagegrp()->me()) {
     filename_ = string(name);
     indentation_ = 0;
   }
@@ -60,37 +60,44 @@ namespace sc {
   }
   
   void PsiInput::open() {
+    if (!can_run_on_me()) return;
     file_.open(filename_.c_str(), ios::out);
     indentation_ = 0;
   }
   
   void PsiInput::close() {
+    if (!can_run_on_me()) return;
     file_.close();
     indentation_ = 0;
   }
   
   void PsiInput::write_indent() {
+    if (!can_run_on_me()) return;
     for (int i=0; i<indentation_; i++)
       file_ << " ";
   }
   
   void PsiInput::incindent(int i) {
+    if (!can_run_on_me()) return;
     if (i > 0)
       indentation_ += i;
   }
   
   void PsiInput::decindent(int i) {
+    if (!can_run_on_me()) return;
     if (i > 0)
       indentation_ -= i;
   }
   
   void PsiInput::begin_section(const char * s) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << s << ":("<< endl;
     incindent(2);
   }
   
   void PsiInput::end_section(void) {
+    if (!can_run_on_me()) return;
     decindent(2);
     write_indent();
     file_ << ")"<< endl;
@@ -98,26 +105,31 @@ namespace sc {
   }
   
   void PsiInput::write_keyword(const char *keyword, const char *value) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = %s", keyword, value) << endl;
   }
   
   void PsiInput::write_keyword(const char *keyword, int value) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = %d", keyword, value) << endl;
   }
   
   void PsiInput::write_keyword(const char *keyword, bool value) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = %s", keyword, value ? "true" : "false") << endl;
   }
   
   void PsiInput::write_keyword(const char *keyword, double value) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = %20.15lf", keyword, value) << endl;
   }
   
   void PsiInput::write_keyword_array(const char *keyword, int num, int *values) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = (", keyword);
     for (int i=0; i<num; i++) {
@@ -128,6 +140,7 @@ namespace sc {
   
   void PsiInput::write_keyword_array(const char *keyword, int num,
                                      double *values) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = (", keyword);
     for (int i=0; i<num; i++) {
@@ -137,16 +150,19 @@ namespace sc {
   }
   
   void PsiInput::write_string(const char *s) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << s;
   }
   
   void PsiInput::write_key_wq(const char *keyword, const char *value) {
+    if (!can_run_on_me()) return;
     write_indent();
     file_ << scprintf("%s = \"%s\"", keyword, value) << endl;
   }
   
   void PsiInput::write_geom(const Ref<Molecule>& m) {
+    if (!can_run_on_me()) return;
     // copy the molecule and rotate to the symmetry frame
     Ref<Molecule> mol = new Molecule(*m);
     mol->transform_to_symmetry_frame();
@@ -166,6 +182,13 @@ namespace sc {
                                               mol->r(i, 2))<< ")"<< endl;
     }
     write_string(")\n");
+    write_string("charges = (");
+    for (int i=0; i < m->natom(); i++) {
+      const double Z = m->charge(i);
+      file_ << scprintf(" %14.12lf",Z);
+    }
+    write_string(")\n");
+
   }
   
   namespace {
@@ -187,6 +210,7 @@ namespace sc {
   }
   
   void PsiInput::write_basis(const Ref<GaussianBasisSet>& basis) {
+    if (!can_run_on_me()) return;
     if (!consistent_puream(basis))
       throw FeatureNotImplemented("PsiInput::write_basis() -- Psi cannot handle yet basis sets that mix cartesian and harmonics functions",__FILE__,__LINE__);
     
@@ -215,6 +239,7 @@ namespace sc {
   }
   
   void PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis) {
+    if (!can_run_on_me()) return;
     begin_section("basis");
     Ref<Molecule> molecule = basis->molecule();
     Ref<AtomInfo> atominfo = basis->molecule()->atominfo();
@@ -265,6 +290,7 @@ namespace sc {
   }
   
   void PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *dertype) {
+    if (!can_run_on_me()) return;
     begin_section("psi");
     
     write_key_wq("label", " ");
@@ -293,6 +319,7 @@ namespace sc {
   }
   
   void PsiInput::print(std::ostream& o) {
+    if (!can_run_on_me()) return;
     o << indent << "PsiInput:" << std::endl;
     o << indent; for(int i=0; i<7; ++i) { o << "----------"; }  o << endl;
     o << sc::incindent;

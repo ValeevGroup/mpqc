@@ -374,7 +374,7 @@ sub process_file {
                 else {
                     $files{"$inputfile"} = 1;
                     my $ret = 1;
-                    $ret = system("cmp $inputfile $inputfile.tmp > /dev/null 2>&1")/256
+                    $ret = system("cmp '$inputfile' '$inputfile.tmp' > /dev/null 2>&1")/256
                         if (-f "$inputfile");
                     if ($ret != 0) {
                         print "writing $inputfile\n";

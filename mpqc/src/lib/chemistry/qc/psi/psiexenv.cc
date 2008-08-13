@@ -47,20 +47,20 @@ namespace sc {
 
 static ClassDesc PsiExEnv_cd(
   typeid(PsiExEnv),"PsiExEnv",1,"public DescribedClass",
-  0, create<PsiExEnv>, 0);
+  create<PsiExEnv>, create<PsiExEnv>, 0);
 
 string PsiExEnv::defaultinputname_("input.dat");
 string PsiExEnv::defaultoutputname_("output.dat");
 string PsiExEnv::file11name_("file11.dat");
 int PsiExEnv::ckptfile_(PSIF_CHKPT);
-string PsiExEnv::defaultcwd_("/tmp");
+string PsiExEnv::defaultcwd_(".");
 string PsiExEnv::defaultfileprefix_("psi");
-string PsiExEnv::defaultpsiprefix_("/usr/local/psi/bin");
+string PsiExEnv::defaultpsiprefix_(PSIROOTDIR "/bin");
 string PsiExEnv::defaultstdout_("stdout");
 string PsiExEnv::defaultstderr_("stderr");
 
 PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
-	psio_(), chkpt_(0)
+	psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me())
 {
   const std::string prefix(SCFormIO::fileext_to_filename("."));
 
@@ -122,23 +122,27 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
   config_psio();
 }
 
-PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
-    cwd_(cwd), fileprefix_(fileprefix), nscratch_(nscratch), chkpt_(0)
+PsiExEnv::PsiExEnv() :
+    psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me()),
+    cwd_(defaultcwd_), nscratch_(1)
 {
-  const std::string prefix(SCFormIO::fileext_to_filename("."));
-
   // Find Psi
-  char *psibin = 0;
-  psibin = getenv("PSIBIN");
+  char *psibin = getenv("PSIBIN");
   if (psibin)
     psiprefix_ = string(psibin);
   else
-    psiprefix_ = prefix + defaultpsiprefix_;
+    psiprefix_ = string(defaultpsiprefix_);
   add_to_path(psiprefix_);
 
   scratch_ = new string[nscratch_];
-  for(int i=0; i<nscratch_; i++)
-    scratch_[i] = string(scratch[i]);
+  for (int i=0; i<nscratch_; i++)
+    scratch_[i] = cwd_;
+
+  fileprefix_ = SCFormIO::fileext_to_filename(".") + defaultfileprefix_;
+  inputname_ = fileprefix_ + "." + defaultinputname_;
+  outputname_ = fileprefix_ + "." + defaultoutputname_;
+  stdout_ = fileprefix_ + "." + defaultstdout_;
+  stderr_ = fileprefix_ + "." + defaultstderr_;
   
   char *s = new char[cwd_.size() + inputname_.size() + 2];
   sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
@@ -198,31 +202,29 @@ void PsiExEnv::add_to_path(const string& dir)
   }
 }
 
-int PsiExEnv::run_psi()
+void PsiExEnv::run_psi()
 {
   std::ostringstream oss;
   oss << "psi3 --messy";
-  int errcod;
-  if (errcod = run_psi_module(oss.str().c_str())) {
-    return errcod;
-  }
-  return 0;
+  run_psi_module(oss.str().c_str());
 }
 
-int PsiExEnv::run_psi_module(const char *module)
+void PsiExEnv::run_psi_module(const char *module)
 {
+  // can only run on node 0
+  if (me_ != 0) return;
+  
   std::ostringstream oss;
   oss << "cd " << cwd_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
       << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;
-  int errcod;
-  if (errcod = system(oss.str().c_str())) {
+  const int errcod = system(oss.str().c_str());
+  if (errcod) {
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
       if (strcmp(module,"psiclean"))
         run_psi_module("psiclean");
       throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
   }
-  return errcod;
 }
 
 void PsiExEnv::print(std::ostream&o) const

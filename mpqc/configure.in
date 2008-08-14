@@ -1966,6 +1966,10 @@ fi
 
 fi
 
+if test X$VALID_PSIROOTDIR = Xno; then
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_PSI $EXCLUDED_DIRS"
+fi
+
 dnl --------- Template instantiation. ---------
 
 if test $template_instantiation = auto; then

@@ -247,6 +247,10 @@ class DescribedClass : public RefCount {
     int class_version() const;
     /// Print the object.
     virtual void print(std::ostream& = ExEnv::out0()) const;
+    /// Return this object wrapped up in a Ref smart pointer.  This
+    /// member is mainly a convenience function for the Python MPQC
+    /// interface.
+    Ref<DescribedClass> ref() { return Ref<DescribedClass>(this); }
   };
 
 /** Return the ClassDesc corresponding to template argument. */

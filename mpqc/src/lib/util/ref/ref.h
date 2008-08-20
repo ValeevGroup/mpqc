@@ -330,6 +330,8 @@ class RefBase {
 */
 template <class T>
 class  Ref  : public RefBase {
+  public:
+    typedef T element_type;
   private:
     T* p;
   public:

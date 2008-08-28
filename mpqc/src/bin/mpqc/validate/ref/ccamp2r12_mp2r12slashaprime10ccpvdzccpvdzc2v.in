@@ -45,7 +45,7 @@ mpqc: (
     memory = 32000000
     stdapprox = "A'"
     corr_factor = "R12"
-    nfzc = 0
+    nfzc = 1
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis

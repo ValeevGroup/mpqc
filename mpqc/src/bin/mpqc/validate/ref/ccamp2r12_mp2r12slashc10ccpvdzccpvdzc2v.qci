@@ -13,11 +13,11 @@ state:
 do_cca:
 yes
 fzc:
-0
+1
 basis:
 cc-pVDZ
 method:
-mp2-r12/b
+mp2-r12/c
 auxbasis:
 cc-pVDZ
 test_calc:

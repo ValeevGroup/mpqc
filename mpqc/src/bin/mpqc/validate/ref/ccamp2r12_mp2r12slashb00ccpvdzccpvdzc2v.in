@@ -14,6 +14,7 @@ molecule<Molecule>: (
 % basis set specification
 basis<GaussianBasisSet>: (
   name = "cc-pVDZ"
+  puream = true
   molecule = $:molecule
 )
 % using cca integrals
@@ -25,7 +26,6 @@ mpqc: (
   checkpoint = no
   savestate = no
   restart = no
-  integrals = $:integrals
   % molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
@@ -36,14 +36,15 @@ mpqc: (
   do_energy = yes
   do_gradient = no
   do_cca = yes
+  integrals = $:integrals
   % method for computing the molecule's energy
   mole<MBPT2_R12>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 32000000
-    integrals = $:integrals
     stdapprox = "B"
+    corr_factor = "R12"
     nfzc = 0
     reference<CLHF>: (
       molecule = $:molecule

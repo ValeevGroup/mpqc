@@ -13,7 +13,7 @@ state:
 do_cca:
 yes
 fzc:
-0
+1
 basis:
 cc-pVDZ
 method:

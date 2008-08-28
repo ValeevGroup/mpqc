@@ -17,7 +17,7 @@ fzc:
 basis:
 cc-pVDZ
 method:
-mp2-r12/b
+mp2-r12/a''
 auxbasis:
 cc-pVDZ
 test_calc:

@@ -43,7 +43,7 @@ mpqc: (
     basis = $:basis
     coor = $..:coor
     memory = 32000000
-    stdapprox = "A'"
+    stdapprox = "C"
     corr_factor = "R12"
     nfzc = 0
     reference<CLHF>: (

@@ -4,7 +4,7 @@
 
   Machine:    x86_64-unknown-linux-gnu
   User:       jpkenny@ulester
-  Start Time: Thu Aug 21 15:31:32 2008
+  Start Time: Thu Aug 21 15:31:34 2008
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -125,20 +125,20 @@
 
   docc = [ 3 0 1 1 ]
   nbasis = 24
-  ints_file = ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.moints
+  ints_file = ccamp2r12_mp2r12slashaprime10ccpvdzccpvdzc2v.moints
 include_DKH_in_Q: false
 
   Molecular formula H2O
 
-  The following keywords in "/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.in" were ignored:
+  The following keywords in "/home/jpkenny/src/mpqc/src/bin/mpqc/validate/ref/ccamp2r12_mp2r12slashaprime10ccpvdzccpvdzc2v.in" were ignored:
     mpqc:mole:reference:guess_wavefunction:multiplicity
     mpqc:mole:reference:multiplicity
     integrals:molecule
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
-    filename      = ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v
-    restart_file  = ccamp2r12_mp2r12slashaprime00ccpvdzccpvdzc2v.ckpt
+    filename      = ccamp2r12_mp2r12slashaprime10ccpvdzccpvdzc2v
+    restart_file  = ccamp2r12_mp2r12slashaprime10ccpvdzccpvdzc2v.ckpt
     restart       = no
     checkpoint    = no
     savestate     = no
@@ -210,12 +210,12 @@ switched off integral check in mbptr12.cc/compute
   Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
     Entered <i i| R12[0] |p p>_bb integrals evaluator (transform type ikjy)
       Memory available per node:      32000000 Bytes
-      Static memory used per node:    1011136 Bytes
-      Total memory used per node:     1669504 Bytes
-      Memory required for one pass:   1669504 Bytes
-      Minimum memory required:        1147264 Bytes
+      Static memory used per node:    1010752 Bytes
+      Total memory used per node:     1464832 Bytes
+      Memory required for one pass:   1464832 Bytes
+      Minimum memory required:        1128448 Bytes
       Number of passes:               1
-      Batch size:                     5
+      Batch size:                     4
       Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
       Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
       Reading file /home/jpkenny/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
@@ -263,87 +263,55 @@ switched off integral check in mbptr12.cc/compute
   Exited MP2 pair energies (<i i|a a>) evaluator
   Computing orthonormal alpha-beta geminal space.
     Using canonical orthogonalization.
-    n(basis):            25
-    Maximum orthogonalization residual = 0.131461
-    Minimum orthogonalization residual = 0.00447838
-  WARNING: Alpha-beta B matrix in orthonormal basis has 9 negative eigenvalues
-  WARNING: Alpha-beta ~B(6) matrix in orthonormal basis has 4 negative eigenvalues
-  WARNING: Alpha-beta ~B(7) matrix in orthonormal basis has 4 negative eigenvalues
-  WARNING: Alpha-beta ~B(8) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(9) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(11) matrix in orthonormal basis has 4 negative eigenvalues
-  WARNING: Alpha-beta ~B(12) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(13) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(14) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(16) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(17) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(18) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(19) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(21) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(22) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(23) matrix in orthonormal basis has 5 negative eigenvalues
-  WARNING: Alpha-beta ~B(24) matrix in orthonormal basis has 5 negative eigenvalues
+    n(basis):            16
+    Maximum orthogonalization residual = 0.131288
+    Minimum orthogonalization residual = 0.0222066
+  WARNING: Alpha-beta B matrix in orthonormal basis has 3 negative eigenvalues
   Computing orthonormal alpha-alpha geminal space.
     Using canonical orthogonalization.
-    n(basis):            10
-    Maximum orthogonalization residual = 0.0923349
-    Minimum orthogonalization residual = 0.0089584
-  WARNING: Alpha-alpha B matrix in orthonormal basis has 3 negative eigenvalues
-  WARNING: Alpha-alpha ~B(2) matrix in orthonormal basis has 2 negative eigenvalues
-  WARNING: Alpha-alpha ~B(4) matrix in orthonormal basis has 2 negative eigenvalues
-  WARNING: Alpha-alpha ~B(5) matrix in orthonormal basis has 2 negative eigenvalues
-  WARNING: Alpha-alpha ~B(7) matrix in orthonormal basis has 2 negative eigenvalues
-  WARNING: Alpha-alpha ~B(8) matrix in orthonormal basis has 2 negative eigenvalues
-  WARNING: Alpha-alpha ~B(9) matrix in orthonormal basis has 2 negative eigenvalues
+    n(basis):             6
+    Maximum orthogonalization residual = 0.0922061
+    Minimum orthogonalization residual = 0.0222066
 
   Singlet MBPT2-F12/A' pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      1       1     -0.000427901   -0.106571604   -0.106999505
-      2       1     -0.000248588   -0.017762186   -0.018010774
-      2       2     -0.008947046   -0.004282525   -0.013229571
-      3       1     -0.000115154   -0.002519067   -0.002634221
-      3       2     -0.012272428   -0.009777273   -0.022049701
-      3       3     -0.019751020   -0.001576730   -0.021327750
-      4       1     -0.000167369   -0.004221872   -0.004389242
-      4       2     -0.009466858    0.039173204    0.029706346
-      4       3     -0.012722847   -0.003881386   -0.016604233
-      4       4     -0.017329041   -0.007817645   -0.025146685
-      5       1     -0.000158942   -0.002766602   -0.002925544
-      5       2     -0.009075206   -0.007380196   -0.016455402
-      5       3     -0.008904392   -0.006904744   -0.015809136
-      5       4     -0.010041762   -0.009853861   -0.019895622
-      5       5     -0.016925640   -0.008278974   -0.025204613
+      1       1     -0.008947046   -0.003834894   -0.012781940
+      2       1     -0.012272428   -0.006816566   -0.019088994
+      2       2     -0.019751020   -0.004939337   -0.024690357
+      3       1     -0.009466858   -0.006737379   -0.016204237
+      3       2     -0.012722847   -0.003784953   -0.016507800
+      3       3     -0.017329041   -0.008097555   -0.025426595
+      4       1     -0.009075206   -0.008065613   -0.017140819
+      4       2     -0.008904392   -0.006904744   -0.015809136
+      4       3     -0.010041762   -0.009972378   -0.020014140
+      4       4     -0.016925640   -0.009506173   -0.026431812
 
   Triplet MBPT2-F12/A' pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.000033665   -0.006932003   -0.006965669
-      3       1     -0.000352091   -0.003183135   -0.003535226
-      3       2     -0.005940691   -0.002294762   -0.008235454
-      4       1     -0.000396662   -0.003232412   -0.003629075
-      4       2     -0.005621228   -0.002683364   -0.008304592
-      4       3     -0.018814377   -0.003350945   -0.022165322
-      5       1     -0.000433560   -0.002829574   -0.003263134
-      5       2     -0.005854165   -0.003491571   -0.009345735
-      5       3     -0.019864522   -0.003570543   -0.023435065
-      5       4     -0.019849686   -0.003888908   -0.023738594
+      2       1     -0.005940691   -0.002036538   -0.007977229
+      3       1     -0.005621228   -0.002712028   -0.008333256
+      3       2     -0.018814377   -0.003328042   -0.022142419
+      4       1     -0.005854165   -0.003553921   -0.009408086
+      4       2     -0.019864522   -0.003570543   -0.023435065
+      4       3     -0.019849686   -0.003892610   -0.023742296
 
-  Singlet MP2 correlation energy [au]:             -0.126554193108
-  Triplet MP2 correlation energy [au]:             -0.077160648691
-  Singlet (MP2)-F12/ A' correlation energy [au]:   -0.154421460258
-  Triplet (MP2)-F12/ A' correlation energy [au]:   -0.035457217750
-  Singlet MP2-F12/ A' correlation energy [au]:     -0.280975653366
-  Triplet MP2-F12/ A' correlation energy [au]:     -0.112617866440
+  Singlet MP2 correlation energy [au]:             -0.125436238838
+  Triplet MP2 correlation energy [au]:             -0.075944669208
+  Singlet (MP2)-F12/ A' correlation energy [au]:   -0.068659592181
+  Triplet (MP2)-F12/ A' correlation energy [au]:   -0.019093681655
+  Singlet MP2-F12/ A' correlation energy [au]:     -0.194095831019
+  Triplet MP2-F12/ A' correlation energy [au]:     -0.095038350863
 
   RHF energy [au]:                                -76.025888240260
-  MP2 correlation energy [au]:                     -0.203714841798
-  (MBPT2)-F12/ A' correlation energy [au]:         -0.189878678008
-  MBPT2-F12/ A' correlation energy [au]:           -0.393593519806
-  MBPT2-F12/ A' energy [au]:                      -76.419481760067
+  MP2 correlation energy [au]:                     -0.201380908046
+  (MBPT2)-F12/ A' correlation energy [au]:         -0.087753273836
+  MBPT2-F12/ A' correlation energy [au]:           -0.289134181882
+  MBPT2-F12/ A' energy [au]:                      -76.315022422142
 
 
-  Value of the MolecularEnergy:  -76.4194817601
+  Value of the MolecularEnergy:  -76.3150224221
 
   MBPT2_R12:
     Spin-adapted algorithm: true
@@ -455,41 +423,41 @@ switched off integral check in mbptr12.cc/compute
 
 
                                                     CPU Wall
-mpqc:                                              1.96 2.06
-  calc:                                            1.42 1.51
-    mp2-f12 energy:                                1.42 1.51
+mpqc:                                              1.82 1.83
+  calc:                                            1.26 1.27
+    mp2-f12 energy:                                1.26 1.27
       B(BC) intermediate:                          0.00 0.00
       MP2 pair energies:                           0.01 0.01
         MO ints retrieve:                          0.00 0.00
-      mp2-f12/a' pair energies:                    0.01 0.01
-      mp2-f12a intermeds (tensor contract):        0.75 0.83
-        Generic tensor contract:                   0.74 0.81
-          MO ints retrieve:                        0.03 0.01
-          tbint_tform_ikjy <i i| R12[0] |p p>_bb:  0.68 0.75
-            mp2-r12/a passes:                      0.63 0.70
-              4. q.t.:                             0.01 0.01
+      mp2-f12/a' pair energies:                    0.00 0.00
+      mp2-f12a intermeds (tensor contract):        0.65 0.64
+        Generic tensor contract:                   0.65 0.64
+          MO ints retrieve:                        0.02 0.00
+          tbint_tform_ikjy <i i| R12[0] |p p>_bb:  0.62 0.62
+            mp2-r12/a passes:                      0.62 0.58
+              4. q.t.:                             0.00 0.00
               MO ints store:                       0.00 0.00
-              ints+1qt+2qt+3qt:                    0.62 0.69
-      vector:                                      0.42 0.42
-        density:                                   0.00 0.00
+              ints+1qt+2qt+3qt:                    0.62 0.57
+      vector:                                      0.43 0.43
+        density:                                   0.01 0.00
         evals:                                     0.00 0.00
-        extrap:                                    0.00 0.01
-        fock:                                      0.38 0.37
+        extrap:                                    0.02 0.01
+        fock:                                      0.36 0.38
           accum:                                   0.00 0.00
-          ao_gmat:                                 0.36 0.35
-            start thread:                          0.36 0.35
+          ao_gmat:                                 0.34 0.36
+            start thread:                          0.34 0.36
             stop thread:                           0.00 0.00
           init pmax:                               0.00 0.00
           local data:                              0.00 0.00
           setup:                                   0.01 0.01
           sum:                                     0.00 0.00
-          symm:                                    0.00 0.01
-  input:                                           0.54 0.54
-    vector:                                        0.11 0.12
+          symm:                                    0.01 0.01
+  input:                                           0.55 0.55
+    vector:                                        0.12 0.12
       density:                                     0.00 0.00
       evals:                                       0.00 0.00
-      extrap:                                      0.00 0.00
-      fock:                                        0.07 0.07
+      extrap:                                      0.01 0.00
+      fock:                                        0.06 0.07
         accum:                                     0.00 0.00
         ao_gmat:                                   0.06 0.06
           start thread:                            0.06 0.06
@@ -498,7 +466,7 @@ mpqc:                                              1.96 2.06
         local data:                                0.00 0.00
         setup:                                     0.00 0.00
         sum:                                       0.00 0.00
-        symm:                                      0.01 0.00
+        symm:                                      0.00 0.01
 
-  End Time: Thu Aug 21 15:31:34 2008
+  End Time: Thu Aug 21 15:31:36 2008
 

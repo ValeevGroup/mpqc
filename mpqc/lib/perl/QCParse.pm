@@ -1002,6 +1002,7 @@ sub input_string() {
 	}
 	if ($do_cca) {
 		$mole = "$mole\n  do_cca = yes";
+                $mole = "$mole\n  integrals = \$:integrals";
 	}
 	$mole = "$mole\n  % method for computing the molecule's energy";
 	$mole = "$mole\n  mole<$method>: (";
@@ -1009,9 +1010,6 @@ sub input_string() {
 	$mole = "$mole\n    basis = \$:basis";
 	$mole = "$mole\n    coor = \$..:coor";
 	$mole = "$mole\n    memory = $memory";
-	if ($do_cca) {
-		$mole = "$mole\n    integrals = \$:integrals";
-	}
 	if (   $method eq "SCF"
 		|| $method eq "UHF"
 		|| $method eq "CLKS"

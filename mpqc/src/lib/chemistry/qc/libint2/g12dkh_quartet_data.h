@@ -47,17 +47,17 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
     Local variables
    ----------------*/
   double P[3], Q[3], PQ[3], W[3];
-  double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
+  const double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
 
-  int p1 = quartet_info_.p1;
-  int p2 = quartet_info_.p2;
-  int p3 = quartet_info_.p3;
-  int p4 = quartet_info_.p4;
+  const int p1 = quartet_info_.p1;
+  const int p2 = quartet_info_.p2;
+  const int p3 = quartet_info_.p3;
+  const int p4 = quartet_info_.p4;
   
-  double a1 = int_shell1_->exponent(quartet_info_.p1);
-  double a2 = int_shell2_->exponent(quartet_info_.p2);
-  double a3 = int_shell3_->exponent(quartet_info_.p3);
-  double a4 = int_shell4_->exponent(quartet_info_.p4);
+  const double a1 = int_shell1_->exponent(quartet_info_.p1);
+  const double a2 = int_shell2_->exponent(quartet_info_.p2);
+  const double a3 = int_shell3_->exponent(quartet_info_.p3);
+  const double a4 = int_shell4_->exponent(quartet_info_.p4);
 
   prim_pair_t* pair12;
   prim_pair_t* pair34;
@@ -73,17 +73,35 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   //
   // prefactors for (ab|-1|cd) are same as for OSRR, only (00|-1|00)^m are different
   //
-  double zeta = pair12->gamma;
-  double eta = pair34->gamma;
-  double ooz = 1.0/zeta;
-  double ooe = 1.0/eta;
-  double ooze = 1.0/(zeta+eta);
+  const double zeta = pair12->gamma;
+  const double eta = pair34->gamma;
+  const double ooz = 1.0/zeta;
+  const double ooe = 1.0/eta;
+  const double ooze = 1.0/(zeta+eta);
   Data->roz[0] = eta*ooze;
-  double rho = zeta*Data->roz[0];
+  const double rho = zeta*Data->roz[0];
   const double gamma = gamma_bra + gamma_ket;
-  double rhog = rho + gamma;
-  double oorhog = 1.0/rhog;
-  double rho2 = rho*rho;
+  const double rhog = rho + gamma;
+  const double oorhog = 1.0/rhog;
+  const double rho2 = rho*rho;
+
+  Data->oo2ze[0] = 0.5*ooze;
+  Data->roe[0] = zeta*ooze;
+  Data->oo2z[0] = 0.5 * ooz;
+  Data->oo2e[0] = 0.5 * ooe;
+
+#if LIBINT2_DEFINED(g12,zeta_A)
+  Data->zeta_A[0] = a1;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_B)
+  Data->zeta_B[0] = a2;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_C)
+  Data->zeta_C[0] = a3;
+#endif
+#if LIBINT2_DEFINED(g12,zeta_D)
+  Data->zeta_D[0] = a4;
+#endif
 
   P[0] = pair12->P[0];
   P[1] = pair12->P[1];
@@ -91,11 +109,6 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   Q[0] = pair34->P[0];
   Q[1] = pair34->P[1];
   Q[2] = pair34->P[2];
-
-  Data->oo2ze[0] = 0.5*ooze;
-  Data->roe[0] = zeta*ooze;
-  Data->oo2z[0] = 0.5 * ooz;
-  Data->oo2e[0] = 0.5 * ooe;
   W[0] = (zeta*P[0] + eta*Q[0])*ooze;
   W[1] = (zeta*P[1] + eta*Q[1])*ooze;
   W[2] = (zeta*P[2] + eta*Q[2])*ooze;
@@ -147,22 +160,20 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   PQ[0] = P[0] - Q[0];
   PQ[1] = P[1] - Q[1];
   PQ[2] = P[2] - Q[2];
-  double PQ2 = PQ[0]*PQ[0];
-  PQ2 += PQ[1]*PQ[1];
-  PQ2 += PQ[2]*PQ[2];
+  const double PQ2 = PQ[0]*PQ[0] + PQ[1]*PQ[1] + PQ[2]*PQ[2];
 
   const double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
                            int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
                            int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
                            int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
   const double pfac_normovlp = pfac_norm * pair12->ovlp * pair34->ovlp * scale;
-  double T = rho2 * oorhog * PQ2;
+  const double T = rho2 * oorhog * PQ2;
 
   //
   // (00|0|00), (00|2|00), and (00|4|00) need to start recursion for (ab|0|cd), (ab|2|cd), (ab|4|cd)
   //
-  double rorg = rho * oorhog;
-  double sqrt_rorg = sqrt(rorg);
+  const double rorg = rho * oorhog;
+  const double sqrt_rorg = sqrt(rorg);
   Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * exp(-gamma*rorg*PQ2) * pfac_normovlp;
   const double ssss_o_rhog = Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
   Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * ssss_o_rhog;
@@ -172,12 +183,12 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   // prefactors for (a0|k|c0) (k!=-1) VRR
   //
   {
-    double u0 = 0.5/(zeta*eta + gamma*(zeta+eta));
+    const double u0 = 0.5/(zeta*eta + gamma*(zeta+eta));
 
     {
-      double t00 = a2*(eta + gamma);
-      double t01 = gamma*a4;
-      double t02 = gamma*eta;
+      const double t00 = a2*(eta + gamma);
+      const double t01 = gamma*a4;
+      const double t02 = gamma*eta;
       double T[3];
       for(int w=0;w<3; w++) {
           T[w] = -2.0 * u0 * (t00*(quartet_info_.A[w]-quartet_info_.B[w]) +
@@ -189,9 +200,9 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
       Data->R12kG12_pfac0_0_z[0] = T[2];
     }
     {
-      double t00 = a4*(zeta + gamma);
-      double t01 = gamma*a2;
-      double t02 = gamma*zeta;
+      const double t00 = a4*(zeta + gamma);
+      const double t01 = gamma*a2;
+      const double t02 = gamma*zeta;
       double T[3];
       for(int w=0;w<3; w++) {
           T[w] = -2.0 * u0 * (t00*(quartet_info_.C[w]-quartet_info_.D[w]) +

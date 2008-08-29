@@ -107,7 +107,7 @@ LinearR12Ansatz::print(std::ostream& o) const
   switch(projector_) {
     case LinearR12::Projector_0: o << "0  , i.e. 1"; break;
     case LinearR12::Projector_1: o << "1  , i.e. (1-P1)(1-P2)"; break;
-    case LinearR12::Projector_2: o << "2  , i.e. (1-P1)(1-P2)-V1V2"; break;
+    case LinearR12::Projector_2: o << "2  , i.e. (1-O1)(1-O2)-V1V2"; break;
     case LinearR12::Projector_3: o << "3  , i.e. 1-P1P2"; break;
   }
   o << std::endl;

@@ -445,6 +445,9 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 #endif
                       
                       // Compute the integrals
+                      // NOTE: Libint computes ( (f12' \cdot \nabla A) ((f12' \cdot \nabla B) | C D ) integral
+                      // which is the negative of the required integral of (\nabla \cdot f12') (f12' \cdot \nabla) operator (see Eq. (A22) )
+                      // hence note the "+16.0" factor in from of this integral, not the "-16.0" factor that appears in Eq. (A12)
                       LIBINT2_PREFIXED_NAME(libint2_build_g12dkh)[tam1][tam2][tam3][tam4](&Libint_);
                       // add, scale, and copy the integrals over to prim_ints_
                       if (quartet_info_.am) {

@@ -42,7 +42,7 @@ static ClassDesc RenderedObject_cd(
   0, 0, 0);
 
 RenderedObject::RenderedObject(const Ref<Material>& material):
-  name_(0),
+  name_(),
   material_(material)
 {
 }

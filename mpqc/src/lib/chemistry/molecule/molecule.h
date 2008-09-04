@@ -134,6 +134,7 @@ class Molecule: public SavableState
     double **r_;
     int *Z_;
     double *charges_;
+    int *fragments_;
 
     // symmetry equiv info
     int nuniq_;
@@ -263,6 +264,15 @@ class Molecule: public SavableState
         the <tt>atominfo</tt> keyword. <td>This gives a user defined mass
         for each atom.  This is ignored if <tt>pdb_file</tt> is given.
 
+        <tr><td><tt>fragment</tt><td>integer[]<td>none<td>Allows to specify
+        fragments of Molecule. Fragment indices can be arbitrary
+        integers and they do not be consecutive (i.e. one could specify only fragments 1 and 7).
+        By default, all atoms belong to fragment 0.
+        This feature is relevant only for some computations.
+        This keyword is ignored if <tt>pdb_file</tt> is given and its
+        values are provided by field resSeq (residue sequence)
+        of ATOM or HETATM records.
+
         </table>
 
     */
@@ -275,7 +285,8 @@ class Molecule: public SavableState
     /// Add an AtomicCenter to the Molecule.
     void add_atom(int Z,double x,double y,double z,
                   const std::string & label = "", double mass = 0.0,
-                  int have_charge = 0, double charge = 0.0);
+                  int have_charge = 0, double charge = 0.0,
+                  int have_fragment = 0, int fragment = 0);
 
     /// Print information about the molecule.
     virtual void print(std::ostream& =ExEnv::out0()) const;
@@ -296,6 +307,8 @@ class Molecule: public SavableState
     /** Returns the label explicitly assigned to atom.  If
         no label has been assigned, then null is returned. */
     const char *label(int atom) const;
+    /// returns the fragment to which atom belongs to
+    int fragment(int atom) const;
 
     /** Takes an (x, y, z) postion and finds an atom within the
         given tolerance distance.  If no atom is found -1 is returned. */

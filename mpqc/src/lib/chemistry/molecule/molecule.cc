@@ -48,11 +48,11 @@ using namespace sc;
 // Molecule
 
 static ClassDesc Molecule_cd(
-  typeid(Molecule),"Molecule",6,"public SavableState",
+  typeid(Molecule),"Molecule",7,"public SavableState",
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
-  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
+  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -68,7 +68,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(const Molecule& mol):
- natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
+ natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -103,6 +103,8 @@ Molecule::clear()
   mass_ = 0;
   delete[] Z_;
   Z_ = 0;
+  delete[] fragments_;
+  fragments_ = 0;
 
   clear_symmetry_info();
 }
@@ -123,7 +125,7 @@ Molecule::throw_if_atom_duplicated(int begin, double tol)
 }
 
 Molecule::Molecule(const Ref<KeyVal>&input):
- natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
+ natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -179,13 +181,16 @@ Molecule::Molecule(const Ref<KeyVal>&input):
               have_charge = 1;
               charge = 0.0;
             }
+          const int fragment = input->intvalue("fragment",i);
+          const int have_fragment = (input->error() == KeyVal::OK);
           add_atom(atominfo_->string_to_Z(input->stringvalue("atoms",i)),
                    input->doublevalue("geometry",i,0)*conv,
                    input->doublevalue("geometry",i,1)*conv,
                    input->doublevalue("geometry",i,2)*conv,
                    input->stringvalue("atom_labels",i),
                    input->doublevalue("mass",i),
-                   have_charge, charge
+                   have_charge, charge,
+                   have_fragment, fragment
               );
         }
     }
@@ -260,6 +265,10 @@ Molecule::operator=(const Molecule& mol)
               else labels_[i] = 0;
             }
         }
+      if (mol.fragments_) {
+        fragments_ = new int[natoms_];
+        memcpy(fragments_, mol.fragments_, natoms_*sizeof(int));
+        }
       r_ = new double*[natoms_];
       r_[0] = new double[natoms_*3];
       for (int i=0; i<natoms_; i++) {
@@ -278,7 +287,8 @@ Molecule::operator=(const Molecule& mol)
 void
 Molecule::add_atom(int Z,double x,double y,double z,
                    const std::string &label,double mass,
-                   int have_charge, double charge)
+                   int have_charge, double charge,
+                   int have_fragment, int fragment)
 {
   int i;
 
@@ -297,6 +307,10 @@ Molecule::add_atom(int Z,double x,double y,double z,
   double *newmass = 0;
   if (mass_ || mass != 0.0) {
       newmass = new double[natoms_+1];
+    }
+  int *newfragments = 0;
+  if (have_fragment || fragments_) {
+    newfragments = new int[natoms_+1];
     }
 
   // setup the r_ pointers
@@ -326,6 +340,12 @@ Molecule::add_atom(int Z,double x,double y,double z,
       else if (newmass) {
           memset(newmass,0,sizeof(double)*natoms_);
         }
+      if (fragments_) {
+        memcpy(newfragments,fragments_,sizeof(int)*natoms_);
+        }
+      else if (newfragments) {
+        memset(newfragments,0,sizeof(int)*natoms_);
+        }
     }
 
   // delete old data
@@ -337,6 +357,7 @@ Molecule::add_atom(int Z,double x,double y,double z,
   delete[] labels_;
   delete[] charges_;
   delete[] mass_;
+  delete[] fragments_;
 
   // setup new pointers
   Z_ = newZ;
@@ -344,6 +365,7 @@ Molecule::add_atom(int Z,double x,double y,double z,
   labels_ = newlabels;
   charges_ = newcharges;
   mass_ = newmass;
+  fragments_ = newfragments;
 
   // copy info for this atom into arrays
   Z_[natoms_] = Z;
@@ -362,6 +384,12 @@ Molecule::add_atom(int Z,double x,double y,double z,
     }
   else if (charges_) {
       charges_[natoms_] = Z;
+    }
+  if (have_fragment) {
+    fragments_[natoms_] = fragment;
+    }
+  else if (fragments_) {
+    fragments_[natoms_] = 0;
     }
 
   if (Z == q_Z_) {
@@ -406,6 +434,9 @@ Molecule::print_parsedkeyval(ostream& os,
           os << scprintf(" %17s", "charge");
         }
     }
+  if (fragments_) {
+      os << scprintf(" %8s", "fragment");
+    }
   os << scprintf("  %16s", "")
      << scprintf(" %16s", "geometry   ")
      << scprintf(" %16s ", "");
@@ -429,6 +460,9 @@ Molecule::print_parsedkeyval(ostream& os,
           if (int_charges) os << scprintf(" %7.4f", charges_[i]);
           else os << scprintf(" %17.15f", charges_[i]);
         }
+      if (fragments_) {
+          os << scprintf(" %8d", fragments_[i]);
+      }
       os << scprintf(" [% 16.10f", conv * r(i,0))
          << scprintf(" % 16.10f", conv * r(i,1))
          << scprintf(" % 16.10f]", conv * r(i,2))
@@ -493,6 +527,13 @@ Molecule::charge(int iatom) const
   return Z_[iatom];
 }
 
+int
+Molecule::fragment(int iatom) const
+{
+  if (fragments_) return fragments_[iatom];
+  return 0;
+}
+
 double
 Molecule::nuclear_charge() const
 {
@@ -522,6 +563,7 @@ void Molecule::save_data_state(StateOut& so)
       so.put(Z_, natoms_);
       so.put_array_double(r_[0], natoms_*3);
       so.put(charges_,natoms_);
+      so.put(fragments_,natoms_);
     }
   if (mass_) {
       so.put(1);
@@ -577,6 +619,12 @@ Molecule::Molecule(StateIn& si):
         }
       else {
           charges_ = 0;
+        }
+      if (si.version(::class_desc<Molecule>()) > 6) {
+          si.get(fragments_);
+        }
+      else {
+          fragments_ = 0;
         }
     }
   int test;
@@ -1266,6 +1314,9 @@ Molecule::read_pdb(const char *filename)
           strncpy(element,&line[76],2); element[2] = '\0';
           char name[5];
           strncpy(name,&line[12],4); name[4] = '\0';
+          char resSeq[5];
+          strncpy(resSeq,&line[23],4); resSeq[5] = '\0';
+          
           if (element[0]==' '&&element[1]==' ') {
               // no element was given so get the element from the atom name
               if (name[0]!=' '&&name[3]!=' ') {
@@ -1326,6 +1377,17 @@ Molecule::read_pdb(const char *filename)
 
           int Z = atominfo_->string_to_Z(element);
 
+          int have_fragment = 0;
+          int fragment;
+          for(int c=0; c<5; ++c) {
+            if (resSeq[c] = ' ')
+              continue;
+            else {
+              have_fragment = 1;
+              fragment = atoi(resSeq+c);
+            }
+          }
+          
           char field[9];
           strncpy(field,&line[30],8); field[8] = '\0';
           double x = atof(field);
@@ -1336,7 +1398,8 @@ Molecule::read_pdb(const char *filename)
           add_atom(Z,
                    x*units->to_atomic_units(),
                    y*units->to_atomic_units(),
-                   z*units->to_atomic_units());
+                   z*units->to_atomic_units(),
+                   "", 0.0, 0, 0.0, have_fragment, fragment);
         }
       else {
         // skip to next record
@@ -1364,9 +1427,18 @@ Molecule::print_pdb(ostream& os, char *title) const
     std::string symbol(atom_symbol(i));
     sprintf(symb,"%s1",symbol.c_str());
 
+    // if fragment representation exceeds 4 characters reserved for resSeq, set it to -1
+    int frag = fragment(i);
+    {
+      std::ostringstream oss;
+      oss << frag;
+      if (oss.str().size() > 4)
+        frag = -1;
+    }
+
     os << scprintf(
-        "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
-        i+1, symb, 0, r(i,0)*bohr, r(i,1)*bohr, r(i,2)*bohr);
+        "HETATM%5d  %-3s UNK  %4d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
+        i+1, symb, frag, r(i,0)*bohr, r(i,1)*bohr, r(i,2)*bohr);
   }
 
   for (i=0; i < natom(); i++) {

@@ -35,6 +35,8 @@
 
 // set to 1 to produce the double commutator with kinetic energy instead of p^4
 #define COMPUTE_g12t1g12 0
+#define COMPUTE_M2 1
+#define COMPUTE_M3 1
 
 #if LIBINT2_SUPPORT_G12DKH
 
@@ -454,21 +456,32 @@ G12DKHLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                         const LIBINT2_REALTYPE* prim_ints4 = Libint_.targets[2];
                         const LIBINT2_REALTYPE* prim_ints_G12pDiv1_sq = Libint_.targets[3];
                         const LIBINT2_REALTYPE* prim_ints_G12pDiv2_sq = Libint_.targets[4];
-                        for(int ijkl=0; ijkl<size; ijkl++)
+                        for(int ijkl=0; ijkl<size; ijkl++) {
+#if COMPUTE_M2
                           prim_ints_[0][buffer_offset + ijkl] +=
-                            (double) (-8.0) * ( pfac0*prim_ints0[ijkl] + pfac2*prim_ints2[ijkl] + pfac4*prim_ints4[ijkl] )
-                            - (double) 8.0 * (prim_ints_G12pDiv1_sq[ijkl] + prim_ints_G12pDiv2_sq[ijkl]);
+                            (double) (-8.0) * ( pfac0*prim_ints0[ijkl] + pfac2*prim_ints2[ijkl] + pfac4*prim_ints4[ijkl] );
+#endif
+#if COMPUTE_M3
+                          prim_ints_[0][buffer_offset + ijkl] +=
+                             (double) (-8.0) * (prim_ints_G12pDiv1_sq[ijkl] + prim_ints_G12pDiv2_sq[ijkl]);
+#endif
+                          }
 
                       }
                       else {
                         const LIBINT2_REALTYPE* prim_ints_G12pDiv1_sq = Libint_.targets[0];
                         const LIBINT2_REALTYPE* prim_ints_G12pDiv2_sq = Libint_.targets[1];
+#if COMPUTE_M2
                     	prim_ints_[0][buffer_offset] +=
                     	  (double) (-8.0) *
                           (pfac0*Libint_.LIBINT_T_SS_K0G12_SS_0[0] +
                            pfac2*Libint_.LIBINT_T_SS_K2G12_SS_0[0] +
-                           pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0])
+                           pfac4*Libint_.LIBINT_T_SS_K4G12_SS_0[0]);
+#endif
+#if COMPUTE_M3
+                    	prim_ints_[0][buffer_offset] +=
                           - (double) 8.0 * (prim_ints_G12pDiv1_sq[0] + prim_ints_G12pDiv2_sq[0]);
+#endif
                       }
 
                     } // end of ket geminal primitive loop

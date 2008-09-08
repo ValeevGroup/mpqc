@@ -2251,7 +2251,6 @@ R12IntEval::f_bra_ket(
       if (make_K && K.null()) {
 	  const Ref<MOIndexSpace>& occ_space = occ(spin);
 	  K_i_e = exchange_(occ_space,intspace,extspace);
-	  K_i_e.assign(0.0);
 	  
 	  if (debug_ >= DefaultPrintThresholds::allN2) {
 		  std::string label;

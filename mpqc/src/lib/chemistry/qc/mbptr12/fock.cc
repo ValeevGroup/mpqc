@@ -349,9 +349,8 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // use R12IntEval::dk() here because deltaDKH is only needed if the MV term is treated analytically
   const int dk = this->dk();
 #if !TEST_DELTA_DKH
-  if (dk != 2) {
-       throw ProgrammingError(
- 	  "Delta_DKH can only be used with dk = 2",
+  if (dk != 2) { 
+        throw ProgrammingError( "Delta_DKH can only be used with dk = 2",
  	  __FILE__, __LINE__, class_desc());
   }
 #endif
@@ -386,7 +385,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
 #if USE_PAULI
   RefSymmSCMatrix paulicontrib = pauli(hcore_basis,p_basis);
   paulicontrib.scale(-1.0);
-  hsymm.assign(paulicontrib);
+  hsymm.accumulate(paulicontrib);
   paulicontrib=0;
 
 #else

@@ -997,6 +997,13 @@ RefSymmSCMatrix::scale(double a) const
 }
 
 void
+RefSymmSCMatrix::scale_diagonal(double a) const
+{
+  require_nonnull();
+  pointer()->scale_diagonal(a);
+}
+
+void
 RefSymmSCMatrix::assign(double a) const
 {
   require_nonnull();

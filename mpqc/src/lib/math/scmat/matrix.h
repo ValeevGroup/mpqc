@@ -326,6 +326,7 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     void randomize() const;
     void assign(const RefSymmSCMatrix&) const;
     void scale(double) const;
+    void scale_diagonal(double) const;
     void assign(double) const;
     void assign(const double*) const;
     void assign(const double**) const;

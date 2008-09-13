@@ -126,9 +126,9 @@ class FockBuildMatrix: public RefCount {
     virtual void clear() = 0;
     // These allocate data to hold the SCMatrix.  The data is only
     // copied if copy is true, otherwise it is zeroed.
-    virtual void scmat_to_data(const Ref<SymmSCMatrix> &m,
+    virtual void scmat_to_data(const RefSymmSCMatrix &m,
                        const Ref<GaussianBasisSet> &b, bool copy) = 0;
-    virtual void scmat_to_data(const Ref<SCMatrix> &m,
+    virtual void scmat_to_data(const RefSCMatrix &m,
                        const Ref<GaussianBasisSet> &b1,
                        const Ref<GaussianBasisSet> &b2, bool copy) = 0;
     // This copies the held data back into the SCMatrix.
@@ -162,8 +162,8 @@ class ReplFockBuildMatrix: public FockBuildMatrix {
     double **blockpointers_; /** Points to the blocks within the data
                               * array. */
 
-    Ref<SCMatrix> rectmat_;
-    Ref<SymmSCMatrix> symmmat_;
+    RefSCMatrix rectmat_;
+    RefSymmSCMatrix symmmat_;
     int ndata_;
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
@@ -179,9 +179,9 @@ class ReplFockBuildMatrix: public FockBuildMatrix {
     bool symmetric() const;
     void fix_diagonal_blocks() const;
     void clear();
-    void scmat_to_data(const Ref<SymmSCMatrix> &m,
+    void scmat_to_data(const RefSymmSCMatrix &m,
                        const Ref<GaussianBasisSet> &b, bool copy);
-    void scmat_to_data(const Ref<SCMatrix> &m,
+    void scmat_to_data(const RefSCMatrix &m,
                        const Ref<GaussianBasisSet> &b1,
                        const Ref<GaussianBasisSet> &b2, bool copy);
     void data_to_scmat() const;
@@ -270,8 +270,8 @@ class DistFockBuildMatrix: public FockBuildMatrix {
     double **blockpointers_; /** Points to the blocks within the data
                               * array. */
 
-    Ref<SCMatrix> rectmat_;
-    Ref<SymmSCMatrix> symmmat_;
+    RefSCMatrix rectmat_;
+    RefSymmSCMatrix symmmat_;
     int ndata_;
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
@@ -326,9 +326,9 @@ class DistFockBuildMatrix: public FockBuildMatrix {
     bool symmetric() const;
     void fix_diagonal_blocks() const;
     void clear();
-    void scmat_to_data(const Ref<SymmSCMatrix> &m,
+    void scmat_to_data(const RefSymmSCMatrix &m,
                        const Ref<GaussianBasisSet> &b, bool copy);
-    void scmat_to_data(const Ref<SCMatrix> &m,
+    void scmat_to_data(const RefSCMatrix &m,
                        const Ref<GaussianBasisSet> &b1,
                        const Ref<GaussianBasisSet> &b2, bool copy);
     void data_to_scmat() const;
@@ -417,16 +417,16 @@ class FockContribution: public RefCount {
                                const double * restrictxx buf) = 0;
     virtual Ref<FockContribution> clone() = 0;
 
-    virtual void set_fmat(int i, const Ref<SCMatrix> &) = 0;
-    virtual void set_fmat(int i, const Ref<SymmSCMatrix> &) = 0;
+    virtual void set_fmat(int i, const RefSCMatrix &) = 0;
+    virtual void set_fmat(int i, const RefSymmSCMatrix &) = 0;
 
-    virtual void set_jmat(int i, const Ref<SCMatrix> &) = 0;
-    virtual void set_jmat(int i, const Ref<SymmSCMatrix> &) = 0;
+    virtual void set_jmat(int i, const RefSCMatrix &) = 0;
+    virtual void set_jmat(int i, const RefSymmSCMatrix &) = 0;
 
-    virtual void set_kmat(int i, const Ref<SCMatrix> &) = 0;
-    virtual void set_kmat(int i, const Ref<SymmSCMatrix> &) = 0;
+    virtual void set_kmat(int i, const RefSCMatrix &) = 0;
+    virtual void set_kmat(int i, const RefSymmSCMatrix &) = 0;
 
-    virtual void set_pmat(int i, const Ref<SymmSCMatrix> &) = 0;
+    virtual void set_pmat(int i, const RefSymmSCMatrix &) = 0;
 
     virtual double *jmat_shell_block(int i, int Ish, int Jsh) = 0;
     virtual double *kmat_shell_block(int i, int Ish, int Jsh) = 0;
@@ -645,16 +645,16 @@ class GenericFockContribution: public FockContribution {
       delete[] data;
     }
 
-    void set_fmat(int i, const Ref<SCMatrix> &);
-    void set_fmat(int i, const Ref<SymmSCMatrix> &);
+    void set_fmat(int i, const RefSCMatrix &);
+    void set_fmat(int i, const RefSymmSCMatrix &);
 
-    void set_jmat(int i, const Ref<SCMatrix> &);
-    void set_jmat(int i, const Ref<SymmSCMatrix> &);
+    void set_jmat(int i, const RefSCMatrix &);
+    void set_jmat(int i, const RefSymmSCMatrix &);
 
-    void set_kmat(int i, const Ref<SCMatrix> &);
-    void set_kmat(int i, const Ref<SymmSCMatrix> &);
+    void set_kmat(int i, const RefSCMatrix &);
+    void set_kmat(int i, const RefSymmSCMatrix &);
 
-    void set_pmat(int i, const Ref<SymmSCMatrix> &);
+    void set_pmat(int i, const RefSymmSCMatrix &);
 
     void copy_matrices(int unique_id);
     void accum(const Ref<FockContribution> &);

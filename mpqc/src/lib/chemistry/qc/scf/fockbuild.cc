@@ -287,7 +287,7 @@ ReplFockBuildMatrix::fix_diagonal_blocks() const
 }
 
 void
-ReplFockBuildMatrix::scmat_to_data(const Ref<SymmSCMatrix> &m,
+ReplFockBuildMatrix::scmat_to_data(const RefSymmSCMatrix &m,
                                    const Ref<GaussianBasisSet> &b,
                                    bool copy)
 {
@@ -354,7 +354,7 @@ ReplFockBuildMatrix::scmat_to_data(const Ref<SymmSCMatrix> &m,
 }
 
 void
-ReplFockBuildMatrix::scmat_to_data(const Ref<SCMatrix> &m,
+ReplFockBuildMatrix::scmat_to_data(const RefSCMatrix &m,
                                    const Ref<GaussianBasisSet> &b1,
                                    const Ref<GaussianBasisSet> &b2,
                                    bool copy)
@@ -1006,7 +1006,7 @@ DistFockBuildMatrix::fix_diagonal_blocks() const
 }
 
 void
-DistFockBuildMatrix::scmat_to_data(const Ref<SymmSCMatrix> &m,
+DistFockBuildMatrix::scmat_to_data(const RefSymmSCMatrix &m,
                                    const Ref<GaussianBasisSet> &b,
                                    bool copy)
 {
@@ -1077,7 +1077,7 @@ DistFockBuildMatrix::scmat_to_data(const Ref<SymmSCMatrix> &m,
 }
 
 void
-DistFockBuildMatrix::scmat_to_data(const Ref<SCMatrix> &m,
+DistFockBuildMatrix::scmat_to_data(const RefSCMatrix &m,
                                    const Ref<GaussianBasisSet> &b1,
                                    const Ref<GaussianBasisSet> &b2,
                                    bool copy)
@@ -1655,7 +1655,7 @@ GenericFockContribution::fockbuildmatrix(int matrix,
 }
 
 void
-GenericFockContribution::set_fmat(int i, const Ref<SCMatrix> &m)
+GenericFockContribution::set_fmat(int i, const RefSCMatrix &m)
 {
   if (f_b1_equiv_f_b2) {
       throw ProgrammingError("set_fmat: rect but bases equiv",
@@ -1667,7 +1667,7 @@ GenericFockContribution::set_fmat(int i, const Ref<SCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_fmat(int i, const Ref<SymmSCMatrix> &m)
+GenericFockContribution::set_fmat(int i, const RefSymmSCMatrix &m)
 {
   if (!f_b1_equiv_f_b2) {
       throw ProgrammingError("set_fmat: symm but bases not equiv",
@@ -1679,7 +1679,7 @@ GenericFockContribution::set_fmat(int i, const Ref<SymmSCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_jmat(int i, const Ref<SCMatrix> &m)
+GenericFockContribution::set_jmat(int i, const RefSCMatrix &m)
 {
   if (f_b1_equiv_f_b2) {
       throw ProgrammingError("set_jmat: rect but bases equiv",
@@ -1690,7 +1690,7 @@ GenericFockContribution::set_jmat(int i, const Ref<SCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_jmat(int i, const Ref<SymmSCMatrix> &m)
+GenericFockContribution::set_jmat(int i, const RefSymmSCMatrix &m)
 {
   if (!f_b1_equiv_f_b2) {
       throw ProgrammingError("set_jmat: symm but bases not equiv",
@@ -1701,7 +1701,7 @@ GenericFockContribution::set_jmat(int i, const Ref<SymmSCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_kmat(int i, const Ref<SCMatrix> &m)
+GenericFockContribution::set_kmat(int i, const RefSCMatrix &m)
 {
   if (f_b1_equiv_f_b2) {
       throw ProgrammingError("set_kmat: rect but bases equiv",
@@ -1712,7 +1712,7 @@ GenericFockContribution::set_kmat(int i, const Ref<SCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_kmat(int i, const Ref<SymmSCMatrix> &m)
+GenericFockContribution::set_kmat(int i, const RefSymmSCMatrix &m)
 {
   if (!f_b1_equiv_f_b2) {
       throw ProgrammingError("set_kmat: symm but bases not equiv",
@@ -1723,7 +1723,7 @@ GenericFockContribution::set_kmat(int i, const Ref<SymmSCMatrix> &m)
 }
 
 void
-GenericFockContribution::set_pmat(int i, const Ref<SymmSCMatrix> &m)
+GenericFockContribution::set_pmat(int i, const RefSymmSCMatrix &m)
 {
   pmats_[i]->scmat_to_data(m, p_b_, true);
 }

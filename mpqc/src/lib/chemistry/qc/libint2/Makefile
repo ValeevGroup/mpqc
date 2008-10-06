@@ -41,7 +41,7 @@ TESTCSRC = libint2test.cc
 
 CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc bounds.cc storage.cc \
 	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
-	hcore.cc obosrr.cc edipole.cc equadrupole.cc
+	hcore.cc obosrr.cc edipole.cc equadrupole.cc p4.cc
 ifeq ($(HAVE_LIBINT2_ERI),yes)
   CXXSRC += eri.cc comp_eri.cc
 endif

@@ -89,7 +89,7 @@ Int1eLibint2::Int1eLibint2(Integral *integral,
   if (need_overlap_) {
     // Allocate OIXYZ
     // max_am+1 - the range of exponents of x, y, and z
-    // 2 - to get kinetic energy integrals
+    // 2 - to get kinetic energy or p4 integrals
     // order - to allow for derivatives
     OIX_ = init_block_(max_am+1+2+order,max_am+1+2+order);
     OIY_ = init_block_(max_am+1+2+order,max_am+1+2+order);

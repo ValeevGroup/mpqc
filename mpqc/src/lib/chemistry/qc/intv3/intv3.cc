@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
@@ -167,6 +168,12 @@ Ref<OneBodyInt>
 IntegralV3::p_dot_nuclear_p()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::p_dot_nuclear_p);
+}
+
+Ref<OneBodyInt>
+IntegralV3::p4()
+{
+  throw FeatureNotImplemented("IntegralV3 cannot compute p4 integrals. Try other factories.");
 }
 
 Ref<OneBodyInt>

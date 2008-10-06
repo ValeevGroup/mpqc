@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/cints/cartit.h>
@@ -176,6 +177,12 @@ Ref<OneBodyInt>
 IntegralCints::nuclear()
 {
   return new OneBodyIntCints(this, bs1_, bs2_, &Int1eCints::nuclear);
+}
+
+Ref<OneBodyInt>
+IntegralCints::p4()
+{
+  throw FeatureNotImplemented("IntegralCints cannot compute p4 integrals. Try other integral factories.");
 }
 
 Ref<OneBodyInt>

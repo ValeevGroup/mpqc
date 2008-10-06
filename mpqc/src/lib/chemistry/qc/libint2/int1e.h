@@ -119,6 +119,7 @@ class Int1eLibint2: public RefCount {
     void hcore_sameam_general_();
     void edipole_full_general_();
     void equadrupole_full_general_();
+    void p4_full_general_();
 
     // Utility functions
     double **init_block_(int, int);     // Used to allocate OIXYZ
@@ -151,6 +152,7 @@ class Int1eLibint2: public RefCount {
     void hcore(int ish, int jsh);
     void edipole(int ish, int jsh);
     void equadrupole(int ish, int jsh);
+    void p4(int ish, int jsh);
 };
 
 }

@@ -245,6 +245,9 @@ class Integral : public SavableState {
         is a vector of three integrals. */
     virtual Ref<OneBodyInt> p_cross_nuclear_p();
 
+    /// Return a OneBodyInt that computes p^4 = (p \dot p)^2.
+    virtual Ref<OneBodyInt> p4() =0;
+
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
     virtual Ref<OneBodyInt> hcore() = 0;
 

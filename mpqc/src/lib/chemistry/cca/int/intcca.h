@@ -341,6 +341,8 @@ namespace sc {
 
     Ref<OneBodyInt> nuclear();
 
+    Ref<OneBodyInt> p4();
+
     Ref<OneBodyInt> hcore();
 
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);

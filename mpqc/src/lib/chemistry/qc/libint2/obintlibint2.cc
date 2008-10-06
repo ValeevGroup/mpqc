@@ -41,7 +41,8 @@ OneBodyIntLibint2::OneBodyIntLibint2(Integral* integral,
     need_overlap = false;
   }
   else if (ifunc == &Int1eLibint2::overlap || ifunc == &Int1eLibint2::kinetic ||
-	   ifunc == &Int1eLibint2::edipole || ifunc == &Int1eLibint2::equadrupole) {
+	   ifunc == &Int1eLibint2::edipole || ifunc == &Int1eLibint2::equadrupole ||
+	   ifunc == &Int1eLibint2::p4) {
     need_coulomb = false;
   }
 

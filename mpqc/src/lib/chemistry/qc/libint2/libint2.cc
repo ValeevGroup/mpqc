@@ -288,6 +288,12 @@ IntegralLibint2::nuclear()
 }
 
 Ref<OneBodyInt>
+IntegralLibint2::p4()
+{
+  return new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::p4);
+}
+
+Ref<OneBodyInt>
 IntegralLibint2::hcore()
 {
   return new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::hcore);

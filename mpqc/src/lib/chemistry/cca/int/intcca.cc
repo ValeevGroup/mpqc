@@ -428,6 +428,12 @@ IntegralCCA::nuclear()
 }
 
 Ref<OneBodyInt>
+IntegralCCA::p4()
+{
+  throw FeatureNotImplemented("IntegralCCA cannot compute p4 integrals. Try other integral factories.");
+}
+
+Ref<OneBodyInt>
 IntegralCCA::hcore()
 {
   eval_req_.clear();

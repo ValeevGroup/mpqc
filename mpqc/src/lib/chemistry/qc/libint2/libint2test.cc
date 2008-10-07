@@ -33,7 +33,10 @@
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
 #include <util/group/pregtime.h>
+#include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -71,6 +74,7 @@ void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
 void test_3_center(const Ref<KeyVal>&, const Ref<Int2eV3> &);
 void test_4_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3);
 void test_4der_center(const Ref<KeyVal>&, const Ref<Int2eV3> &int2ev3);
+void test_p4(const Ref<KeyVal>& keyval, const Ref<Integral>& ints);
 
 #define maxint 9
 
@@ -161,6 +165,8 @@ int main(int argc, char **argv)
   testint(nuclearlibint2);
   Ref<OneBodyInt> hcorelibint2 = integrallibint2->hcore();
   testint(hcorelibint2);
+  Ref<OneBodyInt> p4libint2 = integrallibint2->p4();
+  testint(p4libint2);
   Ref<OneBodyInt> edipolelibint2 = integrallibint2->dipole(0);
   testint(edipolelibint2);
 
@@ -214,6 +220,10 @@ int main(int argc, char **argv)
   compare_1e_libint2_vs_v3(hcorelibint2,hcorev3);
   cout << "Testing Libint2' electric dipole moment integrals against IntV3's" << endl;
   compare_1e3_libint2_vs_v3(edipolelibint2,edipolev3);
+  
+  cout << "Testing Libint2' p^4 integrals" << endl;
+  test_p4(tkeyval,integrallibint2);
+
 #endif
   
   //  compare_2e_permute(integrallibint2);
@@ -1578,6 +1588,37 @@ test_4der_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3)
     }
 
   if (bounds) int2ev3->done_bounds_1der();
+}
+
+void
+test_p4(const Ref<KeyVal>& tkeyval, const Ref<Integral>& ints) {
+  
+  Ref<Wavefunction> wfn = require_dynamic_cast<Wavefunction*>(
+    tkeyval->describedclassvalue("wfn").pointer(),"test_p4\n");
+  
+  const RefSymmSCMatrix P = wfn->density();
+  const Ref<GaussianBasisSet> bs = wfn->basis();
+  ints->set_basis(bs,bs);
+  Ref<OneBodyInt> obint = ints->p4();
+  Ref<PetiteList> pl = ints->petite_list();
+  RefSCDimension so_dim = pl->SO_basisdim();
+  RefSCDimension ao_dim = pl->AO_basisdim();
+  Ref<SCMatrixKit> so_kit = bs->so_matrixkit();
+  Ref<SCMatrixKit> kit = bs->matrixkit();
+  
+  // compute p^4 in SO basis
+  RefSymmSCMatrix p4_skel(ao_dim, kit);
+  p4_skel.assign(0.0);
+  Ref<SCElementOp> p4intop = new OneBodyIntOp(new SymmOneBodyIntIter(obint, pl));
+  p4_skel.element_op(p4intop);
+  p4intop=0;
+  RefSymmSCMatrix p4(so_dim, so_kit);
+  pl->symmetrize(p4_skel,p4);
+  p4_skel = 0;
+
+  const double c = 137.0359895;
+  const double mv = - (p4 * P).trace()/(8.0 * c * c);
+  std::cout << "mass-velocity term = " << mv << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

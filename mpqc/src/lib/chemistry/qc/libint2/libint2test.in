@@ -149,7 +149,7 @@ currentbas<GaussianBasisSet>: (
   %name = "cc-pVTZ"
   %name = "STO-3G"
   %name = "6-31G*"
-  %name = "cc-pVDZ"
+  name = "cc-pVDZ"
   %name = "cc-pVTZ"
   %name = "cc-pVQZ"
   %name = "DZ (Dunning)"
@@ -205,6 +205,7 @@ test: (
    unique = yes
    %quartet = [0 0 0 1]
    %storage = 10000
+   wfn = $:wfn
  )
 
 % a few basis sets for convenience
@@ -297,4 +298,10 @@ basis:(
   helium: test2: [
      (get = STO-3G)
     ]
+)
+
+wfn<CLHF> : (
+  molecule = $:molecule
+  basis = $:basisset
+  integrals<IntegralLibint2>:()
 )

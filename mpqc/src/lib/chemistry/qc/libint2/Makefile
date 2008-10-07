@@ -65,10 +65,6 @@ LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
-#LTLINKLIBOPTS += $(LDFLAGS)
-#ifeq ($(HAVE_LIBINT2),yes)
-#  LTLINKLIBOPTS += -lint2
-#endif
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 DISTFILES = $(TESTCSRC) $(INC) Makefile
@@ -82,8 +78,8 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-libint2test: libint2test.$(OBJSUF) \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+TESTLIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../wfn/LIBS.h)
+libint2test: libint2test.$(OBJSUF) $(TESTLIBS) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o libint2test $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 libint2test.$(OBJSUF): libint2test.cc

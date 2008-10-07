@@ -246,7 +246,11 @@ class R12IntEval : virtual public SavableState {
                                            bool include_MV = true);
   // Computes the skalar Pauli-Hamiltonian (T + V + mass_velocity + Darwin), 
   // with the mass-velocity term evaluated in the momentum basis.
-  RefSymmSCMatrix pauli(const Ref<GaussianBasisSet> &bas,
+  RefSymmSCMatrix pauli(const Ref<GaussianBasisSet> &bas, 
+                        const Ref<GaussianBasisSet> &pbas = 0,
+                        const bool momentum=false);
+  RefSymmSCMatrix pauli_realspace(const Ref<GaussianBasisSet> &bas);
+  RefSymmSCMatrix pauli_momentumspace(const Ref<GaussianBasisSet> &bas,
                         const Ref<GaussianBasisSet> &p_bas);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,

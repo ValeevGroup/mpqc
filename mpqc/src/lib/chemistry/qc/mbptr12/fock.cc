@@ -106,8 +106,22 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
   if (dk==0) {pauli_=false;}
 
   RefSymmSCMatrix hsymm;
+
+// flodbg
+//  ExEnv::out0() << "florian, vor pauli" << endl;
+//  hsymm = pauli(hcore_basis,p_basis,true);
+//  ExEnv::out0() << "flo1" << endl;
+//  RefSymmSCMatrix hsymm2 = pauli(hcore_basis);
+//  ExEnv::out0() << "flo2" << endl;
+//  hsymm.scale(-1.0);
+//  hsymm.accumulate(hsymm2);
+//  hsymm.print("Pauli: real vs momentum space");
+//  ExEnv::out0() << "florian, nach pauli" << endl;
+//  throw ProgrammingError( "flo in progress", __FILE__, __LINE__, class_desc());
+// flodbg
+
   if (pauli_) {
-    hsymm = pauli(hcore_basis,p_basis);
+    hsymm = pauli(hcore_basis);
   } 
   else {   
     // include the full DKH-Hamiltionian, or the NR-Hamiltonian, depending on the reference
@@ -761,9 +775,109 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
   return h_dk_so;
 }
 
+RefSymmSCMatrix
+R12IntEval::pauli(
+  const Ref<GaussianBasisSet> &basis,
+  const Ref<GaussianBasisSet> &pbas,
+  const bool momentum)
+{   
+  RefSymmSCMatrix hcore;
+  
+  if (momentum) {
+    hcore = pauli_momentumspace(basis, pbas);
+  }
+  else { 
+    hcore = pauli_realspace(basis);
+  }
+
+  return hcore;
+}
+
 
 RefSymmSCMatrix
-R12IntEval::pauli(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas)
+R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
+{
+  const double c = 137.0359895; // speed of light in a vacuum in a.u.
+
+  Ref<Integral> localints = r12info_->integral()->clone();
+  localints->set_basis(bas);
+
+  Ref<PetiteList> pl = localints->petite_list();
+
+  // form skeleton Hcore in AO basis
+  RefSymmSCMatrix hao(bas->basisdim(), bas->matrixkit());
+  hao.assign(0.0);
+
+  // kinetic energy
+  Ref<SCElementOp> hc =
+    new OneBodyIntOp(new SymmOneBodyIntIter(localints->kinetic(), pl));
+  hao.element_op(hc);
+  hc=0;
+
+  // molecular potential
+  Ref<OneBodyInt> nuc = localints->nuclear();
+  nuc->reinitialize();
+  hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
+  hao.element_op(hc);
+  hc=0;
+  
+  // mass-velocity
+  Ref<OneBodyInt> mv = localints->p4();
+  mv->reinitialize();
+  hc = new OneBodyIntOp(new SymmOneBodyIntIter(mv, pl));
+  RefSymmSCMatrix mv_ao(bas->basisdim(), bas->matrixkit());
+  mv_ao.assign(0.0);
+  mv_ao.element_op(hc);
+  mv_ao.scale((-1.0)/(8.0*c*c));
+  hao.accumulate(mv_ao);
+  mv_ao=0;
+  hc=0;
+
+  // Darwin term
+  RefSymmSCMatrix Darwin(bas->basisdim(), bas->matrixkit());
+  Darwin.assign(0.0);
+  {
+    const double darwin_prefac = M_PI/(c*c*2.0);
+    MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
+    
+    GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,localints);
+    const int nbasis1 = bas->nbasis();
+    double* values1=new double[nbasis1];
+    const int natom=mp2wfn->molecule()->natom();
+    
+    for (int iatom=0; iatom<natom; iatom++) {
+      
+      SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
+      // this puts values of basis functions evaluated at R_iatom into values1
+      bas->values(R_iatom, vdata1, values1);
+      const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
+      
+      for (int ibasis=0; ibasis<bas->nbasis(); ibasis++) {
+        for (int jbasis=0; jbasis<=ibasis; jbasis++) {
+          
+          const double d=values1[ibasis]*values1[jbasis]*prefac;
+          Darwin.accumulate_element(ibasis, jbasis, d);
+        }
+      }
+    }
+    delete[] values1;
+    delete vdata1;
+  }
+  hao.accumulate(Darwin);
+
+
+  // now symmetrize Hso
+  RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
+  pl->symmetrize(hao,h);
+
+//  h.print("pauli_realspace");
+
+  return h;
+}
+
+
+RefSymmSCMatrix
+R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas)
 {
   // cast Wavefunction to MBPT2
   MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
@@ -1011,6 +1125,8 @@ R12IntEval::pauli(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> 
   Darwin.print("Darwin term");
 #endif
   h_dk_so.accumulate(Darwin);
+
+//  h_dk_so.print("pauli_momentumspace");
 
   return h_dk_so;
 }

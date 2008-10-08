@@ -31,6 +31,10 @@
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/basis/petite.h>
 
+// tests against analytic results from Mathematica suggest that M contribution comes out too large by a factor of 2
+// TODO: figure out where we made an apparent error for a factor of 2
+#define P_INCLUDES_Mover2 1
+
 using namespace std;
 using namespace sc;
 
@@ -184,6 +188,10 @@ void R12IntEval::compute_B_DKH_() {
     // hence multiply by 8
     B_DKH.scale(8.0 * minus_one_over_8c2);
     
+#if P_INCLUDES_Mover2
+    B_DKH.scale(0.5);
+#endif
+
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M1)").c_str());
     }
@@ -217,6 +225,9 @@ void R12IntEval::compute_B_DKH_() {
                                                               tforms_g12dkh,
                                                               descrs_g12dkh);
     B_DKH.scale(minus_one_over_8c2);
+#if P_INCLUDES_Mover2
+    B_DKH.scale(0.5);
+#endif
     if (debug_ >= DefaultPrintThresholds::O4) {
       B_DKH.print(prepend_spincase(spincase2,"B(DKH2) contribution (M2+M3)").c_str());
     }

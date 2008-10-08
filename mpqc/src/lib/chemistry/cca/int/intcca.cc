@@ -45,6 +45,7 @@
 #include <ChemistryDescrCXX_PcrossNuclearPDescr.hxx>
 #include <ChemistryDescrCXX_KineticDescr.hxx>
 #include <ChemistryDescrCXX_NuclearDescr.hxx>
+#include <ChemistryDescrCXX_P4Descr.hxx>
 #include <ChemistryDescrCXX_HCoreDescr.hxx>
 #include <ChemistryDescrCXX_DipoleDescr.hxx>
 #include <ChemistryDescrCXX_QuadrupoleDescr.hxx>
@@ -430,7 +431,15 @@ IntegralCCA::nuclear()
 Ref<OneBodyInt>
 IntegralCCA::p4()
 {
-  throw FeatureNotImplemented("IntegralCCA cannot compute p4 integrals. Try other integral factories.");
+  eval_req_.clear();
+  P4Descr desc =
+    P4Descr::_create();
+  cca_dcs_.push_back( ChemistryDescrCXX::DerivCenters::_create() );
+  desc.set_deriv_centers( cca_dcs_.back() );
+  descs_.push_back( desc );
+  eval_req_.add_descr( desc );
+  
+  return get_onebody( eval_req_ );
 }
 
 Ref<OneBodyInt>

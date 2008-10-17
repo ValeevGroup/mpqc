@@ -59,6 +59,8 @@ OneBodyIntCCA::OneBodyIntCCA( Integral* integral,
   else
     cca_bs2_ = cca_bs1_;
 
+  cca_bs1_.print_molecular();
+
   // there are no onebody evaluators currently in mpqc
   // that handle multiple types, so CompositeDescr contains exactly 1 Descr
 
@@ -92,7 +94,6 @@ OneBodyIntCCA::compute_shell(int i, int j)
   eval_.compute( i, j );
 
   // temporary debugging stuff for cca integrals comparison
-/*
   if( 1 ) {
     std::cerr << "CCA buffer for shell doublet:\n";
     std::cerr << "shellnum1: " << i << std::endl;
@@ -111,7 +112,6 @@ OneBodyIntCCA::compute_shell(int i, int j)
       std::cerr << buffer_[ii] << std::endl;
     std::cerr << std::endl;
   }
-*/
 
 }
 

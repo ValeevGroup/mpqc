@@ -102,6 +102,7 @@ namespace MPQC {
       gov::cca::TypeMap tm_;
       gov::cca::ports::ParameterPortFactory ppf_;
       gov::cca::ports::ParameterPort pp_;
+      gov::cca::TypeMap cqos_tm_;
 
       Chemistry::MoleculeFactoryInterface molecule_factory_;
       Chemistry::MoleculeInterface molecule_;
@@ -230,7 +231,7 @@ namespace MPQC {
     /**
      *  Starts up a component presence in the calling framework.
      * @param services the component instance's handle on the framework world.
-     * Contracts concerning services and setServices:
+     * Contracts concerning Svc and setServices:
      * 
      * The component interaction with the CCA framework
      * and Ports begins on the call to setServices by the framework.
@@ -238,7 +239,7 @@ namespace MPQC {
      * This function is called exactly once for each instance created
      * by the framework.
      * 
-     * The argument services will never be nil/null.
+     * The argument Svc will never be nil/null.
      * 
      * Those uses ports which are automatically connected by the framework
      * (so-called service-ports) may be obtained via getPort during

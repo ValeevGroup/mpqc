@@ -15,6 +15,9 @@
 #ifndef included_Chemistry_MoleculeInterface_hxx
 #include "Chemistry_MoleculeInterface.hxx"
 #endif
+#ifndef included_gov_cca_TypeMap_hxx
+#include "gov_cca_TypeMap.hxx"
+#endif
 #ifndef included_sidl_BaseInterface_hxx
 #include "sidl_BaseInterface.hxx"
 #endif
@@ -460,6 +463,38 @@ MPQC::Model_impl::get_guess_hessian_accuracy_impl ()
   return DBL_EPSILON;
 
   // DO-NOT-DELETE splicer.end(MPQC.Model.get_guess_hessian_accuracy)
+}
+
+/**
+ *  Sets the initial CQoS metadata typemap.  
+ * The model may augment this typemap.
+ * @param typemap The initial typemap. 
+ */
+void
+MPQC::Model_impl::set_metadata_impl (
+  /* in */::gov::cca::TypeMap typemap ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_metadata)
+
+  cqos_tm_ = typemap;
+    
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_metadata)
+}
+
+/**
+ *  Returns CQoS metadata typemap.
+ * @return Metadata typemap. 
+ */
+::gov::cca::TypeMap
+MPQC::Model_impl::get_metadata_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_metadata)
+
+  cqos_tm_.putInt("nelectron",wfn_->nelectron());
+  return cqos_tm_;
+    
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_metadata)
 }
 
 /**

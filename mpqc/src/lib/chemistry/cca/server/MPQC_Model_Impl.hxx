@@ -26,6 +26,9 @@
 #ifndef included_MPQC_Model_hxx
 #include "MPQC_Model.hxx"
 #endif
+#ifndef included_gov_cca_TypeMap_hxx
+#include "gov_cca_TypeMap.hxx"
+#endif
 #ifndef included_sidl_BaseClass_hxx
 #include "sidl_BaseClass.hxx"
 #endif
@@ -65,6 +68,7 @@ namespace MPQC {
 
     sc::Ref<sc::Wavefunction> wfn_;
     Chemistry::MoleculeInterface molecule_;
+    gov::cca::TypeMap cqos_tm_;
 
     // DO-NOT-DELETE splicer.end(MPQC.Model._implementation)
 
@@ -268,6 +272,25 @@ namespace MPQC {
      */
     double
     get_guess_hessian_accuracy_impl() ;
+
+    /**
+     *  Sets the initial CQoS metadata typemap.  
+     * The model may augment this typemap.
+     * @param typemap The initial typemap. 
+     */
+    void
+    set_metadata_impl (
+      /* in */::gov::cca::TypeMap typemap
+    )
+    ;
+
+
+    /**
+     *  Returns CQoS metadata typemap.
+     * @return Metadata typemap. 
+     */
+    ::gov::cca::TypeMap
+    get_metadata_impl() ;
 
     /**
      *  This should be called when the object is no longer needed.

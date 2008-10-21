@@ -42,9 +42,6 @@
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
 
-// set to 1 to include the cusp region in the fit, other use Tew&Klopper's strategy
-#define INCLUDE_CUSP_IN_GTG_FIT 0
-
 using namespace std;
 using namespace sc;
 using namespace sc::LinearR12;

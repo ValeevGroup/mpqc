@@ -59,7 +59,16 @@ class R12Technology: virtual public SavableState {
 
     // for debugging purposes only
     bool omit_B_;
-
+    
+    // no need to store this guy
+#if 0
+    // determines the weight function used to fit the correlation factor
+    struct GTGFitWeight {
+      typedef enum {TewKlopper, Cusp} Type;
+    };
+    GTGFitWeight::Type gtg_fit_weight_;
+#endif
+    
   public:
     R12Technology(StateIn&);
     /** The KeyVal constructor.
@@ -147,6 +156,12 @@ class R12Technology: virtual public SavableState {
 	positive pair energy corrections can result from using too many correlation functions.
 	<tt>posdef_B = yes</tt> offers the best protection against nonphysical results.
 	The default is <tt>weak</tt>, which is cheaper <tt>yes</tt> and is definitely safer than <tt>no</tt>.
+	
+	<dt><tt>gtg_fit_weight</tt><dd> This keyword determines how the correlation factor is fit to Gaussians (hence
+	only valid when <tt>corr_factor</tt> is set to <tt>stg-ng</t>)
+	The choices are <tt>tewklopper</tt>, which is appropriate for energy computations, and <tt>cusp</tt>, which is appropriate
+	for accurate cusp region description. The default is <tt>tewklopper</tt>. Choosing <tt>cusp</tt> is probably only appropriate
+	when many (9 or more) Gaussians are used for the fit.
 
         </dl> */
     R12Technology(const Ref<KeyVal>&,

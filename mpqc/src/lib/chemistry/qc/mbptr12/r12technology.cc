@@ -45,9 +45,6 @@
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
-// set to 1 to include the cusp region in the fit, otherwise use Tew&Klopper's strategy
-#define INCLUDE_CUSP_IN_GTG_FIT 0
-
 using namespace std;
 using namespace sc;
 using namespace sc::LinearR12;
@@ -293,21 +290,33 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     // convert STGs into combinations of Gaussians
     for(int f=0; f<num_f12; f++) {
 	using namespace sc::mbptr12;
-#if INCLUDE_CUSP_IN_GTG_FIT
-	// fit using weight exp(-0.005*r^6), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
-	PowerGaussian1D w(0.005,6,0);
-#else
-	// fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
-	PowerGaussian1D w(2.0,2,2);
-#endif
+	PowerGaussian1D* w;
+	// Default is to use TewKlopper fit
+	const std::string gtg_fit_weight = keyval->stringvalue("gtg_fit_weight",KeyValValuestring(std::string("tewklopper")));
+	if (gtg_fit_weight == std::string("TewKlopper") ||
+	    gtg_fit_weight == std::string("TEWKLOPPER") ||
+	    gtg_fit_weight == std::string("tewklopper") ) {
+	  // fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
+	  w = new PowerGaussian1D(2.0,2,2);
+	}
+	else if (gtg_fit_weight == std::string("Cusp") ||
+	    gtg_fit_weight == std::string("CUSP") ||
+        gtg_fit_weight == std::string("cusp")) {
+	  // fit using weight exp(-0.005*r^6), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
+	  w = new PowerGaussian1D(0.005,6,0);
+	}
+	else {
+	  throw InputError("Invalid value for keyword gtg_fit_weight",__FILE__,__LINE__);
+	}
 	typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
-	GTGFit gtgfit(ng12, w, 0.0, 10.0, 1001);
+	GTGFit gtgfit(ng12, *w, 0.0, 10.0, 1001);
 	// fit r12^k exp(-gamma*r_{12})
 	const int k = 0;
 	const double gamma = stg_exponents[f];
 	Ref<G12CorrelationFactor> cf;
 	cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
 	params.push_back(cf->function(0));
+	delete w;
     }
 
     // If stdapprox_ == C, no need for commutators

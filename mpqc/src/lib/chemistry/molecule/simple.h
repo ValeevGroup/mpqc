@@ -118,7 +118,9 @@ class SimpleCo : public IntCoor {
     /// Fill in a row of the B matrix.
     void bmat(const Ref<Molecule>&,RefSCVector&bmat,double coef = 1.0);
 
-    /// Calculates an approximate force constant and returns it's value.
+    /// Calculates an approximate force constant and returns it's
+    /// value.  Specializations implement this using the method of
+    /// Fischer and Alml&ouml;f, J. Phys. Chem., 1992, 96, pp. 9768-9774.
     virtual double calc_force_con(Molecule&) = 0;
     /** Calculate the value of the coordinate based on what's in Molecule.
         If given a double*, fill in that part of the B matrix.  If the

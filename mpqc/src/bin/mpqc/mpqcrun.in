@@ -284,8 +284,19 @@ if ($nodes ne "") {
     }
 }
 elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
+    # this will get the nodelist from the PBS batch scheduler
     $nodefile=$ENV{"PBS_NODEFILE"};
 }
+elsif ("$nodefile" eq "" && exists($ENV{"LSB_MCPU_HOSTS"})) {
+    # this will get the nodelist from the LSF batch scheduler
+    @y = split / /, $ENV{"LSB_MCPU_HOSTS"};
+    @nodelist = ();
+    for ($i=0; $i<=$#y; $i+=2) {
+        print $y[$i], "\n";
+        $nodelist[$#nodelist+1] = $y[$i];
+    }
+}
+
 if ("$nodefile" ne "" && -f "$nodefile") {
     my %nodesfound = {};
     open(NODEFILE,"<$nodefile");

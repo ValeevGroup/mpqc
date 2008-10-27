@@ -295,6 +295,9 @@ elsif ("$nodefile" eq "" && exists($ENV{"LSB_MCPU_HOSTS"})) {
         print $y[$i], "\n";
         $nodelist[$#nodelist+1] = $y[$i];
     }
+elsif ("$nodefile" eq "" && exists($ENV{"PE_HOSTFILE"})) {
+    # this will get the nodelist from the SGE batch scheduler
+    $nodefile=$ENV{"PE_HOSTFILE"};
 }
 
 if ("$nodefile" ne "" && -f "$nodefile") {

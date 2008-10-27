@@ -139,14 +139,20 @@ features.
 \section compileconf Configuration
 
  You can build MPQC in the source code directory or you can make a
-companion directory which will be used to hold all of the files generated
+companion target directory which will be used to hold all of the files generated
 by the compilation.  You may name this directory anything you want.
 Typically, this directory is named to indicate the architecture
 (e.g. <tt>mpqc.i686-linux</tt>) and will be referred to as the target
 directory below.
 
+ A <tt>configure</tt> script is used to prepare MPQC for compilation.
+Release tarballs of MPQC contain a prepared configure script.  Users
+checking out code from the MPQC subversion repository must generate a
+<tt>configure</tt> script by running <tt>make configure</tt> in the
+top-level source directory.
+
  In the target directory execute the <tt>configure</tt> command which is
-located in the SC source directory.  Use the absolute pathname to the
+located in the source directory.  Use the absolute pathname to the
 configure script.  This command should build a hierarchy of target
 directories and the necessary makefiles. Do a <tt>configure --help</tt> to
 see a list of options.  Options are specified with an equals sign, as in

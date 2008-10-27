@@ -198,6 +198,17 @@ OneBodyInt::reinitialize()
 {
 }
 
+std::pair<const double *,unsigned long[2]>
+OneBodyInt::compute_shell_array(int i,int j)
+{
+  compute_shell(i,j);
+  std::pair<const double *,unsigned long[2]> r;
+  r.first = buffer();
+  r.second[0] = basis1()->shell(i).nfunction();
+  r.second[1] = basis2()->shell(j).nfunction();
+  return r;
+}
+
 bool
 OneBodyInt::cloneable()
 {

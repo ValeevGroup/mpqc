@@ -161,6 +161,31 @@ TwoBodyInt::buffer(tbint_type i) const
   return 0;
 }
 
+std::pair<std::map<TwoBodyInt::tbint_type,const double*>,unsigned long[4]>
+TwoBodyInt::compute_shell_arrays(int i,int j, int k, int l)
+{
+  int saved_redundant = redundant();
+  set_redundant(1);
+
+  compute_shell(i,j,k,l);
+
+  set_redundant(saved_redundant);
+
+  std::pair<std::map<tbint_type,const double*>,unsigned long[4]> r;
+
+  for (unsigned int it=0; it<num_tbint_types(); it++) {
+      tbint_type tbit = inttype(it);
+      r.first[tbit] = buffer(tbit);
+  }
+
+  r.second[0] = basis1()->shell(i).nfunction();
+  r.second[1] = basis2()->shell(j).nfunction();
+  r.second[2] = basis3()->shell(k).nfunction();
+  r.second[3] = basis4()->shell(l).nfunction();
+
+  return r;
+}
+
 void
 TwoBodyInt::set_integral_storage(size_t storage)
 {

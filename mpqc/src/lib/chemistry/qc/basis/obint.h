@@ -145,6 +145,11 @@ class OneBodyInt : public RefCount {
         given shell pair. */
     virtual void compute_shell(int,int) = 0;
 
+    /** Computes the integrals between basis functions in the given
+        shell pair. This is used in the python interface where the
+        return type is automatically converted to a numpy array. */
+    std::pair<const double *,unsigned long[2]> compute_shell_array(int,int);
+
     /** This is called for one body integrals that take data to let
         them know that the data they reference has changed. */
     virtual void reinitialize();

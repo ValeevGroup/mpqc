@@ -147,6 +147,15 @@ class TwoBodyInt : public RefCount {
         second two indices correspond to electron 2.*/
     virtual void compute_shell(int,int,int,int) = 0;
 
+    /** Given four shell indices, supported two body integral types
+        are computed and returned.  The first two indices correspond
+        to electron 1 and the second two indices correspond to
+        electron 2. This is used in the python interface where the
+        return type is automatically converted to a map of numpy
+        arrays. */
+    std::pair<std::map<tbint_type,const double*>,unsigned long[4]>
+    compute_shell_arrays(int,int,int,int);
+
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block obtained from compute_shell.  An index of -1 for any
         argument indicates any shell.  */

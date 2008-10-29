@@ -53,5 +53,5 @@ $(TOPDIR)/lib/cca/$(TARGET_TO_MAKE).la: $(LIBOBJ) $(LIBS)
 	$(LTLINK) $(CXX) -module -o $@ $^ $(LTLINKLIBOPTS) $(SYSLIBS)
 
 install:: $(TOPDIR)/lib/cca/$(TARGET_TO_MAKE).$(LIBSUF)
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	$(MKINSTALLDIRS) $(installroot)$(libdir)
 	$(LTINST) $(INSTALL) -module $(INSTALLLIBOPT) $< $(installroot)$(libdir)

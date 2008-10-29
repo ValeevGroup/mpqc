@@ -66,21 +66,21 @@ clean:
 	/bin/rm -rf *~
 
 install:
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
+	$(MKINSTALLDIRS) $(installroot)$(prefix)
 	/bin/cp -r html $(installroot)$(prefix)
 
 install_devel: install_man install_samples
 
 .PHONY: install_man
 install_man:
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
+	$(MKINSTALLDIRS) $(installroot)$(prefix)
 	/bin/cp -r man $(installroot)$(prefix)
 
 .PHONY: install_samples
 install_samples:
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)/examples
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)/examples/mp2
+	$(MKINSTALLDIRS) $(installroot)$(prefix)
+	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples
+	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples/mp2
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.cc \
 		$(installroot)$(prefix)/examples/mp2
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.in \

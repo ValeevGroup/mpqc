@@ -25,6 +25,7 @@ THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src/lib/,,$(shell pwd))
 
 CLASS2TEXFLAGS =
 CLASS2TEX = $(PERL) $(SRCTOPDIR)/bin/class2tex
+MKINSTALLDIRS = $(SRCTOPDIR)/bin/mkinstalldirs
 
 # installroot can be given on the command line to force
 # the install targets install to a different directory.

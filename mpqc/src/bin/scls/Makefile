@@ -38,7 +38,7 @@ scls: $(BINOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: scls
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 
 clean::

@@ -57,7 +57,7 @@ scpr: $(BINOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: scpr
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 
 clean::

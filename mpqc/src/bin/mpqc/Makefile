@@ -75,15 +75,15 @@ $(TOPDIR)/lib/libmpqc.la: $(BINOBJ) $(MPQCLTDEPLIBS)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS) $(MPQCLTSYSLIBS)
 
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	test -d $(installroot)$(libdir) || $(MKINSTALLDIRS) $(installroot)$(libdir)
 	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
 
 install:: mpqc
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	test -d $(installroot)$(bindir) || $(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) mpqcrun $(installroot)$(bindir)/mpqcrun
 	$(INSTALL) $(INSTALLSCRIPTOPT) ccarun $(installroot)$(bindir)/ccarun
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)
+	test -d  $(installroot)$(scdatadir) || $(MKINSTALLDIRS) $(installroot)$(scdatadir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) $(SRCDIR)/mpqcrunproc $(installroot)$(scdatadir)/mpqcrunproc
 	$(INSTALL) $(INSTALLSCRIPTOPT) $(SRCDIR)/ccarunproc $(installroot)$(scdatadir)/ccarunproc
 

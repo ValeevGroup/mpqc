@@ -143,14 +143,14 @@ install:: install_target
 endif
 
 install_inc::
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	$(MKINSTALLDIRS) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.hxx $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 	-$(INSTALL) $(INSTALLLIBOPT) *.hxx $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 
 install_target:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	$(MKINSTALLDIRS) $(installroot)$(libdir)
 	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
 endif
 
@@ -164,7 +164,7 @@ install_devel::
 install:: install_target
 
 install_target:: $(TARGET_TO_MAKE)
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(installroot)$(bindir)
 
 endif

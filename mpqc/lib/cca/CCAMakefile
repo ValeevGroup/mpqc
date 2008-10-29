@@ -10,7 +10,7 @@ SERVER_DIR = $(SRCTOPDIR)/src/lib/chemistry/cca/server
 MPQC_SIDL = $(SRCTOPDIR)/lib/cca/sidl/chemistry-mpqc.sidl
 
 babel-mpqc-cxx: $(MPQC_SIDL)
-	$(INSTALL) $(INSTALLDIROPT) $(REPO)
+	$(MKINSTALLDIRS) $(REPO)
 	$(BABEL) --text=xml $(EXT_REPOS) $(EXCLUDE) -o$(REPO) $(MPQC_SIDL)
 	-rm -rf babel.tmpdir
 	mkdir babel.tmpdir

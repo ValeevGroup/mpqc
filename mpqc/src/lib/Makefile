@@ -13,12 +13,12 @@ install::
 	$(LIBTOOL) --finish $(installroot)$(libdir)
 
 install_inc::
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)
+	$(MKINSTALLDIRS) $(installroot)$(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)
 
 install_devel::
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)
+	$(MKINSTALLDIRS) $(installroot)$(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)
 

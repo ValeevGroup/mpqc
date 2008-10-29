@@ -24,6 +24,6 @@ clean:: oclean
 distclean:: oclean
 
 install:: atominfo.kv magic
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)
+	$(MKINSTALLDIRS) $(installroot)$(scdatadir)
 	$(INSTALL) $(INSTALLLIBOPT) $^ $(installroot)$(scdatadir)
 

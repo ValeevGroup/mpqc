@@ -10,17 +10,17 @@ FILES = $(shell echo `find repo`)
 default::
 
 install:: mpqc.cca
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca
+	$(MKINSTALLDIRS) $(installroot)$(libdir)/cca
 	$(INSTALL) $(INSTALLIBOPT) mpqc.cca $(installroot)$(libdir)/cca
 
 install_devel:: $(SRCDIR)/sidl/chemistry-mpqc.sidl
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)/cca/sidl
+	$(MKINSTALLDIRS) $(installroot)$(libdir)/cca
+	$(MKINSTALLDIRS) $(installroot)$(libdir)/cca/sidl
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/sidl/chemistry-mpqc.sidl \
           $(installroot)$(libdir)/cca/sidl
 	for i in $(FILES); do \
          if test -d $${i}; then \
-          $(INSTALL) $(INSTALLDIROPT) $${i} $(installroot)$(libdir)/cca; \
+          $(MKINSTALLDIRS) $${i} $(installroot)$(libdir)/cca; \
          else \
           $(INSTALL) -D $(INSTALLLIBOPT) $${i} \
             $(installroot)$(libdir)/cca/$${i}; \

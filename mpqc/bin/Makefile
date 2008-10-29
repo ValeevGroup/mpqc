@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install_devel::
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) mkf77sym.pl $(installroot)$(bindir)/sc-mkf77sym
 

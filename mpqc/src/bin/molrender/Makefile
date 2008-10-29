@@ -34,7 +34,7 @@ molrender: $(BINOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: molrender
-	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(MKINSTALLDIRS) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 	cd $(TOPDIR); CONFIG_FILES=src/bin/molrender/tkmolrender CONFIG_HEADERS= ./config.status
 	$(INSTALL) $(INSTALLBINOPT) tkmolrender $(installroot)$(bindir)

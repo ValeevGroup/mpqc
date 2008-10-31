@@ -99,7 +99,12 @@ MPQC::CintsEvaluatorFactory_impl::CintsEvaluatorFactory_impl() : StubBase(
 void MPQC::CintsEvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._ctor)
 
+#ifdef HAVE_CINTS
   integral_ = new sc::IntegralCints();
+#else
+  integral_ = 0;
+#endif
+
   DescrInterface desc;
 
   cdesc_ = ChemistryDescrCXX::CompositeDescr::_create();

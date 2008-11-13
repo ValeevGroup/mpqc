@@ -62,6 +62,8 @@ R12IntEval::init_intermeds_g12_()
       const Ref<MOIndexSpace>& occ2 = occ(spin2);
       const Ref<MOIndexSpace>& occ1_act = occ_act(spin1);
       const Ref<MOIndexSpace>& occ2_act = occ_act(spin2);
+      const Ref<MOIndexSpace>& obs1 = refinfo->orbs(spin1);
+      const Ref<MOIndexSpace>& obs2 = refinfo->orbs(spin2);
       const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
       const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
 
@@ -81,7 +83,7 @@ R12IntEval::init_intermeds_g12_()
       // for now it's always true since can only use ij and pq products to generate geminals
       const bool occ12_in_x12 = true;
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xmyn;
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xzyw;
       {
 	  NewTransformCreator tform_creator(
 	      thisref,
@@ -90,19 +92,33 @@ R12IntEval::init_intermeds_g12_()
 	      xspace2,
 	      xspace2,true,true
 	      );
-	  fill_container(tform_creator,tforms_f12f12_xmyn);
+	  fill_container(tform_creator,tforms_f12f12_xzyw);
       }
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyn;
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyj;
       {
-	  // use xmyn, not xiyj, cause if OBS != VBS the former is needed
-	  NewTransformCreator tform_creator(
+      // xiyj is needed, but it's a subset of integrals needed later
+	  // use xmyn if OBS != VBS
+      // use xpyq if OBS == VBS
+      if (obs_eq_vbs) {
+        NewTransformCreator tform_creator(
+          thisref,
+          xspace1,
+          obs1,
+          xspace2,
+          obs2,true
+          );
+        fill_container(tform_creator,tforms_f12_xiyj);        
+      }
+      else {
+        NewTransformCreator tform_creator(
 	      thisref,
 	      xspace1,
 	      occ1,
 	      xspace2,
 	      occ2,true
 	      );
-	  fill_container(tform_creator,tforms_f12_xmyn);
+        fill_container(tform_creator,tforms_f12_xiyj);
+      }
       }
 
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
@@ -110,7 +126,7 @@ R12IntEval::init_intermeds_g12_()
 	  xspace1, occ1_act,
 	  xspace2, occ2_act,
 	  antisymmetrize,
-	  tforms_f12_xmyn
+	  tforms_f12_xiyj
 	  );
       // g12*g12' operator
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -118,7 +134,7 @@ R12IntEval::init_intermeds_g12_()
 	  xspace1, xspace1,
 	  xspace2, xspace2,
 	  antisymmetrize,
-	  tforms_f12f12_xmyn
+	  tforms_f12f12_xzyw
 	  );
       // 0.5 ( g12*[T,g12'] + [g12,T]*g12' ) = [g12,[t1,g12']] + 0.5 ( g12*[T,g12'] - g12'*[T,g12] )
       //   = [g12,[t1,g12']] - 0.5 ( g12*[g12',T] - g12'*[g12,T] ) = [g12,[t1,g12']] - 0.5 ( (beta-alpha)/(beta+alpha) * [g12*g12',T] ),
@@ -129,7 +145,7 @@ R12IntEval::init_intermeds_g12_()
 	  xspace1, xspace1,
 	  xspace2, xspace2,
 	  antisymmetrize,
-	  tforms_f12f12_xmyn
+	  tforms_f12f12_xzyw
 	  );
       // the second is antisymmetric wrt such permutation and is only needed when number of geminals > 1
       if (r12info()->corrfactor()->nfunctions() > 1) {
@@ -146,14 +162,14 @@ R12IntEval::init_intermeds_g12_()
 		  xspace1, xspace1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_f12f12_xmyn
+		  tforms_f12f12_xzyw
 		  );
 	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 		  Banti, corrfactor()->tbint_type_t2f12(),
 		  xspace1, xspace1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_f12f12_xmyn
+		  tforms_f12f12_xzyw
 		  );
 	  }
 	  else {

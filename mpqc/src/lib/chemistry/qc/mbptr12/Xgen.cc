@@ -97,15 +97,15 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // check number of ABS indices, make sure user-imposed maxnabs not exceeded
     //
     const Ref<GaussianBasisSet> abs = r12info()->basis_ri();
-    const unsigned int nabs_in_bra1 = (bra1->basis() == abs);
-    const unsigned int nabs_in_bra2 = (bra2->basis() == abs);
-    const unsigned int nabs_in_ket1 = (ket1->basis() == abs);
-    const unsigned int nabs_in_ket2 = (ket2->basis() == abs);
+    const unsigned int nabs_in_bra1 = abs_eq_obs ? 0 : (bra1->basis() == abs);
+    const unsigned int nabs_in_bra2 = abs_eq_obs ? 0 : (bra2->basis() == abs);
+    const unsigned int nabs_in_ket1 = abs_eq_obs ? 0 : (ket1->basis() == abs);
+    const unsigned int nabs_in_ket2 = abs_eq_obs ? 0 : (ket2->basis() == abs);
     const unsigned int nabs_in_bra = nabs_in_bra1 + nabs_in_bra2;
     const unsigned int nabs_in_ket = nabs_in_ket1 + nabs_in_ket2;
     const unsigned int maxnabs = r12info()->maxnabs();
-    if (!F2_only && nabs_in_bra > maxnabs ||
-	nabs_in_ket > maxnabs) {
+    if (!F2_only && (nabs_in_bra > maxnabs ||
+	             nabs_in_ket > maxnabs)) {
 	throw ProgrammingError("R12IntEval::compute_X_() -- maxnabs is exceeded",__FILE__,__LINE__);
     }
     const unsigned int nabs = max(nabs_in_bra,nabs_in_ket);

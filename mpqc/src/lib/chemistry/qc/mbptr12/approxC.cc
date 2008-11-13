@@ -117,7 +117,7 @@ R12IntEval::compute_BC_()
 #if INCLUDE_Q
 	// if can only use 1 RI index, h+J can be resolved by the OBS
 	Ref<MOIndexSpace> hj_x1, hj_x2;
-	if (maxnabs > 1) {
+	if (maxnabs > 0) {
 	    hj_x1 = hj_x_P(spin1);
 	    hj_x2 = hj_x_P(spin2);
 	}

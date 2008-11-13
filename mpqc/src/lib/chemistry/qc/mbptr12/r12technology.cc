@@ -390,7 +390,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     throw InputError("R12Technology::R12Technology -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);
   
   // Default is to include all integrals, unless using A'' method
-  const int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
+  int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
+  // there are no ABS indices if OBS and ABS are the same
+  if (abs_eq_obs_) default_maxnabs = 0;
   maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(default_maxnabs)));
   
   safety_check_ = keyval->booleanvalue("safety_check",KeyValValueboolean((int)true));

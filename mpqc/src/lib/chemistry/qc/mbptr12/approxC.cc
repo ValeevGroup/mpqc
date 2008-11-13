@@ -92,7 +92,7 @@ R12IntEval::compute_BC_()
     // some combinations are not implemented yet or are not sane
     if (!vbs_eq_obs && ansatz()->projector() == LinearR12::Projector_3)
 	throw FeatureNotImplemented("B(C) cannot be evaluated yet when using ansatz 3 and VBS!=OBS",__FILE__,__LINE__);
-  
+
     Timer tim_B_app_C("B(app. C) intermediate");
     ExEnv::out0() << endl << indent
 		  << "Entered B(app. C) intermediate evaluator" << endl;
@@ -213,6 +213,26 @@ R12IntEval::compute_BC_()
 	    }
 #endif // INCLUDE_P_PKP
 
+	    // in this special case PFP and pFp terms can be combined
+	    if (ansatz()->projector() == LinearR12::Projector_2 && abs_eq_obs && vbs_eq_obs) {
+#if INCLUDE_P_PFP && INCLUDE_P_pFp
+	      {
+	        const Ref<MOIndexSpace> forbs1 = F_p_p(spin1);
+	        const Ref<MOIndexSpace> forbs2 = F_p_p(spin2);
+	        // R_klpr F_pq R_qrij
+	        compute_FxF_(P,spincase2,
+	                     xspace1,xspace2,
+	                     xspace1,xspace2,
+	                     orbs1,orbs2,
+	                     orbs1,orbs2,
+	                     forbs1,forbs2);
+	        if (debug_ >= DefaultPrintThresholds::allO4)
+	          P.print("P(incl R_klpr F_pq R_qrij)");
+	      }
+#endif // INCLUDE_P_PFP
+	    }
+	    else {
+	      
 	    if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
 		{
@@ -316,6 +336,7 @@ R12IntEval::compute_BC_()
 		} // pFp contributes
 #endif // INCLUDE_P_pFp
 	    }
+	    } // end of PFP + pFp code for OBS != ABS
 
       
 	    if (!abs_eq_obs) {
@@ -439,13 +460,9 @@ R12IntEval::compute_BC_()
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
 	    tim_P.exit();
 
-#if 0
 	    if (debug_ >= DefaultPrintThresholds::mostO4) {
-#else
-        {
-#endif
-        std::string label = prepend_spincase(spincase2,"P(C) contribution");
-        P.print(label.c_str());
+	      std::string label = prepend_spincase(spincase2,"P(C) contribution");
+          P.print(label.c_str());
         }
 
 	    B_[s].accumulate(P); P = 0;

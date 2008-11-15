@@ -1461,7 +1461,7 @@ dnl ----------- See if Fortran works --------------
 
 AC_MSG_CHECKING([if fortran compiler works])
 if test -n "$F77" -a "$F77" != no ; then
-  /bin/rm -f ffunc.f flink.c
+  /bin/rm -f ffunc.f
   echo "      program main" > ffunc.f
   echo "      end" >> ffunc.f
   if $F77 -o ffunc ffunc.f 1>&5 2>&5; then
@@ -1477,29 +1477,29 @@ dnl ----------- Fortran symbol names --------------
 
 AC_MSG_CHECKING([fortran symbols])
 if test -n "$F77" -a "$F77" != no ; then
-  /bin/rm -f ffunc.f flink.c
+  /bin/rm -f ffunc.f flink.cc
   echo "      subroutine ffunc()" > ffunc.f
   echo "      return" >> ffunc.f
   echo "      end" >> ffunc.f
   $F77 -c ffunc.f 1>/dev/null 2>/dev/null
-  echo "main(){ FF(); return 0; }" > flink.c
-  if $CC -o flink -DFF=ffunc flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  echo "extern \"C\" void FF(); int main(int argc, char** argv){ FF(); return 0; }" > flink.cc
+  if $CXX -o flink -DFF=ffunc flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT([same as C])
     F77_SYMBOLS=symbol
-  elif $CC -o flink -DFF=ffunc_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=ffunc_ flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT([lowercase with underscore])
     F77_SYMBOLS=symbol_
-  elif $CC -o flink -DFF=FFUNC flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=FFUNC flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT([uppercase])
     F77_SYMBOLS=SYMBOL
-  elif $CC -o flink -DFF=FFUNC_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=FFUNC_ flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT([uppercase with underscore])
     F77_SYMBOLS=SYMBOL_
   else
     AC_MSG_RESULT([giving up])
     AC_MSG_ERROR([could not determine F77 symbol names])
   fi
-  /bin/rm -f ffunc.f ffunc.o flink flink.c flink.o ffunc
+  /bin/rm -f ffunc.f ffunc.o flink flink.cc flink.o ffunc
 else
   F77_SYMBOLS=symbol_
   AC_MSG_RESULT([guessing lowercase with underscore])

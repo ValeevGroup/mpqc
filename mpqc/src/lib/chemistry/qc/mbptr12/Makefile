@@ -37,7 +37,7 @@ TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc \
-  r12ia.cc r12ia_memgrp.cc \
+  r12ia.cc \
   r12ia_node0file.cc \
   vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \
@@ -81,7 +81,7 @@ r12_amps.h                      vxb_eval_info.h \
 r12ia.h
 
 ifeq ($(HAVE_MPIIO),yes)
-  CXXSRCS += r12ia_mpiiofile.cc
+  CXXSRCS += 
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)

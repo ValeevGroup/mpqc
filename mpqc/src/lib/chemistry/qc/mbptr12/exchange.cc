@@ -139,7 +139,6 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   }
 
   ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
-  mnxy_acc->deactivate();
 
   msg->sum(K_xy,nbraket);
   

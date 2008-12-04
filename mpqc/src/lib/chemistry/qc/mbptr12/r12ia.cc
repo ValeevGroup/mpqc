@@ -42,30 +42,24 @@ using namespace sc;
   R12IntsAcc
  --------------------------------*/
 static ClassDesc R12IntsAcc_cd(
-  typeid(R12IntsAcc),"R12IntsAcc",1,"virtual public SavableState",
+  typeid(R12IntsAcc),"R12IntsAcc",2,"virtual public SavableState",
   0, 0, 0);
 
 R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny) :
-  num_te_types_(num_te_types), ni_(ni), nj_(nj), nx_(nx), ny_(ny)
+  num_te_types_(num_te_types), ni_(ni), nj_(nj), nx_(nx), ny_(ny),
+  nxy_(nx*ny), blksize_(nxy_*sizeof(double)), blocksize_(blksize_*num_te_types_),
+  mem_(MemoryGrp::get_default_memorygrp()), active_(false)
 {
-  nxy_ = nx_*ny_;
-  blksize_ = nxy_*sizeof(double);
-  blocksize_ = blksize_*num_te_types_;
-  committed_ = false;
-  active_ = false;
-  next_orbital_ = 0;
 }
 
-R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
+R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si),
+  mem_(MemoryGrp::get_default_memorygrp()), active_(false)
 {
   si.get(num_te_types_);
   si.get(ni_);
   si.get(nj_);
   si.get(nx_);
   si.get(ny_);
-  int committed; si.get(committed); committed_ = (bool) committed;
-  int active; si.get(active); active_ = (bool) active;
-  si.get(next_orbital_);
 
   nxy_ = nx_ * ny_;
   blksize_ = nxy_*sizeof(double);
@@ -74,7 +68,6 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
 
 R12IntsAcc::~R12IntsAcc()
 {
-  deactivate();
 }
 
 void R12IntsAcc::save_data_state(StateOut& so)
@@ -84,46 +77,6 @@ void R12IntsAcc::save_data_state(StateOut& so)
   so.put(nj_);
   so.put(nx_);
   so.put(ny_);
-  so.put((int)committed_);
-  so.put((int)active_);
-  so.put(next_orbital_);
-}
-
-void
-R12IntsAcc::commit()
-{
-  if (!committed_)
-    committed_ = true;
-  else
-    throw std::runtime_error("R12IntsAcc::commit() -- accumulator has already been committed");
-  activate();
-}
-
-void
-R12IntsAcc::activate()
-{
-  if (active_)
-    throw std::runtime_error("R12IntsAcc::activate() -- accumulator is already active");
-  if (is_committed())
-    active_ = true;
-  else
-    throw std::runtime_error("R12IntsAcc::activate() -- accumulator hasn't been committed yet");
-}
-
-void
-R12IntsAcc::deactivate()
-{
-  active_ = false;
-}
-
-int R12IntsAcc::next_orbital() const
-{
-  return next_orbital_;
-}
-
-void R12IntsAcc::inc_next_orbital(int ni)
-{
-  next_orbital_ += ni;
 }
 
 int
@@ -149,6 +102,40 @@ R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
 
   return nproc_with_ints;
 }
+
+namespace sc{ namespace detail {
+  
+void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
+                     int ni, const size_t blksize_memgrp) {
+  const int num_te_types = acc->num_te_types();
+  for (int i=0; i<ni; i++) {
+    const int ii = i + i_offset;
+    for (int j=0; j<acc->nj(); j++) {
+      const int ij = acc->ij_index(ii, j);
+      const int proc = ij % mem->n();
+      const int local_ij_index = ij / mem->n();
+      if (proc != mem->me()) {
+        distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp
+            *num_te_types + mem->offset(proc);
+        const size_t blksize = acc->blksize();
+        for (int te_type = 0; te_type < num_te_types; ++te_type) {
+          double* data = (double *) mem->obtain_readonly(moffset, blksize);
+          acc->store_pair_block(ii, j, te_type, data);
+          mem->release_readonly(data, moffset, blksize);
+          moffset += blksize_memgrp;
+        }
+      } else {
+        double* data = (double *) ((size_t)mem->localdata() + blksize_memgrp
+            *num_te_types*local_ij_index);
+        for (int te_type=0; te_type < num_te_types; te_type++) {
+          acc->store_pair_block(ii, j, te_type, data);
+          data = (double*) ((size_t) data + blksize_memgrp);
+        }
+      }
+    }
+  }
+}
+}} // end of namespace sc::detail
 
 ///////////////////////////////////////////////////////////////
 

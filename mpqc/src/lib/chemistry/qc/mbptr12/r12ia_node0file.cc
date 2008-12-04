@@ -52,34 +52,30 @@ static ClassDesc R12IntsAcc_Node0File_cd(
   typeid(R12IntsAcc_Node0File),"R12IntsAcc_Node0File",1,"public R12IntsAcc",
   0, 0, create<R12IntsAcc_Node0File>);
 
-R12IntsAcc_Node0File::R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char* filename, int num_te_types,
-					   int ni, int nj, int nx, int ny) :
+R12IntsAcc_Node0File::R12IntsAcc_Node0File(const char* filename, int num_te_types,
+                                           int ni, int nj, int nx, int ny) :
   R12IntsAcc(num_te_types, ni, nj, nx, ny)
 {
-  mem_ = mem;
   filename_ = strdup(filename);
-  
   init(false);
 }
 
 R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :
   R12IntsAcc(si)
 {
-  mem_ = MemoryGrp::get_default_memorygrp();
   si.getstring(filename_);
-  
   init(true);
 }
 
 R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
 {
-  for(int i=0;i<ni_;i++)
-    for(int j=0;j<nj_;j++) {
+  for(int i=0;i<ni();i++)
+    for(int j=0;j<nj();j++) {
       if (!is_avail(i,j)) {
 	int ij = ij_index(i,j);
 	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
 	  if (pairblk_[ij].ints_[oper_type] != NULL) {
-	    ExEnv::outn() << indent << taskid() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
+	    ExEnv::outn() << indent << me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
 	    throw std::runtime_error("Logic error: R12IntsAcc_Node0File::~ : some nonlocal blocks have not been released!");
 	  }
       }
@@ -88,7 +84,7 @@ R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
    
   // Destroy the file
 #if  CREATE_FILE_ON_NODE0_ONLY
-  if (taskid() == 0)
+  if (me() == 0)
 #endif
     unlink(filename_);
   free(filename_);
@@ -104,29 +100,29 @@ R12IntsAcc_Node0File::save_data_state(StateOut& so)
 void
 R12IntsAcc_Node0File::init(bool restart)
 {
-  pairblk_ = new struct PairBlkInfo[ni_*nj_];
+  pairblk_ = new PairBlkInfo[ni()*nj()];
   int i, j, ij;
-  for(i=0,ij=0;i<ni_;i++)
-    for(j=0;j<nj_;j++,ij++) {
+  for(i=0,ij=0;i<ni();i++)
+    for(j=0;j<nj();j++,ij++) {
       for(int type=0; type<num_te_types(); type++) {
         pairblk_[ij].ints_[type] = NULL;
         pairblk_[ij].refcount_[type] = 0;
         if (classdebug() > 0)
-          ExEnv::outn() << indent << mem_->me() << ":refcount=" << pairblk_[ij].refcount_[type]
+          ExEnv::outn() << indent << me() << ":refcount=" << pairblk_[ij].refcount_[type]
                         << ": i = " << i << " j = " << j << " tbint_type = " << type << endl;
         }
-      pairblk_[ij].offset_ = (off_t)ij*blocksize_;
+      pairblk_[ij].offset_ = (off_t)ij*blocksize();
     }
 
   // node 0 will have the file
 #if CREATE_FILE_ON_NODE0_ONLY
-  if (taskid() != 0)
+  if (me() != 0)
     return;
 #endif
 
   // See if can open/create the file
   if (restart) {
-    datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
+    datafile_ = open(filename_,O_RDWR,0644);
   }
   else {
     datafile_ = creat(filename_,0644);
@@ -152,12 +148,42 @@ R12IntsAcc_Node0File::check_filedescr_()
       case ENOTDIR:
       throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- not a directory");
       default:
-      perror(0);
+      const char* errormsg = strerror(errno);
+      ExEnv::out0() << "R12IntsAcc_Node0File::store_pair_block(): " << errormsg << std::endl;
       throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
     }
   }
 }
 
+void
+R12IntsAcc_Node0File::activate()
+{
+  if (active()) return;
+  
+#if CREATE_FILE_ON_NODE0_ONLY
+  if (me() == 0)
+#endif
+    datafile_ = open(filename_, O_RDWR);
+  R12IntsAcc::activate();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
+}
+
+void
+R12IntsAcc_Node0File::deactivate()
+{
+  if (!active()) return;
+  
+#if CREATE_FILE_ON_NODE0_ONLY
+  if (me() == 0)
+#endif
+    close(datafile_);
+  R12IntsAcc::deactivate();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
+}
+
+#if 0
 void
 R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
 {
@@ -167,21 +193,21 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
   }
   // mem must be the same as mem_
   else if (mem_ != mem) {
-    ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
+    ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
+      "mem != R12IntsAcc_Node0File::mem_" << endl;
     abort();
   }
   // Will store integrals on node 0
   else if (taskid() != 0)
     return;
-  else if (ni > ni_) {
+  else if (ni > ni()) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_Node0File::ni_" << endl;
+      "ni > R12IntsAcc_Node0File::ni()" << endl;
     abort();
   }
-  else if (next_orbital() + ni > ni_) {
+  else if (next_orbital() + ni > ni()) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_Node0File::ni_" << endl;
+      "ni+next_orbital() > R12IntsAcc_Node0File::ni()" << endl;
     abort();
   }
   else {
@@ -193,12 +219,12 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
     // Compute global offsets to each processor's data
     int i,j,ij;
     int me = taskid();
-    int nproc = mem->n();
+    int nproc = ntasks();
 
     // Append the data to the file
     datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
     for (int i=0; i<ni; i++)
-      for (int j=0; j<nj_; j++) {
+      for (int j=0; j<nj(); j++) {
 	double *data;
 	int ij = ij_index(i,j);
 	int proc = ij%nproc;
@@ -240,96 +266,113 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
 }
 
 void
-R12IntsAcc_Node0File::store_pair_block(int i, int j, double *ints)
+R12IntsAcc_Node0File::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
 {
-  ExEnv::err0() << "R12IntsAcc_Node0File::store_pair_block() called: error" << endl;
-  abort();
+  // mem must be the same as mem()
+  if (mem() != mem) {
+    throw ProgrammingError("R12IntsAcc_Node0File::restore_memorygrp() -- mem != R12IntsAcc_Node0File::mem()",__FILE__,__LINE__);
+  }
+  if (ni != ni()) {
+    throw ProgrammingError("R12IntsAcc_Node0File::restore_memorygrp() -- ni != R12IntsAcc_Node0File::ni()",__FILE__,__LINE__);
+  }
+  throw FeatureNotImplemented("R12IntsAcc_Node0File::restore_memorygrp()");
+}
+#endif
+
+void
+R12IntsAcc_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const double *data)
+{
+  // Can write blocks?
+  if (!is_avail(i,j))
+    throw ProgrammingError("R12IntsAcc_Node0File::store_pair_block -- can only be called on node 0",
+                           __FILE__,__LINE__);
+
+  const int ij = ij_index(i,j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+
+  // first, seek
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+
+  const off_t offset = pb->offset_ + (off_t)oper_type*blksize();
+  const off_t result_offset = lseek(datafile_,offset,SEEK_SET);
+  if (offset == static_cast<off_t>(-1) || result_offset != offset)
+    throw FileOperationFailed("R12IntsAcc_Node0File::store_pair_block() -- lseek failed",
+                                __FILE__, __LINE__,
+                                filename_, FileOperationFailed::Other);
+
+  // then, write
+  ssize_t wrote_this_much = write(datafile_, data, blksize());
+  if (wrote_this_much != blksize()) {
+    const char* errormsg = strerror(errno);
+    ExEnv::out0() << "R12IntsAcc_Node0File::store_pair_block(): " << errormsg << std::endl;
+    throw FileOperationFailed("R12IntsAcc_Node0File::store_pair_block() -- write failed",
+                              __FILE__, __LINE__,
+                              filename_, FileOperationFailed::Read);
+  }
 }
 
+#if 0
 void
 R12IntsAcc_Node0File::commit()
 {
-  mem_->set_localsize(0);
-  mem_->sync();
-  mem_->deactivate();
+  mem()->set_localsize(0);
+  mem()->sync();
+  mem()->deactivate();
   R12IntsAcc::commit();
 }
 
-void
-R12IntsAcc_Node0File::activate()
-{
-  R12IntsAcc::activate();
-#if CREATE_FILE_ON_NODE0_ONLY
-  if (taskid() == 0)
 #endif
-    datafile_ = open(filename_, O_RDONLY);
-  if (classdebug() > 0)
-    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
-}
 
-void
-R12IntsAcc_Node0File::deactivate()
-{
-  mem_->activate();
-#if CREATE_FILE_ON_NODE0_ONLY
-  if (taskid() == 0)
-#endif
-    close(datafile_);
-  R12IntsAcc::deactivate();
-  if (classdebug() > 0)
-    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
-}
-
-double *
-R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
-{
-  // Can retrieve blocks on node 0 only
-  if (is_avail(i,j)) {
-    int ij = ij_index(i,j);
-    struct PairBlkInfo *pb = &pairblk_[ij];
-    // Always first check if it's already in memory
-    if (pb->ints_[oper_type] == 0) {
-
+double * R12IntsAcc_Node0File::retrieve_pair_block(int i, int j,
+                                                   tbint_type oper_type) const {
+  // Can write blocks?
+  if (!is_avail(i, j))
+    throw ProgrammingError("R12IntsAcc_Node0File::store_pair_block -- can only be called on node 0",
+        __FILE__,__LINE__);
+  
+  const int ij = ij_index(i, j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+  // Always first check if it's already in memory
+  if (pb->ints_[oper_type] == 0) {
+    
     if (classdebug() > 0)
-      ExEnv::out0() << indent << "retrieving block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
-
-      off_t offset = pb->offset_ + (off_t)oper_type*blksize_;
-      off_t result_offset = lseek(datafile_,offset,SEEK_SET);
-      if (offset == (off_t)-1 || result_offset != offset)
-        throw FileOperationFailed("R12IntsAcc_Node0File::retrieve_pair_block() failed",
-                                  __FILE__,
-                                  __LINE__,
-                                  filename_,
-                                  FileOperationFailed::Other);
-      pb->ints_[oper_type] = new double[nxy_];
-      ssize_t read_this_much = read(datafile_,pb->ints_[oper_type],blksize_);
-      if (read_this_much != blksize_)
-        throw FileOperationFailed("R12IntsAcc_Node0File::retrieve_pair_block() failed",
-                                  __FILE__,
-                                  __LINE__,
-                                  filename_,
-                                  FileOperationFailed::Read);
-    }
-    pb->refcount_[oper_type] += 1;
-    if (classdebug() > 0)
-      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
-                    << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
-    return pb->ints_[oper_type];
+      ExEnv::out0() << indent << "retrieving block: file=" << filename_
+          << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+    
+    off_t offset = pb->offset_ + (off_t)oper_type*blksize();
+    off_t result_offset = lseek(datafile_, offset, SEEK_SET);
+    if (offset == (off_t)-1 || result_offset != offset)
+      throw FileOperationFailed("R12IntsAcc_Node0File::retrieve_pair_block() -- lseek failed",
+          __FILE__,
+          __LINE__,
+          filename_,
+          FileOperationFailed::Other);
+    pb->ints_[oper_type] = new double[nxy()];
+    ssize_t read_this_much = read(datafile_, pb->ints_[oper_type], blksize());
+    if (read_this_much != blksize())
+      throw FileOperationFailed("R12IntsAcc_Node0File::retrieve_pair_block() -- read failed",
+          __FILE__,
+          __LINE__,
+          filename_,
+          FileOperationFailed::Read);
   }
-  else
-    throw std::runtime_error("R12IntsAcc_Node0File::retrieve_pair_block() called on node other than 0");
-
-  return 0;
+  pb->refcount_[oper_type] += 1;
+  if (classdebug() > 0)
+    ExEnv::outn() << indent << me() << ":refcount="
+        << pb->refcount_[oper_type] << ": i = " << i << " j = " << j
+        << " tbint_type = " << oper_type << endl;
+  return pb->ints_[oper_type];
 }
 
 void
-R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type)
+R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type) const
 {
   if (is_avail(i,j)) {
-    int ij = ij_index(i,j);
-    struct PairBlkInfo *pb = &pairblk_[ij];
+    const int ij = ij_index(i,j);
+    const PairBlkInfo *pb = &pairblk_[ij];
     if (pb->refcount_[oper_type] <= 0) {
-      ExEnv::outn() << indent << taskid() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
+      ExEnv::outn() << indent << me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
       throw std::runtime_error("Logic error: R12IntsAcc_Node0File::release_pair_block: refcount is already zero!");
     }
     if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
@@ -340,7 +383,7 @@ R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type)
     }
     pb->refcount_[oper_type] -= 1;
     if (classdebug() > 0)
-      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+      ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
                     << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
   }
 }

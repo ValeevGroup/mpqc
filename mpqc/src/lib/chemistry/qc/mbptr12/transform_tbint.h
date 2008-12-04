@@ -88,6 +88,7 @@ protected:
   Ref<MOIndexSpace> space3_;
   Ref<MOIndexSpace> space4_;
 
+  int restart_orbital_; // when restarting, this recalls where to start transform
   size_t memory_;
   bool dynamic_;
   double print_percent_;

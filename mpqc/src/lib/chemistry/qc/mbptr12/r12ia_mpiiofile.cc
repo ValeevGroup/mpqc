@@ -34,6 +34,7 @@
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
 
 using namespace std;
@@ -278,6 +279,19 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
   }
   
   inc_next_orbital(ni);
+}
+
+void
+R12IntsAcc_MPIIOFile_Ind::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
+{
+  // mem must be the same as mem_
+  if (mem_ != mem) {
+    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- mem != R12IntsAcc_MPIIOFile_Ind::mem_",__FILE__,__LINE__);
+  }
+  if (ni != ni_) {
+    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- ni != R12IntsAcc_MPIIOFile_Ind::ni_",__FILE__,__LINE__);
+  }
+  throw FeatureNotImplemented("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp()");
 }
 
 double *

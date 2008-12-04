@@ -61,26 +61,25 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
   name_(name), factory_(factory), tbintdescr_(tbintdescr),
-  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
-{
-  mem_ = MemoryGrp::get_default_memorygrp();
-  msg_ = MessageGrp::get_default_messagegrp();
-  thr_ = ThreadGrp::get_default_threadgrp();
-
+  space1_(space1), space2_(space2), space3_(space3), space4_(space4),
+  mem_(MemoryGrp::get_default_memorygrp()),
+  msg_(MessageGrp::get_default_messagegrp()),
+  thr_(ThreadGrp::get_default_threadgrp()),
+  restart_orbital_(0),
   // Default values
-  memory_ = factory_->memory();
-  debug_ = factory_->debug();
-  dynamic_ = factory_->dynamic();
-  print_percent_ = factory_->print_percent();
-  ints_method_ = factory_->ints_method();
-  file_prefix_ = factory_->file_prefix();
+  memory_(factory_->memory()),
+  debug_(factory_->debug()),
+  dynamic_(factory_->dynamic()),
+  print_percent_(factory_->print_percent()),
+  ints_method_(factory_->ints_method()),
+  file_prefix_(factory_->file_prefix())
+{
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 {
   si.get(name_);
   factory_ << SavableState::restore_state(si);
-  // tbintdescr_ << SavableState::restore_state(si);
   ints_acc_ << SavableState::restore_state(si);
   
   space1_ << SavableState::restore_state(si);
@@ -98,6 +97,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   si.get(print_percent_);
   int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransformFactory::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
+  si.get(restart_orbital_);
 }
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
@@ -109,7 +109,6 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 {
   so.put(name_);
   SavableState::save_state(factory_.pointer(),so);
-  //SavableState::save_state(tbintdescr_.pointer(),so);
   SavableState::save_state(ints_acc_.pointer(),so);
   
   SavableState::save_state(space1_.pointer(),so);
@@ -123,6 +122,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
+  so.put(restart_orbital_);
 }
 
 void
@@ -180,7 +180,7 @@ TwoBodyMOIntsTransform::num_te_types() const { return tbintdescr_->num_sets(); }
 
 unsigned int
 TwoBodyMOIntsTransform::restart_orbital() const {
-  return (ints_acc_.null() ? 0 : ints_acc_->next_orbital());
+  return restart_orbital_;
 }
 
 
@@ -226,10 +226,8 @@ TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static, int rank
 void
 TwoBodyMOIntsTransform::init_vars()
 {
-  int me = msg_->me();
-
-  int restart_orbital = ints_acc_.nonnull() ? ints_acc_->next_orbital() : 0;
-  int rank_i = space1_->rank() - restart_orbital;
+  const int me = msg_->me();
+  const int rank_i = space1_->rank() - restart_orbital_;
 
   mem_static_ = 0;
   if (me == 0) {
@@ -323,9 +321,8 @@ TwoBodyMOIntsTransform::compute_nij(const int rank_i, const int rank_j, const in
 void
 TwoBodyMOIntsTransform::memory_report(std::ostream& os) const
 {
-  size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
-  int restart_orbital = ints_acc_.nonnull() ? ints_acc_->next_orbital() : 0;
-  int rank_i_restart = space1_->rank() - restart_orbital;
+  const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
+  const int rank_i_restart = space1_->rank() - restart_orbital_;
 
   os << indent
      << "Memory available per node:      " << memory_ << " Bytes"

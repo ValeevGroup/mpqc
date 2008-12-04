@@ -209,13 +209,8 @@ namespace sc {
           if (debug_ > DefaultPrintThresholds::diagnostics)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
           
+          tform->compute();
           Ref<R12IntsAcc> accum = tform->ints_acc();
-          // if transforms have not been computed yet, compute
-          if (accum.null() || !accum->is_committed()) {
-            tform->compute();
-          }
-          if (!accum->is_active())
-            accum->activate();
           
           // split work over tasks which have access to integrals
           vector<int> proc_with_ints;
@@ -281,7 +276,6 @@ namespace sc {
             } // bra loop
           } // loop over tasks with access
           
-	  accum->deactivate();
         } // ket blocks
       } // bra blocks
 

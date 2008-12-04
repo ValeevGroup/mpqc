@@ -65,6 +65,9 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     int ntasks() const { return mem_->n(); }
     /// ID of this task
     int taskid() const { return mem_->me(); }
+
+    /// Stores an ij pair block of integrals (assumes the block resides locally)
+    void store_pair_block(int i, int j, double *ints);
     
   public:
     R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int ni, int nj, int nx, int ny);
@@ -72,14 +75,13 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);
 
-    /** Stores all pair block of integrals held in mem
-     mem must be the same as mem_ used to construct this
-     This is a collective operation. See documentation for R12IntsAcc::store_memorygrp()
-     for more info.
+    /** Implements R12IntsAcc::store_memorygrp().
+     mem must be the same Memorygrp used to construct this.
+     This is a collective operation.
      */
-    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize);
-    /// Stores an ij pair block of integrals (assumes the block resides locally)
-    void store_pair_block(int i, int j, double *ints);
+    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
+    /// Implements R12IntsAcc::restore_memorygrp(). mem must be the same MemoryGrp used to construct this.
+    void restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize = 0) const;
     /// Done reading content - call set_localsize(0) on the associated MemoryGrp
     /// This is a collective operation. This accumulator cannot be activated again.
     void deactivate();

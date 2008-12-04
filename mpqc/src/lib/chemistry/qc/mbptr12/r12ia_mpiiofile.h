@@ -132,8 +132,11 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
         This is a collective operation.
         See documentation for R12IntsAcc::store_memorygrp()
         for more info.
+        mem must be the same MemoryGrp used to construct this.
       */
     void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
+    /// Implements R12IntsAcc::restore_memorygrp(). mem must be the same MemoryGrp used to construct this.
+    void restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize = 0) const;
     /// Retrieves an ij pair block of integrals from the file
     double* retrieve_pair_block(int i, int j, tbint_type oper_type);
 };

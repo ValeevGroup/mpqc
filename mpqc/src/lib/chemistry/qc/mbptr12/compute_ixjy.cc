@@ -61,8 +61,14 @@ using namespace sc;
 void
 TwoBodyMOIntsTransform_ixjy::compute()
 {
+  int rank1 = space1_->rank();
+  int rank2 = space2_->rank();
+  int rank3 = space3_->rank();
+  int rank4 = space4_->rank();
+  
   init_acc();
-  if (ints_acc_->is_committed())
+  // if all integrals are already available -- do nothing
+  if (restart_orbital_ == rank1)
     return;
   
   Ref<Integral> integral = factory_->integral();
@@ -70,10 +76,6 @@ TwoBodyMOIntsTransform_ixjy::compute()
   Ref<GaussianBasisSet> bs2 = space2_->basis();
   Ref<GaussianBasisSet> bs3 = space3_->basis();
   Ref<GaussianBasisSet> bs4 = space4_->basis();
-  int rank1 = space1_->rank();
-  int rank2 = space2_->rank();
-  int rank3 = space3_->rank();
-  int rank4 = space4_->rank();
   int nbasis1 = bs1->nbasis();
   int nbasis2 = bs2->nbasis();
   int nbasis3 = bs3->nbasis();
@@ -156,7 +158,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
    -----------------------------------*/
   Timer tim_pass("mp2-r12/a passes");
-  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
+  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -392,11 +394,15 @@ TwoBodyMOIntsTransform_ixjy::compute()
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
     Timer tim_mostore("MO ints store");
-    ints_acc_->store_memorygrp(mem_,ni,memgrp_blocksize);
+    ints_acc_->activate();
+    detail::store_memorygrp(ints_acc_,mem_,restart_orbital_,ni,memgrp_blocksize);
+    if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+    // if didn't throw can safely update the counter
+    restart_orbital_ += ni;
     tim_mostore.exit();
     mem_->sync();
 
-    if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint() && ints_acc_->can_restart()) {
+    if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
       StateOutBin stateout(top_mole_->checkpoint_file());
       SavableState::save_state(top_mole_,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -404,12 +410,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   } // end of loop over passes
   tim_pass.exit();
-  // Done storing integrals - commit the content
-  // WARNING: it is not safe to use mem until deactivate has been called on the accumulator
-  //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]
-  ints_acc_->commit();
-
-  
+    
   for (int i=0; i<thr_->nthread(); i++) {
     delete e13thread[i];
   }

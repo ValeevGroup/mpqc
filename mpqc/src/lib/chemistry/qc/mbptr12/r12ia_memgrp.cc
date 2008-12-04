@@ -129,15 +129,43 @@ R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
     
     for (int i=0; i<ni_; i++)
       for (int j=0; j<nj_; j++)
-	if (is_local(i,j)) {
-	  int local_ij_index = ij_index(i,j)/nproc_;
-	  double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
-                                            blksize_memgrp_*num_te_types()*local_ij_index);
-	  store_pair_block(i,j,integral_ij_offset);
-	}
+        if (is_local(i,j)) {
+          int local_ij_index = ij_index(i,j)/nproc_;
+          double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
+              blksize_memgrp_*num_te_types()*local_ij_index);
+          store_pair_block(i,j,integral_ij_offset);
+        }
   }
 
   inc_next_orbital(ni);
+}
+
+void
+R12IntsAcc_MemoryGrp::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
+{
+  // mem must be the same as mem_
+  if (mem_ != mem) {
+    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- mem != R12IntsAcc_MemoryGrp::mem_",__FILE__,__LINE__);
+  }
+  if (ni != ni_) {
+    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- ni != R12IntsAcc_MemoryGrp::ni_",__FILE__,__LINE__);
+  }
+  const size_t blksize_memgrp = (blksize == 0) ? blksize_memgrp_ : blksize;
+  if (blksize_memgrp < blksize_memgrp_) {
+    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- blksize < R12IntsAcc_MemoryGrp::blksize_memgrp_",__FILE__,__LINE__);
+  }
+
+  // loop over all local blocks in reverse and resize
+  for (int i=ni_-1; i>=0; i--)
+    for (int j=nj_-1; j>=0; j--)
+      if (is_local(i,j)) {
+        int local_ij_index = ij_index(i,j)/nproc_;
+        double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
+            blksize_memgrp_*num_te_types()*local_ij_index);
+        //store_pair_block(i,j,integral_ij_offset);
+      }
+  
+  throw FeatureNotImplemented("R12IntsAcc_MemoryGrp::restore_memorygrp()");
 }
 
 void

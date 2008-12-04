@@ -36,9 +36,9 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/transform_ikjy.h>
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
-#include <chemistry/qc/mbptr12/transform_ikjy.h>
 
 // Set to 1 if want to use ixjy transforms only
 #define USE_IXJY_ALWAYS 0
@@ -175,7 +175,6 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
 {
   Ref<TwoBodyMOIntsTransform> result;
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
-
   result = new TwoBodyMOIntsTransform_ijxy(name,this,descr,space1_,space2_,space3_,space4_);
 
   if (top_mole_.nonnull())

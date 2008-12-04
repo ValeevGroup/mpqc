@@ -36,10 +36,22 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+
+// set to 1 when finished rewriting R12IntsAcc_MemoryGrp
+#define HAVE_R12IA_MEMGRP 0
+#if HAVE_R12IA_MEMGRP
+  #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+#endif
+#include <cassert>
+
 #include <chemistry/qc/mbptr12/r12ia_node0file.h>
+
+// set to 1 when finished rewriting R12IntsAcc_MPIIO
+#define HAVE_R12IA_MPIIO 0
 #ifdef HAVE_MPIIO
+#  if HAVE_R12IA_MPIIO
   #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#  endif
 #endif
 
 using namespace std;
@@ -140,32 +152,48 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
   case MOIntsTransformFactory::StoreMethod::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
+#if HAVE_R12IA_MEMGRP
     ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());  // Hack to avoid using nfzc and nocc
+#else
+    assert(false);
+#endif
     break;
 
   case MOIntsTransformFactory::StoreMethod::mem_posix:
     if (npass_ == 1) {
+#if HAVE_R12IA_MEMGRP
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+#else
+      assert(false);
+#endif
       break;
     }
     // else use the next case
       
   case MOIntsTransformFactory::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
     break;
 
 #if HAVE_MPIIO
   case MOIntsTransformFactory::StoreMethod::mem_mpi:
     if (npass_ == 1) {
+#if HAVE_R12IA_MEMGRP
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+#else
+      assert(false);
+#endif
       break;
     }
     // else use the next case
 
   case MOIntsTransformFactory::StoreMethod::mpi:
+#if HAVE_R12IA_MPIIO
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+#else
+    assert(false);
+#endif
     break;
 #endif
   
@@ -178,9 +206,7 @@ void
 TwoBodyMOIntsTransform_ijxy::check_int_symm(double threshold) throw (ProgrammingError)
 {
   Ref<R12IntsAcc> iacc = ints_acc();
-  if (!iacc->is_committed())
-    throw ProgrammingError("TwoBodyMOIntsTransform_ijxy::check_int_symm() is called but integrals not computed yet",
-                           __FILE__, __LINE__);
+  iacc->activate();
 
   int num_te_types = iacc->num_te_types();
   int ni = iacc->ni();

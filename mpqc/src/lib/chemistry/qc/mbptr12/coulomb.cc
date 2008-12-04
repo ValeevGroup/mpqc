@@ -139,7 +139,6 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   }
 
   ExEnv::out0() << indent << "End of computation of Coulomb matrix" << endl;
-  mnxy_acc->deactivate();
 
   msg->sum(J_xy,nbraket);
 

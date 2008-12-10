@@ -37,7 +37,7 @@ REQUIREDCXXSRC = mstate.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc \
          memamsg.cc memproc.cc \
          pregtime.cc thread.cc memiter.cc memrdma.cc \
-	 actmsg.cc
+	 actmsg.cc memregion.cc
 
 OPTIONALCXXSRC = messmpi.cc memshm.cc \
                  memmtmpi.cc

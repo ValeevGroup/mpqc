@@ -33,6 +33,7 @@
 #define _util_group_memregion_h
 
 #include <list>
+#include <memory>
 #include <sys/types.h>
 
 #include <util/group/memory.h>
@@ -40,10 +41,10 @@
 namespace sc {
 
 /** The MemoryGrpRegion is a MemoryGrp proxy to a region of a MemoryGrp. It is assumed that the host MemoryGrp
-    is not resized.
+    is not resized during lifetime of all MemoryGrpRegion objects bound to it.
     
-    Each region has a static start and size.
-    set_localsize() then cannot ask for more than the maximum size.
+    Each region has a static local offset and size. set_localsize() then cannot ask for more than the maximum size,
+    but can be called multiple times.
   */
 class MemoryGrpRegion: public MemoryGrp {
   public:
@@ -61,31 +62,54 @@ class MemoryGrpRegion: public MemoryGrp {
     void release_writeonly(void* data, distsize_t offset, int size);
     void release_readwrite(void* data, distsize_t offset, int size);
 
+    void activate();
+    void deactivate();
     void sync();
+    void catchup();
+    void* malloc_local(size_t nbytes);
+    void free_local(void* data);
+
+    /// reimplementation of MemoryGrp::clone(). always throws ProgrammingError -- this type of MemoryGrp is not clonable
+    Ref<MemoryGrp> clone();
+    void print(std::ostream &o=ExEnv::out0()) const;
     
   private:
-    class Region {
+    
+    // LocalRegion is an interval [start, start+size)
+    class LocalRegion {
       public:
-        Region(size_t start, size_t size) : start_(start), size_(size) {}
+        LocalRegion(size_t start, size_t size) : start_(start), size_(size) {}
         size_t start() const { return start_; }
         size_t size() const { return size_; }
+        bool operator==(const LocalRegion& other) const {
+          return start() == other.start() && size() == other.size();
+        }
+        bool operator>(const LocalRegion& other) const {
+          return start() > other.start();
+        }
       private:
         size_t start_;
         size_t size_;
     };
-    typedef std::list<Region> Regions;
+    typedef std::list<LocalRegion> LocalRegions;
     
     Ref<MemoryGrp> host_;
-    Region reserve_;              // reserved space
-    distsize_t* memgrp_offsets_;  // offsets within the host MemoryGrp
+    LocalRegion reserve_;              // reserved space
+    std::vector<distsize_t> host_offsets_;  // start of regions on each node using the host MemoryGrp coordinates
+    // converts offset from this object's coordinates to host coordinates
+    distsize_t offset_to_host_offset(const distsize_t& offset) const;
     
     // this maps MemoryGrp to the ordered list of its allocated regions, in order of increasing starts
     class HostToRegionsMap {
       public:
-        const Regions* regions(const MemoryGrp* host) const;
-        void insert(const MemoryGrp* host, const Region& region);
+        HostToRegionsMap();
+        ~HostToRegionsMap();
+        void insert(const MemoryGrp* host, const LocalRegion& region);
+        void erase(const MemoryGrp* host, const LocalRegion& region);
       private:
-        std::map<MemoryGrp*,Regions*> impl_;
+        const LocalRegions* regions(const MemoryGrp* host) const;
+        typedef std::map<const MemoryGrp*,LocalRegions*> ImplType;
+        ImplType impl_;
         Ref<ThreadLock> lock_;
     };
     static HostToRegionsMap map_;

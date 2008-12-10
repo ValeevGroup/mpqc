@@ -32,6 +32,7 @@
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>
 #include <util/group/memshm.h>
+#include <util/group/memregion.h>
 #ifdef HAVE_NX
 #  include <util/group/memipgon.h>
 #endif
@@ -48,10 +49,6 @@ using namespace sc;
     static ForceLink<MTMPIMemoryGrp> fl3;
 #endif
 //#endif
-
-#include <util/class/scexception.h>
-static const char * (sc::SCException::*force_except_link)() const
-    = &sc::SCException::description;
 
 #include <util/class/scexception.h>
 static const char * (sc::SCException::*force_except_link)() const
@@ -85,6 +82,8 @@ void do_simple_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
 void do_int_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
 void do_double_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
 void do_double2_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
+void do_memgrp_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
+void do_memgrpregion_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
 
 int
 main(int argc, char**argv)
@@ -129,14 +128,22 @@ main(int argc, char**argv)
   else
     mem = MemoryGrp::get_default_memorygrp();
 
+  do_memgrp_tests(msg, mem);
+  do_memgrpregion_tests(msg, mem);
+  
+  return 0;
+}
+
+void
+do_memgrp_tests(const Ref<MessageGrp>&msg,
+             const Ref<MemoryGrp>&mem)
+{
   do_simple_tests(msg, mem);
 
   do_double_tests(msg, mem);
   do_double2_tests(msg, mem);
 
   do_int_tests(msg, mem);
-
-  return 0;
 }
 
 void
@@ -426,6 +433,26 @@ do_double2_tests(const Ref<MessageGrp>&msg,
   PRINTF(("==========================================================\n"));
   mem->sync();
 
+  mem->set_localsize(0);
+}
+
+void
+do_memgrpregion_tests(const Ref<MessageGrp>&msg,
+                      const Ref<MemoryGrp>&mem)
+{
+  PRINTF(("MemoryGrpRegion tests entered\n"));
+  cout << scprintf("Using host memory group \"%s\".\n", mem->class_name());  
+  // grab enough memory to fit in 2 regions
+  mem->set_localsize(400);
+
+  Ref<MemoryGrpRegion> rg1 = new MemoryGrpRegion(mem,0,200);
+  do_memgrp_tests(msg, rg1);
+  Ref<MemoryGrpRegion> rg2 = new MemoryGrpRegion(mem,200,200);
+  do_memgrp_tests(msg, rg2);
+
+  mem->sync();
+  PRINTF(("==========================================================\n"));
+  mem->sync();
   mem->set_localsize(0);
 }
 

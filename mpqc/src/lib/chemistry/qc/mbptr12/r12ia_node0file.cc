@@ -81,7 +81,7 @@ R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
       }
     }
   delete[] pairblk_;
-   
+
   // Destroy the file
 #if  CREATE_FILE_ON_NODE0_ONLY
   if (me() == 0)
@@ -159,7 +159,7 @@ void
 R12IntsAcc_Node0File::activate()
 {
   if (active()) return;
-  
+
 #if CREATE_FILE_ON_NODE0_ONLY
   if (me() == 0)
 #endif
@@ -173,7 +173,7 @@ void
 R12IntsAcc_Node0File::deactivate()
 {
   if (!active()) return;
-  
+
 #if CREATE_FILE_ON_NODE0_ONLY
   if (me() == 0)
 #endif
@@ -324,22 +324,22 @@ R12IntsAcc_Node0File::commit()
 
 #endif
 
-double * R12IntsAcc_Node0File::retrieve_pair_block(int i, int j,
+const double * R12IntsAcc_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type) const {
   // Can write blocks?
   if (!is_avail(i, j))
     throw ProgrammingError("R12IntsAcc_Node0File::store_pair_block -- can only be called on node 0",
         __FILE__,__LINE__);
-  
+
   const int ij = ij_index(i, j);
   const PairBlkInfo* pb = &pairblk_[ij];
   // Always first check if it's already in memory
   if (pb->ints_[oper_type] == 0) {
-    
+
     if (classdebug() > 0)
       ExEnv::out0() << indent << "retrieving block: file=" << filename_
           << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
-    
+
     off_t offset = pb->offset_ + (off_t)oper_type*blksize();
     off_t result_offset = lseek(datafile_, offset, SEEK_SET);
     if (offset == (off_t)-1 || result_offset != offset)

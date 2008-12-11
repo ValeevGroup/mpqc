@@ -48,12 +48,12 @@ static ClassDesc R12IntsAcc_cd(
 R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny) :
   num_te_types_(num_te_types), ni_(ni), nj_(nj), nx_(nx), ny_(ny),
   nxy_(nx*ny), blksize_(nxy_*sizeof(double)), blocksize_(blksize_*num_te_types_),
-  mem_(MemoryGrp::get_default_memorygrp()), active_(false)
+  msg_(MessageGrp::get_default_messagegrp()), active_(false)
 {
 }
 
 R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si),
-  mem_(MemoryGrp::get_default_memorygrp()), active_(false)
+  msg_(MessageGrp::get_default_messagegrp()), active_(false)
 {
   si.get(num_te_types_);
   si.get(ni_);
@@ -83,13 +83,13 @@ int
 R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
 {
   int nproc = ntasks();
-  
+
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
   int nproc_with_ints = 0;
   for(int proc=0;proc<nproc;proc++)
     if (has_access(proc)) nproc_with_ints++;
- 
+
   twa_map.resize(nproc);
   int count = 0;
   for(int proc=0;proc<nproc;proc++)
@@ -104,7 +104,7 @@ R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
 }
 
 namespace sc{ namespace detail {
-  
+
 void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
                      int ni, const size_t blksize_memgrp) {
   const int num_te_types = acc->num_te_types();
@@ -119,13 +119,13 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
             *num_te_types + mem->offset(proc);
         const size_t blksize = acc->blksize();
         for (int te_type = 0; te_type < num_te_types; ++te_type) {
-          double* data = (double *) mem->obtain_readonly(moffset, blksize);
+          const double* data = (const double *) mem->obtain_readonly(moffset, blksize);
           acc->store_pair_block(ii, j, te_type, data);
-          mem->release_readonly(data, moffset, blksize);
+          mem->release_readonly(const_cast<void*>(static_cast<const void*>(data)), moffset, blksize);
           moffset += blksize_memgrp;
         }
       } else {
-        double* data = (double *) ((size_t)mem->localdata() + blksize_memgrp
+        const double* data = (const double *) ((size_t)mem->localdata() + blksize_memgrp
             *num_te_types*local_ij_index);
         for (int te_type=0; te_type < num_te_types; te_type++) {
           acc->store_pair_block(ii, j, te_type, data);

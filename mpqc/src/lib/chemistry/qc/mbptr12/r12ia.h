@@ -78,8 +78,6 @@ class R12IntsAcc: virtual public SavableState {
     typedef unsigned int tbint_type;
     static const unsigned int max_num_te_types_ = TwoBodyInt::max_num_tbint_types;
 
-    /// MemoryGrp
-    Ref<MemoryGrp> mem() const { return mem_; }
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
     /// Rank of index space i
@@ -102,7 +100,7 @@ class R12IntsAcc: virtual public SavableState {
     /// if this returns false, call to deactivate may destroy data
     virtual bool data_persistent() const =0;
     /// Retrieves an ij block of integrals
-    virtual double* retrieve_pair_block(int i, int j, tbint_type oper_type) const =0;
+    virtual const double* retrieve_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Releases the buffer that holds ij block of integrals
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Stores an ij pair block of integrals
@@ -126,7 +124,7 @@ class R12IntsAcc: virtual public SavableState {
     /// Set to nonzero to debug this and derived classes
     static const int classdebug_ = 0;
     int num_te_types_;  // Number of types of integrals in a block
-    Ref<MemoryGrp> mem_;
+    Ref<MessageGrp> msg_;
     int ni_, nj_;
     int nx_, ny_;
     size_t nxy_;        // nx_ * ny_  - the number of integrals of one type in a block
@@ -141,9 +139,9 @@ class R12IntsAcc: virtual public SavableState {
     // return active_
     bool active() const { return active_; }
     /// total number of tasks
-    int ntasks() const { return mem_->n(); }
+    int ntasks() const { return msg_->n(); }
     /// rank of this task
-    int me() const { return mem_->me(); }
+    int me() const { return msg_->me(); }
     /// return debug level for this class
     int classdebug() const { return classdebug_; }
 

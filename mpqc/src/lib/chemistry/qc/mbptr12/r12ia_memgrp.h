@@ -49,58 +49,49 @@ namespace sc {
 
 class R12IntsAcc_MemoryGrp: public R12IntsAcc {
 
-    Ref<MemoryGrp> mem_; /// The MemoryGrp used by this accumulator to store integrals
-    int nproc_;
-    size_t blksize_memgrp_;  // The size of the ij-block in held memory (may be larger than blksize_)
+    Ref<MemoryGrp> mem_;     /// The MemoryGrp that holds integrals
+    /// The size of the ij-block in held memory, may be larger than that returned by blksize().
+    size_t blksize_memgrp_;
 
+    /** Holds the information and data for ij-blocks.
+        Local blocks are held in MemoryGrp whereas remote blocks are held in local storage. */
     struct PairBlkInfo {
-      double *ints_[max_num_te_types_];         // blocks corresponding to each operator type
-      int refcount_[max_num_te_types_];          // number of references
-      distsize_t offset_;    // global Memgrp offset in bytes
+      const double *ints_[max_num_te_types_];   // blocks corresponding to each operator type
+      mutable int refcount_[max_num_te_types_];         // counts references
+      distsize_t offset_;                       // global Memgrp offset in bytes
     } *pairblk_;
-    
+
     /// Initialization tasks common to all constructors
     void init();
-    /// total number of tasks
-    int ntasks() const { return mem_->n(); }
-    /// ID of this task
-    int taskid() const { return mem_->me(); }
+    // Utility functions
+    int ij_proc(int i, int j) const { return ij_index(i,j)%ntasks();};
 
-    /// Stores an ij pair block of integrals (assumes the block resides locally)
-    void store_pair_block(int i, int j, double *ints);
-    
   public:
-    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int ni, int nj, int nx, int ny);
+    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types,
+                         int ni, int nj, int nx, int ny,
+                         size_t memorygrp_blksize);
     R12IntsAcc_MemoryGrp(StateIn&);
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);
 
-    /** Implements R12IntsAcc::store_memorygrp().
-     mem must be the same Memorygrp used to construct this.
-     This is a collective operation.
-     */
-    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
-    /// Implements R12IntsAcc::restore_memorygrp(). mem must be the same MemoryGrp used to construct this.
-    void restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize = 0) const;
-    /// Done reading content - call set_localsize(0) on the associated MemoryGrp
-    /// This is a collective operation. This accumulator cannot be activated again.
+    // Implementation of R12IntsAcc_MemoryGrp
     void deactivate();
+    /// implementation of R12IntsAcc::data_persistent()
+    bool data_persistent() const { return true; }
+    /// Stores an ij pair block of integrals (assumes the block resides locally)
+    void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
     /// Retrieves an ij pair block of integrals
-    double* retrieve_pair_block(int i, int j, tbint_type oper_type);
+    const double* retrieve_pair_block(int i, int j, tbint_type oper_type) const;
     /// Releases an ij pair block of integrals (if needed)
-    void release_pair_block(int i, int j, tbint_type oper_type);
+    void release_pair_block(int i, int j, tbint_type oper_type) const;
+
     /// Is this block stored locally?
     bool is_local(int i, int j) const { return (ij_proc(i,j) == mem_->me());};
     /// In this implementation all blocks are globally available
     bool is_avail(int i, int j) const { return true;};
     /// Does this task have access to all the integrals?
     bool has_access(int proc) const { return true;};
-    /// Cannot restart MemoryGrp-based accumulator
-    bool can_restart() const { return false; };
 
-    // Utility functions
-    int ij_index(int i, int j) const { return i*nj_ + j; };
-    int ij_proc(int i, int j) const { return ij_index(i,j)%nproc_;};
 };
 
 }

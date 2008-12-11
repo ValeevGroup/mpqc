@@ -43,7 +43,7 @@ namespace sc {
 /** R12IntsAcc_Node0File handles transformed integrals stored in file
     on node 0 (file is a usual POSIX binary file)
 
-    Transfering integrals to the file from nodes is done via MemoryGrp
+    Transferring integrals to the file from nodes is done via MemoryGrp
     given as an argument to store_memorygrp
     Remote retrieval is not possible
 
@@ -64,14 +64,14 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
       off_t offset_;      // location in file (in bytes)
     };
     PairBlkInfo* pairblk_;
-    
+
     /// Initialization tasks common to all constructors
     void init(bool restart);
     // Check if the file operation went OK
     void check_filedescr_();
     // Utility functions
     int ij_proc(int i, int j) const { return 0;};
-    
+
   public:
     R12IntsAcc_Node0File(const char *filename, int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc_Node0File(StateIn&);
@@ -87,10 +87,10 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
     /// Retrieves an ij pair block of integrals from the file
-    double* retrieve_pair_block(int i, int j, tbint_type oper_type) const;
+    const double* retrieve_pair_block(int i, int j, tbint_type oper_type) const;
     /// Releases an ij pair block of integrals
     void release_pair_block(int i, int j, tbint_type oper_type) const;
-    
+
     /// Is this block stored locally?
     bool is_local(int i, int j) const { return (me() == 0);};
     /// In this implementation blocks are available only on node 0

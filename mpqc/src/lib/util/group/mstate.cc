@@ -145,6 +145,18 @@ MsgStateSend::put(int d)
 }
 
 int
+MsgStateSend::put(unsigned long d)
+{
+  return StateOut::put(d);
+}
+
+int
+MsgStateSend::put(long d)
+{
+  return StateOut::put(d);
+}
+
+int
 MsgStateSend::put(float d)
 {
   return StateOut::put(d);
@@ -171,6 +183,18 @@ MsgStateSend::put(const unsigned int* d, int n)
 
 int
 MsgStateSend::put(const int* d, int n)
+{
+  return StateOut::put(d, n);
+}
+
+int
+MsgStateSend::put(const unsigned long* d, int n)
+{
+  return StateOut::put(d, n);
+}
+
+int
+MsgStateSend::put(const long* d, int n)
 {
   return StateOut::put(d, n);
 }
@@ -313,6 +337,18 @@ MsgStateRecv::get(unsigned int& d, const char *key)
 }
 
 int
+MsgStateRecv::get(long& d, const char *key)
+{
+  return StateIn::get(d,key);
+}
+
+int
+MsgStateRecv::get(unsigned long& d, const char *key)
+{
+  return StateIn::get(d,key);
+}
+
+int
 MsgStateRecv::get(float& d, const char *key)
 {
   return StateIn::get(d,key);
@@ -338,6 +374,18 @@ MsgStateRecv::get(unsigned int*& d)
 
 int
 MsgStateRecv::get(int*& d)
+{
+  return StateIn::get(d);
+}
+
+int
+MsgStateRecv::get(unsigned long*& d)
+{
+  return StateIn::get(d);
+}
+
+int
+MsgStateRecv::get(long*& d)
 {
   return StateIn::get(d);
 }
@@ -637,7 +685,7 @@ BcastStateInBin::open(const char *path)
 {
   file_position_ = 0;
 
-  if (grp->me() == 0) { 
+  if (grp->me() == 0) {
       if (opened_) close();
 
       filebuf *fbuf = new filebuf();

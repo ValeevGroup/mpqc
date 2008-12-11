@@ -114,6 +114,11 @@ AssignedKeyVal::assign(const char*key,int val)
   assign(key,new KeyValValueint(val));
 }
 void
+AssignedKeyVal::assign(const char*key,long val)
+{
+  assign(key,new KeyValValuelong(val));
+}
+void
 AssignedKeyVal::assign(const char*key,const char* val)
 {
   assign(key,new KeyValValuestring(val));

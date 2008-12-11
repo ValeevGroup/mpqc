@@ -130,6 +130,18 @@ StateOut::put_array_int(const int*p,int size)
 }
 
 int
+StateOut::put_array_ulong(const unsigned long*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
+StateOut::put_array_long(const long*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
 StateOut::put_array_float(const float*p,int size)
 {
   return translate_->put(p,size);
@@ -145,17 +157,10 @@ int StateOut::put(char r) { return put_array_char(&r,1); }
 int StateOut::put(unsigned int r) { return put_array_uint(&r,1); }
 int StateOut::put(bool r) { return put(int(r)); }
 int StateOut::put(int r) { return put_array_int(&r,1); }
+int StateOut::put(unsigned long r) { return put_array_ulong(&r,1); }
+int StateOut::put(long r) { return put_array_long(&r,1); }
 int StateOut::put(float r) { return put_array_float(&r,1); }
 int StateOut::put(double r) { return put_array_double(&r,1); }
-int StateOut::put(unsigned long r)
-{
-  if (r > INT_MAX) {
-      throw LimitExceeded<unsigned long>(
-          "StateOut::put max allowed size exceeded",
-          __FILE__, __LINE__, INT_MAX, r);
-    }
-  return put(int(r));
-}
 
 // This deletes all references to objects, so if they are output
 // again, they will be written in their entirety.
@@ -327,6 +332,34 @@ StateOut::put(const int*s,int size)
   if (s) {
       r += put(size);
       r += put_array_int(s,size);
+    }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
+
+int
+StateOut::put(const unsigned long*s,int size)
+{
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_ulong(s,size);
+    }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
+
+int
+StateOut::put(const long*s,int size)
+{
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_long(s,size);
     }
   else {
       r += put((int)0);

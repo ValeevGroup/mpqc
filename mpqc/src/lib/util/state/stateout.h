@@ -113,6 +113,7 @@ class StateOut: public DescribedClass {
     virtual int put(int r);
     virtual int put(bool r);
     virtual int put(unsigned long r);
+    virtual int put(long r);
     virtual int put(float r);
     virtual int put(double r);
     /** Write the given array data.  Size information is also saved.  The
@@ -120,6 +121,8 @@ class StateOut: public DescribedClass {
     virtual int put(const char*,int);
     virtual int put(const unsigned int*,int);
     virtual int put(const int*,int);
+    virtual int put(const unsigned long*,int);
+    virtual int put(const long*,int);
     virtual int put(const float*,int);
     virtual int put(const double*,int);
     /** Put arrays of data.  No size information is stored.  This
@@ -127,6 +130,8 @@ class StateOut: public DescribedClass {
     virtual int put_array_char(const char*p,int size);
     virtual int put_array_uint(const unsigned int*p,int size);
     virtual int put_array_int(const int*p,int size);
+    virtual int put_array_ulong(const unsigned long*p,int size);
+    virtual int put_array_long(const long*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
 

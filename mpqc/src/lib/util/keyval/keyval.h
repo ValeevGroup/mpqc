@@ -106,6 +106,8 @@ class KeyVal: public RefCount {
     virtual char   key_charvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by intvalue.
     virtual int    key_intvalue(const char* key,const KeyValValue& def);
+    /// Ultimately called by longvalue.
+    virtual long   key_longvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by sizevalue.
     virtual size_t key_sizevalue(const char* key,const KeyValValue& def);
     /// Ultimately called by pcharvalue.
@@ -150,6 +152,9 @@ class KeyVal: public RefCount {
     /// Returns the int value of key.
     int    intvalue(const char* key = 0,
                     const KeyValValue& def=KeyValValueint());
+    /// Returns the long value of key.
+    long   longvalue(const char* key = 0,
+                     const KeyValValue& def=KeyValValuelong());
     /// Returns the size_t value of key.
     size_t sizevalue(const char* key = 0,
                      const KeyValValue& def=KeyValValuesize());
@@ -185,6 +190,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(const char* key,int i,
                     const KeyValValue& def=KeyValValueint());
+    long   longvalue(const char* key,int i,
+                     const KeyValValue& def=KeyValValuelong());
     size_t sizevalue(const char* key,int i,
                      const KeyValValue& def=KeyValValuesize());
     DEPRECATED char*  pcharvalue(const char* key,int i,
@@ -206,6 +213,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(int i,
                     const KeyValValue& def=KeyValValueint());
+    long   longvalue(int i,
+                     const KeyValValue& def=KeyValValuelong());
     size_t sizevalue(int i,
                      const KeyValValue& def=KeyValValuesize());
     DEPRECATED char*  pcharvalue(int i,
@@ -235,6 +244,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(const char* key,int,int,
                     const KeyValValue& def=KeyValValueint());
+    long   longvalue(const char* key,int,int,
+                     const KeyValValue& def=KeyValValuelong());
     size_t sizevalue(const char* key,int,int,
                      const KeyValValue& def=KeyValValuesize());
     DEPRECATED char*  pcharvalue(const char* key,int,int,
@@ -256,6 +267,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(int i,int j,
                     const KeyValValue& def=KeyValValueint());
+    long   longvalue(int i,int j,
+                     const KeyValValue& def=KeyValValuelong());
     size_t sizevalue(int i,int j,
                      const KeyValValue& def=KeyValValuesize());
     DEPRECATED char*  pcharvalue(int i,int j,
@@ -279,6 +292,7 @@ class KeyVal: public RefCount {
     float  Va_floatvalue(const char* key,int nindex,...);
     char   Va_charvalue(const char* key,int nindex,...);
     int    Va_intvalue(const char* key,int nindex,...);
+    long   Va_longvalue(const char* key,int nindex,...);
     size_t Va_sizevalue(const char* key,int nindex,...);
     DEPRECATED char*  Va_pcharvalue(const char* key,int nindex,...);
     std::string Va_stringvalue(const char* key,int nindex,...);
@@ -336,6 +350,7 @@ class AssignedKeyVal: public KeyVal {
     void assign(const char* key, float val);
     void assign(const char* key, char val);
     void assign(const char* key, int val);
+    void assign(const char* key, long val);
     void assign(const char* key, const char* val);
     void assign(const char* key, const Ref<DescribedClass>& val);
     //@}

@@ -154,6 +154,8 @@ class StateIn:  public DescribedClass {
     virtual int get(char&r, const char *keyword = 0);
     virtual int get(unsigned int&r, const char *keyword = 0);
     virtual int get(int&r, const char *keyword = 0);
+    virtual int get(unsigned long int&r, const char *keyword = 0);
+    virtual int get(long int&r, const char *keyword = 0);
     virtual int get(bool&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
@@ -162,6 +164,8 @@ class StateIn:  public DescribedClass {
     virtual int get(char*&);
     virtual int get(unsigned int*&);
     virtual int get(int*&);
+    virtual int get(unsigned long int*&);
+    virtual int get(long int*&);
     virtual int get(float*&);
     virtual int get(double*&);
     /** These restore data saved with StateOut's put.
@@ -169,6 +173,8 @@ class StateIn:  public DescribedClass {
     virtual int get_array_char(char*p,int size);
     virtual int get_array_uint(unsigned int*p,int size);
     virtual int get_array_int(int*p,int size);
+    virtual int get_array_ulong(unsigned long*p,int size);
+    virtual int get_array_long(long*p,int size);
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
 

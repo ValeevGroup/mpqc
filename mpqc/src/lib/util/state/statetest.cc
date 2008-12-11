@@ -232,6 +232,7 @@ static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
 class D: public B, public C {
   private:
     int id;
+    long ld;
     char cd;
     float fd;
     double dd;
@@ -239,6 +240,7 @@ class D: public B, public C {
     Ref<B> _b;
     char *cdat;
     int *idat;
+    long *ldat;
     float *fdat;
     double *ddat;
     std::string sdat;
@@ -277,15 +279,18 @@ class D: public B, public C {
 D::D()
 {
   id = 4;
+  ld = 14;
   cd = 'd';
   fd = 4.1;
   dd = 8.2;
   ddat = new double[4];
   fdat = new float[4];
   idat = new int[4];
+  ldat = new long[4];
   cdat = new char[4];
   cdat[0]=(cdat[1]=(cdat[2]=(cdat[3]='a')+1)+1)+1;
   idat[0]=(idat[1]=(idat[2]=(idat[3]=1)+1)+1)+1;
+  ldat[0]=(ldat[1]=(ldat[2]=(ldat[3]=1)+1)+1)+1;
   fdat[0]=(fdat[1]=(fdat[2]=(fdat[3]=1.0)+1)+1)+1;
   ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
   sdat = "Test of std::string";
@@ -294,6 +299,7 @@ D::D(const Ref<KeyVal>&keyval):
   B(keyval),
   C(keyval),
   id(keyval->intvalue("di")),
+  ld(keyval->longvalue("dl")),
   cd(keyval->charvalue("dc")),
   fd(keyval->floatvalue("df")),
   dd(keyval->doublevalue("dd")),
@@ -303,9 +309,11 @@ D::D(const Ref<KeyVal>&keyval):
   ddat = new double[4];
   fdat = new float[4];
   idat = new int[4];
+  ldat = new long[4];
   cdat = new char[4];
   cdat[0]=(cdat[1]=(cdat[2]=(cdat[3]='a')+1)+1)+1;
   idat[0]=(idat[1]=(idat[2]=(idat[3]=1)+1)+1)+1;
+  ldat[0]=(ldat[1]=(ldat[2]=(ldat[3]=1)+1)+1)+1;
   fdat[0]=(fdat[1]=(fdat[2]=(fdat[3]=1.0)+1)+1)+1;
   ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
   sdat = "Test of std::string";
@@ -316,6 +324,7 @@ D::D(StateIn&s):
   C(s)
 {
   s.get(id,"di");
+  s.get(ld,"dl");
   s.get(cd,"dc");
   s.get(fd,"df");
   s.get(dd,"dd");
@@ -329,6 +338,7 @@ D::D(StateIn&s):
   s.get(ddat);
   s.get(fdat);
   s.get(idat);
+  s.get(ldat);
   s.get(cdat);
   s.get(sdat);
 }
@@ -338,6 +348,7 @@ D::save_data_state(StateOut&s)
   B::save_data_state(s);
   C::save_data_state(s);
   s.put(id);
+  s.put(ld);
   s.put(cd);
   s.put(fd);
   s.put(dd);
@@ -348,6 +359,7 @@ D::save_data_state(StateOut&s)
   s.put(ddat,4);
   s.put(fdat,4);
   s.put(idat,4);
+  s.put(ldat,4);
   s.put(cdat,4);
   s.put(sdat);
 }
@@ -356,6 +368,7 @@ D::~D()
   delete[] ddat;
   delete[] fdat;
   delete[] idat;
+  delete[] ldat;
   delete[] cdat;
 }
 
@@ -431,7 +444,7 @@ main()
 
   cout << " --- saving to A ---" << endl;
   StateOutTypeA soa("statetest.a.out");
-  ra = new A(new PrefixKeyVal("test:object_a",pkv));
+  ra = new A(new PrefixKeyVal(pkv,"test:object_a"));
   cout << "  first a" << endl;
   ra->save_object_state(soa);
   soa.forget_references();

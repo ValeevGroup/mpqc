@@ -89,6 +89,14 @@ KeyValValue::intvalue(int& val) const
 }
 
 KeyValValue::KeyValValueError
+KeyValValue::longvalue(long& val) const
+{
+  KeyValValuelong def;
+  def.longvalue(val);
+  return KeyValValue::WrongType;
+}
+
+KeyValValue::KeyValValueError
 KeyValValue::sizevalue(size_t& val) const
 {
   KeyValValuesize def;
@@ -250,6 +258,29 @@ KeyValValueint::print(ostream&o) const
 
 /////////////////////////////////////////////////////////////////////////
 
+KeyValValuelong::KeyValValuelong(const KeyValValuelong&val):
+  _val(val._val)
+{
+}
+KeyValValuelong::~KeyValValuelong()
+{
+}
+
+KeyValValue::KeyValValueError
+KeyValValuelong::longvalue(long&val) const
+{
+  val = _val;
+  return KeyValValue::OK;
+}
+
+void
+KeyValValuelong::print(ostream&o) const
+{
+  o << _val;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValuesize::KeyValValuesize(const KeyValValuesize&val):
   _val(val._val)
 {
@@ -367,6 +398,12 @@ KeyValValue::KeyValValueError
 KeyValValuestring::intvalue(int&val) const
 {
   val = atoi(_val.c_str());
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::longvalue(long&val) const
+{
+  val = atol(_val.c_str());
   return KeyValValue::OK;
 }
 KeyValValue::KeyValValueError
@@ -574,6 +611,12 @@ KeyValValue::KeyValValueError
 KeyValValueString::intvalue(int&val) const
 {
   val = atoi(_val);
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValueString::longvalue(long&val) const
+{
+  val = atol(_val);
   return KeyValValue::OK;
 }
 KeyValValue::KeyValValueError

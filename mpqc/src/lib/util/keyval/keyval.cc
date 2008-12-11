@@ -121,6 +121,20 @@ KeyVal::key_intvalue(const char* key, const KeyValValue& def)
     }
   return result;
 }
+long
+KeyVal::key_longvalue(const char* key, const KeyValValue& def)
+{
+  Ref<KeyValValue> val(key_value(key,def));
+  long result;
+  if (val.nonnull()) {
+      seterror(val->longvalue(result));
+    }
+  else {
+      KeyValValue::KeyValValueError err = def.longvalue(result);
+      if (error() == OK) seterror(err);
+    }
+  return result;
+}
 size_t
 KeyVal::key_sizevalue(const char* key, const KeyValValue& def)
 {
@@ -248,6 +262,11 @@ KeyVal::intvalue(const char*key,const KeyValValue& def)
 {
   return key_intvalue(key,def);
 }
+long
+KeyVal::longvalue(const char*key,const KeyValValue& def)
+{
+  return key_longvalue(key,def);
+}
 size_t
 KeyVal::sizevalue(const char*key,const KeyValValue& def)
 {
@@ -330,6 +349,12 @@ int KeyVal::intvalue(const char* key,int n1,const KeyValValue& def)
   getnewkey(newkey,key,n1);
   return key_intvalue(newkey,def);
   }
+long KeyVal::longvalue(const char* key,int n1,const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1);
+  return key_longvalue(newkey,def);
+  }
 size_t KeyVal::sizevalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
@@ -402,6 +427,13 @@ int KeyVal::intvalue(const char* key,int n1,int n2,
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
   return key_intvalue(newkey,def);
+  }
+long KeyVal::longvalue(const char* key,int n1,int n2,
+                       const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1,n2);
+  return key_longvalue(newkey,def);
   }
 size_t KeyVal::sizevalue(const char* key,int n1,int n2,
                          const KeyValValue& def)
@@ -502,6 +534,13 @@ int KeyVal::Va_intvalue(const char* key,int narg,...)
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
   return key_intvalue(newkey,KeyValValueint());
+  }
+long KeyVal::Va_longvalue(const char* key,int narg,...)
+  {
+  va_list args;
+  char newkey[MaxKeywordLength];
+  getnewvakey(newkey,key,narg);
+  return key_longvalue(newkey,KeyValValuelong());
   }
 size_t KeyVal::Va_sizevalue(const char* key,int narg,...)
   {
@@ -617,6 +656,12 @@ KeyVal::intvalue(int i,const KeyValValue& def)
   return intvalue((const char*)0,i,def);
 }
 
+long
+KeyVal::longvalue(int i,const KeyValValue& def)
+{
+  return longvalue((const char*)0,i,def);
+}
+
 size_t
 KeyVal::sizevalue(int i,const KeyValValue& def)
 {
@@ -681,6 +726,12 @@ int
 KeyVal::intvalue(int i,int j,const KeyValValue& def)
 {
   return intvalue((const char*)0,i,j,def);
+}
+
+long
+KeyVal::longvalue(int i,int j,const KeyValValue& def)
+{
+  return longvalue((const char*)0,i,j,def);
 }
 
 size_t

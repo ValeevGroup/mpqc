@@ -133,6 +133,18 @@ StateIn::get_array_int(int*p,int size)
 }
 
 int
+StateIn::get_array_ulong(unsigned long int*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
+StateIn::get_array_long(long int*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
 StateIn::get_array_float(float*p,int size)
 {
   return translate_->get(p,size);
@@ -185,6 +197,40 @@ StateIn::get(int&r, const char *keyword)
   if (keyword && override().nonnull()) {
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          ExEnv::out0() << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(unsigned long int&r, const char *keyword)
+{
+  int n = get_array_ulong(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      long roverride = override()->longvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          ExEnv::out0() << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(long int&r, const char *keyword)
+{
+  int n = get_array_long(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      long roverride = override()->longvalue(key());
       if (override()->error() == KeyVal::OK) {
           ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
@@ -396,6 +442,38 @@ StateIn::get(int*&s)
   if (size) {
       s = new int[size];
       r += get_array_int(s,size);
+    }
+  else {
+      s = 0;
+    }
+  return r;
+}
+
+int
+StateIn::get(long unsigned int*&s)
+{
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
+      s = new long unsigned int[size];
+      r += get_array_ulong(s,size);
+    }
+  else {
+      s = 0;
+    }
+  return r;
+}
+
+int
+StateIn::get(long int*&s)
+{
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
+      s = new long int[size];
+      r += get_array_long(s,size);
     }
   else {
       s = 0;

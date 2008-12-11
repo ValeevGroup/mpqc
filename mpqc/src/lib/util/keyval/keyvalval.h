@@ -50,6 +50,7 @@ class KeyValValue: public RefCount {
     virtual KeyValValue::KeyValValueError floatvalue(float&) const;
     virtual KeyValValue::KeyValValueError charvalue(char&) const;
     virtual KeyValValue::KeyValValueError intvalue(int&) const;
+    virtual KeyValValue::KeyValValueError longvalue(long&) const;
     virtual KeyValValue::KeyValValueError sizevalue(size_t&) const;
     DEPRECATED virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     virtual KeyValValue::KeyValValueError stringvalue(std::string&) const;
@@ -125,6 +126,19 @@ class KeyValValueint: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+/// Represents a long value.
+class KeyValValuelong: public KeyValValue {
+  private:
+    long _val;
+  public:
+    KeyValValuelong(): _val(0) {}
+    KeyValValuelong(long v): _val(v) {}
+    KeyValValuelong(const KeyValValuelong&);
+    ~KeyValValuelong();
+    KeyValValue::KeyValValueError longvalue(long&) const;
+    void print(std::ostream &o=ExEnv::out0()) const;
+};
+
 /// Represents a size_t value.
 class KeyValValuesize: public KeyValValue {
   private:
@@ -175,6 +189,8 @@ class KeyValValuestring: public KeyValValue {
     KeyValValue::KeyValValueError charvalue(char&) const;
     /// Converts the string to int.
     KeyValValue::KeyValValueError intvalue(int&) const;
+    /// Converts the string to long.
+    KeyValValue::KeyValValueError longvalue(long&) const;
     /// Converts the string to size_t. Various suffices are
     /// recognized: KB, MB, GB, KIB, MIB, and GIB.
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
@@ -219,6 +235,7 @@ class KeyValValueString: public KeyValValue {
     KeyValValue::KeyValValueError floatvalue(float&) const;
     KeyValValue::KeyValValueError charvalue(char&) const;
     KeyValValue::KeyValValueError intvalue(int&) const;
+    KeyValValue::KeyValValueError longvalue(long&) const;
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
     DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     KeyValValue::KeyValValueError stringvalue(std::string&) const;

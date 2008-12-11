@@ -20,6 +20,7 @@ test: (
       c = 13
       )
     di = 14
+    dl = 24
     df = 4.1
     dd = 8.2
     dc = d
@@ -39,6 +40,7 @@ test2: (
     object = "D"
     override: (
         di = 10
+        dl = 12
         df = 4.111
         dd = 8.222
         dc = X

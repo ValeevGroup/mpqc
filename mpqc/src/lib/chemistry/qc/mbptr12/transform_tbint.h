@@ -103,6 +103,7 @@ protected:
   // These variables computed every time in case environment has changed or it's a restart
   size_t max_memory_;      // max memory given to this object
   size_t static_memory_;   // memory used to hold persistent quantities
+  size_t dynamic_memory_;  // memory used by compute()
   int batchsize_;
   int npass_;
 

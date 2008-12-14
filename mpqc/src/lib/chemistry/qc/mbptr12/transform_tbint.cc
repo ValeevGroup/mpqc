@@ -101,6 +101,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
 {
+  dealloc_mem();
   factory_->release_memory(memory());
 }
 
@@ -274,6 +275,7 @@ TwoBodyMOIntsTransform::init_vars()
   // R12IntsAcc object will either use none or all of the dynamical memory
   // this will call init_acc() implicitly
   const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
+  dynamic_memory_ = mem_dyn;
   if (!ints_acc()->data_persistent()) { // data is held in memory
     memory_ = static_memory_ + mem_dyn;
     peak_memory_ = memory_;

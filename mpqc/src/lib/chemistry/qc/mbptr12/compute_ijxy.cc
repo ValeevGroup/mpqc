@@ -65,12 +65,12 @@ TwoBodyMOIntsTransform_ijxy::compute()
   int rank2 = space2_->rank();
   int rank3 = space3_->rank();
   int rank4 = space4_->rank();
-  
+
   init_acc();
   // if all integrals are already available -- do nothing
   if (restart_orbital_ == rank1)
     return;
-  
+
   Ref<Integral> integral = factory_->integral();
   Ref<GaussianBasisSet> bs1 = space1_->basis();
   Ref<GaussianBasisSet> bs2 = space2_->basis();
@@ -96,7 +96,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
   // (erep < 2^tol => discard)
   const int tol = (int) (-10.0/log10(2.0));  // discard ints smaller than 10^-20
 
-  int aoint_computed = 0; 
+  int aoint_computed = 0;
 
   std::string tim_label("tbint_tform_");
   tim_label += type(); tim_label += " "; tim_label += name();
@@ -104,14 +104,15 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
   print_header();
 
-  // Compute the storage remaining for the integral routines
-  size_t dyn_mem = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
-  
+  // allocate memory for MemoryGrp
+  const size_t dyn_mem = dynamic_memory_;
+  alloc_mem(dyn_mem);
+
   int me = msg_->me();
   int nproc = msg_->n();
   const int restart_orb = restart_orbital();
   int nijmax = compute_nij(batchsize_,rank2,nproc,me);
-  
+
   vector<unsigned int> mosym1 = space1_->mosym();
   vector<unsigned int> mosym2 = space2_->mosym();
   vector<unsigned int> mosym3 = space3_->mosym();
@@ -161,7 +162,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
       Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
       if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
   }
-  
+
   /*-----------------------------------
 
     Start the integrals transformation
@@ -226,7 +227,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
     mem_->sync();  // Make sure ijsq is complete on each node before continuing
     integral_ijrs = (double*) mem_->localdata();
-    
+
     // If bs3_eq_bs4 -- only s>r integrals are produced
     // Produce ijsr integrals too
     if (bs3_eq_bs4) {
@@ -256,7 +257,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
         }
       }
     }
-    
+
 
 #if PRINT2Q
     {
@@ -406,7 +407,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
         }
       }
     }
-    // Sync up tasks before integrals are committed    
+    // Sync up tasks before integrals are committed
     mem_->sync();
 
 #if PRINT4Q
@@ -451,7 +452,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
   } // end of loop over passes
   tim_passes.exit();
-  
+
   for (int i=0; i<thr_->nthread(); i++) {
     delete e12thread[i];
   }
@@ -467,7 +468,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
-  
+
   print_footer();
 
 #if CHECK_INTS_SYMM
@@ -475,6 +476,9 @@ TwoBodyMOIntsTransform_ijxy::compute()
   check_int_symm();
   ExEnv::out0() << "none" << endl;
 #endif
+
+  // memory used by MemoryGrp can now be purged unless ints_acc_ uses it
+  if (ints_acc_->data_persistent()) dealloc_mem();
 
 }
 

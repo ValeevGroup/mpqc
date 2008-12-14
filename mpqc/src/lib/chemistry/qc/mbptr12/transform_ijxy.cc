@@ -218,7 +218,6 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
   }
 
   // now safe to use memorygrp
-  alloc_mem(localmem);
 }
 
 void

@@ -219,8 +219,7 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
     throw std::runtime_error("TwoBodyMOIntsTransform_ikjy::init_acc() -- invalid integrals store method");
   }
 
-  // now safe to use memorygrp
-  alloc_mem(localmem);
+  // now safe to use MemoryGrp
 }
 
 void

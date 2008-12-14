@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2002 Edward Valeev
 //
-// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
 //
 // This file is part of the SC Toolkit.
@@ -46,11 +46,10 @@ static ClassDesc R12IntsAcc_MPIIOFile_cd(
   typeid(R12IntsAcc_MPIIOFile),"R12IntsAcc_MPIIOFile",1,"public R12IntsAcc",
   0, 0, 0);
 
-R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types,
+R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(const char* filename, int nte_types,
                                            int ni, int nj, int nx, int ny) :
     R12IntsAcc(nte_types, ni, nj, nx, ny), datafile_(MPI_FILE_NULL)
 {
-  mem_ = mem;
   filename_ = strdup(filename);
 
   init(false);
@@ -59,22 +58,22 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
   SavableState(si), R12IntsAcc(si)
 {
-  mem_ = MemoryGrp::get_default_memorygrp();
   si.getstring(filename_);
-  
+
   init(true);
 }
 
-R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
-{
-  for(int i=0;i<ni_;i++)
-    for(int j=0;j<nj_;j++) {
-      int ij = ij_index(i,j);
-      for(int oper_type=0; oper_type<num_te_types(); oper_type++)
-	if (pairblk_[ij].ints_[oper_type] != NULL) {
-	  ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
-	  throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::~ : some nonlocal blocks have not been released!");
-	}
+R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile() {
+  for (int i = 0; i < ni(); i++)
+    for (int j = 0; j < nj(); j++) {
+      int ij = ij_index(i, j);
+      for (int oper_type = 0; oper_type < num_te_types(); oper_type++)
+        if (pairblk_[ij].ints_[oper_type] != NULL) {
+          ExEnv::outn() << indent << me() << ": i = " << i << " j = "
+              << j << " oper_type = " << oper_type << endl;
+          throw ProgrammingError("R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile -- some nonlocal blocks have not been released!",
+                                 __FILE__,__LINE__);
+        }
     }
   delete[] pairblk_;
   free(filename_);
@@ -90,19 +89,20 @@ R12IntsAcc_MPIIOFile::save_data_state(StateOut& so)
 void
 R12IntsAcc_MPIIOFile::init(bool restart)
 {
+  int nproc = ntasks();
   int errcod;
-  errcod = MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
-  nints_per_block_ = nxy_*num_te_types();
+  errcod = MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  nints_per_block_ = nxy()*num_te_types();
 
-  pairblk_ = new struct PairBlkInfo[ni_*nj_];
+  pairblk_ = new struct PairBlkInfo[ni()*nj()];
   int i, j, ij;
-  for(i=0,ij=0;i<ni_;i++)
-    for(j=0;j<nj_;j++,ij++) {
+  for(i=0,ij=0;i<ni();i++)
+    for(j=0;j<nj();j++,ij++) {
       for(int type=0; type<num_te_types(); type++) {
         pairblk_[ij].ints_[type] = NULL;
         pairblk_[ij].refcount_[type] = 0;
         }
-      pairblk_[ij].offset_ = (MPI_Offset)ij*blocksize_;
+      pairblk_[ij].offset_ = (MPI_Offset)ij*blocksize();
     }
 
   // Try opening/creating the file
@@ -133,7 +133,7 @@ R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
       char* errstr = new char[MPI_MAX_ERROR_STRING];
       int errstrlen;
       MPI_Error_string(errcod, errstr, &errstrlen);
-      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr 
+      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr
                     << " on file " << filename_ << endl;
       delete[] errstr;
       throw std::runtime_error("R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error");
@@ -143,46 +143,30 @@ R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
 }
 
 void
-R12IntsAcc_MPIIOFile::store_pair_block(int i, int j, double *ints)
-{
-  ExEnv::err0() << "R12IntsAcc_MPIIOFile::store_pair_block() called: error" << endl;
-  abort();
-}
-
-void
-R12IntsAcc_MPIIOFile::commit()
-{
-  mem_->set_localsize(0);
-  mem_->sync();
-  mem_->deactivate();
-  R12IntsAcc::commit();
-}
-
-void
 R12IntsAcc_MPIIOFile::activate()
 {
   R12IntsAcc::activate();
-  int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDONLY | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &datafile_);
+  int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDWR, MPI_INFO_NULL, &datafile_);
   check_error_code_(errcod);
 }
 
 void
 R12IntsAcc_MPIIOFile::deactivate()
 {
-  mem_->activate();
   int errcod = MPI_File_close(&datafile_);
   check_error_code_(errcod);
   R12IntsAcc::deactivate();
 }
 
 void
-R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type)
+R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
-    ExEnv::outn() << indent << mem_->me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
-    throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::release_pair_block: refcount is already zero!");
+    ExEnv::outn() << indent << me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
+    throw ProgrammingError("R12IntsAcc_MPIIOFile::release_pair_block -- refcount is already zero!",
+                           __FILE__,__LINE__);
   }
   if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
     delete[] pb->ints_[oper_type];
@@ -202,9 +186,9 @@ R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
 {
 }
 
-R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types,
+R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(const char* filename, int num_te_types,
                                                    int ni, int nj, int nx, int ny) :
-  R12IntsAcc_MPIIOFile(mem,filename,num_te_types,ni,nj,nx,ny)
+  R12IntsAcc_MPIIOFile(filename,num_te_types,ni,nj,nx,ny)
 {
 }
 
@@ -218,6 +202,7 @@ R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
   R12IntsAcc_MPIIOFile::save_data_state(so);
 }
 
+#if 0
 void
 R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
 {
@@ -231,20 +216,20 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
       "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
     abort();
   }
-  else if (ni > ni_) {
+  else if (ni > ni()) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_MPIIOFile_Ind::ni_" << endl;
+      "ni > R12IntsAcc_MPIIOFile_Ind::ni()" << endl;
     abort();
   }
-  else if (next_orbital() + ni > ni_) {
+  else if (next_orbital() + ni > ni()) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::ni_" << endl;
+      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::ni()" << endl;
     abort();
   }
   else {
     size_t blksize_memgrp = blksize;
     if (blksize_memgrp == 0)
-      blksize_memgrp = blksize_;
+      blksize_memgrp = blksize();
 
     // Now do some extra work to figure layout of data in MemoryGrp
     // Compute global offsets to each processor's data
@@ -255,9 +240,9 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
     // Append the data to the file
     int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_APPEND | MPI_MODE_WRONLY, MPI_INFO_NULL, &datafile_);
     check_error_code_(errcod);
-    
+
     for (int i=0; i<ni; i++)
-      for (int j=0; j<nj_; j++) {
+      for (int j=0; j<nj(); j++) {
 	int ij = ij_index(i,j);
 	int proc = ij%nproc;
         if (proc != me) continue;
@@ -265,10 +250,10 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
         double *data = (double *) ((size_t)mem->localdata() + blksize_memgrp*num_te_types()*local_ij_index);
         for(int te_type=0; te_type < num_te_types(); te_type++) {
           int IJ = ij_index(i+next_orbital(),j);
-          int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_+(MPI_Offset)te_type*blksize_, MPI_SEEK_SET);
+          int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_+(MPI_Offset)te_type*blksize(), MPI_SEEK_SET);
           check_error_code_(errcod);
           MPI_Status status;
-          errcod = MPI_File_write(datafile_, (void *)data, nxy_, MPI_DOUBLE, &status);
+          errcod = MPI_File_write(datafile_, (void *)data, nxy(), MPI_DOUBLE, &status);
           check_error_code_(errcod);
           data = (double*) ((size_t) data + blksize_memgrp);
         }
@@ -277,7 +262,7 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
     errcod = MPI_File_close(&datafile_);
     check_error_code_(errcod);
   }
-  
+
   inc_next_orbital(ni);
 }
 
@@ -288,25 +273,58 @@ R12IntsAcc_MPIIOFile_Ind::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, in
   if (mem_ != mem) {
     throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- mem != R12IntsAcc_MPIIOFile_Ind::mem_",__FILE__,__LINE__);
   }
-  if (ni != ni_) {
-    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- ni != R12IntsAcc_MPIIOFile_Ind::ni_",__FILE__,__LINE__);
+  if (ni != ni()) {
+    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- ni != R12IntsAcc_MPIIOFile_Ind::ni()",__FILE__,__LINE__);
   }
   throw FeatureNotImplemented("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp()");
 }
+#endif
 
-double *
-R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type)
+void R12IntsAcc_MPIIOFile_Ind::store_pair_block(int i, int j,
+                                                tbint_type oper_type,
+                                                const double *ints) {
+
+  const int nproc = ntasks();
+  const int ij = ij_index(i,j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+
+  // first, seek, then write
+  if (classdebug() > 0)
+    ExEnv::outn() << indent << "storing block: me=" << me() << " file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+
+  for (int i = 0; i < ni(); i++) {
+    for (int j = 0; j < nj(); j++) {
+      const int ij = ij_index(i, j);
+      const int proc = ij % nproc;
+      if (proc != me())
+        continue;
+
+      const int local_ij_index = ij / nproc;
+      int errcod = MPI_File_seek(datafile_,
+                                 pairblk_[ij].offset_ + (MPI_Offset) oper_type * blksize(),
+                                 MPI_SEEK_SET);
+      check_error_code_(errcod);
+      MPI_Status status;
+      errcod = MPI_File_write(datafile_, (void *) ints, nxy(), MPI_DOUBLE,
+                              &status);
+      check_error_code_(errcod);
+    }
+  }
+}
+
+const double*
+R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // Always first check if it's already in memory
   if (pb->ints_[oper_type] == 0) {
-    MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize_;
+    MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize();
     int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
     check_error_code_(errcod);
-    double *buffer = new double[nxy_];
+    double *buffer = new double[nxy()];
     MPI_Status status;
-    errcod = MPI_File_read(datafile_, (void *)buffer, nxy_, MPI_DOUBLE, &status);
+    errcod = MPI_File_read(datafile_, (void *)buffer, nxy(), MPI_DOUBLE, &status);
     check_error_code_(errcod);
     pb->ints_[oper_type] = buffer;
   }

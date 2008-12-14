@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2002 Edward Valeev
 //
-// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
 //
 // This file is part of the SC Toolkit.
@@ -85,7 +85,7 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     /// implementation of R12IntsAcc::data_persistent()
     bool data_persistent() const { return true; }
     /// Stores an ij pair block of integrals to the file
-    void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
+    void store_pair_block(int i, int j, tbint_type oper_type, const double* ints);
     /// Retrieves an ij pair block of integrals from the file
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type) const;
     /// Releases an ij pair block of integrals

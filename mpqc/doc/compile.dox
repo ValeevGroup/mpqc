@@ -126,7 +126,7 @@ features.
          integrals. IntegralCints and MBPT2_R12 classes depend on this
          library. The library is freely available under GNU Public License
          (GPL) from <a
-         href="http://www.ccmst.gatech.edu/evaleev/libint/">www.ccmst.gatech.edu/evaleev/libint/</a>.
+         href="http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html">http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html</a>.
 
     <li> Cca-chem-generic (version 0.2.0 or higher, and associated CCA tools):
          This package allows both stand-alone and embedded component applications  

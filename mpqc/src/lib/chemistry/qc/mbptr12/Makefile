@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2001 Edward Valeev
 #
-# Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+# Author: Edward Valeev <evaleev@vt.edu>
 # Maintainer: EV
 #
 # This file is part of the SC Toolkit.
@@ -81,7 +81,7 @@ r12_amps.h                      vxb_eval_info.h \
 r12ia.h
 
 ifeq ($(HAVE_MPIIO),yes)
-  CXXSRCS += 
+  CXXSRCS += r12ia_mpiiofile.cc
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)

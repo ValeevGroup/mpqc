@@ -1,7 +1,7 @@
 //
-// contract_tbint_tensor.h
+// contract_tbint_tensor_direct.h
 //
-// Copyright (C) 2005 Edward Valeev
+// Copyright (C) 2008 Edward Valeev
 //
 // Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
@@ -42,10 +42,7 @@
 
 namespace sc {
   
-  template <typename DataProcess_Bra,
-            typename DataProcess_Ket,
-            typename DataProcess_BraKet,
-            bool CorrFactorInBra,
+  template <bool CorrFactorInBra,
             bool CorrFactorInKet,
             bool CorrFactorInInt>
     void
@@ -61,12 +58,9 @@ namespace sc {
       const Ref<MOIndexSpace>& space2_ket,
       const Ref<MOIndexSpace>& space1_intk,
       const Ref<MOIndexSpace>& space2_intk,
-      const Ref<LinearR12::TwoParticleContraction>& tpcontract,
       bool antisymmetrize,
-      const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra,
-      const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_ket,
-      const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_bra,
-      const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_ket
+      const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra
+      const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_bra
     )
     {
       // are external spaces of particles 1 and 2 equivalent?
@@ -75,6 +69,9 @@ namespace sc {
       // can external spaces of particles 1 and 2 be equivalent?
       const bool part1_weak_equiv_part2 = (space1_bra->rank()==space2_bra->rank() &&
                                            space1_ket->rank()==space2_ket->rank());
+      // are internal spaces of particles 1 and 2 equivalent?
+      const bool part1_intequiv_part2 = (space1_intb==space2_intb &&
+                                         space1_intk==space2_intk);
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
       bool correct_semantics = (antisymmetrize && (part1_weak_equiv_part2 ||
                                                    part1_strong_equiv_part2) ) ||
@@ -83,45 +80,18 @@ namespace sc {
       correct_semantics = ( correct_semantics &&
                             (space1_intb->rank() == space1_intk->rank()) &&
                             (space2_intb->rank() == space2_intk->rank()) );
-      // also dimensions of tpcontract must match those of space1_int and space2_int
-      correct_semantics = ( correct_semantics &&
-                            (tpcontract->nrow() == space1_intb->rank()) &&
-                            (tpcontract->ncol() == space2_intb->rank()) );
       if (!correct_semantics)
-        throw ProgrammingError("R12IntEval::contract_tbint_tensor_() -- incorrect call semantics",
+        throw ProgrammingError("R12IntEval::contract_tbint_tensor_direct_() -- incorrect call semantics",
                                __FILE__,__LINE__);
       
       //
       // How is permutational symmetry implemented?
-      //
-      // 1) if need to antisymmetrize && internal spaces for p1 and p2 are same, then
-      // can antisymmetrize each integral explicitly and compute antisymmetric tensor
-      // 2) inf need to antisymmetrize but internal spaces for p1 and p2 do not match,
-      // then compute as AlphaBeta and antisymmetrize at the end. I have to allocate temporary
-      // result.
-      //
-      
-      // are internal spaces of particles 1 and 2 equivalent?
-      const bool part1_intequiv_part2 = (space1_intb==space2_intb &&
-                                         space1_intk==space2_intk);
-#if 0
-      // antisymmetrization for weakly equivalent particles and nonmatching internal spaces
-      // is probably incorrect semantics
-      if (!part1_intequiv_part2 && ! part1_strong_equiv_part2 && antisymmetrize)
-        throw ProgrammingError("R12IntEval::contract_tbint_tensor_() -- dubious call semantics",
-                               __FILE__,__LINE__);
-#endif
-      // Will antisymmetrize each integral? If no, then result will be computed
-      // as AlphaBeta and antisymmetrized at the end
+      // if possible, use permutational symmetry of bra integrals to reduce the number of <bra1 bra2|
+      // permutational symmetry of AO ket integrals is taken care of by petite list
       const bool alphabeta = !(antisymmetrize &&
                                part1_strong_equiv_part2 &&
                                part1_intequiv_part2);
-
-      //
-      // NOTE! Even if computing in AlphaBeta, internal sums can be over AlphaAlpha!!!
-      // Logic should not become much more complicated. Only need time to implement.
-      //
-     
+      
       const bool CorrFactorInBraInt = CorrFactorInBra && CorrFactorInInt;
       const bool CorrFactorInKetInt = CorrFactorInKet && CorrFactorInInt;
       
@@ -131,13 +101,10 @@ namespace sc {
       const unsigned int nbraintsets = (CorrFactorInBraInt ? -1 : nbrasets*nintsets);
       const unsigned int nketintsets = (CorrFactorInKetInt ? -1 : nketsets*nintsets);
       
-      
       //
       // create transforms, if needed
       //
       typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
-      
-      // bra transforms
       tformvec transforms_bra = tforms_bra;
       if (transforms_bra.empty()) {
         if (CorrFactorInBraInt) {
@@ -181,55 +148,10 @@ namespace sc {
         }
       }
       
-      // ket transforms
-      tformvec transforms_ket = tforms_ket;
-      if (transforms_ket.empty()) {
-        if (CorrFactorInKetInt) {
-          unsigned int fketint = 0;
-          for(unsigned int fket=0; fket<nketsets; ++fket) {
-            for(unsigned int fint=0; fint<nintsets; ++fint, ++fketint) {
-              std::string tlabel(transform_label(space1_ket,space1_intk,space2_ket,space2_intk,fket,fint));
-              try {
-                transforms_ket.push_back(get_tform_(tlabel));
-              }
-              catch (TransformNotFound& a){
-                Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-                tfactory->set_spaces(space1_ket,space1_intk,space2_ket,space2_intk);
-                Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
-                                                      MOIntsTransformFactory::StorageType_13,
-                                                      tlabel,
-                                                      intdescrs_ket[fketint]
-                                                    );
-                transforms_ket.push_back(tform);
-              }
-            }
-          }
-        }
-        else {
-          for(int f=0; f<nketintsets; f++) {
-            std::string tlabel(transform_label(space1_ket,space1_intk,space2_ket,space2_intk,f));
-            try {
-              transforms_ket.push_back(get_tform_(tlabel));
-            }
-            catch (TransformNotFound& a){
-              Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-              tfactory->set_spaces(space1_ket,space1_intk,space2_ket,space2_intk);
-              Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
-                                                    MOIntsTransformFactory::StorageType_13,
-                                                    tlabel,
-                                                    intdescrs_ket[f]
-                                                  );
-              transforms_ket.push_back(tform);
-            }
-          }
-        }
-      }
-      
-      
       //
       // Generate contract label
       //
-      Timer tim_gen_tensor_contract("Generic tensor contract");
+      Timer tim_gen_tensor_contract("Generic direct tensor contract");
       std::string label;
       {
         std::ostringstream oss_bra;
@@ -247,7 +169,7 @@ namespace sc {
         label = oss.str();
       }
       ExEnv::out0() << endl << indent
-                    << "Entered generic contraction (" << label << ")" << endl;
+                    << "Entered generic direct contraction (" << label << ")" << endl;
       ExEnv::out0() << incindent;
       
       //
@@ -259,59 +181,16 @@ namespace sc {
       Ref<MOIndexSpace> tspace2_bra = transforms_bra[0]->space3();
       Ref<MOIndexSpace> tspace1_intb = transforms_bra[0]->space2();
       Ref<MOIndexSpace> tspace2_intb = transforms_bra[0]->space4();
-      Ref<MOIndexSpace> tspace1_ket = transforms_ket[0]->space1();
-      Ref<MOIndexSpace> tspace2_ket = transforms_ket[0]->space3();
-      Ref<MOIndexSpace> tspace1_intk = transforms_ket[0]->space2();
-      Ref<MOIndexSpace> tspace2_intk = transforms_ket[0]->space4();
-      // maps spaceX to spaceX of the transform
-      std::vector<unsigned int> map1_bra, map2_bra, map1_ket, map2_ket,
-                                map1_intb, map2_intb, map1_intk, map2_intk;
-      // maps space2_intb to space1_intb of transform
-      std::vector<unsigned int> map12_intb;
-      // maps space1_intb to space2_intb of transform
-      std::vector<unsigned int> map21_intb;
-      // maps space2_intk to space1_intk of transform
-      std::vector<unsigned int> map12_intk;
-      // maps space1_intk to space2_intk of transform
-      std::vector<unsigned int> map21_intk;
-      
-      { // bra maps
+      // maps spaceX to the corresponding space of the transform
+      std::vector<unsigned int> map1_bra, map2_bra, map1_intb, map2_intb;
+      {
         map1_bra = *tspace1_bra<<*space1_bra;
         map2_bra = *tspace2_bra<<*space2_bra;
         map1_intb = *tspace1_intb<<*space1_intb;
         map2_intb = *tspace2_intb<<*space2_intb;
-        // Will antisymmetrize the integrals? Then need ijkl AND ijlk
-        if (!alphabeta) {
-          if (tspace1_intb == tspace2_intb) {
-            map12_intb = map1_intb;
-            map21_intb = map2_intb;
-          }
-          else {
-            map12_intb = *tspace1_intb<<*space2_intb;
-            map21_intb = *tspace2_intb<<*space1_intb;
-          }
-        }
-      }
-      { // ket maps
-        map1_ket = *tspace1_ket<<*space1_ket;
-        map2_ket = *tspace2_ket<<*space2_ket;
-        map1_intk = *tspace1_intk<<*space1_intk;
-        map2_intk = *tspace2_intk<<*space2_intk;
-        // Will antisymmetrize the integrals? Then need ijkl AND ijlk
-        if (!alphabeta) {
-          if (tspace1_intk == tspace2_intk) {
-            map12_intk = map1_intk;
-            map21_intk = map2_intk;
-          }
-          else {
-            map12_intk = *tspace1_intk<<*space2_intk;
-            map21_intk = *tspace2_intk<<*space1_intk;
-          }
-        }
       }
       
       const unsigned int bratform_block_ncols = tspace2_intb->rank();
-      const unsigned int kettform_block_ncols = tspace2_intk->rank();
       const RefDiagSCMatrix evals1_bra = space1_bra->evals();
       const RefDiagSCMatrix evals2_bra = space2_bra->evals();
       const RefDiagSCMatrix evals1_ket = space1_ket->evals();
@@ -325,14 +204,35 @@ namespace sc {
       // More efficient algorithm will require generic code
       const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
       SpinMOPairIter iterbra(space1_bra,(alphabeta ? space2_bra : space1_bra),S);
-      SpinMOPairIter iterket(space1_ket,(alphabeta ? space2_ket : space1_ket),S);
       SpinMOPairIter iterint(space1_intb,(alphabeta ? space2_intb : space1_intb),S);
       // size of one block of <space1_bra space2_bra|
       const unsigned int nbra = iterbra.nij();
-      // size of one block of <space1_ket space2_ket|
-      const unsigned int nket = iterket.nij();
       // size of one block of |space1_int space2_int>
       const unsigned int nint = iterint.nij();
+      
+      //
+      // Collect all bra integrals into a replicated matrix and transform to AO basis
+      //   loop over bra blocks IJ
+      //     for each block loop over bra indices
+      unsigned int fbraoffset = 0;
+      for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
+        const unsigned int fbraint = fbra*nintsets+fint;
+        Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbraint];
+        const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
+        const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
+
+        Ref<R12IntsAcc> accumb = tformb->ints_acc();
+        // if transforms have not been computed yet, compute
+        if (accumb.null() || !accumb->is_committed()) {
+          tformb->compute();
+          accumb = tformb->ints_acc();
+        }
+        if (!accumb->is_active()) {
+          //ExEnv::out0() << indent << "Activating accumb" << endl;
+          accumb->activate();
+        }
+
+      } // end of loop over bra blocks      
       
       RefSCMatrix Tcontr;
       // Allocate storage for the result, if need to antisymmetrize at the end; else accumulate directly to T
@@ -363,8 +263,16 @@ namespace sc {
 	  const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
 	  const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
-      tformb->compute();
 	  Ref<R12IntsAcc> accumb = tformb->ints_acc();
+	  // if transforms have not been computed yet, compute
+	  if (accumb.null() || !accumb->is_committed()) {
+	    tformb->compute();
+	    accumb = tformb->ints_acc();
+	  }
+	  if (!accumb->is_active()) {
+	    //ExEnv::out0() << indent << "Activating accumb" << endl;
+	    accumb->activate();
+	  }
 
 	  unsigned int fketoffset = 0;
 	  for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
@@ -373,8 +281,15 @@ namespace sc {
 	    const Ref<TwoBodyIntDescr>& intdescrk = tformk->intdescr();
 	    const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
             
-	        tformk->compute();
             Ref<R12IntsAcc> accumk = tformk->ints_acc();
+            if (accumk.null() || !accumk->is_committed()) {
+              tformk->compute();
+	      accumk = tformk->ints_acc();
+            }
+            if (!accumk->is_active()) {
+	      //ExEnv::out0() << indent << "Activating accumk" << endl;
+              accumk->activate();
+	    }
             
             if (debug_ >= DefaultPrintThresholds::diagnostics) {
               ExEnv::out0() << indent << "Using transforms "
@@ -554,7 +469,13 @@ namespace sc {
 	    //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
 	    //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
 	    //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+	    if (accumb != accumk) {
+	      //ExEnv::out0() << indent << "Deactivating accumk" << endl;
+	      accumk->deactivate();
+	    }
 	  } // ket blocks
+	  //ExEnv::out0() << indent << "Deactivating accumb" << endl;
+	  accumb->deactivate();
 	} // bra blocks
       } // int blocks
       

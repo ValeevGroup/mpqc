@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2002 Edward Valeev
 //
-// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
 //
 // This file is part of the SC Toolkit.
@@ -67,17 +67,18 @@ R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :
   init(true);
 }
 
-R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
-{
-  for(int i=0;i<ni();i++)
-    for(int j=0;j<nj();j++) {
-      if (!is_avail(i,j)) {
-	int ij = ij_index(i,j);
-	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
-	  if (pairblk_[ij].ints_[oper_type] != NULL) {
-	    ExEnv::outn() << indent << me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
-	    throw std::runtime_error("Logic error: R12IntsAcc_Node0File::~ : some nonlocal blocks have not been released!");
-	  }
+R12IntsAcc_Node0File::~R12IntsAcc_Node0File() {
+  for (int i = 0; i < ni(); i++)
+    for (int j = 0; j < nj(); j++) {
+      if (!is_avail(i, j)) {
+        int ij = ij_index(i, j);
+        for (int oper_type = 0; oper_type < num_te_types(); oper_type++)
+          if (pairblk_[ij].ints_[oper_type] != NULL) {
+            ExEnv::outn() << indent << me() << ": i = " << i << " j = " << j
+                << " oper_type = " << oper_type << endl;
+            throw ProgrammingError("R12IntsAcc_Node0File::~R12IntsAcc_Node0File -- some nonlocal blocks have not been released!",
+                                   __FILE__,__LINE__);
+          }
       }
     }
   delete[] pairblk_;

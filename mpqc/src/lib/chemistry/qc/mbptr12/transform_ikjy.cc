@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2004 Edward Valeev
 //
-// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
 //
 // This file is part of the SC Toolkit.
@@ -49,7 +49,7 @@
 #include <chemistry/qc/mbptr12/r12ia_node0file.h>
 
 // set to 1 when finished rewriting R12IntsAcc_MPIIO
-#define HAVE_R12IA_MPIIO 0
+#define HAVE_R12IA_MPIIO 1
 #ifdef HAVE_MPIIO
 #  if HAVE_R12IA_MPIIO
   #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
@@ -207,7 +207,7 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
 
   case MOIntsTransformFactory::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem(), (file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
 #else
     assert(false);

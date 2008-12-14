@@ -5,7 +5,7 @@
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
 // Author: Ida Nielsen <ida@kemi.aau.dk>
-// Updated: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Updated: Edward Valeev <evaleev@vt.edu>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.

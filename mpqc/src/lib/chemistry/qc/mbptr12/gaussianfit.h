@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2007 Edward Valeev
 //
-// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
 //
 // This file is part of the SC Toolkit.

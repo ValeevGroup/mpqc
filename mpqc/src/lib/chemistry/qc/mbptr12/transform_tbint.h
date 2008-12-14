@@ -77,7 +77,9 @@ protected:
 
   Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
   Ref<MessageGrp> msg_;
-  Ref<MemoryGrp> mem_;
+  Ref<MemoryGrp> mem_;    // Initially taken from Factory, but may decide to create another MemoryGrp object
+                          // e.g. MemoryGrpRegion object created from Factory's MemoryGrp object. The choice of MemoryGrp
+                          // is finialized in the derived class constructor (\sa init_acc())
   Ref<ThreadGrp> thr_;
   Ref<TwoBodyIntDescr> tbintdescr_;
   // Integrals accumulator
@@ -89,7 +91,8 @@ protected:
   Ref<MOIndexSpace> space4_;
 
   int restart_orbital_; // when restarting, this recalls where to start transform
-  size_t memory_;
+  size_t peak_memory_;  // actual maximum memory (per process) used by this transform during its lifetime
+  size_t memory_;       // memory (per process) used by this transform after compute() has been called
   bool dynamic_;
   double print_percent_;
   DistShellPair::SharedData spdata_;
@@ -97,15 +100,15 @@ protected:
   MOIntsTransformFactory::StoreMethod::type ints_method_;
   std::string file_prefix_;
 
-  // These variables are never saved but computed every time in case environment
-  // has changed or it's a restart  
-  size_t mem_static_;
+  // These variables computed every time in case environment has changed or it's a restart
+  size_t max_memory_;      // max memory given to this object
+  size_t static_memory_;   // memory used to hold persistent quantities
   int batchsize_;
   int npass_;
 
   /// returns index in range of space1_ where to start the transformation
   unsigned int restart_orbital() const;
-  
+
   // Compute used static memory and batch size
   void init_vars();
   // Re-construct the integrals accumulator object
@@ -114,6 +117,8 @@ protected:
   void alloc_mem(const size_t localmem);
   // Deallocate distributed memory
   void dealloc_mem();
+  // Reset mem_ to point to new_mem
+  void set_memgrp(const Ref<MemoryGrp>& new_mem);
 
   // Compute batchsize given the amount of used static memory and
   // the number of i-orbitals
@@ -130,38 +135,40 @@ protected:
       Assumes formatting info from ExEnv::out0().
    */
   void mospace_report(std::ostream& os = ExEnv::out0()) const;
-  
+
   /** Prints out standard header. Call at the beginning of compute().
    */
   void print_header(std::ostream& os = ExEnv::out0()) const;
   /** Prints out standard footer. Call at the end of compute().
    */
   void print_footer(std::ostream& os = ExEnv::out0()) const;
-  
+
 #if 0
   /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
   void check_tbint(const Ref<TwoBodyInt>& tbint) const;
 #endif
-  
+
 public:
-  
+
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                          const Ref<TwoBodyIntDescr>& tbintdescr,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   virtual ~TwoBodyMOIntsTransform();
-  
+
   void save_data_state(StateOut&);
-  
+
+  /// factory who created this
+  const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
   /// Returns the name of the transform
   std::string name() const {return name_;}
   /// Returns a short label which uniquely identifies the type of transform
   virtual std::string type() const =0;
   /// Returns the MemoryGrp object
-  Ref<MemoryGrp> mem() const;
+  const Ref<MemoryGrp>& mem() const;
   /// Returns the MessageGrp object
-  Ref<MessageGrp> msg() const;
+  const Ref<MessageGrp>& msg() const;
   /// Returns the integral set descriptor
   const Ref<TwoBodyIntDescr>& intdescr() const;
   /** Returns the integrals accumulator object. */
@@ -174,6 +181,11 @@ public:
   const Ref<MOIndexSpace>& space3() const;
   /// Returns MOIndexSpace object 4
   const Ref<MOIndexSpace>& space4() const;
+
+  /// Returns amount of memory used by this object after compute() has been called
+  size_t memory() const;
+  /// Returns the maximum amount of memory that will be used by this object
+  size_t peak_memory() const;
 
   /// Returns the update print frequency
   double print_percent() const;
@@ -189,26 +201,25 @@ public:
       in MemoryGrp. It's guaranteed to be divisible by sizeof(double).
     */
   virtual const size_t memgrp_blksize() const =0;
-  
+
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
-  
-  void set_memory(const size_t memory);
+
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
-  
+
   /// Computes transformed integrals
   virtual void compute() = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
-  
+
   /** Returns a that data that must be shared between all DistShellPair
    * objects. */
   DistShellPair::SharedData *shell_pair_data() { return &spdata_; }
-  
+
 };
 
 }

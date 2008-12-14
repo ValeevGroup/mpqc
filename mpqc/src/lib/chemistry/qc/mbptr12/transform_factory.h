@@ -44,6 +44,31 @@ using namespace std;
 
 namespace sc {
 
+  /** Provides hints to the constructors of a Transform class that help configure
+      its implementation.
+
+      The default is to assume that data will not be needed persistently.
+   */
+  class CreateTransformHints {
+    public:
+      CreateTransformHints();
+      CreateTransformHints(const CreateTransformHints&);
+      CreateTransformHints& operator=(const CreateTransformHints& other);
+
+      /// will this transform's data need to be used multiple times?
+      bool data_persistent() const
+      {
+          return data_persistent_;
+      }
+      void data_persistent(bool data_persistent_)
+      {
+          this->data_persistent_ = data_persistent_;
+      }
+
+    private:
+      bool data_persistent_;
+  };
+
 class TwoBodyMOIntsTransform;
 //class TwoBodyIntDescr;
 
@@ -62,30 +87,36 @@ public:
                     StorageType_12=0, StorageType_13=1};
 
 private:
-  
+
   /// The default integral descriptor will compute ERIs
   typedef TwoBodyIntDescrERI DefaultTwoBodyIntDescr;
-  
+
   Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
 
   Ref<Integral> integral_;
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
-  
+
   Ref<TwoBodyIntDescr> tbintdescr_;
-  
+
   Ref<MOIndexSpace> space1_;
   Ref<MOIndexSpace> space2_;
   Ref<MOIndexSpace> space3_;
   Ref<MOIndexSpace> space4_;
 
+  CreateTransformHints hints_;
   size_t memory_;
   bool dynamic_;
   double print_percent_;
   int debug_;
   StoreMethod::type ints_method_;
   std::string file_prefix_;
+
+  // some functions must be called from TwoBodyMOIntsTransform to allow proper memory management
+  friend class TwoBodyMOIntsTransform;
+  void release_memory(size_t nbytes);
+  void reserve_memory(size_t nbytes);
 
 public:
 
@@ -112,14 +143,20 @@ public:
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
-  void set_memory(size_t nbytes) { memory_ = nbytes; }
+  void set_memory(size_t nbytes) { memory_ = nbytes; mem_->set_localsize(memory_); }
 
+  /// Returns the MemoryGrp object
+  Ref<MemoryGrp> mem() const { return mem_; }
+  /// Returns the MessageGrp object
+  Ref<MessageGrp> msg() const { return msg_; }
   /// Returns the Integral factory
-  Ref<Integral> integral() const { return integral_; };
+  Ref<Integral> integral() const { return integral_; }
   /// Returns the default TwoBodyIntDescr used to produce integrals
   Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.
   const StoreMethod::type ints_method() const { return ints_method_; }
+  const CreateTransformHints& hints() const { return hints_; }
+  CreateTransformHints& hints() { return hints_; }
   /// Sets the name of the file to hold the integrals.
   const std::string file_prefix() const { return file_prefix_; }
   const int debug() const { return debug_; }
@@ -145,7 +182,7 @@ public:
     stored in rs blocks for each pq */
   Ref<TwoBodyMOIntsTransform>
   twobody_transform_12(const std::string& id, const Ref<TwoBodyIntDescr>& descr = 0);
-  
+
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored according to storage */
   Ref<TwoBodyMOIntsTransform>

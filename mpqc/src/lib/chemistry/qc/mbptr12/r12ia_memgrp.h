@@ -67,7 +67,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     int ij_proc(int i, int j) const { return ij_index(i,j)%ntasks();};
 
   public:
-    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types,
+    R12IntsAcc_MemoryGrp(const Ref<MemoryGrp>&, int num_te_types,
                          int ni, int nj, int nx, int ny,
                          size_t memorygrp_blksize);
     R12IntsAcc_MemoryGrp(StateIn&);
@@ -77,7 +77,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     // Implementation of R12IntsAcc_MemoryGrp
     void deactivate();
     /// implementation of R12IntsAcc::data_persistent()
-    bool data_persistent() const { return true; }
+    bool data_persistent() const { return false; }
     /// Stores an ij pair block of integrals (assumes the block resides locally)
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
     /// Retrieves an ij pair block of integrals

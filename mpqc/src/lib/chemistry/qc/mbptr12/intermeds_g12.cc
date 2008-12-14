@@ -83,17 +83,6 @@ R12IntEval::init_intermeds_g12_()
       // for now it's always true since can only use ij and pq products to generate geminals
       const bool occ12_in_x12 = true;
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xzyw;
-      {
-	  NewTransformCreator tform_creator(
-	      thisref,
-	      xspace1,
-	      xspace1,
-	      xspace2,
-	      xspace2,true,true
-	      );
-	  fill_container(tform_creator,tforms_f12f12_xzyw);
-      }
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyj;
       {
       // xiyj is needed, but it's a subset of integrals needed later
@@ -107,7 +96,7 @@ R12IntEval::init_intermeds_g12_()
           xspace2,
           obs2,true
           );
-        fill_container(tform_creator,tforms_f12_xiyj);        
+        fill_container(tform_creator,tforms_f12_xiyj);
       }
       else {
         NewTransformCreator tform_creator(
@@ -128,14 +117,26 @@ R12IntEval::init_intermeds_g12_()
 	  antisymmetrize,
 	  tforms_f12_xiyj
 	  );
+
+      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xzyw;
+      {
+      NewTransformCreator tform_creator(
+          thisref,
+          xspace1,
+          xspace1,
+          xspace2,
+          xspace2,true,true
+          );
+      fill_container(tform_creator,tforms_f12f12_xzyw);
+      }
       // g12*g12' operator
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-	  X_[s], corrfactor()->tbint_type_f12f12(),
-	  xspace1, xspace1,
-	  xspace2, xspace2,
-	  antisymmetrize,
-	  tforms_f12f12_xzyw
-	  );
+      X_[s], corrfactor()->tbint_type_f12f12(),
+      xspace1, xspace1,
+      xspace2, xspace2,
+      antisymmetrize,
+      tforms_f12f12_xzyw
+      );
       // 0.5 ( g12*[T,g12'] + [g12,T]*g12' ) = [g12,[t1,g12']] + 0.5 ( g12*[T,g12'] - g12'*[T,g12] )
       //   = [g12,[t1,g12']] - 0.5 ( g12*[g12',T] - g12'*[g12,T] ) = [g12,[t1,g12']] - 0.5 ( (beta-alpha)/(beta+alpha) * [g12*g12',T] ),
       // where the last step valid is for 2 primitive gaussians only (must be contracted otherwise)
@@ -221,7 +222,7 @@ R12IntEval::init_intermeds_g12_()
 		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true,true);
 		      fill_container(tform_creator,tforms_zHxy);
 		  }
-		  
+
 		  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 		      Banti, corrfactor()->tbint_type_f12f12_anti(),
 		      xspace1, xspace2,
@@ -258,7 +259,7 @@ R12IntEval::init_intermeds_g12_()
 
   tim_diagonal.exit();
   checkpoint_();
-  
+
   return;
 }
 

@@ -79,6 +79,9 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
   print_percent_ = 10.0;
   ints_method_ = StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
+
+  // allocate all memory at once
+  mem_->set_localsize(memory_);
 }
 
 MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
@@ -149,7 +152,7 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
 {
   Ref<TwoBodyMOIntsTransform> result;
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
-  
+
   if (space2_->rank() <= space2_->basis()->nbasis()) {
 #if USE_IXJY_ALWAYS
     result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
@@ -163,9 +166,9 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-
   result->set_debug(debug());
-  
+  reserve_memory(result->memory());
+
   return result;
 }
 
@@ -179,9 +182,9 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-
   result->set_debug(debug());
-  
+  reserve_memory(result->memory());
+
   return result;
 }
 
@@ -191,17 +194,47 @@ MOIntsTransformFactory::twobody_transform(StorageType storage,
                                           const Ref<TwoBodyIntDescr>& descrarg)
 {
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
-  
+
   switch (storage) {
     case StorageType_12:
     return twobody_transform_12(name,descr);
-    
+
     case StorageType_13:
     return twobody_transform_13(name,descr);
-    
+
     default:
     throw ProgrammingError("MOIntsTransformFactory::twobody_transform() -- unknown storage type requested",__FILE__,__LINE__);
   }
+}
+
+void
+MOIntsTransformFactory::reserve_memory(size_t bytes) {
+  memory_ -= bytes;
+}
+
+void
+MOIntsTransformFactory::release_memory(size_t bytes) {
+  memory_ += bytes;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+CreateTransformHints::CreateTransformHints() :
+  data_persistent_(false)
+{
+}
+
+CreateTransformHints::CreateTransformHints(const CreateTransformHints& other) :
+  data_persistent_(other.data_persistent_)
+{
+}
+
+CreateTransformHints&
+CreateTransformHints::operator=(const CreateTransformHints& other)
+{
+  data_persistent_ = other.data_persistent_;
+
+  return *this;
 }
 
 /////////////////////////////////////////////////////////////////////////////

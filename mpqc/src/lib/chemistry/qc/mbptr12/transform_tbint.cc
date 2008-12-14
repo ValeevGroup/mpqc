@@ -56,23 +56,23 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
 double
 TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
 
-TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& fact,
                                                const Ref<TwoBodyIntDescr>& tbintdescr,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  name_(name), factory_(factory), tbintdescr_(tbintdescr),
+  name_(name), factory_(fact), tbintdescr_(tbintdescr),
   space1_(space1), space2_(space2), space3_(space3), space4_(space4),
-  mem_(MemoryGrp::get_default_memorygrp()),
-  msg_(MessageGrp::get_default_messagegrp()),
+  mem_(factory()->mem()),
+  msg_(factory()->msg()),
   thr_(ThreadGrp::get_default_threadgrp()),
   restart_orbital_(0),
   // Default values
-  memory_(factory_->memory()),
-  debug_(factory_->debug()),
-  dynamic_(factory_->dynamic()),
-  print_percent_(factory_->print_percent()),
-  ints_method_(factory_->ints_method()),
-  file_prefix_(factory_->file_prefix())
+  debug_(factory()->debug()),
+  dynamic_(factory()->dynamic()),
+  print_percent_(factory()->print_percent()),
+  ints_method_(factory()->ints_method()),
+  file_prefix_(factory()->file_prefix()),
+  max_memory_(factory()->memory())
 {
 }
 
@@ -81,7 +81,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   si.get(name_);
   factory_ << SavableState::restore_state(si);
   ints_acc_ << SavableState::restore_state(si);
-  
+
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
@@ -91,7 +91,6 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
@@ -102,6 +101,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
 {
+  factory_->release_memory(memory());
 }
 
 void
@@ -110,13 +110,12 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   so.put(name_);
   SavableState::save_state(factory_.pointer(),so);
   SavableState::save_state(ints_acc_.pointer(),so);
-  
+
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
-  so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
@@ -126,29 +125,31 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 }
 
 void
-TwoBodyMOIntsTransform::set_memory(const size_t memory)
-{
-  memory_ = memory;
-  init_vars();
-}
+TwoBodyMOIntsTransform::set_memgrp(const Ref<MemoryGrp>& new_mem) { mem_ = new_mem; }
 
-Ref<MemoryGrp>
+const Ref<MemoryGrp>&
 TwoBodyMOIntsTransform::mem() const {return mem_; }
 
-Ref<MessageGrp>
-TwoBodyMOIntsTransform::msg() const {return  msg_; }
+const Ref<MessageGrp>&
+TwoBodyMOIntsTransform::msg() const {return msg_; }
 
 const Ref<TwoBodyIntDescr>&
 TwoBodyMOIntsTransform::intdescr() const { return tbintdescr_; }
 
 const Ref<R12IntsAcc>&
 TwoBodyMOIntsTransform::ints_acc() {
-  if (ints_acc_.nonnull())
-    return ints_acc_;
-  else {
-    init_acc();
-    return ints_acc_;
-  }
+  init_acc();
+  return ints_acc_;
+}
+
+size_t
+TwoBodyMOIntsTransform::memory() const {
+  return memory_;
+}
+
+size_t
+TwoBodyMOIntsTransform::peak_memory() const {
+  return peak_memory_;
 }
 
 const Ref<MOIndexSpace>&
@@ -196,10 +197,11 @@ TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static, int rank
 {
   // Check is have enough for even static objects
   size_t mem_dyn = 0;
-  if (memory_ <= mem_static)
+  const size_t max_memory = factory_->memory();
+  if (max_memory <= mem_static)
     return 0;
   else
-    mem_dyn = memory_ - mem_static;
+    mem_dyn = max_memory - mem_static;
 
   // Determine if calculation is possible at all (i.e., if ni=1 possible)
   int ni = 1;
@@ -229,31 +231,33 @@ TwoBodyMOIntsTransform::init_vars()
   const int me = msg_->me();
   const int rank_i = space1_->rank() - restart_orbital_;
 
-  mem_static_ = 0;
+  static_memory_ = 0;
   if (me == 0) {
+#if 0 // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
     // mem_static should include storage in MOIndexSpace
-    mem_static_ = space1_->memory_in_use() +
+    static_memory_ = space1_->memory_in_use() +
                   space2_->memory_in_use() +
                   space3_->memory_in_use() +
                   space4_->memory_in_use(); // scf vector
     int nthreads = thr_->nthread();
     // ... plus the integrals evaluators
-    //mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
+    //static_memory_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
     //                                                        space3_->basis(),space4_->basis());
-    // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
-    mem_static_ += 1000000;
-    batchsize_ = compute_transform_batchsize_(mem_static_,rank_i); 
+#else
+    static_memory_ += 1000000;
+#endif
+    batchsize_ = compute_transform_batchsize_(static_memory_,rank_i);
   }
 
   // Send value of ni and mem_static to other nodes
   msg_->bcast(batchsize_);
-  double mem_static_double = static_cast<double>(mem_static_);
-  msg_->bcast(mem_static_double);
-  mem_static_ = static_cast<size_t>(mem_static_double);
+  double static_memory_double = static_cast<double>(static_memory_);
+  msg_->bcast(static_memory_double);
+  static_memory_ = static_cast<size_t>(static_memory_double);
 
   if (batchsize_ == 0)
     throw std::runtime_error("TwoBodyMOIntsTransform::init_vars() -- batch size is 0: more memory or processors are needed");
-  
+
   npass_ = 0;
   int rest = 0;
   if (batchsize_ == rank_i) {
@@ -264,6 +268,19 @@ TwoBodyMOIntsTransform::init_vars()
     rest = rank_i%batchsize_;
     npass_ = (rank_i - rest)/batchsize_ + 1;
     if (rest == 0) npass_--;
+  }
+
+  // At this point I need to figure out how much memory will be used after compute() has been called
+  // R12IntsAcc object will either use none or all of the dynamical memory
+  // this will call init_acc() implicitly
+  const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
+  if (!ints_acc()->data_persistent()) { // data is held in memory
+    memory_ = static_memory_ + mem_dyn;
+    peak_memory_ = memory_;
+  }
+  else { // data is held elsewhere
+    memory_ = static_memory_;
+    peak_memory_ = memory_ + mem_dyn;
   }
 }
 
@@ -314,33 +331,32 @@ TwoBodyMOIntsTransform::compute_nij(const int rank_i, const int rank_j, const in
       if (index++ % nproc == 0) nij++;
     }
   }
-  
+
   return nij;
 }
 
 void
 TwoBodyMOIntsTransform::memory_report(std::ostream& os) const
 {
-  const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
   const int rank_i_restart = space1_->rank() - restart_orbital_;
 
   os << indent
-     << "Memory available per node:      " << memory_ << " Bytes"
+     << "Memory available per node:      " << max_memory_ << " Bytes"
      << endl;
   os << indent
-     << "Static memory used per node:    " << mem_static_ << " Bytes"
+     << "Static memory used per node:    " << static_memory_ << " Bytes"
      << endl;
   os << indent
-     << "Total memory used per node:     " << mem_dyn+mem_static_ << " Bytes"
+     << "Total memory used per node:     " << peak_memory_ << " Bytes"
      << endl;
   os << indent
      << "Memory required for one pass:   "
-     << compute_transform_dynamic_memory_(rank_i_restart)+mem_static_
+     << compute_transform_dynamic_memory_(rank_i_restart)+static_memory_
      << " Bytes"
      << endl;
   os << indent
      << "Minimum memory required:        "
-     << compute_transform_dynamic_memory_(1)+mem_static_
+     << compute_transform_dynamic_memory_(1)+static_memory_
      << " Bytes"
      << endl;
   os << indent
@@ -374,13 +390,13 @@ TwoBodyMOIntsTransform::print_header(std::ostream& os) const
   int nproc = msg_->n();
   if (debug_ >= DefaultPrintThresholds::diagnostics)
     os << indent << scprintf("nproc = %i", nproc) << endl;
-  
+
   if (restart_orbital() && debug_ >= DefaultPrintThresholds::diagnostics) {
     os << indent
        << scprintf("Restarting at orbital %d",
                    restart_orbital()) << endl;
   }
-  
+
   memory_report(os);
   if (dynamic_)
     os << indent << "Using dynamic load balancing." << endl;

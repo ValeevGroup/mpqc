@@ -38,7 +38,7 @@ BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc \
   r12ia.cc \
-  r12ia_node0file.cc \
+  r12ia_node0file.cc r12ia_memgrp.cc \
   vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \
   multipole_ints.cc ri_basis.cc \

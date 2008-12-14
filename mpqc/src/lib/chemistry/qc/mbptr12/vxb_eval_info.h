@@ -100,17 +100,17 @@ private:
   int nlindep_aux_;
   int nlindep_vir_;
   int nlindep_ri_;
-  
+
   /// This space depends only on the orbital basis set
   Ref<MOIndexSpace> abs_space_;  // ABS space
-  Ref<MOIndexSpace> ribs_space_; // RIBS basis  
+  Ref<MOIndexSpace> ribs_space_; // RIBS basis
   SpinSpaces vir_spaces_[NSpinCases1];
   Ref<MOIndexSpace> vir_act_;
   Ref<MOIndexSpace> vir_;
   Ref<MOIndexSpace> vir_sb_;
   /// Initializes all spaces that relate to the reference determinant
   Ref<SingleRefInfo> refinfo_;
-  
+
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
 
@@ -149,14 +149,21 @@ public:
 	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
 	  This method does not allow all steps to be parallelized but it is most likely to work in all environments.
 
-	  <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method allows
-	  parallelization of all steps.
+      <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method allows
+      parallelization of all steps, but requires MPI-I/O capability (including MPI-I/O capable file system;
+      see keyword <tt>ints_file</tt>)
+
+	  <dt><tt>mem</tt><dd> Store integrals in memory. Can only be used with single-pass
+      transformations for MP2-R12/A and MP2-R12/A' methods. This choice is the most efficient, but
+      requires significant amount memory. It is probably only feasible when <tt>stdapprox = A'</tt>.
+
+      <dt><tt>mem-posix</tt><dd> The program will choose between <tt>mem</tt> and <tt>posix</tt> automatically.
+
+      <dt><tt>mem-mpi</tt><dd> The program will choose between <tt>mem</tt> and <tt>mpi</tt> automatically.
 
 	</dl>
 
-	If <tt>store_ints</tt> is not specified, then <tt>posix</tt> method will be used.
-	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
-	<tt>store_ints</tt> should be explicitly set to <tt>mpi</tt>.
+	The default is <tt>posix</tt>.
 
     <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
 	MO integrals file if <tt>ints</tt> is set to <tt>posix</tt> or <tt>mpi</tt>.
@@ -165,10 +172,10 @@ public:
     The default value for the prefix is "./".
     If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
-	
+
 	<dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
 	is used by MO integrals transforms. The default is false.
-	
+
     */
   R12IntEvalInfo(const Ref<KeyVal>& keyval,
 		 Wavefunction* wfn,
@@ -255,7 +262,7 @@ public:
   void vir(const SpinCase1& S, const Ref<MOIndexSpace>& space);
   void vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& space);
   void vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& space);
-  
+
   /// Returns the MOIndexSpace object for ABS
   const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS: approximates the identity
@@ -269,7 +276,7 @@ public:
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
   /// Return the SingleRefInfo object
   const Ref<SingleRefInfo>& refinfo() const;
-  
+
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
   static Ref<MOIndexSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
@@ -286,7 +293,7 @@ public:
   */
   static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                 const std::string& id, const std::string& name, double lindep_tol);
-                                       
+
   /// Compute overlap matrices in the basis of space1 and space2
   static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,

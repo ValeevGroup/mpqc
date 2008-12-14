@@ -32,13 +32,14 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
+#include <util/group/memregion.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
 
 // set to 1 when finished rewriting R12IntsAcc_MemoryGrp
-#define HAVE_R12IA_MEMGRP 0
+#define HAVE_R12IA_MEMGRP 1
 #if HAVE_R12IA_MEMGRP
   #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
 #endif
@@ -143,9 +144,8 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
   if (ints_acc_.nonnull())
     return;
 
-  int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
-
-  alloc_mem((size_t)num_te_types()*nij*memgrp_blksize());
+  const int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
+  const size_t localmem = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
 
   switch (ints_method_) {
 
@@ -153,23 +153,34 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
 #if HAVE_R12IA_MEMGRP
-    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());  // Hack to avoid using nfzc and nocc
+    {
+      // use a subset of a MemoryGrp provided by TransformFactory
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+                                           space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
+                                           memgrp_blksize());
+    }
 #else
     assert(false);
 #endif
     break;
 
   case MOIntsTransformFactory::StoreMethod::mem_posix:
-    if (npass_ == 1) {
+    // if can do in one pass, use the factory hints about how data will be used
+    if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+      // use a subset of a MemoryGrp provided by TransformFactory
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+                                           space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
+                                           memgrp_blksize());
 #else
       assert(false);
 #endif
       break;
     }
     // else use the next case
-      
+
   case MOIntsTransformFactory::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
@@ -177,9 +188,14 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
 #if HAVE_MPIIO
   case MOIntsTransformFactory::StoreMethod::mem_mpi:
-    if (npass_ == 1) {
+    // if can do in one pass, use the factory hints about how data will be used
+    if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+      // use a subset of a MemoryGrp provided by TransformFactory
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+                                           space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
+                                           memgrp_blksize());
 #else
       assert(false);
 #endif
@@ -189,17 +205,20 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
   case MOIntsTransformFactory::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem(), (file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
 #else
     assert(false);
 #endif
     break;
 #endif
-  
+
   default:
     throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- invalid integrals store method");
   }
+
+  // now safe to use memorygrp
+  alloc_mem(localmem);
 }
 
 void
@@ -217,13 +236,13 @@ TwoBodyMOIntsTransform_ijxy::check_int_symm(double threshold) throw (Programming
   vector<unsigned int> jsyms = space2_->mosym();
   vector<unsigned int> xsyms = space3_->mosym();
   vector<unsigned int> ysyms = space4_->mosym();
-  
+
   int me = msg_->me();
   vector<int> twi_map;
   int ntasks_with_ints = iacc->tasks_with_access(twi_map);
   if (!iacc->has_access(me))
     return;
-  
+
   int ij=0;
   for(int i=0; i<ni; i++) {
     int isym = isyms[i];

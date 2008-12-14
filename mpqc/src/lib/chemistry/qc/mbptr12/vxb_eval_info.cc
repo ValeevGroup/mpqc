@@ -89,22 +89,33 @@ R12IntEvalInfo::R12IntEvalInfo(
 
   // Determine how to store MO integrals
   std::string ints_str = keyval->stringvalue("store_ints",KeyValValuestring("posix"));
-  if (ints_str == "posix") {
+  if (ints_str == std::string("mem")) {
+    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_only;
+  }
+  else if (ints_str == std::string("posix")) {
     ints_method_ = MOIntsTransformFactory::StoreMethod::posix;
   }
+  else if (ints_str == std::string("mem-posix")) {
+    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_posix;
+  }
+  else if (ints_str == std::string("mpi")) {
 #if HAVE_MPIIO
-  else if (ints_str == "mpi") {
     ints_method_ = MOIntsTransformFactory::StoreMethod::mpi;
-  }
 #else
-  else if (ints_str == "mpi") {
-    throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- the value for keyword store_ints is not valid in this environment (no MPI-I/O detected)");
-  }
+    throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- store_ints=mpi is not valid in this environment (no MPI-I/O detected)");
 #endif
+  }
+  else if (ints_str == std::string("mem-mpi")) {
+#if HAVE_MPIIO
+    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_mpi;
+#else
+    throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- store_ints=mem_mpi is not valid in this environment (no MPI-I/O detected)");
+#endif
+  }
   else {
     throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- invalid value for keyword r12ints");
   }
-  
+
   // Get the filename prefix to store the integrals
   const std::string ints_file_default = SCFormIO::fileext_to_filename(".moints");
   ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(ints_file_default));
@@ -115,7 +126,7 @@ R12IntEvalInfo::R12IntEvalInfo(
 
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(0)));
-  
+
   r12tech_ = new R12Technology(keyval,ref->basis(),bs_vir_,bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
@@ -167,7 +178,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     vir_sb_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
-  
+
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
     refinfo_ << SavableState::restore_state(si);
   }
@@ -193,7 +204,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
-  
+
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
   SavableState::save_state(vir_act_.pointer(),so);
@@ -211,13 +222,21 @@ R12IntEvalInfo::initialize()
       refinfo_->initialize();
       construct_ri_basis_(safety_check());
       construct_orthog_vir_();
-      
+
       tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
       tfactory_->set_memory(memory_);
       tfactory_->set_dynamic(dynamic_);
       tfactory_->set_ints_method(ints_method_);
       tfactory_->set_file_prefix(ints_file_);
       initialized_ = true;
+
+      // provide hints to the factory about the likely use of transforms
+      // 1) if stdapprox is A' or A'' most transforms will never be reused
+      // 2) otherwise use persistent transforms
+      if (stdapprox() == LinearR12::StdApprox_Ap || stdapprox() == LinearR12::StdApprox_App)
+        tfactory_->hints().data_persistent(false);
+      else
+        tfactory_->hints().data_persistent(true);
   }
 }
 
@@ -285,7 +304,7 @@ R12IntEvalInfo::construct_orthog_vir_()
 {
   if (vir_.nonnull())
     return;
-  
+
   const bool spin_polarized = refinfo()->spin_polarized();
 
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
@@ -305,7 +324,7 @@ R12IntEvalInfo::construct_orthog_vir_()
   else {
     if (refinfo()->nfzv() != 0)
       throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
-    
+
     // This is a set of orthonormal functions that span VBS
     Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
     if (!spin_polarized) {
@@ -384,16 +403,16 @@ R12IntEvalInfo::print(std::ostream& o) const {
   std::string ints_str;
   switch (ints_method_) {
   case R12IntEvalInfo::StoreMethod::mem_only:
-    ints_str = "mem"; break;
+    ints_str = std::string("mem"); break;
   case R12IntEvalInfo::StoreMethod::mem_posix:
-    ints_str = "mem_posix"; break;
+    ints_str = std::string("mem-posix"); break;
   case R12IntEvalInfo::StoreMethod::posix:
-    ints_str = "posix"; break;
+    ints_str = std::string("posix"); break;
 #if HAVE_MPIIO
   case R12IntEvalInfo::StoreMethod::mem_mpi:
-    ints_str = "mem-mpi"; break;
+    ints_str = std::string("mem-mpi"); break;
   case R12IntEvalInfo::StoreMethod::mpi:
-    ints_str = "mpi"; break;
+    ints_str = std::string("mpi"); break;
 #endif
   default:
     throw std::runtime_error("R12IntEvalInfo::print -- invalid value of ints_method_");

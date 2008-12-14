@@ -33,6 +33,7 @@
 #define _util_group_memregion_h
 
 #include <list>
+#include <vector>
 #include <memory>
 #include <sys/types.h>
 
@@ -42,7 +43,7 @@ namespace sc {
 
 /** The MemoryGrpRegion is a MemoryGrp proxy to a region of a MemoryGrp. It is assumed that the host MemoryGrp
     is not resized during lifetime of all MemoryGrpRegion objects bound to it.
-    
+
     Each region has a static local offset and size. set_localsize() then cannot ask for more than the maximum size,
     but can be called multiple times.
   */
@@ -50,6 +51,8 @@ class MemoryGrpRegion: public MemoryGrp {
   public:
     /// MemoryGrpRegion is defined by the host MemoryGrp and position and size of the local segment within the local memory of the host
     MemoryGrpRegion(const Ref<MemoryGrp>& mem, size_t mem_start, size_t max_size);
+    /// same as above, except mem_start is determined automatically
+    MemoryGrpRegion(const Ref<MemoryGrp>& mem, size_t max_size);
     ~MemoryGrpRegion();
 
     void set_localsize(size_t);
@@ -72,10 +75,13 @@ class MemoryGrpRegion: public MemoryGrp {
     /// reimplementation of MemoryGrp::clone(). always throws ProgrammingError -- this type of MemoryGrp is not clonable
     Ref<MemoryGrp> clone();
     void print(std::ostream &o=ExEnv::out0()) const;
-    
+
   private:
-    
-    // LocalRegion is an interval [start, start+size)
+
+    // init() should be called in every constructor to finish up construction duties
+    void init();
+
+    /// LocalRegion is an interval [start, start+size)
     class LocalRegion {
       public:
         LocalRegion(size_t start, size_t size) : start_(start), size_(size) {}
@@ -92,20 +98,22 @@ class MemoryGrpRegion: public MemoryGrp {
         size_t size_;
     };
     typedef std::list<LocalRegion> LocalRegions;
-    
+
     Ref<MemoryGrp> host_;
     LocalRegion reserve_;              // reserved space
     std::vector<distsize_t> host_offsets_;  // start of regions on each node using the host MemoryGrp coordinates
     // converts offset from this object's coordinates to host coordinates
     distsize_t offset_to_host_offset(const distsize_t& offset) const;
-    
-    // this maps MemoryGrp to the ordered list of its allocated regions, in order of increasing starts
+
+    /// this maps MemoryGrp to the ordered list of its allocated regions, in order of increasing starts
     class HostToRegionsMap {
       public:
         HostToRegionsMap();
         ~HostToRegionsMap();
         void insert(const MemoryGrp* host, const LocalRegion& region);
         void erase(const MemoryGrp* host, const LocalRegion& region);
+        /// suggests where to put a block of size sz. Does not check whether host has enough memory.
+        size_t find_free(const MemoryGrp* host, size_t sz) const;
       private:
         const LocalRegions* regions(const MemoryGrp* host) const;
         typedef std::map<const MemoryGrp*,LocalRegions*> ImplType;
@@ -113,7 +121,7 @@ class MemoryGrpRegion: public MemoryGrp {
         Ref<ThreadLock> lock_;
     };
     static HostToRegionsMap map_;
-    
+
 };
 
 }

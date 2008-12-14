@@ -49,10 +49,30 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t host_offset,
   MemoryGrp(), host_(host), reserve_(host_offset,max_size), host_offsets_(host_->n(),0)
 {
   // host must be initialized already
-  assert(host_offset + max_size <= host->localsize());
+  assert(reserve_.start() + reserve_.size() <= host_->localsize());
   // add region to the map
   map_.insert(host_,reserve_);
 
+  init();
+}
+
+MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t max_size) :
+  MemoryGrp(), host_(host),
+  // find_free finds a free segment of size max_size.
+  reserve_(map_.find_free(host_,max_size),max_size),
+  host_offsets_(host_->n(),0)
+{
+  // host must be initialized already
+  assert(reserve_.start() + reserve_.size() <= host->localsize());
+  // add region to the map
+  map_.insert(host_,reserve_);
+
+  init();
+}
+
+void
+MemoryGrpRegion::init()
+{
   // replicate host_offset
   const int nnodes = host_->n();
   long int* host_offsets = new long int[nnodes];
@@ -61,7 +81,7 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t host_offset,
   host_offsets[host_->me()] = reserve_.start();
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
   msg->sum(host_offsets,nnodes);
-  
+
   // compute host_offsets_
   host_offsets_.resize(nnodes);
   for(int node=0; node<nnodes; ++node)
@@ -69,7 +89,7 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t host_offset,
 
   // cleanup
   delete[] host_offsets;
-  
+
   // MemoryGrp constructor doesn't do much, initialize its protected members here
   n_ = host_->n();
   me_ = host_->me();
@@ -87,7 +107,7 @@ void
 MemoryGrpRegion::set_localsize(size_t localsize)
 {
   assert(localsize <= host_->localsize());
-  
+
   // replicate sizes
   const int nnodes = host_->n();
   long int* sizes = new long int[nnodes];
@@ -95,7 +115,7 @@ MemoryGrpRegion::set_localsize(size_t localsize)
   sizes[host_->me()] = localsize;
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
   msg->sum(sizes,nnodes);
-  
+
   // compute offsets_
   offsets_[0] = 0;
   // remember, offsets_ is nnodes+1 long
@@ -251,15 +271,12 @@ MemoryGrpRegion::HostToRegionsMap::regions(const MemoryGrp* host) const {
 }
 
 void
-MemoryGrpRegion::HostToRegionsMap::insert(const MemoryGrp* host, const LocalRegion& region) {
-  
-  if (region.start() + region.size() > const_cast<MemoryGrp*>(host)->localsize()) {
-    throw ProgrammingError("MemoryGrpRegion::HostToRegionsMap::insert -- out of space",__FILE__,__LINE__);
-  }
+MemoryGrpRegion::HostToRegionsMap::insert(const MemoryGrp* host, const LocalRegion& region)
+{
 
   // one thread at a time
   lock_->lock();
-  
+
   LocalRegions* regions_ptr = const_cast<LocalRegions*>(this->regions(host));
   if (regions_ptr) {
     LocalRegions& regions = *regions_ptr;
@@ -301,16 +318,16 @@ MemoryGrpRegion::HostToRegionsMap::insert(const MemoryGrp* host, const LocalRegi
     regions_ptr->push_back(region);
     impl_[host] = regions_ptr;
   }
-  
+
   lock_->unlock();
 }
 
 void
 MemoryGrpRegion::HostToRegionsMap::erase(const MemoryGrp* host, const LocalRegion& region) {
-  
+
   // one thread at a time
   lock_->lock();
-  
+
   LocalRegions* regions_ptr = const_cast<LocalRegions*>(this->regions(host));
   if (regions_ptr == 0) {
     lock_->unlock();
@@ -327,12 +344,44 @@ MemoryGrpRegion::HostToRegionsMap::erase(const MemoryGrp* host, const LocalRegio
     lock_->unlock();
     throw ProgrammingError("MemoryGrpRegion::HostToRegionsMap::erase -- this region not found",__FILE__,__LINE__);
   }
-  
+
   // remove regions, if empty
   if (regions.empty())
     impl_.erase(host);
-  
+
   lock_->unlock();
+}
+
+size_t
+MemoryGrpRegion::HostToRegionsMap::find_free(const MemoryGrp* host, size_t size) const
+{
+  // one thread at a time
+    lock_->lock();
+
+    size_t result = 0;
+    LocalRegions* regions_ptr = const_cast<LocalRegions*>(this->regions(host));
+    // if regions_ptr == 0, return 0
+    if (regions_ptr != 0) {
+      LocalRegions& regions = *regions_ptr;
+      // regions are ordered, find the first gap that is big enough, otherwise assume free space past the last block
+      typedef LocalRegions::iterator iter;
+      const iter end = regions.end();
+      for(iter block=regions.begin(); block!=end; ++block) {
+        const size_t gap_start = block->start() + block->size();
+        result = gap_start;
+        // if the gap between the end of this block and the next one if large enough, stop
+        iter next_block = block; ++next_block;
+        if (next_block != end) {
+          const size_t gap_size = next_block->start() - gap_start;
+          if (gap_size >= size) {
+            break;
+          }
+        }
+      }
+    }
+
+    lock_->unlock();
+    return result;
 }
 
 #endif // header guard

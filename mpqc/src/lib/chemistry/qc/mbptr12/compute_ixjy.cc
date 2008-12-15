@@ -71,9 +71,6 @@ TwoBodyMOIntsTransform_ixjy::compute()
   if (restart_orbital_ == rank1)
     return;
 
-  // memory used by MemoryGrp can now be purged unless ints_acc_ uses it
-  if (ints_acc_->data_persistent()) dealloc_mem();
-
   Ref<Integral> integral = factory_->integral();
   Ref<GaussianBasisSet> bs1 = space1_->basis();
   Ref<GaussianBasisSet> bs2 = space2_->basis();
@@ -106,14 +103,13 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   print_header();
 
-  // allocate memory for MemoryGrp
-  const size_t dyn_mem = dynamic_memory_;
-  alloc_mem(dyn_mem);
-
   int me = msg_->me();
   int nproc = msg_->n();
   const int restart_orb = restart_orbital();
-  int nijmax = compute_nij(batchsize_,rank3,nproc,me);
+  const int nijmax = compute_nij(batchsize_,rank3,nproc,me);
+  // allocate memory for MemoryGrp
+  const size_t localmem = nijmax * num_te_types() * memgrp_blksize();
+  alloc_mem(localmem);
 
   vector<unsigned int> mosym1 = space1_->mosym();
   vector<unsigned int> mosym2 = space2_->mosym();
@@ -140,7 +136,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
   // end of debug print
 
   // Initialize the integrals
-  integral->set_storage(memory_ - dyn_mem);
+  integral->set_storage(max_memory_ - localmem);
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {

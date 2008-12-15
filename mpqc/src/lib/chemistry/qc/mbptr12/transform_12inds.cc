@@ -73,7 +73,7 @@ TwoBodyMOIntsTransform_12Inds::~TwoBodyMOIntsTransform_12Inds()
 
 /*
   Distribute work by SR
-  
+
    for all PQ
     compute unique (PQ|RS)
     transform to (RS|IM) where M are all AOs for basis set 2
@@ -88,20 +88,20 @@ TwoBodyMOIntsTransform_12Inds::~TwoBodyMOIntsTransform_12Inds()
 void
 TwoBodyMOIntsTransform_12Inds::run()
 {
-  Ref<MemoryGrp> mem = tform_->mem();
-  Ref<MessageGrp> msg = tform_->msg();
+  const Ref<MemoryGrp>& mem = tform_->mem();
+  const Ref<MessageGrp>& msg = tform_->msg();
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
   const int me = msg->me();
   const int nproc = msg->n();
-  Ref<MOIndexSpace> space1 = tform_->space1();
-  Ref<MOIndexSpace> space2 = tform_->space2();
-  Ref<MOIndexSpace> space3 = tform_->space3();
-  Ref<MOIndexSpace> space4 = tform_->space4();
+  const Ref<MOIndexSpace>& space1 = tform_->space1();
+  const Ref<MOIndexSpace>& space2 = tform_->space2();
+  const Ref<MOIndexSpace>& space3 = tform_->space3();
+  const Ref<MOIndexSpace>& space4 = tform_->space4();
 
-  Ref<GaussianBasisSet> bs1 = space1->basis();
-  Ref<GaussianBasisSet> bs2 = space2->basis();
-  Ref<GaussianBasisSet> bs3 = space3->basis();
-  Ref<GaussianBasisSet> bs4 = space4->basis();
+  const Ref<GaussianBasisSet>& bs1 = space1->basis();
+  const Ref<GaussianBasisSet>& bs2 = space2->basis();
+  const Ref<GaussianBasisSet>& bs3 = space3->basis();
+  const Ref<GaussianBasisSet>& bs4 = space4->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
   const bool bs3_eq_bs4 = (bs3 == bs4);
 
@@ -125,7 +125,7 @@ TwoBodyMOIntsTransform_12Inds::run()
   const int nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
-  
+
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 1
   int tbtype_anti1 = -1;
   const unsigned int ntypes = tbint_->num_tbint_types();
@@ -161,7 +161,7 @@ TwoBodyMOIntsTransform_12Inds::run()
     rsiq_ints[te_type] = new double[ni*nbasis2*nfuncmax3*nfuncmax4];
   }
   ijrs_contrib  = mem->malloc_local_double(ni*rank2*nfuncmax3*nfuncmax4);
-  
+
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
@@ -170,7 +170,7 @@ TwoBodyMOIntsTransform_12Inds::run()
   shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
-  int work_per_thread = bs3_eq_bs4 ? 
+  int work_per_thread = bs3_eq_bs4 ?
     ((nsh3*(nsh3+1))/2)/(nproc*nthread_) :
     (nsh3*nsh4)/(nproc*nthread_) ;
   int print_interval = work_per_thread/100;
@@ -202,10 +202,10 @@ TwoBodyMOIntsTransform_12Inds::run()
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
     int r_offset = bs3->shell_to_function(R);
-    
+
     int ns = bs4->shell(S).nfunction();
     int s_offset = bs4->shell_to_function(S);
-    
+
     const int nrs = nr*ns;
 
     if (debug_ >= DefaultPrintThresholds::fine && (print_index++)%print_interval == 0) {
@@ -235,7 +235,7 @@ TwoBodyMOIntsTransform_12Inds::run()
       for (int Q=0; Q<=Qmax; Q++) {
 	int nq = bs2->shell(Q).nfunction();
 	int q_offset = bs2->shell_to_function(Q);
-        
+
 	// check if symmetry unique and compute degeneracy
 	int deg = p4list->in_p4(P,Q,R,S);
 	if (deg == 0)
@@ -286,11 +286,11 @@ TwoBodyMOIntsTransform_12Inds::run()
 		      rsip_ptr = &rsiq_ints[te_type][p + nbasis2*(0 + ni*(bf4 + ns*bf3))];
 		      c_qi = vector1[q] + i_offset_;
                     }
-                    
+
 		    double rsiq_int_contrib = *pqrs_ptr;
 		    // multiply each integral by its symmetry degeneracy factor
 		    rsiq_int_contrib *= symfac;
-                    
+
                     if (bs1_eq_bs2) {
 
                       double rsip_int_contrib = rsiq_int_contrib;
@@ -312,7 +312,7 @@ TwoBodyMOIntsTransform_12Inds::run()
                           rsiq_ptr += nbasis2;
                         }
                       }
-                        
+
                     }
                     else {
 
@@ -363,13 +363,13 @@ TwoBodyMOIntsTransform_12Inds::run()
     const int nij = ni*rank2;
     const int niq = ni*nbasis2;
     double* ij_ints = new double[nij];
-    
+
     timer_->enter("2. q.t.");
     // Begin second quarter transformation;
     // generate (ij|rs) stored as ijrs
 
     bzerofast(ijrs_contrib, ni*rank2*nrs);
-    
+
     for(int te_type=0; te_type<num_te_types; te_type++) {
       const double *rsiq_ptr = rsiq_ints[te_type];
       double *ijrs_ptr = ijrs_contrib;
@@ -423,11 +423,11 @@ TwoBodyMOIntsTransform_12Inds::run()
         }
       }
     }
-    
+
     timer_->exit("2. q.t.");
-    
+
     delete[] ij_ints;
-	  
+
   }         // exit while get_task
 
   if (debug_) {
@@ -444,6 +444,35 @@ TwoBodyMOIntsTransform_12Inds::run()
   delete[] vector1[0]; delete[] vector1;
   delete[] vector2[0]; delete[] vector2;
   delete[] intbuf;
+}
+
+size_t
+TwoBodyMOIntsTransform_12Inds::compute_required_dynamic_memory(const TwoBodyMOIntsTransform& tform,
+                                                               int ibatchsize)
+{
+  const Ref<MOIndexSpace>& space1 = tform.space1();
+  const Ref<MOIndexSpace>& space2 = tform.space2();
+  const Ref<MOIndexSpace>& space3 = tform.space3();
+  const Ref<MOIndexSpace>& space4 = tform.space4();
+
+  const Ref<GaussianBasisSet>& bs1 = space1->basis();
+  const Ref<GaussianBasisSet>& bs2 = space2->basis();
+  const Ref<GaussianBasisSet>& bs3 = space3->basis();
+  const Ref<GaussianBasisSet>& bs4 = space4->basis();
+  const int rank1 = space1->rank();
+  const int rank2 = space2->rank();
+  const int nbasis1 = bs1->nbasis();
+  const int nbasis2 = bs2->nbasis();
+  const int nfuncmax3 = bs3->max_nfunction_in_shell();
+  const int nfuncmax4 = bs4->max_nfunction_in_shell();
+  const unsigned int num_te_types = tform.num_te_types();
+
+  const size_t coefs1 = rank1*nbasis1;
+  const size_t coefs2 = rank2*nbasis2;
+  const size_t iqrs = num_te_types * ibatchsize * nbasis2 * nfuncmax3 * nfuncmax4;
+  const size_t ijrs = ibatchsize * rank2 * nfuncmax3 * nfuncmax4;
+
+  return (coefs1 + coefs2 + iqrs + ijrs) * sizeof(double);
 }
 
 ////////////////////////////////////////////////////////////////////////////

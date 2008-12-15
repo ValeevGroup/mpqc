@@ -37,6 +37,7 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
+#include <chemistry/qc/mbptr12/transform_12inds.h>
 
 // set to 1 when finished rewriting R12IntsAcc_MemoryGrp
 #define HAVE_R12IA_MEMGRP 1
@@ -102,28 +103,31 @@ TwoBodyMOIntsTransform_ijxy::save_data_state(StateOut& so)
 distsize_t
 TwoBodyMOIntsTransform_ijxy::compute_transform_dynamic_memory_(int ni) const
 {
-  int nproc = msg_->n();
-  int nthread = thr_->nthread();
+  // dynamic contribution from 1+2 QT
+  const int nthread = thr_->nthread();
+  const distsize_t memsize12 = (distsize_t) nthread *
+                         TwoBodyMOIntsTransform_12Inds::compute_required_dynamic_memory(*this,ni);
 
-  int rank2 = space2_->rank();
-  int nbasis2 = space2_->basis()->nbasis();
-  int nfuncmax3 = space3_->basis()->max_nfunction_in_shell();
-  int nfuncmax4 = space4_->basis()->max_nfunction_in_shell();
-  int rank3 = space3_->rank();
-  int nbasis4 = space4_->basis()->nbasis();
+  // dynamic contributon from 3+4 QT
+  const int rank3 = space3()->rank();
+  const int rank4 = space4()->rank();
+  const int nbasis3 = space3()->basis()->nbasis();
+  const int nbasis4 = space4()->basis()->nbasis();
+  const distsize_t memsize34 = (distsize_t)sizeof(double)*
+                                 (rank3 * nbasis3 + // coefs3
+                                  rank4 * nbasis4 + // coefs4
+                                  rank3 * std::max(nbasis4,rank4) // xs or xy
+                                 );
 
+  // integrals held by MemoryGrp
   // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
-  int nij = compute_nij(ni, rank2, nproc, 0);
+  const int nproc = msg()->n();
+  const int rank2 = space2()->rank();
+  const int nij = compute_nij(ni, rank2, nproc, 0);
+  const distsize_t memsize_memgrp = num_te_types() * nij * (distsize_t) memgrp_blksize();
 
-  distsize_t memsize = sizeof(double)*(num_te_types()*((distsize_t)nthread * ni * nbasis2 * nfuncmax3 * nfuncmax4 // iqrs
-						     + (distsize_t)ni * rank2 * nfuncmax3 * nfuncmax4  // ijrs
-						     + (distsize_t)nij * rank3 * nbasis4 // ijxs - buffer of 3 q.t. and higher
-						     // transformed integrals
-						     )
-				       + (distsize_t)rank3 * nbasis4 // xs or xy
-				       );
-
-  return memsize;
+  // determine the peak memory requirements
+  return memsize_memgrp + std::max(memsize12,memsize34);
 }
 
 const size_t
@@ -145,7 +149,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     return;
 
   const int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
-  const size_t localmem = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
+  const size_t localmem = num_te_types() * nij * memgrp_blksize();
 
   switch (ints_method_) {
 

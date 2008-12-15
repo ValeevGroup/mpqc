@@ -69,6 +69,10 @@ class TwoBodyMOIntsTransform_12Inds: public Thread {
     void set_ni(const int nivalue) { ni_ = nivalue; }
 
     void run();
+
+    /// computes how much memory will be allocated via new or similar means (MemoryGrp::malloc_local())
+    static size_t compute_required_dynamic_memory(const TwoBodyMOIntsTransform& tform,
+                                                  int ibatchsize);
 };
 
 }

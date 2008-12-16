@@ -100,7 +100,7 @@ R12IntEval::contrib_to_VXB_a_()
       else
 	  // involves this term -P1P2
           tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
-        
+
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
       {
@@ -141,7 +141,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms
 	  );
-        
+
       contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
 	  ManyBodyTensors::I_to_T,
@@ -186,6 +186,7 @@ R12IntEval::contrib_to_VXB_a_()
       }
 
       if (debug_ >= DefaultPrintThresholds::O4) {
+          globally_sum_intermeds_();
           V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
 	  if (compute_B)
@@ -391,7 +392,7 @@ R12IntEval::contrib_to_VXB_a_()
 			  tpcontract,
 			  antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
-	      
+
 		  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
 	      }
 	  }
@@ -402,15 +403,16 @@ R12IntEval::contrib_to_VXB_a_()
 	      if (compute_B)
 		  symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
 	  }
-	  
+
 	  if (debug_ >= DefaultPrintThresholds::O4) {
+	      globally_sum_intermeds_();
 	      V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
 	      X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
 	      if (compute_B)
 		  B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
 	  }
       }
-      
+
   }
 }
 

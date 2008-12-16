@@ -82,7 +82,7 @@ R12IntEval::compute_BC_()
 {
     if (evaluated_)
 	return;
-  
+
     const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
     const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
     const unsigned int maxnabs = r12info()->maxnabs();
@@ -97,12 +97,12 @@ R12IntEval::compute_BC_()
     ExEnv::out0() << endl << indent
 		  << "Entered B(app. C) intermediate evaluator" << endl;
     ExEnv::out0() << incindent;
-  
+
     for(int s=0; s<nspincases2(); s++) {
 	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
 	const SpinCase1 spin1 = case1(spincase2);
 	const SpinCase1 spin2 = case2(spincase2);
-    
+
 	Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 	Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
 	Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
@@ -124,13 +124,13 @@ R12IntEval::compute_BC_()
 	else {
 	    hj_x1 = hj_x_p(spin1);
 	    hj_x2 = hj_x_p(spin2);
-	}    
+	}
 	std::string Qlabel = prepend_spincase(spincase2,"Q(C) intermediate");
 	Timer tim_Q(Qlabel);
 	ExEnv::out0() << endl << indent
 		      << "Entered " << Qlabel << " evaluator" << endl;
 	ExEnv::out0() << incindent;
-    
+
 	// compute Q = F12^2 (note F2_only = true in compute_X_ calls)
 	RefSCMatrix Q;
 	compute_X_(Q,spincase2,xspace1,xspace2,
@@ -150,34 +150,31 @@ R12IntEval::compute_BC_()
 	ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
 	tim_Q.exit();
 
-#if 0
 	if (debug_ >= DefaultPrintThresholds::mostO4) {
-#else
-	    {
-#endif
-		std::string label = prepend_spincase(spincase2,"Q(C) contribution");
-		Q.print(label.c_str());
-	    }
-	    B_[s].accumulate(Q); Q = 0;
+	  globally_sum_intermeds_();
+	  std::string label = prepend_spincase(spincase2,"Q(C) contribution");
+      Q.print(label.c_str());
+	}
+	B_[s].accumulate(Q); Q = 0;
 #endif // INCLUDE_Q
 
 #if INCLUDE_P
 	    // compute P
 	    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
-      
+
 	    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
-	    if (!abs_eq_obs && 
+	    if (!abs_eq_obs &&
 		absmethod != LinearR12::ABS_CABS &&
 		absmethod != LinearR12::ABS_CABSPlus) {
 		throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
 	    }
-      
+
 	    std::string Plabel = prepend_spincase(spincase2,"P(C) intermediate");
 	    Timer tim_P(Plabel);
 	    ExEnv::out0() << endl << indent
 			  << "Entered " << Plabel << " evaluator" << endl;
 	    ExEnv::out0() << incindent;
-      
+
 	    Ref<MOIndexSpace> ribs1, ribs2;
 	    if (abs_eq_obs) {
 		ribs1 = orbs1;
@@ -188,7 +185,7 @@ R12IntEval::compute_BC_()
 		ribs2 = r12info()->ribs_space();
 	    }
 	    RefSCMatrix P;
-      
+
 #if INCLUDE_P_PKP
 	    // R_klPQ K_QR R_PRij is included with projectors 2 and 3
 	    {
@@ -232,7 +229,7 @@ R12IntEval::compute_BC_()
 #endif // INCLUDE_P_PFP
 	    }
 	    else {
-	      
+
 	    if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
 		{
@@ -338,12 +335,12 @@ R12IntEval::compute_BC_()
 	    }
 	    } // end of PFP + pFp code for OBS != ABS
 
-      
+
 	    if (!abs_eq_obs) {
-        
+
 		Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
 		Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
-        
+
 		if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFP
                     // R_klmA F_mP R_PAij + R_klPA F_Pm R_mAij
@@ -373,7 +370,7 @@ R12IntEval::compute_BC_()
 		    // the form of the pFp term depends on the projector
 		    Ref<MOIndexSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
 		    Ref<MOIndexSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
-		    
+
 		    // R_klpz F_pA R_Azij
 		    if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
 			// and on whether VBS==OBS
@@ -423,7 +420,7 @@ R12IntEval::compute_BC_()
 			    }
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
-				
+
 			} // VBS != OBS
                         if (debug_ >= DefaultPrintThresholds::allO4)
                           P.print("P(incl R_klpz F_pA R_Azij)");
@@ -450,12 +447,12 @@ R12IntEval::compute_BC_()
 		    }
 #endif // INCLUDE_P_mFm
 		}
-        
+
 	    } // ABS != OBS
 	    else {
 		P.scale(-1.0);
 	    }
-      
+
 	    ExEnv::out0() << decindent;
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
 	    tim_P.exit();
@@ -473,7 +470,7 @@ R12IntEval::compute_BC_()
 	    RefSCMatrix B_t = B_[s].t();
 	    B_[s].accumulate(B_t);
 	}
-  
+
 	globally_sum_intermeds_();
 
 	ExEnv::out0() << decindent;

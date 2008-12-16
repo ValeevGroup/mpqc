@@ -57,6 +57,7 @@ using namespace sc;
                           ENABLE; \
                          } while(0)
 
+// comment out these two lines to produce diagnostic output
 #undef PRINTF
 #define PRINTF(args)
 
@@ -213,23 +214,28 @@ ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 void *
 ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
-  PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite entered\n"));
+  PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readwrite: overall: offset = %ld size = %d\n",
+          me(), (size_t)offset, size));
   void *data = (void *) new char[size];
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
+    PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: working on:"
+            "node = %d offset = %d size = %d\n",
+            me(), i.node(), i.offset(), i.size()));
       if (i.node() == me()) {
-          PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite: local copy\n"));
+          PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: local copy: "
+                  "offset = %d size = %d\n", me(), i.offset(), i.size()));
           obtain_local_lock(i.offset(), i.offset()+i.size());
           memcpy(i.data(), &data_[i.offset()], i.size());
         }
       else {
-          PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite: node = %d, "
+          PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: node = %d, "
                   "int offset = %d, int size = %d\n",
-                  i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
+                  me(), i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           retrieve_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
     }
-  PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite exiting\n"));
+  PRINTF(("%d: exiting ActiveMsgMemoryGrp::obtain_readwrite\n", me()));
   return data;
 }
 
@@ -237,12 +243,12 @@ void *
 ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   void *data = (void *) new char[size];
-  PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly:"
-          "overall: offset = %d size = %d\n",
-          me(), offset, size));
+  PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readonly:"
+          "overall: offset = %ld size = %d\n",
+          me(), (size_t)offset, size));
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
-      PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly:working on:"
+      PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly: working on:"
               "node = %d offset = %d size = %d\n",
               me(), i.node(), i.offset(), i.size()));
       if (i.node() == me()) {
@@ -251,12 +257,13 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
           memcpy(i.data(), &data_[i.offset()], i.size());
         }
       else {
-          PRINTF(("ActiveMsgMemoryGrp::obtain_readonly: node = %d, "
+          PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly: node = %d, "
                   "int offset = %d, int size = %d\n",
-                  i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
+                  me(), i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           retrieve_data(i.data(), i.node(), i.offset(), i.size(), 0);
         }
     }
+  PRINTF(("%d: exiting ActiveMsgMemoryGrp::obtain_readonly\n", me()));
   return data;
 }
 
@@ -337,17 +344,29 @@ ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
 void
 ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
 {
+  PRINTF(("%d: entering ActiveMsgMemoryGrp::release_readwrite:"
+          "overall: offset = %ld size = %d\n",
+          me(), (size_t)offset, size));
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
+    PRINTF(("%d: ActiveMsgMemoryGrp::release_readwrite: working on:"
+            "node = %d offset = %d size = %d\n",
+            me(), i.node(), i.offset(), i.size()));
       if (i.node() == me()) {
+        PRINTF(("%d: ActiveMsgMemoryGrp::release_readwrite: local copy: "
+                "offset = %d size = %d\n", me(), i.offset(), i.size()));
           memcpy(&data_[i.offset()], i.data(), i.size());
           release_local_lock(i.offset(), i.offset()+i.size());
         }
       else {
+        PRINTF(("%d: ActiveMsgMemoryGrp::release_readwrite: node = %d, "
+                "int offset = %d, int size = %d\n",
+                me(), i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           replace_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
     }
   delete[] (char*) data;
+  PRINTF(("%d: exiting ActiveMsgMemoryGrp::release_readwrite\n", me()));
 }
 
 void

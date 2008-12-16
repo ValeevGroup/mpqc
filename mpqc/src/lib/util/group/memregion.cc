@@ -41,6 +41,27 @@
 
 using namespace sc;
 
+#ifdef HAVE_HRECV
+#  define DISABLE do { masktrap(1); ExEnv::outn().flush(); } while(0)
+#  define ENABLE do { ExEnv::outn().flush(); masktrap(0); } while(0)
+   extern "C" {
+       long masktrap(long state);
+     }
+#else
+#  define DISABLE ExEnv::outn().flush()
+#  define ENABLE ExEnv::outn().flush()
+#endif
+
+#define PRINTF(args) do { DISABLE; \
+                          ExEnv::outn() << scprintf args ; \
+                          ExEnv::outn().flush(); \
+                          ENABLE; \
+                         } while(0)
+
+// comment out these two lines to produce diagnostic output
+#undef PRINTF
+#define PRINTF(args)
+
 static ClassDesc MemoryGrpRegion_cd(
   typeid(MemoryGrpRegion),"MemoryGrpRegion",1,"public MemoryGrp",
   0, 0, 0);
@@ -48,6 +69,12 @@ static ClassDesc MemoryGrpRegion_cd(
 MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t host_offset, size_t max_size) :
   MemoryGrp(), host_(host), reserve_(host_offset,max_size), host_offsets_(host_->n(),0)
 {
+  if (only_allow_double_aligned_regions_ &&
+      (reserve_.start()%sizeof(double) != 0 ||
+       reserve_.size()%sizeof(double) != 0)
+     )
+    throw ProgrammingError("MemoryGrpRegion::MemoryGrpRegion -- only sizeof(double)-aligned regions are supported",__FILE__,__LINE__);
+
   // host must be initialized already
   assert(reserve_.start() + reserve_.size() <= host_->localsize());
   // add region to the map
@@ -62,6 +89,12 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t max_size) :
   reserve_(map_.find_free(host_,max_size),max_size),
   host_offsets_(host_->n(),0)
 {
+  if (only_allow_double_aligned_regions_ &&
+      (reserve_.start()%sizeof(double) != 0 ||
+       reserve_.size()%sizeof(double) != 0)
+     )
+    throw ProgrammingError("MemoryGrpRegion::MemoryGrpRegion -- only sizeof(double)-aligned regions are supported",__FILE__,__LINE__);
+
   // host must be initialized already
   assert(reserve_.start() + reserve_.size() <= host->localsize());
   // add region to the map
@@ -87,15 +120,21 @@ MemoryGrpRegion::init()
   for(int node=0; node<nnodes; ++node)
     host_offsets_[node] = host_->offset(node) + host_offsets[node];
 
-  // cleanup
-  delete[] host_offsets;
-
   // MemoryGrp constructor doesn't do much, initialize its protected members here
   n_ = host_->n();
   me_ = host_->me();
   // initialize MemoryGrp::offsets_ -- it has nnodes+1 elements!
   offsets_ = new distsize_t[nnodes+1];
   for(int node=0; node<=nnodes; ++node) offsets_[node] = 0;
+
+  // cleanup
+  delete[] host_offsets;
+
+  // print debug info
+  if (classdebug()) {
+    this->print(ExEnv::out0());
+  }
+
 }
 
 MemoryGrpRegion::~MemoryGrpRegion()
@@ -124,6 +163,12 @@ MemoryGrpRegion::set_localsize(size_t localsize)
 
   // cleanup
   delete[] sizes;
+
+  if (classdebug()) {
+    ExEnv::out0() << indent << "MemoryGrpRegion::set_localsize(" << localsize << ") called" << std::endl << incindent;
+    this->print(ExEnv::out0());
+    ExEnv::out0() << decindent;
+  }
 }
 
 void*
@@ -137,10 +182,13 @@ MemoryGrpRegion::offset_to_host_offset(const distsize_t& offset) const
 {
   // find the last node with host_offset less than or equal to the requested offset
   int node = host_->n() - 1;
-  for(; node>=0; ++node)
+  for(; node>=0; --node)
     if (offsets_[node] <= offset)
       break;
   const distsize_t host_offset = host_offsets_[node] + (offset - offsets_[node]);
+  if (classdebug() > 1) {
+    PRINTF(("MemoryGrpRegion::offset_to_host_offset -- offset = %ld host_offset = %ld\n", (size_t)offset, (size_t)host_offset));
+  }
   return host_offset;
 }
 
@@ -185,6 +233,40 @@ MemoryGrpRegion::release_readwrite(void *data, distsize_t offset, int size)
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->release_readwrite(data,host_offset,size);
 }
+
+void
+MemoryGrpRegion::sum_reduction_on_node(double *data, size_t doffset, int dsize, int node)
+{
+  const distsize_t offset = doffset * sizeof(double);
+  const distsize_t host_offset = offset_to_host_offset(offset);
+  host_->sum_reduction_on_node(data,host_offset/sizeof(double),dsize,node);
+}
+
+#if 0
+void
+MemoryGrpRegion::sum_reduction(double *data, distsize_t doffset, int dsize)
+{
+  // doffset is in terms of doubles
+  const distsize_t offset = doffset * sizeof(double);
+  const size_t size = dsize * sizeof(double);
+
+  if (offset + size > totalsize()) {
+    std::ostrinstream oss;
+    oss << "MemoryGrpRegion::sum_reduction: arg out of range:"
+      << " offset = " << offset
+      << " length = " << length
+      << " totalsize() = " << totalsize()
+      << std::endl;
+    throw ProgrammingError(oss.str().c_str(),__FILE__,__LINE__);
+  }
+
+  double *source_data = (double*) obtain_readwrite(offset, size);
+  for (size_t i=0; i<dsize; i++) {
+    source_data[i] += data[i];
+  }
+  release_readwrite((void*) source_data, offset, size);
+}
+#endif
 
 void
 MemoryGrpRegion::sync()
@@ -232,9 +314,10 @@ MemoryGrpRegion::print(std::ostream& o) const
   o << scprintf("MemoryRegionGrp (node %d):\n", me());
   o << scprintf("%d: n = %d\n", me(), n());
   for (int i=0; i<=n_; i++) {
-    o << scprintf("%d: offset[%d] = %5d  host_offset[%d] = %5d\n",
-                  me(), i, offsets_[i],
-                  i, host_offsets_[i]);
+    o << me() << ": offset[" << i << "] = " << std::setw(10) << offsets_[i];
+    if (i < n_)
+      o << "  host_offset[" << i << "] = " << std::setw(10) << host_offsets_[i];
+    o << std::endl;
   }
   o << "Host MemoryGrp (class " << host_->class_name() << ")" << std::endl << incindent;
   host_->print(o);

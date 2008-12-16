@@ -107,14 +107,31 @@ namespace sc{ namespace detail {
 
 void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
                      int ni, const size_t blksize_memgrp) {
+  // if the accumulator does not accept data from this task, bolt
+  if (acc->has_access(mem->me()) == false)
+    return;
+
+  // determine over how many tasks the work can be split
+  vector<int> writers;
+  const int nwriters = acc->tasks_with_access(writers);
+
+  const int me = mem->me();
+  const int nproc = mem->n();
   const int num_te_types = acc->num_te_types();
   for (int i=0; i<ni; i++) {
     const int ii = i + i_offset;
     for (int j=0; j<acc->nj(); j++) {
       const int ij = acc->ij_index(ii, j);
-      const int proc = ij % mem->n();
-      const int local_ij_index = ij / mem->n();
-      if (proc != mem->me()) {
+
+      // round-robin assignment of blocks among writers
+      const int proc_writer = ij % nwriters;
+      if (proc_writer != writers[me])
+        continue;
+
+      // blocks are distributed in MemoryGrp in round-robin also
+      const int proc = ij % nproc;
+      const int local_ij_index = ij / nproc;
+      if (proc != me) {
         distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp
             *num_te_types + mem->offset(proc);
         const size_t blksize = acc->blksize();

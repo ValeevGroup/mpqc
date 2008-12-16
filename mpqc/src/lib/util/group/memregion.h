@@ -64,6 +64,12 @@ class MemoryGrpRegion: public MemoryGrp {
     void release_readonly(void* data, distsize_t offset, int size);
     void release_writeonly(void* data, distsize_t offset, int size);
     void release_readwrite(void* data, distsize_t offset, int size);
+    // to implement sun_reduction as in ActiveMsgMemoryGrp (i.e., with locking one node at a time)
+    // need the analog of MemoryIter
+    // TODO implement MemoryRegionIter
+    // for now use the less efficient MemoryGrp version which uses obtain_readwrite, hence may lock multiple nodes
+    //void sum_reduction(double *data, distsize_t doffset, int dsize);
+    void sum_reduction_on_node(double *data, size_t doffset, int dsize, int node=-1);
 
     void activate();
     void deactivate();
@@ -77,6 +83,16 @@ class MemoryGrpRegion: public MemoryGrp {
     void print(std::ostream &o=ExEnv::out0()) const;
 
   private:
+
+    // change to 0 if want the most general implementation, but semantics of double-specific functions (sum_reduction_on_node, etc.) will throw then
+    static const int only_allow_double_aligned_regions_ = 1;
+
+    // set to greater than 1 to produce debugging information at runtime:
+    // 0 -- no debugging information
+    // 1 -- debug constructor and change of state
+    // 2 -- debug operations
+    static const int classdebug_ = 0;
+    static int classdebug() { return classdebug_; }
 
     // init() should be called in every constructor to finish up construction duties
     void init();

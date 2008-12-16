@@ -95,9 +95,12 @@ void R12IntsAcc_MemoryGrp::init() {
         pairblk_[ij].ints_[type] = NULL;
         pairblk_[ij].refcount_[type] = 0;
       }
+      // not sure if MemoryGrp::set_localsize has been called yet, hence it's offsets may be meaningless. Compute them on the fly
+#if 0
       int local_ij_index = ij_index(i, j)/n;
       pairblk_[ij].offset_ = (distsize_t)local_ij_index*blksize_memgrp_
           *num_te_types() + mem_->offset(ij_proc(i,j));
+#endif
     }
 }
 
@@ -197,12 +200,18 @@ R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type) co
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (!is_local(i,j) && pb->ints_[oper_type] == 0) {
-    pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_memgrp_, blksize());
+    const int local_ij_index = ij / ntasks();
+    // this offset could not be computed in ::init(), compute here and store so that release can reuse its value
+    pairblk_[ij].offset_ = mem_->offset(ij_proc(i,j)) + (distsize_t)local_ij_index*blksize_memgrp_*num_te_types();
+    const distsize_t offset = pb->offset_ + (distsize_t)oper_type*blksize_memgrp_;
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "retrieving remote block:  i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
+    pb->ints_[oper_type] = (double *) mem_->obtain_readonly(offset, blksize());
   }
   pb->refcount_[oper_type] += 1;
   if (classdebug() > 0)
     ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
-                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
+                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type  << " ptr = " << pb->ints_[oper_type] << endl;
   return pb->ints_[oper_type];
 }
 
@@ -215,14 +224,15 @@ R12IntsAcc_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) con
     ExEnv::outn() << indent << me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
     throw ProgrammingError("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!",__FILE__,__LINE__);
   }
+  if (classdebug() > 0)
+    ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
+                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << " ptr = " << pb->ints_[oper_type] << " ptr[0] = " << pb->ints_[oper_type][0] << endl;
   if (!is_local(i,j) && pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
-    mem_->release_readonly(const_cast<void*>(reinterpret_cast<const void*>(pb->ints_[oper_type])),pb->offset_+ oper_type*blksize_memgrp_,blksize());
+    mem_->release_readonly(const_cast<void*>(reinterpret_cast<const void*>(pb->ints_[oper_type])),pb->offset_ + oper_type*blksize_memgrp_,blksize());
+    pb->offset_ = -1;
     pb->ints_[oper_type] = NULL;
   }
   pb->refcount_[oper_type] -= 1;
-  if (classdebug() > 0)
-    ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
-                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
 }
 
 // Local Variables:

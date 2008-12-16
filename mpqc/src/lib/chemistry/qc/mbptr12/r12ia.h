@@ -106,7 +106,6 @@ class R12IntsAcc: virtual public SavableState {
     /// Stores an ij pair block of integrals
     virtual void store_pair_block(int i, int j, tbint_type oper_type, const double* ints) =0;
 
-
     int ij_index(int i, int j) const { return i*nj_ + j; };
 
     /// Can this block be accessed via retrieve_pair_block from this task?
@@ -123,6 +122,7 @@ class R12IntsAcc: virtual public SavableState {
   private:
     /// Set to nonzero to debug this and derived classes
     static const int classdebug_ = 0;
+
     int num_te_types_;  // Number of types of integrals in a block
     Ref<MessageGrp> msg_;
     int ni_, nj_;
@@ -146,6 +146,7 @@ class R12IntsAcc: virtual public SavableState {
     int classdebug() const { return classdebug_; }
 
 };
+
 
 namespace detail {
 

@@ -292,10 +292,9 @@ R12IntsAcc_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
   const PairBlkInfo* pb = &pairblk_[ij];
 
   // first, seek
-  if (classdebug() > 0)
-    ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
-
   const off_t offset = pb->offset_ + (off_t)oper_type*blksize();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
   const off_t result_offset = lseek(datafile_,offset,SEEK_SET);
   if (offset == static_cast<off_t>(-1) || result_offset != offset)
     throw FileOperationFailed("R12IntsAcc_Node0File::store_pair_block() -- lseek failed",

@@ -2379,6 +2379,7 @@ R12IntEval::compute()
   if (nocorrptr.null()) {
 
     if (debug_ >= DefaultPrintThresholds::O4) {
+      globally_sum_intermeds_();
       for(int s=0; s<nspincases2(); s++) {
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag) contribution").c_str());
@@ -2388,7 +2389,6 @@ R12IntEval::compute()
 
     if (obs_eq_vbs) {
       contrib_to_VXB_a_();
-
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();
@@ -2619,11 +2619,13 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (stdapprox() == LinearR12::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
-    if (stdapprox() == LinearR12::StdApprox_C)
-      globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (ebc() == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
     }
+  }
+
+  const int nspincases_for_emp2pairs = (spin_polarized() ? 3 : 2);
+  for(int s=0; s<nspincases_for_emp2pairs; s++) {
     globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }
 

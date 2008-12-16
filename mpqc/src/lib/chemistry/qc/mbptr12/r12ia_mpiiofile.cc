@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cassert>
 #include <stdexcept>
 #include <stdlib.h>
 #include <util/misc/string.h>
@@ -108,7 +109,7 @@ R12IntsAcc_MPIIOFile::init(bool restart)
   // Try opening/creating the file
   int amode;
   if (!restart)
-    amode = MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE | MPI_MODE_WRONLY;
+    amode = MPI_MODE_CREATE | MPI_MODE_WRONLY;
   else
     amode = MPI_MODE_RDONLY;
 
@@ -148,6 +149,8 @@ R12IntsAcc_MPIIOFile::activate()
   R12IntsAcc::activate();
   int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDWR, MPI_INFO_NULL, &datafile_);
   check_error_code_(errcod);
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 void
@@ -156,6 +159,8 @@ R12IntsAcc_MPIIOFile::deactivate()
   int errcod = MPI_File_close(&datafile_);
   check_error_code_(errcod);
   R12IntsAcc::deactivate();
+  if (classdebug() > 0)
+    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 void
@@ -282,34 +287,27 @@ R12IntsAcc_MPIIOFile_Ind::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, in
 
 void R12IntsAcc_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,
-                                                const double *ints) {
+                                                const double *ints)
+{
+  // store blocks local to this node ONLY
+  assert(is_local(i,j));
 
   const int nproc = ntasks();
   const int ij = ij_index(i,j);
   const PairBlkInfo* pb = &pairblk_[ij];
+  const int local_ij_index = ij / nproc;
 
   // first, seek, then write
   if (classdebug() > 0)
     ExEnv::outn() << indent << "storing block: me=" << me() << " file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
-
-  for (int i = 0; i < ni(); i++) {
-    for (int j = 0; j < nj(); j++) {
-      const int ij = ij_index(i, j);
-      const int proc = ij % nproc;
-      if (proc != me())
-        continue;
-
-      const int local_ij_index = ij / nproc;
-      int errcod = MPI_File_seek(datafile_,
-                                 pairblk_[ij].offset_ + (MPI_Offset) oper_type * blksize(),
-                                 MPI_SEEK_SET);
-      check_error_code_(errcod);
-      MPI_Status status;
-      errcod = MPI_File_write(datafile_, (void *) ints, nxy(), MPI_DOUBLE,
-                              &status);
-      check_error_code_(errcod);
-    }
-  }
+  int errcod = MPI_File_seek(datafile_,
+                             pairblk_[ij].offset_ + (MPI_Offset) oper_type * blksize(),
+                             MPI_SEEK_SET);
+  check_error_code_(errcod);
+  MPI_Status status;
+  errcod = MPI_File_write(datafile_, (void *) ints, nxy(), MPI_DOUBLE,
+                          &status);
+  check_error_code_(errcod);
 }
 
 const double*

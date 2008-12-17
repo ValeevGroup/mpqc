@@ -132,6 +132,8 @@ MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MO
                                    const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4)
 {
   space1_ = space1;
+  if (space1_.null())
+    throw ProgrammingError("MOIntsTransformFactory::set_spaces() -- space1 cannot be null",__FILE__,__LINE__);
   if (space2.null())
     space2_ = space1_;
   else

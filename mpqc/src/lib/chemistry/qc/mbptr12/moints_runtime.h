@@ -91,8 +91,9 @@ namespace sc {
       /// returns the factory
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
 
-      typedef enum {Layout_12,
-                    Layout_13} Layout;
+      typedef enum {Layout_b1b2_k1k2, // physicists layout
+                    Layout_b1k1_b2k2  // chemists layout
+                   } Layout;
     private:
       Ref<MOIntsTransformFactory> factory_;  // that creates transforms
 

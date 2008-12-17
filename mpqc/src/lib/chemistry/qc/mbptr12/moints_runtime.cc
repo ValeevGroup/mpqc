@@ -89,8 +89,12 @@ ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
   }
 
   // figure out the desired layout
-  // TODO determine layout
-  layout_ = MOIntsRuntime::Layout_12;
+  if (keycopy == std::string("(b1 b2|k1 k2)"))
+    layout_ = MOIntsRuntime::Layout_b1b2_k1k2;
+  else if (keycopy == std::string("(b1 k1|b2 k2)"))
+    layout_ = MOIntsRuntime::Layout_b1k1_b2k2;
+  else
+    throw ProgrammingError("ParsedTwoBodyIntKey::ParsedTwoBodyIntKey() -- layout not recognized",__FILE__,__LINE__);
 
 #if 1
   ExEnv::out0() << indent << "ParsedTwoBodyIntKey::ParsedTwoBodyIntKey():" << std::endl << incindent;
@@ -100,7 +104,8 @@ ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
   ExEnv::out0() << indent << "ket1 = " << ket1_ << std::endl;
   ExEnv::out0() << indent << "ket2 = " << ket2_ << std::endl;
   ExEnv::out0() << indent << "oper = " << oper_ << std::endl;
-  ExEnv::out0() << indent << "params = " << params_ << std::endl << decindent;
+  ExEnv::out0() << indent << "params = " << params_ << std::endl;
+  ExEnv::out0() << indent << "layout = " << layout_ << std::endl << decindent;
 #endif
 }
 
@@ -177,10 +182,10 @@ MOIntsRuntime::create_tform(const std::string& key)
   Ref<TwoBodyMOIntsTransform> tform;
   const MOIntsRuntime::Layout layout = pkey.layout();
   switch(layout) {
-    case MOIntsRuntime::Layout_12:
+    case MOIntsRuntime::Layout_b1b2_k1k2:
       tform = factory()->twobody_transform_13(key,descr);   // factory assumes chemists' convention
       break;
-    case MOIntsRuntime::Layout_13:
+    case MOIntsRuntime::Layout_b1k1_b2k2:
       tform = factory()->twobody_transform_12(key,descr);   // factory assumes chemists' convention
       break;
   }

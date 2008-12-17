@@ -165,50 +165,12 @@ namespace detail {
   void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
                        int ni, const size_t blksize_memgrp = 0);
 
+  /** Reverse of store_memorygrp()
+   */
+  void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
+                         int ni, const size_t blksize_memgrp = 0);
+
 }
-
-#if 0 // this is either garbage or needs to become standalone function/class
-/// The index of the first orbital in the next integrals batch to be stored
-int next_orbital() const;
-/// Commit the content of the accumulator for reading
-virtual void commit();
-/// Has the content of the accumulator been commited for reading?
-bool is_committed() { return committed_; }
-/// Call before starting to read content
-virtual void activate();
-/// Call when done reading content
-virtual void deactivate();
-/// Check if can read content
-const bool is_active() { return active_; }
-/// The index of the first orbital in the next integrals batch to be stored
-void inc_next_orbital(int ni);
-
-int next_orbital_;  // The first index of the next batch to be stored
-bool committed_;    // Whether all data has been written out and ready to be read
-bool active_;       // Whether ready to read data
-
-
-/** Stores all pair block of integrals held in mem
-    in a layout assumed throughout R12IntEval.
-    Let's suppose the number of tasks is nproc, nj is the number of j indices,
-    ni is the number of i indices of integrals held in
-    mem at the moment. Then all integrals with a given i and j
-    are stored on task (i*nj+j)/nproc and this ij block is
-    (i*nj+j)%nproc -th block on this task. Each ij block contains
-    num_te_types_ subblocks of integrals. Each subblock of integrals
-    has blksize bytes allocated for it. Note that
-    blksize may be larger than blksize_ because an ij-block of partially
-    transformed integrals may be larger than the block of fully transformed integrals.
-  */
-virtual void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0) =0;
-/** Restores all pair block of integrals to mem
-    in a layout assumed throughout R12IntEval.
-    Its effect is opposite of store_memorygrp.
-    Since store_memorygrp is meant to be called in each pass of a transform,
-    restoring a memorygrp needs an offset.
-  */
-virtual void restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize = 0) const =0;
-#endif
 
 }
 

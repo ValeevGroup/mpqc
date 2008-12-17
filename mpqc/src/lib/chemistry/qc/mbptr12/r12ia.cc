@@ -152,6 +152,58 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
     }
   }
 }
+
+void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
+                       int ni, const size_t blksize_memgrp) {
+  // if this task cannot get the data from the accumulator, bolt
+  if (acc->has_access(mem->me()) == false)
+    return;
+
+  // determine over how many tasks the work can be split
+  vector<int> readers;
+  const int nreaders = acc->tasks_with_access(readers);
+
+  const int me = mem->me();
+  const int nproc = mem->n();
+  const int num_te_types = acc->num_te_types();
+  for (int i=0; i<ni; i++) {
+    const int ii = i + i_offset;
+    for (int j=0; j<acc->nj(); j++) {
+      const int ij = acc->ij_index(ii, j);
+
+      // round-robin assignment of blocks among readers
+      const int proc_reader = ij % nreaders;
+      if (proc_reader != readers[me])
+        continue;
+
+      // blocks are distributed in MemoryGrp in round-robin also
+      const int proc = ij % nproc;
+      const int local_ij_index = ij / nproc;
+      if (proc != me) {
+        distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp
+            *num_te_types + mem->offset(proc);
+        const size_t blksize = acc->blksize();
+        for (int te_type = 0; te_type < num_te_types; ++te_type) {
+          const double* data = acc->retrieve_pair_block(ii, j, te_type);
+          double* buffer = (double *) mem->obtain_writeonly(moffset, blksize);
+          ::memcpy((void*)buffer, (const void*)data, blksize);
+          mem->release_writeonly(const_cast<void*>(static_cast<const void*>(buffer)), moffset, blksize);
+          moffset += blksize_memgrp;
+        }
+      } else {
+        double* buffer = (double *) ((size_t)mem->localdata() + blksize_memgrp
+            *num_te_types*local_ij_index);
+        const size_t blksize = acc->blksize();
+        for (int te_type=0; te_type < num_te_types; te_type++) {
+          const double* data = acc->retrieve_pair_block(ii, j, te_type);
+          ::memcpy((void*)buffer, (const void*)data, blksize);
+          buffer = (double*) ((size_t) buffer + blksize_memgrp);
+        }
+      }
+    }
+  }
+}
+
 }} // end of namespace sc::detail
 
 ///////////////////////////////////////////////////////////////

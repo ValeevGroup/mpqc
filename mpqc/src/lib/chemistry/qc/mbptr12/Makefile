@@ -58,7 +58,8 @@ CXXSRCS = mbptr12.cc \
   creator.cc approxC.cc approxApp.cc ansatz.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
-  singles_emp2.cc bc_contrib.cc blas.cc dkh.cc
+  singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
+  moints_runtime.cc
   
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \
@@ -78,7 +79,7 @@ pairiter.h                      twoparticlecontraction.h \
 print.h                         utils.h \
 print_scmat_norms.h             utils.impl.h \
 r12_amps.h                      vxb_eval_info.h \
-r12ia.h
+r12ia.h				moints_runtime.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

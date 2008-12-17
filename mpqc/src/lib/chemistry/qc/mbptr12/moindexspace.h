@@ -99,6 +99,8 @@ private:
   // sorting functions borrowed from mbpt.cc
   static void dquicksort(double *item,unsigned int *index,unsigned int n);
 
+  // add this to the global registry
+  void add_to_registry();
 
 public:
   MOIndexSpace(StateIn&);

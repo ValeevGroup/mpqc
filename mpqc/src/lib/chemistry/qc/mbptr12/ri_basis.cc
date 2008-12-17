@@ -171,7 +171,7 @@ R12IntEvalInfo::abs_spans_obs_()
   else {
     Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
   }
-  
+
   const int obs_rank = refinfo()->orbs()->rank();
   if (nlindep_ri - nlindep_aux_ - obs_rank == 0)
     return true;
@@ -187,7 +187,7 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   construct_orthog_aux_();
   construct_orthog_vir_();
   construct_orthog_ri_();
-  
+
   if (debug_ >= DefaultPrintThresholds::mostN2) {
     refinfo()->docc_sb()->coefs().print("Occupied MOs (symblocked)");
     refinfo()->docc_act()->coefs().print("Active occupied MOs");
@@ -198,15 +198,15 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   }
 
   if (!refinfo()->spin_polarized()) {
-    Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "CABS", refinfo()->ref()->lindep_tol());
+    Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "p'-m", "CABS", refinfo()->ref()->lindep_tol());
     tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = tmp;
     vir_spaces_[Beta].ri_ = tmp;
   }
   else {
-    Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+    Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
-    Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", refinfo()->ref()->lindep_tol());
     vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
   }
 }
@@ -409,7 +409,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] nvec_per_block;
 
   Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(id,name,orthog2,space2->basis(),space2->integral());
-  
+
   return orthog_comp_space;
 }
 
@@ -424,7 +424,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   // 2) SVDecompose C12 = U Sigma V^t, throw out (near)singular triplets
   // 3) Projected vectors (in AO basis) are X2 = C2 * V * Sigma^{-1} * U^t, where Sigma^{-1} is the generalized inverse
   //
-  
+
   // Check integral factories
   if (!space1->integral()->equiv(space2->integral()))
     throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
@@ -442,8 +442,8 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   C12.print("C12 matrix");
 
   // Check dimensions of C12 to make sure that projection makes sense
-  
-  
+
+
   Ref<SCMatrixKit> ao_matrixkit = space1->basis()->matrixkit();
   Ref<SCMatrixKit> so_matrixkit = space1->basis()->so_matrixkit();
   int nblocks = C12.nblock();
@@ -468,11 +468,11 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
     RefSCDimension cold = C12.coldim()->blocks()->subdim(b);
     int nrow = rowd.n();
     int ncol = cold.n();
-    
+
     // Cannot project if rank of the target space is smaller than the rank of the source space
     if (nrow > ncol)
       throw std::runtime_error("R12IntEvalInfo::svd_project() -- rank of the target space is smaller than the rank of the source space");
-    
+
     if (nrow && ncol) {
 
       RefSCMatrix C12_b = C12.block(b);
@@ -482,7 +482,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
       RefSCMatrix U(rowd, rowd, ao_matrixkit);
       RefSCMatrix V(cold, cold, ao_matrixkit);
       RefDiagSCMatrix Sigma(sigd, ao_matrixkit);
-      
+
       //
       // Compute C12 = U * Sigma * V
       //
@@ -519,10 +519,10 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
           stmp(i) = 1.0/(Sigma(i));
         RefSCMatrix utmp = U.get_subblock(0,nrow-1,s_first,s_last);
         RefSCMatrix C12_inv_t = (utmp * stmp) * vtmp;
-        
+
         (C12_b * C12_inv_t.t()).print("C12 * C12^{-1}");
         (C12_inv_t * C12_b.t()).print("C12^{-1} * C12");
-        
+
         // Transform V into AO basis and transpose so that vectors are in rows
         RefSCMatrix C2_b = C2.block(b);
         RefSCMatrix X2_t = C12_inv_t * C2_b.t();
@@ -534,7 +534,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
       nvec_per_block[b] = 0;
     }
 
-    
+
     v_offset += nvec_per_block[b];
   }
 
@@ -569,7 +569,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 
   RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
   S12.print("Check: overlap between space1 and projected space");
-  
+
   return proj_space;
 }
 

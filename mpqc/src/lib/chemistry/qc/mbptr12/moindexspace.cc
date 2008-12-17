@@ -388,8 +388,17 @@ MOIndexSpace::init()
 {
   if (id_.size() > max_id_length)
     throw ProgrammingError("MOIndexSpace constructed with id longer than allowed",__FILE__,__LINE__);
+
+  // must do this at the very end of initialization: add this to the registry
+  add_to_registry();
 }
 
+void
+MOIndexSpace::add_to_registry()
+{
+  const Ref<MOIndexSpaceRegistry> idxrgy = MOIndexSpaceRegistry::instance();
+  idxrgy->add(this);
+}
 
 size_t
 MOIndexSpace::memory_in_use() const

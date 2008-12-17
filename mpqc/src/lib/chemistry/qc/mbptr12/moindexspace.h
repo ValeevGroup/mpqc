@@ -37,6 +37,7 @@
 #include <util/ref/ref.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
+#include <util/group/thread.h>
 #include <math/scmat/abstract.h>
 #include <util/state/statein.h>
 #include <chemistry/qc/basis/basis.h>
@@ -66,7 +67,7 @@ private:
   static const unsigned int max_id_length = 10;
   std::string id_;                        // see documentation for id()
   std::string name_;                      // String identifier for the orbital space
-  
+
   Ref<GaussianBasisSet> basis_;    // The AO basis
   Ref<Integral> integral_;
   RefSCMatrix coefs_;              // AO-> MO transformation coefficients (nao by nmo matrix)
@@ -94,10 +95,10 @@ private:
 
   // initialize the object
   void init();
-  
+
   // sorting functions borrowed from mbpt.cc
   static void dquicksort(double *item,unsigned int *index,unsigned int n);
-  
+
 
 public:
   MOIndexSpace(StateIn&);
@@ -148,7 +149,7 @@ public:
   void save_data_state(StateOut&);
 
   /// Returns a self-contained expressive label
-  const std::string& name() const;  
+  const std::string& name() const;
   /// Returns a short (preferably, one, max 10 character) identifier for the space
   /** Suggested convention:
       i -- active occupied orbitals
@@ -162,9 +163,9 @@ public:
   /// returns the dimension correspondign to this space
   const RefSCDimension& dim() const;
   /// Returns the AO basis set
-  const Ref<GaussianBasisSet>& basis() const;  
+  const Ref<GaussianBasisSet>& basis() const;
   /// Returns the integral factory used to instantiate the coefficient matrix
-  const Ref<Integral>& integral() const;  
+  const Ref<Integral>& integral() const;
   /// Returns the coefficient matrix
   const RefSCMatrix& coefs() const;
   /// Returns the "eigenvalues" matrix
@@ -242,6 +243,31 @@ overlap(const MOIndexSpace& space2, const MOIndexSpace& space1, const Ref<SCMatr
 /** in(s1,s2) returns true if s1 is in s2 */
 bool
 in(const MOIndexSpace& s1, const MOIndexSpace& s2);
+
+
+/** Registry of globally-known MOIndexSpaces associates MOIndexSpace S with a string key given by S->id().
+    It is a singleton. All operations on it are thread-safe.
+ */
+class MOIndexSpaceRegistry : virtual public SavableState {
+  public:
+    static const Ref<MOIndexSpaceRegistry>& instance();
+
+    /// returns MOIndexSpace that corresponds to this key. If key is not known, returns null pointer
+    Ref<MOIndexSpace> find(const std::string& key) const;
+    /// registers this MOIndexSpace
+    void add(const Ref<MOIndexSpace>& space);
+
+  private:
+    // this is a Singleton: access only through instance()
+    MOIndexSpaceRegistry();
+
+    static Ref<MOIndexSpaceRegistry> instance_;
+
+    typedef std::map< std::string, Ref<MOIndexSpace> > MOIndexSpaceMap;
+    MOIndexSpaceMap space_map_;
+    // std::map's operations are not reentrant, hence lock the map every time
+    Ref<ThreadLock> lock_;
+};
 
 }
 

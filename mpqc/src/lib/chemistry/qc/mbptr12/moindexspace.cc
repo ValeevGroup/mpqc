@@ -69,7 +69,7 @@ MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
   moorder_(moorder)
 {
   full_coefs_to_coefs(full_coefs, evals, offsets);
-  
+
   init();
 }
 
@@ -88,7 +88,7 @@ MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- invalid nfzc+nfzv");
   std::vector<unsigned int> offsets = frozen_to_blockinfo(nfzc,nfzv,evals);
   full_coefs_to_coefs(full_coefs, evals, offsets);
-  
+
   init();
 }
 
@@ -105,9 +105,9 @@ MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
     offsets[i] = 0;
     nmo_[i] = modim_blocks->size(i);
   }
-  
+
   full_coefs_to_coefs(full_coefs, 0, offsets);
-  
+
   init();
 }
 
@@ -141,7 +141,7 @@ MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
   si.get(nmo_);
 
   int moorder; si.get(moorder); moorder = (int) moorder_;
-  
+
   init();
 }
 
@@ -208,7 +208,7 @@ void
 MOIndexSpace::check_mosym() const
 {
   int ng = basis_->molecule()->point_group()->char_table().order();
-  
+
   for(std::vector<unsigned int>::const_iterator p=mosym_.begin(); p != mosym_.end(); ++p) {
     if (*p < 0 || *p >= ng)
       throw std::runtime_error("MOIndexSpace::check_mosym() -- invalid value in the list of orbital irreps");
@@ -230,7 +230,7 @@ MOIndexSpace::frozen_to_blockinfo(unsigned int nfzc, unsigned int nfzv,
     nmo_[b] = evals.dim()->blocks()->size(b);
     offsets[b] = 0;
   }
-  
+
   // Get the energies of the orbitals in this space
   double* energy = new double[rank];
   unsigned int* index_map = new unsigned int[rank];
@@ -244,11 +244,11 @@ MOIndexSpace::frozen_to_blockinfo(unsigned int nfzc, unsigned int nfzv,
     }
     offset += nmo_[b];
   }
-    
+
   // Do the sort
   dquicksort(energy,index_map,rank);
   delete[] energy;
-  
+
   // Get rid of nfzc lowest orbitals
   for(unsigned int i=0; i<nfzc; i++) {
     unsigned int b = blocked_index_to_irrep[index_map[i]];
@@ -261,7 +261,7 @@ MOIndexSpace::frozen_to_blockinfo(unsigned int nfzc, unsigned int nfzv,
     unsigned int b = blocked_index_to_irrep[index_map[i]];
     --nmo_[b];
   }
-  
+
   delete[] index_map;
   return offsets;
 }
@@ -278,7 +278,7 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
 
   mosym_.resize(rank_);
   RefSCDimension modim = full_coefs.coldim();  // the dimension of the full space
-  
+
   // In general vectors are ordered differently from the original
   unsigned int* index_map = new unsigned int[rank_];               // maps index in this (sorted) space to this (blocked) space
   std::vector<unsigned int> blocked_subindex_to_full_index(rank_); // maps index from this space(in blocked form) into the full space
@@ -295,12 +295,12 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
         modim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
     }
     delete[] nfunc_per_block;
-  
+
     // The sorted->blocked reordering array is trivial when no resorting is done
     for(unsigned int i=0; i<rank_; i++) {
       index_map[i] = i;
     }
-    
+
     unsigned int ii = 0;     // blocked index to this space
     unsigned int offset = 0;
     for(unsigned int b=0; b<nb; b++) {
@@ -309,13 +309,13 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
         blocked_subindex_to_irrep[ii] = b;
       }
       offset += modim->blocks()->size(b);
-    }    
+    }
   }
   else if (moorder_ == energy) {
     //
     // Sort vectors by their energy
     //
-    
+
     // Get the energies of the orbitals in this space
     double* energy = new double[rank_];
     const unsigned int nb = nmo_.size();
@@ -329,27 +329,27 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
       }
       offset += modim->blocks()->size(b);
     }
-    
+
     // Do the sort
     dquicksort(energy,index_map,rank_);
-    
+
     // coefs_ has 1 block
     int* nfunc_per_block = new int[1];
     nfunc_per_block[0] = rank_;
     modim_ = new SCDimension(rank_, 1, nfunc_per_block, ("MO(" + name_ + ")").c_str());
     if (rank_)
       modim_->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
-    
+
     // Recompute nmo_ to conform the energy ordering
     nmo_.resize(1);
     nmo_[0] = rank_;
-    
+
     delete[] energy;
     delete[] nfunc_per_block;
   }
   else
     throw std::runtime_error("MOIndexSpace::full_coefs_to_coefs() -- moorder should be either energy or symmetry");
-  
+
   // Copy required columns of full_coefs_ into coefs_
   RefSCDimension aodim = full_coefs.rowdim();
   Ref<SCMatrixKit> so_matrixkit = basis_->so_matrixkit();
@@ -380,7 +380,7 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
   }
 #endif
 
-  delete[] index_map;  
+  delete[] index_map;
 }
 
 void
@@ -437,7 +437,7 @@ MOIndexSpace::print_summary(ostream& o) const
 }
 
 /////////////////////////////////////////////////////////////////
-// Function dquicksort performs a quick sort (smaller -> larger) 
+// Function dquicksort performs a quick sort (smaller -> larger)
 // of the double data in item by the integer indices in index;
 // data in item remain unchanged
 /////////////////////////////////////////////////////////////////
@@ -490,7 +490,7 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
       s1.basis() != s2.basis() ||
       s1.integral()->class_desc() != s2.integral()->class_desc())
     throw CannotConstructMap();
-  
+
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
 #if 0
@@ -498,17 +498,17 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
   c2.print("operator<<(MOIndexSpace,MOIndexSpace): c2");
 #endif
   const unsigned int nao = c1.coldim().n();
-  
+
   typedef std::vector<unsigned int> maptype;
   maptype map(rank1);
-  
+
   // if objects are the same, map is trivial
   if (&s1 == &s2) {
     for(unsigned int mo1=0; mo1<rank1; mo1++)
       map[mo1] = mo1;
     return map;
   }
-  
+
   std::vector<int> has_been_mapped(rank2,-1);
   // for each MO in 1 find vector in 2
   for(unsigned int mo1=0; mo1<rank1; mo1++) {
@@ -546,7 +546,7 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
     if (!found_match)
       throw CannotConstructMap();
   }
-  
+
   return map;
 }
 
@@ -559,7 +559,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
       s1.basis() != s2.basis() ||
       s1.integral()->class_desc() != s2.integral()->class_desc())
     throw CannotConstructMap();
-  
+
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
 #if 0
@@ -567,17 +567,17 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
   c2.print("sparsemap(MOIndexSpace,MOIndexSpace): c2");
 #endif
   const unsigned int nao = c1.coldim().n();
-  
+
   typedef SparseMOIndexMap maptype;
   maptype map(rank1);
-  
+
   // if objects are the same, map is trivial
   if (&s1 == &s2) {
     for(unsigned int mo1=0; mo1<rank1; mo1++)
       map[mo1] = make_pair(mo1,1.0);
     return map;
   }
-  
+
   std::vector<int> has_been_mapped(rank2,-1);
   // for each MO in 1 find vector in 2
   for(unsigned int mo1=0; mo1<rank1; mo1++) {
@@ -635,7 +635,7 @@ sc::sparsemap(const MOIndexSpace& s2, const MOIndexSpace& s1, double hardzero)
     if (!found_match)
       throw CannotConstructMap();
   }
-  
+
   return map;
 }
 
@@ -651,7 +651,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
   Ref<Integral> integral = s1.integral()->clone();
   const Ref<GaussianBasisSet>& bs1 = s1.basis();
   const Ref<GaussianBasisSet>& bs2 = s2.basis();
-  
+
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
 #if DEBUG_DENSE_TRANSFORM
@@ -661,7 +661,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
 
   RefSCMatrix tform(c2.rowdim(),c1.rowdim(),kit);
   tform.assign(0.0);
-  
+
   // if objects are the same, the transform is trivial
   if (&s1 == &s2) {
       RefDiagSCMatrix unit(c2.rowdim(),kit);
@@ -675,7 +675,7 @@ sc::transform(const MOIndexSpace& s2, const MOIndexSpace& s1, const Ref<SCMatrix
 
   // the transform matrix is the inverse of S21
   RefSCMatrix U21 = S21.gi();
-  
+
 #if DEBUG_DENSE_TRANSFORM
   // test
   (S21).print("S21");
@@ -770,7 +770,7 @@ sc::overlap(const MOIndexSpace& space1, const MOIndexSpace& space2,
   s12 = 0;
   RefSCMatrix S(vec1t.rowdim(), vec2.coldim(), kit);
   S.assign(ss);
-  
+
   // and clean up a bit
   s = 0;
 
@@ -786,6 +786,56 @@ sc::in(const MOIndexSpace& s1, const MOIndexSpace& s2)
     }
     catch(CannotConstructMap& e) { result = false; }
     return result;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+const Ref<MOIndexSpaceRegistry>&
+MOIndexSpaceRegistry::instance()
+{
+  return instance_;
+}
+
+Ref<MOIndexSpaceRegistry>
+MOIndexSpaceRegistry::instance_ = new MOIndexSpaceRegistry;
+
+MOIndexSpaceRegistry::MOIndexSpaceRegistry() :
+  lock_(ThreadGrp::get_default_threadgrp()->new_lock())
+{
+}
+
+Ref<MOIndexSpace>
+MOIndexSpaceRegistry::find(const std::string& key) const
+{
+  // although this does not modify the map, cannot search map while someone else is changing it
+  lock_->lock();
+
+  typedef MOIndexSpaceMap::const_iterator citer;
+  citer v = space_map_.find(key);
+  Ref<MOIndexSpace> result;
+  if (v != space_map_.end())
+    result = v->second;
+
+  lock_->unlock();
+  return result;
+}
+
+void
+MOIndexSpaceRegistry::add(const Ref<MOIndexSpace>& space)
+{
+  lock_->lock();
+  const std::string key = space->id();
+
+  // check if this key already exists
+  typedef MOIndexSpaceMap::const_iterator citer;
+  citer v = space_map_.find(key);
+  Ref<MOIndexSpace> result;
+  if (v != space_map_.end())
+    throw ProgrammingError("MOIndexSpaceRegistry::add -- MOIndexSpace with this key already exists",__FILE__,__LINE__);
+
+  space_map_[key] = space;
+
+  lock_->unlock();
 }
 
 /////////////////////////////////////////////////////////////////////////////

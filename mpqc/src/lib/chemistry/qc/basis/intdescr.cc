@@ -47,6 +47,12 @@ TwoBodyIntDescrERI::inteval() const
   return factory_->electron_repulsion();
 }
 
+Ref<IntParams>
+TwoBodyIntDescrERI::params() const
+{
+  return new IntParamsVoid;
+}
+
 unsigned int
 TwoBodyIntDescrERI::intset(TwoBodyInt::tbint_type t) const
 {
@@ -90,6 +96,12 @@ Ref<TwoBodyInt>
 TwoBodyIntDescrR12::inteval() const
 {
   return factory_->grt();
+}
+
+Ref<IntParams>
+TwoBodyIntDescrR12::params() const
+{
+  return new IntParamsVoid;
 }
 
 unsigned int
@@ -140,7 +152,7 @@ TwoBodyIntDescrR12::intSet(unsigned int t)
 ////
 
 TwoBodyIntDescrG12::TwoBodyIntDescrG12(const Ref<Integral>& IF,
-                                         const Ref<IntParamsG12>& params) :
+                                       const Ref<IntParamsG12>& params) :
   TwoBodyIntDescr(), factory_(IF), params_(params)
 {
 }
@@ -149,6 +161,12 @@ Ref<TwoBodyInt>
 TwoBodyIntDescrG12::inteval() const
 {
   return factory_->g12(params_);
+}
+
+Ref<IntParams>
+TwoBodyIntDescrG12::params() const
+{
+  return params_;
 }
 
 unsigned int
@@ -217,6 +235,12 @@ TwoBodyIntDescrG12NC::inteval() const
   return factory_->g12nc(params_);
 }
 
+Ref<IntParams>
+TwoBodyIntDescrG12NC::params() const
+{
+  return params_;
+}
+
 unsigned int
 TwoBodyIntDescrG12NC::intset(TwoBodyInt::tbint_type t) const
 {
@@ -282,6 +306,12 @@ TwoBodyIntDescrG12DKH::inteval() const
   return factory_->g12dkh(params_);
 }
 
+Ref<IntParams>
+TwoBodyIntDescrG12DKH::params() const
+{
+  return params_;
+}
+
 unsigned int
 TwoBodyIntDescrG12DKH::intset(TwoBodyInt::tbint_type t) const
 {
@@ -326,6 +356,12 @@ Ref<TwoBodyInt>
 TwoBodyIntDescrGenG12::inteval() const
 {
   return factory_->geng12(params_);
+}
+
+Ref<IntParams>
+TwoBodyIntDescrGenG12::params() const
+{
+  return params_;
 }
 
 unsigned int

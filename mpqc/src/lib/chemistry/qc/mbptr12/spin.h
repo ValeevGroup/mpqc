@@ -36,12 +36,12 @@
 #define _chemistry_qc_mbptr12_spin_h
 
 namespace sc {
-  
+
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
   typedef enum { NPureSpinCases2 = 2 } NPureSpinCases;
-  typedef enum { Alpha = 0, Beta = 1} SpinCase1;
-  typedef enum { AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2} SpinCase2;
-  typedef enum { Singlet = 0, Triplet = 1} PureSpinCase2;
+  typedef enum { AnySpinCase1 = -1, Alpha = 0, Beta = 1, InvalidSpinCase1 = 2} SpinCase1;
+  typedef enum { AnySpinCase2 = -1, AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2, InvalidSpinCase2 = 3} SpinCase2;
+  typedef enum { AnyPureSpinCase2 = -1, Singlet = 0, Triplet = 1, InvalidPureSpinCase2 = 2} PureSpinCase2;
   /// Returns the number of unique spin cases (1 or 2)
   unsigned int nspincases1(bool spin_polarized);
   /// Returns the number of unique combinations of 2 spin cases (1 or 3)
@@ -53,6 +53,13 @@ namespace sc {
   /// returns the second spin case of the 2-spin S
   SpinCase1 case2(SpinCase2 S);
 
+  std::string to_string(SpinCase1 S);
+  std::string to_string(SpinCase2 S);
+  std::string to_string(PureSpinCase2 S);
+  SpinCase1 to_spincase1(const std::string& key);
+  SpinCase2 to_spincase2(const std::string& key);
+  PureSpinCase2 to_purespincase2(const std::string& key);
+
   enum { ToLowerCase = true,
 	 ToUpperCase = false };
   /// Prepend string representation of S to R and return
@@ -61,8 +68,8 @@ namespace sc {
   std::string prepend_spincase(SpinCase2 S, const std::string& R, bool lowercase = false);
   /// Prepend string representation of S to R and return
   std::string prepend_spincase(PureSpinCase2 S, const std::string& R, bool lowercase = false);
-  
-  
+
+
 };
 
 #endif

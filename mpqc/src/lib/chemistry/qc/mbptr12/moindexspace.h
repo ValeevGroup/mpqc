@@ -41,6 +41,7 @@
 #include <math/scmat/abstract.h>
 #include <util/state/statein.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 using namespace std;
 
@@ -98,9 +99,6 @@ private:
 
   // sorting functions borrowed from mbpt.cc
   static void dquicksort(double *item,unsigned int *index,unsigned int n);
-
-  // add this to the global registry
-  void add_to_registry();
 
 public:
   MOIndexSpace(StateIn&);
@@ -246,6 +244,78 @@ overlap(const MOIndexSpace& space2, const MOIndexSpace& space1, const Ref<SCMatr
 bool
 in(const MOIndexSpace& s1, const MOIndexSpace& s2);
 
+/**
+   Parses keys of MOIndexSpace. Although MOIndexSpace object with arbitrary keys can be created,
+   other components of MPQC assume certain rules for the keys. The simplest rule is that a key for
+   a spin-polarized MOIndexSpace (i.e., that has spin-alpha and spin-beta variants) must encode the spin information.
+   This class can encode and decode this information.
+
+   Another rule is how transformed MOIndexSpace objects are labeled. \sa ParsedTranformedMOIndexSpaceKey
+ */
+class ParsedMOIndexSpaceKey {
+  public:
+    /// throws if key is not properly formatted
+    ParsedMOIndexSpaceKey(const std::string& key);
+
+    const std::string& key() const { return key_; }
+    const std::string& label() const { return label_; }
+    SpinCase1 spin() const { return spin_; }
+
+    static std::string key(const std::string& label,
+                           SpinCase1 spin);
+
+  private:
+    std::string key_;
+    std::string label_;
+    SpinCase1 spin_;
+};
+
+/**
+   Parses keys of a "transformed" MOIndexSpace. Although MOIndexSpace object with arbitrary keys can be created,
+   other components of MPQC assume certain rules for the keys. "Transformed" MOIndexSpace
+   represents space U obtained by transformation of space V as
+   U_i^j = C_i^k V_k^j, where V is the coefficient matrix of the original space, C is the transformation
+   matrix, and U is the transformed space. Transformation matrices typically represent common
+   one-electron operators, e.g., Fock, Coulomb, exchange, kinetic energy, etc.
+ */
+class ParsedTransformedMOIndexSpaceKey {
+  public:
+    typedef enum {
+      Fock = 0,
+      Coulomb = 1,
+      Exchange = 2,
+      KineticEnergy = 3,
+      CoreHamiltonian = 4,
+      CorePlusCoulomb = 5,
+      InvalidOneBodyOperator = 6
+    } OneBodyOperator;
+#define ParsedTransformedMOIndexSpaceKey_OneBodyOperatorLabelInitializer {"F", "J", "K", "T", "h", "h+J"}
+    static const char* OneBodyOperatorLabel[]; // = ParsedTransformedMOIndexSpaceKey_OneBodyOperatorLabelInitializer
+
+    /// throws if key is not properly formatted
+    ParsedTransformedMOIndexSpaceKey(const std::string& key);
+
+    const std::string& key() const { return key_; }
+    const std::string& label() const { return label_; }
+    SpinCase1 spin() const { return spin_; }
+    const std::string& original_label() const { return original_label_; }
+    SpinCase1 original_spin() const { return spin_; }
+    OneBodyOperator transform_operator() const { return transform_operator_; }
+
+    static std::string key(const std::string& label,
+                           SpinCase1 spin,
+                           const std::string& original_label,
+                           SpinCase1 original_spin,
+                           OneBodyOperator oper);
+
+  private:
+    std::string key_;
+    std::string label_;
+    SpinCase1 spin_;
+    std::string original_label_;
+    SpinCase1 original_spin_;
+    OneBodyOperator transform_operator_;
+};
 
 /** Registry of globally-known MOIndexSpaces associates MOIndexSpace S with a string key given by S->id().
     It is a singleton. All operations on it are thread-safe.
@@ -257,7 +327,8 @@ class MOIndexSpaceRegistry : virtual public SavableState {
     /// returns MOIndexSpace that corresponds to this key. If key is not known, returns null pointer
     Ref<MOIndexSpace> find(const std::string& key) const;
     /// registers this MOIndexSpace
-    void add(const Ref<MOIndexSpace>& space);
+    void add(const Ref<MOIndexSpace>& space,
+             SpinCase1 spin = AnySpinCase1);
 
   private:
     // this is a Singleton: access only through instance()

@@ -45,8 +45,10 @@ CXXSRCS = mbptr12.cc \
   moindexspace.cc pairiter.cc \
   transform_factory.cc transform_tbint.cc \
   transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
+  transform_iRjS.cc \
   transform_123inds.cc transform_13inds.cc transform_12inds.cc \
   compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
+  compute_iRjS.cc \
   r12int_eval.cc \
   coulomb.cc exchange.cc fock.cc \
   r12_amps.cc compute_amps.cc \

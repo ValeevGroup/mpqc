@@ -31,6 +31,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
@@ -74,6 +75,11 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   file_prefix_(factory()->file_prefix()),
   max_memory_(factory()->memory())
 {
+  // all spaces must be given, even for partial transforms
+  assert(space1_.nonnull());
+  assert(space2_.nonnull());
+  assert(space3_.nonnull());
+  assert(space4_.nonnull());
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)

@@ -388,16 +388,6 @@ MOIndexSpace::init()
 {
   if (id_.size() > max_id_length)
     throw ProgrammingError("MOIndexSpace constructed with id longer than allowed",__FILE__,__LINE__);
-
-  // must do this at the very end of initialization: add this to the registry
-  add_to_registry();
-}
-
-void
-MOIndexSpace::add_to_registry()
-{
-  const Ref<MOIndexSpaceRegistry> idxrgy = MOIndexSpaceRegistry::instance();
-  idxrgy->add(this);
 }
 
 size_t
@@ -830,10 +820,11 @@ MOIndexSpaceRegistry::find(const std::string& key) const
 }
 
 void
-MOIndexSpaceRegistry::add(const Ref<MOIndexSpace>& space)
+MOIndexSpaceRegistry::add(const Ref<MOIndexSpace>& space,
+                          SpinCase1 spin)
 {
   lock_->lock();
-  const std::string key = space->id();
+  const std::string key = ParsedMOIndexSpaceKey::key(space->id(),spin);
 
   // check if this key already exists
   typedef MOIndexSpaceMap::const_iterator citer;
@@ -845,6 +836,81 @@ MOIndexSpaceRegistry::add(const Ref<MOIndexSpace>& space)
   space_map_[key] = space;
 
   lock_->unlock();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  // pop off str from beginning up to token.
+  std::string
+  pop_till_token(std::string& str,
+                 char token) {
+    const size_t next_token_pos = str.find_first_of(token);
+    std::string result;
+    if (next_token_pos != std::string::npos) {
+      result = str.substr(0,next_token_pos);
+      str.erase(0,next_token_pos+1);
+    }
+    else {
+      result = str;
+      str.clear();
+    }
+    return result;
+  }
+}
+
+ParsedMOIndexSpaceKey::ParsedMOIndexSpaceKey(const std::string& key) :
+  key_(key)
+{
+  std::string keycopy(key);
+  label_ = pop_till_token(keycopy,'[');
+  if (!keycopy.empty()) {
+    const std::string spinkey = pop_till_token(keycopy,']');
+    spin_ = to_spincase1(spinkey);
+  }
+}
+
+std::string
+ParsedMOIndexSpaceKey::key(const std::string& label,
+                           SpinCase1 spin)
+{
+  if (spin != AnySpinCase1) {
+    std::ostringstream oss;
+    oss << label << "[" << to_string(spin) << "]";
+    return oss.str();
+  }
+  return label;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+const char* ParsedTransformedMOIndexSpaceKey::OneBodyOperatorLabel[] =
+  ParsedTransformedMOIndexSpaceKey_OneBodyOperatorLabelInitializer
+  ;
+
+ParsedTransformedMOIndexSpaceKey::ParsedTransformedMOIndexSpaceKey(const std::string& key) :
+  key_(key)
+{
+  std::string keycopy(key);
+
+  const std::string tformed_key = pop_till_token(keycopy,'_');
+  ParsedMOIndexSpaceKey parsed_tformed_key(tformed_key);
+  label_ = parsed_tformed_key.label();
+  spin_ = parsed_tformed_key.spin();
+
+  const std::string oper_key = pop_till_token(keycopy,'(');
+  transform_operator_ = InvalidOneBodyOperator;
+  for(int o=0; o!=InvalidOneBodyOperator; ++o) {
+    if (oper_key == std::string(OneBodyOperatorLabel[o])) {
+      transform_operator_ = static_cast<OneBodyOperator>(o);
+      break;
+    }
+  }
+
+  const std::string orig_key = pop_till_token(keycopy,')');
+  ParsedMOIndexSpaceKey parsed_orig_key(orig_key);
+  original_label_ = parsed_orig_key.label();
+  original_spin_ = parsed_orig_key.spin();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1409,6 +1409,7 @@ dnl --------- Checks for rand functions ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(drand48)
+AC_CHECK_FUNCS(lrand48)
 AC_LANG_RESTORE
 
 dnl --------- Checks for SYSV IPC. ---------

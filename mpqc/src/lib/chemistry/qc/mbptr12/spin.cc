@@ -30,6 +30,8 @@
 #endif
 
 #include <chemistry/qc/mbptr12/spin.h>
+#include <util/class/scexception.h>
+#include <ctype.h>
 
 namespace sc {
   unsigned int nspincases1(bool spin_polarized) { return spin_polarized ? 2 : 1; }
@@ -37,38 +39,94 @@ namespace sc {
   unsigned int npurespincases2(){ return(NPureSpinCases2); }
   SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
   SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
-  
+  std::string to_string(SpinCase1 S) {
+    switch(S) {
+      case Alpha:
+        return std::string("alpha");
+      case Beta:
+        return std::string("beta");
+      case AnySpinCase1:
+        return std::string("");
+    }
+    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
+  }
+
+  std::string to_string(SpinCase2 S) {
+    switch(S) {
+      case AlphaAlpha:
+        return std::string("alpha-alpha");
+      case AlphaBeta:
+        return std::string("alpha-beta");
+      case BetaBeta:
+        return std::string("beta-beta");
+      case AnySpinCase2:
+        return std::string("");
+    }
+    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
+  }
+
+  std::string to_string(PureSpinCase2 S) {
+    switch(S) {
+      case Singlet:
+        return std::string("singlet");
+      case Triplet:
+        return std::string("triplet");
+      case AnyPureSpinCase2:
+        return std::string("");
+    }
+    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
+  }
+
+  SpinCase1 to_spincase1(const std::string& key) {
+    for(int s=AnySpinCase1; s!=InvalidSpinCase1; ++s) {
+      SpinCase1 sc = static_cast<SpinCase1>(s);
+      if (key == to_string(sc))
+        return sc;
+    }
+    throw ProgrammingError("to_spincase1() -- invalid argument",__FILE__,__LINE__);
+  }
+
+  PureSpinCase2 to_purespincase2(const std::string& key) {
+    for(int s=AnyPureSpinCase2; s!=InvalidPureSpinCase2; ++s) {
+      PureSpinCase2 sc = static_cast<PureSpinCase2>(s);
+      if (key == to_string(sc))
+        return sc;
+    }
+    throw ProgrammingError("to_purespincase2() -- invalid argument",__FILE__,__LINE__);
+  }
+
+  SpinCase2 to_spincase2(const std::string& key) {
+    for(int s=AnySpinCase2; s!=InvalidSpinCase2; ++s) {
+      SpinCase2 sc = static_cast<SpinCase2>(s);
+      if (key == to_string(sc))
+        return sc;
+    }
+    throw ProgrammingError("to_spincase2() -- invalid argument",__FILE__,__LINE__);
+  }
+
   std::string prepend_spincase(SpinCase2 S, const std::string& R, bool lowercase)
   {
-    std::string prefix;
-    if (S == AlphaAlpha)
-      prefix = (lowercase ? "alpha-alpha " : "Alpha-alpha ");
-    else if (S == AlphaBeta)
-      prefix = (lowercase ? "alpha-beta " : "Alpha-beta ");
-    else
-      prefix = (lowercase ? "beta-beta " : "Beta-beta ");
+    std::string prefix(to_string(S));
+    if (!lowercase)
+      prefix[0] = toupper(prefix[0]);
     return prefix + R;
   }
-  
+
   std::string prepend_spincase(PureSpinCase2 S, const std::string& R, bool lowercase)
   {
-    std::string prefix;
-    if (S == Singlet)
-      prefix = (lowercase ? "singlet " : "Singlet ");
-    else
-      prefix = (lowercase ? "triplet " : "Triplet ");
+    std::string prefix(to_string(S));
+    if (!lowercase)
+      prefix[0] = toupper(prefix[0]);
     return prefix + R;
   }
-  
+
   std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase)
   {
-    std::string prefix;
-    if (S == Alpha)
-      prefix = (lowercase ? "alpha " : "Alpha ");
-    else
-      prefix = (lowercase ? "beta " : "Beta ");
+    std::string prefix(to_string(S));
+    if (!lowercase)
+      prefix[0] = toupper(prefix[0]);
     return prefix + R;
   }
-  
+
 }
 

@@ -60,19 +60,6 @@ namespace sc {
         */
       Ref<TwoBodyIntsAcc> get(const std::string& key);   // non-const: can add transforms
 
-      /// Returns key that describes the set of integrals for the index spaces given in physicists' order
-      std::string key(const Ref<MOIndexSpace>& space1_bra,
-                      const Ref<MOIndexSpace>& space2_bra,
-                      const Ref<MOIndexSpace>& space1_ket,
-                      const Ref<MOIndexSpace>& space2_ket,
-                      const std::string& operator_key = std::string());
-      /// Returns key that describes the set of integrals for the index spaces given in mulliken order
-      std::string key_mulliken(const Ref<MOIndexSpace>& space1_bra,
-                               const Ref<MOIndexSpace>& space1_ket,
-                               const Ref<MOIndexSpace>& space2_bra,
-                               const Ref<MOIndexSpace>& space2_ket,
-                               const std::string& operator_key = std::string());
-
       /** Returns key that describes params. If not registered, will do so using register_params(params)
        */
       std::string params_key(const Ref<IntParams>& params) const;
@@ -91,9 +78,24 @@ namespace sc {
       /// returns the factory
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
 
-      typedef enum {Layout_b1b2_k1k2, // physicists layout
-                    Layout_b1k1_b2k2  // chemists layout
-                   } Layout;
+      /// describes the physical layout of the integrals in TwoBodyIntsAcc
+      class Layout {
+        public:
+          Layout(const std::string& str);
+          Layout(const Layout& other);
+          Layout& operator=(const Layout& other);
+          bool operator==(const Layout& other) const;
+
+        private:
+          typedef enum {
+            b1b2_k1k2, // physicists layout
+            b1k1_b2k2  // chemists layout
+          } Type;
+          Type type_;
+      };
+      static Layout Layout_b1b2_k1k2;  // physicists layout
+      static Layout Layout_b1k1_b2k2;  // chemists layout
+
     private:
       Ref<MOIntsTransformFactory> factory_;  // that creates transforms
 
@@ -128,14 +130,29 @@ namespace sc {
       const std::string& ket2() const { return ket2_; }
       const std::string& oper() const { return oper_; }
       const std::string& params() const { return params_; }
-      const MOIntsRuntime::Layout& layout() const { return layout_; }
+      const std::string& layout() const { return layout_; }
+
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& ket1,
+                             const std::string& ket2,
+                             const std::string& oper,
+                             const std::string& params,
+                             const std::string& layout);
+      /// computes operator part of the key given an TwoBodyIntDescr object
+      static std::string key(const Ref<TwoBodyIntDescr>& descr);
+      /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
+      static Ref<TwoBodyIntDescr> create_descr(const std::string& oper_key,
+                                               const Ref<IntParams>& p,
+                                               const Ref<Integral>& integral);
 
     private:
       std::string key_;
       std::string bra1_, bra2_, ket1_, ket2_;
       std::string oper_;
       std::string params_;
-      MOIntsRuntime::Layout layout_;
+      std::string layout_;
   };
 
   namespace detail {

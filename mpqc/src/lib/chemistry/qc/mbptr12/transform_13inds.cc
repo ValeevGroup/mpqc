@@ -92,15 +92,12 @@ TwoBodyMOIntsTransform_13Inds::run()
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
   const int me = msg->me();
   const int nproc = msg->n();
-  Ref<MOIndexSpace> space1 = tform_->space1();
-  Ref<MOIndexSpace> space2 = tform_->space2();
-  Ref<MOIndexSpace> space3 = tform_->space3();
-  Ref<MOIndexSpace> space4 = tform_->space4();
-
-  Ref<GaussianBasisSet> bs1 = space1->basis();
-  Ref<GaussianBasisSet> bs2 = space2->basis();
-  Ref<GaussianBasisSet> bs3 = space3->basis();
-  Ref<GaussianBasisSet> bs4 = space4->basis();
+  const Ref<MOIndexSpace>& space1 = tform_->space1();
+  const Ref<MOIndexSpace>& space3 = tform_->space3();
+  const Ref<GaussianBasisSet>& bs1 = tform_->space1()->basis();
+  const Ref<GaussianBasisSet>& bs2 = tform_->space2()->basis();
+  const Ref<GaussianBasisSet>& bs3 = tform_->space3()->basis();
+  const Ref<GaussianBasisSet>& bs4 = tform_->space4()->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
   const bool bs3_eq_bs4 = (bs3 == bs4);
 
@@ -500,17 +497,13 @@ TwoBodyMOIntsTransform_13Inds::compute_required_dynamic_memory(const TwoBodyMOIn
                                                                int ibatchsize)
 {
   const Ref<MOIndexSpace>& space1 = tform.space1();
-  const Ref<MOIndexSpace>& space2 = tform.space2();
   const Ref<MOIndexSpace>& space3 = tform.space3();
-  const Ref<MOIndexSpace>& space4 = tform.space4();
-
-  const Ref<GaussianBasisSet>& bs1 = space1->basis();
-  const Ref<GaussianBasisSet>& bs2 = space2->basis();
-  const Ref<GaussianBasisSet>& bs3 = space3->basis();
-  const Ref<GaussianBasisSet>& bs4 = space4->basis();
+  const Ref<GaussianBasisSet>& bs1 = tform.space1()->basis();
+  const Ref<GaussianBasisSet>& bs2 = tform.space2()->basis();
+  const Ref<GaussianBasisSet>& bs3 = tform.space3()->basis();
+  const Ref<GaussianBasisSet>& bs4 = tform.space4()->basis();
   const bool bs3_eq_bs4 = (bs3 == bs4);
   const int rank1 = space1->rank();
-  const int rank2 = space2->rank();
   const int rank3 = space3->rank();
   const int nbasis1 = bs1->nbasis();
   const int nbasis2 = bs2->nbasis();

@@ -41,6 +41,11 @@
 
 namespace sc {
 
+  namespace detail {
+    // helper template to save to StateOut
+    template <typename T> struct ToStateOut;
+  }
+
 class StateOutData {
   public:
     int num;
@@ -135,13 +140,38 @@ class StateOut: public DescribedClass {
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
 
-    /// Write an STL vector of data.
+    /// Write an std::vector. This also works if T is a Ref to a SavableState.
     template <class T>
     int put(typename std::vector<T> &v) {
-      int l = v.size();
+      const size_t l = v.size();
       int r = put(l);
-      if (l) { for (int i=0; i<l; i++) r += put(v[i]); }
+      if (l) { for (size_t i=0; i<l; ++i) detail::ToStateOut<T>::put(v[i],*this,r); }
       return r;
+    }
+
+    /// Write an std::map. This also works if Key or Value is a Ref to a SavableState.
+    template <typename Key, typename Value>
+    int put(const std::map<Key,Value>& map) {
+      typedef std::map<Key,Value> Map;
+      const size_t size = map.size();
+      int r = put(size);
+      if (size) {
+        typedef typename Map::const_iterator citer;
+        const citer end = map.end();
+        for(citer i=map.begin(); i!=end; ++i) {
+          r += put(*i);
+        }
+      }
+      return r;
+    }
+
+    /// Write an std::pair
+    template <typename L, typename R>
+    int put(const std::pair<L,R>& v) {
+      int s = 0;
+      detail::ToStateOut<L>::put(v.first,*this,s);
+      detail::ToStateOut<R>::put(v.second,*this,s);
+      return s;
     }
 
     /** Don't keep track of pointers to objects.  Calling this
@@ -176,6 +206,20 @@ class StateOut: public DescribedClass {
         default implementation returns 0. */
     virtual int seekable();
   };
+
+  namespace detail {
+    // helper template to save to StateOut
+    template <typename T> struct ToStateOut {
+      static void put(const T& t, StateOut& so, int& count) {
+        count += so.put(t);
+      }
+    };
+    template <typename T> struct ToStateOut< sc::Ref<T> > {
+      static void put(const Ref<T>& t, StateOut& so, int& count) {
+        SavableState::save_state(t.pointer(),so);
+      }
+    };
+  }
 
 }
 

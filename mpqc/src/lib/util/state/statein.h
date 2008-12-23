@@ -41,6 +41,11 @@
 
 namespace sc {
 
+  namespace detail {
+    // helper template to read from StateIn
+    template <typename T> struct FromStateIn;
+  }
+
 class StateInData {
   public:
     Ref<SavableState> ptr;
@@ -143,10 +148,10 @@ class StateIn:  public DescribedClass {
     /** Returns the version of the ClassDesc in the persistent object
         or -1 if info on the ClassDesc doesn't exist. */
     virtual int version(const ClassDesc*);
-    
+
     /// This restores strings saved with StateOut::putstring.
     virtual int getstring(char*&);
-    
+
     /// This restores a std::string object.
     virtual int get(std::string&);
 
@@ -178,13 +183,38 @@ class StateIn:  public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
 
-    /// Read an STL vector of data.
-    template <class T>
-    int get(typename std::vector<T> &v) {
-      int l;
+    /// Read an std::vector. This also works if T is a Ref to a SavableState.
+    template <typename T>
+    int get(std::vector<T>& v) {
+      size_t l;
       int r = get(l);
-      if (l) { v.resize(l); for (int i=0; i<l; i++) r += get(v[i]); }
+      if (l) { v.resize(l); for (size_t i=0; i<l; i++) detail::FromStateIn<T>::get(v[i],*this,r); }
       return r;
+    }
+
+    /// Read an std::map. This also works if Key or Value is a Ref to a SavableState.
+    template <typename Key, typename Value>
+    int get(std::map<Key,Value>& map) {
+      typedef std::map<Key,Value> Map;
+      size_t size;
+      int r = get(size);
+      if (size) {
+        for(size_t i=0; i<size; ++i) {
+          std::pair<Key,Value> v;
+          get(v);
+          map[v.first] = v.second;
+        }
+      }
+      return r;
+    }
+
+    /// Read an std::pair.
+    template <typename L, typename R>
+    int get(std::pair<L,R>& v) {
+      int s = 0;
+      detail::FromStateIn<L>::get(v.first,*this,s);
+      detail::FromStateIn<R>::get(v.second,*this,s);
+      return s;
     }
 
     /** True if this is a node to node save/restore.  This is
@@ -216,6 +246,20 @@ class StateIn:  public DescribedClass {
     /** Return the KeyVal used to override values. */
     const Ref<KeyVal> &override() const { return override_; }
   };
+
+  namespace detail {
+    // helper template to read from StateIn
+    template <typename T> struct FromStateIn {
+      static void get(T& t, StateIn& so, int& count) {
+        count += so.get(t);
+      }
+    };
+    template <typename T> struct FromStateIn< sc::Ref<T> > {
+      static void get(Ref<T>& t, StateIn& so, int& count) {
+        t << SavableState::restore_state(so);
+      }
+    };
+  }
 
 }
 

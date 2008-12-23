@@ -85,6 +85,13 @@ public:
   /// How integrals are stored. Type_13 means (ix|jy) integrals are stored as (ij|xy)
   enum StorageType {StorageType_First=0, StorageType_Last=1,
                     StorageType_12=0, StorageType_13=1};
+  /// How integrals are stored. Type_13 means (ix|jy) integrals are stored as (ij|xy)
+  enum TwoBodyTransformType {
+    TwoBodyTransformType_ixjy=0, TwoBodyTransformType_ikjy=1,
+    TwoBodyTransformType_ijxy=2, TwoBodyTransformType_iRjS=3,
+    TwoBodyTransformType_First=TwoBodyTransformType_ixjy,
+    TwoBodyTransformType_Last=TwoBodyTransformType_iRjS
+  };
 
 private:
 
@@ -117,6 +124,10 @@ private:
   friend class TwoBodyMOIntsTransform;
   void release_memory(size_t nbytes);
   void reserve_memory(size_t nbytes);
+
+  template <typename TransformType> Ref<TwoBodyMOIntsTransform>
+    twobody_transform(const std::string& name,
+                      const Ref<TwoBodyIntDescr>& descrarg);
 
 public:
 
@@ -188,6 +199,12 @@ public:
   Ref<TwoBodyMOIntsTransform>
   twobody_transform(StorageType storage, const std::string& id,
                     const Ref<TwoBodyIntDescr>& descr = 0);
+
+  /// Creates an TwoBodyMOIntsTransform object of type T
+  Ref<TwoBodyMOIntsTransform> twobody_transform(TwoBodyTransformType T,
+                                                const std::string& name,
+                                                const Ref<TwoBodyIntDescr>& descrarg);
+
 };
 
 }

@@ -39,6 +39,8 @@
 #include <chemistry/qc/mbptr12/transform_ikjy.h>
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
+#include <chemistry/qc/mbptr12/transform_iRjS.h>
+#include <chemistry/qc/mbptr12/transform_factory.timpl.h>
 
 // Set to 1 if want to use ixjy transforms only
 #define USE_IXJY_ALWAYS 0
@@ -206,6 +208,23 @@ MOIntsTransformFactory::twobody_transform(StorageType storage,
 
     default:
     throw ProgrammingError("MOIntsTransformFactory::twobody_transform() -- unknown storage type requested",__FILE__,__LINE__);
+  }
+}
+
+Ref<TwoBodyMOIntsTransform>
+MOIntsTransformFactory::twobody_transform(TwoBodyTransformType T,
+                                          const std::string& name,
+                                          const Ref<TwoBodyIntDescr>& descrarg)
+{
+  switch (T) {
+    case TwoBodyTransformType_ixjy:
+      return twobody_transform<TwoBodyMOIntsTransform_ixjy>(name,descrarg);
+    case TwoBodyTransformType_ikjy:
+      return twobody_transform<TwoBodyMOIntsTransform_ikjy>(name,descrarg);
+    case TwoBodyTransformType_ijxy:
+      return twobody_transform<TwoBodyMOIntsTransform_ijxy>(name,descrarg);
+    case TwoBodyTransformType_iRjS:
+      return twobody_transform<TwoBodyMOIntsTransform_iRjS>(name,descrarg);
   }
 }
 

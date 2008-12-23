@@ -29,27 +29,31 @@
 #pragma interface
 #endif
 
-#include <vector>
-#include <utility>
-#include <util/ref/ref.h>
-
 #ifndef _chemistry_qc_basis_intparams_h
 #define _chemistry_qc_basis_intparams_h
 
+#include <vector>
+#include <utility>
+#include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
+
 namespace sc {
-  
+
   /** This class passes optional operator parameters. These parameters can be
       passed to
       1) Factory methods which initialize XXXBodyInt objects
       2) compute_shell methods of XXXBodyInt objects
   */
-  class IntParams : public RefCount {
+  class IntParams : virtual public SavableState {
     public:
       IntParams(unsigned int nparams=0);
+      IntParams(StateIn&);
       virtual ~IntParams();
-      
+      void save_data_state(StateOut&);
+
       unsigned int nparams() const;
-      
+
     private:
       unsigned int nparams_;
   };
@@ -58,7 +62,9 @@ namespace sc {
   class IntParamsVoid : public IntParams {
     public:
       IntParamsVoid();
+      IntParamsVoid(StateIn&);
       ~IntParamsVoid();
+      void save_data_state(StateOut&);
   };
 
   /** Passes params to Integral::g12() */
@@ -77,7 +83,10 @@ namespace sc {
       /// Request integrals with 2 geminals (g12*g12', [g12,[T1,g12']], [Ti,g12*g12'])
       IntParamsG12(const ContractedGeminal& bra,
                    const ContractedGeminal& ket);
+      IntParamsG12(StateIn&);
       ~IntParamsG12();
+
+      void save_data_state(StateOut&);
 
       const ContractedGeminal& bra() const;
       const ContractedGeminal& ket() const;
@@ -86,7 +95,7 @@ namespace sc {
                                       const PrimitiveGeminal& B);
       static ContractedGeminal product(const ContractedGeminal& A,
                                        const ContractedGeminal& B);
-      
+
     private:
       /// An invalid exponent (exponent of null_geminal)
       static double null_exponent;
@@ -94,7 +103,7 @@ namespace sc {
       ContractedGeminal bra_;
       ContractedGeminal ket_;
   };
-  
+
   /** Passes params to Integral::geng12() */
   class IntParamsGenG12 : public IntParams {
     public:
@@ -113,11 +122,13 @@ namespace sc {
       /// in bra and ket, hence this will throw if bra != ket.
       IntParamsGenG12(const ContractedGeminal& bra,
                    const ContractedGeminal& ket);
+      IntParamsGenG12(StateIn&);
       ~IntParamsGenG12();
+      void save_data_state(StateOut&);
 
       const ContractedGeminal& bra() const;
       const ContractedGeminal& ket() const;
-      
+
     private:
       /// An invalid exponent (exponent of null_geminal)
       static double null_exponent;
@@ -125,7 +136,7 @@ namespace sc {
       ContractedGeminal bra_;
       ContractedGeminal ket_;
   };
-  
+
 
 }
 

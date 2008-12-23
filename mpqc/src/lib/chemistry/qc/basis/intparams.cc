@@ -37,12 +37,24 @@ using namespace sc;
 
 /////////////////////////////
 
-IntParams::IntParams(unsigned int nparams) :
-  nparams_(nparams)
-{}
+static ClassDesc IntParams_cd(
+  typeid(IntParams),"IntParams",1,"virtual public SavableState",
+  0, 0, 0);
 
-IntParams::~IntParams()
-{}
+IntParams::IntParams(unsigned int nparams) : nparams_(nparams) {}
+
+IntParams::IntParams(StateIn& si) : SavableState(si)
+{
+  si.get(nparams_);
+}
+
+IntParams::~IntParams() {}
+
+void
+IntParams::save_data_state(StateOut& so)
+{
+  so.put(nparams_);
+}
 
 unsigned int
 IntParams::nparams() const
@@ -52,18 +64,34 @@ IntParams::nparams() const
 
 /////////////////////////////
 
+static ClassDesc IntParamsVoid_cd(
+  typeid(IntParamsVoid),"IntParamsVoid",1,"public IntParams",
+  create<IntParamsVoid>, 0, create<IntParamsVoid>);
+
 IntParamsVoid::IntParamsVoid() : IntParams(0) {}
+
+IntParamsVoid::IntParamsVoid(StateIn& si) : IntParams(si) {}
 
 IntParamsVoid::~IntParamsVoid() {}
 
+void
+IntParamsVoid::save_data_state(StateOut& so)
+{
+  IntParams::save_data_state(so);
+}
+
 /////////////////////////////
+
+static ClassDesc IntParamsG12_cd(
+  typeid(IntParamsG12),"IntParamsG12",1,"public IntParams",
+  0, 0, create<IntParamsG12>);
 
 IntParamsG12::IntParamsG12(const ContractedGeminal& bra) :
   IntParams(2), bra_(bra), ket_(null_geminal)
 {
   if (bra_.size() == 0)
     throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal contractions of zero length",__FILE__,__LINE__);
-  
+
   typedef ContractedGeminal::const_iterator citer;
   citer end = bra_.end();
   for(citer i=bra_.begin(); i<end; i++) {
@@ -79,7 +107,7 @@ IntParamsG12::IntParamsG12(const ContractedGeminal& bra,
   if (bra_.size() == 0 ||
       ket_.size() == 0)
     throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal contractions of zero length",__FILE__,__LINE__);
-  
+
   typedef ContractedGeminal::const_iterator citer;
   citer end = bra_.end();
   for(citer i=bra_.begin(); i<end; i++) {
@@ -93,8 +121,21 @@ IntParamsG12::IntParamsG12(const ContractedGeminal& bra,
   }
 }
 
-IntParamsG12::~IntParamsG12()
-{}
+IntParamsG12::IntParamsG12(StateIn& si) : SavableState(si)
+{
+  si.get(bra_);
+  si.get(ket_);
+}
+
+IntParamsG12::~IntParamsG12() {}
+
+void
+IntParamsG12::save_data_state(StateOut& so)
+{
+  IntParams::save_data_state(so);
+  so.put(bra_);
+  so.put(ket_);
+}
 
 const IntParamsG12::ContractedGeminal&
 IntParamsG12::bra() const { return bra_; }
@@ -133,13 +174,17 @@ IntParamsG12::product(const ContractedGeminal& A,
 
 /////////////////////////////
 
+static ClassDesc IntParamsGenG12_cd(
+  typeid(IntParamsGenG12),"IntParamsGenG12",1,"public IntParams",
+  0, 0, create<IntParamsGenG12>);
+
 IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra) :
   IntParams(2), bra_(bra), ket_(null_geminal)
 {
   if (bra_.size() == 0)
     throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal contractions of zero length",__FILE__,__LINE__);
 
-#if 0  
+#if 0
   typedef ContractedGeminal::const_iterator citer;
   citer end = bra_.end();
   for(citer i=bra_.begin(); i<end; i++) {
@@ -159,7 +204,7 @@ IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra,
   if (bra_.size() == 0)
     throw ProgrammingError("IntParamsGenG12::IntParamsGenG12() -- geminal contractions of zero length",__FILE__,__LINE__);
 
-#if 0  
+#if 0
   typedef ContractedGeminal::const_iterator citer;
   citer end = bra_.end();
   for(citer i=bra_.begin(); i<end; i++) {
@@ -169,8 +214,20 @@ IntParamsGenG12::IntParamsGenG12(const ContractedGeminal& bra,
 #endif
 }
 
-IntParamsGenG12::~IntParamsGenG12()
-{}
+IntParamsGenG12::IntParamsGenG12(StateIn& si) : SavableState(si)
+{
+  si.get(bra_);
+  si.get(ket_);
+}
+
+IntParamsGenG12::~IntParamsGenG12() {}
+
+void
+IntParamsGenG12::save_data_state(StateOut& so)
+{
+  so.put(bra_);
+  so.put(ket_);
+}
 
 const IntParamsGenG12::ContractedGeminal&
 IntParamsGenG12::bra() const { return bra_; }

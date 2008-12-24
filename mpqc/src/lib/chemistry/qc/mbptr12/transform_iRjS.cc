@@ -54,7 +54,7 @@ TwoBodyMOIntsTransform_iRjS::TwoBodyMOIntsTransform_iRjS(const std::string& name
                                                          const Ref<MOIndexSpace>& space2,
                                                          const Ref<MOIndexSpace>& space3,
                                                          const Ref<MOIndexSpace>& space4) :
-  TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,0,space3,0)
+  TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,space2,space3,space4)
 {
   init_vars();
 }

@@ -55,6 +55,9 @@ class MBPT2_R12;
 
 class R12IntEvalInfo : virtual public SavableState {
 
+  // change to 0 to use the old set of MOIndexSpace keys
+  static const int USE_NEW_MOINDEXSPACE_KEYS = 1;
+
 public:
 
   /// Describes the method of storing transformed MO integrals. See MBPT2_R12.

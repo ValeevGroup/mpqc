@@ -100,12 +100,12 @@ namespace sc {
       Ref<MOIntsTransformFactory> factory_;  // that creates transforms
 
       // Maps key to IntParams
-      typedef std::map< std::string, Ref<IntParams> > ParamsMap;
-      mutable ParamsMap params_map_;  // key->params map can be modified silently, no need to observe const-ness
+      typedef Registry<std::string, Ref<IntParams>, detail::NonsingletonCreationPolicy > ParamRegistry;
+      Ref<ParamRegistry> params_;
 
       // Map to TwoBodyMOIntsTransform objects that have been computed previously
-      typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
-      TformMap tform_map_;
+      typedef Registry<std::string, Ref<TwoBodyMOIntsTransform>, detail::NonsingletonCreationPolicy > TformRegistry;
+      Ref<TformRegistry> tforms_;
 
       // creates a transform object for a given key
       const Ref<TwoBodyMOIntsTransform>& create_tform(const std::string& key);
@@ -154,13 +154,6 @@ namespace sc {
       std::string params_;
       std::string layout_;
   };
-
-  namespace detail {
-    /// Convert 2 spaces to SpinCase2 assuming that lower-case symbols correspond to beta, upper -- to alpha
-    SpinCase2 spincase2(const Ref<MOIndexSpace>& space1,
-                        const Ref<MOIndexSpace>& space2);
-    std::string id(SpinCase2 S);
-  }
 
 } // end of namespace sc
 

@@ -42,6 +42,7 @@
 #include <util/state/statein.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/mbptr12/registry.h>
 
 using namespace std;
 
@@ -60,7 +61,7 @@ class MOIndexSpace : virtual public SavableState {
 public:
 
   /// Describes the ordering of indices
-  enum IndexOrder { symmetry = 0, energy = 1, undefined = 2 };
+  enum IndexOrder { symmetry = 0, energy = 1};
 
 private:
 
@@ -73,14 +74,9 @@ private:
   Ref<Integral> integral_;
   RefSCMatrix coefs_;              // AO-> MO transformation coefficients (nao by nmo matrix)
   RefDiagSCMatrix evals_;          // "eigenvalues" associated with the MOs
-  RefSCDimension modim_;           // The MO dimension
-  std::vector<unsigned int> mosym_;              // irrep of each orbital
-
-  unsigned int rank_;          // The rank of this space
-  unsigned int nblocks_;       // Number of blocks
+  RefSCDimension dim_;             // only here to allow dim() return const &
+  std::vector<unsigned int> mosym_;  // irrep of each orbital
   vector<unsigned int> nmo_;        // Number of MOs in each block
-
-  IndexOrder moorder_;
 
   // checks mosym_ for irrep indices outside of the allowed range
   void check_mosym() const;
@@ -92,7 +88,8 @@ private:
   // computes coefficient matrix from the full coefficient matrix. If moorder_ == energy
   // then the MO vectors will be sorted by their eigenvalues
   void full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSCMatrix& evals,
-                           const std::vector<unsigned int>& offsets);
+                           const std::vector<unsigned int>& offsets,
+                           IndexOrder moorder);
 
   // initialize the object
   void init();
@@ -148,6 +145,8 @@ public:
 
   void save_data_state(StateOut&);
 
+  MOIndexSpace& operator=(const MOIndexSpace& other);
+
   /// Returns a self-contained expressive label
   const std::string& name() const;
   /// Returns a short (preferably, one, max 10 character) identifier for the space
@@ -172,8 +171,6 @@ public:
   const RefDiagSCMatrix& evals() const;
   /// Returns the orbital symmetry array
   const vector<unsigned int>& mosym() const;
-  /// Returns the order of the orbitals
-  IndexOrder moorder() const;
   /// Returns the rank of the space
   unsigned int rank() const;
   /// Returns the number of blocks
@@ -317,6 +314,17 @@ class ParsedTransformedMOIndexSpaceKey {
     OneBodyOperator transform_operator_;
 };
 
+/// registry of globally-known MOIndexSpace objects
+typedef Registry<std::string, Ref<MOIndexSpace>, detail::SingletonCreationPolicy > MOIndexSpaceRegistry;
+/// helper function to form a key/space pair from a MOIndexSpace
+std::pair<std::string,Ref<MOIndexSpace> >
+  make_keyspace_pair(const Ref<MOIndexSpace>& space,
+                     SpinCase1 spin = AnySpinCase1);
+
+/// registry of globally-known MOIndexSpace objects that describe AO basis spaces
+typedef Registry< Ref<GaussianBasisSet>, Ref<MOIndexSpace>, detail::SingletonCreationPolicy > AOIndexSpaceRegistry;
+
+#if 0
 /** Registry of globally-known MOIndexSpaces associates MOIndexSpace S with a string key given by S->id().
     It is a singleton. All operations on it are thread-safe.
  */
@@ -341,6 +349,7 @@ class MOIndexSpaceRegistry : virtual public SavableState {
     // std::map's operations are not reentrant, hence lock the map every time
     Ref<ThreadLock> lock_;
 };
+#endif
 
 }
 

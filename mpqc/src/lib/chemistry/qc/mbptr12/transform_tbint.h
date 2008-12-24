@@ -182,6 +182,10 @@ public:
   /// Returns MOIndexSpace object 4
   const Ref<MOIndexSpace>& space4() const;
 
+  /// Supplies the partially transformed integrals.
+  virtual void partially_transformed_ints(const Ref<R12IntsAcc>&);
+
+
   /// Returns amount of memory used by this object after compute() has been called
   size_t memory() const;
   /// Returns the maximum amount of memory that will be used by this object

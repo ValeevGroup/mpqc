@@ -275,6 +275,12 @@ TwoBodyMOIntsTransform_ixjy::check_int_symm(double threshold) throw (Programming
   }
 }
 
+void
+TwoBodyMOIntsTransform_ixjy::partially_transformed_ints(const Ref<R12IntsAcc>& ints_acc)
+{
+  partially_tformed_ints_ = ints_acc;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

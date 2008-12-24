@@ -44,6 +44,7 @@
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/r12ia.h>
 
 using namespace std;
 using namespace sc;
@@ -193,26 +194,38 @@ TwoBodyMOIntsTransform_ixjy::compute()
     memset(integral_ijsq, 0, num_te_types()*nij*memgrp_blocksize);
     integral_ijsq = 0;
     mem_->sync();
-    ExEnv::out0() << indent
-		  << scprintf("Begin loop over shells (ints, 1+2 q.t.)") << endl;
 
-    // Do the two electron integrals and the first two quarter transformations
-    Timer tim12("ints+1qt+2qt");
-    shell_pair_data()->init();
-    for (int i=0; i<thr_->nthread(); i++) {
-      e13thread[i]->set_i_offset(i_offset);
-      e13thread[i]->set_ni(ni);
-      thr_->add_thread(i,e13thread[i]);
+    //
+    // if given half-transformed integrals, read them to memory, else do 1 and 2 quarter transforms
+    //
+    if (partially_tformed_ints_.nonnull()) {
+      partially_tformed_ints_->activate();
+      detail::restore_memorygrp(partially_tformed_ints_, mem_, i_offset, ni,
+                                memgrp_blocksize);
+      if (partially_tformed_ints_->data_persistent()) partially_tformed_ints_->deactivate();
+      ExEnv::out0() << indent << scprintf("Read half-transformed integrals")
+          << endl;
+    } else {
+      ExEnv::out0() << indent
+          << scprintf("Begin loop over shells (ints, 1+2 q.t.)") << endl;
+      // Do the two electron integrals and the first two quarter transformations
+      Timer tim12("ints+1qt+2qt");
+      shell_pair_data()->init();
+      for (int i = 0; i < thr_->nthread(); i++) {
+        e13thread[i]->set_i_offset(i_offset);
+        e13thread[i]->set_ni(ni);
+        thr_->add_thread(i, e13thread[i]);
 #     if SINGLE_THREAD_E13
-      e13thread[i]->run();
+        e13thread[i]->run();
 #     endif
-    }
+      }
 #   if !SINGLE_THREAD_E13
-    thr_->start_threads();
-    thr_->wait_threads();
+      thr_->start_threads();
+      thr_->wait_threads();
 #   endif
-    tim12.exit();
-    ExEnv::out0() << indent << "End of loop over shells" << endl;
+      tim12.exit();
+      ExEnv::out0() << indent << "End of loop over shells" << endl;
+    }
 
     mem_->sync();  // Make sure ijsq is complete on each node before continuing
     integral_ijsq = (double*) mem_->localdata();

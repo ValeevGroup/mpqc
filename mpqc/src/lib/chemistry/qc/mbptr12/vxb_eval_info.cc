@@ -42,6 +42,8 @@
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/mbptr12/registry.timpl.h>
 
 using namespace std;
 using namespace sc;
@@ -237,6 +239,63 @@ R12IntEvalInfo::initialize()
         tfactory_->hints().data_persistent(false);
       else
         tfactory_->hints().data_persistent(true);
+
+      if (USE_NEW_MOINDEXSPACE_KEYS) {
+        // RI-related spaces should already be in the registry. Push all OBS-based spaces onto the registry also
+        const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+        if (!refinfo()->spin_polarized()) {
+          idxreg->add(make_keyspace_pair(refinfo()->docc_act()));
+          idxreg->add(make_keyspace_pair(refinfo()->docc()));
+          idxreg->add(make_keyspace_pair(vir_act()));
+          idxreg->add(make_keyspace_pair(refinfo()->orbs()));
+        }
+        else {
+          for(int s=Alpha; s!=InvalidSpinCase1; ++s) {
+            SpinCase1 spin = static_cast<SpinCase1>(s);
+            idxreg->add(make_keyspace_pair(refinfo()->occ_act(spin),spin));
+            idxreg->add(make_keyspace_pair(refinfo()->occ(spin),spin));
+            idxreg->add(make_keyspace_pair(vir_act(spin),spin));
+            idxreg->add(make_keyspace_pair(refinfo()->orbs(spin),spin));
+          }
+        }
+
+        // also create AO spaces
+        Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
+        { // OBS
+          const int nao = basis()->nbasis();
+          RefSCDimension obs_ao_dim = new SCDimension(nao,1);
+          obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
+          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(obs_ao_dim,obs_ao_dim);
+          obs_ao_coefs.assign(0.0);
+          for(int ao=0; ao<nao; ++ao)
+            obs_ao_coefs.set_element(ao,ao,1.0);
+          Ref<MOIndexSpace> mu = new MOIndexSpace("mu", "OBS(AO)", obs_ao_coefs,
+                                                  basis(), integral());
+          idxreg->add(make_keyspace_pair(mu));
+          aoidxreg->add(mu->basis(),mu);
+        }
+        { // RI-BS
+          const int nao = basis_ri()->nbasis();
+          RefSCDimension ribs_ao_dim = new SCDimension(nao,1);
+          ribs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
+          RefSCMatrix ribs_ao_coefs = matrixkit_->matrix(ribs_ao_dim,ribs_ao_dim);
+          ribs_ao_coefs.assign(0.0);
+          for(int ao=0; ao<nao; ++ao)
+            ribs_ao_coefs.set_element(ao,ao,1.0);
+          Ref<MOIndexSpace> mu = new MOIndexSpace("mu'", "RIBS(AO)", ribs_ao_coefs,
+                                                  basis_ri(), integral());
+          idxreg->add(make_keyspace_pair(mu));
+          aoidxreg->add(mu->basis(),mu);
+        }
+
+#define TEST_MOINTSRUNTIME 0
+#if TEST_MOINTSRUNTIME
+        // create MO integrals runtime and try creating a transform
+        Ref<MOIntsRuntime> ints_rtime = new MOIntsRuntime(tfactory_);
+        Ref<R12IntsAcc> iiMuMup_acc = ints_rtime->get(std::string("<i i|ERI|mu mu'>(b1 b2|k1 k2)"));
+        Ref<R12IntsAcc> iimA_acc = ints_rtime->get(std::string("<i i|ERI|m a'>(b1 b2|k1 k2)"));
+#endif
+      }
   }
 }
 

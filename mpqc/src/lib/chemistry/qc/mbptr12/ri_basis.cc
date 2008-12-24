@@ -130,11 +130,6 @@ R12IntEvalInfo::construct_orthog_aux_()
   abs_space_ = orthogonalize("p'","RIBS", bs_aux_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
   if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
-#if 0
-    // vir_spaces_.ri_ should be a CABS space, not a RIBS space
-    vir_spaces_[Alpha].ri_ = ribs_space_;
-    vir_spaces_[Beta].ri_ = ribs_space_;
-#endif
   }
 }
 
@@ -149,10 +144,11 @@ R12IntEvalInfo::construct_orthog_ri_()
     throw std::runtime_error("R12IntEvalInfo::construct_orthog_ri_ -- RI basis has not been set yet");
   if (bs_aux_ == bs_ri_)
     construct_orthog_aux_();
-  if (ribs_space_.nonnull())
-    return;
-
-  ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
+  if (ribs_space_.null()) {
+    ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
+  }
+  const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(ribs_space_));
 }
 
 bool
@@ -184,6 +180,8 @@ R12IntEvalInfo::abs_spans_obs_()
 void
 R12IntEvalInfo::construct_ortho_comp_svd_()
 {
+  const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+
   construct_orthog_aux_();
   construct_orthog_vir_();
   construct_orthog_ri_();
@@ -202,12 +200,23 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
     tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = tmp;
     vir_spaces_[Beta].ri_ = tmp;
+    idxreg->add(make_keyspace_pair(vir_spaces_[Alpha].ri_));
   }
   else {
     Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
     Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", refinfo()->ref()->lindep_tol());
-    vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    if (USE_NEW_MOINDEXSPACE_KEYS) {
+      const std::string key_a = ParsedMOIndexSpaceKey::key(std::string("a'"),Alpha);
+      const std::string key_b = ParsedMOIndexSpaceKey::key(std::string("a'"),Beta);
+      vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, key_a, "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+      vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    }
+    else {
+      vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, "A'", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+      vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, "a'", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    }
+    idxreg->add(make_keyspace_pair(vir_spaces_[Alpha].ri_));
+    idxreg->add(make_keyspace_pair(vir_spaces_[Beta].ri_));
   }
 }
 
@@ -271,9 +280,9 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 {
   if (!space1->integral()->equiv(space2->integral()))
     throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
-  // Both spaces must be ordered in the same way
-  if (space1->moorder() != space2->moorder())
-    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
+  // Both spaces must have same blocking
+  if (space1->nblocks() != space2->nblocks())
+    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 have incompatible blocking");
 
   ExEnv::out0() << indent
                 << "SVD-projecting out " << space1->name() << " out of " << space2->name()
@@ -428,9 +437,9 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   // Check integral factories
   if (!space1->integral()->equiv(space2->integral()))
     throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
-  // Both spaces must be ordered in the same way
-  if (space1->moorder() != space2->moorder())
-    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
+  // Both spaces must have same blocking
+  if (space1->nblocks() != space2->nblocks())
+    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 have incompatible blocking");
 
   ExEnv::out0() << indent
                 << "Projecting " << space1->name() << " onto " << space2->name()

@@ -33,7 +33,8 @@
 #include <sstream>
 #include <cassert>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
-
+#include <chemistry/qc/mbptr12/registry.h>
+#include <chemistry/qc/mbptr12/registry.timpl.h>
 
 using namespace sc;
 
@@ -185,34 +186,36 @@ static ClassDesc MOIntsRuntime_cd(
   typeid(MOIntsRuntime),"MOIntsRuntime",1,"virtual public SavableState",
   0, 0, create<MOIntsRuntime>);
 
-MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& f) : factory_(f)
+MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& f) : factory_(f),
+  params_(ParamRegistry::instance()), tforms_(TformRegistry::instance())
 {
   // associate empty params key with IntParamsVoid
   Ref<IntParams> voidparams = new IntParamsVoid;
-  params_map_[std::string("")] = voidparams;
+  register_params(std::string(""),voidparams);
 }
 
 MOIntsRuntime::MOIntsRuntime(StateIn& si)
 {
   factory_ << SavableState::restore_state(si);
-  // TODO implement restoring maps
-  assert(false);
+  params_ = ParamRegistry::restore_instance(si);
+  tforms_ = TformRegistry::restore_instance(si);
 }
 
 void
 MOIntsRuntime::save_data_state(StateOut& so)
 {
   SavableState::save_state(factory_.pointer(),so);
-  // TODO implement dumping maps
-  assert(false);
+  ParamRegistry::save_instance(params_,so);
+  TformRegistry::save_instance(tforms_,so);
 }
 
 Ref<MOIntsRuntime::TwoBodyIntsAcc>
 MOIntsRuntime::get(const std::string& key)
 {
-  TformMap::const_iterator tform_iter = tform_map_.find(key);
-  if (tform_iter == tform_map_.end()) {  // if not found
-    // verify that key follows the standard format
+  if (tforms_->key_exists(key)) {
+    return tforms_->value(key)->ints_acc();
+  }
+  else {  // if not found
     try { ParsedTwoBodyIntKey parsedkey(key); }
     catch (...) {
       std::ostringstream oss;
@@ -222,10 +225,6 @@ MOIntsRuntime::get(const std::string& key)
     // then create tform
     const Ref<TwoBodyMOIntsTransform>& tform = create_tform(key);
     tform->compute();
-    return tform->ints_acc();
-  }
-  else {
-    const Ref<TwoBodyMOIntsTransform>& tform = tform_iter->second;
     return tform->ints_acc();
   }
   assert(false); // unreachable
@@ -246,88 +245,76 @@ MOIntsRuntime::create_tform(const std::string& key)
 
   // get the spaces and construct the descriptor
   Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
-  Ref<MOIndexSpace> bra1 = idxreg->find(bra1_str);
-  Ref<MOIndexSpace> bra2 = idxreg->find(bra2_str);
-  Ref<MOIndexSpace> ket1 = idxreg->find(ket1_str);
-  Ref<MOIndexSpace> ket2 = idxreg->find(ket2_str);
+  Ref<MOIndexSpace> bra1 = idxreg->value(bra1_str);
+  Ref<MOIndexSpace> bra2 = idxreg->value(bra2_str);
+  Ref<MOIndexSpace> ket1 = idxreg->value(ket1_str);
+  Ref<MOIndexSpace> ket2 = idxreg->value(ket2_str);
   factory()->set_spaces(bra1,ket1,bra2,ket2);    // factory assumes chemists' convention
   Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
 
   // create the transform
   Ref<TwoBodyMOIntsTransform> tform;
   const Layout layout(pkey.layout());
-  if(layout == Layout_b1b2_k1k2)
-    tform = factory()->twobody_transform_13(key,descr);   // factory assumes chemists' convention
+  if(layout == Layout_b1b2_k1k2) {
+    Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
+    Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+
+
+    // is this a partial transform?
+    if (aoidxreg->value_exists(ket1) &&
+        aoidxreg->value_exists(ket2))
+      tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_iRjS,key,descr);
+    else { // if not, look for a partial transform
+
+      Ref<MOIndexSpace> aoket1 = aoidxreg->value(ket1->basis());
+      Ref<MOIndexSpace> aoket2 = aoidxreg->value(ket2->basis());
+      const std::string half_tform_key =
+        ParsedTwoBodyIntKey::key(idxreg->key(bra1),
+                                 idxreg->key(bra2),
+                                 idxreg->key(aoket1),
+                                 idxreg->key(aoket2),
+                                 oper_str,
+                                 params_str,
+                                 pkey.layout());
+      if (tforms_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
+        tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
+        tform->partially_transformed_ints( tforms_->value(half_tform_key)->ints_acc() );
+      }
+      else { // decide the best algorithm
+        if (ket1->rank() <= ket1->basis()->nbasis()) {
+          tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ikjy,key,descr);
+        }
+        else {
+          tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
+        }
+      }
+    }
+  }
   else if (layout == Layout_b1k1_b2k2)
-    tform = factory()->twobody_transform_12(key,descr);   // factory assumes chemists' convention
+    tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ijxy,key,descr);
 
   // add to the map
-  tform_map_[key] = tform;
+  tforms_->add(key,tform);
 
-  // return
-  return tform_map_[key];
+  return tforms_->value(key);
 }
-
-#if 0
-std::string
-MOIntsRuntime::key(const Ref<MOIndexSpace>& space1_bra,
-                   const Ref<MOIndexSpace>& space2_bra,
-                   const Ref<MOIndexSpace>& space1_ket,
-                   const Ref<MOIndexSpace>& space2_ket,
-                   const std::string& operator_key)
-{
-  std::ostringstream oss;
-  // physicists' notation
-  oss << "<" << space1_bra->id() << " " << space2_bra->id() << "|" << operator_key << "|"
-      << space1_ket->id() << " " << space2_ket->id() << " >";
-  // for case-insensitive file systems append spincase
-  oss << "_" << detail::id(detail::spincase2(space1_bra,space2_bra));
-  return oss.str();
-}
-
-std::string
-MOIntsRuntime::key_mulliken(const Ref<MOIndexSpace>& space1_bra,
-                            const Ref<MOIndexSpace>& space1_ket,
-                            const Ref<MOIndexSpace>& space2_bra,
-                            const Ref<MOIndexSpace>& space2_ket,
-                            const std::string& operator_key)
-{
-  std::ostringstream oss;
-  // physicists' notation
-  oss << "<" << space1_bra->id() << " " << space2_bra->id() << "|" << operator_key << "|"
-      << space1_ket->id() << " " << space2_ket->id() << ">";
-  // for case-insensitive file systems append spincase
-  oss << "_" << detail::id(detail::spincase2(space1_bra,space2_bra));
-  return oss.str();
-}
-#endif
 
 std::string
 MOIntsRuntime::params_key(const Ref<IntParams>& params) const
 {
-  // search map for params
-  typedef ParamsMap::const_iterator citer;
-  for(citer v=params_map_.begin();
-      v != params_map_.end();
-      ++v) {
-    if (v->second == params) {  // if found, return
-      return v->first;
-    }
-  }
-  // if not found, register
-  return register_params(params);
+  if (params_->value_exists(params))
+    return params_->key(params);
+  else  // if not found, register
+    return register_params(params);
 }
 
 Ref<IntParams>
 MOIntsRuntime::params(const std::string& key) const
 {
-  // search for key
-  typedef ParamsMap::const_iterator citer;
-  citer v = params_map_.find(key);
-  if (v == params_map_.end())
+  if (params_->key_exists(key))
+    return params_->value(key);
+  else  // if not found, register
     return 0;
-  else
-    return v->second;
 }
 
 std::string
@@ -346,16 +333,12 @@ MOIntsRuntime::register_params(const Ref<IntParams>& params) const
     oss << "[p" << random_number << "]";
     key = oss.str();
     // make sure it's unique by searching the map for it
-    typedef ParamsMap::const_iterator citer;
-    citer v = params_map_.find(key);
-    if (v == params_map_.end()) { // fine, it's unique, do the work
-      params_map_[key] = params;
+    unique = params_->key_exists(key) ? false : true;
+    if (unique) {
+      params_->add(key,params);
       return key;
     }
-    else { // not unique, try again
-      unique = false;
-    }
-  } while (!unique);
+  } while (!unique); // if not unique -- try again
   // unreachable
   abort();
 }
@@ -363,14 +346,9 @@ MOIntsRuntime::register_params(const Ref<IntParams>& params) const
 void
 MOIntsRuntime::register_params(const std::string& key, const Ref<IntParams>& params) const
 {
-  // make sure it's unique by searching the map for it
-  typedef ParamsMap::const_iterator citer;
-  citer v = params_map_.find(key);
-  if (v == params_map_.end()) { // fine, it's unique, do the work
-    params_map_[key] = params;
-    return;
-  }
-  throw ProgrammingError("MOIntsRuntime::register_params() -- this key already exists",__FILE__,__LINE__);
+  assert(! params_->key_exists(key));
+  assert(! params_->value_exists(params));
+  params_->add(key,params);
 }
 
 std::string

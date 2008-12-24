@@ -149,6 +149,12 @@ TwoBodyMOIntsTransform::ints_acc() {
   return ints_acc_;
 }
 
+void
+TwoBodyMOIntsTransform::partially_transformed_ints(const Ref<R12IntsAcc>& ints_acc)
+{
+  throw FeatureNotImplemented("TwoBodyMOIntsTransform::partially_transformed_ints() -- not implemented for this type of transform",__FILE__,__LINE__);
+}
+
 size_t
 TwoBodyMOIntsTransform::memory() const {
   return memory_;

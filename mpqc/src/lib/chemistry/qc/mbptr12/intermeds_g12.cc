@@ -89,7 +89,7 @@ R12IntEval::init_intermeds_g12_()
 	  // use xmyn if OBS != VBS
       // use xpyq if OBS == VBS
       if (obs_eq_vbs) {
-        NewTransformCreator tform_creator(
+        TwoBodyMOIntsTransformCreator tform_creator(
           thisref,
           xspace1,
           obs1,
@@ -99,7 +99,7 @@ R12IntEval::init_intermeds_g12_()
         fill_container(tform_creator,tforms_f12_xiyj);
       }
       else {
-        NewTransformCreator tform_creator(
+        TwoBodyMOIntsTransformCreator tform_creator(
 	      thisref,
 	      xspace1,
 	      occ1,
@@ -120,7 +120,7 @@ R12IntEval::init_intermeds_g12_()
 
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xzyw;
       {
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
           thisref,
           xspace1,
           xspace1,
@@ -184,13 +184,13 @@ R12IntEval::init_intermeds_g12_()
 	      // <xy|hJ z> tforms
 	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyHz;
 	      {
-		  NewTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true,true);
+		  TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true,true);
 		  fill_container(tform_creator,tforms_xyHz);
 	      }
 	      // <hJ z|xy> tforms
 	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Hzxy;
 	      {
-		  NewTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true,true);
+		  TwoBodyMOIntsTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true,true);
 		  fill_container(tform_creator,tforms_Hzxy);
 	      }
 
@@ -213,13 +213,13 @@ R12IntEval::init_intermeds_g12_()
 		  // <xy|z hJ> tforms
 		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyzH;
 		  {
-		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true,true);
+		      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true,true);
 		      fill_container(tform_creator,tforms_xyzH);
 		  }
 		  // <z hJ|xy> tforms
 		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_zHxy;
 		  {
-		      NewTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true,true);
+		      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true,true);
 		      fill_container(tform_creator,tforms_zHxy);
 		  }
 

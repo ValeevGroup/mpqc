@@ -105,7 +105,7 @@ R12IntEval::contrib_to_VXB_a_()
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
       {
 	  Ref<R12IntEval> thisref(this);
-	  NewTransformCreator tform_creator(
+	  TwoBodyMOIntsTransformCreator tform_creator(
 	      thisref,
 	      xspace1,
 	      orbs1,
@@ -116,7 +116,7 @@ R12IntEval::contrib_to_VXB_a_()
       }
       if (!occ12_in_x12) {
 	  Ref<R12IntEval> thisref(this);
-	  NewTransformCreator tform_creator(
+	  TwoBodyMOIntsTransformCreator tform_creator(
 	      thisref,
 	      occ1_act,
 	      orbs1,
@@ -222,7 +222,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyP;
 	  {
 	      Ref<R12IntEval> thisref(this);
-	      NewTransformCreator tform_creator(
+	      TwoBodyMOIntsTransformCreator tform_creator(
 		  thisref,
 		  xspace1,
 		  occ1,
@@ -233,7 +233,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  }
 	  if (!occ12_in_x12) {
 	      Ref<R12IntEval> thisref(this);
-	      NewTransformCreator tform_creator(
+	      TwoBodyMOIntsTransformCreator tform_creator(
 		  thisref,
 		  occ1_act,
 		  occ1,
@@ -309,7 +309,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xPym;
 	      {
 		  Ref<R12IntEval> thisref(this);
-		  NewTransformCreator tform_creator(
+		  TwoBodyMOIntsTransformCreator tform_creator(
 		      thisref,
 		      xspace1,
 		      rispace1,
@@ -320,7 +320,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      }
 	      if (!occ12_in_x12) {
 		  Ref<R12IntEval> thisref(this);
-		  NewTransformCreator tform_creator(
+		  TwoBodyMOIntsTransformCreator tform_creator(
 		      thisref,
 		      occ1_act,
 		      rispace1,

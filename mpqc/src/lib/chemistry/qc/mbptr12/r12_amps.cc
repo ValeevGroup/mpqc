@@ -159,7 +159,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   // if OBS == VBS then use (ip|ip) and (imjx) integrals
   if (obs_eq_vbs) {
     {
-      NewTransformCreator tform_creator(r12eval_,
+      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
         occ1_act,
         refinfo->orbs(spin1),
         occ2_act,
@@ -167,7 +167,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         tform0_pp = tform_creator();
     }
     {
-      NewTransformCreator tform_creator(r12eval_,
+      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
         xspace1,
         refinfo->orbs(spin1),
         xspace2,
@@ -175,7 +175,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         fill_container(tform_creator,tforms_pp);
     }
     {
-      NewTransformCreator tform_creator(r12eval_,
+      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
         xspace1,
         occ1,
         xspace2,
@@ -183,7 +183,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         fill_container(tform_creator,tforms_mx);
     }
     {
-      NewTransformCreator tform_creator(r12eval_,
+      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
         xspace1,
         cabs1,
         xspace2,

@@ -144,7 +144,7 @@ void R12IntEval::compute_B_DKH_() {
     // <xy|T z> tforms
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms_xyTz;
     {
-      NewTransformCreator tform_creator(thisref, xspace1, t_x1, xspace2,
+      TwoBodyMOIntsTransformCreator tform_creator(thisref, xspace1, t_x1, xspace2,
           xspace2, true, true);
       fill_container(tform_creator, tforms_xyTz);
     }
@@ -159,7 +159,7 @@ void R12IntEval::compute_B_DKH_() {
       // <xy|z T> tforms
       std::vector< Ref<TwoBodyMOIntsTransform> > tforms_xyzT;
       {
-        NewTransformCreator tform_creator(thisref, xspace1, xspace1, xspace2,
+        TwoBodyMOIntsTransformCreator tform_creator(thisref, xspace1, xspace1, xspace2,
             t_x2, true, true);
         fill_container(tform_creator, tforms_xyzT);
       }

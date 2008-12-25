@@ -105,12 +105,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else
@@ -148,12 +148,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else
@@ -192,12 +192,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else
@@ -237,12 +237,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else
@@ -282,12 +282,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else
@@ -327,12 +327,12 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
 	  {
-	      NewTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
 	      fill_container(tform_creator,tforms_f12);
 	  }
 	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
 	  if (!occ12_in_x12) {
-	      NewTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
+	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
 	      fill_container(tform_creator,tforms);
 	  }
 	  else

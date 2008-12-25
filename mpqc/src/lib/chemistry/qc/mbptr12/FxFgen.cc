@@ -141,13 +141,13 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   // (bra1 intkx1 |bra2 int2) tforms
   std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fbra_k1;
   {
-    NewTransformCreator tform_creator(thisref,bra1,intkx1,bra2,int2,true);
+    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,intkx1,bra2,int2,true);
     fill_container(tform_creator,tforms_Fbra_k1);
   }
   // (ket1 intk1 |ket2 int2) tforms
   std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fket_k1;
   {
-    NewTransformCreator tform_creator(thisref,ket1,intk1,ket2,int2,true);
+    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,intk1,ket2,int2,true);
     fill_container(tform_creator,tforms_Fket_k1);
   }
   // contract
@@ -174,13 +174,13 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
     // (bra1 intb1 |bra2 intkx2) tforms
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fbra_k2;
     {
-      NewTransformCreator tform_creator(thisref,bra1,int1,bra2,intkx2,true);
+      TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,int1,bra2,intkx2,true);
       fill_container(tform_creator,tforms_Fbra_k2);
     }
     // (ket1 int1 |ket2 intk2) tforms
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fket_k2;
     {
-      NewTransformCreator tform_creator(thisref,ket1,int1,ket2,intk2,true);
+      TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,int1,ket2,intk2,true);
       fill_container(tform_creator,tforms_Fket_k2);
     }
     // contract

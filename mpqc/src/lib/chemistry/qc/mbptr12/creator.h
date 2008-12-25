@@ -37,7 +37,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 
 namespace sc {
-  
+
   /** RangeCreator<T> is Functor which can be used up to n times to create objects
       of type T. operator() returns the objects, or 0 when done. Thus T must be Comparable to
       an int or Constructable from an int. */
@@ -48,56 +48,23 @@ namespace sc {
         n_(n), ncreated_(0) {}
       /// returns a new object T, or T(0) if done
       virtual T operator()() =0;
-      
+
       protected:
       bool can_create() const { return ncreated_ < n_; }
       void next() { ++ncreated_; }
-      
+
       private:
       unsigned int n_;
       unsigned int ncreated_;
     };
 
-#if 0
-  /** Creates TwoBodyMOIntsTransforms using transforms known by name to R12IntEval */
-  class NamedTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
-  {
-    public:
-    typedef Ref<TwoBodyMOIntsTransform> ObjT;
-    
-    NamedTransformCreator(Ref<R12IntEval>& r12eval,
-                          const Ref<MOIndexSpace>& space1,
-                          const Ref<MOIndexSpace>& space2,
-                          const Ref<MOIndexSpace>& space3,
-                          const Ref<MOIndexSpace>& space4,
-                          bool CorrFunctionInBra = false,
-                          bool CorrFunctionInKet = false);
-    /// Implementation of RangeCreator::operator()
-    ObjT operator()();
-    
-    private:
-    Ref<R12IntEval> r12eval_;
-    Ref<MOIndexSpace> space1_;
-    Ref<MOIndexSpace> space2_;
-    Ref<MOIndexSpace> space3_;
-    Ref<MOIndexSpace> space4_;
-    bool CorrFunctionInBraKet_;
-    unsigned int nf12bra_;
-    unsigned int nf12ket_;
-    unsigned int braindex_;
-    unsigned int ketindex_;
-    
-    void increment_indices();
-  };
-#endif
-  
   /** Creates new TwoBodyMOIntsTransforms and adds them to the transform map (R12IntEval, at the moment) */
-  class NewTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
+  class TwoBodyMOIntsTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
   {
     public:
     typedef Ref<TwoBodyMOIntsTransform> ObjT;
-    
-    NewTransformCreator(Ref<R12IntEval>& r12eval,
+
+    TwoBodyMOIntsTransformCreator(Ref<R12IntEval>& r12eval,
                         const Ref<MOIndexSpace>& space1,
                         const Ref<MOIndexSpace>& space2,
                         const Ref<MOIndexSpace>& space3,
@@ -108,7 +75,7 @@ namespace sc {
                           MOIntsTransformFactory::StorageType_13);
     /// Implementation of RangeCreator::operator()
     ObjT operator()();
-    
+
     private:
     Ref<R12IntEval> r12eval_;
     Ref<MOIntsTransformFactory> tfactory_;
@@ -123,24 +90,24 @@ namespace sc {
     unsigned int nf12ket_;
     unsigned int braindex_;
     unsigned int ketindex_;
-    
+
     void increment_indices();
   };
-  
+
   using LinearR12::CorrelationFactor;
-  /** Creates TwoBodyIntDescr for correlation factpr C */
+  /** Creates TwoBodyIntDescr for correlation factor C */
   class TwoBodyIntDescrCreator : public RangeCreator< Ref<TwoBodyIntDescr> >
   {
     public:
     typedef Ref<TwoBodyIntDescr> ObjT;
-    
+
     TwoBodyIntDescrCreator(const Ref<CorrelationFactor>& corrfactor,
                            const Ref<Integral>& integral,
                            bool CorrFunctionInBra = false,
                            bool CorrFunctionInKet = false);
     /// Implementation of RangeCreator::operator()
     ObjT operator()();
-    
+
     private:
     Ref<CorrelationFactor> corrfactor_;
     Ref<Integral> integral_;
@@ -149,11 +116,11 @@ namespace sc {
     unsigned int nf12ket_;
     unsigned int braindex_;
     unsigned int ketindex_;
-    
+
     void increment_indices();
   };
-  
-  
+
+
 }
 
 #endif

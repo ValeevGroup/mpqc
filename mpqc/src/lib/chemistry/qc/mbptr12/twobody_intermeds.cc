@@ -106,7 +106,7 @@ R12IntEval::V(SpinCase2 spincase2,
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyn;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(thisref,
+      TwoBodyMOIntsTransformCreator tform_creator(thisref,
 					xspace1,p1,
 					xspace2,p2,
 					true
@@ -142,7 +142,7 @@ R12IntEval::V(SpinCase2 spincase2,
   std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
   {
     Ref<R12IntEval> thisref(this);
-    NewTransformCreator tform_creator(
+    TwoBodyMOIntsTransformCreator tform_creator(
 				      thisref,
 				      xspace1,
 				      orbs1,
@@ -153,7 +153,7 @@ R12IntEval::V(SpinCase2 spincase2,
   }
   if (!p1p2_in_x1x2) {
     Ref<R12IntEval> thisref(this);
-    NewTransformCreator tform_creator(
+    TwoBodyMOIntsTransformCreator tform_creator(
 				      thisref,
 				      p1,
 				      orbs1,
@@ -211,7 +211,7 @@ R12IntEval::V(SpinCase2 spincase2,
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyP;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
 					thisref,
 					xspace1,
 					occ1,
@@ -222,7 +222,7 @@ R12IntEval::V(SpinCase2 spincase2,
     }
     if (!p1p2_in_x1x2) {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
 					thisref,
 					p1,
 					occ1,
@@ -255,7 +255,7 @@ R12IntEval::V(SpinCase2 spincase2,
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xPym;
       {
 	Ref<R12IntEval> thisref(this);
-	NewTransformCreator tform_creator(
+	TwoBodyMOIntsTransformCreator tform_creator(
 					  thisref,
 					  xspace1,
 					  rispace1,
@@ -266,7 +266,7 @@ R12IntEval::V(SpinCase2 spincase2,
       }
       if (!p1p2_in_x1x2) {
 	Ref<R12IntEval> thisref(this);
-	NewTransformCreator tform_creator(
+	TwoBodyMOIntsTransformCreator tform_creator(
 					  thisref,
 					  p1,
 					  rispace1,
@@ -372,7 +372,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xoyw;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(thisref,
+      TwoBodyMOIntsTransformCreator tform_creator(thisref,
                     xspace1,orbs1,
                     xspace2,orbs2,
                     true
@@ -390,7 +390,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xoyw;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
         thisref,
         xspace1,
         xspace1,
@@ -427,7 +427,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
         thisref,
         xspace1,
         orbs1,
@@ -450,7 +450,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
         thisref,
         xspace1,
         orbs1,
@@ -491,7 +491,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
         thisref,
         xspace1,
         occ1,
@@ -515,7 +515,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
     {
       Ref<R12IntEval> thisref(this);
-      NewTransformCreator tform_creator(
+      TwoBodyMOIntsTransformCreator tform_creator(
         thisref,
         xspace1,
         occ1,
@@ -550,7 +550,7 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
       {
         Ref<R12IntEval> thisref(this);
-        NewTransformCreator tform_creator(
+        TwoBodyMOIntsTransformCreator tform_creator(
           thisref,
           xspace1,
           cabs1,
@@ -574,7 +574,7 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
       {
         Ref<R12IntEval> thisref(this);
-        NewTransformCreator tform_creator(
+        TwoBodyMOIntsTransformCreator tform_creator(
           thisref,
           xspace1,
           cabs1,

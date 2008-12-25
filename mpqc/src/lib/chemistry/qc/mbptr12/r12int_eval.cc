@@ -2450,7 +2450,7 @@ R12IntEval::compute()
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
         Ref<R12IntEval> thisref(this);
         if (obs_eq_vbs) {
-          NewTransformCreator tform_creator(thisref,
+          TwoBodyMOIntsTransformCreator tform_creator(thisref,
                                               xspace1,
                                               refinfo->orbs(spin1),
                                               xspace2,
@@ -2458,7 +2458,7 @@ R12IntEval::compute()
           fill_container(tform_creator,tforms);
         }
         else {
-          NewTransformCreator tform_creator(thisref,
+          TwoBodyMOIntsTransformCreator tform_creator(thisref,
                                               xspace1,
                                               vir1_act,
                                               xspace2,
@@ -2528,7 +2528,7 @@ R12IntEval::compute()
       Ref<R12IntEval> thisref(this);
       // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
       if (obs_eq_vbs && nocorrptr.null()) {
-        NewTransformCreator tform_creator(thisref,
+        TwoBodyMOIntsTransformCreator tform_creator(thisref,
                                           occ1_act,
                                           r12info()->refinfo()->orbs(spin1),
                                           occ2_act,
@@ -2536,7 +2536,7 @@ R12IntEval::compute()
         fill_container(tform_creator,tforms);
       }
       else {
-        NewTransformCreator tform_creator(thisref,
+        TwoBodyMOIntsTransformCreator tform_creator(thisref,
                                           occ1_act,
                                           vir1_act,
                                           occ2_act,

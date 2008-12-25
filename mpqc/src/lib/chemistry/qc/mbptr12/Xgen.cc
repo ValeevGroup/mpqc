@@ -203,7 +203,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         // (i k |j l) tforms
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;
         {
-	    NewTransformCreator tform_creator(thisref,bra1,ket1,bra2,ket2,true,true);
+	    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,ket1,bra2,ket2,true,true);
 	    fill_container(tform_creator,tforms_ikjl);
         }
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -239,13 +239,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    // (i p |j p) tforms
 	    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ipjp;
 	    {
-		NewTransformCreator tform_creator(thisref,bra1,orbs1,bra2,orbs2,true);
+		TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,orbs1,bra2,orbs2,true);
 		fill_container(tform_creator,tforms_ipjp);
 	    }
 	    // (k p |l p) tforms
 	    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_kplp;
 	    {
-		NewTransformCreator tform_creator(thisref,ket1,orbs1,ket2,orbs2,true);
+		TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,orbs1,ket2,orbs2,true);
 		fill_container(tform_creator,tforms_kplp);
 	    }
     
@@ -272,12 +272,12 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_ij;
 		{
-		    NewTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_ij);
 		}
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_kl;
 		{
-		    NewTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -293,12 +293,12 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_ij;
 		{
-		    NewTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_ij);
 		}
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_kl;
 		{
-		    NewTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -314,12 +314,12 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_ij;
 		{
-		    NewTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_ij);
 		}
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_kl;
 		{
-		    NewTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -335,12 +335,12 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_ij;
 		{
-		    NewTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,cs1,bra2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_ij);
 		}
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_kl;
 		{
-		    NewTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,cs1,ket2,cs2,true);
 		    fill_container(tform_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -359,13 +359,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    // (i m |j a') tforms
 	    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imjA;
 	    {
-		NewTransformCreator tform_creator(thisref,bra1,occ1,bra2,ribs2,true);
+		TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,occ1,bra2,ribs2,true);
 		fill_container(tform_creator,tforms_imjA);
 	    }
 	    // (k m |l a') tforms
 	    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_kmlA;
 	    {
-		NewTransformCreator tform_creator(thisref,ket1,occ1,ket2,ribs2,true);
+		TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,occ1,ket2,ribs2,true);
 		fill_container(tform_creator,tforms_kmlA);
 	    }
 	    
@@ -392,13 +392,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		// (i a' |j m) tforms
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iAjm;
 		{
-		    NewTransformCreator tform_creator(thisref,bra1,ribs1,bra2,occ2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,ribs1,bra2,occ2,true);
 		    fill_container(tform_creator,tforms_iAjm);
 		}
 		// (k a' |l m) tforms
 		std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_kAlm;
 		{
-		    NewTransformCreator tform_creator(thisref,ket1,ribs1,ket2,occ2,true);
+		    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,ribs1,ket2,occ2,true);
 		    fill_container(tform_creator,tforms_kAlm);
 		}
 		

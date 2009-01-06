@@ -142,6 +142,8 @@ namespace sc {
 
 } // end of namespace sc
 
+#include <chemistry/qc/mbptr12/registry.timpl.h>
+
 #endif // end of header guard
 
 

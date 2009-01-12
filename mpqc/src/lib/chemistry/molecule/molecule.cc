@@ -157,7 +157,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
           std::string tmp = input->stringvalue("unit");
           geometry_units_ = new Units(tmp.c_str());
         }
-        
+
       double conv = geometry_units_->to_atomic_units();
 
       // get the number of atoms and make sure that the geometry and the
@@ -691,7 +691,7 @@ Molecule::set_point_group(const Ref<PointGroup>&ppg, double tol)
   cleanup_molecule(tol);
 }
 
-Ref<PointGroup>
+const Ref<PointGroup>&
 Molecule::point_group() const
 {
   return pg_;
@@ -727,7 +727,7 @@ Molecule::nuclear_repulsion_energy()
       int i = non_q_atoms_[ii];
       SCVector3 ai(r(i));
       double Zi = charge(i);
-    
+
       for (int jj=0; jj < ii; jj++) {
           int j = non_q_atoms_[jj];
           SCVector3 aj(r(j));
@@ -740,7 +740,7 @@ Molecule::nuclear_repulsion_energy()
       int i = q_atoms_[ii];
       SCVector3 ai(r(i));
       double Zi = charge(i);
-    
+
       for (int jj=0; jj < non_q_atoms_.size(); jj++) {
           int j = non_q_atoms_[jj];
           SCVector3 aj(r(j));
@@ -754,7 +754,7 @@ Molecule::nuclear_repulsion_energy()
           int i = q_atoms_[ii];
           SCVector3 ai(r(i));
           double Zi = charge(i);
-    
+
           for (int jj=0; jj < ii; jj++) {
               int j = q_atoms_[jj];
               SCVector3 aj(r(j));
@@ -939,12 +939,12 @@ Molecule::symmetrize(double tol)
   clear_symmetry_info();
 
   Molecule *newmol = new Molecule(*this);
-  
+
   CharacterTable ct = this->point_group()->char_table();
 
   SCVector3 np;
   SymmetryOperation so;
-  
+
   for (int i=0; i < natom(); i++) {
     SCVector3 ac(r(i));
 
@@ -970,7 +970,7 @@ Molecule::symmetrize(double tol)
       }
     }
   }
-  
+
   Ref<Units> saved_units = geometry_units_;
   *this = *newmol;
   geometry_units_ = saved_units;
@@ -997,7 +997,7 @@ Molecule::move_to_com()
   translate(com.data());
 }
 
-// find the 3 principal coordinate axes, and rotate the molecule to be 
+// find the 3 principal coordinate axes, and rotate the molecule to be
 // aligned along them.  also rotate the symmetry frame contained in point_group
 void
 Molecule::transform_to_principal_axes(int trans_frame)
@@ -1063,7 +1063,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
     }
 
   if (!trans_frame) return;
-  
+
   SymmetryOperation tso=point_group()->symm_frame();
 
   for (i=0; i < 3; i++) {
@@ -1316,7 +1316,7 @@ Molecule::read_pdb(const char *filename)
           strncpy(name,&line[12],4); name[4] = '\0';
           char resSeq[5];
           strncpy(resSeq,&line[23],4); resSeq[5] = '\0';
-          
+
           if (element[0]==' '&&element[1]==' ') {
               // no element was given so get the element from the atom name
               if (name[0]!=' '&&name[3]!=' ') {
@@ -1387,7 +1387,7 @@ Molecule::read_pdb(const char *filename)
               fragment = atoi(resSeq+c);
             }
           }
-          
+
           char field[9];
           strncpy(field,&line[30],8); field[8] = '\0';
           double x = atof(field);

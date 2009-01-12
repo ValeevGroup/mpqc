@@ -203,7 +203,7 @@ class Molecule: public SavableState
         Schoenflies symbol of the point group.  This is case insensitive.
         It should be a subgroup of D<sub>2h</sub>.  If it is <tt>auto</tt>,
         then the appropriate subgroup of D<sub>2h</sub> will be found.
-        
+
         <tr><td><tt>symmetry_tolerance</tt><td>double<td>1.0e-4<td>When
         a molecule has symmetry, some atoms may be related by symmetry
         operations.  The distance between given atoms and atoms generated
@@ -332,7 +332,7 @@ class Molecule: public SavableState
     /// Sets the PointGroup of the molecule.
     void set_point_group(const Ref<PointGroup>&, double tol=1.0e-7);
     /// Returns the PointGroup of the molecule.
-    Ref<PointGroup> point_group() const;
+    const Ref<PointGroup>& point_group() const;
 
     /** Find this molecules true point group (limited to abelian groups).
         If the point group of this molecule is set to the highest point
@@ -365,7 +365,7 @@ class Molecule: public SavableState
 
     /// Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
-    
+
     /** Compute the nuclear repulsion energy first derivative with respect
         to the given center. */
     void nuclear_repulsion_1der(int center, double xyz[3]);
@@ -377,7 +377,7 @@ class Molecule: public SavableState
         positions of the nuclei at the given point. */
     void nuclear_charge_efield(const double *charges,
                                const double *position, double* efield);
-    
+
     /** If the molecule contains only symmetry unique atoms, this function
         will generate the other, redundant atoms.  The redundant atom
         will only be generated if there is no other atoms within a distance

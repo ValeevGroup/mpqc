@@ -43,9 +43,9 @@ namespace sc {
 // CLHFContribution
 
 CLHFContribution::CLHFContribution(
-    Ref<GaussianBasisSet> &bs1,
-    Ref<GaussianBasisSet> &bs2,
-    Ref<GaussianBasisSet> &bs3,
+    const Ref<GaussianBasisSet> &bs1,
+    const Ref<GaussianBasisSet> &bs2,
+    const Ref<GaussianBasisSet> &bs3,
     const std::string &fockbuildmatrixtype
     ):
   GenericFockContribution(1,1,bs1,bs2,bs3,fockbuildmatrixtype)
@@ -101,7 +101,7 @@ F_contrib(I,J,K,L,i,j,k,l,\
           P,pI,pJ,pij,pdim)\
   F += factor*integral*P
 #endif
-    
+
 void
 CLHFContribution::contrib_e_J(double factor,
                               int I, int J, int K, int L,

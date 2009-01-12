@@ -146,7 +146,7 @@ ParsedTwoBodyIntKey::key(const Ref<TwoBodyIntDescr>& descr)
     result = std::string("R12");
   }
   if (g12descr.nonnull()) {
-    result = std::string("G12'");
+    result = std::string("G12");
   }
   if (g12ncdescr.nonnull()) {
     result = std::string("G12'");

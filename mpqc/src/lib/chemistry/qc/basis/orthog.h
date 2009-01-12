@@ -37,9 +37,13 @@ namespace sc {
 /// This class computes the orthogonalizing transform for a basis set.
 class OverlapOrthog: virtual public SavableState {
   public:
-    
+
     /// An enum for the types of orthogonalization.
     enum OrthogMethod { Symmetric=1, Canonical=2, GramSchmidt=3 };
+    /// default is to use Symmetric orthogonalization
+    static OrthogMethod default_orthog_method() { return Symmetric; }
+    /// default orthog threshold is 1e-8
+    static double default_lindep_tol() { return 1e-8; }
 
   private:
     int debug_;

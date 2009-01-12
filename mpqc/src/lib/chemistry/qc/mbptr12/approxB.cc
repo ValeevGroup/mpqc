@@ -70,20 +70,20 @@ R12IntEval::compute_BB_()
 {
   if (evaluated_)
     return;
-  
+
   const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
-  
+
   Timer tim_B_app_B("B(app. B) intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(app. B) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
-  
+
   for(int s=0; s<nspincases2(); s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    
+
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
     Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
@@ -98,13 +98,13 @@ R12IntEval::compute_BB_()
     const LinearR12::ABSMethod absmethod = r12info()->abs_method();
     const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
                              absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
-    
+
     std::string Qlabel = prepend_spincase(spincase2,"Q intermediate");
     Timer tim_Q(Qlabel);
     ExEnv::out0() << endl << indent
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
-    
+
     // compute Q
     RefSCMatrix Q;
     if (include_Kp) {
@@ -171,29 +171,29 @@ R12IntEval::compute_BB_()
     // compute P
     // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs && !omit_P()) {
-      
+
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
       if (absmethod != LinearR12::ABS_CABS &&
           absmethod != LinearR12::ABS_CABSPlus) {
             throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
       }
-      
+
       std::string Plabel = prepend_spincase(spincase2,"P intermediate");
       Timer tim_P(Plabel);
       ExEnv::out0() << endl << indent
                     << "Entered " << Plabel << " evaluator" << endl;
       ExEnv::out0() << incindent;
-      
+
       Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
       Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
-      
+
       RefSCMatrix P;
       if (r12info()->maxnabs() < 2) {
 
 	  if (vbs_eq_obs) {
-	      Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
-	      Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
-	      
+	      Ref<MOIndexSpace> kvir1_obs = K_a_p(spin1);
+	      Ref<MOIndexSpace> kvir2_obs = K_a_p(spin2);
+
 	      // R_klpB K_pa R_aBij
 	      compute_FxF_(P,spincase2,
 			   xspace1,xspace2,
@@ -205,7 +205,7 @@ R12IntEval::compute_BB_()
 	  else { // VBS != OBS
 	      Ref<MOIndexSpace> Kma1 = K_m_a(spin1);
 	      Ref<MOIndexSpace> Kma2 = K_m_a(spin2);
-	      
+
 	      // R_klmB K_ma R_aBij
 	      compute_FxF_(P,spincase2,
 			   xspace1,xspace2,
@@ -216,7 +216,7 @@ R12IntEval::compute_BB_()
 
 	      Ref<MOIndexSpace> Kaa1 = K_a_a(spin1);
 	      Ref<MOIndexSpace> Kaa2 = K_a_a(spin2);
-	      
+
 	      // R_klbB K_ba R_aBij
 	      compute_FxF_(P,spincase2,
 			   xspace1,xspace2,
@@ -230,8 +230,8 @@ R12IntEval::compute_BB_()
       else {
 
 #if INCLUDE_P_AKB || INCLUDE_P_AKb
-        Ref<MOIndexSpace> kcabs1 = kribs(spin1);
-        Ref<MOIndexSpace> kcabs2 = kribs(spin2);
+        Ref<MOIndexSpace> kcabs1 = K_A_P(spin1);
+        Ref<MOIndexSpace> kcabs2 = K_A_P(spin2);
 #endif
 
 #if INCLUDE_P_AKB
@@ -257,8 +257,8 @@ R12IntEval::compute_BB_()
 #endif // INCLUDE_P_AKb
 
 #if INCLUDE_P_aKB
-        Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
-        Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
+        Ref<MOIndexSpace> kvir1_ribs = K_a_P(spin1);
+        Ref<MOIndexSpace> kvir2_ribs = K_a_P(spin2);
         // R_klPB K_Pa R_aBij
         compute_FxF_(P,spincase2,
                      xspace1,xspace2,
@@ -271,7 +271,7 @@ R12IntEval::compute_BB_()
       }
 
       P.scale(-1.0);
-      
+
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
       tim_P.exit();
@@ -285,7 +285,7 @@ R12IntEval::compute_BB_()
     RefSCMatrix BB_t = BB_[s].t();
     BB_[s].accumulate(BB_t);
   }
-  
+
   globally_sum_intermeds_();
 
   ExEnv::out0() << decindent;

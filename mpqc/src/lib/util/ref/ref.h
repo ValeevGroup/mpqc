@@ -326,7 +326,7 @@ class RefBase {
     There also may be a to convert to T*, where T is the type of the object
     which Ref references.  Some compilers have bugs that prevent the use of
     operator T*().  The pointer() member should be used instead.
- 
+
 */
 template <class T>
 class  Ref  : public RefBase {
@@ -504,6 +504,19 @@ class  Ref  : public RefBase {
     }
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
+};
+
+/** this functor can be used as a binary predicate for standard algorithms. For example,
+    it can be used as an argument to std::hash_map that uses keys of sc::Ref<T> type.
+    Optional EqualTo argument is a default-constructible binary predicate
+    that takes 2 values of type T. By default it calls operator==(const T&, const T&).
+  */
+template <typename T, typename EqualTo = std::equal_to<T> >
+struct RefObjectEqual {
+  bool operator()(const Ref<T>& obj1, const Ref<T>& obj2) {
+    EqualTo equal_functor;
+    return equal_functor(*obj1,*obj2);
+  }
 };
 
 }

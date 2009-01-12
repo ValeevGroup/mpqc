@@ -41,16 +41,14 @@ using namespace sc;
 void R12IntEval::compute_B_DKH_() {
   if (evaluated_)
     return;
-  
-  // get smart ptr to this, but how? Just unmanage it for now
-  Ref<R12IntEval> thisref(this);
+
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
-  
+
   // Check if the requsted calculation is implemented
   if (!obs_eq_vbs)
     throw FeatureNotImplemented("OBS!=VBS is not supported yet in relativistic calculations",__FILE__,__LINE__);
-  
+
   Timer tim_B_DKH2("Analytic B(DKH2) intermediate");
   ExEnv::out0() << endl << indent
       << "Entered analytic B(DKH2) intermediate evaluator" << endl;
@@ -67,7 +65,7 @@ void R12IntEval::compute_B_DKH_() {
   const unsigned int maxnabs = r12info()->maxnabs();
   Ref<MOIndexSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
   Ref<GaussianBasisSet> ribs = rispace->basis();
-  // Symmetry blocked 
+  // Symmetry blocked
   RefSCMatrix t_obs_ribs;
   {
     Ref<Integral> ref_integral = r12info()->refinfo()->ref()->integral();
@@ -80,7 +78,7 @@ void R12IntEval::compute_B_DKH_() {
     t_obs_ribs_ao.element_op(op);
     op = 0;
     //t_obs_ribs_ao.print("T(OBS/RIBS) in AO basis");
-    
+
     // now must the OBS dimension into the SO basis
     ref_integral->set_basis(ribs);
     Ref<PetiteList> pl_ribs = ref_integral->petite_list();
@@ -113,11 +111,11 @@ void R12IntEval::compute_B_DKH_() {
     name = prepend_spincase(spin,name);
     t_x_P[s] = new MOIndexSpace(id, name, x, t_x_P_coefs, ribs);
   }
-  
+
   //
   // Compute transformed integrals
   //
-  
+
   // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {
     using namespace sc::LinearR12;
@@ -125,11 +123,11 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    
+
     const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
     const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
     const bool x1_eq_x2 = (xspace1 == xspace2);
-    
+
     // are particles 1 and 2 equivalent?
     const bool part1_equiv_part2 = (spincase2 != AlphaBeta) || x1_eq_x2;
     // Need to antisymmetrize 1 and 2
@@ -142,11 +140,11 @@ void R12IntEval::compute_B_DKH_() {
     Ref<MOIndexSpace> t_x2 = t_x_P[spin2];
 
     // <xy|T z> tforms
-    std::vector< Ref<TwoBodyMOIntsTransform> > tforms_xyTz;
+    std::vector<std::string> tforms_xyTz;
     {
-      TwoBodyMOIntsTransformCreator tform_creator(thisref, xspace1, t_x1, xspace2,
-          xspace2, true, true);
-      fill_container(tform_creator, tforms_xyTz);
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, t_x1, xspace2,
+          xspace2, r12info()->corrfactor(), true, true);
+      fill_container(tformkey_creator, tforms_xyTz);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
         B_DKH,
@@ -157,11 +155,11 @@ void R12IntEval::compute_B_DKH_() {
         tforms_xyTz);
     if (!part1_equiv_part2) {
       // <xy|z T> tforms
-      std::vector< Ref<TwoBodyMOIntsTransform> > tforms_xyzT;
+      std::vector<std::string> tforms_xyzT;
       {
-        TwoBodyMOIntsTransformCreator tform_creator(thisref, xspace1, xspace1, xspace2,
-            t_x2, true, true);
-        fill_container(tform_creator, tforms_xyzT);
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, xspace1, xspace2,
+            t_x2, r12info()->corrfactor(), true, true);
+        fill_container(tformkey_creator, tforms_xyzT);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
           B_DKH,
@@ -181,13 +179,13 @@ void R12IntEval::compute_B_DKH_() {
     B_DKH.scale(0.5);
     RefSCMatrix B_DKH_t = B_DKH.t();
     B_DKH.accumulate(B_DKH_t);  B_DKH_t = 0;
-    
+
     // and scale by the prefactor
     // M1 = 2 ( f12(T1+T2)f12 (T1 + T2) + (T1 + T2) f12(T1+T2)f12 ) = 4 * ( f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12 )
     // what I have computed so far is 1/2 * (f12T1f12 (T1 + T2) + (T1 + T2) f12T1f12)
     // hence multiply by 8
     B_DKH.scale(8.0 * minus_one_over_8c2);
-    
+
 #if P_INCLUDES_Mover2
     B_DKH.scale(0.5);
 #endif
@@ -197,24 +195,31 @@ void R12IntEval::compute_B_DKH_() {
     }
     B_[s].accumulate(B_DKH);
     B_DKH.assign(0.0);
-    
+
     // Transforms for this type of integrals does not yet exists
     // will not use RangeCreator here because its input is hardwired to corrfactor()->tbintdescr()
     // will create a set of descriptors so that compute_tbint_tensor can construct transforms
     // only 1 correlation factor of G12 type is accepted at the moment, hence completely manual work here
-    std::vector< Ref<TwoBodyMOIntsTransform> > tforms_g12dkh;
-    std::vector< Ref<TwoBodyIntDescr> > descrs_g12dkh;
+    std::vector<std::string> tforms_g12dkh;
     {
       Ref<G12NCCorrelationFactor> g12corrfact;
       g12corrfact << corrfactor();
       if (g12corrfact.null())
         throw FeatureNotImplemented("B(DKH2) evaluator can only work in standard approximation C",__FILE__,__LINE__);
-      descrs_g12dkh.push_back(new TwoBodyIntDescrG12DKH(r12info()->integral(),new IntParamsG12(g12corrfact->function(0),
-              g12corrfact->function(0)
-          )
-      ));
+      if (g12corrfact->nfunctions() > 0)
+        throw FeatureNotImplemented("B(DKH2) evaluator can only work with one correlation factor",__FILE__,__LINE__);
+      Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(),
+                                                                    new IntParamsG12(g12corrfact->function(0),
+                                                                                     g12corrfact->function(0))
+      );
+      const std::string descr_key = r12info()->moints_runtime()->descr_key(descr_g12dkh);
+      const std::string tform_key = ParsedTwoBodyIntKey::key(xspace1->id(),xspace2->id(),
+                                                             xspace1->id(),xspace2->id(),
+                                                             descr_key,
+                                                             std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+      tforms_g12dkh.push_back(tform_key);
     }
-    
+
     // M2H + M3H
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
                                                               B_DKH,
@@ -222,8 +227,7 @@ void R12IntEval::compute_B_DKH_() {
                                                               xspace1, xspace1,
                                                               xspace2, xspace2,
                                                               antisymmetrize,
-                                                              tforms_g12dkh,
-                                                              descrs_g12dkh);
+                                                              tforms_g12dkh);
     B_DKH.scale(minus_one_over_8c2);
 #if P_INCLUDES_Mover2
     B_DKH.scale(0.5);
@@ -233,16 +237,16 @@ void R12IntEval::compute_B_DKH_() {
     }
     B_[s].accumulate(B_DKH);
     B_DKH.assign(0.0);
-        
+
   } // end of spincase2 loop
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited analytic B(DKH2) intermediate evaluator"
       << endl;
-  
+
   tim_B_DKH2.exit();
   checkpoint_();
-  
+
   return;
 }
 

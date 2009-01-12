@@ -308,7 +308,7 @@ R12IntsAcc_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
     ExEnv::out0() << "R12IntsAcc_Node0File::store_pair_block(): " << errormsg << std::endl;
     throw FileOperationFailed("R12IntsAcc_Node0File::store_pair_block() -- write failed",
                               __FILE__, __LINE__,
-                              filename_, FileOperationFailed::Read);
+                              filename_, FileOperationFailed::Write);
   }
 }
 

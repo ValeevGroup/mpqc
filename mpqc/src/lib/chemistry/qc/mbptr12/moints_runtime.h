@@ -32,6 +32,7 @@
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
 #define _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
 
+#include <boost/ref.hpp>
 #include <util/state/state.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/spin.h>
@@ -45,20 +46,20 @@ namespace sc {
   class MOIntsRuntime : virtual public SavableState {
     public:
       // for now use the typedef, later replace R12IntsAcc with TwoBodyIntsAcc
+      typedef TwoBodyMOIntsTransform TwoBodyIntsTransform;
+      // for now use the typedef, later replace R12IntsAcc with TwoBodyIntsAcc
       typedef R12IntsAcc TwoBodyIntsAcc;
       MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory);
       MOIntsRuntime(StateIn& si);
       void save_data_state(StateOut& so);
 
-      /** Returns the TwoBodyIntsAcc that contains the integrals described by key.
-          The desired integrals may be a subset of the given TwoBodyIntsAcc.
+      /** Returns the TwoBodyIntsTransform that contains the integrals described by key.
+          The desired integrals may be a subset of the given TwoBodyIntsTransform.
 
           key must be in format recognized by ParsedTwoBodyIntKey, which matched the format used by key() or key_mulliken().
           If this key is not known, the integrals will be computed by an appropriate TwoBodyMOIntsTranform object.
-
-          \sa key(), \sa key_mulliken()
         */
-      Ref<TwoBodyIntsAcc> get(const std::string& key);   // non-const: can add transforms
+      Ref<TwoBodyIntsTransform> get(const std::string& key);   // non-const: can add transforms
 
       /** Returns key that describes params. If not registered, will do so using register_params(params)
        */
@@ -85,6 +86,7 @@ namespace sc {
           Layout(const Layout& other);
           Layout& operator=(const Layout& other);
           bool operator==(const Layout& other) const;
+          operator std::string();
 
         private:
           typedef enum {
@@ -99,8 +101,9 @@ namespace sc {
     private:
       Ref<MOIntsTransformFactory> factory_;  // that creates transforms
 
-      // Maps key to IntParams
-      typedef Registry<std::string, Ref<IntParams>, detail::NonsingletonCreationPolicy > ParamRegistry;
+      // Maps key to IntParams. IntParams objects are not unique, hence should compare them instead of pointers
+      typedef Registry<std::string, Ref<IntParams>, detail::NonsingletonCreationPolicy, std::equal_to<std::string>,
+                       RefObjectEqual<IntParams> > ParamRegistry;
       Ref<ParamRegistry> params_;
 
       // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -139,6 +142,13 @@ namespace sc {
                              const std::string& ket2,
                              const std::string& oper,
                              const std::string& params,
+                             const std::string& layout);
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& ket1,
+                             const std::string& ket2,
+                             const std::string& descr,
                              const std::string& layout);
       /// computes operator part of the key given an TwoBodyIntDescr object
       static std::string key(const Ref<TwoBodyIntDescr>& descr);

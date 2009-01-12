@@ -61,7 +61,7 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
                         const Ref<MOIndexSpace>& space3,
                         const Ref<MOIndexSpace>& space4,
                         bool antisymmetrize,
-                        const Ref<TwoBodyMOIntsTransform>& transform)
+                        const std::string& transform_key)
 {
   Timer tim("T2 amplitudes");
   std::ostringstream oss;
@@ -71,20 +71,16 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 T2 amplitude (" << label << ") evaluator" << endl;
   ExEnv::out0() << incindent;
-  
-  typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
-  tformvec tform;
-  if (transform.nonnull())
-    tform.push_back(transform);
+
+  std::vector<std::string> tform_keys;  tform_keys.push_back(transform_key);
   compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(
     T2, corrfactor()->tbint_type_eri(),
     space1, space2,
     space3, space4,
     antisymmetrize,
-    tform,
-    std::vector< Ref<TwoBodyIntDescr> >(1,new TwoBodyIntDescrERI(r12info()->integral()))
+    tform_keys
   );
-  
+
   ExEnv::out0() << decindent << indent << "Exited MP2 T2 amplitude (" << label << ") evaluator" << endl;
 }
 
@@ -96,8 +92,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         const Ref<MOIndexSpace>& space3,
                         const Ref<MOIndexSpace>& space4,
                         bool antisymmetrize,
-                        const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
-                        const std::vector< Ref<TwoBodyIntDescr> >& descrvec)
+                        const std::vector<std::string>& transform_keys)
 {
   Timer tim("F12 amplitudes");
   std::ostringstream oss;
@@ -107,13 +102,13 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
   ExEnv::out0() << endl << indent
                 << "Entered F12 amplitude (" << label << ") evaluator" << endl
                 << incindent;
-  
+
   compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
     F12, corrfactor()->tbint_type_f12(),
     space1, space2,
     space3, space4,
     antisymmetrize,
-    transvec, descrvec
+    transform_keys
   );
 
   ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;

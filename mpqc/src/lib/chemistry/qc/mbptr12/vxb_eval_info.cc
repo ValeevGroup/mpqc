@@ -42,7 +42,6 @@
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
 
 using namespace std;
@@ -54,7 +53,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",9,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",10,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(
@@ -181,6 +180,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     tfactory_ << SavableState::restore_state(si);
   }
 
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 10) {
+    moints_runtime_ << SavableState::restore_state(si);
+  }
+
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
     refinfo_ << SavableState::restore_state(si);
   }
@@ -213,6 +216,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_.pointer(),so);
   SavableState::save_state(vir_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
+  SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(refinfo_.pointer(),so);
   so.put(initialized_);
 }
@@ -288,13 +292,8 @@ R12IntEvalInfo::initialize()
           aoidxreg->add(mu->basis(),mu);
         }
 
-#define TEST_MOINTSRUNTIME 0
-#if TEST_MOINTSRUNTIME
-        // create MO integrals runtime and try creating a transform
-        Ref<MOIntsRuntime> ints_rtime = new MOIntsRuntime(tfactory_);
-        Ref<R12IntsAcc> iiMuMup_acc = ints_rtime->get(std::string("<i i|ERI|mu mu'>(b1 b2|k1 k2)"));
-        Ref<R12IntsAcc> iimA_acc = ints_rtime->get(std::string("<i i|ERI|m a'>(b1 b2|k1 k2)"));
-#endif
+        // create MO integrals runtime
+        moints_runtime_ = new MOIntsRuntime(tfactory_);
       }
   }
 }

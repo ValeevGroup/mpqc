@@ -83,30 +83,34 @@ R12IntEval::init_intermeds_g12_()
       // for now it's always true since can only use ij and pq products to generate geminals
       const bool occ12_in_x12 = true;
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyj;
+      std::vector<std::string> tforms_f12_xiyj_keys;
       {
       // xiyj is needed, but it's a subset of integrals needed later
 	  // use xmyn if OBS != VBS
       // use xpyq if OBS == VBS
       if (obs_eq_vbs) {
-        TwoBodyMOIntsTransformCreator tform_creator(
-          thisref,
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
           xspace1,
           obs1,
           xspace2,
-          obs2,true
+          obs2,
+          r12info()->corrfactor(),
+          true
           );
-        fill_container(tform_creator,tforms_f12_xiyj);
+        fill_container(tformkey_creator,tforms_f12_xiyj_keys);
       }
       else {
-        TwoBodyMOIntsTransformCreator tform_creator(
-	      thisref,
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
 	      xspace1,
 	      occ1,
 	      xspace2,
-	      occ2,true
+	      occ2,
+	      r12info()->corrfactor(),
+          true
 	      );
-        fill_container(tform_creator,tforms_f12_xiyj);
+        fill_container(tformkey_creator,tforms_f12_xiyj_keys);
       }
       }
 
@@ -115,19 +119,21 @@ R12IntEval::init_intermeds_g12_()
 	  xspace1, occ1_act,
 	  xspace2, occ2_act,
 	  antisymmetrize,
-	  tforms_f12_xiyj
+	  tforms_f12_xiyj_keys
 	  );
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xzyw;
+      std::vector<std::string> tforms_f12f12_xzyw_keys;
       {
-      TwoBodyMOIntsTransformCreator tform_creator(
-          thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
           xspace1,
           xspace1,
           xspace2,
-          xspace2,true,true
+          xspace2,
+          r12info()->corrfactor(),
+          true,true
           );
-      fill_container(tform_creator,tforms_f12f12_xzyw);
+      fill_container(tformkey_creator,tforms_f12f12_xzyw_keys);
       }
       // g12*g12' operator
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -135,7 +141,7 @@ R12IntEval::init_intermeds_g12_()
       xspace1, xspace1,
       xspace2, xspace2,
       antisymmetrize,
-      tforms_f12f12_xzyw
+      tforms_f12f12_xzyw_keys
       );
       // 0.5 ( g12*[T,g12'] + [g12,T]*g12' ) = [g12,[t1,g12']] + 0.5 ( g12*[T,g12'] - g12'*[T,g12] )
       //   = [g12,[t1,g12']] - 0.5 ( g12*[g12',T] - g12'*[g12,T] ) = [g12,[t1,g12']] - 0.5 ( (beta-alpha)/(beta+alpha) * [g12*g12',T] ),
@@ -146,7 +152,7 @@ R12IntEval::init_intermeds_g12_()
 	  xspace1, xspace1,
 	  xspace2, xspace2,
 	  antisymmetrize,
-	  tforms_f12f12_xzyw
+	  tforms_f12f12_xzyw_keys
 	  );
       // the second is antisymmetric wrt such permutation and is only needed when number of geminals > 1
       if (r12info()->corrfactor()->nfunctions() > 1) {
@@ -163,14 +169,14 @@ R12IntEval::init_intermeds_g12_()
 		  xspace1, xspace1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_f12f12_xzyw
+		  tforms_f12f12_xzyw_keys
 		  );
 	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 		  Banti, corrfactor()->tbint_type_t2f12(),
 		  xspace1, xspace1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_f12f12_xzyw
+		  tforms_f12f12_xzyw_keys
 		  );
 	  }
 	  else {
@@ -182,16 +188,22 @@ R12IntEval::init_intermeds_g12_()
 	      Ref<MOIndexSpace> hj_x2 = hj_x_P(spin2);
 
 	      // <xy|hJ z> tforms
-	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyHz;
+	      std::vector<std::string> tforms_xyHz_keys;
 	      {
-		  TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,hj_x1,xspace2,xspace2,true,true);
-		  fill_container(tform_creator,tforms_xyHz);
+		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		                                           xspace1,hj_x1,xspace2,xspace2,
+		                                           r12info()->corrfactor(),
+		                                           true,true);
+		  fill_container(tformkey_creator,tforms_xyHz_keys);
 	      }
 	      // <hJ z|xy> tforms
-	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Hzxy;
+	      std::vector<std::string> tforms_Hzxy_keys;
 	      {
-		  TwoBodyMOIntsTransformCreator tform_creator(thisref,hj_x1,xspace1,xspace2,xspace2,true,true);
-		  fill_container(tform_creator,tforms_Hzxy);
+		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		                                           hj_x1,xspace1,xspace2,xspace2,
+		                                           r12info()->corrfactor(),
+		                                           true,true);
+		  fill_container(tformkey_creator,tforms_Hzxy_keys);
 	      }
 
 	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -199,28 +211,34 @@ R12IntEval::init_intermeds_g12_()
 		  xspace1, hj_x1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_xyHz
+		  tforms_xyHz_keys
 		  );
 	      compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
 		  Banti, corrfactor()->tbint_type_f12f12_anti(),
 		  hj_x1, xspace1,
 		  xspace2, xspace2,
 		  antisymmetrize,
-		  tforms_Hzxy
+		  tforms_Hzxy_keys
 		  );
 
 	      if (!x1_eq_x2) {
 		  // <xy|z hJ> tforms
-		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xyzH;
+		  std::vector<std::string> tforms_xyzH_keys;
 		  {
-		      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,xspace1,xspace2,hj_x2,true,true);
-		      fill_container(tform_creator,tforms_xyzH);
+		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		                                               xspace1,xspace1,xspace2,hj_x2,
+		                                               r12info()->corrfactor(),
+		                                               true,true);
+		      fill_container(tformkey_creator,tforms_xyzH_keys);
 		  }
 		  // <z hJ|xy> tforms
-		  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_zHxy;
+		  std::vector<std::string> tforms_zHxy_keys;
 		  {
-		      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,xspace1,hj_x2,xspace2,true,true);
-		      fill_container(tform_creator,tforms_zHxy);
+		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		                                               xspace1,xspace1,hj_x2,xspace2,
+		                                               r12info()->corrfactor(),
+		                                               true,true);
+		      fill_container(tformkey_creator,tforms_zHxy_keys);
 		  }
 
 		  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -228,14 +246,14 @@ R12IntEval::init_intermeds_g12_()
 		      xspace1, xspace2,
 		      xspace2, hj_x2,
 		      antisymmetrize,
-		      tforms_xyzH
+		      tforms_xyzH_keys
 		      );
 		  compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
 		      Banti, corrfactor()->tbint_type_f12f12_anti(),
 		      xspace1, xspace1,
 		      hj_x2, xspace2,
 		      antisymmetrize,
-		      tforms_zHxy
+		      tforms_zHxy_keys
 		      );
 	      }
 	      else {

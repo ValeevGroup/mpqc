@@ -29,6 +29,9 @@
 #pragma interface
 #endif
 
+#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
+#define _chemistry_qc_mbptr12_vxbevalinfo_h
+
 #include <string>
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
@@ -42,9 +45,7 @@
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
-
-#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
-#define _chemistry_qc_mbptr12_vxbevalinfo_h
+#include <chemistry/qc/mbptr12/moints_runtime.h>
 
 namespace sc {
 
@@ -116,6 +117,8 @@ private:
 
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
+  /// The MOIntsRuntime object
+  Ref<MOIntsRuntime> moints_runtime_;
 
   /// false until initialize() is called
   bool initialized_;
@@ -277,6 +280,8 @@ public:
   const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const;
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
+  /// Returns the MOIntsRuntime object
+  const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; };
   /// Return the SingleRefInfo object
   const Ref<SingleRefInfo>& refinfo() const;
 

@@ -75,7 +75,7 @@ R12IntEval::V(SpinCase2 spincase2,
   }
 
   Timer tim("R12 intermeds (tensor contract): Vpqxy");
-  
+
   const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
   const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
   const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
@@ -89,7 +89,7 @@ R12IntEval::V(SpinCase2 spincase2,
   RefSCDimension dim_p12 = new SCDimension(np12);
   V = local_matrix_kit->matrix(dim_f12(spincase2), dim_p12);
   V.assign(0.0);
-  
+
   // The diagonal contribution
   Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
@@ -103,15 +103,14 @@ R12IntEval::V(SpinCase2 spincase2,
       sc::antisymmetrize<true>(V,I,xspace1,xspace2,p1,p2);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyn;
+    std::vector<std::string> tforms_f12_xmyn;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
 					xspace1,p1,
 					xspace2,p2,
-					true
+					r12info()->corrfactor(),true
 					);
-      fill_container(tform_creator,tforms_f12_xmyn);
+      fill_container(tformkey_creator,tforms_f12_xmyn);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       V, corrfactor()->tbint_type_f12eri(),
@@ -123,7 +122,7 @@ R12IntEval::V(SpinCase2 spincase2,
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag contribution").c_str());
   }
-  
+
   Ref<TwoParticleContraction> tpcontract;
   const ABSMethod absmethod = r12info()->abs_method();
   // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
@@ -138,29 +137,29 @@ R12IntEval::V(SpinCase2 spincase2,
     // involves this term -P1P2
     tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
 
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+  std::vector<std::string> tforms;
+  std::vector<std::string> tforms_f12;
   {
-    Ref<R12IntEval> thisref(this);
-    TwoBodyMOIntsTransformCreator tform_creator(
-				      thisref,
+    R12TwoBodyIntKeyCreator tformkey_creator(
+				      r12info()->moints_runtime(),
 				      xspace1,
 				      orbs1,
 				      xspace2,
-				      orbs2,true
+				      orbs2,
+				      r12info()->corrfactor(),true
 				      );
-    fill_container(tform_creator,tforms_f12);
+    fill_container(tformkey_creator,tforms_f12);
   }
   if (!p1p2_in_x1x2) {
-    Ref<R12IntEval> thisref(this);
-    TwoBodyMOIntsTransformCreator tform_creator(
-				      thisref,
+    R12TwoBodyIntKeyCreator tformkey_creator(
+				      r12info()->moints_runtime(),
 				      p1,
 				      orbs1,
 				      p2,
-				      orbs2
+				      orbs2,
+                      r12info()->corrfactor()
 				      );
-    fill_container(tform_creator,tforms);
+    fill_container(tformkey_creator,tforms);
   }
   else
     tforms.push_back(tforms_f12[0]);
@@ -185,7 +184,7 @@ R12IntEval::V(SpinCase2 spincase2,
 
   // These terms only contribute if Projector=2
   if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
-    
+
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			      absmethod == LinearR12::ABS_CABSPlus);
     const Ref<MOIndexSpace>& occ1 = occ(spin1);
@@ -207,33 +206,33 @@ R12IntEval::V(SpinCase2 spincase2,
 			     rispace2->rank(),part1_equiv_part2 ? -2.0 : -1.0
 			     );
 
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imjP;
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyP;
+    std::vector<std::string> tforms_imjP;
+    std::vector<std::string> tforms_f12_xmyP;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-					thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+					r12info()->moints_runtime(),
 					xspace1,
 					occ1,
 					xspace2,
-					rispace2,true
+					rispace2,
+                    r12info()->corrfactor(),true
 					);
-      fill_container(tform_creator,tforms_f12_xmyP);
+      fill_container(tformkey_creator,tforms_f12_xmyP);
     }
     if (!p1p2_in_x1x2) {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-					thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+					r12info()->moints_runtime(),
 					p1,
 					occ1,
 					p2,
-					rispace2
+					rispace2,
+                    r12info()->corrfactor()
 					);
-      fill_container(tform_creator,tforms_imjP);
+      fill_container(tformkey_creator,tforms_imjP);
     }
     else
       tforms_imjP.push_back(tforms_f12_xmyP[0]);
-    
+
     contract_tbint_tensor<ManyBodyTensors::I_to_T,
       ManyBodyTensors::I_to_T,
       ManyBodyTensors::I_to_T,
@@ -250,40 +249,40 @@ R12IntEval::V(SpinCase2 spincase2,
 
     // If particles 1 and 2 are not equivalent, also need another set of terms
     if (!part1_equiv_part2) {
-      
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iPjm;
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xPym;
+
+      std::vector<std::string> tforms_iPjm;
+      std::vector<std::string> tforms_f12_xPym;
       {
-	Ref<R12IntEval> thisref(this);
-	TwoBodyMOIntsTransformCreator tform_creator(
-					  thisref,
+	R12TwoBodyIntKeyCreator tformkey_creator(
+					  r12info()->moints_runtime(),
 					  xspace1,
 					  rispace1,
 					  xspace2,
-					  occ2,true
+					  occ2,
+                      r12info()->corrfactor(),true
 					  );
-	fill_container(tform_creator,tforms_f12_xPym);
+	fill_container(tformkey_creator,tforms_f12_xPym);
       }
       if (!p1p2_in_x1x2) {
-	Ref<R12IntEval> thisref(this);
-	TwoBodyMOIntsTransformCreator tform_creator(
-					  thisref,
+	R12TwoBodyIntKeyCreator tformkey_creator(
+					  r12info()->moints_runtime(),
 					  p1,
 					  rispace1,
 					  p2,
-					  occ2
+					  occ2,
+                      r12info()->corrfactor()
 					  );
-	fill_container(tform_creator,tforms_iPjm);
+	fill_container(tformkey_creator,tforms_iPjm);
       }
       else
 	tforms_iPjm.push_back(tforms_f12_xPym[0]);
-      
+
       Ref<TwoParticleContraction> tpcontract =
 	new Direct_Contraction(
 			       rispace1->rank(),
 			       occ2->rank(),-1.0
 			       );
-      
+
       contract_tbint_tensor<ManyBodyTensors::I_to_T,
 	ManyBodyTensors::I_to_T,
 	ManyBodyTensors::I_to_T,
@@ -350,7 +349,7 @@ R12IntEval::P(SpinCase2 spincase2)
   }
 
   Timer tim("R12 intermeds (tensor contract): Pxyow");
-  
+
   // allocate P
   RefSCMatrix P = local_matrix_kit->matrix(dimf12,dimf12);
   P.assign(0.0);
@@ -369,15 +368,15 @@ R12IntEval::P(SpinCase2 spincase2)
   // Diagonal contribution: P_{xy}^{wz} = (RGR)_{xy}^{wz}
   //
   if (r12ptr.nonnull()) {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xoyw;
+    std::vector<std::string> tforms_f12_xoyw;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
                     xspace1,orbs1,
                     xspace2,orbs2,
+                    r12info()->corrfactor(),
                     true
                     );
-      fill_container(tform_creator,tforms_f12_xoyw);
+      fill_container(tformkey_creator,tforms_f12_xoyw);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       P, corrfactor()->tbint_type_f12(),
@@ -387,17 +386,17 @@ R12IntEval::P(SpinCase2 spincase2)
       tforms_f12_xoyw);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12f12_xoyw;
+    std::vector<std::string> tforms_f12f12_xoyw;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-        thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+        r12info()->moints_runtime(),
         xspace1,
         xspace1,
         xspace2,
-        xspace2,true,true
+        xspace2,
+        r12info()->corrfactor(),true,true
         );
-      fill_container(tform_creator,tforms_f12f12_xoyw);
+      fill_container(tformkey_creator,tforms_f12f12_xoyw);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
       P, corrfactor()->tbint_type_f12eri(),
@@ -424,17 +423,17 @@ R12IntEval::P(SpinCase2 spincase2)
       sc::antisymmetrize<true>(V_pp,I,xspace1,xspace2,orbs1,orbs2);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
+    std::vector<std::string> tforms_f12_xpyq;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-        thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+        r12info()->moints_runtime(),
         xspace1,
         orbs1,
         xspace2,
-        orbs2,true,false
+        orbs2,
+        r12info()->corrfactor(),true,false
         );
-      fill_container(tform_creator,tforms_f12_xpyq);
+      fill_container(tformkey_creator,tforms_f12_xpyq);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       V_pp, corrfactor()->tbint_type_f12eri(),
@@ -447,17 +446,17 @@ R12IntEval::P(SpinCase2 spincase2)
   // get R_pp
   RefSCMatrix R_pp = local_matrix_kit->matrix(dimf12,dim_aa(spincase2));  R_pp.assign(0.0);
   {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xpyq;
+    std::vector<std::string> tforms_f12_xpyq;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-        thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+        r12info()->moints_runtime(),
         xspace1,
         orbs1,
         xspace2,
-        orbs2,true,false
+        orbs2,
+        r12info()->corrfactor(),true,false
         );
-      fill_container(tform_creator,tforms_f12_xpyq);
+      fill_container(tformkey_creator,tforms_f12_xpyq);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       R_pp, corrfactor()->tbint_type_f12(),
@@ -469,11 +468,11 @@ R12IntEval::P(SpinCase2 spincase2)
   V_pp.scale(-1.0);
   P.accumulate(V_pp * R_pp.t());
   V_pp = 0;  R_pp = 0;
-  
+
   if (debug_ >= DefaultPrintThresholds::O4) {
     P.print(prepend_spincase(spincase2,"Pxyow: diag+OBS contribution").c_str());
   }
-  
+
   //
   // ABS contribution: P_{xy}^{wz} -= (V_{xy}^{ma'} + (RG)_{xy}^{ma'} ) r_{ma'}^{wz}
   //
@@ -488,17 +487,17 @@ R12IntEval::P(SpinCase2 spincase2)
       sc::antisymmetrize<true>(V_iA,I,xspace1,xspace2,occ1,cabs2);
   }
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
+    std::vector<std::string> tforms_f12_xiyA;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-        thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+        r12info()->moints_runtime(),
         xspace1,
         occ1,
         xspace2,
-        cabs2,true,false
+        cabs2,
+        r12info()->corrfactor(),true,false
         );
-      fill_container(tform_creator,tforms_f12_xiyA);
+      fill_container(tformkey_creator,tforms_f12_xiyA);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       V_iA, corrfactor()->tbint_type_f12eri(),
@@ -512,17 +511,17 @@ R12IntEval::P(SpinCase2 spincase2)
   const unsigned int niA = occ1->rank() * cabs2->rank();
   RefSCMatrix R_iA = local_matrix_kit->matrix(dimf12,new SCDimension(niA));  R_iA.assign(0.0);
   {
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xiyA;
+    std::vector<std::string> tforms_f12_xiyA;
     {
-      Ref<R12IntEval> thisref(this);
-      TwoBodyMOIntsTransformCreator tform_creator(
-        thisref,
+      R12TwoBodyIntKeyCreator tformkey_creator(
+        r12info()->moints_runtime(),
         xspace1,
         occ1,
         xspace2,
-        cabs2,true,false
+        cabs2,
+        r12info()->corrfactor(),true,false
         );
-      fill_container(tform_creator,tforms_f12_xiyA);
+      fill_container(tformkey_creator,tforms_f12_xiyA);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
       R_iA, corrfactor()->tbint_type_f12(),
@@ -547,17 +546,17 @@ R12IntEval::P(SpinCase2 spincase2)
         sc::antisymmetrize<true>(V_Ai,I,xspace1,xspace2,cabs1,occ2);
     }
     else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
+      std::vector<std::string> tforms_f12_xAyi;
       {
-        Ref<R12IntEval> thisref(this);
-        TwoBodyMOIntsTransformCreator tform_creator(
-          thisref,
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
           xspace1,
           cabs1,
           xspace2,
-          occ2,true,false
+          occ2,
+          r12info()->corrfactor(),true,false
           );
-        fill_container(tform_creator,tforms_f12_xAyi);
+        fill_container(tformkey_creator,tforms_f12_xAyi);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
         V_Ai, corrfactor()->tbint_type_f12eri(),
@@ -571,17 +570,17 @@ R12IntEval::P(SpinCase2 spincase2)
     const unsigned int nAi = cabs1->rank() * occ2->rank();
     RefSCMatrix R_Ai = local_matrix_kit->matrix(dimf12,new SCDimension(nAi));  R_Ai.assign(0.0);
     {
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xAyi;
+      std::vector<std::string> tforms_f12_xAyi;
       {
-        Ref<R12IntEval> thisref(this);
-        TwoBodyMOIntsTransformCreator tform_creator(
-          thisref,
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
           xspace1,
           cabs1,
           xspace2,
-          occ2,true,false
+          occ2,
+          r12info()->corrfactor(),true,false
           );
-        fill_container(tform_creator,tforms_f12_xAyi);
+        fill_container(tformkey_creator,tforms_f12_xAyi);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
         R_Ai, corrfactor()->tbint_type_f12(),
@@ -592,13 +591,13 @@ R12IntEval::P(SpinCase2 spincase2)
     }
     V_Ai.scale(-1.0);
     P.accumulate(V_Ai * R_Ai.t());
-    V_Ai = 0;  R_Ai = 0;    
+    V_Ai = 0;  R_Ai = 0;
   }
-  
+
   // Because we skipped Ai term if particles 1 and 2 are equivalent, must make particles equivalent explicitly
   if (part1_equiv_part2)
     symmetrize<false>(P,P,xspace1,xspace1);
-  
+
   if (debug_ >= DefaultPrintThresholds::O4) {
     P.print(prepend_spincase(spincase2,"Pxyow: diag+OBS+ABS contribution").c_str());
   }

@@ -37,71 +37,82 @@
 
 namespace sc {
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  Ref< Registry<Key,Value,CreationPolicy> >
-  Registry<Key,Value,CreationPolicy>::instance()
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  Ref< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::instance()
   {
-    return CreationPolicy< Registry<Key,Value,CreationPolicy> >::instance();
+    return CreationPolicy< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >::instance();
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
-  Registry<Key,Value,CreationPolicy>::save_instance(const Ref<Registry>& obj, StateOut& so)
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::save_instance(const Ref<Registry>& obj, StateOut& so)
   {
-    CreationPolicy< Registry<Key,Value,CreationPolicy> >::save_instance(obj, so);
+    CreationPolicy< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >::save_instance(obj, so);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  Ref< Registry<Key,Value,CreationPolicy> >
-  Registry<Key,Value,CreationPolicy>::restore_instance(StateIn& si)
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  Ref< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::restore_instance(StateIn& si)
   {
-    return CreationPolicy< Registry<Key,Value,CreationPolicy> >::instance(si);
+    return CreationPolicy< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >::instance(si);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  Registry<Key,Value,CreationPolicy>::Registry() :
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::Registry() :
     lock_(ThreadGrp::get_default_threadgrp()->new_lock())
   {
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  Registry<Key,Value,CreationPolicy>::Registry(StateIn& si) :
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::Registry(StateIn& si) :
     lock_(ThreadGrp::get_default_threadgrp()->new_lock())
   {
     si.get(map_);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
-  Registry<Key,Value,CreationPolicy>::save_data_state(StateOut& so)
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::save_data_state(StateOut& so)
   {
     so.put(map_);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  typename Registry<Key,Value,CreationPolicy>::const_iterator
-  Registry<Key,Value,CreationPolicy>::find_by_key(const Key& key) const
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  typename Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::const_iterator
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::find_by_key(const Key& key) const
   {
-    const_iterator result = map_.find(key);
-    return result;
+    // if KeyEqual is std::equal_to<Key> then can use the fast find function
+    if (SameType<KeyEqual,std::equal_to<Key> >::result) {
+      const_iterator result = map_.find(key);
+      return result;
+    }
+    else {
+      KeyEqual keyeq;
+      for(const_iterator v=map_.begin(); v!= map_.end(); ++v)
+        if (keyeq(v->first,key))
+          return v;
+      return map_.end();
+    }
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-  typename Registry<Key,Value,CreationPolicy>::const_iterator
-  Registry<Key,Value,CreationPolicy>::find_by_value(const Value& value) const
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  typename Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::const_iterator
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::find_by_value(const Value& value) const
   {
     const_iterator result;
 
+    ValueEqual valeq;
     for(const_iterator v=map_.begin(); v!= map_.end(); ++v)
-      if (v->second == value)
+      if (valeq(v->second,value))
         return v;
 
     return map_.end();
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   bool
-  Registry<Key,Value,CreationPolicy>::key_exists(const Key& key) const
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::key_exists(const Key& key) const
   {
     bool result = false;
 
@@ -115,9 +126,9 @@ namespace sc {
     return result;
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   bool
-  Registry<Key,Value,CreationPolicy>::value_exists(const Value& value) const
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::value_exists(const Value& value) const
   {
     bool result = false;
 
@@ -131,9 +142,9 @@ namespace sc {
     return result;
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   const Key&
-  Registry<Key,Value,CreationPolicy>::key(const Value& value) const
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::key(const Value& value) const
   {
     // although this does not modify the map, cannot search map while someone else is changing it
     lock_->lock();
@@ -150,9 +161,9 @@ namespace sc {
     assert(false);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   const Value&
-  Registry<Key,Value,CreationPolicy>::value(const Key& key) const
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::value(const Key& key) const
   {
     // although this does not modify the map, cannot search map while someone else is changing it
     lock_->lock();
@@ -169,18 +180,18 @@ namespace sc {
     assert(false);
   }
 
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
-  Registry<Key,Value,CreationPolicy>::add(const Key& key,
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::add(const Key& key,
                                           const Value& value)
   {
     lock_->lock();
     map_[key] = value;
     lock_->unlock();
   }
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
-  Registry<Key,Value,CreationPolicy>::add(const std::pair<Key,Value>& keyval_pair)
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::add(const std::pair<Key,Value>& keyval_pair)
   {
     this->add(keyval_pair.first,keyval_pair.second);
   }

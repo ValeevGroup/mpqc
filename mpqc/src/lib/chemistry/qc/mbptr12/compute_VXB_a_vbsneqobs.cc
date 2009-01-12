@@ -45,7 +45,6 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
   if (evaluated_)
     return;
 
-  Ref<R12IntEval> thisref(this);
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
   // commutators never appear in StdApprox C
@@ -103,15 +102,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = occ2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+	                                               r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -146,15 +147,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = vir1_act;
 	  Ref<MOIndexSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+                                                   r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -190,15 +193,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+                                                   r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -235,15 +240,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = cabs2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+                                                   r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -280,15 +287,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+                                                   r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -325,15 +334,17 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<MOIndexSpace> cs1 = occ1;
 	  Ref<MOIndexSpace> cs2 = cabs2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+	  std::vector<std::string> tforms_f12;
 	  {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,xspace1,cs1,xspace2,cs2,true);
-	      fill_container(tform_creator,tforms_f12);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),xspace1,cs1,xspace2,cs2,
+                                                   r12info()->corrfactor(),true);
+	      fill_container(tformkey_creator,tforms_f12);
 	  }
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      TwoBodyMOIntsTransformCreator tform_creator(thisref,occ1_act,cs1,occ2_act,cs2);
-	      fill_container(tform_creator,tforms);
+	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),occ1_act,cs1,occ2_act,cs2,
+                                                   r12info()->corrfactor());
+	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
 	      tforms.push_back(tforms_f12[0]);
@@ -370,14 +381,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  if (compute_B)
 	      symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
       }
-      
+
       if (debug_ >= DefaultPrintThresholds::O4) {
 	  V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
 	  X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
 	  if (compute_B)
 	      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
       }
-      
+
   }
 }
 

@@ -88,10 +88,18 @@ namespace sc {
       Registry is not a SavableState, but it behaves like one (see save_instance and restore_instance methods).
       Therefore both Key and Value are assumed to be usable with StateIn and StateOut.
 
+      KeyEqual and ValueEqual are Functor types that define the
+      equivalence of two Key (or Value) objects. By default std::equal_to is used.
+      For pointer types std::equal_to may not be appropriate since it will not distinguish
+      2 equivalent but distinct objects.
+
       \sa sc::detail::SingletonCreationPolicy \sa sc::detail::NonsingletonCreationPolicy
     */
-  template <typename Key, typename Value, template <typename> class CreationPolicy >
-    class Registry : public RefCount, public CreationPolicy< Registry<Key,Value,CreationPolicy> > {
+  template <typename Key, typename Value, template <typename> class CreationPolicy,
+            typename KeyEqual = std::equal_to<Key>,
+            typename ValueEqual = std::equal_to<Value>
+           >
+    class Registry : public RefCount, public CreationPolicy< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> > {
       public:
         static Ref<Registry> instance();
         static void save_instance(const Ref<Registry>&, StateOut&);
@@ -118,7 +126,7 @@ namespace sc {
 
       private:
         // creation policy must be able to construct Registry
-        friend class CreationPolicy< Registry<Key,Value,CreationPolicy> >;
+        friend class CreationPolicy< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >;
 
         // access only through instance() and related methods
         Registry();
@@ -138,6 +146,15 @@ namespace sc {
 
         // std::map's operations are not reentrant, hence lock the map every time
         Ref<ThreadLock> lock_;
+
+        /// used to compare types
+        template <typename T1, typename T2> struct SameType {
+          static const bool result = false;
+        };
+        template <typename T> struct SameType<T,T> {
+          static const bool result = true;
+        };
+
     };
 
 } // end of namespace sc

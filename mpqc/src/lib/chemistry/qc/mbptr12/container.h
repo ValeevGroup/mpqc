@@ -33,7 +33,7 @@
 #define _chemistry_qc_mbptr12_container_h
 
 namespace sc {
-  
+
   /** Create Container<T> filled with objects of type T created by calling
       CreateT() repeatedly until it returns zero */
   template < typename T,
@@ -45,11 +45,11 @@ namespace sc {
                                  Container<T>& container)
     {
       T a;
-      while( (a = creator()) != 0) {
+      while( (a = creator()) != creator.null()) {
         container.push_back(a);
       }
     }
-  
+
 }
 
 #endif

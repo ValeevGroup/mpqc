@@ -54,9 +54,24 @@ namespace sc {
 
       unsigned int nparams() const;
 
+    protected:
+      template <typename T> const T* downcast(const IntParams& p) const {
+        try {
+          const T& voidref = dynamic_cast<const T&>(p);
+          return &voidref;
+        }
+        catch (std::bad_cast&) { return 0; }
+      }
+
     private:
       unsigned int nparams_;
+
+      friend bool operator==(const IntParams& p1, const IntParams& p2);
+      virtual bool equiv(const IntParams& other) const =0;
   };
+  inline bool operator==(const IntParams& p1, const IntParams& p2) {
+    return p1.equiv(p2);
+  }
 
   /** Passes params to Integral::electron_repulsion() and other factory methods which do not need parameters */
   class IntParamsVoid : public IntParams {
@@ -65,6 +80,8 @@ namespace sc {
       IntParamsVoid(StateIn&);
       ~IntParamsVoid();
       void save_data_state(StateOut&);
+    private:
+      bool equiv(const IntParams& other) const;
   };
 
   /** Passes params to Integral::g12() */
@@ -97,6 +114,8 @@ namespace sc {
                                        const ContractedGeminal& B);
 
     private:
+      bool equiv(const IntParams& other) const;
+
       /// An invalid exponent (exponent of null_geminal)
       static double null_exponent;
 
@@ -130,6 +149,8 @@ namespace sc {
       const ContractedGeminal& ket() const;
 
     private:
+      bool equiv(const IntParams& other) const;
+
       /// An invalid exponent (exponent of null_geminal)
       static double null_exponent;
 

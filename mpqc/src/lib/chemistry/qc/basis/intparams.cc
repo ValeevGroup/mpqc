@@ -80,6 +80,11 @@ IntParamsVoid::save_data_state(StateOut& so)
   IntParams::save_data_state(so);
 }
 
+bool
+IntParamsVoid::equiv(const IntParams& other) const {
+  return (downcast<IntParamsVoid>(other) != 0);
+}
+
 /////////////////////////////
 
 static ClassDesc IntParamsG12_cd(
@@ -172,6 +177,16 @@ IntParamsG12::product(const ContractedGeminal& A,
   return result;
 }
 
+bool
+IntParamsG12::equiv(const IntParams& other) const {
+  const IntParamsG12* otherptr = downcast<IntParamsG12>(other);
+  if (otherptr) { // compare contents
+    return (otherptr->bra_ == bra_ &&
+            otherptr->ket_ == ket_);
+  }
+  return false;
+}
+
 /////////////////////////////
 
 static ClassDesc IntParamsGenG12_cd(
@@ -243,3 +258,13 @@ IntParamsGenG12::null_exponent(DBL_MAX);
 
 IntParamsGenG12::ContractedGeminal
 IntParamsGenG12::null_geminal(1,std::make_pair(std::make_pair(null_exponent,null_exponent),1.0));
+
+bool
+IntParamsGenG12::equiv(const IntParams& other) const {
+  const IntParamsGenG12* otherptr = downcast<IntParamsGenG12>(other);
+  if (otherptr) { // compare contents
+    return (otherptr->bra_ == bra_ &&
+            otherptr->ket_ == ket_);
+  }
+  return false;
+}

@@ -32,94 +32,118 @@
 #ifndef _chemistry_qc_mbptr12_creator_h
 #define _chemistry_qc_mbptr12_creator_h
 
-#include <chemistry/qc/mbptr12/transform_tbint.h>
-#include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
 
 namespace sc {
 
   /** RangeCreator<T> is Functor which can be used up to n times to create objects
-      of type T. operator() returns the objects, or 0 when done. Thus T must be Comparable to
-      an int or Constructable from an int. */
-  template <typename T>
-    class RangeCreator {
-      public:
-      RangeCreator(unsigned int n) :
-        n_(n), ncreated_(0) {}
-      /// returns a new object T, or T(0) if done
-      virtual T operator()() =0;
-
-      protected:
-      bool can_create() const { return ncreated_ < n_; }
-      void next() { ++ncreated_; }
-
-      private:
-      unsigned int n_;
-      unsigned int ncreated_;
-    };
-
-  /** Creates new TwoBodyMOIntsTransforms and adds them to the transform map (R12IntEval, at the moment) */
-  class TwoBodyMOIntsTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
-  {
+   of type T. operator() returns the objects, or 0 when done. Thus T must be Comparable to
+   an int or Constructable from an int. */
+  template<typename T>
+  class RangeCreator {
     public:
-    typedef Ref<TwoBodyMOIntsTransform> ObjT;
+      RangeCreator(unsigned int n) :
+        n_(n), ncreated_(0) {
+      }
+      /// returns a new object T, or null() if done. \sa null()
+      virtual T operator()() =0;
+      /// returns the null object. Default is to return T(0).
+      virtual T null() const {
+        return T(0);
+      }
 
-    TwoBodyMOIntsTransformCreator(Ref<R12IntEval>& r12eval,
-                        const Ref<MOIndexSpace>& space1,
-                        const Ref<MOIndexSpace>& space2,
-                        const Ref<MOIndexSpace>& space3,
-                        const Ref<MOIndexSpace>& space4,
-                        bool CorrFunctionInBra = false,
-                        bool CorrFunctionInKet = false,
-                        MOIntsTransformFactory::StorageType storage =
-                          MOIntsTransformFactory::StorageType_13);
-    /// Implementation of RangeCreator::operator()
-    ObjT operator()();
+    protected:
+      bool can_create() const {
+        return ncreated_ < n_;
+      }
+      void next() {
+        ++ncreated_;
+      }
+      unsigned int ncreated() const {
+        return ncreated_;
+      }
 
     private:
-    Ref<R12IntEval> r12eval_;
-    Ref<MOIntsTransformFactory> tfactory_;
-    Ref<MOIndexSpace> space1_;
-    Ref<MOIndexSpace> space2_;
-    Ref<MOIndexSpace> space3_;
-    Ref<MOIndexSpace> space4_;
-    MOIntsTransformFactory::StorageType storage_;
-    bool CorrFunctionInBraKet_;
-    bool CorrFunction_;
-    unsigned int nf12bra_;
-    unsigned int nf12ket_;
-    unsigned int braindex_;
-    unsigned int ketindex_;
+      unsigned int n_;
+      unsigned int ncreated_;
+  };
 
-    void increment_indices();
+  /** Creates new R12IntsAcc using MOIntsRuntime and a vector of transform keys */
+  class R12IntsAccCreator: public RangeCreator<Ref<R12IntsAcc> > {
+    public:
+      typedef Ref<R12IntsAcc> ObjT;
+
+      R12IntsAccCreator(const Ref<MOIntsRuntime>& moints_rtime,
+                        const std::vector<std::string>& tform_keys);
+      /// Implementation of RangeCreator::operator()
+      ObjT operator()();
+
+    private:
+      const Ref<MOIntsRuntime>& moints_rtime_;
+      const std::vector<std::string>& tform_keys_;
   };
 
   using LinearR12::CorrelationFactor;
   /** Creates TwoBodyIntDescr for correlation factor C */
-  class TwoBodyIntDescrCreator : public RangeCreator< Ref<TwoBodyIntDescr> >
-  {
+  class TwoBodyIntDescrCreator: public RangeCreator<Ref<TwoBodyIntDescr> > {
     public:
-    typedef Ref<TwoBodyIntDescr> ObjT;
+      typedef Ref<TwoBodyIntDescr> ObjT;
 
-    TwoBodyIntDescrCreator(const Ref<CorrelationFactor>& corrfactor,
-                           const Ref<Integral>& integral,
-                           bool CorrFunctionInBra = false,
-                           bool CorrFunctionInKet = false);
-    /// Implementation of RangeCreator::operator()
-    ObjT operator()();
+      TwoBodyIntDescrCreator(const Ref<CorrelationFactor>& corrfactor,
+                             const Ref<Integral>& integral,
+                             bool CorrFunctionInBra = false,
+                             bool CorrFunctionInKet = false);
+      /// Implementation of RangeCreator::operator()
+      ObjT operator()();
 
     private:
-    Ref<CorrelationFactor> corrfactor_;
-    Ref<Integral> integral_;
-    bool CorrFunctionInBraKet_;
-    unsigned int nf12bra_;
-    unsigned int nf12ket_;
-    unsigned int braindex_;
-    unsigned int ketindex_;
+      Ref<CorrelationFactor> corrfactor_;
+      Ref<Integral> integral_;
+      bool CorrFunctionInBraKet_;
+      unsigned int nf12bra_;
+      unsigned int nf12ket_;
+      unsigned int braindex_;
+      unsigned int ketindex_;
 
-    void increment_indices();
+      void increment_indices();
   };
 
+  /** Creates R12TwoBodyIntKey for the given CorrelationFactor */
+  class R12TwoBodyIntKeyCreator: public RangeCreator<std::string> {
+    public:
+      typedef std::string ObjT;
+
+      R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime_,
+                              const Ref<MOIndexSpace>& bra1,
+                              const Ref<MOIndexSpace>& ket1,
+                              const Ref<MOIndexSpace>& bra2,
+                              const Ref<MOIndexSpace>& ket2,
+                              const Ref<CorrelationFactor>& corrfactor,
+                              bool CorrFunctionInBra = false,
+                              bool CorrFunctionInKet = false,
+                              std::string layout_key = std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+      /// Implementation of RangeCreator::operator()
+      ObjT operator()();
+
+      ObjT null() const;
+
+    private:
+      Ref<MOIntsRuntime> moints_rtime_;
+      Ref<CorrelationFactor> corrfactor_;
+      const Ref<MOIndexSpace>& bra1_;
+      const Ref<MOIndexSpace>& bra2_;
+      const Ref<MOIndexSpace>& ket1_;
+      const Ref<MOIndexSpace>& ket2_;
+      bool CorrFunctionInBraKet_;
+      std::string layout_key_;
+      unsigned int nf12bra_;
+      unsigned int nf12ket_;
+      unsigned int braindex_;
+      unsigned int ketindex_;
+
+      void increment_indices();
+  };
 
 }
 

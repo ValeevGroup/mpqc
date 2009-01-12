@@ -186,8 +186,8 @@ TwoBodyMOIntsTransform_12Inds::run()
     lock_->unlock();
   }
 
-  Ref<GenPetite4> p4list
-    = construct_gpetite(bs1,bs2,bs3,bs4);
+  Ref<GPetiteList4> p4list
+    = GPetiteListFactory::plist4(bs1,bs2,bs3,bs4);
 
 #if FAST_BUT_WRONG
   for(int te_type=0;te_type<num_te_types;te_type++) {
@@ -237,7 +237,7 @@ TwoBodyMOIntsTransform_12Inds::run()
 	int q_offset = bs2->shell_to_function(Q);
 
 	// check if symmetry unique and compute degeneracy
-	int deg = p4list->in_p4(P,Q,R,S);
+	int deg = p4list->in(P,Q,R,S);
 	if (deg == 0)
 	  continue;
 	double symfac = (double) deg;

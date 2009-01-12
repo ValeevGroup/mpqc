@@ -771,60 +771,6 @@ std::pair<std::string,Ref<MOIndexSpace> >
                         space);
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if 0
-const Ref<MOIndexSpaceRegistry>&
-MOIndexSpaceRegistry::instance()
-{
-  return instance_;
-}
-
-Ref<MOIndexSpaceRegistry>
-MOIndexSpaceRegistry::instance_ = new MOIndexSpaceRegistry;
-
-MOIndexSpaceRegistry::MOIndexSpaceRegistry() :
-  lock_(ThreadGrp::get_default_threadgrp()->new_lock())
-{
-}
-
-Ref<MOIndexSpace>
-MOIndexSpaceRegistry::find(const std::string& key) const
-{
-  // although this does not modify the map, cannot search map while someone else is changing it
-  lock_->lock();
-
-  typedef MOIndexSpaceMap::const_iterator citer;
-  citer v = space_map_.find(key);
-  Ref<MOIndexSpace> result;
-  if (v != space_map_.end())
-    result = v->second;
-
-  lock_->unlock();
-  return result;
-}
-
-void
-MOIndexSpaceRegistry::add(const Ref<MOIndexSpace>& space,
-                          SpinCase1 spin)
-{
-  lock_->lock();
-  const std::string key = ParsedMOIndexSpaceKey::key(space->id(),spin);
-
-  // check if this key already exists
-  typedef MOIndexSpaceMap::const_iterator citer;
-  citer v = space_map_.find(key);
-  Ref<MOIndexSpace> result;
-  if (v != space_map_.end())
-    throw ProgrammingError("MOIndexSpaceRegistry::add -- MOIndexSpace with this key already exists",__FILE__,__LINE__);
-
-  space_map_[key] = space;
-
-  lock_->unlock();
-}
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 
 namespace {

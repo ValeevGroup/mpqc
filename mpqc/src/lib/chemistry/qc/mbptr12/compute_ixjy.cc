@@ -53,7 +53,7 @@ using namespace sc;
 #define PRINT2Q 0
 #define PRINT3Q 0
 #define PRINT4Q 0
-#define PRINT_NUM_TE_TYPES 1
+#define PRINT_NUM_TE_TYPES 5
 #define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
@@ -98,7 +98,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   int aoint_computed = 0;
 
-  std::string tim_label("tbint_tform_ikjy ");
+  std::string tim_label("tbint_tform_ixjy ");
   tim_label += name_;
   Timer tim(tim_label);
 

@@ -34,11 +34,13 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/gaussbas.h>
-#include <chemistry/qc/basis/uncontract.h> 
+#include <chemistry/qc/basis/uncontract.h>
+#include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/debug.h>
+#include <chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace std;
 using namespace sc;
@@ -55,13 +57,18 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K)
 {
+  // validate the input
+  if (! (scale_J == 1.0 || scale_J == 0.0 || scale_K == 1.0 || scale_K == 0.0) ) { // currently FockBuild can only handle unit contributions
+    throw ProgrammingError("R12IntEval::fock() -- non-unit J and K coefficients are not currently supported",__FILE__,__LINE__);
+  }
+
   if (bra_space->rank() == 0 || ket_space->rank() == 0)
     return 0;
-  
+
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
-  const bool bs1_eq_bs2 = (bs1 == bs2);
+  const bool bs1_eq_bs2 = bs1->equiv(bs2);
   int nshell1 = bs1->nshell();
   int nshell2 = bs2->nshell();
 
@@ -122,12 +129,12 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
   if (pauli_) {
     hsymm = pauli(hcore_basis);
-  } 
-  else {   
+  }
+  else {
     // include the full DKH-Hamiltionian, or the NR-Hamiltonian, depending on the reference
     hsymm = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
   }
-  
+
 
   // convert hsymm to the AO basis
   Ref<Integral> localints = r12info_->integral()->clone();
@@ -176,7 +183,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
         h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2, rf_start12, cf_start12);
       }
     }
-    
+
   }
 
 
@@ -199,7 +206,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
   Ref<SCMatrixKit> aokit = bs1->so_matrixkit();
   RefSCMatrix h(aodim1, aodim2, aokit);
   h.assign(0.0);
-  
+
   for(int sh1=0; sh1<nshell1; sh1++) {
     int bf1_offset = bs1->shell_to_function(sh1);
     int nbf1 = bs1->shell(sh1).nfunction();
@@ -209,11 +216,11 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
       sh2max = sh1;
     else
       sh2max = nshell2-1;
-    
+
     for(int sh2=0; sh2<=sh2max; sh2++) {
       int bf2_offset = bs2->shell_to_function(sh2);
       int nbf2 = bs2->shell(sh2).nfunction();
-      
+
       h_ints->compute_shell(sh1,sh2);
       const double *hintsptr = h_ints->buffer();
 
@@ -254,15 +261,41 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
     F.print("Core Hamiltonian contribution");
   // and clean up a bit
   h = 0;
-  
+
   const bool spin_unrestricted = spin_polarized();
-  
+
 #if TEST_FOCKBUILD
-  RefSCMatrix Ftest;
-  if (!spin_unrestricted)
-    Ftest = F.clone();
+  RefSCMatrix hcore = F.clone();
+  hcore.assign(F);
+  {
+    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
+    if (bs1_eq_bs2) {
+      Ref< OneBodyFockMatrixBuilder<true> > fmb =
+        new OneBodyFockMatrixBuilder<true>(
+            OneBodyFockMatrixBuilder<true>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+
+      typedef RefSymmSCMatrix mattype;
+      mattype Htest = fmb->result();
+      RefSCMatrix H_mo = vec1t * Htest * vec2;
+      (F-H_mo).print("H matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
+    else { // result is rectangular already
+
+      Ref< OneBodyFockMatrixBuilder<false> > fmb =
+        new OneBodyFockMatrixBuilder<false>(
+            OneBodyFockMatrixBuilder<false>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+      typedef RefSCMatrix mattype;
+      mattype Htest = fmb->result();
+      RefSCMatrix H_mo = vec1t * Htest * vec2;
+      (F-H_mo).print("H matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
+  }
 #endif
-  
+
   //
   // add coulomb and exchange parts
   //
@@ -286,47 +319,99 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
       K.print("Exchange contribution");
     F.accumulate(K); K = 0;
   }
-  
+
   if (debug_ >= DefaultPrintThresholds::allN2) {
     F.print("Fock matrix");
   }
-  
+
 #if TEST_FOCKBUILD
-  if (scale_J == 1.0 && scale_K == 1.0) {
-    Ref<GaussianBasisSet> obs = occ(Alpha)->basis();
-    Ref<FockContribution> fc = new CLHFContribution(bs1,bs2,obs,obs);
-    
-    // transform the density matrix to the AO basis
-    RefSymmSCMatrix D_ao = reference()->ao_density();
-    RefSCMatrix G_ao = Ftest.kit()->matrix(aodim1,aodim2);
-    fc->set_fmat(0, G_ao);
-    fc->set_pmat(0, D_ao);
-    
-    const Ref<Integral>& integral = r12info()->integral();
-    const unsigned int nthreads = r12info()->thr()->nthread();
-    Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[nthreads];
-    for(unsigned int t=0; t<nthreads; ++t)
-      tbints[t] = integral->electron_repulsion();
-    
-    // WARNING should replace with something reasonable
-    const double accuracy = 1.0e-15;
-    Ref<FockBuild> fb = new FockBuild(fc,accuracy,tbints,
-                                      bs1, bs2, obs, obs,
-                                      r12info()->msg(), r12info()->thr(),
-                                      integral);
-    fb->build();
-    ExEnv::out0() << indent << scprintf("%20.0f integrals\n",
-    fb->contrib()->nint());
-    fb = 0;
-    
-    // WARNING Need to symmetrize G
-    
-    for(unsigned int t=0; t<nthreads; ++t)
-      tbints[t] = 0;
-    delete[] tbints;
+  {
+    const bool compute_F = (scale_J == 1.0 && scale_K == 1.0);
+    const bool compute_J = (scale_J != 0.0 && !compute_F);
+    const bool compute_K = (scale_K != 0.0 && !compute_F);
+    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
+    RefSCMatrix Gtest;
+    double nints;
+    if (bs1_eq_bs2) {
+      Ref< OneBodyFockMatrixBuilder<true> > f1mb =
+        new OneBodyFockMatrixBuilder<true>(
+            OneBodyFockMatrixBuilder<true>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+
+      Ref< TwoBodyFockMatrixBuilder<true> > fmb =
+        new TwoBodyFockMatrixBuilder<true>(
+            compute_F,compute_J,compute_K,
+            bs1,bs2,obs,
+            r12info()->refinfo()->ref()->ao_density(),
+            r12info()->integral(),
+            r12info()->msg(),
+            r12info()->thr());
+      nints = fmb->nints();
+      typedef RefSymmSCMatrix mattype;
+      mattype Gtest;
+      if (compute_F)
+        Gtest = fmb->F();
+      else {
+        if (compute_J) {
+          Gtest = fmb->J();
+          Gtest.scale(scale_J);
+        }
+        if (compute_K) {
+            mattype K = fmb->K();
+            K.scale(-1.0*scale_K);
+            if (compute_J)
+              Gtest.accumulate(K);
+            else
+              Gtest = K;
+        }
+      }
+      //Gtest.print("G matrix: AO basis, FockBuild");
+      RefSCMatrix G_mo = vec1t * Gtest * vec2;
+      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
+    else { // result is rectangular already
+
+      Ref< OneBodyFockMatrixBuilder<false> > f1mb =
+        new OneBodyFockMatrixBuilder<false>(
+            OneBodyFockMatrixBuilder<false>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+
+      Ref< TwoBodyFockMatrixBuilder<false> > fmb =
+        new TwoBodyFockMatrixBuilder<false>(
+            compute_F,compute_J,compute_K,
+            bs1,bs2,obs,
+            r12info()->refinfo()->ref()->ao_density(),
+            r12info()->integral(),
+            r12info()->msg(),
+            r12info()->thr());
+      nints = fmb->nints();
+      typedef RefSCMatrix mattype;
+      mattype Gtest;
+      if (compute_F)
+        Gtest = fmb->F();
+      else {
+        if (compute_J) {
+          Gtest = fmb->J();
+          Gtest.scale(scale_J);
+        }
+        if (compute_K) {
+            mattype K = fmb->K();
+            K.scale(-1.0*scale_K);
+            if (compute_J)
+              Gtest.accumulate(K);
+            else
+              Gtest = K;
+        }
+      }
+      //Gtest.print("G matrix: AO basis, FockBuild");
+      RefSCMatrix G_mo = vec1t * Gtest * vec2;
+      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
   }
 #endif
-  
+
   return F;
 }
 
@@ -335,7 +420,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 RefSCMatrix
 R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
                           const Ref<MOIndexSpace>& ket_space,
-                          SpinCase1 spin) 
+                          SpinCase1 spin)
 {
 
   ExEnv::out0() << indent<< "Entering Delta_DKH" <<incindent << endl;
@@ -345,10 +430,10 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   const bool bs1_eq_bs2 = (bs1 == bs2);
   int nshell1 = bs1->nshell();
   int nshell2 = bs2->nshell();
-  
+
   RefSCMatrix vec1t = bra_space->coefs().t();
   RefSCMatrix vec2 = ket_space->coefs();
-  
+
   RefSCDimension aodim1 = vec1t.coldim();
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
@@ -363,15 +448,15 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // use R12IntEval::dk() here because deltaDKH is only needed if the MV term is treated analytically
   const int dk = this->dk();
 #if !TEST_DELTA_DKH
-  if (dk != 2) { 
+  if (dk != 2) {
         throw ProgrammingError( "Delta_DKH can only be used with dk = 2",
  	  __FILE__, __LINE__, class_desc());
   }
 #endif
-  
+
   Ref<SCF> ref = mp2wfn->ref();
-  
-  Ref<GaussianBasisSet> hcore_basis; 
+
+  Ref<GaussianBasisSet> hcore_basis;
   Ref<GaussianBasisSetSum> bs1_plus_bs2;
   if (bs1_eq_bs2) {
       hcore_basis = bs1;
@@ -386,16 +471,16 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   // reference should be a superset of hcore_basis
 
   // be precise, it's a critical step
-  //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(ref->momentum_basis());   
+  //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(ref->momentum_basis());
   Ref<GaussianBasisSet> uncontract_p = ref->momentum_basis(); // for consistency
   Ref<GaussianBasisSet> p_basis = uncontract_p+hcore_basis;
-  
-  // compute the relativistic core Hamiltonian  
+
+  // compute the relativistic core Hamiltonian
   RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
-  
+
   // the whole Darwin/mass_velocity block can be replaced by a call of pauli
   // I'll leave it for now for testing purposes.
-    
+
 #if USE_PAULI
   RefSymmSCMatrix paulicontrib = pauli(hcore_basis,p_basis);
   paulicontrib.scale(-1.0);
@@ -409,23 +494,23 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   {
     const double c = 137.0359895; // speed of light in a vacuum in a.u.
     const double darwin_prefac = M_PI/(c*c*2.0);
-    
+
     mp2wfn->integral()->set_basis(hcore_basis);
     GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(hcore_basis,mp2wfn->integral());
     const int nbasis1 = hcore_basis->nbasis();
     double* values1=new double[nbasis1];
     const int natom=mp2wfn->molecule()->natom();
-    
+
     for (int iatom=0; iatom<natom; iatom++) {
-      
+
       SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
       // this puts values of basis functions evaluated at R_iatom into values1
       hcore_basis->values(R_iatom, vdata1, values1);
       const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
-      
+
       for (int ibasis=0; ibasis<hcore_basis->nbasis(); ibasis++) {
         for (int jbasis=0; jbasis<=ibasis; jbasis++) {
-          
+
           const double d=values1[ibasis]*values1[jbasis]*prefac;
           Darwin.accumulate_element(ibasis, jbasis, d);
         }
@@ -434,20 +519,20 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
     delete[] values1;
     delete vdata1;
   }
-  
+
   // calculate delta_DKH = H_DKH - H_tvmvd to get the difference Hamiltonian
   // H_tvmvd = T+V+mass-velocity ...
 #if TEST_DELTA_DKH
   RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,r12info()->basis_ri());
 #else
-  
+
 #if EVALUATE_MV_VIA_RI
   RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis,true,false,false);
-  
+
 #else
   RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,p_basis);
 #endif
-  
+
 #endif
 
 #if !EVALUATE_MV_VIA_RI
@@ -470,16 +555,16 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   //         + Darwin
   TVmv.accumulate(Darwin);
   Darwin=0;
-  
+
   TVmv.scale(-1.0);
   hsymm.accumulate(TVmv);
 #else
   hsymm.assign(TVmv);
 #endif
 #endif  // USE_PAULI
-  
+
   // from now on proceed as in fock
-  
+
   // convert hsymm to the AO basis
   Ref<Integral> localints = r12info_->integral()->clone();
   localints->set_basis(hcore_basis,hcore_basis);
@@ -488,7 +573,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   hsymm = 0;
 
   RefSCMatrix h(aodim1, aodim2, sokit);
-  
+
   if (bs1_eq_bs2) {
     h.assign(0.0);
     h.accumulate(hsymm_ao);
@@ -496,7 +581,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
     RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
     hrect_ao.assign(0.0);
     hrect_ao.accumulate(hsymm_ao);
-    
+
     // extract the bs1 by bs2 block:
     //   loop over all bs1 fblocks
     //     loop over all bs2 fblocks
@@ -510,37 +595,37 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
       if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
         continue;
       const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
-      
+
       const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
       const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
-      
+
       for (int cb=0; cb<nfblock; ++cb) {
         const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
         if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
           continue;
         const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
-        
+
         const int cf_start2 = bs1_plus_bs2->function12_to_function(cf_start12);
         const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
-        
+
         // assign row-/col-subblock to h
         h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2,
                           rf_start12, cf_start12);
       }
     }
-    
+
   }
 
-  
+
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
   if (debug_ >= DefaultPrintThresholds::allN2)
     F.print("Core Hamiltonian contribution");
   // and clean up a bit
   h = 0;
-  
+
   const bool spin_unrestricted = spin_polarized();
-  
+
   if (debug_ >= DefaultPrintThresholds::allN2) {
     F.print("Fock matrix");
   }
@@ -562,11 +647,11 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
   ExEnv::out0() << indent << "include_T = " << (include_T ? "true" : "false") << endl;
   ExEnv::out0() << indent << "include_V = " << (include_V ? "true" : "false") << endl;
   ExEnv::out0() << indent << "include_MV = " << (include_MV ? "true" : "false") << endl;
-  
+
   // The one electron integrals will be computed in the momentum basis.
   // Use mbptr12's integrals.
   mp2wfn->integral()->set_basis(p_bas);
-  
+
   Ref<PetiteList> p_pl = mp2wfn->integral()->petite_list();
 
   RefSCDimension p_so_dim = p_pl->SO_basisdim();
@@ -760,7 +845,7 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
                   << std::endl;
   }
 #endif
-  
+
 #if DK_DEBUG
   S_ao_p_so.print("S_ao_p_so");
   p_to_so.print("p_to_so");
@@ -780,13 +865,13 @@ R12IntEval::pauli(
   const Ref<GaussianBasisSet> &basis,
   const Ref<GaussianBasisSet> &pbas,
   const bool momentum)
-{   
+{
   RefSymmSCMatrix hcore;
-  
+
   if (momentum) {
     hcore = pauli_momentumspace(basis, pbas);
   }
-  else { 
+  else {
     hcore = pauli_realspace(basis);
   }
 
@@ -820,7 +905,7 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
   hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
   hao.element_op(hc);
   hc=0;
-  
+
   // mass-velocity
   Ref<OneBodyInt> mv = localints->p4();
   mv->reinitialize();
@@ -839,22 +924,22 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
   {
     const double darwin_prefac = M_PI/(c*c*2.0);
     MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
-    
+
     GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,localints);
     const int nbasis1 = bas->nbasis();
     double* values1=new double[nbasis1];
     const int natom=mp2wfn->molecule()->natom();
-    
+
     for (int iatom=0; iatom<natom; iatom++) {
-      
+
       SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
       // this puts values of basis functions evaluated at R_iatom into values1
       bas->values(R_iatom, vdata1, values1);
       const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
-      
+
       for (int ibasis=0; ibasis<bas->nbasis(); ibasis++) {
         for (int jbasis=0; jbasis<=ibasis; jbasis++) {
-          
+
           const double d=values1[ibasis]*values1[jbasis]*prefac;
           Darwin.accumulate_element(ibasis, jbasis, d);
         }
@@ -884,11 +969,11 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
 #define PAULI_DEBUG 0
 
   ExEnv::out0() << indent<< "Using the Pauli Hamiltonian for the R12 treatment " << endl;
-  
+
   // The one electron integrals will be computed in the momentum basis.
   // Use mbptr12's integrals.
   mp2wfn->integral()->set_basis(p_bas);
-  
+
   Ref<PetiteList> p_pl = mp2wfn->integral()->petite_list();
 
   RefSCDimension p_so_dim = p_pl->SO_basisdim();
@@ -1079,7 +1164,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
                   << std::endl;
   }
 #endif
-  
+
 #if PAULI_DEBUG
   S_ao_p_so.print("S_ao_p_so");
   p_to_so.print("p_to_so");
@@ -1096,23 +1181,23 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
   Darwin.assign(0.0);
   {
     const double darwin_prefac = M_PI/(c*c*2.0);
-    
+
     mp2wfn->integral()->set_basis(bas);
     GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,mp2wfn->integral());
     const int nbasis1 = bas->nbasis();
     double* values1=new double[nbasis1];
     const int natom=mp2wfn->molecule()->natom();
-    
+
     for (int iatom=0; iatom<natom; iatom++) {
-      
+
       SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
       // this puts values of basis functions evaluated at R_iatom into values1
       bas->values(R_iatom, vdata1, values1);
       const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
-      
+
       for (int ibasis=0; ibasis<bas->nbasis(); ibasis++) {
         for (int jbasis=0; jbasis<=ibasis; jbasis++) {
-          
+
           const double d=values1[ibasis]*values1[jbasis]*prefac;
           Darwin.accumulate_element(ibasis, jbasis, d);
         }

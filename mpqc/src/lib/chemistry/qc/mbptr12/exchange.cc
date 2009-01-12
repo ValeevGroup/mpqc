@@ -90,8 +90,8 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
   vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(mnxy_acc,proc_with_ints);
-  
+  int nproc_with_ints = mnxy_acc->tasks_with_access(proc_with_ints);
+
   //////////////////////////////////////////////////////////////
   //
   // Evaluation of the exchange matrix proceeds as follows:
@@ -141,7 +141,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
 
   msg->sum(K_xy,nbraket);
-  
+
   RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
   K.assign(K_xy);
   delete[] K_xy;
@@ -149,7 +149,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   if (debug_ >= DefaultPrintThresholds::allN2) {
     K.print("Exchange matrix");
   }
-  
+
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
   tim_exchange.exit();

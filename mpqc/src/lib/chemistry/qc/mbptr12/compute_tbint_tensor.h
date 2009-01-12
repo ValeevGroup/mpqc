@@ -41,7 +41,7 @@
 #define _chemistry_qc_mbptr12_computetbinttensor_h
 
 namespace sc {
-  
+
   template <typename DataProcess,
             bool CorrFactorInBra,
             bool CorrFactorInKet>
@@ -53,8 +53,7 @@ namespace sc {
                                      const Ref<MOIndexSpace>& space2_bra,
                                      const Ref<MOIndexSpace>& space2_ket,
                                      bool antisymmetrize,
-                                     const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
-                                     const std::vector< Ref<TwoBodyIntDescr> >& intdescrs)
+                                     const std::vector<std::string>& transform_keys)
     {
       // are particles 1 and 2 equivalent?
       const bool part1_strong_equiv_part2 = (space1_bra==space2_bra && space1_ket==space2_ket);
@@ -70,67 +69,19 @@ namespace sc {
       const bool alphabeta = !(antisymmetrize && part1_strong_equiv_part2);
 
       const bool CorrFactorInBraKet = CorrFactorInBra && CorrFactorInKet;
-      
+
       const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
       const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions() : 1);
       const unsigned int nsets = (CorrFactorInBraKet ? -1 : nbrasets*nketsets);
-      
+
       // create transforms, if needed
       typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
-      tformvec transforms = transvec;
-      if (transforms.empty()) {
-        if (CorrFactorInBraKet) {
-          unsigned int fbraket = 0;
-          for(unsigned int fbra=0; fbra<nbrasets; ++fbra) {
-            for(unsigned int fket=0; fket<nketsets; ++fket, ++fbraket) {
-              
-              // is this appropriate here? If user didn't give transforms, create them anew then!
-#define SEARCH_EXISTING_TRANSFORMS 0
-              std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,fbra,fket));
-#if SEARCH_EXISTING_TRANSFORMS
-              try {
-                transforms.push_back(get_tform_(tlabel));
-              }
-              catch (TransformNotFound& a){
-#endif
-                Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-                tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
-                Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
-                                                      MOIntsTransformFactory::StorageType_13,
-                                                      tlabel,
-                                                      intdescrs[fbraket]
-                                                    );
-                transforms.push_back(tform);
-#if SEARCH_EXISTING_TRANSFORMS
-              }
-#endif
-            }
-          }
-        }
-        else {
-          for(int f=0; f<nsets; f++) {
-            std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,f));
-#if SEARCH_EXISTING_TRANSFORMS
-            try {
-              transforms.push_back(get_tform_(tlabel));
-            }
-            catch (TransformNotFound& a){
-#endif
-              Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-              tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
-              Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
-                                                    MOIntsTransformFactory::StorageType_13,
-                                                    tlabel,
-                                                    intdescrs[f]
-                                                  );
-              transforms.push_back(tform);
-#if SEARCH_EXISTING_TRANSFORMS
-            }
-#endif
-          }
-        }
+      const size_t num_tforms = transform_keys.size();
+      tformvec transforms(num_tforms);
+      for(unsigned int t=0; t<num_tforms; ++t) {
+        transforms[t] = r12info()->moints_runtime()->get(transform_keys[t]);
       }
-      
+
       Timer tim_generic_tensor("Generic tensor");
       std::ostringstream oss;
       oss << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
@@ -139,7 +90,7 @@ namespace sc {
       ExEnv::out0() << endl << indent
       << "Entered generic tensor (" << label << ") evaluator" << endl;
       ExEnv::out0() << incindent;
-      
+
       //
       // WARNING: Assuming all transforms are over same spaces!!!
       //
@@ -147,7 +98,7 @@ namespace sc {
       Ref<MOIndexSpace> tspace1_ket = transforms[0]->space2();
       Ref<MOIndexSpace> tspace2_bra = transforms[0]->space3();
       Ref<MOIndexSpace> tspace2_ket = transforms[0]->space4();
-      
+
       // maps spaceX to spaceX of the transform
       std::vector<unsigned int> map1_bra, map1_ket, map2_bra, map2_ket;
       // maps space2_ket to space1_ket of transform
@@ -168,13 +119,13 @@ namespace sc {
           map21_ket = *tspace2_ket<<*space1_ket;
         }
       }
-      
+
       const unsigned int tblock_ncols = tspace2_ket->rank();
       const RefDiagSCMatrix evals1_bra = space1_bra->evals();
       const RefDiagSCMatrix evals1_ket = space1_ket->evals();
       const RefDiagSCMatrix evals2_bra = space2_bra->evals();
       const RefDiagSCMatrix evals2_ket = space2_ket->evals();
-      
+
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
       const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
@@ -194,42 +145,42 @@ namespace sc {
       }
       else
         Tresult = T;
-      
+
       unsigned int fbraket = 0;
       unsigned int fbraoffset = 0;
       for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
-        
+
         unsigned int fketoffset = 0;
         for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket,++fbraket) {
-          
+
           Ref<TwoBodyMOIntsTransform> tform = transforms[fbraket];
 	  const Ref<TwoBodyIntDescr>& intdescr = tform->intdescr();
 	  const unsigned int intsetidx = intdescr->intset(tbint_type);
-          
+
           if (debug_ > DefaultPrintThresholds::diagnostics)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
-          
+
           tform->compute();
           Ref<R12IntsAcc> accum = tform->ints_acc();
-          
+
           // split work over tasks which have access to integrals
           vector<int> proc_with_ints;
-          const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
+          const int nproc_with_ints = accum->tasks_with_access(proc_with_ints);
           const int me = r12info()->msg()->me();
-          
+
           if (accum->has_access(me)) {
             for(iterbra.start(); iterbra; iterbra.next()) {
               const int ij = iterbra.ij();
-              
+
               const int ij_proc = ij%nproc_with_ints;
               if (ij_proc != proc_with_ints[me])
                 continue;
-              
+
               const unsigned int i = iterbra.i();
               const unsigned int j = iterbra.j();
               const unsigned int ii = map1_bra[i];
               const unsigned int jj = map2_bra[j];
-              
+
 	      if (debug_ > DefaultPrintThresholds::allO2N2)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
               Timer tim_intsretrieve("MO ints retrieve");
@@ -237,7 +188,7 @@ namespace sc {
               tim_intsretrieve.exit();
 	      if (debug_ > DefaultPrintThresholds::allO2N2)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-              
+
               for(iterket.start(); iterket; iterket.next()) {
                 const unsigned int a = iterket.i();
                 const unsigned int b = iterket.j();
@@ -245,9 +196,9 @@ namespace sc {
                 const unsigned int bb = map2_ket[b];
                 const int AB = aa*tblock_ncols+bb;
                 const int ab = iterket.ij();
-                
+
                 const double I_ijab = ij_buf[AB];
-                
+
                 if (alphabeta) {
 		  if (debug_ > DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
@@ -269,13 +220,13 @@ namespace sc {
                   const double T_ijab = DataProcess::I2T(I_anti,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
                   Tresult.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
                 }
-                
+
               } // ket loop
               accum->release_pair_block(ii,jj,intsetidx);
-              
+
             } // bra loop
           } // loop over tasks with access
-          
+
         } // ket blocks
       } // bra blocks
 
@@ -285,20 +236,20 @@ namespace sc {
         sc::antisymmetrize(T,Tresult,space1_bra,space1_ket,true);
         Tresult = 0;
       }
-      
+
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited generic tensor (" << label << ") evaluator" << endl;
       tim_generic_tensor.exit();
     }
-  
+
   /// Contains classes used to compute many-body tensors
   namespace ManyBodyTensors {
-    
+
     enum Sign {
       Minus = -1,
       Plus = +1
     };
-    
+
     /// Tensor elements are <pq||rs>
     template <Sign sign = Plus>
     class Apply_Identity {
@@ -315,7 +266,7 @@ namespace sc {
           return -I;
       }
     };
-    
+
     /// Applies (H0 - E0)
     template <Sign sign = Plus>
     class Apply_H0minusE0 {
@@ -333,7 +284,7 @@ namespace sc {
           return -I*ediff;
       }
     };
-    
+
     /// Applies (H0 - E0)^{-1}, e.g. MP2 T2 tensor elements are <ij||ab> /(e_i + e_j - e_a - e_b)
     template <Sign sign = Plus>
     class Apply_Inverse_H0minusE0 {
@@ -351,7 +302,7 @@ namespace sc {
           return -I/ediff;
       }
     };
-    
+
     /// Applies 1.0/sqrt(H0-E0)
     /// MP2 pseudo-T2 (S2) tensor elements are <ij||ab> /sqrt(|e_i + e_j - e_a - e_b|) such
     /// that MP2 pair energies are the diagonal elements of S2 * S2.t()
@@ -371,7 +322,7 @@ namespace sc {
           return -I/std::sqrt(std::fabs(ediff));
       }
     };
-    
+
     typedef Apply_Identity<Plus> I_to_T;
     typedef Apply_Identity<Minus> I_to_mT;
     typedef Apply_Inverse_Sqrt_H0minusE0<Plus> ERI_to_S2;

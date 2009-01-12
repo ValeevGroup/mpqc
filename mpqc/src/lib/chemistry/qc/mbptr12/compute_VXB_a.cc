@@ -101,29 +101,29 @@ R12IntEval::contrib_to_VXB_a_()
 	  // involves this term -P1P2
           tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+      std::vector<std::string> tforms;
+      std::vector<std::string> tforms_f12;
       {
-	  Ref<R12IntEval> thisref(this);
-	  TwoBodyMOIntsTransformCreator tform_creator(
-	      thisref,
+	  R12TwoBodyIntKeyCreator tformkey_creator(
+	      r12info()->moints_runtime(),
 	      xspace1,
 	      orbs1,
 	      xspace2,
-	      orbs2,true
+	      orbs2,
+	      r12info()->corrfactor(),true
 	      );
-	  fill_container(tform_creator,tforms_f12);
+	  fill_container(tformkey_creator,tforms_f12);
       }
       if (!occ12_in_x12) {
-	  Ref<R12IntEval> thisref(this);
-	  TwoBodyMOIntsTransformCreator tform_creator(
-	      thisref,
+	  R12TwoBodyIntKeyCreator tformkey_creator(
+	      r12info()->moints_runtime(),
 	      occ1_act,
 	      orbs1,
 	      occ2_act,
-	      orbs2
+	      orbs2,
+          r12info()->corrfactor()
 	      );
-	  fill_container(tform_creator,tforms_f12);
+	  fill_container(tformkey_creator,tforms_f12);
       }
       else
 	  tforms.push_back(tforms_f12[0]);
@@ -218,29 +218,29 @@ R12IntEval::contrib_to_VXB_a_()
 		  rispace2->rank(),part1_equiv_part2 ? -2.0 : -1.0
 		  );
 
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imjP;
-	  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xmyP;
+	  std::vector<std::string> tforms_imjP;
+	  std::vector<std::string> tforms_f12_xmyP;
 	  {
-	      Ref<R12IntEval> thisref(this);
-	      TwoBodyMOIntsTransformCreator tform_creator(
-		  thisref,
+	      R12TwoBodyIntKeyCreator tformkey_creator(
+		  r12info()->moints_runtime(),
 		  xspace1,
 		  occ1,
 		  xspace2,
-		  rispace2,true
+		  rispace2,
+          r12info()->corrfactor(),true
 		  );
-	      fill_container(tform_creator,tforms_f12_xmyP);
+	      fill_container(tformkey_creator,tforms_f12_xmyP);
 	  }
 	  if (!occ12_in_x12) {
-	      Ref<R12IntEval> thisref(this);
-	      TwoBodyMOIntsTransformCreator tform_creator(
-		  thisref,
+	      R12TwoBodyIntKeyCreator tformkey_creator(
+		  r12info()->moints_runtime(),
 		  occ1_act,
 		  occ1,
 		  occ2_act,
-		  rispace2
+		  rispace2,
+          r12info()->corrfactor()
 		  );
-	      fill_container(tform_creator,tforms_imjP);
+	      fill_container(tformkey_creator,tforms_imjP);
 	  }
 	  else
 	      tforms_imjP.push_back(tforms_f12_xmyP[0]);
@@ -305,29 +305,29 @@ R12IntEval::contrib_to_VXB_a_()
 	  // If particles 1 and 2 are not equivalent, also need another set of terms
 	  if (!part1_equiv_part2) {
 
-	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iPjm;
-	      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12_xPym;
+	      std::vector<std::string> tforms_iPjm;
+	      std::vector<std::string> tforms_f12_xPym;
 	      {
-		  Ref<R12IntEval> thisref(this);
-		  TwoBodyMOIntsTransformCreator tform_creator(
-		      thisref,
+		  R12TwoBodyIntKeyCreator tformkey_creator(
+		      r12info()->moints_runtime(),
 		      xspace1,
 		      rispace1,
 		      xspace2,
-		      occ2,true
+		      occ2,
+	          r12info()->corrfactor(),true
 		      );
-		  fill_container(tform_creator,tforms_f12_xPym);
+		  fill_container(tformkey_creator,tforms_f12_xPym);
 	      }
 	      if (!occ12_in_x12) {
-		  Ref<R12IntEval> thisref(this);
-		  TwoBodyMOIntsTransformCreator tform_creator(
-		      thisref,
+		  R12TwoBodyIntKeyCreator tformkey_creator(
+		      r12info()->moints_runtime(),
 		      occ1_act,
 		      rispace1,
 		      occ2_act,
-		      occ2
+		      occ2,
+	          r12info()->corrfactor()
 		      );
-		  fill_container(tform_creator,tforms_iPjm);
+		  fill_container(tformkey_creator,tforms_iPjm);
 	      }
 	      else
 		  tforms_iPjm.push_back(tforms_f12_xPym[0]);

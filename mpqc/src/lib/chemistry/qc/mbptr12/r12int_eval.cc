@@ -1910,10 +1910,20 @@ R12IntEval::F_P_P(SpinCase1 spin)
   const Ref<MOIndexSpace>& extspace = r12info()->ribs_space();
   const Ref<MOIndexSpace>& intspace = r12info()->ribs_space();
   Ref<MOIndexSpace> null;
-  f_bra_ket(spin,true,false,true,
+#define TEST_FOCK_BUILDER 0
+  f_bra_ket(spin,true,false,
+#if !TEST_FOCK_BUILDER
+            true,
+#else
+            false,
+#endif
 	    F_P_P_[s],
 	    null,
+#if !TEST_FOCK_BUILDER
 	    K_P_P_[s],
+#else
+	    null,
+#endif
 	    extspace,intspace);
   return F_P_P_[s];
 }
@@ -2184,6 +2194,8 @@ R12IntEval::f_bra_ket(
     const Ref<MOIndexSpace>& intspace
     )
 {
+  const Ref<MOIndexSpaceRegistry>& idxreg = MOIndexSpaceRegistry::instance();
+
   const unsigned int s = static_cast<unsigned int>(spin);
   const bool not_yet_computed =
       (make_F && F.null()) ||
@@ -2247,6 +2259,7 @@ R12IntEval::f_bra_ket(
 #endif
 	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_trafo,
 				intspace->basis());
+	  idxreg->add(make_keyspace_pair(hJ, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
       }
 
       RefSCMatrix K_i_e;
@@ -2283,6 +2296,7 @@ R12IntEval::f_bra_ket(
 	  name = prepend_spincase(spin,name);
 	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_trafo,
 				intspace->basis());
+      idxreg->add(make_keyspace_pair(K, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
       }
 
       if (make_F && F.null()) {
@@ -2323,36 +2337,10 @@ R12IntEval::f_bra_ket(
           name = prepend_spincase(spin,name);
 	  F = new MOIndexSpace(id, name, extspace, intspace->coefs()*F_i_e,
 				intspace->basis());
+      idxreg->add(make_keyspace_pair(F, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
       }
 
   }
-}
-
-const int
-R12IntEval::tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi)
-{
-  int nproc = r12info_->msg()->n();
-
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  int nproc_with_ints = 0;
-  for(int proc=0;proc<nproc;proc++)
-    if (ints_acc->has_access(proc)) nproc_with_ints++;
-
-  map_to_twi.resize(nproc);
-  int count = 0;
-  for(int proc=0;proc<nproc;proc++)
-    if (ints_acc->has_access(proc)) {
-      map_to_twi[proc] = count;
-      count++;
-    }
-      else
-        map_to_twi[proc] = -1;
-
-  ExEnv::out0() << indent << "Computing intermediates on " << nproc_with_ints
-    << " processors" << endl;
-
-  return nproc_with_ints;
 }
 
 void
@@ -2445,27 +2433,6 @@ R12IntEval::compute()
         Ref<MOIndexSpace> fvir1_act = fvir_act(spin1);
         Ref<MOIndexSpace> fvir2_act = fvir_act(spin2);
 
-        const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-
-        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-        Ref<R12IntEval> thisref(this);
-        if (obs_eq_vbs) {
-          TwoBodyMOIntsTransformCreator tform_creator(thisref,
-                                              xspace1,
-                                              refinfo->orbs(spin1),
-                                              xspace2,
-                                              refinfo->orbs(spin2),true);
-          fill_container(tform_creator,tforms);
-        }
-        else {
-          TwoBodyMOIntsTransformCreator tform_creator(thisref,
-                                              xspace1,
-                                              vir1_act,
-                                              xspace2,
-                                              vir2_act,true);
-          fill_container(tform_creator,tforms);
-        }
-
         compute_A_direct_(A_[s],
                           xspace1, vir1_act,
                           xspace2, vir2_act,
@@ -2524,29 +2491,30 @@ R12IntEval::compute()
       Ref<MOIndexSpace> vir1_act = vir_act(spin1);
       Ref<MOIndexSpace> vir2_act = vir_act(spin2);
 
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
-      Ref<R12IntEval> thisref(this);
+      std::string tform_key;
       // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
       if (obs_eq_vbs && nocorrptr.null()) {
-        TwoBodyMOIntsTransformCreator tform_creator(thisref,
-                                          occ1_act,
-                                          r12info()->refinfo()->orbs(spin1),
-                                          occ2_act,
-                                          r12info()->refinfo()->orbs(spin2),1);
-        fill_container(tform_creator,tforms);
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+                                           occ1_act,
+                                           r12info()->refinfo()->orbs(spin1),
+                                           occ2_act,
+                                           r12info()->refinfo()->orbs(spin2),
+                                           r12info()->corrfactor());
+        tform_key = tformkey_creator();
       }
       else {
-        TwoBodyMOIntsTransformCreator tform_creator(thisref,
-                                          occ1_act,
-                                          vir1_act,
-                                          occ2_act,
-                                          vir2_act,0);
-        fill_container(tform_creator,tforms);
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+                                              occ1_act,
+                                              vir1_act,
+                                              occ2_act,
+                                              vir2_act,
+                                              r12info()->corrfactor());
+        tform_key = tformkey_creator();
       }
       compute_mp2_pair_energies_(emp2pair_[s],spincase2,
                                  occ1_act,vir1_act,
                                  occ2_act,vir2_act,
-                                 tforms[0]);
+                                 tform_key);
   }
 
   // compute singles contribution to the MP2 energy, if needed

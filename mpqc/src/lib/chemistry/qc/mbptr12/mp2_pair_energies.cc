@@ -42,7 +42,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                        const Ref<MOIndexSpace>& space2,
                                        const Ref<MOIndexSpace>& space3,
                                        const Ref<MOIndexSpace>& space4,
-                                       const Ref<TwoBodyMOIntsTransform>& transform)
+                                       const std::string& tform_key)
 {
   // Check correct semantics of this call : if S != AlphaBeta then space1==space3 and space2==space4
   const bool correct_semantics = (S != AlphaBeta && space1==space3 && space2==space4) ||
@@ -55,12 +55,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   //
   // If transform not given, construct appropriately, otherwise notify user which transform is used
   //
-  Ref<TwoBodyMOIntsTransform> tform = transform;
-  if (tform.null()) {
-    // Only need 1/r12 integrals, hence doesn't matter which f12 to use
-    tform = get_tform_(transform_label(space1,space2,space3,space4,0));
-  }
-  
+  Ref<TwoBodyMOIntsTransform> tform = r12info()->moints_runtime()->get(tform_key);
+
   //
   // Initialize spaces and maps
   //
@@ -88,7 +84,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       map42 = *tspace4<<*space2;
     }
   }
-  
+
   const unsigned int rank1 = space1->rank();
   const unsigned int rank2 = space2->rank();
   const unsigned int rank3 = space3->rank();
@@ -98,15 +94,15 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   const RefDiagSCMatrix evals2 = space2->evals();
   const RefDiagSCMatrix evals3 = space3->evals();
   const RefDiagSCMatrix evals4 = space4->evals();
-  
+
   // Using spinorbital iterators means I don't take into account perm symmetry
   // More efficient algorithm will require generic code
   SpinMOPairIter iter13(space1,space3,S);
   SpinMOPairIter iter24(space2,space4,S);
-  
+
   tform->compute();
   Ref<R12IntsAcc> accum = tform->ints_acc();
-  
+
   Timer tim_mp2_pair_energies("MP2 pair energies");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|"
@@ -117,24 +113,24 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   ExEnv::out0() << incindent;
   if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
-  
+
   vector<int> proc_with_ints;
-  const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
+  const int nproc_with_ints = accum->tasks_with_access(proc_with_ints);
   const int me = r12info()->msg()->me();
-  
+
   if (accum->has_access(me)) {
     for(iter13.start(); iter13; iter13.next()) {
       const int ij = iter13.ij();
-      
+
       const int ij_proc = ij%nproc_with_ints;
       if (ij_proc != proc_with_ints[me])
         continue;
-      
+
       const unsigned int i = iter13.i();
       const unsigned int j = iter13.j();
       const unsigned int ii = map1[i];
       const unsigned int jj = map3[j];
-      
+
       if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
       Timer tim_intsretrieve("MO ints retrieve");
@@ -142,7 +138,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       tim_intsretrieve.exit();
       if (debug_ >= DefaultPrintThresholds::mostO4)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-      
+
       double emp2 = 0.0;
       for(iter24.start(); iter24; iter24.next()) {
         const unsigned int a = iter24.i();
@@ -150,10 +146,10 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
         const unsigned int aa = map2[a];
         const unsigned int bb = map4[b];
         const int ab = aa*trank4+bb;
-        
+
         const double ERI_iajb = ij_buf_eri[ab];
         const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
-        
+
         if (S == AlphaBeta) {
           emp2 += ERI_iajb*ERI_iajb*denom;
 	  if (debug_ >= DefaultPrintThresholds::mostO2N2) {
@@ -180,13 +176,13 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
             << endl;
           }
         }
-        
+
       }
       accum->release_pair_block(ii,jj,corrfactor()->tbint_type_eri());
       emp2pair.set_element(ij,emp2);
     }
   }
-  
+
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited MP2 pair energies (" << label << ") evaluator" << endl;
 }

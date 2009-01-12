@@ -33,82 +33,62 @@
 
 using namespace sc;
 
-TwoBodyMOIntsTransformCreator::TwoBodyMOIntsTransformCreator(
-  Ref<R12IntEval>& r12eval,
-  const Ref<MOIndexSpace>& space1,
-  const Ref<MOIndexSpace>& space2,
-  const Ref<MOIndexSpace>& space3,
-  const Ref<MOIndexSpace>& space4,
-  bool CorrFunctionInBra,
-  bool CorrFunctionInKet,
-  MOIntsTransformFactory::StorageType storage
-  ) : RangeCreator<ObjT>((CorrFunctionInBra ? (CorrFunctionInKet ? r12eval->corrfactor()->nfunctions() * r12eval->corrfactor()->nfunctions()
-                                                                 : r12eval->corrfactor()->nfunctions())
-                                            : (CorrFunctionInKet ? r12eval->corrfactor()->nfunctions()
-                                                                 : 1))),
-      r12eval_(r12eval), tfactory_(r12eval->r12info()->tfactory()),
-      space1_(space1), space2_(space2),
-      space3_(space3), space4_(space4),
-      storage_(storage),
-      CorrFunctionInBraKet_(CorrFunctionInBra && CorrFunctionInKet),
-      CorrFunction_(CorrFunctionInBra || CorrFunctionInKet),
-      nf12bra_((CorrFunctionInBra ? r12eval->corrfactor()->nfunctions() : 1)),
-      nf12ket_((CorrFunctionInKet ? r12eval->corrfactor()->nfunctions() : 1)),
-      braindex_(0),
-      ketindex_(0)
-  {
-  }
+R12IntsAccCreator::R12IntsAccCreator(const Ref<MOIntsRuntime>& moints_rtime,
+                                     const std::vector<std::string>& tform_keys) :
+  RangeCreator<ObjT> (tform_keys.size()), moints_rtime_(moints_rtime),
+      tform_keys_(tform_keys) {
+}
 
-TwoBodyMOIntsTransformCreator::ObjT
-TwoBodyMOIntsTransformCreator::operator()()
-{
-  if (!can_create())
-    return 0;
+R12IntsAccCreator::ObjT R12IntsAccCreator::operator()() {
+  if (!can_create()) return null();
+
+  const std::string& tform_key = tform_keys_.at(ncreated());
+  const ObjT& result = moints_rtime_->get(tform_key)->ints_acc();
+
+  return result;
+}
+
+////
+
+TwoBodyIntDescrCreator::TwoBodyIntDescrCreator(
+                                               const Ref<CorrelationFactor>& corrfactor,
+                                               const Ref<Integral>& integral,
+                                               bool CorrFunctionInBra,
+                                               bool CorrFunctionInKet) :
+      RangeCreator<ObjT> (
+                          (CorrFunctionInBra ? (CorrFunctionInKet ? corrfactor->nfunctions()
+                                                                     * corrfactor->nfunctions()
+                                                                  : corrfactor->nfunctions())
+                                             : (CorrFunctionInKet ? corrfactor->nfunctions()
+                                                                  : 1))),
+      corrfactor_(corrfactor), integral_(integral),
+      CorrFunctionInBraKet_(CorrFunctionInBra && CorrFunctionInKet),
+      nf12bra_((CorrFunctionInBra ? corrfactor->nfunctions() : 1)),
+      nf12ket_((CorrFunctionInKet ? corrfactor->nfunctions() : 1)),
+      braindex_(0), ketindex_(0) {
+}
+
+TwoBodyIntDescrCreator::ObjT TwoBodyIntDescrCreator::operator()() {
+  if (!can_create()) return null();
 
   ObjT result;
-
-  std::string label;
-  Ref<TwoBodyIntDescr> tbintdescr;
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<Integral> integral = r12info->integral();
-  if (CorrFunctionInBraKet_) {
-    label = r12eval_->transform_label(space1_,space2_,space3_,space4_,braindex_,ketindex_);
-    tbintdescr = r12info->corrfactor()->tbintdescr(integral,braindex_,ketindex_);
-  }
-  else {
-    if (CorrFunction_) {
-      label = r12eval_->transform_label(space1_,space2_,space3_,space4_,braindex_);
-      tbintdescr = r12info->corrfactor()->tbintdescr(integral,braindex_);
-    }
-    else
-      label = r12eval_->transform_label(space1_,space2_,space3_,space4_);
-  }
-
-  // See if tform manager has it, otherwise create anew
-  try {
-    result = r12eval_->get_tform_(label);
-  }
-  catch (TransformNotFound& e) {
-    tfactory_->set_spaces(space1_,space2_,space3_,space4_);
-    result = tfactory_->twobody_transform(storage_,label,tbintdescr);
-    r12eval_->add_tform(label,result);
-  }
+  if (CorrFunctionInBraKet_)
+    result = corrfactor_->tbintdescr(integral_, braindex_, ketindex_);
+  else
+    result = corrfactor_->tbintdescr(integral_, braindex_);
 
   increment_indices();
   return result;
 }
 
-void
-TwoBodyMOIntsTransformCreator::increment_indices()
-{
+void TwoBodyIntDescrCreator::increment_indices() {
   if (CorrFunctionInBraKet_) {
     ++ketindex_;
     if (ketindex_ == nf12ket_) {
       ++braindex_;
       ketindex_ = 0;
     }
-  }
-  else {
+  } else {
     ++braindex_;
   }
   next();
@@ -116,51 +96,52 @@ TwoBodyMOIntsTransformCreator::increment_indices()
 
 ////
 
-TwoBodyIntDescrCreator::TwoBodyIntDescrCreator(
-  const Ref<CorrelationFactor>& corrfactor,
-  const Ref<Integral>& integral,
-  bool CorrFunctionInBra,
-  bool CorrFunctionInKet
-  ) : RangeCreator<ObjT>((CorrFunctionInBra ? (CorrFunctionInKet ? corrfactor->nfunctions() * corrfactor->nfunctions()
-                                                                 : corrfactor->nfunctions())
-                                            : (CorrFunctionInKet ? corrfactor->nfunctions()
-                                                                 : 1))),
-      corrfactor_(corrfactor), integral_(integral),
+R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime,
+                                                 const Ref<MOIndexSpace>& bra1,
+                                                 const Ref<MOIndexSpace>& ket1,
+                                                 const Ref<MOIndexSpace>& bra2,
+                                                 const Ref<MOIndexSpace>& ket2,
+                                                 const Ref<CorrelationFactor>& corrfactor,
+                                                 bool CorrFunctionInBra,
+                                                 bool CorrFunctionInKet,
+                                                 std::string layout) :
+      RangeCreator<ObjT> (
+                          (CorrFunctionInBra ? (CorrFunctionInKet ? corrfactor->nfunctions()
+                                                                     * corrfactor->nfunctions()
+                                                                  : corrfactor->nfunctions())
+                                             : (CorrFunctionInKet ? corrfactor->nfunctions()
+                                                                  : 1))),
+      corrfactor_(corrfactor), layout_key_(layout), moints_rtime_(moints_rtime),
+      bra1_(bra1), bra2_(bra2), ket1_(ket1), ket2_(ket2),
       CorrFunctionInBraKet_(CorrFunctionInBra && CorrFunctionInKet),
       nf12bra_((CorrFunctionInBra ? corrfactor->nfunctions() : 1)),
       nf12ket_((CorrFunctionInKet ? corrfactor->nfunctions() : 1)),
-      braindex_(0),
-      ketindex_(0)
-  {
-  }
-
-TwoBodyIntDescrCreator::ObjT
-TwoBodyIntDescrCreator::operator()()
+      braindex_(0), ketindex_(0)
 {
-  if (!can_create())
-    return 0;
+}
 
-  ObjT result;
-  if (CorrFunctionInBraKet_)
-    result = corrfactor_->tbintdescr(integral_,braindex_,ketindex_);
-  else
-    result = corrfactor_->tbintdescr(integral_,braindex_);
+R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::null() const { return std::string(""); }
+
+R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::operator()()
+{
+  if (!can_create()) return null();
+
+  const Ref<Integral>& integral = moints_rtime_->factory()->integral();
+  const std::string descr_key = moints_rtime_->descr_key( CorrFunctionInBraKet_ ? corrfactor_->tbintdescr(integral,braindex_,ketindex_) : corrfactor_->tbintdescr(integral,braindex_) );
+  ObjT result = ParsedTwoBodyIntKey::key(bra1_->id(),bra2_->id(),ket1_->id(),ket2_->id(),descr_key,layout_key_);
 
   increment_indices();
   return result;
 }
 
-void
-TwoBodyIntDescrCreator::increment_indices()
-{
+void R12TwoBodyIntKeyCreator::increment_indices() {
   if (CorrFunctionInBraKet_) {
     ++ketindex_;
     if (ketindex_ == nf12ket_) {
       ++braindex_;
       ketindex_ = 0;
     }
-  }
-  else {
+  } else {
     ++braindex_;
   }
   next();

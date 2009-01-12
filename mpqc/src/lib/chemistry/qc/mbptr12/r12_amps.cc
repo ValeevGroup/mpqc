@@ -110,12 +110,12 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<SingleRefInfo> refinfo = r12info->refinfo();
   const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
   const bool spin_polarized = refinfo->spin_polarized();
-  
+
   const unsigned int s = static_cast<unsigned int>(spincase2);
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
   const bool p1_neq_p2 = spin_polarized && spincase2 == AlphaBeta;
-  
+
   Ref<MOIndexSpace> occ1_act = r12eval_->occ_act(spin1);
   Ref<MOIndexSpace> occ2_act = r12eval_->occ_act(spin2);
   Ref<MOIndexSpace> occ1 = r12eval_->occ(spin1);
@@ -126,7 +126,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<MOIndexSpace> vir2_act = r12eval_->vir_act(spin2);
   Ref<MOIndexSpace> xspace1 = r12eval_->xspace(spin1);
   Ref<MOIndexSpace> xspace2 = r12eval_->xspace(spin2);
-  
+
   // Allocate the matrices
   RefSCDimension dim_f12 = r12eval_->dim_f12(spincase2);
   RefSCDimension dim_aa = r12eval_->dim_oo(spincase2);
@@ -150,66 +150,73 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   }
   // If no active orbital pairs for this spin case -- leave
   if (dim_f12.n() == 0) return;
-  
-  Ref<TwoBodyMOIntsTransform> tform0_pp;
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_pp;
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_mx;
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_xm;
-  
+
+  std::string tform0_pp_key;
+  std::vector<std::string> tform_pp_keys;
+  std::vector<std::string> tform_mx_keys;
+  std::vector<std::string> tform_xm_keys;
+
   // if OBS == VBS then use (ip|ip) and (imjx) integrals
   if (obs_eq_vbs) {
     {
-      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
+      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime(),
         occ1_act,
         refinfo->orbs(spin1),
         occ2_act,
-        refinfo->orbs(spin2));
-        tform0_pp = tform_creator();
+        refinfo->orbs(spin2),
+        r12info->corrfactor());
+        tform0_pp_key = tform_creator();
     }
     {
-      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime(),
         xspace1,
         refinfo->orbs(spin1),
         xspace2,
-        refinfo->orbs(spin2),true);
-        fill_container(tform_creator,tforms_pp);
+        refinfo->orbs(spin2),
+        r12info->corrfactor(),
+        true);
+        fill_container(tformkey_creator,tform_pp_keys);
     }
     {
-      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
+      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime(),
         xspace1,
         occ1,
         xspace2,
-        cabs2,true);
-        fill_container(tform_creator,tforms_mx);
+        cabs2,
+        r12info->corrfactor(),
+        true);
+        fill_container(tform_creator,tform_mx_keys);
     }
     {
-      TwoBodyMOIntsTransformCreator tform_creator(r12eval_,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime(),
         xspace1,
         cabs1,
         xspace2,
-        occ2,true);
-        fill_container(tform_creator,tforms_xm);
+        occ2,
+        r12info->corrfactor(),
+        true);
+        fill_container(tformkey_creator,tform_xm_keys);
     }
   }
   // else the needed transforms already exist
-  
+
   const bool antisymm = spincase2!=AlphaBeta;
-  r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tform0_pp);
-  r12eval_->compute_F12_(Fvv_[s],xspace1,vir1_act,xspace2,vir2_act,antisymm,tforms_pp);
-  r12eval_->compute_F12_(Foo_[s],xspace1,occ1,xspace2,occ2,antisymm,tforms_pp);
-  
+  r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tform0_pp_key);
+  r12eval_->compute_F12_(Fvv_[s],xspace1,vir1_act,xspace2,vir2_act,antisymm,tform_pp_keys);
+  r12eval_->compute_F12_(Foo_[s],xspace1,occ1,xspace2,occ2,antisymm,tform_pp_keys);
+
   // WARNING cannot antisymmetrize matrices if p1_neq_p2. Should throw but will do nothing for now
   if (!antisymm) {
-    r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tforms_pp);
-    r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tforms_mx);
+    r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tform_pp_keys);
+    r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tform_mx_keys);
     if (p1_neq_p2) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
-      r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tforms_pp);
-      r12eval_->compute_F12_(Fxo_[s],xspace1,cabs1,xspace2,occ2,antisymm,tforms_xm);
+      r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tform_pp_keys);
+      r12eval_->compute_F12_(Fxo_[s],xspace1,cabs1,xspace2,occ2,antisymm,tform_xm_keys);
     }
   }
-  
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

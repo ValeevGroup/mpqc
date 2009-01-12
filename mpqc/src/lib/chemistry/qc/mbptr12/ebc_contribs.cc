@@ -75,7 +75,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
 {
   // are particles 1 and 2 equivalent?
   const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
-  
+
   const unsigned int nf12 = corrfactor()->nfunctions();
   // create transforms, if needed
   std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4_f
@@ -83,7 +83,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
                                        r12info()->integral(),
                                        true,false);
   fill_container(descr_creator,descrs);
-  
+
   Timer tim_A_direct("A intermediate (direct)");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|A|"
@@ -95,8 +95,18 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   //
   // ij|A|kl = ij|f12|kl_f, symmetrized if part1_equiv_part2
   //
-  std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
-  compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tforms4f,descrs);
+  std::vector<std::string> tform4f_keys; // get 1 3 |F12| 2 4_f
+  {
+    R12TwoBodyIntKeyCreator tform_creator(r12info()->moints_runtime(),
+      space1,
+      space2,
+      space3,
+      fspace4,
+      r12info()->corrfactor(),
+      true);
+      fill_container(tform_creator,tform4f_keys);
+  }
+  compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tform4f_keys);
   if (part1_equiv_part2) {
     // no need to symmetrize if computing antisymmetric matrix -- compute_tbint_tensor takes care of that
     if (!antisymmetrize)
@@ -104,8 +114,18 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
     A.scale(2.0);
   }
   else {
-    std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
-    compute_F12_(A,space1,fspace2,space3,space4,antisymmetrize,tforms2f,descrs);
+    std::vector<std::string> tform2f_keys;
+    {
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+        space1,
+        fspace2,
+        space3,
+        space4,
+        r12info()->corrfactor(),
+        true);
+        fill_container(tformkey_creator,tform2f_keys);
+    }
+    compute_F12_(A,space1,fspace2,space3,space4,antisymmetrize,tform2f_keys);
   }
 
   ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
@@ -119,9 +139,9 @@ R12IntEval::AT2_contrib_to_V_()
 
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      
+
       RefSCMatrix V = A_[s] * amps()->T2(spin).t();
-      
+
       std::string label = prepend_spincase(spin,"AT2 contribution to V");
       if (debug_ >= DefaultPrintThresholds::O4) {
         V.print(label.c_str());
@@ -143,7 +163,7 @@ R12IntEval::AF12_contrib_to_B_()
   if (r12info_->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      
+
       RefSCMatrix AF = A_[s] * amps()->Fvv(spin).t();
 
       // B^{EBC} implies summation over all ab, not just unique ones, hence a factor of 2
@@ -154,7 +174,7 @@ R12IntEval::AF12_contrib_to_B_()
       AF.scale(scale); B.accumulate(AF);
       RefSCMatrix AFt = AF.t();
       B.accumulate(AFt);
-      
+
       const std::string label = prepend_spincase(spin,"B^{EBC} contribution");
       if (debug_ >= DefaultPrintThresholds::O4) {
         B.print(label.c_str());

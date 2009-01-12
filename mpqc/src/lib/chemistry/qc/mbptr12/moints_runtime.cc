@@ -89,7 +89,7 @@ ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
     params_ = oper_plus_params.substr(params_pos);
   }
 
-#if 1
+#if 0
   ExEnv::out0() << indent << "ParsedTwoBodyIntKey::ParsedTwoBodyIntKey():" << std::endl << incindent;
   ExEnv::out0() << indent << "key = " << key_ << std::endl;
   ExEnv::out0() << indent << "bra1 = " << bra1_ << std::endl;
@@ -111,10 +111,23 @@ ParsedTwoBodyIntKey::key(const std::string& bra1,
                          const std::string& params,
                          const std::string& layout)
 {
+  const std::string descr_key(oper + params);
+  return key(bra1,bra2,ket1,ket2,descr_key,layout);
+}
+
+std::string
+ParsedTwoBodyIntKey::key(const std::string& bra1,
+                         const std::string& bra2,
+                         const std::string& ket1,
+                         const std::string& ket2,
+                         const std::string& descr,
+                         const std::string& layout)
+{
   std::ostringstream oss;
-  oss << "<" << bra1 << " " << bra2 << "|" << oper << params << "|" << ket1 << " " << ket2 << ">" << layout;
+  oss << "<" << bra1 << " " << bra2 << "|" << descr << "|" << ket1 << " " << ket2 << ">" << layout;
   return oss.str();
 }
+
 
 std::string
 ParsedTwoBodyIntKey::key(const Ref<TwoBodyIntDescr>& descr)
@@ -209,11 +222,11 @@ MOIntsRuntime::save_data_state(StateOut& so)
   TformRegistry::save_instance(tforms_,so);
 }
 
-Ref<MOIntsRuntime::TwoBodyIntsAcc>
+Ref<MOIntsRuntime::TwoBodyIntsTransform>
 MOIntsRuntime::get(const std::string& key)
 {
   if (tforms_->key_exists(key)) {
-    return tforms_->value(key)->ints_acc();
+    return tforms_->value(key);
   }
   else {  // if not found
     try { ParsedTwoBodyIntKey parsedkey(key); }
@@ -225,7 +238,7 @@ MOIntsRuntime::get(const std::string& key)
     // then create tform
     const Ref<TwoBodyMOIntsTransform>& tform = create_tform(key);
     tform->compute();
-    return tform->ints_acc();
+    return tform;
   }
   assert(false); // unreachable
 }
@@ -276,18 +289,33 @@ MOIntsRuntime::create_tform(const std::string& key)
                                  oper_str,
                                  params_str,
                                  pkey.layout());
+
+#define ALWAYS_USE_PARTIAL_TRANSFORMS 1
+#define ALWAYS_USE_IXJY 0
+
       if (tforms_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
         tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
         tform->partially_transformed_ints( tforms_->value(half_tform_key)->ints_acc() );
       }
+#if ALWAYS_USE_PARTIAL_TRANSFORMS
+      else { // create partial transform and use it
+        const Ref<TwoBodyMOIntsTransform>& half_tform = create_tform(half_tform_key);
+        half_tform->compute();
+        return create_tform(key);
+      }
+#else
       else { // decide the best algorithm
+#if !ALWAYS_USE_IXJY
         if (ket1->rank() <= ket1->basis()->nbasis()) {
           tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ikjy,key,descr);
         }
-        else {
+        else
+#endif
+        {
           tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
         }
       }
+#endif
     }
   }
   else if (layout == Layout_b1k1_b2k2)
@@ -386,6 +414,15 @@ MOIntsRuntime::Layout::Layout(const std::string& str)
 MOIntsRuntime::Layout::Layout(const Layout& other) :
   type_(other.type_)
 {
+}
+
+MOIntsRuntime::Layout::operator std::string() {
+  switch (type_) {
+    case b1b2_k1k2:
+      return std::string("(b1 b2|k1 k2)");
+    case b1k1_b2k2:
+      return std::string("(b1 k1|b2 k2)");
+  }
 }
 
 MOIntsRuntime::Layout&

@@ -75,7 +75,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
 {
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
-  
+
   // Check semantics
   bool correct_semantics = (spincase2 != AlphaBeta && part1_equiv_part2) ||
                            (spincase2 == AlphaBeta);
@@ -84,16 +84,23 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
                       intk2->rank() == intkx2->rank();
   if (!correct_semantics)
     throw ProgrammingError("R12IntEval::compute_FxF_() -- incorrect call semantics",__FILE__,__LINE__);
-  
+
   // check if summation spaces consistent with part1_equiv_part2
   const bool int_1_equiv_2 = (int1 == int2 && intk1 == intk2 && intkx1 == intkx2);
   if (part1_equiv_part2 ^ int_1_equiv_2)
     throw ProgrammingError("R12IntEval::compute_FxF_() -- contraction spaces must have same permutational symmetry as outer spaces",__FILE__,__LINE__);
-  
+
+  // heuristic rules to make supporting half-transformed integral types less numerous
+  // 1) if p1 and p2 are not equivalent, both types of integrals (x1_2 and 1_x2) will be needed -- nothing can be done here
+  // 2) if p1 and p2 are equivalent, choose x1_2 or 1_x2 path so that AO basis rank of p2 is greater than of p1
+  const bool reorder = intkx1->basis()->nbasis() > int2->basis()->nbasis();
+  const bool do_x1_2 = part1_equiv_part2 ? (!reorder) : true;
+  const bool do_1_x2 = part1_equiv_part2 ? (reorder) : true;
+
   Timer tim("generic FxF intermediate");
   ExEnv::out0() << indent << "Entered generic FxF intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
-  
+
   const unsigned int nf12 = corrfactor()->nfunctions();
   SpinMOPairIter braiter(bra1,bra2,spincase2);
   SpinMOPairIter ketiter(ket1,ket2,spincase2);
@@ -112,43 +119,32 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
     if (FxF.coldim().n() != nket)
       throw ProgrammingError("R12IntEval::compute_FxF_() -- column dimension of the given FxF doesn't match given ket dimensions",__FILE__,__LINE__);
   }
-  
+
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  
-#if 0
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-  Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-  Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-  Ref<MOIndexSpace> vir1 = vir(spin1);
-  Ref<MOIndexSpace> vir2 = vir(spin2);
-  Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-  Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-  // if orbs1 and orbs2 have different rank -- something is TERRIBLY wrong
-  if (orbs1->rank() != orbs2->rank())
-    throw ProgrammingError("R12IntEval::compute_FxF_() -- orbs1 and orbs2 have different ranks",__FILE__,__LINE__);
-  const unsigned int nobs = orbs1->rank();
-#endif
-  
-  Ref<R12IntEval> thisref(this);
-  
+
   using LinearR12::TwoParticleContraction;
   using LinearR12::Direct_Contraction;
-  // If particles are not equivalent, will add the 21 contribution too
+
+  // If only x1_2 or 1_x2 is computed (this happens only is p1 not equiv p2), need to double its weight.
   const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);
+
+  if (do_x1_2) {
   Ref<TwoParticleContraction> dircontract_k1 =
     new Direct_Contraction(intk1->rank(),int2->rank(),perm_pfac);
   // (bra1 intkx1 |bra2 int2) tforms
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fbra_k1;
+  std::vector<std::string> tforms_Fbra_k1;
   {
-    TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,intkx1,bra2,int2,true);
-    fill_container(tform_creator,tforms_Fbra_k1);
+    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,intkx1,bra2,int2,
+                                             r12info()->corrfactor(),true);
+    fill_container(tformkey_creator,tforms_Fbra_k1);
   }
   // (ket1 intk1 |ket2 int2) tforms
-  std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fket_k1;
+  std::vector<std::string> tforms_Fket_k1;
   {
-    TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,intk1,ket2,int2,true);
-    fill_container(tform_creator,tforms_Fket_k1);
+    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,intk1,ket2,int2,
+                                             r12info()->corrfactor(),true);
+    fill_container(tformkey_creator,tforms_Fket_k1);
   }
   // contract
   contract_tbint_tensor<
@@ -165,23 +161,25 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
       dircontract_k1,
       spincase2!=AlphaBeta, tforms_Fbra_k1, tforms_Fket_k1
     );
-  
-  // Do the same for particle 2
-  if (!part1_equiv_part2) {
-    
+  }
+
+  if (do_1_x2) {
+
     Ref<TwoParticleContraction> dircontract_k2 =
-      new Direct_Contraction(int1->rank(),intk2->rank(),1.0);
+      new Direct_Contraction(int1->rank(),intk2->rank(),perm_pfac);
     // (bra1 intb1 |bra2 intkx2) tforms
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fbra_k2;
+    std::vector<std::string> tforms_Fbra_k2;
     {
-      TwoBodyMOIntsTransformCreator tform_creator(thisref,bra1,int1,bra2,intkx2,true);
-      fill_container(tform_creator,tforms_Fbra_k2);
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,int1,bra2,intkx2,
+                                               r12info()->corrfactor(),true);
+      fill_container(tformkey_creator,tforms_Fbra_k2);
     }
     // (ket1 int1 |ket2 intk2) tforms
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fket_k2;
+    std::vector<std::string> tforms_Fket_k2;
     {
-      TwoBodyMOIntsTransformCreator tform_creator(thisref,ket1,int1,ket2,intk2,true);
-      fill_container(tform_creator,tforms_Fket_k2);
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,int1,ket2,intk2,
+                                               r12info()->corrfactor(),true);
+      fill_container(tformkey_creator,tforms_Fket_k2);
     }
     // contract
     contract_tbint_tensor<
@@ -199,24 +197,23 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
         spincase2!=AlphaBeta, tforms_Fbra_k2, tforms_Fket_k2
       );
   }
-  // particles equivalent -- just symmetrize
-  else {
-    if (spincase2 == AlphaBeta)
-      symmetrize<false>(FxF,FxF,bra1,ket1);
-  }
-  
+
+  // if particles are equivalent and spincase alpha-beta -- symmetrize just in case
+  if (part1_equiv_part2 && spincase2 == AlphaBeta)
+    symmetrize<false>(FxF,FxF,bra1,ket1);
+
   if (debug_ >= DefaultPrintThresholds::allO4) {
     std::string label = prepend_spincase(spincase2,"generic FxF");
     FxF.print(label.c_str());
   }
-  
+
   // Bra-Ket symmetrize
   FxF.scale(0.5);
   RefSCMatrix FxF_t = FxF.t();
   FxF.accumulate(FxF_t);
-  
+
   globally_sum_scmatrix_(FxF);
-  
+
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited generic FxF intermediate evaluator" << endl;
 }

@@ -121,7 +121,7 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
   for (int i=0; i<ni; i++) {
     const int ii = i + i_offset;
     for (int j=0; j<acc->nj(); j++) {
-      const int ij = acc->ij_index(ii, j);
+      const int ij = acc->ij_index(i, j);
 
       // round-robin assignment of blocks among writers
       const int proc_writer = ij % nwriters;
@@ -169,7 +169,7 @@ void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
   for (int i=0; i<ni; i++) {
     const int ii = i + i_offset;
     for (int j=0; j<acc->nj(); j++) {
-      const int ij = acc->ij_index(ii, j);
+      const int ij = acc->ij_index(i, j);
 
       // round-robin assignment of blocks among readers
       const int proc_reader = ij % nreaders;

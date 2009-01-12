@@ -257,7 +257,7 @@ TwoBodyMOIntsTransform::init_vars()
     //static_memory_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
     //                                                        space3_->basis(),space4_->basis());
 #else
-    static_memory_ += 1000000;
+    static_memory_ += 0;
 #endif
     batchsize_ = compute_transform_batchsize_(static_memory_,rank_i);
   }

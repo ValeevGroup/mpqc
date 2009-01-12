@@ -61,7 +61,7 @@ i_offset64(sc_int_least64_t i)
 }
 
 // //////////////////////////////////////////////////////////////////////////
-// These are helper functions for PetiteList and GPetite4
+// These are helper functions for PetiteList and GenericPetiteList4
 
 int **compute_atom_map(const Ref<GaussianBasisSet> &);
 void delete_atom_map(int **atom_map, const Ref<GaussianBasisSet> &);
@@ -90,10 +90,10 @@ struct SO {
     ~SO();
 
     SO& operator=(const SO&);
-    
+
     void set_length(int);
     void reset_length(int);
-    
+
     // is this equal to so to within a sign
     int equiv(const SO& so);
 };
@@ -114,7 +114,6 @@ struct SO_block {
 };
 
 // //////////////////////////////////////////////////////////////////////////
-// this should only be used from within a SymmGaussianBasisSet
 
 class PetiteList : public RefCount {
   private:
@@ -127,7 +126,7 @@ class PetiteList : public RefCount {
 
     Ref<GaussianBasisSet> gbs_;
     Ref<Integral> ints_;
-    
+
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
     int **atom_map_;  // atom_map[n][g] is the atom that symop g maps atom n
                       // into
@@ -162,7 +161,7 @@ class PetiteList : public RefCount {
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     /// Same as previous, except for doesn't assume ij > kl and recomputes them
     int in_p4(int i, int j, int k, int l) const;
-    
+
     int nfunction(int i) const
                             { return (c1_) ? gbs_->nbasis() : nbf_in_ir_[i]; }
 
@@ -204,7 +203,7 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 {
   if (c1_)
     return 1;
-  
+
   sc_int_least64_t ijkl = i_offset64(ij)+kl;
   int nijkl=1;
 
@@ -227,7 +226,7 @@ PetiteList::in_p4(int i, int j, int k, int l) const
 {
   if (c1_)
     return 1;
-  
+
   int ij = ij_offset(i,j);
   int kl = ij_offset(k,l);
   sc_int_least64_t ijkl = ij_offset64(ij,kl);

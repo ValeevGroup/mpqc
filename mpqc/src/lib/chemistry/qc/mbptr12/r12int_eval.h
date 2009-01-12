@@ -39,7 +39,7 @@
 #define _chemistry_qc_mbptr12_r12inteval_h
 
 namespace sc {
-  
+
   class TwoBodyMOIntsTransform;
   class R12IntsAcc;
   class F12Amplitudes;
@@ -70,7 +70,7 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_aa_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
   RefSCDimension dim_xy_[NSpinCases2];
-  
+
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
   double emp2_singles_;
@@ -82,7 +82,7 @@ class R12IntEval : virtual public SavableState {
 
   /// "Spin-adapt" MO space id and name
   void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
-  
+
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_[NSpinCases1];
   /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
@@ -143,7 +143,7 @@ class R12IntEval : virtual public SavableState {
   void form_fvir_ribs_T(SpinCase1 spin);
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
-  
+
   /// Form Fock-weighted (through RIBS) RIBS space for spin case S
   void form_fribs_ribs(SpinCase1 S);
   /// Form Fock-weighted (through CABS) active occupied space for spin case S
@@ -237,16 +237,16 @@ class R12IntEval : virtual public SavableState {
   RefSCMatrix Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
                          const Ref<MOIndexSpace>& ket_space,
                          SpinCase1 S = Alpha);
-  // Computes T, V and the mass-velocity term in the momentum basis. 
+  // Computes T, V and the mass-velocity term in the momentum basis.
   // It's a modified version of Wavefunction::core_hamiltonian_dk
   RefSymmSCMatrix hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas,
                                            const Ref<GaussianBasisSet> &p_bas,
                                            bool include_T = true,
                                            bool include_V = true,
                                            bool include_MV = true);
-  // Computes the skalar Pauli-Hamiltonian (T + V + mass_velocity + Darwin), 
+  // Computes the skalar Pauli-Hamiltonian (T + V + mass_velocity + Darwin),
   // with the mass-velocity term evaluated in the momentum basis.
-  RefSymmSCMatrix pauli(const Ref<GaussianBasisSet> &bas, 
+  RefSymmSCMatrix pauli(const Ref<GaussianBasisSet> &bas,
                         const Ref<GaussianBasisSet> &pbas = 0,
                         const bool momentum=false);
   RefSymmSCMatrix pauli_realspace(const Ref<GaussianBasisSet> &bas);
@@ -262,12 +262,6 @@ class R12IntEval : virtual public SavableState {
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;
 
-  /** Compute the number tasks which have access to the integrals.
-      map_to_twi is a vector<int> each element of which will hold the
-      number of tasks with access to the integrals of lower rank than that task
-      (or -1 if the task doesn't have access to the integrals) */
-  const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
-
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_();
   /// New version which uses tensor contract functions
@@ -280,8 +274,8 @@ class R12IntEval : virtual public SavableState {
                                   const Ref<MOIndexSpace>& space2,
                                   const Ref<MOIndexSpace>& space3,
                                   const Ref<MOIndexSpace>& space4,
-                                  const Ref<TwoBodyMOIntsTransform>& transform);
-  
+                                  const std::string& tform_key);
+
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
       AlphaBeta amplitudes are computed.
@@ -295,12 +289,12 @@ class R12IntEval : virtual public SavableState {
                          const Ref<MOIndexSpace>& rispace2,
                          const Ref<MOIndexSpace>& rispace4,
                          bool antisymmetrize);
-  
+
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
       Computed tensor T is added to its previous contents.
       Class DataProcess defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
-      
+
       Of course, this ugliness should become constructor/member function of ManyBodyOperator
    */
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
@@ -311,22 +305,19 @@ class R12IntEval : virtual public SavableState {
                               const Ref<MOIndexSpace>& space3,
                               const Ref<MOIndexSpace>& space4,
                               bool antisymmetrize,
-                              const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms = 
-                                std::vector< Ref<TwoBodyMOIntsTransform> >(),
-                              const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs =
-                                std::vector< Ref<TwoBodyIntDescr> >());
-  
+                              const std::vector<std::string>& tform_keys);
+
   /** contract_tbint_tensor computes a 2-body tensor T as a sum over mn : <ij|Tbra|mn> * <kl|Tket|mn>^t
       bra and ket integrals come from tforms_bra and tforms_ket.
       Computed tensor T is added to its previous contents.
       Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
-      
+
       Semantics: 1) ranks of internal spaces must match, although the spaces don't have to be the same;
       2) if antisymmetrize is true, external (bra and ket) particle spaces
       should be strongly (identity) or weakly(rank) equivalent. If internal spaces do not match
       but antisymmetrization is requested
-      
+
       Of course, this ugliness should become function/operator on 2 ManyBodyOperators
    */
   template <typename DataProcessBra,
@@ -349,21 +340,15 @@ class R12IntEval : virtual public SavableState {
            const Ref<MOIndexSpace>& space2_intk,
            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
            bool antisymmetrize,
-           const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra = 
-             std::vector< Ref<TwoBodyMOIntsTransform> >(),
-           const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_ket = 
-             std::vector< Ref<TwoBodyMOIntsTransform> >(),
-           const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_bra =
-             std::vector< Ref<TwoBodyIntDescr> >(),
-           const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_ket =
-             std::vector< Ref<TwoBodyIntDescr> >());
-  
+           const std::vector<std::string>& tformkeys_bra,
+           const std::vector<std::string>& tformkeys_ket);
+
   /** Compute X intermediate (F12 F12) in basis <bra1 bra2 | ket1 ket2>. sc2 specifies the spin case
       of particles 1 and 2. Resulting X is symmetric w.r.t bra-ket permutation, but will not be
       symmetric w.r.t. permutation of particles 1 and 2 if bra1 != bra2 || ket1 != ket2.
       If X is null, then allocate, otherwise check dimensions and accumulate result into X.
       Setting F2_only to true will only leave F12^2 term.
-      
+
       Semantics: 1) sc2 == AlphaAlpha or BetaBeta means that X will be antisymmetric w.r.t
       permutations bra1<->bra2 or ket1<->ket2, maybe artificially so. So sc2 == AlphaBeta
       means "particles are not equivalent or different spin", whereas AlphaAlpha means "act like
@@ -397,7 +382,7 @@ class R12IntEval : virtual public SavableState {
                     const Ref<MOIndexSpace>& intkx1,
                     const Ref<MOIndexSpace>& intkx2
                    );
-  
+
   /// Compute A*T2 contribution to V (needed if EBC is not assumed)
   void AT2_contrib_to_V_();
 
@@ -412,7 +397,7 @@ class R12IntEval : virtual public SavableState {
 
   /** Compute contributions to B which appear in standard approximation B and not in A' */
   void compute_BB_();
-  
+
   /** Compute B using standard approximation C */
   void compute_BC_();
 
@@ -443,7 +428,7 @@ class R12IntEval : virtual public SavableState {
   /** Sum contributions to SCVector A from all nodes and broadcast so
       every node has the correct SCVector. If to_all_tasks is false, then
       collect all contributions to task 0 and zero out the matrix on other tasks,
-      otherwise distribute the sum to every task. If to_average is true then 
+      otherwise distribute the sum to every task. If to_average is true then
       each result is scaled by the inverse of the number of tasks. */
   void globally_sum_scvector_(RefSCVector& A, bool to_all_tasks = false, bool to_average = false);
 
@@ -452,7 +437,7 @@ class R12IntEval : virtual public SavableState {
       collect all contributions to task 0 and zero out the matrix on other tasks,
       otherwise distribute the sum to every task. */
   void globally_sum_intermeds_(bool to_all_tasks = false);
-  
+
 public:
   R12IntEval(StateIn&);
   /** Constructs R12IntEval. */
@@ -469,7 +454,7 @@ public:
   void set_dynamic(bool dynamic);
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
-  
+
   /// Indicates whether Douglas-Kroll Hamiltonian is used. For output values see Wavefunction::dk().
   int dk() const;
 
@@ -506,7 +491,7 @@ public:
 
   /// Returns amplitudes of pair correlation functions
   Ref<F12Amplitudes> amps();
-  
+
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);
   /// Returns S block of intermediate X
@@ -535,14 +520,14 @@ public:
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S
   const RefDiagSCMatrix& evals(SpinCase1 S) const;
-  
+
   /// Returns the eigenvalues for the closed-shell case
   RefDiagSCMatrix evals() const;
   /// Returns the alpha eigenvalues
   RefDiagSCMatrix evals_a() const;
   /// Returns the beta eigenvalues
   RefDiagSCMatrix evals_b() const;
-  
+
   /// Returns the act occ space for spin case S
   const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
   /// Returns the occ space for spin case S
@@ -579,7 +564,7 @@ public:
   const Ref<MOIndexSpace>& kvir_ribs(SpinCase1 S);
   /// Form exchange-weighted (through virtuals) ABS space for spin case S
   const Ref<MOIndexSpace>& kvir_ribs_T(SpinCase1 S);
-  
+
   // NOTE Names of these spaces are already consistent with the future convention
   /// Form exchange-weighted (through RIBS) RIBS space for spin case S
   const Ref<MOIndexSpace>& kribs_ribs(SpinCase1 S);
@@ -706,7 +691,7 @@ public:
   const Ref<MOIndexSpace>& F_p_a(SpinCase1 S);
   /// Form <P|F|P> space
   const Ref<MOIndexSpace>& F_P_P(SpinCase1 S);
-  
+
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&) const;
@@ -734,7 +719,7 @@ public:
                               unsigned int f12_left,
                               unsigned int f12_right,
                               const std::string& operator_label = std::string()) const;
-  
+
   /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
       AlphaBeta amplitudes are computed.
       If tform is not given (it should be!), this function will construct a generic
@@ -745,7 +730,7 @@ public:
                    const Ref<MOIndexSpace>& space3,
                    const Ref<MOIndexSpace>& space4,
                    bool antisymmetrize,
-                   const Ref<TwoBodyMOIntsTransform>& tform = 0);
+                   const std::string& tform_key);
   /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
       AlphaBeta amplitudes are computed.
@@ -757,10 +742,7 @@ public:
                    const Ref<MOIndexSpace>& space3,
                    const Ref<MOIndexSpace>& space4,
                    bool antisymmetrize,
-                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms
-                     = std::vector< Ref<TwoBodyMOIntsTransform> >(),
-                   const std::vector< Ref<TwoBodyIntDescr> >& descrvec
-                     = std::vector< Ref<TwoBodyIntDescr> >() );
+                   const std::vector<std::string>& transform_keys);
 
   /** Compute the Fock matrix between bra_ and ket_ spaces of spin S.
       scale_J and scale_K are used to scale Coulomb

@@ -32,7 +32,6 @@
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
 #define _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
 
-#include <boost/ref.hpp>
 #include <util/state/state.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/spin.h>

@@ -231,7 +231,7 @@ ReplFockBuildMatrix::ReplFockBuildMatrix(const ReplFockBuildMatrix &fbm,
       owns_data_ = true;
     }
 }
-    
+
 ReplFockBuildMatrix::~ReplFockBuildMatrix()
 {
   clear();
@@ -368,13 +368,67 @@ ReplFockBuildMatrix::scmat_to_data(const RefSCMatrix &m,
   bs1_ = b1;
   bs2_ = b2;
 
-  throw std::runtime_error("scmat_to_data: not yet impl (rect)");
+  // bdim contains the shell blocking information.
+  // the matrix dimension is an petite list AO dimension
+  // which does not contain the needed shell information
+  Ref<SCDimension> bdim1 = b1->basisdim();
+  Ref<SCDimension> bdim2 = b2->basisdim();
+
+  Ref<SCBlockInfo> biI(bdim1->blocks());
+  Ref<SCBlockInfo> biJ(bdim2->blocks());
+  nI_ = biI->nblock();
+  nJ_ = biJ->nblock();
+
+  ndata_ = 0;
+  for (int I=0; I<nI_; I++) {
+      for (int J=0; J<nJ_; J++) {
+          ndata_ +=  biI->size(I) * biJ->size(J);
+        }
+    }
+
+  auto_vec<double*> tmp_blockpointers(new double*[n_shell_block()]);
+  auto_vec<double> tmp_data(new double[ndata_]);
+
+  blockpointers_ = tmp_blockpointers.release();
+  blockpointers_[0] = tmp_data.release();
+
+  double *current_data = blockpointers_[0];
+  for (int I=0; I<nI_; I++) {
+      for (int J=0; J<nJ_; J++) {
+          blockpointers_[shell_block_offset(I,J)] = current_data;
+          current_data +=  biI->size(I) * biJ->size(J);
+        }
+    }
+
+  if (copy) {
+      bool symm = false;
+      bool data_to_mat = false;
+      Ref<SCElementOp> op
+          = new FockBuildMatrixRectElemOp(blockpointers_,
+                                          symm, data_to_mat,
+                                          ndata_,
+                                          bs1_->basisdim()->blocks(),
+                                          bs2_->basisdim()->blocks());
+      rectmat_->element_op(op);
+    }
+  else {
+      double *tmp = blockpointers_[0];
+      for (int i=0; i<ndata_; i++) tmp[i] = 0.0;
+    }
 }
 
 void
 ReplFockBuildMatrix::data_to_rectmat() const
 {
-  throw std::runtime_error("data_to_rectmat: not yet impl");
+  bool symm = false;
+  bool data_to_mat = true;
+  Ref<SCElementOp> op
+      = new FockBuildMatrixRectElemOp(blockpointers_,
+                                      symm, data_to_mat,
+                                      ndata_,
+                                      bs1_->basisdim()->blocks(),
+                                      bs2_->basisdim()->blocks());
+  rectmat_->element_op(op);
 }
 
 void
@@ -489,7 +543,7 @@ ReplFockBuildMatrix::print() const
             }
         }
     }
-      
+
 }
 
 /////////////////////////////////////////////////////////////////
@@ -848,7 +902,7 @@ DistFockBuildMatrix::DistFockBuildMatrix(const DistFockBuildMatrix &fbm,
       owns_data_ = true;
     }
 }
-    
+
 DistFockBuildMatrix::~DistFockBuildMatrix()
 {
   clear();
@@ -1335,7 +1389,7 @@ DistFockBuildMatrix::shell_block(int I, int J) const
                 << ": block is remote but write-only.  Zeroing."
                 << std::endl;
 #endif
-          
+
       for (int i=0; i<ndata; i++) data[i] = 0.0;
 
       block_cache_[IJ_t(iblock,jblock)] = data;
@@ -1380,7 +1434,7 @@ DistFockBuildMatrix::shell_block(int I, int J) const
         }
 
       shell_block_cache_[key] = data;
-  
+
       return data;
     }
 }
@@ -1811,7 +1865,7 @@ GenericFockContribution::compute_pmax() const
     }
 
   pmats_[0]->messagegrp()->max(pmax,n12);
-  
+
   return pmax;
 }
 
@@ -1821,7 +1875,7 @@ GenericFockContribution::pmax_contrib(const Ref<FockBuildMatrix> &mat,
 {
   double l2inv = 1.0/log(2.0);
   double tol = pow(2.0,-126.0);
-  
+
   Ref<SCBlockInfo> bi1 = p_b_->basisdim()->blocks();
 
   int ish, jsh, ij;
@@ -1834,7 +1888,7 @@ GenericFockContribution::pmax_contrib(const Ref<FockBuildMatrix> &mat,
       if (!mat->shell_block_is_owner(ish,jsh)) continue;
 
       int nj = bi1->size(jsh);
-      
+
       double maxp=0, tmp;
       double *pmat_block = mat->shell_block(ish,jsh);
       int nij = ni*nj;

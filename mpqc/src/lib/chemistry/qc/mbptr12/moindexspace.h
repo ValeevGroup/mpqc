@@ -159,7 +159,7 @@ public:
       p' -- all RI functions
   */
   const std::string& id() const;
-  /// returns the dimension correspondign to this space
+  /// returns the dimension corresponding to this space
   const RefSCDimension& dim() const;
   /// Returns the AO basis set
   const Ref<GaussianBasisSet>& basis() const;
@@ -189,6 +189,9 @@ public:
   void print_detail(std::ostream&o=ExEnv::out0()) const;
 
 };
+
+bool operator==(const MOIndexSpace& space1,
+                const MOIndexSpace& space2);
 
 class CannotConstructMap: public std::logic_error {
   public:

@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <stdlib.h>
+#include <cfloat>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/petite.h>
@@ -769,6 +770,23 @@ std::pair<std::string,Ref<MOIndexSpace> >
                          SpinCase1 spin) {
   return std::make_pair(ParsedMOIndexSpaceKey::key(space->id(),spin),
                         space);
+}
+
+bool
+sc::operator==(const MOIndexSpace& space1,
+               const MOIndexSpace& space2) {
+  if (!space1.integral()->equiv(space2.integral()) ||
+      space1.rank() != space2.rank() ||
+      space1.nblocks() != space2.nblocks() ||
+      space1.nmo() != space2.nmo() ||
+      space1.id() != space2.id() ||
+      space1.name() != space2.name() ||
+      !space1.basis()->equiv(space2.basis()) ||
+      (space1.coefs() - space2.coefs())->maxabs() > DBL_EPSILON
+     )
+    return false;
+  else
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

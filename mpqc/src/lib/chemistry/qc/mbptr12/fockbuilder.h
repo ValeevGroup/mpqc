@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/scf/fockbuild.h>
 #include <chemistry/qc/scf/clhfcontrib.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
 
 namespace sc {
 
@@ -96,9 +97,19 @@ namespace sc {
                        const Ref<GaussianBasisSet>& pbs,
                        const Ref<Integral>& integral);
 
+    RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
+                        const Ref<MOIndexSpace>& occspace,
+                        const Ref<MOIndexSpace>& braspace,
+                        const Ref<MOIndexSpace>& ketspace);
+    RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
+                         const Ref<MOIndexSpace>& occspace,
+                         const Ref<MOIndexSpace>& braspace,
+                         const Ref<MOIndexSpace>& ketspace);
+
   } // end of namespace detail
 
 
+  /// Builds the two-body part of the Fock matrix in AO basis using integral-direct algorithm
   template<bool bra_eq_ket> class TwoBodyFockMatrixBuilder: public RefCount {
 
     public:
@@ -225,6 +236,73 @@ namespace sc {
 
   }; // class TwoBodyFockMatrixBuilder
 
+  /// Builds the two-body part of the Fock matrix in MO basis using AO->MO transforms
+  class TwoBodyFockTransformBuilder: public RefCount {
+
+    public:
+
+      TwoBodyFockTransformBuilder(bool compute_J,
+                        bool compute_K,
+                        SpinCase1 spin,
+                        const Ref<MOIndexSpace>& braspace,
+                        const Ref<MOIndexSpace>& ketspace,
+                        const Ref<MOIndexSpace>& occspace_A,
+                        const Ref<MOIndexSpace>& occspace_B,
+                        const Ref<MOIntsRuntime>& ints_rtime) :
+                          compute_J_(compute_J),
+                          compute_K_(compute_K),
+                          compute_F_(compute_J && compute_K)
+      {
+
+        for(int t=0; t<3; ++t) {
+
+          if (compute_J == false && t == 0) continue;
+          if (compute_K == false && t == 1) continue;
+
+          if (t == 0) { // coulomb
+            result_[t] = detail::coulomb(ints_rtime,occspace_A,braspace,ketspace);
+            if (*occspace_A == *occspace_B) { // alpha and beta spins equivalent? Scale by 2, else compute
+              result_[t].scale(2.0);
+            }
+            else {
+              result_[t].accumulate( detail::coulomb(ints_rtime,occspace_B,braspace,ketspace) );
+            }
+          }
+
+          if (t == 1) { // exchange
+            result_[t] = detail::exchange(ints_rtime,occspace_A,braspace,ketspace);
+          }
+
+        }
+
+        if (compute_F_)
+          result_[2] = result_[0] - result_[1];
+
+      }
+
+      const RefSCMatrix& F() const {
+        assert(compute_F_);
+        return result_[2];
+      }
+      const RefSCMatrix& J() const {
+        assert(compute_J_);
+        return result_[0];
+      }
+      const RefSCMatrix& K() const {
+        assert(compute_K_);
+        return result_[1];
+      }
+
+    private:
+
+      bool compute_J_;
+      bool compute_K_;
+      bool compute_F_;
+      RefSCMatrix result_[3];
+
+  }; // class TwoBodyFockTransformBuilder
+
+  /// Builds the one-body part of the Fock matrix in AO basis
   template<bool bra_eq_ket> class OneBodyFockMatrixBuilder: public RefCount {
 
     public:

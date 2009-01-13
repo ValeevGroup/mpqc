@@ -326,6 +326,35 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
 #if TEST_FOCKBUILD
   {
+    const bool compute_J = (scale_J != 0.0);
+    const bool compute_K = (scale_K != 0.0);
+    Ref<TwoBodyFockTransformBuilder> fmb = new TwoBodyFockTransformBuilder(compute_J,
+                                                                     compute_K,
+                                                                     spin,
+                                                                     bra_space,
+                                                                     ket_space,
+                                                                     occ(Alpha),
+                                                                     occ(Beta),
+                                                                     r12info()->moints_runtime());
+    RefSCMatrix Gtest;
+    if (compute_J) {
+      Gtest = fmb->J();
+      Gtest.scale(scale_J);
+    }
+    if (compute_K) {
+      RefSCMatrix K = fmb->K();
+      K.scale(-1.0*scale_K);
+      if (compute_J)
+        Gtest.accumulate(K);
+      else
+        Gtest = K;
+    }
+    (F-hcore-Gtest).print("G matrix: MO basis, difference(FockTransformBuild-reference) [should be 0]");
+  }
+#endif
+
+#if TEST_FOCKBUILD
+  {
     const bool compute_F = (scale_J == 1.0 && scale_K == 1.0);
     const bool compute_J = (scale_J != 0.0 && !compute_F);
     const bool compute_K = (scale_K != 0.0 && !compute_F);
@@ -366,7 +395,6 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
               Gtest = K;
         }
       }
-      //Gtest.print("G matrix: AO basis, FockBuild");
       RefSCMatrix G_mo = vec1t * Gtest * vec2;
       (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
     }
@@ -405,7 +433,6 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
               Gtest = K;
         }
       }
-      //Gtest.print("G matrix: AO basis, FockBuild");
       RefSCMatrix G_mo = vec1t * Gtest * vec2;
       (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
     }

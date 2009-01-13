@@ -32,6 +32,7 @@
 #include <cfloat>
 #include<chemistry/qc/basis/symmint.h>
 #include<chemistry/qc/basis/orthog.h>
+#include<chemistry/qc/mbptr12/blas.h>
 #include<chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace sc;
@@ -570,8 +571,187 @@ namespace sc {
 
     }
 
-  }
-} // namespace sc::detail
+    RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
+                        const Ref<MOIndexSpace>& occ_space,
+                        const Ref<MOIndexSpace>& bra_space,
+                        const Ref<MOIndexSpace>& ket_space) {
+
+      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+
+      Timer tim_coulomb("coulomb");
+
+      int me = msg->me();
+      int nproc = msg->n();
+      ExEnv::out0() << endl << indent
+               << "Entered Coulomb matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
+
+      // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
+      const std::string tform_key = ParsedTwoBodyIntKey::key(occ_space->id(),bra_space->id(),
+                                                             occ_space->id(),ket_space->id(),
+                                                             std::string("ERI"),
+                                                             std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+      Ref<TwoBodyMOIntsTransform> mnxy_tform = ints_rtime->get(tform_key);
+      Ref<R12IntsAcc> mnxy_acc = mnxy_tform->ints_acc();
+
+      const int nocc = occ_space->rank();
+      const int nbra = bra_space->rank();
+      const int nket = ket_space->rank();
+      const int nbraket = nbra*nket;
+
+      ExEnv::out0() << indent << "Begin computation of Coulomb matrix" << endl;
+
+      // Compute the number of tasks that have full access to the integrals
+      // and split the work among them
+      vector<int> proc_with_ints;
+      int nproc_with_ints = mnxy_acc->tasks_with_access(proc_with_ints);
+
+      //////////////////////////////////////////////////////////////
+      //
+      // Evaluation of the coulomb matrix proceeds as follows:
+      //
+      //    loop over batches of mm, 0<=m<nocc
+      //      load (mmxy)=(xm|my) into memory
+      //
+      //      loop over xy, 0<=x<nbra, 0<=y<nket
+      //        compute K[x][y] += (mmxy)
+      //      end xy loop
+      //    end mm loop
+      //
+      /////////////////////////////////////////////////////////////////////////////////
+
+      double* J_xy = new double[nbraket];
+      memset(J_xy,0,nbraket*sizeof(double));
+      Timer tim_mo_ints_retrieve;
+      tim_mo_ints_retrieve.set_default("MO ints retrieve");
+      if (mnxy_acc->has_access(me)) {
+
+        for(int m=0; m<nocc; m++) {
+
+          const int mm = m*nocc+m;
+          const int mm_proc = mm%nproc_with_ints;
+          if (mm_proc != proc_with_ints[me])
+            continue;
+
+          // Get (|1/r12|) integrals
+          tim_mo_ints_retrieve.enter_default();
+          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyInt::eri);
+          tim_mo_ints_retrieve.exit_default();
+
+          const double one = 1.0;
+          const int unit_stride = 1;
+          F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,J_xy,&unit_stride);
+
+          mnxy_acc->release_pair_block(m,m,TwoBodyInt::eri);
+        }
+      }
+
+      ExEnv::out0() << indent << "End of computation of Coulomb matrix" << endl;
+
+      msg->sum(J_xy,nbraket);
+
+      RefSCMatrix J(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
+      J.assign(J_xy);
+      delete[] J_xy;
+
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited Coulomb matrix evaluator" << endl;
+      tim_coulomb.exit();
+
+      return J;
+    }
+
+    RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
+                         const Ref<MOIndexSpace>& occ_space,
+                         const Ref<MOIndexSpace>& bra_space,
+                         const Ref<MOIndexSpace>& ket_space) {
+
+      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+
+      Timer tim_exchange("exchange");
+
+      int me = msg->me();
+      int nproc = msg->n();
+      ExEnv::out0() << endl << indent
+               << "Entered exchange matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
+
+      // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
+      const std::string tform_key = ParsedTwoBodyIntKey::key(occ_space->id(),occ_space->id(),
+                                                             bra_space->id(),ket_space->id(),
+                                                             std::string("ERI"),
+                                                             std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+      Ref<TwoBodyMOIntsTransform> mxny_tform = ints_rtime->get(tform_key);
+      Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
+
+      const int nocc = occ_space->rank();
+      const int nbra = bra_space->rank();
+      const int nket = ket_space->rank();
+      const int nbraket = nbra*nket;
+
+      ExEnv::out0() << indent << "Begin computation of exchange matrix" << endl;
+
+      // Compute the number of tasks that have full access to the integrals
+      // and split the work among them
+      vector<int> proc_with_ints;
+      int nproc_with_ints = mnxy_acc->tasks_with_access(proc_with_ints);
+
+      //////////////////////////////////////////////////////////////
+      //
+      // Evaluation of the exchange matrix proceeds as follows:
+      //
+      //    loop over batches of mm, 0<=m<nocc
+      //      load (mmxy)=(xm|my) into memory
+      //
+      //      loop over xy, 0<=x<nbra, 0<=y<nket
+      //        compute K[x][y] += (mmxy)
+      //      end xy loop
+      //    end mm loop
+      //
+      /////////////////////////////////////////////////////////////////////////////////
+
+      double* K_xy = new double[nbraket];
+      memset(K_xy,0,nbraket*sizeof(double));
+      Timer tim_mo_ints_retrieve;
+      tim_mo_ints_retrieve.set_default("MO ints retrieve");
+      if (mnxy_acc->has_access(me)) {
+
+        for(int m=0; m<nocc; m++) {
+
+          const int mm = m*nocc+m;
+          const int mm_proc = mm%nproc_with_ints;
+          if (mm_proc != proc_with_ints[me])
+            continue;
+
+          // Get (|1/r12|) integrals
+          tim_mo_ints_retrieve.enter_default();
+          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyInt::eri);
+          tim_mo_ints_retrieve.exit_default();
+
+          const double one = 1.0;
+          const int unit_stride = 1;
+          F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,K_xy,&unit_stride);
+
+          mnxy_acc->release_pair_block(m,m,TwoBodyInt::eri);
+        }
+      }
+
+      ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
+
+      msg->sum(K_xy,nbraket);
+
+      RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
+      K.assign(K_xy);
+      delete[] K_xy;
+
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
+      tim_exchange.exit();
+
+      return K;
+    }
+
+}} // namespace sc::detail
 
 /////////////////////////////////////////////////////////////////////////////
 

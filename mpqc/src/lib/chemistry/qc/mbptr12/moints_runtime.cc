@@ -222,6 +222,12 @@ MOIntsRuntime::save_data_state(StateOut& so)
   TformRegistry::save_instance(tforms_,so);
 }
 
+bool
+MOIntsRuntime::exists(const std::string& key) const
+{
+  return tforms_->key_exists(key);
+}
+
 Ref<MOIntsRuntime::TwoBodyIntsTransform>
 MOIntsRuntime::get(const std::string& key)
 {
@@ -341,7 +347,7 @@ MOIntsRuntime::params(const std::string& key) const
 {
   if (params_->key_exists(key))
     return params_->value(key);
-  else  // if not found, register
+  else
     return 0;
 }
 

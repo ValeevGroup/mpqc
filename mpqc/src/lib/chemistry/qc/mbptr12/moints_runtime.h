@@ -52,6 +52,10 @@ namespace sc {
       MOIntsRuntime(StateIn& si);
       void save_data_state(StateOut& so);
 
+      /** Returns true if the given transform is available
+        */
+      bool exists(const std::string& key) const;
+
       /** Returns the TwoBodyIntsTransform that contains the integrals described by key.
           The desired integrals may be a subset of the given TwoBodyIntsTransform.
 

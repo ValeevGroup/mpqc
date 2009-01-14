@@ -41,7 +41,7 @@ TESTPROGS = scftest focktest
 SRCS = fbclhf.cc scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
        clscf.cc clhf.cc hsosscf.cc hsoshf.cc \
        ossscf.cc osshf.cc tcscf.cc tchf.cc \
-       uscf.cc uhf.cc fockbuild.cc clhfcontrib.cc \
+       uscf.cc uhf.cc fockbuild.cc clhfcontrib.cc hsoshfcontrib.cc \
        tmplinst.cc svd.cc \
        fockdist.cc
 

@@ -8,6 +8,12 @@
 
 namespace sc {
 
+/**
+     Computes components of the Fock matrix necessary for closed-shell
+     calculations (i.e. CLSCF). Requires as input the total AO density matrix P(0).
+     Output matrices are in AO basis. If f_b1 == f_b2 then the output is the skeleton AO matrix
+     that needs to be symmetrized with PetiteList, else the output is the full AO matrix.
+ */
 class CLHFContribution: public GenericFockContribution {
   public:
     CLHFContribution(const Ref<GaussianBasisSet> &f_b1,

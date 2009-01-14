@@ -827,7 +827,7 @@ ParsedMOIndexSpaceKey::key(const std::string& label,
 {
   if (spin != AnySpinCase1) {
     std::ostringstream oss;
-    oss << label << "[" << to_string(spin) << "]";
+    oss << label << "[" << (spin == Alpha ? 'A' : 'B') << "]";
     return oss.str();
   }
   return label;

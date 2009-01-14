@@ -244,22 +244,24 @@ R12IntEvalInfo::initialize()
       else
         tfactory_->hints().data_persistent(true);
 
-      if (USE_NEW_MOINDEXSPACE_KEYS) {
+      {
         // RI-related spaces should already be in the registry. Push all OBS-based spaces onto the registry also
         const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
         if (!refinfo()->spin_polarized()) {
           idxreg->add(make_keyspace_pair(refinfo()->docc_act()));
           idxreg->add(make_keyspace_pair(refinfo()->docc()));
           idxreg->add(make_keyspace_pair(vir_act()));
+          idxreg->add(make_keyspace_pair(vir()));
           idxreg->add(make_keyspace_pair(refinfo()->orbs()));
         }
         else {
           for(int s=Alpha; s!=InvalidSpinCase1; ++s) {
             SpinCase1 spin = static_cast<SpinCase1>(s);
-            idxreg->add(make_keyspace_pair(refinfo()->occ_act(spin),spin));
-            idxreg->add(make_keyspace_pair(refinfo()->occ(spin),spin));
-            idxreg->add(make_keyspace_pair(vir_act(spin),spin));
-            idxreg->add(make_keyspace_pair(refinfo()->orbs(spin),spin));
+            idxreg->add(make_keyspace_pair(refinfo()->occ_act(spin)));
+            idxreg->add(make_keyspace_pair(refinfo()->occ(spin)));
+            idxreg->add(make_keyspace_pair(vir_act(spin)));
+            idxreg->add(make_keyspace_pair(vir(spin)));
+            idxreg->add(make_keyspace_pair(refinfo()->orbs(spin)));
           }
         }
 
@@ -345,12 +347,8 @@ R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
                                  const SpinCase1& spincase,
                                  const Ref<MOIndexSpace>& vbs)
 {
-  std::string id, label;
-  if (spincase == Alpha)
-    id = "E(sym)";
-  else
-    id = "e(sym)";
-  vir_sb_ = R12IntEvalInfo::orthog_comp(refinfo->occ_sb(spincase), vbs, "e(sym)", "VBS", refinfo->ref()->lindep_tol());
+  std::string id = ParsedMOIndexSpaceKey::key(std::string("e(sym)"),spincase);
+  vir_sb_ = R12IntEvalInfo::orthog_comp(refinfo->occ_sb(spincase), vbs, id, "VBS", refinfo->ref()->lindep_tol());
   // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
   // Need to move all relevant code outside of MBPT2-F12 code
   vir_ = vir_sb_;

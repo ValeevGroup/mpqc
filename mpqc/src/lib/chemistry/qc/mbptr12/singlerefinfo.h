@@ -36,9 +36,9 @@
 #include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
-  
+
   class SCF;
-  
+
   /**
      SingleRefInfo maintains orbital information for the single-reference case.
   */
@@ -48,10 +48,10 @@ namespace sc {
     /// Construct using SCF reference object
     SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv, bool delayed_initialization = false);
     ~SingleRefInfo();
-    
+
     void save_data_state(StateOut&);
     void initialize();
-    
+
     /// Returns the reference
     const Ref<SCF>& ref() const;
     /// Returns true if alpha and beta densities are not equal. Thus only false for CLSCF references.
@@ -60,10 +60,10 @@ namespace sc {
     unsigned int nfzc() const;
     /// Return number of frozen unoccupied orbitals
     unsigned int nfzv() const;
-    
+
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<MOIndexSpace>& oso_space() const;
-    
+
     //@{ \group Spin-independent spaces
     /**  Spin-independent variants can throw when used with spin-polarized reference.
     */
@@ -86,7 +86,7 @@ namespace sc {
     /// Return the space of active unoccupied (virtual) MOs
     const Ref<MOIndexSpace>& uocc_act() const;
     //@}
-    
+
     /// Return the space of symmetry-blocked MOs of the given spin
     const Ref<MOIndexSpace>& orbs_sb(SpinCase1 spin) const;
     /// Return the space of energy-sorted MOs of the given spin
@@ -103,7 +103,7 @@ namespace sc {
     const Ref<MOIndexSpace>& uocc(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
     const Ref<MOIndexSpace>& uocc_act(SpinCase1 spin) const;
-    
+
     private:
     /// initialized?
     bool initialized_;
@@ -113,7 +113,7 @@ namespace sc {
     unsigned int nfzc_;
     /// Number of unoccupied orbitals not used in correlated method
     unsigned int nfzv_;
-    
+
     /// Following data structure is defined for each spin case
     typedef struct {
       Ref<MOIndexSpace> orbs_sb_;
@@ -125,12 +125,12 @@ namespace sc {
       Ref<MOIndexSpace> uocc_;
       Ref<MOIndexSpace> uocc_act_;
       /// "constructor"
-      void init(const std::string& prefix, const Ref<GaussianBasisSet>& bs,
+      void init(SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                 const Ref<Integral>& integral,
                 const RefDiagSCMatrix& evals, const RefSCMatrix& evecs,
                 const std::vector<double>& occs, unsigned int nfzc, unsigned int nfzv);
     } SpinSpaces;
-    
+
     //@{
     /** see corresponding public member function
     */
@@ -145,17 +145,17 @@ namespace sc {
     Ref<MOIndexSpace> uocc_act_;
     SpinSpaces spinspaces_[NSpinCases1];
     //}@
-    
+
     /// initialize spin-specific spaces
     void init_spinspecific_spaces();
     /// initialize spin-independent spaces
     void init_spinindependent_spaces();
-    
+
     /// throws if ref_ is spin-polarized
     void throw_if_spin_polarized() const;
-    
+
   };
-  
+
 };
 
 #endif

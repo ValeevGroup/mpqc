@@ -168,7 +168,7 @@ R12IntEvalInfo::abs_spans_obs_()
     Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
   }
 
-  const int obs_rank = refinfo()->orbs()->rank();
+  const int obs_rank = refinfo()->orbs(Alpha)->rank();
   if (nlindep_ri - nlindep_aux_ - obs_rank == 0)
     return true;
   else

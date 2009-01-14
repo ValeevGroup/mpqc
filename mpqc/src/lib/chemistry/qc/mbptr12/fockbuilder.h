@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/scf/fockbuild.h>
 #include <chemistry/qc/scf/clhfcontrib.h>
+#include <chemistry/qc/scf/hsoshfcontrib.h>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
 
 namespace sc {
@@ -124,6 +125,7 @@ namespace sc {
                         const Ref<GaussianBasisSet>& ketbasis,
                         const Ref<GaussianBasisSet>& densitybasis,
                         const RefSymmSCMatrix& density,
+                        const RefSymmSCMatrix& openshelldensity,
                         const Ref<Integral>& integral,
                         const Ref<MessageGrp>& msg,
                         const Ref<ThreadGrp>& thr,
@@ -137,9 +139,19 @@ namespace sc {
           throw ProgrammingError("FockMatrixBuilder::FockMatrixBuilder -- inconsistent constructor and template arguments",
                                  __FILE__, __LINE__);
 
-        Ref<FockContribution> fc =
-            new CLHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
-        fc->set_pmat(0, density);
+        const bool openshell = openshelldensity.nonnull();
+
+        Ref<FockContribution> fc;
+        if (openshell) {
+          fc = new HSOSHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
+          ntypes_ = 2;
+          fc->set_pmat(0, density);
+          fc->set_pmat(1, openshelldensity);
+        } else {
+          fc = new CLHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
+          ntypes_ = 1;
+          fc->set_pmat(0, density);
+        }
 
         // FockBuild can compute either J and K separately, or the total F.
         // Determine whether we really need to compute J and K, or F
@@ -149,21 +161,23 @@ namespace sc {
 
         // FockBuild only accepts matrices created with appropriate basisdim(), which are not blocked, hence must
         // use non-blocked kit
-        ResultType G_ao_skel[3];
-        if (really_compute_J) {
-          G_ao_skel[0] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
-          G_ao_skel[0].assign(0.0);
-          fc->set_jmat(0, G_ao_skel[0]);
-        }
-        if (really_compute_K) {
-          G_ao_skel[1] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
-          G_ao_skel[1].assign(0.0);
-          fc->set_kmat(0, G_ao_skel[1]);
-        }
-        if (really_compute_F) {
-          G_ao_skel[2] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
-          G_ao_skel[2].assign(0.0);
-          fc->set_fmat(0, G_ao_skel[2]);
+        ResultType G_ao_skel[2][3];
+        for(int t=0; t<ntypes_; ++t) {
+          if (really_compute_J) {
+            G_ao_skel[t][0] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
+            G_ao_skel[t][0].assign(0.0);
+            fc->set_jmat(t, G_ao_skel[t][0]);
+          }
+          if (really_compute_K) {
+            G_ao_skel[t][1] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
+            G_ao_skel[t][1].assign(0.0);
+            fc->set_kmat(t, G_ao_skel[t][1]);
+          }
+          if (really_compute_F) {
+            G_ao_skel[t][2] = ResultFactory::create(brabasis->matrixkit(),brabasis->basisdim(),ketbasis->basisdim());
+            G_ao_skel[t][2].assign(0.0);
+            fc->set_fmat(t, G_ao_skel[t][2]);
+          }
         }
 
         const bool prefetch_blocks = false;
@@ -178,52 +192,76 @@ namespace sc {
         const int ng = pl->point_group()->char_table().order();
 
         /// convert skeleton matrices computed by FockBuild to the full matrices
-        for(int t=0; t<3; ++t) {
+        for(int t=0; t<ntypes_; ++t) {
+          for(int c=0; c<3; ++c) {
 
-          if (really_compute_J == false && t == 0) continue;
-          if (really_compute_K == false && t == 1) continue;
-          if (really_compute_F == false && t == 2) continue;
+            if (really_compute_J == false && c == 0) continue;
+            if (really_compute_K == false && c == 1) continue;
+            if (really_compute_F == false && c == 2) continue;
 
-          // if C1 -- nothing else needs to be done, return the result
-          // same holds for brabasis != ketbasis since FockBuild does not use symmetry in that case
-          if (ng == 1 || !bra_eq_ket) {
-            RefSCDimension braaodim = brapl->AO_basisdim();
-            RefSCDimension ketaodim = ketpl->AO_basisdim();
-            result_[t] = ResultFactory::create(brabasis->so_matrixkit(),brapl->AO_basisdim(),ketpl->AO_basisdim());
-            result_[t]->convert(G_ao_skel[t]);
-          }
-          else { // if not C1 and , symmetrize the skeleton G matrix to produce the SO basis G matrix
-            G_ao_skel[t].scale(1.0/(double)ng);
-            ResultType G_so = ResultFactory::create(brabasis->so_matrixkit(),brapl->SO_basisdim(),ketpl->SO_basisdim());
-            symmetrize(pl,integral,G_ao_skel[t],G_so);
-            G_ao_skel[t] = 0;
+            // if C1 -- nothing else needs to be done, return the result
+            // same holds for brabasis != ketbasis since FockBuild does not use symmetry in that case
+            if (ng == 1 || !bra_eq_ket) {
+              RefSCDimension braaodim = brapl->AO_basisdim();
+              RefSCDimension ketaodim = ketpl->AO_basisdim();
+              result_[t][c] = ResultFactory::create(brabasis->so_matrixkit(),brapl->AO_basisdim(),ketpl->AO_basisdim());
+              result_[t][c]->convert(G_ao_skel[t][c]);
+            }
+            else { // if not C1 and , symmetrize the skeleton G matrix to produce the SO basis G matrix
+              G_ao_skel[t][c].scale(1.0/(double)ng);
+              ResultType G_so = ResultFactory::create(brabasis->so_matrixkit(),brapl->SO_basisdim(),ketpl->SO_basisdim());
+              symmetrize(pl,integral,G_ao_skel[t][c],G_so);
+              G_ao_skel[t][c] = 0;
 
-            // and convert back to AO basis, but this time make a blocked matrix
-            RefSCDimension braaodim = brapl->AO_basisdim();
-            RefSCDimension ketaodim = ketpl->AO_basisdim();
-            result_[t] = ResultFactory::create(brabasis->so_matrixkit(),brapl->AO_basisdim(),ketpl->AO_basisdim());
-            ResultFactory::transform(result_[t], G_so, brapl->sotoao(), ketpl->sotoao(), SCMatrix::TransposeTransform);
+              // and convert back to AO basis, but this time make a blocked matrix
+              RefSCDimension braaodim = brapl->AO_basisdim();
+              RefSCDimension ketaodim = ketpl->AO_basisdim();
+              result_[t][c] = ResultFactory::create(brabasis->so_matrixkit(),brapl->AO_basisdim(),ketpl->AO_basisdim());
+              ResultFactory::transform(result_[t][c], G_so, brapl->sotoao(), ketpl->sotoao(), SCMatrix::TransposeTransform);
+            }
           }
         }
 
         if (compute_F_ && !really_compute_F)
-          result_[2] = result_[0] - result_[1];
+          for(int t=0; t<ntypes_; ++t)
+            result_[t][2] = result_[t][0] - result_[t][1];
 
       }
 
       const Ref<FockBuild>& builder() const { return fb_; }
       double nints() const { return builder()->contrib()->nint(); }
-      const ResultType& F() const {
-        assert(compute_F_);
-        return result_[2];
+      const ResultType& F(unsigned int t = 0) const {
+        assert(compute_F_ && t < ntypes_);
+        return result_[t][2];
       }
-      const ResultType& J() const {
-        assert(compute_J_);
-        return result_[0];
+      const ResultType& J(unsigned int t = 0) const {
+        assert(compute_J_ && t < ntypes_);
+        return result_[t][0];
       }
-      const ResultType& K() const {
-        assert(compute_K_);
-        return result_[1];
+      const ResultType& K(unsigned int t = 0) const {
+        assert(compute_K_ && t < ntypes_);
+        return result_[t][1];
+      }
+      ResultType F(SpinCase1 spin) const {
+        if (ntypes_ == 1)
+          return F(0);
+        else {
+          return (spin == Alpha) ? F(0) + F(1) : F(0) - F(1);
+        }
+      }
+      ResultType J(SpinCase1 spin) const {
+        if (ntypes_ == 1)
+          return J(0);
+        else {
+          return (spin == Alpha) ? J(0) + J(1) : J(0) - J(1);
+        }
+      }
+      ResultType K(SpinCase1 spin) const {
+        if (ntypes_ == 1)
+          return K(0);
+        else {
+          return (spin == Alpha) ? K(0) + K(1) : K(0) - K(1);
+        }
       }
 
     private:
@@ -232,7 +270,8 @@ namespace sc {
       bool compute_J_;
       bool compute_K_;
       bool compute_F_;
-      ResultType result_[3];
+      int ntypes_;
+      ResultType result_[2][3];
 
   }; // class TwoBodyFockMatrixBuilder
 
@@ -270,7 +309,7 @@ namespace sc {
           }
 
           if (t == 1) { // exchange
-            result_[t] = detail::exchange(ints_rtime,occspace_A,braspace,ketspace);
+            result_[t] = detail::exchange(ints_rtime,(spin == Alpha ? occspace_A : occspace_B),braspace,ketspace);
           }
 
         }

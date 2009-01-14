@@ -1591,6 +1591,7 @@ R12IntEval::f_bra_ket(
 	  }
 
 	  std::string id = extspace->id();  id += "_hJ(";  id += intspace->id();  id += ")";
+	  id = ParsedMOIndexSpaceKey::key(id,spin);
 	  std::string name = "(h+J)-weighted space";
 	  name = prepend_spincase(spin,name);
 
@@ -1599,6 +1600,7 @@ R12IntEval::f_bra_ket(
 
 	  if (delta_dkh) {
 	      id = extspace->id();  id += "_hJ-d(";  id += intspace->id();  id += ")";
+	      id = ParsedMOIndexSpaceKey::key(id,spin);
 	      name = "(hJ-d)-weighted space";
  	      hJ_trafo.accumulate(dkh_contrib);
           }
@@ -1607,7 +1609,7 @@ R12IntEval::f_bra_ket(
 #endif
 	  hJ = new MOIndexSpace(id, name, extspace, intspace->coefs()*hJ_trafo,
 				intspace->basis());
-	  idxreg->add(make_keyspace_pair(hJ, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
+	  idxreg->add(make_keyspace_pair(hJ));
       }
 
       RefSCMatrix K_i_e;
@@ -1626,6 +1628,7 @@ R12IntEval::f_bra_ket(
 	  }
 
 	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
+      id = ParsedMOIndexSpaceKey::key(id,spin);
 	  std::string name = "K-weighted space";
 
 	  // keep K_i_e unchanged for possible later use in F
@@ -1633,6 +1636,7 @@ R12IntEval::f_bra_ket(
 
 	  if (delta_dkh) {
 	       id = extspace->id();  id += "_K-d(";  id += intspace->id();  id += ")";
+	       id = ParsedMOIndexSpaceKey::key(id,spin);
 	       name = "(K-d)-weighted space";
 	       K_trafo.accumulate(dkh_contrib);
 	  }
@@ -1644,7 +1648,7 @@ R12IntEval::f_bra_ket(
 	  name = prepend_spincase(spin,name);
 	  K = new MOIndexSpace(id, name, extspace, intspace->coefs()*K_trafo,
 				intspace->basis());
-      idxreg->add(make_keyspace_pair(K, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
+      idxreg->add(make_keyspace_pair(K));
       }
 
       if (make_F && F.null()) {
@@ -1681,11 +1685,12 @@ R12IntEval::f_bra_ket(
 	  }
 
 	  std::string id = extspace->id();  id += "_F(";  id += intspace->id();  id += ")";
+      id = ParsedMOIndexSpaceKey::key(id,spin);
 	  std::string name = "F-weighted space";
           name = prepend_spincase(spin,name);
 	  F = new MOIndexSpace(id, name, extspace, intspace->coefs()*F_i_e,
 				intspace->basis());
-      idxreg->add(make_keyspace_pair(F, r12info()->refinfo()->spin_polarized() ? spin : AnySpinCase1));
+      idxreg->add(make_keyspace_pair(F));
       }
 
   }

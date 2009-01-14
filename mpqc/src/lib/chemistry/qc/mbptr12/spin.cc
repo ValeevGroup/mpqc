@@ -117,7 +117,7 @@ namespace sc {
     std::string prefix(to_string(S));
     if (!lowercase)
       prefix[0] = toupper(prefix[0]);
-    return prefix + R;
+    return prefix + ' ' + R;
   }
 
   std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase)
@@ -125,7 +125,7 @@ namespace sc {
     std::string prefix(to_string(S));
     if (!lowercase)
       prefix[0] = toupper(prefix[0]);
-    return prefix + R;
+    return prefix + ' ' + R;
   }
 
 }

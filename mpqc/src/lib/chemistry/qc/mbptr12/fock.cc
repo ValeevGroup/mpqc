@@ -326,6 +326,97 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
 #if TEST_FOCKBUILD
   {
+    const bool compute_F = (scale_J == 1.0 && scale_K == 1.0);
+    const bool compute_J = (scale_J != 0.0 && !compute_F);
+    const bool compute_K = (scale_K != 0.0 && !compute_F);
+    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
+    RefSCMatrix Gtest;
+    double nints;
+    Ref<SCF> ref = r12info()->refinfo()->ref();
+    const bool openshell = ref->spin_polarized();
+    RefSymmSCMatrix P = ref->ao_density();
+    RefSymmSCMatrix Po;
+    if (openshell) {
+      Po = ref->alpha_ao_density() - ref->beta_ao_density();
+    }
+    if (bs1_eq_bs2) {
+      Ref< OneBodyFockMatrixBuilder<true> > f1mb =
+        new OneBodyFockMatrixBuilder<true>(
+            OneBodyFockMatrixBuilder<true>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+
+      Ref< TwoBodyFockMatrixBuilder<true> > fmb =
+        new TwoBodyFockMatrixBuilder<true>(
+            compute_F,compute_J,compute_K,
+            bs1,bs2,obs,P,Po,
+            r12info()->integral(),
+            r12info()->msg(),
+            r12info()->thr());
+      nints = fmb->nints();
+      typedef RefSymmSCMatrix mattype;
+      mattype Gtest;
+      if (compute_F)
+        Gtest = fmb->F(spin);
+      else {
+        if (compute_J) {
+          Gtest = fmb->J(spin);
+          Gtest.scale(scale_J);
+        }
+        if (compute_K) {
+            mattype K = fmb->K(spin);
+            K.scale(-1.0*scale_K);
+            if (compute_J)
+              Gtest.accumulate(K);
+            else
+              Gtest = K;
+        }
+      }
+      RefSCMatrix G_mo = vec1t * Gtest * vec2;
+      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
+    else { // result is rectangular already
+
+      Ref< OneBodyFockMatrixBuilder<false> > f1mb =
+        new OneBodyFockMatrixBuilder<false>(
+            OneBodyFockMatrixBuilder<false>::NonRelativistic,
+            bs1,bs2,obs,
+            r12info()->integral());
+
+      Ref< TwoBodyFockMatrixBuilder<false> > fmb =
+        new TwoBodyFockMatrixBuilder<false>(
+            compute_F,compute_J,compute_K,
+            bs1,bs2,obs,P,Po,
+            r12info()->integral(),
+            r12info()->msg(),
+            r12info()->thr());
+      nints = fmb->nints();
+      typedef RefSCMatrix mattype;
+      mattype Gtest;
+      if (compute_F)
+        Gtest = fmb->F(spin);
+      else {
+        if (compute_J) {
+          Gtest = fmb->J(spin);
+          Gtest.scale(scale_J);
+        }
+        if (compute_K) {
+            mattype K = fmb->K(spin);
+            K.scale(-1.0*scale_K);
+            if (compute_J)
+              Gtest.accumulate(K);
+            else
+              Gtest = K;
+        }
+      }
+      RefSCMatrix G_mo = vec1t * Gtest * vec2;
+      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
+    }
+  }
+#endif
+
+#if TEST_FOCKBUILD
+  {
     const bool compute_J = (scale_J != 0.0);
     const bool compute_K = (scale_K != 0.0);
     Ref<TwoBodyFockTransformBuilder> fmb = new TwoBodyFockTransformBuilder(compute_J,
@@ -350,92 +441,6 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
         Gtest = K;
     }
     (F-hcore-Gtest).print("G matrix: MO basis, difference(FockTransformBuild-reference) [should be 0]");
-  }
-#endif
-
-#if TEST_FOCKBUILD
-  {
-    const bool compute_F = (scale_J == 1.0 && scale_K == 1.0);
-    const bool compute_J = (scale_J != 0.0 && !compute_F);
-    const bool compute_K = (scale_K != 0.0 && !compute_F);
-    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
-    RefSCMatrix Gtest;
-    double nints;
-    if (bs1_eq_bs2) {
-      Ref< OneBodyFockMatrixBuilder<true> > f1mb =
-        new OneBodyFockMatrixBuilder<true>(
-            OneBodyFockMatrixBuilder<true>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-
-      Ref< TwoBodyFockMatrixBuilder<true> > fmb =
-        new TwoBodyFockMatrixBuilder<true>(
-            compute_F,compute_J,compute_K,
-            bs1,bs2,obs,
-            r12info()->refinfo()->ref()->ao_density(),
-            r12info()->integral(),
-            r12info()->msg(),
-            r12info()->thr());
-      nints = fmb->nints();
-      typedef RefSymmSCMatrix mattype;
-      mattype Gtest;
-      if (compute_F)
-        Gtest = fmb->F();
-      else {
-        if (compute_J) {
-          Gtest = fmb->J();
-          Gtest.scale(scale_J);
-        }
-        if (compute_K) {
-            mattype K = fmb->K();
-            K.scale(-1.0*scale_K);
-            if (compute_J)
-              Gtest.accumulate(K);
-            else
-              Gtest = K;
-        }
-      }
-      RefSCMatrix G_mo = vec1t * Gtest * vec2;
-      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
-    else { // result is rectangular already
-
-      Ref< OneBodyFockMatrixBuilder<false> > f1mb =
-        new OneBodyFockMatrixBuilder<false>(
-            OneBodyFockMatrixBuilder<false>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-
-      Ref< TwoBodyFockMatrixBuilder<false> > fmb =
-        new TwoBodyFockMatrixBuilder<false>(
-            compute_F,compute_J,compute_K,
-            bs1,bs2,obs,
-            r12info()->refinfo()->ref()->ao_density(),
-            r12info()->integral(),
-            r12info()->msg(),
-            r12info()->thr());
-      nints = fmb->nints();
-      typedef RefSCMatrix mattype;
-      mattype Gtest;
-      if (compute_F)
-        Gtest = fmb->F();
-      else {
-        if (compute_J) {
-          Gtest = fmb->J();
-          Gtest.scale(scale_J);
-        }
-        if (compute_K) {
-            mattype K = fmb->K();
-            K.scale(-1.0*scale_K);
-            if (compute_J)
-              Gtest.accumulate(K);
-            else
-              Gtest = K;
-        }
-      }
-      RefSCMatrix G_mo = vec1t * Gtest * vec2;
-      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
   }
 #endif
 

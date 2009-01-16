@@ -1615,7 +1615,13 @@ R12IntEval::f_bra_ket(
       RefSCMatrix K_i_e;
       if (make_K && K.null()) {
 	  const Ref<MOIndexSpace>& occ_space = occ(spin);
-	  K_i_e = exchange_(occ_space,intspace,extspace);
+	  if (!USE_FOCKBUILD)
+	    K_i_e = exchange_(occ_space,intspace,extspace);
+	  else {
+        K_i_e = fock(intspace,extspace,spin,0.0,1.0,0.0);
+        K_i_e.scale(-1.0);
+	  }
+
 
 	  if (debug_ >= DefaultPrintThresholds::allN2) {
 		  std::string label;
@@ -1660,8 +1666,12 @@ R12IntEval::f_bra_ket(
 	      }
 	      else {
 		  const Ref<MOIndexSpace>& occ_space = occ(spin);
-		  F_i_e = exchange_(occ_space,intspace,extspace);
-		  F_i_e.scale(-1.0);
+	      if (!USE_FOCKBUILD) {
+	        F_i_e = exchange_(occ_space,intspace,extspace);
+	        F_i_e.scale(-1.0);
+	      } else {
+	        F_i_e = fock(intspace,extspace,spin,0.0,1.0,0.0);
+	      }
 		  F_i_e.accumulate(hJ_i_e);
 	      }
 	  }

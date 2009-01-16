@@ -61,7 +61,7 @@ CXXSRCS = mbptr12.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
   singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
-  moints_runtime.cc fockbuilder.cc
+  moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc
   
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \

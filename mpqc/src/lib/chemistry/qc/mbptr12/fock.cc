@@ -41,11 +41,13 @@
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/debug.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>
+#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
 
 using namespace std;
 using namespace sc;
 
 #define TEST_FOCKBUILD 0
+#define TEST_FOCKBUILDRUNTIME 0
 // set to 1 to test MVD integrals
 #define TEST_DELTA_DKH 0
 #define NEW_HCORE 1
@@ -55,7 +57,8 @@ RefSCMatrix
 R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
                   const Ref<MOIndexSpace>& ket_space,
                   SpinCase1 spin,
-                  double scale_J, double scale_K)
+                  double scale_J, double scale_K,
+                  double scale_H)
 {
   // validate the input
   if (! (scale_J == 1.0 || scale_J == 0.0 || scale_K == 1.0 || scale_K == 0.0) ) { // currently FockBuild can only handle unit contributions
@@ -257,6 +260,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
+  F.scale(scale_H);
   if (debug_ >= DefaultPrintThresholds::allN2)
     F.print("Core Hamiltonian contribution");
   // and clean up a bit
@@ -264,38 +268,7 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
   const bool spin_unrestricted = spin_polarized();
 
-#if TEST_FOCKBUILD
-  RefSCMatrix hcore = F.clone();
-  hcore.assign(F);
-  {
-    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
-    if (bs1_eq_bs2) {
-      Ref< OneBodyFockMatrixBuilder<true> > fmb =
-        new OneBodyFockMatrixBuilder<true>(
-            OneBodyFockMatrixBuilder<true>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-
-      typedef RefSymmSCMatrix mattype;
-      mattype Htest = fmb->result();
-      RefSCMatrix H_mo = vec1t * Htest * vec2;
-      (F-H_mo).print("H matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
-    else { // result is rectangular already
-
-      Ref< OneBodyFockMatrixBuilder<false> > fmb =
-        new OneBodyFockMatrixBuilder<false>(
-            OneBodyFockMatrixBuilder<false>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-      typedef RefSCMatrix mattype;
-      mattype Htest = fmb->result();
-      RefSCMatrix H_mo = vec1t * Htest * vec2;
-      (F-H_mo).print("H matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
-  }
-#endif
-
+  if (!USE_FOCKBUILD) {
   //
   // add coulomb and exchange parts
   //
@@ -320,129 +293,21 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
     F.accumulate(K); K = 0;
   }
 
+  } else { // USE_NEWFOCKBUILD
+    Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
+    const std::string hkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("H"));
+    RefSCMatrix H = fb_rtime->get(hkey);
+    const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
+    RefSCMatrix J = fb_rtime->get(jkey);
+    const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
+    const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
+    RefSCMatrix K = fb_rtime->get(kkey);
+    F.accumulate(J*scale_J - K*scale_K);
+  }
+
   if (debug_ >= DefaultPrintThresholds::allN2) {
     F.print("Fock matrix");
   }
-
-#if TEST_FOCKBUILD
-  {
-    const bool compute_F = (scale_J == 1.0 && scale_K == 1.0);
-    const bool compute_J = (scale_J != 0.0 && !compute_F);
-    const bool compute_K = (scale_K != 0.0 && !compute_F);
-    const Ref<GaussianBasisSet>& obs = occ(Alpha)->basis();
-    RefSCMatrix Gtest;
-    double nints;
-    Ref<SCF> ref = r12info()->refinfo()->ref();
-    const bool openshell = ref->spin_polarized();
-    RefSymmSCMatrix P = ref->ao_density();
-    RefSymmSCMatrix Po;
-    if (openshell) {
-      Po = ref->alpha_ao_density() - ref->beta_ao_density();
-    }
-    if (bs1_eq_bs2) {
-      Ref< OneBodyFockMatrixBuilder<true> > f1mb =
-        new OneBodyFockMatrixBuilder<true>(
-            OneBodyFockMatrixBuilder<true>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-
-      Ref< TwoBodyFockMatrixBuilder<true> > fmb =
-        new TwoBodyFockMatrixBuilder<true>(
-            compute_F,compute_J,compute_K,
-            bs1,bs2,obs,P,Po,
-            r12info()->integral(),
-            r12info()->msg(),
-            r12info()->thr());
-      nints = fmb->nints();
-      typedef RefSymmSCMatrix mattype;
-      mattype Gtest;
-      if (compute_F)
-        Gtest = fmb->F(spin);
-      else {
-        if (compute_J) {
-          Gtest = fmb->J(spin);
-          Gtest.scale(scale_J);
-        }
-        if (compute_K) {
-            mattype K = fmb->K(spin);
-            K.scale(-1.0*scale_K);
-            if (compute_J)
-              Gtest.accumulate(K);
-            else
-              Gtest = K;
-        }
-      }
-      RefSCMatrix G_mo = vec1t * Gtest * vec2;
-      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
-    else { // result is rectangular already
-
-      Ref< OneBodyFockMatrixBuilder<false> > f1mb =
-        new OneBodyFockMatrixBuilder<false>(
-            OneBodyFockMatrixBuilder<false>::NonRelativistic,
-            bs1,bs2,obs,
-            r12info()->integral());
-
-      Ref< TwoBodyFockMatrixBuilder<false> > fmb =
-        new TwoBodyFockMatrixBuilder<false>(
-            compute_F,compute_J,compute_K,
-            bs1,bs2,obs,P,Po,
-            r12info()->integral(),
-            r12info()->msg(),
-            r12info()->thr());
-      nints = fmb->nints();
-      typedef RefSCMatrix mattype;
-      mattype Gtest;
-      if (compute_F)
-        Gtest = fmb->F(spin);
-      else {
-        if (compute_J) {
-          Gtest = fmb->J(spin);
-          Gtest.scale(scale_J);
-        }
-        if (compute_K) {
-            mattype K = fmb->K(spin);
-            K.scale(-1.0*scale_K);
-            if (compute_J)
-              Gtest.accumulate(K);
-            else
-              Gtest = K;
-        }
-      }
-      RefSCMatrix G_mo = vec1t * Gtest * vec2;
-      (F-hcore-G_mo).print("G matrix: MO basis, difference(FockBuild-reference) [should be 0]");
-    }
-  }
-#endif
-
-#if TEST_FOCKBUILD
-  {
-    const bool compute_J = (scale_J != 0.0);
-    const bool compute_K = (scale_K != 0.0);
-    Ref<TwoBodyFockTransformBuilder> fmb = new TwoBodyFockTransformBuilder(compute_J,
-                                                                     compute_K,
-                                                                     spin,
-                                                                     bra_space,
-                                                                     ket_space,
-                                                                     occ(Alpha),
-                                                                     occ(Beta),
-                                                                     r12info()->moints_runtime());
-    RefSCMatrix Gtest;
-    if (compute_J) {
-      Gtest = fmb->J();
-      Gtest.scale(scale_J);
-    }
-    if (compute_K) {
-      RefSCMatrix K = fmb->K();
-      K.scale(-1.0*scale_K);
-      if (compute_J)
-        Gtest.accumulate(K);
-      else
-        Gtest = K;
-    }
-    (F-hcore-Gtest).print("G matrix: MO basis, difference(FockTransformBuild-reference) [should be 0]");
-  }
-#endif
 
   return F;
 }

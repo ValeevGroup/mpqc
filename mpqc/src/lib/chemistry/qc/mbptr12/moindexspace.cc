@@ -819,6 +819,9 @@ ParsedMOIndexSpaceKey::ParsedMOIndexSpaceKey(const std::string& key) :
     const std::string spinkey = pop_till_token(keycopy,']');
     spin_ = to_spincase1(spinkey);
   }
+  else {
+    spin_ = AnySpinCase1;
+  }
 }
 
 std::string
@@ -827,7 +830,7 @@ ParsedMOIndexSpaceKey::key(const std::string& label,
 {
   if (spin != AnySpinCase1) {
     std::ostringstream oss;
-    oss << label << "[" << (spin == Alpha ? 'A' : 'B') << "]";
+    oss << label << "[" << to_string(spin) << "]";
     return oss.str();
   }
   return label;

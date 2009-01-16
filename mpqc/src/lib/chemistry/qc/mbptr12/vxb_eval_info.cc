@@ -182,6 +182,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 10) {
     moints_runtime_ << SavableState::restore_state(si);
+    fockbuild_runtime_ << SavableState::restore_state(si);
   }
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
@@ -217,6 +218,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(moints_runtime_.pointer(),so);
+  SavableState::save_state(fockbuild_runtime_.pointer(),so);
   SavableState::save_state(refinfo_.pointer(),so);
   so.put(initialized_);
 }
@@ -296,6 +298,21 @@ R12IntEvalInfo::initialize()
 
         // create MO integrals runtime
         moints_runtime_ = new MOIntsRuntime(tfactory_);
+        // and Fock build runtime
+        RefSymmSCMatrix Pa, Pb;
+        Ref<SCF> ref = refinfo()->ref();
+        if (!ref->spin_polarized()) {
+          Pa = ref->ao_density();  Pa.scale(0.5);
+          Pb = Pa;
+        }
+        else {
+          Pa = ref->alpha_ao_density();
+          Pb = ref->beta_ao_density();
+        }
+        // use Integral used by reference wfn!
+        fockbuild_runtime_ = new FockBuildRuntime(basis(), Pa, Pb, ref->integral(),
+                                                  msg(),
+                                                  thr());
       }
   }
 }

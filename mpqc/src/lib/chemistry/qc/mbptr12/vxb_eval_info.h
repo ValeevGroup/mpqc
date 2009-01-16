@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
 
 namespace sc {
 
@@ -119,6 +120,8 @@ private:
   Ref<MOIntsTransformFactory> tfactory_;
   /// The MOIntsRuntime object
   Ref<MOIntsRuntime> moints_runtime_;
+  /// The FockBuildRuntime object
+  Ref<FockBuildRuntime> fockbuild_runtime_;
 
   /// false until initialize() is called
   bool initialized_;
@@ -282,6 +285,8 @@ public:
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
   /// Returns the MOIntsRuntime object
   const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; };
+  /// Returns the MOIntsRuntime object
+  const Ref<FockBuildRuntime>& fockbuild_runtime() const { return fockbuild_runtime_; };
   /// Return the SingleRefInfo object
   const Ref<SingleRefInfo>& refinfo() const;
 

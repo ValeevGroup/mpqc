@@ -42,7 +42,7 @@
 namespace sc {
 
   namespace detail {
-    // helper template to save to StateOut
+    /// helper template to save to StateOut
     template <typename T> struct ToStateOut;
   }
 
@@ -207,17 +207,34 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
+  class RefSCMatrix;
+  class RefSymmSCMatrix;
+  class RefDiagSCMatrix;
+
   namespace detail {
-    // helper template to save to StateOut
+    /// helper template to save to StateOut
     template <typename T> struct ToStateOut {
       static void put(const T& t, StateOut& so, int& count) {
         count += so.put(t);
       }
     };
+    /// specialization for Ref<SavableState>
     template <typename T> struct ToStateOut< sc::Ref<T> > {
       static void put(const Ref<T>& t, StateOut& so, int& count) {
         SavableState::save_state(t.pointer(),so);
       }
+    };
+    /// specialization for RefSCMatrix
+    template <> struct ToStateOut<sc::RefSCMatrix> {
+      static void put(const sc::RefSCMatrix& t, StateOut& so, int& count);
+    };
+    /// specialization for RefSymmSCMatrix
+    template <> struct ToStateOut<sc::RefSymmSCMatrix> {
+      static void put(const sc::RefSymmSCMatrix& t, StateOut& so, int& count);
+    };
+    /// specialization for RefDiagSCMatrix
+    template <> struct ToStateOut<sc::RefDiagSCMatrix> {
+      static void put(const sc::RefDiagSCMatrix& t, StateOut& so, int& count);
     };
   }
 

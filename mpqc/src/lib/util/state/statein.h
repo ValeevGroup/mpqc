@@ -42,7 +42,7 @@
 namespace sc {
 
   namespace detail {
-    // helper template to read from StateIn
+    /// helper template to read from StateIn
     template <typename T> struct FromStateIn;
   }
 
@@ -247,17 +247,34 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
+  class RefSCMatrix;
+  class RefSymmSCMatrix;
+  class RefDiagSCMatrix;
+
   namespace detail {
-    // helper template to read from StateIn
+    /// helper template to read from StateIn
     template <typename T> struct FromStateIn {
       static void get(T& t, StateIn& so, int& count) {
         count += so.get(t);
       }
     };
+    /// specialization for Ref<SavableState>
     template <typename T> struct FromStateIn< sc::Ref<T> > {
       static void get(Ref<T>& t, StateIn& so, int& count) {
         t << SavableState::restore_state(so);
       }
+    };
+    /// specialization for RefSCMatrix
+    template <> struct FromStateIn<sc::RefSCMatrix> {
+      static void get(sc::RefSCMatrix& t, StateIn& so, int& count);
+    };
+    /// specialization for RefSymmSCMatrix
+    template <> struct FromStateIn<sc::RefSymmSCMatrix> {
+      static void get(sc::RefSymmSCMatrix& t, StateIn& so, int& count);
+    };
+    /// specialization for RefDiagSCMatrix
+    template <> struct FromStateIn<sc::RefDiagSCMatrix> {
+      static void get(sc::RefDiagSCMatrix& t, StateIn& so, int& count);
     };
   }
 

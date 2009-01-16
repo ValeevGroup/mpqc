@@ -167,7 +167,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
         space1 and space2 if electron 1 is at r1 and
         electron 2 is at r2. equiv specifies whether electrons
         are equivalent (same spin) or not */
-    RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+    RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                       const SCVector3& r1, const SCVector3& r2) const;
   public:
     MP2R12Energy_SpinOrbital(StateIn&);
@@ -227,7 +227,7 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
         space1 and space2 if electron 1 is at r1 and
         electron 2 is at r2. equiv specifies whether electrons
         are equivalent (same spin) or not */
-    RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+    RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                       const SCVector3& r1, const SCVector3& r2) const;
     
     RefSymmSCMatrix compute_B_non_pairspecific(const RefSymmSCMatrix &B,

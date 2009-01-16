@@ -104,19 +104,19 @@ R12IntEval::compute_BC_()
 	const SpinCase1 spin2 = case2(spincase2);
 
 	Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-	Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-	Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-	Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-	Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-	Ref<MOIndexSpace> xspace1 = xspace(spin1);
-	Ref<MOIndexSpace> xspace2 = xspace(spin2);
-	Ref<MOIndexSpace> vir1 = vir(spin1);
-	Ref<MOIndexSpace> vir2 = vir(spin2);
+	Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
+	Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
+	Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
+	Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+	Ref<OrbitalSpace> xspace1 = xspace(spin1);
+	Ref<OrbitalSpace> xspace2 = xspace(spin2);
+	Ref<OrbitalSpace> vir1 = vir(spin1);
+	Ref<OrbitalSpace> vir2 = vir(spin2);
 	bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
 
 #if INCLUDE_Q
 	// if can only use 1 RI index, h+J can be resolved by the OBS
-	Ref<MOIndexSpace> hj_x1, hj_x2;
+	Ref<OrbitalSpace> hj_x1, hj_x2;
 	if (maxnabs > 0) {
 	    hj_x1 = hj_x_P(spin1);
 	    hj_x2 = hj_x_P(spin2);
@@ -175,7 +175,7 @@ R12IntEval::compute_BC_()
 			  << "Entered " << Plabel << " evaluator" << endl;
 	    ExEnv::out0() << incindent;
 
-	    Ref<MOIndexSpace> ribs1, ribs2;
+	    Ref<OrbitalSpace> ribs1, ribs2;
 	    if (abs_eq_obs) {
 		ribs1 = orbs1;
 		ribs2 = orbs2;
@@ -189,7 +189,7 @@ R12IntEval::compute_BC_()
 #if INCLUDE_P_PKP
 	    // R_klPQ K_QR R_PRij is included with projectors 2 and 3
 	    {
-		Ref<MOIndexSpace> kribs1, kribs2;
+		Ref<OrbitalSpace> kribs1, kribs2;
 		if (abs_eq_obs) {
 		    kribs1 = K_p_p(spin1);
 		    kribs2 = K_p_p(spin2);
@@ -214,8 +214,8 @@ R12IntEval::compute_BC_()
 	    if (ansatz()->projector() == LinearR12::Projector_2 && abs_eq_obs && vbs_eq_obs) {
 #if INCLUDE_P_PFP && INCLUDE_P_pFp
 	      {
-	        const Ref<MOIndexSpace> forbs1 = F_p_p(spin1);
-	        const Ref<MOIndexSpace> forbs2 = F_p_p(spin2);
+	        const Ref<OrbitalSpace> forbs1 = F_p_p(spin1);
+	        const Ref<OrbitalSpace> forbs2 = F_p_p(spin2);
 	        // R_klpr F_pq R_qrij
 	        compute_FxF_(P,spincase2,
 	                     xspace1,xspace2,
@@ -233,7 +233,7 @@ R12IntEval::compute_BC_()
 	    if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_PFP
 		{
-		    Ref<MOIndexSpace> fribs1,fribs2;
+		    Ref<OrbitalSpace> fribs1,fribs2;
 		    if (abs_eq_obs) {
 			fribs1 = F_p_p(spin1);
 			fribs2 = F_p_p(spin2);
@@ -258,13 +258,13 @@ R12IntEval::compute_BC_()
 	    {
 #if INCLUDE_P_pFp
 		// the form of the pFp term depends on the projector
-		Ref<MOIndexSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
-		Ref<MOIndexSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
+		Ref<OrbitalSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
+		Ref<OrbitalSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
 
 		if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
 		    // and on whether VBS==OBS
 		    if (vbs_eq_obs) {
-			Ref<MOIndexSpace> forbs1, forbs2;
+			Ref<OrbitalSpace> forbs1, forbs2;
 			forbs1 = F_p_p(spin1);
 			forbs2 = F_p_p(spin2);
 			// R_klpa F_pq R_qaij
@@ -281,10 +281,10 @@ R12IntEval::compute_BC_()
 			// else it's a sum of
 			// R_klma F_mn R_naij
 			{
-			    Ref<MOIndexSpace> x1 = occ1;
-			    Ref<MOIndexSpace> x2 = occ2;
-			    Ref<MOIndexSpace> fx1 = F_m_m(spin1);
-			    Ref<MOIndexSpace> fx2 = F_m_m(spin2);
+			    Ref<OrbitalSpace> x1 = occ1;
+			    Ref<OrbitalSpace> x2 = occ2;
+			    Ref<OrbitalSpace> fx1 = F_m_m(spin1);
+			    Ref<OrbitalSpace> fx2 = F_m_m(spin2);
 			    compute_FxF_(P,spincase2,
 					 xspace1,xspace2,
 					 xspace1,xspace2,
@@ -296,10 +296,10 @@ R12IntEval::compute_BC_()
 			}
 			// R_klca F_cd R_daij
 			{
-			    Ref<MOIndexSpace> x1 = vir1;
-			    Ref<MOIndexSpace> x2 = vir2;
-			    Ref<MOIndexSpace> fx1 = F_a_a(spin1);
-			    Ref<MOIndexSpace> fx2 = F_a_a(spin2);
+			    Ref<OrbitalSpace> x1 = vir1;
+			    Ref<OrbitalSpace> x2 = vir2;
+			    Ref<OrbitalSpace> fx1 = F_a_a(spin1);
+			    Ref<OrbitalSpace> fx2 = F_a_a(spin2);
 			    compute_FxF_(P,spincase2,
 					 xspace1,xspace2,
 					 xspace1,xspace2,
@@ -311,10 +311,10 @@ R12IntEval::compute_BC_()
 			}
 			// R_klca F_cm R_maij + R_klma F_mc R_caij
 			{
-			    Ref<MOIndexSpace> x1 = occ1;
-			    Ref<MOIndexSpace> x2 = occ2;
-			    Ref<MOIndexSpace> fx1 = F_m_a(spin1);
-			    Ref<MOIndexSpace> fx2 = F_m_a(spin2);
+			    Ref<OrbitalSpace> x1 = occ1;
+			    Ref<OrbitalSpace> x2 = occ2;
+			    Ref<OrbitalSpace> fx1 = F_m_a(spin1);
+			    Ref<OrbitalSpace> fx2 = F_m_a(spin2);
 			    RefSCMatrix Ptmp;
 			    compute_FxF_(Ptmp,spincase2,
 					 xspace1,xspace2,
@@ -338,14 +338,14 @@ R12IntEval::compute_BC_()
 
 	    if (!abs_eq_obs) {
 
-		Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
-		Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
+		Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
+		Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
 
 		if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFP
                     // R_klmA F_mP R_PAij + R_klPA F_Pm R_mAij
 		    {
-			Ref<MOIndexSpace> focc1, focc2;
+			Ref<OrbitalSpace> focc1, focc2;
 			focc1 = F_m_P(spin1);
 			focc2 = F_m_P(spin2);
 			RefSCMatrix Ptmp;
@@ -368,15 +368,15 @@ R12IntEval::compute_BC_()
 		{
 #if INCLUDE_P_pFA
 		    // the form of the pFp term depends on the projector
-		    Ref<MOIndexSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
-		    Ref<MOIndexSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
+		    Ref<OrbitalSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
+		    Ref<OrbitalSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
 
 		    // R_klpz F_pA R_Azij
 		    if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
 			// and on whether VBS==OBS
 			if (vbs_eq_obs) {
-			    Ref<MOIndexSpace> forbs1 = F_p_A(spin1);
-			    Ref<MOIndexSpace> forbs2 = F_p_A(spin2);
+			    Ref<OrbitalSpace> forbs1 = F_p_A(spin1);
+			    Ref<OrbitalSpace> forbs2 = F_p_A(spin2);
 			    RefSCMatrix Ptmp;
 			    compute_FxF_(Ptmp,spincase2,
 					 xspace1,xspace2,
@@ -391,10 +391,10 @@ R12IntEval::compute_BC_()
 
 			    RefSCMatrix Ptmp;
 			    {
-				Ref<MOIndexSpace> x1 = occ1;
-				Ref<MOIndexSpace> x2 = occ2;
-				Ref<MOIndexSpace> fx1 = F_m_A(spin1);
-				Ref<MOIndexSpace> fx2 = F_m_A(spin2);
+				Ref<OrbitalSpace> x1 = occ1;
+				Ref<OrbitalSpace> x2 = occ2;
+				Ref<OrbitalSpace> fx1 = F_m_A(spin1);
+				Ref<OrbitalSpace> fx2 = F_m_A(spin2);
 				compute_FxF_(Ptmp,spincase2,
 					     xspace1,xspace2,
 					     xspace1,xspace2,
@@ -405,10 +405,10 @@ R12IntEval::compute_BC_()
                                   Ptmp.print("P(R_klmz F_mA R_Azij)");
 			    }
 			    {
-				Ref<MOIndexSpace> x1 = vir1;
-				Ref<MOIndexSpace> x2 = vir2;
-				Ref<MOIndexSpace> fx1 = F_a_A(spin1);
-				Ref<MOIndexSpace> fx2 = F_a_A(spin2);
+				Ref<OrbitalSpace> x1 = vir1;
+				Ref<OrbitalSpace> x2 = vir2;
+				Ref<OrbitalSpace> fx1 = F_a_A(spin1);
+				Ref<OrbitalSpace> fx2 = F_a_A(spin2);
 				compute_FxF_(Ptmp,spincase2,
 					     xspace1,xspace2,
 					     xspace1,xspace2,
@@ -433,8 +433,8 @@ R12IntEval::compute_BC_()
 		if (ansatz()->projector() == LinearR12::Projector_2) {
 #if INCLUDE_P_mFm
 		    {
-			Ref<MOIndexSpace> focc1 = F_m_m(spin1);
-			Ref<MOIndexSpace> focc2 = F_m_m(spin2);
+			Ref<OrbitalSpace> focc1 = F_m_m(spin1);
+			Ref<OrbitalSpace> focc2 = F_m_m(spin2);
 			// R_klmA F_mn R_nAij
 			compute_FxF_(P,spincase2,
 				     xspace1,xspace2,

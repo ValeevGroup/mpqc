@@ -38,8 +38,8 @@
 
 void
 sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                   const Ref<MOIndexSpace>& bra,
-                   const Ref<MOIndexSpace>& ket,
+                   const Ref<OrbitalSpace>& bra,
+                   const Ref<OrbitalSpace>& ket,
                    bool accumulate)
 {
   SpatialMOPairIter_eq ij_iter(bra);

@@ -39,7 +39,7 @@ using namespace sc;
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
-MOPairIter::MOPairIter(const Ref<MOIndexSpace>& space_i, const Ref<MOIndexSpace>& space_j)
+MOPairIter::MOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j)
 {
   i_eq_j_ = (space_i == space_j);
   ni_ = space_i->rank();
@@ -53,7 +53,7 @@ MOPairIter::~MOPairIter()
 {
 }
 
-SpatialMOPairIter_eq::SpatialMOPairIter_eq(const Ref<MOIndexSpace>& space) :
+SpatialMOPairIter_eq::SpatialMOPairIter_eq(const Ref<OrbitalSpace>& space) :
   SpatialMOPairIter(space,space)
 {
   nij_ = ni_*(ni_+1)/2;
@@ -70,7 +70,7 @@ SpatialMOPairIter_eq::~SpatialMOPairIter_eq()
 {
 }
 
-SpatialMOPairIter_neq::SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
+SpatialMOPairIter_neq::SpatialMOPairIter_neq(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2) :
 SpatialMOPairIter(space1,space2)
 {
   /// If debugging, check if spaces are the same
@@ -89,8 +89,8 @@ SpatialMOPairIter_neq::~SpatialMOPairIter_neq()
 
 ///////
 
-SpinMOPairIter::SpinMOPairIter(const Ref<MOIndexSpace>& space1,
-                               const Ref<MOIndexSpace>& space2,
+SpinMOPairIter::SpinMOPairIter(const Ref<OrbitalSpace>& space1,
+                               const Ref<OrbitalSpace>& space2,
                                const SpinCase2& S) :
   MOPairIter(space1, space2), IJ_(0)
 {
@@ -163,7 +163,7 @@ SpinMOPairIter::operator int() const { return nij_ > IJ_; }
 
 ///////
 
-PureSpinPairIter::PureSpinPairIter(const Ref<MOIndexSpace>& space,
+PureSpinPairIter::PureSpinPairIter(const Ref<OrbitalSpace>& space,
 				   const PureSpinCase2& S) :
   MOPairIter(space, space), spin_(S), IJ_(0)
 {
@@ -236,7 +236,7 @@ PureSpinPairIter::operator int() const { return nij_ > IJ_; }
 ///////
 
 Ref<SpatialMOPairIter>
-MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+MOPairIterFactory::mopairiter(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2)
 {
   if (space1 == space2)
     return new SpatialMOPairIter_eq(space1);
@@ -245,7 +245,7 @@ MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndex
 }
 
 RefSCDimension
-MOPairIterFactory::scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+MOPairIterFactory::scdim_aa(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2)
 {
   if (space1 != space2)
     return scdim_ab(space1,space2);
@@ -258,7 +258,7 @@ MOPairIterFactory::scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 }
 
 RefSCDimension
-MOPairIterFactory::scdim_ab(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+MOPairIterFactory::scdim_ab(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2)
 {
   Ref<MOPairIter> piter = mopairiter(space1,space2);
   int npair_ab = space1->rank() * space2->rank();

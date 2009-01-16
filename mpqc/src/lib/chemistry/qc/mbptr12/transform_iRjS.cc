@@ -50,10 +50,10 @@ static ClassDesc TwoBodyMOIntsTransform_iRjS_cd(
 
 TwoBodyMOIntsTransform_iRjS::TwoBodyMOIntsTransform_iRjS(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                                                          const Ref<TwoBodyIntDescr>& tbintdescr,
-                                                         const Ref<MOIndexSpace>& space1,
-                                                         const Ref<MOIndexSpace>& space2,
-                                                         const Ref<MOIndexSpace>& space3,
-                                                         const Ref<MOIndexSpace>& space4) :
+                                                         const Ref<OrbitalSpace>& space1,
+                                                         const Ref<OrbitalSpace>& space2,
+                                                         const Ref<OrbitalSpace>& space3,
+                                                         const Ref<OrbitalSpace>& space4) :
   TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,space2,space3,space4)
 {
   init_vars();

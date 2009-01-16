@@ -572,9 +572,9 @@ namespace sc {
     }
 
     RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
-                        const Ref<MOIndexSpace>& occ_space,
-                        const Ref<MOIndexSpace>& bra_space,
-                        const Ref<MOIndexSpace>& ket_space) {
+                        const Ref<OrbitalSpace>& occ_space,
+                        const Ref<OrbitalSpace>& bra_space,
+                        const Ref<OrbitalSpace>& ket_space) {
 
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
@@ -662,9 +662,9 @@ namespace sc {
     }
 
     RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
-                         const Ref<MOIndexSpace>& occ_space,
-                         const Ref<MOIndexSpace>& bra_space,
-                         const Ref<MOIndexSpace>& ket_space) {
+                         const Ref<OrbitalSpace>& occ_space,
+                         const Ref<OrbitalSpace>& bra_space,
+                         const Ref<OrbitalSpace>& ket_space) {
 
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 

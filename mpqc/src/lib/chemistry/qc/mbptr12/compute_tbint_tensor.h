@@ -48,10 +48,10 @@ namespace sc {
     void
     R12IntEval::compute_tbint_tensor(RefSCMatrix& T,
                                      TwoBodyInt::tbint_type tbint_type,
-                                     const Ref<MOIndexSpace>& space1_bra,
-                                     const Ref<MOIndexSpace>& space1_ket,
-                                     const Ref<MOIndexSpace>& space2_bra,
-                                     const Ref<MOIndexSpace>& space2_ket,
+                                     const Ref<OrbitalSpace>& space1_bra,
+                                     const Ref<OrbitalSpace>& space1_ket,
+                                     const Ref<OrbitalSpace>& space2_bra,
+                                     const Ref<OrbitalSpace>& space2_ket,
                                      bool antisymmetrize,
                                      const std::vector<std::string>& transform_keys)
     {
@@ -94,10 +94,10 @@ namespace sc {
       //
       // WARNING: Assuming all transforms are over same spaces!!!
       //
-      Ref<MOIndexSpace> tspace1_bra = transforms[0]->space1();
-      Ref<MOIndexSpace> tspace1_ket = transforms[0]->space2();
-      Ref<MOIndexSpace> tspace2_bra = transforms[0]->space3();
-      Ref<MOIndexSpace> tspace2_ket = transforms[0]->space4();
+      Ref<OrbitalSpace> tspace1_bra = transforms[0]->space1();
+      Ref<OrbitalSpace> tspace1_ket = transforms[0]->space2();
+      Ref<OrbitalSpace> tspace2_bra = transforms[0]->space3();
+      Ref<OrbitalSpace> tspace2_ket = transforms[0]->space4();
 
       // maps spaceX to spaceX of the transform
       std::vector<unsigned int> map1_bra, map1_ket, map2_bra, map2_ket;

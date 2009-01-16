@@ -64,12 +64,12 @@ R12IntEval::contrib_to_VXB_a_()
       if (dim_oo(spincase2).n() == 0)
         continue;
 
-      const Ref<MOIndexSpace>& occ1_act = occ_act(spin1);
-      const Ref<MOIndexSpace>& occ2_act = occ_act(spin2);
-      const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
-      const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
-      const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-      const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
+      const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
+      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+      const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+      const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
@@ -199,9 +199,9 @@ R12IntEval::contrib_to_VXB_a_()
 
 	  const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 				    absmethod == LinearR12::ABS_CABSPlus);
-	  const Ref<MOIndexSpace>& occ1 = occ(spin1);
-	  const Ref<MOIndexSpace>& occ2 = occ(spin2);
-	  Ref<MOIndexSpace> rispace1, rispace2;
+	  const Ref<OrbitalSpace>& occ1 = occ(spin1);
+	  const Ref<OrbitalSpace>& occ2 = occ(spin2);
+	  Ref<OrbitalSpace> rispace1, rispace2;
 	  if (cabs_method) {
 	    rispace1 = r12info()->ribs_space(spin1);
 	    rispace2 = r12info()->ribs_space(spin2);

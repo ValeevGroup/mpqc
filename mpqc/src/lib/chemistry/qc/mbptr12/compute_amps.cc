@@ -56,10 +56,10 @@ using namespace sc;
 
 void
 R12IntEval::compute_T2_(RefSCMatrix& T2,
-                        const Ref<MOIndexSpace>& space1,
-                        const Ref<MOIndexSpace>& space2,
-                        const Ref<MOIndexSpace>& space3,
-                        const Ref<MOIndexSpace>& space4,
+                        const Ref<OrbitalSpace>& space1,
+                        const Ref<OrbitalSpace>& space2,
+                        const Ref<OrbitalSpace>& space3,
+                        const Ref<OrbitalSpace>& space4,
                         bool antisymmetrize,
                         const std::string& transform_key)
 {
@@ -87,10 +87,10 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
 
 void
 R12IntEval::compute_F12_(RefSCMatrix& F12,
-                        const Ref<MOIndexSpace>& space1,
-                        const Ref<MOIndexSpace>& space2,
-                        const Ref<MOIndexSpace>& space3,
-                        const Ref<MOIndexSpace>& space4,
+                        const Ref<OrbitalSpace>& space1,
+                        const Ref<OrbitalSpace>& space2,
+                        const Ref<OrbitalSpace>& space3,
+                        const Ref<OrbitalSpace>& space4,
                         bool antisymmetrize,
                         const std::vector<std::string>& transform_keys)
 {

@@ -69,16 +69,16 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       const SpinCase1 spin2 = case2(spincase2);
       Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
-      const Ref<MOIndexSpace>& occ1_act = occ_act(spin1);
-      const Ref<MOIndexSpace>& occ2_act = occ_act(spin2);
-      const Ref<MOIndexSpace>& occ1 = occ(spin1);
-      const Ref<MOIndexSpace>& occ2 = occ(spin2);
-      const Ref<MOIndexSpace>& vir1_act = vir_act(spin1);
-      const Ref<MOIndexSpace>& vir2_act = vir_act(spin2);
-      const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-      const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
-      const Ref<MOIndexSpace>& cabs1 = r12info()->ribs_space(spin1);
-      const Ref<MOIndexSpace>& cabs2 = r12info()->ribs_space(spin2);
+      const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
+      const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
+      const Ref<OrbitalSpace>& occ1 = occ(spin1);
+      const Ref<OrbitalSpace>& occ2 = occ(spin2);
+      const Ref<OrbitalSpace>& vir1_act = vir_act(spin1);
+      const Ref<OrbitalSpace>& vir2_act = vir_act(spin2);
+      const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+      const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
+      const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
@@ -99,8 +99,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
       // (im|jn) contribution
       {
-	  Ref<MOIndexSpace> cs1 = occ1;
-	  Ref<MOIndexSpace> cs2 = occ2;
+	  Ref<OrbitalSpace> cs1 = occ1;
+	  Ref<OrbitalSpace> cs2 = occ2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
@@ -144,8 +144,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       // (ia|jb) contribution
       {
-	  Ref<MOIndexSpace> cs1 = vir1_act;
-	  Ref<MOIndexSpace> cs2 = vir2_act;
+	  Ref<OrbitalSpace> cs1 = vir1_act;
+	  Ref<OrbitalSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
@@ -190,8 +190,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       // (im|ja) contribution
       {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
-	  Ref<MOIndexSpace> cs1 = occ1;
-	  Ref<MOIndexSpace> cs2 = vir2_act;
+	  Ref<OrbitalSpace> cs1 = occ1;
+	  Ref<OrbitalSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
@@ -237,8 +237,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       // only needed if ansatz == 2
       if (ansatz()->projector() == LinearR12::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
-	  Ref<MOIndexSpace> cs1 = occ1;
-	  Ref<MOIndexSpace> cs2 = cabs2;
+	  Ref<OrbitalSpace> cs1 = occ1;
+	  Ref<OrbitalSpace> cs2 = cabs2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
@@ -284,8 +284,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       // (im|ja) contribution
       {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
-	  Ref<MOIndexSpace> cs1 = occ1;
-	  Ref<MOIndexSpace> cs2 = vir2_act;
+	  Ref<OrbitalSpace> cs1 = occ1;
+	  Ref<OrbitalSpace> cs2 = vir2_act;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
@@ -331,8 +331,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       // only needed if ansatz == 2
       if (ansatz()->projector() == LinearR12::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
-	  Ref<MOIndexSpace> cs1 = occ1;
-	  Ref<MOIndexSpace> cs2 = cabs2;
+	  Ref<OrbitalSpace> cs1 = occ1;
+	  Ref<OrbitalSpace> cs2 = cabs2;
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {

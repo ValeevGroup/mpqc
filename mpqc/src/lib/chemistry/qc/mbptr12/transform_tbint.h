@@ -38,7 +38,7 @@
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
 using namespace std;
@@ -85,10 +85,10 @@ protected:
   // Integrals accumulator
   Ref<R12IntsAcc> ints_acc_;
 
-  Ref<MOIndexSpace> space1_;
-  Ref<MOIndexSpace> space2_;
-  Ref<MOIndexSpace> space3_;
-  Ref<MOIndexSpace> space4_;
+  Ref<OrbitalSpace> space1_;
+  Ref<OrbitalSpace> space2_;
+  Ref<OrbitalSpace> space3_;
+  Ref<OrbitalSpace> space4_;
 
   int restart_orbital_; // when restarting, this recalls where to start transform
   size_t peak_memory_;  // actual maximum memory (per process) used by this transform during its lifetime
@@ -153,8 +153,8 @@ public:
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                          const Ref<TwoBodyIntDescr>& tbintdescr,
-                         const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                         const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
+                         const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                         const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4);
   virtual ~TwoBodyMOIntsTransform();
 
   void save_data_state(StateOut&);
@@ -173,14 +173,14 @@ public:
   const Ref<TwoBodyIntDescr>& intdescr() const;
   /** Returns the integrals accumulator object. */
   const Ref<R12IntsAcc>& ints_acc();
-  /// Returns MOIndexSpace object 1
-  const Ref<MOIndexSpace>& space1() const;
-  /// Returns MOIndexSpace object 2
-  const Ref<MOIndexSpace>& space2() const;
-  /// Returns MOIndexSpace object 3
-  const Ref<MOIndexSpace>& space3() const;
-  /// Returns MOIndexSpace object 4
-  const Ref<MOIndexSpace>& space4() const;
+  /// Returns OrbitalSpace object 1
+  const Ref<OrbitalSpace>& space1() const;
+  /// Returns OrbitalSpace object 2
+  const Ref<OrbitalSpace>& space2() const;
+  /// Returns OrbitalSpace object 3
+  const Ref<OrbitalSpace>& space3() const;
+  /// Returns OrbitalSpace object 4
+  const Ref<OrbitalSpace>& space4() const;
 
   /// Supplies the partially transformed integrals.
   virtual void partially_transformed_ints(const Ref<R12IntsAcc>&);

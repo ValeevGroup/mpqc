@@ -59,11 +59,11 @@ void R12IntEval::compute_B_DKH_() {
   //
   // Compute kinetic energy integrals and obtain geminal-generator spaces transformed with them
   //
-  Ref<MOIndexSpace> t_x_P[NSpinCases1];
+  Ref<OrbitalSpace> t_x_P[NSpinCases1];
   // first need kinetic energy matrix between OBS and RIBS
   Ref<GaussianBasisSet> obs = r12info()->basis();
   const unsigned int maxnabs = r12info()->maxnabs();
-  Ref<MOIndexSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
+  Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
   Ref<GaussianBasisSet> ribs = rispace->basis();
   // Symmetry blocked
   RefSCMatrix t_obs_ribs;
@@ -99,7 +99,7 @@ void R12IntEval::compute_B_DKH_() {
     using namespace sc::LinearR12;
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     // t_x_P = xspace.coef() * t_obs_ribs
-    Ref<MOIndexSpace> x = xspace(spin);
+    Ref<OrbitalSpace> x = xspace(spin);
     if (x->basis() != r12info()->basis())
       throw FeatureNotImplemented("Cannot handle geminal generating spaces supported by non-orbital basis sets",__FILE__,__LINE__);
     RefSCMatrix t_x_P_coefs = t_obs_ribs.t() * x->coefs();
@@ -109,7 +109,7 @@ void R12IntEval::compute_B_DKH_() {
     ExEnv::out0() << "id = " << id << endl;
     std::string name = "(T)-weighted space";
     name = prepend_spincase(spin,name);
-    t_x_P[s] = new MOIndexSpace(id, name, x, t_x_P_coefs, ribs);
+    t_x_P[s] = new OrbitalSpace(id, name, x, t_x_P_coefs, ribs);
   }
 
   //
@@ -124,8 +124,8 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase1 spin2 = case2(spincase2);
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
-    const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-    const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
+    const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+    const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
     const bool x1_eq_x2 = (xspace1 == xspace2);
 
     // are particles 1 and 2 equivalent?
@@ -136,8 +136,8 @@ void R12IntEval::compute_B_DKH_() {
     RefSCMatrix B_DKH = B_[s].clone();
     B_DKH.assign(0.0);
 
-    Ref<MOIndexSpace> t_x1 = t_x_P[spin1];
-    Ref<MOIndexSpace> t_x2 = t_x_P[spin2];
+    Ref<OrbitalSpace> t_x1 = t_x_P[spin1];
+    Ref<OrbitalSpace> t_x2 = t_x_P[spin2];
 
     // <xy|T z> tforms
     std::vector<std::string> tforms_xyTz;

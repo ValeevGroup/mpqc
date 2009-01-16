@@ -59,8 +59,8 @@ TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& fact,
                                                const Ref<TwoBodyIntDescr>& tbintdescr,
-                                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                               const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
+                                               const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                                               const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
   name_(name), factory_(fact), tbintdescr_(tbintdescr),
   space1_(space1), space2_(space2), space3_(space3), space4_(space4),
   mem_(factory()->mem()),
@@ -165,16 +165,16 @@ TwoBodyMOIntsTransform::peak_memory() const {
   return peak_memory_;
 }
 
-const Ref<MOIndexSpace>&
+const Ref<OrbitalSpace>&
 TwoBodyMOIntsTransform::space1() const {return space1_;}
 
-const Ref<MOIndexSpace>&
+const Ref<OrbitalSpace>&
 TwoBodyMOIntsTransform::space2() const {return space2_;}
 
-const Ref<MOIndexSpace>&
+const Ref<OrbitalSpace>&
 TwoBodyMOIntsTransform::space3() const {return space3_;}
 
-const Ref<MOIndexSpace>&
+const Ref<OrbitalSpace>&
 TwoBodyMOIntsTransform::space4() const {return space4_;}
 
 double
@@ -247,7 +247,7 @@ TwoBodyMOIntsTransform::init_vars()
   static_memory_ = 0;
   if (me == 0) {
 #if 0 // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
-    // mem_static should include storage in MOIndexSpace
+    // mem_static should include storage in OrbitalSpace
     static_memory_ = space1_->memory_in_use() +
                   space2_->memory_in_use() +
                   space3_->memory_in_use() +

@@ -65,12 +65,12 @@ using namespace sc;
 
 void
 R12IntEval::compute_A_direct_(RefSCMatrix& A,
-                              const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
-                              const Ref<MOIndexSpace>& fspace2,
-                              const Ref<MOIndexSpace>& fspace4,
+                              const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
+                              const Ref<OrbitalSpace>& space3,
+                              const Ref<OrbitalSpace>& space4,
+                              const Ref<OrbitalSpace>& fspace2,
+                              const Ref<OrbitalSpace>& fspace4,
                               bool antisymmetrize)
 {
   // are particles 1 and 2 equivalent?

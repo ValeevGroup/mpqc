@@ -115,10 +115,10 @@ namespace sc {
       typedef std::string ObjT;
 
       R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime_,
-                              const Ref<MOIndexSpace>& bra1,
-                              const Ref<MOIndexSpace>& ket1,
-                              const Ref<MOIndexSpace>& bra2,
-                              const Ref<MOIndexSpace>& ket2,
+                              const Ref<OrbitalSpace>& bra1,
+                              const Ref<OrbitalSpace>& ket1,
+                              const Ref<OrbitalSpace>& bra2,
+                              const Ref<OrbitalSpace>& ket2,
                               const Ref<CorrelationFactor>& corrfactor,
                               bool CorrFunctionInBra = false,
                               bool CorrFunctionInKet = false,
@@ -131,10 +131,10 @@ namespace sc {
     private:
       Ref<MOIntsRuntime> moints_rtime_;
       Ref<CorrelationFactor> corrfactor_;
-      const Ref<MOIndexSpace>& bra1_;
-      const Ref<MOIndexSpace>& bra2_;
-      const Ref<MOIndexSpace>& ket1_;
-      const Ref<MOIndexSpace>& ket2_;
+      const Ref<OrbitalSpace>& bra1_;
+      const Ref<OrbitalSpace>& bra2_;
+      const Ref<OrbitalSpace>& ket1_;
+      const Ref<OrbitalSpace>& ket2_;
       bool CorrFunctionInBraKet_;
       std::string layout_key_;
       unsigned int nf12bra_;

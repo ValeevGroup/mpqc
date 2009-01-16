@@ -42,7 +42,7 @@ CXXSRCS = mbptr12.cc \
   vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \
   multipole_ints.cc ri_basis.cc \
-  moindexspace.cc pairiter.cc \
+  orbitalspace.cc pairiter.cc \
   transform_factory.cc transform_tbint.cc \
   transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
   transform_iRjS.cc \
@@ -61,7 +61,8 @@ CXXSRCS = mbptr12.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
   singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
-  moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc
+  moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
+  orbitalspace_runtime.cc
   
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \
@@ -74,14 +75,16 @@ transform_12inds.h linearr12.h transform_13inds.h \
 linearr12.timpl.h               transform_factory.h \
 linkage.h                       transform_ijxy.h \
 mbptr12.h                       transform_ikjy.h \
-moindexspace.h                  transform_ixjy.h \
+orbitalspace.h                  transform_ixjy.h \
 mp2r12_energy.h                 transform_tbint.h \
 mp2r12_energy_util.h            twobodygrid.h \
 pairiter.h                      twoparticlecontraction.h \
 print.h                         utils.h \
 print_scmat_norms.h             utils.impl.h \
 r12_amps.h                      vxb_eval_info.h \
-r12ia.h				moints_runtime.h
+r12ia.h				moints_runtime.h \
+fockbuilder.h                   fockbuild_runtime.h \
+orbitalspace_runtime.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

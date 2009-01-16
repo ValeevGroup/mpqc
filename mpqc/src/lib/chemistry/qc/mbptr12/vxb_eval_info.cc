@@ -39,7 +39,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
@@ -248,7 +248,7 @@ R12IntEvalInfo::initialize()
 
       {
         // RI-related spaces should already be in the registry. Push all OBS-based spaces onto the registry also
-        const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+        const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
         if (!refinfo()->spin_polarized()) {
           idxreg->add(make_keyspace_pair(refinfo()->docc_act()));
           idxreg->add(make_keyspace_pair(refinfo()->docc()));
@@ -268,7 +268,7 @@ R12IntEvalInfo::initialize()
         }
 
         // also create AO spaces
-        Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
+        Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
         { // OBS
           const int nao = basis()->nbasis();
           RefSCDimension obs_ao_dim = new SCDimension(nao,1);
@@ -277,7 +277,7 @@ R12IntEvalInfo::initialize()
           obs_ao_coefs.assign(0.0);
           for(int ao=0; ao<nao; ++ao)
             obs_ao_coefs.set_element(ao,ao,1.0);
-          Ref<MOIndexSpace> mu = new MOIndexSpace("mu", "OBS(AO)", obs_ao_coefs,
+          Ref<OrbitalSpace> mu = new OrbitalSpace("mu", "OBS(AO)", obs_ao_coefs,
                                                   basis(), integral());
           idxreg->add(make_keyspace_pair(mu));
           aoidxreg->add(mu->basis(),mu);
@@ -290,7 +290,7 @@ R12IntEvalInfo::initialize()
           ribs_ao_coefs.assign(0.0);
           for(int ao=0; ao<nao; ++ao)
             ribs_ao_coefs.set_element(ao,ao,1.0);
-          Ref<MOIndexSpace> mu = new MOIndexSpace("mu'", "RIBS(AO)", ribs_ao_coefs,
+          Ref<OrbitalSpace> mu = new OrbitalSpace("mu'", "RIBS(AO)", ribs_ao_coefs,
                                                   basis_ri(), integral());
           idxreg->add(make_keyspace_pair(mu));
           aoidxreg->add(mu->basis(),mu);
@@ -317,7 +317,7 @@ R12IntEvalInfo::initialize()
   }
 }
 
-const Ref<MOIndexSpace>&
+const Ref<OrbitalSpace>&
 R12IntEvalInfo::ribs_space(const SpinCase1& S) const
 {
     if (abs_method() == LinearR12::ABS_CABS || abs_method() == LinearR12::ABS_CABSPlus)
@@ -362,9 +362,9 @@ R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const SpinCa
 void
 R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
                                  const SpinCase1& spincase,
-                                 const Ref<MOIndexSpace>& vbs)
+                                 const Ref<OrbitalSpace>& vbs)
 {
-  std::string id = ParsedMOIndexSpaceKey::key(std::string("e(sym)"),spincase);
+  std::string id = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spincase);
   vir_sb_ = R12IntEvalInfo::orthog_comp(refinfo->occ_sb(spincase), vbs, id, "VBS", refinfo->ref()->lindep_tol());
   // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
   // Need to move all relevant code outside of MBPT2-F12 code
@@ -399,7 +399,7 @@ R12IntEvalInfo::construct_orthog_vir_()
       throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
 
     // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    Ref<OrbitalSpace> vir_space = orthogonalize("e","VBS", bs_vir_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
     if (!spin_polarized) {
       // Now project out occupied MOs
       vir_sb_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());
@@ -416,7 +416,7 @@ R12IntEvalInfo::construct_orthog_vir_()
 }
 
 void
-R12IntEvalInfo::vir(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+R12IntEvalInfo::vir(const SpinCase1& S, const Ref<OrbitalSpace>& sp)
 {
   if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_ = sp;
@@ -429,7 +429,7 @@ R12IntEvalInfo::vir(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 }
 
 void
-R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<OrbitalSpace>& sp)
 {
   if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_sb_ = sp;
@@ -442,7 +442,7 @@ R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
 }
 
 void
-R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<OrbitalSpace>& sp)
 {
   if (refinfo()->spin_polarized()) {
     vir_spaces_[S].vir_act_ = sp;

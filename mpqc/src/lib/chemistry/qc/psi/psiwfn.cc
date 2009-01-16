@@ -853,7 +853,7 @@ namespace sc {
     return reference()->nelectron();
   }
   
-  const Ref<MOIndexSpace>&
+  const Ref<OrbitalSpace>&
   PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
     if (occ_act_sb_[spin].nonnull())
       return occ_act_sb_[spin];
@@ -864,14 +864,14 @@ namespace sc {
     const int nocc = reference_->nocc(spin);
     
     const std::string id(spin==Alpha ? "I" : "i");
-    occ_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active occupied MOs (Psi3)"),
+    occ_act_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"active occupied MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
-        reference_->evals(spin),nfzc_,nmo-nocc,MOIndexSpace::symmetry);
+        reference_->evals(spin),nfzc_,nmo-nocc,OrbitalSpace::symmetry);
     
     return occ_act_sb_[spin];
   }
   
-  const Ref<MOIndexSpace>&
+  const Ref<OrbitalSpace>&
   PsiCorrWavefunction::vir_act_sb(SpinCase1 spin) {
     if (vir_act_sb_[spin].nonnull())
       return vir_act_sb_[spin];
@@ -882,9 +882,9 @@ namespace sc {
     const int nocc = reference_->nocc(spin);
 
     const std::string id(spin==Alpha ? "A" : "a");    
-    vir_act_sb_[spin] = new MOIndexSpace(id,prepend_spincase(spin,"active virtual MOs (Psi3)"),
+    vir_act_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"active virtual MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
-        reference_->evals(spin),nocc,nfzv_,MOIndexSpace::symmetry);
+        reference_->evals(spin),nocc,nfzv_,OrbitalSpace::symmetry);
     
     return vir_act_sb_[spin];
   }

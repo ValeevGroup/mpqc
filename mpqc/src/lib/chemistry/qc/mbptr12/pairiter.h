@@ -30,7 +30,7 @@
 #endif
 
 #include <stdexcept>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/spin.h>
 
 #ifndef _chemistry_qc_mbptr12_pairiter_h
@@ -59,7 +59,7 @@ class MOPairIter : public RefCount {
 
   public:
     /// Initialize an iterator for the given MO spaces.
-    MOPairIter(const Ref<MOIndexSpace>& space_i, const Ref<MOIndexSpace>& space_j);
+    MOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j);
     virtual ~MOPairIter();
 
     /// Start the iteration.
@@ -90,7 +90,7 @@ class SpatialMOPairIter : public MOPairIter {
 
 public:
   /// Initialize a spatial pair iterator for the given MO spaces.
-  SpatialMOPairIter(const Ref<MOIndexSpace>& space_i, const Ref<MOIndexSpace>& space_j) :
+  SpatialMOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j) :
     MOPairIter(space_i,space_j) {};
   ~SpatialMOPairIter() {};
 
@@ -172,7 +172,7 @@ class SpatialMOPairIter_eq : public SpatialMOPairIter {
 
 public:
   /// Initialize an iterator for the given MO spaces.
-  SpatialMOPairIter_eq(const Ref<MOIndexSpace>& space1);
+  SpatialMOPairIter_eq(const Ref<OrbitalSpace>& space1);
   ~SpatialMOPairIter_eq();
 
   /// Initialize the iterator assuming that iteration will start with pair ij_offset
@@ -245,7 +245,7 @@ class SpatialMOPairIter_neq : public SpatialMOPairIter {
 
 public:
   /// Initialize an iterator for the given MO spaces.
-  SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  SpatialMOPairIter_neq(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2);
   ~SpatialMOPairIter_neq();
 
   /// Initialize the iterator assuming that iteration will start with pair ij_offset
@@ -282,7 +282,7 @@ class SpinMOPairIter : public MOPairIter
 {
   public:
   /// spincase S
-  SpinMOPairIter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+  SpinMOPairIter(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                  const SpinCase2& S);
   ~SpinMOPairIter();
   
@@ -305,7 +305,7 @@ class PureSpinPairIter : public MOPairIter
 {
   public:
   /// spincase S
-  PureSpinPairIter(const Ref<MOIndexSpace>& space,
+  PureSpinPairIter(const Ref<OrbitalSpace>& space,
 		   const PureSpinCase2& S);
   ~PureSpinPairIter();
   
@@ -378,11 +378,11 @@ public:
   ~MOPairIterFactory() {}
 
   /// Constructs an appropriate MOPairIter object
-  Ref<SpatialMOPairIter> mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  Ref<SpatialMOPairIter> mopairiter(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2);
   /// Constructs an appropriate RefSCDimension object for same-spin pair
-  RefSCDimension scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  RefSCDimension scdim_aa(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2);
   /// Constructs an appropriate RefSCDimension object for different-spin pair
-  RefSCDimension scdim_ab(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  RefSCDimension scdim_ab(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2);
 };
 
 }

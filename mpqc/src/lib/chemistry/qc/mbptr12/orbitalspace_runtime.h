@@ -1,5 +1,5 @@
 //
-// moindexspace_runtime.h
+// orbitalspace_runtime.h
 //
 // Copyright (C) 2008 Edward Valeev
 //
@@ -29,37 +29,37 @@
 #pragma interface
 #endif
 
-#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_moindexspaceruntime_h
-#define _mpqc_src_lib_chemistry_qc_mbptr12_moindexspaceruntime_h
+#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_orbitalspaceruntime_h
+#define _mpqc_src_lib_chemistry_qc_mbptr12_orbitalspaceruntime_h
 
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/registry.h>
 
 namespace sc {
 
-  /** Smart runtime that knows how to build MOIndexSpace objects and knows relationships
-      between MOIndexSpace objects. The objects are held by the global MOIndexSpaceRegistry.
+  /** Smart runtime that knows how to build OrbitalSpace objects and knows relationships
+      between OrbitalSpace objects. The objects are held by the global OrbitalSpaceRegistry.
     */
-  class MOIndexSpaceRuntime : virtual public SavableState {
+  class OrbitalSpaceRuntime : virtual public SavableState {
     public:
-      MOIndexSpaceRuntime();
-      MOIndexSpaceRuntime(StateIn&);
+      OrbitalSpaceRuntime();
+      OrbitalSpaceRuntime(StateIn&);
       void save_data_state(StateOut&);
 
       /**
        Finds or constructs a space with the given key. To be able to
        construct a transformed space base spaces need to be available.
        */
-      Ref<MOIndexSpace> get(const std::string& key) const;
+      Ref<OrbitalSpace> get(const std::string& key) const;
 
       /// declares that space represents the AO space supported by space->basis()
-      void declare_aospace(const Ref<MOIndexSpace>& space);
+      void declare_aospace(const Ref<OrbitalSpace>& space);
       /// which space is the AO space for basis?
-      Ref<MOIndexSpace> aospace(const Ref<GaussianBasisSet>& basis);
+      Ref<OrbitalSpace> aospace(const Ref<GaussianBasisSet>& basis);
 
     private:
 
-      typedef Registry<Ref<GaussianBasisSet>, Ref<MOIndexSpace>, detail::NonsingletonCreationPolicy > BasisToAOSpaceMap;
+      typedef Registry<Ref<GaussianBasisSet>, Ref<OrbitalSpace>, detail::NonsingletonCreationPolicy > BasisToAOSpaceMap;
       Ref<BasisToAOSpaceMap> basis_to_aospace_map_;
 
   };

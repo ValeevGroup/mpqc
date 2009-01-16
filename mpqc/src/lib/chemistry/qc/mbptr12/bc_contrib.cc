@@ -79,8 +79,8 @@ R12IntEval::compute_B_bc_()
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<MOIndexSpace> xspace1 = xspace(spin1);
-    Ref<MOIndexSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> xspace1 = xspace(spin1);
+    Ref<OrbitalSpace> xspace2 = xspace(spin2);
     
     if (dim_oo(spincase2).n() == 0)
       continue;
@@ -91,10 +91,10 @@ R12IntEval::compute_B_bc_()
     if (!r12info()->bc()) {
       // compute Q = X_{xy}^{xy_{F}}
       if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
-        Ref<MOIndexSpace> F_x2 = F_x_p(spin2);
+        Ref<OrbitalSpace> F_x2 = F_x_p(spin2);
         compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
       } else { // if VBS != OBS: X_{kl}^{im} F_m^j + X_{kl}^{ia} F_a^j
-        Ref<MOIndexSpace> F_x2 = F_x_m(spin2);
+        Ref<OrbitalSpace> F_x2 = F_x_m(spin2);
         compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
         F_x2 = F_x_a(spin2);
         compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
@@ -102,10 +102,10 @@ R12IntEval::compute_B_bc_()
       
       if (xspace1 != xspace2) {
         if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
-          Ref<MOIndexSpace> F_x1 = F_x_p(spin1);
+          Ref<OrbitalSpace> F_x1 = F_x_p(spin1);
           compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);
         } else { // if VBS != OBS: X_{kl}^{im} F_m^j + X_{kl}^{ia} F_a^j
-          Ref<MOIndexSpace> F_x1 = F_x_m(spin1);
+          Ref<OrbitalSpace> F_x1 = F_x_m(spin1);
           compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);
           F_x1 = F_x_a(spin1);
           compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);

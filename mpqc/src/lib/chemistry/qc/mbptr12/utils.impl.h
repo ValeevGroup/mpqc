@@ -30,7 +30,7 @@
 #endif
 
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
 #ifndef _chemistry_qc_mbptr12_utilsimpl_h
@@ -40,8 +40,8 @@ namespace sc {
   
   template <PureSpinCase2 spin>
   RefSCMatrix spinadapt(const RefSCMatrix &A,
-                        const Ref<MOIndexSpace> &bra,
-                        const Ref<MOIndexSpace> &ket){
+                        const Ref<OrbitalSpace> &bra,
+                        const Ref<OrbitalSpace> &ket){
     SpatialMOPairIter_eq ij_iter(bra);
     SpatialMOPairIter_eq kl_iter(ket);
     const unsigned int brablock_size_ab = ij_iter.nij_ab();
@@ -102,10 +102,10 @@ namespace sc {
   template <bool accumulate>
   void
   antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                 const Ref<MOIndexSpace>& bra1,
-                 const Ref<MOIndexSpace>& bra2,
-                 const Ref<MOIndexSpace>& ket1,
-                 const Ref<MOIndexSpace>& ket2)
+                 const Ref<OrbitalSpace>& bra1,
+                 const Ref<OrbitalSpace>& bra2,
+                 const Ref<OrbitalSpace>& ket1,
+                 const Ref<OrbitalSpace>& ket2)
   {
     const bool bra1_eq_bra2 = (bra1 == bra2);
     const bool ket1_eq_ket2 = (ket1 == ket2);
@@ -188,7 +188,7 @@ namespace sc {
   template <bool accumulate>
   void
   antisymmetrize(RefSymmSCMatrix& Aanti, const RefSymmSCMatrix& A,
-                 const Ref<MOIndexSpace>& bra1)
+                 const Ref<OrbitalSpace>& bra1)
   {
     SpatialMOPairIter* ij_iter = new SpatialMOPairIter_eq(bra1);
     SpatialMOPairIter* kl_iter = new SpatialMOPairIter_eq(bra1);
@@ -244,8 +244,8 @@ namespace sc {
   
   template <bool Accumulate>
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
-                    const Ref<MOIndexSpace>& bra,
-                    const Ref<MOIndexSpace>& ket)
+                    const Ref<OrbitalSpace>& bra,
+                    const Ref<OrbitalSpace>& ket)
     {
       if (A.rowdim().n() != Asymm.rowdim().n())
         throw ProgrammingError("sc::symmetrize() -- source and target matrices have different row dimensions",__FILE__,__LINE__);
@@ -313,10 +313,10 @@ namespace sc {
     
   template <bool Accumulate, sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
     void symmetrize12(RefSCMatrix& Asymm, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra1,
-                      const Ref<MOIndexSpace>& bra2,
-                      const Ref<MOIndexSpace>& ket1,
-                      const Ref<MOIndexSpace>& ket2)
+                      const Ref<OrbitalSpace>& bra1,
+                      const Ref<OrbitalSpace>& bra2,
+                      const Ref<OrbitalSpace>& ket1,
+                      const Ref<OrbitalSpace>& ket2)
     {
       using namespace sc::fastpairiter;
       using sc::fastpairiter::MOPairIter;
@@ -384,10 +384,10 @@ namespace sc {
     sc::fastpairiter::PairSymm DstBraSymm, sc::fastpairiter::PairSymm DstKetSymm
     >
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra1,
-                      const Ref<MOIndexSpace>& bra2,
-                      const Ref<MOIndexSpace>& ket1,
-                      const Ref<MOIndexSpace>& ket2)
+                      const Ref<OrbitalSpace>& bra1,
+                      const Ref<OrbitalSpace>& bra2,
+                      const Ref<OrbitalSpace>& ket1,
+                      const Ref<OrbitalSpace>& ket2)
     {
       using namespace sc::fastpairiter;
       using sc::fastpairiter::MOPairIter;

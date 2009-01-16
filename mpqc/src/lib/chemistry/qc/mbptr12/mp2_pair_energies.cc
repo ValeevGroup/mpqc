@@ -38,10 +38,10 @@ using namespace sc;
 void
 R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                        SpinCase2 S,
-                                       const Ref<MOIndexSpace>& space1,
-                                       const Ref<MOIndexSpace>& space2,
-                                       const Ref<MOIndexSpace>& space3,
-                                       const Ref<MOIndexSpace>& space4,
+                                       const Ref<OrbitalSpace>& space1,
+                                       const Ref<OrbitalSpace>& space2,
+                                       const Ref<OrbitalSpace>& space3,
+                                       const Ref<OrbitalSpace>& space4,
                                        const std::string& tform_key)
 {
   // Check correct semantics of this call : if S != AlphaBeta then space1==space3 and space2==space4
@@ -66,10 +66,10 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   std::vector<unsigned int> map24;
   // maps space2 to space4 of transform
   std::vector<unsigned int> map42;
-  Ref<MOIndexSpace> tspace1 = tform->space1();
-  Ref<MOIndexSpace> tspace2 = tform->space2();
-  Ref<MOIndexSpace> tspace3 = tform->space3();
-  Ref<MOIndexSpace> tspace4 = tform->space4();
+  Ref<OrbitalSpace> tspace1 = tform->space1();
+  Ref<OrbitalSpace> tspace2 = tform->space2();
+  Ref<OrbitalSpace> tspace3 = tform->space3();
+  Ref<OrbitalSpace> tspace4 = tform->space4();
   map1 = *tspace1<<*space1;
   map2 = *tspace2<<*space2;
   map3 = *tspace3<<*space3;

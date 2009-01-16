@@ -54,8 +54,8 @@ using namespace sc;
 #define USE_PAULI 1
 
 RefSCMatrix
-R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
-                  const Ref<MOIndexSpace>& ket_space,
+R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
+                  const Ref<OrbitalSpace>& ket_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K,
                   double scale_H)
@@ -315,8 +315,8 @@ R12IntEval::fock(const Ref<MOIndexSpace>& bra_space,
 
 
 RefSCMatrix
-R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
-                          const Ref<MOIndexSpace>& ket_space,
+R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
+                          const Ref<OrbitalSpace>& ket_space,
                           SpinCase1 spin)
 {
 
@@ -437,7 +437,7 @@ R12IntEval::Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
   TVmv.accumulate(Darwin);
 #if TEST_DELTA_DKH
   {
-    Ref<MOIndexSpace> occ1 = occ(Alpha);
+    Ref<OrbitalSpace> occ1 = occ(Alpha);
     if (occ1->basis() == hcore_basis) {
       // to the 1-e Darwin correction to the energy at the HF level, contract with the HF density
       RefSCMatrix occ1_coefs = occ1->coefs();

@@ -40,12 +40,12 @@ using namespace std;
 using namespace sc;
 
 void
-R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+R12IntEvalInfo::compute_multipole_ints(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                        RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ,
 				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ)
 {
   if (!space1->integral()->equiv(space2->integral()))
-    throw ProgrammingError("two MOIndexSpaces use incompatible Integral factories");
+    throw ProgrammingError("two OrbitalSpaces use incompatible Integral factories");
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
@@ -175,11 +175,11 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
 
 
 void
-R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+R12IntEvalInfo::compute_overlap_ints(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                      RefSCMatrix& S)
 {
   if (!space1->integral()->equiv(space2->integral()))
-    throw ProgrammingError("two MOIndexSpaces use incompatible Integral factories");
+    throw ProgrammingError("two OrbitalSpaces use incompatible Integral factories");
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);

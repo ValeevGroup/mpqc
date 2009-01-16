@@ -39,7 +39,7 @@
 
 namespace sc {
   
-  class MOIndexSpace;
+  class OrbitalSpace;
   
   /** Takes the 4-index quantity <ij|A|kl> and returns,
       depending on the value of the PureSpinCase2 spin,
@@ -47,15 +47,15 @@ namespace sc {
     */
   template <PureSpinCase2 spin>
   RefSCMatrix spinadapt(const RefSCMatrix &A,
-                          const Ref<MOIndexSpace> &bra,
-                          const Ref<MOIndexSpace> &ket);
+                          const Ref<OrbitalSpace> &bra,
+                          const Ref<OrbitalSpace> &ket);
   /** Antisymmetrizes 4-index quantity <ij|A|kl> -> <ij|A|kl> - <ij|A|lk>
       and saves to Aanti. Row dimension of A has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket.
     */
   void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra,
-                      const Ref<MOIndexSpace>& ket,
+                      const Ref<OrbitalSpace>& bra,
+                      const Ref<OrbitalSpace>& ket,
                       bool accumulate = false);
   /** Generalization of the above.
       Antisymmetrizes 4-index quantity <ij|A|kl>.
@@ -70,10 +70,10 @@ namespace sc {
     */
   template <bool accumulate>
     void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                        const Ref<MOIndexSpace>& bra1,
-                        const Ref<MOIndexSpace>& bra2,
-                        const Ref<MOIndexSpace>& ket1,
-                        const Ref<MOIndexSpace>& ket2);
+                        const Ref<OrbitalSpace>& bra1,
+                        const Ref<OrbitalSpace>& bra2,
+                        const Ref<OrbitalSpace>& ket1,
+                        const Ref<OrbitalSpace>& ket2);
   /** Specialization of the above to symmetric matrices. bra2 must be equal to bra1, hence not needed.
       Antisymmetrizes 4-index quantity <ij|A|kl>.
       <ij|Aanti|kl> = <ij|A|kl> - <ij|A|lk>.
@@ -83,15 +83,15 @@ namespace sc {
     */
   template <bool accumulate>
     void antisymmetrize(RefSymmSCMatrix& Aanti, const RefSymmSCMatrix& A,
-                        const Ref<MOIndexSpace>& bra1);
+                        const Ref<OrbitalSpace>& bra1);
   /** Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>)
       and saves to Asymm. Row dimension has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket. Asymm and A can be the same matrix.
     */
   template <bool Accumulate>
     void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
-                    const Ref<MOIndexSpace>& bra,
-                    const Ref<MOIndexSpace>& ket);
+                    const Ref<OrbitalSpace>& bra,
+                    const Ref<OrbitalSpace>& ket);
 
   /** Generalization of the above. Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>),
       where either bra or ket may have been antisymmetrized.
@@ -106,10 +106,10 @@ namespace sc {
     */
   template <bool Accumulate, sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
     void symmetrize12(RefSCMatrix& Asymm, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra1,
-                      const Ref<MOIndexSpace>& bra2,
-                      const Ref<MOIndexSpace>& ket1,
-                      const Ref<MOIndexSpace>& ket2);
+                      const Ref<OrbitalSpace>& bra1,
+                      const Ref<OrbitalSpace>& bra2,
+                      const Ref<OrbitalSpace>& ket1,
+                      const Ref<OrbitalSpace>& ket2);
 
   /** Symmetrizes/antisymmetrizes bra and/or ket. Sanity is checked as fully as possible.
       If DstBraSymm!=ASymm, bra1 must equal bra2.
@@ -127,10 +127,10 @@ namespace sc {
     sc::fastpairiter::PairSymm DstKetSymm
     >
     void symmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                    const Ref<MOIndexSpace>& bra1,
-                    const Ref<MOIndexSpace>& bra2,
-                    const Ref<MOIndexSpace>& ket1,
-                    const Ref<MOIndexSpace>& ket2);
+                    const Ref<OrbitalSpace>& bra1,
+                    const Ref<OrbitalSpace>& bra2,
+                    const Ref<OrbitalSpace>& ket1,
+                    const Ref<OrbitalSpace>& ket2);
 
   /** Converts RefDiagSCMatrix to std::vector<double>
   */

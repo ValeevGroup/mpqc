@@ -50,14 +50,14 @@ namespace sc {
       RefSCMatrix& T,
       TwoBodyInt::tbint_type tbint_type_bra,
       TwoBodyInt::tbint_type tbint_type_ket,
-      const Ref<MOIndexSpace>& space1_bra,
-      const Ref<MOIndexSpace>& space2_bra,
-      const Ref<MOIndexSpace>& space1_intb,
-      const Ref<MOIndexSpace>& space2_intb,
-      const Ref<MOIndexSpace>& space1_ket,
-      const Ref<MOIndexSpace>& space2_ket,
-      const Ref<MOIndexSpace>& space1_intk,
-      const Ref<MOIndexSpace>& space2_intk,
+      const Ref<OrbitalSpace>& space1_bra,
+      const Ref<OrbitalSpace>& space2_bra,
+      const Ref<OrbitalSpace>& space1_intb,
+      const Ref<OrbitalSpace>& space2_intb,
+      const Ref<OrbitalSpace>& space1_ket,
+      const Ref<OrbitalSpace>& space2_ket,
+      const Ref<OrbitalSpace>& space1_intk,
+      const Ref<OrbitalSpace>& space2_intk,
       bool antisymmetrize,
       const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra
       const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_bra
@@ -177,10 +177,10 @@ namespace sc {
       //
       // WARNING: Assuming all transforms are over same spaces!!!
       //
-      Ref<MOIndexSpace> tspace1_bra = transforms_bra[0]->space1();
-      Ref<MOIndexSpace> tspace2_bra = transforms_bra[0]->space3();
-      Ref<MOIndexSpace> tspace1_intb = transforms_bra[0]->space2();
-      Ref<MOIndexSpace> tspace2_intb = transforms_bra[0]->space4();
+      Ref<OrbitalSpace> tspace1_bra = transforms_bra[0]->space1();
+      Ref<OrbitalSpace> tspace2_bra = transforms_bra[0]->space3();
+      Ref<OrbitalSpace> tspace1_intb = transforms_bra[0]->space2();
+      Ref<OrbitalSpace> tspace2_intb = transforms_bra[0]->space4();
       // maps spaceX to the corresponding space of the transform
       std::vector<unsigned int> map1_bra, map2_bra, map1_intb, map2_intb;
       {

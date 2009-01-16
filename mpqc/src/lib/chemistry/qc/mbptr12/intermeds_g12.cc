@@ -58,14 +58,14 @@ R12IntEval::init_intermeds_g12_()
       const SpinCase1 spin2 = case2(spincase2);
       Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
-      const Ref<MOIndexSpace>& occ1 = occ(spin1);
-      const Ref<MOIndexSpace>& occ2 = occ(spin2);
-      const Ref<MOIndexSpace>& occ1_act = occ_act(spin1);
-      const Ref<MOIndexSpace>& occ2_act = occ_act(spin2);
-      const Ref<MOIndexSpace>& obs1 = refinfo->orbs(spin1);
-      const Ref<MOIndexSpace>& obs2 = refinfo->orbs(spin2);
-      const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-      const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& occ1 = occ(spin1);
+      const Ref<OrbitalSpace>& occ2 = occ(spin2);
+      const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
+      const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
+      const Ref<OrbitalSpace>& obs1 = refinfo->orbs(spin1);
+      const Ref<OrbitalSpace>& obs2 = refinfo->orbs(spin2);
+      const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+      const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1 == occ2);
@@ -184,8 +184,8 @@ R12IntEval::init_intermeds_g12_()
 	      // Firstly, instead of T we can use h+J (it will be used later anyway)
 	      // Second let's designate (beta-alpha)/(beta+alpha) * g12*g12 as A12. A12 is computed as anti_f12f12 by G12NCLibint2
 	      // [A12,T] = [A12,h+J] = A12 (hJ_1 + hJ_2) -  (hJ_1 + hJ_2) A12
-	      Ref<MOIndexSpace> hj_x1 = hj_x_P(spin1);
-	      Ref<MOIndexSpace> hj_x2 = hj_x_P(spin2);
+	      Ref<OrbitalSpace> hj_x1 = hj_x_P(spin1);
+	      Ref<OrbitalSpace> hj_x2 = hj_x_P(spin2);
 
 	      // <xy|hJ z> tforms
 	      std::vector<std::string> tforms_xyHz_keys;

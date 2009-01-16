@@ -41,8 +41,8 @@ using namespace sc;
 
 RefSCMatrix
 R12IntEval::V(SpinCase2 spincase2,
-	      const Ref<MOIndexSpace>& p1,
-	      const Ref<MOIndexSpace>& p2)
+	      const Ref<OrbitalSpace>& p1,
+	      const Ref<OrbitalSpace>& p2)
 {
   using namespace sc::LinearR12;
 
@@ -76,10 +76,10 @@ R12IntEval::V(SpinCase2 spincase2,
 
   Timer tim("R12 intermeds (tensor contract): Vpqxy");
 
-  const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-  const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
-  const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
-  const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+  const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
 
   // some transforms can be skipped if p1/p2 is a subset of x1/x2
   const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
@@ -187,9 +187,9 @@ R12IntEval::V(SpinCase2 spincase2,
 
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			      absmethod == LinearR12::ABS_CABSPlus);
-    const Ref<MOIndexSpace>& occ1 = occ(spin1);
-    const Ref<MOIndexSpace>& occ2 = occ(spin2);
-    Ref<MOIndexSpace> rispace1, rispace2;
+    const Ref<OrbitalSpace>& occ1 = occ(spin1);
+    const Ref<OrbitalSpace>& occ2 = occ(spin2);
+    Ref<OrbitalSpace> rispace1, rispace2;
     if (cabs_method) {
       rispace1 = r12info()->ribs_space(spin1);
       rispace2 = r12info()->ribs_space(spin2);
@@ -322,18 +322,18 @@ R12IntEval::P(SpinCase2 spincase2)
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
   Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-  const Ref<MOIndexSpace>& xspace1 = xspace(spin1);
-  const Ref<MOIndexSpace>& xspace2 = xspace(spin2);
-  const Ref<MOIndexSpace>& orbs1 = refinfo->orbs(spin1);
-  const Ref<MOIndexSpace>& orbs2 = refinfo->orbs(spin2);
-  const Ref<MOIndexSpace>& occ1 = occ(spin1);
-  const Ref<MOIndexSpace>& occ2 = occ(spin2);
+  const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+  const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<OrbitalSpace>& occ1 = occ(spin1);
+  const Ref<OrbitalSpace>& occ2 = occ(spin2);
   const LinearR12::ABSMethod absmethod = r12info()->abs_method();
   if (absmethod == LinearR12::ABS_ABS ||
       absmethod == LinearR12::ABS_ABSPlus)
     throw InputError("R12IntEval::P() -- cannot use if abs_method = abs/abs+. Try cabs or cabs+.");
-  const Ref<MOIndexSpace>& cabs1 = r12info()->ribs_space(spin1);
-  const Ref<MOIndexSpace>& cabs2 = r12info()->ribs_space(spin2);
+  const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
+  const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
   const RefSCDimension dimf12 = dim_f12(spincase2);
 
   // are particles 1 and 2 equivalent?

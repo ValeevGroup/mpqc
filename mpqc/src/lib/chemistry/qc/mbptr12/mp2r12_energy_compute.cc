@@ -134,12 +134,12 @@ MP2R12Energy_SpinOrbital::compute()
     }
     else {
       
-      const Ref<MOIndexSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
-      const Ref<MOIndexSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
-      const Ref<MOIndexSpace>& xspace1  = r12eval()->xspace(case1(spincase2));
-      const Ref<MOIndexSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
-      const Ref<MOIndexSpace>& vir2_act = r12eval()->vir_act(case2(spincase2));
-      const Ref<MOIndexSpace>& xspace2  = r12eval()->xspace(case2(spincase2));
+      const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
+      const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
+      const Ref<OrbitalSpace>& xspace1  = r12eval()->xspace(case1(spincase2));
+      const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
+      const Ref<OrbitalSpace>& vir2_act = r12eval()->vir_act(case2(spincase2));
+      const Ref<OrbitalSpace>& xspace2  = r12eval()->xspace(case2(spincase2));
       int nocc1_act = occ1_act->rank();
       int nvir1_act = vir1_act->rank();
       int nx1 = xspace1->rank();
@@ -600,12 +600,12 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
                                                                          const RefSCMatrix &V,
                                                                          const RefSCMatrix &A,
                                                                          const SpinCase2 &spincase2) {
-  const Ref<MOIndexSpace> &xspace1  = r12eval()->xspace(case1(spincase2));
-  const Ref<MOIndexSpace> &xspace2  = r12eval()->xspace(case2(spincase2));
-  const Ref<MOIndexSpace> &vir1_act = r12eval()->vir_act(case1(spincase2));
-  const Ref<MOIndexSpace> &vir2_act = r12eval()->vir_act(case2(spincase2));
-  const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-  const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+  const Ref<OrbitalSpace> &xspace1  = r12eval()->xspace(case1(spincase2));
+  const Ref<OrbitalSpace> &xspace2  = r12eval()->xspace(case2(spincase2));
+  const Ref<OrbitalSpace> &vir1_act = r12eval()->vir_act(case1(spincase2));
+  const Ref<OrbitalSpace> &vir2_act = r12eval()->vir_act(case2(spincase2));
+  const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+  const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
   const std::vector<double> evals_xspace1  = convert(xspace1->evals());
   const std::vector<double> evals_xspace2  = convert(xspace2->evals());
   const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
@@ -690,12 +690,12 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
                                                                      const RefSCMatrix &V,
                                                                      const RefSCMatrix &A,
                                                                      const SpinCase2 &spincase2) {
-  const Ref<MOIndexSpace> &xspace1  = r12eval()->xspace(case1(spincase2));
-  const Ref<MOIndexSpace> &xspace2  = r12eval()->xspace(case2(spincase2));
-  const Ref<MOIndexSpace> &vir1_act = r12eval()->vir_act(case1(spincase2));
-  const Ref<MOIndexSpace> &vir2_act = r12eval()->vir_act(case2(spincase2));
-  const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-  const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+  const Ref<OrbitalSpace> &xspace1  = r12eval()->xspace(case1(spincase2));
+  const Ref<OrbitalSpace> &xspace2  = r12eval()->xspace(case2(spincase2));
+  const Ref<OrbitalSpace> &vir1_act = r12eval()->vir_act(case1(spincase2));
+  const Ref<OrbitalSpace> &vir2_act = r12eval()->vir_act(case2(spincase2));
+  const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+  const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
   const std::vector<double> evals_xspace1  = convert(xspace1->evals());
   const std::vector<double> evals_xspace2  = convert(xspace2->evals());
   const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
@@ -805,8 +805,8 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
   RefSCDimension gdim=new SCDimension(ngem);
   RefSCDimension two_gdim=new SCDimension(2*gdim.n());
   
-  const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-  const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+  const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+  const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
   SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
   
   int nocc1_act = occ1_act->rank();
@@ -893,8 +893,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
       continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-    const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+    const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+    const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
   
@@ -997,8 +997,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
       continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-    const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+    const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+    const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
@@ -1098,8 +1098,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
       continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-    const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+    const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+    const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
@@ -1191,8 +1191,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
       continue;
     
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    const Ref<MOIndexSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-    const Ref<MOIndexSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
+    const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
+    const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 

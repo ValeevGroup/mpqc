@@ -112,10 +112,10 @@ TwoBodyMOIntsTransform_ijxy::compute()
   const size_t localmem = nijmax * num_te_types() * memgrp_blksize();
   alloc_mem(localmem);
 
-  vector<unsigned int> mosym1 = space1_->mosym();
-  vector<unsigned int> mosym2 = space2_->mosym();
-  vector<unsigned int> mosym3 = space3_->mosym();
-  vector<unsigned int> mosym4 = space4_->mosym();
+  vector<unsigned int> orbsym1 = space1_->orbsym();
+  vector<unsigned int> orbsym2 = space2_->orbsym();
+  vector<unsigned int> orbsym3 = space3_->orbsym();
+  vector<unsigned int> orbsym4 = space4_->orbsym();
   double** vector3 = new double*[nbasis3];
   double** vector4 = new double*[nbasis4];
   vector3[0] = new double[rank3*nbasis3];
@@ -390,13 +390,13 @@ TwoBodyMOIntsTransform_ijxy::compute()
           int ij = i*rank2+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
-            const int ij_sym = mosym1[i+i_offset] ^ mosym2[j];
+            const int ij_sym = orbsym1[i+i_offset] ^ orbsym2[j];
             for(int te_type=0; te_type<num_te_types(); te_type++) {
               double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank3; x++) {
-                const int ijx_sym = ij_sym ^ mosym3[x];
+                const int ijx_sym = ij_sym ^ orbsym3[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
-                  if (ijx_sym ^ mosym4[y]) {
+                  if (ijx_sym ^ orbsym4[y]) {
                     *ijxy_ptr = 0.0;
                   }
                 }

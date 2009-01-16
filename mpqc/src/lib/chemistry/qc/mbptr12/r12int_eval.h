@@ -95,54 +95,54 @@ class R12IntEval : virtual public SavableState {
 		 bool make_F,
 		 bool make_hJ,
 		 bool make_K,
-		 Ref<MOIndexSpace>& F,
-		 Ref<MOIndexSpace>& hJ,
-		 Ref<MOIndexSpace>& K,
-		 const Ref<MOIndexSpace>& extspace,
-		 const Ref<MOIndexSpace>& intspace
+		 Ref<OrbitalSpace>& F,
+		 Ref<OrbitalSpace>& hJ,
+		 Ref<OrbitalSpace>& K,
+		 const Ref<OrbitalSpace>& extspace,
+		 const Ref<OrbitalSpace>& intspace
       );
-  Ref<MOIndexSpace> hj_i_p_[NSpinCases1];
-  Ref<MOIndexSpace> hj_i_A_[NSpinCases1];
-  Ref<MOIndexSpace> hj_i_P_[NSpinCases1];
-  Ref<MOIndexSpace> hj_i_m_[NSpinCases1];
-  Ref<MOIndexSpace> hj_i_a_[NSpinCases1];
-  Ref<MOIndexSpace> hj_p_p_[NSpinCases1];
-  Ref<MOIndexSpace> hj_p_A_[NSpinCases1];
-  Ref<MOIndexSpace> hj_p_P_[NSpinCases1];
-  Ref<MOIndexSpace> hj_P_P_[NSpinCases1];
-  Ref<MOIndexSpace> hj_p_m_[NSpinCases1];
-  Ref<MOIndexSpace> hj_p_a_[NSpinCases1];
-  Ref<MOIndexSpace> K_i_p_[NSpinCases1];
-  Ref<MOIndexSpace> K_i_m_[NSpinCases1];
-  Ref<MOIndexSpace> K_i_a_[NSpinCases1];
-  Ref<MOIndexSpace> K_i_A_[NSpinCases1];
-  Ref<MOIndexSpace> K_i_P_[NSpinCases1];
-  Ref<MOIndexSpace> K_m_a_[NSpinCases1];
-  Ref<MOIndexSpace> K_a_a_[NSpinCases1];
-  Ref<MOIndexSpace> K_a_p_[NSpinCases1];
-  Ref<MOIndexSpace> K_a_P_[NSpinCases1];
-  Ref<MOIndexSpace> K_p_p_[NSpinCases1];
-  Ref<MOIndexSpace> K_p_m_[NSpinCases1];
-  Ref<MOIndexSpace> K_p_a_[NSpinCases1];
-  Ref<MOIndexSpace> K_p_A_[NSpinCases1];
-  Ref<MOIndexSpace> K_p_P_[NSpinCases1];
-  Ref<MOIndexSpace> K_A_P_[NSpinCases1];
-  Ref<MOIndexSpace> K_P_P_[NSpinCases1];
-  Ref<MOIndexSpace> F_P_P_[NSpinCases1];
-  Ref<MOIndexSpace> F_p_A_[NSpinCases1];
-  Ref<MOIndexSpace> F_p_p_[NSpinCases1];
-  Ref<MOIndexSpace> F_p_m_[NSpinCases1];
-  Ref<MOIndexSpace> F_p_a_[NSpinCases1];
-  Ref<MOIndexSpace> F_m_m_[NSpinCases1];
-  Ref<MOIndexSpace> F_m_a_[NSpinCases1];
-  Ref<MOIndexSpace> F_m_P_[NSpinCases1];
-  Ref<MOIndexSpace> F_m_A_[NSpinCases1];
-  Ref<MOIndexSpace> F_i_A_[NSpinCases1];
-  Ref<MOIndexSpace> F_i_m_[NSpinCases1];
-  Ref<MOIndexSpace> F_i_a_[NSpinCases1];
-  Ref<MOIndexSpace> F_i_p_[NSpinCases1];
-  Ref<MOIndexSpace> F_a_a_[NSpinCases1];
-  Ref<MOIndexSpace> F_a_A_[NSpinCases1];
+  Ref<OrbitalSpace> hj_i_p_[NSpinCases1];
+  Ref<OrbitalSpace> hj_i_A_[NSpinCases1];
+  Ref<OrbitalSpace> hj_i_P_[NSpinCases1];
+  Ref<OrbitalSpace> hj_i_m_[NSpinCases1];
+  Ref<OrbitalSpace> hj_i_a_[NSpinCases1];
+  Ref<OrbitalSpace> hj_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> hj_p_A_[NSpinCases1];
+  Ref<OrbitalSpace> hj_p_P_[NSpinCases1];
+  Ref<OrbitalSpace> hj_P_P_[NSpinCases1];
+  Ref<OrbitalSpace> hj_p_m_[NSpinCases1];
+  Ref<OrbitalSpace> hj_p_a_[NSpinCases1];
+  Ref<OrbitalSpace> K_i_p_[NSpinCases1];
+  Ref<OrbitalSpace> K_i_m_[NSpinCases1];
+  Ref<OrbitalSpace> K_i_a_[NSpinCases1];
+  Ref<OrbitalSpace> K_i_A_[NSpinCases1];
+  Ref<OrbitalSpace> K_i_P_[NSpinCases1];
+  Ref<OrbitalSpace> K_m_a_[NSpinCases1];
+  Ref<OrbitalSpace> K_a_a_[NSpinCases1];
+  Ref<OrbitalSpace> K_a_p_[NSpinCases1];
+  Ref<OrbitalSpace> K_a_P_[NSpinCases1];
+  Ref<OrbitalSpace> K_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> K_p_m_[NSpinCases1];
+  Ref<OrbitalSpace> K_p_a_[NSpinCases1];
+  Ref<OrbitalSpace> K_p_A_[NSpinCases1];
+  Ref<OrbitalSpace> K_p_P_[NSpinCases1];
+  Ref<OrbitalSpace> K_A_P_[NSpinCases1];
+  Ref<OrbitalSpace> K_P_P_[NSpinCases1];
+  Ref<OrbitalSpace> F_P_P_[NSpinCases1];
+  Ref<OrbitalSpace> F_p_A_[NSpinCases1];
+  Ref<OrbitalSpace> F_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> F_p_m_[NSpinCases1];
+  Ref<OrbitalSpace> F_p_a_[NSpinCases1];
+  Ref<OrbitalSpace> F_m_m_[NSpinCases1];
+  Ref<OrbitalSpace> F_m_a_[NSpinCases1];
+  Ref<OrbitalSpace> F_m_P_[NSpinCases1];
+  Ref<OrbitalSpace> F_m_A_[NSpinCases1];
+  Ref<OrbitalSpace> F_i_A_[NSpinCases1];
+  Ref<OrbitalSpace> F_i_m_[NSpinCases1];
+  Ref<OrbitalSpace> F_i_a_[NSpinCases1];
+  Ref<OrbitalSpace> F_i_p_[NSpinCases1];
+  Ref<OrbitalSpace> F_a_a_[NSpinCases1];
+  Ref<OrbitalSpace> F_a_A_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -155,20 +155,20 @@ class R12IntEval : virtual public SavableState {
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
   /// Compute <space1 space2|space3 space4> matrix
-  RefSCMatrix compute_I_(const Ref<MOIndexSpace>& space1,
-			 const Ref<MOIndexSpace>& space2,
-			 const Ref<MOIndexSpace>& space3,
-			 const Ref<MOIndexSpace>& space4);
+  RefSCMatrix compute_I_(const Ref<OrbitalSpace>& space1,
+			 const Ref<OrbitalSpace>& space2,
+			 const Ref<OrbitalSpace>& space3,
+			 const Ref<OrbitalSpace>& space4);
   /// Compute <space1 space2|r_{12}^2|space3 space4> matrix
-  RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1,
-                          const Ref<MOIndexSpace>& space2,
-                          const Ref<MOIndexSpace>& space3,
-                          const Ref<MOIndexSpace>& space4);
+  RefSCMatrix compute_r2_(const Ref<OrbitalSpace>& space1,
+                          const Ref<OrbitalSpace>& space2,
+                          const Ref<OrbitalSpace>& space3,
+                          const Ref<OrbitalSpace>& space4);
   /** Compute the relativistic hcore Hamiltonian using DKH2 and substract
       T, V and the mass-velocity term. Based on r12int_eval::fock. In file fock.cc
   */
-  RefSCMatrix Delta_DKH_(const Ref<MOIndexSpace>& bra_space,
-                         const Ref<MOIndexSpace>& ket_space,
+  RefSCMatrix Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
+                         const Ref<OrbitalSpace>& ket_space,
                          SpinCase1 S = Alpha);
   // Computes T, V and the mass-velocity term in the momentum basis.
   // It's a modified version of Wavefunction::core_hamiltonian_dk
@@ -186,11 +186,11 @@ class R12IntEval : virtual public SavableState {
   RefSymmSCMatrix pauli_momentumspace(const Ref<GaussianBasisSet> &bas,
                         const Ref<GaussianBasisSet> &p_bas);
   /// Compute the coulomb matrix between 2 spaces
-  RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                       const Ref<MOIndexSpace>& ket_space);
+  RefSCMatrix coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
+                       const Ref<OrbitalSpace>& ket_space);
   /// Compute the exchange matrix between 2 spaces
-  RefSCMatrix exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                        const Ref<MOIndexSpace>& ket_space);
+  RefSCMatrix exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
+                        const Ref<OrbitalSpace>& ket_space);
 
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;
@@ -203,10 +203,10 @@ class R12IntEval : virtual public SavableState {
   /// Compute MP2 pair energies of spin case S using < space1 space3|| space2 space4> integrals
   void compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                   SpinCase2 S,
-                                  const Ref<MOIndexSpace>& space1,
-                                  const Ref<MOIndexSpace>& space2,
-                                  const Ref<MOIndexSpace>& space3,
-                                  const Ref<MOIndexSpace>& space4,
+                                  const Ref<OrbitalSpace>& space1,
+                                  const Ref<OrbitalSpace>& space2,
+                                  const Ref<OrbitalSpace>& space3,
+                                  const Ref<OrbitalSpace>& space4,
                                   const std::string& tform_key);
 
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
@@ -215,12 +215,12 @@ class R12IntEval : virtual public SavableState {
       If tform is not given (it should be!), this function will construct a generic
       transform. */
   void compute_A_direct_(RefSCMatrix& A,
-                         const Ref<MOIndexSpace>& space1,
-                         const Ref<MOIndexSpace>& space2,
-                         const Ref<MOIndexSpace>& space3,
-                         const Ref<MOIndexSpace>& space4,
-                         const Ref<MOIndexSpace>& rispace2,
-                         const Ref<MOIndexSpace>& rispace4,
+                         const Ref<OrbitalSpace>& space1,
+                         const Ref<OrbitalSpace>& space2,
+                         const Ref<OrbitalSpace>& space3,
+                         const Ref<OrbitalSpace>& space4,
+                         const Ref<OrbitalSpace>& rispace2,
+                         const Ref<OrbitalSpace>& rispace4,
                          bool antisymmetrize);
 
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
@@ -233,10 +233,10 @@ class R12IntEval : virtual public SavableState {
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
     void compute_tbint_tensor(RefSCMatrix& T,
                               TwoBodyInt::tbint_type tbint_type,
-                              const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
+                              const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
+                              const Ref<OrbitalSpace>& space3,
+                              const Ref<OrbitalSpace>& space4,
                               bool antisymmetrize,
                               const std::vector<std::string>& tform_keys);
 
@@ -263,14 +263,14 @@ class R12IntEval : virtual public SavableState {
            RefSCMatrix& T,
            TwoBodyInt::tbint_type tbint_type_bra,
            TwoBodyInt::tbint_type tbint_type_ket,
-           const Ref<MOIndexSpace>& space1_bra,
-           const Ref<MOIndexSpace>& space2_bra,
-           const Ref<MOIndexSpace>& space1_intb,
-           const Ref<MOIndexSpace>& space2_intb,
-           const Ref<MOIndexSpace>& space1_ket,
-           const Ref<MOIndexSpace>& space2_ket,
-           const Ref<MOIndexSpace>& space1_intk,
-           const Ref<MOIndexSpace>& space2_intk,
+           const Ref<OrbitalSpace>& space1_bra,
+           const Ref<OrbitalSpace>& space2_bra,
+           const Ref<OrbitalSpace>& space1_intb,
+           const Ref<OrbitalSpace>& space2_intb,
+           const Ref<OrbitalSpace>& space1_ket,
+           const Ref<OrbitalSpace>& space2_ket,
+           const Ref<OrbitalSpace>& space1_intk,
+           const Ref<OrbitalSpace>& space2_intk,
            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
            bool antisymmetrize,
            const std::vector<std::string>& tformkeys_bra,
@@ -289,10 +289,10 @@ class R12IntEval : virtual public SavableState {
   */
   void compute_X_(RefSCMatrix& X,
                   SpinCase2 sc2,
-                  const Ref<MOIndexSpace>& bra1,
-                  const Ref<MOIndexSpace>& bra2,
-                  const Ref<MOIndexSpace>& ket1,
-                  const Ref<MOIndexSpace>& ket2,
+                  const Ref<OrbitalSpace>& bra1,
+                  const Ref<OrbitalSpace>& bra2,
+                  const Ref<OrbitalSpace>& ket1,
+                  const Ref<OrbitalSpace>& ket2,
                   bool F2_only = false);
   /** Compute contraction <bra1 bra2|F12|intb1 int2> <intb1|x|intk1> <intk1 int2|F12|ket1 ket2> +
       <bra1 bra2|F12|int1 intb2> <intb2|x|intk2> <int1 intk2|F12|ket1 ket2>
@@ -304,16 +304,16 @@ class R12IntEval : virtual public SavableState {
   */
   void compute_FxF_(RefSCMatrix& FxF,
                     SpinCase2 sc2,
-                    const Ref<MOIndexSpace>& bra1,
-                    const Ref<MOIndexSpace>& bra2,
-                    const Ref<MOIndexSpace>& ket1,
-                    const Ref<MOIndexSpace>& ket2,
-                    const Ref<MOIndexSpace>& int1,
-                    const Ref<MOIndexSpace>& int2,
-                    const Ref<MOIndexSpace>& intk1,
-                    const Ref<MOIndexSpace>& intk2,
-                    const Ref<MOIndexSpace>& intkx1,
-                    const Ref<MOIndexSpace>& intkx2
+                    const Ref<OrbitalSpace>& bra1,
+                    const Ref<OrbitalSpace>& bra2,
+                    const Ref<OrbitalSpace>& ket1,
+                    const Ref<OrbitalSpace>& ket2,
+                    const Ref<OrbitalSpace>& int1,
+                    const Ref<OrbitalSpace>& int2,
+                    const Ref<OrbitalSpace>& intk1,
+                    const Ref<OrbitalSpace>& intk2,
+                    const Ref<OrbitalSpace>& intkx1,
+                    const Ref<OrbitalSpace>& intkx2
                    );
 
   /// Compute A*T2 contribution to V (needed if EBC is not assumed)
@@ -442,8 +442,8 @@ public:
 
   /** Compute V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy} */
   RefSCMatrix V(SpinCase2 spincase2,
-                const Ref<MOIndexSpace>& p,
-                const Ref<MOIndexSpace>& q);
+                const Ref<OrbitalSpace>& p,
+                const Ref<OrbitalSpace>& q);
   /// Compute P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
 
@@ -462,132 +462,132 @@ public:
   RefDiagSCMatrix evals_b() const;
 
   /// Returns the act occ space for spin case S
-  const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& occ_act(SpinCase1 S) const;
   /// Returns the occ space for spin case S
-  const Ref<MOIndexSpace>& occ(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& occ(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
-  const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& vir_act(SpinCase1 S) const;
   /// Returns the vir space for spin case S
-  const Ref<MOIndexSpace>& vir(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& vir(SpinCase1 S) const;
   /// Returns the geminal-generating orbital space for spin case S
-  const Ref<MOIndexSpace>& xspace(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& xspace(SpinCase1 S) const;
 
   /// Form <P|h+J|x> space
-  const Ref<MOIndexSpace>& hj_x_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
   /// Form <A|h+J|x> space
-  const Ref<MOIndexSpace>& hj_x_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_x_A(SpinCase1 S);
   /// Form <p|h+J|x> space
-  const Ref<MOIndexSpace>& hj_x_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_x_p(SpinCase1 S);
   /// Form <m|h+J|x> space
-  const Ref<MOIndexSpace>& hj_x_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_x_m(SpinCase1 S);
   /// Form <a|h+J|x> space
-  const Ref<MOIndexSpace>& hj_x_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_x_a(SpinCase1 S);
   /// Form <P|h+J|i> space
-  const Ref<MOIndexSpace>& hj_i_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_i_P(SpinCase1 S);
   /// Form <A|h+J|i> space
-  const Ref<MOIndexSpace>& hj_i_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_i_A(SpinCase1 S);
   /// Form <p|h+J|i> space
-  const Ref<MOIndexSpace>& hj_i_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_i_p(SpinCase1 S);
   /// Form <m|h+J|i> space
-  const Ref<MOIndexSpace>& hj_i_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_i_m(SpinCase1 S);
   /// Form <a|h+J|i> space
-  const Ref<MOIndexSpace>& hj_i_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_i_a(SpinCase1 S);
   /// Form <P|h+J|p> space
-  const Ref<MOIndexSpace>& hj_p_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_p_P(SpinCase1 S);
   /// Form <A|h+J|p> space
-  const Ref<MOIndexSpace>& hj_p_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_p_A(SpinCase1 S);
   /// Form <p|h+J|p> space
-  const Ref<MOIndexSpace>& hj_p_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_p_p(SpinCase1 S);
   /// Form <m|h+J|p> space
-  const Ref<MOIndexSpace>& hj_p_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_p_m(SpinCase1 S);
   /// Form <a|h+J|p> space
-  const Ref<MOIndexSpace>& hj_p_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& hj_p_a(SpinCase1 S);
   /// Form <P|K|x> space
-  const Ref<MOIndexSpace>& K_x_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_x_P(SpinCase1 S);
   /// Form <A|K|x> space
-  const Ref<MOIndexSpace>& K_x_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_x_A(SpinCase1 S);
   /// Form <p|K|x> space
-  const Ref<MOIndexSpace>& K_x_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_x_p(SpinCase1 S);
   /// Form <i|K|x> space
-  const Ref<MOIndexSpace>& K_x_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_x_m(SpinCase1 S);
   /// Form <a|K|x> space
-  const Ref<MOIndexSpace>& K_x_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_x_a(SpinCase1 S);
   /// Form <P|K|i> space
-  const Ref<MOIndexSpace>& K_i_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_i_P(SpinCase1 S);
   /// Form <A|K|i> space
-  const Ref<MOIndexSpace>& K_i_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_i_A(SpinCase1 S);
   /// Form <p|K|i> space
-  const Ref<MOIndexSpace>& K_i_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_i_p(SpinCase1 S);
   /// Form <m|K|i> space
-  const Ref<MOIndexSpace>& K_i_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_i_m(SpinCase1 S);
   /// Form <a|K|i> space
-  const Ref<MOIndexSpace>& K_i_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_i_a(SpinCase1 S);
   /// Form <a|K|m> space
-  const Ref<MOIndexSpace>& K_m_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_m_a(SpinCase1 S);
   /// Form <a|K|a> space
-  const Ref<MOIndexSpace>& K_a_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_a_a(SpinCase1 S);
   /// Form <p|K|a> space
-  const Ref<MOIndexSpace>& K_a_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_a_p(SpinCase1 S);
   /// Form <P|K|a> space
-  const Ref<MOIndexSpace>& K_a_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_a_P(SpinCase1 S);
   /// Form <P|K|p> space
-  const Ref<MOIndexSpace>& K_p_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_p_P(SpinCase1 S);
   /// Form <A|K|p> space
-  const Ref<MOIndexSpace>& K_p_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_p_A(SpinCase1 S);
   /// Form <p|K|p> space
-  const Ref<MOIndexSpace>& K_p_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_p_p(SpinCase1 S);
   /// Form <m|K|p> space
-  const Ref<MOIndexSpace>& K_p_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_p_m(SpinCase1 S);
   /// Form <a|K|p> space
-  const Ref<MOIndexSpace>& K_p_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_p_a(SpinCase1 S);
   /// Form <P|K|A> space
-  const Ref<MOIndexSpace>& K_A_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_A_P(SpinCase1 S);
   /// Form <P|K|P> space
-  const Ref<MOIndexSpace>& K_P_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& K_P_P(SpinCase1 S);
   /// Form <P|F|x> space
-  const Ref<MOIndexSpace>& F_x_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_x_P(SpinCase1 S);
   /// Form <A|F|x> space
-  const Ref<MOIndexSpace>& F_x_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_x_A(SpinCase1 S);
   /// Form <p|F|x> space
-  const Ref<MOIndexSpace>& F_x_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_x_p(SpinCase1 S);
   /// Form <m|F|x> space
-  const Ref<MOIndexSpace>& F_x_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_x_m(SpinCase1 S);
   /// Form <a|F|x> space
-  const Ref<MOIndexSpace>& F_x_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_x_a(SpinCase1 S);
   /// Form <P|F|i> space
-  const Ref<MOIndexSpace>& F_i_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_i_P(SpinCase1 S);
   /// Form <A|F|i> space
-  const Ref<MOIndexSpace>& F_i_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_i_A(SpinCase1 S);
   /// Form <p|F|i> space
-  const Ref<MOIndexSpace>& F_i_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_i_p(SpinCase1 S);
   /// Form <m|F|i> space
-  const Ref<MOIndexSpace>& F_i_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_i_m(SpinCase1 S);
   /// Form <a|F|i> space
-  const Ref<MOIndexSpace>& F_i_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_i_a(SpinCase1 S);
   /// Form <m|F|m> space
-  const Ref<MOIndexSpace>& F_m_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_m_m(SpinCase1 S);
   /// Form <a|F|m> space
-  const Ref<MOIndexSpace>& F_m_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_m_a(SpinCase1 S);
   /// Form <P|F|m> space
-  const Ref<MOIndexSpace>& F_m_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_m_P(SpinCase1 S);
   /// Form <A|F|m> space
-  const Ref<MOIndexSpace>& F_m_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_m_A(SpinCase1 S);
   /// Form <a|F|a> space
-  const Ref<MOIndexSpace>& F_a_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_a_a(SpinCase1 S);
   /// Form <A|F|a> space
-  const Ref<MOIndexSpace>& F_a_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_a_A(SpinCase1 S);
   /// Form <P|F|p> space
-  const Ref<MOIndexSpace>& F_p_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_p_P(SpinCase1 S);
   /// Form <A|F|p> space
-  const Ref<MOIndexSpace>& F_p_A(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_p_A(SpinCase1 S);
   /// Form <p|F|p> space
-  const Ref<MOIndexSpace>& F_p_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_p_p(SpinCase1 S);
   /// Form <m|F|p> space
-  const Ref<MOIndexSpace>& F_p_m(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_p_m(SpinCase1 S);
   /// Form <a|F|p> space
-  const Ref<MOIndexSpace>& F_p_a(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_p_a(SpinCase1 S);
   /// Form <P|F|P> space
-  const Ref<MOIndexSpace>& F_P_P(SpinCase1 S);
+  const Ref<OrbitalSpace>& F_P_P(SpinCase1 S);
 
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */
@@ -596,23 +596,23 @@ public:
   void add_tform(const std::string& label,
                  const Ref<TwoBodyMOIntsTransform>& T);
   /// Generates canonical id for transform. no correlation function included
-  std::string transform_label(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
+  std::string transform_label(const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
+                              const Ref<OrbitalSpace>& space3,
+                              const Ref<OrbitalSpace>& space4,
                               const std::string& operator_label = std::string()) const;
   /// Generates canonical id for transform. f12 is the index of the correlation function
-  std::string transform_label(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
+  std::string transform_label(const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
+                              const Ref<OrbitalSpace>& space3,
+                              const Ref<OrbitalSpace>& space4,
                               unsigned int f12,
                               const std::string& operator_label = std::string()) const;
   /// version of transform_label() applicable when left and right correlation factors differ
-  std::string transform_label(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
+  std::string transform_label(const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
+                              const Ref<OrbitalSpace>& space3,
+                              const Ref<OrbitalSpace>& space4,
                               unsigned int f12_left,
                               unsigned int f12_right,
                               const std::string& operator_label = std::string()) const;
@@ -622,10 +622,10 @@ public:
       If tform is not given (it should be!), this function will construct a generic
       transform. */
   void compute_T2_(RefSCMatrix& T2,
-                   const Ref<MOIndexSpace>& space1,
-                   const Ref<MOIndexSpace>& space2,
-                   const Ref<MOIndexSpace>& space3,
-                   const Ref<MOIndexSpace>& space4,
+                   const Ref<OrbitalSpace>& space1,
+                   const Ref<OrbitalSpace>& space2,
+                   const Ref<OrbitalSpace>& space3,
+                   const Ref<OrbitalSpace>& space4,
                    bool antisymmetrize,
                    const std::string& tform_key);
   /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
@@ -634,10 +634,10 @@ public:
       If tform is not given (it should be!), this function will construct a generic
       transform. */
   void compute_F12_(RefSCMatrix& F12,
-                   const Ref<MOIndexSpace>& space1,
-                   const Ref<MOIndexSpace>& space2,
-                   const Ref<MOIndexSpace>& space3,
-                   const Ref<MOIndexSpace>& space4,
+                   const Ref<OrbitalSpace>& space1,
+                   const Ref<OrbitalSpace>& space2,
+                   const Ref<OrbitalSpace>& space3,
+                   const Ref<OrbitalSpace>& space4,
                    bool antisymmetrize,
                    const std::vector<std::string>& transform_keys);
 
@@ -645,8 +645,8 @@ public:
       scale_J and scale_K are used to scale Coulomb
       and exchange contributions, T12IntEval::occ() is used for the occupied spaces.
       */
-  RefSCMatrix fock(const Ref<MOIndexSpace>& bra_space,
-                   const Ref<MOIndexSpace>& ket_space, SpinCase1 S = Alpha,
+  RefSCMatrix fock(const Ref<OrbitalSpace>& bra_space,
+                   const Ref<OrbitalSpace>& ket_space, SpinCase1 S = Alpha,
                    double scale_J = 1.0, double scale_K = 1.0, double scale_H = 1.0);
 
 };

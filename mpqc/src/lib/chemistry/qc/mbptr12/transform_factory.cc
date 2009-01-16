@@ -58,8 +58,8 @@ static ClassDesc MOIntsTransformFactory_cd(
   0, 0, create<MOIntsTransformFactory>);
 
 MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
-                                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                               const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
+                                               const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                                               const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
   integral_(integral), tbintdescr_(new DefaultTwoBodyIntDescr(integral)),
   space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
@@ -130,8 +130,8 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
 }
 
 void
-MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                   const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4)
+MOIntsTransformFactory::set_spaces(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                                   const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4)
 {
   space1_ = space1;
   if (space1_.null())

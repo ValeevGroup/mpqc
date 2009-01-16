@@ -75,10 +75,10 @@ namespace {
 void
 R12IntEval::compute_X_(RefSCMatrix& X,
                        SpinCase2 spincase2,
-                       const Ref<MOIndexSpace>& bra1,
-                       const Ref<MOIndexSpace>& bra2,
-                       const Ref<MOIndexSpace>& ket1,
-                       const Ref<MOIndexSpace>& ket2,
+                       const Ref<OrbitalSpace>& bra1,
+                       const Ref<OrbitalSpace>& bra2,
+                       const Ref<OrbitalSpace>& ket1,
+                       const Ref<OrbitalSpace>& ket2,
                        bool F2_only)
 {
     using LinearR12::TwoParticleContraction;
@@ -149,10 +149,10 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-    Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-    Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
+    Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
+    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
     // if orbs1 and orbs2 have different rank -- something is TERRIBLY wrong
     if (orbs1->rank() != orbs2->rank())
 	throw ProgrammingError("R12IntEval::compute_X_() -- orbs1 and orbs2 have different ranks",__FILE__,__LINE__);
@@ -268,8 +268,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
 	    // (im|jn) contribution
 	    {
-		Ref<MOIndexSpace> cs1 = occ1;
-		Ref<MOIndexSpace> cs2 = occ2;
+		Ref<OrbitalSpace> cs1 = occ1;
+		Ref<OrbitalSpace> cs2 = occ2;
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
@@ -291,8 +291,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    } // (im|jn)
 	    // (ia|jb) contribution
 	    {
-		Ref<MOIndexSpace> cs1 = vir_act(spin1);
-		Ref<MOIndexSpace> cs2 = vir_act(spin2);
+		Ref<OrbitalSpace> cs1 = vir_act(spin1);
+		Ref<OrbitalSpace> cs2 = vir_act(spin2);
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
@@ -314,8 +314,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    } // (ia|jb)
 	    // (im|ja) contribution
 	    {
-		Ref<MOIndexSpace> cs1 = occ1;
-		Ref<MOIndexSpace> cs2 = vir_act(spin2);
+		Ref<OrbitalSpace> cs1 = occ1;
+		Ref<OrbitalSpace> cs2 = vir_act(spin2);
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 		std::vector<std::string> tforms_f12_ij;
 		{
@@ -337,8 +337,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    } // (im|ja)
 	    // (ia|jm) contribution
 	    if (!part1_equiv_part2) {
-		Ref<MOIndexSpace> cs1 = vir_act(spin1);
-		Ref<MOIndexSpace> cs2 = occ2;
+		Ref<OrbitalSpace> cs1 = vir_act(spin1);
+		Ref<OrbitalSpace> cs2 = occ2;
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
@@ -363,7 +363,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	// These are only needed in ansatz 2
 	if (ansatz()->projector() == LinearR12::Projector_2 && do_ri_in_abs) {
-	    Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
+	    Ref<OrbitalSpace> ribs2 = r12info()->ribs_space(spin2);
 
 	    // (i m |j a') tforms
 	    std::vector<std::string> tforms_imjA;
@@ -398,7 +398,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	    if (!part1_equiv_part2) {
 
-		Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);
+		Ref<OrbitalSpace> ribs1 = r12info()->ribs_space(spin1);
 
 		// (i a' |j m) tforms
 		std::vector<std::string> tforms_iAjm;

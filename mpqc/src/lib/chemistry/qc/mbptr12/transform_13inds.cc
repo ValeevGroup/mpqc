@@ -92,8 +92,8 @@ TwoBodyMOIntsTransform_13Inds::run()
   Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
   const int me = msg->me();
   const int nproc = msg->n();
-  const Ref<MOIndexSpace>& space1 = tform_->space1();
-  const Ref<MOIndexSpace>& space3 = tform_->space3();
+  const Ref<OrbitalSpace>& space1 = tform_->space1();
+  const Ref<OrbitalSpace>& space3 = tform_->space3();
   const Ref<GaussianBasisSet>& bs1 = tform_->space1()->basis();
   const Ref<GaussianBasisSet>& bs2 = tform_->space2()->basis();
   const Ref<GaussianBasisSet>& bs3 = tform_->space3()->basis();
@@ -496,8 +496,8 @@ size_t
 TwoBodyMOIntsTransform_13Inds::compute_required_dynamic_memory(const TwoBodyMOIntsTransform& tform,
                                                                int ibatchsize)
 {
-  const Ref<MOIndexSpace>& space1 = tform.space1();
-  const Ref<MOIndexSpace>& space3 = tform.space3();
+  const Ref<OrbitalSpace>& space1 = tform.space1();
+  const Ref<OrbitalSpace>& space3 = tform.space3();
   const Ref<GaussianBasisSet>& bs1 = tform.space1()->basis();
   const Ref<GaussianBasisSet>& bs2 = tform.space2()->basis();
   const Ref<GaussianBasisSet>& bs3 = tform.space3()->basis();

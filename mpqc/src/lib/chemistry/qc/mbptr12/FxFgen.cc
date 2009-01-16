@@ -61,16 +61,16 @@ using namespace sc;
 void
 R12IntEval::compute_FxF_(RefSCMatrix& FxF,
                          SpinCase2 spincase2,
-                         const Ref<MOIndexSpace>& bra1,
-                         const Ref<MOIndexSpace>& bra2,
-                         const Ref<MOIndexSpace>& ket1,
-                         const Ref<MOIndexSpace>& ket2,
-                         const Ref<MOIndexSpace>& int1,
-                         const Ref<MOIndexSpace>& int2,
-                         const Ref<MOIndexSpace>& intk1,
-                         const Ref<MOIndexSpace>& intk2,
-                         const Ref<MOIndexSpace>& intkx1,
-                         const Ref<MOIndexSpace>& intkx2
+                         const Ref<OrbitalSpace>& bra1,
+                         const Ref<OrbitalSpace>& bra2,
+                         const Ref<OrbitalSpace>& ket1,
+                         const Ref<OrbitalSpace>& ket2,
+                         const Ref<OrbitalSpace>& int1,
+                         const Ref<OrbitalSpace>& int2,
+                         const Ref<OrbitalSpace>& intk1,
+                         const Ref<OrbitalSpace>& intk2,
+                         const Ref<OrbitalSpace>& intkx1,
+                         const Ref<OrbitalSpace>& intkx2
                         )
 {
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());

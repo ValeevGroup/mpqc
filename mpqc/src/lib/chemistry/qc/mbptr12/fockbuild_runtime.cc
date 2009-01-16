@@ -34,7 +34,7 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/fockbuild_runtime.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace sc;
@@ -137,17 +137,17 @@ FockBuildRuntime::get(const std::string& key) {
     const std::string& bra_key = pkey.bra();
     const std::string& ket_key = pkey.ket();
     const std::string& oper_key = pkey.oper();
-    Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
-    Ref<MOIndexSpace> bra = idxreg->value(bra_key);
-    Ref<MOIndexSpace> ket = idxreg->value(ket_key);
+    Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+    Ref<OrbitalSpace> bra = idxreg->value(bra_key);
+    Ref<OrbitalSpace> ket = idxreg->value(ket_key);
 
     // determine spin
     const SpinCase1 spin = pkey.spin();
 
     // is the AO matrix available?
-    Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
-    Ref<MOIndexSpace> aobra = aoidxreg->value(bra->basis());
-    Ref<MOIndexSpace> aoket = aoidxreg->value(ket->basis());
+    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+    Ref<OrbitalSpace> aobra = aoidxreg->value(bra->basis());
+    Ref<OrbitalSpace> aoket = aoidxreg->value(ket->basis());
     const std::string& aobra_key = idxreg->key(aobra);
     const std::string& aoket_key = idxreg->key(aoket);
     const std::string aokey = ParsedOneBodyIntKey::key(aobra_key, aoket_key,

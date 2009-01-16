@@ -1,5 +1,5 @@
 //
-// moindexspace_runtime.cc
+// orbitalspace_runtime.cc
 //
 // Copyright (C) 2008 Edward Valeev
 //
@@ -30,35 +30,35 @@
 #endif
 
 // includes go here
-#include<chemistry/qc/mbptr12/moindexspace_runtime.h>
+#include<chemistry/qc/mbptr12/orbitalspace_runtime.h>
 
 using namespace sc;
 
-static ClassDesc MOIndexSpaceRuntime_cd(
-  typeid(MOIndexSpaceRuntime),"MOIndexSpaceRuntime",1,"virtual public SavableState",
-  create<MOIndexSpaceRuntime>, 0, create<MOIndexSpaceRuntime>);
+static ClassDesc OrbitalSpaceRuntime_cd(
+  typeid(OrbitalSpaceRuntime),"OrbitalSpaceRuntime",1,"virtual public SavableState",
+  create<OrbitalSpaceRuntime>, 0, create<OrbitalSpaceRuntime>);
 
-MOIndexSpaceRuntime::MOIndexSpaceRuntime() {}
+OrbitalSpaceRuntime::OrbitalSpaceRuntime() {}
 
-MOIndexSpaceRuntime::MOIndexSpaceRuntime(StateIn& si) : SavableState(si)
+OrbitalSpaceRuntime::OrbitalSpaceRuntime(StateIn& si) : SavableState(si)
 {
   basis_to_aospace_map_ = BasisToAOSpaceMap::restore_instance(si);
 }
 
 void
-MOIndexSpaceRuntime::save_data_state(StateOut& so)
+OrbitalSpaceRuntime::save_data_state(StateOut& so)
 {
   BasisToAOSpaceMap::save_instance(basis_to_aospace_map_,so);
 }
 
 void
-MOIndexSpaceRuntime::declare_aospace(const Ref<MOIndexSpace>& aospace)
+OrbitalSpaceRuntime::declare_aospace(const Ref<OrbitalSpace>& aospace)
 {
   basis_to_aospace_map_->add(aospace->basis(),aospace);
 }
 
-Ref<MOIndexSpace>
-MOIndexSpaceRuntime::aospace(const Ref<GaussianBasisSet>& basis)
+Ref<OrbitalSpace>
+OrbitalSpaceRuntime::aospace(const Ref<GaussianBasisSet>& basis)
 {
   return basis_to_aospace_map_->value(basis);
 }

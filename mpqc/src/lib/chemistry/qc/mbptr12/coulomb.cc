@@ -52,8 +52,8 @@ using namespace std;
 using namespace sc;
 
 RefSCMatrix
-R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                     const Ref<MOIndexSpace>& ket_space)
+R12IntEval::coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
+                     const Ref<OrbitalSpace>& ket_space)
 {
   Ref<MessageGrp> msg = r12info()->msg();
 

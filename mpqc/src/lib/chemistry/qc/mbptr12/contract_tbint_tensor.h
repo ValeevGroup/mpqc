@@ -53,14 +53,14 @@ namespace sc {
       RefSCMatrix& T,
       TwoBodyInt::tbint_type tbint_type_bra,
       TwoBodyInt::tbint_type tbint_type_ket,
-      const Ref<MOIndexSpace>& space1_bra,
-      const Ref<MOIndexSpace>& space2_bra,
-      const Ref<MOIndexSpace>& space1_intb,
-      const Ref<MOIndexSpace>& space2_intb,
-      const Ref<MOIndexSpace>& space1_ket,
-      const Ref<MOIndexSpace>& space2_ket,
-      const Ref<MOIndexSpace>& space1_intk,
-      const Ref<MOIndexSpace>& space2_intk,
+      const Ref<OrbitalSpace>& space1_bra,
+      const Ref<OrbitalSpace>& space2_bra,
+      const Ref<OrbitalSpace>& space1_intb,
+      const Ref<OrbitalSpace>& space2_intb,
+      const Ref<OrbitalSpace>& space1_ket,
+      const Ref<OrbitalSpace>& space2_ket,
+      const Ref<OrbitalSpace>& space1_intk,
+      const Ref<OrbitalSpace>& space2_intk,
       const Ref<LinearR12::TwoParticleContraction>& tpcontract,
       bool antisymmetrize,
       const std::vector<std::string>& tformkeys_bra,
@@ -178,14 +178,14 @@ namespace sc {
       //
       // WARNING: Assuming all transforms are over same spaces!!!
       //
-      Ref<MOIndexSpace> tspace1_bra = transforms_bra[0]->space1();
-      Ref<MOIndexSpace> tspace2_bra = transforms_bra[0]->space3();
-      Ref<MOIndexSpace> tspace1_intb = transforms_bra[0]->space2();
-      Ref<MOIndexSpace> tspace2_intb = transforms_bra[0]->space4();
-      Ref<MOIndexSpace> tspace1_ket = transforms_ket[0]->space1();
-      Ref<MOIndexSpace> tspace2_ket = transforms_ket[0]->space3();
-      Ref<MOIndexSpace> tspace1_intk = transforms_ket[0]->space2();
-      Ref<MOIndexSpace> tspace2_intk = transforms_ket[0]->space4();
+      Ref<OrbitalSpace> tspace1_bra = transforms_bra[0]->space1();
+      Ref<OrbitalSpace> tspace2_bra = transforms_bra[0]->space3();
+      Ref<OrbitalSpace> tspace1_intb = transforms_bra[0]->space2();
+      Ref<OrbitalSpace> tspace2_intb = transforms_bra[0]->space4();
+      Ref<OrbitalSpace> tspace1_ket = transforms_ket[0]->space1();
+      Ref<OrbitalSpace> tspace2_ket = transforms_ket[0]->space3();
+      Ref<OrbitalSpace> tspace1_intk = transforms_ket[0]->space2();
+      Ref<OrbitalSpace> tspace2_intk = transforms_ket[0]->space4();
       // maps spaceX to spaceX of the transform
       std::vector<unsigned int> map1_bra, map2_bra, map1_ket, map2_ket,
                                 map1_intb, map2_intb, map1_intk, map2_intk;

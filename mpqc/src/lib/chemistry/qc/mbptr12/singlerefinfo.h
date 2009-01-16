@@ -32,7 +32,7 @@
 #ifndef _chemistry_qc_mbptr12_singlerefinfo_h
 #define _chemistry_qc_mbptr12_singlerefinfo_h
 
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
@@ -62,47 +62,47 @@ namespace sc {
     unsigned int nfzv() const;
 
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
-    const Ref<MOIndexSpace>& oso_space() const;
+    const Ref<OrbitalSpace>& oso_space() const;
 
     //@{ \group Spin-independent spaces
     /**  Spin-independent variants can throw when used with spin-polarized reference.
     */
     /// Return the space of symmetry-blocked MOs
-    const Ref<MOIndexSpace>& orbs_sb() const;
+    const Ref<OrbitalSpace>& orbs_sb() const;
     /// Return the space of energy-sorted MOs
-    const Ref<MOIndexSpace>& orbs() const;
+    const Ref<OrbitalSpace>& orbs() const;
     /// Return the space of symmetry-blocked doubly-occupied MOs
-    const Ref<MOIndexSpace>& docc_sb() const;
+    const Ref<OrbitalSpace>& docc_sb() const;
     /// Return the space of doubly-occupied MOs
-    const Ref<MOIndexSpace>& docc() const;
+    const Ref<OrbitalSpace>& docc() const;
     /// Return the space of active doubly-occupied MOs
-    const Ref<MOIndexSpace>& docc_act() const;
+    const Ref<OrbitalSpace>& docc_act() const;
     /// Return the space of singly-occupied MOs
-    const Ref<MOIndexSpace>& socc() const;
+    const Ref<OrbitalSpace>& socc() const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs
-    const Ref<MOIndexSpace>& uocc_sb() const;
+    const Ref<OrbitalSpace>& uocc_sb() const;
     /// Return the space of unoccupied (virtual) MOs
-    const Ref<MOIndexSpace>& uocc() const;
+    const Ref<OrbitalSpace>& uocc() const;
     /// Return the space of active unoccupied (virtual) MOs
-    const Ref<MOIndexSpace>& uocc_act() const;
+    const Ref<OrbitalSpace>& uocc_act() const;
     //@}
 
     /// Return the space of symmetry-blocked MOs of the given spin
-    const Ref<MOIndexSpace>& orbs_sb(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& orbs_sb(SpinCase1 spin) const;
     /// Return the space of energy-sorted MOs of the given spin
-    const Ref<MOIndexSpace>& orbs(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& orbs(SpinCase1 spin) const;
     /// Return the space of symmery-blocked occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ_sb(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin) const;
     /// Return the space of occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& occ(SpinCase1 spin) const;
     /// Return the space of occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ_act(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& occ_act(SpinCase1 spin) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc_sb(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& uocc(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc_act(SpinCase1 spin) const;
+    const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin) const;
 
     private:
     /// initialized?
@@ -116,14 +116,14 @@ namespace sc {
 
     /// Following data structure is defined for each spin case
     typedef struct {
-      Ref<MOIndexSpace> orbs_sb_;
-      Ref<MOIndexSpace> orbs_;
-      Ref<MOIndexSpace> occ_sb_;
-      Ref<MOIndexSpace> occ_;
-      Ref<MOIndexSpace> occ_act_;
-      Ref<MOIndexSpace> uocc_sb_;
-      Ref<MOIndexSpace> uocc_;
-      Ref<MOIndexSpace> uocc_act_;
+      Ref<OrbitalSpace> orbs_sb_;
+      Ref<OrbitalSpace> orbs_;
+      Ref<OrbitalSpace> occ_sb_;
+      Ref<OrbitalSpace> occ_;
+      Ref<OrbitalSpace> occ_act_;
+      Ref<OrbitalSpace> uocc_sb_;
+      Ref<OrbitalSpace> uocc_;
+      Ref<OrbitalSpace> uocc_act_;
       /// "constructor"
       void init(SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                 const Ref<Integral>& integral,
@@ -134,15 +134,15 @@ namespace sc {
     //@{
     /** see corresponding public member function
     */
-    Ref<MOIndexSpace> orbs_sb_;
-    Ref<MOIndexSpace> orbs_;
-    Ref<MOIndexSpace> docc_sb_;
-    Ref<MOIndexSpace> docc_;
-    Ref<MOIndexSpace> docc_act_;
-    Ref<MOIndexSpace> socc_;
-    Ref<MOIndexSpace> uocc_sb_;
-    Ref<MOIndexSpace> uocc_;
-    Ref<MOIndexSpace> uocc_act_;
+    Ref<OrbitalSpace> orbs_sb_;
+    Ref<OrbitalSpace> orbs_;
+    Ref<OrbitalSpace> docc_sb_;
+    Ref<OrbitalSpace> docc_;
+    Ref<OrbitalSpace> docc_act_;
+    Ref<OrbitalSpace> socc_;
+    Ref<OrbitalSpace> uocc_sb_;
+    Ref<OrbitalSpace> uocc_;
+    Ref<OrbitalSpace> uocc_act_;
     SpinSpaces spinspaces_[NSpinCases1];
     //}@
 

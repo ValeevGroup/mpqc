@@ -116,16 +116,16 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   const SpinCase1 spin2 = case2(spincase2);
   const bool p1_neq_p2 = spin_polarized && spincase2 == AlphaBeta;
 
-  Ref<MOIndexSpace> occ1_act = r12eval_->occ_act(spin1);
-  Ref<MOIndexSpace> occ2_act = r12eval_->occ_act(spin2);
-  Ref<MOIndexSpace> occ1 = r12eval_->occ(spin1);
-  Ref<MOIndexSpace> occ2 = r12eval_->occ(spin2);
-  Ref<MOIndexSpace> cabs1 = r12info->ribs_space(spin1);
-  Ref<MOIndexSpace> cabs2 = r12info->ribs_space(spin2);
-  Ref<MOIndexSpace> vir1_act = r12eval_->vir_act(spin1);
-  Ref<MOIndexSpace> vir2_act = r12eval_->vir_act(spin2);
-  Ref<MOIndexSpace> xspace1 = r12eval_->xspace(spin1);
-  Ref<MOIndexSpace> xspace2 = r12eval_->xspace(spin2);
+  Ref<OrbitalSpace> occ1_act = r12eval_->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = r12eval_->occ_act(spin2);
+  Ref<OrbitalSpace> occ1 = r12eval_->occ(spin1);
+  Ref<OrbitalSpace> occ2 = r12eval_->occ(spin2);
+  Ref<OrbitalSpace> cabs1 = r12info->ribs_space(spin1);
+  Ref<OrbitalSpace> cabs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> vir1_act = r12eval_->vir_act(spin1);
+  Ref<OrbitalSpace> vir2_act = r12eval_->vir_act(spin2);
+  Ref<OrbitalSpace> xspace1 = r12eval_->xspace(spin1);
+  Ref<OrbitalSpace> xspace2 = r12eval_->xspace(spin2);
 
   // Allocate the matrices
   RefSCDimension dim_f12 = r12eval_->dim_f12(spincase2);

@@ -99,13 +99,13 @@ namespace sc {
                        const Ref<Integral>& integral);
 
     RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
-                        const Ref<MOIndexSpace>& occspace,
-                        const Ref<MOIndexSpace>& braspace,
-                        const Ref<MOIndexSpace>& ketspace);
+                        const Ref<OrbitalSpace>& occspace,
+                        const Ref<OrbitalSpace>& braspace,
+                        const Ref<OrbitalSpace>& ketspace);
     RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
-                         const Ref<MOIndexSpace>& occspace,
-                         const Ref<MOIndexSpace>& braspace,
-                         const Ref<MOIndexSpace>& ketspace);
+                         const Ref<OrbitalSpace>& occspace,
+                         const Ref<OrbitalSpace>& braspace,
+                         const Ref<OrbitalSpace>& ketspace);
 
   } // end of namespace detail
 
@@ -284,10 +284,10 @@ namespace sc {
       TwoBodyFockTransformBuilder(bool compute_J,
                         bool compute_K,
                         SpinCase1 spin,
-                        const Ref<MOIndexSpace>& braspace,
-                        const Ref<MOIndexSpace>& ketspace,
-                        const Ref<MOIndexSpace>& occspace_A,
-                        const Ref<MOIndexSpace>& occspace_B,
+                        const Ref<OrbitalSpace>& braspace,
+                        const Ref<OrbitalSpace>& ketspace,
+                        const Ref<OrbitalSpace>& occspace_A,
+                        const Ref<OrbitalSpace>& occspace_B,
                         const Ref<MOIntsRuntime>& ints_rtime) :
                           compute_J_(compute_J),
                           compute_K_(compute_K),

@@ -263,11 +263,11 @@ MOIntsRuntime::create_tform(const std::string& key)
   const std::string& params_str = pkey.params();
 
   // get the spaces and construct the descriptor
-  Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
-  Ref<MOIndexSpace> bra1 = idxreg->value(bra1_str);
-  Ref<MOIndexSpace> bra2 = idxreg->value(bra2_str);
-  Ref<MOIndexSpace> ket1 = idxreg->value(ket1_str);
-  Ref<MOIndexSpace> ket2 = idxreg->value(ket2_str);
+  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
+  Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
+  Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
+  Ref<OrbitalSpace> ket2 = idxreg->value(ket2_str);
   factory()->set_spaces(bra1,ket1,bra2,ket2);    // factory assumes chemists' convention
   Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
 
@@ -275,7 +275,7 @@ MOIntsRuntime::create_tform(const std::string& key)
   Ref<TwoBodyMOIntsTransform> tform;
   const Layout layout(pkey.layout());
   if(layout == Layout_b1b2_k1k2) {
-    Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
+    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
 
     // is this a partial transform?
     if (aoidxreg->value_exists(ket1) &&
@@ -283,8 +283,8 @@ MOIntsRuntime::create_tform(const std::string& key)
       tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_iRjS,key,descr);
     else { // if not, look for a partial transform
 
-      Ref<MOIndexSpace> aoket1 = aoidxreg->value(ket1->basis());
-      Ref<MOIndexSpace> aoket2 = aoidxreg->value(ket2->basis());
+      Ref<OrbitalSpace> aoket1 = aoidxreg->value(ket1->basis());
+      Ref<OrbitalSpace> aoket2 = aoidxreg->value(ket2->basis());
       const std::string half_tform_key =
         ParsedTwoBodyIntKey::key(idxreg->key(bra1),
                                  idxreg->key(bra2),
@@ -451,8 +451,8 @@ namespace sc{   namespace detail {
 
   /// Convert 2 spaces to SpinCase2
   SpinCase2
-  spincase2(const Ref<MOIndexSpace>& space1,
-            const Ref<MOIndexSpace>& space2)
+  spincase2(const Ref<OrbitalSpace>& space1,
+            const Ref<OrbitalSpace>& space2)
   {
     char id1 = space1->id()[0];
     char id2 = space2->id()[0];

@@ -71,8 +71,8 @@ static ClassDesc TwoBodyMOIntsTransform_ixjy_cd(
 
 TwoBodyMOIntsTransform_ixjy::TwoBodyMOIntsTransform_ixjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                                                          const Ref<TwoBodyIntDescr>& tbintdescr,
-                                                         const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                                         const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
+                                                         const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                                                         const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
   TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,space2,space3,space4)
 {
   init_vars();
@@ -236,10 +236,10 @@ TwoBodyMOIntsTransform_ixjy::check_int_symm(double threshold) throw (Programming
   int nj = iacc->nj();
   int nx = iacc->nx();
   int ny = iacc->ny();
-  vector<unsigned int> isyms = space1_->mosym();
-  vector<unsigned int> jsyms = space3_->mosym();
-  vector<unsigned int> xsyms = space2_->mosym();
-  vector<unsigned int> ysyms = space4_->mosym();
+  vector<unsigned int> isyms = space1_->orbsym();
+  vector<unsigned int> jsyms = space3_->orbsym();
+  vector<unsigned int> xsyms = space2_->orbsym();
+  vector<unsigned int> ysyms = space4_->orbsym();
 
   int me = msg_->me();
   vector<int> twi_map;

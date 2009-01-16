@@ -37,7 +37,7 @@
 #include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 
 using namespace std;
@@ -107,10 +107,10 @@ private:
 
   Ref<TwoBodyIntDescr> tbintdescr_;
 
-  Ref<MOIndexSpace> space1_;
-  Ref<MOIndexSpace> space2_;
-  Ref<MOIndexSpace> space3_;
-  Ref<MOIndexSpace> space4_;
+  Ref<OrbitalSpace> space1_;
+  Ref<OrbitalSpace> space2_;
+  Ref<OrbitalSpace> space3_;
+  Ref<OrbitalSpace> space4_;
 
   CreateTransformHints hints_;
   size_t memory_;
@@ -133,15 +133,15 @@ public:
 
   MOIntsTransformFactory(StateIn&);
   MOIntsTransformFactory(const Ref<Integral>& integral,
-                         const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2 = 0,
-                         const Ref<MOIndexSpace>& space3 = 0, const Ref<MOIndexSpace>& space4 = 0);
+                         const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2 = 0,
+                         const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
   ~MOIntsTransformFactory();
 
   void save_data_state(StateOut&);
 
   /// Sets the orbital spaces
-  void set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2 = 0,
-                  const Ref<MOIndexSpace>& space3 = 0, const Ref<MOIndexSpace>& space4 = 0);
+  void set_spaces(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2 = 0,
+                  const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
 
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
@@ -175,14 +175,14 @@ public:
   const double print_percent() const { return print_percent_; }
   const size_t memory() const { return memory_; }
 
-  /// Returns MOIndexSpace object 1
-  Ref<MOIndexSpace> space1() const;
-  /// Returns MOIndexSpace object 2
-  Ref<MOIndexSpace> space2() const;
-  /// Returns MOIndexSpace object 3
-  Ref<MOIndexSpace> space3() const;
-  /// Returns MOIndexSpace object 4
-  Ref<MOIndexSpace> space4() const;
+  /// Returns OrbitalSpace object 1
+  Ref<OrbitalSpace> space1() const;
+  /// Returns OrbitalSpace object 2
+  Ref<OrbitalSpace> space2() const;
+  /// Returns OrbitalSpace object 3
+  Ref<OrbitalSpace> space3() const;
+  /// Returns OrbitalSpace object 4
+  Ref<OrbitalSpace> space4() const;
 
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
       stored in qs blocks for each pr */

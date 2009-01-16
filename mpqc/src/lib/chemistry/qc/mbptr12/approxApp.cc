@@ -80,8 +80,8 @@ R12IntEval::compute_BApp_()
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<MOIndexSpace> xspace1 = xspace(spin1);
-    Ref<MOIndexSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> xspace1 = xspace(spin1);
+    Ref<OrbitalSpace> xspace2 = xspace(spin2);
 
     if (dim_oo(spincase2).n() == 0)
       continue;
@@ -97,18 +97,18 @@ R12IntEval::compute_BApp_()
     // compute Q = X_{xy}^{xy_{hj}}
     RefSCMatrix Q;
     if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
-	Ref<MOIndexSpace> hj_x2 = hj_x_P(spin2);
+	Ref<OrbitalSpace> hj_x2 = hj_x_P(spin2);
 	compute_X_(Q,spincase2,xspace1,xspace2,
 		   xspace1,hj_x2);
     }
     else { // else do RI in orbital basis...
 	if (vbs_eq_obs) { // which is just p if VBS == OBS
-	    Ref<MOIndexSpace> hj_x2 = hj_x_p(spin2);
+	    Ref<OrbitalSpace> hj_x2 = hj_x_p(spin2);
 	    compute_X_(Q,spincase2,xspace1,xspace2,
 		       xspace1,hj_x2);
 	}
 	else { // if VBS != OBS, p = m + a
-	    Ref<MOIndexSpace> hj_x2 = hj_x_m(spin2);
+	    Ref<OrbitalSpace> hj_x2 = hj_x_m(spin2);
 	    compute_X_(Q,spincase2,xspace1,xspace2,
 		       xspace1,hj_x2);
 	    hj_x2 = hj_x_a(spin2);
@@ -119,18 +119,18 @@ R12IntEval::compute_BApp_()
 
     if (xspace1 != xspace2) {
 	if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
-	    Ref<MOIndexSpace> hj_x1 = hj_x_P(spin1);
+	    Ref<OrbitalSpace> hj_x1 = hj_x_P(spin1);
 	    compute_X_(Q,spincase2,xspace1,xspace2,
 		       hj_x1,xspace2);
 	}
 	else { // else do RI in orbital basis...
 	    if (vbs_eq_obs) { // which is just p if VBS == OBS
-		Ref<MOIndexSpace> hj_x1 = hj_x_p(spin1);
+		Ref<OrbitalSpace> hj_x1 = hj_x_p(spin1);
 		compute_X_(Q,spincase2,xspace1,xspace2,
 			   hj_x1,xspace2);
 	    }
 	    else { // if VBS != OBS, p = m + a
-		Ref<MOIndexSpace> hj_x1 = hj_x_m(spin1);
+		Ref<OrbitalSpace> hj_x1 = hj_x_m(spin1);
 		compute_X_(Q,spincase2,xspace1,xspace2,
 			   hj_x1,xspace2);
 		hj_x1 = hj_x_a(spin1);

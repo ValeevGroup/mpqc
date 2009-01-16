@@ -147,7 +147,7 @@ R12IntEvalInfo::construct_orthog_ri_()
   if (ribs_space_.null()) {
     ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
   }
-  const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
   idxreg->add(make_keyspace_pair(ribs_space_));
 }
 
@@ -165,7 +165,7 @@ R12IntEvalInfo::abs_spans_obs_()
     nlindep_ri = nlindep_ri_;
   }
   else {
-    Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
+    Ref<OrbitalSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
   }
 
   const int obs_rank = refinfo()->orbs(Alpha)->rank();
@@ -180,7 +180,7 @@ R12IntEvalInfo::abs_spans_obs_()
 void
 R12IntEvalInfo::construct_ortho_comp_svd_()
 {
-  const Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
 
   construct_orthog_aux_();
   construct_orthog_vir_();
@@ -196,18 +196,18 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   }
 
   if (!refinfo()->spin_polarized()) {
-    Ref<MOIndexSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "p'-m", "CABS", refinfo()->ref()->lindep_tol());
+    Ref<OrbitalSpace> tmp = orthog_comp(refinfo()->docc_sb(), ribs_space_, "p'-m", "CABS", refinfo()->ref()->lindep_tol());
     tmp = orthog_comp(vir_sb_, tmp, "a'", "CABS", refinfo()->ref()->lindep_tol());
     vir_spaces_[Alpha].ri_ = tmp;
     vir_spaces_[Beta].ri_ = tmp;
     idxreg->add(make_keyspace_pair(vir_spaces_[Alpha].ri_));
   }
   else {
-    Ref<MOIndexSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
-    Ref<MOIndexSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", refinfo()->ref()->lindep_tol());
-    if (USE_NEW_MOINDEXSPACE_KEYS) {
-      const std::string key_a = ParsedMOIndexSpaceKey::key(std::string("a'"),Alpha);
-      const std::string key_b = ParsedMOIndexSpaceKey::key(std::string("a'"),Beta);
+    Ref<OrbitalSpace> tmp_a = orthog_comp(refinfo()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", refinfo()->ref()->lindep_tol());
+    Ref<OrbitalSpace> tmp_b = orthog_comp(refinfo()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", refinfo()->ref()->lindep_tol());
+    if (USE_NEW_ORBITALSPACE_KEYS) {
+      const std::string key_a = ParsedOrbitalSpaceKey::key(std::string("a'"),Alpha);
+      const std::string key_b = ParsedOrbitalSpaceKey::key(std::string("a'"),Beta);
       vir_spaces_[Alpha].ri_ = orthog_comp(refinfo()->uocc_sb(Alpha), tmp_a, key_a, "CABS (Alpha)", refinfo()->ref()->lindep_tol());
       vir_spaces_[Beta].ri_ = orthog_comp(refinfo()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", refinfo()->ref()->lindep_tol());
     }
@@ -220,7 +220,7 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   }
 }
 
-Ref<MOIndexSpace>
+Ref<OrbitalSpace>
 R12IntEvalInfo::orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
                               const Ref<Integral>& ints,
                               OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
@@ -268,18 +268,18 @@ R12IntEvalInfo::orthogonalize(const std::string& id, const std::string& name, co
   ExEnv::out0() << decindent;
 
   nlindep = orthog.nlindep();
-  Ref<MOIndexSpace> space = new MOIndexSpace(id,name,orthog_ao,bs,integral);
+  Ref<OrbitalSpace> space = new OrbitalSpace(id,name,orthog_ao,bs,integral);
 
   return space;
 }
 
 
-Ref<MOIndexSpace>
-R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+Ref<OrbitalSpace>
+R12IntEvalInfo::orthog_comp(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                             const std::string& id, const std::string& name, double lindep_tol)
 {
   if (!space1->integral()->equiv(space2->integral()))
-    throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
+    throw ProgrammingError("Two OrbitalSpaces use incompatible Integral factories");
   // Both spaces must have same blocking
   if (space1->nblocks() != space2->nblocks())
     throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 have incompatible blocking");
@@ -290,7 +290,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 
   // If space1 is void, return a copy of the original space
   if (space1->rank() == 0)
-      return new MOIndexSpace(id,name,space2->coefs(),space2->basis(),space2->integral());
+      return new OrbitalSpace(id,name,space2->coefs(),space2->basis(),space2->integral());
 
   // C12 = C1 * S12 * C2
   RefSCMatrix C12;
@@ -417,14 +417,14 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(id,name,orthog2,space2->basis(),space2->integral());
+  Ref<OrbitalSpace> orthog_comp_space = new OrbitalSpace(id,name,orthog2,space2->basis(),space2->integral());
 
   return orthog_comp_space;
 }
 
 
-Ref<MOIndexSpace>
-R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+Ref<OrbitalSpace>
+R12IntEvalInfo::gen_project(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                             const std::string& id, const std::string& name, double lindep_tol)
 {
   //
@@ -436,7 +436,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 
   // Check integral factories
   if (!space1->integral()->equiv(space2->integral()))
-    throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
+    throw ProgrammingError("Two OrbitalSpaces use incompatible Integral factories");
   // Both spaces must have same blocking
   if (space1->nblocks() != space2->nblocks())
     throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 have incompatible blocking");
@@ -574,7 +574,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> proj_space = new MOIndexSpace(id,name,proj,space2->basis(),space2->integral());
+  Ref<OrbitalSpace> proj_space = new OrbitalSpace(id,name,proj,space2->basis(),space2->integral());
 
   RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
   S12.print("Check: overlap between space1 and projected space");

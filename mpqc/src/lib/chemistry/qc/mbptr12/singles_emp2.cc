@@ -70,8 +70,8 @@ R12IntEval::compute_singles_emp2_()
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     
-    Ref<MOIndexSpace> occ_act = r12info_->refinfo()->occ_act(spin);
-    Ref<MOIndexSpace> vir_act = r12info_->vir_act(spin);
+    Ref<OrbitalSpace> occ_act = r12info_->refinfo()->occ_act(spin);
+    Ref<OrbitalSpace> vir_act = r12info_->vir_act(spin);
     RefSCMatrix Fia = fock(occ_act,vir_act,spin);
 
     const int ni = occ_act->rank();

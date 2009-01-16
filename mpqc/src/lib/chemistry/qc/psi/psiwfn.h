@@ -36,7 +36,7 @@
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 
 namespace sc {
   
@@ -252,8 +252,8 @@ namespace sc {
   class PsiCorrWavefunction : public PsiWavefunction {
     protected:
       Ref<PsiSCF> reference_;
-      Ref<MOIndexSpace> occ_act_sb_[NSpinCases1];
-      Ref<MOIndexSpace> vir_act_sb_[NSpinCases1];
+      Ref<OrbitalSpace> occ_act_sb_[NSpinCases1];
+      Ref<OrbitalSpace> vir_act_sb_[NSpinCases1];
       unsigned int nfzc_;
       unsigned int nfzv_;
       mutable std::vector<unsigned int> frozen_docc_;
@@ -277,9 +277,9 @@ namespace sc {
       /// Number of electrons
       int nelectron();
       /// symmetry-blocked space of active occupied orbitals from Psi3
-      const Ref<MOIndexSpace>& occ_act_sb(SpinCase1);
+      const Ref<OrbitalSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3
-      const Ref<MOIndexSpace>& vir_act_sb(SpinCase1);
+      const Ref<OrbitalSpace>& vir_act_sb(SpinCase1);
       /// total # of frozen doubly-occupied orbitals
       unsigned int nfzc() const;
       /// total # of frozen unoccupied orbitals

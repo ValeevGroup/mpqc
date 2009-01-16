@@ -82,20 +82,20 @@ R12IntEval::compute_B_gbc_()
     const SpinCase1 spin2 = case2(spincase2);
     
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<MOIndexSpace> occ1 = refinfo->occ(spin1);
-    Ref<MOIndexSpace> occ2 = refinfo->occ(spin2);
-    Ref<MOIndexSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<MOIndexSpace> orbs2 = refinfo->orbs(spin2);
-    Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
-    Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
-    Ref<MOIndexSpace> xspace1 = xspace(spin1);
-    Ref<MOIndexSpace> xspace2 = xspace(spin2);
-    Ref<MOIndexSpace> vir1 = vir(spin1);
-    Ref<MOIndexSpace> vir2 = vir(spin2);
-    Ref<MOIndexSpace> F_m_A_1 = F_m_A(spin1);
-    Ref<MOIndexSpace> F_m_A_2 = F_m_A(spin2);
-    Ref<MOIndexSpace> F_x_A_1 = F_x_A(spin1);
-    Ref<MOIndexSpace> F_x_A_2 = F_x_A(spin2);
+    Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
+    Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
+    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
+    Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+    Ref<OrbitalSpace> xspace1 = xspace(spin1);
+    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> vir1 = vir(spin1);
+    Ref<OrbitalSpace> vir2 = vir(spin2);
+    Ref<OrbitalSpace> F_m_A_1 = F_m_A(spin1);
+    Ref<OrbitalSpace> F_m_A_2 = F_m_A(spin2);
+    Ref<OrbitalSpace> F_x_A_1 = F_x_A(spin1);
+    Ref<OrbitalSpace> F_x_A_2 = F_x_A(spin2);
     
     RefSCMatrix B_gbc1 = B_[s].clone(); B_gbc1.assign(0.0);
     RefSCMatrix B_gbc2 = B_[s].clone(); B_gbc2.assign(0.0);

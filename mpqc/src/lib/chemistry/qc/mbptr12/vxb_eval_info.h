@@ -42,7 +42,7 @@
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/ansatz.h>
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
@@ -57,8 +57,8 @@ class MBPT2_R12;
 
 class R12IntEvalInfo : virtual public SavableState {
 
-  // change to 0 to use the old set of MOIndexSpace keys
-  static const int USE_NEW_MOINDEXSPACE_KEYS = 1;
+  // change to 0 to use the old set of OrbitalSpace keys
+  static const int USE_NEW_ORBITALSPACE_KEYS = 1;
 
 public:
 
@@ -67,17 +67,17 @@ public:
 
   /// Maintains virtual orbitals and RI space info if VBS != OBS
   typedef struct {
-    //Ref<MOIndexSpace> vbs_sb_;
-    //Ref<MOIndexSpace> vbs_;
-    Ref<MOIndexSpace> vir_sb_;
-    Ref<MOIndexSpace> vir_;
-    Ref<MOIndexSpace> vir_act_;
+    //Ref<OrbitalSpace> vbs_sb_;
+    //Ref<OrbitalSpace> vbs_;
+    Ref<OrbitalSpace> vir_sb_;
+    Ref<OrbitalSpace> vir_;
+    Ref<OrbitalSpace> vir_act_;
     // RI space
-    Ref<MOIndexSpace> ri_;
+    Ref<OrbitalSpace> ri_;
     // "constructor" that uses SingleRefInfo object
     void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase);
     // "constructor" that uses SingleRefInfo object
-    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<MOIndexSpace>& vbs);
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<OrbitalSpace>& vbs);
   } SpinSpaces;
 
 private:
@@ -107,12 +107,12 @@ private:
   int nlindep_ri_;
 
   /// This space depends only on the orbital basis set
-  Ref<MOIndexSpace> abs_space_;  // ABS space
-  Ref<MOIndexSpace> ribs_space_; // RIBS basis
+  Ref<OrbitalSpace> abs_space_;  // ABS space
+  Ref<OrbitalSpace> ribs_space_; // RIBS basis
   SpinSpaces vir_spaces_[NSpinCases1];
-  Ref<MOIndexSpace> vir_act_;
-  Ref<MOIndexSpace> vir_;
-  Ref<MOIndexSpace> vir_sb_;
+  Ref<OrbitalSpace> vir_act_;
+  Ref<OrbitalSpace> vir_;
+  Ref<OrbitalSpace> vir_sb_;
   /// Initializes all spaces that relate to the reference determinant
   Ref<SingleRefInfo> refinfo_;
 
@@ -254,33 +254,33 @@ public:
   bool safety_check() const { return r12tech()->safety_check(); }
   const LinearR12::PositiveDefiniteB& posdef_B() const { return r12tech()->posdef_B(); }
 
-  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
-  const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
-  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
-  const Ref<MOIndexSpace>& vir_sb() const { throw_if_spin_polarized(); return vir_sb_; };
-  /// Returns the MOIndexSpace object for the active unoccupied MOs
-  const Ref<MOIndexSpace>& vir_act() const { throw_if_spin_polarized(); return vir_act_; };
-  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
-  const Ref<MOIndexSpace>& vir(const SpinCase1& S) const { return vir_spaces_[S].vir_; };
-  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
-  const Ref<MOIndexSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
-  /// Returns the MOIndexSpace object for the active unoccupied MOs
-  const Ref<MOIndexSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
+  /// Returns the OrbitalSpace object for all unoccupied MOs ordered by energy
+  const Ref<OrbitalSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
+  /// Returns the OrbitalSpace object for all unoccupied MOs ordered by symmetry
+  const Ref<OrbitalSpace>& vir_sb() const { throw_if_spin_polarized(); return vir_sb_; };
+  /// Returns the OrbitalSpace object for the active unoccupied MOs
+  const Ref<OrbitalSpace>& vir_act() const { throw_if_spin_polarized(); return vir_act_; };
+  /// Returns the OrbitalSpace object for all unoccupied MOs ordered by energy
+  const Ref<OrbitalSpace>& vir(const SpinCase1& S) const { return vir_spaces_[S].vir_; };
+  /// Returns the OrbitalSpace object for all unoccupied MOs ordered by symmetry
+  const Ref<OrbitalSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
+  /// Returns the OrbitalSpace object for the active unoccupied MOs
+  const Ref<OrbitalSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
 
   /// Cheating! fock() is not available yet standalone, thus these spaces must be modified after canonicalization
-  void vir(const SpinCase1& S, const Ref<MOIndexSpace>& space);
-  void vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& space);
-  void vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& space);
+  void vir(const SpinCase1& S, const Ref<OrbitalSpace>& space);
+  void vir_sb(const SpinCase1& S, const Ref<OrbitalSpace>& space);
+  void vir_act(const SpinCase1& S, const Ref<OrbitalSpace>& space);
 
-  /// Returns the MOIndexSpace object for ABS
-  const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
-  /// Returns the MOIndexSpace object for RI-BS: approximates the identity
-  const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
-  /** Returns the MOIndexSpace object for RI-BS:
+  /// Returns the OrbitalSpace object for ABS
+  const Ref<OrbitalSpace>& abs_space() const { return abs_space_; };
+  /// Returns the OrbitalSpace object for RI-BS: approximates the identity
+  const Ref<OrbitalSpace>& ribs_space() const { return ribs_space_; };
+  /** Returns the OrbitalSpace object for RI-BS:
       if CABS/CABS+ -- approximates the complement to OBS,
       if ABS/ABS+   -- throw
   */
-  const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const;
+  const Ref<OrbitalSpace>& ribs_space(const SpinCase1& S) const;
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
   /// Returns the MOIntsRuntime object
@@ -292,28 +292,28 @@ public:
 
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
-  static Ref<MOIndexSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
+  static Ref<OrbitalSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
                                          const Ref<Integral>& integral, OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                                          int& nlindep);
 
   /** Project space1 on space2. This routine computes X2 such that C1.S12.X2 = I,
       where I is identity matrix, C1 is space1, and X2 spans
       subspace of space2. X2 is returned. */
-  static Ref<MOIndexSpace> gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+  static Ref<OrbitalSpace> gen_project(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                        const std::string& id, const std::string& name, double lindep_tol);
   /** Compute subspace X2 of space2 which is orthogonal complement to space1, i.e.,
       C1.S12.X2=0, where 0 is the null matrix.
   */
-  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+  static Ref<OrbitalSpace> orthog_comp(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                 const std::string& id, const std::string& name, double lindep_tol);
 
   /// Compute overlap matrices in the basis of space1 and space2
-  static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
-                            const Ref<MOIndexSpace>& space2,
+  static void compute_overlap_ints(const Ref<OrbitalSpace>& space1,
+                            const Ref<OrbitalSpace>& space2,
                             RefSCMatrix& S);
   /// Compute electric dipole and quadrupole moment matrices in the basis of space1 and space2
-  static void compute_multipole_ints(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
+  static void compute_multipole_ints(const Ref<OrbitalSpace>& space1,
+                              const Ref<OrbitalSpace>& space2,
                               RefSCMatrix& MX,
                               RefSCMatrix& MY,
                               RefSCMatrix& MZ,

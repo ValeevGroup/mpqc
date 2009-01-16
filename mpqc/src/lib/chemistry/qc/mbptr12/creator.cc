@@ -97,10 +97,10 @@ void TwoBodyIntDescrCreator::increment_indices() {
 ////
 
 R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime,
-                                                 const Ref<MOIndexSpace>& bra1,
-                                                 const Ref<MOIndexSpace>& ket1,
-                                                 const Ref<MOIndexSpace>& bra2,
-                                                 const Ref<MOIndexSpace>& ket2,
+                                                 const Ref<OrbitalSpace>& bra1,
+                                                 const Ref<OrbitalSpace>& ket1,
+                                                 const Ref<OrbitalSpace>& bra2,
+                                                 const Ref<OrbitalSpace>& ket2,
                                                  const Ref<CorrelationFactor>& corrfactor,
                                                  bool CorrFunctionInBra,
                                                  bool CorrFunctionInKet,

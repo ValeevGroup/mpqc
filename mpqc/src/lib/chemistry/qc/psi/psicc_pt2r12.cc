@@ -54,7 +54,7 @@ namespace {
                     const int np,
                     const int nq);
   RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
-                                const Ref<MOIndexSpace>& i, const Ref<MOIndexSpace>& a, const Ref<MOIndexSpace>& j);
+                                const Ref<OrbitalSpace>& i, const Ref<OrbitalSpace>& a, const Ref<OrbitalSpace>& j);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -192,15 +192,15 @@ void PsiCCSD_PT2R12::compute() {
       continue;
 
     Ref<R12IntEvalInfo> r12info = r12eval->r12info();
-    const Ref<MOIndexSpace>& p1 = r12info->refinfo()->orbs(spin1);
-    const Ref<MOIndexSpace>& p2 = r12info->refinfo()->orbs(spin2);
+    const Ref<OrbitalSpace>& p1 = r12info->refinfo()->orbs(spin1);
+    const Ref<OrbitalSpace>& p2 = r12info->refinfo()->orbs(spin2);
     const unsigned int np1 = p1->rank();
     const unsigned int np2 = p2->rank();
     
-    const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
+    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
+    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
     
     Vpq[s] = r12eval->V(spincase2, p1, p2);
     Vij[s] = r12eval->V(spincase2);
@@ -209,12 +209,12 @@ void PsiCCSD_PT2R12::compute() {
     if (test_t2_phases_)
       T2_MP1[s] = r12eval->T2(spincase2);
     
-    const Ref<MOIndexSpace>& v1 = r12eval->vir_act(spin1);
-    const Ref<MOIndexSpace>& v2 = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& v1 = r12eval->vir_act(spin1);
+    const Ref<OrbitalSpace>& v2 = r12eval->vir_act(spin2);
     const unsigned int nv1 = v1->rank();
     const unsigned int nv2 = v2->rank();
-    const Ref<MOIndexSpace>& o1 = r12eval->occ_act(spin1);
-    const Ref<MOIndexSpace>& o2 = r12eval->occ_act(spin2);
+    const Ref<OrbitalSpace>& o1 = r12eval->occ_act(spin1);
+    const Ref<OrbitalSpace>& o2 = r12eval->occ_act(spin2);
     const unsigned int no1 = o1->rank();
     const unsigned int no2 = o2->rank();
     const RefSCDimension v1v2dim = (spincase2 != AlphaBeta) ? pairdim<AntiSymm>(nv1,nv2) : pairdim<ASymm>(nv1,nv2);
@@ -314,17 +314,17 @@ void PsiCCSD_PT2R12::compute() {
   for(int s=0; s<nspincases1; ++s) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     // print out MPQC orbitals to compare to Psi orbitals below;
-    const Ref<MOIndexSpace>& orbs_sb_mpqc = r12eval->r12info()->refinfo()->orbs_sb(spin);
+    const Ref<OrbitalSpace>& orbs_sb_mpqc = r12eval->r12info()->refinfo()->orbs_sb(spin);
     if (debug() >= DefaultPrintThresholds::mostN2) {
       orbs_sb_mpqc->coefs().print(prepend_spincase(spin,"MPQC eigenvector").c_str());
       orbs_sb_mpqc->evals().print(prepend_spincase(spin,"MPQC eigenvalues").c_str());
     }
-    const Ref<MOIndexSpace>& occ_act = r12eval->occ_act(spin);
-    const Ref<MOIndexSpace>& vir_act = r12eval->vir_act(spin);
+    const Ref<OrbitalSpace>& occ_act = r12eval->occ_act(spin);
+    const Ref<OrbitalSpace>& vir_act = r12eval->vir_act(spin);
     
     // Psi stores amplitudes in Pitzer (symmetry-blocked) order. Construct such spaces for active occupied and virtual spaces
-    Ref<MOIndexSpace> occ_act_sb_psi = occ_act_sb(spin);
-    Ref<MOIndexSpace> vir_act_sb_psi = vir_act_sb(spin);
+    Ref<OrbitalSpace> occ_act_sb_psi = occ_act_sb(spin);
+    Ref<OrbitalSpace> vir_act_sb_psi = vir_act_sb(spin);
     if (debug() >= DefaultPrintThresholds::mostN2) {
       occ_act->coefs().print(prepend_spincase(spin,"Active occupied MPQC eigenvector").c_str());
       occ_act_sb_psi->coefs().print(prepend_spincase(spin,"Active occupied Psi3 eigenvector").c_str());
@@ -446,10 +446,10 @@ void PsiCCSD_PT2R12::compute() {
     if (r12eval->dim_oo(spincase2).n() == 0)
       continue;
 
-    const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
+    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
+    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
     
     // grab CC amplitudes
     RefSCMatrix T2_psi = this->T2(spincase2);
@@ -489,10 +489,10 @@ void PsiCCSD_PT2R12::compute() {
     }
 
     if (test_t2_phases_) {
-      const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
-      const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
-      const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
-      const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+      const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
+      const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
+      const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
+      const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
       compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
                  occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
     }
@@ -512,10 +512,10 @@ void PsiCCSD_PT2R12::compute() {
     if (r12eval->dim_oo(spincase2).n() == 0)
       continue;
 
-    const Ref<MOIndexSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<MOIndexSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<MOIndexSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<MOIndexSpace>& vir2_act = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
+    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
+    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
     const bool p1_equiv_p2 = (occ1_act == occ2_act) && (vir1_act == vir2_act);
     
     
@@ -552,8 +552,8 @@ void PsiCCSD_PT2R12::compute() {
         if (p1_equiv_p2) {
           // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
           VT1.scale(2.0);
-          const Ref<MOIndexSpace>& xspace1 = r12eval->xspace(spin1);
-          const Ref<MOIndexSpace>& xspace2 = r12eval->xspace(spin2);
+          const Ref<OrbitalSpace>& xspace1 = r12eval->xspace(spin1);
+          const Ref<OrbitalSpace>& xspace2 = r12eval->xspace(spin2);
           if (spincase2 == AlphaBeta)
             symmetrize12<false,ASymm,ASymm>(VT1, VT1, xspace1, xspace2, occ1_act, occ2_act);
           else
@@ -568,8 +568,8 @@ void PsiCCSD_PT2R12::compute() {
         // If needed, antisymmetrize VT1
         if (spincase2 != AlphaBeta) {
           RefSCMatrix VT1Anti = HT.clone();
-          const Ref<MOIndexSpace>& xspace1 = r12eval->xspace(spin1);
-          const Ref<MOIndexSpace>& xspace2 = r12eval->xspace(spin2);
+          const Ref<OrbitalSpace>& xspace1 = r12eval->xspace(spin1);
+          const Ref<OrbitalSpace>& xspace2 = r12eval->xspace(spin2);
           symmetrize<false,AntiSymm,ASymm,AntiSymm,AntiSymm>(VT1Anti,VT1,xspace1,xspace2,occ1_act,occ2_act);
           VT1 = VT1Anti;
         }
@@ -593,7 +593,7 @@ void PsiCCSD_PT2R12::compute() {
             delete[] tmp;
           }
           RefSCMatrix Tocc2_act_coefs = vir2_act_coefs * to_t1;
-          Ref<MOIndexSpace> Tocc2_act = new MOIndexSpace("i(t1)", "active occupied orbitals (weighted by T1)",
+          Ref<OrbitalSpace> Tocc2_act = new OrbitalSpace("i(t1)", "active occupied orbitals (weighted by T1)",
               occ2_act, Tocc2_act_coefs, occ2_act->basis());
           ViJ = r12eval->V(spincase2, occ1_act, Tocc2_act);
           if (p1_equiv_p2) {
@@ -614,7 +614,7 @@ void PsiCCSD_PT2R12::compute() {
               delete[] tmp;
             }
             RefSCMatrix Tocc1_act_coefs = vir1_act_coefs * to_t1;
-            Ref<MOIndexSpace> Tocc1_act = new MOIndexSpace("I(t1)", "active occupied orbitals (weighted by T1)",
+            Ref<OrbitalSpace> Tocc1_act = new OrbitalSpace("I(t1)", "active occupied orbitals (weighted by T1)",
                 occ1_act, Tocc1_act_coefs, occ1_act->basis());
             VIj = r12eval->V(spincase2, Tocc1_act, occ2_act);
           }
@@ -843,7 +843,7 @@ namespace {
   /// if part2 == true, VT1_ij = V_ia . (T_ja)^t
   /// note that the result is not symmetric with respect to permutation of particles 1 and 2
   RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
-                                const Ref<MOIndexSpace>& i, const Ref<MOIndexSpace>& a, const Ref<MOIndexSpace>& j)
+                                const Ref<OrbitalSpace>& i, const Ref<OrbitalSpace>& a, const Ref<OrbitalSpace>& j)
   {
     const unsigned int ni = i->rank();
     const unsigned int nj = j->rank();

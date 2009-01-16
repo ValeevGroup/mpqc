@@ -34,7 +34,7 @@
 #include <ccfiles.h>
 #include <libdpd/dpd.h>
 
-#include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/pairiter.impl.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/psi/psiwfn.h>
@@ -54,7 +54,7 @@ namespace {
       std::copy(Cpp.begin(),Cpp.end(),C);
       return C;
     }
-  
+
   /// compare 2 2-body tensors
   template <sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
   void
@@ -65,26 +65,26 @@ namespace {
 }
 
 namespace sc {
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCC_cd(typeid(PsiCC), "PsiCC", 1,
                             "public PsiCorrWavefunction", 0, create<PsiCC>,
                             create<PsiCC>);
-  
+
   bool PsiCC::test_t2_phases_ = false;
-  
+
   PsiCC::PsiCC(const Ref<KeyVal>&keyval) :
     PsiCorrWavefunction(keyval) {
   }
-  
+
   PsiCC::~PsiCC() {
   }
-  
+
   PsiCC::PsiCC(StateIn&s) :
     PsiCorrWavefunction(s) {
   }
-  
+
   void PsiCC::save_data_state(StateOut&s) {
     PsiCorrWavefunction::save_data_state(s);
   }
@@ -94,31 +94,31 @@ namespace sc {
     int* cachefiles = init_int_array(PSIO_MAXUNIT);
     int** cachelist = init_int_matrix(32,32);
 
-    const Ref<MOIndexSpace>& aocc = occ_act_sb(Alpha);
-    const Ref<MOIndexSpace>& avir = vir_act_sb(Alpha);
+    const Ref<OrbitalSpace>& aocc = occ_act_sb(Alpha);
+    const Ref<OrbitalSpace>& avir = vir_act_sb(Alpha);
 
-    int* aoccpi = to_C<int>(aocc->nmo());
-    int* avirpi = to_C<int>(avir->nmo());
-    int* aocc_sym = to_C<int>(aocc->mosym());
-    int* avir_sym = to_C<int>(avir->mosym());
-    
+    int* aoccpi = to_C<int>(aocc->block_sizes());
+    int* avirpi = to_C<int>(avir->block_sizes());
+    int* aocc_sym = to_C<int>(aocc->orbsym());
+    int* avir_sym = to_C<int>(avir->orbsym());
+
     // UHF/ROHF (ROHF always expected in semicanonical orbitals)
     if (reference()->reftype() != PsiSCF::rhf) {
-      const Ref<MOIndexSpace>& bocc = occ_act_sb(Beta);
-      const Ref<MOIndexSpace>& bvir = vir_act_sb(Beta);
-      
-      int* boccpi = to_C<int>(bocc->nmo());
-      int* bvirpi = to_C<int>(bvir->nmo());
-      int* bocc_sym = to_C<int>(bocc->mosym());
-      int* bvir_sym = to_C<int>(bvir->mosym());
-      
-      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist, 
+      const Ref<OrbitalSpace>& bocc = occ_act_sb(Beta);
+      const Ref<OrbitalSpace>& bvir = vir_act_sb(Beta);
+
+      int* boccpi = to_C<int>(bocc->block_sizes());
+      int* bvirpi = to_C<int>(bvir->block_sizes());
+      int* bocc_sym = to_C<int>(bocc->orbsym());
+      int* bvir_sym = to_C<int>(bvir->orbsym());
+
+      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist,
                NULL, 4, aoccpi, aocc_sym, avirpi, avir_sym,
                boccpi, bocc_sym, bvirpi, bvir_sym);
     }
     // RHF
     else {
-      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist, 
+      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist,
                NULL, 2, aoccpi, aocc_sym, avirpi, avir_sym);
     }
 
@@ -131,7 +131,7 @@ namespace sc {
     for(int i=CC_MIN; i <= CC_MAX; i++) psio.close(i,1);
     dpd_close(0);
   }
-  
+
   const RefSCMatrix&PsiCC::T1(SpinCase1 spin1) {
     if (T1_[spin1].nonnull())
       return T1_[spin1];
@@ -169,7 +169,7 @@ namespace sc {
       }
       dpd_stop();
     }
-    
+
     // Grab T matrices
     const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
     T2_[spin2] = T2(spin2, kwd);
@@ -209,7 +209,7 @@ namespace sc {
       Tau2_[spin2].print(prepend_spincase(spin2,"Tau2 amplitudes").c_str());
     return Tau2_[spin2];
   }
-  
+
   RefSCMatrix PsiCC::T1(SpinCase1 spin, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
@@ -235,7 +235,7 @@ namespace sc {
       actoccioff[irrep] = actoccioff[irrep-1] + actoccpi[irrep-1];
       actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
     }
-    
+
     RefSCDimension rowdim = new SCDimension(nocc_act);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nuocc_act);
@@ -254,7 +254,7 @@ namespace sc {
       psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
                       reinterpret_cast<char*>(T1), nia_dpd*sizeof(double));
       psio.close(CC_OEI, 1);
-      
+
       // form the full matrix
       unsigned int ia = 0;
       for (unsigned int h=0; h<nirrep_; ++h) {
@@ -266,10 +266,10 @@ namespace sc {
       }
       delete[] T1;
     }
-    
+
     return T;
   }
-  
+
   RefSCMatrix PsiCC::T2(SpinCase2 spin12, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
     const SpinCase1 spin1 = case1(spin12);
@@ -313,7 +313,7 @@ namespace sc {
       actoccioff2[irrep] = actoccioff2[irrep-1] + actoccpi2[irrep-1];
       actuoccioff2[irrep] = actuoccioff2[irrep-1] + actuoccpi2[irrep-1];
     }
-    
+
     // DPD of orbital product spaces
     std::vector<int> ijpi(nirrep_);
     std::vector<int> abpi(nirrep_);
@@ -329,7 +329,7 @@ namespace sc {
       abpi[h] = nab;
       nijab_dpd += nij*nab;
     }
-    
+
     const unsigned int nij = nocc1_act*nocc2_act;
     const unsigned int nab = nuocc1_act*nuocc2_act;
     RefSCDimension rowdim = new SCDimension(nij);
@@ -358,21 +358,21 @@ namespace sc {
         unsigned int gh = g^h;
         for (int i=0; i<actoccpi1[g]; ++i) {
           const unsigned int ii = i + actoccioff1[g];
-          
+
           for (int j=0; j<actoccpi2[gh]; ++j) {
             const unsigned int jj = j + actoccioff2[gh];
-            
+
             const unsigned int ij = ii * nocc2_act + jj;
-            
+
             for (unsigned int f=0; f<nirrep_; ++f) {
               unsigned int fh = f^h;
               for (int a=0; a<actuoccpi1[f]; ++a) {
                 const unsigned int aa = a + actuoccioff1[f];
-                
+
                 for (int b=0; b<actuoccpi2[fh]; ++b, ++ijab) {
                   const unsigned int bb = b + actuoccioff2[fh];
                   const unsigned int ab = aa*nuocc2_act + bb;
-                  
+
                   T.set_element(ij, ab, T2[ijab]);
                 }
               }
@@ -386,23 +386,23 @@ namespace sc {
 
     return T;
   }
-  
+
   const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
     if (Lambda1_[spin].nonnull())
       return Lambda1_[spin];
-    
+
     throw FeatureNotImplemented("PsiCC::Lambda1() -- cannot read Lambda1 amplitudes yet",__FILE__,__LINE__);
     return Lambda1_[spin];
   }
-  
+
   const RefSCMatrix&PsiCC::Lambda2(SpinCase2 spin) {
     if (Lambda2_[spin].nonnull())
       return Lambda2_[spin];
-    
+
     throw FeatureNotImplemented("PsiCC::Lambda2() -- cannot read Lambda2 amplitudes yet",__FILE__,__LINE__);
     return Lambda2_[spin];
   }
-  
+
   RefSCMatrix PsiCC::transform_T1(const SparseMOIndexMap& occ_act_map,
                                   const SparseMOIndexMap& vir_act_map,
                                   const RefSCMatrix& T1,
@@ -410,27 +410,27 @@ namespace sc {
     RefSCMatrix T1_new;
     T1_new = kit->matrix(T1.rowdim(), T1.coldim());
     T1_new.assign(0.0);
-    
+
     const unsigned int no1 = occ_act_map.size();
     const unsigned int nv1 = vir_act_map.size();
-    
+
     // convert T1 to new orbitals
     for (unsigned int i=0; i<no1; ++i) {
       const unsigned int ii = occ_act_map[i].first;
       const double ii_coef = occ_act_map[i].second;
-      
+
       for (unsigned int a=0; a<nv1; ++a) {
         const unsigned int aa = vir_act_map[a].first;
         const double aa_coef = vir_act_map[a].second;
-        
+
         const double elem = T1.get_element(ii, aa);
         T1_new.set_element(i, a, elem*ii_coef*aa_coef);
       }
     }
-    
+
     return T1_new;
   }
-  
+
   RefSCMatrix PsiCC::transform_T2(const SparseMOIndexMap& occ1_act_map,
                                   const SparseMOIndexMap& occ2_act_map,
                                   const SparseMOIndexMap& vir1_act_map,
@@ -440,38 +440,38 @@ namespace sc {
     RefSCMatrix T2_new;
     T2_new = kit->matrix(T2.rowdim(), T2.coldim());
     T2_new.assign(0.0);
-    
+
     const unsigned int no1 = occ1_act_map.size();
     const unsigned int nv1 = vir1_act_map.size();
     const unsigned int no2 = occ2_act_map.size();
     const unsigned int nv2 = vir2_act_map.size();
-    
+
     for (unsigned int i=0; i<no1; ++i) {
       const unsigned int ii = occ1_act_map[i].first;
       const double ii_coef = occ1_act_map[i].second;
-      
+
       for (unsigned int j=0; j<no2; ++j) {
         const unsigned int jj = occ2_act_map[j].first;
         const double jj_coef = occ2_act_map[j].second;
-        
+
         const unsigned int ij = i*no2+j;
         const unsigned int iijj = ii*no2+jj;
-        
+
         const double ij_coef = ii_coef * jj_coef;
-        
+
         for (unsigned int a=0; a<nv1; ++a) {
           const unsigned int aa = vir1_act_map[a].first;
           const double aa_coef = vir1_act_map[a].second;
-          
+
           const double ija_coef = ij_coef * aa_coef;
-          
+
           for (unsigned int b=0; b<nv2; ++b) {
             const unsigned int bb = vir2_act_map[b].first;
             const double bb_coef = vir2_act_map[b].second;
-            
+
             const unsigned int ab = a*nv2+b;
             const unsigned int aabb = aa*nv2+bb;
-            
+
             const double t2 = T2.get_element(iijj, aabb);
             const double t2_mpqc = t2 * ija_coef * bb_coef;
             T2_new.set_element(ij, ab, t2_mpqc);
@@ -481,7 +481,7 @@ namespace sc {
     }
     return T2_new;
   }
-  
+
   RefSCMatrix PsiCC::transform_T1(const RefSCMatrix& occ_act_tform,
                                   const RefSCMatrix& vir_act_tform,
                                   const RefSCMatrix& T1,
@@ -489,17 +489,17 @@ namespace sc {
     // convert to raw storage
     double* t1 = new double[T1.rowdim().n() * T1.coldim().n()];
     T1.convert(t1);
-    
+
     RefSCMatrix T1_ia = kit->matrix(occ_act_tform.coldim(),
                                     vir_act_tform.coldim());
     T1_ia.assign(t1);
-    
+
     RefSCMatrix T1_Ia = occ_act_tform * T1_ia;
     RefSCMatrix T1_IA = T1_Ia * vir_act_tform.t();
-    
+
     return T1_IA;
   }
-  
+
   RefSCMatrix PsiCC::transform_T2(const RefSCMatrix& occ1_act_tform,
                                   const RefSCMatrix& occ2_act_tform,
                                   const RefSCMatrix& vir1_act_tform,
@@ -510,16 +510,16 @@ namespace sc {
     assert(occ2_act_tform.rowdim().n() == occ2_act_tform.coldim().n());
     assert(vir1_act_tform.rowdim().n() == vir1_act_tform.coldim().n());
     assert(vir2_act_tform.rowdim().n() == vir2_act_tform.coldim().n());
-    
+
     // convert to raw storage
     double* t2 = new double[T2.rowdim().n() * T2.coldim().n()];
     T2.convert(t2);
-    
+
     const unsigned int nij = T2.rowdim().n();
     const unsigned int nab = T2.coldim().n();
     const unsigned int njab = occ2_act_tform.coldim().n() * nab;
     const unsigned int nija = vir1_act_tform.coldim().n() * nij;
-    
+
     // store as i by jab
     RefSCMatrix T2_i_jab = kit->matrix(occ1_act_tform.coldim(),
                                        new SCDimension(njab));
@@ -528,7 +528,7 @@ namespace sc {
     RefSCMatrix T2_I_jab = occ1_act_tform * T2_i_jab;
     T2_i_jab = 0;
     T2_I_jab.convert(t2);
-    
+
     // for each I store as j by ab
     // transform j -> J
     RefSCMatrix t2_j_ab = kit->matrix(occ2_act_tform.coldim(), T2.coldim());
@@ -540,7 +540,7 @@ namespace sc {
       t2_J_ab.accumulate_product(occ2_act_tform, t2_j_ab);
       t2_J_ab.convert(t2 + I*njab);
     }
-    
+
     // for each IJ store as a by b
     // transform a -> A
     RefSCMatrix t2_a_b = kit->matrix(vir1_act_tform.coldim(),
@@ -554,7 +554,7 @@ namespace sc {
       t2_A_b.accumulate_product(vir1_act_tform, t2_a_b);
       t2_A_b.convert(t2 + IJ*nab);
     }
-    
+
     // store as IJA by b
     RefSCMatrix T2_IJA_b = kit->matrix(new SCDimension(nija), vir2_act_tform.coldim());
     T2_IJA_b.assign(t2);
@@ -562,19 +562,19 @@ namespace sc {
     RefSCMatrix T2_IJA_B = T2_IJA_b * vir2_act_tform.t();
     T2_IJA_b = 0;
     T2_IJA_B.convert(t2);
-    
+
     // store as IJ by AB
     RefSCMatrix T2_IJ_AB = kit->matrix(T2.rowdim(), T2.coldim());
     T2_IJ_AB.assign(t2);
     return T2_IJ_AB;
   }
-  
+
   namespace {
     bool gtzero(double a) {
       return a > 0.0;
     }
   }
-  
+
   void PsiCC::compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref,
                          SpinCase2 spin12, unsigned int no1, unsigned int no2, unsigned int nv1,
                          unsigned int nv2, double zero) const {
@@ -584,23 +584,23 @@ namespace sc {
     else
       compare_tbint_tensors<ASymm,ASymm>(T2,T2_ref,no1,no2,nv1,nv2,zero);
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCCSD_cd(typeid(PsiCCSD), "PsiCCSD", 1, "public PsiCC", 0,
                               create<PsiCCSD>, create<PsiCCSD>);
-  
+
   PsiCCSD::PsiCCSD(const Ref<KeyVal>&keyval) :
     PsiCC(keyval) {
   }
-  
+
   PsiCCSD::~PsiCCSD() {
   }
-  
+
   PsiCCSD::PsiCCSD(StateIn&s) :
     PsiCC(s) {
   }
-  
+
   int PsiCCSD::gradient_implemented() const {
     int impl = 0;
     PsiSCF::RefType reftype = reference_->reftype();
@@ -608,11 +608,11 @@ namespace sc {
       impl = 1;
     return impl;
   }
-  
+
   void PsiCCSD::save_data_state(StateOut&s) {
     PsiCC::save_data_state(s);
   }
-  
+
   void PsiCCSD::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
@@ -620,35 +620,35 @@ namespace sc {
     input->write_keyword("psi:wfn", "ccsd");
     input->close();
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCCSD_T_cd(typeid(PsiCCSD_T), "PsiCCSD_T", 1,
                                 "public PsiCC", 0, create<PsiCCSD_T>, create<
                                     PsiCCSD_T>);
-  
+
   PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval) :
     PsiCC(keyval) {
   }
-  
+
   PsiCCSD_T::~PsiCCSD_T() {
   }
-  
+
   PsiCCSD_T::PsiCCSD_T(StateIn&s) :
     PsiCC(s) {
   }
-  
+
   int PsiCCSD_T::gradient_implemented() const {
     int impl = 0;
     PsiSCF::RefType reftype = reference_->reftype();
     return impl;
   }
-  
+
   void PsiCCSD_T::save_data_state(StateOut&s) {
     PsiCC::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
   }
-  
+
   void PsiCCSD_T::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
@@ -677,10 +677,10 @@ namespace {
       const int b12 = biter.ij();
       for(kiter.start(); kiter; kiter.next()) {
         const int k12 = kiter.ij();
-      
+
         const double t2 = T2.get_element(b12, k12);
         const double t2_ref = T2_ref.get_element(b12, k12);
-              
+
         if (fabs(t2_ref - t2) > zero) {
           T2_ref.print("compare_tbint_tensors() -- T2(ref)");
           T2.print("compare_tbint_tensors() -- T2");

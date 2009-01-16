@@ -380,8 +380,8 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
       SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const RefSCVector ef12 = ef12_[s];
       const RefSCVector emp2f12 = emp2f12_[s];
-      const Ref<MOIndexSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
-      const Ref<MOIndexSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
+      const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
+      const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
       
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
@@ -418,7 +418,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
-    const Ref<MOIndexSpace> occ_act = r12eval()->occ_act(Alpha);
+    const Ref<OrbitalSpace> occ_act = r12eval()->occ_act(Alpha);
     SpatialMOPairIter_eq ij_iter(occ_act);
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
@@ -556,14 +556,14 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
   
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
-  Ref<MOIndexSpace> vir1_act = r12info->vir_act(spin1);
-  Ref<MOIndexSpace> vir2_act = r12info->vir_act(spin2);
-  Ref<MOIndexSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
-  Ref<MOIndexSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
-  Ref<MOIndexSpace> occ1 = r12info->refinfo()->occ(spin1);
-  Ref<MOIndexSpace> occ2 = r12info->refinfo()->occ(spin2);
-  Ref<MOIndexSpace> ribs1 = r12info->ribs_space(spin1);
-  Ref<MOIndexSpace> ribs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
+  Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
+  Ref<OrbitalSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
+  Ref<OrbitalSpace> occ1 = r12info->refinfo()->occ(spin1);
+  Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
+  Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
+  Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
   
   // Pair index
   unsigned int ij;
@@ -680,7 +680,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
 }
 
 RefSCVector
-MP2R12Energy_SpinOrbital::compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+MP2R12Energy_SpinOrbital::compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const
 {
   const Ref<Integral> ints = r12eval_->r12info()->integral();
@@ -940,8 +940,8 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
       SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const RefSCVector ef12 = ef12_[s];
       const RefSCVector emp2f12 = emp2f12_[s];
-      const Ref<MOIndexSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
-      const Ref<MOIndexSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
+      const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
+      const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
       
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
@@ -978,7 +978,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
-    const Ref<MOIndexSpace> occ_act = r12eval()->occ_act(Alpha);
+    const Ref<OrbitalSpace> occ_act = r12eval()->occ_act(Alpha);
     SpatialMOPairIter_eq ij_iter(occ_act);
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
@@ -1116,14 +1116,14 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
   
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
-  Ref<MOIndexSpace> vir1_act = r12info->vir_act(spin1);
-  Ref<MOIndexSpace> vir2_act = r12info->vir_act(spin2);
-  Ref<MOIndexSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
-  Ref<MOIndexSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
-  Ref<MOIndexSpace> occ1 = r12info->refinfo()->occ(spin1);
-  Ref<MOIndexSpace> occ2 = r12info->refinfo()->occ(spin2);
-  Ref<MOIndexSpace> ribs1 = r12info->ribs_space(spin1);
-  Ref<MOIndexSpace> ribs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
+  Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
+  Ref<OrbitalSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
+  Ref<OrbitalSpace> occ1 = r12info->refinfo()->occ(spin1);
+  Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
+  Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
+  Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
   
   // Pair index
   unsigned int ij;
@@ -1240,7 +1240,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
 }
 
 RefSCVector
-MP2R12Energy_SpinOrbital_new::compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+MP2R12Energy_SpinOrbital_new::compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const
 {
   const Ref<Integral> ints = r12eval_->r12info()->integral();

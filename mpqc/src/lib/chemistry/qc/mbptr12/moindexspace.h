@@ -66,7 +66,7 @@ public:
 private:
 
   /// max length of string returned by id()
-  static const unsigned int max_id_length = 20;
+  static const unsigned int max_id_length = 30;
   std::string id_;                        // see documentation for id()
   std::string name_;                      // String identifier for the orbital space
 

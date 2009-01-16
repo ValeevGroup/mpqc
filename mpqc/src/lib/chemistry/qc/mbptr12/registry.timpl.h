@@ -33,6 +33,8 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_registrytimpl_h
 
 #include <cassert>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 #include <chemistry/qc/mbptr12/registry.h>
 
 namespace sc {

@@ -33,6 +33,8 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_registry_h
 
 #include <map>
+#include <stdexcept>
+#include <util/group/thread.h>
 
 namespace sc {
 

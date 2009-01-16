@@ -157,7 +157,7 @@ namespace sc {
         // Determine whether we really need to compute J and K, or F
         const bool really_compute_F = compute_F_ && !compute_J_ && !compute_K_;
         const bool really_compute_J = !really_compute_F;
-        const bool really_compute_K = !really_compute_K;
+        const bool really_compute_K = !really_compute_F;
 
         // FockBuild only accepts matrices created with appropriate basisdim(), which are not blocked, hence must
         // use non-blocked kit
@@ -198,6 +198,8 @@ namespace sc {
             if (really_compute_J == false && c == 0) continue;
             if (really_compute_K == false && c == 1) continue;
             if (really_compute_F == false && c == 2) continue;
+            // J matrices are spin-independent
+            if (c == 0 && t == 1) continue;
 
             // if C1 -- nothing else needs to be done, return the result
             // same holds for brabasis != ketbasis since FockBuild does not use symmetry in that case
@@ -218,13 +220,19 @@ namespace sc {
               RefSCDimension ketaodim = ketpl->AO_basisdim();
               result_[t][c] = ResultFactory::create(brabasis->so_matrixkit(),brapl->AO_basisdim(),ketpl->AO_basisdim());
               ResultFactory::transform(result_[t][c], G_so, brapl->sotoao(), ketpl->sotoao(), SCMatrix::TransposeTransform);
+
             }
+
+            // FockBuild computes -K, hence change the sign
+            if (c == 1) result_[t][1].scale(-1.0);
+
           }
         }
 
         if (compute_F_ && !really_compute_F)
-          for(int t=0; t<ntypes_; ++t)
+          for(int t=0; t<ntypes_; ++t) {
             result_[t][2] = result_[t][0] - result_[t][1];
+          }
 
       }
 
@@ -247,13 +255,6 @@ namespace sc {
           return F(0);
         else {
           return (spin == Alpha) ? F(0) + F(1) : F(0) - F(1);
-        }
-      }
-      ResultType J(SpinCase1 spin) const {
-        if (ntypes_ == 1)
-          return J(0);
-        else {
-          return (spin == Alpha) ? J(0) + J(1) : J(0) - J(1);
         }
       }
       ResultType K(SpinCase1 spin) const {

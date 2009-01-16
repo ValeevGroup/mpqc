@@ -114,14 +114,6 @@ R12IntEval::compute_BC_()
 	Ref<MOIndexSpace> vir2 = vir(spin2);
 	bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
 
-#define TEST_FOCK_BUILDER 1
-#if TEST_FOCK_BUILDER
-	{
-	  Ref<MOIndexSpace> f_RIBS_RIBS = F_P_P(Alpha);
-      Ref<MOIndexSpace> f_OCC_RIBS = F_m_P(Alpha);
-	}
-#endif
-
 #if INCLUDE_Q
 	// if can only use 1 RI index, h+J can be resolved by the OBS
 	Ref<MOIndexSpace> hj_x1, hj_x2;

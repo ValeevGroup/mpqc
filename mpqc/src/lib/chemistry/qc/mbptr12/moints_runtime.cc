@@ -276,8 +276,6 @@ MOIntsRuntime::create_tform(const std::string& key)
   const Layout layout(pkey.layout());
   if(layout == Layout_b1b2_k1k2) {
     Ref<AOIndexSpaceRegistry> aoidxreg = AOIndexSpaceRegistry::instance();
-    Ref<MOIndexSpaceRegistry> idxreg = MOIndexSpaceRegistry::instance();
-
 
     // is this a partial transform?
     if (aoidxreg->value_exists(ket1) &&

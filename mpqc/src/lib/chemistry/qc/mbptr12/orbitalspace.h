@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include </opt/local/include/boost/tuple/tuple.hpp>
 #include <util/ref/ref.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -47,6 +48,115 @@
 using namespace std;
 
 namespace sc {
+
+  /// Orbital = index + attributes
+  template <typename Attributes>
+  class DecoratedOrbital {
+    public:
+      DecoratedOrbital(size_t index, const Attributes& attr) : index_(index), attr_(attr) {}
+
+      size_t index() const { return index_; }
+      const Attributes& attr() const { return attr_; }
+
+    private:
+      size_t index_;
+      Attributes attr_;
+  };
+
+  /// Orbital in a blocked space
+  typedef DecoratedOrbital< unsigned int > BlockedOrbital;
+
+  /// MO is irrep, energy, occupation number
+  typedef boost::tuple<unsigned int, double, double> MolecularOrbitalAttributes;
+  typedef DecoratedOrbital< MolecularOrbitalAttributes > MolecularOrbital;
+
+  /// order by symmetry first, then by energy
+  struct SymmetryMOOrder {
+    public:
+      SymmetryMOOrder(unsigned int nirreps) : nirreps_(nirreps) {}
+
+      bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
+        using namespace boost;
+        // return o1.attr() < o2.attr(); // TODO the canonical operator< for tuple is precisely what we need. why doesn't work?
+        if (o1.attr().get<0>() < o2.attr().get<0>())
+          return true;
+        else if (o1.attr().get<0>() == o2.attr().get<0>()) {
+          if (o1.attr().get<1>() < o2.attr().get<1>())
+            return true;
+          else if (o1.attr().get<1>() == o2.attr().get<1>()) {
+            if (o1.attr().get<2>() < o2.attr().get<2>())
+              return true;
+          }
+        }
+        return false;
+      }
+      unsigned int block(const MolecularOrbital& o) const {
+        return o.attr().get<0>();
+      }
+      unsigned int nblocks() const {
+        return nirreps_;
+      }
+
+    private:
+      unsigned int nirreps_;
+  };
+
+  /// order by energy first, then by symmetry
+  struct EnergyMOOrder {
+    public:
+      bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
+        if (o1.attr().get<1>() < o2.attr().get<1>())
+          return true;
+        else if (o1.attr().get<1>() == o2.attr().get<1>()) {
+          if (o1.attr().get<0>() < o2.attr().get<0>())
+            return true;
+        }
+        return false;
+      }
+      unsigned int block(const MolecularOrbital& o) const {
+        return 1;
+      }
+      unsigned int nblocks() const {
+        return 1;
+      }
+  };
+
+  /// order by occupation first, then by symmetry, then by energy
+  struct CorrelatedMOOrder {
+    public:
+      CorrelatedMOOrder(unsigned int nirreps) : nirreps_(nirreps) {}
+
+      bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
+        // occupieds come before virtuals
+        if (o1.attr().get<2>() > o2.attr().get<2>())
+          return true;
+        else if (o1.attr().get<2>() == o2.attr().get<2>()) {
+          if (o1.attr().get<0>() < o2.attr().get<0>())
+            return true;
+          else if (o1.attr().get<0>() == o2.attr().get<0>()) {
+            if (o1.attr().get<1>() < o2.attr().get<1>())
+              return true;
+          }
+        }
+        return false;
+      }
+
+      unsigned int block(const MolecularOrbital& o) const {
+        const unsigned int irrep = o.attr().get<0>();
+        const double occnum = o.attr().get<2>();
+        // occupieds come before virtuals
+        const int occblock = (occnum == 1.0) ? 0 : 1;
+        return occblock * nirreps_ + irrep;
+      }
+      unsigned int nblocks() const {
+        return nirreps_ * 2;
+      }
+
+    private:
+      unsigned int nirreps_;
+  };
+
+  ///////////////////////////////////////////////////////////////////////////
 
   /** Class OrbitalSpace describes a range of orbitals
    that are linear combinations of Gaussian basis functions
@@ -64,10 +174,10 @@ namespace sc {
       enum IndexOrder {
         symmetry = 0, ///< symmetry corresponds to orbitals ordered by symmetry, then (i.e. within each symmetry block) by energy.
         energy = 1, ///< energy corresponds to orbitals ordered by energy.
-        correlated = 2
-      /**< correlated corresponds to orbitals ordered as: frozen occupied, active occupied, active virtual, frozen virtual;
+        correlated = 2, /**< correlated corresponds to orbitals ordered as: frozen occupied, active occupied, active virtual, frozen virtual;
        within each block orbitals are ordered by symmetry, and within each symmetry block orbitals are
        ordered by energy.*/
+        general = 3 ///< any other
       };
 
     private:
@@ -82,6 +192,7 @@ namespace sc {
       RefDiagSCMatrix evals_; // "eigenvalues" associated with the MOs
       RefSCDimension dim_; // only here to allow dim() return const &
       std::vector<unsigned int> orbsym_; // irrep of each orbital
+      std::vector<unsigned int> block_offsets_; // Start of each block
       std::vector<unsigned int> block_sizes_; // Number of orbitals in each block
 
       // checks orbsym_ for irrep indices outside of the allowed range
@@ -95,14 +206,27 @@ namespace sc {
       // computes coefficient matrix from the full coefficient matrix. If moorder_ == energy
       // then the MO vectors will be sorted by their eigenvalues
       void full_coefs_to_coefs(const RefSCMatrix& full_coefs,
-                               const RefDiagSCMatrix& evals, const std::vector<
-                                   unsigned int>& offsets, IndexOrder moorder);
-
-      // initialize the object
+                               const RefDiagSCMatrix& evals,
+                               const std::vector<unsigned int>& offsets,
+                               IndexOrder moorder);
+      /// initialize the object
       void init();
 
       // sorting functions borrowed from mbpt.cc
       static void dquicksort(double *item, unsigned int *index, unsigned int n);
+
+    protected:
+      /// Empty constructor only useful for derived classes -- don't forget to call init()
+      OrbitalSpace();
+      /// initialize the object by mapping the original space to a space with indexmap
+      void init(const std::string& id, const std::string& name,
+                const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
+                const RefSCMatrix& coefs,
+                const RefDiagSCMatrix& evals,
+                const RefDiagSCMatrix& occnums,
+                const std::vector<unsigned int>& orbsyms,
+                unsigned int nblocks,
+                const std::vector<BlockedOrbital>& indexmap);
 
     public:
       OrbitalSpace(StateIn&);
@@ -120,15 +244,13 @@ namespace sc {
        \param integral -- integral factory
        \param block_offsets -- block offsets
        \param block_sizes -- new block sizes
-       \param moorder -- describes the ordering of vectors
        */
       OrbitalSpace(const std::string& id, const std::string& name,
                    const RefSCMatrix& full_coefs, const RefDiagSCMatrix& evals,
                    const Ref<GaussianBasisSet>& basis,
                    const Ref<Integral>& integral,
                    const std::vector<unsigned int>& block_offsets,
-                   const std::vector<unsigned int>& block_sizes,
-                   const IndexOrder& moorder);
+                   const std::vector<unsigned int>& block_sizes);
 
       /** This function constructs an OrbitalSpace from (blocked) space full_coefs.
        Block i will contain vectors [ offsets[i], offsets[i]+nmopi[i]-1 ] . By default,
@@ -174,9 +296,10 @@ namespace sc {
 
       /** This constructor is a true hack introduced because I have no idea how to construct what I need.
        It will copy orig_space but replace its coefs with new_coefs, and its basis with new_basis. */
-      OrbitalSpace(const std::string& id, const std::string& name, const Ref<
-          OrbitalSpace>& orig_space, const RefSCMatrix& new_coefs, const Ref<
-          GaussianBasisSet>& new_basis);
+      OrbitalSpace(const std::string& id, const std::string& name,
+                   const Ref<OrbitalSpace>& orig_space,
+                   const RefSCMatrix& new_coefs,
+                   const Ref<GaussianBasisSet>& new_basis);
       ~OrbitalSpace();
 
       void save_data_state(StateOut&);
@@ -381,7 +504,30 @@ namespace sc {
   typedef Registry<Ref<GaussianBasisSet> , Ref<OrbitalSpace> ,
       detail::SingletonCreationPolicy> AOSpaceRegistry;
 
+  ////////////////////////////////
+
+  /** This is an OrbitalSpace ordered according to the Order type.
+      Order defines strict weak ordering for Orbital objects
+      in this space and the blocking scheme.
+   */
+  template <typename Order>
+  class OrderedOrbitalSpace : public OrbitalSpace {
+    public:
+      OrderedOrbitalSpace(const std::string& id, const std::string& name,
+                          const Ref<GaussianBasisSet>& basis,
+                          const Ref<Integral>& integral,
+                          const RefSCMatrix& coefs, const RefDiagSCMatrix& evals,
+                          const RefDiagSCMatrix& occnums,
+                          const std::vector<unsigned int>& orbsyms,
+                          const Order& order);
+
+    private:
+
+  };
+
 }
+
+#include <chemistry/qc/mbptr12/orbitalspace.timpl.h>
 
 #endif
 

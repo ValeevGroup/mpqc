@@ -51,8 +51,9 @@ inline int max(int a, int b) {
  OrbitalSpace
  ---------------*/
 static ClassDesc OrbitalSpace_cd(typeid(OrbitalSpace), "OrbitalSpace", 1,
-                                 "virtual public SavableState", 0, 0, create<
-                                     OrbitalSpace> );
+                                 "virtual public SavableState", 0, 0, create<OrbitalSpace> );
+
+OrbitalSpace::OrbitalSpace() {}
 
 OrbitalSpace::OrbitalSpace(const OrbitalSpace& O) :
   id_(O.id_), name_(O.name_), basis_(O.basis_), integral_(O.integral_),
@@ -61,11 +62,26 @@ OrbitalSpace::OrbitalSpace(const OrbitalSpace& O) :
 }
 
 OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
-                           const RefSCMatrix& full_coefs, const Ref<
-                               GaussianBasisSet>& basis,
-                           const Ref<Integral>& integral, const std::vector<
-                               unsigned int>& block_offsets, const std::vector<
-                               unsigned int>& block_sizes,
+                           const RefSCMatrix& full_coefs,
+                           const RefDiagSCMatrix& evals,
+                           const Ref<GaussianBasisSet>& basis,
+                           const Ref<Integral>& integral,
+                           const std::vector<unsigned int>& block_offsets,
+                           const std::vector<unsigned int>& block_sizes) :
+  id_(id), name_(name), basis_(basis), integral_(integral),
+  block_sizes_(block_sizes) {
+  full_coefs_to_coefs(full_coefs, evals, block_offsets, general);
+
+  init();
+}
+
+
+OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
+                           const RefSCMatrix& full_coefs,
+                           const Ref<GaussianBasisSet>& basis,
+                           const Ref<Integral>& integral,
+                           const std::vector<unsigned int>& block_offsets,
+                           const std::vector<unsigned int>& block_sizes,
                            const IndexOrder& moorder,
                            const RefDiagSCMatrix& evals) :
   id_(id), name_(name), basis_(basis), integral_(integral),
@@ -98,8 +114,8 @@ OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
 }
 
 OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
-                           const RefSCMatrix& full_coefs, const Ref<
-                               GaussianBasisSet>& basis,
+                           const RefSCMatrix& full_coefs,
+                           const Ref<GaussianBasisSet>& basis,
                            const Ref<Integral>& integral) :
   id_(id), name_(name), basis_(basis), integral_(integral) {
   Ref<SCBlockInfo> modim_blocks = full_coefs.coldim()->blocks();
@@ -118,8 +134,8 @@ OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
 
 OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
                            const Ref<OrbitalSpace>& orig_space,
-                           const RefSCMatrix& new_coefs, const Ref<
-                               GaussianBasisSet>& new_basis) :
+                           const RefSCMatrix& new_coefs,
+                           const Ref<GaussianBasisSet>& new_basis) :
   id_(id), name_(name), integral_(orig_space->integral()),
       orbsym_(orig_space->orbsym_), evals_(orig_space->evals_),
       block_sizes_(orig_space->block_sizes_) {
@@ -214,18 +230,18 @@ OrbitalSpace::block_sizes() const {
 }
 
 void OrbitalSpace::check_orbsym() const {
-  int ng = basis_->molecule()->point_group()->char_table().order();
+  const int ng = basis_->molecule()->point_group()->char_table().order();
 
-  for (std::vector<unsigned int>::const_iterator p = orbsym_.begin(); p
-      != orbsym_.end(); ++p) {
+  for (std::vector<unsigned int>::const_iterator p = orbsym_.begin();
+       p != orbsym_.end();
+       ++p) {
     if (*p < 0 || *p >= ng)
-      throw std::runtime_error(
-                               "OrbitalSpace::check_orbsym() -- invalid value in the list of orbital irreps");
+      throw ProgrammingError("OrbitalSpace::check_orbsym() -- invalid value in the list of orbital irreps",
+                             __FILE__,__LINE__,class_desc());
   }
 }
 
-std::vector<unsigned int> OrbitalSpace::frozen_to_blockinfo(
-                                                            unsigned int nfzc,
+std::vector<unsigned int> OrbitalSpace::frozen_to_blockinfo(unsigned int nfzc,
                                                             unsigned int nfzv,
                                                             const RefDiagSCMatrix& evals) {
   unsigned int rank = evals.dim().n();
@@ -274,15 +290,15 @@ std::vector<unsigned int> OrbitalSpace::frozen_to_blockinfo(
   return offsets;
 }
 
-void OrbitalSpace::full_coefs_to_coefs(
-                                       const RefSCMatrix& full_coefs,
+void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
                                        const RefDiagSCMatrix& evals,
                                        const std::vector<unsigned int>& offsets,
                                        IndexOrder moorder) {
   // compute the rank of this
   unsigned int rank = 0;
-  for (vector<unsigned int>::const_iterator p = block_sizes_.begin(); p
-      != block_sizes_.end(); ++p) {
+  for (vector<unsigned int>::const_iterator p = block_sizes_.begin();
+       p != block_sizes_.end();
+       ++p) {
     rank += *p;
   }
 
@@ -358,8 +374,7 @@ void OrbitalSpace::full_coefs_to_coefs(
     delete[] energy;
     delete[] nfunc_per_block;
   } else
-    throw std::runtime_error(
-                             "OrbitalSpace::full_coefs_to_coefs() -- moorder should be either energy or symmetry");
+    throw std::runtime_error("OrbitalSpace::full_coefs_to_coefs() -- moorder should be either energy or symmetry");
 
   // Copy required columns of full_coefs_ into coefs_
   RefSCDimension aodim = full_coefs.rowdim();
@@ -391,6 +406,73 @@ void OrbitalSpace::init() {
                            __FILE__,__LINE__);
 
   dim_ = evals_.dim();
+}
+
+void OrbitalSpace::init(const std::string& id, const std::string& name,
+                        const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
+                        const RefSCMatrix& coefs,
+                        const RefDiagSCMatrix& evals,
+                        const RefDiagSCMatrix& occnums,
+                        const std::vector<unsigned int>& orbsyms,
+                        unsigned int nblocks,
+                        const std::vector<BlockedOrbital>& indexmap) {
+  id_ = id;
+  name_ = name;
+  basis_ = basis;
+  integral_ = integral;
+
+  // compute block info
+  const unsigned int norbs = indexmap.size();
+  block_offsets_.resize(nblocks);
+  block_sizes_.resize(nblocks);
+  size_t current_block = indexmap[0].attr();
+  assert(current_block == 0);
+  block_offsets_[current_block] = 0;
+  size_t current_size = 0;
+  for(size_t o=0; o<norbs; ++o) {
+    const size_t next_block = indexmap[o].attr();
+    if (next_block == current_block)
+      ++current_size;
+    else {
+      assert(next_block > current_block);  // blocks must be in increasing order
+      while (next_block - current_block > 0) { // update current_block and current_size safely: blocks may be empty!
+        block_sizes_[current_block] = current_size;
+        ++current_block;
+        block_offsets_[current_block] = o;
+        current_size = 0;
+      }
+      ++current_size;
+    }
+  }
+  block_sizes_[current_block] = current_size; // complete the last block
+
+  // build new blocked dimension
+  int* nfunc_per_block = new int[nblocks];
+  for (unsigned int i = 0; i < nblocks; i++)
+    nfunc_per_block[i] = block_sizes_[i];
+  dim_ = new SCDimension(norbs, nblocks, nfunc_per_block, id.c_str());
+  if (norbs) {
+    for (unsigned int i = 0; i < nblocks; i++)
+      dim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
+  }
+  delete[] nfunc_per_block;
+
+  // Map coefficients, eigenvalues, etc.
+  RefSCDimension aodim = coefs.rowdim();
+  Ref<SCMatrixKit> so_matrixkit = basis_->so_matrixkit();
+  coefs_ = so_matrixkit->matrix(aodim, dim_);
+  evals_ = so_matrixkit->diagmatrix(dim_);
+  orbsym_.resize(norbs);
+  for (unsigned int i = 0; i < norbs; ++i) {
+    const unsigned int ii = indexmap[i].index();
+    orbsym_[i] = orbsyms[ii];
+    for (unsigned int j = 0; j < aodim.n(); j++) {
+      coefs_(j, i) = coefs(j, ii);
+    }
+    evals_(i) = evals(ii);
+  }
+
+  init();
 }
 
 size_t OrbitalSpace::memory_in_use() const {
@@ -788,6 +870,7 @@ std::pair<std::string, Ref<OrbitalSpace> > sc::make_keyspace_pair(const Ref<
 }
 
 bool sc::operator==(const OrbitalSpace& space1, const OrbitalSpace& space2) {
+  if (&space1 == &space2) return true;
   if (!space1.integral()->equiv(space2.integral()) || space1.rank()
       != space2.rank() || space1.nblocks() != space2.nblocks()
       || space1.block_sizes() != space2.block_sizes() || space1.id()

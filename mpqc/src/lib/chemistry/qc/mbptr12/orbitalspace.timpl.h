@@ -64,10 +64,11 @@ namespace sc {
     // construct vector of MolecularOrbital objects
     std::vector<MolecularOrbital> orbs;
     for(size_t o=0; o<norbs; ++o) {
+      using detail::MolecularOrbitalAttributes;
       orbs.push_back(MolecularOrbital(o,
-                                      boost::make_tuple(orbsyms.at(o),
-                                                        evals.get_element(o),
-                                                        occnums.get_element(o)
+                                      MolecularOrbitalAttributes(orbsyms.at(o),
+                                                                 evals.get_element(o),
+                                                                 occnums.get_element(o)
                                       )
       ));
     }

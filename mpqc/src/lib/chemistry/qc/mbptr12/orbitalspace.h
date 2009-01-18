@@ -34,7 +34,6 @@
 
 #include <vector>
 #include <stdexcept>
-#include </opt/local/include/boost/tuple/tuple.hpp>
 #include <util/ref/ref.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -66,9 +65,49 @@ namespace sc {
   /// Orbital in a blocked space
   typedef DecoratedOrbital< unsigned int > BlockedOrbital;
 
-  /// MO is irrep, energy, occupation number
-  typedef boost::tuple<unsigned int, double, double> MolecularOrbitalAttributes;
-  typedef DecoratedOrbital< MolecularOrbitalAttributes > MolecularOrbital;
+  namespace detail {
+    /// MO is irrep, energy, occupation number
+    struct MolecularOrbitalAttributes {
+      public:
+        MolecularOrbitalAttributes(unsigned int irrep, double energy,
+                                   double occnum) :
+          irrep_(irrep), energy_(energy), occnum_(occnum) {
+        }
+
+        unsigned int irrep() const {
+          return irrep_;
+        }
+        double energy() const {
+          return energy_;
+        }
+        double occnum() const {
+          return occnum_;
+        }
+
+      private:
+        unsigned int irrep_;
+        double energy_;
+        double occnum_;
+    };
+    /// Same as MolecularOrbitalAttributes, plus spin
+    struct MolecularSpinOrbitalAttributes : public MolecularOrbitalAttributes {
+      public:
+        MolecularSpinOrbitalAttributes(unsigned int irrep,
+                                       double energy,
+                                       double occnum,
+                                       SpinCase1 spin) :
+          MolecularOrbitalAttributes(irrep, energy, occnum), spin_(spin)
+          {}
+
+        SpinCase1 spin() const { return spin_; }
+
+      private:
+        SpinCase1 spin_;
+    };
+  } // namespace detail
+
+  typedef DecoratedOrbital< detail::MolecularOrbitalAttributes > MolecularOrbital;
+  typedef DecoratedOrbital< detail::MolecularSpinOrbitalAttributes > MolecularSpinOrbital;
 
   /// order by symmetry first, then by energy
   struct SymmetryMOOrder {
@@ -76,22 +115,20 @@ namespace sc {
       SymmetryMOOrder(unsigned int nirreps) : nirreps_(nirreps) {}
 
       bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
-        using namespace boost;
-        // return o1.attr() < o2.attr(); // TODO the canonical operator< for tuple is precisely what we need. why doesn't work?
-        if (o1.attr().get<0>() < o2.attr().get<0>())
+        if (o1.attr().irrep() < o2.attr().irrep())
           return true;
-        else if (o1.attr().get<0>() == o2.attr().get<0>()) {
-          if (o1.attr().get<1>() < o2.attr().get<1>())
+        else if (o1.attr().irrep() == o2.attr().irrep()) {
+          if (o1.attr().energy() < o2.attr().energy())
             return true;
-          else if (o1.attr().get<1>() == o2.attr().get<1>()) {
-            if (o1.attr().get<2>() < o2.attr().get<2>())
+          else if (o1.attr().energy() == o2.attr().energy()) {
+            if (o1.attr().occnum() < o2.attr().occnum())
               return true;
           }
         }
         return false;
       }
       unsigned int block(const MolecularOrbital& o) const {
-        return o.attr().get<0>();
+        return o.attr().irrep();
       }
       unsigned int nblocks() const {
         return nirreps_;
@@ -105,10 +142,10 @@ namespace sc {
   struct EnergyMOOrder {
     public:
       bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
-        if (o1.attr().get<1>() < o2.attr().get<1>())
+        if (o1.attr().energy() < o2.attr().energy())
           return true;
-        else if (o1.attr().get<1>() == o2.attr().get<1>()) {
-          if (o1.attr().get<0>() < o2.attr().get<0>())
+        else if (o1.attr().energy() == o2.attr().energy()) {
+          if (o1.attr().irrep() < o2.attr().irrep())
             return true;
         }
         return false;
@@ -128,13 +165,13 @@ namespace sc {
 
       bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
         // occupieds come before virtuals
-        if (o1.attr().get<2>() > o2.attr().get<2>())
+        if (o1.attr().occnum() > o2.attr().occnum())
           return true;
-        else if (o1.attr().get<2>() == o2.attr().get<2>()) {
-          if (o1.attr().get<0>() < o2.attr().get<0>())
+        else if (o1.attr().occnum() == o2.attr().occnum()) {
+          if (o1.attr().irrep() < o2.attr().irrep())
             return true;
-          else if (o1.attr().get<0>() == o2.attr().get<0>()) {
-            if (o1.attr().get<1>() < o2.attr().get<1>())
+          else if (o1.attr().irrep() == o2.attr().irrep()) {
+            if (o1.attr().energy() < o2.attr().energy())
               return true;
           }
         }
@@ -142,8 +179,8 @@ namespace sc {
       }
 
       unsigned int block(const MolecularOrbital& o) const {
-        const unsigned int irrep = o.attr().get<0>();
-        const double occnum = o.attr().get<2>();
+        const unsigned int irrep = o.attr().irrep();
+        const double occnum = o.attr().occnum();
         // occupieds come before virtuals
         const int occblock = (occnum == 1.0) ? 0 : 1;
         return occblock * nirreps_ + irrep;

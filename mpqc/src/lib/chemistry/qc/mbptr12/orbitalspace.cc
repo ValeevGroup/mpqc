@@ -412,7 +412,6 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
                         const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
                         const RefSCMatrix& coefs,
                         const RefDiagSCMatrix& evals,
-                        const RefDiagSCMatrix& occnums,
                         const std::vector<unsigned int>& orbsyms,
                         unsigned int nblocks,
                         const std::vector<BlockedOrbital>& indexmap) {
@@ -493,6 +492,7 @@ void OrbitalSpace::print(ostream&o) const {
 void OrbitalSpace::print_detail(ostream&o) const {
   o << indent << "OrbitalSpace \"" << name_ << "\":" << endl;
   o << incindent;
+  o << indent << "id = " << id_ << endl;
   o << indent << "Basis Set:" << endl;
   o << incindent;
   basis_->print(o);
@@ -559,6 +559,46 @@ void OrbitalSpace::dquicksort(double *item, unsigned int *index, unsigned int n)
   for (unsigned int i = 0; i < n; i++) {
     index[i] = vals.at(i).index();
   }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
+                                       const std::string& name,
+                                       const Ref<OrbitalSpace>& orig_space,
+                                       const std::vector<bool>& mask) :
+  OrbitalSpace() {
+
+  // validate input
+  const size_t num_orig_orbs = mask.size();
+  if (mask.size() != orig_space->rank())
+    throw ProgrammingError("MaskedOrbitalSpace::MaskedOrbitalSpace -- mask must have same size as the original OrbitalSpace",
+                           __FILE__,__LINE__);
+
+  // create vector of BlockedOrbitals
+  std::vector<BlockedOrbital> blocked_orbs;
+  const unsigned int nblocks = orig_space->nblocks();
+  size_t block_offset = 0;
+  const std::vector<unsigned int>& block_sizes = orig_space->block_sizes();
+  for(unsigned int b=0; b<nblocks; ++b) {
+    const size_t block_size = block_sizes[b];
+    for(size_t o=0; o<block_size; ++o) {
+      const size_t oo = o + block_offset;
+      if (mask[oo]) {
+        blocked_orbs.push_back( BlockedOrbital(oo, b) );
+      }
+    }
+    block_offset += block_size;
+  }
+
+  init(id, name,
+       orig_space->basis(),
+       orig_space->integral(),
+       orig_space->coefs(),
+       orig_space->evals(),
+       orig_space->orbsym(),
+       nblocks, blocked_orbs);
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

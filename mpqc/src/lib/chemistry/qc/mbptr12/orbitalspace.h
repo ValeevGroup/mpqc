@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include <algorithm>
 #include <util/ref/ref.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -193,6 +194,82 @@ namespace sc {
       unsigned int nirreps_;
   };
 
+  namespace detail {
+
+    template <typename Container> struct ContainerAdaptor {
+      public:
+        typedef typename Container::value_type value_type;
+        ContainerAdaptor(const Container& cont) : cont_(cont) {}
+        size_t size() const { return cont_.size(); }
+        value_type elem(size_t i) const { return cont_[i]; }
+
+      private:
+        const Container& cont_;
+    };
+
+    template<> struct ContainerAdaptor<RefDiagSCMatrix> {
+      public:
+        typedef RefDiagSCMatrix Container;
+        typedef double value_type;
+        ContainerAdaptor(const Container& cont) : cont_(cont) {}
+        size_t size() const { return cont_.dim().n(); }
+        value_type elem(size_t i) const { return cont_(i); }
+
+      private:
+        const Container& cont_;
+    };
+
+  } // namespace detail
+
+  /// mask out first n MOs in the order defined by Compare. By default mask the n lowest-energy MOs
+  template <typename Attribute,
+            typename AttributeContainer,
+            typename Compare = std::less<Attribute> >
+  struct MolecularOrbitalMask {
+    private:
+      typedef DecoratedOrbital<Attribute> MO;
+      struct _compare {
+        bool operator()(const MO& mo1,
+            const MO& mo2) const {
+          Compare comp;
+          return comp(mo1.attr(), mo2.attr());
+        }
+      };
+
+    public:
+      MolecularOrbitalMask(unsigned int n,
+                           const AttributeContainer& attributes) :
+        mask_(detail::ContainerAdaptor<AttributeContainer>(attributes).size(),true)
+        {
+          // validate input
+          if (n == 0) return;
+          const size_t nmos = mask_.size();
+          assert(n < nmos);
+
+          // copy attributes to vector of MOs
+          std::vector<MO> mos;
+          detail::ContainerAdaptor<AttributeContainer> contadaptor(attributes);
+          for(size_t mo=0; mo<nmos; ++mo) {
+            mos.push_back(MO(mo,contadaptor.elem(mo)));
+          }
+
+          // sort
+          _compare comp;
+          std::stable_sort(mos.begin(), mos.end(), comp);
+
+          // copy to mask
+          for(unsigned int t=0; t<n; ++t) {
+            mask_[ mos[t].index() ] = false;
+          }
+        }
+
+      const std::vector<bool>& mask() const { return mask_; }
+
+    private:
+      std::vector<bool> mask_;
+  };
+
+
   ///////////////////////////////////////////////////////////////////////////
 
   /** Class OrbitalSpace describes a range of orbitals
@@ -260,7 +337,6 @@ namespace sc {
                 const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
                 const RefSCMatrix& coefs,
                 const RefDiagSCMatrix& evals,
-                const RefDiagSCMatrix& occnums,
                 const std::vector<unsigned int>& orbsyms,
                 unsigned int nblocks,
                 const std::vector<BlockedOrbital>& indexmap);
@@ -557,11 +633,18 @@ namespace sc {
                           const RefDiagSCMatrix& occnums,
                           const std::vector<unsigned int>& orbsyms,
                           const Order& order);
-
-    private:
-
   };
 
+  ////////////////////////////////
+
+  /** This is an OrbitalSpace produced from an existing one by masking out some Orbitals
+   */
+  class MaskedOrbitalSpace : public OrbitalSpace {
+    public:
+      MaskedOrbitalSpace(const std::string& id, const std::string& name,
+                         const Ref<OrbitalSpace>& orig_space,
+                         const std::vector<bool>& mask);
+  };
 }
 
 #include <chemistry/qc/mbptr12/orbitalspace.timpl.h>

@@ -84,7 +84,7 @@ namespace sc {
       ));
     }
 
-    init(id, name, basis, integral, coefs, evals, occnums, orbsyms, order.nblocks(), blocked_orbs);
+    init(id, name, basis, integral, coefs, evals, orbsyms, order.nblocks(), blocked_orbs);
 
   }
 

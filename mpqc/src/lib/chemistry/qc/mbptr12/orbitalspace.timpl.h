@@ -72,6 +72,9 @@ namespace sc {
                                            const Order& order) :
     OrbitalSpace() {
 
+    // some compilers are dumb ...
+    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
+
     // validate input
     const size_t norbs = coefs.coldim().n();
     assert(norbs != 0);

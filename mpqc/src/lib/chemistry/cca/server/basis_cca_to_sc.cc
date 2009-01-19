@@ -73,7 +73,7 @@ Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
       input << "   type: [";
       for(int icon=0; icon<shell.get_n_contraction(); ++icon) {
 	input << " (am = " << am_to_symbol[shell.get_angular_momentum(icon)];
-        if( shell.get_max_angular_momentum() > 1 ) {
+        if( shell.get_max_angular_momentum() > 0 ) {
           if( shell.get_angular_type() == AngularType_CARTESIAN )
             input << " puream = 0)";
           else if( shell.get_angular_type() == AngularType_SPHERICAL )
@@ -113,9 +113,9 @@ Ref<GaussianBasisSet> basis_cca_to_sc( MolecularInterface &cca_basis ) {
   Ref<GaussianBasisSet> gbs;
   gbs.assign_pointer(sc_basis);
 
+  // debug
   //std::cerr << "basis converter's molcule:\n";
   //gbs->molecule()->print();
-  
   //for(int i=0; i<gbs->nshell(); ++i)
   //  gbs->shell(i).print();
 

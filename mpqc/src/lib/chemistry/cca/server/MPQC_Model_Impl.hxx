@@ -138,22 +138,6 @@ namespace MPQC {
     )
     ;
 
-
-    /**
-     *  Set the molecule. @param molecule The new molecule. 
-     */
-    void
-    set_molecule_impl (
-      /* in */::Chemistry::MoleculeInterface molecule
-    )
-    ;
-
-
-    /**
-     *  Returns the molecule.  @return The Molecule object. 
-     */
-    ::Chemistry::MoleculeInterface
-    get_molecule_impl() ;
     /**
      * user defined non-static method.
      */
@@ -173,7 +157,7 @@ namespace MPQC {
 
     /**
      *  Returns the accuracy to which the energy is already computed.
-     * The result is undefined if the energy has not already 
+     * The result is undefined if the energy has not already
      * been computed.
      * @return The energy accuracy. 
      */
@@ -181,11 +165,11 @@ namespace MPQC {
     get_energy_accuracy_impl() ;
 
     /**
-     *  This allows a programmer to request that if any result 
+     *  This allows a programmer to request that if any result
      * is computed,
      * then the energy is computed too.  This allows, say, for a request
      * for a gradient to cause the energy to be computed.  This computed
-     * energy is cached and returned when the get_energy() member 
+     * energy is cached and returned when the get_energy() member
      * is called.
      * @param doit Whether or not to compute the energy.
      */
@@ -215,7 +199,7 @@ namespace MPQC {
 
     /**
      *  Returns the accuracy to which the gradient is already computed.
-     * The result is undefined if the gradient has not already 
+     * The result is undefined if the gradient has not already
      * been computed.
      * @return The current gradient accuracy. 
      */
@@ -241,7 +225,7 @@ namespace MPQC {
 
     /**
      *  Returns the accuracy to which the Hessian is already computed.
-     * The result is undefined if the Hessian has not already 
+     * The result is undefined if the Hessian has not already
      * been computed. 
      */
     double
@@ -265,8 +249,8 @@ namespace MPQC {
 
 
     /**
-     *  Returns the accuracy to which the guess Hessian is 
-     * already computed.  The result is undefined if the guess Hessian 
+     *  Returns the accuracy to which the guess Hessian is
+     * already computed.  The result is undefined if the guess Hessian
      * has not already been computed.
      * @return The guess hessian accuracy.  
      */
@@ -274,7 +258,30 @@ namespace MPQC {
     get_guess_hessian_accuracy_impl() ;
 
     /**
-     *  Sets the initial CQoS metadata typemap.  
+     *  This should be called when the object is no longer needed.
+     * No other members may be called after finalize. 
+     */
+    int32_t
+    finalize_impl() ;
+
+    /**
+     *  Set the molecule. @param molecule The new molecule. 
+     */
+    void
+    set_molecule_impl (
+      /* in */::Chemistry::MoleculeInterface molecule
+    )
+    ;
+
+
+    /**
+     *  Returns the molecule.  @return The Molecule object. 
+     */
+    ::Chemistry::MoleculeInterface
+    get_molecule_impl() ;
+
+    /**
+     *  Sets the initial CQoS metadata typemap.
      * The model may augment this typemap.
      * @param typemap The initial typemap. 
      */
@@ -291,13 +298,6 @@ namespace MPQC {
      */
     ::gov::cca::TypeMap
     get_metadata_impl() ;
-
-    /**
-     *  This should be called when the object is no longer needed.
-     * No other members may be called after finalize. 
-     */
-    int32_t
-    finalize_impl() ;
   };  // end class Model_impl
 
 } // end namespace MPQC

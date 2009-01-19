@@ -185,6 +185,233 @@ MPQC::Model_impl::initialize_pointer_impl (
 }
 
 /**
+ * Method:  get_energy[]
+ */
+double
+MPQC::Model_impl::get_energy_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_energy)
+
+ // if ((++ex_counter)%3 == 0) {
+ //     sidl::BaseException e = sidl::BaseException::_create();
+ //     e.setNote("Simulated Numerical Error");
+ //     throw e;
+ //   }
+  return wfn_->energy();
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_energy)
+}
+
+/**
+ *  Sets the accuracy for subsequent energy calculations.
+ * @param acc The new accuracy. 
+ */
+void
+MPQC::Model_impl::set_energy_accuracy_impl (
+  /* in */double acc ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_energy_accuracy)
+
+  wfn_->set_desired_value_accuracy(acc);
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_energy_accuracy)
+}
+
+/**
+ *  Returns the accuracy to which the energy is already computed.
+ * The result is undefined if the energy has not already
+ * been computed.
+ * @return The energy accuracy. 
+ */
+double
+MPQC::Model_impl::get_energy_accuracy_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_energy_accuracy)
+
+  return wfn_->actual_value_accuracy();
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_energy_accuracy)
+}
+
+/**
+ *  This allows a programmer to request that if any result
+ * is computed,
+ * then the energy is computed too.  This allows, say, for a request
+ * for a gradient to cause the energy to be computed.  This computed
+ * energy is cached and returned when the get_energy() member
+ * is called.
+ * @param doit Whether or not to compute the energy.
+ */
+void
+MPQC::Model_impl::set_do_energy_impl (
+  /* in */bool doit ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_do_energy)
+
+  wfn_->do_value(1);
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_do_energy)
+}
+
+/**
+ *  Returns the Cartesian gradient.  
+ */
+::sidl::array<double>
+MPQC::Model_impl::get_gradient_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_gradient)
+
+  return vector_to_array(wfn_->gradient());
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_gradient)
+}
+
+/**
+ *  Sets the accuracy for subsequent gradient calculations
+ * @param acc The new accuracy for gradients. 
+ */
+void
+MPQC::Model_impl::set_gradient_accuracy_impl (
+  /* in */double acc ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_gradient_accuracy)
+
+  wfn_->set_desired_gradient_accuracy(acc);
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_gradient_accuracy)
+}
+
+/**
+ *  Returns the accuracy to which the gradient is already computed.
+ * The result is undefined if the gradient has not already
+ * been computed.
+ * @return The current gradient accuracy. 
+ */
+double
+MPQC::Model_impl::get_gradient_accuracy_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_gradient_accuracy)
+
+  return wfn_->actual_gradient_accuracy();
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_gradient_accuracy)
+}
+
+/**
+ *  Returns the Cartesian Hessian. @return The Hessian. 
+ */
+::sidl::array<double>
+MPQC::Model_impl::get_hessian_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_hessian)
+
+  return matrix_to_array(wfn_->hessian());
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_hessian)
+}
+
+/**
+ *  Sets the accuracy for subsequent Hessian calculations.
+ * @param acc The new accuracy for Hessians. 
+ */
+void
+MPQC::Model_impl::set_hessian_accuracy_impl (
+  /* in */double acc ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_hessian_accuracy)
+
+  wfn_->set_desired_hessian_accuracy(acc);
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_hessian_accuracy)
+}
+
+/**
+ *  Returns the accuracy to which the Hessian is already computed.
+ * The result is undefined if the Hessian has not already
+ * been computed. 
+ */
+double
+MPQC::Model_impl::get_hessian_accuracy_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_hessian_accuracy)
+
+  return wfn_->actual_hessian_accuracy();
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_hessian_accuracy)
+}
+
+/**
+ *  Returns a Cartesian guess Hessian. 
+ */
+::sidl::array<double>
+MPQC::Model_impl::get_guess_hessian_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_guess_hessian)
+
+  sc::RefSymmSCMatrix hess(wfn_->dimension(), wfn_->matrixkit());
+  wfn_->guess_hessian(hess);
+  return matrix_to_array(hess);
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_guess_hessian)
+}
+
+/**
+ *  Sets the accuracy for subsequent guess Hessian calculations.
+ * @param acc The new accuracy for guess Hessians. 
+ */
+void
+MPQC::Model_impl::set_guess_hessian_accuracy_impl (
+  /* in */double acc ) 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_guess_hessian_accuracy)
+  // Insert-Code-Here {MPQC.Model.set_guess_hessian_accuracy} (set_guess_hessian_accuracy method)
+  // 
+  // This method has not been implemented
+  // 
+    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
+    ex.setNote("This method has not been implemented");
+    ex.add(__FILE__, __LINE__, "set_guess_hessian_accuracy");
+    throw ex;
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_guess_hessian_accuracy)
+}
+
+/**
+ *  Returns the accuracy to which the guess Hessian is
+ * already computed.  The result is undefined if the guess Hessian
+ * has not already been computed.
+ * @return The guess hessian accuracy.  
+ */
+double
+MPQC::Model_impl::get_guess_hessian_accuracy_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_guess_hessian_accuracy)
+
+  return DBL_EPSILON;
+
+  // DO-NOT-DELETE splicer.end(MPQC.Model.get_guess_hessian_accuracy)
+}
+
+/**
+ *  This should be called when the object is no longer needed.
+ * No other members may be called after finalize. 
+ */
+int32_t
+MPQC::Model_impl::finalize_impl () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.Model.finalize)
+  // DO-NOT-DELETE splicer.end(MPQC.Model.finalize)
+}
+
+/**
  *  Set the molecule. @param molecule The new molecule. 
  */
 void
@@ -251,222 +478,7 @@ MPQC::Model_impl::get_molecule_impl ()
 }
 
 /**
- * Method:  get_energy[]
- */
-double
-MPQC::Model_impl::get_energy_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_energy)
-
- // if ((++ex_counter)%3 == 0) {
- //     sidl::BaseException e = sidl::BaseException::_create();
- //     e.setNote("Simulated Numerical Error");
- //     throw e;
- //   }
-  return wfn_->energy();
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_energy)
-}
-
-/**
- *  Sets the accuracy for subsequent energy calculations.
- * @param acc The new accuracy. 
- */
-void
-MPQC::Model_impl::set_energy_accuracy_impl (
-  /* in */double acc ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_energy_accuracy)
-
-  wfn_->set_desired_value_accuracy(acc);
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_energy_accuracy)
-}
-
-/**
- *  Returns the accuracy to which the energy is already computed.
- * The result is undefined if the energy has not already 
- * been computed.
- * @return The energy accuracy. 
- */
-double
-MPQC::Model_impl::get_energy_accuracy_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_energy_accuracy)
-
-  return wfn_->actual_value_accuracy();
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_energy_accuracy)
-}
-
-/**
- *  This allows a programmer to request that if any result 
- * is computed,
- * then the energy is computed too.  This allows, say, for a request
- * for a gradient to cause the energy to be computed.  This computed
- * energy is cached and returned when the get_energy() member 
- * is called.
- * @param doit Whether or not to compute the energy.
- */
-void
-MPQC::Model_impl::set_do_energy_impl (
-  /* in */bool doit ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_do_energy)
-
-  wfn_->do_value(1);
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_do_energy)
-}
-
-/**
- *  Returns the Cartesian gradient.  
- */
-::sidl::array<double>
-MPQC::Model_impl::get_gradient_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_gradient)
-
-  return vector_to_array(wfn_->gradient());
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_gradient)
-}
-
-/**
- *  Sets the accuracy for subsequent gradient calculations
- * @param acc The new accuracy for gradients. 
- */
-void
-MPQC::Model_impl::set_gradient_accuracy_impl (
-  /* in */double acc ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_gradient_accuracy)
-
-  wfn_->set_desired_gradient_accuracy(acc);
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_gradient_accuracy)
-}
-
-/**
- *  Returns the accuracy to which the gradient is already computed.
- * The result is undefined if the gradient has not already 
- * been computed.
- * @return The current gradient accuracy. 
- */
-double
-MPQC::Model_impl::get_gradient_accuracy_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_gradient_accuracy)
-
-  return wfn_->actual_gradient_accuracy();
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_gradient_accuracy)
-}
-
-/**
- *  Returns the Cartesian Hessian. @return The Hessian. 
- */
-::sidl::array<double>
-MPQC::Model_impl::get_hessian_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_hessian)
-
-  return matrix_to_array(wfn_->hessian());
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_hessian)
-}
-
-/**
- *  Sets the accuracy for subsequent Hessian calculations.
- * @param acc The new accuracy for Hessians. 
- */
-void
-MPQC::Model_impl::set_hessian_accuracy_impl (
-  /* in */double acc ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_hessian_accuracy)
-
-  wfn_->set_desired_hessian_accuracy(acc);
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_hessian_accuracy)
-}
-
-/**
- *  Returns the accuracy to which the Hessian is already computed.
- * The result is undefined if the Hessian has not already 
- * been computed. 
- */
-double
-MPQC::Model_impl::get_hessian_accuracy_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_hessian_accuracy)
-
-  return wfn_->actual_hessian_accuracy();
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_hessian_accuracy)
-}
-
-/**
- *  Returns a Cartesian guess Hessian. 
- */
-::sidl::array<double>
-MPQC::Model_impl::get_guess_hessian_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_guess_hessian)
-
-  sc::RefSymmSCMatrix hess(wfn_->dimension(), wfn_->matrixkit());
-  wfn_->guess_hessian(hess);
-  return matrix_to_array(hess);
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_guess_hessian)
-}
-
-/**
- *  Sets the accuracy for subsequent guess Hessian calculations.
- * @param acc The new accuracy for guess Hessians. 
- */
-void
-MPQC::Model_impl::set_guess_hessian_accuracy_impl (
-  /* in */double acc ) 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.set_guess_hessian_accuracy)
-  // Insert-Code-Here {MPQC.Model.set_guess_hessian_accuracy} (set_guess_hessian_accuracy method)
-  // 
-  // This method has not been implemented
-  // 
-    ::sidl::NotImplementedException ex = ::sidl::NotImplementedException::_create();
-    ex.setNote("This method has not been implemented");
-    ex.add(__FILE__, __LINE__, "set_guess_hessian_accuracy");
-    throw ex;
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_guess_hessian_accuracy)
-}
-
-/**
- *  Returns the accuracy to which the guess Hessian is 
- * already computed.  The result is undefined if the guess Hessian 
- * has not already been computed.
- * @return The guess hessian accuracy.  
- */
-double
-MPQC::Model_impl::get_guess_hessian_accuracy_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.get_guess_hessian_accuracy)
-
-  return DBL_EPSILON;
-
-  // DO-NOT-DELETE splicer.end(MPQC.Model.get_guess_hessian_accuracy)
-}
-
-/**
- *  Sets the initial CQoS metadata typemap.  
+ *  Sets the initial CQoS metadata typemap.
  * The model may augment this typemap.
  * @param typemap The initial typemap. 
  */
@@ -495,18 +507,6 @@ MPQC::Model_impl::get_metadata_impl ()
   return cqos_tm_;
     
   // DO-NOT-DELETE splicer.end(MPQC.Model.get_metadata)
-}
-
-/**
- *  This should be called when the object is no longer needed.
- * No other members may be called after finalize. 
- */
-int32_t
-MPQC::Model_impl::finalize_impl () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.Model.finalize)
-  // DO-NOT-DELETE splicer.end(MPQC.Model.finalize)
 }
 
 

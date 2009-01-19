@@ -633,6 +633,15 @@ namespace sc {
                           const RefDiagSCMatrix& occnums,
                           const std::vector<unsigned int>& orbsyms,
                           const Order& order);
+
+      OrderedOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+
+    private:
+
+      typedef OrderedOrbitalSpace this_type;
+      // ClassDesc object
+      static ClassDesc class_desc_;
   };
 
   ////////////////////////////////
@@ -644,6 +653,10 @@ namespace sc {
       MaskedOrbitalSpace(const std::string& id, const std::string& name,
                          const Ref<OrbitalSpace>& orig_space,
                          const std::vector<bool>& mask);
+
+      MaskedOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+
   };
 }
 

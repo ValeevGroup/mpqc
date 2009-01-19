@@ -26,7 +26,7 @@
 //
 
 #ifdef __GNUG__
-#pragma interface
+#pragma implementation
 #endif
 
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_orbitalspacetimpl_h
@@ -39,6 +39,26 @@
 #include <vector>
 
 namespace sc {
+
+  template <typename Order>
+  ClassDesc
+  OrderedOrbitalSpace<Order>::class_desc_(typeid(this_type),
+                                          (std::string("OrderedOrbitalSpace<") +
+                                           std::string(typeid(Order).name()) +
+                                           std::string(">")
+                                          ).c_str(), 1,
+                                          "public OrbitalSpace", 0, 0,
+                                          create<this_type> );
+
+  template <typename Order>
+  OrderedOrbitalSpace<Order>::OrderedOrbitalSpace(StateIn& si) :
+    OrbitalSpace(si) {}
+
+  template <typename Order>
+  void
+  OrderedOrbitalSpace<Order>::save_data_state(StateOut& so) {
+    OrbitalSpace::save_data_state(so);
+  }
 
   template <typename Order>
   OrderedOrbitalSpace<Order>::OrderedOrbitalSpace(const std::string& id,

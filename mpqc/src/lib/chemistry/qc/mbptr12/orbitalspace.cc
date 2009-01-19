@@ -563,6 +563,17 @@ void OrbitalSpace::dquicksort(double *item, unsigned int *index, unsigned int n)
 
 /////////////////////////////////////////////////////////////////////////////
 
+static ClassDesc MaskedOrbitalSpace_cd(typeid(MaskedOrbitalSpace), "MaskedOrbitalSpace", 1,
+                                       "public OrbitalSpace", 0, 0, create<MaskedOrbitalSpace> );
+
+MaskedOrbitalSpace::MaskedOrbitalSpace(StateIn& si) :
+  OrbitalSpace(si) {}
+
+void
+MaskedOrbitalSpace::save_data_state(StateOut& so) {
+  OrbitalSpace::save_data_state(so);
+}
+
 MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
                                        const std::string& name,
                                        const Ref<OrbitalSpace>& orig_space,

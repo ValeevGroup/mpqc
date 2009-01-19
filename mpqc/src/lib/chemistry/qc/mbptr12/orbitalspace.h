@@ -636,6 +636,7 @@ namespace sc {
 
       OrderedOrbitalSpace(StateIn&);
       void save_data_state(StateOut&);
+      ~OrderedOrbitalSpace();
 
     private:
 

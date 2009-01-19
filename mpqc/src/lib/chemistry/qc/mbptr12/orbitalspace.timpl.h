@@ -61,6 +61,12 @@ namespace sc {
   }
 
   template <typename Order>
+  OrderedOrbitalSpace<Order>::~OrderedOrbitalSpace() {
+    // some compilers must be tricked ...
+    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
+  }
+
+  template <typename Order>
   OrderedOrbitalSpace<Order>::OrderedOrbitalSpace(const std::string& id,
                                            const std::string& name,
                                            const Ref<GaussianBasisSet>& basis,
@@ -71,9 +77,6 @@ namespace sc {
                                            const std::vector<unsigned int>& orbsyms,
                                            const Order& order) :
     OrbitalSpace() {
-
-    // some compilers are dumb ...
-    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
 
     // validate input
     const size_t norbs = coefs.coldim().n();

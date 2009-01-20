@@ -114,6 +114,144 @@ namespace sc {
 
   }
 
+  //////////////////////////////////////////////////////////
+
+  template <typename Order>
+  ClassDesc
+  OrderedSpinOrbitalSpace<Order>::class_desc_(typeid(this_type),
+                                          (std::string("OrderedSpinOrbitalSpace<") +
+                                           std::string(typeid(Order).name()) +
+                                           std::string(">")
+                                          ).c_str(), 1,
+                                          "public OrbitalSpace", 0, 0,
+                                          create<this_type> );
+
+  template <typename Order>
+  OrderedSpinOrbitalSpace<Order>::OrderedSpinOrbitalSpace(StateIn& si) :
+    OrbitalSpace(si) {}
+
+  template <typename Order>
+  void
+  OrderedSpinOrbitalSpace<Order>::save_data_state(StateOut& so) {
+    OrbitalSpace::save_data_state(so);
+  }
+
+  template <typename Order>
+  OrderedSpinOrbitalSpace<Order>::~OrderedSpinOrbitalSpace() {
+    // some compilers must be tricked ...
+    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
+  }
+
+  template <typename Order>
+  OrderedSpinOrbitalSpace<Order>::OrderedSpinOrbitalSpace(const std::string& id,
+                                           const std::string& name,
+                                           const Ref<GaussianBasisSet>& basis,
+                                           const Ref<Integral>& integral,
+                                           const RefSCMatrix& coefs_a,
+                                           const RefSCMatrix& coefs_b,
+                                           const RefDiagSCMatrix& evals_a,
+                                           const RefDiagSCMatrix& evals_b,
+                                           const RefDiagSCMatrix& occnums_a,
+                                           const RefDiagSCMatrix& occnums_b,
+                                           const std::vector<unsigned int>& orbsyms_a,
+                                           const std::vector<unsigned int>& orbsyms_b,
+                                           const Order& order) :
+    OrbitalSpace() {
+
+    // validate input
+    const size_t norbs = coefs_a.coldim().n();
+    assert(norbs != 0);
+    assert(norbs == coefs_b.coldim().n());
+    const unsigned int max_orbsym_a = *(std::max_element(orbsyms_a.begin(), orbsyms_a.end()));
+    const unsigned int min_orbsym_a = *(std::min_element(orbsyms_a.begin(), orbsyms_a.end()));
+    const unsigned int max_orbsym_b = *(std::max_element(orbsyms_b.begin(), orbsyms_b.end()));
+    const unsigned int min_orbsym_b = *(std::min_element(orbsyms_b.begin(), orbsyms_b.end()));
+    const unsigned int max_orbsym = std::max(max_orbsym_a,max_orbsym_b);
+    const unsigned int min_orbsym = std::min(min_orbsym_a,min_orbsym_b);
+    const unsigned int nirreps = basis->molecule()->point_group()->char_table().order();
+    if (min_orbsym >= nirreps || max_orbsym >= nirreps)
+      throw ProgrammingError("OrderedSpinOrbitalSpace -- invalid orbital symmetry arrays",__FILE__,__LINE__);
+
+    /////////////
+    // Merge alpha and beta orbitals:
+    /////////////
+
+    // 1) construct vector of MolecularOrbital objects
+    std::vector<MolecularSpinOrbital> orbs;
+    for(size_t o=0; o<norbs; ++o) { // alpha spin
+      using detail::MolecularSpinOrbitalAttributes;
+      orbs.push_back(MolecularSpinOrbital(o,
+                                      MolecularSpinOrbitalAttributes(orbsyms_a.at(o),
+                                                                     evals_a.get_element(o),
+                                                                     occnums_a.get_element(o),
+                                                                     Alpha
+                                      )
+      ));
+    }
+    for(size_t o=0; o<norbs; ++o) { // beta spin
+      using detail::MolecularSpinOrbitalAttributes;
+      orbs.push_back(MolecularSpinOrbital(o + norbs,
+                                      MolecularSpinOrbitalAttributes(orbsyms_b.at(o),
+                                                                     evals_b.get_element(o),
+                                                                     occnums_b.get_element(o),
+                                                                     Beta
+                                      )
+      ));
+    }
+
+    // sort
+    std::stable_sort(orbs.begin(), orbs.end(), order);
+
+    // convert vector of MolecularOrbitals to BlockedOrbitals
+    std::vector<BlockedOrbital> blocked_orbs;
+    for(size_t o=0; o<norbs*2; ++o) {
+      const unsigned index = orbs[o].index();
+      const unsigned block = order.block(orbs[o]);
+      BlockedOrbital orb(index,block);
+      blocked_orbs.push_back(orb);
+    }
+
+    // 2) merge coefficients, eigenvalues, and occupations
+    RefSCDimension orbdim;
+    {
+      const unsigned int nblocks = coefs_a.coldim()->blocks()->nblock() * 2;
+      // build new blocked dimension
+      int* nfunc_per_block = new int[nblocks];
+      for (unsigned int i = 0; i < nblocks/2; ++i)
+        nfunc_per_block[i] = coefs_a.coldim()->blocks()->size(i);
+      for (unsigned int i = 0, ii=nblocks/2; i < nblocks/2; ++i, ++ii)
+        nfunc_per_block[ii] = coefs_a.coldim()->blocks()->size(i);
+      orbdim = new SCDimension(norbs * 2, nblocks, nfunc_per_block, id.c_str());
+      if (norbs) {
+        for (unsigned int i = 0; i < nblocks; ++i)
+          orbdim->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
+      }
+      delete[] nfunc_per_block;
+    }
+    RefSCMatrix coefs = coefs_a.kit()->matrix(coefs_a.rowdim(),orbdim);
+    RefDiagSCMatrix evals = evals_a.kit()->diagmatrix(orbdim);
+    std::vector<unsigned int> orbsyms(norbs*2);
+    const unsigned int nao = coefs_a.rowdim().n();
+    for (unsigned int i = 0, ii=0; i < norbs; ++i, ++ii) { // alpha
+      for(unsigned int ao=0; ao<nao; ++ao) {
+        coefs(ao,ii) = coefs_a(ao,i);
+      }
+      evals(ii) = evals_a(i);
+      orbsyms[ii] = orbsyms_a[i];
+    }
+    for (unsigned int i = 0, ii=norbs; i < norbs; ++i, ++ii) { // alpha
+      for(unsigned int ao=0; ao<nao; ++ao) {
+        coefs(ao,ii) = coefs_b(ao,i);
+      }
+      evals(ii) = evals_b(i);
+      orbsyms[ii] = orbsyms_b[i];
+    }
+
+    init(id, name, basis, integral, coefs, evals, orbsyms, order.nblocks(), blocked_orbs);
+
+  }
+
+
 } // end of namespace sc
 
 #endif // end of header guard

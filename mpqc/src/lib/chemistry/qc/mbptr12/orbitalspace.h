@@ -194,6 +194,48 @@ namespace sc {
       unsigned int nirreps_;
   };
 
+  /// order by occupation first, then by spin, then by symmetry, then by energy
+  struct CorrelatedSpinMOOrder {
+    public:
+      CorrelatedSpinMOOrder(unsigned int nirreps) : nirreps_(nirreps) {}
+
+      bool operator()(const MolecularSpinOrbital& o1, const MolecularSpinOrbital& o2) const {
+        // occupieds come before virtuals
+        if (o1.attr().occnum() > o2.attr().occnum())
+          return true;
+        else if (o1.attr().occnum() == o2.attr().occnum()) {
+          if (o1.attr().spin() < o2.attr().spin())
+            return true;
+          else if (o1.attr().spin() == o2.attr().spin()) {
+            if (o1.attr().irrep() < o2.attr().irrep())
+              return true;
+            else if (o1.attr().irrep() == o2.attr().irrep()) {
+              if (o1.attr().energy() < o2.attr().energy())
+                return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      unsigned int block(const MolecularSpinOrbital& o) const {
+        const unsigned int irrep = o.attr().irrep();
+        const SpinCase1 spin = o.attr().spin();
+        const unsigned int spincase = (spin == Alpha) ? 0 : 1;
+        const double occnum = o.attr().occnum();
+        const unsigned int occblock = (occnum == 1.0) ? 0 : 1;
+        // occupieds come before virtuals, Alpha before Beta
+        const unsigned int result = (occblock * 2 + spincase) * nirreps_ + irrep;
+        return result;
+      }
+      unsigned int nblocks() const {
+        return nirreps_ * 4;
+      }
+
+    private:
+      unsigned int nirreps_;
+  };
+
   namespace detail {
 
     template <typename Container> struct ContainerAdaptor {
@@ -641,6 +683,35 @@ namespace sc {
     private:
 
       typedef OrderedOrbitalSpace this_type;
+      // ClassDesc object
+      static ClassDesc class_desc_;
+  };
+
+  /** Same as OrderedOrbitalSpace, except for spin-orbitals
+   */
+  template <typename Order>
+  class OrderedSpinOrbitalSpace : public OrbitalSpace {
+    public:
+      OrderedSpinOrbitalSpace(const std::string& id, const std::string& name,
+                          const Ref<GaussianBasisSet>& basis,
+                          const Ref<Integral>& integral,
+                          const RefSCMatrix& coefs_alpha,
+                          const RefSCMatrix& coefs_beta,
+                          const RefDiagSCMatrix& evals_alpha,
+                          const RefDiagSCMatrix& evals_beta,
+                          const RefDiagSCMatrix& occnums_alpha,
+                          const RefDiagSCMatrix& occnums_beta,
+                          const std::vector<unsigned int>& orbsyms_alpha,
+                          const std::vector<unsigned int>& orbsyms_beta,
+                          const Order& order);
+
+      OrderedSpinOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+      ~OrderedSpinOrbitalSpace();
+
+    private:
+
+      typedef OrderedSpinOrbitalSpace this_type;
       // ClassDesc object
       static ClassDesc class_desc_;
   };

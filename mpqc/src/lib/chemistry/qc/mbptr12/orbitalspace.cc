@@ -614,6 +614,48 @@ MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
 
 /////////////////////////////////////////////////////////////////////////////
 
+static ClassDesc NonblockedOrbitalSpace_cd(typeid(NonblockedOrbitalSpace), "NonblockedOrbitalSpace", 1,
+                                           "public OrbitalSpace", 0, 0, create<NonblockedOrbitalSpace> );
+
+NonblockedOrbitalSpace::NonblockedOrbitalSpace(StateIn& si) :
+  OrbitalSpace(si) {}
+
+void
+NonblockedOrbitalSpace::save_data_state(StateOut& so) {
+  OrbitalSpace::save_data_state(so);
+}
+
+NonblockedOrbitalSpace::NonblockedOrbitalSpace(const std::string& id,
+                                               const std::string& name,
+                                               const Ref<OrbitalSpace>& orig_space) :
+  OrbitalSpace() {
+
+  // create vector of BlockedOrbitals
+  std::vector<BlockedOrbital> blocked_orbs;
+  const unsigned int nblocks = orig_space->nblocks();
+  const std::vector<unsigned int>& block_sizes = orig_space->block_sizes();
+  size_t block_offset = 0;
+  for(unsigned int b=0; b<nblocks; ++b) {
+    const size_t block_size = block_sizes[b];
+    for(size_t o=0; o<block_size; ++o) {
+      const size_t oo = o + block_offset;
+      blocked_orbs.push_back( BlockedOrbital(oo, 0) );
+    }
+    block_offset += block_size;
+  }
+
+  init(id, name,
+       orig_space->basis(),
+       orig_space->integral(),
+       orig_space->coefs(),
+       orig_space->evals(),
+       orig_space->orbsym(),
+       1, blocked_orbs);
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 MOIndexMap sc::operator<<(const OrbitalSpace& s2, const OrbitalSpace& s1) {
   const unsigned int rank1 = s1.rank();
   const unsigned int rank2 = s2.rank();

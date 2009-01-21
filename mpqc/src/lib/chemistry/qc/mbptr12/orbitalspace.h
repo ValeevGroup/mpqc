@@ -730,6 +730,22 @@ namespace sc {
       void save_data_state(StateOut&);
 
   };
+
+  ////////////////////////////////
+
+  /** This is an OrbitalSpace produced from an existing one by getting rid of the blocking.
+   * The number of blocks in the result space is always one.
+   */
+  class NonblockedOrbitalSpace : public OrbitalSpace {
+    public:
+      NonblockedOrbitalSpace(const std::string& id, const std::string& name,
+                       const Ref<OrbitalSpace>& orig_space);
+
+      NonblockedOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+
+  };
+
 }
 
 #include <chemistry/qc/mbptr12/orbitalspace.timpl.h>

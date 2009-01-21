@@ -151,7 +151,7 @@ FockBuildRuntime::get(const std::string& key) {
     const std::string& aobra_key = idxreg->key(aobra);
     const std::string& aoket_key = idxreg->key(aoket);
     const std::string aokey = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
-                                                       oper_key);
+                                                       oper_key, spin);
     if (registry_->key_exists(aokey)) {
       RefSCMatrix aofock = registry_->value(aokey);
       RefSCMatrix mofock = bra->coefs().t() * aofock * ket->coefs();

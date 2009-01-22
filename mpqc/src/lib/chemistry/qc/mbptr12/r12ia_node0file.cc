@@ -150,7 +150,7 @@ R12IntsAcc_Node0File::check_filedescr_()
       throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- not a directory");
       default:
       const char* errormsg = strerror(errno);
-      ExEnv::out0() << "R12IntsAcc_Node0File::store_pair_block(): " << errormsg << std::endl;
+      ExEnv::out0() << "R12IntsAcc_Node0File::R12IntsAcc_Node0File " << errormsg << std::endl;
       throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
     }
   }
@@ -328,7 +328,7 @@ const double * R12IntsAcc_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type) const {
   // Can write blocks?
   if (!is_avail(i, j))
-    throw ProgrammingError("R12IntsAcc_Node0File::store_pair_block -- can only be called on node 0",
+    throw ProgrammingError("R12IntsAcc_Node0File::retrieve_pair_block -- can only be called on node 0",
         __FILE__,__LINE__);
 
   const int ij = ij_index(i, j);

@@ -490,7 +490,7 @@ MPQC::Model_impl::set_metadata_impl (
 
   cqos_tm_ = typemap;
 
-  // Do-NOT-DELETE splicer.end(MPQC.Model.set_metadata)
+  // DO-NOT-DELETE splicer.end(MPQC.Model.set_metadata)
 }
 
 /**

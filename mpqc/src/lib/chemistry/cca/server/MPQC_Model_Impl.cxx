@@ -489,8 +489,8 @@ MPQC::Model_impl::set_metadata_impl (
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_metadata)
 
   cqos_tm_ = typemap;
-    
-  // DO-NOT-DELETE splicer.end(MPQC.Model.set_metadata)
+
+  // Do-NOT-DELETE splicer.end(MPQC.Model.set_metadata)
 }
 
 /**
@@ -504,6 +504,8 @@ MPQC::Model_impl::get_metadata_impl ()
   // DO-NOT-DELETE splicer.begin(MPQC.Model.get_metadata)
 
   cqos_tm_.putInt("nelectron",wfn_->nelectron());
+  cqos_tm_.putInt("AtomicOrbitals",wfn_->ao_dimension());
+  cqos_tm_.putInt("OrthSymmOrbitals",wfn_->oso_dimension());
   return cqos_tm_;
     
   // DO-NOT-DELETE splicer.end(MPQC.Model.get_metadata)

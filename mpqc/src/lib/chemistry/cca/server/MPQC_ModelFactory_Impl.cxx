@@ -51,6 +51,7 @@
 using namespace std;
 using namespace sc;
 
+
 // DO-NOT-DELETE splicer.end(MPQC.ModelFactory._includes)
 
 // speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
@@ -377,6 +378,9 @@ MPQC::ModelFactory_impl::get_model_impl ()
   cqos_tm_ = services_.createTypeMap();
   cqos_tm_.putString("theory",theory_);
   cqos_tm_.putString("basis",basis_);
+  cqos_tm_.putInt("MemGrpSize",grp_->n());
+  if( thread_.nonnull() )
+    cqos_tm_.putInt("Threads",thread_->nthread());
   model.set_metadata(cqos_tm_);
   
   return model;

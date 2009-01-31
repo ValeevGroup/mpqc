@@ -149,13 +149,34 @@ currentbas<GaussianBasisSet>: (
   %name = "cc-pVTZ"
   %name = "STO-3G"
   %name = "6-31G*"
-  name = "cc-pVDZ"
+  %name = "cc-pVDZ"
   %name = "cc-pVTZ"
   %name = "cc-pVQZ"
   %name = "DZ (Dunning)"
   name = "DZP (Dunning)"
   %name = "aug-cc-pVDZ"
-  puream = no
+  puream = true
+)
+
+smallestbas<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "DZ (Dunning)"
+  puream = false
+)
+smallbas<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "cc-pVDZ"
+  puream = false
+)
+largebas<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "DZP (Dunning)"
+  puream = false
+)
+largestbas<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "cc-pVTZ"
+  puream = false
 )
 
 631gs<GaussianBasisSet>: (
@@ -206,6 +227,11 @@ test: (
    %quartet = [0 0 0 1]
    %storage = 10000
    wfn = $:wfn
+   
+   basis1 = $:smallestbas
+   basis2 = $:smallbas
+   basis3 = $:largebas
+   basis4 = $:largestbas
  )
 
 % a few basis sets for convenience

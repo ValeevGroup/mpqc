@@ -110,6 +110,7 @@ void R12IntEval::compute_B_DKH_() {
     std::string name = "(T)-weighted space";
     name = prepend_spincase(spin,name);
     t_x_P[s] = new OrbitalSpace(id, name, x, t_x_P_coefs, ribs);
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_P[s]));
   }
 
   //
@@ -206,7 +207,7 @@ void R12IntEval::compute_B_DKH_() {
       g12corrfact << corrfactor();
       if (g12corrfact.null())
         throw FeatureNotImplemented("B(DKH2) evaluator can only work in standard approximation C",__FILE__,__LINE__);
-      if (g12corrfact->nfunctions() > 0)
+      if (g12corrfact->nfunctions() > 1)
         throw FeatureNotImplemented("B(DKH2) evaluator can only work with one correlation factor",__FILE__,__LINE__);
       Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(),
                                                                     new IntParamsG12(g12corrfact->function(0),

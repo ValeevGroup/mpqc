@@ -120,7 +120,7 @@ GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
   // if there isn't a matrixkit in the input, init2() will assign the
   // default matrixkit
   matrixkit_ << keyval->describedclassvalue("matrixkit");
-  
+
   // Bases keeps track of what basis set data bases have already
   // been read in.  It also handles the conversion of basis
   // names to file names.
@@ -168,7 +168,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   nshell_(gbs.nshell_)
 {
   int i,j;
-  
+
   name_ = gbs.name_;
   label_ = gbs.label_;
 
@@ -176,14 +176,14 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   for (i=0; i < ncenter_; i++) {
       center_to_nshell_[i] = gbs.center_to_nshell_[i];
     }
-  
+
   shell_ = new GaussianShell*[nshell_];
   for (i=0; i<nshell_; i++) {
       const GaussianShell& gsi = gbs(i);
 
       int nc=gsi.ncontraction();
       int np=gsi.nprimitive();
-      
+
       int *ams = new int[nc];
       int *pure = new int[nc];
       double *exps = new double[np];
@@ -199,7 +199,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
 
       for (j=0; j < np; j++)
           exps[j] = gsi.exponent(j);
-      
+
       shell_[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
                                    GaussianShell::Unnormalized);
     }
@@ -226,7 +226,7 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
 {
   name_ = name;
   label_ = label;
-  
+
   init2();
 }
 
@@ -261,7 +261,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   for (i=0; i<ncenter_; i++) {
       nshell_ += center_to_nshell_[i];
     }
-  
+
   shell_ = new GaussianShell*[nshell_];
   for (i=0; i<nshell_; i++) {
       shell_[i] = new GaussianShell(s);
@@ -277,7 +277,7 @@ GaussianBasisSet::save_data_state(StateOut&s)
 
   SavableState::save_state(molecule_.pointer(),s);
   SavableState::save_state(basisdim_.pointer(),s);
-  
+
   s.put(name_);
   s.put(label_);
   for (int i=0; i<nshell_; i++) {
@@ -520,7 +520,7 @@ GaussianBasisSet::init2(int skip_ghosts,bool include_q)
     matrixkit_ = SCMatrixKit::default_matrixkit();
 
   so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
-  
+
   if (basisdim_.null()) {
     int nb = nshell();
     int *bs = new int[nb];
@@ -711,7 +711,7 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
         throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- orbital exponents have to be positive");
       }
     }
-      
+
     if (have_last_exp) {
       sprintf(keyword,":basis:%s:%s:last_exp:%d", element, basisname, b);
       alphaN = keyval->doublevalue(keyword);
@@ -1040,7 +1040,7 @@ GaussianBasisSet::init(
     const Ref<SCMatrixKit> &so_matrixkit,
     GaussianShell **shell,
     const std::vector<int> shell_to_center)
-    
+
 {
   name_ = name;
   label_ = label;
@@ -1114,7 +1114,8 @@ GaussianBasisSet::ValueData::ValueData(
   sivec_ = new SphericalTransformIter *[maxam_+1];
   for (int i=0; i<=maxam_; i++) {
       civec_[i] = integral->new_cartesian_iter(i);
-      if (i>1) sivec_[i] = integral->new_spherical_transform_iter(i);
+      // spherical transforms are necessary even for p-type shells
+      if (i>0) sivec_[i] = integral->new_spherical_transform_iter(i);
       else sivec_[i] = 0;
     }
 }
@@ -1182,7 +1183,7 @@ GaussianBasisSetSum::save_data_state(StateOut&s)
   SavableState::save_state(bs1_.pointer(),s);
   SavableState::save_state(bs2_.pointer(),s);
   SavableState::save_state(bs12_.pointer(),s);
-  
+
   // maps
   s.put(shell_to_basis_);
   s.put(function_to_basis_);

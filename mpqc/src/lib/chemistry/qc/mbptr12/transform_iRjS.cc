@@ -33,7 +33,9 @@
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
 #include <chemistry/qc/mbptr12/r12ia_node0file.h>
-#include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#ifdef HAVE_MPIIO
+#  include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#endif
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
 

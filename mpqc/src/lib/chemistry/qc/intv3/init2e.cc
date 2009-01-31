@@ -143,7 +143,7 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
              *(int_unit2?1:cs2->max_ncartesian_in_shell(1))
              *cs3->max_ncartesian_in_shell(1)
              *(int_unit4?1:cs4->max_ncartesian_in_shell(1));
- 
+
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
     int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
@@ -242,9 +242,8 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
                      cs2,bs2_shell_offset_,bs2_prim_offset_);
       compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
                      cs1,bs1_shell_offset_,bs1_prim_offset_);
-      // cs2 cs2 terms are not needed since cs1 != cs2
-      //compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
-      //               cs2,bs2_shell_offset_,bs2_prim_offset_);
+      compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
+                     cs2,bs2_shell_offset_,bs2_prim_offset_);
       }
     if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) {
       compute_prim_2(cs1,bs1_shell_offset_,bs1_prim_offset_,

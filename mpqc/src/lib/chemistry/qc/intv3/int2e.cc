@@ -58,7 +58,11 @@ Int2eV3::Int2eV3(Integral *integral,
   transform_init();
   int_initialize_offsets2();
   int_initialize_erep(storage,order,bs1_,bs2_,bs3_,bs4_);
-  if (!(int_unit2 || int_unit4)) {
+
+  // bounds in IntV3 can only be computed under certain circumstances
+  const bool compute_bounds = !(int_unit2 || int_unit4) &&
+                              ((bs1_ == bs2_)&&(bs1_ == bs3_)&&(bs1_ == bs4_));
+  if (compute_bounds) {
     if (order==0) {
       init_bounds();
       }

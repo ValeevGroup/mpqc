@@ -69,6 +69,7 @@ namespace MPQC {
     sc::Ref<sc::Wavefunction> wfn_;
     Chemistry::MoleculeInterface molecule_;
     gov::cca::TypeMap cqos_tm_;
+    double time_get_energy_;
 
     // DO-NOT-DELETE splicer.end(MPQC.Model._implementation)
 

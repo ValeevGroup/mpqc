@@ -33,6 +33,7 @@ static int ex_counter = 0;
 
 #include "ChemistryCXX_Molecule.hxx"
 #include <iostream>
+#include <time.h>
 using namespace std;
 
 sidl::array<double>
@@ -198,7 +199,15 @@ MPQC::Model_impl::get_energy_impl ()
  //     e.setNote("Simulated Numerical Error");
  //     throw e;
  //   }
-  return wfn_->energy();
+  clock_t time1;
+  clock_t time2;
+  double time;
+
+  time1 = clock();
+  double e = wfn_-> energy();
+  time2 = clock();
+  time_get_energy_ = ( (double) time2 - time1 ) / CLOCKS_PER_SEC;
+  return e;
 
   // DO-NOT-DELETE splicer.end(MPQC.Model.get_energy)
 }
@@ -506,6 +515,7 @@ MPQC::Model_impl::get_metadata_impl ()
   cqos_tm_.putInt("nelectron",wfn_->nelectron());
   cqos_tm_.putInt("AtomicOrbitals",wfn_->ao_dimension());
   cqos_tm_.putInt("OrthSymmOrbitals",wfn_->oso_dimension());
+  cqos_tm_.putDouble("TimeGetEnergy",time_get_energy_);
   return cqos_tm_;
     
   // DO-NOT-DELETE splicer.end(MPQC.Model.get_metadata)

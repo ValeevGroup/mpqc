@@ -55,7 +55,6 @@
   #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
 #  endif
 #endif
-#include <chemistry/qc/mbptr12/transform_123inds.h>
 
 using namespace std;
 using namespace sc;

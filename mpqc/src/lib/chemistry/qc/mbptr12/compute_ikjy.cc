@@ -51,7 +51,8 @@ using namespace sc;
 #define SINGLE_THREAD_E123   0
 #define PRINT3Q 0
 #define PRINT4Q 0
-#define PRINT_NUM_TE_TYPES 6
+#define PRINT_NUM_TE_TYPES 1
+#define ALL_TASKS_ON_SAME_NODE 1
 #define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
@@ -213,31 +214,44 @@ TwoBodyMOIntsTransform_ikjy::compute()
     integral_ijsx = (double*) mem_->localdata();
 
 #if PRINT3Q
-    if ( me == 0 ) {
-      string filename = type() + "." + name_ + ".3q.dat";
-      ios_base::openmode mode = ios_base::trunc;
-      if (pass > 0)
-        mode = ios_base::app;
-      ofstream ints_file(filename.c_str(),mode);
-      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
-        for (int i = 0; i<ni; i++) {
-          for (int j = 0; j<rank3; j++) {
-            int ij = i*rank3+j;
-            int ij_local = ij/nproc;
-            if (ij%nproc != me)
-              continue;
-            for (int x = 0; x<rank2; x++) {
-              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
-              for (int s = 0; s<nbasis4; s++) {
-                double value = ijsx_ints[s*rank2+x];
-                ints_file << scprintf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                                      te_type,i+i_offset,x,j,s,value);
+    {
+      // each task take its turn to write to the file, in case all tasks live on the same node
+      for (int proc = 0; proc < nproc; ++proc) {
+        if (me == proc) { // my turn to write
+
+          string filename = type() + "." + name_ + ".3q.dat";
+          ios_base::openmode mode = ios_base::trunc;
+          if (pass > 0 || ALL_TASKS_ON_SAME_NODE)
+            mode = ios_base::app;
+          ofstream ints_file(filename.c_str(), mode);
+
+          const int ntetypes = std::min((int) num_te_types(),
+                                        PRINT_NUM_TE_TYPES);
+          for (int te_type = 0; te_type < ntetypes; te_type++) {
+            for (int i = 0; i < ni; i++) {
+              for (int j = 0; j < rank3; j++) {
+                int ij = i * rank3 + j;
+                int ij_local = ij / nproc;
+                if (ij % nproc != me)
+                  continue;
+                for (int x = 0; x < rank2; x++) {
+                  const double* ijsx_ints =
+                      (const double*) ((size_t) integral_ijsx + (ij_local
+                          * num_te_types() + te_type) * memgrp_blocksize);
+                  for (int s = 0; s < nbasis4; s++) {
+                    double value = ijsx_ints[s * rank2 + x];
+                    ints_file << scprintf("3Q: type = %d |(%d %d|%d %d)| = %12.8f\n",
+                                          te_type, i + i_offset, x, j, s, fabs(value));
+                  }
+                }
               }
             }
           }
+
+          ints_file.close();
         }
+        msg_->sync();
       }
-      ints_file.close();
     }
 #endif
 
@@ -304,35 +318,48 @@ TwoBodyMOIntsTransform_ikjy::compute()
       }
     }
     // Sync up tasks before integrals are committed
-    mem_->sync();
+    msg_->sync();
 
 #if PRINT4Q
-    if ( me == 0 ) {
-      string filename = type() + "." + name_ + ".4q.dat";
-      ios_base::openmode mode = ios_base::trunc;
-      if (pass > 0)
-        mode = ios_base::app;
-      ofstream ints_file(filename.c_str(),mode);
-      const int ntetypes = std::min((int)num_te_types(),PRINT_NUM_TE_TYPES);
-      for(int te_type=0; te_type<ntetypes; te_type++) {
-        for (int i = 0; i<ni; i++) {
-          for (int j = 0; j<rank3; j++) {
-            int ij = i*rank3+j;
-            int ij_local = ij/nproc;
-            if (ij%nproc != me)
-              continue;
-            for (int x = 0; x<rank2; x++) {
-              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
-              for (int y = 0; y<rank4; y++) {
-                double value = ijxy_ints[x*rank4+y];
-                ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                                      te_type,i+i_offset,x,j,y,value);
+    {
+
+      // each task take its turn to write to the file, in case all tasks live on the same node
+      for (int proc = 0; proc < nproc; ++proc) {
+        if (me == proc) { // my turn to write
+
+          string filename = type() + "." + name_ + ".4q.dat";
+          ios_base::openmode mode = ios_base::trunc;
+          if (pass > 0 || ALL_TASKS_ON_SAME_NODE)
+            mode = ios_base::app;
+          ofstream ints_file(filename.c_str(), mode);
+
+          const int ntetypes = std::min((int) num_te_types(),
+                                        PRINT_NUM_TE_TYPES);
+          for (int te_type = 0; te_type < ntetypes; te_type++) {
+            for (int i = 0; i < ni; i++) {
+              for (int j = 0; j < rank3; j++) {
+                int ij = i * rank3 + j;
+                int ij_local = ij / nproc;
+                if (ij % nproc != me)
+                  continue;
+                for (int x = 0; x < rank2; x++) {
+                  const double* ijxy_ints =
+                      (const double*) ((size_t) integral_ijxy + (ij_local
+                          * num_te_types() + te_type) * memgrp_blocksize);
+                  for (int y = 0; y < rank4; y++) {
+                    double value = ijxy_ints[x * rank4 + y];
+                    ints_file << scprintf("4Q: type = %d |(%d %d|%d %d)| = %12.8f\n",
+                                          te_type, i + i_offset, x, j, y, fabs(value));
+                  }
+                }
               }
             }
           }
+
+          ints_file.close();
         }
+        msg_->sync(); // all tasks wait the end of each turn
       }
-      ints_file.close();
     }
 #endif
 

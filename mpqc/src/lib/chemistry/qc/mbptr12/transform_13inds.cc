@@ -44,8 +44,9 @@
 using namespace std;
 using namespace sc;
 
+#define PRINT0Q 0
 #define PRINT1Q 0
-#define PRINT2Q 0
+#define ALL_TASKS_ON_SAME_NODE 1
 #define PRINT_NUM_TE_TYPES 1
 
 // The FAST_BUT_WRONG flags is useful for exercising the communications
@@ -202,6 +203,7 @@ TwoBodyMOIntsTransform_13Inds::run()
 
   int R = 0;
   int S = 0;
+  int RS_count = 0;
   while (shellpairs.get_task(S,R)) {
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
@@ -255,6 +257,49 @@ TwoBodyMOIntsTransform_13Inds::run()
         timer_->enter("AO integrals");
         tbint_->compute_shell(P,Q,R,S);
         timer_->exit("AO integrals");
+
+#if PRINT0Q
+    {
+      // each task take its turn to write to the file, in case all tasks live on the same node
+      for (int proc = 0; proc < nproc; ++proc) {
+        if (me == proc) { // my turn to write
+
+          lock_->lock();
+          string filename = tform_->type() + "." + tform_->name()
+                            + ".0q.dat";
+          ios_base::openmode mode = ios_base::trunc;
+          if (RS_count != 0 || ALL_TASKS_ON_SAME_NODE)
+            mode = ios_base::app;
+          ofstream ints_file(filename.c_str(), mode);
+
+          const int ntetypes = std::min((int) num_te_types,
+                                        PRINT_NUM_TE_TYPES);
+          for (int te_type = 0; te_type < ntetypes; te_type++) {
+            for (int p = 0; p < np; p++) {
+              int pp = p + p_offset;
+              for (int q = 0; q < nq; q++) {
+                int qq = q + q_offset;
+                for (int r = 0; r < nr; r++) {
+                  int rr = r + r_offset;
+                  for (int s = 0; s < ns; s++) {
+                    int ss = s + s_offset;
+                    double value = intbuf[te_type][s + ns * (r + nr * (q
+                        + nq * p))];
+                    ints_file << scprintf("0Q: type = %d |(%d %d|%d %d)| = %12.8f\n",
+                                          te_type, pp, qq, rr, ss, fabs(value));
+                  }
+                }
+              }
+            }
+          }
+
+          ints_file.close();
+          lock_->unlock();
+        }
+        msg->sync();
+      }
+    }
+#endif
 
         timer_->enter("1. q.t.");
 
@@ -344,23 +389,41 @@ TwoBodyMOIntsTransform_13Inds::run()
 
 #if PRINT1Q
     {
-        lock_->lock();
-        for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
-          for (int i = 0; i<ni; i++) {
-            for (int q = 0; q<nbasis2; q++) {
-              for (int r = 0; r<nr; r++) {
-                int rr = r+r_offset;
-                for (int s = 0; s<ns; s++) {
-                  int ss = s+s_offset;
-                  double value = rsiq_ints[te_type][q+nbasis2*(i+ni*(s+ns*r))];
-                  printf("1Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+i_offset_,q,rr,ss,value);
+      // each task take its turn to write to the file, in case all tasks live on the same node
+      for (int proc = 0; proc < nproc; ++proc) {
+        if (me == proc) { // my turn to write
+
+          lock_->lock();
+          string filename = tform_->type() + "." + tform_->name() + ".1q.dat";
+          ios_base::openmode mode = ios_base::trunc;
+          if (RS_count != 0 || ALL_TASKS_ON_SAME_NODE)
+            mode = ios_base::app;
+          ofstream ints_file(filename.c_str(), mode);
+
+          const int ntetypes = std::min((int) num_te_types, PRINT_NUM_TE_TYPES);
+          for (int te_type = 0; te_type < ntetypes; te_type++) {
+            for (int i = 0; i < ni; i++) {
+              for (int q = 0; q < nbasis2; q++) {
+                for (int r = 0; r < nr; r++) {
+                  int rr = r + r_offset;
+                  for (int s = 0; s < ns; s++) {
+                    int ss = s + s_offset;
+                    double value = rsiq_ints[te_type][q + nbasis2 * (i + ni
+                        * (s + ns * r))];
+                    ints_file
+                        << scprintf("1Q: type = %d |(%d %d|%d %d)| = %12.8f\n",
+                                    te_type, i + i_offset_, q, rr, ss, fabs(value));
+                  }
                 }
               }
             }
           }
+
+          ints_file.close();
+          lock_->unlock();
         }
-        lock_->unlock();
+        msg->sync();
+      }
     }
 #endif
 
@@ -472,6 +535,7 @@ TwoBodyMOIntsTransform_13Inds::run()
     }  // endif te_type
     timer_->exit("2. q.t.");
 
+    ++RS_count;
   }         // exit while get_task
 
   if (debug_) {

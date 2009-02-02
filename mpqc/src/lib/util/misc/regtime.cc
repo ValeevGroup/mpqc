@@ -668,6 +668,7 @@ RegionTimer::print(ostream& o) const
   o << endl;
 
   o.setf(ios::fixed);
+  streamsize oldprecision = o.precision();
   o.precision(2);
   for (i=0; i<n; i++) {
       int width = strlen(names[i]) + 2 * depth[i] + 2;
@@ -676,15 +677,17 @@ RegionTimer::print(ostream& o) const
       for (j=width; j<maxwidth; j++) o << " ";
       if (cpu_time_) {
           o << " " << setw(maxcpuwidth) << cpu_time[i];
-        }                    
-      if (wall_time_) {      
+        }
+      if (wall_time_) {
           o << " " << setw(maxwallwidth) << wall_time[i];
         }
-      if (flops_) {      
+      if (flops_) {
           o << " " << setw(maxflopswidth) << flops[i];
         }
       o << endl;
     }
+  o.precision(oldprecision);
+  o.unsetf(ios::fixed);
 
   delete[] cpu_time;
   delete[] wall_time;

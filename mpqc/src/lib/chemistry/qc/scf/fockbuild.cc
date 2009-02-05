@@ -1496,8 +1496,8 @@ DistFockBuildMatrix::finish_prefetch_block()
       fockbuildop_->finish_prefetch(iter->second.second);
 #if DEBUG_DIST
       std::cout << MessageGrp::get_default_messagegrp()->me()
-                << ": " << iter->first.first
-                << ", " << iter->first.second
+                << ": " << iter->first.i()
+                << ", " << iter->first.j()
                 << ": prefetch finished"
                 << std::endl;
 #endif
@@ -2087,13 +2087,16 @@ FockBuildThread_F11_P11::run()
   got_blocks = dist->get_blocks(iblock_next,jblock_next,kblock_next,lblock_next);
   if (prefetch_blocks_ && got_blocks) {
 #if DEBUG_DIST
+      lock_->lock();
       std::cout << MessageGrp::get_default_messagegrp()->me()
+                << ":" << threadnum_
                 << ": prefetch_blocks for "
                 << iblock_next
                 << ", " << jblock_next
                 << ", " << kblock_next
                 << ", " << lblock_next
                 << std::endl;
+      lock_->unlock();
 #endif
       prefetch_blocks(dist,
                       iblock_next,jblock_next,kblock_next,lblock_next);
@@ -2108,20 +2111,26 @@ FockBuildThread_F11_P11::run()
 
       if (prefetch_blocks_) {
 #if DEBUG_DIST
+          lock_->lock();
           std::cout << MessageGrp::get_default_messagegrp()->me()
+                    << ":" << threadnum_
                     << ": finish_prefetch_blocks"
                     << std::endl;
+          lock_->unlock();
 #endif
           contrib_->finish_prefetch_blocks();
           if (got_blocks) {
 #if DEBUG_DIST
+              lock_->lock();
               std::cout << MessageGrp::get_default_messagegrp()->me()
+                        << ":" << threadnum_
                         << ": prefetch_blocks for "
                         << iblock_next
                         << ", " << jblock_next
                         << ", " << kblock_next
                         << ", " << lblock_next
                         << std::endl;
+              lock_->unlock();
 #endif
               prefetch_blocks(dist,
                               iblock_next,jblock_next,kblock_next,lblock_next);
@@ -2138,13 +2147,32 @@ FockBuildThread_F11_P11::run()
       int lend = dist->end(lblock);
 
 #if DEBUG || DEBUG_DIST
+      lock_->lock();
       std::cout << MessageGrp::get_default_messagegrp()->me()
+                << ":" << threadnum_
                 << ": working on blocks: "
                 << std::setw(2) << iblock
                 << ", " << std::setw(2) << jblock
                 << ", " << std::setw(2) << kblock
                 << ", " << std::setw(2) << lblock
                 << std::endl;
+      std::cout << MessageGrp::get_default_messagegrp()->me()
+                << ":" << threadnum_
+                << ": begin_blocks: "
+                << std::setw(2) << ibegin
+                << ", " << std::setw(2) << jbegin
+                << ", " << std::setw(2) << kbegin
+                << ", " << std::setw(2) << lbegin
+                << std::endl;
+      std::cout << MessageGrp::get_default_messagegrp()->me()
+                << ":" << threadnum_
+                << ": end_blocks: "
+                << std::setw(2) << iend
+                << ", " << std::setw(2) << jend
+                << ", " << std::setw(2) << kend
+                << ", " << std::setw(2) << lend
+                << std::endl;
+      lock_->unlock();
 #endif
 
       for (int i=ibegin; i<iend; i++) {
@@ -2188,12 +2216,16 @@ FockBuildThread_F11_P11::run()
                       if (pmaxjl>pmax_K) pmax_K = pmaxjl;
 
 #if DEBUG || DEBUG_DIST
-                      std::cout << "  shell: "
+                      lock_->lock();
+                      std::cout << MessageGrp::get_default_messagegrp()->me()
+                                << ":" << threadnum_
+                                << ": shell: "
                                 << std::setw(2) << i
                                 << ", " << std::setw(2) << j
                                 << ", " << std::setw(2) << k
                                 << ", " << std::setw(2) << l
                                 << std::endl;
+                      lock_->unlock();
 #endif
 
 #if SCF_USE_BOUNDS

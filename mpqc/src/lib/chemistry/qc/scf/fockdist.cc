@@ -275,7 +275,7 @@ FockDistStatic4::next_block()
       if (size(k_) == 1 && l_ <= j_) return true;
     }
 
-  if (l_ <= k_) return true;
+  if (k_ < i_ && l_ <= k_) return true;
 
   l_ = 0;
   k_++;
@@ -635,7 +635,7 @@ FockDistDynamic2::get_blocks(int&i,int&j,int&k,int&l)
 //             << i << " " << j << " " << k << " " << l
 //             << " size = " << size(i)*size(j) << " * " << size(k)*size(l)
 //             << std::endl;
-  
+
   return true;
 }
 
@@ -858,7 +858,7 @@ FockDistDynamic4::get_blocks(int&i,int&j,int&k,int&l)
 //             << i << " " << j << " " << k << " " << l
 //             << " size = " << size(i)*size(j) << " * " << size(k)*size(l)
 //             << std::endl;
-  
+
   return true;
 }
 

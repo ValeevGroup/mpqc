@@ -68,7 +68,7 @@ OneBodyWavefunction::OneBodyWavefunction(const Ref<KeyVal>&keyval):
   double acc = keyval->doublevalue("eigenvector_accuracy");
   if (keyval->error() != KeyVal::OK)
     acc = value_.desired_accuracy();
-  
+
   oso_eigenvectors_.set_desired_accuracy(acc);
   eigenvalues_.set_desired_accuracy(acc);
 
@@ -179,11 +179,12 @@ OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn
   old_to_new_ao.assign(0.0);
   old_to_new_ao.element_op(op);
   op = 0;
-  integral()->set_basis(basis());
 
   // now must transform the transform into the SO basis
-  Ref<PetiteList> pl = integral()->petite_list();
+  owfn->integral()->set_basis(owfn->basis());
   Ref<PetiteList> oldpl = owfn->integral()->petite_list();
+  integral()->set_basis(basis());
+  Ref<PetiteList> pl = integral()->petite_list();
   RefSCMatrix blocked_old_to_new_ao(oldpl->AO_basisdim(), pl->AO_basisdim(),
                                     basis()->so_matrixkit());
   blocked_old_to_new_ao->convert(old_to_new_ao);
@@ -197,7 +198,7 @@ OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn
                              * so_to_oso.t();
   old_so_to_oso = 0;
   old_to_new_so = 0;
-  
+
   // The old density transformed to the new orthogonal SO basis
   RefSymmSCMatrix newP_oso(oso_dimension(), basis_matrixkit());
   newP_oso->assign(0.0);
@@ -260,7 +261,7 @@ OneBodyWavefunction::projected_eigenvalues(const Ref<OneBodyWavefunction>& owfn,
     require_dynamic_cast<BlockedDiagSCMatrix*>(oval.pointer(),
       "OneBodyWavefunction::projected_eigenvalues: oval"
       );
-    
+
   // get the core hamiltonian eigenvalues
   RefDiagSCMatrix val;
   hcore_guess(val);
@@ -292,7 +293,7 @@ OneBodyWavefunction::projected_eigenvalues(const Ref<OneBodyWavefunction>& owfn,
 
     if (!nf)
       continue;
-    
+
     double *vals = new double[nf];
     valp->block(irrep)->convert(vals);
 
@@ -303,7 +304,7 @@ OneBodyWavefunction::projected_eigenvalues(const Ref<OneBodyWavefunction>& owfn,
       for (i=0; i < nocc; i++) vals[i] = ovals[i];
       delete[] ovals;
     }
-    
+
     for (i=nocc; i < nf; i++)
       vals[i] = 99.0;
 
@@ -479,7 +480,7 @@ OneBodyWavefunction::alpha_occupation(int irrep, int vectornum)
 {
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
-  
+
   ExEnv::errn() << class_name() << "::alpha_occupation not implemented" << endl;
   abort();
   return 0;
@@ -490,7 +491,7 @@ OneBodyWavefunction::beta_occupation(int irrep, int vectornum)
 {
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
-  
+
   ExEnv::errn() << class_name() << "::beta_occupation not implemented" << endl;
   abort();
   return 0;
@@ -595,7 +596,7 @@ OneBodyWavefunction::symmetry_changed()
   occupations_=0;
   alpha_occupations_=0;
   beta_occupations_=0;
-  
+
   // for now, delete old eigenvectors...later we'll transform to new
   // pointgroup
   oso_eigenvectors_.result_noupdate() = 0;
@@ -631,7 +632,7 @@ OneBodyWavefunction::set_desired_value_accuracy(double eps)
   oso_eigenvectors_.set_desired_accuracy(eps);
   eigenvalues_.set_desired_accuracy(eps);
 }
-  
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

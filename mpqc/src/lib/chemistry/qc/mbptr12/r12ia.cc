@@ -197,6 +197,7 @@ void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
         for (int te_type=0; te_type < num_te_types; te_type++) {
           const double* data = acc->retrieve_pair_block(ii, j, te_type);
           ::memcpy((void*)buffer, (const void*)data, blksize);
+          acc->release_pair_block(ii, j, te_type);
           buffer = (double*) ((size_t) buffer + blksize_memgrp);
         }
       }

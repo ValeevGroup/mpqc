@@ -817,8 +817,8 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
     throw ProgrammingError("MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific -- fixed coefficients can be only determined for Slater type geminals.",__FILE__,__LINE__);
   }
   double gamma=single_slater_exponent(r12eval_->r12info()->r12tech()->corrfactor()->geminaldescriptor());
-  double Cp_ij_ij=-1.0/(2.0*gamma);  // singlett
-  double Cm_ij_ij=-1.0/(4.0*gamma);  // triplett
+  double Cp_ij_ij=-1.0/(2.0*gamma);  // singlet
+  double Cm_ij_ij=-1.0/(4.0*gamma);  // triplet
   
   C_[spincase2].assign(0.0);
   

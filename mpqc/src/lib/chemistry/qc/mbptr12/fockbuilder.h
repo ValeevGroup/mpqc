@@ -139,9 +139,10 @@ namespace sc {
           throw ProgrammingError("FockMatrixBuilder::FockMatrixBuilder -- inconsistent constructor and template arguments",
                                  __FILE__, __LINE__);
 
-        const bool openshell = openshelldensity.nonnull();
+        Ref<Integral> localints = integral->clone();
 
         Ref<FockContribution> fc;
+        const bool openshell = openshelldensity.nonnull();
         if (openshell) {
           fc = new HSOSHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
           ntypes_ = 2;
@@ -182,13 +183,15 @@ namespace sc {
 
         const bool prefetch_blocks = false;
         Ref<FockDistribution> fd = new FockDistribution;
-        fb_ = new FockBuild(fd, fc, prefetch_blocks, brabasis, ketbasis, densitybasis, msg, thr, integral);
+        fb_ = new FockBuild(fd, fc, prefetch_blocks, brabasis, ketbasis, densitybasis, msg, thr, localints);
         fb_->set_accuracy(accuracy);
         fb_->build();
 
         Ref<GPetiteList2> pl = GPetiteListFactory::plist2(brabasis,ketbasis);
-        Ref<PetiteList> brapl = new PetiteList(brabasis,integral);
-        Ref<PetiteList> ketpl = new PetiteList(ketbasis,integral);
+        localints->set_basis(brabasis);
+        Ref<PetiteList> brapl = localints->petite_list();
+        localints->set_basis(ketbasis);
+        Ref<PetiteList> ketpl = localints->petite_list();
         const int ng = pl->point_group()->char_table().order();
 
         /// convert skeleton matrices computed by FockBuild to the full matrices
@@ -212,7 +215,7 @@ namespace sc {
             else { // if not C1 and , symmetrize the skeleton G matrix to produce the SO basis G matrix
               G_ao_skel[t][c].scale(1.0/(double)ng);
               ResultType G_so = ResultFactory::create(brabasis->so_matrixkit(),brapl->SO_basisdim(),ketpl->SO_basisdim());
-              symmetrize(pl,integral,G_ao_skel[t][c],G_so);
+              symmetrize(pl,localints,G_ao_skel[t][c],G_so);
               G_ao_skel[t][c] = 0;
 
               // and convert back to AO basis, but this time make a blocked matrix
@@ -406,8 +409,10 @@ namespace sc {
         RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
         hsymm = 0;
 
-        Ref<PetiteList> brapl = new PetiteList(brabasis,integral);
-        Ref<PetiteList> ketpl = new PetiteList(ketbasis,integral);
+        localints->set_basis(brabasis);
+        Ref<PetiteList> brapl = localints->petite_list();
+        localints->set_basis(ketbasis);
+        Ref<PetiteList> ketpl = localints->petite_list();
         RefSCDimension braaodim = brapl->AO_basisdim();
         RefSCDimension ketaodim = ketpl->AO_basisdim();
         if (bs1_eq_bs2) {

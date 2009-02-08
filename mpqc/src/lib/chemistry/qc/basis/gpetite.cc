@@ -244,7 +244,8 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
     throw ProgrammingError("sc::symmetrize(RefSymmSCMatrix) -- dimensions of skel and sym don't match",__FILE__,__LINE__);
 
   const Ref<GaussianBasisSet>& bs1 = plist12->basis1();
-  Ref<PetiteList> pl1 = new PetiteList(bs1,integral);
+  integral->set_basis(bs1);
+  Ref<PetiteList> pl1 = integral->petite_list();
 
   // SO basis is always blocked, so first make sure skel is blocked
   RefSymmSCMatrix bskel = dynamic_cast<BlockedSymmSCMatrix*>(skel.pointer());
@@ -335,8 +336,10 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
 
   const Ref<GaussianBasisSet>& bs1 = plist12->basis1();
   const Ref<GaussianBasisSet>& bs2 = plist12->basis2();
-  Ref<PetiteList> pl1 = new PetiteList(bs1,integral);
-  Ref<PetiteList> pl2 = new PetiteList(bs2,integral);
+  integral->set_basis(bs1);
+  Ref<PetiteList> pl1 = integral->petite_list();
+  integral->set_basis(bs2);
+  Ref<PetiteList> pl2 = integral->petite_list();
 
   // SO basis is always blocked, so first make sure skel is blocked
   RefSCMatrix bskel = dynamic_cast<BlockedSCMatrix*>(skel.pointer());

@@ -2489,7 +2489,8 @@ FockBuild::FockBuild(const Ref<FockDistribution> &fockdist,
   if (b_f2_.null()) b_f2_ = b_f1_;
   if (b_p_.null()) b_p_ = b_f1_;
 
-  pl_ = integral_->petite_list(b_p_);
+  integral_->set_basis(b_p_);
+  pl_ = integral_->petite_list();
 
 //   for (int ishell=0; ishell<b_p_->nshell(); ishell++) {
 //       int icenter = b_p_->shell_to_center(ishell);

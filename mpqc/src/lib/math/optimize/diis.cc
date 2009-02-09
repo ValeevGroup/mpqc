@@ -53,19 +53,19 @@ DIIS::init()
 
   bmat = new double*[dim];
   bold = new double*[ndiis];
-  
+
   if (!btemp || !bmat || !bold) {
     ExEnv::err0() << indent
          << "DIIS::init: alloc of bmat, bold, and btemp failed\n";
     abort();
   }
-  
+
   for (int i=0; i < dim; i++) {
     bmat[i] = new double[dim];
     if (i < dim-1)
       bold[i] = new double[ndiis];
   }
-  
+
   diism_data = new Ref<SCExtrapData>[ndiis];
   diism_error = new Ref<SCExtrapError>[ndiis];
   // diism_datain is on bigger than the other because
@@ -131,10 +131,10 @@ DIIS::DIIS(StateIn& s) :
 
   for (i=0; i < ndat; i++)
     s.get_array_double(bold[i],ndat);
-  
+
   for (i=0; i <= ndat; i++)
     s.get_array_double(bmat[i],ndat+1);
-  
+
   for (i=0; i < ndat; i++) {
     diism_data[i] << SavableState::restore_state(s);
     diism_error[i] << SavableState::restore_state(s);
@@ -167,7 +167,7 @@ DIIS::DIIS(const Ref<KeyVal>& keyval):
 
   mixing_fraction = keyval->doublevalue("mixing_fraction");
   if (keyval->error() != KeyVal::OK) mixing_fraction = 0;
-  
+
   if (ndiis <= 0) {
     ExEnv::err0() << indent
          << "DIIS::DIIS(const Ref<KeyVal>& keyval): got ndiis = 0\n";
@@ -192,7 +192,7 @@ DIIS::~DIIS()
     delete[] bold;
     bold=0;
   }
-    
+
   if (bmat) {
     for (int i=0; i <= ndiis; i++) {
       if (bmat[i])
@@ -201,7 +201,7 @@ DIIS::~DIIS()
     delete[] bmat;
     bmat=0;
   }
-    
+
   if (diism_data) {
     delete[] diism_data;
     diism_data=0;
@@ -239,10 +239,10 @@ DIIS::save_data_state(StateOut& s)
 
   for (i=0; i < ndat; i++)
     s.put_array_double(bold[i], ndat);
-  
+
   for (i=0; i <= ndat; i++)
     s.put_array_double(bmat[i], ndat+1);
-  
+
   for (i=0; i < ndat; i++) {
     SavableState::save_state(diism_data[i].pointer(),s);
     SavableState::save_state(diism_error[i].pointer(),s);
@@ -257,7 +257,8 @@ DIIS::reinitialize(Ref<SCExtrapData> data)
 {
   iter=0;
   if (data.nonnull()) {
-    diism_datain[0] = data->copy();
+    const bool do_mixing = (mixing_fraction != 0.0);
+    if (do_mixing) diism_datain[0] = data->copy();
   }
   else {
     diism_datain[0] = 0;
@@ -281,6 +282,8 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
   double norm, determ;
   double scale;
 
+  const bool do_mixing = (mixing_fraction != 0.0);
+
   iter++;
 
   scale = 1.0 + damping_factor;
@@ -301,7 +304,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
   diism_error[last] = error;
 
   set_error(error->error());
-               
+
   // then set up B matrix, where B(i,j) = <ei|ej>
 
   // move bold(i+1,j+1) to bold(i,j)
@@ -315,7 +318,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
 
   // and set the current rows of bold
   for (i=0; i <= last ; i++)
-      bold[i][last]=bold[last][i] = 
+      bold[i][last]=bold[last][i] =
                       diism_error[i]->scalar_product(diism_error[last]);
 
   bmat[0][0] = 0.0;
@@ -441,7 +444,8 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
       }
   }
 
-  diism_datain[last+1] = data->copy();
+  // only need to keep data in diis_datain if doing mixing
+  if (do_mixing) diism_datain[last+1] = data->copy();
 
   return 0;
 }

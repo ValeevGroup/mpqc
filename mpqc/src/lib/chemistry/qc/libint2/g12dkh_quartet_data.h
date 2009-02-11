@@ -53,7 +53,7 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   const int p2 = quartet_info_.p2;
   const int p3 = quartet_info_.p3;
   const int p4 = quartet_info_.p4;
-  
+
   const double a1 = int_shell1_->exponent(quartet_info_.p1);
   const double a2 = int_shell2_->exponent(quartet_info_.p2);
   const double a3 = int_shell3_->exponent(quartet_info_.p3);
@@ -132,13 +132,13 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
 
   /* AC */
 #if LIBINT2_DEFINED(g12,AC_x)
-  Data->BD_x[0] = quartet_info_.A[0] - quartet_info_.C[0];
+  Data->AC_x[0] = quartet_info_.A[0] - quartet_info_.C[0];
 #endif
 #if LIBINT2_DEFINED(g12,AC_y)
-  Data->BD_y[0] = quartet_info_.A[1] - quartet_info_.C[1];
+  Data->AC_y[0] = quartet_info_.A[1] - quartet_info_.C[1];
 #endif
 #if LIBINT2_DEFINED(g12,AC_z)
-  Data->BD_z[0] = quartet_info_.A[2] - quartet_info_.C[2];
+  Data->AC_z[0] = quartet_info_.A[2] - quartet_info_.C[2];
 #endif
   /* BD */
 #if LIBINT2_DEFINED(g12,BD_x)

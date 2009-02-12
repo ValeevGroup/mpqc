@@ -95,7 +95,7 @@ class Integral : public SavableState {
     Integral(const Ref<KeyVal>&);
 
     virtual ~Integral();
-    
+
     void save_data_state(StateOut&);
 
     /** Create an integral factory.  This routine looks for a -integral
@@ -214,10 +214,10 @@ class Integral : public SavableState {
     virtual const SphericalTransform *
                   spherical_transform(int l,
                                       int inv=0, int subl=-1) =0;
-    
+
     /// Return a OneBodyInt that computes the overlap.
     virtual Ref<OneBodyInt> overlap() =0;
-    
+
     /// Return a OneBodyInt that computes the kinetic energy.
     virtual Ref<OneBodyInt> kinetic() =0;
 
@@ -265,22 +265,23 @@ class Integral : public SavableState {
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.
     virtual Ref<OneBodyDerivInt> overlap_deriv() =0;
-                                             
+
     /// Return a OneBodyDerivInt that computes kinetic energy derivatives.
     virtual Ref<OneBodyDerivInt> kinetic_deriv() =0;
-                                             
+
     /// Return a OneBodyDerivInt that computes nuclear repulsion derivatives.
     virtual Ref<OneBodyDerivInt> nuclear_deriv() =0;
-                                     
+
     /// Return a OneBodyDerivInt that computes core Hamiltonian derivatives.
     virtual Ref<OneBodyDerivInt> hcore_deriv() =0;
 
     /** Return a TwoBodyThreeCenterInt that computes electron repulsion
-        integrals.  If this is not re-implemented it will throw. */
+        integrals. Electron 1 corresponds to centers 1 and 2, electron 2
+        corresponds to center 3. If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyThreeCenterInt> electron_repulsion3();
 
     /** Return a TwoBodyThreeCenterInt that computes electron repulsion
-        integrals.  If this is not re-implemented it will throw. */
+        integrals.  If this is not re-implemented it will throw. \sa electron_repulsion3() */
     virtual Ref<TwoBodyThreeCenterDerivInt> electron_repulsion3_deriv();
 
     /** Return a TwoBodyTwoCenterInt that computes electron repulsion
@@ -307,7 +308,7 @@ class Integral : public SavableState {
         Implementation for this kind of TwoBodyInt is
         optional. */
     virtual Ref<TwoBodyInt> grt();
-    
+
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
@@ -332,7 +333,7 @@ class Integral : public SavableState {
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrGenG12.
         Implementation for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> geng12(const Ref<IntParamsGenG12>&);
-    
+
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }
 };

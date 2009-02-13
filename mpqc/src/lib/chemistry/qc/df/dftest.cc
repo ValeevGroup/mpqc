@@ -77,21 +77,26 @@ int main(int argc, char **argv) {
   if (me == tproc)
     cout << "testing on processor " << tproc << endl;
 
-  tim->enter("DensityFitting");
-  Ref<Integral> integral = new IntegralV3(bs);
+  // use test::DensityFitting to test first
+  {
+    using namespace sc::test;
 
-  // construct the Coulomb matrix
-  // and reconstruct it using DensityFitting
-  integral->set_basis(bs, bs, bs, bs);
-  RefSCMatrix C = twobody_matrix(integral->electron_repulsion());
-  C.print("Coulomb operator");
-  Ref<DensityFitting> df = new DensityFitting(integral, bs, bs, fbs);
-  df->compute();
-  RefSCMatrix C_df = df->C().t() * df->conjugateC();
-  C_df.print("Reconstructed Coulomb operator");
-  (C-C_df).print("Reconstruction error");
+    tim->enter("test::DensityFitting");
+    Ref<Integral> integral = new IntegralV3(bs);
 
-  tim->exit();
+    // construct the Coulomb matrix
+    // and reconstruct it using DensityFitting
+    integral->set_basis(bs, bs, bs, bs);
+    RefSCMatrix C = twobody_matrix(integral->electron_repulsion());
+    C.print("Coulomb operator");
+    Ref<DensityFitting> df = new DensityFitting(integral, bs, bs, fbs);
+    df->compute();
+    RefSCMatrix C_df = df->C().t() * df->conjugateC();
+    C_df.print("Reconstructed Coulomb operator");
+    (C - C_df).print("Reconstruction error");
+
+    tim->exit();
+  }
 
   tim->print();
   return 0;

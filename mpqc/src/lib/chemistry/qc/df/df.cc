@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbptr12/svd.h>
 
 using namespace sc;
+using namespace sc::test;
 
 static ClassDesc BasisProductDecomposition_cd(
   typeid(BasisProductDecomposition),"BasisProductDecomposition",1,
@@ -151,8 +152,6 @@ DensityFitting::compute()
     }
   }
 
-  kernel_.print("DensityFitting: kernel");
-
   // compute the conjugate coefficient matrix
   {
     const Ref<GaussianBasisSet>& b1 = this->basis(0);
@@ -192,11 +191,9 @@ DensityFitting::compute()
     }
   }
 
-  cC_.print("DensityFitting: conjugateC");
-
   // solve the linear system
+  // TODO parallelize. Can do trivially by dividing RHS vectors into subsets
   sc::exp::lapack_linsolv_symmnondef(kernel_, C_, cC_);
-  C_.print("DensityFitting: C");
 
 }
 

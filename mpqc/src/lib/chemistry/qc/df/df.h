@@ -39,82 +39,95 @@
 
 namespace sc {
 
-  /** Represents decomposition of a product of basis sets. The definition is as follows:
-      \f[
-      |rs) = \sum_A C^{rs}_A |A)  \quad ,
-      \f]
-      where \f$ |A) \f$ represent the low-rank space. The coefficients in the expansion are returned by result().
-      */
-  class BasisProductDecomposition : virtual public SavableState {
-    public:
-      ~BasisProductDecomposition();
-      BasisProductDecomposition(const Ref<Integral>& integral,
-                                const Ref<GaussianBasisSet>& basis1,
-                                const Ref<GaussianBasisSet>& basis2);
-      BasisProductDecomposition(StateIn&);
-      void save_data_state(StateOut&);
+  namespace test {
 
-      /// column dimension corresponds to the basis product space, row dimension corresponds to the reduced rank space
-      virtual const RefSCMatrix& C() const =0;
+    /** Represents decomposition of a product of basis sets. The definition is as follows:
+     \f[
+     |rs) = \sum_A C^{rs}_A |A)  \quad ,
+     \f]
+     where \f$ |A) \f$ represent the low-rank space. The coefficients in the expansion are returned by result().
+     */
+    class BasisProductDecomposition: virtual public SavableState {
+      public:
+        ~BasisProductDecomposition();
+        BasisProductDecomposition(const Ref<Integral>& integral, const Ref<
+            GaussianBasisSet>& basis1, const Ref<GaussianBasisSet>& basis2);
+        BasisProductDecomposition(StateIn&);
+        void save_data_state(StateOut&);
 
-      const Ref<Integral>& integral() const { return integral_; }
-      const Ref<GaussianBasisSet>& basis(unsigned int i) const { return basis_[i]; }
+        /// column dimension corresponds to the basis product space, row dimension corresponds to the reduced rank space
+        virtual const RefSCMatrix& C() const =0;
 
-      virtual void compute() =0;
+        const Ref<Integral>& integral() const {
+          return integral_;
+        }
+        const Ref<GaussianBasisSet>& basis(unsigned int i) const {
+          return basis_[i];
+        }
 
-    protected:
-      const RefSCDimension& product_dimension() const { return pdim_; }
+        virtual void compute() =0;
 
-    private:
-      RefSCDimension pdim_;    //< basis product dimension
+      protected:
+        const RefSCDimension& product_dimension() const {
+          return pdim_;
+        }
 
-      Ref<Integral> integral_;
-      Ref<GaussianBasisSet> basis_[2];
+      private:
+        RefSCDimension pdim_; //< basis product dimension
 
-  };
+        Ref<Integral> integral_;
+        Ref<GaussianBasisSet> basis_[2];
 
-  /** Decomposition by density fitting with respect to some kernel. The definition is as follows:
-      \f[
-      |rs) = \sum_A C^{rs}_A |A)  \quad ,
-      \f]
-      where \f$ |A) \f$ belong to a fitting basis and \f$ C^{rs}_A \f$ are determined by solving the linear system
-      \f[
-      (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B)  \quad .
-      \f]
-      The kernel \f$\hat{W} \f$ is any definite operator (currently hardwired to Coulomb kernel).
-   */
-  class DensityFitting : public BasisProductDecomposition {
-    public:
-      ~DensityFitting();
-      DensityFitting(const Ref<Integral>& integral,
-                     const Ref<GaussianBasisSet>& basis1,
-                     const Ref<GaussianBasisSet>& basis2,
-                     const Ref<GaussianBasisSet>& fitting_basis);
-      DensityFitting(StateIn&);
-      void save_data_state(StateOut&);
+    };
 
-      const RefSCMatrix& C() const { return C_; }
-      /// returns the kernel represented in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
-      const RefSymmSCMatrix& kernel() const { return kernel_; }
-      /// returns the conjugate expansion matrix, i.e. \f$ (A|\hat{W}|rs) \equiv \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
-      const RefSCMatrix& conjugateC() const { return cC_; }
+    /** Decomposition by density fitting with respect to some kernel. The definition is as follows:
+     \f[
+     |rs) = \sum_A C^{rs}_A |A)  \quad ,
+     \f]
+     where \f$ |A) \f$ belong to a fitting basis and \f$ C^{rs}_A \f$ are determined by solving the linear system
+     \f[
+     (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B)  \quad .
+     \f]
+     The kernel \f$\hat{W} \f$ is any definite operator (currently hardwired to Coulomb kernel).
+     */
+    class DensityFitting: public BasisProductDecomposition {
+      public:
+        ~DensityFitting();
+        DensityFitting(const Ref<Integral>& integral, const Ref<
+            GaussianBasisSet>& basis1, const Ref<GaussianBasisSet>& basis2,
+                       const Ref<GaussianBasisSet>& fitting_basis);
+        DensityFitting(StateIn&);
+        void save_data_state(StateOut&);
 
-      // implements BasisProductDecomposition::compute()
-      void compute();
+        const RefSCMatrix& C() const {
+          return C_;
+        }
+        /// returns the kernel represented in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
+        const RefSymmSCMatrix& kernel() const {
+          return kernel_;
+        }
+        /// returns the conjugate expansion matrix, i.e. \f$ (A|\hat{W}|rs) \equiv \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
+        const RefSCMatrix& conjugateC() const {
+          return cC_;
+        }
 
-    private:
-      RefSCMatrix C_;
-      RefSymmSCMatrix kernel_;
-      RefSCMatrix cC_;
+        // implements BasisProductDecomposition::compute()
+        void compute();
 
-      Ref<GaussianBasisSet> fbasis_;
+      private:
+        RefSCMatrix C_;
+        RefSymmSCMatrix kernel_;
+        RefSCMatrix cC_;
 
-  };
+        Ref<GaussianBasisSet> fbasis_;
+
+    };
+
+  } // end of namespace test
 
 } // end of namespace sc
 
 #endif // end of header guard
-
 
 // Local Variables:
 // mode: c++

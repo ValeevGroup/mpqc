@@ -15,7 +15,7 @@ CXXINCLUDE += -I. -I$(SRCDIR)
 
 TARGET_TO_MAKE = mpqc
 
-CXXSRC = mpqc.cc mpqcin.cc
+CXXSRC = mpqc.cc mpqcin.cc mpqcinit.cc
 XGENCXXSRC = parse.cc scan.cc
 CSRC =
 INC =
@@ -24,6 +24,7 @@ XGENINC = parse.h
 DEPENDINCLUDE = $(INC)
 
 BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(XGENCXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
+INITOBJ = mpqcinit.$(OBJSUF)
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
@@ -63,6 +64,11 @@ $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
+$(TOPDIR)/lib/libmpqcinit.a: $(INITOBJ)
+	/bin/rm -f $@
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
 ifeq ($(ENABLE_DEPLIBS),yes)
 MPQCLTDEPLIBS=$(LIBS)
 MPQCLTSYSLIBS=$(SYSLIBS)
@@ -74,9 +80,22 @@ endif
 $(TOPDIR)/lib/libmpqc.la: $(BINOBJ) $(MPQCLTDEPLIBS)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS) $(MPQCLTSYSLIBS)
 
+$(TOPDIR)/lib/libmpqcinit.la: $(INITOBJ) $(MPQCLTDEPLIBS)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS) $(MPQCLTSYSLIBS)
+
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 	test -d $(installroot)$(libdir) || $(MKINSTALLDIRS) $(installroot)$(libdir)
 	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
+
+install_devel:: $(TOPDIR)/lib/libmpqcinit.$(LIBSUF)
+	test -d $(installroot)$(libdir) || $(MKINSTALLDIRS) $(installroot)$(libdir)
+	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
+
+install_devel:: install_inc
+
+install_inc::
+	$(MKINSTALLDIRS) $(installroot)$(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/mpqcinit.h $(installroot)$(includedir)
 
 install:: mpqc
 	test -d $(installroot)$(bindir) || $(MKINSTALLDIRS) $(installroot)$(bindir)

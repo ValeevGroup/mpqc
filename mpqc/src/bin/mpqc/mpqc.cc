@@ -52,12 +52,7 @@
 #include <scconfig.h>
 #include <sstream>
 
-#ifdef HAVE_SYS_RESOURCE_H
-#  include <sys/resource.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-#endif
+#include "mpqcinit.h"
 
 #include <util/options/GetLongOpt.h>
 #include <util/class/scexception.h>
@@ -147,17 +142,6 @@ trash_stack()
   trash_stack_b(i,ichar);
 }
 
-static void
-clean_up(void)
-{
-  MemoryGrp::set_default_memorygrp(0);
-  MessageGrp::set_default_messagegrp(0);
-  ThreadGrp::set_default_threadgrp(0);
-  SCMatrixKit::set_default_matrixkit(0);
-  Integral::set_default_integral(0);
-  RegionTimer::set_default_regiontimer(0);
-}
-
 #include <signal.h>
 
 #ifdef HAVE_FENV_H
@@ -182,49 +166,9 @@ print_unseen(const Ref<ParsedKeyVal> &parsedkv,
 int
 try_main(int argc, char *argv[])
 {
-  //trash_stack();
-
   KeyValValueboolean truevalue(1), falsevalue(0);
   int i;
   const char *devnull = "/dev/null";
-  atexit(clean_up);
-
-#ifdef HAVE_FEENABLEEXCEPT
-  // this uses a glibc extension to trap on individual exceptions
-# ifdef FE_DIVBYZERO
-  feenableexcept(FE_DIVBYZERO);
-# endif
-# ifdef FE_INVALID
-  feenableexcept(FE_INVALID);
-# endif
-# ifdef FE_OVERFLOW
-  feenableexcept(FE_OVERFLOW);
-# endif
-#endif
-
-#ifdef HAVE_FEDISABLEEXCEPT
-  // this uses a glibc extension to not trap on individual exceptions
-# ifdef FE_UNDERFLOW
-  fedisableexcept(FE_UNDERFLOW);
-# endif
-# ifdef FE_INEXACT
-  fedisableexcept(FE_INEXACT);
-# endif
-#endif
-
-#if defined(HAVE_SETRLIMIT)
-  struct rlimit rlim;
-  rlim.rlim_cur = 0;
-  rlim.rlim_max = 0;
-  setrlimit(RLIMIT_CORE,&rlim);
-#endif
-
-  ExEnv::init(argc, argv);
-
-  Ref<MessageGrp> grp;
-#if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
-  grp = new MPIMessageGrp(&argc, &argv);
-#endif
 
   // parse commandline options
   GetLongOpt options;
@@ -234,12 +178,6 @@ try_main(int argc, char *argv[])
                  "the name of an object format input file", 0);
   options.enroll("o", GetLongOpt::MandatoryValue,
                  "the name of the output file", 0);
-  options.enroll("messagegrp", GetLongOpt::MandatoryValue,
-                 "which message group to use", 0);
-  options.enroll("threadgrp", GetLongOpt::MandatoryValue,
-                 "which thread group to use", 0);
-  options.enroll("memorygrp", GetLongOpt::MandatoryValue,
-                 "which memory group to use", 0);
   options.enroll("integral", GetLongOpt::MandatoryValue,
                  "which integral evaluator to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
@@ -257,6 +195,8 @@ try_main(int argc, char *argv[])
                  "cca component path", "");
   options.enroll("cca-load", GetLongOpt::OptionalValue,
                  "cca components to load", "");
+
+  MPQCInit init(options,argc,argv);
 
   int optind = options.parse(argc, argv);
 
@@ -320,12 +260,11 @@ try_main(int argc, char *argv[])
     throw invalid_argument("extra arguments given");
   }
 
-  // get the message group.  first try the commandline and environment
-  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
-    MessageGrp::set_default_messagegrp(grp);
-  else
-    grp = MessageGrp::get_default_messagegrp();
+  ExEnv::init(argc, argv);
+  init.init_fp();
+  init.init_limits();
+  Ref<MessageGrp> grp = init.init_messagegrp();
+  init.init_io(grp);
 
   if (object_input == 0 && generic_input == 0) {
     generic_input = "mpqc.in";
@@ -411,16 +350,6 @@ try_main(int argc, char *argv[])
   SCFormIO::set_default_basename(basename);
   free(input_copy);
 
-  // set up output classes
-  SCFormIO::setindent(ExEnv::outn(), 2);
-  SCFormIO::setindent(ExEnv::errn(), 2);
-  SCFormIO::setindent(cout, 2);
-  SCFormIO::setindent(cerr, 2);
-
-  SCFormIO::set_printnode(0);
-  if (grp->n() > 1)
-    SCFormIO::init_mp(grp->me());
-
   if (options.retrieve("d"))
     SCFormIO::set_debug(1);
 
@@ -464,33 +393,8 @@ try_main(int argc, char *argv[])
                              ExEnv::username(), ExEnv::hostname()) << endl
        << indent << scprintf("Start Time: %s", tstr) << endl;
 
-  // get the thread group.  first try the commandline and environment
-  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
-  
-  // if we still don't have a group, try reading the thread group
-  // from the input
-  if (thread.null()) {
-    thread << keyval->describedclassvalue("thread");
-  }
-
-  if (thread.nonnull())
-    ThreadGrp::set_default_threadgrp(thread);
-  else
-    thread = ThreadGrp::get_default_threadgrp();
-
-  // get the memory group.  first try the commandline and environment
-  Ref<MemoryGrp> memory = MemoryGrp::initial_memorygrp(argc, argv);
-  
-  // if we still don't have a group, try reading the memory group
-  // from the input
-  if (memory.null()) {
-    memory << keyval->describedclassvalue("memory");
-  }
-
-  if (memory.nonnull())
-    MemoryGrp::set_default_memorygrp(memory);
-  else
-    memory = MemoryGrp::get_default_memorygrp();
+  Ref<ThreadGrp> thread = init.init_threadgrp(keyval);
+  Ref<MemoryGrp> memory = init.init_memorygrp(keyval);
 
   ExEnv::out0() << indent
        << "Using " << grp->class_name()
@@ -1000,7 +904,7 @@ try_main(int argc, char *argv[])
   parsedkv = 0;
   grp = 0;
   memory = 0;
-  clean_up();
+  init.finalize();
 
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)
   time(&t);
@@ -1030,26 +934,22 @@ main(int argc, char *argv[])
     cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl
          << e.what()
          << endl;
-    clean_up();
     throw;
   }
   catch (bad_alloc &e) {
     cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
          << e.what()
          << endl;
-    clean_up();
     throw;
   }
   catch (exception &e) {
     cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
          << e.what()
          << endl;
-    clean_up();
     throw;
   }
   catch (...) {
     cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
-    clean_up();
     throw;
   }
   return 0;

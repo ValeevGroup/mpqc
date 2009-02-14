@@ -13,7 +13,8 @@ initialized in your <tt>main</tt> subroutine.
 <ul>
   <li> \ref scconfig
   <li> \ref scinit
-  <li> \ref devsamp
+  <li> \ref devsampmp2
+  <li> \ref devsamphf
   <li> \ref scexcept
   <li> \ref devcheck
 </ul>
@@ -88,11 +89,11 @@ This segment of code sets up the message passing object:
     grp = MessageGrp::get_default_messagegrp();
 </pre>
 
-\section devsamp MP2 Implementation Example
+\section devsampmp2 Using MPQC's main: MP2 Implementation Example
 
 This section illustrates how to add a new method a new method to MPQC.
 
-\subsection devsampsrc MP2 Implementation Example: Source
+\subsection devsampmp2src MP2 Implementation Example: Source
 
 This example code illustrates a complete MP2 energy
 implementation using the SC Toolkit.  First an MP2 class is
@@ -103,30 +104,71 @@ functions are defined.
 Note that no main routine is provided.  This is because this file
 is designed to be used to extend the functionality of the mpqc
 executable.  To generate a new mpqc executable with the new class
-available for use, see the \ref devsampmak section.
+available for use, see the \ref devsampmp2mak section.
 
-\include mp2.cc
+\include mp2/mp2.cc
 
-\subsection devsampmak MP2 Implementation Example: Makefile
+\subsection devsampmp2mak MP2 Implementation Example: Makefile
 
 This example Makefile demonstrates how to link in a new class to
 form a new mpqc executable, here named mp2.  The code is given in
-the \ref devsampsrc section.  The \ref scconfig "sc-config command"
+the \ref devsampmp2src section.  The \ref scconfig "sc-config command"
 is used to obtain information about how the SC toolkit
 was compiled and installed.  The library specified with -lmpqc
 provides the main routine from mpqc.
 
-\include Makefile
+\include mp2/Makefile
 
-\subsection devsampinp MP2 Implementation Example: Input
+\subsection devsampmp2inp MP2 Implementation Example: Input
 
 This input file can be used with the program illustrated in
-the \ref devsampsrc section.  It will compute the MP2 energy
+the \ref devsampmp2src section.  It will compute the MP2 energy
 using the new MP2 class.  Note that only the
 \ref mpqcoo "object-oriented input format" can be used with
 user provided classes.
 
-\include mp2.in
+\include mp2/mp2.in
+
+\section devsamphf A User-provided main: HF Implementation Example
+
+The MP2 sample program above used the MPQC main routine. This does not
+always provide sufficient flexibility, and a user-provide main routine
+is sometimes more appropriate. However, quite a few steps are need to
+prepare for a run, most of which have to do with initializing various
+libraries to prepare for a parallel run. The HF example illustrates
+how an sc::MPQCInit object can be used to prepare for a
+computation. It implements a complete closed-shell Hartree-Fock program
+using various MPQC functionality, without provide a new MPQC
+sc::Wavefunction implementation as done in the previous example
+(\ref devsampmp2).
+
+This example program can be found in the <tt>doc/devsamp/hf</tt>
+subdirectory of the MPQC source distribution and is shown
+here in its entirety.
+
+\section devsamphfsrc HF Implementation Example: Source Code
+
+\include hf/hf.cc
+
+\subsection devsamphfmak HF Implementation Example: Makefile
+
+This example Makefile will build an executable named hf.
+The \ref scconfig "sc-config command"
+is used to obtain information about how the SC toolkit
+was compiled and installed.  The library specified with -lmpqcinit
+provides the initialization routines from mpqc.
+
+\include hf/Makefile
+
+\subsection devsamphfinp HF Implementation Example: Input
+
+This input will run a Hartree-Fock calculation on a water molecule.
+The section beginning <tt>mpqc:</tt> provides the input needed to
+run the <tt>mpqc</tt> program with the same basis set and geometry
+as a check. The <tt>hf</tt> program only reads the <tt>occ</tt>
+and <tt>basis</tt> keywords at the beginning of the sample input.
+
+\include hf/hf.in
 
 \section scexcept Exception Handling in SC
 

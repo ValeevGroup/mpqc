@@ -92,7 +92,7 @@ std::ios& skipnextindent(std::ios&);
 class scprintf;
 std::ostream& operator<<(std::ostream&, const scprintf&);
 
-/** This class allows <tt>printf</tt> like output to put sent
+/** This class allows <tt>printf</tt>-like output to be sent
     to an <tt>ostream</tt>. */
 class scprintf {
   private:

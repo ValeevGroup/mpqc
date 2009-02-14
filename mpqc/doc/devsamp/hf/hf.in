@@ -1,0 +1,30 @@
+
+% occupation vector elements must be 0 or 2
+occ = [ 2 2 2 2 2 ]
+
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  puream = 0
+  molecule<Molecule>: (
+      symmetry = c1
+      { atoms geometry } = {
+         O    [ 0 0 0 ]
+         H    [ 0 -1 1]
+         H    [ 0  1 1]
+      }
+  )
+)
+
+% This is not needed by the hf.cc example. It is here to allow this
+% input file to be used with MPQC for testing purposes.
+mpqc: (
+  mole<CLHF>: (
+    molecule = $:basis:molecule
+    basis = $:basis
+    density_reset_frequency = 1
+    guess_wavefunction<HCoreWfn>: (
+      molecule = $:basis:molecule
+      basis = $:basis
+    )
+  )
+)

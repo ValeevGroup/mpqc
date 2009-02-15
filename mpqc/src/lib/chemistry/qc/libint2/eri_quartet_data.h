@@ -32,6 +32,8 @@
 #ifndef _chemistry_qc_libint2_eriquartetdata_h
 #define _chemistry_qc_libint2_eriquartetdata_h
 
+namespace sc {
+
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
  --------------------------------------------------------------------------------*/
@@ -135,6 +137,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
   }
 
   return;
+}
+
 }
 
 #endif

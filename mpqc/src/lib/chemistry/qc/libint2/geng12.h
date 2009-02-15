@@ -58,7 +58,7 @@ class Integral;
     whose exponent is a sum of exponents of g12 and g12'. The following integrals over 2 geminals are needed:
     <list type="bullet">
       <item> g12*g12' = G12. Returned as r12_0_g12. </item>
-      <item> [g12,[t1,g12']] = - 2 a a' r1^2 G12 - 2 g g' r12^2 G12 + 2 (a g' + a' g) r1 \dot r12 G12. Returned as g12t1g12. </item>
+      <item> \f$[g12,[t1,g12']] = - 2 a a' r1^2 G12 - 2 g g' r12^2 G12 + 2 (a g' + a' g) r1 \dot r12 G12\f$. Returned as g12t1g12. </item>
     </list>
 
     [t1,g12] integrals are also needed when bra and ket are not identical. Hence the constructor will throw if bra!=ket.
@@ -147,9 +147,9 @@ class GenG12Libint2: public Int2eLibint2 {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/libint2/geng12_quartet_data.h>
-
 }
+
+#include <chemistry/qc/libint2/geng12_quartet_data.h>
 
 #endif // header guard
 #endif // if LIBINT2_SUPPORT_GENG12

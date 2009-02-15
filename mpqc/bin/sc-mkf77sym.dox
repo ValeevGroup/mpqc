@@ -14,7 +14,7 @@ sc-mkf77sym <i>input</i> <i>output</i>
 
 sc-mkf77sym requires two arguments: the name of the input file and the name
 of the output file.  The input file contains C preprocessor definitions of
-the form '#define F77_FUNC' where FUNC is the name of a FORTRAN 77
+the form '\#define F77_FUNC' where FUNC is the name of a FORTRAN 77
 function.  The output file assigns these definitions to the C symbol that
 will link with the FORTRAN 77 function.  For example, if FORTRAN symbols
 are formed from the routine name by converting to lowercase and have

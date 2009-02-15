@@ -109,8 +109,6 @@ class GRTCints: public Int2eCints {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/cints/grt_quartet_data.h>
-
 /* Libr12StaticInterface is an initializer class for the static part
    of libr12's interface (one per executable) */
 class Libr12StaticInterface {
@@ -122,6 +120,8 @@ class Libr12StaticInterface {
 };
 
 }
+
+#include <chemistry/qc/cints/grt_quartet_data.h>
 
 #endif
 

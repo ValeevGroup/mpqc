@@ -30,6 +30,8 @@
 
 #include <math.h>
 
+namespace sc {
+
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
  --------------------------------------------------------------------------------*/
@@ -144,6 +146,8 @@ inline void GRTCints::grt_quartet_data_(prim_data *Data, double scale)
   Data->U[5][2] = W[2] - Q[2];
 
   return;
+}
+
 }
 
 #endif

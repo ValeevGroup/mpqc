@@ -440,7 +440,7 @@ public:
   /// Returns S block of intermediate F12
   const RefSCMatrix& F12(SpinCase2 S);
 
-  /** Compute V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy} */
+  /** Compute \f$V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy}\f$ */
   RefSCMatrix V(SpinCase2 spincase2,
                 const Ref<OrbitalSpace>& p,
                 const Ref<OrbitalSpace>& q);

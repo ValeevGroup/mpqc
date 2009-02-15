@@ -282,7 +282,7 @@ class FileOperationFailed: public SystemException {
     /** Create a FileOperationFailure exception.
 
         @param description a description of the problem.
-        @param file the file name where the problem occured.
+        @param source_file the file name where the problem occured.
         @param line the line number where the exception occured.
         @param filename the name of the file for which the operation failed.
         @param operation the type of fail operation that resulted in the
@@ -322,7 +322,7 @@ class SyscallFailed: public SystemException {
     /** Create a SyscallFailed exception.
 
         @param description a description of the problem.
-        @param file the file name where the problem occured.
+        @param source_file the file name where the problem occured.
         @param line the line number where the exception occured.
         @param syscall the name of the syscall that failed.
         @param err the error returned by the failed syscall.

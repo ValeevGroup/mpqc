@@ -392,6 +392,8 @@ namespace sc {
        The number of blocks is given by block_offsets.size(); it must be identical to
        block_sizes.size().
 
+       \param id -- identifier for this orbital space
+       \param name -- descriptive name for this orbital space
        \param full_coefs -- symmetry-blocked transformation coefficient matrix
        (AO by MO) for the full space
        \param evals -- the orbital energies
@@ -414,6 +416,8 @@ namespace sc {
        evals are provided, then all vectors will be put in one block and
        sorted according to ascending evals.
 
+       \param id -- identifier for this orbital space
+       \param name -- descriptive name for this orbital space
        \param full_coefs -- symmetry-blocked transformation coefficient matrix
        (AO by MO) for the full space
        \param basis -- basis set

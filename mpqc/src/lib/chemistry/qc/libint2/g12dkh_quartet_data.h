@@ -32,6 +32,7 @@
 #include <chemistry/qc/libint2/static.h>
 #include <chemistry/qc/libint2/libint2_utils.h>
 
+namespace sc {
 
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
@@ -239,6 +240,8 @@ inline void G12DKHLibint2::g12dkh_quartet_data_(prim_data *Data, double scale, d
   }
 
   return;
+}
+
 }
 
 #endif

@@ -38,8 +38,8 @@
 
 namespace sc {
 
-/** <em>WARNING: The BEMSolventH class is not thoroughly tested.  It should
-    only be used by developers wishing to test or fix it.</em>
+/** WARNING: The BEMSolventH class is not thoroughly tested.
+    It should only be used by developers wishing to test or fix it.
 
     This specialization of AccumH computes the
     contribution to the energy one body Hamiltonian from

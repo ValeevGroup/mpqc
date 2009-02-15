@@ -32,6 +32,8 @@
 #ifndef _chemistry_qc_libint2_g12quartetdata_h
 #define _chemistry_qc_libint2_g12quartetdata_h
 
+namespace sc {
+
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
 
@@ -300,6 +302,8 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   }
 
   return;
+}
+
 }
 
 #endif

@@ -401,14 +401,14 @@ namespace sc {
     template <class CorrFactor, class Fitter>
     Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k=0);
 
-    /// produces geng12 for exp(-alpha * (r_1 \dot r_2) )
+    /// produces geng12 for \f$e^{-\alpha (r_1 \cdot r_2) }\f$
     Ref<CorrelationFactor> ang_to_geng12(double alpha);
 
-    /// fits r_{12}^k * exp(-gamma*r_{12}) * exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
+    /// fits \f$r_{12}^k * e^{-\gamma r_{12}} e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
     template <class Fitter>
     Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
 
-    /// fits separately r_{12}^k * exp(-gamma*r_{12}) and exp(-alpha * (r_1 \dot r_2) ) using the provided fitter. The fitter must implement GaussianFit interface.
+    /// fits separately \f$r_{12}^k e^{-\gamma r_{12}}\f$ and \f$e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
     template <class Fitter>
     Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
 

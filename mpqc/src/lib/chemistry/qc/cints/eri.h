@@ -108,8 +108,6 @@ class EriCints: public Int2eCints {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/cints/eri_quartet_data.h>
-
 /* LibintStaticInterface is an initializer class for the static part
    of libint's interface (one per executable) */
 class LibintStaticInterface {
@@ -121,6 +119,8 @@ class LibintStaticInterface {
 };
 
 }
+
+#include <chemistry/qc/cints/eri_quartet_data.h>
 
 #endif
 

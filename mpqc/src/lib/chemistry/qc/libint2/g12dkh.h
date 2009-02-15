@@ -136,9 +136,9 @@ class G12DKHLibint2: public Int2eLibint2 {
     void compute_quartet(int*, int*, int*, int*);
 };
 
-#include <chemistry/qc/libint2/g12dkh_quartet_data.h>
-
 }
+
+#include <chemistry/qc/libint2/g12dkh_quartet_data.h>
 
 #endif // header guard
 #endif // if LIBINT2_SUPPORT_G12DKH

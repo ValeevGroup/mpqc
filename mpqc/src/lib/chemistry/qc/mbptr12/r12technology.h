@@ -158,7 +158,7 @@ class R12Technology: virtual public SavableState {
 	The default is <tt>weak</tt>, which is cheaper <tt>yes</tt> and is definitely safer than <tt>no</tt>.
 	
 	<dt><tt>gtg_fit_weight</tt><dd> This keyword determines how the correlation factor is fit to Gaussians (hence
-	only valid when <tt>corr_factor</tt> is set to <tt>stg-ng</t>)
+	only valid when <tt>corr_factor</tt> is set to <tt>stg-ng</tt>)
 	The choices are <tt>tewklopper</tt>, which is appropriate for energy computations, and <tt>cusp</tt>, which is appropriate
 	for accurate cusp region description. The default is <tt>tewklopper</tt>. Choosing <tt>cusp</tt> is probably only appropriate
 	when many (9 or more) Gaussians are used for the fit.

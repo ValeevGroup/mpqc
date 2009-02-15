@@ -176,8 +176,8 @@ public:
 
     <dt><tt>ints_file</tt><dd> This specifies the prefix for the transformed
 	MO integrals file if <tt>ints</tt> is set to <tt>posix</tt> or <tt>mpi</tt>.
-	If the prefix ends in '/' (slash character) then "<basename>.moints"
-    is appended to it where <basename> is the basename as defined in SCFormIO.
+	If the prefix ends in '/' (slash character) then <i>basename</i><tt>.moints</tt>
+    is appended to it where <i>basename</i> is the basename as defined in SCFormIO.
     The default value for the prefix is "./".
     If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
@@ -185,6 +185,8 @@ public:
 	<dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
 	is used by MO integrals transforms. The default is false.
 
+
+        </dl>
     */
   R12IntEvalInfo(const Ref<KeyVal>& keyval,
 		 Wavefunction* wfn,

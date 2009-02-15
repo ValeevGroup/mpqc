@@ -30,6 +30,8 @@
 
 #include <util/misc/math.h>
 
+namespace sc {
+
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
  --------------------------------------------------------------------------------*/
@@ -137,6 +139,8 @@ inline void EriCints::eri_quartet_data_(prim_data *Data, double scale)
   }
 
   return;
+}
+
 }
 
 #endif

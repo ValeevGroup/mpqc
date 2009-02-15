@@ -235,17 +235,17 @@ class Integral : public SavableState {
         included as well.  */
     virtual Ref<OneBodyInt> nuclear() = 0;
 
-    /** Return a OneBodyInt that computes $\bar{p}\cdotp V\bar{p}$, where
+    /** Return a OneBodyInt that computes \f$\bar{p}\cdot V\bar{p}\f$, where
         $V$ is the nuclear potential. */
     virtual Ref<OneBodyInt> p_dot_nuclear_p();
 
-    /** Return a OneBodyInt that computes $\bar{p}\times V\bar{p}$, where
+    /** Return a OneBodyInt that computes \f$\bar{p}\times V\bar{p}\f$, where
         $V$ is the nuclear potential. This is different than most other
         one body integrals, in that each entry in the integral buffer
         is a vector of three integrals. */
     virtual Ref<OneBodyInt> p_cross_nuclear_p();
 
-    /// Return a OneBodyInt that computes p^4 = (p \dot p)^2.
+    /// Return a OneBodyInt that computes \f$p^4 = (\bar{p} \cdot \bar{p})^2\f$.
     virtual Ref<OneBodyInt> p4() =0;
 
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.

@@ -114,8 +114,6 @@ class EriLibint2: public Int2eLibint2 {
     
 };
 
-#include <chemistry/qc/libint2/eri_quartet_data.h>
-
 /* Libint2StaticInterface is an initializer class for the static part
    of libint's interface (one per executable) */
 class Libint2StaticInterface {
@@ -127,6 +125,8 @@ class Libint2StaticInterface {
 };
 
 }
+
+#include <chemistry/qc/libint2/eri_quartet_data.h>
 
 #endif // header guard
 #endif // if LIBINT2_SUPPORT_ERI

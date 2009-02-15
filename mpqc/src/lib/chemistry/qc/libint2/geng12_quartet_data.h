@@ -34,6 +34,8 @@
 
 #define GENG12_CHECK_INTEGRABILITY 1
 
+namespace sc {
+
 /*--------------------------------------------------------------------------------
   This function computes constants used in RR for a given quartet of primitives
 
@@ -301,6 +303,8 @@ inline void GenG12Libint2::geng12_quartet_data_(prim_data *Data, double scale, d
   }
 
   return;
+}
+
 }
 
 #endif

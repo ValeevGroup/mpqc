@@ -84,7 +84,7 @@ The input files in the verification suite are divided into several categories:
   <dt><tt>symm1</tt><dd>Tests of point group symmetry.
 
   <dt><tt>symm2</tt><dd>More point group symmetry tests.  These use basis
-        sets with higher angular momentum than #symm1#.
+        sets with higher angular momentum than <tt>symm1</tt>.
 
   <dt><tt>symm3</tt><dd>Tests automatic point group determination.
 

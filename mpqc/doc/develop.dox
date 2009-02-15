@@ -218,8 +218,8 @@ to deal with array.
 The include files for these two classes are:
 
 <pre>
-#include \<memory\>
-#include \<util/misc/autovec.h\>
+\#include \<memory\>
+\#include \<util/misc/autovec.h\>
 </pre>
 
 the code would be modified as follows:

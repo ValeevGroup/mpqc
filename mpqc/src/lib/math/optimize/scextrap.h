@@ -94,7 +94,7 @@ class SelfConsistentExtrapolation: public SavableState {
   public:
     SelfConsistentExtrapolation();
     SelfConsistentExtrapolation(StateIn&);
-    /** The only keyword read is #tolerance#, which is usually not needed
+    /** The only keyword read is <tt>tolerance</tt>, which is usually not needed
         since the objects using SelfConsistentExtrapolation should set the
         tolerances as needed.  */
     SelfConsistentExtrapolation(const Ref<KeyVal>&);

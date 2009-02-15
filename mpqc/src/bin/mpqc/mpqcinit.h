@@ -41,10 +41,18 @@ namespace sc {
       init_memorygrp(sc::Ref<sc::KeyVal> &keyval);
     /// Initialize formatted I/O.
     void init_io(const sc::Ref<sc::MessageGrp> &grp);
+    /// Initialize the default integral factory.
+    void init_integrals(const Ref<KeyVal> &keyval);
+    /// Initialize the default region timer.
+    void init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval);
+    /// Initialize the name used to construct data file names.
+    void init_basename(const std::string &input_filename,
+                       const std::string &output_filename = "");
     /// Calls all of the initialize routines in the proper sequence.
     /// The parse member for the GetLongOpt object given to the
     /// constructor must have been called before this is called.
-    sc::Ref<sc::KeyVal> init(const std::string &filename);
+    sc::Ref<sc::KeyVal> init(const std::string &input_filename,
+                             const std::string &output_filename = "");
     /// Clean up at the end of a run. This is called automatically by
     /// the destructor.
     void finalize();

@@ -33,6 +33,7 @@ finalize()
   SCMatrixKit::set_default_matrixkit(0);
   Integral::set_default_integral(0);
   RegionTimer::set_default_regiontimer(0);
+  SCFormIO::set_default_basename(0);
 }
 
 MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
@@ -44,6 +45,8 @@ MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
               "which thread group to use", 0);
   opt_.enroll("memorygrp", GetLongOpt::MandatoryValue,
               "which memory group to use", 0);
+  opt_.enroll("integral", GetLongOpt::MandatoryValue,
+              "which integral evaluator to use", 0);
 }
 
 MPQCInit::~MPQCInit()
@@ -188,8 +191,65 @@ MPQCInit::init_io(const Ref<MessageGrp> &grp)
   if (grp->n() > 1) SCFormIO::init_mp(grp->me());
 }
 
+void
+MPQCInit::init_integrals(const Ref<KeyVal> &keyval)
+{
+  // get the integral factory. first try commandline and environment
+  Ref<Integral> integral = Integral::initial_integral(argc_, argv_);
+  
+  // if we still don't have a integral, try reading the integral
+  // from the input
+  if (integral.null()) {
+    integral << keyval->describedclassvalue("integrals");
+  }
+
+  if (integral.nonnull()) {
+    Integral::set_default_integral(integral);
+  }
+  else {
+    Integral::get_default_integral();
+  }
+}
+
+void
+MPQCInit::init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval)
+{
+  grp->sync(); // make sure nodes are sync'ed before starting timings
+  Ref<RegionTimer> tim;
+  if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer");
+  else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
+  RegionTimer::set_default_regiontimer(tim);
+}
+
+void
+MPQCInit::init_basename(const std::string &input_filename,
+                        const std::string &output_filename)
+{
+  // get the basename for output files:
+  // 1) if output filename is given, use it minus the suffix
+  // 2) if output filename is not given, use input's basename minus the suffix
+  const char *basename_source;
+  char *input_copy = ::strdup(input_filename.c_str());
+  if (!output_filename.empty()) basename_source = output_filename.c_str();
+  else {
+    // get the basename(input). basename() in libgen.h is in POSIX standard
+    basename_source = basename(input_copy);
+  }
+  // if basename_source does not contain '.' this will return a null pointer
+  const char* dot_position = ::strrchr(basename_source, '.');
+  const int nfilebase =  (dot_position) ?
+                           (int) (dot_position - basename_source) :
+                           strlen(basename_source);
+  char* basename = new char[nfilebase + 1];
+  strncpy(basename, basename_source, nfilebase);
+  basename[nfilebase] = '\0';
+  SCFormIO::set_default_basename(basename);
+  free(input_copy);
+}
+
 Ref<KeyVal>
-MPQCInit::init(const std::string &filename)
+MPQCInit::init(const std::string &input_filename,
+               const std::string &output_filename)
 {
   atexit(sc::finalize);
   ExEnv::init(argc_, argv_);
@@ -197,14 +257,13 @@ MPQCInit::init(const std::string &filename)
   init_limits();
   Ref<MessageGrp> grp = init_messagegrp();
   init_io(grp);
-  Ref<KeyVal> keyval = init_keyval(grp,filename);
+  Ref<KeyVal> keyval = init_keyval(grp,input_filename);
   init_threadgrp(keyval);
   init_memorygrp(keyval);
-
-  // these still need to be implemented
   //init_cca();
-  //init_integrals();
-  //init_timer();
+  init_integrals(keyval);
+  init_timer(grp,keyval);
+  init_basename(input_filename, output_filename);
 
   return keyval;
 }

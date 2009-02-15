@@ -178,8 +178,6 @@ try_main(int argc, char *argv[])
                  "the name of an object format input file", 0);
   options.enroll("o", GetLongOpt::MandatoryValue,
                  "the name of the output file", 0);
-  options.enroll("integral", GetLongOpt::MandatoryValue,
-                 "which integral evaluator to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
   options.enroll("W", GetLongOpt::MandatoryValue,
                  "set the working directory", ".");
@@ -329,38 +327,15 @@ try_main(int argc, char *argv[])
   if (options.retrieve("k")) parsedkv->verbose(1);
   Ref<KeyVal> keyval = new PrefixKeyVal(parsedkv.pointer(),"mpqc");
 
-  // get the basename for output files:
-  // 1) if output filename is given, use it minus the suffix
-  // 2) if output filename is not given, use its basename minus the suffix
-  const char *basename_source;
-  char *input_copy = ::strdup(input);
-  if (output) basename_source = output;
-  else {
-    // get the basename(input). basename() in libgen.h is in POSIX standard
-    basename_source = basename(input_copy);
-  }
-  // if basename_source does not contain '.' this will return a null pointer
-  const char* dot_position = ::strrchr(basename_source, '.');
-  const int nfilebase =  (dot_position) ?
-                           (int) (dot_position - basename_source) :
-                           strlen(basename_source);
-  char* basename = new char[nfilebase + 1];
-  strncpy(basename, basename_source, nfilebase);
-  basename[nfilebase] = '\0';
-  SCFormIO::set_default_basename(basename);
-  free(input_copy);
+  init.init_basename(input, (output?std::string(output):std::string("")));
 
   if (options.retrieve("d"))
     SCFormIO::set_debug(1);
 
   // initialize timing for mpqc
-  grp->sync(); // make sure nodes are sync'ed before starting timings
-  Ref<RegionTimer> tim;
-  if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer");
-  else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
-  RegionTimer::set_default_regiontimer(tim);
+  init.init_timer(grp,keyval);
 
-  Timer timer(tim);
+  Timer timer;
 
   timer.enter("input");
   
@@ -463,25 +438,14 @@ try_main(int argc, char *argv[])
       dynamic_cast<SCMatrixKit*>(
         keyval->describedclassvalue("matrixkit").pointer()));
 
-  // get the integral factory. first try commandline and environment
-  Ref<Integral> integral = Integral::initial_integral(argc, argv);
-  
-  // if we still don't have a integral, try reading the integral
-  // from the input
-  if (integral.null()) {
-    integral << keyval->describedclassvalue("integrals");
-  }
-
-  if (integral.nonnull())
-    Integral::set_default_integral(integral);
-  else
-    integral = Integral::get_default_integral();
-
+  init.init_integrals(keyval);
+  Ref<Integral> integral = Integral::get_default_integral();
   ExEnv::out0() << endl << indent
        << "Using " << integral->class_name()
        << " by default for molecular integrals evaluation" << endl << endl;
   
   // check for a molecular energy and optimizer
+  std::string basename = SCFormIO::default_basename();
   KeyValValuestring molnamedef(basename);
   std::string molname = keyval->stringvalue("filename", molnamedef);
   if (molname != basename)
@@ -888,9 +852,6 @@ try_main(int argc, char *argv[])
   if (print_timings)
     timer.print(ExEnv::out0());
 
-  delete[] basename;
-  SCFormIO::set_default_basename(0);
-
   renderer = 0;
   molfreq = 0;
   molhess = 0;
@@ -899,7 +860,6 @@ try_main(int argc, char *argv[])
   integral = 0;
   debugger = 0;
   thread = 0;
-  tim = 0;
   keyval = 0;
   parsedkv = 0;
   grp = 0;

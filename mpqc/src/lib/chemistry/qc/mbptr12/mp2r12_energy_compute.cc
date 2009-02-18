@@ -76,12 +76,12 @@ MP2R12Energy_SpinOrbital::compute()
 {
   if (evaluated_)
     return;
-  
+
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MessageGrp> msg = r12info->msg();
   int me = msg->me();
   int ntasks = msg->n();
-  
+
   const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
   const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
@@ -117,11 +117,11 @@ MP2R12Energy_SpinOrbital::compute()
   // distribute workload among nodes by pair index
   //
   for(int spin=0; spin<num_unique_spincases2; spin++) {
-    
+
     const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
-    
+
     Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12info->corrfactor();
     // if no explicit correlation -- just get MP2 energies
     if (nullcorrptr.nonnull()) {
@@ -133,7 +133,7 @@ MP2R12Energy_SpinOrbital::compute()
       delete[] buf;
     }
     else {
-      
+
       const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
       const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
       const Ref<OrbitalSpace>& xspace1  = r12eval()->xspace(case1(spincase2));
@@ -152,7 +152,7 @@ MP2R12Energy_SpinOrbital::compute()
       const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
       const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
       const std::vector<double> evals_xspace2  = convert(xspace2->evals());
-      
+
       // Get the intermediates V and X
       RefSCMatrix V;
       if(r12intermediates_->V_computed()){
@@ -161,7 +161,7 @@ MP2R12Energy_SpinOrbital::compute()
       else {
         V = r12eval()->V(spincase2);
       }
-      
+
       RefSymmSCMatrix X;
       if(r12intermediates_->X_computed()){
         X = r12intermediates_->get_X(spincase2);
@@ -185,7 +185,7 @@ MP2R12Energy_SpinOrbital::compute()
           B = r12eval()->B(spincase2);
         }
       }
-      
+
       RefSCMatrix A;
       if (ebc == false) {
         if(r12intermediates_->A_computed()){
@@ -195,7 +195,7 @@ MP2R12Energy_SpinOrbital::compute()
           A = r12eval()->A(spincase2);
         }
       }
-      
+
       // Prepare total and R12 pairs
       const RefSCDimension dim_oo = V.coldim();
       const RefSCDimension dim_xc = V.rowdim();
@@ -211,10 +211,10 @@ MP2R12Energy_SpinOrbital::compute()
       // this class now does not handle the diagonal ansatz case, hence there is no need to use Util at all
       // will get rid of it soon.
       Ref<MP2R12EnergyUtil_base> util = new MP2R12EnergyUtil_Nondiag(dim_oo,dim_xy,dim_xc,nocc1_act);
-      
+
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
-      
+
       if (debug_ >= DefaultPrintThresholds::mostO4) {
         util->print(prepend_spincase(spincase2,"V matrix").c_str(),V);
         util->print(prepend_spincase(spincase2,"X matrix").c_str(),X);
@@ -291,10 +291,10 @@ MP2R12Energy_SpinOrbital::compute()
 	      V.assign_column(col,i);
 	      col = 0;
 	    }
-	    
+
 	    RefSCMatrix Vt = V.t(); V=0;
 	    UX = Vt * UX;
-	    
+
 	    // Test new transform matrix
 	    if (debug_ >= DefaultPrintThresholds::allO4) {
 	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
@@ -317,7 +317,7 @@ MP2R12Energy_SpinOrbital::compute()
 	} // check of positive definiteness of B
 
       } // safety checks of X and B matrices
-      
+
       // Prepare the B matrix:
       if (same_B_for_all_pairs) {
         RefSymmSCMatrix B_ij = B.clone();
@@ -327,18 +327,18 @@ MP2R12Energy_SpinOrbital::compute()
           const int xy = xy_iter.ij();
           const int x = xy_iter.i();
           const int y = xy_iter.j();
-          
+
           for(int f=0; f<num_f12; f++) {
             const int f_off = f*nxy;
             const int xyf = f_off + xy;
-            
+
             for(int g=0; g<=f; g++) {
               const int g_off = g*nxy;
               const int xyg = g_off + xy;
-              
+
               const double fx = - (evals_xspace1[x] + evals_xspace2[y]) * X.get_element(xyf,xyg);
               B_ij.accumulate_element(xyf,xyg,fx);
-                  
+
               // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
               if (ebc == false) {
                 double fy = 0.0;
@@ -347,12 +347,12 @@ MP2R12Energy_SpinOrbital::compute()
                   const int cd = cd_iter.ij();
                   const int c = cd_iter.i();
                   const int d = cd_iter.j();
-                  
+
                   fy -= A.get_element(xyf, cd)*A.get_element(xyg, cd)
                         /(evals_act_vir1[c] + evals_act_vir2[d]
                           - evals_act_occ1[x] - evals_act_occ2[y]);
                 }
-                
+
                 B_ij.accumulate_element(xyf,xyg,fy);
               }
             }
@@ -404,41 +404,41 @@ MP2R12Energy_SpinOrbital::compute()
             continue;
           const int i = ij_iter.i();
           const int j = ij_iter.j();
-          
-          // 
-          
+
+          //
+
           // In approximations A', B, or C matrices B are pair-specific:
           // app A' or B:  form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
           // app A'' or C: form B(ij)kl,ow = Bkl,ow - (ei + ej)Xkl,ow
           B_ij.assign(B);
-          
+
           for(int f=0; f<num_f12; f++) {
             const int f_off = f*nxy;
-            
+
             SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
             for(kl_iter.start(); kl_iter; kl_iter.next()) {
               const int kl = kl_iter.ij() + f_off;
               const int k = kl_iter.i();
               const int l = kl_iter.j();
-              
+
               for(int g=0; g<=f; g++) {
                 const int g_off = g*nxy;
-                
+
                 SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
                 for(ow_iter.start(); ow_iter; ow_iter.next()) {
                   const int ow = ow_iter.ij() + g_off;
                   const int o = ow_iter.i();
                   const int w = ow_iter.j();
-                  
+
                   // This is a symmetric matrix
                   if (ow > kl)
                     continue;
 
                   const double fx = - (evals_act_occ1[i] + evals_act_occ2[j])
                                       * X.get_element(kl, ow);
-                  
+
                   B_ij.accumulate_element(kl,ow,fx);
-                  
+
                   // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
                   if (ebc == false) {
                     double fy = 0.0;
@@ -447,11 +447,11 @@ MP2R12Energy_SpinOrbital::compute()
                       const int cd = cd_iter.ij();
                       const int c = cd_iter.i();
                       const int d = cd_iter.j();
-                        
+
                       fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
                                                                        - evals_act_occ1[i] - evals_act_occ2[j]);
                     }
-                    
+
                     B_ij.accumulate_element(kl,ow,fy);
                   }
                 }
@@ -481,7 +481,7 @@ MP2R12Energy_SpinOrbital::compute()
 	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
 	      Borth.assign(0.0);
 	      Borth.accumulate_transform(UX,B_ij);
-	      
+
 	      RefDiagSCMatrix Bevals;
 	      RefSCMatrix Bevecs;
 	      if (posdef_Bij) {
@@ -512,7 +512,7 @@ MP2R12Energy_SpinOrbital::compute()
 		  V.assign_column(col,i);
 		  col = 0;
 		}
-		
+
 		RefSCMatrix Vt = V.t(); V=0;
 		UXB = Vt * UX;
 
@@ -559,7 +559,7 @@ MP2R12Energy_SpinOrbital::compute()
           }
         }
       } // pair-specific B block
-      
+
       // Compute pair energies
       RefSCVector ef12 = util->dot_product(C_[spin],V);
       for(unsigned int ij=0; ij<noo; ij++)
@@ -577,9 +577,9 @@ MP2R12Energy_SpinOrbital::compute()
 
       delete[] ef12_vec;
     }
-    
+
   } // end of spincase loop
-  
+
   // Set beta-beta energies to alpha-alpha for closed-shell
   if (!r12info->refinfo()->spin_polarized()) {
     emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
@@ -587,7 +587,7 @@ MP2R12Energy_SpinOrbital::compute()
   }
 
   evaluated_ = true;
-  
+
   return;
 }
 
@@ -621,7 +621,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
   const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
-  
+
   const bool obs_eq_vbs = r12eval_->r12info()->basis_vir()->equiv(r12eval_->r12info()->basis());
   const bool obs_eq_ribs = r12eval_->r12info()->basis_ri()->equiv(r12eval_->r12info()->basis());
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
@@ -631,7 +631,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
       cabs_empty)
     ebc = true;
   SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
-  
+
   Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,dim_oo,dim_xy,dim_xc,nocc1_act);
 
   RefSymmSCMatrix B_ij = B.clone();
@@ -640,11 +640,11 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
     const int xy = xy_iter.ij();
     const int x = xy_iter.i();
     const int y = xy_iter.j();
-        
+
     for(int f=0; f<num_f12; f++) {
       const int f_off = f*nxy;
       const int xyf = f_off + xy;
-          
+
       for(int g=0; g<=f; g++) {
         const int g_off = g*nxy;
         const int xyg = g_off + xy;
@@ -668,7 +668,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
             const int cd = cd_iter.ij();
             const int c = cd_iter.i();
             const int d = cd_iter.j();
-              
+
             fy -= A.get_element(xyf,cd)*A.get_element(xyg,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
             - evals_act_occ1[x] - evals_act_occ2[y]);
           }  // loop over cd_iter
@@ -680,7 +680,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
     }  // loop over geminal index f
   }  // loop over xy_iter
   //B_ij.print("B_ij:");
-  
+
   return(B_ij);
 }
 
@@ -711,7 +711,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
   const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
-  
+
   const bool obs_eq_vbs = r12eval_->r12info()->basis_vir()->equiv(r12eval_->r12info()->basis());
   const bool obs_eq_ribs = r12eval_->r12info()->basis_ri()->equiv(r12eval_->r12info()->basis());
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
@@ -721,9 +721,9 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
       cabs_empty)
     ebc = true;
   SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
-  
+
   RefSymmSCMatrix B_ij = B.clone();
-  
+
   const int i = ij_iter.i();
   const int j = ij_iter.j();
 
@@ -741,25 +741,25 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
       const int kl = kl_iter.ij() + f_off;
       const int k = kl_iter.i();
       const int l = kl_iter.j();
-  
+
       for(int g=0; g<=f; g++) {
         const int g_off = g*nxy;
-    
+
         SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
         for(ow_iter.start(); ow_iter; ow_iter.next()) {
           const int ow = ow_iter.ij() + g_off;
           const int o = ow_iter.i();
           const int w = ow_iter.j();
-                
+
           // This is a symmetric matrix
           if (ow > kl)
             continue;
 
           const double fx = - (evals_act_occ1[i] + evals_act_occ2[j])
                               * X.get_element(kl, ow);
-              
+
           B_ij.accumulate_element(kl,ow,fx);
-              
+
           // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
           if (ebc == false) {
             double fy = 0.0;
@@ -768,11 +768,11 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
               const int cd = cd_iter.ij();
               const int c = cd_iter.i();
               const int d = cd_iter.j();
-                
+
               fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
                                                                - evals_act_occ1[i] - evals_act_occ2[j]);
             }
-            
+
             B_ij.accumulate_element(kl,ow,fy);
           }  // ebc == false
 
@@ -780,7 +780,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
       }  // loop over geminal index g
     }  // loop over kl_iter
   }  // loop over geminal index f
-  
+
   return(B_ij);
 }
 
@@ -796,22 +796,22 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
   RefSCDimension oodim = r12eval()->dim_oo(spincase2);
   RefSCDimension xydim = r12eval()->dim_xy(spincase2);
   RefSCDimension f12dim = r12eval()->dim_f12(spincase2);
-  
+
   const unsigned int nij = oodim.n();
   const unsigned int nxy = xydim.n();
   const unsigned int nf12 = f12dim.n();
   const unsigned int ngem = nf12/nxy;  // number of geminals
-  
+
   RefSCDimension gdim=new SCDimension(ngem);
   RefSCDimension two_gdim=new SCDimension(2*gdim.n());
-  
+
   const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
   const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
   SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-  
+
   int nocc1_act = occ1_act->rank();
   Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,oodim,xydim,f12dim,nocc1_act);
-  
+
   RefSCVector C_pair;
   if(!STG(r12eval_->r12info()->r12tech()->corrfactor()->geminaldescriptor())){
     throw ProgrammingError("MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific -- fixed coefficients can be only determined for Slater type geminals.",__FILE__,__LINE__);
@@ -819,14 +819,14 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
   double gamma=single_slater_exponent(r12eval_->r12info()->r12tech()->corrfactor()->geminaldescriptor());
   double Cp_ij_ij=-1.0/(2.0*gamma);  // singlet
   double Cm_ij_ij=-1.0/(4.0*gamma);  // triplet
-  
+
   C_[spincase2].assign(0.0);
-  
+
   for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
     int ij = ij_iter.ij();
     int i = ij_iter.i();
     int j = ij_iter.j();
-    
+
     if((spincase2==AlphaBeta) && (i!=j)){
       C_pair = C_[spincase2].kit()->vector(two_gdim);
       for(int g=0; g<ngem; g++){
@@ -854,14 +854,15 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
   }
 }
 
-void MP2R12Energy_SpinOrbital_new::determine_ef12_fixedcoeff_hylleraas(const RefSymmSCMatrix &B_ij,
+void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,
                                                                        const RefSCMatrix &V,
                                                                        const SpinCase2 &spincase2,
                                                                        const Ref<MP2R12EnergyUtil_Diag> &util) {
-  RefSCVector ef12_tmp = util->dot_product(C_[spincase2],V);
-  RefSCMatrix product=C_[spincase2].clone();
-  util->times(B_ij,C_[spincase2],product);
-  ef12_[spincase2]->assign(ef12_tmp*2.0+util->dot_product(C_[spincase2],product));
+  RefSCVector C_V = util->dot_product(C_[spincase2],V);
+  RefSCMatrix Binv_C = C_[spincase2].clone();
+  util->times(B_ij, C_[spincase2], Binv_C);
+  RefSCVector C_Binv_C = util->dot_product(C_[spincase2], Binv_C);
+  ef12_[spincase2]->assign( 2.0 * C_V +  C_Binv_C);
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_C_pairspecific(const int ij,
@@ -870,7 +871,7 @@ void MP2R12Energy_SpinOrbital_new::determine_C_pairspecific(const int ij,
                                                             const SpinCase2 &spincase2) {
   const RefSCDimension dim_xc = V.rowdim();
   const int nxc=dim_xc.n();
-  
+
   RefSCVector V_ij = V.get_column(ij);
 
   //B_ij.print("B_ij:");
@@ -891,13 +892,13 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
-    
+
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
-  
+
     const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
     const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
@@ -906,14 +907,14 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
       ebc = true;
-    
+
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
     // 1) the B matrix is the same if the ansatz is diagonal
     // 2) in approximations A', A'', B, and C the B matrix is pair-specific
     const bool same_B_for_all_pairs = diag();
-  
+
     // Get the intermediates V and X
     RefSCMatrix V;
     if(r12intermediates_->V_computed()){
@@ -923,7 +924,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     else {
       V = r12eval()->V(spincase2);
     }
-    
+
     RefSymmSCMatrix X;
     if(r12intermediates_->X_computed()){
       X = r12intermediates_->get_X(spincase2);
@@ -948,7 +949,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
         B = r12eval()->B(spincase2);
       }
     }
-  
+
     RefSCMatrix A;
     if (ebc == false) {
       if(r12intermediates_->A_computed()){
@@ -958,7 +959,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
         A = r12eval()->A(spincase2);
       }
     }
-  
+
     // Prepare total and R12 pairs
     const RefSCDimension dim_oo = V.coldim();
     const RefSCDimension dim_xc = V.rowdim();
@@ -967,15 +968,15 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
-    
+
     SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
     for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
       const int ij = ij_iter.ij();
       const int i = ij_iter.i();
       const int j = ij_iter.j();
-  
+
       RefSymmSCMatrix B_ij = compute_B_pairspecific(ij_iter,B,X,V,A,spincase2);
-  
+
       determine_C_pairspecific(ij,B_ij,V,spincase2);
     }  // loop over ij_iter
     // compute ef12_
@@ -983,19 +984,19 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     for(int ij=0; ij<noo; ij++){
       ef12_[spincase2].set_element(ij,product.get_element(ij,ij));
     }
-    
+
     emp2f12_[spincase2].assign(r12eval()->emp2(spincase2));
     emp2f12_[spincase2]->accumulate(ef12_[spincase2]);
   }
 }
 
-void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
+void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
-    
+
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
@@ -1010,7 +1011,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
       ebc = true;
-    
+
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
@@ -1027,7 +1028,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
     else {
       V = r12eval()->V(spincase2);
     }
-    
+
     RefSymmSCMatrix X;
     if(r12intermediates_->X_computed()){
       X = r12intermediates_->get_X(spincase2);
@@ -1035,7 +1036,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
     else {
       X = r12eval()->X(spincase2);
     }
-    
+
     RefSymmSCMatrix B;
     if(r12intermediates_->B_computed()){
       B = r12intermediates_->get_B(spincase2);
@@ -1072,31 +1073,31 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed() {
     const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
-    
+
     RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B,X,V,A,spincase2);
 
     //B_ij.print("B_ij:");
     //V.print("V");
-    
+
     Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,dim_oo,dim_xy,dim_xc,nocc1_act);
 
     // compute C_
     determine_C_non_pairspecific(B_ij,V,spincase2,util);
 
     ef12_[spincase2]->assign(util->dot_product(C_[spincase2],V));
-    
+
     emp2f12_[spincase2].assign(r12eval()->emp2(spincase2));
     emp2f12_[spincase2]->accumulate(ef12_[spincase2]);
   }
 }
 
-void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
+void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for(int spin2=0; spin2<num_unique_spincases2; spin2++){
     SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
-    
+
     Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
@@ -1111,7 +1112,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
       ebc = true;
-    
+
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
     ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
@@ -1128,7 +1129,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
     else {
       V = r12eval()->V(spincase2);
     }
-    
+
     RefSymmSCMatrix X;
     if(r12intermediates_->X_computed()){
       X = r12intermediates_->get_X(spincase2);
@@ -1172,77 +1173,18 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas() {
     const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
-    
+
     Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,dim_oo,dim_xy,dim_xc,nocc1_act);
     RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B,X,V,A,spincase2);
     determine_C_fixed_non_pairspecific(spincase2);
-    determine_ef12_fixedcoeff_hylleraas(B_ij,V,spincase2,util);
-    
-    emp2f12_[spincase2].assign(r12eval()->emp2(spincase2));
-    emp2f12_[spincase2]->accumulate(ef12_[spincase2]);
-  }
-}
 
-void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
-  const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
-  for(int spin2=0; spin2<num_unique_spincases2; spin2++){
-    SpinCase2 spincase2=static_cast<SpinCase2>(spin2);
-    if (r12eval()->dim_oo(spincase2).n() == 0)
-      continue;
-    
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-    const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
-    int nocc1_act = occ1_act->rank();
-    int nocc2_act = occ2_act->rank();
-
-    const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-    const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
-    const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-    bool ebc = r12eval()->ebc();
-    if (r12eval()->vir(Alpha)->rank()==0 ||
-        r12eval()->vir(Beta)->rank()==0 ||
-        cabs_empty)
-      ebc = true;
-    
-    // WARNING only RHF and UHF are considered
-    const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
-    ExEnv::out0() << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
-    // 1) the B matrix is the same if the ansatz is diagonal
-    // 2) in approximations A', A'', B, and C the B matrix is pair-specific
-    const bool same_B_for_all_pairs = diag();
-
-    // Get the intermediates V and X
-    RefSCMatrix V;
-    if(r12intermediates_->V_computed()){
-      ExEnv::out0() << "Importing F12 intermediate matrix V from r12intermediates_ object." << std::endl;
-      V = r12intermediates_->get_V(spincase2);
-    }
-    else {
-      V = r12eval()->V(spincase2);
-    }
-    
-    RefSymmSCMatrix X;
-    if(r12intermediates_->X_computed()){
-      X = r12intermediates_->get_X(spincase2);
-    }
-    else {
-      X = r12eval()->X(spincase2);
-    }
-
-    // Prepare total and R12 pairs
-    const RefSCDimension dim_oo = V.coldim();
-    const RefSCDimension dim_xc = V.rowdim();
-    const int noo = dim_oo.n();
-    const int nxc = dim_xc.n();
-    const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
-    const int nxy = nxc / num_f12;
-    RefSCDimension dim_xy = new SCDimension(nxy);
-    
-    Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,dim_oo,dim_xy,dim_xc,nocc1_act);
-    determine_C_fixed_non_pairspecific(spincase2);
+#define USE_HYLLERAAS_FUNCTIONAL 1
+#if USE_HYLLERAAS_FUNCTIONAL
+    determine_ef12_hylleraas(B_ij,V,spincase2,util);
+#else // use the CC energy formula which is not variational -- only use for testing
     ef12_[spincase2]->assign(util->dot_product(C_[spincase2],V));
-    
+#endif
+
     emp2f12_[spincase2].assign(r12eval()->emp2(spincase2));
     emp2f12_[spincase2]->accumulate(ef12_[spincase2]);
   }
@@ -1255,33 +1197,26 @@ void MP2R12Energy_SpinOrbital_new::compute() {
 
   if(diag()){
     if(fixedcoeff()){
-      if(hylleraas_) {
-        ExEnv::out0() << "Calling MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_hylleraas()" << endl;
-        compute_MP2R12_diag_fixed_hylleraas();
-      }  // hylleraas_
-      else {  // not hylleraas_
-        ExEnv::out0() << "Calling MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas()" << endl;
-        compute_MP2R12_diag_fixed_nonhylleraas();
-      }  // not hylleraas_
+      compute_MP2R12_diag_nonfullopt();
     }   // fixed_coeff_
     else {  // not fixed_coeff_
       ExEnv::out0() << "Calling MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfixed();" << endl;
-      compute_MP2R12_diag_nonfixed();
-    }  // not fixed_coeff_
-  }  // diag_
+      compute_MP2R12_diag_fullopt();
+    }
+  }
   else {  // not diag_
     ExEnv::out0() << "Calling MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag()" << endl;
     compute_MP2R12_nondiag();
   }  // not diag_
-                          
+
   C_[BetaBeta] = C_[AlphaAlpha];
-  
+
   ef12_[BetaBeta] = ef12_[AlphaAlpha];
-  
+
   emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
-  
+
   evaluated_=true;
-  
+
   return;
 }
 
@@ -1311,7 +1246,7 @@ namespace {
   {
     bool below_thresh = (stats.num_below_threshold > 0);
     bool zero_thresh = (stats.threshold == 0.0);
-    
+
     if (debug >= DefaultPrintThresholds::mostN) {
       ostringstream oss;  oss << "Eigenvalues of " << label;
       util->print(oss.str().c_str(),stats.evals);
@@ -1338,5 +1273,5 @@ namespace {
       }
     }
   }
-  
+
 }

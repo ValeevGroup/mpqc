@@ -151,7 +151,7 @@ void R12EnergyIntermediates::A_computed(const bool computed) {
 }
 
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
-  return(V_[spincase2]); 
+  return(V_[spincase2]);
 }
 
 void R12EnergyIntermediates::assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V) {
@@ -214,7 +214,7 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 {
   r12eval_ << SavableState::restore_state(si);
   r12intermediates_ << SavableState::restore_state(si);
-  
+
   si.get(debug_);
   int evaluated;
   si.get(evaluated);
@@ -231,7 +231,7 @@ void MP2R12Energy::save_data_state(StateOut& so)
 {
   SavableState::save_state(r12eval_.pointer(),so);
   SavableState::save_state(r12intermediates_.pointer(),so);
-  
+
   so.put(debug_);
   so.put((int)evaluated_);
 }
@@ -257,7 +257,7 @@ static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVe
 
 void MP2R12Energy::print(std::ostream& so) const
 {
-} 
+}
 
 namespace {
   // Assigns src to dest safely, i.e. by converting to a double*
@@ -309,7 +309,7 @@ MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(StateIn &si) :
   MP2R12Energy(si)
 {
   init_();
-  
+
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].restore(si);
     emp2f12_[s].restore(si);
@@ -325,7 +325,7 @@ MP2R12Energy_SpinOrbital::~MP2R12Energy_SpinOrbital()
 
 void MP2R12Energy_SpinOrbital::save_data_state(StateOut &so){
   MP2R12Energy::save_data_state(so);
-  
+
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].save(so);
     emp2f12_[s].save(so);
@@ -348,7 +348,7 @@ double MP2R12Energy_SpinOrbital::ef12tot(SpinCase2 s) const {
 void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostream& so)
 {
   compute();
-  
+
   std::string SA_str;
   switch (stdapprox()) {
     case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
@@ -371,7 +371,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
   double ef12tot_1;
   double emp2f12tot_0;
   double emp2f12tot_1;
-  
+
   /*---------------------------------------
     Spin-adapt pair energies, if necessary
    ---------------------------------------*/
@@ -383,7 +383,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
       const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
       const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-      
+
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
       so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -396,23 +396,23 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
         const double ep_mp2 = ep_mp2f12 - ep_f12;
         so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,ep_mp2,ep_f12,ep_mp2f12) << endl;
       }
-      
+
     }
   }
   else {
-    
+
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
     RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
     RefSCVector ef12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector ef12_1 = localkit->vector(r12eval_->dim_oo_t());
-    
+
     // Triplet pairs are easy
     assign(emp2f12_1,emp2f12_[AlphaAlpha]);
     emp2f12_1->scale(3.0);
     assign(ef12_1,ef12_[AlphaAlpha]);
     ef12_1->scale(3.0);
-      
+
     // Singlet pairs are a bit trickier
     const RefSCVector emp2f12_ab = emp2f12_[AlphaBeta];
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
@@ -452,7 +452,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     ef12tot_1 = ef12_1.dot(unit_1);
     emp2f12tot_0 = emp2f12_0.dot(unit_0);
     emp2f12tot_1 = emp2f12_1.dot(unit_1);
-    
+
     so << endl << indent << "Singlet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -465,7 +465,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
                                  i+1,j+1,ep_mp2f12_0-ep_f12_0,ep_f12_0,ep_mp2f12_0) << endl;
       }
     }
-    
+
     so << endl << indent << "Triplet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -477,17 +477,17 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
                                  i+1,j+1,ep_mp2f12_1-ep_f12_1,ep_f12_1,ep_mp2f12_1) << endl;
       }
     }
-    
+
   }
-  
+
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
-  
+
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
   // node;
   ///////////////////////////////////////////////////////////////
-  
+
   if (spinadapted) {
     so <<endl<<indent
     <<scprintf("Singlet MP2 correlation energy [au]:           %17.12lf\n", emp2f12tot_0 - ef12tot_0);
@@ -504,7 +504,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     <<scprintf("Triplet MP2-F12/%3s correlation energy [au]:   %17.12lf\n", SA_str.c_str(),
     emp2f12tot_1);
   }
-  
+
   double etotal = escf + emp2f12_corr_energy;
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
@@ -517,9 +517,9 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
   emp2f12_corr_energy);
   so <<indent
   <<scprintf("MBPT2-F12/%3s energy [au]:                     %17.12lf\n", SA_str.c_str(), etotal) << endl;
-  
+
   so.flush();
-  
+
   return;
 }
 
@@ -539,7 +539,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   // Cannot plot same-spin pairs yet
   if (spincase2 != AlphaBeta)
     return;
-  
+
   // convert replicated matrix to local matrix
   RefSCMatrix C;
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -554,7 +554,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   // and transpose so that row dimension is for |ij> pairs
   C = C.t();
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
-  
+
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
   Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
@@ -564,7 +564,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
   Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
   Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
-  
+
   // Pair index
   unsigned int ij;
   switch(spincase2) {
@@ -586,7 +586,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
     return;
-  
+
   Ref<F12Amplitudes> Amps = r12eval_->amps();
   RefSCMatrix T2 = Amps->T2(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2) T2.print("T2 amplitudes");
   const unsigned int nij = T2.rowdim().n();
@@ -601,7 +601,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
     Fvo = Amps->Fvo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(vo) matrix");
     Fxo = Amps->Fxo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(xo) matrix");
   }
-  
+
   RefSCMatrix Cvv = C * Fvv;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cvv.print("C(vv) matrix");
   RefSCMatrix Coo = C * Foo;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Coo.print("C(oo) matrix");
   RefSCMatrix Cov = C * Fov;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cov.print("C(ov) matrix");
@@ -611,7 +611,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
     Cvo = C * Fvo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(vo) matrix");
     Cxo = C * Fxo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(xo) matrix");
   }
-  
+
   const int nelem = tbgrid->nelem();
   std::string spinlabel;
   switch(spincase2) {
@@ -623,7 +623,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   output_file_name << SCFormIO::default_basename() << ".pair_function." << tbgrid->name() << "." << spinlabel << "."
                    << i << "_" << j << ".txt";
   ofstream ofile(output_file_name.str().c_str());
-  
+
   // get coefficients for ij-th pair
   double* c_ij = new double[nf12*nij];
   {
@@ -631,11 +631,11 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
     Cij.convert(c_ij);
   }
   RefSCVector C_ij_f = localkit->vector(C.rowdim());
-  
+
   for(int p=0; p<nelem; p++) {
     const SCVector3 r1 = tbgrid->xyz1(p);
     const SCVector3 r2 = tbgrid->xyz2(p);
-    
+
     RefSCVector phi_aa = compute_2body_values_(antisymm,occ1_act,occ2_act,r1,r2);
     RefSCVector phi_vv = compute_2body_values_(antisymm,vir1_act,vir2_act,r1,r2);
     RefSCVector phi_oo = compute_2body_values_(antisymm,occ1,occ2,r1,r2);
@@ -652,10 +652,10 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
     }
 
     double phi_t2 = T2.get_row(ij).dot(phi_vv);
-    
+
     const double r12 = (r1-r2).norm();
     double phi_r12 = 0.0;
-    
+
     for(int f=0; f<nf12; ++f) {
       C_ij_f.assign(c_ij + f*nij);
       phi_r12 += 0.5 * C_ij_f.dot(phi_aa) * corrfactor->value(f,r12);
@@ -672,7 +672,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
       phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_xo);
     }
-    
+
     print_psi_values(ofile,r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
   }
 
@@ -733,7 +733,7 @@ MP2R12Energy_SpinOrbital::compute_2body_values_(bool equiv, const Ref<OrbitalSpa
 
   kit = new LocalSCMatrixKit;
   RefSCVector vals = kit->vector(pairdim);
-  
+
   MOPairIterFactory PIFactory;
   Ref<SpatialMOPairIter> ij_iter = PIFactory.mopairiter(space1,space2);
   for(ij_iter->start();int(*ij_iter.pointer());ij_iter->next()) {
@@ -758,7 +758,7 @@ MP2R12Energy_SpinOrbital::compute_2body_values_(bool equiv, const Ref<OrbitalSpa
         vals.set_element(ij_ba,value);
       }
     }
-        
+
   }
 
   vdata1->~ValueData();
@@ -810,8 +810,8 @@ static ClassDesc MP2R12Energy_SpinOrbital_new_cd(
                            0, 0, create<MP2R12Energy_SpinOrbital_new>);
 
 MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
-                                                           bool hylleraas, int debug) :
-  MP2R12Energy(r12intermediates,debug), hylleraas_(hylleraas) {
+                                                           int debug) :
+  MP2R12Energy(r12intermediates,debug) {
   init_();
 }
 
@@ -827,18 +827,18 @@ MP2R12Energy_SpinOrbital_new::init_()
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
       C_[s] = kit->matrix(dim_f12,dim_oo);
       C_[s].assign(0.0);
-      
+
       ef12_[s] = kit->vector(dim_oo);
       ef12_[s].assign(0.0);
-      
+
       emp2f12_[s] = kit->vector(dim_oo);
       emp2f12_[s].assign(0.0);
     }
     else {
       C_[BetaBeta] = C_[AlphaAlpha];
-      
+
       ef12_[BetaBeta] = ef12_[AlphaAlpha];
-      
+
       emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
     }
   }
@@ -849,13 +849,9 @@ MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(StateIn &si) :
 {
   init_();
 
-  int hylleraas; si.get(hylleraas); hylleraas_=(bool)hylleraas;
-  
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].restore(si);
-    
     emp2f12_[s].restore(si);
-    
     C_[s].restore(si);
   }
 }
@@ -868,14 +864,10 @@ MP2R12Energy_SpinOrbital_new::~MP2R12Energy_SpinOrbital_new()
 
 void MP2R12Energy_SpinOrbital_new::save_data_state(StateOut &so){
   MP2R12Energy::save_data_state(so);
-  
-  so.put((int)hylleraas_);
-  
+
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].save(so);
-    
     emp2f12_[s].save(so);
-    
     C_[s].save(so);
   }
 }
@@ -897,18 +889,15 @@ bool MP2R12Energy_SpinOrbital_new::diag() const {
 }
 
 bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
-  return(r12eval_->r12info()->r12tech()->ansatz()->fixedcoeff());
+  const bool result = r12eval_->r12info()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  return result;
 }
 
 void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::ostream& so)
 {
-  
+
   compute();
-  
-  so << "diag = " << ((diag()==true) ? "true" : "false") << endl;
-  so << "fixedcoeff = " << ((fixedcoeff()==true) ? "true" : "false") << endl;
-  so << "hylleraas = " << ((hylleraas_==true) ? "true" : "false") << endl;
-  
+
   std::string SA_str;
   switch (stdapprox()) {
     case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
@@ -931,7 +920,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
   double ef12tot_1;
   double emp2f12tot_0;
   double emp2f12tot_1;
-  
+
   /*---------------------------------------
     Spin-adapt pair energies, if necessary
    ---------------------------------------*/
@@ -943,7 +932,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
       const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
       const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-      
+
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
       so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -956,23 +945,23 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
         const double ep_mp2 = ep_mp2f12 - ep_f12;
         so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,ep_mp2,ep_f12,ep_mp2f12) << endl;
       }
-      
+
     }
   }
   else {
-    
+
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
     RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
     RefSCVector ef12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector ef12_1 = localkit->vector(r12eval_->dim_oo_t());
-    
+
     // Triplet pairs are easy
     assign(emp2f12_1,emp2f12_[AlphaAlpha]);
     emp2f12_1->scale(3.0);
     assign(ef12_1,ef12_[AlphaAlpha]);
     ef12_1->scale(3.0);
-      
+
     // Singlet pairs are a bit trickier
     const RefSCVector emp2f12_ab = emp2f12_[AlphaBeta];
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
@@ -1012,7 +1001,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     ef12tot_1 = ef12_1.dot(unit_1);
     emp2f12tot_0 = emp2f12_0.dot(unit_0);
     emp2f12tot_1 = emp2f12_1.dot(unit_1);
-    
+
     so << endl << indent << "Singlet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -1025,7 +1014,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
                                  i+1,j+1,ep_mp2f12_0-ep_f12_0,ep_f12_0,ep_mp2f12_0) << endl;
       }
     }
-    
+
     so << endl << indent << "Triplet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
@@ -1037,17 +1026,17 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
                                  i+1,j+1,ep_mp2f12_1-ep_f12_1,ep_f12_1,ep_mp2f12_1) << endl;
       }
     }
-    
+
   }
-  
+
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
-  
+
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
   // node;
   ///////////////////////////////////////////////////////////////
-  
+
   if (spinadapted) {
     so <<endl<<indent
     <<scprintf("Singlet MP2 correlation energy [au]:           %17.12lf\n", emp2f12tot_0 - ef12tot_0);
@@ -1064,7 +1053,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     <<scprintf("Triplet MP2-F12/%3s correlation energy [au]:   %17.12lf\n", SA_str.c_str(),
     emp2f12tot_1);
   }
-  
+
   double etotal = escf + emp2f12_corr_energy;
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
@@ -1077,9 +1066,9 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
   emp2f12_corr_energy);
   so <<indent
   <<scprintf("MBPT2-F12/%3s energy [au]:                     %17.12lf\n", SA_str.c_str(), etotal) << endl;
-  
+
   so.flush();
-  
+
   return;
 }
 
@@ -1099,7 +1088,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   // Cannot plot same-spin pairs yet
   if (spincase2 != AlphaBeta)
     return;
-  
+
   // convert replicated matrix to local matrix
   RefSCMatrix C;
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -1114,7 +1103,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   // and transpose so that row dimension is for |ij> pairs
   C = C.t();
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
-  
+
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
   Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
@@ -1124,7 +1113,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
   Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
   Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
-  
+
   // Pair index
   unsigned int ij;
   switch(spincase2) {
@@ -1146,7 +1135,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
     return;
-  
+
   Ref<F12Amplitudes> Amps = r12eval_->amps();
   RefSCMatrix T2 = Amps->T2(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2) T2.print("T2 amplitudes");
   const unsigned int nij = T2.rowdim().n();
@@ -1161,7 +1150,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
     Fvo = Amps->Fvo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(vo) matrix");
     Fxo = Amps->Fxo(sc2);  if (debug_ >= DefaultPrintThresholds::mostO2N2)Fvv.print("F12(xo) matrix");
   }
-  
+
   RefSCMatrix Cvv = C * Fvv;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cvv.print("C(vv) matrix");
   RefSCMatrix Coo = C * Foo;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Coo.print("C(oo) matrix");
   RefSCMatrix Cov = C * Fov;  if (debug_ >= DefaultPrintThresholds::mostO2N2)Cov.print("C(ov) matrix");
@@ -1171,7 +1160,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
     Cvo = C * Fvo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(vo) matrix");
     Cxo = C * Fxo;  if (debug_ >= DefaultPrintThresholds::mostO2N2) Cvv.print("C(xo) matrix");
   }
-  
+
   const int nelem = tbgrid->nelem();
   std::string spinlabel;
   switch(spincase2) {
@@ -1183,7 +1172,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   output_file_name << SCFormIO::default_basename() << ".pair_function." << tbgrid->name() << "." << spinlabel << "."
                    << i << "_" << j << ".txt";
   ofstream ofile(output_file_name.str().c_str());
-  
+
   // get coefficients for ij-th pair
   double* c_ij = new double[nf12*nij];
   {
@@ -1191,11 +1180,11 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
     Cij.convert(c_ij);
   }
   RefSCVector C_ij_f = localkit->vector(C.rowdim());
-  
+
   for(int p=0; p<nelem; p++) {
     const SCVector3 r1 = tbgrid->xyz1(p);
     const SCVector3 r2 = tbgrid->xyz2(p);
-    
+
     RefSCVector phi_aa = compute_2body_values_(antisymm,occ1_act,occ2_act,r1,r2);
     RefSCVector phi_vv = compute_2body_values_(antisymm,vir1_act,vir2_act,r1,r2);
     RefSCVector phi_oo = compute_2body_values_(antisymm,occ1,occ2,r1,r2);
@@ -1212,10 +1201,10 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
     }
 
     double phi_t2 = T2.get_row(ij).dot(phi_vv);
-    
+
     const double r12 = (r1-r2).norm();
     double phi_r12 = 0.0;
-    
+
     for(int f=0; f<nf12; ++f) {
       C_ij_f.assign(c_ij + f*nij);
       phi_r12 += 0.5 * C_ij_f.dot(phi_aa) * corrfactor->value(f,r12);
@@ -1232,7 +1221,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
       phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_xo);
     }
-    
+
     print_psi_values(ofile,r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
   }
 
@@ -1293,7 +1282,7 @@ MP2R12Energy_SpinOrbital_new::compute_2body_values_(bool equiv, const Ref<Orbita
 
   kit = new LocalSCMatrixKit;
   RefSCVector vals = kit->vector(pairdim);
-  
+
   MOPairIterFactory PIFactory;
   Ref<SpatialMOPairIter> ij_iter = PIFactory.mopairiter(space1,space2);
   for(ij_iter->start();int(*ij_iter.pointer());ij_iter->next()) {
@@ -1318,7 +1307,7 @@ MP2R12Energy_SpinOrbital_new::compute_2body_values_(bool equiv, const Ref<Orbita
         vals.set_element(ij_ba,value);
       }
     }
-        
+
   }
 
   vdata1->~ValueData();
@@ -1361,11 +1350,11 @@ RefSCMatrix MP2R12Energy_SpinOrbital_new::T2(SpinCase2 S)
 }
 
 Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
-                                             bool hylleraas, int debug,
+                                             int debug,
                                              bool use_new_version) {
   Ref<MP2R12Energy> mp2r12energy;
   if(use_new_version){
-    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,hylleraas,debug);
+    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,debug);
   }
   else {
     mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);

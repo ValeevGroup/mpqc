@@ -70,7 +70,6 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
 
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int incmp1; s.get(incmp1); include_mp1_ = (bool)incmp1;
-  int hylleraas; s.get(hylleraas); hylleraas_ = (bool)hylleraas;
   int unv; s.get(unv); new_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
 
@@ -98,29 +97,22 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
 
   const bool diag = r12evalinfo()->ansatz()->diag();
-  const bool fixedcoeff = r12evalinfo()->ansatz()->fixedcoeff();
+  const bool optimized_amplitudes = r12evalinfo()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
 
   // Default is to not compute MP1 energy
   include_mp1_ = false;
   // only check if VBS != OBS
   if (!r12evalinfo()->basis_vir()->equiv(r12evalinfo()->basis()))
       include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));
-  
+
   new_energy_ = diag ? true : false;
   new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
   if((new_energy_==true) && (diag==false)) {
     ExEnv::out0() << indent << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
                   << indent << "because the old version performs many security checks." << endl;
   }
-  if((new_energy_==false) and (fixedcoeff==true)) {
-    throw InputError("MBPT2_R12::MBPT2_R12 -- fixed coefficients are not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
-  }
-  
-  const bool hyll_default = (fixedcoeff==true) ? true : false;
-  hylleraas_ = keyval->booleanvalue("hylleraas",KeyValValueboolean((int)hyll_default));
-  
-  if((fixedcoeff==false) && (hylleraas_==true)){
-    throw InputError("MBPT2_R12::MBPT2_R12 -- Hylleraas functional needn't be calculated if coefficients are optimized (gives the same result as non Hylleraas).",__FILE__,__LINE__);
+  if((new_energy_==false) and (optimized_amplitudes==false)) {
+    throw InputError("MBPT2_R12::MBPT2_R12 -- incomplete optimization of amplitudes is not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
   }
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
@@ -143,7 +135,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12b_energy_ = 0;
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
-  
+
   set_desired_value_accuracy(desired_value_accuracy());
 }
 
@@ -165,7 +157,6 @@ MBPT2_R12::save_data_state(StateOut& s)
 
   s.put((int)spinadapted_);
   s.put((int)include_mp1_);
-  s.put((int)hylleraas_);
   s.put((int)new_energy_);
   s.put(mp2_corr_energy_);
 
@@ -184,8 +175,6 @@ MBPT2_R12::print(ostream&o) const
   if (!r12evalinfo()->basis_vir()->equiv(r12evalinfo()->basis()))
     o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
   o << indent << "Use new MP2R12Energy: " << (new_energy_ ? "true" : "false") << endl;
-  o << indent << "Compute Hylleraas functional: " << (hylleraas_ ? "true" : "false") << endl;
-  
 
   r12evalinfo()->r12tech()->print(o);
 
@@ -283,14 +272,6 @@ MBPT2_R12::r12_corr_energy()
 {
   energy();
   return energy() - mp2_corr_energy_ - ref_energy();
-}
-
-////////////////////////////////////////////////////////////////////////////
-
-bool
-MBPT2_R12::hylleraas() const
-{
-  return hylleraas_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

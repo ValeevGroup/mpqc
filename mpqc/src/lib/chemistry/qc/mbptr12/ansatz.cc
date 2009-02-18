@@ -36,7 +36,13 @@ static ClassDesc LinearR12Ansatz_cd(
   typeid(LinearR12Ansatz),"LinearR12Ansatz",3,"virtual public SavableState",
   create<LinearR12Ansatz>, create<LinearR12Ansatz>, create<LinearR12Ansatz>);
 
-LinearR12Ansatz::LinearR12Ansatz() : projector_(LinearR12::Projector_2), diag_(false), fixedcoeff_(false), wof_(false), orbital_product_(LinearR12::OrbProd_ij) {}
+LinearR12Ansatz::LinearR12Ansatz() :
+  projector_(LinearR12::Projector_2),
+  diag_(false),
+  amplitudes_(LinearR12::GeminalAmplitudeAnsatz_fullopt),
+  wof_(false),
+  orbital_product_(LinearR12::OrbProd_ij) {
+}
 
 LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
@@ -45,11 +51,21 @@ LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
   wof_ = keyval->booleanvalue("wof",KeyValValueboolean((int)default_wof));
 
   diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
-  // coefficients should be fixed by default if the diagonal ansatz is used
-  const bool default_fixedcoeff = diag_ ? true : false;
-  fixedcoeff_ = keyval->booleanvalue("fixedcoeff",KeyValValueboolean((int)default_fixedcoeff));
-  if((diag_==false) && (fixedcoeff_==true)){
-    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- fixedcoeff can be only true if diag is true",__FILE__,__LINE__);
+
+  // amplitudes should be fixed by default if the diagonal ansatz is used
+  const std::string default_amplitudes_str = diag_ ? std::string("fixed") : std::string("optimized");
+  const std::string amplitudes_str = keyval->stringvalue("amplitudes",
+                                                         KeyValValuestring(default_amplitudes_str));
+  if (amplitudes_str == std::string("fixed"))
+    amplitudes_ = LinearR12::GeminalAmplitudeAnsatz_fixed;
+  else if (amplitudes_str == std::string("optimized"))
+    amplitudes_ = LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  else if (amplitudes_str == std::string("scaledfixed"))
+    amplitudes_ = LinearR12::GeminalAmplitudeAnsatz_scaledfixed;
+  else
+    throw InputError("Invalid value for keyword \"amplitudes\"",__FILE__,__LINE__);
+  if ( (diag_==false) && (amplitudes_!=LinearR12::GeminalAmplitudeAnsatz_fullopt) ){
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- amplitudes can only be fixed if diag is true",__FILE__,__LINE__);
   }
 
   std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
@@ -69,7 +85,7 @@ LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
 {
   int p; s.get(p); projector_ = (LinearR12::Projector)p;
   int d; s.get(d); diag_ = (bool)d;
-  int f; s.get(f); fixedcoeff_ = (bool)f;
+  int a; s.get(a); amplitudes_ = (LinearR12::GeminalAmplitudeAnsatz)a;
   if (s.version(::class_desc<LinearR12Ansatz>()) >= 3) {
     int w; s.get(w); wof_ = (bool)w;
   }
@@ -85,7 +101,7 @@ LinearR12Ansatz::save_data_state(StateOut& s)
 {
   s.put((int)projector_);
   s.put((int)diag_);
-  s.put((int)fixedcoeff_);
+  s.put((int)amplitudes_);
   s.put((int)wof_);
   s.put((int)orbital_product_);
 }
@@ -111,9 +127,18 @@ LinearR12Ansatz::print(std::ostream& o) const
     case LinearR12::Projector_3: o << "3  , i.e. 1-P1P2"; break;
   }
   o << std::endl;
-  
-  o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant") 
-              << (fixedcoeff_ ? " with fixed coefficients" : "") << std::endl;
+
+  std::string amplitudes_str;
+  switch (amplitudes_) {
+    case LinearR12::GeminalAmplitudeAnsatz_fullopt:
+      amplitudes_str = std::string("optimized");
+    case LinearR12::GeminalAmplitudeAnsatz_fixed:
+      amplitudes_str = std::string("fixed");
+    case LinearR12::GeminalAmplitudeAnsatz_scaledfixed:
+      amplitudes_str = std::string("scaled fixed");
+  }
+  o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant")
+              << " with " << amplitudes_str << " amplitudes" << std::endl;
   o << indent << "WOF: " << (wof_ ? "true" : "false") << std::endl;
   o << decindent;
 }
@@ -124,9 +149,8 @@ LinearR12Ansatz::projector() const { return projector_; }
 bool
 LinearR12Ansatz::diag() const { return diag_; }
 
-bool LinearR12Ansatz::fixedcoeff() const {
-  return(fixedcoeff_);
-}
+LinearR12::GeminalAmplitudeAnsatz
+LinearR12Ansatz::amplitudes() const { return amplitudes_; }
 
 bool
 LinearR12Ansatz::wof() const { return wof_; }

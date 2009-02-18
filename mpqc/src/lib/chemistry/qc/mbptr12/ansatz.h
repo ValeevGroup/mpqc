@@ -69,9 +69,11 @@ namespace sc {
     which is equivalent to the "old" (pre-1992) form of R12 theory. The default is <tt>false</tt>,
     which corresponds to the orbital invariant ansatz of Klopper.
 
-    <dt><tt>fixedcoeff</tt><dd> This keyword can be only true if diag is true and a single Slater type
-    geminal function is used. If this keyword is true, the coefficents of the f12 functions are determined
-    from the coalescence conditions of singlet and triplet electron pairs. Default value is false.
+    <dt><tt>amplitudes</tt><dd> This keyword specifies how the geminal amplitudes are determined.
+    Permitted values are <tt>optimized</tt> (for fully optimized amplitudes) and <tt>fixed</tt>
+    (fixed using first-order cusp-conditions, a la Ten-no). The default is <tt>fixed</tt>
+    if the diagonal ansatz is used with an appropriate correlation factor (either Slater-type geminal
+    or linear), otherwise <tt>optimized</tt>.
 
     </dl>
     */
@@ -87,14 +89,15 @@ namespace sc {
 
     LinearR12::Projector projector() const;
     bool diag() const;
-    bool fixedcoeff() const;
+    LinearR12::GeminalAmplitudeAnsatz amplitudes() const;
     bool wof() const;
     LinearR12::OrbitalProduct orbital_product() const;
 
     private:
     LinearR12::Projector projector_;
     bool diag_;
-    bool fixedcoeff_;
+    LinearR12::GeminalAmplitudeAnsatz amplitudes_;
+    bool scaled_;     //<
     bool wof_;
     LinearR12::OrbitalProduct orbital_product_;
   };

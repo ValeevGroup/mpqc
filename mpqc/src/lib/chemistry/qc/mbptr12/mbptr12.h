@@ -57,16 +57,13 @@ class R12Technology;
 class R12IntEval;
 class R12IntEvalInfo;
 class MP2R12Energy;
-  
+
 /** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
 methods. */
 class MBPT2_R12: public MBPT2 {
 
     bool spinadapted_;
     bool include_mp1_;
-    
-    bool hylleraas_;
-    
     bool new_energy_;
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
@@ -110,15 +107,11 @@ class MBPT2_R12: public MBPT2 {
 
     <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
     specifies which pair function to plot.
-    
+
     <dt><tt>new_energy</tt><dd> Use new version that has got improved diagonal Ansaetze preserving
-    spin as well as a fixed coefficient version. For the non diagonal ansaetze the old version is to be 
+    spin as well as a fixed coefficient version. For the non diagonal ansaetze the old version is to be
     preferred since it has many more security checks, such as checks of positive definiteness of B etc.
     The default value of this variable is false.
-    
-    <dt><tt>hylleraas</tt><dd> If new_energy = true, and the ansatz sets diag and fixed_coeff to true, this variable
-    tells the new version to compute the F12 energy according to the Hylleraas functional. The default
-    is to use the Hylleraas functional if the ansatz defines fixedcoef = true.
 
     </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
@@ -131,9 +124,6 @@ class MBPT2_R12: public MBPT2 {
     /// this changes the correlation factor
     void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
 
-    // use Hylleraas functional?
-    bool hylleraas() const;
-    
     double corr_energy();
     double r12_corr_energy();
 

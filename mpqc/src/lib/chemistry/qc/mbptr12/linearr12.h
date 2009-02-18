@@ -39,7 +39,7 @@
 
 namespace sc {
   namespace LinearR12 {
-    
+
     /**
       Projector of linear R12 methods:
       0: Q_{12} = 1
@@ -61,7 +61,7 @@ namespace sc {
       ABS_ABSPlus = 1,
       ABS_CABS = 2,
       ABS_CABSPlus = 3};
-    
+
     enum OrbitalProduct {
       OrbProd_ij = 0,
       OrbProd_pq = 1
@@ -73,6 +73,11 @@ namespace sc {
       PositiveDefiniteB_weak = 2
     };
 
+    enum GeminalAmplitudeAnsatz {
+      GeminalAmplitudeAnsatz_fullopt = 0,
+      GeminalAmplitudeAnsatz_fixed = 1,
+      GeminalAmplitudeAnsatz_scaledfixed = 2
+    };
 
     class GeminalDescriptor : public RefCount {
       private:
@@ -116,7 +121,7 @@ namespace sc {
         CorrelationFactor(const std::string& label, const Ref<GeminalDescriptor> &geminaldescriptor);
         CorrelationFactor();
         virtual ~CorrelationFactor();
-	
+
 	// return true if this is equivalent to cf
 	virtual bool equiv(const Ref<CorrelationFactor>& cf) const =0;
 
@@ -126,12 +131,12 @@ namespace sc {
         virtual unsigned int nfunctions() const;
         /// Returns the number of primitive functions in contraction c
         virtual unsigned int nprimitives(unsigned int c) const;
-        
+
         /// Computes value of function c when electrons are at distance r12
         virtual double value(unsigned int c, double r12) const =0;
         /// Computes value of function c when electrons are at (r1, r2, r12). By default, will call value(c,r12).
         virtual double value(unsigned int c, double r12, double r1, double r2) const;
-        
+
         /** Returns TwoBodyIntDescr needed to compute matrix elements where correlation
             function f appears in either bra or ket only.
         */
@@ -142,11 +147,11 @@ namespace sc {
         virtual Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
         /// Returns the maximum number of two-body integral types produced by the appropriate integral evaluator
         virtual unsigned int max_num_tbint_types() const =0;
-        
+
         //
         // These functions are used to map the logical type of integrals ([T1,F12], etc.) to concrete types as produced by TwoBodyInt
         //
-        
+
         /// Returns TwoBodyInt::tbint_type corresponding to electron repulsion integrals
         virtual TwoBodyInt::tbint_type tbint_type_eri() const;
         /// Returns TwoBodyInt::tbint_type corresponding to integrals over correlation operator
@@ -164,11 +169,11 @@ namespace sc {
         /// Returns TwoBodyInt::tbint_type corresponding to integrals over f12*f12' antisymmetrized
         /// wrt exponents, i.e. f12*f12' (exp(f12')-exp(f12))/(exp(f12')+exp(f12))
         virtual TwoBodyInt::tbint_type tbint_type_f12f12_anti() const;
-        
+
         /// print the correlation factor
         void print(std::ostream& os = ExEnv::out0()) const;
         Ref<GeminalDescriptor> geminaldescriptor();
-        
+
       protected:
         std::string label_;
         Ref<GeminalDescriptor> geminaldescriptor_;
@@ -177,7 +182,7 @@ namespace sc {
 	virtual void print_params(std::ostream& os, unsigned int f) const;
 
     };
-    
+
     /** NullCorrelationFactor stands for no correlation factor */
     class NullCorrelationFactor : public CorrelationFactor {
       public:
@@ -190,12 +195,12 @@ namespace sc {
       /// Implementation of CorrelationFactor::value()
       double value(unsigned int c, double r12) const;
     };
-    
+
     /** R12CorrelationFactor stands for no correlation factor */
     class R12CorrelationFactor : public CorrelationFactor {
       public:
       R12CorrelationFactor();
-      
+
       /// Implementation of CorrelationFactor::equiv()
       bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Implementation of CorrelationFactor::max_num_tbint_types()
@@ -218,7 +223,7 @@ namespace sc {
 	typedef typename IntParam::PrimitiveGeminal PrimitiveGeminal;
 	typedef typename IntParam::ContractedGeminal ContractedGeminal;
 	typedef std::vector<ContractedGeminal> ContractedGeminals;
-	
+
 	// 2 parameters are equivalent if their values differ by less than epsilon
 	static double epsilon;
 	static bool equiv(const ContractedGeminals& A, const ContractedGeminals& B);
@@ -227,7 +232,7 @@ namespace sc {
 	static bool equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B);
     };
     template <class IntParam> double CorrParamCompare<IntParam>::epsilon(1e-6);
-    
+
     /** G12CorrelationFactor stands for Gaussian geminals correlation factor,
 	usable with methods that require commutator integrals */
     class G12CorrelationFactor : public CorrelationFactor {
@@ -239,7 +244,7 @@ namespace sc {
       typedef std::vector<ContractedGeminal> CorrelationParameters;
 
       G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor = 0);
-      
+
       /// Implementation of CorrelationFactor::equiv()
       bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
@@ -290,7 +295,7 @@ namespace sc {
       typedef std::vector<ContractedGeminal> CorrelationParameters;
 
       G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor = 0);
-      
+
       /// Implementation of CorrelationFactor::equiv()
       bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
@@ -319,7 +324,7 @@ namespace sc {
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
       /// Implementation of CorrelationFactor::value()
       double value(unsigned int c, double r12) const;
-      
+
       static ContractedGeminal product(const ContractedGeminal& A,
                                        const ContractedGeminal& B);
 
@@ -341,7 +346,7 @@ namespace sc {
       typedef std::vector<ContractedGeminal> CorrelationParameters;
 
       GenG12CorrelationFactor(const CorrelationParameters& params);
-      
+
       /// Implementation of CorrelationFactor::equiv()
       bool equiv(const Ref<CorrelationFactor>& cf) const;
       /// Reimplementation of CorrelationFactor::nfunctions()
@@ -378,7 +383,7 @@ namespace sc {
       void print_params(std::ostream& os, unsigned int f) const;
 
     };
-    
+
     class GeminalDescriptorFactory : public RefCount {
       private:
         const char* invalid_id_;  // = "invalid"
@@ -414,7 +419,7 @@ namespace sc {
 
     /// direct product of 2 correlation factors A and B
     template <class CF> Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B);
-    
+
   }
 
 }

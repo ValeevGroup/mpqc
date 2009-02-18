@@ -96,20 +96,20 @@ class MP2R12Energy : virtual public SavableState {
     bool ebc_;
     int debug_;
     bool evaluated_;
-  
+
     // Initialize SCVectors and SCMatrices
     virtual void init_() = 0;
   public:
-  
+
     MP2R12Energy(StateIn&);
     MP2R12Energy(const Ref<R12EnergyIntermediates>& r12intermediates,
                  int debug);
     ~MP2R12Energy();
-  
+
     void save_data_state(StateOut&);
     void obsolete();
     void print(std::ostream&o=ExEnv::out0()) const;
-  
+
     Ref<R12IntEval> r12eval() const;
     const Ref<R12EnergyIntermediates>& r12intermediates() const;
     LinearR12::StandardApproximation stdapprox() const;
@@ -121,20 +121,20 @@ class MP2R12Energy : virtual public SavableState {
     bool ebc() const;
     void set_debug(int debug);
     int get_debug() const;
-    
+
     virtual void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()) = 0;
     virtual double energy() = 0;
     virtual const RefSCVector& ef12(SpinCase2 S) const {};
-    
+
     virtual double emp2f12tot(SpinCase2 S) const = 0;
     virtual double ef12tot(SpinCase2 S) const = 0;
-  
+
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
     /** Computes values of pair function ij on tbgrid */
     virtual void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                                const Ref<TwoBodyGrid>& tbgrid) {};
 #endif
-  
+
     /// Computes the first-order R12 wave function and MP2-R12 energy
     virtual void compute() = 0;
     /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
@@ -156,13 +156,13 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
     RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
     // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
     RefSCMatrix C_[NSpinCases2];
-    
+
     double emp2f12tot(SpinCase2 S) const;
     double ef12tot(SpinCase2 S) const;
-    
+
     // Initialize SCVectors and SCMatrices
     void init_();
-    
+
     /** Computes values of all 2-body products from
         space1 and space2 if electron 1 is at r1 and
         electron 2 is at r2. equiv specifies whether electrons
@@ -173,13 +173,13 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
     MP2R12Energy_SpinOrbital(StateIn&);
     MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
     ~MP2R12Energy_SpinOrbital();
-    
+
     void save_data_state(StateOut&);
     void compute();
-    
+
     // Print pair energies nicely to so
     void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
-    
+
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   /** Computes values of pair function ij on tbgrid */
   void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
@@ -191,7 +191,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
   const RefSCVector& ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy
   double energy();
-  
+
   /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
   */
   RefSCMatrix C(SpinCase2 S);
@@ -203,33 +203,32 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
 /**
  * The class MP2R12Energy_SpinOrbital_new is a new version of MP2R12Energy_SpinOrbital
  * and computes diagonal and non diagonal MP2 F12 energies preserving the Spin symmetry
- * of the wavefunction. It also implements a Slater type geminal fixed coeefficient 
- * version of MP2 F12 where the coefficients are determined according to the singlet and
- * triplet electron pair coalescence conditions. For non diagonal MP2 F12 calculations
+ * of the wavefunction. It also implements fixed-amplitude
+ * version of MP2-R12 where the coefficients are determined according to the singlet and
+ * triplet electron pair coalescence conditions. For non-diagonal MP2 F12 calculations
  * the old version MP2R12Energy_SpinOrbital should be preferred, since it invokes many
  * security checks still not implemented in this version of MP2R12Energy_SpinOrbital_new.
  */
 class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 {
   private:
-    bool hylleraas_;
     RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
     // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
     RefSCMatrix C_[NSpinCases2];
-    
+
     double emp2f12tot(SpinCase2 S) const;
     double ef12tot(SpinCase2 S) const;
-    
+
     // Initialize SCVectors and SCMatrices
     void init_();
-    
+
     /** Computes values of all 2-body products from
         space1 and space2 if electron 1 is at r1 and
         electron 2 is at r2. equiv specifies whether electrons
         are equivalent (same spin) or not */
     RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                       const SCVector3& r1, const SCVector3& r2) const;
-    
+
     RefSymmSCMatrix compute_B_non_pairspecific(const RefSymmSCMatrix &B,
                                                const RefSymmSCMatrix &X,
                                                const RefSCMatrix &V,
@@ -250,29 +249,30 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
                                   const RefSCMatrix &V,
                                   const SpinCase2 &spincase2);
     void determine_C_fixed_non_pairspecific(const SpinCase2 &spincase2);
-    void determine_ef12_fixedcoeff_hylleraas(const RefSymmSCMatrix &B_ij,
-                                             const RefSCMatrix &V,
-                                             const SpinCase2 &spincase2,
-                                             const Ref<MP2R12EnergyUtil_Diag> &util);
+    void determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,
+                                  const RefSCMatrix &V,
+                                  const SpinCase2 &spincase2,
+                                  const Ref<MP2R12EnergyUtil_Diag> &util);
     void compute_MP2R12_nondiag();
-    void compute_MP2R12_diag_nonfixed();
-    void compute_MP2R12_diag_fixed_hylleraas();
-    void compute_MP2R12_diag_fixed_nonhylleraas();
+    void compute_MP2R12_diag_fullopt();
+    void compute_MP2R12_diag_nonfullopt();
+
+    // shortcuts
+    bool diag() const;
+    bool fixedcoeff() const;
+
   public:
     MP2R12Energy_SpinOrbital_new(StateIn&);
     MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
-                                 bool hylleraas, int debug);
+                                 int debug);
     ~MP2R12Energy_SpinOrbital_new();
-    
+
     void save_data_state(StateOut&);
     void compute();
-    
-    bool diag() const;
-    bool fixedcoeff() const;
-    
+
     // Print pair energies nicely to so
     void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
-    
+
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   /** Computes values of pair function ij on tbgrid */
   void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
@@ -284,18 +284,17 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
   const RefSCVector& ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy
   double energy();
-  
+
   /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
   */
   RefSCMatrix C(SpinCase2 S);
-  //RefSCMatrix C_diag_fixedcoeff(SpinCase2 S);
   /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
   */
   RefSCMatrix T2(SpinCase2 S);
 };
 
 Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
-                                         bool hylleraas, int debug,
+                                         int debug,
                                          bool use_new_version);
 
 }

@@ -1,5 +1,6 @@
 
 #include "mpqcinit.h"
+#include <libgen.h>
 
 #include <sstream>
 
@@ -145,7 +146,7 @@ MPQCInit::init_threadgrp(const Ref<KeyVal>&keyval)
 {
   // get the thread group.  first try the commandline and environment
   Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc_, argv_);
-  
+
   // if we still don't have a group, try reading the thread group
   // from the input
   if (thread.null() && keyval.nonnull()) {
@@ -165,7 +166,7 @@ MPQCInit::init_memorygrp(Ref<KeyVal> &keyval)
 {
   // get the memory group.  first try the commandline and environment
   Ref<MemoryGrp> memory = MemoryGrp::initial_memorygrp(argc_, argv_);
-  
+
   // if we still don't have a group, try reading the memory group
   // from the input
   if (memory.null() && keyval.nonnull()) {
@@ -196,7 +197,7 @@ MPQCInit::init_integrals(const Ref<KeyVal> &keyval)
 {
   // get the integral factory. first try commandline and environment
   Ref<Integral> integral = Integral::initial_integral(argc_, argv_);
-  
+
   // if we still don't have a integral, try reading the integral
   // from the input
   if (integral.null()) {

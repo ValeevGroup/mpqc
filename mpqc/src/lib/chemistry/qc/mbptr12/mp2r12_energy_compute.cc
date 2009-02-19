@@ -855,13 +855,26 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,
-                                                                       const RefSCMatrix &V,
-                                                                       const SpinCase2 &spincase2,
-                                                                       const Ref<MP2R12EnergyUtil_Diag> &util) {
+                                                            const RefSCMatrix &V,
+                                                            const SpinCase2 &spincase2,
+                                                            const Ref<MP2R12EnergyUtil_Diag> &util) {
   RefSCVector C_V = util->dot_product(C_[spincase2],V);
   RefSCMatrix Binv_C = C_[spincase2].clone();
   util->times(B_ij, C_[spincase2], Binv_C);
   RefSCVector C_Binv_C = util->dot_product(C_[spincase2], Binv_C);
+
+  const bool scaled_amplitudes = r12eval_->r12info()->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_scaledfixed;
+  if (scaled_amplitudes) {
+    // scale all amplitudes of this spincase by a factor determined by
+    // minimization of the total Hylleraas functional for this spin
+    RefSCVector mask = C_V.clone();  mask.assign(1.0);
+    const double C_V_trace = C_V.dot(mask);
+    const double C_Binv_C_trace = C_Binv_C.dot(mask);
+    const double lambda_opt = -C_V_trace / C_Binv_C_trace;
+    C_V.scale(lambda_opt);
+    C_Binv_C.scale(lambda_opt*lambda_opt);
+  }
+
   ef12_[spincase2]->assign( 2.0 * C_V +  C_Binv_C);
 }
 

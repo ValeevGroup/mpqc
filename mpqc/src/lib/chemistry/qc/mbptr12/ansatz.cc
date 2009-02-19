@@ -131,11 +131,11 @@ LinearR12Ansatz::print(std::ostream& o) const
   std::string amplitudes_str;
   switch (amplitudes_) {
     case LinearR12::GeminalAmplitudeAnsatz_fullopt:
-      amplitudes_str = std::string("optimized");
+      amplitudes_str = std::string("optimized"); break;
     case LinearR12::GeminalAmplitudeAnsatz_fixed:
-      amplitudes_str = std::string("fixed");
+      amplitudes_str = std::string("fixed"); break;
     case LinearR12::GeminalAmplitudeAnsatz_scaledfixed:
-      amplitudes_str = std::string("scaled fixed");
+      amplitudes_str = std::string("scaled fixed"); break;
   }
   o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant")
               << " with " << amplitudes_str << " amplitudes" << std::endl;

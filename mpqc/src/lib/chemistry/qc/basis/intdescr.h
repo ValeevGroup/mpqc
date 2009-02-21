@@ -269,6 +269,70 @@ namespace sc {
     Ref<Integral> factory_;
   };
 
+  /// TwoBodyThreeCenterIntDescr describes a TwoBodyThreeCenterInt
+  typedef IntegralSetDescr<TwoBodyThreeCenterInt> TwoBodyThreeCenterIntDescr;
+
+  /** TwoBodyThreeCenterIntDescrERI describes single set of 3-center electron repulsion integrals
+    */
+  class TwoBodyThreeCenterIntDescrERI : public TwoBodyThreeCenterIntDescr {
+    public:
+    static const unsigned int num_intsets = 1;
+    TwoBodyThreeCenterIntDescrERI(const Ref<Integral>& IF);
+
+    /// which factory is used
+    Ref<Integral> factory() const { return factory_; }
+    // implementation of TwoBodyIntDescr::inteval()
+    Ref<TwoBodyThreeCenterInt> inteval() const;
+    // implementation of TwoBodyIntDescr::num_sets()
+    unsigned int num_sets() const { return num_intsets; }
+    // implementation of TwoBodyIntDescr::params()
+    Ref<IntParams> params() const;
+    // Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    // Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    // Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    // Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
+
+    private:
+    /// which factory is used
+    Ref<Integral> factory_;
+  };
+
+  /// TwoBodyTwoCenterIntDescr describes a TwoBodyTwoCenterInt
+  typedef IntegralSetDescr<TwoBodyTwoCenterInt> TwoBodyTwoCenterIntDescr;
+
+  /** TwoBodyTwoCenterIntDescrERI describes single set of 2-center electron repulsion integrals
+    */
+  class TwoBodyTwoCenterIntDescrERI : public TwoBodyTwoCenterIntDescr {
+    public:
+    static const unsigned int num_intsets = 1;
+    TwoBodyTwoCenterIntDescrERI(const Ref<Integral>& IF);
+
+    /// which factory is used
+    Ref<Integral> factory() const { return factory_; }
+    // implementation of TwoBodyIntDescr::inteval()
+    Ref<TwoBodyTwoCenterInt> inteval() const;
+    // implementation of TwoBodyIntDescr::num_sets()
+    unsigned int num_sets() const { return num_intsets; }
+    // implementation of TwoBodyIntDescr::params()
+    Ref<IntParams> params() const;
+    // Implementation of TwoBodyIntDescr::intset()
+    unsigned int intset(TwoBodyInt::tbint_type t) const;
+    // Implementation of TwoBodyIntDescr::intset()
+    TwoBodyInt::tbint_type intset(unsigned int t) const;
+    // Static version of TwoBodyIntDescr::intset()
+    static unsigned int intSet(TwoBodyInt::tbint_type t);
+    // Static version of TwoBodyIntDescr::intset()
+    static TwoBodyInt::tbint_type intSet(unsigned int t);
+
+    private:
+    /// which factory is used
+    Ref<Integral> factory_;
+  };
+
 }
 
 #endif

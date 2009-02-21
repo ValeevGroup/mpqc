@@ -408,3 +408,104 @@ TwoBodyIntDescrGenG12::intSet(unsigned int t)
   throw ProgrammingError("TwoBodyIntDescrGenG12::intSet() -- this type not recognized");
 }
 
+////
+
+TwoBodyThreeCenterIntDescrERI::TwoBodyThreeCenterIntDescrERI(const Ref<Integral>& IF) :
+  TwoBodyThreeCenterIntDescr(), factory_(IF)
+{
+}
+
+Ref<TwoBodyThreeCenterInt>
+TwoBodyThreeCenterIntDescrERI::inteval() const
+{
+  return factory_->electron_repulsion3();
+}
+
+Ref<IntParams>
+TwoBodyThreeCenterIntDescrERI::params() const
+{
+  return new IntParamsVoid;
+}
+
+unsigned int
+TwoBodyThreeCenterIntDescrERI::intset(TwoBodyInt::tbint_type t) const
+{
+  return TwoBodyThreeCenterIntDescrERI::intSet(t);
+}
+
+TwoBodyInt::tbint_type
+TwoBodyThreeCenterIntDescrERI::intset(unsigned int t) const
+{
+  return TwoBodyThreeCenterIntDescrERI::intSet(t);
+}
+
+unsigned int
+TwoBodyThreeCenterIntDescrERI::intSet(TwoBodyInt::tbint_type t)
+{
+  switch(t) {
+  case TwoBodyInt::eri:
+    return 0;
+  }
+  throw ProgrammingError("TwoBodyThreeCenterIntDescrERI::intSet() -- this type not recognized");
+}
+
+TwoBodyInt::tbint_type
+TwoBodyThreeCenterIntDescrERI::intSet(unsigned int t)
+{
+  switch(t) {
+  case 0:
+    return TwoBodyInt::eri;
+  }
+  throw ProgrammingError("TwoBodyIntDescrERI::intSet() -- this type not recognized");
+}
+
+////
+
+TwoBodyTwoCenterIntDescrERI::TwoBodyTwoCenterIntDescrERI(const Ref<Integral>& IF) :
+  TwoBodyTwoCenterIntDescr(), factory_(IF)
+{
+}
+
+Ref<TwoBodyTwoCenterInt>
+TwoBodyTwoCenterIntDescrERI::inteval() const
+{
+  return factory_->electron_repulsion2();
+}
+
+Ref<IntParams>
+TwoBodyTwoCenterIntDescrERI::params() const
+{
+  return new IntParamsVoid;
+}
+
+unsigned int
+TwoBodyTwoCenterIntDescrERI::intset(TwoBodyInt::tbint_type t) const
+{
+  return TwoBodyTwoCenterIntDescrERI::intSet(t);
+}
+
+TwoBodyInt::tbint_type
+TwoBodyTwoCenterIntDescrERI::intset(unsigned int t) const
+{
+  return TwoBodyTwoCenterIntDescrERI::intSet(t);
+}
+
+unsigned int
+TwoBodyTwoCenterIntDescrERI::intSet(TwoBodyInt::tbint_type t)
+{
+  switch(t) {
+  case TwoBodyInt::eri:
+    return 0;
+  }
+  throw ProgrammingError("TwoBodyTwoCenterIntDescrERI::intSet() -- this type not recognized");
+}
+
+TwoBodyInt::tbint_type
+TwoBodyTwoCenterIntDescrERI::intSet(unsigned int t)
+{
+  switch(t) {
+  case 0:
+    return TwoBodyInt::eri;
+  }
+  throw ProgrammingError("TwoBodyIntDescrERI::intSet() -- this type not recognized");
+}

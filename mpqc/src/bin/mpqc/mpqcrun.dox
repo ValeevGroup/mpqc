@@ -87,12 +87,15 @@ mpqcrun takes the following command line options:
 The cmd given with the <tt>--launch</tt> option can contain special strings
 that will be substituted:
 <dl>
-  <dt><tt>\%MPQC%</tt><dd>The MPQC program to run.
+  <dt><tt>\%MPQCRUNPROC%</tt><dd>Script to runs MPQC with the environment set up correctly.
   <dt><tt>\%INPUT%</tt><dd>The input filename.
   <dt><tt>\%OUTPUT%</tt><dd>The output filename.
   <dt><tt>\%NPROC%</tt><dd>The number of processes to start.
   <dt><tt>\%NODEFILE%</tt><dd>The name of a file containing the node names.
+  <dt><tt>\%CONFIGFILE%</tt><dd>The name of a file having lines of the form: node: command.
+  <dt><tt>\%IFHNFILE%</tt><dd>The name of a file having lines of the form: node ifhn=value.
   <dt><tt>\%NODELIST%</tt><dd>A comma separated list of node names.
+  <dt><tt>\%MPQC%</tt><dd>The MPQC executable.
 </dl>
 
 For these last two, if they are contained within square brackets

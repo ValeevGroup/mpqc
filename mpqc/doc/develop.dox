@@ -26,67 +26,45 @@ and installed.  See \ref sc-config for more information.
 
 \section scinit Initializing SC
 
-First the execution environment must be initialized using
-the ExEnv init member.
+A variety of initializations must be done when a program using the
+MPQC classes is started. This includes finding out what sc::MessageGrp
+to be used for communication, what sc::ThreadGrp is to be used for
+multi-threading, what default sc::Integral factory should be used, reading
+the input file in a way that is efficient on a parallel machine,
+setting up the output, and so on. The sc::MPQCInit class simplifies
+this setup. It is used by first initializing an sc::GetLongOpt
+object. This is used to retrieve flags specified on the command
+line. The programmer enrolls any desired options into the
+sc::GetLongOpt object and then passes this, along with <tt>argc</tt>
+and <tt>argv</tt>, to the constructor for sc::MPQCInit.  The
+sc::MPQCInit class will enroll the options it requires:
+<tt>--messagegrp</tt>, <tt>--threadgrp</tt>, <tt>--memory</tt>, and
+<tt>--integral</tt>. Then the programmer can parse the options and
+retrieve the value of any flag or obtain anything that was specified
+on the command line that was not associated with a flag.
 
+Below is a code fragment illustrating the use of sc::MPQCInit.
 <pre>
-  ExEnv::init(argc, argv);
-</pre>
+  sc::GetLongOpt opt;
+  opt.usage("[options] [filename]");
+  opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 
-By default, all output will go to the console stream, cout.  To change
-this, use the following code:
+  sc::MPQCInit init(opt,argc,argv);
 
-<pre>
-  ostream *outstream = new ofstream(outputfilename);
-  ExEnv::set_out(outstream);
-</pre>
+  int optind = opt.parse(argc, argv);
+  std::string inputfile;
+  if (argc - optind == 0) {
+    inputfile = "input.in";
+  }
+  else if (argc - optind == 1) {
+    inputfile = argv[optind];
+  }
+  else {
+    opt.usage(std::cout);
+    return 1;
+  }
 
-MPI is allowed wait until MPI_Init is called to fill in argc and argv, so
-you may have to call MPI_Init before you even know that we ready to
-construct MPIMessageGrp.  So if an MPIMessageGrp is needed, it is up to the
-developer to call MPI_Init to get the argument list for certain MPI
-implementations.
-
-<pre>
-  MPI_Init(&argc, &argv);
-</pre>
-
-When files are read and written, an extension is added to a
-basename to construct the file name.  The default is "SC".
-To use another basename, make the following call, where
-<tt>basename</tt> is a <tt>const char *</tt>:
-
-<pre>
-  SCFormIO::set_default_basename(basename);
-</pre>
-
-If your job might run in parallel, then make the following
-call or the nodes will print redundant information.  The
-<tt>myproc</tt> argument is the rank of the called node.
-
-<pre>
-  SCFormIO::init_mp(myproc);
-</pre>
-
-This segment of code sets up an object to provide multi-threading:
-
-<pre>
-  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
-  ThreadGrp::set_default_threadgrp(thread);
-  if (thread.nonnull())
-    ThreadGrp::set_default_threadgrp(thread);
-  else
-    thread = ThreadGrp::get_default_threadgrp();
-</pre>
-
-This segment of code sets up the message passing object:
-
-<pre>
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
-    MessageGrp::set_default_messagegrp(grp);
-  else
-    grp = MessageGrp::get_default_messagegrp();
+  sc::Ref<sc::KeyVal> keyval = init.init(inputfile);
 </pre>
 
 \section devsampmp2 Using MPQC's main: MP2 Implementation Example

@@ -100,6 +100,9 @@ at any GNU software FTP repository.
          or perl 5 will work.  To generate the validation inputs and
          automatically check the outputs, perl 5.003 or later is needed.
 
+    <li> If you are working from the source tree, then you also need
+         autoconf (at least version 2.55).
+
   </ul>
 
 \section compilepreopt Optional Packages
@@ -218,7 +221,8 @@ Useful options to configure include:
   accidentally dynamically linking with the wrong libraries.
 
 <dt><tt>--with-default-memory</tt><dd>This specifies the default
-memory allocation, which is used in absense of the memory> keyword in user's input.
+memory allocation, which is used in absense of the <tt>memory</tt>
+keyword in user's input.
 The default is 32 million bytes (roughly, 32 MB).
 
 <dt><tt>--with-cc</tt><dd>Gives the name of the C compiler.

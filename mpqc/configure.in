@@ -1696,24 +1696,7 @@ AC_CHECK_HEADERS(libint2/libint2.h,
   )
   fi
   if test X$libint2_cgshell_ordering = Xnone; then
-  dnl -- else try gamess --
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
-        void present_if_defined() {}
-        #endif
-      ]],
-      [[
-        present_if_defined();
-      ]]
-    ),
-    [libint2_cgshell_ordering=gamess
-     AC_MSG_RESULT(gamess)]
-  )
-  fi
-  if test X$libint2_cgshell_ordering = Xnone; then
-    AC_MSG_ERROR([could not determine -- this libint2 library is too old])
+    AC_MSG_ERROR([could not determine -- this libint2 library is too old or uses an unsupported ordering])
   fi
   AC_MSG_CHECKING([if libint2 can compute ERI])
   AC_COMPILE_IFELSE(

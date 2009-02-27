@@ -503,7 +503,7 @@ void OrbitalSpace::print_detail(ostream&o) const {
 }
 
 void OrbitalSpace::print_summary(ostream& o) const {
-  o << indent << "OrbitalSpace \"" << name_ << "\":" << endl;
+  o << indent << "OrbitalSpace \"" << name_ << "\" (id = " << id_ << "):" << endl;
   o << incindent;
   o << indent << "GaussianBasisSet \"" << basis_->name() << "\"" << endl;
   o << indent << "  rank  nbasis  nshell  nfuncmax" << endl;

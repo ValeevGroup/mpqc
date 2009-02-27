@@ -44,10 +44,11 @@ void R12IntEval::compute_B_DKH_() {
 
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  const unsigned int maxnabs = r12info()->maxnabs();
 
   // Check if the requsted calculation is implemented
-  if (!obs_eq_vbs)
-    throw FeatureNotImplemented("OBS!=VBS is not supported yet in relativistic calculations",__FILE__,__LINE__);
+  if (!obs_eq_vbs && maxnabs < 1)
+    throw FeatureNotImplemented("OBS!=VBS & maxnabs == 0 is not supported yet in relativistic calculations",__FILE__,__LINE__);
 
   Timer tim_B_DKH2("Analytic B(DKH2) intermediate");
   ExEnv::out0() << endl << indent
@@ -62,7 +63,6 @@ void R12IntEval::compute_B_DKH_() {
   Ref<OrbitalSpace> t_x_P[NSpinCases1];
   // first need kinetic energy matrix between OBS and RIBS
   Ref<GaussianBasisSet> obs = r12info()->basis();
-  const unsigned int maxnabs = r12info()->maxnabs();
   Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
   Ref<GaussianBasisSet> ribs = rispace->basis();
   // Symmetry blocked

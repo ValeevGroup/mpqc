@@ -158,9 +158,10 @@ FockBuildRuntime::get(const std::string& key) {
       registry_->add(key, mofock);
       return registry_->value(key);
     }
-    if (registry_->key_exists(transposed_key(aokey))) {
-      RefSCMatrix aofock = registry_->value(aokey);
-      RefSCMatrix mofock = bra->coefs().t() * aofock.t() * ket->coefs();
+    const std::string transposed_aokey = transposed_key(aokey);
+    if (registry_->key_exists(transposed_aokey)) {
+      RefSCMatrix transposed_aofock = registry_->value(transposed_aokey);
+      RefSCMatrix mofock = bra->coefs().t() * transposed_aofock.t() * ket->coefs();
       registry_->add(key, mofock);
       return registry_->value(key);
     }

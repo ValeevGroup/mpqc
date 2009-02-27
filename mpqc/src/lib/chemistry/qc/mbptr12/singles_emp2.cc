@@ -65,11 +65,11 @@ R12IntEval::compute_singles_emp2_()
 
   int me = msg->me();
   int nproc = msg->n();
-  
+
   emp2_singles_ = 0.0;
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
-    
+
     Ref<OrbitalSpace> occ_act = r12info_->refinfo()->occ_act(spin);
     Ref<OrbitalSpace> vir_act = r12info_->vir_act(spin);
     RefSCMatrix Fia = fock(occ_act,vir_act,spin);
@@ -86,9 +86,9 @@ R12IntEval::compute_singles_emp2_()
       }
     }
   }
-  
+
+  ExEnv::out0() << "Exited singles MP2 energy evaluator" << endl;
   ExEnv::out0() << decindent;
-  ExEnv::out0() << endl << "Exited singles MP2 energy evaluator" << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////

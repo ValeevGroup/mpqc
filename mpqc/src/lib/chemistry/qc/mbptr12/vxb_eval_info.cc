@@ -282,6 +282,20 @@ R12IntEvalInfo::initialize()
           idxreg->add(make_keyspace_pair(mu));
           aoidxreg->add(mu->basis(),mu);
         }
+        if (!bs_vir_->equiv(basis())) { // VBS
+          const Ref<GaussianBasisSet> bs = bs_vir_;
+          const int nao = bs->nbasis();
+          RefSCDimension obs_ao_dim = new SCDimension(nao,1);
+          obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
+          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(obs_ao_dim,obs_ao_dim);
+          obs_ao_coefs.assign(0.0);
+          for(int ao=0; ao<nao; ++ao)
+            obs_ao_coefs.set_element(ao,ao,1.0);
+          Ref<OrbitalSpace> nu = new OrbitalSpace("nu", "VBS(AO)", obs_ao_coefs,
+                                                  bs, integral());
+          idxreg->add(make_keyspace_pair(nu));
+          aoidxreg->add(nu->basis(),nu);
+        }
         { // RI-BS
           const int nao = basis_ri()->nbasis();
           RefSCDimension ribs_ao_dim = new SCDimension(nao,1);
@@ -409,9 +423,16 @@ R12IntEvalInfo::construct_orthog_vir_()
         throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
       vir_ = vir_sb_;
       vir_act_ = vir_sb_;
+      for(int s=0; s<NSpinCases1; s++) {
+        vir_spaces_[s].vir_sb_ = vir_sb_;
+        vir_spaces_[s].vir_ = vir_;
+        vir_spaces_[s].vir_act_ = vir_act_;
+      }
     }
-    vir_spaces_[Alpha].init(refinfo(),Alpha,vir_space);
-    vir_spaces_[Beta].init(refinfo(),Beta,vir_space);
+    else {
+      vir_spaces_[Alpha].init(refinfo(),Alpha,vir_space);
+      vir_spaces_[Beta].init(refinfo(),Beta,vir_space);
+    }
   }
 }
 

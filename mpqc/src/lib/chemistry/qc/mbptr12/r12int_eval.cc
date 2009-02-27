@@ -164,7 +164,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   init_tforms_();
 
   // canonicalize virtuals if VBS != OBS
-  if (r12info()->basis_vir()->equiv(r12info()->basis())) {
+  if (! r12info()->basis_vir()->equiv(r12info()->basis())) {
     form_canonvir_space_();
   }
 
@@ -751,9 +751,9 @@ R12IntEval::form_canonvir_space_()
     delete[] F_lowtri;
 
     std::string id_sb, id;
-    if (nspincases1() == 2 && spincase == Alpha) {
-      id_sb = "E(sym)";
-      id = "E";
+    if (spin_polarized()) {
+      id_sb = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spincase);
+      id = ParsedOrbitalSpaceKey::key(std::string("e"),spincase);
     }
     else {
       id_sb = "e(sym)";
@@ -777,6 +777,11 @@ R12IntEval::form_canonvir_space_()
                                              F_vir_evals, 0, 0,
                                              OrbitalSpace::energy);
     r12info()->vir(spincase, vir);
+
+    const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+    idxreg->add(make_keyspace_pair(vir));
+    idxreg->add(make_keyspace_pair(vir_act));
+    idxreg->add(make_keyspace_pair(canonvir_space_symblk));
   }
 }
 

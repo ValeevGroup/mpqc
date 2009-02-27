@@ -113,11 +113,14 @@ R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moint
                                                                   : 1))),
       corrfactor_(corrfactor), layout_key_(layout), moints_rtime_(moints_rtime),
       bra1_(bra1), bra2_(bra2), ket1_(ket1), ket2_(ket2),
-      CorrFunctionInBraKet_(CorrFunctionInBra && CorrFunctionInKet),
+      CorrFunctionInBra_(CorrFunctionInBra), CorrFunctionInKet_(CorrFunctionInKet),
       nf12bra_((CorrFunctionInBra ? corrfactor->nfunctions() : 1)),
       nf12ket_((CorrFunctionInKet ? corrfactor->nfunctions() : 1)),
       braindex_(0), ketindex_(0)
 {
+  if (! (CorrFunctionInBra_ || CorrFunctionInKet_) ) {
+    throw ProgrammingError("R12TwoBodyIntKeyCreator used but no correlation factor is present on bra or ket",__FILE__,__LINE__);
+  }
 }
 
 R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::null() const { return std::string(""); }
@@ -127,7 +130,14 @@ R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::operator()()
   if (!can_create()) return null();
 
   const Ref<Integral>& integral = moints_rtime_->factory()->integral();
-  const std::string descr_key = moints_rtime_->descr_key( CorrFunctionInBraKet_ ? corrfactor_->tbintdescr(integral,braindex_,ketindex_) : corrfactor_->tbintdescr(integral,braindex_) );
+  Ref<TwoBodyIntDescr> descr;
+  if (CorrFunctionInBra_ && CorrFunctionInKet_)
+    descr = corrfactor_->tbintdescr(integral,braindex_,ketindex_);
+  else if (CorrFunctionInBra_)
+    descr = corrfactor_->tbintdescr(integral,braindex_);
+  else // if (CorrFunctionInKet_)
+    descr = corrfactor_->tbintdescr(integral,ketindex_);
+  const std::string descr_key = moints_rtime_->descr_key(descr);
   ObjT result = ParsedTwoBodyIntKey::key(bra1_->id(),bra2_->id(),ket1_->id(),ket2_->id(),descr_key,layout_key_);
 
   increment_indices();
@@ -135,14 +145,18 @@ R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::operator()()
 }
 
 void R12TwoBodyIntKeyCreator::increment_indices() {
-  if (CorrFunctionInBraKet_) {
+  if (CorrFunctionInBra_ && CorrFunctionInKet_) {
     ++ketindex_;
     if (ketindex_ == nf12ket_) {
       ++braindex_;
       ketindex_ = 0;
     }
-  } else {
+  }
+  else if (CorrFunctionInBra_) {
     ++braindex_;
+  }
+  else if (CorrFunctionInKet_) {
+    ++ketindex_;
   }
   next();
 }

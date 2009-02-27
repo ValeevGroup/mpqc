@@ -135,7 +135,8 @@ namespace sc {
       const Ref<OrbitalSpace>& bra2_;
       const Ref<OrbitalSpace>& ket1_;
       const Ref<OrbitalSpace>& ket2_;
-      bool CorrFunctionInBraKet_;
+      bool CorrFunctionInBra_;
+      bool CorrFunctionInKet_;
       std::string layout_key_;
       unsigned int nf12bra_;
       unsigned int nf12ket_;

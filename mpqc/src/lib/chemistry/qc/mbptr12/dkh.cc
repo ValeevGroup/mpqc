@@ -173,7 +173,9 @@ void R12IntEval::compute_B_DKH_() {
     }
     else {
       B_DKH.scale(2.0);
-      symmetrize<false>(B_DKH,B_DKH,xspace1,xspace1);
+      if (spincase2 == AlphaBeta) {
+        symmetrize<false>(B_DKH,B_DKH,xspace1,xspace1);
+      }
     }
 
     // symmetrize bra and ket

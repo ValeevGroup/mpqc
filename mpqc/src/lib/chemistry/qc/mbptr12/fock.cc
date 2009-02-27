@@ -58,7 +58,8 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
                   const Ref<OrbitalSpace>& ket_space,
                   SpinCase1 spin,
                   double scale_J, double scale_K,
-                  double scale_H)
+                  double scale_H,
+                  int override_pauli)
 {
   // validate the input
   if (! (scale_J == 1.0 || scale_J == 0.0 || scale_K == 1.0 || scale_K == 0.0) ) { // currently FockBuild can only handle unit contributions
@@ -111,9 +112,9 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     p_basis = p_basis + hcore_basis;
   }
 
-  // include only the Pauli-Hamiltionian in the R12 treatment of the Fock operator
-  bool pauli_=r12info()->r12tech()->pauli();
-  if (dk==0) {pauli_=false;}
+  // include only the Pauli-Hamiltonian in the R12 treatment of the Fock operator
+  bool pauli_flag = (override_pauli == -1) ? r12info()->r12tech()->pauli() : override_pauli;
+  if (dk==0) { pauli_flag = false; }
 
   RefSymmSCMatrix hsymm;
 
@@ -130,7 +131,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
 //  throw ProgrammingError( "flo in progress", __FILE__, __LINE__, class_desc());
 // flodbg
 
-  if (pauli_) {
+  if (pauli_flag) {
     hsymm = pauli(hcore_basis);
   }
   else {

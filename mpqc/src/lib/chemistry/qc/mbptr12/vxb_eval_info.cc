@@ -399,10 +399,7 @@ R12IntEvalInfo::construct_orthog_vir_()
     if (!spin_polarized) {
       vir_ = refinfo()->uocc();
       vir_sb_ = refinfo()->uocc_sb();
-      if (refinfo()->nfzv() == 0)
-        vir_act_ = vir_;
-      else
-        vir_act_ = refinfo()->uocc_act();
+      vir_act_ = refinfo()->uocc_act();
     }
     vir_spaces_[Alpha].init(refinfo(),Alpha);
     vir_spaces_[Beta].init(refinfo(),Beta);

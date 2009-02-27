@@ -647,7 +647,9 @@ public:
       */
   RefSCMatrix fock(const Ref<OrbitalSpace>& bra_space,
                    const Ref<OrbitalSpace>& ket_space, SpinCase1 S = Alpha,
-                   double scale_J = 1.0, double scale_K = 1.0, double scale_H = 1.0);
+                   double scale_J = 1.0, double scale_K = 1.0, double scale_H = 1.0,
+                   // leave at default to use R12Technology's pauli flag, else set to 0 or 1
+                   int override_pauli = -1);
 
 };
 

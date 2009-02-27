@@ -731,7 +731,12 @@ R12IntEval::form_canonvir_space_()
 
     const Ref<OrbitalSpace>& mo_space = r12info()->refinfo()->orbs(spincase);
     const Ref<OrbitalSpace>& vir_space = r12info()->vir_sb(spincase);
-    RefSCMatrix F_vir = fock(vir_space,vir_space,spincase);
+    // note that I'm overriding pauli flag here -- true Fock matrix must always be used
+    const double scale_J = 1.0;
+    const double scale_K = 1.0;
+    const double scale_H = 1.0;
+    const int pauli = 0;
+    RefSCMatrix F_vir = fock(vir_space,vir_space,spincase,scale_J,scale_K,scale_H,pauli);
 
     int nrow = vir_space->rank();
     double* F_full = new double[nrow*nrow];
@@ -1870,7 +1875,7 @@ R12IntEval::compute()
                                            r12info()->corrfactor());
         tform_key = tformkey_creator();
       }
-      else {
+      else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
         R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
                                               occ1_act,
                                               vir1_act,
@@ -1879,6 +1884,15 @@ R12IntEval::compute()
                                               r12info()->corrfactor());
         tform_key = tformkey_creator();
       }
+      else { // pure MP2 -- manually construct transform
+        const std::string descr_key = r12info()->moints_runtime()->descr_key(new TwoBodyIntDescrERI(r12info()->integral()));
+        const std::string layout_key = std::string(MOIntsRuntime::Layout_b1b2_k1k2);
+        tform_key = ParsedTwoBodyIntKey::key(occ1_act->id(),occ2_act->id(),
+                                             vir1_act->id(),vir2_act->id(),
+                                             descr_key,
+                                             layout_key);
+      }
+
       compute_mp2_pair_energies_(emp2pair_[s],spincase2,
                                  occ1_act,vir1_act,
                                  occ2_act,vir2_act,

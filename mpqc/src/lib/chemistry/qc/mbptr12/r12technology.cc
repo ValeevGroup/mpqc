@@ -74,7 +74,7 @@ R12Technology::R12Technology(StateIn& s)
   safety_check_ = static_cast<bool>(safety_check);
   int posdef_B; s.get(posdef_B);
   posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
-  
+
   if (s.version(::class_desc<R12Technology>()) >= 9) {
     int omit_B; s.get(omit_B); omit_B_ = (bool)omit_B;
   }
@@ -125,7 +125,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   if (sa_string == "none" || sa_string == "NONE") {
       stdapprox_ = LinearR12::StdApprox_Ap;
   }
-  
+
   //
   // r12 correlation factor?
   //
@@ -274,7 +274,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         bool contracted = (keyval->count("corr_param",0) != 0);
         if (contracted)
 	    throw FeatureNotImplemented("Cannot accept contracted STG correlation factors yet",__FILE__,__LINE__);
-	
+
 	  // Primitive functions only
 	  for(int f=0; f<num_f12; f++) {
         double exponent = keyval->doublevalue("corr_param", f);
@@ -333,19 +333,19 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   }
   else
     throw FeatureNotImplemented("R12Technology::R12Technology -- this correlation factor is not implemented",__FILE__,__LINE__);
-  
+
   // Default is to assume GBC
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
   // Default is to assume EBC
   ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
-    
+
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
 
-  // Default is to use only the Pauli Hamiltonian in the R12 treatment 
+  // Default is to use only the Pauli Hamiltonian in the R12 treatment
   pauli_= keyval->booleanvalue("pauli",KeyValValueboolean((int)true));
   //ExEnv::out0() << "Pauli Hamiltonian in R12 treatment: " << (pauli_? "true" : "false") << endl;
-  
+
   // For now the default is to use the old ABS method, of Klopper and Samson
   std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("ABS"));
   if ( abs_method_str == "KS" ||
@@ -388,13 +388,13 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   if (ansatz()->projector() == LinearR12::Projector_3 &&
       stdapprox_ != LinearR12::StdApprox_C)
     throw InputError("R12Technology::R12Technology -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);
-  
+
   // Default is to include all integrals, unless using A'' method
   int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
   // there are no ABS indices if OBS and ABS are the same
   if (abs_eq_obs_) default_maxnabs = 0;
   maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(default_maxnabs)));
-  
+
   safety_check_ = keyval->booleanvalue("safety_check",KeyValValueboolean((int)true));
 
   std::string posdef_B = keyval->stringvalue("posdef_B",KeyValValuestring("weak"));
@@ -424,7 +424,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
     }
   }
-  
+
   // Klopper and Samson's ABS method is only implemented for certain "old" methods
   // Make sure that the ABS method is available for the requested MP2-R12 energy
   const bool must_use_cabs = (!gbc_ ||
@@ -476,9 +476,9 @@ R12Technology::print(ostream&o) const
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: Valeev" << endl;
   switch (posdef_B()) {
-    case LinearR12::PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;      
-    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;      
-    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Enforce positive definiteness of B, but not ~B(ij)" << endl;  break;      
+    case LinearR12::PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;
+    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;
+    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Enforce positive definiteness of B, but not ~B(ij)" << endl;  break;
   }
   if (stdapprox_ == LinearR12::StdApprox_B && omit_P_) {
     o << indent << "Intermediate P is omitted" << endl;
@@ -629,34 +629,38 @@ R12Technology::omit_B() const
 void
 R12Technology::check_integral_factory(const Ref<Integral>& ints)
 {
-  // Only IntegralCints or IntegralLibint2 can be used at the moment
-  bool allowed_integral_factory = false;
+  // any factory can support pure MP2 calculations! Thus only test for nontrivial corr factors
+  Ref<LinearR12::NullCorrelationFactor> nullcf; nullcf << corrfactor();
+  if (nullcf.null()) {
+    // Only IntegralCints or IntegralLibint2 can be used at the moment
+    bool allowed_integral_factory = false;
 #if HAVE_INTEGRALCINTS
-  IntegralCints* cintsintf = dynamic_cast<IntegralCints*>(ints.pointer());
-  if (cintsintf) {
-    allowed_integral_factory = true;
-  }
+    IntegralCints* cintsintf = dynamic_cast<IntegralCints*>(ints.pointer());
+    if (cintsintf) {
+      allowed_integral_factory = true;
+    }
 #endif
 #if HAVE_INTEGRALLIBINT2
-  IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(ints.pointer());
-  if (libint2intf) {
-    allowed_integral_factory = true;
-  }
-#endif
-  if(strcmp(ints->class_name(),"IntegralCCA") == 0) {
-    allowed_integral_factory = true;
-  }
-  if (!allowed_integral_factory) {
-    InputError ex("R12Technology::check_integral_factory_(): invalid integral factory provided.",
-                  __FILE__, __LINE__, 0, 0, class_desc());
-    try {
-      ex.elaborate() << "Try using IntegralCints, IntegralCCA, or IntegralLibint2."
-                     << std::endl
-                     << "The given integral factory was of type " << ints->class_name()
-                     << std::endl;
+    IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(ints.pointer());
+    if (libint2intf) {
+      allowed_integral_factory = true;
     }
-    catch (...) {}
-    throw ex;
+#endif
+    if(strcmp(ints->class_name(),"IntegralCCA") == 0) {
+      allowed_integral_factory = true;
+    }
+    if (!allowed_integral_factory) {
+      InputError ex("R12Technology::check_integral_factory_(): invalid integral factory provided.",
+                  __FILE__, __LINE__, 0, 0, class_desc());
+      try {
+        ex.elaborate() << "Try using IntegralCints, IntegralCCA, or IntegralLibint2."
+                       << std::endl
+                       << "The given integral factory was of type " << ints->class_name()
+                       << std::endl;
+      }
+      catch (...) {}
+      throw ex;
+    }
   }
 }
 

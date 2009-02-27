@@ -1872,7 +1872,7 @@ R12IntEval::compute()
                                            r12info()->refinfo()->orbs(spin1),
                                            occ2_act,
                                            r12info()->refinfo()->orbs(spin2),
-                                           r12info()->corrfactor());
+                                           r12info()->corrfactor(),true);
         tform_key = tformkey_creator();
       }
       else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
@@ -1881,7 +1881,7 @@ R12IntEval::compute()
                                               vir1_act,
                                               occ2_act,
                                               vir2_act,
-                                              r12info()->corrfactor());
+                                              r12info()->corrfactor(),true);
         tform_key = tformkey_creator();
       }
       else { // pure MP2 -- manually construct transform

@@ -515,11 +515,9 @@ R12IntEvalInfo::print(std::ostream& o) const {
 bool
 R12IntEvalInfo::bc() const
 {
-  // 1) false if VBS != OBS
-  const bool vbs_neq_obs = !bs_vir_->equiv(basis());
-  // 2) or using ROHF reference
+  // false using ROHF reference
   const bool open_shell_but_not_uhf = refinfo()->ref()->spin_polarized() && !refinfo()->ref()->spin_unrestricted();
-  return !(vbs_neq_obs || open_shell_but_not_uhf);
+  return !open_shell_but_not_uhf;
 }
 
 /////////////////////////////////////////////////////////////////////////////

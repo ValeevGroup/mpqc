@@ -46,7 +46,7 @@ void R12IntEval::compute_B_DKH_() {
   const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
   const unsigned int maxnabs = r12info()->maxnabs();
 
-  // Check if the requsted calculation is implemented
+  // Check if the requested calculation is implemented
   if (!obs_eq_vbs && maxnabs < 1)
     throw FeatureNotImplemented("OBS!=VBS & maxnabs == 0 is not supported yet in relativistic calculations",__FILE__,__LINE__);
 
@@ -140,36 +140,35 @@ void R12IntEval::compute_B_DKH_() {
     Ref<OrbitalSpace> t_x1 = t_x_P[spin1];
     Ref<OrbitalSpace> t_x2 = t_x_P[spin2];
 
-    // <xy|T z> tforms
-    std::vector<std::string> tforms_xyTz;
+    // <xy|z T> tforms
+    std::vector<std::string> tforms_xyzT;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, t_x1, xspace2,
-          xspace2, r12info()->corrfactor(), true, true);
-      fill_container(tformkey_creator, tforms_xyTz);
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, xspace1, xspace2,
+          t_x2, r12info()->corrfactor(), true, true);
+      fill_container(tformkey_creator, tforms_xyzT);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
         B_DKH,
         corrfactor()->tbint_type_f12t1f12(),
-        xspace1, t_x1,
-        xspace2, xspace2,
+        xspace1, xspace1,
+        xspace2, t_x2,
         antisymmetrize,
-        tforms_xyTz);
+        tforms_xyzT);
     if (!part1_equiv_part2) {
-      // <xy|z T> tforms
-      std::vector<std::string> tforms_xyzT;
+      // <xy|T z> tforms
+      std::vector<std::string> tforms_xyTz;
       {
-        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, xspace1, xspace2,
-            t_x2, r12info()->corrfactor(), true, true);
-        fill_container(tformkey_creator, tforms_xyzT);
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, t_x1, xspace2,
+            xspace2, r12info()->corrfactor(), true, true);
+        fill_container(tformkey_creator, tforms_xyTz);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
           B_DKH,
           corrfactor()->tbint_type_f12t1f12(),
-          xspace1,
-          xspace1,
-          xspace2, t_x2,
+          xspace1, t_x1,
+          xspace2, xspace2,
           antisymmetrize,
-          tforms_xyzT);
+          tforms_xyTz);
     }
     else {
       B_DKH.scale(2.0);

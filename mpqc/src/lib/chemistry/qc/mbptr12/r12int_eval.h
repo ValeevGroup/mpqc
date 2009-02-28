@@ -340,8 +340,11 @@ class R12IntEval : virtual public SavableState {
   /** Compute the mass-velocity contributions to B that appear when DKH-based R12 calculations are requested */
   void compute_B_DKH_();
 
-  /// Compute singles contribution to the MP2 energy
-  void compute_singles_emp2_();
+  /** Compute singles contribution to the MP2 energy.
+      If obs_singles is set to true, use OBS virtuals, else use correlating virtuals (these
+      virtuals differ if VBS != OBS).
+    */
+  double compute_singles_emp2_(bool obs_singles);
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/

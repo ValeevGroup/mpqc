@@ -1899,9 +1899,11 @@ R12IntEval::compute()
                                  tform_key);
   }
 
-  // compute singles contribution to the MP2 energy, if needed
-  if (!r12info()->bc())
-    compute_singles_emp2_();
+  // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
+  if (!r12info()->bc()) {
+    const bool obs_singles = true;
+    emp2_singles_ = compute_singles_emp2_(obs_singles);
+  }
 
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);

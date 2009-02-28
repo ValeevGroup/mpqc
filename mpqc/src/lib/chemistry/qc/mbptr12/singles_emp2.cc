@@ -49,30 +49,43 @@
 using namespace std;
 using namespace sc;
 
-void
-R12IntEval::compute_singles_emp2_()
+double
+R12IntEval::compute_singles_emp2_(bool obs_singles)
 {
-  if (evaluated_)
-    return;
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
 
   Timer tim("singles MP2 energy");
-  ExEnv::out0() << endl << indent
-	       << "Entered singles MP2 energy evaluator" << endl;
+  std::string evalname;
+  {
+    std::ostringstream oss;
+    oss << (obs_singles ? "OBS" : "VBS") << " singles MP2 energy evaluator";
+    evalname = oss.str();
+  }
+  ExEnv::out0() << endl << indent << "Entered " << evalname << endl;
   ExEnv::out0() << incindent;
 
   int me = msg->me();
   int nproc = msg->n();
 
-  emp2_singles_ = 0.0;
+  double result = 0.0;
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
     Ref<OrbitalSpace> occ_act = r12info_->refinfo()->occ_act(spin);
-    Ref<OrbitalSpace> vir_act = r12info_->vir_act(spin);
+    Ref<OrbitalSpace> vir_act = obs_singles ? r12info()->refinfo()->uocc_act(spin) : r12info()->vir_act(spin);
     RefSCMatrix Fia = fock(occ_act,vir_act,spin);
+
+#define DEBUG_EMP2_SINGLES 0
+#if DEBUG_EMP2_SINGLES
+    Fia.print(prepend_spincase(spin,"occ/vir Fock matrix").c_str());
+
+    Ref<OrbitalSpace> orbs = r12info_->refinfo()->orbs(spin);
+    RefSCMatrix Fpp = fock(orbs,orbs,spin);
+    orbs->print_detail(ExEnv::out0());
+    Fpp.print(prepend_spincase(spin,"OBS/OBS Fock matrix").c_str());
+#endif
 
     const int ni = occ_act->rank();
     const int na = vir_act->rank();
@@ -82,13 +95,15 @@ R12IntEval::compute_singles_emp2_()
     for(int i=0; i<ni; i++) {
       for(int a=0; a<na; a++) {
         const double fia = Fia.get_element(i,a);
-        emp2_singles_ -= fia*fia/(-ievals(i)+aevals(a));
+        result -= fia*fia/(-ievals(i)+aevals(a));
       }
     }
   }
 
-  ExEnv::out0() << "Exited singles MP2 energy evaluator" << endl;
-  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "E(MP2 singles) = " << scprintf("%15.9lf",result) << endl;
+  ExEnv::out0() << decindent << indent << "Exited " << evalname << endl;
+
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////

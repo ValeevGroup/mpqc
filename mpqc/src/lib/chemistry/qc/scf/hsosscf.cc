@@ -78,12 +78,12 @@ HSOSSCF::HSOSSCF(StateIn& s) :
     basis_matrixkit()->symmmatrix(so_dimension());
   cl_fock_.restore_state(s);
   cl_fock_.result_noupdate().restore(s);
-  
+
   op_fock_.result_noupdate() =
     basis_matrixkit()->symmmatrix(so_dimension());
   op_fock_.restore_state(s);
   op_fock_.result_noupdate().restore(s);
-  
+
   s.get(user_occupations_);
   s.get(tndocc_);
   s.get(tnsocc_);
@@ -141,13 +141,13 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   semicanonical_evaluated_(false)
 {
   int i;
-  
+
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
-  
+
   op_fock_.compute()=0;
   op_fock_.computed()=0;
-  
+
   alpha_semican_evals_.compute()=0;
   alpha_semican_evals_.computed()=0;
   beta_semican_evals_.compute()=0;
@@ -156,7 +156,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   alpha_semican_evecs_.computed()=0;
   beta_semican_evecs_.compute()=0;
   beta_semican_evecs_.computed()=0;
-  
+
   // calculate the total nuclear charge
   double Znuc=molecule()->nuclear_charge();
 
@@ -179,7 +179,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     else
       tnsocc_=2;
   }
-  
+
   // now do the same for the number of doubly occupied shells
   if (keyval->exists("ndocc")) {
     tndocc_ = keyval->intvalue("ndocc");
@@ -267,10 +267,10 @@ HSOSSCF::save_data_state(StateOut& s)
 
   cl_fock_.save_data_state(s);
   cl_fock_.result_noupdate().save(s);
-  
+
   op_fock_.save_data_state(s);
   op_fock_.result_noupdate().save(s);
-  
+
   s.put(user_occupations_);
   s.put(tndocc_);
   s.put(tnsocc_);
@@ -348,7 +348,7 @@ void
 HSOSSCF::print(ostream&o) const
 {
   int i;
-  
+
   SCF::print(o);
   o << indent << "HSOSSCF Parameters:\n" << incindent
     << indent << "charge = " << molecule()->nuclear_charge()
@@ -390,11 +390,11 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
          << "HSOSSCF: WARNING: reforming occupation vectors from scratch"
          << endl;
   }
-  
+
   int i,j;
-  
+
   RefDiagSCMatrix evals;
-  
+
   if (ev.null()) {
     initial_vector(0);
     evals = eigenvalues_.result_noupdate();
@@ -428,7 +428,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
     tndocc_ += nb;
     tnsocc_ += (na - nb);
   }
-  
+
   if (!ndocc_) {
     ndocc_=newdocc;
     nsocc_=newsocc;
@@ -504,13 +504,13 @@ HSOSSCF::init_vector()
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
-  
+
   cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
   op_dens_ = hcore_.clone();
   op_dens_.assign(0.0);
-  
+
   op_dens_diff_ = hcore_.clone();
   op_dens_diff_.assign(0.0);
 
@@ -530,7 +530,7 @@ HSOSSCF::init_vector()
 
   // set up trial vector
   initial_vector(1);
-    
+
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
@@ -598,13 +598,13 @@ HSOSSCF::new_density()
   so_density(op_dens_, 1.0);
 
   cl_dens_.accumulate(op_dens_);
-  
+
   cl_dens_diff_.accumulate(cl_dens_);
   op_dens_diff_.accumulate(op_dens_);
 
   Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   cl_dens_diff_.element_op(sp.pointer(), cl_dens_diff_);
-  
+
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
@@ -623,7 +623,7 @@ HSOSSCF::density()
     so_density(dens1, 1.0);
     dens.accumulate(dens1);
     dens1=0;
-    
+
     density_ = dens;
     // only flag the density as computed if the calc is converged
     if (!value_needed()) density_.computed() = 1;
@@ -641,14 +641,14 @@ HSOSSCF::scf_energy()
   RefSymmSCMatrix go = op_fock_.result_noupdate().copy();
   go.scale(-1.0);
   go.accumulate(cl_fock_.result_noupdate());
-  
+
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
   Ref<SCElementOp2> op = eop;
   t.element_op(op, cl_dens_);
 
   double cl_e = eop->result();
-  
+
   eop->reset();
   go.element_op(op, op_dens_);
   double op_e = eop->result();
@@ -746,7 +746,7 @@ HSOSSCF::lagrangian()
                                SCMatrix::TransposeTransform);
 
   mofock.scale(2.0);
-  
+
   Ref<SCElementOp2> op = new MOLagrangian(this);
   mofock.element_op(op, mofocko);
   mofocko=0;
@@ -755,7 +755,7 @@ HSOSSCF::lagrangian()
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(so_to_oso_tr * oso_scf_vector_, mofock);
-  
+
   // and then from SO to AO
   Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
@@ -770,14 +770,14 @@ HSOSSCF::gradient_density()
 {
   cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   op_dens_ = cl_dens_.clone();
-  
+
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
-  
+
   so_density(op_dens_, 1.0);
-  
+
   Ref<PetiteList> pl = integral()->petite_list(basis());
-  
+
   cl_dens_ = pl->to_AO_basis(cl_dens_);
   op_dens_ = pl->to_AO_basis(op_dens_);
 
@@ -785,7 +785,7 @@ HSOSSCF::gradient_density()
   tdens.accumulate(op_dens_);
 
   op_dens_.scale(2.0);
-  
+
   return tdens;
 }
 
@@ -821,16 +821,16 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     double *pmat, *pmato;
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
     RefSymmSCMatrix potmp = get_local_data(op_dens_, pmato, SCF::Read);
-  
+
     Ref<PetiteList> pl = integral()->petite_list();
     LocalHSOSGradContribution l(pmat,pmato);
-    
+
     int i;
     int na3 = molecule()->natom()*3;
     int nthread = threadgrp_->nthread();
     double **grads = new double*[nthread];
     Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
-    for (i=0; i < nthread; i++) { 
+    for (i=0; i < nthread; i++) {
       tbis[i] = integral()->electron_repulsion_deriv();
       grads[i] = new double[na3];
       memset(grads[i], 0, sizeof(double)*na3);
@@ -911,17 +911,17 @@ HSOSSCF::semicanonical()
     compute();
   if (semicanonical_evaluated_)
     return;
-  
+
   const RefSCDimension modim = eigenvalues().dim();
   const RefSCDimension sodim = so_dimension();
   const unsigned int nirrep = molecule()->point_group()->char_table().nirrep();
-  
+
   RefSCMatrix so_eigenvector = eigenvectors();
 #if DEBUG_SEMICANONICAL
   eigenvalues().print("HSOSSCF orbital energies");
   so_eigenvector.print("HSOSSCF orbitals");
 #endif
-  
+
   // initialize dimensions for occupied and virtual blocks
   int* aoccpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) aoccpi[h] = 0;
   int* boccpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) boccpi[h] = 0;
@@ -959,7 +959,7 @@ HSOSSCF::semicanonical()
     if (navir) avirdim->blocks()->set_subdim(h,new SCDimension(avirpi[h]));
     if (nbvir) bvirdim->blocks()->set_subdim(h,new SCDimension(bvirpi[h]));
   }
-  
+
   // get occupied and virtual eigenvectors
   RefSCMatrix aoccvec(so_dimension(), aoccdim, basis_matrixkit()); aoccvec.assign(0.0);
   RefSCMatrix boccvec(so_dimension(), boccdim, basis_matrixkit()); boccvec.assign(0.0);
@@ -993,7 +993,7 @@ HSOSSCF::semicanonical()
   Fa.print("Alpha Fock matrix");
   effective_fock().print("Effective Fock matrix");
 #endif
-  
+
   RefSymmSCMatrix aoccfock(aoccdim, basis_matrixkit());
   aoccfock.assign(0.0);
   aoccfock.accumulate_transform(aoccvec, afock_so,
@@ -1001,7 +1001,7 @@ HSOSSCF::semicanonical()
   RefDiagSCMatrix aoccevals(aoccdim, basis_matrixkit());
   RefSCMatrix aoccevecs(aoccdim, aoccdim, basis_matrixkit());
   aoccfock.diagonalize(aoccevals, aoccevecs);
-  
+
   RefSymmSCMatrix avirfock(avirdim, basis_matrixkit());
   avirfock.assign(0.0);
   avirfock.accumulate_transform(avirvec, afock_so,
@@ -1036,7 +1036,7 @@ HSOSSCF::semicanonical()
         const double e = avirevals.get_element(aviroffset + i);
         alpha_semican_evals_.result_noupdate().set_element(mo,e);
       }
-      
+
       aoccoffset += aoccpi[h];
       aviroffset += avirpi[h];
     }
@@ -1044,7 +1044,7 @@ HSOSSCF::semicanonical()
   alpha_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,aevecs);
 #if DEBUG_SEMICANONICAL
   so_eigenvector.print("Original eigenvector");
-  aevecs.print("Tranform matrix");
+  aevecs.print("Alpha tranform matrix");
   {
     RefSymmSCMatrix afock_mo(modim, basis_matrixkit()); afock_mo.assign(0.0);
     afock_mo.accumulate_transform(alpha_semican_evecs_.result_noupdate(), afock_so,
@@ -1055,7 +1055,7 @@ HSOSSCF::semicanonical()
   alpha_semican_evecs_.result_noupdate().print("Alpha semicanonical orbitals");
 #endif
   aevecs = 0;
-  
+
   //
   // beta case
   //
@@ -1070,7 +1070,7 @@ HSOSSCF::semicanonical()
                           SCMatrix::TransposeTransform);
   Fb.print("Beta Fock matrix");
 #endif
-  
+
   RefSymmSCMatrix boccfock(boccdim, basis_matrixkit());
   boccfock.assign(0.0);
   boccfock.accumulate_transform(boccvec, bfock_so,
@@ -1078,7 +1078,7 @@ HSOSSCF::semicanonical()
   RefDiagSCMatrix boccevals(boccdim, basis_matrixkit());
   RefSCMatrix boccevecs(boccdim, boccdim, basis_matrixkit());
   boccfock.diagonalize(boccevals, boccevecs);
-  
+
   RefSymmSCMatrix bvirfock(bvirdim, basis_matrixkit());
   bvirfock.assign(0.0);
   bvirfock.accumulate_transform(bvirvec, bfock_so,
@@ -1113,18 +1113,25 @@ HSOSSCF::semicanonical()
         const double e = bvirevals.get_element(bviroffset + i);
         beta_semican_evals_.result_noupdate().set_element(mo,e);
       }
-      
+
       boccoffset += boccpi[h];
       bviroffset += bvirpi[h];
     }
   }
   beta_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,bevecs);
 #if DEBUG_SEMICANONICAL
+  bevecs.print("Beta tranform matrix");
+  {
+    RefSymmSCMatrix bfock_mo(modim, basis_matrixkit()); bfock_mo.assign(0.0);
+    bfock_mo.accumulate_transform(beta_semican_evecs_.result_noupdate(), bfock_so,
+                                  SCMatrix::TransposeTransform);
+    bfock_mo.print("Beta Fock matrix in the semicanonical orbitals");
+  }
   beta_semican_evals_.result_noupdate().print("Beta semicanonical orbital energies");
   beta_semican_evecs_.result_noupdate().print("Beta semicanonical orbitals");
 #endif
   bevecs = 0;
-  
+
   semicanonical_evaluated_ = true;
 }
 

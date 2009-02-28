@@ -108,7 +108,7 @@ namespace {
   transposed_key(const std::string& key) {
     ParsedOneBodyIntKey pkey(key);
     std::string tkey = ParsedOneBodyIntKey::key(pkey.ket(), pkey.bra(),
-                                                pkey.oper());
+                                                pkey.oper(), pkey.spin());
     return tkey;
   }
 
@@ -216,6 +216,13 @@ FockBuildRuntime::get(const std::string& key) {
           RefSCMatrix F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J);
           const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
           registry_->add(fkey, F);
+
+#define DEBUG_FOCKBUILD_RUNTIME 0
+#if DEBUG_FOCKBUILD_RUNTIME
+          J.print(jkey.c_str());
+          K.print(kkey.c_str());
+          F.print(fkey.c_str());
+#endif
         }
 
       } else { // result is rectangular already
@@ -239,6 +246,11 @@ FockBuildRuntime::get(const std::string& key) {
           RefSCMatrix F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J);
           const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
           registry_->add(fkey, F);
+#if DEBUG_FOCKBUILD_RUNTIME
+          J.print(jkey.c_str());
+          K.print(kkey.c_str());
+          F.print(fkey.c_str());
+#endif
         }
       }
     }

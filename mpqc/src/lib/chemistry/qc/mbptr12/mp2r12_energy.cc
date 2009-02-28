@@ -481,7 +481,11 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
   }
 
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
+  const double emp2_obs_singles_energy = r12info->bc() ? 0.0 : r12eval()->emp2_singles();
+  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
+                                     emp2f12tot(BetaBeta) +
+                                     emp2f12tot(AlphaBeta) +
+                                     emp2_obs_singles_energy;
 
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
@@ -505,7 +509,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     emp2f12tot_1);
   }
 
-  double etotal = escf + emp2f12_corr_energy;
+  const double etotal = escf + emp2f12_corr_energy;
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
   so <<indent
@@ -1030,7 +1034,11 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
   }
 
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
+  const double emp2_obs_singles_energy = r12info->bc() ? 0.0 : r12eval()->emp2_singles();
+  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
+                                     emp2f12tot(BetaBeta) +
+                                     emp2f12tot(AlphaBeta) +
+                                     emp2_obs_singles_energy;
 
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
@@ -1054,7 +1062,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     emp2f12tot_1);
   }
 
-  double etotal = escf + emp2f12_corr_energy;
+  const double etotal = escf + emp2f12_corr_energy;
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
   so <<indent

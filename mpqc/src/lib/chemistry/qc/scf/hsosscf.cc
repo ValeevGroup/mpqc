@@ -1044,7 +1044,7 @@ HSOSSCF::semicanonical()
   alpha_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,aevecs);
 #if DEBUG_SEMICANONICAL
   so_eigenvector.print("Original eigenvector");
-  aevecs.print("Alpha tranform matrix");
+  aevecs.print("Alpha transform matrix");
   {
     RefSymmSCMatrix afock_mo(modim, basis_matrixkit()); afock_mo.assign(0.0);
     afock_mo.accumulate_transform(alpha_semican_evecs_.result_noupdate(), afock_so,
@@ -1120,7 +1120,7 @@ HSOSSCF::semicanonical()
   }
   beta_semican_evecs_.result_noupdate().accumulate_product(so_eigenvector,bevecs);
 #if DEBUG_SEMICANONICAL
-  bevecs.print("Beta tranform matrix");
+  bevecs.print("Beta transform matrix");
   {
     RefSymmSCMatrix bfock_mo(modim, basis_matrixkit()); bfock_mo.assign(0.0);
     bfock_mo.accumulate_transform(beta_semican_evecs_.result_noupdate(), bfock_so,

@@ -189,6 +189,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     refinfo_ << SavableState::restore_state(si);
   }
 
+  obs_eq_vbs_ = refinfo_->ref()->basis()->equiv(bs_vir_);
+  obs_eq_ribs_ = refinfo_->ref()->basis()->equiv(bs_ri_);
+
   int initialized; si.get(initialized); initialized_ = (bool)initialized;
 }
 
@@ -230,6 +233,9 @@ R12IntEvalInfo::initialize()
       refinfo_->initialize();
       construct_ri_basis_(safety_check());
       construct_orthog_vir_();
+
+      obs_eq_vbs_ = basis()->equiv(basis_vir());
+      obs_eq_ribs_ = basis()->equiv(basis_ri());
 
       tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
       tfactory_->set_memory(memory_);
@@ -282,7 +288,7 @@ R12IntEvalInfo::initialize()
           idxreg->add(make_keyspace_pair(mu));
           aoidxreg->add(mu->basis(),mu);
         }
-        if (!bs_vir_->equiv(basis())) { // VBS
+        if (!obs_eq_vbs()) { // VBS
           const Ref<GaussianBasisSet> bs = bs_vir_;
           const int nao = bs->nbasis();
           RefSCDimension obs_ao_dim = new SCDimension(nao,1);
@@ -296,7 +302,7 @@ R12IntEvalInfo::initialize()
           idxreg->add(make_keyspace_pair(nu));
           aoidxreg->add(nu->basis(),nu);
         }
-        { // RI-BS
+        if (!obs_eq_ribs()) { // RI-BS
           const int nao = basis_ri()->nbasis();
           RefSCDimension ribs_ao_dim = new SCDimension(nao,1);
           ribs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
@@ -338,6 +344,16 @@ R12IntEvalInfo::ribs_space(const SpinCase1& S) const
 	return vir_spaces_[S].ri_;
     else
 	throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
+}
+
+bool
+R12IntEvalInfo::obs_eq_vbs() const {
+  return obs_eq_vbs_;
+}
+
+bool
+R12IntEvalInfo::obs_eq_ribs() const {
+  return obs_eq_ribs_;
 }
 
 const Ref<SingleRefInfo>&
@@ -395,7 +411,7 @@ R12IntEvalInfo::construct_orthog_vir_()
   const bool spin_polarized = refinfo()->spin_polarized();
 
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
-  if (obs == bs_vir_) {
+  if (obs->equiv(bs_vir_)) {
     if (!spin_polarized) {
       vir_ = refinfo()->uocc();
       vir_sb_ = refinfo()->uocc_sb();

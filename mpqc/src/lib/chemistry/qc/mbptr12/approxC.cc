@@ -83,8 +83,8 @@ R12IntEval::compute_BC_()
     if (evaluated_)
 	return;
 
-    const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-    const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+    const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+    const bool abs_eq_obs = r12info()->obs_eq_ribs();
     const unsigned int maxnabs = r12info()->maxnabs();
 
     const unsigned int nf12 = corrfactor()->nfunctions();

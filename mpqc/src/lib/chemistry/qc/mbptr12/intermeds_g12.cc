@@ -42,8 +42,8 @@ R12IntEval::init_intermeds_g12_()
 
   // get smart ptr to this, but how? Just unmanage it for now
   Ref<R12IntEval> thisref(this);
-  const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
-  const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
 
   Timer tim_diagonal("\"diagonal\" part of G12 intermediates");
   ExEnv::out0() << endl << indent

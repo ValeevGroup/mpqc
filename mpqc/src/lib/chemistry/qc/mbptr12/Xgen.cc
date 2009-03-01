@@ -87,9 +87,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     using LinearR12::Direct_Contraction;
 
     // equations depend on whether VBS == OBS ..
-    const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
+    const bool vbs_eq_obs = r12info()->obs_eq_vbs();
     // .. and ABS == OBS
-    const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+    const bool abs_eq_obs = r12info()->obs_eq_ribs();
     // if particle 1 and 2 are equivalent, can use permutational symmetry
     const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
 

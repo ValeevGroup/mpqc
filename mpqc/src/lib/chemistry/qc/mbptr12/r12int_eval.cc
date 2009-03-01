@@ -164,7 +164,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   init_tforms_();
 
   // canonicalize virtuals if VBS != OBS
-  if (! r12info()->basis_vir()->equiv(r12info()->basis())) {
+  if (! r12info()->obs_eq_vbs()) {
     form_canonvir_space_();
   }
 
@@ -722,9 +722,8 @@ R12IntEval::form_canonvir_space_()
 {
   // Create a complement space to all occupieds
   // Fock operator is diagonal in this space
-  if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+  if (r12info_->obs_eq_vbs())
     return;
-  }
 
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spincase = static_cast<SpinCase1>(s);
@@ -1726,8 +1725,8 @@ R12IntEval::compute()
 
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS
   // compare these basis sets here
-  const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
-  const bool obs_eq_ribs = r12info_->basis_ri()->equiv(r12info_->basis());
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
   const LinearR12::ABSMethod absmethod = r12info()->abs_method();
   const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			    absmethod == LinearR12::ABS_CABSPlus);
@@ -1763,7 +1762,7 @@ R12IntEval::compute()
     // whereas other methods that include X (A' and B) must also make sure to include non-BC piece, if needed
     else {
       if (stdapprox() != LinearR12::StdApprox_C) {
-        compute_B_bc_();
+        compute_B_fX_();
       }
     }
 
@@ -2005,7 +2004,7 @@ R12IntEval::occ(SpinCase1 S) const
 const Ref<OrbitalSpace>&
 R12IntEval::vir_act(SpinCase1 S) const
 {
-  if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
+  if (!r12info()->obs_eq_vbs())
     return r12info()->vir_act(S);
   else
     return r12info()->refinfo()->uocc_act(S);
@@ -2014,7 +2013,7 @@ R12IntEval::vir_act(SpinCase1 S) const
 const Ref<OrbitalSpace>&
 R12IntEval::vir(SpinCase1 S) const
 {
-  if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
+  if (!r12info()->obs_eq_vbs())
     return r12info()->vir(S);
   else
     return r12info()->refinfo()->uocc(S);

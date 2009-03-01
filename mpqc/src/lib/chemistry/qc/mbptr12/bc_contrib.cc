@@ -60,35 +60,35 @@ using namespace std;
 using namespace sc;
 
 void
-R12IntEval::compute_B_bc_()
+R12IntEval::compute_B_fX_()
 {
   if (evaluated_)
     return;
-  
+
   Ref<MessageGrp> msg = r12info()->msg();
   int me = msg->me();
   int ntasks = msg->n();
-  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-  
-  Timer tim("B(BC) intermediate");
-  ExEnv::out0() << endl << indent << "Entered B(BC) intermediate evaluator"
+  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+
+  Timer tim("B(fX) intermediate");
+  ExEnv::out0() << endl << indent << "Entered B(fX) intermediate evaluator"
       << endl;
   ExEnv::out0() << incindent;
-  
+
   for (int s=0; s<nspincases2(); s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
     Ref<OrbitalSpace> xspace1 = xspace(spin1);
     Ref<OrbitalSpace> xspace2 = xspace(spin2);
-    
+
     if (dim_oo(spincase2).n() == 0)
       continue;
 
     RefSCMatrix Q = B_[s].clone();
     Q.assign(0.0);
-    // if Brillouin condition does not hold, compute X_{kl}^{ij_F} explicitly
-    if (!r12info()->bc()) {
+    // if Brillouin condition does not hold or VBS!=OBS, compute X_{kl}^{ij_F} explicitly
+    if (!r12info()->bc() || !vbs_eq_obs) {
       // compute Q = X_{xy}^{xy_{F}}
       if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
         Ref<OrbitalSpace> F_x2 = F_x_p(spin2);
@@ -99,7 +99,7 @@ R12IntEval::compute_B_bc_()
         F_x2 = F_x_a(spin2);
         compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
       }
-      
+
       if (xspace1 != xspace2) {
         if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
           Ref<OrbitalSpace> F_x1 = F_x_p(spin1);
@@ -116,8 +116,8 @@ R12IntEval::compute_B_bc_()
           symmetrize<false>(Q, Q, xspace1, xspace1);
         }
       }
-    } // bc = false
-    else { // bs = true
+    } // bc = false || vbs!=obs
+    else { // bc = true, vbs==obs
 
       const int num_f12 = r12info()->corrfactor()->nfunctions();
       const int nxy = dim_xy(spincase2).n();
@@ -127,10 +127,10 @@ R12IntEval::compute_B_bc_()
       // replicate X on all nodes (don't forget to zero out all instances except on node 0)
       globally_sum_scmatrix_(X_[s],true);
       const RefSCMatrix& X = X_[s];
-      
+
       for(int f=0; f<num_f12; f++) {
         const int f_off = f*nxy;
-        
+
         SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
         for(kl_iter.start(); kl_iter; kl_iter.next()) {
           const int kl = kl_iter.ij() + f_off;
@@ -138,21 +138,20 @@ R12IntEval::compute_B_bc_()
             continue;
           const int k = kl_iter.i();
           const int l = kl_iter.j();
-          
+
           for(int g=0; g<=f; g++) {
             const int g_off = g*nxy;
-            
+
             SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
             for(ow_iter.start(); ow_iter; ow_iter.next()) {
               const int ow = ow_iter.ij() + g_off;
               const int o = ow_iter.i();
               const int w = ow_iter.j();
-              
-              // contribution from X vanishes in approximation A
+
               const double fx = 0.5 * (evals_xspace1(k) + evals_xspace2(l)
                                      + evals_xspace1(o) + evals_xspace2(w))
                                     * X.get_element(kl, ow);
-                
+
               Q.accumulate_element(kl,ow,fx);
             }
           }
@@ -163,24 +162,24 @@ R12IntEval::compute_B_bc_()
       if (me != 0)
         X.assign(0.0);
     }
-    
+
     if (debug_ >= DefaultPrintThresholds::mostO4) {
-      std::string label = prepend_spincase(spincase2, "B(BC) contribution");
+      std::string label = prepend_spincase(spincase2, "B(fX) contribution");
       Q.print(label.c_str());
     }
     B_[s].accumulate(Q);
     Q = 0;
-    
-    // Bra-Ket symmetrize the B(BC) contribution
+
+    // Bra-Ket symmetrize the B(fX) contribution
     B_[s].scale(0.5);
     RefSCMatrix B_t = B_[s].t();
     B_[s].accumulate(B_t);
   }
-  
+
   globally_sum_intermeds_();
-  
+
   ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited B(BC) intermediate evaluator" << endl;
+  ExEnv::out0() << indent << "Exited B(fX) intermediate evaluator" << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////

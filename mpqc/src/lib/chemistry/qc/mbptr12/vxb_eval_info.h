@@ -88,6 +88,8 @@ private:
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
+  bool obs_eq_vbs_;
+  bool obs_eq_ribs_;
   Ref<SCMatrixKit> matrixkit_;
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
@@ -223,10 +225,14 @@ public:
   Ref<Integral> integral() const { return wfn()->integral(); };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
-  /// Returns the virtuals basis set (VBS) obje19ct
+  /// Returns the virtuals basis set (VBS) object
   Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
+  /// Returns true if VBS is equivalent to OBS
+  bool obs_eq_vbs() const;
+  /// Returns true if RIBS is equivalent to OBS
+  bool obs_eq_ribs() const;
   Ref<SCMatrixKit> matrixkit() const { return matrixkit_; };
   Ref<MemoryGrp> mem() const { return mem_;};
   Ref<MessageGrp> msg() const { return msg_;};

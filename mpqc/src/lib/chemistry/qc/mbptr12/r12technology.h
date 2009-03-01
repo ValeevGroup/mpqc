@@ -59,7 +59,7 @@ class R12Technology: virtual public SavableState {
 
     // for debugging purposes only
     bool omit_B_;
-    
+
     // no need to store this guy
 #if 0
     // determines the weight function used to fit the correlation factor
@@ -68,7 +68,7 @@ class R12Technology: virtual public SavableState {
     };
     GTGFitWeight::Type gtg_fit_weight_;
 #endif
-    
+
   public:
     R12Technology(StateIn&);
     /** The KeyVal constructor.
@@ -76,7 +76,7 @@ class R12Technology: virtual public SavableState {
 
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
         Allowed values are "r12", "g12", "geng12", and "none". The default is "r12".
-      
+
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
         of the correlation factor. <tt>corr_param</tt> can be a single floating-point value
         an array of floating-point values, or an array of arrays of 2-element arrays of
@@ -94,7 +94,7 @@ class R12Technology: virtual public SavableState {
 
         This keyword has no meaning for some correlation factors, e.g., "r12" and "none",
         and is not used. There is no default.
-      
+
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A'. WARNING: standard approximation A is now obsolete.
 
@@ -119,9 +119,9 @@ class R12Technology: virtual public SavableState {
           Only energies can be computed with the MP2-R12/C method.
 
         </dl>
-        
+
         <dt><tt>ansatz</tt><dd> This object specifies the ansatz (see LinearR12Ansatz).
-        
+
         <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
         Condition (GBC) is assumed to hold. The default is "true". This keyword is
         only valid if stdapprox=A'.
@@ -133,12 +133,12 @@ class R12Technology: virtual public SavableState {
         is only valid if stdapprox=A'.
         The effect of setting this keyword to true is small --
         hence it is not recommended to use this keyword.
-       
+
         <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
         Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
         For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
         will leave out such terms.
-       
+
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
 	Valid values are "ABS" (Klopper and Samson), "ABS+", "CABS", and "CABS+", where the "+" labels
@@ -156,7 +156,7 @@ class R12Technology: virtual public SavableState {
 	positive pair energy corrections can result from using too many correlation functions.
 	<tt>posdef_B = yes</tt> offers the best protection against nonphysical results.
 	The default is <tt>weak</tt>, which is cheaper <tt>yes</tt> and is definitely safer than <tt>no</tt>.
-	
+
 	<dt><tt>gtg_fit_weight</tt><dd> This keyword determines how the correlation factor is fit to Gaussians (hence
 	only valid when <tt>corr_factor</tt> is set to <tt>stg-ng</tt>)
 	The choices are <tt>tewklopper</tt>, which is appropriate for energy computations, and <tt>cusp</tt>, which is appropriate
@@ -185,7 +185,6 @@ class R12Technology: virtual public SavableState {
     bool spinadapted() const;
     bool omit_P() const;
     bool pauli() const;
-    bool include_mp1() const;
     bool safety_check() const;
     const LinearR12::PositiveDefiniteB& posdef_B() const;
 
@@ -194,7 +193,7 @@ class R12Technology: virtual public SavableState {
     //
     // omit expensive parts of B
     bool omit_B() const;
-    
+
     // This checks if ints is suitable for R12 calculations. Throws, if false.
     void check_integral_factory(const Ref<Integral>& ints);
 

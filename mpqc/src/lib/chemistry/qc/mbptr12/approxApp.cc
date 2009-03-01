@@ -66,16 +66,16 @@ R12IntEval::compute_BApp_()
 {
   if (evaluated_)
     return;
-  
-  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-  const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+
+  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+  const bool abs_eq_obs = r12info()->obs_eq_ribs();
   const unsigned int maxnabs = r12info()->maxnabs();
-  
+
   Timer tim_B_app_App("B(app. A'') intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(app. A'') intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
-  
+
   for(int s=0; s<nspincases2(); s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
@@ -93,7 +93,7 @@ R12IntEval::compute_BApp_()
     ExEnv::out0() << endl << indent
                   << "Entered " << Qlabel << " evaluator" << endl;
     ExEnv::out0() << incindent;
-    
+
     // compute Q = X_{xy}^{xy_{hj}}
     RefSCMatrix Q;
     if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
@@ -162,7 +162,7 @@ R12IntEval::compute_BApp_()
     RefSCMatrix B_t = B_[s].t();
     B_[s].accumulate(B_t);
   }
-  
+
   globally_sum_intermeds_();
 
   ExEnv::out0() << decindent;

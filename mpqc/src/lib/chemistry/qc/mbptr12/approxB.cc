@@ -71,8 +71,8 @@ R12IntEval::compute_BB_()
   if (evaluated_)
     return;
 
-  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-  const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+  const bool abs_eq_obs = r12info()->obs_eq_ribs();
 
   Timer tim_B_app_B("B(app. B) intermediate");
   ExEnv::out0() << endl << indent

@@ -48,8 +48,8 @@ R12IntEval::V(SpinCase2 spincase2,
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
-  const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
-  const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
 
   const bool p1_eq_p2 = (p1 == p2);
   // are particles 1 and 2 equivalent?
@@ -316,8 +316,8 @@ R12IntEval::P(SpinCase2 spincase2)
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
-  const bool obs_eq_vbs = r12info()->basis_vir()->equiv(r12info_->basis());
-  const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);

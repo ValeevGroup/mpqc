@@ -63,7 +63,6 @@ methods. */
 class MBPT2_R12: public MBPT2 {
 
     bool spinadapted_;
-    bool include_mp1_;
     bool new_energy_;
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator

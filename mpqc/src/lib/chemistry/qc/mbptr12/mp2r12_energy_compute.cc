@@ -82,8 +82,8 @@ MP2R12Energy_SpinOrbital::compute()
   int me = msg->me();
   int ntasks = msg->n();
 
-  const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-  const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+  const bool obs_eq_vbs = r12info->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   bool ebc = r12eval()->ebc();
   if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -622,8 +622,8 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
 
-  const bool obs_eq_vbs = r12eval_->r12info()->basis_vir()->equiv(r12eval_->r12info()->basis());
-  const bool obs_eq_ribs = r12eval_->r12info()->basis_ri()->equiv(r12eval_->r12info()->basis());
+  const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   bool ebc = r12eval()->ebc();
   if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -712,8 +712,8 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
 
-  const bool obs_eq_vbs = r12eval_->r12info()->basis_vir()->equiv(r12eval_->r12info()->basis());
-  const bool obs_eq_ribs = r12eval_->r12info()->basis_ri()->equiv(r12eval_->r12info()->basis());
+  const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   bool ebc = r12eval()->ebc();
   if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -912,8 +912,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-    const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+    const bool obs_eq_vbs = r12info->obs_eq_vbs();
+    const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool ebc = r12eval()->ebc();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -1016,8 +1016,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-    const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+    const bool obs_eq_vbs = r12info->obs_eq_vbs();
+    const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool ebc = r12eval()->ebc();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -1117,8 +1117,8 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-    const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+    const bool obs_eq_vbs = r12info->obs_eq_vbs();
+    const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool ebc = r12eval()->ebc();
     if (r12eval()->vir(Alpha)->rank()==0 ||

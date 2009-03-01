@@ -43,8 +43,8 @@ R12IntEval::contrib_to_VXB_a_()
   if (evaluated_)
     return;
 
-  const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
-  const bool obs_eq_ribs = r12info()->basis_ri()->equiv(r12info()->basis());
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
   // commutators never appear in StdApprox C
   const bool compute_B = (stdapprox() != LinearR12::StdApprox_C);
 

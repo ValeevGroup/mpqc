@@ -325,8 +325,9 @@ class R12IntEval : virtual public SavableState {
   /** Compute contributions to B that vanish under GBC */
   void compute_B_gbc_();
 
-  /** Compute contributions to B that vanish under BC */
-  void compute_B_bc_();
+  /** Compute the fX contribution to B (only appears in stdapprox = A' or B).
+      This includes contributions that depend on Brillouin condition. */
+  void compute_B_fX_();
 
   /** Compute contributions to B which appear in standard approximation B and not in A' */
   void compute_BB_();

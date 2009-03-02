@@ -1722,14 +1722,12 @@ R12IntEval::compute()
       }
     }
 
-#if 0
     if (obs_eq_vbs) {
       contrib_to_VXB_a_();
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();
     }
-#endif
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods
     // because exchange is completely skipped

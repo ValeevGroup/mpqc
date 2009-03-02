@@ -799,11 +799,26 @@ R12IntEval::hj_i_P(SpinCase1 spin)
   const Ref<OrbitalSpace>& extspace = occ_act(spin);
   const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
   Ref<OrbitalSpace> null;
+#if 1 // real H+J
   f_bra_ket(spin,false,true,false,
 	    null,
 	    hj_i_P_[s],
 	    null,
 	    extspace,intspace);
+#else // use another one-electron matrix instead
+  {
+    RefSCMatrix X_i_e;
+    X_i_e = this->fock(intspace, extspace, AnySpinCase1, 1.0, 0.0, 1.0, 0);
+    // r12info()->compute_overlap_ints(intspace, extspace, S_i_e);
+    std::string id = extspace->id();  id += "_X(";  id += intspace->id();  id += ")";
+    id = ParsedOrbitalSpaceKey::key(id,spin);
+    std::string name = "X-weighted space";
+    name = prepend_spincase(spin,name);
+    hj_i_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs()*X_i_e,
+                         intspace->basis());
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hj_i_P_[s]));
+  }
+#endif
   return hj_i_P_[s];
 }
 
@@ -1553,165 +1568,125 @@ R12IntEval::f_bra_ket(
 {
   const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
 
-  const unsigned int s = static_cast<unsigned int>(spin);
-  const bool not_yet_computed =
-      (make_F && F.null()) ||
-      (make_hJ && hJ.null()) ||
-      (make_K && K.null());
+  const unsigned int s = static_cast<unsigned int> (spin);
+  const bool not_yet_computed = (make_F && F.null()) || (make_hJ && hJ.null())
+      || (make_K && K.null());
   if (not_yet_computed) {
 
-       // no Delta_DKH in hJ and K if Pauli Hamiltonian is used
-       const bool pauli=r12info()->r12tech()->pauli();
-       const int dk = this->dk();
-       bool delta_dkh=(!pauli && (dk==2));
+    const bool pauli = r12info()->r12tech()->pauli();
+    const int dk = this->dk();
 
 #if 0
-       ExEnv::out0() << indent << "make_F   = " << (make_F ? "true" : "false") << endl;
-       ExEnv::out0() << indent << "make_hJ  = " << (make_hJ ? "true" : "false") << endl;
-       ExEnv::out0() << indent << "make_K   = " << (make_K ? "true" : "false") << endl;
-       ExEnv::out0() << indent << "delta_dk = " << (delta_dkh ? "true" : "false") << endl;
+    ExEnv::out0() << indent << "make_F   = " << (make_F ? "true" : "false") << endl;
+    ExEnv::out0() << indent << "make_hJ  = " << (make_hJ ? "true" : "false") << endl;
+    ExEnv::out0() << indent << "make_K   = " << (make_K ? "true" : "false") << endl;
 #endif
 
-       // in case we include the full DKH-Hamiltonian, let's do the higher order terms via RI
-       RefSCMatrix dkh_contrib;
-       if ((make_hJ || make_K) && (delta_dkh))  {
-               dkh_contrib = Delta_DKH_(intspace,extspace,spin);
-               dkh_contrib.scale(-1.0);
-               if (debug_ >= DefaultPrintThresholds::allN2) {
-                   std::string label("(Delta_DKH) matrix in ");
-                   label += intspace->id();
-                   label += "/";
-                   label += extspace->id();
-                   label += " basis";
-                   dkh_contrib.print(label.c_str());
-               }
-       }
-
-      RefSCMatrix hJ_i_e;
-      if (make_hJ && hJ.null()) {
-	  hJ_i_e = fock(intspace,extspace,spin,1.0,0.0);
-	  if (debug_ >= DefaultPrintThresholds::allN2) {
-	      std::string label("(h+J) matrix in ");
-	      label += intspace->id();
-	      label += "/";
-	      label += extspace->id();
-	      label += " basis";
-	      hJ_i_e.print(label.c_str());
-	  }
-
-	  std::string id = extspace->id();  id += "_hJ(";  id += intspace->id();  id += ")";
-	  id = ParsedOrbitalSpaceKey::key(id,spin);
-	  std::string name = "(h+J)-weighted space";
-	  name = prepend_spincase(spin,name);
-
-	  // keep hJ_i_e unchanged for possible later use in F
-	  RefSCMatrix hJ_trafo = hJ_i_e.copy();
-
-	  if (delta_dkh) {
-	      id = extspace->id();  id += "_hJ-d(";  id += intspace->id();  id += ")";
-	      id = ParsedOrbitalSpaceKey::key(id,spin);
-	      name = "(hJ-d)-weighted space";
- 	      hJ_trafo.accumulate(dkh_contrib);
-          }
-#if EVALUATE_MV_VIA_RI
-       	  hJ_trafo.assign(dkh_contrib);  hJ_trafo.scale(-1.0);
-#endif
-	  hJ = new OrbitalSpace(id, name, extspace, intspace->coefs()*hJ_trafo,
-				intspace->basis());
-	  idxreg->add(make_keyspace_pair(hJ));
+    RefSCMatrix hJ_i_e;
+    if (make_hJ && hJ.null()) {
+      hJ_i_e = fock(intspace, extspace, spin, 1.0, 0.0);
+      if (debug_ >= DefaultPrintThresholds::allN2) {
+        std::string label("(h+J) matrix in ");
+        label += intspace->id();
+        label += "/";
+        label += extspace->id();
+        label += " basis";
+        hJ_i_e.print(label.c_str());
       }
 
-      RefSCMatrix K_i_e;
-      if (make_K && K.null()) {
-	  const Ref<OrbitalSpace>& occ_space = occ(spin);
-	  if (!USE_FOCKBUILD)
-	    K_i_e = exchange_(occ_space,intspace,extspace);
-	  else {
-        K_i_e = fock(intspace,extspace,spin,0.0,1.0,0.0);
+      std::string id = extspace->id();
+      id += "_hJ(";
+      id += intspace->id();
+      id += ")";
+      id = ParsedOrbitalSpaceKey::key(id, spin);
+      std::string name = "(h+J)-weighted space";
+      name = prepend_spincase(spin, name);
+
+      hJ = new OrbitalSpace(id, name, extspace, intspace->coefs() * hJ_i_e,
+                            intspace->basis());
+      idxreg->add(make_keyspace_pair(hJ));
+    }
+
+    RefSCMatrix K_i_e;
+    if (make_K && K.null()) {
+      const Ref<OrbitalSpace>& occ_space = occ(spin);
+      if (!USE_FOCKBUILD)
+        K_i_e = exchange_(occ_space, intspace, extspace);
+      else {
+        K_i_e = fock(intspace, extspace, spin, 0.0, 1.0, 0.0);
         K_i_e.scale(-1.0);
-	  }
+      }
+      if (debug_ >= DefaultPrintThresholds::allN2) {
+        std::string label;
+        label += "K matrix in ";
+        label += intspace->id();
+        label += "/";
+        label += extspace->id();
+        label += " basis";
+        K_i_e.print(label.c_str());
+      }
 
-
-	  if (debug_ >= DefaultPrintThresholds::allN2) {
-		  std::string label;
-		  label +="K matrix in ";
-	      label += intspace->id();
-	      label += "/";
-	      label += extspace->id();
-	      label += " basis";
-	      K_i_e.print(label.c_str());
-	  }
-
-	  std::string id = extspace->id();  id += "_K(";  id += intspace->id();  id += ")";
-      id = ParsedOrbitalSpaceKey::key(id,spin);
-	  std::string name = "K-weighted space";
-
-	  // keep K_i_e unchanged for possible later use in F
- 	  RefSCMatrix K_trafo = K_i_e.copy();
-
-	  if (delta_dkh) {
-	       id = extspace->id();  id += "_K-d(";  id += intspace->id();  id += ")";
-	       id = ParsedOrbitalSpaceKey::key(id,spin);
-	       name = "(K-d)-weighted space";
-	       K_trafo.accumulate(dkh_contrib);
-	  }
-	  name = prepend_spincase(spin,name);
-
-#if EVALUATE_MV_VIA_RI
-	  K_trafo.assign(dkh_contrib);  K_trafo.scale(-1.0);
-#endif
-	  name = prepend_spincase(spin,name);
-	  K = new OrbitalSpace(id, name, extspace, intspace->coefs()*K_trafo,
-				intspace->basis());
+      std::string id = extspace->id();
+      id += "_K(";
+      id += intspace->id();
+      id += ")";
+      id = ParsedOrbitalSpaceKey::key(id, spin);
+      std::string name = "K-weighted space";
+      name = prepend_spincase(spin, name);
+      K = new OrbitalSpace(id, name, extspace, intspace->coefs() * K_i_e,
+                           intspace->basis());
       idxreg->add(make_keyspace_pair(K));
+    }
+
+    if (make_F && F.null()) {
+      RefSCMatrix F_i_e;
+      if (make_hJ) {
+        if (make_K) {
+          F_i_e = K_i_e.clone();
+          F_i_e.assign(K_i_e);
+          F_i_e.scale(-1.0);
+          F_i_e.accumulate(hJ_i_e);
+        } else {
+          const Ref<OrbitalSpace>& occ_space = occ(spin);
+          if (!USE_FOCKBUILD) {
+            F_i_e = exchange_(occ_space, intspace, extspace);
+            F_i_e.scale(-1.0);
+          } else {
+            F_i_e = fock(intspace, extspace, spin, 0.0, 1.0, 0.0);
+          }
+          F_i_e.accumulate(hJ_i_e);
+        }
+      } else {
+        if (make_K) {
+          F_i_e = K_i_e.clone();
+          F_i_e.assign(K_i_e);
+          F_i_e.scale(-1.0);
+          RefSCMatrix hJ_i_e = fock(intspace, extspace, spin, 1.0, 0.0);
+          F_i_e.accumulate(hJ_i_e);
+        } else {
+          F_i_e = fock(intspace, extspace, spin, 1.0, 1.0);
+        }
+      }
+      if (debug_ >= DefaultPrintThresholds::allN2) {
+        std::string label("F matrix in ");
+        label += intspace->id();
+        label += "/";
+        label += extspace->id();
+        label += " basis";
+        F_i_e.print(label.c_str());
       }
 
-      if (make_F && F.null()) {
-	  RefSCMatrix F_i_e;
-	  if (make_hJ) {
-	      if (make_K) {
-		  F_i_e = K_i_e.clone();  F_i_e.assign(K_i_e);  F_i_e.scale(-1.0);
-		  F_i_e.accumulate(hJ_i_e);
-	      }
-	      else {
-		  const Ref<OrbitalSpace>& occ_space = occ(spin);
-	      if (!USE_FOCKBUILD) {
-	        F_i_e = exchange_(occ_space,intspace,extspace);
-	        F_i_e.scale(-1.0);
-	      } else {
-	        F_i_e = fock(intspace,extspace,spin,0.0,1.0,0.0);
-	      }
-		  F_i_e.accumulate(hJ_i_e);
-	      }
-	  }
-	  else {
-	      if (make_K) {
-		  F_i_e = K_i_e.clone();  F_i_e.assign(K_i_e);  F_i_e.scale(-1.0);
-		  RefSCMatrix hJ_i_e = fock(intspace,extspace,spin,1.0,0.0);
-		  F_i_e.accumulate(hJ_i_e);
-	      }
-	      else {
-		  F_i_e = fock(intspace,extspace,spin,1.0,1.0);
-	      }
-	  }
-	  if (debug_ >= DefaultPrintThresholds::allN2) {
-	      std::string label("F matrix in ");
-	      label += intspace->id();
-	      label += "/";
-	      label += extspace->id();
-	      label += " basis";
-	      F_i_e.print(label.c_str());
-	  }
-
-	  std::string id = extspace->id();  id += "_F(";  id += intspace->id();  id += ")";
-      id = ParsedOrbitalSpaceKey::key(id,spin);
-	  std::string name = "F-weighted space";
-          name = prepend_spincase(spin,name);
-	  F = new OrbitalSpace(id, name, extspace, intspace->coefs()*F_i_e,
-				intspace->basis());
+      std::string id = extspace->id();
+      id += "_F(";
+      id += intspace->id();
+      id += ")";
+      id = ParsedOrbitalSpaceKey::key(id, spin);
+      std::string name = "F-weighted space";
+      name = prepend_spincase(spin, name);
+      F = new OrbitalSpace(id, name, extspace, intspace->coefs() * F_i_e,
+                           intspace->basis());
       idxreg->add(make_keyspace_pair(F));
-      }
-
+    }
   }
 }
 
@@ -1747,12 +1722,14 @@ R12IntEval::compute()
       }
     }
 
+#if 0
     if (obs_eq_vbs) {
       contrib_to_VXB_a_();
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();
     }
+#endif
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods
     // because exchange is completely skipped

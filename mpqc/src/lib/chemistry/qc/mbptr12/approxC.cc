@@ -60,6 +60,7 @@
 using namespace std;
 using namespace sc;
 
+#define DEBUG_PRINT_ALL_B_CONTRIBUTIONS 0
 #define INCLUDE_Q 1
 #define INCLUDE_P 1
 #define INCLUDE_P_PKP 1
@@ -150,7 +151,7 @@ R12IntEval::compute_BC_()
 	ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
 	tim_Q.exit();
 
-	if (debug_ >= DefaultPrintThresholds::mostO4) {
+	if (debug_ >= DefaultPrintThresholds::mostO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
 	  globally_sum_intermeds_();
 	  std::string label = prepend_spincase(spincase2,"Q(C) contribution");
       Q.print(label.c_str());
@@ -205,7 +206,7 @@ R12IntEval::compute_BC_()
 			     ribs1,ribs2,
 			     kribs1,kribs2);
 
-                if (debug_ >= DefaultPrintThresholds::allO4)
+                if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                   P.print("P(incl R_klPQ K_QR R_PRij)");
 	    }
 #endif // INCLUDE_P_PKP
@@ -223,7 +224,7 @@ R12IntEval::compute_BC_()
 	                     orbs1,orbs2,
 	                     orbs1,orbs2,
 	                     forbs1,forbs2);
-	        if (debug_ >= DefaultPrintThresholds::allO4)
+	        if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
 	          P.print("P(incl R_klpr F_pq R_qrij)");
 	      }
 #endif // INCLUDE_P_PFP
@@ -249,7 +250,7 @@ R12IntEval::compute_BC_()
 				 occ1,occ2,
 				 ribs1,ribs2,
 				 fribs1,fribs2);
-                    if (debug_ >= DefaultPrintThresholds::allO4)
+                    if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                       P.print("P(incl R_klPm F_PQ R_Qmij)");
 		}
 #endif // INCLUDE_P_PFP
@@ -274,7 +275,7 @@ R12IntEval::compute_BC_()
 				     z1,z2,
 				     orbs1,orbs2,
 				     forbs1,forbs2);
-                        if (debug_ >= DefaultPrintThresholds::allO4)
+                        if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                           P.print("P(incl R_klpa F_pq R_qaij)");
 		    }
 		    else {
@@ -291,7 +292,7 @@ R12IntEval::compute_BC_()
 					 z1,z2,
 					 x1,x2,
 					 fx1,fx2);
-                            if (debug_ >= DefaultPrintThresholds::allO4)
+                            if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                               P.print("P(incl R_klma F_mn R_naij)");
 			}
 			// R_klca F_cd R_daij
@@ -306,7 +307,7 @@ R12IntEval::compute_BC_()
 					 z1,z2,
 					 x1,x2,
 					 fx1,fx2);
-                            if (debug_ >= DefaultPrintThresholds::allO4)
+                            if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                               P.print("P(incl R_klca F_cd R_daij)");
 			}
 			// R_klca F_cm R_maij + R_klma F_mc R_caij
@@ -326,7 +327,7 @@ R12IntEval::compute_BC_()
                             // the R_klma F_mc R_caij term
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
-                            if (debug_ >= DefaultPrintThresholds::allO4)
+                            if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                               P.print("P(incl 2 R_klca F_cm R_maij");
 			}
 		    } // VBS != OBS
@@ -359,7 +360,7 @@ R12IntEval::compute_BC_()
                         // the R_klma F_mc R_caij term
                         Ptmp.scale(2.0);
 			P.accumulate(Ptmp);
-                        if (debug_ >= DefaultPrintThresholds::allO4)
+                        if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                           P.print("P(incl 2 R_klmA F_mP R_PAij)");
 		    }
 #endif // INCLUDE_P_mFP
@@ -401,7 +402,7 @@ R12IntEval::compute_BC_()
 					     z1,z2,
 					     x1,x2,
 					     fx1,fx2);
-                                if (debug_ >= DefaultPrintThresholds::allO4)
+                                if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                                   Ptmp.print("P(R_klmz F_mA R_Azij)");
 			    }
 			    {
@@ -415,14 +416,14 @@ R12IntEval::compute_BC_()
 					     z1,z2,
 					     x1,x2,
 					     fx1,fx2);
-                                if (debug_ >= DefaultPrintThresholds::allO4)
+                                if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                                   Ptmp.print("P(R_klaz F_aA R_Azij)");
 			    }
 			    Ptmp.scale(2.0);
 			    P.accumulate(Ptmp);
 
 			} // VBS != OBS
-                        if (debug_ >= DefaultPrintThresholds::allO4)
+                        if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                           P.print("P(incl R_klpz F_pA R_Azij)");
 		    } // pFA contributes
 #endif // INCLUDE_P_pFA
@@ -442,7 +443,7 @@ R12IntEval::compute_BC_()
 				     cabs1,cabs2,
 				     occ1,occ2,
 				     focc1,focc2);
-                        if (debug_ >= DefaultPrintThresholds::allO4)
+                        if (debug_ >= DefaultPrintThresholds::allO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
                           P.print("P(incl R_klmA F_mn R_nAij)");
 		    }
 #endif // INCLUDE_P_mFm
@@ -457,7 +458,7 @@ R12IntEval::compute_BC_()
 	    ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
 	    tim_P.exit();
 
-	    if (debug_ >= DefaultPrintThresholds::mostO4) {
+	    if (debug_ >= DefaultPrintThresholds::mostO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
 	      std::string label = prepend_spincase(spincase2,"P(C) contribution");
           P.print(label.c_str());
         }

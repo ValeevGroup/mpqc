@@ -164,6 +164,8 @@ class R12IntEval : virtual public SavableState {
                           const Ref<OrbitalSpace>& space2,
                           const Ref<OrbitalSpace>& space3,
                           const Ref<OrbitalSpace>& space4);
+
+#if 0
   /** Compute the relativistic hcore Hamiltonian using DKH2 and substract
       T, V and the mass-velocity term. Based on r12int_eval::fock. In file fock.cc
   */
@@ -177,6 +179,8 @@ class R12IntEval : virtual public SavableState {
                                            bool include_T = true,
                                            bool include_V = true,
                                            bool include_MV = true);
+#endif
+
   // Computes the skalar Pauli-Hamiltonian (T + V + mass_velocity + Darwin),
   // with the mass-velocity term evaluated in the momentum basis.
   RefSymmSCMatrix pauli(const Ref<GaussianBasisSet> &bas,

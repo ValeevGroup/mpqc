@@ -52,6 +52,7 @@ using namespace sc;
 #define TEST_DELTA_DKH 0
 #define NEW_HCORE 1
 #define USE_PAULI 1
+#define DEBUG_PRINT_ALL_F_CONTRIBUTIONS 0
 
 RefSCMatrix
 R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
@@ -262,7 +263,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
   F.scale(scale_H);
-  if (debug_ >= DefaultPrintThresholds::allN2)
+  if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
     F.print("Core Hamiltonian contribution");
   // and clean up a bit
   h = 0;
@@ -281,7 +282,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     if (scale_J != 0.0) {
       RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
       J.scale(J_prefactor*scale_J);
-      if (debug_ >= DefaultPrintThresholds::allN2)
+      if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
         J.print("Coulomb contribution");
       F.accumulate(J); J = 0;
     }
@@ -289,24 +290,26 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   if (scale_K != 0.0) {
     RefSCMatrix K = exchange_(occ(spin),bra_space,ket_space);
     K.scale(-1.0*scale_K);
-    if (debug_ >= DefaultPrintThresholds::allN2)
+    if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
       K.print("Exchange contribution");
     F.accumulate(K); K = 0;
   }
 
   } else { // USE_NEWFOCKBUILD
-    Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
-    const std::string hkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("H"));
-    RefSCMatrix H = fb_rtime->get(hkey);
-    const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
-    RefSCMatrix J = fb_rtime->get(jkey);
-    const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
-    const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
-    RefSCMatrix K = fb_rtime->get(kkey);
-    F.accumulate(J*scale_J - K*scale_K);
+    if (scale_J != 0.0 || scale_K != 0.0) {
+      Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
+      const std::string hkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("H"));
+      RefSCMatrix H = fb_rtime->get(hkey);
+      const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
+      RefSCMatrix J = fb_rtime->get(jkey);
+      const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
+      const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
+      RefSCMatrix K = fb_rtime->get(kkey);
+      F.accumulate(J*scale_J - K*scale_K);
+    }
   }
 
-  if (debug_ >= DefaultPrintThresholds::allN2) {
+  if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS) {
     F.print("Fock matrix");
   }
 
@@ -314,7 +317,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
 }
 
 
-
+#if 0
 RefSCMatrix
 R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
                           const Ref<OrbitalSpace>& ket_space,
@@ -530,7 +533,6 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   ExEnv::out0() << decindent << indent << "Leaving Delta_DKH" << endl;
   return F;
 }
-
 
 
 RefSymmSCMatrix
@@ -757,6 +759,7 @@ R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref
   ExEnv::out0() << decindent << indent << "Leaving hcore_plus_massvelocity_" << endl;
   return h_dk_so;
 }
+#endif
 
 RefSymmSCMatrix
 R12IntEval::pauli(

@@ -40,6 +40,43 @@ using namespace sc;
 namespace sc {
   namespace detail {
 
+    RefSymmSCMatrix overlap(const Ref<GaussianBasisSet>& bas,
+                            const Ref<Integral>& integral) {
+
+      Ref<Integral> localints = integral->clone();
+      localints->set_basis(bas);
+      Ref<PetiteList> pl = localints->petite_list();
+
+      // form skeleton overlap in AO basis
+      RefSymmSCMatrix sao(bas->basisdim(), bas->matrixkit());
+      sao.assign(0.0);
+      Ref<SCElementOp> sc =
+          new OneBodyIntOp(new SymmOneBodyIntIter(localints->overlap(), pl));
+      sao.element_op(sc);
+      sc = 0;
+
+      // now symmetrize Sso
+      RefSymmSCMatrix s(pl->SO_basisdim(), bas->so_matrixkit());
+      pl->symmetrize(sao, s);
+
+      return s;
+    }
+
+    RefSCMatrix overlap(const Ref<GaussianBasisSet>& brabas,
+                        const Ref<GaussianBasisSet>& ketbas,
+                        const Ref<Integral>& integral) {
+
+      Ref<Integral> localints = integral->clone();
+      Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
+      localints->set_basis(brabas,ketbas);
+
+      // form overlap in AO basis
+      RefSCMatrix sao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
+      sao.assign(0.0);
+
+      abort();
+    }
+
     RefSymmSCMatrix nonrelativistic(const Ref<GaussianBasisSet>& bas,
                                     const Ref<Integral>& integral) {
 

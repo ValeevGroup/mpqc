@@ -89,11 +89,20 @@ namespace sc {
       };
     };
 
-    // computes nonrelativistic Hamiltonian matrix in SO basis
+    /// computes overlap matrix in SO basis
+    RefSymmSCMatrix overlap(const Ref<GaussianBasisSet>& bas,
+                            const Ref<Integral>& integral);
+    /// computes overlap matrix in SO basis
+    RefSCMatrix overlap(const Ref<GaussianBasisSet>& brabs,
+                        const Ref<GaussianBasisSet>& ketbs,
+                        const Ref<Integral>& integral);
+    /// computes nonrelativistic Hamiltonian matrix in SO basis
     RefSymmSCMatrix nonrelativistic(const Ref<GaussianBasisSet>& bas,
                                     const Ref<Integral>& integral);
+    /// computes Pauli Hamiltonian matrix (= nonrelativistic + MV + 1e Darwin) in SO basis
     RefSymmSCMatrix pauli(const Ref<GaussianBasisSet>& bas,
                           const Ref<Integral>& integral);
+    /// computes DK Hamiltonian matrix in SO basis
     RefSymmSCMatrix dk(int dklev, const Ref<GaussianBasisSet>& bs,
                        const Ref<GaussianBasisSet>& pbs,
                        const Ref<Integral>& integral);

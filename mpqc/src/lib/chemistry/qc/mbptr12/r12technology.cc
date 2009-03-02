@@ -343,8 +343,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
 
   // Default is to use only the Pauli Hamiltonian in the R12 treatment
-  pauli_= keyval->booleanvalue("pauli",KeyValValueboolean((int)true));
-  //ExEnv::out0() << "Pauli Hamiltonian in R12 treatment: " << (pauli_? "true" : "false") << endl;
+  pauli_= keyval->booleanvalue("pauli",KeyValValueboolean((int)false));
 
   // For now the default is to use the old ABS method, of Klopper and Samson
   std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("ABS"));

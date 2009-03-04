@@ -99,6 +99,40 @@ R12IntEval::compute_BC_()
 		  << "Entered B(app. C) intermediate evaluator" << endl;
     ExEnv::out0() << incindent;
 
+    //
+    // if I'm relativistic, all relativistic terms will be treated as K, make new space K - (F(rel) - F(nonrel))
+    //
+    Ref<OrbitalSpace> Kr[NSpinCases1];
+    if (this->dk() > 0) {
+
+      const int nspins1 = this->nspincases1();
+      for(int s=0; s<nspins1; ++s) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        // which space is used as RIBS?
+        Ref<OrbitalSpace> ribs = (!abs_eq_obs) ? r12info()->ribs_space() :
+                                                 r12info()->refinfo()->orbs(spin);
+        Ref<OrbitalSpace> kribs = (!abs_eq_obs) ? K_P_P(spin) : K_p_p(spin);
+        // get AO space for RIBS
+        Ref<OrbitalSpace> aoribs = AOSpaceRegistry::instance()->value(ribs->basis());
+        // compute dF = F(rel) - F(nonrel) in AO basis
+        RefSCMatrix Fr = this->fock(aoribs,aoribs,spin,0.0,0.0,1.0);
+        const std::string nonrel_hkey = ParsedOneBodyIntKey::key(aoribs->id(),
+                                                                 aoribs->id(),
+                                                                 std::string("H"));
+        RefSCMatrix Fnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
+        RefSCMatrix dF = Fr - Fnr;
+        // transform columns to MO basis
+        RefSCMatrix dF_aomo = dF * ribs->coefs();
+
+        // Make new space K - dF
+        std::string id = ribs->id();  id += "_Kr(";  id += ribs->id();  id += ")";
+        ExEnv::out0() << "id = " << id << endl;
+        std::string name = "(Kr)-weighted space";
+        Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs() - dF_aomo, ribs->basis());
+      }
+    }
+
+
     for(int s=0; s<nspincases2(); s++) {
 	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
 	const SpinCase1 spin1 = case1(spincase2);
@@ -199,6 +233,13 @@ R12IntEval::compute_BC_()
 		    kribs1 = K_P_P(spin1);
 		    kribs2 = K_P_P(spin2);
 		}
+
+		// if I'm relativistic, treat all relativistic terms just as K, reassign kribs1 and kribs2
+		if (this->dk() > 0) {
+		  kribs1 = Kr[spin1];
+          kribs2 = Kr[spin2];
+		}
+
 		compute_FxF_(P,spincase2,
 			     xspace1,xspace2,
 			     xspace1,xspace2,

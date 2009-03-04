@@ -193,7 +193,8 @@ R12IntEval::contrib_to_VXB_a_()
 	      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
       }
 
-
+#define DEBUG_SKIP_CABS_TERMS 0
+#if !DEBUG_SKIP_CABS_TERMS
       // These terms only contribute if Projector=2
       if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
 
@@ -412,6 +413,8 @@ R12IntEval::contrib_to_VXB_a_()
 		  B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
 	  }
       }
+
+#endif
 
   }
 }

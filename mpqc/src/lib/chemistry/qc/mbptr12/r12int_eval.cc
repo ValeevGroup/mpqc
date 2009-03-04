@@ -497,14 +497,10 @@ R12IntEval::init_intermeds_()
   }
 
   // add in the relativistic contribution, if needed
-  // can only use stdapprox C and 1 correlation factor (but pq ansatz should work!)
-  if (this->dk() > 0) {
-    if (g12ncptr.nonnull() && corrfactor()->nfunctions() == 1) {
-      compute_B_DKH_();
-    }
-    else
-      throw FeatureNotImplemented("Relativistic R12 method only implemented when stdapprox=C and there is only 1 correlation factor",__FILE__,__LINE__);
-  }
+  // can only use 1 Gaussian-based correlation factor (but pq ansatz should work!)
+  if (this->dk() > 0)
+    compute_B_DKH_();
+
 }
 
 void
@@ -1573,7 +1569,6 @@ R12IntEval::f_bra_ket(
       || (make_K && K.null());
   if (not_yet_computed) {
 
-    const bool pauli = r12info()->r12tech()->pauli();
     const int dk = this->dk();
 
 #if 0
@@ -1729,17 +1724,25 @@ R12IntEval::compute()
       contrib_to_VXB_a_vbsneqobs_();
     }
 
+    // In stdapprox A', A'', and B add single-commutator contributions due to the relativistic terms
+    // in stdapprox C these are computed via RI
+    if (this->dk() > 0 && stdapprox() != LinearR12::StdApprox_C) {
+      contrib_to_B_DKH_a_();
+    }
+
     // Contribution from X to B in approximation A'' is more complicated than in other methods
     // because exchange is completely skipped
     if (stdapprox() == LinearR12::StdApprox_App) {
       compute_BApp_();
     }
-    // whereas other methods that include X (A' and B) must also make sure to include non-BC piece, if needed
+    // whereas other methods that include X (A' and B) can use the simple fX form
     else {
       if (stdapprox() != LinearR12::StdApprox_C) {
         compute_B_fX_();
       }
     }
+    B_[AlphaBeta].print(prepend_spincase(static_cast<SpinCase2>(AlphaBeta),"B contribution after fX").c_str());
+
 
     // This is app B contribution to B -- only valid for projector 2
     if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() == LinearR12::Projector_2 && !r12info()->r12tech()->omit_B()) {

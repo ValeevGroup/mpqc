@@ -203,6 +203,8 @@ class R12IntEval : virtual public SavableState {
   void contrib_to_VXB_a_();
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_vbsneqobs_();
+  /// extra single-commutator contributions to B from relativistic terms
+  void contrib_to_B_DKH_a_();
 
   /// Compute MP2 pair energies of spin case S using < space1 space3|| space2 space4> integrals
   void compute_mp2_pair_energies_(RefSCVector& emp2pair,

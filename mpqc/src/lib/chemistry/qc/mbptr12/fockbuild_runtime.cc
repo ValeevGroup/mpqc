@@ -129,8 +129,9 @@ FockBuildRuntime::get(const std::string& key) {
   } else { // if not found
 
     // try transpose first
-    if (registry_->key_exists(transposed_key(key))) {
-      return registry_->value(key).t();
+    const std::string tkey = transposed_key(key);
+    if (registry_->key_exists(tkey)) {
+      return registry_->value(tkey).t();
     }
 
     ParsedOneBodyIntKey pkey(key);

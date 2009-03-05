@@ -60,7 +60,7 @@
 using namespace std;
 using namespace sc;
 
-#define DEBUG_PRINT_ALL_B_CONTRIBUTIONS 0
+#define DEBUG_PRINT_ALL_B_CONTRIBUTIONS 1
 #define INCLUDE_Q 1
 #define INCLUDE_P 1
 #define INCLUDE_P_PKP 1
@@ -100,36 +100,96 @@ R12IntEval::compute_BC_()
     ExEnv::out0() << incindent;
 
     //
-    // if I'm relativistic, all relativistic terms will be treated as K, make new space K - (F(rel) - F(nonrel))
+    // if I'm relativistic, all relativistic terms will be treated as K, hence
+    // 1) make new space Kr = K - (H(r) - H(nr)) = K - dH
+    // 2) make new space hJnr = h(nr) + J = (h(r) + J) - (H(r) - H(nr)) = hJ - dH
     //
     Ref<OrbitalSpace> Kr[NSpinCases1];
+    Ref<OrbitalSpace> hJnr[NSpinCases1];
     if (this->dk() > 0) {
 
       const int nspins1 = this->nspincases1();
-      for(int s=0; s<nspins1; ++s) {
-        const SpinCase1 spin = static_cast<SpinCase1>(s);
+      for (int s = 0; s < nspins1; ++s) {
+        const SpinCase1 spin = static_cast<SpinCase1> (s);
         // which space is used as RIBS?
-        Ref<OrbitalSpace> ribs = (!abs_eq_obs) ? r12info()->ribs_space() :
-                                                 r12info()->refinfo()->orbs(spin);
-        Ref<OrbitalSpace> kribs = (!abs_eq_obs) ? K_P_P(spin) : K_p_p(spin);
+        Ref<OrbitalSpace> ribs = (!abs_eq_obs) ? r12info()->ribs_space()
+                                               : r12info()->refinfo()->orbs(spin);
         // get AO space for RIBS
-        Ref<OrbitalSpace> aoribs = AOSpaceRegistry::instance()->value(ribs->basis());
-        // compute dF = F(rel) - F(nonrel) in AO basis
-        RefSCMatrix Fr = this->fock(aoribs,aoribs,spin,0.0,0.0,1.0);
-        const std::string nonrel_hkey = ParsedOneBodyIntKey::key(aoribs->id(),
-                                                                 aoribs->id(),
-                                                                 std::string("H"));
-        RefSCMatrix Fnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
-        RefSCMatrix dF = Fr - Fnr;
-        // transform columns to MO basis
-        RefSCMatrix dF_aomo = dF * ribs->coefs();
+        const Ref<OrbitalSpace>& aoribs =
+          AOSpaceRegistry::instance()->value(ribs->basis());
 
-        // Make new space K - dF
-        std::string id = ribs->id();  id += "_Kr(";  id += ribs->id();  id += ")";
-        ExEnv::out0() << "id = " << id << endl;
-        std::string name = "(Kr)-weighted space";
-        Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs() - dF_aomo, ribs->basis());
+        { // exchange part
+          Ref<OrbitalSpace> kribs = (!abs_eq_obs) ? K_P_P(spin) : K_p_p(spin);
+          // compute dH = H(rel) - H(nonrel) in AO basis
+          RefSCMatrix Hr = this->fock(aoribs, aoribs, spin, 0.0, 0.0, 1.0);
+          const std::string nonrel_hkey =
+            ParsedOneBodyIntKey::key(aoribs->id(), aoribs->id(),
+                                     std::string("H"));
+          RefSCMatrix Hnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
+          RefSCMatrix dH = Hnr.clone();
+          dH->convert(Hr);
+          Hnr.scale(-1.0);
+          dH.accumulate(Hnr);
+          Hr = 0;
+          Hnr = 0;
+          // transform columns to MO basis
+          RefSCMatrix dH_aomo = dH * ribs->coefs();
+
+          // Make new space K - dH
+          std::string id = ribs->id();
+          id += "_Kr(";
+          id += ribs->id();
+          id += ")";
+          ExEnv::out0() << "id = " << id << endl;
+          std::string name = "(Kr)-weighted space";
+#if 1
+          Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs() - dH_aomo, ribs->basis());
+#else
+          Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs(),
+                                    ribs->basis());
+#endif
+
+          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Kr[s]));
+        }
+
+        { // h+J part
+          Ref<OrbitalSpace> hJ_x_P = (!abs_eq_obs) ? hj_x_P(spin) : hj_x_p(spin);
+          const Ref<OrbitalSpace>& x = xspace(spin);
+          const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(x->basis());
+          // compute dH = H(rel) - H(nonrel) in AO basis
+          RefSCMatrix Hr = this->fock(aox, aoribs, spin, 0.0, 0.0, 1.0);
+          const std::string nonrel_hkey =
+            ParsedOneBodyIntKey::key(aox->id(), aoribs->id(),
+                                     std::string("H"));
+          RefSCMatrix Hnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
+          RefSCMatrix dH = Hnr.clone();
+          dH->convert(Hr);
+          Hnr.scale(-1.0);
+          dH.accumulate(Hnr);
+          Hr = 0;
+          Hnr = 0;
+          // transform x dimension to MO basis, and transpose so that the MOs are in columns
+          RefSCMatrix dH_aomo = dH.t() * x->coefs();
+
+          // Make new space hJ - dH
+          std::string id = x->id();
+          id += "_hJnr(";
+          id += ribs->id();
+          id += ")";
+          ExEnv::out0() << "id = " << id << endl;
+          std::string name = "(hJnr)-weighted space";
+#if 1
+          hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs() - dH_aomo, hJ_x_P->basis());
+#else
+          hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
+#endif
+
+          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hJnr[s]));
+        }
+
       }
+      if (Kr[Beta].null()) Kr[Beta] = Kr[Alpha];
+      if (hJnr[Beta].null()) hJnr[Beta] = hJnr[Alpha];
     }
 
 
@@ -160,6 +220,11 @@ R12IntEval::compute_BC_()
 	    hj_x1 = hj_x_p(spin1);
 	    hj_x2 = hj_x_p(spin2);
 	}
+    // if I'm relativistic, all relativistic terms are treated just as K, use hJ here that uses nonrelativistic core
+    if (this->dk() > 0) {
+      hj_x1 = hJnr[spin1];
+      hj_x2 = hJnr[spin2];
+    }
 	std::string Qlabel = prepend_spincase(spincase2,"Q(C) intermediate");
 	Timer tim_Q(Qlabel);
 	ExEnv::out0() << endl << indent

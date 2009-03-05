@@ -275,11 +275,14 @@ R12IntEvalInfo::initialize()
 
         // also create AO spaces
         Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+        Ref<Integral> localints = refinfo()->ref()->integral()->clone();
         { // OBS
           const int nao = basis()->nbasis();
           RefSCDimension obs_ao_dim = new SCDimension(nao,1);
           obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(obs_ao_dim,obs_ao_dim);
+          localints->set_basis(basis());
+          Ref<PetiteList> pl = localints->petite_list();
+          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),obs_ao_dim);
           obs_ao_coefs.assign(0.0);
           for(int ao=0; ao<nao; ++ao)
             obs_ao_coefs.set_element(ao,ao,1.0);
@@ -293,7 +296,9 @@ R12IntEvalInfo::initialize()
           const int nao = bs->nbasis();
           RefSCDimension obs_ao_dim = new SCDimension(nao,1);
           obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(obs_ao_dim,obs_ao_dim);
+          localints->set_basis(bs);
+          Ref<PetiteList> pl = localints->petite_list();
+          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),obs_ao_dim);
           obs_ao_coefs.assign(0.0);
           for(int ao=0; ao<nao; ++ao)
             obs_ao_coefs.set_element(ao,ao,1.0);
@@ -306,7 +311,9 @@ R12IntEvalInfo::initialize()
           const int nao = basis_ri()->nbasis();
           RefSCDimension ribs_ao_dim = new SCDimension(nao,1);
           ribs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          RefSCMatrix ribs_ao_coefs = matrixkit_->matrix(ribs_ao_dim,ribs_ao_dim);
+          localints->set_basis(basis_ri());
+          Ref<PetiteList> pl = localints->petite_list();
+          RefSCMatrix ribs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),ribs_ao_dim);
           ribs_ao_coefs.assign(0.0);
           for(int ao=0; ao<nao; ++ao)
             ribs_ao_coefs.set_element(ao,ao,1.0);

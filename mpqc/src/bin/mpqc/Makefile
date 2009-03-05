@@ -33,10 +33,10 @@ default:: mpqc
 XLIBS =
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   ifeq ($(ENABLESHARED),yes)
-    LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB)
+    LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB) -lccafePreload
   else
     XLIBS += -L$(CCA_CHEM_LIB) -L$(CCAFE_LIB) -L$(CCA_SPEC_BABEL_LIB) -L$(BABEL_LIB) \
-             -lccachem $(CCAFE_CORE) -lcca-cxx -lsidlstub_cxx -lsidl -lxml2 -lz
+             -lccachem $(CCAFE_CORE) -lcca-cxx -lsidlstub_cxx -lccafePreload -lsidl -lxml2 -lz
     LDFLAGS += -Wl,--rpath,$(CCA_CHEM_LIB) -Wl,--rpath,$(CCAFE_LIB) -Wl,--rpath,$(CCA_SPEC_BABEL_LIB) -Wl,--rpath,$(BABEL_LIB)
   endif
   ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)

@@ -34,7 +34,7 @@
 #include "sidl_NotImplementedException.hxx"
 #endif
 // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._includes)
-#include "dc/babel.new/babel-cca/AllBabelCCA.hxx"
+#include "AllBabelCCA.hxx"
 #include "MPQC_ComponentClassDescription.hxx"
 #include "ChemistryCXX_IntegralSuperFactory.hxx"
 #include "MPQC_IntV3EvaluatorFactory.hxx"

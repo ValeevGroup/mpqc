@@ -50,7 +50,7 @@
 #include "Chemistry_QC_ModelFactoryInterface.hxx"
 #include "Chemistry_QC_ModelInterface.hxx"
 #include "Chemistry_MoleculeInterface.hxx"
-#include "dc/babel.new/babel-cca/server/ccaffeine_TypeMap.hxx"
+#include "ccaffeine_TypeMap.hxx"
 #include "parameters/parametersStar.h"
 #include "gov_cca_ports_ParameterPortFactory.hxx"
 #include "gov_cca_ports_ParameterPort.hxx"

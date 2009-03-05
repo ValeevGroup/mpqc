@@ -243,7 +243,6 @@ MPQC::OptimizationSolver_impl::setServices_impl (
 {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver.setServices)
     
-  std::cerr << "in solver setServices\n";
   services_ = services;
   if (services_._is_nil()) return;
 
@@ -267,8 +266,6 @@ MPQC::OptimizationSolver_impl::setServices_impl (
     CCAEnv::init( fw );
   }
 
-  std::cerr << "solver setServices complete\n";
-    
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver.setServices)
 }
 

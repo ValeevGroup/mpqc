@@ -132,8 +132,8 @@ R12IntEval::compute_BC_()
           dH.accumulate(Hnr);
           Hr = 0;
           Hnr = 0;
-          // transform columns to MO basis
-          RefSCMatrix dH_aomo = dH * ribs->coefs();
+          // transform to MO basis
+          RefSCMatrix dH_mo = ribs->coefs().t() * dH * ribs->coefs();
 
           // Make new space K - dH
           std::string id = ribs->id();
@@ -143,7 +143,7 @@ R12IntEval::compute_BC_()
           ExEnv::out0() << "id = " << id << endl;
           std::string name = "(Kr)-weighted space";
 #if 1
-          Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs() - dH_aomo, ribs->basis());
+          Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs() - ribs->coefs() * dH_mo, ribs->basis());
 #else
           Kr[spin] = new OrbitalSpace(id, name, kribs, kribs->coefs(),
                                     ribs->basis());
@@ -168,8 +168,9 @@ R12IntEval::compute_BC_()
           dH.accumulate(Hnr);
           Hr = 0;
           Hnr = 0;
-          // transform x dimension to MO basis, and transpose so that the MOs are in columns
-          RefSCMatrix dH_aomo = dH.t() * x->coefs();
+          // transform to MO basis, transpose so that x dimension is coldim
+          RefSCMatrix dH_mo = x->coefs().t() * dH * ribs->coefs();
+          dH_mo = dH_mo.t();
 
           // Make new space hJ - dH
           std::string id = x->id();
@@ -179,7 +180,7 @@ R12IntEval::compute_BC_()
           ExEnv::out0() << "id = " << id << endl;
           std::string name = "(hJnr)-weighted space";
 #if 1
-          hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs() - dH_aomo, hJ_x_P->basis());
+          hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs() - ribs->coefs() * dH_mo, hJ_x_P->basis());
 #else
           hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
 #endif

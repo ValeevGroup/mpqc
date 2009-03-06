@@ -54,10 +54,10 @@ BlockedSCMatrix::resize(SCDimension *a, SCDimension *b)
     delete[] mats_;
     mats_=0;
   }
-  
+
   d1 = a;
   d2 = b;
-  
+
   if (!a || !b || !a->blocks()->nblock() || !b->blocks()->nblock())
     return;
 
@@ -149,7 +149,7 @@ BlockedSCMatrix::set_element(int i,int j,double a)
 
   d1->blocks()->elem_to_block(i,block_i,elem_i);
   d2->blocks()->elem_to_block(j,block_j,elem_j);
-  
+
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->set_element(elem_i,elem_j,a);
 
@@ -169,7 +169,7 @@ BlockedSCMatrix::accumulate_element(int i,int j,double a)
 
   d1->blocks()->elem_to_block(i,block_i,elem_i);
   d2->blocks()->elem_to_block(j,block_j,elem_j);
-  
+
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->accumulate_element(elem_i,elem_j,a);
 
@@ -373,17 +373,23 @@ BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
     ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
          << "dimensions don't match\n";
+    rowdim().print();
+    coldim().print();
+    la->rowdim().print();
+    la->coldim().print();
+    lb->rowdim().print();
+    lb->coldim().print();
     abort();
   }
 
   // find out the number of blocks we need to process.
   int mxnb = (nblocks_ > la->nblocks_) ? nblocks_ : la->nblocks_;
-  
+
   int nrba = la->d1->blocks()->nblock();
   int ncba = la->d2->blocks()->nblock();
   int nrbb = lb->d1->blocks()->nblock();
   int ncbb = lb->d2->blocks()->nblock();
-  
+
   int &mi = (nrba==1 && ncba > 1 && nrbb > 1 && ncbb==1) ? zero : i;
   int &ai = (nrba==1 && ncba==1) ? zero : i;
   int &bi = (nrbb==1 && ncbb==1) ? zero : i;
@@ -399,7 +405,7 @@ void
 BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   int i, zero=0;
-  
+
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
@@ -415,7 +421,7 @@ BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
   }
 
   int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
-  
+
   for (i=0; i < nblocks_; i++) {
     if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
       continue;
@@ -428,7 +434,7 @@ void
 BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   int i, zero=0;
-  
+
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
@@ -444,7 +450,7 @@ BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   }
 
   int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
-  
+
   for (i=0; i < nblocks_; i++) {
     if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
       continue;
@@ -463,6 +469,10 @@ BlockedSCMatrix::accumulate(const SCMatrix*a)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
     ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(SCMatrix*a): "
          << "dimensions don't match\n";
+    rowdim().print();
+    coldim().print();
+    la->rowdim().print();
+    la->coldim().print();
     abort();
   }
 
@@ -482,6 +492,9 @@ BlockedSCMatrix::accumulate(const SymmSCMatrix*a)
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
     ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(SymmSCMatrix*a): "
          << "dimensions don't match\n";
+    rowdim().print();
+    coldim().print();
+    la->dim().print();
     abort();
   }
 
@@ -535,7 +548,7 @@ BlockedSCMatrix::transpose_this()
   for (int i=0; i < nblocks_; i++)
     if (mats_[i].nonnull())
       mats_[i]->transpose_this();
-  
+
   RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
@@ -575,7 +588,7 @@ BlockedSCMatrix::invert_this()
         mats_[i]->convert(tdim.get_subblock(d1->blocks()->start(i),
                                             d1->blocks()->fence(i)-1,
                                             0, d2->n()-1));
-    
+
     return res;
 
   } else if (d2->blocks()->nblock() == 1) {
@@ -592,7 +605,7 @@ BlockedSCMatrix::invert_this()
         mats_[i]->convert(tdim.get_subblock(0, d1->n()-1,
                                             d2->blocks()->start(i),
                                             d2->blocks()->fence(i)-1));
-    
+
     return res;
 
   } else {
@@ -616,7 +629,7 @@ double
 BlockedSCMatrix::determ_this()
 {
   double res=1;
-  
+
   for (int i=0; i < nblocks_; i++)
     if (mats_[i].nonnull())
       res *= mats_[i]->determ_this();
@@ -631,7 +644,7 @@ BlockedSCMatrix::trace()
   for (int i=0; i < nblocks_; i++)
     if (mats_[i].nonnull())
       ret += mats_[i]->trace();
-  
+
   return ret;
 }
 
@@ -654,10 +667,10 @@ double
 BlockedSCMatrix::solve_this(SCVector*v)
 {
   double res=1;
-  
+
   BlockedSCVector* lv =
     require_dynamic_cast<BlockedSCVector*>(v,"BlockedSCMatrix::solve_this");
-  
+
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
     ExEnv::errn() << indent << "BlockedSCMatrix::solve_this(SCVector*v): "
@@ -677,7 +690,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 {
   BlockedSymmSCMatrix* lS =
     require_dynamic_cast<BlockedSymmSCMatrix*>(S,"BlockedSCMatrix::schmidt_orthog");
-  
+
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
     ExEnv::errn() << indent << "BlockedSCMatrix::schmidt_orthog(): "

@@ -289,11 +289,13 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   //
   Ref<OrbitalSpace> t_x_P[NSpinCases1];
   Ref<OrbitalSpace> t_p_P[NSpinCases1];
-  Ref<OrbitalSpace> t_x_A[NSpinCases1];
-  for(int s=0; s<NSpinCases1; ++s) {
+  Ref<OrbitalSpace> t_m_P[NSpinCases1];
+  Ref<OrbitalSpace> t_A_P[NSpinCases1];
+  for(int s=0; s<nspincases1(); ++s) {
     using namespace sc::LinearR12;
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     Ref<OrbitalSpace> x = xspace(spin);
+    Ref<OrbitalSpace> m = occ(spin);
     Ref<OrbitalSpace> obs = r12info()->refinfo()->orbs(spin);
     Ref<OrbitalSpace> ribs = r12info()->ribs_space();
     Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
@@ -301,12 +303,19 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     t_x_P[s] = sc::detail::t_x_X(x, ribs);
     OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_P[s]));
 
+    t_m_P[s] = sc::detail::t_x_X(m, ribs);
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_m_P[s]));
+
     t_p_P[s] = sc::detail::t_x_X(obs, ribs);
     OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_p_P[s]));
 
-    t_x_A[s] = sc::detail::t_x_X(x, cabs);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_A[s]));
+    t_A_P[s] = sc::detail::t_x_X(cabs, ribs);
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_A_P[s]));
   }
+  if (t_x_P[Beta].null()) t_x_P[Beta] = t_x_P[Alpha];
+  if (t_m_P[Beta].null()) t_m_P[Beta] = t_m_P[Alpha];
+  if (t_p_P[Beta].null()) t_p_P[Beta] = t_p_P[Alpha];
+  if (t_A_P[Beta].null()) t_A_P[Beta] = t_A_P[Alpha];
 
   // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {
@@ -318,13 +327,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-    const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-    const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
-    const bool x1_eq_x2 = (xspace1 == xspace2);
     const Ref<OrbitalSpace>& x_tP1 = t_x_P[spin1];
     const Ref<OrbitalSpace>& x_tP2 = t_x_P[spin2];
-    const Ref<OrbitalSpace>& p_tP1 = t_p_P[spin1];
-    const Ref<OrbitalSpace>& p_tP2 = t_p_P[spin2];
+    const bool x1_eq_x2 = (xspace1 == xspace2);
 
     // are particles 1 and 2 equivalent?
     const bool part1_equiv_part2 = (spincase2 != AlphaBeta) || x1_eq_x2;
@@ -333,6 +338,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
 
     RefSCMatrix B_DKH = B_[s].clone();
     B_DKH.assign(0.0);
+
+    { // pq contribution
+      const Ref<OrbitalSpace>& p_tP1 = t_p_P[spin1];
+      const Ref<OrbitalSpace>& p_tP2 = t_p_P[spin2];
+      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
 
     Ref<TwoParticleContraction> tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
     // <x y|p q> tforms
@@ -428,52 +439,325 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         spincase2!=AlphaBeta, tforms_xy_pq, tforms_xy_pqT
         );
 
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-            ManyBodyTensors::I_to_T,
-            ManyBodyTensors::I_to_T,
-            true,true,false>
-            (
-            B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-            xspace1, xspace2,
-            orbs1, orbs2,
-            x_tP1, xspace2,
-            orbs1, orbs2,
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_xy_pq, tforms_xTy_pq
-            );
-        contract_tbint_tensor<ManyBodyTensors::I_to_T,
-            ManyBodyTensors::I_to_T,
-            ManyBodyTensors::I_to_T,
-            true,true,false>
-            (
-            B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-            xspace1, xspace2,
-            orbs1, orbs2,
-            xspace1, x_tP2,
-            orbs1, orbs2,
-            tpcontract,
-            spincase2!=AlphaBeta, tforms_xy_pq, tforms_xyT_pq
-            );
+    contract_tbint_tensor<ManyBodyTensors::I_to_T,
+        ManyBodyTensors::I_to_T,
+        ManyBodyTensors::I_to_T,
+        true,true,false>
+        (
+        B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+        xspace1, xspace2,
+        orbs1, orbs2,
+        x_tP1, xspace2,
+        orbs1, orbs2,
+        tpcontract,
+        spincase2!=AlphaBeta, tforms_xy_pq, tforms_xTy_pq
+        );
+    contract_tbint_tensor<ManyBodyTensors::I_to_T,
+        ManyBodyTensors::I_to_T,
+        ManyBodyTensors::I_to_T,
+        true,true,false>
+        (
+        B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+        xspace1, xspace2,
+        orbs1, orbs2,
+        xspace1, x_tP2,
+        orbs1, orbs2,
+        tpcontract,
+        spincase2!=AlphaBeta, tforms_xy_pq, tforms_xyT_pq
+        );
 
-            // symmetrize bra and ket
-            B_DKH.scale(0.5);
-            RefSCMatrix B_DKH_t = B_DKH.t();
-            B_DKH.accumulate(B_DKH_t);  B_DKH_t = 0;
+    // symmetrize bra and ket
+    B_DKH.scale(0.5);
+    RefSCMatrix B_DKH_t = B_DKH.t();
+    B_DKH.accumulate(B_DKH_t);  B_DKH_t = 0;
 
-            // 0.5 due to double counting contributions from electrons 1 and 2
-            // 4 from p^2 -> T
-            B_DKH.scale(0.5 * 4.0 * minus_one_over_8c2);
+    // 0.5 due to double counting contributions from electrons 1 and 2
+    // 4 from T^2 -> p^4
+    B_DKH.scale(0.5 * 4.0 * minus_one_over_8c2);
 
-            if (debug_ >= DefaultPrintThresholds::O4) {
-              globally_sum_intermeds_();
-              B_DKH.print(prepend_spincase(static_cast<SpinCase2>(s),"B(DKH pq) contribution").c_str());
-            }
-
-            B_[s].accumulate(B_DKH);
-            B_DKH.assign(0.0);
-
-            B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS+MV) contribution").c_str());
+    if (debug_ >= DefaultPrintThresholds::O4) {
+      globally_sum_intermeds_();
+      B_DKH.print(prepend_spincase(static_cast<SpinCase2>(s),"B(DKH pq) contribution").c_str());
     }
+
+    B_[s].accumulate(B_DKH);
+    B_DKH.assign(0.0);
+    } // end of pq contribution
+
+    { // mA contribution
+      const Ref<OrbitalSpace>& occ1 = occ(spin1);
+      const Ref<OrbitalSpace>& occ2 = occ(spin2);
+      const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
+      const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
+      const Ref<OrbitalSpace>& m_tP1 = t_m_P[spin1];
+      const Ref<OrbitalSpace>& m_tP2 = t_m_P[spin2];
+      const Ref<OrbitalSpace>& A_tP1 = t_A_P[spin1];
+      const Ref<OrbitalSpace>& A_tP2 = t_A_P[spin2];
+
+      // TODO take advantage of the permutational symmetry
+      Ref<TwoParticleContraction> tpcontract_mA =
+        new Direct_Contraction(occ1->rank(), cabs2->rank(), -1.0);
+      Ref<TwoParticleContraction> tpcontract_Am =
+        new Direct_Contraction(cabs1->rank(), occ2->rank(), -1.0);
+
+      // <x y|m A> tforms
+      std::vector<std::string> tforms_xy_mA;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          occ1,
+          xspace2,
+          cabs2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_mA);
+      }
+      // <x y|m_T A> tforms
+      std::vector<std::string> tforms_xy_mTA;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          m_tP1,
+          xspace2,
+          cabs2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_mTA);
+      }
+      // <x y|m A_T> tforms
+      std::vector<std::string> tforms_xy_mAT;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          occ1,
+          xspace2,
+          A_tP2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_mAT);
+      }
+      // <x_T y|m A> tforms
+      std::vector<std::string> tforms_xTy_mA;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          x_tP1,
+          occ1,
+          xspace2,
+          cabs2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xTy_mA);
+      }
+      // <x y_T|m A> tforms
+      std::vector<std::string> tforms_xyT_mA;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          occ1,
+          x_tP2,
+          cabs2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xyT_mA);
+      }
+
+      // <x y|A m> tforms
+      std::vector<std::string> tforms_xy_Am;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          cabs1,
+          xspace2,
+          occ2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_Am);
+      }
+      // <x y|A m_T> tforms
+      std::vector<std::string> tforms_xy_AmT;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          cabs1,
+          xspace2,
+          m_tP2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_AmT);
+      }
+      // <x y|A_T m> tforms
+      std::vector<std::string> tforms_xy_ATm;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          A_tP1,
+          xspace2,
+          occ2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xy_ATm);
+      }
+      // <x_T y|A m> tforms
+      std::vector<std::string> tforms_xTy_Am;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          x_tP1,
+          cabs1,
+          xspace2,
+          occ2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xTy_Am);
+      }
+      // <x y_T|A m> tforms
+      std::vector<std::string> tforms_xyT_Am;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(
+          r12info()->moints_runtime(),
+          xspace1,
+          cabs1,
+          x_tP2,
+          occ2,
+          r12info()->corrfactor(),true
+          );
+        fill_container(tformkey_creator, tforms_xyT_Am);
+      }
+
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          true,true,false>
+          (
+          B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+          xspace1, xspace2,
+          occ1, cabs2,
+          xspace1, xspace2,
+          m_tP1, cabs2,
+          tpcontract_mA,
+          spincase2!=AlphaBeta, tforms_xy_mA, tforms_xy_mTA
+          );
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          true,true,false>
+          (
+          B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+          xspace1, xspace2,
+          occ1, cabs2,
+          xspace1, xspace2,
+          occ1, A_tP2,
+          tpcontract_mA,
+          spincase2!=AlphaBeta, tforms_xy_mA, tforms_xy_mAT
+          );
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          true,true,false>
+          (
+          B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+          xspace1, xspace2,
+          occ1, cabs2,
+          x_tP1, xspace2,
+          occ1, cabs2,
+          tpcontract_mA,
+          spincase2!=AlphaBeta, tforms_xy_mA, tforms_xTy_mA
+          );
+      contract_tbint_tensor<ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          ManyBodyTensors::I_to_T,
+          true,true,false>
+          (
+          B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+          xspace1, xspace2,
+          occ1, cabs2,
+          xspace1, x_tP2,
+          occ1, cabs2,
+          tpcontract_mA,
+          spincase2!=AlphaBeta, tforms_xy_mA, tforms_xyT_mA
+          );
+
+          contract_tbint_tensor<ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              true,true,false>
+              (
+              B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+              xspace1, xspace2,
+              cabs1, occ2,
+              xspace1, xspace2,
+              cabs1, m_tP2,
+              tpcontract_Am,
+              spincase2!=AlphaBeta, tforms_xy_Am, tforms_xy_AmT
+              );
+          contract_tbint_tensor<ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              true,true,false>
+              (
+              B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+              xspace1, xspace2,
+              cabs1, occ2,
+              xspace1, xspace2,
+              A_tP1, occ2,
+              tpcontract_Am,
+              spincase2!=AlphaBeta, tforms_xy_Am, tforms_xy_ATm
+              );
+          contract_tbint_tensor<ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              true,true,false>
+              (
+              B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+              xspace1, xspace2,
+              cabs1, occ2,
+              x_tP1, xspace2,
+              cabs1, occ2,
+              tpcontract_Am,
+              spincase2!=AlphaBeta, tforms_xy_Am, tforms_xTy_Am
+              );
+          contract_tbint_tensor<ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              ManyBodyTensors::I_to_T,
+              true,true,false>
+              (
+              B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+              xspace1, xspace2,
+              cabs1, occ2,
+              xspace1, x_tP2,
+              cabs1, occ2,
+              tpcontract_Am,
+              spincase2!=AlphaBeta, tforms_xy_Am, tforms_xyT_Am
+              );
+
+    // symmetrize bra and ket
+    B_DKH.scale(0.5);
+    RefSCMatrix B_DKH_t = B_DKH.t();
+    B_DKH.accumulate(B_DKH_t);  B_DKH_t = 0;
+
+    // 0.5 due to double counting contributions from electrons 1 and 2
+    // 4 from T^2 -> p^4
+    B_DKH.scale(0.5 * 4.0 * minus_one_over_8c2);
+
+    if (debug_ >= DefaultPrintThresholds::O4) {
+      globally_sum_intermeds_();
+      B_DKH.print(prepend_spincase(static_cast<SpinCase2>(s),"B(DKH mA+Am) contribution").c_str());
+    }
+
+    B_[s].accumulate(B_DKH);
+    B_DKH.assign(0.0);
+    } // end of mA contribution
+
+    B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS+MV) contribution").c_str());
+  }
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited analytic single-commutator B(DKH2) intermediate evaluator"

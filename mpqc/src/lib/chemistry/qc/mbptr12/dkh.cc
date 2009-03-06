@@ -272,6 +272,11 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   const bool obs_eq_vbs = r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12info()->obs_eq_ribs();
 
+  // verify that this contribution should be included
+  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
+  if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
+    return;
+
   // Check if the requested calculation is implemented
   if (obs_eq_ribs)
     throw FeatureNotImplemented("OBS==RIBS is not supported yet in relativistic calculations",__FILE__,__LINE__);

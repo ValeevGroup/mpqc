@@ -90,6 +90,11 @@ void R12IntEval::compute_B_DKH_() {
   if (evaluated_)
     return;
 
+  // verify that this contribution should be included
+  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
+  if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
+    return;
+
   const bool obs_eq_vbs = r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12info()->obs_eq_ribs();
   const unsigned int maxnabs = r12info()->maxnabs();

@@ -53,7 +53,8 @@ class R12Technology: virtual public SavableState {
     bool gbc_;
     bool ebc_;
     bool omit_P_;
-    bool pauli_;
+    LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli_;
+    bool H0_dk_keep_;
     bool safety_check_;
     LinearR12::PositiveDefiniteB posdef_B_;
 
@@ -163,7 +164,43 @@ class R12Technology: virtual public SavableState {
 	for accurate cusp region description. The default is <tt>tewklopper</tt>. Choosing <tt>cusp</tt> is probably only appropriate
 	when many (9 or more) Gaussians are used for the fit.
 
-        </dl> */
+    <dt><tt>H0_dk_approx_pauli</tt><dd> This string keyword determines how H0 DK Hamiltonian
+    is approximated by Pauli Hamiltonian. The allowed values are
+    <dl>
+
+          <dt><tt>true/yes</tt><dd> Use Pauli everywhere. Valid in approximations A'' and C.
+          In approximation C this choice involves the appearance of M intermediate
+          (double commutator of mass-velocity term with 2 correlation factors)
+          and use of Pauli Hamiltonian everywhere in P intermediate.
+          In approximations A'' this involves the use of Pauli Hamiltonian in
+          the double commutator, in single commutator, in Q intermediate.
+
+          <dt><tt>fHf</tt><dd> Use Pauli in the "diagonal" term, i.e. in f12 H f12
+          which involves the use of Pauli Hamiltonian in the double commutator
+          and in Q intermediate. Only valid in approximation C.
+
+          <dt><tt>fHf_Q</tt><dd> Same as <tt>fHf</tt> but use the full DK Hamiltonian
+          in Q intermediate. This is equivalent to assuming that terms of higher order
+          than Pauli commute with the correlation factor, hence they should be kept in Q.
+          Only valid in approximation C.
+
+          <dt><tt>false/no</tt><dd> Use full DKH operator (this is the default).
+          Valid in approximations A'' and C.
+          In approximation C this means treat relativistic terms like exchange,
+          this affects the Q intermediate and fKf part of P intermediate.
+          In approximation A'' this means that all relativistic terms are dropped from H0 --
+          this is chosen to be consistent with the nonrelativistic A'' method
+          where exchange operator is dropped completely because its
+          commutators cannot be evaluated analytically.
+
+        </dl>
+
+    <dt><tt>H0_dk_keep</tt><dd> This boolean keyword specifies whether to keep
+    relativistic terms or drop them. This is only considered in approximation A'' if <tt>H0_dk_approx_pauli=false</tt>.
+    The default is <tt>false</tt>. Setting to <tt>true</tt> will keep the
+    relativistic terms in Q intermediate of the A'' approximation.
+
+    */
     R12Technology(const Ref<KeyVal>&,
 		  const Ref<GaussianBasisSet>& bs,
 		  const Ref<GaussianBasisSet>& vbs,
@@ -184,7 +221,8 @@ class R12Technology: virtual public SavableState {
     const Ref<LinearR12Ansatz>& ansatz() const;
     bool spinadapted() const;
     bool omit_P() const;
-    bool pauli() const;
+    LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli() const;
+    bool H0_dk_keep() const;
     bool safety_check() const;
     const LinearR12::PositiveDefiniteB& posdef_B() const;
 

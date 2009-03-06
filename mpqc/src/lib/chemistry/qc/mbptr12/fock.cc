@@ -50,7 +50,6 @@ using namespace sc;
 #define TEST_FOCKBUILDRUNTIME 0
 // set to 1 to test MVD integrals
 #define TEST_DELTA_DKH 0
-#define NEW_HCORE 1
 #define USE_PAULI 1
 #define DEBUG_PRINT_ALL_F_CONTRIBUTIONS 0
 
@@ -63,7 +62,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
                   int override_pauli)
 {
   // validate the input
-  if (! (scale_J == 1.0 || scale_J == 0.0 || scale_K == 1.0 || scale_K == 0.0) ) { // currently FockBuild can only handle unit contributions
+  if (! (scale_J == 1.0 || scale_J == 0.0 || scale_K == 1.0 || scale_K == 0.0 || scale_H == 1.0 || scale_H == 0.0) ) { // currently FockBuild can only handle unit contributions
     throw ProgrammingError("R12IntEval::fock() -- non-unit J and K coefficients are not currently supported",__FILE__,__LINE__);
   }
 
@@ -80,193 +79,117 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   RefSCMatrix vec1t = bra_space->coefs().t();
   RefSCMatrix vec2 = ket_space->coefs();
 
-#if NEW_HCORE
-  RefSCDimension aodim1 = vec1t.coldim();
-  RefSCDimension aodim2 = vec2.rowdim();
-  Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
+  RefSCMatrix F = vec1t->kit()->matrix(vec1t.rowdim(),vec2.coldim());  F.assign(0.0);
 
-  // cast Wavefunction to MBPT2
-  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
-  if (mp2wfn == 0) {
-      throw ProgrammingError(
-          "r12info()->wfn() was not an MBPT2 object",
-          __FILE__, __LINE__, class_desc());
-  }
-  // Form the DK correction in the current basis using the momentum
-  // basis of the reference wavefunction.  The momentum basis in the
-  // reference should be a superset of hcore_basis
-  Ref<GaussianBasisSet> p_basis = mp2wfn->ref()->momentum_basis();
-  Ref<GaussianBasisSet> hcore_basis;
-  Ref<GaussianBasisSetSum> bs1_plus_bs2;
-  if (bs1_eq_bs2) {
-      hcore_basis = bs1;
+  if (scale_H != 0.0) {
+    RefSCDimension aodim1 = vec1t.coldim();
+    RefSCDimension aodim2 = vec2.rowdim();
+    Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
+
+    // cast Wavefunction to MBPT2
+    MBPT2 *mp2wfn = dynamic_cast<MBPT2*> (r12info()->wfn());
+    if (mp2wfn == 0) {
+      throw ProgrammingError("r12info()->wfn() was not an MBPT2 object",
+                             __FILE__, __LINE__, class_desc());
     }
-  else {
-    bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
-    hcore_basis = bs1_plus_bs2->bs12();
-  }
+    // Form the DK correction in the current basis using the momentum
+    // basis of the reference wavefunction.  The momentum basis in the
+    // reference should be a superset of hcore_basis
+    Ref<GaussianBasisSet> p_basis = mp2wfn->ref()->momentum_basis();
+    Ref<GaussianBasisSet> hcore_basis;
+    Ref<GaussianBasisSetSum> bs1_plus_bs2;
+    if (bs1_eq_bs2) {
+      hcore_basis = bs1;
+    } else {
+      bs1_plus_bs2 = new GaussianBasisSetSum(bs1, bs2);
+      hcore_basis = bs1_plus_bs2->bs12();
+    }
 
-  const int dk=r12info()->refinfo()->ref()->dk();
-  if (dk > 0) {
-    // momentum basis in DKH calculations must span both bra and ket basis sets.
-    // easiest to achieve if both are included in p_basis
-    p_basis = p_basis + hcore_basis;
-  }
+    const int dk = r12info()->refinfo()->ref()->dk();
+    if (dk > 0) {
+      // momentum basis in DKH calculations must span both bra and ket basis sets.
+      // easiest to achieve if both are included in p_basis
+      p_basis = p_basis + hcore_basis;
+    }
 
-  // include only the Pauli-Hamiltonian in the R12 treatment of the Fock operator
-  bool pauli_flag = (override_pauli == -1) ? r12info()->r12tech()->pauli() : override_pauli;
-  if (dk==0) { pauli_flag = false; }
+    // include only the Pauli-Hamiltonian in the R12 treatment of the Fock operator
+    bool use_pauli =
+        (override_pauli == -1) ? (r12info()->r12tech()->H0_dk_approx_pauli()
+            == LinearR12::H0_dk_approx_pauli_true) : override_pauli;
+    if (dk == 0) {
+      use_pauli = false;
+    }
+    ExEnv::out0() << "WARNING: use_pauli = " << (use_pauli ? 1 : 0)
+        << std::endl;
 
-  RefSymmSCMatrix hsymm;
+    RefSymmSCMatrix hsymm;
+    if (use_pauli) {
+      hsymm = pauli(hcore_basis);
+    } else {
+      // include the full DKH-Hamiltionian, or the NR-Hamiltonian, depending on the reference
+      hsymm = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis, p_basis);
+    }
 
-// flodbg
-//  ExEnv::out0() << "florian, vor pauli" << endl;
-//  hsymm = pauli(hcore_basis,p_basis,true);
-//  ExEnv::out0() << "flo1" << endl;
-//  RefSymmSCMatrix hsymm2 = pauli(hcore_basis);
-//  ExEnv::out0() << "flo2" << endl;
-//  hsymm.scale(-1.0);
-//  hsymm.accumulate(hsymm2);
-//  hsymm.print("Pauli: real vs momentum space");
-//  ExEnv::out0() << "florian, nach pauli" << endl;
-//  throw ProgrammingError( "flo in progress", __FILE__, __LINE__, class_desc());
-// flodbg
+    // convert hsymm to the AO basis
+    Ref<Integral> localints = r12info_->integral()->clone();
+    localints->set_basis(hcore_basis, hcore_basis);
+    Ref<PetiteList> hcore_pl = localints->petite_list();
+    RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
+    hsymm = 0;
 
-  if (pauli_flag) {
-    hsymm = pauli(hcore_basis);
-  }
-  else {
-    // include the full DKH-Hamiltionian, or the NR-Hamiltonian, depending on the reference
-    hsymm = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis,p_basis);
-  }
-
-
-  // convert hsymm to the AO basis
-  Ref<Integral> localints = r12info_->integral()->clone();
-  localints->set_basis(hcore_basis,hcore_basis);
-  Ref<PetiteList> hcore_pl = localints->petite_list();
-  RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
-  hsymm = 0;
-
-  RefSCMatrix h(aodim1, aodim2, sokit);
-  if (bs1_eq_bs2) {
+    RefSCMatrix h(aodim1, aodim2, sokit);
+    if (bs1_eq_bs2) {
       h.assign(0.0);
       h.accumulate(hsymm_ao);
-  }
-  else {
-    RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
-    hrect_ao.assign(0.0);
-    hrect_ao.accumulate(hsymm_ao);
+    } else {
+      RefSCMatrix hrect_ao(hsymm_ao.dim(), hsymm_ao.dim(), sokit);
+      hrect_ao.assign(0.0);
+      hrect_ao.accumulate(hsymm_ao);
 
-    // extract the bs1 by bs2 block:
-    //   loop over all bs1 fblocks
-    //     loop over all bs2 fblocks
-    //       copy block to h
-    //     end loop
-    //   end loop
-    const int nbf = hcore_basis->nbasis();
-    const int nfblock = bs1_plus_bs2->nfblock();
-    for(int rb=0; rb<nfblock; ++rb) {
-      const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
-      if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
-      continue;
-      const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
+      // extract the bs1 by bs2 block:
+      //   loop over all bs1 fblocks
+      //     loop over all bs2 fblocks
+      //       copy block to h
+      //     end loop
+      //   end loop
+      const int nbf = hcore_basis->nbasis();
+      const int nfblock = bs1_plus_bs2->nfblock();
+      for (int rb = 0; rb < nfblock; ++rb) {
+        const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
+        if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
+          continue;
+        const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
 
-      const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
-      const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
+        const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
+        const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
 
-      for(int cb=0; cb<nfblock; ++cb) {
-        const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
-        if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
-        continue;
-        const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
+        for (int cb = 0; cb < nfblock; ++cb) {
+          const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
+          if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
+            continue;
+          const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
 
-        const int cf_start2 = bs1_plus_bs2->function12_to_function(cf_start12);
-        const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
+          const int cf_start2 =
+              bs1_plus_bs2->function12_to_function(cf_start12);
+          const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
 
-        // assign row-/col-subblock to h
-        h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2, rf_start12, cf_start12);
-      }
-    }
-
-  }
-
-
-#else // ! NEW_HCORE
-
-  if (r12info()->refinfo()->ref()->dk() > 0) {
-      throw ProgrammingError(
-	  "cannot use reference with dk > 0 with old mp2r12 fock algorithm",
-	  __FILE__, __LINE__, class_desc());
-  }
-
-  Ref<Integral> localints = r12info_->integral()->clone();
-  localints->set_basis(bs1,bs2);
-
-  Ref<OneBodyInt> h_ints = localints->hcore();
-
-  // form AO moment matrices
-  RefSCDimension aodim1 = vec1t.coldim();
-  RefSCDimension aodim2 = vec2.rowdim();
-  Ref<SCMatrixKit> aokit = bs1->so_matrixkit();
-  RefSCMatrix h(aodim1, aodim2, aokit);
-  h.assign(0.0);
-
-  for(int sh1=0; sh1<nshell1; sh1++) {
-    int bf1_offset = bs1->shell_to_function(sh1);
-    int nbf1 = bs1->shell(sh1).nfunction();
-
-    int sh2max;
-    if (bs1_eq_bs2)
-      sh2max = sh1;
-    else
-      sh2max = nshell2-1;
-
-    for(int sh2=0; sh2<=sh2max; sh2++) {
-      int bf2_offset = bs2->shell_to_function(sh2);
-      int nbf2 = bs2->shell(sh2).nfunction();
-
-      h_ints->compute_shell(sh1,sh2);
-      const double *hintsptr = h_ints->buffer();
-
-      int bf1_index = bf1_offset;
-      for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, hintsptr+=nbf2) {
-	int bf2_index = bf2_offset;
-	const double *ptr = hintsptr;
-	int bf2max;
-        if (bs1_eq_bs2 && sh1 == sh2)
-          bf2max = bf1;
-        else
-	  bf2max = nbf2-1;
-	for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++, ptr++) {
-
-	  h.set_element(bf1_index, bf2_index, *ptr);
-
+          // assign row-/col-subblock to h
+          h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2,
+                            rf_start12, cf_start12);
         }
       }
+
     }
-  }
 
-  // Symmetrize matrices, if necessary
-  if (bs1_eq_bs2) {
-    const int nbasis = bs1->nbasis();
-    for(int bf1=0; bf1<nbasis; bf1++)
-      for(int bf2=0; bf2<=bf1; bf2++) {
-        h(bf2,bf1) = h(bf1,bf2);
-      }
-  }
-
-  h_ints = 0;
-
-#endif // NEW_HCORE
-
-  // finally, transform
-  RefSCMatrix F = vec1t * h * vec2;
-  F.scale(scale_H);
-  if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
-    F.print("Core Hamiltonian contribution");
-  // and clean up a bit
-  h = 0;
+    // finally, transform
+    F.accumulate(vec1t * h * vec2);
+    F.scale(scale_H);
+    if (debug_ >= DefaultPrintThresholds::allN2
+        || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
+      F.print("Core Hamiltonian contribution");
+    // and clean up a bit
+    h = 0;
+  } // if scale_H != 0.0
 
   const bool spin_unrestricted = spin_polarized();
 

@@ -54,7 +54,7 @@ using namespace sc::LinearR12;
  --------------------------------*/
 
 static ClassDesc R12Technology_cd(
-  typeid(R12Technology),"R12Technology",9,"virtual public SavableState",
+  typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
   0, 0, create<R12Technology>);
 
 R12Technology::R12Technology(StateIn& s)
@@ -77,6 +77,14 @@ R12Technology::R12Technology(StateIn& s)
 
   if (s.version(::class_desc<R12Technology>()) >= 9) {
     int omit_B; s.get(omit_B); omit_B_ = (bool)omit_B;
+  }
+  if (s.version(::class_desc<R12Technology>()) >= 10) {
+    {
+      int i; s.get(i); H0_dk_approx_pauli_ = static_cast<LinearR12::H0_dk_approx_pauli>(i);
+    }
+    {
+      int i; s.get(i); H0_dk_keep_ = static_cast<bool>(i);
+    }
   }
 }
 
@@ -342,9 +350,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
 
-  // Default is to use only the Pauli Hamiltonian in the R12 treatment
-  pauli_= keyval->booleanvalue("pauli",KeyValValueboolean((int)false));
-
   // For now the default is to use the old ABS method, of Klopper and Samson
   std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("ABS"));
   if ( abs_method_str == "KS" ||
@@ -410,6 +415,36 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       throw InputError("R12Technology::R12Technology -- invalid value for keyword posdef_B",__FILE__,__LINE__);
   }
 
+  const std::string H0_dk_approx_pauli = keyval->stringvalue("H0_dk_approx_pauli", KeyValValuestring("false"));
+  if (H0_dk_approx_pauli == "yes" ||
+      H0_dk_approx_pauli == "YES" ||
+      H0_dk_approx_pauli == "true" ||
+      H0_dk_approx_pauli == "TRUE") {
+    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_true;
+  }
+  else if (H0_dk_approx_pauli == "no" ||
+      H0_dk_approx_pauli == "NO" ||
+      H0_dk_approx_pauli == "false" ||
+      H0_dk_approx_pauli == "FALSE") {
+    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_false;
+  }
+  else if (H0_dk_approx_pauli == "fHf" ||
+      H0_dk_approx_pauli == "fhf" ||
+      H0_dk_approx_pauli == "FHF") {
+    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_fHf;
+  }
+  else if (H0_dk_approx_pauli == "fHf_Q" ||
+      H0_dk_approx_pauli == "fhf_q" ||
+      H0_dk_approx_pauli == "FHF_Q") {
+    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_fHf_Q;
+  }
+  else
+    throw InputError("R12Technology::R12Technology -- invalid value for keyword H0_dk_approx_pauli",__FILE__,__LINE__);
+
+  if (H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_false) {
+    H0_dk_keep_ = keyval->booleanvalue("H0_dk_keep",KeyValValueboolean((int)false));
+  }
+
   //
   //
   // Check that requested features are compatible/allowed
@@ -437,6 +472,15 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     throw std::runtime_error("R12Technology::R12Technology() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
 
   //
+  // Relativistic features are only implemented for certain approximations
+  //
+  if ((H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_fHf ||
+       H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_fHf_Q) &&
+       stdapprox_ != LinearR12::StdApprox_C) {
+    throw InputError("R12Technology::R12Technology -- the given value of keyword H0_dk_approx_pauli is only valid when stdapprox=C",__FILE__,__LINE__);
+  }
+
+  //
   // These are for debugging only
   //
   // Do not compute expensive parts of B?
@@ -458,8 +502,9 @@ R12Technology::save_data_state(StateOut& s)
   SavableState::save_state(ansatz_.pointer(),s);
   s.put((int)safety_check_);
   s.put((int)posdef_B_);
-
   s.put((int)omit_B_);
+  s.put((int)H0_dk_approx_pauli_);
+  s.put((int)H0_dk_keep_);
 }
 
 void
@@ -512,6 +557,18 @@ R12Technology::print(ostream&o) const
   }
   ansatz()->print(o);
 
+  o << indent << "H0_dk_approx_pauli: ";
+  switch(H0_dk_approx_pauli()) {
+    case LinearR12::H0_dk_approx_pauli_true:    o << "true" << endl;  break;
+    case LinearR12::H0_dk_approx_pauli_false:   o << "false" << endl; break;
+    case LinearR12::H0_dk_approx_pauli_fHf:     o << "fHf" << endl;   break;
+    case LinearR12::H0_dk_approx_pauli_fHf_Q:   o << "fHf_Q" << endl; break;
+  }
+  if (H0_dk_approx_pauli() == LinearR12::H0_dk_approx_pauli_false &&
+      stdapprox() == LinearR12::StdApprox_App) {
+    o << indent << "H0_dk_keep: " << (this->H0_dk_keep() ? "true" : "false") << endl;
+  }
+
   o << indent << "Max # ABS indices: " << maxnabs_ << endl;
 
   o << decindent;
@@ -545,10 +602,18 @@ R12Technology::omit_P() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool
-R12Technology::pauli() const
+LinearR12::H0_dk_approx_pauli
+R12Technology::H0_dk_approx_pauli() const
 {
-  return pauli_;
+  return H0_dk_approx_pauli_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+R12Technology::H0_dk_keep() const
+{
+  return H0_dk_keep_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

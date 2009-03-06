@@ -496,13 +496,10 @@ R12IntEval::init_intermeds_()
     init_intermeds_g12_();
   }
 
-  // Switching to treating all relativistic terms by RI only...
-#if 0
-  // add in the relativistic contribution, if needed
+  // add in the double-commutator relativistic contribution, if needed
   // can only use 1 Gaussian-based correlation factor (but pq ansatz should work!)
   if (this->dk() > 0)
     compute_B_DKH_();
-#endif
 
 }
 

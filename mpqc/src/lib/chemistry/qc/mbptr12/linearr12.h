@@ -79,6 +79,13 @@ namespace sc {
       GeminalAmplitudeAnsatz_scaledfixed = 2
     };
 
+    enum H0_dk_approx_pauli {
+      H0_dk_approx_pauli_true = 0,
+      H0_dk_approx_pauli_fHf = 1,
+      H0_dk_approx_pauli_fHf_Q = 2,
+      H0_dk_approx_pauli_false = 3
+    };
+
     class GeminalDescriptor : public RefCount {
       private:
         std::string type_;

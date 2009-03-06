@@ -1741,8 +1741,6 @@ R12IntEval::compute()
         compute_B_fX_();
       }
     }
-    B_[AlphaBeta].print(prepend_spincase(static_cast<SpinCase2>(AlphaBeta),"B contribution after fX").c_str());
-
 
     // This is app B contribution to B -- only valid for projector 2
     if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() == LinearR12::Projector_2 && !r12info()->r12tech()->omit_B()) {

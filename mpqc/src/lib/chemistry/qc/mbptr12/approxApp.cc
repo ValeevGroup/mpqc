@@ -76,12 +76,86 @@ R12IntEval::compute_BApp_()
   << "Entered B(app. A'') intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
+  //
+  // if I'm relativistic, all relativistic terms will either be treated as K(i.e. dropped from F giving h+J)
+  // OR kept if user asks for that. The latter assumes that all higher-order terms in
+  // DK hamiltonian commute with Q12 f12
+  //
+  // to accomodate the former option (drop reltivistic terms from h+J) do this
+  // 1) make new space hJnr = h(nr) + J = (h(r) + J) - (H(r) - H(nr)) = hJ - dH
+  //
+  Ref<OrbitalSpace> hJnr[NSpinCases1];
+  if (this->dk() > 0) {
+
+    const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
+    const bool H0_dk_keep = r12info()->r12tech()->H0_dk_keep();
+
+    const int nspins1 = this->nspincases1();
+    for (int s = 0; s < nspins1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1> (s);
+
+      // is this supported?
+      if (!vbs_eq_obs && maxnabs < 2)
+        throw FeatureNotImplemented("Relativistic R12/A'' computations are not supported with maxnabs==1 && VBS!=OBS",__FILE__,__LINE__);
+      if (abs_eq_obs)
+        throw FeatureNotImplemented("Relativistic R12/A'' computations are not supported with ABS==OBS",__FILE__,__LINE__);
+
+      // which space is used as RIBS?
+      Ref<OrbitalSpace> ribs = (maxnabs < 2) ? r12info()->refinfo()->orbs(spin) : r12info()->ribs_space();
+      // get AO space for RIBS
+      const Ref<OrbitalSpace>& aoribs =
+        AOSpaceRegistry::instance()->value(ribs->basis());
+
+      Ref<OrbitalSpace> hJ_x_P = (maxnabs < 2) ? hj_x_p(spin) : hj_x_P(spin);
+      if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false && !H0_dk_keep) { // use nonrelativistic hamiltonian in h+J
+        const Ref<OrbitalSpace>& x = xspace(spin);
+        const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(x->basis());
+        // compute dH = H(rel) - H(nonrel) in AO basis
+        RefSCMatrix Hr = this->fock(aox, aoribs, spin, 0.0, 0.0, 1.0);
+        const std::string nonrel_hkey =
+          ParsedOneBodyIntKey::key(aox->id(), aoribs->id(),
+                                   std::string("H"));
+        RefSCMatrix Hnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
+        RefSCMatrix dH = Hnr.clone();
+        dH->convert(Hr);
+        Hnr.scale(-1.0);
+        dH.accumulate(Hnr);
+        Hr = 0;
+        Hnr = 0;
+        // transform to MO basis, transpose so that x dimension is coldim
+        RefSCMatrix dH_mo = x->coefs().t() * dH * ribs->coefs();
+        dH_mo = dH_mo.t();
+
+        // Make new space hJ - dH
+        std::string id = x->id();
+        id += "_hJnr(";
+        id += ribs->id();
+        id += ")";
+        ExEnv::out0() << "id = " << id << endl;
+        std::string name = "(hJnr)-weighted space";
+#if 1
+        hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs() - ribs->coefs() * dH_mo, hJ_x_P->basis());
+#else
+        hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
+#endif
+
+        OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hJnr[s]));
+      }
+      else { // use pure h+J
+        hJnr[spin] = hJ_x_P;
+      }
+
+    }
+    if (hJnr[Beta].null()) hJnr[Beta] = hJnr[Alpha];
+  }
+
   for(int s=0; s<nspincases2(); s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
     Ref<OrbitalSpace> xspace1 = xspace(spin1);
     Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    const bool x1_eq_x2 = (xspace1 == xspace2);
 
     if (dim_oo(spincase2).n() == 0)
       continue;
@@ -97,47 +171,55 @@ R12IntEval::compute_BApp_()
     // compute Q = X_{xy}^{xy_{hj}}
     RefSCMatrix Q;
     if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
-	Ref<OrbitalSpace> hj_x2 = hj_x_P(spin2);
-	compute_X_(Q,spincase2,xspace1,xspace2,
-		   xspace1,hj_x2);
+      Ref<OrbitalSpace> hj_x2 = hj_x_P(spin2);
+      // if I'm relativistic, use the hJ adjusted for user options
+      if (this->dk() > 0) { hj_x2 = hJnr[spin2]; }
+      compute_X_(Q,spincase2,xspace1,xspace2,
+                 xspace1,hj_x2);
     }
     else { // else do RI in orbital basis...
-	if (vbs_eq_obs) { // which is just p if VBS == OBS
-	    Ref<OrbitalSpace> hj_x2 = hj_x_p(spin2);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,hj_x2);
-	}
-	else { // if VBS != OBS, p = m + a
-	    Ref<OrbitalSpace> hj_x2 = hj_x_m(spin2);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,hj_x2);
+      if (vbs_eq_obs) { // which is just p if VBS == OBS
+        Ref<OrbitalSpace> hj_x2 = hj_x_p(spin2);
+        // if I'm relativistic, use the hJ adjusted for user options
+        if (this->dk() > 0) { hj_x2 = hJnr[spin2]; }
+        compute_X_(Q,spincase2,xspace1,xspace2,
+                   xspace1,hj_x2);
+      }
+      else { // if VBS != OBS, p = m + a
+        Ref<OrbitalSpace> hj_x2 = hj_x_m(spin2);
+        compute_X_(Q,spincase2,xspace1,xspace2,
+                   xspace1,hj_x2);
 	    hj_x2 = hj_x_a(spin2);
 	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,hj_x2);
-	}
+	               xspace1,hj_x2);
+      }
     }
 
-    if (xspace1 != xspace2) {
-	if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
-	    Ref<OrbitalSpace> hj_x1 = hj_x_P(spin1);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       hj_x1,xspace2);
-	}
-	else { // else do RI in orbital basis...
+    if (x1_eq_x2) {
+      if (maxnabs > 1) { // if can only use 2 RI index, h+J can be resolved by the RIBS
+        Ref<OrbitalSpace> hj_x1 = hj_x_P(spin1);
+        // if I'm relativistic, use the hJ adjusted for user options
+        if (this->dk() > 0) { hj_x1 = hJnr[spin1]; }
+        compute_X_(Q,spincase2,xspace1,xspace2,
+                   hj_x1,xspace2);
+      }
+      else { // else do RI in orbital basis...
 	    if (vbs_eq_obs) { // which is just p if VBS == OBS
-		Ref<OrbitalSpace> hj_x1 = hj_x_p(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   hj_x1,xspace2);
+	      Ref<OrbitalSpace> hj_x1 = hj_x_p(spin1);
+	      // if I'm relativistic, use the hJ adjusted for user options
+	      if (this->dk() > 0) { hj_x1 = hJnr[spin1]; }
+	      compute_X_(Q,spincase2,xspace1,xspace2,
+	                 hj_x1,xspace2);
 	    }
 	    else { // if VBS != OBS, p = m + a
-		Ref<OrbitalSpace> hj_x1 = hj_x_m(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   hj_x1,xspace2);
-		hj_x1 = hj_x_a(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   hj_x1,xspace2);
+	      Ref<OrbitalSpace> hj_x1 = hj_x_m(spin1);
+	      compute_X_(Q,spincase2,xspace1,xspace2,
+	                 hj_x1,xspace2);
+	      hj_x1 = hj_x_a(spin1);
+	      compute_X_(Q,spincase2,xspace1,xspace2,
+	                 hj_x1,xspace2);
 	    }
-	}
+      }
     }
     else {
       Q.scale(2.0);

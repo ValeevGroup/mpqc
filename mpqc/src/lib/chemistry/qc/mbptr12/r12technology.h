@@ -136,9 +136,7 @@ class R12Technology: virtual public SavableState {
         hence it is not recommended to use this keyword.
 
         <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
-        Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
-        For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
-        will leave out such terms.
+        Valid values are 1 or 2. The default is 2 except for R12/A'' method.
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.

@@ -36,6 +36,7 @@
 #include <mpi.h>
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
+#include <chemistry/qc/mbptr12/registry.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 
 namespace sc {
@@ -58,6 +59,11 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     char *filename_;
     MPI_File datafile_;
 
+    // keep track of clones of this object to be able to create unique names
+    typedef Registry<std::string,int,detail::NonsingletonCreationPolicy> ListOfClones;
+    Ref<ListOfClones> clonelist_;
+    void set_clonelist(const Ref<ListOfClones>& cl);
+
     struct PairBlkInfo {
       mutable double* ints_[max_num_te_types_];      // blocks corresponding to each operator type
       mutable int refcount_[max_num_te_types_];      // number of references
@@ -71,6 +77,9 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     // Utility functions
     int ij_proc(int i, int j) const { return 0;};
 
+    /// helps to implement clone of Derived class
+    template <typename Derived> Ref<R12IntsAcc> clone();
+
   public:
     R12IntsAcc_MPIIOFile(const char *filename, int num_te_types,
                          int ni, int nj, int nx, int ny);
@@ -78,7 +87,7 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     ~R12IntsAcc_MPIIOFile();
     void save_data_state(StateOut&);
 
-    /// implementation of R12IntsAcc::activate()
+     /// implementation of R12IntsAcc::activate()
     void activate();
     /// implementation of R12IntsAcc::deactivate()
     void deactivate();
@@ -94,6 +103,34 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     /// Does this task have access to all the integrals?
     bool has_access(int proc) const { return true; }
 };
+
+namespace detail {
+  void clone_filename(std::string& result, const char* original, int id);
+}
+
+template <typename Derived>
+  Ref<R12IntsAcc> R12IntsAcc_MPIIOFile::clone() {
+
+    int id = 0;
+    std::string clonename;
+    using detail::clone_filename;
+    clone_filename(clonename, this->filename_, id);
+    if (clonelist_.nonnull()) {
+      while (clonelist_->key_exists(clonename)) {
+        ++id;
+        clone_filename(clonename, this->filename_, id);
+      }
+    } else {
+      clonelist_ = ListOfClones::instance();
+    }
+    clonelist_->add(clonename, id);
+    Ref<Derived> result =
+        new Derived(clonename.c_str(), num_te_types(),
+                    ni(), nj(),
+                    nx(), ny());
+    result->set_clonelist(clonelist_);
+    return result;
+  }
 
 //////////////////////////////////////////////////////////////////////////////
 /** R12IntsAcc_MPIIOFile_Ind handles transformed integrals stored in a binary
@@ -112,6 +149,8 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
     R12IntsAcc_MPIIOFile_Ind(StateIn&);
     ~R12IntsAcc_MPIIOFile_Ind();
     void save_data_state(StateOut&);
+
+    Ref<R12IntsAcc> clone();
 
 #if 0
     /** Stores all pair block of integrals held in mem.

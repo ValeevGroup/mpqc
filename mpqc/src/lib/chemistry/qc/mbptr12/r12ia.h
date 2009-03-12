@@ -74,6 +74,9 @@ class R12IntsAcc: virtual public SavableState {
     virtual ~R12IntsAcc();
     void save_data_state(StateOut&);
 
+    /// how to clone
+    virtual Ref<R12IntsAcc> clone() =0;
+
     /// Types of two-body operators that R12IntsAcc understands
     typedef unsigned int tbint_type;
     static const unsigned int max_num_te_types_ = TwoBodyInt::max_num_tbint_types;

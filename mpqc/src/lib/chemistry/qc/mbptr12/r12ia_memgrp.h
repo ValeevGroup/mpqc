@@ -74,6 +74,8 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);
 
+    Ref<R12IntsAcc> clone();
+
     // Implementation of R12IntsAcc_MemoryGrp
     void deactivate();
     /// implementation of R12IntsAcc::data_persistent()

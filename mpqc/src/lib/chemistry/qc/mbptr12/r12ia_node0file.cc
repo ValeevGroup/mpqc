@@ -64,6 +64,7 @@ R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :
   R12IntsAcc(si)
 {
   si.getstring(filename_);
+  clonelist_ = ListOfClones::restore_instance(si);
   init(true);
 }
 
@@ -96,6 +97,36 @@ R12IntsAcc_Node0File::save_data_state(StateOut& so)
 {
   R12IntsAcc::save_data_state(so);
   so.putstring(filename_);
+  ListOfClones::save_instance(clonelist_, so);
+}
+
+namespace {
+  void clone_filename(std::string& result, const char* original, int id) {
+    std::ostringstream oss;
+    oss << original << ".clone" << id;
+    result = oss.str();
+  }
+}
+
+Ref<R12IntsAcc>
+R12IntsAcc_Node0File::clone() {
+  int id = 0;
+  std::string clonename;
+  clone_filename(clonename, this->filename_, id);
+  if (clonelist_.nonnull()) {
+    while (clonelist_->key_exists(clonename)) {
+      ++id;
+      clone_filename(clonename, this->filename_, id);
+    }
+  }
+  else {
+    clonelist_ = ListOfClones::instance();
+  }
+  clonelist_->add(clonename, id);
+  Ref<R12IntsAcc_Node0File> result = new R12IntsAcc_Node0File(clonename.c_str(), num_te_types(),
+                                                              ni(), nj(), nx(), ny());
+  result->set_clonelist(clonelist_);
+  return result;
 }
 
 void
@@ -154,6 +185,11 @@ R12IntsAcc_Node0File::check_filedescr_()
       throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
     }
   }
+}
+
+void
+R12IntsAcc_Node0File::set_clonelist(const Ref<ListOfClones>& cl) {
+  clonelist_ = cl;
 }
 
 void

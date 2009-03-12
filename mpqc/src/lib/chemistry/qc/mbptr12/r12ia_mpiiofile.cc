@@ -60,6 +60,7 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
   SavableState(si), R12IntsAcc(si)
 {
   si.getstring(filename_);
+  clonelist_ = ListOfClones::restore_instance(si);
 
   init(true);
 }
@@ -85,6 +86,7 @@ R12IntsAcc_MPIIOFile::save_data_state(StateOut& so)
 {
   R12IntsAcc::save_data_state(so);
   so.putstring(filename_);
+  ListOfClones::save_instance(clonelist_,so);
 }
 
 void
@@ -141,6 +143,11 @@ R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
     }
   }
 
+}
+
+void
+R12IntsAcc_MPIIOFile::set_clonelist(const Ref<ListOfClones>& cl) {
+  clonelist_ = cl;
 }
 
 void
@@ -205,6 +212,11 @@ void
 R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
 {
   R12IntsAcc_MPIIOFile::save_data_state(so);
+}
+
+Ref<R12IntsAcc>
+R12IntsAcc_MPIIOFile_Ind::clone() {
+  return R12IntsAcc_MPIIOFile::clone<R12IntsAcc_MPIIOFile_Ind>();
 }
 
 #if 0
@@ -328,6 +340,12 @@ R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
   }
   pb->refcount_[oper_type] += 1;
   return pb->ints_[oper_type];
+}
+
+void detail::clone_filename(std::string& result, const char* original, int id) {
+  std::ostringstream oss;
+  oss << original << ".clone" << id;
+  result = oss.str();
 }
 
 // Local Variables:

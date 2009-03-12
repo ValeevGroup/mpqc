@@ -82,6 +82,17 @@ R12IntsAcc_MemoryGrp::save_data_state(StateOut& so)
   so.put(blksize_memgrp_);
 }
 
+Ref<R12IntsAcc>
+R12IntsAcc_MemoryGrp::clone()
+{
+  Ref<MemoryGrp> newmem = mem_->clone();
+  newmem->set_localsize(mem_->localsize());
+  Ref<R12IntsAcc> result = new R12IntsAcc_MemoryGrp(newmem, num_te_types(),
+                                                    ni(), nj(), nx(), ny(),
+                                                    blksize_memgrp_);
+  return result;
+}
+
 void R12IntsAcc_MemoryGrp::init() {
   const int n = ntasks();
 

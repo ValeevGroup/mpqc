@@ -30,9 +30,11 @@
 #endif
 
 #include <stdexcept>
-#include <stdlib.h>
+#include <cstdlib>
+#include <sstream>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 
 using namespace std;
@@ -131,12 +133,31 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
       // blocks are distributed in MemoryGrp in round-robin also
       const int proc = ij % nproc;
       const int local_ij_index = ij / nproc;
+#if 0
+      ExEnv::out0() << indent << "sc::detail::store_memorygrp: me = " << me
+                    << " i = " << ii
+                    << " j = " << j
+                    << " proc = " << proc << endl;
+#endif
       if (proc != me) {
         distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp
             *num_te_types + mem->offset(proc);
         const size_t blksize = acc->blksize();
         for (int te_type = 0; te_type < num_te_types; ++te_type) {
           const double* data = (const double *) mem->obtain_readonly(moffset, blksize);
+
+#if 0
+          {
+            Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+            RefSCMatrix datamat = localkit->matrix(new SCDimension(acc->nx()),
+                                                   new SCDimension(acc->ny()));
+            datamat.assign(data);
+            std::ostringstream oss;
+            oss << "sc::detail::store_memorygrp: i = " << ii << " j = " << j << " te_type = " << te_type;
+            datamat.print(oss.str().c_str());
+          }
+#endif
+
           acc->store_pair_block(ii, j, te_type, data);
           mem->release_readonly(const_cast<void*>(static_cast<const void*>(data)), moffset, blksize);
           moffset += blksize_memgrp;
@@ -145,6 +166,19 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
         const double* data = (const double *) ((size_t)mem->localdata() + blksize_memgrp
             *num_te_types*local_ij_index);
         for (int te_type=0; te_type < num_te_types; te_type++) {
+
+#if 0
+          {
+            Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+            RefSCMatrix datamat = localkit->matrix(new SCDimension(acc->nx()),
+                                                   new SCDimension(acc->ny()));
+            datamat.assign(data);
+            std::ostringstream oss;
+            oss << "sc::detail::store_memorygrp: i = " << ii << " j = " << j << " te_type = " << te_type;
+            datamat.print(oss.str().c_str());
+          }
+#endif
+
           acc->store_pair_block(ii, j, te_type, data);
           data = (double*) ((size_t) data + blksize_memgrp);
         }

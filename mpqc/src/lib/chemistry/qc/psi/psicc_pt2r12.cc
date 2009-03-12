@@ -135,6 +135,7 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
     input->write_keyword("psi:wfn", "mp2");
   else
     input->write_keyword("psi:wfn", "ccsd");
+  input->write_keyword("ccenergy:convergence", convergence);
   input->close();
 }
 
@@ -155,15 +156,22 @@ void PsiCCSD_PT2R12::compute() {
     psio.close(CC_INFO, 1);
   }
 
-  // compare reference energies from Psi3 and MPQC -- abort, if do not agree
+  // compare reference energies from Psi3 and MPQC -- warn, if do not agree
   {
+    const double nucrep_energy_mpqc = mbptr12_->molecule()->nuclear_repulsion_energy();
+    const double nucrep_energy_psi3 = nuclear_repulsion_energy();
+    const double enuc_diff = std::fabs(nucrep_energy_mpqc - nucrep_energy_psi3);
+    const double enuc_tol = 1e-15;
+    if (enuc_diff > enuc_tol)
+      ExEnv::out0() << "WARNING: PsiCCSD_PT2R12::compute -- MPQC and Psi3 nuclear repulsion energies differ by "
+                    << enuc_diff << " but expected less than " << enuc_tol << std::endl;
     const double reference_energy_mpqc = mbptr12_->ref_energy();
     const double reference_energy_psi3 = reference_energy();
     const double eref_diff = std::fabs(reference_energy_mpqc - reference_energy_psi3);
     const double eref_tol = desired_value_accuracy()*100.0;
     if (eref_diff > eref_tol)
-      throw ToleranceExceeded("PsiCCSD_PT2R12::compute -- MPQC and Psi3 reference energies do not agree",
-                              __FILE__,__LINE__,eref_tol,eref_diff);
+      ExEnv::out0() << "WARNING: PsiCCSD_PT2R12::compute -- MPQC and Psi3 reference energies differ by "
+                    << eref_diff << " but expected less than " << eref_tol << std::endl;
   }
 
   const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
@@ -781,6 +789,7 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
     input->write_keyword("psi:wfn", "mp2");
   else
     input->write_keyword("psi:wfn", "ccsd_t");
+  input->write_keyword("ccenergy:convergence", convergence);
   input->close();
 }
 

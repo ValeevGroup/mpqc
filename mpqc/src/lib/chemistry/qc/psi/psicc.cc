@@ -618,6 +618,7 @@ namespace sc {
     input->open();
     PsiCorrWavefunction::write_input(convergence);
     input->write_keyword("psi:wfn", "ccsd");
+    input->write_keyword("ccenergy:convergence", convergence);
     input->close();
   }
 

@@ -39,7 +39,7 @@
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 
 namespace sc {
-  
+
   ///////////////////////////////////////////////////////////////////
   /** PsiWavefunction is an abstract base for all Psi wave functions.
    Its KeyVal constructor is invoked by all KeyVal constructors of
@@ -47,13 +47,13 @@ namespace sc {
    */
 
   class PsiWavefunction : public Wavefunction {
-      
+
       Ref<PsiExEnv> exenv_;
       /// All Psi wave functions can at least compute the energy
       int value_implemented() const {
         return 1;
       }
-      
+
     protected:
       int nirrep_;
       char *memory_;
@@ -86,7 +86,7 @@ namespace sc {
       ~PsiWavefunction();
 
       void save_data_state(StateOut&);
-      
+
       /// returns the Psi3 convention for the ordering of the cartesian functions
       static Integral::CartesianOrdering cartesian_ordering();
 
@@ -102,19 +102,21 @@ namespace sc {
       Ref<PsiExEnv> exenv() const {
         return exenv_;
       }
-      
+
       /// Return an associated PsiInput object
       Ref<PsiInput> get_psi_input() const {
         return exenv_->get_psi_input();
       }
-      
+
       /// Returns a map from shells in Psi3 basis to std::pair<shell,contraction> in MPQC basis (note that Psi3 does not handle general contractions)
       std::vector< std::pair<unsigned int,unsigned int> > shell_map();
       /// Returns a map from AO in Psi3 basis to AO in MPQC basis
       std::vector<unsigned int> ao_map();
-      
+
+      /// return Psi3 nuclear repulsion energy
+      double nuclear_repulsion_energy() const;
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiSCF is an abstract base for all Psi SCF wave functions
 
@@ -124,14 +126,14 @@ namespace sc {
       std::vector<unsigned int> occpi_[NSpinCases1];
       std::vector<unsigned int> uoccpi_[NSpinCases1];
       std::vector<unsigned int> mopi_;
-      
+
     protected:
       std::vector<int> docc_;
       std::vector<int> socc_;
       int multp_;
       int charge_;
       static const int maxiter = 100;
-      
+
       /// guess wave function is only used to get the occupations
       Ref<OneBodyWavefunction> guess_wfn_;
 
@@ -167,7 +169,7 @@ namespace sc {
       /// number of occupied MOs of spin
       unsigned int nocc(SpinCase1 spin);
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiCLHF is a concrete implementation of Psi RHF wave function
 
@@ -193,7 +195,7 @@ namespace sc {
       }
       ;
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiHSOSHF is a concrete implementation of Psi ROHF wave function
 
@@ -219,7 +221,7 @@ namespace sc {
       }
       ;
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiUHF is a concrete implementation of Psi UHF wave function
 
@@ -245,7 +247,7 @@ namespace sc {
       }
       ;
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiCorrWavefunction is a Psi correlated wave function
 
@@ -261,7 +263,7 @@ namespace sc {
       void write_input(int conv);
 
       double valacc_to_refacc() const { return 100.0; }
-      
+
     public:
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
@@ -272,7 +274,7 @@ namespace sc {
       }
       /// sets the desired value accuracy
       void set_desired_value_accuracy(double acc);
-      
+
       const Ref<PsiSCF>& reference() const { return reference_; }
       /// Number of electrons
       int nelectron();
@@ -291,8 +293,8 @@ namespace sc {
 
       /// reference energy
       virtual double reference_energy();
-      
+
   };
-  
+
 }
 #endif

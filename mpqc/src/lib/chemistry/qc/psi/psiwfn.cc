@@ -66,22 +66,22 @@ namespace {
 }
 
 namespace sc {
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiWavefunction_cd(typeid(PsiWavefunction),
                                       "PsiWavefunction", 2,
                                       "public Wavefunction", 0, 0, 0);
-  
+
   PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval) :
     Wavefunction(keyval) {
     exenv_ << keyval->describedclassvalue("psienv");
     if (exenv_.null()) {
       exenv_ = new PsiExEnv;
     }
-    
+
     nirrep_ = molecule()->point_group()->char_table().order();
-    
+
     size_t bytes = keyval->sizevalue("memory");
     if (bytes <= 2000000)
       bytes = 2000000;
@@ -93,34 +93,34 @@ namespace sc {
       strcpy(memory_,oss.str().c_str());
     }
   }
-  
+
   PsiWavefunction::~PsiWavefunction() {
     exenv_->run_psi_module("psiclean");
   }
-  
+
   PsiWavefunction::PsiWavefunction(StateIn&s) :
     SavableState(s), Wavefunction(s) {
     throw std::runtime_error("PsiWavefunction::PsiWavefunction(StateIn&) -- cannot restore state of Psi wave functions");
   }
-  
+
   Integral::CartesianOrdering
   PsiWavefunction::cartesian_ordering() {
     return Integral::CCACartesianOrdering;
   }
-  
+
   void PsiWavefunction::save_data_state(StateOut&s) {
     throw std::runtime_error("PsiWavefunction::save_data_state -- cannot save state of Psi wave functions, set savestate = no in your input file");
   }
-  
+
   void PsiWavefunction::print(ostream&o) const {
     Wavefunction::print(o);
     exenv_->print(o);
   }
-  
+
   int PsiWavefunction::debug() const {
     return debug_;
   }
-  
+
   void PsiWavefunction::compute() {
     if (gradient_needed() && !gradient_implemented()) {
       ExEnv::out0()
@@ -136,20 +136,20 @@ namespace sc {
       grad_acc = 1.0e-7;
     if (gradient_needed() && energy_acc > grad_acc/10.0)
       energy_acc = grad_acc/10.0;
-    
+
     write_input((int)-log10(energy_acc));
     if (debug_ > 1)
       exenv()->get_psi_input()->print();
     exenv()->run_psi();
-    
+
     // read output
     if (gradient_needed()) {
       Ref<PsiFile11> file11 = exenv()->get_psi_file11();
       file11->open();
-      
+
       set_energy(file11->get_energy(0));
       set_actual_value_accuracy(energy_acc);
-      
+
       int natom_mpqc = molecule()->natom();
       int natom = file11->get_natom(0);
       if (natom != natom_mpqc) {
@@ -170,18 +170,20 @@ namespace sc {
       set_actual_value_accuracy(energy_acc);
     }
   }
-  
+
   RefSymmSCMatrix PsiWavefunction::density() {
     abort();
     return 0;
   }
-  
+
   void PsiWavefunction::write_basic_input(int conv) {
     const char *dertype = gradient_needed() ? "first" : "none";
-    
+
     Ref<PsiInput> psiinput = get_psi_input();
     psiinput->write_defaults(exenv_, dertype);
     psiinput->write_keyword("psi:memory", memory_);
+    psiinput->write_keyword("psi:convergence", conv);
+    psiinput->write_keyword("cints:cutoff", conv+5);
     psiinput->begin_section("input");
     psiinput->write_keyword("no_reorient", "true");
     psiinput->write_keyword("keep_ref_frame", "true");
@@ -192,7 +194,7 @@ namespace sc {
     psiinput->end_section();
     psiinput->write_basis_sets(basis());
   }
-  
+
   // Shamelessly borrowed from class SCF
   std::vector<int> PsiWavefunction::read_occ(const Ref<KeyVal> &keyval,
                                              const char *name, int nirrep) {
@@ -211,7 +213,7 @@ namespace sc {
     }
     return occ;
   }
-  
+
   std::vector< std::pair<unsigned int, unsigned int> > PsiWavefunction::shell_map() {
     typedef std::vector< std::pair<unsigned int, unsigned int> > ShellMap;
     const Ref<GaussianBasisSet>& bs = basis();
@@ -269,37 +271,43 @@ namespace sc {
     return map;
   }
 
+  double
+  PsiWavefunction::nuclear_repulsion_energy() const
+  {
+    return exenv()->chkpt().rd_enuc();
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiSCF_cd(typeid(PsiSCF), "PsiSCF", 1,
                              "public PsiWavefunction", 0, 0, 0);
-  
+
   PsiSCF::PsiSCF(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
     docc_ = read_occ(keyval, "docc", nirrep_);
     socc_ = read_occ(keyval, "socc", nirrep_);
   }
-  
+
   PsiSCF::~PsiSCF() {
   }
-  
+
   PsiSCF::PsiSCF(StateIn&s) :
     PsiWavefunction(s) {
   }
-  
+
   void PsiSCF::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
   }
-  
+
   int PsiSCF::nelectron() {
     return nocc(Alpha) + nocc(Beta);
   }
-  
+
   unsigned int PsiSCF::nmo() {
     int num_mo = exenv()->chkpt().rd_nmo();
     return num_mo;
   }
-  
+
   unsigned int PsiSCF::nocc(SpinCase1 spin) {
     const std::vector<unsigned int>& occpi = this->occpi(spin);
     unsigned int nocc = 0;
@@ -307,15 +315,15 @@ namespace sc {
       nocc += occpi[h];
     return nocc;
   }
-  
+
   const RefDiagSCMatrix&PsiSCF::evals(SpinCase1 spin) {
     if (evals_[spin].nonnull())
       return evals_[spin];
-    
+
     PsiSCF::RefType ref = reftype();
     if (ref == rhf && spin == Beta)
       return evals(Alpha);
-    
+
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
     int num_mo = exenv()->chkpt().rd_nmo();
@@ -328,7 +336,7 @@ namespace sc {
       default:
         E = (spin == Alpha) ? exenv()->chkpt().rd_alpha_evals() : exenv()->chkpt().rd_beta_evals();
     }
-    
+
     // convert raw matrices to SCMatrices
     RefSCDimension modim = new SCDimension(num_mo,nirrep_,mopi);
     for (unsigned int h=0; h<nirrep_; ++h)
@@ -337,21 +345,21 @@ namespace sc {
     evals_[spin].assign(E);
     if (debug() >= DefaultPrintThresholds::mostN)
       evals_[spin].print(prepend_spincase(spin,"Psi3 SCF eigenvalues").c_str());
-    
+
     psi::Chkpt::free(E);
     psi::Chkpt::free(mopi);
 
     return evals_[spin];
   }
-  
+
   const RefSCMatrix&PsiSCF::coefs(SpinCase1 spin) {
     if (coefs_[spin].nonnull())
       return coefs_[spin];
-    
+
     PsiSCF::RefType ref = reftype();
     if (ref == rhf && spin == Beta)
       return coefs(Alpha);
-    
+
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
     int num_so = exenv()->chkpt().rd_nso();
@@ -368,7 +376,7 @@ namespace sc {
     }
     // get AO->SO matrix (MPQC AO equiv PSI3 BF)
     double** ao2so = exenv()->chkpt().rd_usotbf();
-    
+
     // convert raw matrices to SCMatrices
     RefSCDimension sodim_nb = new SCDimension(num_so,1);
     sodim_nb->blocks()->set_subdim(0, new SCDimension(num_so));
@@ -406,7 +414,7 @@ namespace sc {
         RefSCMatrix coefs_mpqc_blk = coefs_mpqc_blkd->block(h);
         if (coefs_mpqc_blk.null()) continue;
         RefSCMatrix coefs_psi_blk = coefs_psi_blkd->block(h);
-        
+
         for (unsigned int aopsi=0; aopsi<nao; ++aopsi) {
           RefSCVector row = coefs_psi_blk.get_row(aopsi);
           const unsigned int aompqc = aomap[aopsi];
@@ -467,13 +475,13 @@ namespace sc {
     }
     if (debug() >= DefaultPrintThresholds::allN2)
       coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered, in MPQC frame)").c_str());
-    
+
     using psi::Chkpt;
     Chkpt::free(mopi);
     Chkpt::free(sopi);
     Chkpt::free(C);
     Chkpt::free(ao2so);
-    
+
     return coefs_[spin];
   }
 
@@ -483,7 +491,7 @@ namespace sc {
       return occpi_[spin];
     if (spin == Beta && reftype() == rhf)
       return occpi(Alpha);
-    
+
     occpi_[spin].resize(nirrep_);
     {
       int* doccpi = exenv()->chkpt().rd_clsdpi();
@@ -497,7 +505,7 @@ namespace sc {
         occpi_[spin][h] += soccpi[h];
       Chkpt::free(soccpi);
     }
-    
+
     return occpi_[spin];
   }
 
@@ -505,7 +513,7 @@ namespace sc {
     using psi::Chkpt;
     if (!mopi_.empty())
       return mopi_;
-    
+
     mopi_.resize(nirrep_);
     {
       int* mopi = exenv()->chkpt().rd_orbspi();
@@ -513,7 +521,7 @@ namespace sc {
         mopi_[h] = mopi[h];
       Chkpt::free(mopi);
     }
-    
+
     return mopi_;
   }
 
@@ -523,13 +531,13 @@ namespace sc {
       return uoccpi_[spin];
     if (spin == Beta && reftype() == rhf)
       return uoccpi(Alpha);
-    
+
     const std::vector<unsigned int>& mopi = this->mopi();
     const std::vector<unsigned int>& occpi = this->occpi(spin);
     uoccpi_[spin].resize(nirrep_);
     for (unsigned int h=0; h<nirrep_; ++h)
       uoccpi_[spin][h] = mopi[h] - occpi[h];
-    
+
     return uoccpi_[spin];
   }
 
@@ -542,7 +550,7 @@ namespace sc {
     const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (charge_ != (nuclear_charge - obwfn->nelectron()) )
       throw InputError("PsiSCF::import_occupations(obwfn) -- number of electrons in obwfn does not match this");
-    
+
     // extract occupations
     std::vector<int> docc_obwfn(nirrep_);
     std::vector<int> socc_obwfn(nirrep_);
@@ -567,7 +575,7 @@ namespace sc {
         }
       }
     }
-    
+
     // if necessary, compare to the existing occupations
     if ( !(docc_.empty() && socc_.empty()) ) {
       if (!docc_.empty() && docc_ != docc_obwfn)
@@ -580,20 +588,20 @@ namespace sc {
       docc_ = docc_obwfn;
       socc_ = socc_obwfn;
     }
-    
+
     // lastly, update multp_
     multp_ = 1 + sum(socc_);
-    
+
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCLHF_cd(typeid(PsiCLHF), "PsiCLHF", 1, "public PsiSCF",
                               0, create<PsiCLHF>, create<PsiCLHF>);
-  
+
   PsiCLHF::PsiCLHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
-    
+
     multp_ = 1;
     const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
     if (docc_.empty()) {
@@ -615,14 +623,14 @@ namespace sc {
       charge_ = nuclear_charge - nelectron;
     }
   }
-  
+
   PsiCLHF::~PsiCLHF() {
   }
-  
+
   PsiCLHF::PsiCLHF(StateIn&s) :
     PsiSCF(s) {
   }
-  
+
   void PsiCLHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "rhf");
@@ -636,7 +644,7 @@ namespace sc {
     }
     input->write_keyword("scf:maxiter", maxiter);
   }
-  
+
   void PsiCLHF::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
@@ -645,16 +653,16 @@ namespace sc {
     input->write_keyword("psi:wfn", "scf");
     input->close();
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiHSOSHF_cd(typeid(PsiHSOSHF), "PsiHSOSHF", 1,
                                 "public PsiSCF", 0, create<PsiHSOSHF>, create<
                                     PsiHSOSHF>);
-  
+
   PsiHSOSHF::PsiHSOSHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
-    
+
     if ( (docc_.empty() && !socc_.empty()) ||
          (!docc_.empty() && socc_.empty()) ) {
       throw InputError("PsiHSOSHF::PsiHSOSHF -- must give both docc and socc keywords, or neither");
@@ -679,16 +687,16 @@ namespace sc {
       charge_ = nuclear_charge - nelectron;
       multp_ = sum(socc_) + 1;
     }
-    
+
   }
-  
+
   PsiHSOSHF::~PsiHSOSHF() {
   }
-  
+
   PsiHSOSHF::PsiHSOSHF(StateIn&s) :
     PsiSCF(s) {
   }
-  
+
   void PsiHSOSHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "rohf");
@@ -704,7 +712,7 @@ namespace sc {
     }
     input->write_keyword("scf:maxiter", maxiter);
   }
-  
+
   void PsiHSOSHF::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
@@ -713,12 +721,12 @@ namespace sc {
     input->write_keyword("psi:wfn", "scf");
     input->close();
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiUHF_cd(typeid(PsiUHF), "PsiUHF", 1, "public PsiSCF", 0,
                              create<PsiUHF>, create<PsiUHF>);
-  
+
   PsiUHF::PsiUHF(const Ref<KeyVal>&keyval) :
     PsiSCF(keyval) {
 
@@ -746,16 +754,16 @@ namespace sc {
       charge_ = nuclear_charge - nelectron;
       multp_ = sum(socc_) + 1;
     }
-  
+
   }
-  
+
   PsiUHF::~PsiUHF() {
   }
-  
+
   PsiUHF::PsiUHF(StateIn&s) :
     PsiSCF(s) {
   }
-  
+
   void PsiUHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "uhf");
@@ -771,7 +779,7 @@ namespace sc {
     }
     input->write_keyword("scf:maxiter", maxiter);
   }
-  
+
   void PsiUHF::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
@@ -780,17 +788,17 @@ namespace sc {
     input->write_keyword("psi:wfn", "scf");
     input->close();
   }
-  
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCorrWavefunction_cd(typeid(PsiCorrWavefunction),
                                           "PsiCorrWavefunction", 1,
                                           "public PsiWavefunction", 0, create<PsiCorrWavefunction>,
                                           create<PsiCorrWavefunction>);
-  
+
   PsiCorrWavefunction::PsiCorrWavefunction(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
-    
+
     std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
     if (nfzc_str == "auto")
       nfzc_ = molecule()->n_core_electrons()/2;
@@ -803,7 +811,7 @@ namespace sc {
       nfzv_ = 0;
     else
       nfzv_ = atoi(nfzv_str.c_str());
-    
+
     reference_ << keyval->describedclassvalue("reference");
     if (reference_.null()) {
       ExEnv::err0()
@@ -812,17 +820,17 @@ namespace sc {
       abort();
     }
   }
-  
+
   PsiCorrWavefunction::~PsiCorrWavefunction() {
   }
-  
+
   PsiCorrWavefunction::PsiCorrWavefunction(StateIn&s) :
     PsiWavefunction(s) {
     reference_ << SavableState::restore_state(s);
     int nfzc; s.get(nfzc); nfzc_ = static_cast<unsigned int>(nfzc);
     int nfzv; s.get(nfzv); nfzv_ = static_cast<unsigned int>(nfzv);
   }
-  
+
   void PsiCorrWavefunction::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
@@ -835,42 +843,43 @@ namespace sc {
     reference()->set_desired_value_accuracy( acc /
                                              valacc_to_refacc() );
   }
-  
+
   void PsiCorrWavefunction::write_input(int convergence) {
     if (gradient_needed())
       reference_->do_gradient(1);
     else
       reference_->do_gradient(0);
-    
+
     Ref<PsiInput> input = get_psi_input();
     PsiWavefunction::write_basic_input(convergence);
     reference_->write_basic_input(convergence);
+    input->write_keyword("psi:tolerance", convergence + 5);
     input->write_keyword("psi:freeze_core", static_cast<int>(nfzc_));
     input->write_keyword("psi:freeze_virt", static_cast<int>(nfzv_));
   }
-  
+
   int PsiCorrWavefunction::nelectron() {
     return reference()->nelectron();
   }
-  
+
   const Ref<OrbitalSpace>&
   PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
     if (occ_act_sb_[spin].nonnull())
       return occ_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
       return occ_act_sb(Alpha);
-    
+
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
-    
+
     const std::string id(spin==Alpha ? "I" : "i");
     occ_act_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"active occupied MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
         reference_->evals(spin),nfzc_,nmo-nocc,OrbitalSpace::symmetry);
-    
+
     return occ_act_sb_[spin];
   }
-  
+
   const Ref<OrbitalSpace>&
   PsiCorrWavefunction::vir_act_sb(SpinCase1 spin) {
     if (vir_act_sb_[spin].nonnull())
@@ -881,11 +890,11 @@ namespace sc {
     const int nmo = reference_->nmo();
     const int nocc = reference_->nocc(spin);
 
-    const std::string id(spin==Alpha ? "A" : "a");    
+    const std::string id(spin==Alpha ? "A" : "a");
     vir_act_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"active virtual MOs (Psi3)"),
         reference_->coefs(spin),basis(),integral(),
         reference_->evals(spin),nocc,nfzv_,OrbitalSpace::symmetry);
-    
+
     return vir_act_sb_[spin];
   }
 
@@ -893,7 +902,7 @@ namespace sc {
   PsiCorrWavefunction::nfzc() const { return nfzc_; }
   unsigned int
   PsiCorrWavefunction::nfzv() const { return nfzv_; }
-  
+
   const std::vector<unsigned int>&
   PsiCorrWavefunction::frozen_docc() const {
     if (frozen_docc_.empty()) {
@@ -904,7 +913,7 @@ namespace sc {
     }
     return frozen_docc_;
   }
-  
+
   const std::vector<unsigned int>&
   PsiCorrWavefunction::frozen_uocc() const {
     if (frozen_uocc_.empty()) {
@@ -915,7 +924,7 @@ namespace sc {
     }
     return frozen_uocc_;
   }
-  
+
   double
   PsiCorrWavefunction::reference_energy()
   {

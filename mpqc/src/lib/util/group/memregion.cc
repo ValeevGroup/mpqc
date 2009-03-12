@@ -283,7 +283,8 @@ MemoryGrpRegion::catchup()
 Ref<MemoryGrp>
 MemoryGrpRegion::clone()
 {
-  throw ProgrammingError("MemoryGrpRegion::clone() -- MemoryGrpRegion is not clonable",__FILE__,__LINE__);
+  Ref<MemoryGrp> result = new MemoryGrpRegion(host_, reserve_.size());
+  return result;
 }
 
 void

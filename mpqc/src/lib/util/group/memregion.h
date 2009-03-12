@@ -64,7 +64,7 @@ class MemoryGrpRegion: public MemoryGrp {
     void release_readonly(void* data, distsize_t offset, int size);
     void release_writeonly(void* data, distsize_t offset, int size);
     void release_readwrite(void* data, distsize_t offset, int size);
-    // to implement sun_reduction as in ActiveMsgMemoryGrp (i.e., with locking one node at a time)
+    // to implement sum_reduction as in ActiveMsgMemoryGrp (i.e., with locking one node at a time)
     // need the analog of MemoryIter
     // TODO implement MemoryRegionIter
     // for now use the less efficient MemoryGrp version which uses obtain_readwrite, hence may lock multiple nodes
@@ -78,7 +78,6 @@ class MemoryGrpRegion: public MemoryGrp {
     void* malloc_local(size_t nbytes);
     void free_local(void* data);
 
-    /// reimplementation of MemoryGrp::clone(). always throws ProgrammingError -- this type of MemoryGrp is not clonable
     Ref<MemoryGrp> clone();
     void print(std::ostream &o=ExEnv::out0()) const;
 

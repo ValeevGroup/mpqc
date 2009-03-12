@@ -62,7 +62,7 @@ CXXSRCS = mbptr12.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
   singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
   moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
-  orbitalspace_runtime.cc
+  orbitalspace_runtime.cc  transform_ijR.cc
   
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \
@@ -84,7 +84,7 @@ print_scmat_norms.h             utils.impl.h \
 r12_amps.h                      vxb_eval_info.h \
 r12ia.h				moints_runtime.h \
 fockbuilder.h                   fockbuild_runtime.h \
-orbitalspace_runtime.h
+orbitalspace_runtime.h		transform_ijR.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

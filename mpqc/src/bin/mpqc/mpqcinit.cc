@@ -15,7 +15,9 @@
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
-#include <util/group/messmpi.h>
+#if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
+#  include <util/group/messmpi.h>
+#endif
 #include <util/group/thread.h>
 #include <util/group/memory.h>
 #include <util/misc/autovec.h>

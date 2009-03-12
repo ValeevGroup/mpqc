@@ -84,10 +84,10 @@ MBPT2::compute_hsos_v1()
   int nvir;
   int nocc=0;
   int ndocc=0,nsocc=0;
-  int i_offset; 
+  int i_offset;
   int npass, pass;
   int ni;             /* batch size */
-  int nr, ns; 
+  int nr, ns;
   int R, S;
   int q, r, s;
   int bf3,bf4;
@@ -131,7 +131,7 @@ MBPT2::compute_hsos_v1()
   int ithread;
 
   me = msg_->me();
-  
+
   ExEnv::out0() << indent << "Just entered OPT2 program (opt2_v1)" << endl;
 
   tol = (int) (-10.0/log10(2.0));  /* discard ereps smaller than 10^-10 */
@@ -170,18 +170,18 @@ MBPT2::compute_hsos_v1()
 
   ndocc = ndocc - nfzc;
   /* nvir = # of unocc. orb. + # of s.o. orb. - # of frozen virt. orb. */
-  nvir  = noso - ndocc - nfzc - nfzv; 
+  nvir  = noso - ndocc - nfzc - nfzv;
   /* nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb. */
   nocc  = ndocc + nsocc;
 
 
   /* compute number of a-values (a_number) processed by each node */
 
-  a_number = nvir/nproc; 
+  a_number = nvir/nproc;
   a_rest = nvir%nproc;
   if (me < a_rest) a_number++;
 
-  if (me == 0 && a_number < nsocc) { 
+  if (me == 0 && a_number < nsocc) {
     ExEnv::err0() << "not enough memory allocated" << endl;
     /* must have all socc's on node 0 for computation of socc_sum*/
     abort();
@@ -292,7 +292,7 @@ MBPT2::compute_hsos_v1()
 
   /* the scf vector might be distributed between the nodes, but for OPT2 *
    * each node needs its own copy of the vector;                         *
-   * therefore, put a copy of the scf vector on each node;               * 
+   * therefore, put a copy of the scf vector on each node;               *
    * while doing this, duplicate columns corresponding to singly         *
    * occupied orbitals and order columns as [socc docc socc unocc]       */
   /* also rearrange scf eigenvalues as [socc docc socc unocc]            *
@@ -384,9 +384,9 @@ MBPT2::compute_hsos_v1()
     abort();
     }
   if (nsocc) socc_sum  = (double*) malloc(nsocc*sizeof(double));
-  if (nsocc) mo_int_do_so_vir = 
+  if (nsocc) mo_int_do_so_vir =
                    (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
-  if (nsocc) mo_int_tmp = 
+  if (nsocc) mo_int_tmp =
                    (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
@@ -407,7 +407,7 @@ MBPT2::compute_hsos_v1()
                                              lock, basis(), tbint[ithread], ni,
                                              scf_vector, tol, debug_);
     }
-  
+
   if (debug_>0) ExEnv::out0() << indent << "beginning passes" << endl;
 
 /**************************************************************************
@@ -557,7 +557,7 @@ MBPT2::compute_hsos_v1()
 
           for (asocc=0; asocc<nsocc; asocc++) {
             socc_sum[isocc] += scf_vector[r][nocc+asocc]*
-                                trans_int3[isocc*(isocc+1)/2 + isocc*i_offset 
+                                trans_int3[isocc*(isocc+1)/2 + isocc*i_offset
                                           + isocc + dim_ij*(asocc + a_number*r)];
             }
           }
@@ -618,16 +618,16 @@ MBPT2::compute_hsos_v1()
             compute_index++;
             if (compute_index%nproc != me) continue;
 
-            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc) 
+            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc)
                         + (j >= nsocc && j < nocc);
             socc_index = ((i_offset+i)<nsocc)+(j<nsocc)+(a<nsocc)+(b<nsocc);
             vir_index = (a >= nsocc) + (b >= nsocc);
 
             if (socc_index >= 3) continue; /* skip to next b value */
- 
-            delta_ijab = evals_open[i_offset+i] + evals_open[j] 
+
+            delta_ijab = evals_open[i_offset+i] + evals_open[j]
                        - evals_open[nocc+a] - evals_open[nocc+b];
-            
+
             /* determine integral type and compute energy contribution */
             if (docc_index == 2 && vir_index == 2) {
               if (i_offset+i == j && a == b) {
@@ -672,9 +672,9 @@ MBPT2::compute_hsos_v1()
               else {
                 contrib1 = trans_int4[a*nvir + b];
                 contrib2 = trans_int4[b*nvir + a];
-                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2
                             - contrib1*contrib2)/(delta_ijab - 0.5*socc_sum[b]);
-                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2
                              - contrib1*contrib2)/delta_ijab;
                 }
               }
@@ -835,17 +835,17 @@ MBPT2::compute_hsos_v1()
   if (method_ == "opt1") {
     set_energy(eopt1);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (method_ == "opt2") {
     set_energy(eopt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (nsocc == 0 && method_ == "mp") {
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else {
     if (method_ != "zapt") {
@@ -854,7 +854,7 @@ MBPT2::compute_hsos_v1()
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
 
   free(trans_int1);

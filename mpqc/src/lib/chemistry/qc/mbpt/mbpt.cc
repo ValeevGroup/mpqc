@@ -41,7 +41,7 @@ using namespace std;
 using namespace sc;
 
 /////////////////////////////////////////////////////////////////
-// Function dquicksort performs a quick sort (smaller -> larger) 
+// Function dquicksort performs a quick sort (smaller -> larger)
 // of the double data in item by the integer indices in index;
 // data in item remain unchanged
 /////////////////////////////////////////////////////////////////
@@ -51,14 +51,14 @@ dqs(double *item,int *index,int left,int right)
   register int i,j;
   double x;
   int y;
- 
+
   i=left; j=right;
   x=item[index[(left+right)/2]];
- 
+
   do {
     while(item[index[i]]<x && i<right) i++;
     while(x<item[index[j]] && j>left) j--;
- 
+
     if (i<=j) {
       if (item[index[i]] != item[index[j]]) {
         y=index[i];
@@ -68,7 +68,7 @@ dqs(double *item,int *index,int left,int right)
       i++; j--;
       }
     } while(i<=j);
-       
+
   if (left<j) dqs(item,index,left,j);
   if (i<right) dqs(item,index,i,right);
 }
@@ -315,7 +315,7 @@ MBPT2::compute()
   init_variables();
 
   reference_->set_desired_value_accuracy(desired_value_accuracy()
-                                         / ref_to_mp2_acc);
+                                         / ref_to_mp2_acc());
   if (gradient_needed()) {
       if (nsocc) {
           ExEnv::errn() << "MBPT2: cannot compute open shell gradients" << endl;
@@ -391,7 +391,7 @@ void
 MBPT2::set_desired_value_accuracy(double acc)
 {
   Function::set_desired_value_accuracy(acc);
-  reference_->set_desired_value_accuracy(acc / ref_to_mp2_acc);
+  reference_->set_desired_value_accuracy(acc / ref_to_mp2_acc());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -483,7 +483,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
           vecs_so_mo1.t().print("vecs_so_mo1.t()");
           so_ao.print("so_ao");
         }
-      
+
       vecs = vecs_mo1_mo2.t() * vecs_so_mo1.t() * so_ao;
     }
   else {

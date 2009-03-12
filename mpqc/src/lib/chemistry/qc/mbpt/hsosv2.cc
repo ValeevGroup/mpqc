@@ -53,10 +53,10 @@ MBPT2::compute_hsos_v2()
   int nvir;
   int nshell;
   int nocc=0,ndocc=0,nsocc=0;
-  int i_offset; 
+  int i_offset;
   int npass, pass;
   int ni;
-  int np, nq, nr, ns; 
+  int np, nq, nr, ns;
   int P, Q, R, S;
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
@@ -80,18 +80,18 @@ MBPT2::compute_hsos_v2()
   int *sorted_shells;  /* sorted shell indices: large shells->small shells */
   int *nbf;            /* number of basis functions processed by each node */
   int *proc;           /* element k: processor which will process shell k  */
-  int aoint_computed = 0; 
+  int aoint_computed = 0;
   double *evals_open;    /* reordered scf eigenvalues                      */
   const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
   double *trans_int2;    /* partially transformed integrals                */
   double *trans_int3;    /* partially transformed integrals                */
   double *trans_int4;    /* fully transformed integrals                    */
-  double *trans_int4_tmp; /* scratch array                                 */ 
+  double *trans_int4_tmp; /* scratch array                                 */
   double *mo_int_do_so_vir=0;/*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
   double *mo_int_tmp=0;  /* scratch array used in global summations        */
   double *socc_sum=0;    /* sum of 2-el integrals involving only s.o.'s    */
-  double *socc_sum_tmp=0;/* scratch array                                  */ 
+  double *socc_sum_tmp=0;/* scratch array                                  */
   double *iqrs, *iprs;
   double *iars_ptr;
   double iars;
@@ -150,7 +150,7 @@ MBPT2::compute_hsos_v2()
 
   ndocc = ndocc - nfzc;
   /* nvir = # of unocc. orb. + # of s.o. orb. - # of frozen virt. orb. */
-  nvir  = noso - ndocc - nfzc - nfzv; 
+  nvir  = noso - ndocc - nfzc - nfzv;
   /* nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb. */
   nocc  = ndocc + nsocc;
   nshell = basis()->nshell();
@@ -226,7 +226,7 @@ MBPT2::compute_hsos_v2()
    * mo_int_do_so_vir, mo_int_tmp,                                        *
    * and the following arrays of type int: myshells, shellsize,           *
    * sorted_shells, nbf, and proc                                         */
-    
+
   size_t memused = 0;
   ni = 0;
   for (i=1; i<=nocc; i++) {
@@ -307,7 +307,7 @@ MBPT2::compute_hsos_v2()
 
   /* the scf vector might be distributed between the nodes, but for OPT2 *
    * each node needs its own copy of the vector;                         *
-   * therefore, put a copy of the scf vector on each node;               * 
+   * therefore, put a copy of the scf vector on each node;               *
    * while doing this, duplicate columns corresponding to singly         *
    * occupied orbitals and order columns as [socc docc socc unocc]       */
   /* also rearrange scf eigenvalues as [socc docc socc unocc]            *
@@ -377,9 +377,9 @@ MBPT2::compute_hsos_v2()
   trans_int4_tmp = (double*) malloc(nvir*nvir*sizeof(double));
   if (nsocc) socc_sum = (double*) malloc(nsocc*sizeof(double));
   if (nsocc) socc_sum_tmp = (double*) malloc(nsocc*sizeof(double));
-  if (nsocc) mo_int_do_so_vir = 
+  if (nsocc) mo_int_do_so_vir =
                      (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
-  if (nsocc) mo_int_tmp = 
+  if (nsocc) mo_int_tmp =
                      (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
@@ -397,7 +397,7 @@ MBPT2::compute_hsos_v2()
   Timer tim;
 
   for (pass=0; pass<npass; pass++) {
-    i_offset = pass*ni;  
+    i_offset = pass*ni;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     r_offset = 0;
@@ -440,7 +440,7 @@ MBPT2::compute_hsos_v2()
 
             for (bf1 = 0; bf1 < np; bf1++) {
               p = basis()->shell_to_function(P) + bf1;
- 
+
               for (bf2 = 0; bf2 < nq; bf2++) {
                 q = basis()->shell_to_function(Q) + bf2;
                 if (q > p) {
@@ -460,7 +460,7 @@ MBPT2::compute_hsos_v2()
 
                       iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
                       iprs = &trans_int1[((bf4*nr + bf3)*nbasis + p)*ni];
-                    
+
                       if (p == q) pqrs *= 0.5;
                       col_index = i_offset;
                       c_pi = &scf_vector[p][col_index];
@@ -583,7 +583,7 @@ MBPT2::compute_hsos_v2()
         tim.exit("global sum socc_sum");
         }
 
-      } 
+      }
 
     /* now we have all the sums of integrals involving s.o.'s (socc_sum);   *
      * begin fourth quarter transformation for all integrals (including     *
@@ -639,16 +639,16 @@ MBPT2::compute_hsos_v2()
             compute_index++;
             if (compute_index%nproc != me) continue;
 
-            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc) 
+            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc)
                         + (j >= nsocc && j < nocc);
             socc_index = ((i_offset+i)<nsocc)+(j<nsocc)+(a<nsocc)+(b<nsocc);
             vir_index = (a >= nsocc) + (b >= nsocc);
 
             if (socc_index >= 3) continue; /* skip to next b value */
- 
-            delta_ijab = evals_open[i_offset+i] + evals_open[j] 
+
+            delta_ijab = evals_open[i_offset+i] + evals_open[j]
                        - evals_open[nocc+a] - evals_open[nocc+b];
-            
+
             /* determine integral type and compute energy contribution */
             if (docc_index == 2 && vir_index == 2) {
               if (i_offset+i == j && a == b) {
@@ -693,9 +693,9 @@ MBPT2::compute_hsos_v2()
               else {
                 contrib1 = trans_int4[a*nvir + b];
                 contrib2 = trans_int4[b*nvir + a];
-                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2
                             - contrib1*contrib2)/(delta_ijab - 0.5*socc_sum[b]);
-                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2
                              - contrib1*contrib2)/delta_ijab;
                 }
               }
@@ -822,7 +822,7 @@ MBPT2::compute_hsos_v2()
     ExEnv::out0() << indent
          << "Number of shell quartets for which AO integrals" << endl
          << indent << "were computed: " << aoint_computed << endl;
-            
+
     ExEnv::out0() << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
     ExEnv::out0() << indent
@@ -847,17 +847,17 @@ MBPT2::compute_hsos_v2()
   if (method_ == "opt1") {
     set_energy(eopt1);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (method_ == "opt2") {
     set_energy(eopt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (nsocc == 0 && method_ == "mp") {
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else {
     if (method_ != "zapt") {
@@ -866,7 +866,7 @@ MBPT2::compute_hsos_v2()
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
 
   free(trans_int1);
@@ -911,14 +911,14 @@ iqs(int *item,int *index,int left,int right)
 {
   register int i,j;
   int x,y;
- 
+
   i=left; j=right;
   x=item[index[(left+right)/2]];
- 
+
   do {
     while(item[index[i]]>x && i<right) i++;
     while(x>item[index[j]] && j>left) j--;
- 
+
     if (i<=j) {
       if (item[index[i]] != item[index[j]]) {
         y=index[i];
@@ -928,7 +928,7 @@ iqs(int *item,int *index,int left,int right)
       i++; j--;
       }
     } while(i<=j);
-       
+
   if (left<j) iqs(item,index,left,j);
   if (i<right) iqs(item,index,i,right);
   }

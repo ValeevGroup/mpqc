@@ -47,7 +47,7 @@ namespace sc {
 methods. */
 class MBPT2: public Wavefunction {
   protected:
-#define ref_to_mp2_acc 100.0
+    static double ref_to_mp2_acc() { return 100.0; }
 
     Ref<SCF> reference_;
     Ref<MemoryGrp> mem;
@@ -86,9 +86,9 @@ class MBPT2: public Wavefunction {
     std::string algorithm_;
     // if do_d1_ is true, D1(MP2) will be computed even if the gradient is not
     int do_d1_;
-    // if do_d2_ is true, D2(MP1) will be computed 
+    // if do_d2_ is true, D2(MP1) will be computed
     int do_d2_;
-    
+
     int nfuncmax;
 
     double hf_energy_;
@@ -228,8 +228,8 @@ class MBPT2: public Wavefunction {
 
         <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
         is used. The default is false.
-    
-        
+
+
         </dl> */
     MBPT2(const Ref<KeyVal>&);
     ~MBPT2();

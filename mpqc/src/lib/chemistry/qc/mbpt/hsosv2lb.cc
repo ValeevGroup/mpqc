@@ -40,7 +40,7 @@ static void iqs(int *item,int *index,int left,int right);
 static void iquicksort(int *item,int *index,int n);
 static void findprocminmax(int *nbf, int nproc,
                            int *procmin, int *procmax, int *minbf, int *maxbf);
-static void findshellmax(int *myshellsizes, int nRshell, int *shellmax, 
+static void findshellmax(int *myshellsizes, int nRshell, int *shellmax,
                          int *shellmaxindex);
 static void expandintarray(int *&a, int dim);
 
@@ -57,10 +57,10 @@ MBPT2::compute_hsos_v2_lb()
   int shellmax;
   int shellmaxindex;
   int nocc=0,ndocc=0,nsocc=0;
-  int i_offset; 
+  int i_offset;
   int npass, pass;
   int ni;
-  int np, nq, nr, ns; 
+  int np, nq, nr, ns;
   int P, Q, R, S;
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
@@ -84,13 +84,13 @@ MBPT2::compute_hsos_v2_lb()
   int nRshell;
   int imyshell;
   int *myshells;       // the R indices processed by node me
-  int *myshellsizes;   // sizes of the shells (after split) on node me 
-  int *split_info;     // on each node: offset for each shell; -1 if shell not split 
+  int *myshellsizes;   // sizes of the shells (after split) on node me
+  int *split_info;     // on each node: offset for each shell; -1 if shell not split
   int *shellsize;      // size of each shell
   int *sorted_shells;  // sorted shell indices: large shells->small shells
   int *nbf;            // number of basis functions processed by each node
   int *proc;           // element k: processor which will process shell k
-  int aoint_computed = 0; 
+  int aoint_computed = 0;
   double A, B, C, ni_top, max, ni_double; // variables used to compute ni
   double *evals_open;    // reordered scf eigenvalues
   const double *intbuf;        // 2-electron AO integral buffer
@@ -123,7 +123,7 @@ MBPT2::compute_hsos_v2_lb()
   double tol;          // log2 of the erep tolerance (erep < 2^tol => discard)
 
   me = msg_->me();
- 
+
   ExEnv::out0() << indent << "Just entered OPT2 program (opt2v2lb)" << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
@@ -162,13 +162,13 @@ MBPT2::compute_hsos_v2_lb()
 
   ndocc = ndocc - nfzc;
   // nvir = # of unocc. orb. + # of s.o. orb. - # of frozen virt. orb.
-  nvir  = noso - ndocc - nfzc - nfzv; 
+  nvir  = noso - ndocc - nfzc - nfzv;
   // nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb.
   nocc  = ndocc + nsocc;
   nshell = basis()->nshell();
 
   // Allocate storage for some arrays used for keeping track of which R
-  // indices are processed by each node                                
+  // indices are processed by each node
   shellsize = (int*) malloc(nshell*sizeof(int));
   sorted_shells = (int*) malloc(nshell*sizeof(int));
   nbf = (int*) malloc(nproc*sizeof(int));
@@ -465,9 +465,9 @@ MBPT2::compute_hsos_v2_lb()
   trans_int4_tmp = (double*) malloc(nvir*nvir*sizeof(double));
   if (nsocc) socc_sum = (double*) malloc(nsocc*sizeof(double));
   if (nsocc) socc_sum_tmp = (double*) malloc(nsocc*sizeof(double));
-  if (nsocc) mo_int_do_so_vir = 
+  if (nsocc) mo_int_do_so_vir =
                      (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
-  if (nsocc) mo_int_tmp = 
+  if (nsocc) mo_int_tmp =
                      (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
@@ -485,7 +485,7 @@ MBPT2::compute_hsos_v2_lb()
   Timer tim;
 
   for (pass=0; pass<npass; pass++) {
-    i_offset = pass*ni;  
+    i_offset = pass*ni;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     r_offset = 0;
@@ -526,7 +526,7 @@ MBPT2::compute_hsos_v2_lb()
 
             for (bf1 = 0; bf1 < np; bf1++) {
               p = basis()->shell_to_function(P) + bf1;
- 
+
               for (bf2 = 0; bf2 < nq; bf2++) {
                 q = basis()->shell_to_function(Q) + bf2;
                 if (q > p) {
@@ -542,7 +542,7 @@ MBPT2::compute_hsos_v2_lb()
 
                   for (bf4 = 0; bf4 < ns; bf4++) {
 
-                    index = bf4 + ns*(bf3+bf3_offset + 
+                    index = bf4 + ns*(bf3+bf3_offset +
                                basis()->shell(R).nfunction()*(bf2 + nq*bf1));
 
                     if (fabs(intbuf[index]) > 1.0e-15) {
@@ -550,7 +550,7 @@ MBPT2::compute_hsos_v2_lb()
 
                       iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
                       iprs = &trans_int1[((bf4*nr + bf3)*nbasis + p)*ni];
-                    
+
                       if (p == q) pqrs *= 0.5;
                       col_index = i_offset;
                       c_pi = &scf_vector[p][col_index];
@@ -669,7 +669,7 @@ MBPT2::compute_hsos_v2_lb()
         tim.exit("global sum socc_sum");
         }
 
-      } 
+      }
 
     // Now we have all the sums of integrals involving s.o.'s (socc_sum);
     // begin fourth quarter transformation for all integrals (including
@@ -723,16 +723,16 @@ MBPT2::compute_hsos_v2_lb()
             compute_index++;
             if (compute_index%nproc != me) continue;
 
-            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc) 
+            docc_index = ((i_offset+i) >= nsocc && (i_offset+i) < nocc)
                         + (j >= nsocc && j < nocc);
             socc_index = ((i_offset+i)<nsocc)+(j<nsocc)+(a<nsocc)+(b<nsocc);
             vir_index = (a >= nsocc) + (b >= nsocc);
 
             if (socc_index >= 3) continue; // skip to next b value
- 
-            delta_ijab = evals_open[i_offset+i] + evals_open[j] 
+
+            delta_ijab = evals_open[i_offset+i] + evals_open[j]
                        - evals_open[nocc+a] - evals_open[nocc+b];
-            
+
             // Determine integral type and compute energy contribution
             if (docc_index == 2 && vir_index == 2) {
               if (i_offset+i == j && a == b) {
@@ -777,9 +777,9 @@ MBPT2::compute_hsos_v2_lb()
               else {
                 contrib1 = trans_int4[a*nvir + b];
                 contrib2 = trans_int4[b*nvir + a];
-                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt2 += 2*(contrib1*contrib1 + contrib2*contrib2
                             - contrib1*contrib2)/(delta_ijab - 0.5*socc_sum[b]);
-                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2 
+                ecorr_opt1 += 2*(contrib1*contrib1 + contrib2*contrib2
                              - contrib1*contrib2)/delta_ijab;
                 }
               }
@@ -905,7 +905,7 @@ MBPT2::compute_hsos_v2_lb()
     ExEnv::out0() << indent
          << "Number of shell quartets for which AO integrals" << endl
          << indent << "were computed: " << aoint_computed << endl;
-            
+
     ExEnv::out0() << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
     ExEnv::out0() << indent
@@ -930,17 +930,17 @@ MBPT2::compute_hsos_v2_lb()
   if (method_ == "opt1") {
     set_energy(eopt1);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (method_ == "opt2") {
     set_energy(eopt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else if (nsocc == 0 && method_ == "mp") {
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
   else {
     if (method_ != "zapt") {
@@ -949,7 +949,7 @@ MBPT2::compute_hsos_v2_lb()
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()
-                              *ref_to_mp2_acc);
+                              *ref_to_mp2_acc());
     }
 
   free(trans_int1);
@@ -976,7 +976,7 @@ MBPT2::compute_hsos_v2_lb()
   }
 
 /////////////////////////////////////////////////////////////////
-// Function iquicksort performs a quick sort (larger -> smaller) 
+// Function iquicksort performs a quick sort (larger -> smaller)
 // of the integer data in item by the integer indices in index;
 // data in item remain unchanged
 /////////////////////////////////////////////////////////////////
@@ -996,14 +996,14 @@ iqs(int *item,int *index,int left,int right)
 {
   register int i,j;
   int x,y;
- 
+
   i=left; j=right;
   x=item[index[(left+right)/2]];
- 
+
   do {
     while(item[index[i]]>x && i<right) i++;
     while(x>item[index[j]] && j>left) j--;
- 
+
     if (i<=j) {
       if (item[index[i]] != item[index[j]]) {
         y=index[i];
@@ -1013,7 +1013,7 @@ iqs(int *item,int *index,int left,int right)
       i++; j--;
       }
     } while(i<=j);
-       
+
   if (left<j) iqs(item,index,left,j);
   if (i<right) iqs(item,index,i,right);
 }
@@ -1065,10 +1065,10 @@ findshellmax(int *myshellsizes, int nRshell, int *shellmax, int *shellmaxindex)
 
 //////////////////////////////////////////////////////////////
 // Function expand_array expands the dimension of an array of
-// doubles by 1; 
+// doubles by 1;
 // NB: THE ARRAY MUST HAVE BEEN ALLOCATED WITH MALLOC
 //////////////////////////////////////////////////////////////
-static void 
+static void
 expandintarray(int *&a, int olddim)
 {
   int i;

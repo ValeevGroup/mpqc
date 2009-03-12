@@ -130,10 +130,10 @@ MBPT2::compute_cs_grad()
   int nshell;
   int offset;
   int ik_offset;
-  int i_offset; 
+  int i_offset;
   int npass, pass;
   int tmpint;
-  int np, nq, nr, ns; 
+  int np, nq, nr, ns;
   int P, Q, R, S;
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
@@ -143,8 +143,8 @@ MBPT2::compute_cs_grad()
   int rest;
   int p_offset, q_offset, r_offset, s_offset;
 
-  int aoint_computed = 0; 
-  int aointder_computed = 0; 
+  int aoint_computed = 0;
+  int aointder_computed = 0;
   int xyz;
   int natom = molecule()->natom();     // the number of atoms
   int int_index;
@@ -172,7 +172,7 @@ MBPT2::compute_cs_grad()
   double emp2=0.0;
   int tol;                    // log2 of the erep tolerance
                               // (erep < 2^tol => discard)
-  double *Wkj=0,*Wab=0,*Waj=0;// occ-occ, vir-vir and vir-occ parts of 
+  double *Wkj=0,*Wab=0,*Waj=0;// occ-occ, vir-vir and vir-occ parts of
                               // second order correction to MP2
                               // energy weighted density matrix
   double *Pkj=0,*Pab=0;       // occ-occ and vir-vir parts of second order
@@ -185,7 +185,7 @@ MBPT2::compute_cs_grad()
   double *d2vir_mat_ptr;
   double *wkj_ptr, *wjk_ptr, *wab_ptr, *wba_ptr, *waj_ptr=0;
   double *laj_ptr, *lpi_ptr, *lqi_ptr;
-  double *gamma_iajs, *gamma_iajs_tmp; 
+  double *gamma_iajs, *gamma_iajs_tmp;
                               // partially back-transformed non-sep 2PDM's
   double *gamma_iqjs_tmp;
   double *gamma_iajs_ptr;
@@ -240,7 +240,7 @@ MBPT2::compute_cs_grad()
     ExEnv::out0() << endl << indent
          << "Entered memgrp based MP2 routine" << endl;
     }
-  
+
   nproc = msg_->n();
   if (me == 0)
     ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
@@ -272,7 +272,7 @@ MBPT2::compute_cs_grad()
       }
     abort();
     }
-    
+
   if (restart_orbital_memgrp_) {
     if (!dograd && !do_d1_ && !do_d2_) {
       ExEnv::out0() << indent
@@ -323,7 +323,7 @@ MBPT2::compute_cs_grad()
     mem_static *= sizeof(double);
     int nthreads = thr_->nthread();
     mem_static += nthreads * integral()->storage_required_eri(basis()); // integral evaluators
-    ni = compute_cs_batchsize(mem_static, nocc_act-restart_orbital_memgrp_); 
+    ni = compute_cs_batchsize(mem_static, nocc_act-restart_orbital_memgrp_);
     }
 
   if (max_norb_ > 0 && ni > max_norb_) {
@@ -611,7 +611,7 @@ MBPT2::compute_cs_grad()
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     // Compute number of of i,j pairs on each node for
-    // two-el integrals and non-sep 2PDM elements 
+    // two-el integrals and non-sep 2PDM elements
     index = 0;
     nij = 0;
     for (i=0; i<ni; i++) {
@@ -854,9 +854,9 @@ MBPT2::compute_cs_grad()
                 tmpval = *ikjs_ptr;
                 for (a=0; a<nvir_act; a++) {
                   *ikja_ptr++ += *c_sa++ * tmpval;
-                  } // exit a loop 
+                  } // exit a loop
                 ikjs_ptr += nbasis;
-                }   // exit s loop 
+                }   // exit s loop
               // Put integral_ikja into ixjs for one i,k,j while
               // overwriting elements of ixjs
               ikjs_ptr = &integral_ixjs[k + nbasis*(nocc + nbasis*ij_index)];
@@ -864,8 +864,8 @@ MBPT2::compute_cs_grad()
               for (a=0; a<nvir_act; a++) {
                 *ikjs_ptr = *ikja_ptr++;
                 ikjs_ptr += nbasis;
-                } // exit a loop 
-              }   // exit k loop 
+                } // exit a loop
+              }   // exit k loop
             }     //endif
 
           ij_index++;
@@ -886,7 +886,7 @@ MBPT2::compute_cs_grad()
     delete[] integral_iajy;
     delete[] integral_ikja;
 
-    // Divide the (ia|jb) MO integrals by the term 
+    // Divide the (ia|jb) MO integrals by the term
     // evals[i]+evals[j]-evals[a]-evals[b]
     // and keep these integrals in mo_int;
     // do this only for active i, j, a, and b
@@ -930,7 +930,7 @@ MBPT2::compute_cs_grad()
     // for one batch of i, all j<nocc, and all a<nvir and b<nvir,
     // where i, j, a, and b are all active;
     // compute contribution to the MP2 correlation energy
-    // from these integrals 
+    // from these integrals
 
 #if WRITE_DOUBLES
     if (nproc > 1 || npass > 1) {
@@ -1093,7 +1093,7 @@ MBPT2::compute_cs_grad()
                   if (k>=nfzc) {
                     delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
                     *wjk_ptr += tmpval*delta_ijab;
-                    } 
+                    }
                   } // exit b loop
                 }   // exit a loop
               mo_intbuf = 0;
@@ -1192,7 +1192,7 @@ MBPT2::compute_cs_grad()
     compute_L:
 
     ///////////////////////////////////////
-    // Update Waj and Laj with contrib. 
+    // Update Waj and Laj with contrib.
     // from (oo|ov) and (ov|oo) integrals;
     // here a is active and j is active or
     // frozen
@@ -1286,7 +1286,7 @@ MBPT2::compute_cs_grad()
 
     ///////////////////////////////////////////////////////////
     // Perform first and second quarter back-transformation.
-    // Each node produces gamma_iajs, and gamma_iqjs 
+    // Each node produces gamma_iajs, and gamma_iqjs
     // for a subset of i and j, all a and all s;
     // the back-transf. is done only for active i, j, a, and b
     ///////////////////////////////////////////////////////////
@@ -1347,7 +1347,7 @@ MBPT2::compute_cs_grad()
 
     delete[] gamma_iajs_tmp;
 
-    // The array mo_int has now been overwritten by the quarter 
+    // The array mo_int has now been overwritten by the quarter
     // back-transformed non-sep 2PDM gamma_iajs, so rename
     gamma_iajs = (double*) mem->localdata();
 
@@ -1408,7 +1408,7 @@ MBPT2::compute_cs_grad()
       }
 
     gamma_iajs = 0;
-    
+
     mem->sync(); // Keep this here to make sure all nodes have gamma_iqjs
                  // before it is needed below, and that gamma_iajs is not
                  // deleted prematurely
@@ -1663,7 +1663,7 @@ MBPT2::compute_cs_grad()
     }
   set_energy(emp2);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
-                            *ref_to_mp2_acc);
+                            *ref_to_mp2_acc());
 
   RefSCDimension nocc_act_dim(new SCDimension(nocc_act,1));
   nocc_act_dim->blocks()->set_subdim(0, new SCDimension(nocc_act));
@@ -1787,8 +1787,8 @@ MBPT2::compute_cs_grad()
   msg_->sum(Wkj,nocc*nocc,tmpmat);
   msg_->sum(Waj,nvir*nocc,tmpmat);
   if (do_d2_) {
-    msg_->sum(d2occ_mat,nocc_act*(nocc_act+1)/2,tmpmat); 
-    msg_->sum(d2vir_mat,nvir_act*(nvir_act+1)/2,tmpmat); 
+    msg_->sum(d2occ_mat,nocc_act*(nocc_act+1)/2,tmpmat);
+    msg_->sum(d2vir_mat,nvir_act*(nvir_act+1)/2,tmpmat);
     }
   delete[] tmpmat;
 
@@ -1820,7 +1820,7 @@ MBPT2::compute_cs_grad()
       else {
         *wab_ptr -= evals[nocc+a]**pab_ptr;
         *wba_ptr -= evals[nocc+b]**pab_ptr;
-        } 
+        }
       pab_ptr++;
       wab_ptr++;
       wba_ptr += nvir;
@@ -1910,7 +1910,7 @@ MBPT2::compute_cs_grad()
   RefSymmSCMatrix Gmat(nbasis_dim,kit);
   init_cs_gmat();
   tim.enter("make_gmat for Laj");
-  make_cs_gmat_new(Gmat, Dmat_matrix); 
+  make_cs_gmat_new(Gmat, Dmat_matrix);
   if (debug_ > 1) {
     Dmat_matrix.print("Dmat");
     Gmat.print("Gmat");
@@ -1980,11 +1980,11 @@ MBPT2::compute_cs_grad()
 
   ////////////////////////////////////////////////////////////////
   // We now have the matrices Pkj_matrix, Paj_matrix, Pab_matrix,
-  // Wkj_matrix, Waj_matrix, Wab_matrix and can compute the 
+  // Wkj_matrix, Waj_matrix, Wab_matrix and can compute the
   // remaining contributions to the gradient
   ///////////////////////////////////////////////////////////////
 
-  // Compute the second order correction to 
+  // Compute the second order correction to
   // the density matrix and energy weighted
   // density matrix in the AO basis
   RefSCMatrix P2AO_matrix(nbasis_dim, nbasis_dim, kit);
@@ -2110,7 +2110,7 @@ MBPT2::compute_cs_grad()
     }
 
   ////////////////////////////////////////////////
-  // Compute the contribution to the MP2 gradient 
+  // Compute the contribution to the MP2 gradient
   // from the separable part of the 2PDM
   ////////////////////////////////////////////////
 
@@ -2267,7 +2267,7 @@ MBPT2::compute_cs_grad()
 ///////////////////////////////////////////////////////////
 // Compute the contribution to the MP2 gradient from hcore
 ///////////////////////////////////////////////////////////
-void 
+void
 MBPT2::hcore_cs_grad(double *PHF, double *PMP2,
                      double **hf_ginter, double **ginter)
 {
@@ -2356,7 +2356,7 @@ MBPT2::hcore_cs_grad(double *PHF, double *PMP2,
 ////////////////////////////////////////////////////
 // Compute the overlap contribution to the gradient
 ////////////////////////////////////////////////////
-void 
+void
 MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
                        double **hf_ginter, double **ginter)
 {
@@ -2441,7 +2441,7 @@ MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
         }   // exit k loop
       }     // exit j loop
     }       // exit i loop
-  
+
   /* Accumulate the nodes' intermediate gradients on node 0 */
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
   sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);

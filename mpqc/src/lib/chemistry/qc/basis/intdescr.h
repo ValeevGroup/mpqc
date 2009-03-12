@@ -45,6 +45,8 @@ namespace sc {
     public:
     IntegralSetDescr() {}
 
+    /// the factory used to create integral evaluator
+    virtual Ref<Integral> factory() const =0;
     /// call appropriate method to produce TwoBodyInt corresponding to this Set
     virtual Ref<IntEval> inteval() const =0;
     /// how many integral sets

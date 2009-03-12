@@ -110,7 +110,7 @@ namespace sc {
       if (V) {
         V.assign(v_data);
       }
-      
+
       delete[] work;
       delete[] a_data;
       delete[] s_data;
@@ -150,11 +150,11 @@ namespace sc {
       double* work = new double[3*n];
       int* iwork = new int[n];
       int info = 0;
-      
+
       F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond, ferr, berr, work, iwork, &info);
 
       if (info) {
-        
+
         delete[] ferr;
         delete[] berr;
         delete[] work;
@@ -221,11 +221,11 @@ namespace sc {
       double* work = new double[3*n];
       int* iwork = new int[n];
       int info = 0;
-      
+
       F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond, ferr, berr, work, iwork, &info);
 
       if (info) {
-        
+
         delete[] ferr;
         delete[] berr;
         delete[] work;
@@ -261,8 +261,54 @@ namespace sc {
       }
     }
 
-    
-    
+
+    /** Same as above, except uses C-style arrays already.
+        A is in packed upper-triangular form, nA is the dimension of A,
+        X and B are matrices with ncolB rows and nA columns.
+    */
+    void lapack_linsolv_symmnondef(const double* AP,
+                                   int nA,
+                                   double* Xt,
+                                   const double* Bt,
+                                   int ncolB)
+    {
+      const int n = nA;
+      const int nrhs = ncolB;
+
+      const int ntri = n*(n+1)/2;
+      // AFP is a scratch array
+      double* AFP = new double[ntri];
+      int* ipiv = new int[n];
+
+      char fact = 'N';
+      char uplo = 'U';
+      double rcond = 0.0;
+      double* ferr = new double[nrhs];
+      double* berr = new double[nrhs];
+      double* work = new double[3*n];
+      int* iwork = new int[n];
+      int info = 0;
+
+      F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, Bt, &n, Xt, &n, &rcond, ferr, berr, work, iwork, &info);
+
+      delete[] ferr;
+      delete[] berr;
+      delete[] work;
+      delete[] iwork;
+
+      delete[] AFP;
+
+      if (info) {
+
+        if (info > 0 && info <= n)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A has factors which are exactly zero");
+        if (info == n + 1)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A is singular");
+        if (info < 0)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- one of the arguments to F77_DSPSVX is invalid");
+      }
+    }
+
     /** Computed eigenvalues of A and returns how many are below threshold. Uses LAPACK's DSYEVD.
     */
     int lapack_evals_less_eps(const RefSymmSCMatrix& A, double threshold)
@@ -285,11 +331,11 @@ namespace sc {
       const int liwork = 1;
       int* iwork = new int[liwork];
       int info = 0;
-      
+
       F77_DSYEVD(&need_evecs, &uplo, &n, Asq, &n, evals, work, &lwork, iwork, &liwork, &info);
 
       if (info) {
-        
+
         delete[] work;
         delete[] iwork;
         delete[] Asq;
@@ -297,23 +343,23 @@ namespace sc {
 
         throw sc::ProgrammingError("lapack_evals_less_eps() -- call to LAPACK's DSYEVD failed",__FILE__,__LINE__);
       }
-      
+
       int nevals_lessthan_threshold = 0;
       for(int i=0; i<n; i++) {
         if (evals[i] < threshold)
           nevals_lessthan_threshold++;
       }
-      
+
       delete[] work;
       delete[] iwork;
       delete[] Asq;
       delete[] evals;
-      
+
       return nevals_lessthan_threshold;
     }
-    
+
   };
-  
+
 };
 
 /////////////////////////////////////////////////////////////////////////////

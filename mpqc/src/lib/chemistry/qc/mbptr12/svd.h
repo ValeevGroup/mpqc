@@ -62,6 +62,16 @@ namespace sc {
                                    RefSCMatrix& X,
                                    const RefSCMatrix& B);
 
+    /** Same as above, except uses C-style arrays already.
+        A is in packed upper-triangular form, nA is the dimension of A,
+        X and B are matrices with ncolB rows and nA columns.
+    */
+    void lapack_linsolv_symmnondef(const double* AP,
+                                   int nA,
+                                   double* Xt,
+                                   const double* Bt,
+                                   int ncolB);
+
   }
 }
 

@@ -129,7 +129,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
 
-  set_desired_value_accuracy(desired_value_accuracy());
+  this->set_desired_value_accuracy(desired_value_accuracy());
 }
 
 MBPT2_R12::~MBPT2_R12()
@@ -171,6 +171,15 @@ MBPT2_R12::print(ostream&o) const
   MBPT2::print(o);
   o << decindent;
 }
+
+void
+MBPT2_R12::set_desired_value_accuracy(double acc)
+{
+  Function::set_desired_value_accuracy(acc);
+  ref()->set_desired_value_accuracy(acc / ref_to_mp2r12_acc());
+}
+
+//////////////////////////////////////////////////////////////////////////////
 
 RefSymmSCMatrix
 MBPT2_R12::density()

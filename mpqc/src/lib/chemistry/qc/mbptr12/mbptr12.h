@@ -79,7 +79,7 @@ class MBPT2_R12: public MBPT2 {
     Ref<TwoBodyGrid> twopdm_grid_;      // The set of 2 particle positions on which to compute values of pair function
     unsigned int plot_pair_function_[2];// Which pair function to plot
 
-#define ref_to_mp2r12_acc_ 100.0
+    static double ref_to_mp2r12_acc() { return 0.01; }
 
     double mp2_corr_energy_;
 
@@ -131,6 +131,7 @@ class MBPT2_R12: public MBPT2 {
     void obsolete();
     int gradient_implemented() const;
     int value_implemented() const;
+    void set_desired_value_accuracy(double acc);
 
     void print(std::ostream&o=ExEnv::out0()) const;
 };

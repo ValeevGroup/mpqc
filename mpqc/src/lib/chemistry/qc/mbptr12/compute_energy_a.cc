@@ -134,7 +134,7 @@ MBPT2_R12::compute_energy_()
   etotal += ref_energy();
   set_energy(etotal);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
-                            *ref_to_mp2_acc);
+                            *ref_to_mp2r12_acc());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   if (twopdm_grid_.nonnull()) {

@@ -613,6 +613,39 @@ MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+namespace {
+  RefSCMatrix make_unit_matrix(const Ref<GaussianBasisSet>& basis,
+                               const Ref<Integral>& integral) {
+    const int nao = basis->nbasis();
+    RefSCDimension obs_ao_dim = new SCDimension(nao,1);
+    obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
+    integral->set_basis(basis);
+    Ref<PetiteList> pl = integral->petite_list();
+    RefSCMatrix obs_ao_coefs = basis->so_matrixkit()->matrix(pl->AO_basisdim(),obs_ao_dim);
+    obs_ao_coefs.assign(0.0);
+    for(int ao=0; ao<nao; ++ao)
+      obs_ao_coefs.set_element(ao,ao,1.0);
+    return obs_ao_coefs;
+  }
+}
+
+static ClassDesc AtomicOrbitalSpace_cd(typeid(AtomicOrbitalSpace), "AtomicOrbitalSpace", 1,
+                                       "public OrbitalSpace", 0, 0, create<AtomicOrbitalSpace> );
+
+AtomicOrbitalSpace::AtomicOrbitalSpace(StateIn& si) :
+  OrbitalSpace(si) {}
+
+void
+AtomicOrbitalSpace::save_data_state(StateOut& so) {
+  OrbitalSpace::save_data_state(so);
+}
+
+AtomicOrbitalSpace::AtomicOrbitalSpace(const std::string& id, const std::string& name,
+                                       const Ref<GaussianBasisSet>& basis,
+                                       const Ref<Integral>& integral) :
+  OrbitalSpace(id, name, make_unit_matrix(basis,integral), basis, integral) {}
+
+/////////////////////////////////////////////////////////////////////////////
 
 static ClassDesc NonblockedOrbitalSpace_cd(typeid(NonblockedOrbitalSpace), "NonblockedOrbitalSpace", 1,
                                            "public OrbitalSpace", 0, 0, create<NonblockedOrbitalSpace> );

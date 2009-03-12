@@ -276,49 +276,17 @@ R12IntEvalInfo::initialize()
         // also create AO spaces
         Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
         Ref<Integral> localints = refinfo()->ref()->integral()->clone();
-        { // OBS
-          const int nao = basis()->nbasis();
-          RefSCDimension obs_ao_dim = new SCDimension(nao,1);
-          obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          localints->set_basis(basis());
-          Ref<PetiteList> pl = localints->petite_list();
-          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),obs_ao_dim);
-          obs_ao_coefs.assign(0.0);
-          for(int ao=0; ao<nao; ++ao)
-            obs_ao_coefs.set_element(ao,ao,1.0);
-          Ref<OrbitalSpace> mu = new OrbitalSpace("mu", "OBS(AO)", obs_ao_coefs,
-                                                  basis(), integral());
-          idxreg->add(make_keyspace_pair(mu));
-          aoidxreg->add(mu->basis(),mu);
-        }
+        // OBS
+        Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu", "OBS(AO)", basis(), localints);
+        idxreg->add(make_keyspace_pair(mu));
+        aoidxreg->add(mu->basis(),mu);
         if (!obs_eq_vbs()) { // VBS
-          const Ref<GaussianBasisSet> bs = bs_vir_;
-          const int nao = bs->nbasis();
-          RefSCDimension obs_ao_dim = new SCDimension(nao,1);
-          obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          localints->set_basis(bs);
-          Ref<PetiteList> pl = localints->petite_list();
-          RefSCMatrix obs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),obs_ao_dim);
-          obs_ao_coefs.assign(0.0);
-          for(int ao=0; ao<nao; ++ao)
-            obs_ao_coefs.set_element(ao,ao,1.0);
-          Ref<OrbitalSpace> nu = new OrbitalSpace("nu", "VBS(AO)", obs_ao_coefs,
-                                                  bs, integral());
+          Ref<OrbitalSpace> nu = new AtomicOrbitalSpace("nu", "VBS(AO)", bs_vir_, localints);
           idxreg->add(make_keyspace_pair(nu));
           aoidxreg->add(nu->basis(),nu);
         }
         if (!obs_eq_ribs()) { // RI-BS
-          const int nao = basis_ri()->nbasis();
-          RefSCDimension ribs_ao_dim = new SCDimension(nao,1);
-          ribs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-          localints->set_basis(basis_ri());
-          Ref<PetiteList> pl = localints->petite_list();
-          RefSCMatrix ribs_ao_coefs = matrixkit_->matrix(pl->AO_basisdim(),ribs_ao_dim);
-          ribs_ao_coefs.assign(0.0);
-          for(int ao=0; ao<nao; ++ao)
-            ribs_ao_coefs.set_element(ao,ao,1.0);
-          Ref<OrbitalSpace> mu = new OrbitalSpace("mu'", "RIBS(AO)", ribs_ao_coefs,
-                                                  basis_ri(), integral());
+          Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu'", "RIBS(AO)", basis_ri(), localints);
           idxreg->add(make_keyspace_pair(mu));
           aoidxreg->add(mu->basis(),mu);
         }

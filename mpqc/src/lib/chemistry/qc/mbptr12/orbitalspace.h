@@ -750,6 +750,22 @@ namespace sc {
 
   };
 
+  ////////////////////////////////
+
+  /** This is an OrbitalSpace describing a set of atomic orbitals.
+      The resulting dimension has 1 block, with the subdimension provided by GaussianBasisSet::basisdim()
+   */
+  class AtomicOrbitalSpace : public OrbitalSpace {
+    public:
+      AtomicOrbitalSpace(const std::string& id, const std::string& name,
+                         const Ref<GaussianBasisSet>& basis,
+                         const Ref<Integral>& integral);
+
+      AtomicOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+
+  };
+
 }
 
 #include <chemistry/qc/mbptr12/orbitalspace.timpl.h>

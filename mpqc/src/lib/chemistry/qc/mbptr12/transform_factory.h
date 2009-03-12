@@ -133,7 +133,7 @@ public:
 
   MOIntsTransformFactory(StateIn&);
   MOIntsTransformFactory(const Ref<Integral>& integral,
-                         const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2 = 0,
+                         const Ref<OrbitalSpace>& space1 = 0, const Ref<OrbitalSpace>& space2 = 0,
                          const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
   ~MOIntsTransformFactory();
 
@@ -161,7 +161,7 @@ public:
   /// Returns the MessageGrp object
   Ref<MessageGrp> msg() const { return msg_; }
   /// Returns the Integral factory
-  Ref<Integral> integral() const { return integral_; }
+  const Ref<Integral>& integral() const { return integral_; }
   /// Returns the default TwoBodyIntDescr used to produce integrals
   Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.

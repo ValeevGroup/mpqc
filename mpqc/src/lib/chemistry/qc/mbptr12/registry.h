@@ -35,6 +35,7 @@
 #include <map>
 #include <stdexcept>
 #include <util/group/thread.h>
+#include <util/state/state.h>
 
 namespace sc {
 

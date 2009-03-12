@@ -15,6 +15,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
+#include <util/group/messmpi.h>
 #include <util/group/thread.h>
 #include <util/group/memory.h>
 #include <util/misc/autovec.h>

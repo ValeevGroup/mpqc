@@ -32,19 +32,228 @@
 // includes go here
 #include <chemistry/qc/df/df.h>
 #include <util/state/statein.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+#include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/svd.h>
 
 using namespace sc;
-using namespace sc::test;
 
-static ClassDesc BasisProductDecomposition_cd(
-  typeid(BasisProductDecomposition),"BasisProductDecomposition",1,
+static ClassDesc DensityFitting_cd(
+  typeid(DensityFitting),"DensityFitting",1,
+  "virtual public SavableState",
+  0, 0, create<DensityFitting>);
+
+DensityFitting::~DensityFitting() {}
+
+DensityFitting::DensityFitting(const Ref<MOIntsTransformFactory>& factory,
+                               const std::string& kernel_key,
+                               const Ref<OrbitalSpace>& space1,
+                               const Ref<OrbitalSpace>& space2,
+                               const Ref<GaussianBasisSet>& fitting_basis) :
+                                 factory_(factory),
+                                 space1_(space1),
+                                 space2_(space2),
+                                 fbasis_(fitting_basis)
+                                 {
+  // only Coulomb fitting is supported at the moment
+  if (kernel_key != std::string("1/r_{12}"))
+    throw FeatureNotImplemented("Non-Coulomb fitting kernels are not supported",__FILE__,__LINE__);
+
+  // fitting dimension
+  RefSCDimension fdim = new SCDimension(fbasis_->nbasis(), "");
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  kernel_ = kit->symmmatrix(fdim);
+}
+
+DensityFitting::DensityFitting(StateIn& si) :
+  SavableState(si) {
+  factory_ << SavableState::restore_state(si);
+  fbasis_ << SavableState::restore_state(si);
+  space1_ << SavableState::restore_state(si);
+  space2_ << SavableState::restore_state(si);
+  cC_ << SavableState::restore_state(si);
+  C_ << SavableState::restore_state(si);
+
+  int count;
+  detail::FromStateIn<RefSymmSCMatrix>::get(kernel_,si,count);
+}
+
+void
+DensityFitting::save_data_state(StateOut& so) {
+  SavableState::save_state(factory_.pointer(),so);
+  SavableState::save_state(fbasis_.pointer(),so);
+  SavableState::save_state(space1_.pointer(),so);
+  SavableState::save_state(space2_.pointer(),so);
+  SavableState::save_state(cC_.pointer(),so);
+  SavableState::save_state(C_.pointer(),so);
+
+  int count;
+  detail::ToStateOut<RefSymmSCMatrix>::put(kernel_,so,count);
+}
+
+RefSCDimension
+DensityFitting::product_dimension() const {
+  return new SCDimension(space1_->rank() * space2_->rank(), "");
+}
+
+void
+DensityFitting::compute()
+{
+  const Ref<Integral>& integral = this->integral();
+
+  // compute cC_ first
+  const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+  Ref<TwoBodyMOIntsTransform_ijR> tform =
+    new TwoBodyMOIntsTransform_ijR("",
+                                   factory_,
+                                   new TwoBodyThreeCenterIntDescrERI(integral),
+                                   space1_,
+                                   space2_,
+                                   aoidxreg->value(fbasis_));
+  tform->compute();
+  cC_ = tform->ints_acc();
+#if 1
+  {
+    cC_->activate();
+    const int ni = space1_->rank();
+    const int nj = space2_->rank();
+    const int nR = fbasis_->nbasis();
+    RefSCMatrix cC = kernel_.kit()->matrix(new SCDimension(nR),
+                                           this->product_dimension());
+    cC.assign(0.0);
+
+    std::vector<int> readers;
+    const int nreaders = cC_->tasks_with_access(readers);
+    const int me = factory()->msg()->me();
+
+    if (cC_->has_access(me)) {
+      RefSCMatrix cC_jR = kernel_.kit()->matrix(new SCDimension(nj),
+                                                new SCDimension(nR));
+      for (int i = 0; i < ni; ++i) {
+
+        if (i % nreaders != readers[me])
+          continue;
+
+        const double* cC_jR_buf = cC_->retrieve_pair_block(0, i,
+                                                           TwoBodyInt::eri);
+        cC_jR.assign(cC_jR_buf);
+        cC.assign_subblock(cC_jR.t(), 0, nR - 1, i * nj, (i + 1) * nj - 1);
+      }
+    }
+
+    // broadcast to all tasks
+
+    // print out the result
+    cC.print("DensityFitting: cC");
+
+    factory_->mem()->sync();
+  }
+#endif
+
+  // compute the kernel second
+  // TODO: parallelize (do I need to bother parallelizing N^2 steps??)
+  {
+    const Ref<GaussianBasisSet>& b = fbasis_;
+    integral->set_basis(b, b);
+    Ref<TwoBodyTwoCenterInt> coulomb2int = integral->electron_repulsion2();
+    const double* buffer = coulomb2int->buffer();
+    for (int s1 = 0; s1 < b->nshell(); ++s1) {
+      const int s1offset = b->shell_to_function(s1);
+      const int nf1 = b->shell(s1).nfunction();
+      for (int s2 = 0; s2 <= s1; ++s2) {
+        const int s2offset = b->shell_to_function(s2);
+        const int nf2 = b->shell(s2).nfunction();
+
+        // compute shell doublet
+        coulomb2int->compute_shell(s1, s2);
+
+        // copy buffer into kernel_
+        const double* bufptr = buffer;
+        for(int f1=0; f1<nf1; ++f1) {
+          for(int f2=0; f2<nf2; ++f2, ++bufptr) {
+            kernel_.set_element(f1+s1offset, f2+s2offset, *bufptr);
+          }
+        }
+
+      }
+    }
+    factory_->mem()->sync();
+  }
+
+  // solve the linear system C_ * kernel = cC_
+  //
+  // create C_ as a clone cC_
+  // parallelize over all tasks that can read from cC_
+  // loop over i1
+  //   decide if I will handle this i
+  //   fetch jR block
+  //   solve the system
+  //   save jR block of the solution to C_
+  // end of loop over i
+  C_ = cC_->clone();
+  C_->activate();
+  cC_->activate();
+  {
+    const int me = factory()->msg()->me();
+    std::vector<int> writers;
+    const int nwriters = C_->tasks_with_access(writers);
+
+    if (C_->has_access(me)) {
+
+      const int n1 = space1_->rank();
+      const int n2 = space2_->rank();
+      const int n3 = fbasis_->nbasis();
+      // scratch for holding solution vectors
+      double* C_jR = new double[n2 * n3];
+      // convert kernel_ to a packed upper-triangle form
+      double* kernel_packed = new double[n3 * (n3 + 1) / 2];
+      kernel_->convert(kernel_packed);
+
+      for (int i = 0; i < n1; ++i) {
+
+        // distribute work in round robin
+        if (i % nwriters != writers[me])
+          continue;
+
+        const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyInt::eri);
+
+        // solve the linear system
+        sc::exp::lapack_linsolv_symmnondef(kernel_packed, n3, C_jR, cC_jR, n2);
+
+        // write
+        C_->store_pair_block(0, i, TwoBodyInt::eri, C_jR);
+
+        // release this block
+        cC_->release_pair_block(0, i, TwoBodyInt::eri);
+
+      }
+
+      delete[] C_jR;
+      delete[] kernel_packed;
+    }
+
+  }
+  if (C_->data_persistent()) C_->deactivate();
+  if (cC_->data_persistent()) cC_->deactivate();
+
+  factory_->mem()->sync();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if 0
+static ClassDesc testBasisProductDecomposition_cd(
+  typeid(test::BasisProductDecomposition),"BasisProductDecomposition",1,
   "virtual public SavableState",
   0, 0, 0);
+#endif
 
-BasisProductDecomposition::~BasisProductDecomposition() {}
+test::BasisProductDecomposition::~BasisProductDecomposition() {}
 
-BasisProductDecomposition::BasisProductDecomposition(const Ref<Integral>& integral,
+test::BasisProductDecomposition::BasisProductDecomposition(const Ref<Integral>& integral,
                                                      const Ref<GaussianBasisSet>& basis1,
                                                      const Ref<GaussianBasisSet>& basis2) :
                                                        integral_(integral) {
@@ -58,7 +267,7 @@ BasisProductDecomposition::BasisProductDecomposition(const Ref<Integral>& integr
 
 }
 
-BasisProductDecomposition::BasisProductDecomposition(StateIn& si) :
+test::BasisProductDecomposition::BasisProductDecomposition(StateIn& si) :
   SavableState(si) {
   integral_ << SavableState::restore_state(si);
   basis_[0] << SavableState::restore_state(si);
@@ -67,7 +276,7 @@ BasisProductDecomposition::BasisProductDecomposition(StateIn& si) :
 }
 
 void
-BasisProductDecomposition::save_data_state(StateOut& so) {
+test::BasisProductDecomposition::save_data_state(StateOut& so) {
   SavableState::save_state(integral_.pointer(),so);
   SavableState::save_state(basis_[0].pointer(),so);
   SavableState::save_state(basis_[1].pointer(),so);
@@ -76,14 +285,14 @@ BasisProductDecomposition::save_data_state(StateOut& so) {
 
 /////////////////////////////////////////////////////////////////////////////
 
-static ClassDesc DensityFitting_cd(
-  typeid(DensityFitting),"DensityFitting",1,
+static ClassDesc testDensityFitting_cd(
+  typeid(test::DensityFitting),"test::DensityFitting",1,
   "public BasisProductDecomposition",
-  0, 0, create<DensityFitting>);
+  0, 0, create<test::DensityFitting>);
 
-DensityFitting::~DensityFitting() {}
+test::DensityFitting::~DensityFitting() {}
 
-DensityFitting::DensityFitting(const Ref<Integral>& integral,
+test::DensityFitting::DensityFitting(const Ref<Integral>& integral,
                                const Ref<GaussianBasisSet>& basis1,
                                const Ref<GaussianBasisSet>& basis2,
                                const Ref<GaussianBasisSet>& fitting_basis) :
@@ -99,7 +308,7 @@ DensityFitting::DensityFitting(const Ref<Integral>& integral,
   kernel_ = kit->symmmatrix(fdim);
 }
 
-DensityFitting::DensityFitting(StateIn& si) :
+test::DensityFitting::DensityFitting(StateIn& si) :
   BasisProductDecomposition(si) {
   fbasis_ << SavableState::restore_state(si);
 
@@ -110,7 +319,7 @@ DensityFitting::DensityFitting(StateIn& si) :
 }
 
 void
-DensityFitting::save_data_state(StateOut& so) {
+test::DensityFitting::save_data_state(StateOut& so) {
   SavableState::save_state(fbasis_.pointer(),so);
 
   int count;
@@ -120,7 +329,7 @@ DensityFitting::save_data_state(StateOut& so) {
 }
 
 void
-DensityFitting::compute()
+test::DensityFitting::compute()
 {
   const Ref<Integral>& integral = this->integral();
 
@@ -190,6 +399,10 @@ DensityFitting::compute()
       }
     }
   }
+
+#if 1
+  cC_->print("test::DensityFitting: cC");
+#endif
 
   // solve the linear system
   // TODO parallelize. Can do trivially by dividing RHS vectors into subsets

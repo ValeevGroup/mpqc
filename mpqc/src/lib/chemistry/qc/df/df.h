@@ -34,10 +34,83 @@
 
 #include <util/state/state.h>
 #include <util/misc/compute.h>
+#include <util/group/memory.h>
 #include <math/scmat/result.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 namespace sc {
+
+  class OrbitalSpace;
+  class R12IntsAcc;
+
+  /** Decomposition by density fitting with respect to some kernel. The definition is as follows:
+   \f[
+   |rs) = \sum_A C^{rs}_A |A)  \quad ,
+   \f]
+   where \f$ |A) \f$ belong to a fitting basis and \f$ C^{rs}_A \f$ are determined by solving the linear system
+   \f[
+   (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B)  \quad .
+   \f]
+   The kernel \f$\hat{W} \f$ is any operator.
+
+   \param factory is the MOIntsTransformFactory object used to compute integrals
+   \param kernel_key denotes the kernel operator to be used for fitting. Currently only "1/r_{12}" is supported.
+   \param space1 is space r in |rs) product space
+   \param space2 is space s in |rs) product space
+   \param fitting_basis is the basis set in which to perform the fitting
+
+   */
+  class DensityFitting: virtual public SavableState {
+    public:
+      ~DensityFitting();
+      DensityFitting(const Ref<MOIntsTransformFactory>& factory,
+                     const std::string& kernel_key,
+                     const Ref<OrbitalSpace>& space1,
+                     const Ref<OrbitalSpace>& space2,
+                     const Ref<GaussianBasisSet>& fitting_basis);
+      DensityFitting(StateIn&);
+      void save_data_state(StateOut&);
+
+      const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
+      const Ref<Integral>& integral() const {
+        return factory_->integral();
+      }
+      /// returns the kernel matrix in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
+      const RefSymmSCMatrix& kernel() const {
+        return kernel_;
+      }
+      /// returns the fitting coeffcients
+      const Ref<R12IntsAcc>& C() const {
+        return C_;
+      }
+      /** returns the conjugate expansion matrix defined as \f$ \tilde{C}^{rs}_A \equiv (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
+          \f$ \tilde{C} \f$ is conjugate to \f$ C \f$ in the sense that their
+          product returns reconstructed integrals:
+          \f$ (pq|rs) \approx \sum_A  \tilde{C}^A_{pq} C^{rs}_A \f$
+        */
+      const Ref<R12IntsAcc>& conjugateC() const {
+        return cC_;
+      }
+
+      /// produces RefSCDimension that corresponds to the product space
+      RefSCDimension product_dimension() const;
+
+      void compute();
+
+    private:
+
+      Ref<R12IntsAcc> C_;
+      RefSymmSCMatrix kernel_;
+      Ref<R12IntsAcc> cC_;
+
+      Ref<MOIntsTransformFactory> factory_;
+      Ref<GaussianBasisSet> fbasis_;
+      Ref<OrbitalSpace> space1_;
+      Ref<OrbitalSpace> space2_;
+
+  };
+
 
   namespace test {
 

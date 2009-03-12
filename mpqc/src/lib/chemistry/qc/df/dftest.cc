@@ -31,6 +31,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/keyval/keyval.h>
+#include <math/scmat/local.h>
 #include <util/group/message.h>
 #include <util/group/pregtime.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -69,17 +70,13 @@ int main(int argc, char **argv) {
     require_dynamic_cast<GaussianBasisSet*> (
         tkeyval->describedclassvalue("fitbasis").pointer(), "main\n");
 
-  int tproc = tkeyval->intvalue("test_processor");
-  if (tproc >= msg->n())
-    tproc = 0;
   int me = msg->me();
-
-  if (me == tproc)
-    cout << "testing on processor " << tproc << endl;
+  int nproc = msg->n();
+  cout << "testing on " << nproc << " processors" << endl;
 
   // use test::DensityFitting to test first
   {
-    using namespace sc::test;
+    using sc::test::DensityFitting;
 
     tim->enter("test::DensityFitting");
     Ref<Integral> integral = new IntegralV3(bs);
@@ -92,6 +89,78 @@ int main(int argc, char **argv) {
     Ref<DensityFitting> df = new DensityFitting(integral, bs, bs, fbs);
     df->compute();
     RefSCMatrix C_df = df->C().t() * df->conjugateC();
+    C_df.print("Reconstructed Coulomb operator");
+    (C - C_df).print("Reconstruction error");
+
+    tim->exit();
+  }
+
+  // use DensityFitting to test first
+  {
+    using sc::DensityFitting;
+
+    tim->enter("DensityFitting");
+    Ref<Integral> integral = new IntegralV3(bs);
+
+    // construct the Coulomb matrix
+    // and reconstruct it using DensityFitting
+    integral->set_basis(bs, bs, bs, bs);
+    RefSCMatrix C = twobody_matrix(integral->electron_repulsion());
+    C.print("Coulomb operator");
+
+    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
+    Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", fbs, integral);
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(bs_space));
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
+    AOSpaceRegistry::instance()->add(bs, bs_space);
+    AOSpaceRegistry::instance()->add(fbs, fbs_space);
+    Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
+    factory->set_ints_method(MOIntsTransformFactory::StoreMethod::posix);
+    Ref<DensityFitting> df = new DensityFitting(factory, "1/r_{12}", bs_space, bs_space, fbs);
+    df->compute();
+
+    RefSCMatrix C_df = C.clone(); C_df.assign(0.0);
+    // assemble reconstructed matrix
+    {
+      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+      Ref<R12IntsAcc> C = df->C();
+      C->activate();
+      Ref<R12IntsAcc> cC = df->conjugateC();
+      C->activate();
+      const int nbs = bs->nbasis();
+      const int nfbs = fbs->nbasis();
+      RefSCDimension bsdim = new SCDimension(nbs);
+      RefSCDimension fbsdim = new SCDimension(nfbs);
+      RefSCMatrix C_jR = localkit->matrix(bsdim, fbsdim);
+      RefSCMatrix cC_jR = localkit->matrix(bsdim, fbsdim);
+      RefSCMatrix cCC = localkit->matrix(bsdim, bsdim);
+      RefSCMatrix C_df_localcopy = localkit->matrix(C_df.rowdim(),
+                                                    C_df.coldim());
+      C_df_localcopy.assign(0.0);
+      if (me == 0) {
+        for (int i1 = 0; i1 < nbs; ++i1) {
+          const double* C_jR_buf = C->retrieve_pair_block(0, i1,
+                                                          TwoBodyInt::eri);
+          C_jR.assign(C_jR_buf);
+          C->release_pair_block(0, i1, TwoBodyInt::eri);
+          RefSCMatrix C_jR_t = C_jR.t();
+          for (int i2 = 0; i2 < nbs; ++i2) {
+            const double* cC_jR_buf = cC->retrieve_pair_block(0, i2,
+                                                              TwoBodyInt::eri);
+            cC_jR.assign(cC_jR_buf);
+            cC->release_pair_block(0, i2, TwoBodyInt::eri);
+
+            cCC.assign(0.0);
+            cCC.accumulate_product(cC_jR, C_jR_t);
+            C_df_localcopy.assign_subblock(cCC, i2 * nbs, (i2 + 1) * nbs - 1,
+                                           i1 * nbs, (i1 + 1) * nbs - 1);
+
+          }
+        }
+      }
+      C_df->convert(C_df_localcopy);
+    }
+
     C_df.print("Reconstructed Coulomb operator");
     (C - C_df).print("Reconstruction error");
 

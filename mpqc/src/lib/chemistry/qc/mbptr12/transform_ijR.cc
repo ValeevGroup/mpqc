@@ -465,7 +465,7 @@ TwoBodyMOIntsTransform_ijR::compute() {
       }
     }
 
-#if 1
+#if 0
     if (s3 == 1) {
     for(int i=0; i<nbasis1; ++i) {
       for(int j=0; j<nbasis2; ++j) {
@@ -490,15 +490,6 @@ TwoBodyMOIntsTransform_ijR::compute() {
       F77_DGEMM(&notransp,&transp,&nf3,&n2,&nbasis2,&one,qR_ints,&nf3,
                 qj,&n2,&zero,jR_ints,&nf3);
 
-#if 1
-    if (s3 == 1) {
-      for(int j=0; j<nbasis2; ++j) {
-        const double value = jR_ints[j*nf3];
-        ExEnv::outn() << "i = " << i << " j = " << j << " R = 1  value = " << value << endl;
-      }
-    }
-#endif
-
       // accumulate to each memory location
       const int i_proc = i % nproc;
       const int i_local = i / nproc;
@@ -506,19 +497,13 @@ TwoBodyMOIntsTransform_ijR::compute() {
       size_t ijR_offset = i_offset + s3offset;
       double* R_ptr = jR_ints;
       for(int j=0; j<n2; ++j) {
-#if 1
+#if 0
     if (s3 == 1) {
       const double value = *R_ptr;
       ExEnv::outn() << "i = " << i << " j = " << j << " R = 1  i_proc = " << i_proc
                     << " ijR_offset = " << ijR_offset << "  value = " << value << endl;
     }
 #endif
-
-#if 1
-    if (i_proc == 0 && ijR_offset == 1)
-      ExEnv::outn() << "i = " << i << " j = " << j << " s3 = " << s3 << endl;
-#endif
-
         mem_->sum_reduction_on_node(R_ptr, ijR_offset , nf3, i_proc);
         ijR_offset += n3;
         R_ptr += nf3;
@@ -528,13 +513,6 @@ TwoBodyMOIntsTransform_ijR::compute() {
     }
 
   } // end of loop over R shells
-
-#if 1
-  if (me == 0) {
-    const double value = static_cast<double*>(mem_->localdata()) [1];
-    ExEnv::out0() << "me = 0 " << value << endl;
-  }
-#endif
 
   mem_->sync();
 

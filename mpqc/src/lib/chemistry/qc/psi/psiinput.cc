@@ -273,7 +273,7 @@ namespace sc {
           write_string(amstring);
           incindent(2);
           for (int prim=0; prim<nprim; prim++) {
-            char primstring[50];
+            char primstring[100];
             sprintf(primstring, "(%40.20lf    %40.20lf)\n",
                     Shell.exponent(prim), Shell.coefficient_norm(con, prim));
             write_string(primstring);
@@ -301,7 +301,7 @@ namespace sc {
     int nscratch = exenv->get_nscratch();
     write_keyword("nvolume", nscratch);
     char *scrname;
-    scrname = new char[10];
+    scrname = new char[20];
     for (int i=0; i<nscratch; i++) {
       sprintf(scrname, "volume%d", i+1);
       write_key_wq(scrname, (exenv->get_scratch(i)).c_str());

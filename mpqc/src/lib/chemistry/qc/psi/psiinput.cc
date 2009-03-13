@@ -274,7 +274,7 @@ namespace sc {
           incindent(2);
           for (int prim=0; prim<nprim; prim++) {
             char primstring[50];
-            sprintf(primstring, "(%20.10lf    %20.10lf)\n",
+            sprintf(primstring, "(%40.20lf    %40.20lf)\n",
                     Shell.exponent(prim), Shell.coefficient_norm(con, prim));
             write_string(primstring);
           }

@@ -151,15 +151,11 @@ R12IntEval::V(SpinCase2 spincase2,
     fill_container(tformkey_creator,tforms_f12);
   }
   if (!p1p2_in_x1x2) {
-    R12TwoBodyIntKeyCreator tformkey_creator(
-				      r12info()->moints_runtime(),
-				      p1,
-				      orbs1,
-				      p2,
-				      orbs2,
-                      r12info()->corrfactor()
-				      );
-    fill_container(tformkey_creator,tforms);
+    const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+                                                           orbs1->id(),orbs1->id(),
+                                                           std::string("ERI"),
+                                                           std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+    tforms.push_back(tform_key);
   }
   else
     tforms.push_back(tforms_f12[0]);
@@ -220,15 +216,11 @@ R12IntEval::V(SpinCase2 spincase2,
       fill_container(tformkey_creator,tforms_f12_xmyP);
     }
     if (!p1p2_in_x1x2) {
-      R12TwoBodyIntKeyCreator tformkey_creator(
-					r12info()->moints_runtime(),
-					p1,
-					occ1,
-					p2,
-					rispace2,
-                    r12info()->corrfactor()
-					);
-      fill_container(tformkey_creator,tforms_imjP);
+      const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+                                                             occ1->id(),rispace2->id(),
+                                                             std::string("ERI"),
+                                                             std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+      tforms_imjP.push_back(tform_key);
     }
     else
       tforms_imjP.push_back(tforms_f12_xmyP[0]);
@@ -264,15 +256,11 @@ R12IntEval::V(SpinCase2 spincase2,
 	fill_container(tformkey_creator,tforms_f12_xPym);
       }
       if (!p1p2_in_x1x2) {
-	R12TwoBodyIntKeyCreator tformkey_creator(
-					  r12info()->moints_runtime(),
-					  p1,
-					  rispace1,
-					  p2,
-					  occ2,
-                      r12info()->corrfactor()
-					  );
-	fill_container(tformkey_creator,tforms_iPjm);
+        const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+                                                               rispace1->id(),occ2->id(),
+                                                               std::string("ERI"),
+                                                               std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+        tforms_iPjm.push_back(tform_key);
       }
       else
 	tforms_iPjm.push_back(tforms_f12_xPym[0]);

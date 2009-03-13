@@ -123,7 +123,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      orbs2,
           r12info()->corrfactor()
 	      );
-	  fill_container(tformkey_creator,tforms_f12);
+	  fill_container(tformkey_creator,tforms);
       }
       else
 	  tforms.push_back(tforms_f12[0]);

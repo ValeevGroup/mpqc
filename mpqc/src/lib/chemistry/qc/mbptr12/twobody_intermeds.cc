@@ -154,7 +154,7 @@ R12IntEval::V(SpinCase2 spincase2,
     const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
                                                            orbs1->id(),orbs1->id(),
                                                            std::string("ERI"),
-                                                           std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+                                                           std::string(MOIntsRuntime::Layout_b1b2_k1k2));
     tforms.push_back(tform_key);
   }
   else
@@ -219,7 +219,7 @@ R12IntEval::V(SpinCase2 spincase2,
       const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
                                                              occ1->id(),rispace2->id(),
                                                              std::string("ERI"),
-                                                             std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+                                                             std::string(MOIntsRuntime::Layout_b1b2_k1k2));
       tforms_imjP.push_back(tform_key);
     }
     else
@@ -259,7 +259,7 @@ R12IntEval::V(SpinCase2 spincase2,
         const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
                                                                rispace1->id(),occ2->id(),
                                                                std::string("ERI"),
-                                                               std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+                                                               std::string(MOIntsRuntime::Layout_b1b2_k1k2));
         tforms_iPjm.push_back(tform_key);
       }
       else

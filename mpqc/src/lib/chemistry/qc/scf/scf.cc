@@ -147,23 +147,23 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   accumdih_ << keyval->describedclassvalue("accumdih");
   if (accumdih_.null())
     accumdih_ = new AccumHNull;
-  
+
   accumddh_ << keyval->describedclassvalue("accumddh");
   if (accumddh_.null())
     accumddh_ = new AccumHNull;
-  
+
   KeyValValuesize defaultmem(DEFAULT_SC_MEMORY);
   storage_ = keyval->sizevalue("memory",defaultmem);
-  
+
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");
-    
+
   print_all_evals_ = keyval->booleanvalue("print_evals");
   print_occ_evals_ = keyval->booleanvalue("print_occupied_evals");
-  
+
   scf_grp_ = basis()->matrixkit()->messagegrp();
   threadgrp_ = ThreadGrp::get_default_threadgrp();
-  
+
   keep_guess_wfn_ = keyval->booleanvalue("keep_guess_wavefunction");
 
   always_use_guess_wfn_
@@ -260,7 +260,7 @@ SCF::print(ostream&o) const
     o << indent << "miniter = " << miniter_ << endl;
   }
   o << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
-    << indent << scprintf("level_shift = %f\n",level_shift_) 
+    << indent << scprintf("level_shift = %f\n",level_shift_)
     << decindent << endl;
 }
 
@@ -271,7 +271,7 @@ SCF::compute()
 {
   local_ = (dynamic_cast<LocalSCMatrixKit*>(basis()->matrixkit().pointer()) ||
             dynamic_cast<ReplSCMatrixKit*>(basis()->matrixkit().pointer())) ? 1:0;
-  
+
   const double hess_to_grad_acc = 1.0/100.0;
   if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()*hess_to_grad_acc);
@@ -295,7 +295,7 @@ SCF::compute()
 
     double eelec;
     delta = compute_vector(eelec,nucrep);
-      
+
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
     ExEnv::out0() << endl << indent
@@ -323,10 +323,10 @@ SCF::compute()
 
     set_actual_gradient_accuracy(delta/grad_to_val_acc);
   }
-  
+
   if (hessian_needed()) {
     RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
-    
+
     ExEnv::out0() << endl << indent
          << scprintf("SCF::compute: hessian accuracy = %10.7e\n",
                      desired_hessian_accuracy())
@@ -346,20 +346,20 @@ SCF::init_pmax(double *pmat_data)
 {
   double l2inv = 1.0/log(2.0);
   double tol = pow(2.0,-126.0);
-  
+
   GaussianBasisSet& gbs = *basis().pointer();
-  
+
   signed char * pmax = new signed char[i_offset(gbs.nshell())];
 
   int ish, jsh, ij;
   for (ish=ij=0; ish < gbs.nshell(); ish++) {
     int istart = gbs.shell_to_function(ish);
     int iend = istart + gbs(ish).nfunction();
-    
+
     for (jsh=0; jsh <= ish; jsh++,ij++) {
       int jstart = gbs.shell_to_function(jsh);
       int jend = jstart + gbs(jsh).nfunction();
-      
+
       double maxp=0, tmp;
 
       for (int i=istart; i < iend; i++) {
@@ -388,7 +388,7 @@ RefSymmSCMatrix
 SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 {
   RefSymmSCMatrix l = m;
-  
+
   if (!dynamic_cast<LocalSymmSCMatrix*>(l.pointer())
       && !dynamic_cast<ReplSymmSCMatrix*>(l.pointer())) {
     Ref<SCMatrixKit> k = new ReplSCMatrixKit;
@@ -455,7 +455,7 @@ SCF::initial_vector(int needv)
         if (!keep_guess_wfn_) guess_wfn_=0;
 
         ExEnv::out0() << endl;
-      
+
       } else {
         ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
              << endl;
@@ -480,7 +480,7 @@ SCF::init_mem(int nm)
     integral()->set_storage(storage_);
     return;
   }
-  
+
   size_t nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
 
   // if we're actually using local matrices, then there's no choice
@@ -508,9 +508,9 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   int me=scf_grp_->me();
   int nproc=scf_grp_->n();
   int uhf = spin_unrestricted();
-  
+
   d->assign(0.0);
-  
+
   RefSCMatrix oso_vector;
   if (alp || !uhf) {
     if (oso_scf_vector_.nonnull())
@@ -520,7 +520,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     if (oso_scf_vector_beta_.nonnull())
       oso_vector = oso_scf_vector_beta_;
   }
-      
+
   if (oso_vector.null()) {
     if (uhf) {
       if (alp)
@@ -537,23 +537,23 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   oso_vector = 0;
 
   if (debug_ > 1) vector.print("SO vector");
-  
+
   BlockedSCMatrix *bvec = require_dynamic_cast<BlockedSCMatrix*>(
     vector, "SCF::so_density: blocked vector");
 
   BlockedSymmSCMatrix *bd = require_dynamic_cast<BlockedSymmSCMatrix*>(
     d, "SCF::so_density: blocked density");
-  
+
   for (int ir=0; ir < oso_dimension()->blocks()->nblock(); ir++) {
     RefSCMatrix vir = bvec->block(ir);
     RefSymmSCMatrix dir = bd->block(ir);
-    
+
     if (vir.null() || vir.ncol()==0)
       continue;
-    
+
     int n_orthoSO = oso_dimension()->blocks()->size(ir);
     int n_SO = so_dimension()->blocks()->size(ir);
-    
+
     // figure out which columns of the scf vector we'll need
     int col0 = -1, coln = -1;
     for (i=0; i < n_orthoSO; i++) {
@@ -580,7 +580,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
     if (coln == -1)
       coln = n_orthoSO-1;
-    
+
     if (local_ || local_dens_) {
       RefSymmSCMatrix ldir = dir;
 
@@ -600,10 +600,10 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       } else {
         occbits = vir->get_subblock(0, n_SO-1, col0, coln);
       }
-    
+
       double **c;
       double *dens;
-      
+
       if (dynamic_cast<LocalSCMatrix*>(occbits.pointer()))
         c = dynamic_cast<LocalSCMatrix*>(occbits.pointer())->get_rows();
       else if (dynamic_cast<ReplSCMatrix*>(occbits.pointer()))
@@ -623,7 +623,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
         for (j=0; j <= i; j++, ij++) {
           if (ij%nproc != me)
             continue;
-          
+
           double dv = 0;
 
           int kk=0;
@@ -724,7 +724,7 @@ SCF::init_threads()
 {
   int nthread = threadgrp_->nthread();
   size_t int_store = integral()->storage_unused()/nthread;
-  
+
   // initialize the two electron integral classes
   tbis_ = new Ref<TwoBodyInt>[nthread];
   for (int i=0; i < nthread; i++) {
@@ -767,6 +767,22 @@ SCF::obsolete()
 {
   OneBodyWavefunction::obsolete();
   if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
+  obsolete_vector();
+  initial_vector(1);
+}
+
+void
+SCF::obsolete_vector() {
+  oso_eigenvectors_ = RefSCMatrix(0);
+}
+
+void
+SCF::set_orthog_method(const OverlapOrthog::OrthogMethod& omethod)
+{
+  if (orthog_method() != omethod) {
+    Wavefunction::set_orthog_method(omethod);
+    obsolete_vector();
+  }
 }
 
 Ref<SCExtrapData>

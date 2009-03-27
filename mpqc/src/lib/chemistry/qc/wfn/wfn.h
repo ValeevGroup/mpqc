@@ -50,7 +50,7 @@ class Wavefunction: public MolecularEnergy {
     RefSCDimension aodim_;
     RefSCDimension sodim_;
     Ref<SCMatrixKit> basiskit_;
-    
+
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;
     ResultRefSCMatrix natural_orbitals_;
@@ -128,7 +128,7 @@ class Wavefunction: public MolecularEnergy {
     double max_orthog_res();
 
     void copy_orthog_info(const Ref<Wavefunction> &);
-    
+
   public:
     Wavefunction(StateIn&);
     /** The KeyVal constructor.
@@ -281,8 +281,10 @@ class Wavefunction: public MolecularEnergy {
 
     /// Returns the orthogonalization method
     OverlapOrthog::OrthogMethod orthog_method() const;
-    /// (Re)Sets the orthogonalization method and makes this obsolete
-    void set_orthog_method(const OverlapOrthog::OrthogMethod&);
+    /** (Re)Sets the orthogonalization method and makes this obsolete.
+        Must be virtual to allow proper obsoletion of the object.
+     */
+    virtual void set_orthog_method(const OverlapOrthog::OrthogMethod&);
 
     /// Returns the tolerance for linear dependencies.
     double lindep_tol() const;

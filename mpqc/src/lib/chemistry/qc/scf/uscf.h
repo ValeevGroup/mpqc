@@ -40,6 +40,10 @@ namespace sc {
 
 /// A base class for unrestricted self-consistent-field methods.
 class UnrestrictedSCF: public SCF {
+
+    // Overload SCF::obsolete_vector()
+    void obsolete_vector();
+
   protected:
     Ref<PointGroup> most_recent_pg_;
     int user_occupations_;
@@ -61,7 +65,7 @@ class UnrestrictedSCF: public SCF {
     // calculate the scf vector, returning the accuracy
     double compute_vector(double&, double enuclear);
     void initial_vector(int needv=1);
-    
+
   public:
     UnrestrictedSCF(StateIn&);
     UnrestrictedSCF(const Ref<KeyVal>&);
@@ -88,11 +92,11 @@ class UnrestrictedSCF: public SCF {
     double occupation(int, int);
     double alpha_occupation(int, int);
     double beta_occupation(int, int);
-    
+
     // both return 1
     int spin_polarized();
     int spin_unrestricted();
-    
+
     void print(std::ostream&o=ExEnv::out0()) const;
 
     int n_fock_matrices() const;
@@ -103,16 +107,16 @@ class UnrestrictedSCF: public SCF {
     /** Spin-unrestricted SCF methods do not define effective Fock matrix,
 	thus this function should never be called. */
     RefSymmSCMatrix effective_fock();
-    
+
     /** Overload of Function::set_desired_value_accuracy(). Must update
         accuracy of the eigenvalues and eigenvectors.
     */
     void set_desired_value_accuracy(double eps);
-    
+
   protected:
     // these are temporary data, so they should not be checkpointed
     Ref<TwoBodyInt> tbi_;
-    
+
     RefSymmSCMatrix densa_;
     RefSymmSCMatrix densb_;
     RefSymmSCMatrix gmata_;
@@ -135,7 +139,7 @@ class UnrestrictedSCF: public SCF {
     void done_gradient();
     RefSymmSCMatrix lagrangian();
     RefSymmSCMatrix gradient_density();
-    
+
     void init_hessian();
     void done_hessian();
 

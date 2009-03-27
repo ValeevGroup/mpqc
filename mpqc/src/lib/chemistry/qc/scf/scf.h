@@ -55,12 +55,12 @@ class SCF: public OneBodyWavefunction {
     Ref<OneBodyWavefunction> guess_wfn_;
 
     int always_use_guess_wfn_;
-    
+
     Ref<SelfConsistentExtrapolation> extrap_;
-    
+
     Ref<AccumH> accumdih_;
     Ref<AccumH> accumddh_;
-    
+
     int maxiter_;
     int miniter_;
     int dens_reset_freq_;
@@ -79,7 +79,7 @@ class SCF: public OneBodyWavefunction {
     Ref<TwoBodyInt>* tbis_; // a two body integral evaluator for each thread
     virtual void init_threads();
     virtual void done_threads();
-    
+
     // implement the Compute::compute() function
     virtual void compute();
 
@@ -91,10 +91,10 @@ class SCF: public OneBodyWavefunction {
 
     // calculate the scf gradient
     virtual void compute_gradient(const RefSCVector&);
-    
+
     // calculate the scf hessian
     virtual void compute_hessian(const RefSymmSCMatrix&);
-    
+
     // saves state and restart information after every checkpoint_freq()
     // SCF iterations
     virtual void savestate_iter(int);
@@ -102,27 +102,33 @@ class SCF: public OneBodyWavefunction {
     // saves state to the given filename
     virtual void savestate_to_file(const std::string &filename);
     std::string previous_savestate_file_;
-    
+
     // returns the log of the max density element in each shell block
     signed char * init_pmax(double *);
-    
+
     // given a matrix, this will convert the matrix to a local matrix if
     // it isn't one already, and return that local matrix.  it will also
     // set the double* to point to the local matrix's data.
     enum Access { Read, Write, Accum };
     RefSymmSCMatrix get_local_data(const RefSymmSCMatrix&, double*&, Access);
-    
+
     // create the initial scf vector.  either use the eigenvectors in
     // guess_wfn_, or use a core Hamiltonian guess.  Call this with needv
     // equal to 0 if you expect to call it twice with the same geometry
     // (eg. when calling from both set_occupations() and init_vector()).
     virtual void initial_vector(int needv=1);
-    
+
+    /// Obsolete scf vector so that next call to initial_vector() will cause recomputation
+    virtual void obsolete_vector();
+
+    // overload Wavefunction::set_orthog_method()
+    void set_orthog_method(const OverlapOrthog::OrthogMethod&);
+
     // given the total number of density and fock matrices, figure out
     // how much memory that will require and then set the local_dens_
     // variable accordingly
     void init_mem(int);
-    
+
     void so_density(const RefSymmSCMatrix& d, double occ, int alp=1);
 
     // Returns a new'ed allocation vector if it is in the input,
@@ -212,7 +218,7 @@ class SCF: public OneBodyWavefunction {
     RefDiagSCMatrix eigenvalues();
 
     int spin_unrestricted(); // return 0
-    
+
     // return the number of AO Fock matrices needed
     virtual int n_fock_matrices() const =0;
 
@@ -239,10 +245,10 @@ class SCF: public OneBodyWavefunction {
 
     // //////////////////////////////////////////////////////////////////////
     // pure virtual member functions follow
-    
+
     // tries to automagically guess the MO occupations
     virtual void set_occupations(const RefDiagSCMatrix&) =0;
-    
+
     // //////////////////////////////////////////////////////////////////////
     // do setup for SCF calculation
     virtual void init_vector() =0;
@@ -256,14 +262,14 @@ class SCF: public OneBodyWavefunction {
 
     // return the scf electronic energy
     virtual double scf_energy() =0;
-    
+
     // return the initial extrapolation data. Used when the mixing_fraction
     // input for DIIS is nonzero. By default null is returned.
     virtual Ref<SCExtrapData> initial_extrap_data();
-    
+
     // return the DIIS data matrices
     virtual Ref<SCExtrapData> extrap_data() =0;
-    
+
     // form the AO basis fock matrices
     virtual void ao_fock(double accuracy) =0;
 
@@ -275,7 +281,7 @@ class SCF: public OneBodyWavefunction {
     virtual RefSymmSCMatrix lagrangian() =0;
     virtual RefSymmSCMatrix gradient_density() =0;
     virtual void two_body_deriv(double*) =0;
-    
+
     // //////////////////////////////////////////////////////////////////////
     // do setup for hessian calculation
     virtual void init_hessian() =0;

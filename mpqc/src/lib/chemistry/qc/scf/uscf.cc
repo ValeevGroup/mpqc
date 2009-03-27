@@ -131,7 +131,7 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
   fockb_(this)
 {
   int i;
-  
+
   double acc = oso_eigenvectors_.desired_accuracy();
   oso_eigenvectors_beta_.set_desired_accuracy(acc);
   eigenvalues_beta_.set_desired_accuracy(acc);
@@ -165,7 +165,7 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
     else {
       multiplicity_given = true;
     }
-    
+
     // for singlet, triplet, etc. we need an even number of electrons
     // for doublet, quartet, etc. we need an odd number of electrons
     if ((mult%2 && nelectrons%2) || (!(mult%2) && !(nelectrons%2))) {
@@ -189,7 +189,7 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
   }
 
   tnbeta_ = nelectrons-tnalpha_;
-  
+
   ExEnv::out0() << endl << indent
        << "USCF::init: total charge = " << Znuc-tnalpha_-tnbeta_
        << endl << endl;
@@ -467,7 +467,7 @@ UnrestrictedSCF::initial_vector(int needv)
         if (!keep_guess_wfn_) guess_wfn_=0;
 
         ExEnv::out0() << endl;
-      
+
       } else {
         ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
              << endl;
@@ -505,11 +505,11 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     ExEnv::out0() << indent
          << "UnrestrictedSCF: WARNING: reforming occupation vector from scratch" << endl;
   }
-  
+
   int i,j;
-  
+
   RefDiagSCMatrix evalsa, evalsb;
-  
+
   if (eva.null()) {
     initial_vector(0);
     evalsa = eigenvalues_.result_noupdate();
@@ -519,7 +519,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     evalsa = eva;
     evalsb = evb;
   }
-  
+
   // if can change the multiplicity, use HundsFEMOSeeker to get the FEMO with maximum multiplicity
   Ref<FEMO> femo;
   if (can_change_multiplicity) {
@@ -616,13 +616,13 @@ UnrestrictedSCF::init_vector()
   // allocate storage for other temp matrices
   densa_ = hcore_.clone();
   densa_.assign(0.0);
-  
+
   diff_densa_ = hcore_.clone();
   diff_densa_.assign(0.0);
 
   densb_ = hcore_.clone();
   densb_.assign(0.0);
-  
+
   diff_densb_ = hcore_.clone();
   diff_densb_.assign(0.0);
 
@@ -642,7 +642,7 @@ UnrestrictedSCF::init_vector()
 
   // set up trial vector
   initial_vector(1);
-    
+
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
   oso_scf_vector_beta_ = oso_eigenvectors_beta_.result_noupdate();
 }
@@ -651,7 +651,7 @@ void
 UnrestrictedSCF::done_vector()
 {
   done_threads();
-  
+
   hcore_ = 0;
   gmata_ = 0;
   densa_ = 0;
@@ -712,7 +712,7 @@ UnrestrictedSCF::new_density()
   Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   d.element_op(sp.pointer(), d);
   d=0;
-  
+
   double delta = sp->result();
   delta = sqrt(delta/i_offset(diff_densa_.n()));
 
@@ -729,7 +729,7 @@ UnrestrictedSCF::density()
     so_density(densb, 1.0, 0);
     densa.accumulate(densb);
     densb=0;
-    
+
     density_ = densa;
     // only flag the density as computed if the calc is converged
     if (!value_needed()) density_.computed() = 1;
@@ -746,7 +746,7 @@ UnrestrictedSCF::scf_energy()
   Ref<SCElementOp2> op = eop;
   focka_.result_noupdate().element_op(op, densa_);
   double ea = eop->result();
-  
+
   eop->reset();
   fockb_.result_noupdate().element_op(op, densb_);
   double eb = eop->result();
@@ -756,7 +756,7 @@ UnrestrictedSCF::scf_energy()
   hcore_.element_op(op, denst);
   double ec = eop->result();
   denst=0;
-  
+
   op=0;
   eop->dereference();
   delete eop;
@@ -785,7 +785,7 @@ class UAExtrapErrorOp : public BlockedSCElementOp {
 
     void process(SCMatrixBlockIter& bi) {
       int ir=current_block();
-      
+
       for (bi.reset(); bi; bi++) {
         int i=bi.i();
         int j=bi.j();
@@ -807,7 +807,7 @@ class UBExtrapErrorOp : public BlockedSCElementOp {
 
     void process(SCMatrixBlockIter& bi) {
       int ir=current_block();
-      
+
       for (bi.reset(); bi; bi++) {
         int i=bi.i();
         int j=bi.j();
@@ -837,17 +837,17 @@ UnrestrictedSCF::extrap_error()
   moa.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_,
                            focka_.result_noupdate(),
                            SCMatrix::TransposeTransform);
-  
+
   Ref<SCElementOp> op = new UAExtrapErrorOp(this);
   moa.element_op(op.pointer());
-  
+
   // form Error_b
   RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
   mob.assign(0.0);
   mob.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_beta_,
                            fockb_.result_noupdate(),
                            SCMatrix::TransposeTransform);
-  
+
   op = new UBExtrapErrorOp(this);
   mob.element_op(op);
 
@@ -880,13 +880,13 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
 
     // reinitialize the extrapolation object
   extrap_->reinitialize();
-  
+
   // create level shifter
   ALevelShift *alevel_shift = new ALevelShift(this);
   alevel_shift->reference();
   BLevelShift *blevel_shift = new BLevelShift(this);
   blevel_shift->reference();
-  
+
   // calculate the core Hamiltonian
   hcore_ = core_hamiltonian();
 
@@ -902,12 +902,12 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
   double delta = 1.0;
   int iter, iter_since_reset = 0;
   double accuracy = 1.0;
-  
+
   ExEnv::out0() << indent
                 << "Beginning iterations.  Basis is "
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
-    // form the density from the current vector 
+    // form the density from the current vector
     tim.enter("density");
     delta = new_density();
     tim.exit("density");
@@ -917,7 +917,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
       reset_density();
       iter_since_reset = 0;
     }
-      
+
     // form the AO basis fock matrix
     tim.enter("fock");
     double base_accuracy = delta;
@@ -942,7 +942,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
          << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                      iter+1, eelec+nucrep, delta)
          << endl;
-    
+
     // check convergence
     if (delta < desired_value_accuracy()
         && iter+1 >= miniter_)
@@ -967,16 +967,16 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     moa.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
                              focka_.result_noupdate(),
                              SCMatrix::TransposeTransform);
-    
+
     RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
     mob.assign(0.0);
     mob.accumulate_transform(so_to_oso_tr * oso_scf_vector_beta_,
                              fockb_.result_noupdate(),
                              SCMatrix::TransposeTransform);
-    
+
     RefSCMatrix nvectora(oso_dimension(), oso_dimension(), basis_matrixkit());
     RefSCMatrix nvectorb(oso_dimension(), oso_dimension(), basis_matrixkit());
-  
+
     // level shift effective fock in the mo basis
     alevel_shift->set_shift(level_shift_);
     moa.element_op(alevel_shift);
@@ -1005,23 +1005,23 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     evalsa.element_op(alevel_shift);
     blevel_shift->set_shift(-level_shift_);
     evalsb.element_op(blevel_shift);
-    
+
     if (reset_occ_)
       // Maintain multiplicity
       set_occupations(evalsa, evalsb, false);
 
     savestate_iter(iter);
     }
-      
+
   eigenvalues_ = evalsa;
   eigenvalues_.computed() = 1;
   eigenvalues_.set_actual_accuracy(delta);
   evalsa = 0;
-  
+
   oso_eigenvectors_ = oso_scf_vector_;
   oso_eigenvectors_.computed() = 1;
   oso_eigenvectors_.set_actual_accuracy(delta);
-  
+
   oso_eigenvectors_beta_ = oso_scf_vector_beta_;
   oso_eigenvectors_beta_.computed() = 1;
   oso_eigenvectors_beta_.set_actual_accuracy(delta);
@@ -1030,7 +1030,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
   eigenvalues_beta_.computed() = 1;
   eigenvalues_beta_.set_actual_accuracy(delta);
   evalsb = 0;
-  
+
   {
     // compute spin contamination
     RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
@@ -1058,7 +1058,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
          << indent << scprintf("<S^2>exact = %f", S2real) << endl
          << indent << scprintf("<S^2>      = %f", S2) << endl;
   }
-  
+
   // now clean up
   done_vector();
 
@@ -1102,7 +1102,7 @@ UnrestrictedSCF::lagrangian()
 
   RefDiagSCMatrix ea = eigenvalues_.result_noupdate().copy();
   RefDiagSCMatrix eb = eigenvalues_beta_.result_noupdate().copy();
-  
+
   BlockedDiagSCMatrix *eab = dynamic_cast<BlockedDiagSCMatrix*>(ea.pointer());
   BlockedDiagSCMatrix *ebb = dynamic_cast<BlockedDiagSCMatrix*>(eb.pointer());
 
@@ -1121,7 +1121,7 @@ UnrestrictedSCF::lagrangian()
     for (i=nbeta_[ir]; i < ebir.dim().n(); i++)
       ebir.set_element(i,0.0);
   }
-  
+
   RefSymmSCMatrix la = basis_matrixkit()->symmmatrix(so_dimension());
   la.assign(0.0);
   la.accumulate_transform(so_to_oso_tr * oso_scf_vector_, ea);
@@ -1131,7 +1131,7 @@ UnrestrictedSCF::lagrangian()
   lb.accumulate_transform(so_to_oso_tr * oso_scf_vector_beta_, eb);
 
   la.accumulate(lb);
-  
+
   la = pl->to_AO_basis(la);
   la->scale(-1.0);
 
@@ -1143,12 +1143,12 @@ UnrestrictedSCF::gradient_density()
 {
   densa_ = basis_matrixkit()->symmmatrix(so_dimension());
   densb_ = densa_.clone();
-  
+
   so_density(densa_, 1.0, 1);
   so_density(densb_, 1.0, 0);
-  
+
   Ref<PetiteList> pl = integral()->petite_list(basis());
-  
+
   densa_ = pl->to_AO_basis(densa_);
   densb_ = pl->to_AO_basis(densb_);
 
@@ -1188,7 +1188,7 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     double *pmata, *pmatb;
     RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
     RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
-  
+
     Ref<PetiteList> pl = integral()->petite_list();
     LocalUHFGradContribution l(pmata,pmatb);
 
@@ -1197,7 +1197,7 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     int nthread = threadgrp_->nthread();
     double **grads = new double*[nthread];
     Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
-    for (i=0; i < nthread; i++) { 
+    for (i=0; i < nthread; i++) {
       tbis[i] = integral()->electron_repulsion_deriv();
       grads[i] = new double[na3];
       memset(grads[i], 0, sizeof(double)*na3);
@@ -1247,6 +1247,11 @@ UnrestrictedSCF::set_desired_value_accuracy(double eps)
   eigenvalues_beta_.set_desired_accuracy(eps);
 }
 
+void
+UnrestrictedSCF::obsolete_vector() {
+  SCF::obsolete_vector();
+  oso_eigenvectors_beta_ = RefSCMatrix(0);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 

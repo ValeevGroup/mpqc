@@ -93,7 +93,7 @@ namespace MPQC {
     twobody_computer computer_;
     twobody_computer computer2_;
     twobody_deriv_computer deriv_computer_;
-    std::map<std::string,sc::TwoBodyInt::tbint_type> descr_to_tbint_type_;
+    std::map<std::string,sc::TwoBodyOper::type> descr_to_tbint_type_;
     sidl::array<double> bounds_;
     BufferSize buffer_size_;
     std::vector< std::pair< std::string, int > > comp_ids_;

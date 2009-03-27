@@ -397,14 +397,15 @@ TwoBodyMOIntsTransform_ijR::compute() {
   const Ref<GaussianBasisSet>& b2 = this->space2()->basis();
   const Ref<GaussianBasisSet>& b3 = this->space3()->basis();
 
+  const int num_te_types = this->num_te_types();
   const int n1 = this->space1()->rank();
   const int n2 = this->space2()->rank();
   const int n3 = b3->nbasis();
   const int n23 = n2*n3;
-  const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*sizeof(double));
+  const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
   const int ni_local = (n1 + nproc - 1)/ nproc;
-  const size_t memgrp_blocksize = static_cast<distsize_t>(n23)*sizeof(double);
-  const size_t ijR_localsize = ni_local * memgrp_blocksize;
+  const size_t memgrp_blocksize = (static_cast<size_t>(n23))*sizeof(double);
+  const size_t ijR_localsize = num_te_types * ni_local * memgrp_blocksize;
   this->alloc_mem(ijR_localsize);
   memset(mem_->localdata(), 0, ijR_localsize);
 
@@ -413,7 +414,9 @@ TwoBodyMOIntsTransform_ijR::compute() {
   int nfuncmax3 = b3->max_nfunction_in_shell();
 
   // get scratch storage
-  double* pq_ints = new double[nbasis1 * nbasis2 * nfuncmax3];
+  double** pq_ints = new double*[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    pq_ints[te_type] = new double[nbasis1 * nbasis2 * nfuncmax3];
   double* iq_ints = new double[n1 * nbasis2 * nfuncmax3];
   memset(iq_ints, 0, n1 * nbasis2 * nfuncmax3 * sizeof(double));
   double* jR_ints = new double[n2 * nfuncmax3];
@@ -429,7 +432,10 @@ TwoBodyMOIntsTransform_ijR::compute() {
   Ref<Integral> integral = tbintdescr_->factory();
   integral->set_basis(b1, b2, b3);
   Ref<TwoBodyThreeCenterInt> inteval = tbintdescr_->inteval();
-  const double* buffer = inteval->buffer();
+  const Ref<TwoBodyOperSetDescr>& descr = inteval->descr();
+  const double **buffer = new const double*[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    buffer[te_type] = inteval->buffer( descr->opertype(te_type) );
 
   // distribute work by basis3
   // TODO 1) use DistShell 2) use threads
@@ -441,7 +447,6 @@ TwoBodyMOIntsTransform_ijR::compute() {
     const int nb2f3 = nf3 * nbasis2;
 
     // compute the entire (p1 p2| block
-    double* pq_offset = pq_ints;
     for (int s1 = 0; s1 < b1->nshell(); ++s1) {
       const int s1offset = b1->shell_to_function(s1);
       const int nf1 = b1->shell(s1).nfunction();
@@ -456,10 +461,12 @@ TwoBodyMOIntsTransform_ijR::compute() {
 
         // copy buffer into pq_ints
         // for each f1 copy s2 s3 block to ((f1+s1offset) * nbasis2 + s2offset) * nf3
-        const double* f1s2s3_src = buffer;
-        double* f1s2s3_dst = pq_ints + (s1offset * nbasis2 + s2offset) * nf3;
-        for(int f1=0; f1<nf1; ++f1, f1s2s3_src += nf23, f1s2s3_dst += nb2f3) {
-          std::copy(f1s2s3_src, f1s2s3_src + nf23, f1s2s3_dst);
+        for(int te_type=0; te_type < num_te_types; ++te_type) {
+          const double* f1s2s3_src = buffer[te_type];
+          double* f1s2s3_dst = pq_ints[te_type] + (s1offset * nbasis2 + s2offset) * nf3;
+          for(int f1=0; f1<nf1; ++f1, f1s2s3_src += nf23, f1s2s3_dst += nb2f3) {
+            std::copy(f1s2s3_src, f1s2s3_src + nf23, f1s2s3_dst);
+          }
         }
 
       }
@@ -481,22 +488,23 @@ TwoBodyMOIntsTransform_ijR::compute() {
     const char transp = 't';
     const double one = 1.0;
     const double zero = 0.0;
-    // (iq|R) = (ip) * (pq|R)
-    F77_DGEMM(&notransp,&transp,&nb2f3,&n1,&nbasis1,&one,pq_ints,&nb2f3,
-              pi,&n1,&zero,iq_ints,&nb2f3);
-    // for each i: (ij|R) = (jq) * (iq|R)
-    const double* qR_ints = iq_ints;
-    for(int i=0; i<n1; ++i) {
-      F77_DGEMM(&notransp,&transp,&nf3,&n2,&nbasis2,&one,qR_ints,&nf3,
-                qj,&n2,&zero,jR_ints,&nf3);
+    for(int te_type=0; te_type < num_te_types; ++te_type) {
+      // (iq|R) = (ip) * (pq|R)
+      F77_DGEMM(&notransp,&transp,&nb2f3,&n1,&nbasis1,&one,pq_ints[te_type],&nb2f3,
+                pi,&n1,&zero,iq_ints,&nb2f3);
+      // for each i: (ij|R) = (jq) * (iq|R)
+      const double* qR_ints = iq_ints;
+      for(int i=0; i<n1; ++i) {
+        F77_DGEMM(&notransp,&transp,&nf3,&n2,&nbasis2,&one,qR_ints,&nf3,
+                  qj,&n2,&zero,jR_ints,&nf3);
 
-      // accumulate to each memory location
-      const int i_proc = i % nproc;
-      const int i_local = i / nproc;
-      const size_t i_offset = i_local * static_cast<size_t>(n23);
-      size_t ijR_offset = i_offset + s3offset;
-      double* R_ptr = jR_ints;
-      for(int j=0; j<n2; ++j) {
+        // accumulate to each memory location
+        const int i_proc = i % nproc;
+        const int i_local = i / nproc;
+        const size_t i_offset = (i_local * num_te_types + te_type) * static_cast<size_t>(n23) ;
+        size_t ijR_offset = i_offset + s3offset;
+        double* R_ptr = jR_ints;
+        for(int j=0; j<n2; ++j) {
 #if 0
     if (s3 == 1) {
       const double value = *R_ptr;
@@ -504,13 +512,14 @@ TwoBodyMOIntsTransform_ijR::compute() {
                     << " ijR_offset = " << ijR_offset << "  value = " << value << endl;
     }
 #endif
-        mem_->sum_reduction_on_node(R_ptr, ijR_offset , nf3, i_proc);
-        ijR_offset += n3;
-        R_ptr += nf3;
-      }
+          mem_->sum_reduction_on_node(R_ptr, ijR_offset , nf3, i_proc);
+          ijR_offset += n3;
+          R_ptr += nf3;
+        }
 
-      qR_ints += nb2f3;
-    }
+        qR_ints += nb2f3;
+      } // end of i loop
+    } // end of te_type loop
 
   } // end of loop over R shells
 

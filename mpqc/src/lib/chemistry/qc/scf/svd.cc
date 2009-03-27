@@ -28,7 +28,7 @@
 #ifdef __GNUC__
 #pragma implementation
 #endif
-                                                                                
+
 #include <stdexcept>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/basis/petite.h>
@@ -43,12 +43,12 @@ SCF::svd_product_basis()
   int nao = bs->nbasis();
   Ref<PetiteList> pl = integral()->petite_list(bs);
   Ref<SCMatrixKit> ao_mkit = bs->matrixkit();
-  Ref<TwoBodyInt> grt_eval = integral()->grt();
-  const double* ints = grt_eval->buffer(TwoBodyInt::eri);
+  Ref<TwoBodyInt> grt_eval = integral()->grt<4>();
+  const double* ints = grt_eval->buffer(TwoBodyOper::eri);
   int* blocksizes = new int[1];
   blocksizes[0] = nao*(nao+1)/2;
   RefSCDimension ao2_dim = new SCDimension(blocksizes[0],1,blocksizes);
-                                                                                
+
   RefSCMatrix G(ao2_dim,ao2_dim,ao_mkit);
   RefSCMatrix U(ao2_dim,ao2_dim,ao_mkit);
   RefSCMatrix V(ao2_dim,ao2_dim,ao_mkit);
@@ -58,14 +58,14 @@ SCF::svd_product_basis()
     int ni = bs->shell(si).nfunction();
     for(int sj=0; sj<=si; sj++) {
       int nj = bs->shell(sj).nfunction();
-                                                                                
+
       for(int sk=0; sk<nshell; sk++) {
         int nk = bs->shell(sk).nfunction();
         for(int sl=0; sl<=sk; sl++) {
           int nl = bs->shell(sl).nfunction();
-                                                                                
+
           grt_eval->compute_shell(si,sj,sk,sl);
-                                                                                
+
           int ii = bs->shell_to_function(si);
           int jj = bs->shell_to_function(sj);
           int kk = bs->shell_to_function(sk);
@@ -78,7 +78,7 @@ SCF::svd_product_basis()
                 int lmax = (sk == sl) ? k : nl-1;
                 for(int l=0; l<=lmax; l++) {
                   int kl = (kk+k)*(kk+k+1)/2 + (ll+l);
-                                                                                
+
                   int ijkl = ((i*nj+j)*nk+k)*nl+l;
                   double value = ints[ijkl];
                   G.set_element(ij,kl,value);
@@ -90,15 +90,15 @@ SCF::svd_product_basis()
       }
     }
   }
-                                                                                
+
   G.svd(U,Sigma,V);
   Sigma.print("Sigmas");
-                                                                                
+
   throw std::runtime_error("RI-CLHF not yet implemented");
 }
-                                                                                
+
 /////////////////////////////////////////////////////////////////////////////
-                                                                                
+
 // Local Variables:
 // mode: c++
 // c-file-style: "ETS"

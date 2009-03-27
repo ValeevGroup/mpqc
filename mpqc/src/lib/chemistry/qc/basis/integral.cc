@@ -126,7 +126,7 @@ Integral::initial_integral(int& argc, char ** argv)
 {
   Integral *intf = 0;
   char * keyval_string = 0;
-  
+
   // see if an integral factory is given on the command line
   if (argc && argv) {
     for (int i=0; i < argc; i++) {
@@ -375,31 +375,71 @@ Integral::electron_repulsion_deriv()
 }
 
 Ref<TwoBodyInt>
-Integral::grt()
+Integral::grt_4()
 {
-  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
+  throw std::runtime_error("Integral::grt_4(): not implemented in this particular integrals factory.");
+}
+Ref<TwoBodyThreeCenterInt>
+Integral::grt_3()
+{
+  throw std::runtime_error("Integral::grt_3(): not implemented in this particular integrals factory.");
+}
+Ref<TwoBodyTwoCenterInt>
+Integral::grt_2()
+{
+  throw std::runtime_error("Integral::grt_2(): not implemented in this particular integrals factory.");
 }
 
 Ref<TwoBodyInt>
-Integral::g12(const Ref<IntParamsG12>& p)
+Integral::g12_4(const Ref<IntParamsG12>& p)
 {
-  throw std::runtime_error("Integral::g12(): not implemented in this particular integrals factory.");
+  throw std::runtime_error("Integral::g12_4(): not implemented in this particular integrals factory.");
+}
+Ref<TwoBodyThreeCenterInt>
+Integral::g12_3(const Ref<IntParamsG12>& p)
+{
+  throw std::runtime_error("Integral::g12_3(): not implemented in this particular integrals factory.");
+}
+Ref<TwoBodyTwoCenterInt>
+Integral::g12_2(const Ref<IntParamsG12>& p)
+{
+  throw std::runtime_error("Integral::g12_2(): not implemented in this particular integrals factory.");
 }
 
 Ref<TwoBodyInt>
-Integral::g12nc(const Ref<IntParamsG12>& p)
+Integral::g12nc_4(const Ref<IntParamsG12>& p)
 {
   throw std::runtime_error("Integral::g12nc(): not implemented in this particular integrals factory.");
 }
-
-Ref<TwoBodyInt>
-Integral::g12dkh(const Ref<IntParamsG12>& p)
+Ref<TwoBodyThreeCenterInt>
+Integral::g12nc_3(const Ref<IntParamsG12>& p)
 {
-  throw FeatureNotImplemented("Integral::g12dkh(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
+  throw std::runtime_error("Integral::g12nc_3(): not implemented in this particular integrals factory.");
+}
+Ref<TwoBodyTwoCenterInt>
+Integral::g12nc_2(const Ref<IntParamsG12>& p)
+{
+  throw std::runtime_error("Integral::g12nc_2(): not implemented in this particular integrals factory.");
 }
 
 Ref<TwoBodyInt>
-Integral::geng12(const Ref<IntParamsGenG12>& p)
+Integral::g12dkh_4(const Ref<IntParamsG12>& p)
+{
+  throw FeatureNotImplemented("Integral::g12dkh_4(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
+}
+Ref<TwoBodyThreeCenterInt>
+Integral::g12dkh_3(const Ref<IntParamsG12>& p)
+{
+  throw FeatureNotImplemented("Integral::g12dkh_3(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
+}
+Ref<TwoBodyTwoCenterInt>
+Integral::g12dkh_2(const Ref<IntParamsG12>& p)
+{
+  throw FeatureNotImplemented("Integral::g12dkh_2(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyInt>
+Integral::geng12_4(const Ref<IntParamsGenG12>& p)
 {
   throw std::runtime_error("Integral::geng12(): not implemented in this particular integrals factory.");
 }

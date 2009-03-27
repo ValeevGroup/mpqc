@@ -109,7 +109,7 @@ namespace {
 }
 
 Ref<R12IntsAcc>
-R12IntsAcc_Node0File::clone() {
+R12IntsAcc_Node0File::clone(const R12IntsAccDimensions& dim) {
   int id = 0;
   std::string clonename;
   clone_filename(clonename, this->filename_, id);
@@ -123,8 +123,15 @@ R12IntsAcc_Node0File::clone() {
     clonelist_ = ListOfClones::instance();
   }
   clonelist_->add(clonename, id);
-  Ref<R12IntsAcc_Node0File> result = new R12IntsAcc_Node0File(clonename.c_str(), num_te_types(),
-                                                              ni(), nj(), nx(), ny());
+
+  Ref<R12IntsAcc_Node0File> result;
+  if (dim == R12IntsAccDimensions::default_dim())
+    result = new R12IntsAcc_Node0File(clonename.c_str(), num_te_types(),
+                                      ni(), nj(), nx(), ny());
+  else
+    result = new R12IntsAcc_Node0File(clonename.c_str(), dim.num_te_types(),
+                                      dim.n1(), dim.n2(), dim.n3(), dim.n4());
+
   result->set_clonelist(clonelist_);
   return result;
 }

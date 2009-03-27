@@ -155,13 +155,13 @@ TwoBodyInt::basis4()
 }
 
 const double *
-TwoBodyInt::buffer(tbint_type i) const
+TwoBodyInt::buffer(TwoBodyOper::type i) const
 {
-  if (i==eri) return buffer_;
+  if (i == TwoBodyOper::eri) return buffer_;
   return 0;
 }
 
-std::pair<std::map<TwoBodyInt::tbint_type,const double*>,unsigned long[4]>
+std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]>
 TwoBodyInt::compute_shell_arrays(int i,int j, int k, int l)
 {
   int saved_redundant = redundant();
@@ -171,10 +171,11 @@ TwoBodyInt::compute_shell_arrays(int i,int j, int k, int l)
 
   set_redundant(saved_redundant);
 
-  std::pair<std::map<tbint_type,const double*>,unsigned long[4]> r;
+  std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]> r;
 
-  for (unsigned int it=0; it<num_tbint_types(); it++) {
-      tbint_type tbit = inttype(it);
+  const Ref<TwoBodyOperSetDescr>& descr = this->descr();
+  for (unsigned int it=0; it<descr->size(); it++) {
+      TwoBodyOper::type tbit = descr->opertype(it);
       r.first[tbit] = buffer(tbit);
   }
 
@@ -191,45 +192,15 @@ TwoBodyInt::set_integral_storage(size_t storage)
 {
 }
 
-double 
+double
 TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
 {
   int ibound = log2_shell_bound(s1,s2,s3,s4);
-  if( ibound < SCHAR_MIN ) 
+  if( ibound < SCHAR_MIN )
     return log2_to_double_[0];
-  else if( ibound > SCHAR_MAX ) 
+  else if( ibound > SCHAR_MAX )
     return log2_to_double_[ SCHAR_MAX - SCHAR_MIN ];
   return log2_to_double_[ ibound - SCHAR_MIN ];
-}
-
-const Ref<TwoBodyIntTypeDescr>&
-TwoBodyInt::inttypedescr(TwoBodyInt::tbint_type type)
-{
-    static Ref<TwoBodyIntTypeDescr> symm_type = new TwoBodyIntTypeDescr(2,+1,+1,+1);
-    static Ref<TwoBodyIntTypeDescr> t1r12_inttype = new TwoBodyIntTypeDescr(2,-1,+1,0);
-    static Ref<TwoBodyIntTypeDescr> t2r12_inttype = new TwoBodyIntTypeDescr(2,+1,-1,0);
-    switch(type) {
-    case TwoBodyInt::r12t1:
-    case TwoBodyInt::t1g12:
-	return t1r12_inttype;
-
-    case TwoBodyInt::r12t2:
-    case TwoBodyInt::t2g12:
-	return t2r12_inttype;
-
-    case TwoBodyInt::eri:
-    case TwoBodyInt::r12:
-    case TwoBodyInt::r12_0_g12:
-    case TwoBodyInt::r12_m1_g12:
-    case TwoBodyInt::g12t1g12:
-    case TwoBodyInt::anti_g12g12:
-    case TwoBodyInt::r12_0_gg12:
-    case TwoBodyInt::r12_m1_gg12:
-    case TwoBodyInt::gg12t1gg12:
-    case g12p4g12_m_g12t1g12t1:
-    return symm_type;
-    }
-    throw ProgrammingError("TwoBodyInt::inttype() -- incorrect type");
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -326,9 +297,9 @@ TwoBodyThreeCenterInt::basis3()
 }
 
 const double *
-TwoBodyThreeCenterInt::buffer(tbint_type i) const
+TwoBodyThreeCenterInt::buffer(TwoBodyOper::type i) const
 {
-  if (i==TwoBodyInt::eri) return buffer_;
+  if (i==TwoBodyOper::eri) return buffer_;
   return 0;
 }
 
@@ -337,7 +308,7 @@ TwoBodyThreeCenterInt::set_integral_storage(size_t storage)
 {
 }
 
-double 
+double
 TwoBodyThreeCenterInt::shell_bound(int s1, int s2, int s3)
 {
   int ibound = log2_shell_bound(s1,s2,s3);
@@ -423,9 +394,9 @@ TwoBodyTwoCenterInt::basis2()
 }
 
 const double *
-TwoBodyTwoCenterInt::buffer(tbint_type i) const
+TwoBodyTwoCenterInt::buffer(TwoBodyOper::type i) const
 {
-  if (i==TwoBodyInt::eri) return buffer_;
+  if (i==TwoBodyOper::eri) return buffer_;
   return 0;
 }
 
@@ -434,7 +405,7 @@ TwoBodyTwoCenterInt::set_integral_storage(size_t storage)
 {
 }
 
-double 
+double
 TwoBodyTwoCenterInt::shell_bound(int s1, int s2)
 {
   int ibound = log2_shell_bound(s1,s2);
@@ -463,18 +434,18 @@ ShellQuartetIter::init(const double * b,
                        double scl, int redund)
 {
   redund_ = redund;
-  
+
   e12 = (is==js);
   e34 = (ks==ls);
   e13e24 = (is==ks) && (js==ls);
-  
+
   istart=fi;
   jstart=fj;
   kstart=fk;
   lstart=fl;
 
   index=0;
-  
+
   iend=ni;
   jend=nj;
   kend=nk;
@@ -507,7 +478,7 @@ ShellQuartetIter::next()
 
     lcur=0;
     l_=lstart;
-    
+
     if (kcur < kend-1) {
       kcur++;
       k_++;
@@ -525,7 +496,7 @@ ShellQuartetIter::next()
 
     jcur=0;
     j_=jstart;
-  
+
     icur++;
     i_++;
 
@@ -557,7 +528,7 @@ ShellQuartetIter::next()
 
     jcur=0;
     j_=jstart;
-  
+
     icur++;
     i_++;
   }
@@ -630,7 +601,7 @@ ShellQuartetIter&
 TwoBodyIntIter::current_quartet()
 {
   tbi->compute_shell(icur,jcur,kcur,lcur);
-  
+
   sqi.init(tbi->buffer(),
            icur, jcur, kcur, lcur,
            tbi->basis()->shell_to_function(icur),
@@ -766,7 +737,7 @@ TwoBodyDerivInt::buffer() const
   return buffer_;
 }
 
-double 
+double
 TwoBodyDerivInt::shell_bound(int s1, int s2, int s3, int s4)
 {
   int ibound = log2_shell_bound(s1,s2,s3,s4);
@@ -876,7 +847,7 @@ TwoBodyThreeCenterDerivInt::buffer() const
   return buffer_;
 }
 
-double 
+double
 TwoBodyThreeCenterDerivInt::shell_bound(int s1, int s2, int s3)
 {
   int ibound = log2_shell_bound(s1,s2,s3);
@@ -967,7 +938,7 @@ TwoBodyTwoCenterDerivInt::buffer() const
   return buffer_;
 }
 
-double 
+double
 TwoBodyTwoCenterDerivInt::shell_bound(int s1, int s2)
 {
   int ibound = log2_shell_bound(s1,s2);
@@ -981,13 +952,13 @@ TwoBodyTwoCenterDerivInt::shell_bound(int s1, int s2)
 /////////////////////////////////////////////////////////////////////////////
 
 double*
-init_log2_to_double() 
+init_log2_to_double()
 {
   int n = -1 * SCHAR_MIN + SCHAR_MAX + 1;
   double* ptr = new double[n];
-  
+
   int i=-1;
-  for(int log2=SCHAR_MIN; log2<=SCHAR_MAX; ++log2) 
+  for(int log2=SCHAR_MIN; log2<=SCHAR_MAX; ++log2)
     ptr[++i] = pow(2.0,log2);
 
   return ptr;

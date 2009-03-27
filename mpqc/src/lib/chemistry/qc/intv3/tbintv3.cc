@@ -39,7 +39,8 @@ TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
                            const Ref<GaussianBasisSet>& b3,
                            const Ref<GaussianBasisSet>& b4,
                            size_t storage):
-  TwoBodyInt(integral,b1,b2,b3,b4)
+  TwoBodyInt(integral,b1,b2,b3,b4),
+  descr_(TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI))
 {
   int2ev3_ = new Int2eV3(integral,b1,b2,b3,b4,0,storage);
   buffer_ = int2ev3_->buffer();
@@ -70,24 +71,6 @@ TwoBodyIntV3::set_integral_storage(size_t storage)
   int2ev3_->init_storage(storage);
 }
 
-unsigned int
-TwoBodyIntV3::inttype(TwoBodyInt::tbint_type t) const
-{
-    if (t == TwoBodyInt::eri) {
-	return 0;
-    }
-    throw ProgrammingError("TwoBodyIntV3::inttype() -- this type not recognized",__FILE__,__LINE__);
-}
-
-TwoBodyInt::tbint_type
-TwoBodyIntV3::inttype(unsigned int t) const
-{
-    if (t == 0) {
-	return TwoBodyInt::eri;
-    }
-    throw ProgrammingError("TwoBodyIntV3::inttype() -- this type not recognized",__FILE__,__LINE__);
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterIntV3::TwoBodyThreeCenterIntV3(
@@ -96,7 +79,8 @@ TwoBodyThreeCenterIntV3::TwoBodyThreeCenterIntV3(
     const Ref<GaussianBasisSet>& b2,
     const Ref<GaussianBasisSet>& b3,
     size_t storage):
-  TwoBodyThreeCenterInt(integral,b1,b2,b3)
+  TwoBodyThreeCenterInt(integral,b1,b2,b3),
+  descr_(TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI))
 {
   Ref<GaussianBasisSet> null;
   int2ev3_ = new Int2eV3(integral,b1,b2,b3,null,0,storage);
@@ -136,7 +120,8 @@ TwoBodyTwoCenterIntV3::TwoBodyTwoCenterIntV3(
     const Ref<GaussianBasisSet>& b1,
     const Ref<GaussianBasisSet>& b2,
     size_t storage):
-  TwoBodyTwoCenterInt(integral,b1,b2)
+  TwoBodyTwoCenterInt(integral,b1,b2),
+  descr_(TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI))
 {
   Ref<GaussianBasisSet> null;
   int2ev3_ = new Int2eV3(integral,b1,null,b2,null,0,storage);

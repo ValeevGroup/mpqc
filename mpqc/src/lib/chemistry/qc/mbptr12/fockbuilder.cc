@@ -672,14 +672,14 @@ namespace sc {
 
           // Get (|1/r12|) integrals
           tim_mo_ints_retrieve.enter_default();
-          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyInt::eri);
+          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyOper::eri);
           tim_mo_ints_retrieve.exit_default();
 
           const double one = 1.0;
           const int unit_stride = 1;
           F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,J_xy,&unit_stride);
 
-          mnxy_acc->release_pair_block(m,m,TwoBodyInt::eri);
+          mnxy_acc->release_pair_block(m,m,TwoBodyOper::eri);
         }
       }
 
@@ -762,14 +762,14 @@ namespace sc {
 
           // Get (|1/r12|) integrals
           tim_mo_ints_retrieve.enter_default();
-          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyInt::eri);
+          const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,TwoBodyOper::eri);
           tim_mo_ints_retrieve.exit_default();
 
           const double one = 1.0;
           const int unit_stride = 1;
           F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,K_xy,&unit_stride);
 
-          mnxy_acc->release_pair_block(m,m,TwoBodyInt::eri);
+          mnxy_acc->release_pair_block(m,m,TwoBodyOper::eri);
         }
       }
 

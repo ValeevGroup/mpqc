@@ -33,18 +33,15 @@
 
 namespace sc {
 
-// Types of available 2-electron integral evaluators
-    typedef enum {erieval, grteval, g12eval, g12nceval, g12dkheval, geng12eval} tbinteval;
-
-/** This implements electron repulsion integrals in the IntLibint2 library. */
+/** This implements 4-center two-electron integrals in the IntLibint2 library. */
 class TwoBodyIntLibint2 : public TwoBodyInt {
 
-    unsigned int num_tbint_types_;
-    tbinteval int2etype_;
+    TwoBodyOperSet::type int2etype_;
+    Ref<TwoBodyOperSetDescr> descr_;
 
   protected:
     Ref<Int2eLibint2> int2elibint2_;
-  
+
   public:
     typedef IntParamsG12::ContractedGeminal ContractedGeminal;
     TwoBodyIntLibint2(Integral*integral,
@@ -52,17 +49,12 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
-                 size_t storage, tbinteval int2etype,
+                 size_t storage, TwoBodyOperSet::type int2etype,
 		 const Ref<IntParams>& params);
     ~TwoBodyIntLibint2();
 
-    unsigned int num_tbint_types() const {
-      return num_tbint_types_;
-    }
-    /// Implementation of TwoBodyIntTypeDescr::inttype()
-    unsigned int inttype(tbint_type t) const;
-    /// Implementation of TwoBodyIntTypeDescr::inttype()
-    TwoBodyInt::tbint_type inttype(unsigned int t) const;
+    TwoBodyOperSet::type type() const { return int2etype_; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -70,8 +62,73 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
     size_t used_storage() const { return int2elibint2_->storage_used(); }
     void set_integral_storage(size_t storage);
 
-    const double *buffer(tbint_type te_type) const {
-	return int2elibint2_->buffer( inttype(te_type) );
+    const double *buffer(TwoBodyOper::type te_type) const {
+      return int2elibint2_->buffer( descr_->opertype(te_type) );
+    }
+};
+
+/** This implements 3-center 2-body integrals in the IntLibint2 library. */
+class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
+
+  TwoBodyOperSet::type int2etype_;
+  Ref<TwoBodyOperSetDescr> descr_;
+
+  protected:
+    Ref<Int2eLibint2> int2elibint2_;
+
+  public:
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+    TwoBodyThreeCenterIntLibint2(Integral*integral,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
+                 const Ref<GaussianBasisSet>&b3,
+                 size_t storage, TwoBodyOperSet::type int2etype,
+         const Ref<IntParams>& params);
+    ~TwoBodyThreeCenterIntLibint2();
+
+    TwoBodyOperSet::type type() const { return int2etype_; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
+
+    int log2_shell_bound(int,int,int);
+    void compute_shell(int,int,int);
+
+    size_t used_storage() const { return int2elibint2_->storage_used(); }
+    void set_integral_storage(size_t storage);
+
+    const double *buffer(TwoBodyOper::type te_type) const {
+      return int2elibint2_->buffer( descr_->opertype(te_type) );
+    }
+};
+
+/** This implements 2-center 2-body integrals in the IntLibint2 library. */
+class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
+
+  TwoBodyOperSet::type int2etype_;
+  Ref<TwoBodyOperSetDescr> descr_;
+
+  protected:
+    Ref<Int2eLibint2> int2elibint2_;
+
+  public:
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+    TwoBodyTwoCenterIntLibint2(Integral*integral,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
+                 size_t storage, TwoBodyOperSet::type int2etype,
+         const Ref<IntParams>& params);
+    ~TwoBodyTwoCenterIntLibint2();
+
+    TwoBodyOperSet::type type() const { return int2etype_; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
+
+    int log2_shell_bound(int,int);
+    void compute_shell(int,int);
+
+    size_t used_storage() const { return int2elibint2_->storage_used(); }
+    void set_integral_storage(size_t storage);
+
+    const double *buffer(TwoBodyOper::type te_type) const {
+      return int2elibint2_->buffer( descr_->opertype(te_type) );
     }
 };
 
@@ -87,7 +144,7 @@ class TwoBodyDerivIntLibint2 : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b2,
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
-                      size_t storage, tbinteval int2etype);
+                      size_t storage, TwoBodyOperSet::type int2etype);
     ~TwoBodyDerivIntLibint2();
 
     int log2_shell_bound(int,int,int,int);

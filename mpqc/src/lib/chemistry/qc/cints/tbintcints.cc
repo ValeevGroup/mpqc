@@ -51,25 +51,24 @@ TwoBodyIntCints::TwoBodyIntCints(Integral*integral,
 				 const Ref<GaussianBasisSet>& b2,
 				 const Ref<GaussianBasisSet>& b3,
 				 const Ref<GaussianBasisSet>& b4,
-				 size_t storage, tbinteval int2etype):
-    TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype)
+				 size_t storage, TwoBodyOperSet::type int2etype):
+    TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype),
+    descr_(TwoBodyOperSetDescr::instance(int2etype))
 {
   // Which evaluator to use
   switch (int2etype_) {
-  case erieval:
+  case TwoBodyOperSet::ERI:
     int2ecints_ = new EriCints(integral,b1,b2,b3,b4,storage);
-    num_tbint_types_ = 1;
     break;
-  case grteval:
+  case TwoBodyOperSet::R12:
     int2ecints_ = new GRTCints(integral,b1,b2,b3,b4,storage);
-    num_tbint_types_ = 4;
     break;
   default:
     ExEnv::errn() << scprintf("Tried to construct a two-electron integral evaluator of unimplemented or unknown type") << endl;
     fail();
   }
 
-  buffer_ = int2ecints_->buffer(TwoBodyInt::eri);
+  buffer_ = int2ecints_->buffer(TwoBodyOper::eri);
   integral_->adjust_storage(int2ecints_->storage_used());
 }
 
@@ -97,28 +96,6 @@ TwoBodyIntCints::set_integral_storage(size_t storage)
   int2ecints_->init_storage(storage);
 }
 
-unsigned int
-TwoBodyIntCints::inttype(TwoBodyInt::tbint_type type) const
-{
-    switch(int2etype_) {
-    case erieval:
-	return TwoBodyIntDescrERI::intSet(type);
-    case grteval:
-	return TwoBodyIntDescrR12::intSet(type);
-    }
-}
-
-TwoBodyInt::tbint_type
-TwoBodyIntCints::inttype(unsigned int type) const
-{
-    switch(int2etype_) {
-    case erieval:
-	return TwoBodyIntDescrERI::intSet(type);
-    case grteval:
-	return TwoBodyIntDescrR12::intSet(type);
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyDerivIntCints::TwoBodyDerivIntCints(Integral*integral,
@@ -126,7 +103,7 @@ TwoBodyDerivIntCints::TwoBodyDerivIntCints(Integral*integral,
 					   const Ref<GaussianBasisSet>& b2,
 					   const Ref<GaussianBasisSet>& b3,
 					   const Ref<GaussianBasisSet>& b4,
-					   size_t storage, tbinteval int2etype):
+					   size_t storage, TwoBodyOperSet::type int2etype):
   TwoBodyDerivInt(integral,b1,b2,b3,b4)
 {
   // Which evaluator to use

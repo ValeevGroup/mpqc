@@ -1,4 +1,5 @@
 libSCmbptr12.LIBSUF
+#include <chemistry/qc/df/LIBS.h>
 #include <chemistry/qc/wfn/LIBS.h>
 #include <chemistry/qc/scf/LIBS.h>
 #include <chemistry/qc/intv3/LIBS.h>

@@ -88,7 +88,7 @@ namespace sc {
     void set_redundant(int i) { redundant_ = i; }
     unsigned int num_tbint_types() const;
     unsigned int inttype(tbint_type t) const;
-    TwoBodyInt::tbint_type inttype(unsigned int t) const;
+    TwoBodyOper::type inttype(unsigned int t) const;
     void remove_redundant(int,int,int,int);
 };
 

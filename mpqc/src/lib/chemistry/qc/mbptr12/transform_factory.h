@@ -70,7 +70,6 @@ namespace sc {
   };
 
 class TwoBodyMOIntsTransform;
-//class TwoBodyIntDescr;
 
   /** MOIntsTransformFactory is a factory that produces MOIntsTransform objects. */
 

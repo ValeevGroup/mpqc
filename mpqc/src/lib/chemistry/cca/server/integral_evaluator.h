@@ -446,7 +446,7 @@ namespace MpqcCca {
     }
 
     double* get_buffer ( QC_IntegralDescr desc, 
-                         sc::TwoBodyInt::tbint_type tbt )
+                         sc::TwoBodyOper::type tbt )
     {
       std::string type = desc.get_type();
       int deriv_lvl = desc.get_deriv_lvl();
@@ -464,7 +464,7 @@ namespace MpqcCca {
     }
 
     sidl::array<double> get_array ( QC_IntegralDescr desc,
-                                    sc::TwoBodyInt::tbint_type tbt,
+                                    sc::TwoBodyOper::type tbt,
                                     int buffer_size )
     {
       std::string type = desc.get_type();

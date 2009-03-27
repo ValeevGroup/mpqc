@@ -155,10 +155,11 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
   int tbtype_anti2 = -1;
-  const unsigned int ntypes = tbints[0]->num_tbint_types();
+  const Ref<TwoBodyOperSetDescr>& descr = tbints[0]->descr();
+  const unsigned int ntypes = descr->size();
   for(unsigned int t=0; t<ntypes; ++t) {
-      const TwoBodyInt::tbint_type ttype = tbints[0]->inttype(t);
-      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      const TwoBodyOper::type ttype = descr->opertype(t);
+      Ref<TwoBodyOperDescr> intdescr = TwoBodyOper::descr(ttype);
       if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
   }
 

@@ -833,7 +833,7 @@ void print_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types,
   const double *buffer[num_te_types];
   for (int te_type = 0; te_type < num_te_types; te_type++) {
     buffer[te_type]
-        = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type> (te_type));
+        = tblibint2->buffer(static_cast<TwoBodyOper::type> (te_type));
   }
   char teout_filename[] = "teout0.dat";
   FILE *teout[num_te_types];
@@ -941,7 +941,7 @@ void print_all_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types,
   const double *buffer[num_te_types];
   for (int te_type = 0; te_type < num_te_types; te_type++) {
     buffer[te_type]
-        = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type> (te_type));
+        = tblibint2->buffer(static_cast<TwoBodyOper::type> (te_type));
   }
   char teout_filename[] = "teout0.dat";
   FILE *teout[num_te_types];
@@ -1000,7 +1000,7 @@ void test_r12_2_integrals(Ref<TwoBodyInt>& tblibint2,
                           Ref<OneBodyInt>& qm_libint2, unsigned int te_type) {
   Ref<GaussianBasisSet> basis = tblibint2->basis();
   const double *tbbuf;
-  tbbuf = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type> (te_type));
+  tbbuf = tblibint2->buffer(static_cast<TwoBodyOper::type> (te_type));
 
   // Compute dipole and quadrupole (xx, yy, zz) matrices
   RefSCDimension dim = basis->basisdim();

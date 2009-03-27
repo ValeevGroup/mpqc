@@ -83,13 +83,20 @@ R12IntsAcc_MemoryGrp::save_data_state(StateOut& so)
 }
 
 Ref<R12IntsAcc>
-R12IntsAcc_MemoryGrp::clone()
+R12IntsAcc_MemoryGrp::clone(const R12IntsAccDimensions& dim)
 {
   Ref<MemoryGrp> newmem = mem_->clone();
   newmem->set_localsize(mem_->localsize());
-  Ref<R12IntsAcc> result = new R12IntsAcc_MemoryGrp(newmem, num_te_types(),
-                                                    ni(), nj(), nx(), ny(),
-                                                    blksize_memgrp_);
+  Ref<R12IntsAcc> result;
+  if (dim == R12IntsAccDimensions::default_dim())
+    result = new R12IntsAcc_MemoryGrp(newmem, num_te_types(),
+                                      ni(), nj(), nx(), ny(),
+                                      blksize_memgrp_);
+  else
+    result = new R12IntsAcc_MemoryGrp(newmem, dim.num_te_types(),
+                                      dim.n1(), dim.n2(), dim.n3(), dim.n4(),
+                                      dim.n3() * dim.n4() * sizeof(double));
+
   return result;
 }
 

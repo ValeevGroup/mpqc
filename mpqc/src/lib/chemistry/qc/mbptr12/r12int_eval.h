@@ -238,7 +238,7 @@ class R12IntEval : virtual public SavableState {
    */
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
     void compute_tbint_tensor(RefSCMatrix& T,
-                              TwoBodyInt::tbint_type tbint_type,
+                              TwoBodyOper::type tbint_type,
                               const Ref<OrbitalSpace>& space1,
                               const Ref<OrbitalSpace>& space2,
                               const Ref<OrbitalSpace>& space3,
@@ -267,8 +267,8 @@ class R12IntEval : virtual public SavableState {
             bool CorrFactorInInt>
     void contract_tbint_tensor(
            RefSCMatrix& T,
-           TwoBodyInt::tbint_type tbint_type_bra,
-           TwoBodyInt::tbint_type tbint_type_ket,
+           TwoBodyOper::type tbint_type_bra,
+           TwoBodyOper::type tbint_type_ket,
            const Ref<OrbitalSpace>& space1_bra,
            const Ref<OrbitalSpace>& space2_bra,
            const Ref<OrbitalSpace>& space1_intb,

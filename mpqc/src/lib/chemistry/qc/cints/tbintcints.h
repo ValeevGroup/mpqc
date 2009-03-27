@@ -33,34 +33,26 @@
 
 namespace sc {
 
-// Types of available 2-electron integral evaluators
-typedef enum {erieval = 0, grteval = 1, greval = 2} tbinteval;
-
 /** This implements electron repulsion integrals in the IntCints library. */
 class TwoBodyIntCints : public TwoBodyInt {
 
-    unsigned int num_tbint_types_;
+    TwoBodyOperSet::type int2etype_;
+    Ref<TwoBodyOperSetDescr> descr_;
 
   protected:
-    tbinteval int2etype_;
     Ref<Int2eCints> int2ecints_;
-  
+
   public:
     TwoBodyIntCints(Integral*integral,
                  const Ref<GaussianBasisSet>&b1,
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
-                 size_t storage, tbinteval int2etype);
+                 size_t storage, TwoBodyOperSet::type int2etype);
     ~TwoBodyIntCints();
 
-    unsigned int num_tbint_types() const {
-      return num_tbint_types_;
-    }
-    /// Implementation of TwoBodyIntTypeDescr::inttype()
-    unsigned int inttype(tbint_type t) const;
-    /// Implementation of TwoBodyIntTypeDescr::inttype()
-    TwoBodyInt::tbint_type inttype(unsigned int t) const;
+    TwoBodyOperSet::type type() const { return int2etype_; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -68,8 +60,8 @@ class TwoBodyIntCints : public TwoBodyInt {
     size_t used_storage() const { return int2ecints_->storage_used(); }
     void set_integral_storage(size_t storage);
 
-    const double *buffer(tbint_type te_type) const {
-      return int2ecints_->buffer( inttype(te_type) );
+    const double *buffer(TwoBodyOper::type te_type) const {
+      return int2ecints_->buffer( descr_->opertype(te_type) );
     }
 };
 
@@ -85,7 +77,7 @@ class TwoBodyDerivIntCints : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b2,
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
-                      size_t storage, tbinteval int2etype);
+                      size_t storage, TwoBodyOperSet::type int2etype);
     ~TwoBodyDerivIntCints();
 
     int log2_shell_bound(int,int,int,int);

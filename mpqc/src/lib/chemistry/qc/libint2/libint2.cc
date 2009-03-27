@@ -201,7 +201,7 @@ IntegralLibint2::new_cartesian_iter(int l)
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-  
+
   return new iter(l);
 }
 
@@ -215,7 +215,7 @@ IntegralLibint2::new_redundant_cartesian_iter(int l)
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-  
+
   return new iter(l);
 }
 
@@ -229,7 +229,7 @@ IntegralLibint2::new_redundant_cartesian_sub_iter(int l)
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
-  
+
   return new iter(l);
 }
 
@@ -380,53 +380,97 @@ IntegralLibint2::electron_repulsion()
 {
 #if LIBINT2_SUPPORT_ERI
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
-  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval, params);
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::ERI, params);
 #else
   throw InputError("IntegralLibint2::electron_repulsion() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
 }
 
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::electron_repulsion3()
+{
+#if LIBINT2_SUPPORT_ERI
+  Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::ERI, params);
+#else
+  throw InputError("IntegralLibint2::electron_repulsion3() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::electron_repulsion2()
+{
+#if LIBINT2_SUPPORT_ERI
+  Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::ERI, params);
+#else
+  throw InputError("IntegralLibint2::electron_repulsion2() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+#endif
+}
+
 Ref<TwoBodyInt>
-IntegralLibint2::g12(const Ref<IntParamsG12>& params)
+IntegralLibint2::g12_4(const Ref<IntParamsG12>& params)
 {
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12eval, static_cast<IntParams*>(params.pointer()));
+                               TwoBodyOperSet::G12, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12() -- libint2 library included in this executable does not support computation of G12 integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12_4() -- libint2 library included in this executable does not support computation of G12 integrals",__FILE__,__LINE__);
 #endif
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::g12nc(const Ref<IntParamsG12>& params)
+IntegralLibint2::g12nc_4(const Ref<IntParamsG12>& params)
 {
 #if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12nceval, static_cast<IntParams*>(params.pointer()));
+                               TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12nc_4() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::g12nc_3(const Ref<IntParamsG12>& params)
+{
+#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_,
+                                          TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
+#else
+  throw InputError("IntegralLibint2::g12nc_3() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::g12nc_2(const Ref<IntParamsG12>& params)
+{
+#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_,
+                                        TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
+#else
+  throw InputError("IntegralLibint2::g12nc_2() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
 #endif
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::g12dkh(const Ref<IntParamsG12>& params)
+IntegralLibint2::g12dkh_4(const Ref<IntParamsG12>& params)
 {
 #if LIBINT2_SUPPORT_G12DKH
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12dkheval, static_cast<IntParams*>(params.pointer()));
+                               TwoBodyOperSet::G12DKH, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12dkh() -- libint2 library included in this executable does not support computation of G12DKH integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12dkh_4() -- libint2 library included in this executable does not support computation of G12DKH integrals",__FILE__,__LINE__);
 #endif
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::geng12(const Ref<IntParamsGenG12>& params)
+IntegralLibint2::geng12_4(const Ref<IntParamsGenG12>& params)
 {
 #if LIBINT2_SUPPORT_GENG12
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               geng12eval, static_cast<IntParams*>(params.pointer()));
+                               TwoBodyOperSet::GenG12, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::geng12() -- libint2 library included in this executable does not support computation of GenG12 integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::geng12_4() -- libint2 library included in this executable does not support computation of GenG12 integrals",__FILE__,__LINE__);
 #endif
 }
 

@@ -217,17 +217,11 @@ void R12IntEval::compute_B_DKH_() {
     Ref<G12NCCorrelationFactor> g12nccorrfact; g12nccorrfact << corrfactor();
     if (g12nccorrfact.null() && g12corrfact.null())
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with Gaussian (or Gaussian-expanded) correlation factors",__FILE__,__LINE__);
-    Ref<TwoBodyIntDescr> descr_g12dkh;
-    if (g12corrfact.nonnull())
-      descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(),
-                                               new IntParamsG12(g12corrfact->function(0),
-                                                                g12corrfact->function(0))
-      );
-    else
-      descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(),
-                                               new IntParamsG12(g12nccorrfact->function(0),
-                                                                g12nccorrfact->function(0))
-      );
+    Ref<IntParamsG12> params = g12corrfact.nonnull() ? new IntParamsG12(g12corrfact->function(0),
+                                                                      g12corrfact->function(0)) :
+                                                     new IntParamsG12(g12nccorrfact->function(0),
+                                                                      g12nccorrfact->function(0));
+    Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(), params);
     const std::string descr_key = r12info()->moints_runtime()->descr_key(descr_g12dkh);
     const std::string tform_key = ParsedTwoBodyIntKey::key(xspace1->id(),xspace2->id(),
                                                            xspace1->id(),xspace2->id(),
@@ -238,7 +232,7 @@ void R12IntEval::compute_B_DKH_() {
     // M2H + M3H
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
                                                               B_DKH,
-                                                              TwoBodyInt::g12p4g12_m_g12t1g12t1,
+                                                              TwoBodyOper::g12p4g12_m_g12t1g12t1,
                                                               xspace1, xspace1,
                                                               xspace2, xspace2,
                                                               antisymmetrize,

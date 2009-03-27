@@ -45,6 +45,7 @@ namespace sc {
   class TwoBodyMOIntsTransform_ijR: virtual public SavableState {
     public:
       typedef MOIntsTransformFactory::StorageType StorageType;
+      typedef IntegralSetDescr<TwoBodyThreeCenterInt> TwoBodyThreeCenterIntDescr;
 
       TwoBodyMOIntsTransform_ijR(StateIn&);
       TwoBodyMOIntsTransform_ijR(const std::string& name,

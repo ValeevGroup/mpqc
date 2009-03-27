@@ -40,6 +40,19 @@
 using namespace std;
 using namespace sc;
 
+R12IntsAccDimensions R12IntsAccDimensions::default_dim_(-1,-1,-1,-1,-1);
+namespace sc {
+  bool operator==(const R12IntsAccDimensions& A,
+                  const R12IntsAccDimensions& B) {
+    if (&A == &B) return true;
+    return A.num_te_types() == B.num_te_types() &&
+    A.n1() == B.n1() &&
+    A.n2() == B.n2() &&
+    A.n3() == B.n3() &&
+    A.n4() == B.n4();
+  }
+}
+
 /*--------------------------------
   R12IntsAcc
  --------------------------------*/

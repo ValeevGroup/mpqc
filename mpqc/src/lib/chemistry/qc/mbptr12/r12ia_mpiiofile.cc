@@ -215,8 +215,8 @@ R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
 }
 
 Ref<R12IntsAcc>
-R12IntsAcc_MPIIOFile_Ind::clone() {
-  return R12IntsAcc_MPIIOFile::clone<R12IntsAcc_MPIIOFile_Ind>();
+R12IntsAcc_MPIIOFile_Ind::clone(const R12IntsAccDimensions& dim) {
+  return R12IntsAcc_MPIIOFile::clone<R12IntsAcc_MPIIOFile_Ind>(dim);
 }
 
 #if 0

@@ -62,7 +62,8 @@ CXXSRCS = mbptr12.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
   singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
   moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
-  orbitalspace_runtime.cc  transform_ijR.cc
+  orbitalspace_runtime.cc  transform_ijR.cc \
+  transform_ixjy_df.cc
   
 INC = r12ia_memgrp.h \
 ansatz.h                        r12ia_mpiiofile.h \

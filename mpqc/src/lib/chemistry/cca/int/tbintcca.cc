@@ -56,7 +56,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     const Ref<GaussianBasisSet> &bs4,
 			     IntegralEvaluatorFactoryInterface fac,
 			     CompositeDescrInterface cdesc ):
-  TwoBodyInt(integral,bs1,bs2,bs3,bs4), 
+  TwoBodyInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
   eval_factory_(fac), cdesc_(cdesc)
 {
@@ -70,13 +70,13 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   tbtype_list_ = new tbint_type[ndesc_];
 
   DescrInterface desc = Eri4Descr::_create();
-  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::eri;
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyOper::eri;
   desc = R12Descr::_create();
-  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12;
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyOper::r12;
   desc = R12T1Descr::_create();
-  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t1;
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyOper::r12t1;
   desc = R12T2Descr::_create();
-  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyInt::r12t2;
+  dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyOper::r12t2;
 
   int_bound_min_ = SCHAR_MIN;
   tol_ = pow(2.0,double(int_bound_min_));
@@ -86,7 +86,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
     * bs2_->max_ncartesian_in_shell()
     * bs3_->max_ncartesian_in_shell()
     * bs4_->max_ncartesian_in_shell();
-    
+
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasisMolecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
@@ -109,7 +109,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   else
     cca_bs4_ = cca_bs3_;
 
-  eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
+  eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_,
 					cca_bs3_, cca_bs4_ );
   for( int i=0; i<ndesc_; ++i ) {
     DescrInterface desc = cdesc_.get_descr(i);
@@ -148,7 +148,7 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
   GaussianShell* s2 = &( bs2_->shell(j) );
   GaussianShell* s3 = &( bs3_->shell(k) );
   GaussianShell* s4 = &( bs4_->shell(l) );
-  nfunc = s1->nfunction() * s2->nfunction() * 
+  nfunc = s1->nfunction() * s2->nfunction() *
           s3->nfunction() * s4->nfunction();
 
   for( int ii=0; ii<ndesc_; ++ii ) {
@@ -156,7 +156,7 @@ TwoBodyIntCCA::compute_shell( int i, int j, int k, int l )
     buffer_ = tbtype_to_buf_[ dtype_to_tbtype_[ types_[ii] ] ];
 
     eval_.compute( i, j, k, l );
-    
+
     if( !redundant_ )
       remove_redundant( i, j, k, l );
   }
@@ -188,7 +188,7 @@ TwoBodyIntCCA::log2_shell_bound( int i, int j, int k, int l )
     // nasty check for rounding effects
     if( upper > int_bound_min_ ) {
       int lower = upper - 1;
-      double lower_dbl = static_cast<double>( lower ); 
+      double lower_dbl = static_cast<double>( lower );
       if( abs(log_dbl - lower_dbl) < 0.01 )
         upper = lower;
     }
@@ -205,15 +205,15 @@ TwoBodyIntCCA::num_tbint_types() const
   return ndesc_;
 }
 
-unsigned int 
+unsigned int
 TwoBodyIntCCA::inttype(tbint_type t) const
 {
   for( int i=0; i<ndesc_; ++i )
     if( t == tbtype_list_[i] )
-      return i;  
+      return i;
 }
 
-TwoBodyInt::tbint_type 
+TwoBodyOper::type
 TwoBodyIntCCA::inttype(unsigned int t) const
 {
   return tbtype_list_[t];
@@ -222,7 +222,7 @@ TwoBodyIntCCA::inttype(unsigned int t) const
 ////////////////////////////////////////////////////////////////////////////
 // TwoBodyDerivIntCCA
 
-TwoBodyDerivIntCCA::TwoBodyDerivIntCCA( 
+TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
     Integral* integral,
     const Ref<GaussianBasisSet> &bs1,
     const Ref<GaussianBasisSet> &bs2,
@@ -252,7 +252,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
   for( int i=0; i<n_descr; ++i ) {
     int temp = cdesc_.get_descr(i).get_deriv_lvl();
     if( temp > max_deriv_lvl_ )
-      max_deriv_lvl_ = temp; 
+      max_deriv_lvl_ = temp;
   }
 
   int scratchsize = bs1_->max_ncartesian_in_shell()
@@ -264,7 +264,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
   else if( max_deriv_lvl_ != 0 )
     throw FeatureNotImplemented("only first order derivatives are available",
                                 __FILE__,__LINE__);
-    
+
   // create cca basis sets
   cca_bs1_ = MPQC::GaussianBasisMolecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->label() );
@@ -290,12 +290,12 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
   // set factory config
 /*
   sidl::array<string> sidl_factories = sidl::array<string>::create1d(n_descr);
-  for( int i=0; i<n_descr; ++i ) 
+  for( int i=0; i<n_descr; ++i )
     sidl_factories.set( i, factories_[i] );
   eval_factory_.set_source_factories( sidl_factories );
 */
 
-  eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_, 
+  eval_ = eval_factory_.get_evaluator4( cdesc_, cca_bs1_, cca_bs2_,
 					cca_bs3_, cca_bs4_ );
 
   for( int i=0; i<ndesc_; ++i ) {
@@ -314,7 +314,7 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(
 
 }
 
-TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA() 
+TwoBodyDerivIntCCA::~TwoBodyDerivIntCCA()
 {
   //delete buff_;
 }
@@ -393,7 +393,7 @@ TwoBodyDerivIntCCA::num_tbint_types() const
 }
 
 void
-TwoBodyDerivIntCCA::copy_buffer(int n) 
+TwoBodyDerivIntCCA::copy_buffer(int n)
 {
   for( int i=0; i<n; ++i)
     buff_[i] = sidl_buffer_.get(i);
@@ -405,7 +405,7 @@ TwoBodyDerivIntCCA::copy_buffer(int n)
 // Code for removing redundant integrals
 // copied liberally from cints
 
-void get_nonredundant_ints_( double *source, double *target, 
+void get_nonredundant_ints_( double *source, double *target,
 			     int e13e24, int e12, int e34,
 			     GaussianShell* int_shell1,
 			     GaussianShell* int_shell2,
@@ -431,7 +431,7 @@ void get_nonredundant_ints_( double *source, double *target,
     for (j=0; j<=jmax; j++) {
       int kmax = e13e24 ? i : nbf3-1;
       for (k=0; k<=kmax; k++) {
-        int lmax = e34 ? ( (e13e24&&(i==k)) ? j : k) : 
+        int lmax = e34 ? ( (e13e24&&(i==k)) ? j : k) :
                          ( (e13e24&&(i==k)) ? j : nbf4-1);
         for (l=0; l<=lmax; l++) {
           *(nonredundant_ptr++) = redundant_ptr[l];
@@ -479,7 +479,7 @@ TwoBodyIntCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
 
 /////////////////////////////////////////////////////////////////////////////
 // Code for removing redundant integrals
-// copied liberally from intV3 
+// copied liberally from intV3
 
 static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)
@@ -501,10 +501,10 @@ nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
 {
   int nonredundant_index;
   int i,j,k,l;
-  
+
   double *redundant_ptr = &buffer[*red_off];
   double *nonredundant_ptr = &buffer[*nonred_off];
-  
+
   nonredundant_index = 0;
   int n34 = n3*n4;
   for (i=0; i<n1; i++) {
@@ -533,7 +533,7 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
 
   int bs1_shell_offset = 0;
   int bs2_shell_offset, bs3_shell_offset, bs4_shell_offset;
-  
+
   int shell_offset1 = shell_offset(bs1_,0);
   int shell_offset2, shell_offset3;
   if (bs2_ == bs1_) {
@@ -544,7 +544,7 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
     shell_offset2 = shell_offset(bs2_,shell_offset1);
     bs2_shell_offset = shell_offset1;
   }
-  
+
   if (bs3_ == bs1_) {
     shell_offset3 = shell_offset2;
     bs3_shell_offset = bs1_shell_offset;
@@ -557,7 +557,7 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
     shell_offset3 = shell_offset(bs3_,shell_offset2);
     bs3_shell_offset = shell_offset2;
   }
-  
+
   if (bs4_ == bs1_) {
     bs4_shell_offset = bs1_shell_offset;
   }
@@ -570,7 +570,7 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
   else {
     bs4_shell_offset = shell_offset3;
   }
-  
+
   int int_unit2 = 0;
   int int_unit4 = 0;
   int osh1 = is + bs1_shell_offset;
@@ -579,14 +579,14 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
   int osh3 = ks + bs3_shell_offset;
   int osh4;
   if (!int_unit4) osh4 = ls + bs4_shell_offset;
-  
+
   int sh1 = is;
   int sh2;
   if (!int_unit2) sh2 = js;
   int sh3 = ks;
   int sh4;
   if (!int_unit4) sh4 = ls;
-  
+
   GaussianShell* int_unit_shell = 0;
   GaussianShell* int_shell1 = &bs1_->shell(sh1);
   GaussianShell* int_shell2;
@@ -596,7 +596,7 @@ TwoBodyIntCCA::remove_redundant(int is, int js, int ks, int ls) {
   GaussianShell* int_shell4;
   if (!int_unit4) int_shell4 = &bs4_->shell(sh4);
   else int_shell4 = int_unit_shell;
-  
+
   int redundant_offset = 0;
   int nonredundant_offset = 0;
 

@@ -1,7 +1,7 @@
 //
-// inttypedescr.cc
+// inttraits.cc
 //
-// Copyright (C) 2007 Edward Valeev
+// Copyright (C) 2009 Edward Valeev
 //
 // Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
@@ -29,27 +29,15 @@
 #pragma implementation
 #endif
 
-#include <util/class/scexception.h>
-#include <chemistry/qc/basis/inttypedescr.h>
+// includes go here
+#include <chemistry/qc/basis/inttraits.h>
 
 using namespace sc;
+using namespace sc::detail;
 
-////
+/////////////////////////////////////////////////////////////////////////////
 
-TwoBodyIntTypeDescr::TwoBodyIntTypeDescr(unsigned int n, int perm_p1, int perm_p2, int perm_p12) :
-  n_(n), perm_p1_(perm_p1), perm_p2_(perm_p2), perm_p12_(perm_p12)
-{
-}
-
-unsigned int TwoBodyIntTypeDescr::num_particles() const { return 2; }
-unsigned int TwoBodyIntTypeDescr::num_functions(unsigned int i) const { return n_; }
-int TwoBodyIntTypeDescr::perm_symm(unsigned int i) const {
-  if (i == 1) return perm_p1_;
-  if (i == 2) return perm_p2_;
-  throw ProgrammingError("IntBodyIntTypeDescr::perm_symm(i) -- i must be 1 or 2",__FILE__,__LINE__);
-}
-int TwoBodyIntTypeDescr::perm_symm(unsigned int i, unsigned int j) const {
-  if ( (i == 1 && j == 2) ||
-       (i == 2 && j == 1) ) return perm_p12_;
-  throw ProgrammingError("IntBodyIntTypeDescr::perm_symm(i,j) -- i,j must be 1,2",__FILE__,__LINE__);
-}
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ-CONDENSED"
+// End:

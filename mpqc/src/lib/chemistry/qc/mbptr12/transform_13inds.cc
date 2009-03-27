@@ -125,10 +125,11 @@ TwoBodyMOIntsTransform_13Inds::run()
 
   //find the type of integrals which is antisymmetric with respect to permuting functions of each particle
   int tbtype_anti1 = -1;  int tbtype_anti2 = -1;
-  const unsigned int ntypes = tbint_->num_tbint_types();
+  const Ref<TwoBodyOperSetDescr>& descr = tbint_->descr();
+  const unsigned int ntypes = descr->size();
   for(unsigned int t=0; t<ntypes; ++t) {
-      const TwoBodyInt::tbint_type ttype = tbint_->inttype(t);
-      Ref<TwoBodyIntTypeDescr> intdescr = TwoBodyInt::inttypedescr(ttype);
+      const TwoBodyOper::type ttype = descr->opertype(t);
+      Ref<TwoBodyOperDescr> intdescr = TwoBodyOper::descr(ttype);
       if (intdescr->perm_symm(1) == -1) tbtype_anti1 = t;
       if (intdescr->perm_symm(2) == -1) tbtype_anti2 = t;
   }
@@ -148,7 +149,7 @@ TwoBodyMOIntsTransform_13Inds::run()
   const int num_te_types = tform_->num_te_types();
   const double **intbuf = new const double*[num_te_types];
   for(int te_type=0; te_type<num_te_types; te_type++)
-    intbuf[te_type] = tbint_->buffer( tbint_->inttype(te_type) );
+    intbuf[te_type] = tbint_->buffer( descr->opertype(te_type) );
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals

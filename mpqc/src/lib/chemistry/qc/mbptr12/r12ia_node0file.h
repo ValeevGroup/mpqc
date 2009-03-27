@@ -84,7 +84,7 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     ~R12IntsAcc_Node0File();
     void save_data_state(StateOut&);
 
-    Ref<R12IntsAcc> clone();
+    Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
 
     /// implementation of R12IntsAcc::activate()
     void activate();

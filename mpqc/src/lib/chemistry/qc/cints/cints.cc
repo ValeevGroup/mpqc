@@ -270,13 +270,13 @@ IntegralCints::hcore_deriv()
 Ref<TwoBodyInt>
 IntegralCints::electron_repulsion()
 {
-  return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval);
+  return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::ERI);
 }
 
 Ref<TwoBodyInt>
-IntegralCints::grt()
+IntegralCints::grt_4()
 {
-  return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
+  return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::R12);
 }
 
 void

@@ -182,9 +182,9 @@ stdbasis<GaussianBasisSet>: (
   basisdir = "./"
   basisfiles = [ "tmp" ]
   molecule = $:molecule
-  %name = "DZ (Dunning)"
+  name = "DZ (Dunning)"
   %name = "1s"
-  name = "STO-3G"
+  %name = "STO-3G"
   %puream = true
 )
 

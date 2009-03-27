@@ -47,7 +47,7 @@ namespace sc {
             bool CorrFactorInKet>
     void
     R12IntEval::compute_tbint_tensor(RefSCMatrix& T,
-                                     TwoBodyInt::tbint_type tbint_type,
+                                     TwoBodyOper::type tbint_type,
                                      const Ref<OrbitalSpace>& space1_bra,
                                      const Ref<OrbitalSpace>& space1_ket,
                                      const Ref<OrbitalSpace>& space2_bra,

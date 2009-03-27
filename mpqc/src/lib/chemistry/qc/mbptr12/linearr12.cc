@@ -47,7 +47,7 @@ namespace sc {
     CorrParamCompare<IntParamsG12>::equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B) {
       return (std::fabs(A.first-B.first) < epsilon && std::fabs(A.second-B.second) < epsilon);
     }
-    
+
     template <>
     bool
     CorrParamCompare<IntParamsGenG12>::equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B) {
@@ -57,20 +57,20 @@ namespace sc {
     }
 
     Ref<CorrelationFactor> ang_to_geng12(double alpha) {
-      
+
       const double halfalpha = alpha/2.0;
-      
+
       // feed to the constructor of CorrFactor
       typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
       typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
       ContractedGeminal geminal_ang;
-      
+
       // add ang
       geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
-      
+
       std::vector<ContractedGeminal> geminals;
       geminals.push_back(geminal_ang);
-      
+
       Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
       return cf;
     }
@@ -81,19 +81,19 @@ namespace sc {
     GeminalDescriptor::GeminalDescriptor(){
       type_ = "invalid";
     }
-    
+
     GeminalDescriptor::GeminalDescriptor(const std::string& type, const std::vector<std::string> &params){
       type_ = type;
       params_ = params;
       //compute_offsets();
     }
-    
+
     GeminalDescriptor::GeminalDescriptor(const GeminalDescriptor& source){
       type_ = source.type_;
       params_ = source.params_;
       //compute_offsets();
     }
-    
+
     //void GeminalDescriptor::compute_offsets() {
     //  if(type_!=std::string("invalid") && type_!=std::string("r12") && type_!=std::string("R12")){
     //    int nfunction=atoi(params_[0].c_str());
@@ -108,15 +108,15 @@ namespace sc {
     //    offsets_[nfunction]=cumul_ind;
     //  }
     //}
-    
+
     std::string GeminalDescriptor::type() const {
       return(type_);
     }
-    
+
     std::vector<std::string> GeminalDescriptor::params() const {
       return(params_);
     }
-    
+
     void GeminalDescriptor::print(std::ostream &o) {
       o << "GeminalDescriptor :" << std::endl;
       o << "type_ = " << type_ << std::endl;
@@ -125,22 +125,22 @@ namespace sc {
         o << params_[i] << std::endl;
       }
     }
-    
+
     bool invalid(const Ref<GeminalDescriptor>& gdesc){
       std::string type=gdesc->type();
       return((type==std::string("invalid")) ? true : false);
     }
-    
+
     bool R12(const Ref<GeminalDescriptor>& gdesc){
       std::string type=gdesc->type();
       return(((type==std::string("R12")) || (type==std::string("r12"))) ? true : false);
     }
-    
+
     bool STG(const Ref<GeminalDescriptor>& gdesc){
       std::string type=gdesc->type();
       return(((type==std::string("STG")) || (type==std::string("stg"))) ? true : false);
     }
-    
+
     bool G12(const Ref<GeminalDescriptor>& gdesc){
       std::string type=gdesc->type();
       if((type==std::string("G12")) || (type==std::string("g12"))){
@@ -150,7 +150,7 @@ namespace sc {
         return(false);
       }
     }
-    
+
     double single_slater_exponent(const Ref<GeminalDescriptor>& gdesc) {
       //gdesc->print();
       std::string type=gdesc->type();
@@ -165,29 +165,29 @@ namespace sc {
       int nprimitives=atoi(params[1].c_str());
       double exponent=atof(params[3].c_str());
       ExEnv::out0() << "exponent = " << exponent << std::endl;
-      
+
       return(exponent);
     }
-    
+
     /****************************
      * GeminalDescriptorFactory *
      ****************************/
-    GeminalDescriptorFactory::GeminalDescriptorFactory() 
+    GeminalDescriptorFactory::GeminalDescriptorFactory()
       : invalid_id_("invalid"),
         r12_id_("R12"),
         stg_id_("STG"),
         g12_id_("G12") {}
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::null_geminal(){
       std::vector<std::string> void_vector;
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(invalid_id_),void_vector)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::r12_geminal(){
       std::vector<std::string> void_vector;
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(r12_id_),void_vector)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::slater_geminal(double gamma){
       std::vector<std::string> param_vec(3);
       int nfunction=1;
@@ -201,7 +201,7 @@ namespace sc {
       inout >> param_vec[2];
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),param_vec)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
       int nfunction=gamma.size();
       std::vector<std::string> params(1+3*nfunction);
@@ -219,7 +219,7 @@ namespace sc {
       out << std::setprecision(16) << oned;
       oned_str=out.str();
       out.str("");
-      
+
       for(int i=0; i<nfunction; i++){
         params[i+1]=one_str;
         params[nfunction+1+2*i]=oned_str;
@@ -227,10 +227,10 @@ namespace sc {
         params[nfunction+2+2*i]=out.str();
         out.str("");
       }
-      
+
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),params)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::gaussian_geminal(double gamma){
       std::vector<std::string> param_vec(3);
       int nfunction=1;
@@ -242,9 +242,9 @@ namespace sc {
       inout >> param_vec[1];
       inout << std::setprecision(16) << gamma;
       inout >> param_vec[2];
-      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));      
+      return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::contracted_gaussian_geminal(const std::vector<double> &coeff,
                                                                                  const std::vector<double> &gamma){
       int nfunction=1;
@@ -263,7 +263,7 @@ namespace sc {
       }
       return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
     }
-    
+
     Ref<GeminalDescriptor> GeminalDescriptorFactory::gaussian_geminal(const LinearR12::G12CorrelationFactor::CorrelationParameters &corrparams){
       unsigned int nfunction=corrparams.size();
       std::vector<int> offsets(nfunction+1);
@@ -275,7 +275,7 @@ namespace sc {
         numofparams+=2*nprimitive;
       }
       offsets[nfunction]=numofparams;
-      
+
       std::vector<std::string> params(numofparams);
       std::stringstream inout;
       inout << nfunction;
@@ -366,49 +366,49 @@ CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
   return value(c,r12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_eri() const
 {
-  return TwoBodyInt::eri;
+  return TwoBodyOper::eri;
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_t1f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_t2f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t2f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_f12eri() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_f12f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_f12t1f12() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 CorrelationFactor::tbint_type_f12f12_anti() const
 {
   throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12f12_anti() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
@@ -455,22 +455,22 @@ R12CorrelationFactor::R12CorrelationFactor()
   geminaldescriptor_=gdesc_factory->r12_geminal();
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 R12CorrelationFactor::tbint_type_f12() const
 {
-  return (TwoBodyInt::r12);
+  return (TwoBodyOper::r12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 R12CorrelationFactor::tbint_type_t1f12() const
 {
-  return (TwoBodyInt::r12t1);
+  return (TwoBodyOper::r12t1);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 R12CorrelationFactor::tbint_type_t2f12() const
 {
-  return (TwoBodyInt::r12t2);
+  return (TwoBodyOper::r12t2);
 }
 
 Ref<TwoBodyIntDescr>
@@ -530,40 +530,40 @@ G12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
 }
 
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_f12() const
 {
-  return (TwoBodyInt::r12_0_g12);
+  return (TwoBodyOper::r12_0_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_t1f12() const
 {
-  return (TwoBodyInt::t1g12);
+  return (TwoBodyOper::t1g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_t2f12() const
 {
-  return (TwoBodyInt::t2g12);
+  return (TwoBodyOper::t2g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_f12eri() const
 {
-  return (TwoBodyInt::r12_m1_g12);
+  return (TwoBodyOper::r12_m1_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_f12f12() const
 {
-  return (TwoBodyInt::r12_0_g12);
+  return (TwoBodyOper::r12_0_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12CorrelationFactor::tbint_type_f12t1f12() const
 {
-  return (TwoBodyInt::g12t1g12);
+  return (TwoBodyOper::g12t1g12);
 }
 
 Ref<TwoBodyIntDescr>
@@ -656,34 +656,34 @@ G12NCCorrelationFactor::primitive(unsigned int c, unsigned int p) const
   return params_.at(c).at(p);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12NCCorrelationFactor::tbint_type_f12() const
 {
-  return (TwoBodyInt::r12_0_g12);
+  return (TwoBodyOper::r12_0_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12NCCorrelationFactor::tbint_type_f12eri() const
 {
-  return (TwoBodyInt::r12_m1_g12);
+  return (TwoBodyOper::r12_m1_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12NCCorrelationFactor::tbint_type_f12f12() const
 {
-  return (TwoBodyInt::r12_0_g12);
+  return (TwoBodyOper::r12_0_g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12NCCorrelationFactor::tbint_type_f12t1f12() const
 {
-  return (TwoBodyInt::g12t1g12);
+  return (TwoBodyOper::g12t1g12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 G12NCCorrelationFactor::tbint_type_f12f12_anti() const
 {
-  return (TwoBodyInt::anti_g12g12);
+  return (TwoBodyOper::anti_g12g12);
 }
 
 Ref<TwoBodyIntDescr>
@@ -779,28 +779,28 @@ GenG12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
   return params_.at(c).at(p);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 GenG12CorrelationFactor::tbint_type_f12() const
 {
-  return (TwoBodyInt::r12_0_gg12);
+  return (TwoBodyOper::r12_0_gg12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 GenG12CorrelationFactor::tbint_type_f12eri() const
 {
-  return (TwoBodyInt::r12_m1_gg12);
+  return (TwoBodyOper::r12_m1_gg12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 GenG12CorrelationFactor::tbint_type_f12f12() const
 {
-  return (TwoBodyInt::r12_0_gg12);
+  return (TwoBodyOper::r12_0_gg12);
 }
 
-TwoBodyInt::tbint_type
+TwoBodyOper::type
 GenG12CorrelationFactor::tbint_type_f12t1f12() const
 {
-  return (TwoBodyInt::gg12t1gg12);
+  return (TwoBodyOper::gg12t1gg12);
 }
 
 Ref<TwoBodyIntDescr>

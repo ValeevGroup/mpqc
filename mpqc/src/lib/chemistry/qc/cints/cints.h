@@ -62,10 +62,10 @@ class IntegralCints : public Integral {
     void save_data_state(StateOut&);
 
     Integral* clone();
-    
+
     /// implements Integral::cartesian_ordering()
     CartesianOrdering cartesian_ordering() const { return CCACartesianOrdering; }
-    
+
     size_t storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,
@@ -74,7 +74,7 @@ class IntegralCints : public Integral {
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,
 				const Ref<GaussianBasisSet> &b4 = 0);
-    
+
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);
     RedundantCartesianSubIter * new_redundant_cartesian_sub_iter(int);
@@ -83,7 +83,7 @@ class IntegralCints : public Integral {
                                                           int subl=-1);
     const SphericalTransform * spherical_transform(int l,
                                                    int inv=0, int subl=-1);
-    
+
     Ref<OneBodyInt> overlap();
 
     Ref<OneBodyInt> kinetic();
@@ -103,16 +103,16 @@ class IntegralCints : public Integral {
     Ref<OneBodyInt> quadrupole(const Ref<DipoleData>& =0);
 
     Ref<OneBodyDerivInt> overlap_deriv();
-                                     
+
     Ref<OneBodyDerivInt> kinetic_deriv();
-                                     
+
     Ref<OneBodyDerivInt> nuclear_deriv();
-                                     
+
     Ref<OneBodyDerivInt> hcore_deriv();
-                                     
+
     Ref<TwoBodyInt> electron_repulsion();
 
-    Ref<TwoBodyInt> grt();
+    Ref<TwoBodyInt> grt_4();
 
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,

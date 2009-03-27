@@ -109,7 +109,7 @@ namespace detail {
 }
 
 template <typename Derived>
-  Ref<R12IntsAcc> R12IntsAcc_MPIIOFile::clone() {
+  Ref<R12IntsAcc> R12IntsAcc_MPIIOFile::clone(const R12IntsAccDimensions& dim) {
 
     int id = 0;
     std::string clonename;
@@ -124,10 +124,17 @@ template <typename Derived>
       clonelist_ = ListOfClones::instance();
     }
     clonelist_->add(clonename, id);
-    Ref<Derived> result =
-        new Derived(clonename.c_str(), num_te_types(),
-                    ni(), nj(),
-                    nx(), ny());
+
+    Ref<Derived> result;
+    if (dim == R12IntsAccDimensions::default_dim())
+      result = new Derived(clonename.c_str(), num_te_types(),
+                           ni(), nj(),
+                           nx(), ny());
+    else
+      result = new Derived(clonename.c_str(), dim.num_te_types(),
+                           dim.n1(), dim.n2(),
+                           dim.n3(), dim.n4());
+
     result->set_clonelist(clonelist_);
     return result;
   }
@@ -150,7 +157,7 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
     ~R12IntsAcc_MPIIOFile_Ind();
     void save_data_state(StateOut&);
 
-    Ref<R12IntsAcc> clone();
+    Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
 
 #if 0
     /** Stores all pair block of integrals held in mem.

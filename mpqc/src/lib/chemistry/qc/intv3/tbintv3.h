@@ -37,6 +37,7 @@ namespace sc {
 class TwoBodyIntV3 : public TwoBodyInt {
   protected:
     Ref<Int2eV3> int2ev3_;
+    Ref<TwoBodyOperSetDescr> descr_;
 
   public:
     TwoBodyIntV3(Integral*integral,
@@ -47,9 +48,8 @@ class TwoBodyIntV3 : public TwoBodyInt {
                  size_t storage);
     ~TwoBodyIntV3();
 
-    unsigned int num_tbint_types() const { return 1; }
-    unsigned int inttype(tbint_type t) const;
-    TwoBodyInt::tbint_type inttype(unsigned int t) const;
+    TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -63,6 +63,7 @@ class TwoBodyIntV3 : public TwoBodyInt {
 class TwoBodyThreeCenterIntV3 : public TwoBodyThreeCenterInt {
   protected:
     Ref<Int2eV3> int2ev3_;
+    Ref<TwoBodyOperSetDescr> descr_;
 
   public:
     TwoBodyThreeCenterIntV3(Integral*integral,
@@ -71,6 +72,9 @@ class TwoBodyThreeCenterIntV3 : public TwoBodyThreeCenterInt {
                             const Ref<GaussianBasisSet>&b3,
                             size_t storage);
     ~TwoBodyThreeCenterIntV3();
+
+    TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
     int log2_shell_bound(int,int,int);
     void compute_shell(int,int,int);
@@ -84,6 +88,7 @@ class TwoBodyThreeCenterIntV3 : public TwoBodyThreeCenterInt {
 class TwoBodyTwoCenterIntV3 : public TwoBodyTwoCenterInt {
   protected:
     Ref<Int2eV3> int2ev3_;
+    Ref<TwoBodyOperSetDescr> descr_;
 
   public:
     TwoBodyTwoCenterIntV3(Integral*integral,
@@ -91,6 +96,9 @@ class TwoBodyTwoCenterIntV3 : public TwoBodyTwoCenterInt {
                           const Ref<GaussianBasisSet>&b2,
                           size_t storage);
     ~TwoBodyTwoCenterIntV3();
+
+    TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
     int log2_shell_bound(int,int);
     void compute_shell(int,int);

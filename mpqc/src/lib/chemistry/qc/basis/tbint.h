@@ -36,7 +36,7 @@
 #include <util/group/message.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
-#include <chemistry/qc/basis/inttypedescr.h>
+#include <chemistry/qc/basis/operator.h>
 
 namespace sc {
 
@@ -51,7 +51,7 @@ class TwoBodyInt : public RefCount {
 
   private:
     double *log2_to_double_;
- 
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -64,7 +64,7 @@ class TwoBodyInt : public RefCount {
     double *buffer_;
 
     int redundant_;
-    
+
     TwoBodyInt(Integral *integral,
                const Ref<GaussianBasisSet>&bs1,
                const Ref<GaussianBasisSet>&bs2,
@@ -72,10 +72,10 @@ class TwoBodyInt : public RefCount {
                const Ref<GaussianBasisSet>&bs4);
   public:
     virtual ~TwoBodyInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
-    
+
     /// Return the number of basis functions on center one.
     int nbasis1() const;
     /// Return the number of basis functions on center two.
@@ -87,7 +87,7 @@ class TwoBodyInt : public RefCount {
 
     /// Return the number of shells on center one.
     int nshell() const;
-    
+
     /// Return the number of shells on center one.
     int nshell1() const;
     /// Return the number of shells on center two.
@@ -109,38 +109,18 @@ class TwoBodyInt : public RefCount {
     /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
 
-  /** Types of two-body integrals that TwoBodyInt understands:
-      eri -- integral of \f$r_{12}^{-1}\f$,
-      r12 -- integral of \f$r_{12}\f$,
-      r12ti -- integral of \f$[r_{12},\hat{T}_i]\f$,
-      r12_0_g12 -- integral of \f$ g_{12}=\exp(-\gamma r_{12}^2) \f$,
-      r12_m1_g12 -- integral of \f$g_{12}/r_{12}\f$,
-      tig12 -- integral of \f$[\hat{T}_i,g_{12}]\f$,
-      g12t1g12 -- integral of \f$[g_{12},[\hat{T}_1,g_{12}]]\f$,
-      g12p4g12_m_g12t1g12t1 -- integral of
-         \f$[g_{12}, [\hat{p}^4_1 + \hat{p}^4_2, g_{12}]] - 2 [g_{12}, [\hat{T}_1 + \hat{T}_2, g_{12}]](\hat{T}_1 + \hat{T}_2)\f$,
-      anti_g12g12 -- integral of 
-       */
-    enum tbint_type { eri =0, r12 =1, r12t1 =2, r12t2 =3,
-                      r12_0_g12 =4, r12_m1_g12 =5, t1g12 =6, t2g12 =7,
-                      g12t1g12 =8, g12p4g12_m_g12t1g12t1 =9, anti_g12g12 =10,
-                      r12_0_gg12 =11, r12_m1_gg12 =12, gg12t1gg12 =13};
-    /// The max number of such types
-    static const int max_num_tbint_types = 14;
-    /// The number of types supported by this TwoBodyInt instance
-    virtual unsigned int num_tbint_types() const =0;
-    /// Maps integral type t to its index
-    virtual unsigned int inttype(tbint_type t) const =0;
-    /// Maps integral type index t to type
-    virtual TwoBodyInt::tbint_type inttype(unsigned int t) const =0;
-    /// Returns a descriptor for integral type t
-    static const Ref<TwoBodyIntTypeDescr>& inttypedescr(tbint_type t);
+    /** Returns the type of the operator set that this object computes.
+        this function is necessary to describe the computed integrals
+        (their number, symmetries, etc.) and/or to implement cloning. */
+    virtual TwoBodyOperSet::type type() const =0;
+    /// return the operator set descriptor
+    virtual const Ref<TwoBodyOperSetDescr>& descr() const =0;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than
 	one buffer:  The type arguments selects which buffer is returned.
 	If the requested type is not supported, then 0 is returned. */
-    virtual const double * buffer(tbint_type type = eri) const;
+    virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
 
     /** Given four shell indices, integrals will be computed and placed in
         the buffer.  The first two indices correspond to electron 1 and the
@@ -153,7 +133,7 @@ class TwoBodyInt : public RefCount {
         electron 2. This is used in the python interface where the
         return type is automatically converted to a map of numpy
         arrays. */
-    std::pair<std::map<tbint_type,const double*>,unsigned long[4]>
+    std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]>
     compute_shell_arrays(int,int,int,int);
 
     /** Return log base 2 of the maximum magnitude of any integral in a
@@ -201,17 +181,17 @@ class TwoBodyThreeCenterInt : public RefCount {
     double *buffer_;
 
     int redundant_;
-    
+
     TwoBodyThreeCenterInt(Integral *integral,
                           const Ref<GaussianBasisSet>&bs1,
                           const Ref<GaussianBasisSet>&bs2,
                           const Ref<GaussianBasisSet>&bs3);
   public:
     virtual ~TwoBodyThreeCenterInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
-    
+
     /// Return the number of basis functions on center one.
     int nbasis1() const;
     /// Return the number of basis functions on center two.
@@ -221,7 +201,7 @@ class TwoBodyThreeCenterInt : public RefCount {
 
     /// Return the number of shells on center one.
     int nshell() const;
-    
+
     /// Return the number of shells on center one.
     int nshell1() const;
     /// Return the number of shells on center two.
@@ -239,16 +219,18 @@ class TwoBodyThreeCenterInt : public RefCount {
     /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
 
-    /// Types of two-body integrals that this evaluator understands
-    typedef TwoBodyInt::tbint_type tbint_type;
-    /// The total number of such types
-    static const int max_num_tbint_types = TwoBodyInt::max_num_tbint_types;
+    /** Returns the type of the operator set that this object computes.
+        this function is necessary to describe the computed integrals
+        (their number, symmetries, etc.) and/or to implement cloning. */
+    virtual TwoBodyOperSet::type type() const =0;
+    /// return the operator set descriptor
+    virtual const Ref<TwoBodyOperSetDescr>& descr() const =0;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than
 	one buffer:  The type arguments selects which buffer is returned.
 	If the requested type is not supported, then 0 is returned. */
-    virtual const double * buffer(tbint_type type = TwoBodyInt::eri) const;
+    virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
 
     /** Given three shell indices, integrals will be computed and placed in
         the buffer.  The first two indices correspond to electron 1 and the
@@ -300,16 +282,16 @@ class TwoBodyTwoCenterInt : public RefCount {
     double *buffer_;
 
     int redundant_;
-    
+
     TwoBodyTwoCenterInt(Integral *integral,
                         const Ref<GaussianBasisSet>&bs1,
                         const Ref<GaussianBasisSet>&bs2);
   public:
     virtual ~TwoBodyTwoCenterInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
-    
+
     /// Return the number of basis functions on center one.
     int nbasis1() const;
     /// Return the number of basis functions on center two.
@@ -317,7 +299,7 @@ class TwoBodyTwoCenterInt : public RefCount {
 
     /// Return the number of shells on center one.
     int nshell() const;
-    
+
     /// Return the number of shells on center one.
     int nshell1() const;
     /// Return the number of shells on center two.
@@ -331,16 +313,18 @@ class TwoBodyTwoCenterInt : public RefCount {
     /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
 
-    /// Types of two-body integrals that this evaluator understands
-    typedef TwoBodyInt::tbint_type tbint_type;
-    /// The total number of such types
-    static const int max_num_tbint_types = TwoBodyInt::max_num_tbint_types;
+    /** Returns the type of the operator set that this object computes.
+        this function is necessary to describe the computed integrals
+        (their number, symmetries, etc.) and/or to implement cloning. */
+    virtual TwoBodyOperSet::type type() const =0;
+    /// return the operator set descriptor
+    virtual const Ref<TwoBodyOperSetDescr>& descr() const =0;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than
 	one buffer:  The type arguments selects which buffer is returned.
 	If the requested type is not supported, then 0 is returned. */
-    virtual const double * buffer(tbint_type type = TwoBodyInt::eri) const;
+    virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
 
     /** Given four shell indices, integrals will be computed and placed in
         the buffer.  The first index corresponds to electron 1 and the
@@ -379,13 +363,13 @@ class ShellQuartetIter {
     double scale_;
 
     int redund_;
-    
+
     int e12;
     int e34;
     int e13e24;
 
     int index;
-    
+
     int istart;
     int jstart;
     int kstart;
@@ -405,7 +389,7 @@ class ShellQuartetIter {
     int j_;
     int k_;
     int l_;
-    
+
   public:
     ShellQuartetIter();
     virtual ~ShellQuartetIter();
@@ -427,7 +411,7 @@ class ShellQuartetIter {
     int l() const { return l_; }
 
     int nint() const { return iend*jend*kend*lend; }
-    
+
     double val() const { return buf[index]*scale_; }
 };
 
@@ -435,20 +419,20 @@ class TwoBodyIntIter {
   protected:
     Ref<TwoBodyInt> tbi;
     ShellQuartetIter sqi;
-    
+
     int iend;
-    
+
     int icur;
     int jcur;
     int kcur;
     int lcur;
-    
+
   public:
     TwoBodyIntIter();
     TwoBodyIntIter(const Ref<TwoBodyInt>&);
 
     virtual ~TwoBodyIntIter();
-    
+
     virtual void start();
     virtual void next();
 
@@ -492,7 +476,7 @@ class TwoBodyDerivInt : public RefCount {
                     const Ref<GaussianBasisSet>&b4);
   public:
     virtual ~TwoBodyDerivInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
@@ -533,7 +517,7 @@ class TwoBodyDerivInt : public RefCount {
         by this member.
     */
     const double * buffer() const;
-    
+
     /** Given for shell indices, this will cause the integral buffer
         to be filled in. */
     virtual void compute_shell(int,int,int,int,DerivCenters&) = 0;
@@ -573,7 +557,7 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
                     const Ref<GaussianBasisSet>&b3);
   public:
     virtual ~TwoBodyThreeCenterDerivInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
@@ -608,7 +592,7 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
         by this member.
     */
     const double * buffer() const;
-    
+
     /** Given for shell indices, this will cause the integral buffer
         to be filled in. */
     virtual void compute_shell(int,int,int,DerivCenters&) = 0;
@@ -647,7 +631,7 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
                     const Ref<GaussianBasisSet>&b2);
   public:
     virtual ~TwoBodyTwoCenterDerivInt();
-  
+
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
@@ -676,7 +660,7 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
         by this member.
     */
     const double * buffer() const;
-    
+
     /** Given for shell indices, this will cause the integral buffer
         to be filled in. */
     virtual void compute_shell(int,int,DerivCenters&) = 0;

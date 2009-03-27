@@ -159,23 +159,23 @@ namespace sc {
         // These functions are used to map the logical type of integrals ([T1,F12], etc.) to concrete types as produced by TwoBodyInt
         //
 
-        /// Returns TwoBodyInt::tbint_type corresponding to electron repulsion integrals
-        virtual TwoBodyInt::tbint_type tbint_type_eri() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over correlation operator
-        virtual TwoBodyInt::tbint_type tbint_type_f12() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over [T1,f12]
-        virtual TwoBodyInt::tbint_type tbint_type_t1f12() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over [T2,f12]
-        virtual TwoBodyInt::tbint_type tbint_type_t2f12() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over f12/r12
-        virtual TwoBodyInt::tbint_type tbint_type_f12eri() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over f12^2
-        virtual TwoBodyInt::tbint_type tbint_type_f12f12() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over [f12,[T1,f12]]
-        virtual TwoBodyInt::tbint_type tbint_type_f12t1f12() const;
-        /// Returns TwoBodyInt::tbint_type corresponding to integrals over f12*f12' antisymmetrized
+        /// Returns TwoBodyOper::type corresponding to electron repulsion integrals
+        virtual TwoBodyOper::type tbint_type_eri() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over correlation operator
+        virtual TwoBodyOper::type tbint_type_f12() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over [T1,f12]
+        virtual TwoBodyOper::type tbint_type_t1f12() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over [T2,f12]
+        virtual TwoBodyOper::type tbint_type_t2f12() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over f12/r12
+        virtual TwoBodyOper::type tbint_type_f12eri() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over f12^2
+        virtual TwoBodyOper::type tbint_type_f12f12() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over [f12,[T1,f12]]
+        virtual TwoBodyOper::type tbint_type_f12t1f12() const;
+        /// Returns TwoBodyOper::type corresponding to integrals over f12*f12' antisymmetrized
         /// wrt exponents, i.e. f12*f12' (exp(f12')-exp(f12))/(exp(f12')+exp(f12))
-        virtual TwoBodyInt::tbint_type tbint_type_f12f12_anti() const;
+        virtual TwoBodyOper::type tbint_type_f12f12_anti() const;
 
         /// print the correlation factor
         void print(std::ostream& os = ExEnv::out0()) const;
@@ -213,11 +213,11 @@ namespace sc {
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 4; }
       /// Reimplementation of CorrelationFactor::tbint_type_f12()
-      TwoBodyInt::tbint_type tbint_type_f12() const;
+      TwoBodyOper::type tbint_type_f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_t1f12()
-      TwoBodyInt::tbint_type tbint_type_t1f12() const;
+      TwoBodyOper::type tbint_type_t1f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_t2f12()
-      TwoBodyInt::tbint_type tbint_type_t2f12() const;
+      TwoBodyOper::type tbint_type_t2f12() const;
       /// Overload of CorrelationFactor::tbintdescr(f)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
       /// Implementation of CorrelationFactor::value()
@@ -265,17 +265,17 @@ namespace sc {
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 6; }
       /// Reimplementation of CorrelationFactor::tbint_type_f12()
-      TwoBodyInt::tbint_type tbint_type_f12() const;
+      TwoBodyOper::type tbint_type_f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
-      TwoBodyInt::tbint_type tbint_type_f12eri() const;
+      TwoBodyOper::type tbint_type_f12eri() const;
       /// Reimplementation of CorrelationFactor::tbint_type_t1f12()
-      TwoBodyInt::tbint_type tbint_type_t1f12() const;
+      TwoBodyOper::type tbint_type_t1f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_t2f12()
-      TwoBodyInt::tbint_type tbint_type_t2f12() const;
+      TwoBodyOper::type tbint_type_t2f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
-      TwoBodyInt::tbint_type tbint_type_f12f12() const;
+      TwoBodyOper::type tbint_type_f12f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
-      TwoBodyInt::tbint_type tbint_type_f12t1f12() const;
+      TwoBodyOper::type tbint_type_f12t1f12() const;
       /// Overload of CorrelationFactor::tbintdescr(f)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
       /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
@@ -316,15 +316,15 @@ namespace sc {
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 6; }
       /// Reimplementation of CorrelationFactor::tbint_type_f12()
-      TwoBodyInt::tbint_type tbint_type_f12() const;
+      TwoBodyOper::type tbint_type_f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
-      TwoBodyInt::tbint_type tbint_type_f12eri() const;
+      TwoBodyOper::type tbint_type_f12eri() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
-      TwoBodyInt::tbint_type tbint_type_f12f12() const;
+      TwoBodyOper::type tbint_type_f12f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
-      TwoBodyInt::tbint_type tbint_type_f12t1f12() const;
+      TwoBodyOper::type tbint_type_f12t1f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12f12_anti()
-      TwoBodyInt::tbint_type tbint_type_f12f12_anti() const;
+      TwoBodyOper::type tbint_type_f12f12_anti() const;
       /// Overload of CorrelationFactor::tbintdescr(f)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
       /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
@@ -367,13 +367,13 @@ namespace sc {
       /// Implementation of CorrelationFactor::max_num_tbint_types()
       unsigned int max_num_tbint_types() const { return 4; }
       /// Reimplementation of CorrelationFactor::tbint_type_f12()
-      TwoBodyInt::tbint_type tbint_type_f12() const;
+      TwoBodyOper::type tbint_type_f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
-      TwoBodyInt::tbint_type tbint_type_f12eri() const;
+      TwoBodyOper::type tbint_type_f12eri() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
-      TwoBodyInt::tbint_type tbint_type_f12f12() const;
+      TwoBodyOper::type tbint_type_f12f12() const;
       /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
-      TwoBodyInt::tbint_type tbint_type_f12t1f12() const;
+      TwoBodyOper::type tbint_type_f12t1f12() const;
       /// Overload of CorrelationFactor::tbintdescr(f)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
       /// Overload of CorrelationFactor::tbintdescr(fbra,fket)

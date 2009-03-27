@@ -44,6 +44,29 @@ using namespace std;
 
 namespace sc {
 
+  struct R12IntsAccDimensions {
+    public:
+      static const R12IntsAccDimensions& default_dim() { return default_dim_; }
+      R12IntsAccDimensions(int num_te_types, int n1, int n2, int n3, int n4) :
+        num_te_types_(num_te_types), n1_(n1), n2_(n2), n3_(n3), n4_(n4)
+        {
+        }
+      int num_te_types() const { return num_te_types_; }
+      int n1() const { return n1_; }
+      int n2() const { return n2_; }
+      int n3() const { return n3_; }
+      int n4() const { return n4_; }
+    private:
+      static R12IntsAccDimensions default_dim_;
+      int num_te_types_;
+      int n1_;
+      int n2_;
+      int n3_;
+      int n4_;
+  };
+  bool operator==(const R12IntsAccDimensions& A,
+                  const R12IntsAccDimensions& B);
+
 /////////////////////////////////////////////////////////////////
 /**R12IntsAcc contains a set of one or more distributed dense 4-index arrays.
    These 4-index quantities are typically AO or MO
@@ -74,12 +97,13 @@ class R12IntsAcc: virtual public SavableState {
     virtual ~R12IntsAcc();
     void save_data_state(StateOut&);
 
-    /// how to clone
-    virtual Ref<R12IntsAcc> clone() =0;
+    /** how to clone. optional dim allows to obtain an object of the same type but different size.
+        the default is to obtain an object of the same size. */
+    virtual Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim()) =0;
 
     /// Types of two-body operators that R12IntsAcc understands
     typedef unsigned int tbint_type;
-    static const unsigned int max_num_te_types_ = TwoBodyInt::max_num_tbint_types;
+    static const unsigned int max_num_te_types_ = TwoBodyOper::max_ntypes;
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };

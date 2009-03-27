@@ -106,10 +106,13 @@ DensityFitting::compute()
 
   // compute cC_ first
   const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+  Ref<IntParams> p = new IntParamsVoid;
   Ref<TwoBodyMOIntsTransform_ijR> tform =
     new TwoBodyMOIntsTransform_ijR("",
                                    factory_,
-                                   new TwoBodyThreeCenterIntDescrERI(integral),
+                                   IntDescrFactory::make<3>(integral,
+                                       TwoBodyOperSet::ERI,
+                                       p),
                                    space1_,
                                    space2_,
                                    aoidxreg->value(fbasis_));
@@ -138,7 +141,7 @@ DensityFitting::compute()
           continue;
 
         const double* cC_jR_buf = cC_->retrieve_pair_block(0, i,
-                                                           TwoBodyInt::eri);
+                                                           TwoBodyOper::eri);
         cC_jR.assign(cC_jR_buf);
         cC.assign_subblock(cC_jR.t(), 0, nR - 1, i * nj, (i + 1) * nj - 1);
       }
@@ -218,16 +221,16 @@ DensityFitting::compute()
         if (i % nwriters != writers[me])
           continue;
 
-        const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyInt::eri);
+        const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyOper::eri);
 
         // solve the linear system
         sc::exp::lapack_linsolv_symmnondef(kernel_packed, n3, C_jR, cC_jR, n2);
 
         // write
-        C_->store_pair_block(0, i, TwoBodyInt::eri, C_jR);
+        C_->store_pair_block(0, i, TwoBodyOper::eri, C_jR);
 
         // release this block
-        cC_->release_pair_block(0, i, TwoBodyInt::eri);
+        cC_->release_pair_block(0, i, TwoBodyOper::eri);
 
       }
 

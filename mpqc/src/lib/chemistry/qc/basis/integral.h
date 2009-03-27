@@ -40,6 +40,7 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/intparams.h>
+#include <chemistry/qc/basis/operator.h>
 
 namespace sc {
 
@@ -53,6 +54,29 @@ class SphericalTransformIter;
 class SphericalTransform;
 class PointBag_double;
 class PetiteList;
+
+/// returns the type of the evaluator for evaluating this set of two-body integrals
+template <int NumCenters> struct TwoBodyIntEvalType;
+template <> struct TwoBodyIntEvalType<4> {
+  typedef TwoBodyInt value;
+};
+template <> struct TwoBodyIntEvalType<3> {
+  typedef TwoBodyThreeCenterInt value;
+};
+template <> struct TwoBodyIntEvalType<2> {
+  typedef TwoBodyTwoCenterInt value;
+};
+// forward declarations of auxiliary type functions
+namespace detail {
+  template <int NumCenters> struct ERIEvalCreator;
+  template <int NumCenters> struct R12EvalCreator;
+  template <int NumCenters> struct G12EvalCreator;
+  template <int NumCenters> struct G12NCEvalCreator;
+  template <int NumCenters> struct GenG12EvalCreator;
+  template <int NumCenters> struct G12DKHEvalCreator;
+  template <int NumCenters, TwoBodyOperSet::type Type> struct EvalCreator;
+};
+
 
 /** The Integral abstract class acts as a factory to provide objects that
 compute one and two electron integrals.  */
@@ -191,6 +215,9 @@ class Integral : public SavableState {
                            const Ref<GaussianBasisSet> &b3 = 0,
                            const Ref<GaussianBasisSet> &b4 = 0);
 
+    /// Return the MessageGrp used by the integrals objects.
+    Ref<MessageGrp> messagegrp() { return grp_; }
+
     // /////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
 
@@ -299,6 +326,74 @@ class Integral : public SavableState {
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > coulomb() {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::ERI>::value EvalCreator;
+      return EvalCreator::eval(this,new IntParamsVoid);
+    }
+
+    /** Return a 2-body evaluator that computes two-electron integrals specific
+        to linear R12 methods.  According to the convention in the
+        literature, "g" stands for electron repulsion integral, "r" for the
+        integral of r12 operator, and "t" for the commutator
+        integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrR12.
+        Implementation for this kind of TwoBodyInt is
+        optional.
+
+        NumCenters specifies the number of centers that carry basis functions.
+        Valid values are 4, 3, and 2.
+        */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > grt() {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12>::value EvalCreator;
+      return EvalCreator::eval(this,new IntParamsVoid);
+    }
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12(const Ref<IntParamsG12>& p) {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12>::value EvalCreator;
+      return EvalCreator::eval(this,p);
+    }
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+        This particular implementation does not produce commutator integrals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
+        Implementation for this kind of TwoBodyInt is optional. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12nc(const Ref<IntParamsG12>& p) {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12NC>::value EvalCreator;
+      return EvalCreator::eval(this,p);
+    }
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to relativistic explicitly correlated methods which use Gaussian geminals.
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12DKH.
+        Implementation for this kind of TwoBodyInt is optional. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12dkh(const Ref<IntParamsG12>& p) {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12DKH>::value EvalCreator;
+      return EvalCreator::eval(this,p);
+    }
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrGenG12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > geng12(const Ref<IntParamsGenG12>& p) {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::GenG12>::value EvalCreator;
+      return EvalCreator::eval(this,p);
+    }
+
+  private:
+    template <int NumCenters> friend struct sc::detail::ERIEvalCreator;
+    template <int NumCenters> friend struct sc::detail::R12EvalCreator;
+    template <int NumCenters> friend struct sc::detail::G12EvalCreator;
+    template <int NumCenters> friend struct sc::detail::G12NCEvalCreator;
+    template <int NumCenters> friend struct sc::detail::G12DKHEvalCreator;
+    template <int NumCenters> friend struct sc::detail::GenG12EvalCreator;
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to linear R12 methods.  According to the convention in the
         literature, "g" stands for electron repulsion integral, "r" for the
@@ -307,35 +402,181 @@ class Integral : public SavableState {
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrR12.
         Implementation for this kind of TwoBodyInt is
         optional. */
-    virtual Ref<TwoBodyInt> grt();
+    virtual Ref<TwoBodyInt> grt_4();
+    virtual Ref<TwoBodyThreeCenterInt> grt_3();
+    virtual Ref<TwoBodyTwoCenterInt> grt_2();
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12_4(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyThreeCenterInt> g12_3(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyTwoCenterInt> g12_2(const Ref<IntParamsG12>&);
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
 	    This particular implementation does not produce commutator integrals.
 	    This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12nc(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12nc_4(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyThreeCenterInt> g12nc_3(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyTwoCenterInt> g12nc_2(const Ref<IntParamsG12>&);
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to relativistic explicitly correlated methods which use Gaussian geminals.
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12DKH.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12dkh(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12dkh_4(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyThreeCenterInt> g12dkh_3(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyTwoCenterInt> g12dkh_2(const Ref<IntParamsG12>&);
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use general Gaussian geminals (i.e. exp(-a*(r1+r2)-g*r12)).
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrGenG12.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> geng12(const Ref<IntParamsGenG12>&);
+    virtual Ref<TwoBodyInt> geng12_4(const Ref<IntParamsGenG12>&);
 
-    /// Return the MessageGrp used by the integrals objects.
-    Ref<MessageGrp> messagegrp() { return grp_; }
+};
+
+// auxiliary type functions
+namespace detail {
+
+  template <> struct ERIEvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->electron_repulsion();
+    }
+  };
+  template <> struct ERIEvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->electron_repulsion3();
+    }
+  };
+  template <> struct ERIEvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->electron_repulsion2();
+    }
+  };
+
+  template <> struct R12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->grt_4();
+    }
+  };
+  template <> struct R12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->grt_3();
+    }
+  };
+  template <> struct R12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->grt_2();
+    }
+  };
+
+  template <> struct G12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12_4(params);
+    }
+  };
+  template <> struct G12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12_3(params);
+    }
+  };
+  template <> struct G12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12_2(params);
+    }
+  };
+
+  template <> struct G12NCEvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12nc_4(params);
+    }
+  };
+  template <> struct G12NCEvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12nc_3(params);
+    }
+  };
+  template <> struct G12NCEvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12nc_2(params);
+    }
+  };
+
+  template <> struct GenG12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsGenG12>& params) {
+      return factory->geng12_4(params);
+    }
+  };
+  template <> struct GenG12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsGenG12>& params) {
+      abort();
+      return 0;
+    }
+  };
+  template <> struct GenG12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsGenG12>& params) {
+      abort();
+      return 0;
+    }
+  };
+
+  template <> struct G12DKHEvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12dkh_4(params);
+    }
+  };
+  template <> struct G12DKHEvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12dkh_3(params);
+    }
+  };
+  template <> struct G12DKHEvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12dkh_2(params);
+    }
+  };
+
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::ERI> {
+    typedef ERIEvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12> {
+    typedef R12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12> {
+    typedef G12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
+    typedef G12NCEvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::GenG12> {
+    typedef GenG12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
+    typedef G12DKHEvalCreator<NumCenters> value;
+  };
+
 };
 
 }

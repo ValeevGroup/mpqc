@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 
   int storage = tkeyval->intvalue("storage");
   cout << "storage = " << storage << endl;
-  
+
   timer.enter("Integral");
   Ref<Integral> integral = new IntegralV3(basis);
   Ref<Integral> integralcints = new IntegralCints(basis);
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
   for ( rciter.start(); int(rciter) ; rciter.next() )
     cout << "nx = " << rciter.a() << " ny = " << rciter.b() << " nz = " << rciter.c() << endl;
 #endif
-  
+
 #if TEST_1E
   cout << "Testing Cints' overlap integrals against IntV3's" << endl;
   compare_1e_cints_vs_v3(overlapcints,overlapv3);
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
   cout << "Testing Cints' electric dipole integrals against IntV3's" << endl;
   compare_dipole1e_cints_vs_v3(edipolecints,edipolev3);
 #endif
-  
+
 #if TEST_2E
   compare_2e_permute(integralcints);
 
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
   cout << "Printing GRT integrals" << endl;
   print_grt_ints(grtcints);
 #endif
-  
+
   //  timer.print();
   return 0;
 }
@@ -285,7 +285,7 @@ compare_1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3)
 	    int am2 = basis->shell(sh2).am(gc2);
 	    CartesianIterCints citer2(am2);
 	    CartesianIterV3 iter2(am2);
-	    
+
 	    for ( citer2.start(); int(citer2) ; citer2.next() ) {
 	      int bf2cints = bf2_offset + citer2.bfn();
 	      int bf2v3;
@@ -297,7 +297,7 @@ compare_1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv3)
 	          break;
 	        }
 	      }
-	      
+
 	      double valuecints = buffercints[bf1cints*nbf2 + bf2cints];
 	      double valuev3 = bufferv3[bf1v3*nbf2 + bf2v3];
 	      if (fabs(valuecints-valuev3) > 1E-13) {
@@ -323,7 +323,7 @@ void compare_dipole1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv
       obcints->compute_shell(sh1, sh2);
       const double *buffercints = obcints->buffer();
       const double *bufferv3 = obv3->buffer();
-      
+
       int bf1_offset = 0;
       for (int gc1=0; gc1<basis->shell(sh1).ncontraction(); gc1++) {
         int am1 = basis->shell(sh1).am(gc1);
@@ -339,13 +339,13 @@ void compare_dipole1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv
               break;
             }
           }
-          
+
           int bf2_offset = 0;
           for (int gc2=0; gc2<basis->shell(sh2).ncontraction(); gc2++) {
             int am2 = basis->shell(sh2).am(gc2);
             CartesianIterCints citer2(am2);
             CartesianIterV3 iter2(am2);
-            
+
             for (citer2.start(); int(citer2); citer2.next() ) {
               int bf2cints = bf2_offset + citer2.bfn();
               int bf2v3;
@@ -356,7 +356,7 @@ void compare_dipole1e_cints_vs_v3(Ref<OneBodyInt>& obcints, Ref<OneBodyInt>& obv
                   break;
                 }
               }
-              
+
               for (int xyz=0; xyz<3; ++xyz) {
                 double valuecints = buffercints[(bf1cints*nbf2 + bf2cints)*3+xyz];
                 // WARNING: Cints and V3 seem to have opposite sign convention
@@ -423,7 +423,7 @@ compare_2e_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 		}
 		bf1cints += bf1_offset;
 		bf1v3 += bf1_offset;
-	      
+
 		int bf2_offset = 0;
 		for(int gc2=0;gc2<basis->shell(sh2).ncontraction(); gc2++) {
 		  int am2 = basis->shell(sh2).am(gc2);
@@ -442,7 +442,7 @@ compare_2e_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 		    }
 		    bf2cints += bf2_offset;
 		    bf2v3 += bf2_offset;
-		    
+
 		    int bf3_offset = 0;
 		    for(int gc3=0;gc3<basis->shell(sh3).ncontraction(); gc3++) {
 		      int am3 = basis->shell(sh3).am(gc3);
@@ -461,7 +461,7 @@ compare_2e_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 			}
 			bf3cints += bf3_offset;
 			bf3v3 += bf3_offset;
-			    
+
 			int bf4_offset = 0;
 			for(int gc4=0;gc4<basis->shell(sh4).ncontraction(); gc4++) {
 			  int am4 = basis->shell(sh4).am(gc4);
@@ -480,7 +480,7 @@ compare_2e_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 			    }
 			    bf4cints += bf4_offset;
 			    bf4v3 += bf4_offset;
-		
+
 			    double valuecints = buffercints[((bf1cints*nbf2 + bf2cints)*nbf3 + bf3cints)*nbf4 + bf4cints];
 			    double valuev3 = bufferv3[((bf1v3*nbf2 + bf2v3)*nbf3 + bf3v3)*nbf4 + bf4v3];
 			    if (fabs(valuecints-valuev3) > 1E-12) {
@@ -571,7 +571,7 @@ compare_2e_bufsum_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 	    int nbf2 = basis->shell(sh2).nfunction();
 	    int nbf3 = basis->shell(sh3).nfunction();
 	    int nbf4 = basis->shell(sh4).nfunction();
-	    
+
 	    double sum_cints = 0.0;
 	    double sum_v3 = 0.0;
 
@@ -592,7 +592,7 @@ compare_2e_bufsum_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& tbv3)
 		}
 	      }
 	    }
-	    
+
 	    if (fabs(sum_cints-sum_v3) > 1E-12) {
 	      cout << scprintf("Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",sh1,sh2,sh3,sh4);
 	      cout << scprintf("TEIntegralSum(cints) = %20.15lf\n",
@@ -623,7 +623,7 @@ compare_2e_unique_bufsum_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& 
 	    int nbf2 = basis->shell(sh2).nfunction();
 	    int nbf3 = basis->shell(sh3).nfunction();
 	    int nbf4 = basis->shell(sh4).nfunction();
-	    
+
 	    double sum_cints = 0.0;
 	    double sum_v3 = 0.0;
 
@@ -651,7 +651,7 @@ compare_2e_unique_bufsum_cints_vs_v3(Ref<TwoBodyInt>& tbcints, Ref<TwoBodyInt>& 
 		}
 	      }
 	    }
-	    
+
 	    if (fabs(sum_cints-sum_v3) > 1E-12) {
 	      cout << scprintf("Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",sh1,sh2,sh3,sh4);
 	      cout << scprintf("TEIntegralSum(cints) = %20.15lf\n",
@@ -667,10 +667,10 @@ print_grt_ints(Ref<TwoBodyInt>& tbcints)
 {
   Ref<GaussianBasisSet> basis = tbcints->basis();
   const double *buffer[4];
-  buffer[0] = tbcints->buffer(TwoBodyInt::eri);
-  buffer[1] = tbcints->buffer(TwoBodyInt::r12);
-  buffer[2] = tbcints->buffer(TwoBodyInt::r12t1);
-  buffer[3] = tbcints->buffer(TwoBodyInt::r12t2);
+  buffer[0] = tbcints->buffer(TwoBodyOper::eri);
+  buffer[1] = tbcints->buffer(TwoBodyOper::r12);
+  buffer[2] = tbcints->buffer(TwoBodyOper::r12t1);
+  buffer[3] = tbcints->buffer(TwoBodyOper::r12t2);
   char teout_filename[] = "teout0.dat";
   FILE *teout[4];
 
@@ -724,7 +724,7 @@ print_grt_ints(Ref<TwoBodyInt>& tbcints)
 	      S3[2] = ush2;
 	      S4[2] = ush3;
 	    }
-	      
+
 	    for(int uq=0;uq<num;uq++) {
 	      int sh1 = S1[uq];
 	      int sh2 = S2[uq];
@@ -737,7 +737,7 @@ print_grt_ints(Ref<TwoBodyInt>& tbcints)
 	      int nbf2 = basis->shell(sh2).nfunction();
 	      int nbf3 = basis->shell(sh3).nfunction();
 	      int nbf4 = basis->shell(sh4).nfunction();
-	    
+
 	      int e12 = (sh1 == sh2) ? 1 : 0;
 	      int e34 = (sh3 == sh4) ? 1 : 0;
 	      int e13e24 = (((sh1 == sh3)&&(sh2==sh4))||((sh1==sh4)&&(sh2==sh3))) ? 1 : 0;
@@ -750,41 +750,41 @@ print_grt_ints(Ref<TwoBodyInt>& tbcints)
 		  for (int k=0; k<=kmax; k++) {
 		    int lmax = e34 ? ( (e13e24&&(i==k)) ? j : k) : ( (e13e24&&(i==k)) ? j : nbf4-1);
 		    for (int l=0; l<=lmax; l++) {
-		      
+
 		      double integral = buffer[0][index];
 		      if (fabs(integral) > 1E-15) {
 			fprintf(teout[0], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
+				basis->shell_to_function(sh1) + i+1,
+				basis->shell_to_function(sh2) + j+1,
+				basis->shell_to_function(sh3) + k+1,
+				basis->shell_to_function(sh4) + l+1,
 				integral);
 		      }
 		      integral = buffer[1][index];
 		      if (fabs(integral) > 1E-15) {
 			fprintf(teout[1], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
+				basis->shell_to_function(sh1) + i+1,
+				basis->shell_to_function(sh2) + j+1,
+				basis->shell_to_function(sh3) + k+1,
+				basis->shell_to_function(sh4) + l+1,
 				integral);
 		      }
 		      integral = buffer[2][index];
 		      if (fabs(integral) > 1E-15) {
 			fprintf(teout[2], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
+				basis->shell_to_function(sh1) + i+1,
+				basis->shell_to_function(sh2) + j+1,
+				basis->shell_to_function(sh3) + k+1,
+				basis->shell_to_function(sh4) + l+1,
 				integral);
 		      }
 		      integral = buffer[3][index];
 		      if (fabs(integral) > 1E-15) {
 			fprintf(teout[3], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
+				basis->shell_to_function(sh1) + i+1,
+				basis->shell_to_function(sh2) + j+1,
+				basis->shell_to_function(sh3) + k+1,
+				basis->shell_to_function(sh4) + l+1,
 				integral);
 		      }
 		      index++;
@@ -819,7 +819,7 @@ compare_2e_permute(Ref<Integral>& cints)
   int nbf2 = basis->shell(sh2).nfunction();
   int nbf3 = basis->shell(sh3).nfunction();
   int nbf4 = basis->shell(sh4).nfunction();
-	    
+
   for(int index = 0; index<nbf1*nbf2*nbf3*nbf4; index++)
     if (fabs(buffer1[index]-buffer2[index]) > 1E-13)
     {

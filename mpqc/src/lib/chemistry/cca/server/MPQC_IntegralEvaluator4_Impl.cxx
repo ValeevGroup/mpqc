@@ -1,17 +1,17 @@
-// 
+//
 // File:          MPQC_IntegralEvaluator4_Impl.cxx
 // Symbol:        MPQC.IntegralEvaluator4-v0.2
 // Symbol Type:   class
 // Description:   Server-side implementation for MPQC.IntegralEvaluator4
-// 
+//
 // WARNING: Automatically generated; only changes within splicers preserved
-// 
-// 
+//
+//
 #include "MPQC_IntegralEvaluator4_Impl.hxx"
 
-// 
+//
 // Includes for all method dependencies.
-// 
+//
 #ifndef included_Chemistry_QC_GaussianBasis_CompositeDescrInterface_hxx
 #include "Chemistry_QC_GaussianBasis_CompositeDescrInterface.hxx"
 #endif
@@ -47,7 +47,7 @@ using namespace ChemistryDescrCXX;
 // speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::IntegralEvaluator4_impl::IntegralEvaluator4_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::IntegralEvaluator4::_wrapObj(
-  reinterpret_cast< void*>(this))),false) , _wrapped(true){ 
+  reinterpret_cast< void*>(this))),false) , _wrapped(true){
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._ctor2)
   // Insert-Code-Here {MPQC.IntegralEvaluator4._ctor2} (ctor2)
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._ctor2)
@@ -62,13 +62,13 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
   reorder_ = false;
 
   DescrInterface desc = Eri4Descr::_create();
-  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::eri;
+  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyOper::eri;
   desc = R12Descr::_create();
-  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12;
+  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyOper::r12;
   desc = R12T1Descr::_create();
-  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12t1;
+  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyOper::r12t1;
   desc = R12T2Descr::_create();
-  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyInt::r12t2;
+  descr_to_tbint_type_[desc.get_type()] = sc::TwoBodyOper::r12t2;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._ctor)
 }
@@ -95,7 +95,7 @@ void MPQC::IntegralEvaluator4_impl::_load() {
 void
 MPQC::IntegralEvaluator4_impl::add_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_evaluator)
 
@@ -119,19 +119,19 @@ MPQC::IntegralEvaluator4_impl::add_evaluator_impl (
 void
 MPQC::IntegralEvaluator4_impl::add_composite_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface cdesc )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.add_composite_evaluator)
   comp_eval_.add_evaluator(eval,cdesc);
 
   for( int i=0; i<cdesc.get_n_descr(); ++i ) {
-    Chemistry::QC::GaussianBasis::DescrInterface desc = 
+    Chemistry::QC::GaussianBasis::DescrInterface desc =
       cdesc.get_descr(i);
     buffer_size_.update( desc.get_deriv_lvl(), desc.get_n_segment() );
     std::pair< std::string, int > p(desc.get_type(),desc.get_deriv_lvl());
     comp_ids_.push_back( p );
     ++neval_;
-  } 
+  }
 
   /* resize bounds array */
   bounds_ = sidl::array<double>::create1d(neval_);
@@ -147,7 +147,7 @@ MPQC::IntegralEvaluator4_impl::set_basis_impl (
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
   /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs4 ) 
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs4 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.set_basis)
 
@@ -174,7 +174,7 @@ MPQC::IntegralEvaluator4_impl::set_basis_impl (
  * Method:  init_reorder[]
  */
 void
-MPQC::IntegralEvaluator4_impl::init_reorder_impl () 
+MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.init_reorder)
@@ -197,8 +197,8 @@ MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
   CompositeDescrInterface cdesc = comp_eval_.get_descriptor();
   for( int i=0; i < cdesc.get_n_descr(); ++i ) {
     DescrInterface idesc = deriv_desc.get_descr(i);
-    reorder_engine_.add_buffer( 
-      comp_eval_.get_buffer( idesc, descr_to_tbint_type_[idesc.get_type()] ), 
+    reorder_engine_.add_buffer(
+      comp_eval_.get_buffer( idesc, descr_to_tbint_type_[idesc.get_type()] ),
       idesc );
   }
 
@@ -209,12 +209,12 @@ MPQC::IntegralEvaluator4_impl::init_reorder_impl ()
  * Method:  get_descriptor[]
  */
 ::Chemistry::QC::GaussianBasis::CompositeDescrInterface
-MPQC::IntegralEvaluator4_impl::get_descriptor_impl () 
+MPQC::IntegralEvaluator4_impl::get_descriptor_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_descriptor)
 
-  CompositeDescrInterface cdesc = 
+  CompositeDescrInterface cdesc =
     ChemistryDescrCXX::CompositeDescr::_create();
   CompositeDescrInterface desc =  eval_.get_descriptor();
   CompositeDescrInterface deriv_desc = deriv_eval_.get_descriptor();
@@ -227,18 +227,18 @@ MPQC::IntegralEvaluator4_impl::get_descriptor_impl ()
     cdesc.add_descr( comp_desc.get_descr(i) );
 
   return cdesc;
-  
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_descriptor)
 }
 
 /**
  *  Get sidl array buffer for given type.
  * @param desc Integral descriptor.
- * @return Sidl array. 
+ * @return Sidl array.
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator4_impl::get_array_impl (
-  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_array)
 
@@ -256,8 +256,8 @@ MPQC::IntegralEvaluator4_impl::get_array_impl (
   }
 
   if( b == NULL )
-    return comp_eval_.get_array( desc, 
-                                 descr_to_tbint_type_[desc.get_type()], 
+    return comp_eval_.get_array( desc,
+                                 descr_to_tbint_type_[desc.get_type()],
                                  buffer_size_.size() );
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_array)
@@ -266,12 +266,12 @@ MPQC::IntegralEvaluator4_impl::get_array_impl (
 /**
  *  Returns array of integral bounds.  When multiple integral
  * types are supported within an evaluator, the ordering
- * matches the ordering of descriptors returned by 
+ * matches the ordering of descriptors returned by
  * get_descriptor().
- * @return Integral bounds array. 
+ * @return Integral bounds array.
  */
 ::sidl::array<double>
-MPQC::IntegralEvaluator4_impl::get_bounds_array_impl () 
+MPQC::IntegralEvaluator4_impl::get_bounds_array_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_bounds_array)
@@ -283,10 +283,10 @@ MPQC::IntegralEvaluator4_impl::get_bounds_array_impl ()
 
 /**
  *  This should be called when the object is no longer needed.
- * No other members may be called after finalize. 
+ * No other members may be called after finalize.
  */
 int32_t
-MPQC::IntegralEvaluator4_impl::finalize_impl () 
+MPQC::IntegralEvaluator4_impl::finalize_impl ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.finalize)
@@ -302,14 +302,14 @@ MPQC::IntegralEvaluator4_impl::finalize_impl ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
- * @param deriv_level Derivative level. 
+ * @param deriv_level Derivative level.
  */
 void
 MPQC::IntegralEvaluator4_impl::compute_impl (
   /* in */int64_t shellnum1,
   /* in */int64_t shellnum2,
   /* in */int64_t shellnum3,
-  /* in */int64_t shellnum4 ) 
+  /* in */int64_t shellnum4 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
@@ -332,14 +332,14 @@ MPQC::IntegralEvaluator4_impl::compute_impl (
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
- * @param shellnum4 Gaussian shell number 4. 
+ * @param shellnum4 Gaussian shell number 4.
  */
 void
 MPQC::IntegralEvaluator4_impl::compute_bounds_impl (
   /* in */int64_t shellnum1,
   /* in */int64_t shellnum2,
   /* in */int64_t shellnum3,
-  /* in */int64_t shellnum4 ) 
+  /* in */int64_t shellnum4 )
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds)
 

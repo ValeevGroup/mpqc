@@ -87,7 +87,7 @@ class GRTLibint2: public Int2eLibint2 {
     /*--- Compute engines ---*/
     Libr12_t Libr12_;
     Ref<FJT> Fm_Eval_;
-  
+
   public:
     GRTLibint2(Integral *,
 	     const Ref<GaussianBasisSet>&,
@@ -97,11 +97,11 @@ class GRTLibint2: public Int2eLibint2 {
 	     size_t storage);
     ~GRTLibint2();
 
-    double *buffer(TwoBodyInt::tbint_type te_type) const {
-      if (te_type == TwoBodyInt::eri ||
-	  te_type == TwoBodyInt::r12 ||
-	  te_type == TwoBodyInt::r12t1 ||
-	  te_type == TwoBodyInt::r12t2)
+    double *buffer(TwoBodyOper::type te_type) const {
+      if (te_type == TwoBodyOper::eri ||
+	  te_type == TwoBodyOper::r12 ||
+	  te_type == TwoBodyOper::r12t1 ||
+	  te_type == TwoBodyOper::r12t2)
 	return target_ints_buffer_[te_type];
       else
 	return 0;
@@ -111,7 +111,7 @@ class GRTLibint2: public Int2eLibint2 {
 				   const Ref<GaussianBasisSet>& b2 = 0,
 				   const Ref<GaussianBasisSet>& b3 = 0,
 				   const Ref<GaussianBasisSet>& b4 = 0);
-    
+
     // evaluate integrals
     void compute_quartet(int*, int*, int*, int*);
 };

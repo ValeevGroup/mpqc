@@ -107,17 +107,19 @@ DensityFitting::compute()
   // compute cC_ first
   const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
   Ref<IntParams> p = new IntParamsVoid;
-  Ref<TwoBodyMOIntsTransform_ijR> tform =
-    new TwoBodyMOIntsTransform_ijR("",
-                                   factory_,
-                                   IntDescrFactory::make<3>(integral,
-                                       TwoBodyOperSet::ERI,
-                                       p),
-                                   space1_,
-                                   space2_,
-                                   aoidxreg->value(fbasis_));
+  factory()->set_spaces(space1_,
+                        space2_,
+                        aoidxreg->value(fbasis_),
+                        0);
+  Ref<TwoBodyThreeCenterIntDescr> descr = IntDescrFactory::make<3>(integral,
+      TwoBodyOperSet::ERI,
+      p);
+  Ref<TwoBodyThreeCenterMOIntsTransform> tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
+                                                                              "",
+                                                                              descr);
   tform->compute();
   cC_ = tform->ints_acc();
+
 #if 1
   {
     cC_->activate();

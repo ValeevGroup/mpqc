@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/transform.h>
 
 using namespace std;
 
@@ -70,27 +71,14 @@ namespace sc {
   };
 
 class TwoBodyMOIntsTransform;
+class TwoBodyThreeCenterMOIntsTransform;
 
   /** MOIntsTransformFactory is a factory that produces MOIntsTransform objects. */
 
 class MOIntsTransformFactory : virtual public SavableState {
 
-public:
-
-  /// Describes the method of storing transformed MO integrals.
-  struct StoreMethod {
-    enum type { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
-  };
-  /// How integrals are stored. Type_13 means (ix|jy) integrals are stored as (ij|xy)
-  enum StorageType {StorageType_First=0, StorageType_Last=1,
-                    StorageType_12=0, StorageType_13=1};
-  /// How integrals are stored. Type_13 means (ix|jy) integrals are stored as (ij|xy)
-  enum TwoBodyTransformType {
-    TwoBodyTransformType_ixjy=0, TwoBodyTransformType_ikjy=1,
-    TwoBodyTransformType_ijxy=2, TwoBodyTransformType_iRjS=3,
-    TwoBodyTransformType_First=TwoBodyTransformType_ixjy,
-    TwoBodyTransformType_Last=TwoBodyTransformType_iRjS
-  };
+  public:
+    typedef MOIntsTransform::StorageType StorageType;
 
 private:
 
@@ -116,7 +104,7 @@ private:
   bool dynamic_;
   double print_percent_;
   int debug_;
-  StoreMethod::type ints_method_;
+  MOIntsTransform::StoreMethod::type ints_method_;
   std::string file_prefix_;
 
   // some functions must be called from TwoBodyMOIntsTransform to allow proper memory management
@@ -127,6 +115,9 @@ private:
   template <typename TransformType> Ref<TwoBodyMOIntsTransform>
     twobody_transform(const std::string& name,
                       const Ref<TwoBodyIntDescr>& descrarg);
+  template <typename TransformType> Ref<TwoBodyThreeCenterMOIntsTransform>
+    twobody_transform(const std::string& name,
+                      const Ref<TwoBodyThreeCenterIntDescr>& descrarg);
 
 public:
 
@@ -147,12 +138,12 @@ public:
   /// Changes the default TwoBodyIntDescr used to produce integrals
   void tbintdescr(const Ref<TwoBodyIntDescr>& descr) { tbintdescr_ = descr; }
   /// Sets the method of storing transformed MO integrals. Default method is mem_posix.
-  void set_ints_method(const StoreMethod::type method) { ints_method_ = method; }
+  void set_ints_method(const MOIntsTransform::StoreMethod::type method) { ints_method_ = method; }
   /// Sets the name of the file to hold the integrals.
   void set_file_prefix(const std::string& prefix) { file_prefix_ = prefix; }
-  void set_debug(int debug) { debug_ = debug; }
+  void set_debug(int debug);
+  void set_print_percent(double print_percent);
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
-  void set_print_percent(double print_percent) { print_percent_ = print_percent; }
   void set_memory(size_t nbytes) { memory_ = nbytes; mem_->set_localsize(memory_); }
 
   /// Returns the MemoryGrp object
@@ -164,14 +155,14 @@ public:
   /// Returns the default TwoBodyIntDescr used to produce integrals
   Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.
-  const StoreMethod::type ints_method() const { return ints_method_; }
+  const MOIntsTransform::StoreMethod::type ints_method() const { return ints_method_; }
   const CreateTransformHints& hints() const { return hints_; }
   CreateTransformHints& hints() { return hints_; }
   /// Sets the name of the file to hold the integrals.
   const std::string file_prefix() const { return file_prefix_; }
   const int debug() const { return debug_; }
-  const bool dynamic() const { return dynamic_; }
   const double print_percent() const { return print_percent_; }
+  const bool dynamic() const { return dynamic_; }
   const size_t memory() const { return memory_; }
 
   /// Returns OrbitalSpace object 1
@@ -200,9 +191,13 @@ public:
                     const Ref<TwoBodyIntDescr>& descr = 0);
 
   /// Creates an TwoBodyMOIntsTransform object of type T
-  Ref<TwoBodyMOIntsTransform> twobody_transform(TwoBodyTransformType T,
+  Ref<TwoBodyMOIntsTransform> twobody_transform(MOIntsTransform::TwoBodyTransformType T,
                                                 const std::string& name,
                                                 const Ref<TwoBodyIntDescr>& descrarg);
+  /// Creates an TwoBodyThreeCenterMOIntsTransform object of type T
+  Ref<TwoBodyThreeCenterMOIntsTransform> twobody_transform(MOIntsTransform::TwoBodyTransformType T,
+                                                const std::string& name,
+                                                const Ref<TwoBodyThreeCenterIntDescr>& descrarg);
 
 };
 

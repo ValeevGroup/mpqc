@@ -91,24 +91,24 @@ R12IntEvalInfo::R12IntEvalInfo(
   // Determine how to store MO integrals
   std::string ints_str = keyval->stringvalue("store_ints",KeyValValuestring("posix"));
   if (ints_str == std::string("mem")) {
-    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_only;
+    ints_method_ = StoreMethod::mem_only;
   }
   else if (ints_str == std::string("posix")) {
-    ints_method_ = MOIntsTransformFactory::StoreMethod::posix;
+    ints_method_ = StoreMethod::posix;
   }
   else if (ints_str == std::string("mem-posix")) {
-    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_posix;
+    ints_method_ = StoreMethod::mem_posix;
   }
   else if (ints_str == std::string("mpi")) {
 #if HAVE_MPIIO
-    ints_method_ = MOIntsTransformFactory::StoreMethod::mpi;
+    ints_method_ = StoreMethod::mpi;
 #else
     throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- store_ints=mpi is not valid in this environment (no MPI-I/O detected)");
 #endif
   }
   else if (ints_str == std::string("mem-mpi")) {
 #if HAVE_MPIIO
-    ints_method_ = MOIntsTransformFactory::StoreMethod::mem_mpi;
+    ints_method_ = StoreMethod::mem_mpi;
 #else
     throw std::runtime_error("R12IntEvalInfo::R12IntEvalInfo -- store_ints=mem_mpi is not valid in this environment (no MPI-I/O detected)");
 #endif

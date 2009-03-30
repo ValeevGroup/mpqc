@@ -43,73 +43,38 @@
 
 using namespace sc;
 
-static ClassDesc TwoBodyMOIntsTransform_ijR_cd(
-  typeid(TwoBodyMOIntsTransform_ijR),"TwoBodyMOIntsTransform_ijR",1,
-  "virtual public SavableState",
-  0, 0, create<TwoBodyMOIntsTransform_ijR>);
+static ClassDesc TwoBodyThreeCenterMOIntsTransform_ijR_cd(
+  typeid(TwoBodyThreeCenterMOIntsTransform_ijR),"TwoBodyThreeCenterMOIntsTransform_ijR",1,
+  "public TwoBodyThreeCenterMOIntsTransform",
+  0, 0, create<TwoBodyThreeCenterMOIntsTransform_ijR>);
 
-TwoBodyMOIntsTransform_ijR::~TwoBodyMOIntsTransform_ijR() {}
+TwoBodyThreeCenterMOIntsTransform_ijR::~TwoBodyThreeCenterMOIntsTransform_ijR() {}
 
-TwoBodyMOIntsTransform_ijR::TwoBodyMOIntsTransform_ijR(const std::string& name,
+TwoBodyThreeCenterMOIntsTransform_ijR::TwoBodyThreeCenterMOIntsTransform_ijR(const std::string& name,
   const Ref<MOIntsTransformFactory>& factory,
   const Ref<TwoBodyThreeCenterIntDescr>& tbintdescr,
   const Ref<OrbitalSpace>& space1,
   const Ref<OrbitalSpace>& space2,
   const Ref<OrbitalSpace>& space3) :
-    name_(name), factory_(factory), mem_(factory->mem()),
-    tbintdescr_(tbintdescr),
-    space1_(space1), space2_(space2), space3_(space3),
-    ints_method_(factory_->ints_method()),
-    file_prefix_(factory_->file_prefix())
+    TwoBodyThreeCenterMOIntsTransform(name, factory, tbintdescr,
+                                      space1, space2, space3)
   {
-    init_acc();
+    init_vars();
   }
 
-TwoBodyMOIntsTransform_ijR::TwoBodyMOIntsTransform_ijR(StateIn& si) :
-  SavableState(si) {
-  si.get(name_);
-  space1_ << SavableState::restore_state(si);
-  space2_ << SavableState::restore_state(si);
-  space3_ << SavableState::restore_state(si);
+TwoBodyThreeCenterMOIntsTransform_ijR::TwoBodyThreeCenterMOIntsTransform_ijR(StateIn& si) :
+  TwoBodyThreeCenterMOIntsTransform(si) {
+  assert(false);
+  init_vars();
 }
 
 void
-TwoBodyMOIntsTransform_ijR::save_data_state(StateOut& so) {
-  so.put(name_);
-  SavableState::save_state(space1_.pointer(),so);
-  SavableState::save_state(space2_.pointer(),so);
-  SavableState::save_state(space3_.pointer(),so);
-}
-
-void
-TwoBodyMOIntsTransform_ijR::set_memgrp(const Ref<MemoryGrp>& new_mem) { mem_ = new_mem; }
-
-size_t
-TwoBodyMOIntsTransform_ijR::memory() const {
-  return memory_;
-}
-
-size_t
-TwoBodyMOIntsTransform_ijR::peak_memory() const {
-  return peak_memory_;
+TwoBodyThreeCenterMOIntsTransform_ijR::save_data_state(StateOut& so) {
+  assert(false);
 }
 
 int
-TwoBodyMOIntsTransform_ijR::batchsize() const {return batchsize_; }
-
-unsigned int
-TwoBodyMOIntsTransform_ijR::num_te_types() const { return tbintdescr_->num_sets(); }
-
-unsigned int
-TwoBodyMOIntsTransform_ijR::restart_orbital() const {
-  return restart_orbital_;
-}
-
-///////////////////////////////////////////////////////
-// Compute the batchsize for the transformation
-///////////////////////////////////////////////////////
-int
-TwoBodyMOIntsTransform_ijR::compute_transform_batchsize(size_t mem_static, int rank_R)
+TwoBodyThreeCenterMOIntsTransform_ijR::compute_transform_batchsize(size_t mem_static, int rank_R)
 {
   // Check is have enough for even static objects
   size_t mem_dyn = 0;
@@ -140,121 +105,28 @@ TwoBodyMOIntsTransform_ijR::compute_transform_batchsize(size_t mem_static, int r
   return nR;
 }
 
-
-void
-TwoBodyMOIntsTransform_ijR::init_vars()
-{
-  const int me = factory()->msg()->me();
-  const int rank_R = space3()->rank() - restart_orbital_;
-
-  static_memory_ = 0;
-  if (me == 0) {
-#if 0 // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
-    // mem_static should include storage in OrbitalSpace
-    static_memory_ = space1()->memory_in_use() +
-                  space2()->memory_in_use() +
-                  space3()->memory_in_use(); // scf vector
-    int nthreads = thr_->nthread();
-    // ... plus the integrals evaluators
-    //static_memory_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
-    //                                                        space3_->basis(),space4_->basis());
-#else
-    static_memory_ += 0;
-#endif
-    batchsize_ = compute_transform_batchsize(static_memory_,rank_R);
-  }
-
-  // Send value of ni and mem_static to other nodes
-  factory()->msg()->bcast(batchsize_);
-  double static_memory_double = static_cast<double>(static_memory_);
-  factory()->msg()->bcast(static_memory_double);
-  static_memory_ = static_cast<size_t>(static_memory_double);
-
-  if (batchsize_ == 0)
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijR::init_vars() -- batch size is 0: more memory or processors are needed");
-
-  npass_ = 0;
-  int rest = 0;
-  if (batchsize_ == rank_R) {
-    npass_ = 1;
-    rest = 0;
-  }
-  else {
-    rest = rank_R%batchsize_;
-    npass_ = (rank_R - rest)/batchsize_ + 1;
-    if (rest == 0) npass_--;
-  }
-
-  // At this point I need to figure out how much memory will be used after compute() has been called
-  // R12IntsAcc object will either use none or all of the dynamical memory
-  // this will call init_acc() implicitly
-  const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory(batchsize_));
-  if (!ints_acc()->data_persistent()) { // data is held in memory
-    memory_ = static_memory_ + mem_dyn;
-    peak_memory_ = memory_;
-  }
-  else { // data is held elsewhere
-    memory_ = static_memory_;
-    peak_memory_ = memory_ + mem_dyn;
-  }
-}
-
-void
-TwoBodyMOIntsTransform_ijR::reinit_acc()
-{
-  if (ints_acc_.nonnull())
-    ints_acc_ = 0;
-  init_acc();
-}
-
-void
-TwoBodyMOIntsTransform_ijR::obsolete()
-{
-  reinit_acc();
-}
-
 distsize_t
-TwoBodyMOIntsTransform_ijR::compute_transform_dynamic_memory(int nR) const
+TwoBodyThreeCenterMOIntsTransform_ijR::compute_transform_dynamic_memory(int batchsize) const
 {
-  abort();
+  const unsigned int rank1 = space1()->rank();
+  const unsigned int rank2 = space2()->rank();
+  const unsigned int rank3 = space3()->rank();
+  if (batchsize == -1)
+    batchsize = rank3;
+  // can only do 1-pass transformation
+  assert(batchsize == rank3);
+
+  return num_te_types() * rank1 * static_cast<distsize_t>(rank2 * rank3 * sizeof(double));
 }
 
 void
-TwoBodyMOIntsTransform_ijR::alloc_mem(const size_t localmem)
-{
-  if (mem_.null())
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijR::alloc_mem() -- memory group not initialized");
-  mem_->set_localsize(localmem);
-  if (debug_ >= DefaultPrintThresholds::diagnostics) {
-    ExEnv::out0() << indent
-                  << "Size of global distributed array:       "
-                  << mem_->totalsize()
-                  << " Bytes" << endl;
-  }
-}
-
-void
-TwoBodyMOIntsTransform_ijR::dealloc_mem()
-{
-  if (mem_.null())
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijR::dealloc_mem() -- memory group not initialized");
-  mem_->set_localsize(0);
-}
-
-void
-TwoBodyMOIntsTransform_ijR::memory_report(std::ostream& os) const
+TwoBodyThreeCenterMOIntsTransform_ijR::extra_memory_report(std::ostream& os) const
 {
   const int rank_R_restart = space3()->rank() - restart_orbital_;
   const int nmaxfunR = space3()->basis()->max_nfunction_in_shell();
 
   os << indent
-     << "Memory available per node:      " << max_memory_ << " Bytes"
-     << endl;
-  os << indent
-     << "Static memory used per node:    " << static_memory_ << " Bytes"
-     << endl;
-  os << indent
-     << "Total memory used per node:     " << peak_memory_ << " Bytes"
+     << "Number of passes:               " << (rank_R_restart+batchsize_-1)/batchsize_
      << endl;
   os << indent
      << "Memory required for one pass:   "
@@ -265,64 +137,11 @@ TwoBodyMOIntsTransform_ijR::memory_report(std::ostream& os) const
      << "Minimum memory required:        "
      << compute_transform_dynamic_memory(nmaxfunR)+static_memory_
      << " Bytes"
-     << endl;
-  os << indent
-     << "Number of passes:               " << (rank_R_restart+batchsize_-1)/batchsize_
-     << endl;
-  os << indent
-     << "Batch size:                     " << batchsize_
-     << endl;
+   << endl;
 }
 
 void
-TwoBodyMOIntsTransform_ijR::mospace_report(std::ostream& os) const
-{
-  os << indent << "MO space 1" << endl << incindent;
-  space1_->print_summary(os);  os << decindent;
-  os << indent << "MO space 2" << endl << incindent;
-  space2_->print_summary(os);  os << decindent;
-  os << indent << "MO space 3" << endl << incindent;
-  space3_->print_summary(os);  os << decindent;
-}
-
-void
-TwoBodyMOIntsTransform_ijR::print_header(std::ostream& os) const
-{
-  if (debug_ >= DefaultPrintThresholds::terse)
-    os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
-  os << incindent;
-
-  int nproc = mem_->n();
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
-    os << indent << scprintf("nproc = %i", nproc) << endl;
-
-  if (restart_orbital() && debug_ >= DefaultPrintThresholds::diagnostics) {
-    os << indent
-       << scprintf("Restarting at orbital %d",
-                   restart_orbital()) << endl;
-  }
-
-  memory_report(os);
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
-    mospace_report(os);
-}
-
-void
-TwoBodyMOIntsTransform_ijR::print_footer(std::ostream& os) const
-{
-  os << decindent;
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
-    os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
-}
-
-const Ref<R12IntsAcc>&
-TwoBodyMOIntsTransform_ijR::ints_acc() {
-  init_acc();
-  return ints_acc_;
-}
-
-void
-TwoBodyMOIntsTransform_ijR::init_acc() {
+TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
   if (ints_acc_.nonnull())
     return;
 
@@ -332,7 +151,7 @@ TwoBodyMOIntsTransform_ijR::init_acc() {
 
   switch (ints_method_) {
 
-  case MOIntsTransformFactory::StoreMethod::mem_only:
+  case MOIntsTransform::StoreMethod::mem_only:
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
@@ -343,7 +162,7 @@ TwoBodyMOIntsTransform_ijR::init_acc() {
     }
     break;
 
-  case MOIntsTransformFactory::StoreMethod::mem_posix:
+  case MOIntsTransform::StoreMethod::mem_posix:
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
@@ -356,13 +175,13 @@ TwoBodyMOIntsTransform_ijR::init_acc() {
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::posix:
+  case MOIntsTransform::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          1, space1()->rank(), space2()->rank(), space3()->rank());
     break;
 
 #if HAVE_MPIIO
-  case MOIntsTransformFactory::StoreMethod::mem_mpi:
+  case MOIntsTransform::StoreMethod::mem_mpi:
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
@@ -375,20 +194,20 @@ TwoBodyMOIntsTransform_ijR::init_acc() {
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::mpi:
+  case MOIntsTransform::StoreMethod::mpi:
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              1, space1()->rank(), space2()->rank(), space3()->rank());
     break;
 #endif
 
   default:
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijR::init_acc() -- invalid integrals store method");
+    throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() -- invalid integrals store method");
   }
 
 }
 
 void
-TwoBodyMOIntsTransform_ijR::compute() {
+TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
 
   const int nproc = mem_->n();
   const int me = mem_->me();

@@ -130,7 +130,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
   /////////////////////////////////////
 
   // debug print
-  if (debug_ >= DefaultPrintThresholds::fine) {
+  if (debug() >= DefaultPrintThresholds::fine) {
     ExEnv::outn() << indent
 		  << scprintf("node %i, begin loop over i-batches",me) << endl;
   }
@@ -143,14 +143,14 @@ TwoBodyMOIntsTransform_ijxy::compute()
   for (int i=0; i<thr_->nthread(); i++) {
     tbints[i] = tbintdescr_->inteval();
   }
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
+  if (debug() >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
 
   Ref<ThreadLock> lock = thr_->new_lock();
   TwoBodyMOIntsTransform_12Inds** e12thread = new TwoBodyMOIntsTransform_12Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug_);
+    e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug());
   }
 
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
@@ -189,7 +189,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
     int nij = compute_nij(ni,rank2,nproc,me);
 
     // debug print
-    if (debug_ >= DefaultPrintThresholds::fine)
+    if (debug() >= DefaultPrintThresholds::fine)
       ExEnv::outn() << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 

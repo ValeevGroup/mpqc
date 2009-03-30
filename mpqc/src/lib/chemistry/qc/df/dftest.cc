@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
     OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(bs_space));
     AOSpaceRegistry::instance()->add(bs, bs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
-    factory->set_ints_method(MOIntsTransformFactory::StoreMethod::posix);
+    factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
     Ref<TwoBodyMOIntsTransform> ixjy_tform =
       new TwoBodyMOIntsTransform_ixjy_df("test", factory,
                                          descr,

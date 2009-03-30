@@ -105,7 +105,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
   /////////////////////////////////////
 
   // debug print
-  if (debug_ >= DefaultPrintThresholds::fine) {
+  if (debug() >= DefaultPrintThresholds::fine) {
     ExEnv::outn() << indent
           << scprintf("node %i, begin loop over i-batches",me) << endl;
   }
@@ -118,14 +118,14 @@ TwoBodyMOIntsTransform_iRjS::compute()
   for (int i=0; i<thr_->nthread(); i++) {
     tbints[i] = tbintdescr_->inteval();
   }
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
+  if (debug() >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
 
   Ref<ThreadLock> lock = thr_->new_lock();
   TwoBodyMOIntsTransform_13Inds** e13thread = new TwoBodyMOIntsTransform_13Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e13thread[i] = new TwoBodyMOIntsTransform_13Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug_);
+    e13thread[i] = new TwoBodyMOIntsTransform_13Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug());
   }
 
   /*-----------------------------------
@@ -152,7 +152,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
     int nij = compute_nij(ni,rank3,nproc,me);
 
     // debug print
-    if (debug_ >= DefaultPrintThresholds::fine)
+    if (debug() >= DefaultPrintThresholds::fine)
       ExEnv::outn() << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 

@@ -53,7 +53,17 @@ namespace sc {
     return result;
   }
 
-  // code goes here
+  template <typename TransformType> Ref<TwoBodyThreeCenterMOIntsTransform>
+    MOIntsTransformFactory::twobody_transform(const std::string& name,
+                      const Ref<TwoBodyThreeCenterIntDescr>& descrarg) {
+    Ref<TwoBodyThreeCenterMOIntsTransform> result = new TransformType(name,this,descrarg,space1_,space2_,space3_);
+#if 0
+    if (top_mole_.nonnull())
+      result->set_top_mole(top_mole_);
+#endif
+    reserve_memory(result->memory());
+    return result;
+  }
 
 } // end of namespace sc
 

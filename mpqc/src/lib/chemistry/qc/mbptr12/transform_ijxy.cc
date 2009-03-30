@@ -153,7 +153,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
   switch (ints_method_) {
 
-  case MOIntsTransformFactory::StoreMethod::mem_only:
+  case MOIntsTransform::StoreMethod::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
 #if HAVE_R12IA_MEMGRP
@@ -169,7 +169,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 #endif
     break;
 
-  case MOIntsTransformFactory::StoreMethod::mem_posix:
+  case MOIntsTransform::StoreMethod::mem_posix:
     // if can do in one pass, use the factory hints about how data will be used
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
@@ -185,13 +185,13 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::posix:
+  case MOIntsTransform::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
     break;
 
 #if HAVE_MPIIO
-  case MOIntsTransformFactory::StoreMethod::mem_mpi:
+  case MOIntsTransform::StoreMethod::mem_mpi:
     // if can do in one pass, use the factory hints about how data will be used
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
@@ -207,7 +207,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::mpi:
+  case MOIntsTransform::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());

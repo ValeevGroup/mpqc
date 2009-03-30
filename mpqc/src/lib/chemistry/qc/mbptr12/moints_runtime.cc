@@ -280,7 +280,7 @@ MOIntsRuntime::create_tform(const std::string& key)
     // is this a partial transform?
     if (aoidxreg->value_exists(ket1) &&
         aoidxreg->value_exists(ket2))
-      tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_iRjS,key,descr);
+      tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_iRjS,key,descr);
     else { // if not, look for a partial transform
 
       Ref<OrbitalSpace> aoket1 = aoidxreg->value(ket1->basis());
@@ -298,7 +298,7 @@ MOIntsRuntime::create_tform(const std::string& key)
 #define ALWAYS_USE_IXJY 0
 
       if (tforms_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
-        tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
+        tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
         tform->partially_transformed_ints( tforms_->value(half_tform_key)->ints_acc() );
       }
 #if ALWAYS_USE_PARTIAL_TRANSFORMS
@@ -311,19 +311,19 @@ MOIntsRuntime::create_tform(const std::string& key)
       else { // decide the best algorithm
 #if !ALWAYS_USE_IXJY
         if (ket1->rank() <= ket1->basis()->nbasis()) {
-          tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ikjy,key,descr);
+          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ikjy,key,descr);
         }
         else
 #endif
         {
-          tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ixjy,key,descr);
+          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
         }
       }
 #endif
     }
   }
   else if (layout == Layout_b1k1_b2k2)
-    tform = factory()->twobody_transform(MOIntsTransformFactory::TwoBodyTransformType_ijxy,key,descr);
+    tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijxy,key,descr);
 
   // add to the map
   tforms_->add(key,tform);

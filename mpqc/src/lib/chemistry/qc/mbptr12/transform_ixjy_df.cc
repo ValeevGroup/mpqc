@@ -157,7 +157,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 
   switch (ints_method_) {
 
-  case MOIntsTransformFactory::StoreMethod::mem_only:
+  case MOIntsTransform::StoreMethod::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ixjy_df::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
 #if HAVE_R12IA_MEMGRP
@@ -173,7 +173,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 #endif
     break;
 
-  case MOIntsTransformFactory::StoreMethod::mem_posix:
+  case MOIntsTransform::StoreMethod::mem_posix:
     // if can do in one pass, use the factory hints about how data will be used
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
@@ -189,13 +189,13 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::posix:
+  case MOIntsTransform::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;
 
 #if HAVE_MPIIO
-  case MOIntsTransformFactory::StoreMethod::mem_mpi:
+  case MOIntsTransform::StoreMethod::mem_mpi:
     // if can do in one pass, use the factory hints about how data will be used
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
@@ -211,7 +211,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
     }
     // else use the next case
 
-  case MOIntsTransformFactory::StoreMethod::mpi:
+  case MOIntsTransform::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
@@ -432,26 +432,24 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     // lastly, compute the 3-center operator matrices
     const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const std::string tform12_name = "crap12";
-    Ref<TwoBodyMOIntsTransform_ijR> cC12_tform =
-      new TwoBodyMOIntsTransform_ijR(tform12_name,
-                                     factory(),
-                                     descr,
-                                     space1(),
-                                     space2(),
-                                     aoidxreg->value(dfbasis12()));
+    const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
+    factory()->set_spaces(space1(),space2(),dfspace12,0);
+    Ref<TwoBodyThreeCenterMOIntsTransform> cC12_tform =
+      factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
+                                   tform12_name,
+                                   descr);
     cC12_tform->compute();
     cC12 = cC12_tform->ints_acc();
     cC12->activate();
 
     if (!equiv_12_34) {
       const std::string tform34_name = "crap34";
-      Ref<TwoBodyMOIntsTransform_ijR> cC34_tform =
-        new TwoBodyMOIntsTransform_ijR(tform34_name,
-                                       factory(),
-                                       descr,
-                                       space3(),
-                                       space4(),
-                                       aoidxreg->value(dfbasis34()));
+      const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
+      factory()->set_spaces(space3(),space4(),dfspace34,0);
+      Ref<TwoBodyThreeCenterMOIntsTransform> cC34_tform =
+        factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
+                                     tform34_name,
+                                     descr);
       cC34_tform->compute();
       cC34 = cC34_tform->ints_acc();
       cC34->activate();

@@ -54,8 +54,10 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   typeid(TwoBodyMOIntsTransform),"TwoBodyMOIntsTransform",1,"virtual public SavableState",
   0, 0, 0);
 
-double
-TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
+// default values
+double TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
+int TwoBodyMOIntsTransform::debug_ = 0;
+double TwoBodyMOIntsTransform::print_percent_ = 0.1;
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& fact,
                                                const Ref<TwoBodyIntDescr>& tbintdescr,
@@ -68,9 +70,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   thr_(ThreadGrp::get_default_threadgrp()),
   restart_orbital_(0),
   // Default values
-  debug_(factory()->debug()),
   dynamic_(factory()->dynamic()),
-  print_percent_(factory()->print_percent()),
   ints_method_(factory()->ints_method()),
   file_prefix_(factory()->file_prefix()),
   max_memory_(factory()->memory())
@@ -97,10 +97,8 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
-  si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransformFactory::StoreMethod::type>(ints_method);
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransform::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
   si.get(restart_orbital_);
 }
@@ -123,9 +121,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
-  so.put(debug_);
   so.put((int)dynamic_);
-  so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
   so.put(restart_orbital_);
@@ -177,14 +173,8 @@ TwoBodyMOIntsTransform::space3() const {return space3_;}
 const Ref<OrbitalSpace>&
 TwoBodyMOIntsTransform::space4() const {return space4_;}
 
-double
-TwoBodyMOIntsTransform::print_percent() const {return print_percent_; }
-
 int
 TwoBodyMOIntsTransform::batchsize() const {return batchsize_; }
-
-int
-TwoBodyMOIntsTransform::debug() const {return debug_; }
 
 bool
 TwoBodyMOIntsTransform::dynamic() const {return dynamic_; }
@@ -317,7 +307,7 @@ TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
   if (mem_.null())
     throw std::runtime_error("TwoBodyMOIntsTransform::alloc_mem() -- memory group not initialized");
   mem_->set_localsize(localmem);
-  if (debug_ >= DefaultPrintThresholds::diagnostics) {
+  if (debug() >= DefaultPrintThresholds::diagnostics) {
     ExEnv::out0() << indent
                   << "Size of global distributed array:       "
                   << mem_->totalsize()
@@ -396,15 +386,15 @@ TwoBodyMOIntsTransform::mospace_report(std::ostream& os) const
 void
 TwoBodyMOIntsTransform::print_header(std::ostream& os) const
 {
-  if (debug_ >= DefaultPrintThresholds::terse)
+  if (debug() >= DefaultPrintThresholds::terse)
     os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
   os << incindent;
 
   int nproc = msg_->n();
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
+  if (debug() >= DefaultPrintThresholds::diagnostics)
     os << indent << scprintf("nproc = %i", nproc) << endl;
 
-  if (restart_orbital() && debug_ >= DefaultPrintThresholds::diagnostics) {
+  if (restart_orbital() && debug() >= DefaultPrintThresholds::diagnostics) {
     os << indent
        << scprintf("Restarting at orbital %d",
                    restart_orbital()) << endl;
@@ -413,7 +403,7 @@ TwoBodyMOIntsTransform::print_header(std::ostream& os) const
   memory_report(os);
   if (dynamic_)
     os << indent << "Using dynamic load balancing." << endl;
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
+  if (debug() >= DefaultPrintThresholds::diagnostics)
     mospace_report(os);
 }
 
@@ -421,7 +411,7 @@ void
 TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
 {
   os << decindent;
-  if (debug_ >= DefaultPrintThresholds::diagnostics)
+  if (debug() >= DefaultPrintThresholds::diagnostics)
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
 
@@ -434,6 +424,218 @@ TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
 current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
 }
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+static ClassDesc TwoBodyThreeCenterMOIntsTransform_cd(
+  typeid(TwoBodyThreeCenterMOIntsTransform),"TwoBodyThreeCenterMOIntsTransform",1,
+  "virtual public SavableState",
+  0, 0, 0);
+
+// default values
+int TwoBodyThreeCenterMOIntsTransform::debug_ = 0;
+double TwoBodyThreeCenterMOIntsTransform::print_percent_ = 0.1;
+
+TwoBodyThreeCenterMOIntsTransform::~TwoBodyThreeCenterMOIntsTransform() {}
+
+TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(const std::string& name,
+  const Ref<MOIntsTransformFactory>& factory,
+  const Ref<TwoBodyThreeCenterIntDescr>& tbintdescr,
+  const Ref<OrbitalSpace>& space1,
+  const Ref<OrbitalSpace>& space2,
+  const Ref<OrbitalSpace>& space3) :
+    name_(name), factory_(factory), mem_(factory->mem()),
+    tbintdescr_(tbintdescr),
+    space1_(space1), space2_(space2), space3_(space3),
+    ints_method_(factory_->ints_method()),
+    file_prefix_(factory_->file_prefix())
+  {
+  }
+
+TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(StateIn& si) :
+  SavableState(si) {
+  si.get(name_);
+  space1_ << SavableState::restore_state(si);
+  space2_ << SavableState::restore_state(si);
+  space3_ << SavableState::restore_state(si);
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::save_data_state(StateOut& so) {
+  so.put(name_);
+  SavableState::save_state(space1_.pointer(),so);
+  SavableState::save_state(space2_.pointer(),so);
+  SavableState::save_state(space3_.pointer(),so);
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::set_memgrp(const Ref<MemoryGrp>& new_mem) { mem_ = new_mem; }
+
+size_t
+TwoBodyThreeCenterMOIntsTransform::memory() const {
+  return memory_;
+}
+
+size_t
+TwoBodyThreeCenterMOIntsTransform::peak_memory() const {
+  return peak_memory_;
+}
+
+unsigned int
+TwoBodyThreeCenterMOIntsTransform::num_te_types() const { return tbintdescr_->num_sets(); }
+
+unsigned int
+TwoBodyThreeCenterMOIntsTransform::restart_orbital() const {
+  return restart_orbital_;
+}
+
+
+void
+TwoBodyThreeCenterMOIntsTransform::init_vars()
+{
+  const int me = factory()->msg()->me();
+  const int rank_R = space3()->rank() - restart_orbital_;
+
+  static_memory_ = 0;
+  if (me == 0) {
+#if 0 // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
+    // mem_static should include storage in OrbitalSpace
+    static_memory_ = space1()->memory_in_use() +
+                  space2()->memory_in_use() +
+                  space3()->memory_in_use(); // scf vector
+    int nthreads = thr_->nthread();
+    // ... plus the integrals evaluators
+    //static_memory_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
+    //                                                        space3_->basis(),space4_->basis());
+#else
+    static_memory_ += 0;
+#endif
+  }
+
+  // Send value of ni and mem_static to other nodes
+  double static_memory_double = static_cast<double>(static_memory_);
+  factory()->msg()->bcast(static_memory_double);
+  static_memory_ = static_cast<size_t>(static_memory_double);
+
+  npass_ = 0;
+  int rest = 0;
+  if (true) {
+    npass_ = 1;
+    rest = 0;
+  }
+
+  // At this point I need to figure out how much memory will be used after compute() has been called
+  // R12IntsAcc object will either use none or all of the dynamical memory
+  // this will call init_acc() implicitly
+  const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory());
+  if (!ints_acc()->data_persistent()) { // data is held in memory
+    memory_ = static_memory_ + mem_dyn;
+    peak_memory_ = memory_;
+  }
+  else { // data is held elsewhere
+    memory_ = static_memory_;
+    peak_memory_ = memory_ + mem_dyn;
+  }
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::reinit_acc()
+{
+  if (ints_acc_.nonnull())
+    ints_acc_ = 0;
+  init_acc();
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::obsolete()
+{
+  reinit_acc();
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::alloc_mem(const size_t localmem)
+{
+  if (mem_.null())
+    throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform::alloc_mem() -- memory group not initialized");
+  mem_->set_localsize(localmem);
+  if (debug() >= DefaultPrintThresholds::diagnostics) {
+    ExEnv::out0() << indent
+                  << "Size of global distributed array:       "
+                  << mem_->totalsize()
+                  << " Bytes" << endl;
+  }
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::dealloc_mem()
+{
+  if (mem_.null())
+    throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform::dealloc_mem() -- memory group not initialized");
+  mem_->set_localsize(0);
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::memory_report(std::ostream& os) const
+{
+  os << indent
+     << "Memory available per node:      " << max_memory_ << " Bytes"
+     << endl;
+  os << indent
+     << "Static memory used per node:    " << static_memory_ << " Bytes"
+     << endl;
+  os << indent
+     << "Total memory used per node:     " << peak_memory_ << " Bytes"
+     << endl;
+  this->extra_memory_report(os);
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::mospace_report(std::ostream& os) const
+{
+  os << indent << "MO space 1" << endl << incindent;
+  space1_->print_summary(os);  os << decindent;
+  os << indent << "MO space 2" << endl << incindent;
+  space2_->print_summary(os);  os << decindent;
+  os << indent << "MO space 3" << endl << incindent;
+  space3_->print_summary(os);  os << decindent;
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::print_header(std::ostream& os) const
+{
+  if (debug() >= DefaultPrintThresholds::terse)
+    os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
+  os << incindent;
+
+  int nproc = mem_->n();
+  if (debug() >= DefaultPrintThresholds::diagnostics)
+    os << indent << scprintf("nproc = %i", nproc) << endl;
+
+  if (restart_orbital() && debug() >= DefaultPrintThresholds::diagnostics) {
+    os << indent
+       << scprintf("Restarting at orbital %d",
+                   restart_orbital()) << endl;
+  }
+
+  memory_report(os);
+  if (debug() >= DefaultPrintThresholds::diagnostics)
+    mospace_report(os);
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform::print_footer(std::ostream& os) const
+{
+  os << decindent;
+  if (debug() >= DefaultPrintThresholds::diagnostics)
+    os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
+}
+
+const Ref<R12IntsAcc>&
+TwoBodyThreeCenterMOIntsTransform::ints_acc() {
+  init_acc();
+  return ints_acc_;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

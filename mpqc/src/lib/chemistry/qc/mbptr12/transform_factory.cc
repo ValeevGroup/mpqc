@@ -40,6 +40,7 @@
 #include <chemistry/qc/mbptr12/transform_ijxy.h>
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
 #include <chemistry/qc/mbptr12/transform_iRjS.h>
+#include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/transform_factory.timpl.h>
 
 // Set to 1 if want to use ixjy transforms only
@@ -79,7 +80,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
   debug_ = 0;
   dynamic_ = false;
   print_percent_ = 10.0;
-  ints_method_ = StoreMethod::mem_posix;
+  ints_method_ = MOIntsTransform::StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
 
   // allocate all memory at once
@@ -103,7 +104,8 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = static_cast<StoreMethod::type>(ints_method);
+  int ints_method; si.get(ints_method);
+  ints_method_ = static_cast<MOIntsTransform::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
 }
 
@@ -170,7 +172,6 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-  result->set_debug(debug());
   reserve_memory(result->memory());
 
   return result;
@@ -186,7 +187,6 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-  result->set_debug(debug());
   reserve_memory(result->memory());
 
   return result;
@@ -200,10 +200,10 @@ MOIntsTransformFactory::twobody_transform(StorageType storage,
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
 
   switch (storage) {
-    case StorageType_12:
+    case MOIntsTransform::StorageType_12:
     return twobody_transform_12(name,descr);
 
-    case StorageType_13:
+    case MOIntsTransform::StorageType_13:
     return twobody_transform_13(name,descr);
 
     default:
@@ -211,21 +211,52 @@ MOIntsTransformFactory::twobody_transform(StorageType storage,
   }
 }
 
+#if 0
+Ref<TwoBodyThreeCenterMOIntsTransform>
+MOIntsTransformFactory::twobody_transform(const std::string& name,
+                                          const Ref<TwoBodyThreeCenterIntDescr>& descr)
+{
+  Ref<TwoBodyThreeCenterMOIntsTransform> result = new TwoBodyThreeCenterMOIntsTransform_ijR(name,this,descr,space1_,space2_,space3_);
+
+#if 0
+  if (top_mole_.nonnull())
+    result->set_top_mole(top_mole_);
+  reserve_memory(result->memory());
+#endif
+  return result;
+}
+#endif
+
+#if 1
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform(TwoBodyTransformType T,
+MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType T,
                                           const std::string& name,
                                           const Ref<TwoBodyIntDescr>& descrarg)
 {
   switch (T) {
-    case TwoBodyTransformType_ixjy:
+    case MOIntsTransform::TwoBodyTransformType_ixjy:
       return twobody_transform<TwoBodyMOIntsTransform_ixjy>(name,descrarg);
-    case TwoBodyTransformType_ikjy:
+    case MOIntsTransform::TwoBodyTransformType_ikjy:
       return twobody_transform<TwoBodyMOIntsTransform_ikjy>(name,descrarg);
-    case TwoBodyTransformType_ijxy:
+    case MOIntsTransform::TwoBodyTransformType_ijxy:
       return twobody_transform<TwoBodyMOIntsTransform_ijxy>(name,descrarg);
-    case TwoBodyTransformType_iRjS:
+    case MOIntsTransform::TwoBodyTransformType_iRjS:
       return twobody_transform<TwoBodyMOIntsTransform_iRjS>(name,descrarg);
   }
+  assert(false); // should be unreachable
+}
+#endif
+
+Ref<TwoBodyThreeCenterMOIntsTransform>
+MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType T,
+                                          const std::string& name,
+                                          const Ref<TwoBodyThreeCenterIntDescr>& descrarg)
+{
+  switch (T) {
+    case MOIntsTransform::TwoBodyTransformType_ijR:
+      return twobody_transform<TwoBodyThreeCenterMOIntsTransform_ijR>(name,descrarg);
+  }
+  assert(false);  // should be unreachable
 }
 
 void
@@ -236,6 +267,20 @@ MOIntsTransformFactory::reserve_memory(size_t bytes) {
 void
 MOIntsTransformFactory::release_memory(size_t bytes) {
   memory_ += bytes;
+}
+
+void
+MOIntsTransformFactory::set_debug(int d) {
+  debug_ = d;
+  TwoBodyMOIntsTransform::set_debug(debug_);
+  TwoBodyThreeCenterMOIntsTransform::set_debug(debug_);
+}
+
+void
+MOIntsTransformFactory::set_print_percent(double pp) {
+  print_percent_ = pp;
+  TwoBodyMOIntsTransform::set_print_percent(print_percent_);
+  TwoBodyThreeCenterMOIntsTransform::set_print_percent(print_percent_);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -63,7 +63,7 @@ class R12IntEvalInfo : virtual public SavableState {
 public:
 
   /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
-  typedef MOIntsTransformFactory::StoreMethod StoreMethod;
+  typedef MOIntsTransform::StoreMethod StoreMethod;
 
   /// Maintains virtual orbitals and RI space info if VBS != OBS
   typedef struct {

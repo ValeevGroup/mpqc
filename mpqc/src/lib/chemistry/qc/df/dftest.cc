@@ -37,6 +37,7 @@
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/df/df.h>
 #include <chemistry/qc/mbptr12/transform_ixjy_df.h>
+#include <chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace std;
 using namespace sc;
@@ -260,8 +261,22 @@ int main(int argc, char **argv) {
     Ref<DensityFitting> df = new DensityFitting(integral, bs, bs, fbs);
     df->compute();
     integral->set_basis(fbs,fbs);
+#if 1
     RefSCMatrix kernel = twobody_matrix(integral->g12nc<2>(g12params),
                                         TwoBodyOper::r12_0_g12);
+#else
+    RefSymmSCMatrix kernel;
+    {
+      RefSymmSCMatrix kernel_so = detail::twobody_twocenter_coulomb(fbs,integral);
+      integral->set_basis(fbs);
+      Ref<PetiteList> pl = integral->petite_list();
+      RefSymmSCMatrix kernel_ao = pl->to_AO_basis(kernel_so);
+      Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+      kernel = kit->symmmatrix(new SCDimension(fbs->nbasis()));
+      kernel_ao->convert(kernel);
+    }
+#endif
+    kernel.print("kernel");
 
     {
       RefSCMatrix C_df = df->C().t() * kernel * df->C();

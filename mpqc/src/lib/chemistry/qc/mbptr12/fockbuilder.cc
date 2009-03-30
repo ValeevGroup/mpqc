@@ -108,6 +108,29 @@ namespace sc {
       return h;
     }
 
+    RefSymmSCMatrix twobody_twocenter_coulomb(const Ref<GaussianBasisSet>& bas,
+                                              const Ref<Integral>& integral) {
+
+      Ref<Integral> localints = integral->clone();
+      localints->set_basis(bas);
+      Ref<PetiteList> pl = localints->petite_list();
+
+      // form skeleton 2-center Coulomb in AO basis
+      RefSymmSCMatrix ao(bas->basisdim(), bas->matrixkit());
+      ao.assign(0.0);
+      Ref<SCElementOp> sc =
+          new TwoBodyTwoCenterIntOp(new SymmTwoBodyTwoCenterIntIter(localints->electron_repulsion2(),
+                                                                    pl));
+      ao.element_op(sc);
+      sc = 0;
+
+      // now symmetrize
+      RefSymmSCMatrix result(pl->SO_basisdim(), bas->so_matrixkit());
+      pl->symmetrize(ao, result);
+
+      return result;
+    }
+
     RefSymmSCMatrix pauli(const Ref<GaussianBasisSet>& bas,
                           const Ref<Integral>& integral) {
       const double c = 137.0359895; // speed of light in a vacuum in a.u.

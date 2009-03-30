@@ -96,6 +96,9 @@ namespace sc {
     RefSCMatrix overlap(const Ref<GaussianBasisSet>& brabs,
                         const Ref<GaussianBasisSet>& ketbs,
                         const Ref<Integral>& integral);
+    /// computes 2-center 2-body Coulomb operator matrix in SO matrix
+    RefSymmSCMatrix twobody_twocenter_coulomb(const Ref<GaussianBasisSet>& bas,
+                                              const Ref<Integral>& integral);
     /// computes nonrelativistic Hamiltonian matrix in SO basis
     RefSymmSCMatrix nonrelativistic(const Ref<GaussianBasisSet>& bas,
                                     const Ref<Integral>& integral);

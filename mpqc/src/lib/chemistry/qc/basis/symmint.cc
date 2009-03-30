@@ -123,6 +123,53 @@ SymmTwoBodyIntIter::scale() const
     pl->in_p4(i_offset(icur)+jcur, i_offset(kcur)+lcur,icur,jcur,kcur,lcur);
 }
 
+////////////////////////////////////////////////////////////////////////////
+// SymmTwoBodyTwoCenterIntIter
+
+SymmTwoBodyTwoCenterIntIter::SymmTwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>& ints,
+                                       const Ref<PetiteList>& p) :
+  TwoBodyTwoCenterIntIter(ints), pl(p)
+{
+}
+
+SymmTwoBodyTwoCenterIntIter::~SymmTwoBodyTwoCenterIntIter()
+{
+}
+
+void
+SymmTwoBodyTwoCenterIntIter::next()
+{
+  TwoBodyTwoCenterIntIter::next();
+  while (TwoBodyTwoCenterIntIter::ready() && !pl->lambda(icur,jcur))
+    TwoBodyTwoCenterIntIter::next();
+}
+
+void
+SymmTwoBodyTwoCenterIntIter::start(int ist, int jst, int ien, int jen)
+{
+  TwoBodyTwoCenterIntIter::start(ist,jst,ien,jen);
+  while (TwoBodyTwoCenterIntIter::ready() && !pl->lambda(icur,jcur))
+    TwoBodyTwoCenterIntIter::next();
+}
+
+double
+SymmTwoBodyTwoCenterIntIter::scale() const
+{
+  return (double) pl->lambda(icur,jcur) / (double) pl->order();
+}
+
+bool
+SymmTwoBodyTwoCenterIntIter::cloneable()
+{
+  return tbi->cloneable();
+}
+
+Ref<TwoBodyTwoCenterIntIter>
+SymmTwoBodyTwoCenterIntIter::clone()
+{
+  return new SymmTwoBodyTwoCenterIntIter(tbi->clone(), pl->clone());
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

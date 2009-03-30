@@ -154,6 +154,19 @@ TwoBodyTwoCenterIntV3::set_integral_storage(size_t storage)
   int2ev3_->init_storage(storage);
 }
 
+bool
+TwoBodyTwoCenterIntV3::cloneable()
+{
+  return true;
+}
+
+Ref<TwoBodyTwoCenterInt>
+TwoBodyTwoCenterIntV3::clone()
+{
+  const size_t storage = int2ev3_->used_storage();
+  return new TwoBodyTwoCenterIntV3(integral_, bs1_, bs2_, storage);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyDerivIntV3::TwoBodyDerivIntV3(Integral*integral,

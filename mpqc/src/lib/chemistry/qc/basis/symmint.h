@@ -44,7 +44,7 @@ namespace sc {
 class SymmOneBodyIntIter : public OneBodyIntIter {
   protected:
     Ref<PetiteList> pl;
-    
+
   public:
     SymmOneBodyIntIter(const Ref<OneBodyInt>&, const Ref<PetiteList>&);
     ~SymmOneBodyIntIter();
@@ -70,6 +70,23 @@ class SymmTwoBodyIntIter : public TwoBodyIntIter {
     void next();
 
     double scale() const;
+};
+
+class SymmTwoBodyTwoCenterIntIter : public TwoBodyTwoCenterIntIter {
+  protected:
+    Ref<PetiteList> pl;
+
+  public:
+    SymmTwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>&, const Ref<PetiteList>&);
+    ~SymmTwoBodyTwoCenterIntIter();
+
+    void start(int ist=0, int jst=0, int ien=0, int jen=0);
+    void next();
+
+    double scale() const;
+
+    bool cloneable();
+    Ref<TwoBodyTwoCenterIntIter> clone();
 };
 
 }

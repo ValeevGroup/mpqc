@@ -37,6 +37,7 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
 #include <chemistry/qc/basis/operator.h>
+#include <chemistry/qc/basis/obint.h>
 
 namespace sc {
 
@@ -155,6 +156,14 @@ class TwoBodyInt : public RefCount {
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
 
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<TwoBodyInt> clone();
+
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
 
@@ -256,6 +265,14 @@ class TwoBodyThreeCenterInt : public RefCount {
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
 
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<TwoBodyThreeCenterInt> clone();
+
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
 
@@ -349,6 +366,14 @@ class TwoBodyTwoCenterInt : public RefCount {
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
+
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<TwoBodyTwoCenterInt> clone();
 
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
@@ -446,6 +471,54 @@ class TwoBodyIntIter {
     virtual double scale() const;
 
     ShellQuartetIter& current_quartet();
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+class TwoBodyTwoCenterIntIter : public RefCount {
+  protected:
+    Ref<TwoBodyTwoCenterInt> tbi; // help me obi wan
+    ShellPairIter spi;
+
+    int redund;
+
+    int istart;
+    int jstart;
+
+    int iend;
+    int jend;
+
+    int icur;
+    int jcur;
+
+    int ij;
+
+  public:
+    TwoBodyTwoCenterIntIter();
+    TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>&);
+    virtual ~TwoBodyTwoCenterIntIter();
+
+    virtual void start(int ist=0, int jst=0, int ien=0, int jen=0);
+    virtual void next();
+
+    int ready() const { return (icur < iend); }
+
+    int ishell() const { return icur; }
+    int jshell() const { return jcur; }
+
+    int ijshell() const { return ij; }
+
+    int redundant() const { return redund; }
+    void set_redundant(int i) { redund=i; }
+
+    virtual double scale() const;
+
+    Ref<TwoBodyTwoCenterInt> two_body_int() { return tbi; }
+
+    ShellPairIter& current_pair();
+
+    virtual bool cloneable();
+    virtual Ref<TwoBodyTwoCenterIntIter> clone();
 };
 
 // //////////////////////////////////////////////////////////////////////////
@@ -674,6 +747,31 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
     double shell_bound(int= -1,int= -1);
 
 };
+
+/////////////
+
+/// The 2-body analog of OneBodyIntOp
+class TwoBodyTwoCenterIntOp: public SCElementOp {
+  protected:
+    Ref<TwoBodyTwoCenterIntIter> iter;
+
+  public:
+    TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>&);
+    TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterIntIter>&);
+    virtual ~TwoBodyTwoCenterIntOp();
+
+    void process(SCMatrixBlockIter&);
+    void process_spec_rect(SCMatrixRectBlock*);
+    void process_spec_ltri(SCMatrixLTriBlock*);
+    void process_spec_rectsub(SCMatrixRectSubBlock*);
+    void process_spec_ltrisub(SCMatrixLTriSubBlock*);
+
+    bool cloneable();
+    Ref<SCElementOp> clone();
+
+    int has_side_effects();
+};
+
 
 }
 

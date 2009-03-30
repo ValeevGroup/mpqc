@@ -203,6 +203,18 @@ TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
   return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
+bool
+TwoBodyInt::cloneable()
+{
+  return false;
+}
+
+Ref<TwoBodyInt>
+TwoBodyInt::clone()
+{
+  throw FeatureNotImplemented("TwoBodyInt::clone() not implemented",__FILE__,__LINE__);
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,
@@ -319,6 +331,18 @@ TwoBodyThreeCenterInt::shell_bound(int s1, int s2, int s3)
   return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
+bool
+TwoBodyThreeCenterInt::cloneable()
+{
+  return false;
+}
+
+Ref<TwoBodyThreeCenterInt>
+TwoBodyThreeCenterInt::clone()
+{
+  throw FeatureNotImplemented("TwoBodyThreeCenterInt::clone() not implemented",__FILE__,__LINE__);
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyTwoCenterInt::TwoBodyTwoCenterInt(Integral *integral,
@@ -414,6 +438,18 @@ TwoBodyTwoCenterInt::shell_bound(int s1, int s2)
   else if( ibound > SCHAR_MAX )
     return log2_to_double_[ SCHAR_MAX - SCHAR_MIN ];
   return log2_to_double_[ ibound - SCHAR_MIN ];
+}
+
+bool
+TwoBodyTwoCenterInt::cloneable()
+{
+  return false;
+}
+
+Ref<TwoBodyTwoCenterInt>
+TwoBodyTwoCenterInt::clone()
+{
+  throw FeatureNotImplemented("TwoBodyTwoCenterInt::clone() not implemented",__FILE__,__LINE__);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -962,6 +998,289 @@ init_log2_to_double()
     ptr[++i] = pow(2.0,log2);
 
   return ptr;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyTwoCenterIntIter::TwoBodyTwoCenterIntIter()
+{
+}
+
+TwoBodyTwoCenterIntIter::TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>& o) :
+  tbi(o)
+{
+}
+
+TwoBodyTwoCenterIntIter::~TwoBodyTwoCenterIntIter()
+{
+}
+
+void
+TwoBodyTwoCenterIntIter::start(int ist, int jst, int ien, int jen)
+{
+  istart=ist;
+  jstart=jst;
+  iend=ien;
+  jend=jen;
+
+  icur=istart;
+  jcur=jstart;
+
+  if (!iend) {
+    iend=tbi->nshell1();
+    jend=tbi->nshell2();
+  }
+
+  ij = (icur*(icur+1)>>1) + jcur;
+}
+
+static inline int
+min(int i, int j)
+{
+  return (i<j) ? i : j;
+}
+
+void
+TwoBodyTwoCenterIntIter::next()
+{
+  int jlast = (redund) ? min(icur,jend-1) : jend-1;
+
+  if (jcur < jlast) {
+    jcur++;
+    ij++;
+    return;
+  }
+
+  jcur=jstart;
+  icur++;
+
+  ij = (icur*(icur+1)>>1) + jcur;
+}
+
+double
+TwoBodyTwoCenterIntIter::scale() const
+{
+  return 1.0;
+}
+
+ShellPairIter&
+TwoBodyTwoCenterIntIter::current_pair()
+{
+  tbi->compute_shell(icur,jcur);
+  spi.init(tbi->buffer(), icur, jcur,
+           tbi->basis1()->shell_to_function(icur),
+           tbi->basis2()->shell_to_function(jcur),
+           tbi->basis1()->operator()(icur).nfunction(),
+           tbi->basis2()->operator()(jcur).nfunction(),
+           redund, scale()
+           );
+
+  return spi;
+}
+
+bool
+TwoBodyTwoCenterIntIter::cloneable()
+{
+  return tbi->cloneable();
+}
+
+Ref<TwoBodyTwoCenterIntIter>
+TwoBodyTwoCenterIntIter::clone()
+{
+  return new TwoBodyTwoCenterIntIter(tbi->clone());
+}
+
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyTwoCenterIntOp::TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>& it)
+{
+  iter = new TwoBodyTwoCenterIntIter(it);
+}
+
+TwoBodyTwoCenterIntOp::TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterIntIter>& it) :
+  iter(it)
+{
+}
+
+TwoBodyTwoCenterIntOp::~TwoBodyTwoCenterIntOp()
+{
+}
+
+bool
+TwoBodyTwoCenterIntOp::cloneable()
+{
+  return iter->cloneable();
+}
+
+Ref<SCElementOp>
+TwoBodyTwoCenterIntOp::clone()
+{
+  return new TwoBodyTwoCenterIntOp(iter->clone());
+}
+
+void
+TwoBodyTwoCenterIntOp::process(SCMatrixBlockIter& b)
+{
+  ExEnv::err0() << indent
+       << "TwoBodyTwoCenterIntOp::process: cannot handle generic case\n";
+  abort();
+}
+
+void
+TwoBodyTwoCenterIntOp::process_spec_rect(SCMatrixRectBlock* b)
+{
+  Ref<GaussianBasisSet> bs1 = iter->two_body_int()->basis1();
+  Ref<GaussianBasisSet> bs2 = iter->two_body_int()->basis2();
+
+  // convert basis function indices into shell indices
+  int ishstart = bs1->function_to_shell(b->istart);
+  int jshstart = bs2->function_to_shell(b->jstart);
+
+  int b1end = b->iend;
+  int ishend = (b1end?bs1->function_to_shell(b1end-1) + 1 : 0);
+
+  int b2end = b->jend;
+  int jshend = (b2end?bs2->function_to_shell(b2end-1) + 1 : 0);
+
+  int njdata = b->jend - b->jstart;
+
+  iter->set_redundant(0);
+
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
+    ShellPairIter& spi = iter->current_pair();
+
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+
+      if (ifn < b->istart || ifn >= b->iend ||
+          jfn < b->jstart || jfn >= b->jend)
+        continue;
+
+      int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
+      b->data[data_index] += spi.val();
+    }
+  }
+}
+
+void
+TwoBodyTwoCenterIntOp::process_spec_ltri(SCMatrixLTriBlock* b)
+{
+  Ref<GaussianBasisSet> bs1 = iter->two_body_int()->basis1();
+
+  // convert basis function indices into shell indices
+  int fnstart = b->start;
+  int fnend = b->end;
+  int shstart = bs1->function_to_shell(fnstart);
+  int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
+
+  iter->set_redundant(1);
+
+  // loop over all needed shells
+  for (iter->start(shstart,shstart,shend,shend); iter->ready(); iter->next()) {
+    ShellPairIter& spi = iter->current_pair();
+
+    // compute a set of shell integrals
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+
+      if (ifn < fnstart || ifn >= fnend)
+        continue;
+
+      int ioff = ifn-fnstart;
+      int joff = jfn-fnstart;
+
+      int data_index = i_offset(ioff)+joff;
+
+      b->data[data_index] += spi.val();
+    }
+  }
+}
+
+void
+TwoBodyTwoCenterIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
+{
+  Ref<GaussianBasisSet> bs1 = iter->two_body_int()->basis1();
+  Ref<GaussianBasisSet> bs2 = iter->two_body_int()->basis2();
+
+  // convert basis function indices into shell indices
+  int istart = b->istart;
+  int jstart = b->jstart;
+  int iend = b->iend;
+  int jend = b->jend;
+
+  int ishstart = bs1->function_to_shell(istart);
+  int jshstart = bs2->function_to_shell(jstart);
+
+  int ishend = (iend ? bs1->function_to_shell(iend-1) + 1 : 0);
+  int jshend = (jend ? bs2->function_to_shell(jend-1) + 1 : 0);
+
+  int njdata = b->istride;
+
+  iter->set_redundant(0);
+
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
+    ShellPairIter& spi = iter->current_pair();
+
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+
+      if (ifn < istart || ifn >= iend || jfn < jstart || jfn >= jend)
+        continue;
+
+      int data_index = ifn*njdata + jfn;
+      b->data[data_index] += spi.val();
+    }
+  }
+}
+
+void
+TwoBodyTwoCenterIntOp::process_spec_ltrisub(SCMatrixLTriSubBlock* b)
+{
+  Ref<GaussianBasisSet> bs1 = iter->two_body_int()->basis1();
+
+  // convert basis function indices into shell indices
+  int istart = b->istart;
+  int iend = b->iend;
+
+  int jstart = b->jstart;
+  int jend = b->jend;
+
+  int ishstart = bs1->function_to_shell(istart);
+  int jshstart = bs1->function_to_shell(jstart);
+
+  int ishend = (iend ? bs1->function_to_shell(iend-1) + 1 : 0);
+  int jshend = (jend ? bs1->function_to_shell(jend-1) + 1 : 0);
+
+  iter->set_redundant(1);
+
+  // loop over all needed shells
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
+    ShellPairIter& spi = iter->current_pair();
+
+    // compute a set of shell integrals
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+
+      if (ifn < istart || ifn >= iend || jfn < jstart || jfn >= jend)
+        continue;
+
+      int data_index = i_offset(ifn)+jfn;
+      b->data[data_index] += spi.val();
+    }
+  }
+}
+
+int
+TwoBodyTwoCenterIntOp::has_side_effects()
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

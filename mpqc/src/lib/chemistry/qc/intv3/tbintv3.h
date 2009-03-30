@@ -100,6 +100,9 @@ class TwoBodyTwoCenterIntV3 : public TwoBodyTwoCenterInt {
     TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
+    bool cloneable();
+    Ref<TwoBodyTwoCenterInt> clone();
+
     int log2_shell_bound(int,int);
     void compute_shell(int,int);
 

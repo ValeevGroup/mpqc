@@ -38,6 +38,7 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
 
     TwoBodyOperSet::type int2etype_;
     Ref<TwoBodyOperSetDescr> descr_;
+    Ref<IntParams> params_;
 
   protected:
     Ref<Int2eLibint2> int2elibint2_;
@@ -72,6 +73,7 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
 
   TwoBodyOperSet::type int2etype_;
   Ref<TwoBodyOperSetDescr> descr_;
+  Ref<IntParams> params_;
 
   protected:
     Ref<Int2eLibint2> int2elibint2_;
@@ -105,6 +107,7 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
 
   TwoBodyOperSet::type int2etype_;
   Ref<TwoBodyOperSetDescr> descr_;
+  Ref<IntParams> params_;
 
   protected:
     Ref<Int2eLibint2> int2elibint2_;
@@ -120,6 +123,9 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
 
     TwoBodyOperSet::type type() const { return int2etype_; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
+
+    bool cloneable();
+    Ref<TwoBodyTwoCenterInt> clone();
 
     int log2_shell_bound(int,int);
     void compute_shell(int,int);

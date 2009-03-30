@@ -166,7 +166,8 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				     size_t storage, TwoBodyOperSet::type int2etype,
 				     const Ref<IntParams>& params):
     TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype),
-    descr_(TwoBodyOperSetDescr::instance(int2etype))
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
 {
     using sc::libint2::create_int2e;
   // Which evaluator to use
@@ -255,7 +256,8 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
                      size_t storage, TwoBodyOperSet::type int2etype,
                      const Ref<IntParams>& params):
     TwoBodyThreeCenterInt(integral,b1,b2,b3), int2etype_(int2etype),
-    descr_(TwoBodyOperSetDescr::instance(int2etype))
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
 {
   Ref<GaussianBasisSet> b4 = new GaussianBasisSet(GaussianBasisSet::Unit);
   using sc::libint2::create_int2e;
@@ -344,7 +346,8 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
                      size_t storage, TwoBodyOperSet::type int2etype,
                      const Ref<IntParams>& params):
     TwoBodyTwoCenterInt(integral,b1,b3), int2etype_(int2etype),
-    descr_(TwoBodyOperSetDescr::instance(int2etype))
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
 {
   Ref<GaussianBasisSet> b2 = new GaussianBasisSet(GaussianBasisSet::Unit);
   Ref<GaussianBasisSet> b4 = b2;
@@ -427,6 +430,20 @@ TwoBodyTwoCenterIntLibint2::set_integral_storage(size_t storage)
 {
   int2elibint2_->init_storage(storage);
 }
+
+bool
+TwoBodyTwoCenterIntLibint2::cloneable()
+{
+  return true;
+}
+
+Ref<TwoBodyTwoCenterInt>
+TwoBodyTwoCenterIntLibint2::clone()
+{
+  const size_t storage = int2elibint2_->storage_used();
+  return new TwoBodyTwoCenterIntLibint2(integral_, bs1_, bs2_, storage, int2etype_, params_);
+}
+
 
 //////////////////////////////////////////////////////////////////
 

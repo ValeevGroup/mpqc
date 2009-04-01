@@ -223,10 +223,10 @@ void R12IntEval::compute_B_DKH_() {
                                                                       g12nccorrfact->function(0));
     Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(), params);
     const std::string descr_key = r12info()->moints_runtime()->descr_key(descr_g12dkh);
-    const std::string tform_key = ParsedTwoBodyIntKey::key(xspace1->id(),xspace2->id(),
+    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(xspace1->id(),xspace2->id(),
                                                            xspace1->id(),xspace2->id(),
                                                            descr_key,
-                                                           std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                                                           std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms_g12dkh.push_back(tform_key);
 
     // M2H + M3H

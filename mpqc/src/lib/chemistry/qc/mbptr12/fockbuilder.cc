@@ -647,10 +647,10 @@ namespace sc {
       ExEnv::out0() << incindent;
 
       // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
-      const std::string tform_key = ParsedTwoBodyIntKey::key(occ_space->id(),bra_space->id(),
+      const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ_space->id(),bra_space->id(),
                                                              occ_space->id(),ket_space->id(),
                                                              std::string("ERI"),
-                                                             std::string(MOIntsRuntime::Layout_b1k1_b2k2));
+                                                             std::string(TwoBodyIntLayout::b1k1_b2k2));
       Ref<TwoBodyMOIntsTransform> mnxy_tform = ints_rtime->get(tform_key);
       Ref<R12IntsAcc> mnxy_acc = mnxy_tform->ints_acc();
 
@@ -737,10 +737,10 @@ namespace sc {
       ExEnv::out0() << incindent;
 
       // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
-      const std::string tform_key = ParsedTwoBodyIntKey::key(occ_space->id(),occ_space->id(),
+      const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ_space->id(),occ_space->id(),
                                                              bra_space->id(),ket_space->id(),
                                                              std::string("ERI"),
-                                                             std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                                                             std::string(TwoBodyIntLayout::b1b2_k1k2));
       Ref<TwoBodyMOIntsTransform> mxny_tform = ints_rtime->get(tform_key);
       Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 

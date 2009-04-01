@@ -138,7 +138,7 @@ R12TwoBodyIntKeyCreator::ObjT R12TwoBodyIntKeyCreator::operator()()
   else // if (CorrFunctionInKet_)
     descr = corrfactor_->tbintdescr(integral,ketindex_);
   const std::string descr_key = moints_rtime_->descr_key(descr);
-  ObjT result = ParsedTwoBodyIntKey::key(bra1_->id(),bra2_->id(),ket1_->id(),ket2_->id(),descr_key,layout_key_);
+  ObjT result = ParsedTwoBodyFourCenterIntKey::key(bra1_->id(),bra2_->id(),ket1_->id(),ket2_->id(),descr_key,layout_key_);
 
   increment_indices();
   return result;

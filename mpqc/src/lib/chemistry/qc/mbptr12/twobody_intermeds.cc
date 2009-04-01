@@ -151,10 +151,10 @@ R12IntEval::V(SpinCase2 spincase2,
     fill_container(tformkey_creator,tforms_f12);
   }
   if (!p1p2_in_x1x2) {
-    const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                            orbs1->id(),orbs1->id(),
                                                            std::string("ERI"),
-                                                           std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                                                           std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms.push_back(tform_key);
   }
   else
@@ -216,10 +216,10 @@ R12IntEval::V(SpinCase2 spincase2,
       fill_container(tformkey_creator,tforms_f12_xmyP);
     }
     if (!p1p2_in_x1x2) {
-      const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+      const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                              occ1->id(),rispace2->id(),
                                                              std::string("ERI"),
-                                                             std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                                                             std::string(TwoBodyIntLayout::b1b2_k1k2));
       tforms_imjP.push_back(tform_key);
     }
     else
@@ -256,10 +256,10 @@ R12IntEval::V(SpinCase2 spincase2,
 	fill_container(tformkey_creator,tforms_f12_xPym);
       }
       if (!p1p2_in_x1x2) {
-        const std::string tform_key = ParsedTwoBodyIntKey::key(p1->id(),p2->id(),
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                                rispace1->id(),occ2->id(),
                                                                std::string("ERI"),
-                                                               std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                                                               std::string(TwoBodyIntLayout::b1b2_k1k2));
         tforms_iPjm.push_back(tform_key);
       }
       else

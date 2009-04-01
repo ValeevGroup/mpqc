@@ -33,101 +33,18 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
 
 #include <util/state/state.h>
+#include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
 namespace sc {
 
-  /**
-   *    Smart runtime support for computing MO-basis integrals.
-   */
-  class MOIntsRuntime : virtual public SavableState {
+
+  /// Parsed representation of a string key that represents a set of 4-center 2-body integrals
+  class ParsedTwoBodyFourCenterIntKey {
     public:
-      // for now use the typedef, later replace R12IntsAcc with TwoBodyIntsAcc
-      typedef TwoBodyMOIntsTransform TwoBodyIntsTransform;
-      // for now use the typedef, later replace R12IntsAcc with TwoBodyIntsAcc
-      typedef R12IntsAcc TwoBodyIntsAcc;
-      MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory);
-      MOIntsRuntime(StateIn& si);
-      void save_data_state(StateOut& so);
-
-      /** Returns true if the given transform is available
-        */
-      bool exists(const std::string& key) const;
-
-      /** Returns the TwoBodyIntsTransform that contains the integrals described by key.
-          The desired integrals may be a subset of the given TwoBodyIntsTransform.
-
-          key must be in format recognized by ParsedTwoBodyIntKey, which matched the format used by key() or key_mulliken().
-          If this key is not known, the integrals will be computed by an appropriate TwoBodyMOIntsTranform object.
-        */
-      Ref<TwoBodyIntsTransform> get(const std::string& key);   // non-const: can add transforms
-
-      /** Returns key that describes params. If not registered, will do so using register_params(params)
-       */
-      std::string params_key(const Ref<IntParams>& params) const;
-      /** Returns params that correspond to key. Returns null ptr if key is not known.
-        */
-      Ref<IntParams> params(const std::string& key) const;
-      // register key->params mapping
-      void register_params(const std::string& key, const Ref<IntParams>& params) const;
-      // register key->params mapping. A unique random key is generated automatically and returned
-      std::string register_params(const Ref<IntParams>& params) const;
-      /** Returns key that corresponds to descr.
-          \sa params_key
-        */
-      std::string descr_key(const Ref<TwoBodyIntDescr>& descr);
-
-      /// returns the factory
-      const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
-
-      /// describes the physical layout of the integrals in TwoBodyIntsAcc
-      class Layout {
-        public:
-          Layout(const std::string& str);
-          Layout(const Layout& other);
-          Layout& operator=(const Layout& other);
-          bool operator==(const Layout& other) const;
-          operator std::string();
-
-        private:
-          typedef enum {
-            b1b2_k1k2, // physicists layout
-            b1k1_b2k2  // chemists layout
-          } Type;
-          Type type_;
-      };
-      static Layout Layout_b1b2_k1k2;  // physicists layout
-      static Layout Layout_b1k1_b2k2;  // chemists layout
-
-    private:
-      Ref<MOIntsTransformFactory> factory_;  // that creates transforms
-
-      // Maps key to IntParams. IntParams objects are not unique, hence should compare them instead of pointers
-      typedef Registry<std::string, Ref<IntParams>, detail::NonsingletonCreationPolicy, std::equal_to<std::string>,
-                       RefObjectEqual<IntParams> > ParamRegistry;
-      Ref<ParamRegistry> params_;
-
-      // Map to TwoBodyMOIntsTransform objects that have been computed previously
-      typedef Registry<std::string, Ref<TwoBodyMOIntsTransform>, detail::NonsingletonCreationPolicy > TformRegistry;
-      Ref<TformRegistry> tforms_;
-
-      // creates a transform object for a given key
-      const Ref<TwoBodyMOIntsTransform>& create_tform(const std::string& key);
-
-      /** creates TwoBodyIntDescr given the operator and params keys.
-          params_key must be in params_map_.
-       */
-      Ref<TwoBodyIntDescr> create_descr(const std::string& oper_key,
-                                        const std::string& params_key);
-
-  };
-
-  /// Parsed representation of a string key that represents a set of 2-body integrals
-  class ParsedTwoBodyIntKey {
-    public:
-      ParsedTwoBodyIntKey(const std::string& key);
+      ParsedTwoBodyFourCenterIntKey(const std::string& key);
 
       const std::string& key() const { return key_; }
       const std::string& bra1() const { return bra1_; }
@@ -167,6 +84,297 @@ namespace sc {
       std::string params_;
       std::string layout_;
   };
+
+  /// Parsed representation of a string key that represents a set of 3-center 2-body integrals
+  class ParsedTwoBodyThreeCenterIntKey {
+    public:
+      ParsedTwoBodyThreeCenterIntKey(const std::string& key);
+
+      const std::string& key() const { return pkey_.key(); }
+      const std::string& bra1() const { return pkey_.bra1(); }
+      const std::string& bra2() const { return pkey_.bra2(); }
+      const std::string& ket1() const { return pkey_.ket1(); }
+      const std::string& oper() const { return pkey_.oper(); }
+      const std::string& params() const { return pkey_.params(); }
+
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& ket1,
+                             const std::string& oper,
+                             const std::string& params);
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& ket1,
+                             const std::string& descr);
+      /// computes operator part of the key given an TwoBodyThreeCenterIntDescr object
+      static std::string key(const Ref<TwoBodyThreeCenterIntDescr>& descr);
+      /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
+      static Ref<TwoBodyThreeCenterIntDescr> create_descr(const std::string& oper_key,
+                                                          const Ref<IntParams>& p,
+                                                          const Ref<Integral>& integral);
+
+    private:
+      // implemented in terms of the 4-center parser
+      ParsedTwoBodyFourCenterIntKey pkey_;
+  };
+
+  /// Parsed representation of a string key that represents a set of 2-center 2-body integrals
+  class ParsedTwoBodyTwoCenterIntKey {
+    public:
+      ParsedTwoBodyTwoCenterIntKey(const std::string& key);
+
+      const std::string& key() const { return pkey_.key(); }
+      const std::string& bra1() const { return pkey_.bra1(); }
+      const std::string& bra2() const { return pkey_.bra2(); }
+      const std::string& oper() const { return pkey_.oper(); }
+      const std::string& params() const { return pkey_.params(); }
+
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& oper,
+                             const std::string& params);
+      /// computes key from its components
+      static std::string key(const std::string& bra1,
+                             const std::string& bra2,
+                             const std::string& descr);
+      /// computes operator part of the key given an TwoBodyThreeCenterIntDescr object
+      static std::string key(const Ref<TwoBodyTwoCenterIntDescr>& descr);
+      /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
+      static Ref<TwoBodyTwoCenterIntDescr> create_descr(const std::string& oper_key,
+                                                        const Ref<IntParams>& p,
+                                                        const Ref<Integral>& integral);
+
+    private:
+      // implemented in terms of the 4-center parser
+      ParsedTwoBodyFourCenterIntKey pkey_;
+  };
+
+  /// describes the physical layout of the integrals in TwoBodyIntsAcc
+  class TwoBodyIntLayout {
+    public:
+      static TwoBodyIntLayout b1b2_k1k2;  // physicists layout
+      static TwoBodyIntLayout b1k1_b2k2;  // chemists layout
+
+      TwoBodyIntLayout(const std::string& str);
+      TwoBodyIntLayout(const TwoBodyIntLayout& other);
+      TwoBodyIntLayout& operator=(const TwoBodyIntLayout& other);
+      bool operator==(const TwoBodyIntLayout& other) const;
+      operator std::string();
+
+    private:
+      typedef enum {
+        _b1b2_k1k2, // physicists layout
+        _b1k1_b2k2  // chemists layout
+      } Type;
+      Type type_;
+  };
+
+  /// this is a singleton registry that holds IntParams objects.
+  class ParamsRegistry : public RefCount {
+
+    public:
+      /// this is a singleton
+      static const Ref<ParamsRegistry>& instance();
+
+      /** Returns key that describes params. If not registered, will do so using register_params(params)
+       */
+      std::string key(const Ref<IntParams>& params) const;
+      /** Returns params that correspond to key. Returns null ptr if key is not known.
+       */
+      Ref<IntParams> value(const std::string& key) const;
+      /// register key->params mapping
+      void add(const std::string& key, const Ref<IntParams>& params) const;
+      /// register key->params mapping. A unique random key is generated automatically and returned
+      std::string add(const Ref<IntParams>& params) const;
+
+    private:
+      ParamsRegistry();
+
+      static Ref<ParamsRegistry> instance_;
+
+      // Maps key to IntParams. IntParams objects are not unique, hence should compare them instead of pointers
+      typedef Registry<std::string, Ref<IntParams>, detail::NonsingletonCreationPolicy, std::equal_to<std::string>,
+      RefObjectEqual<IntParams> > RegistryType;
+
+      Ref<RegistryType> params_;
+  };
+
+  namespace detail {
+    // computes the type of the object that holds the two-body MO integrals
+    // with the given number of centers
+    template <int NumCenters> struct TwoBodyIntEval;
+    template <> struct TwoBodyIntEval<4> {
+      typedef TwoBodyMOIntsTransform value;
+      typedef Ref<value> refvalue;
+    };
+    template <> struct TwoBodyIntEval<3> {
+      typedef TwoBodyThreeCenterMOIntsTransform value;
+      typedef Ref<value> refvalue;
+    };
+    template <> struct TwoBodyIntEval<2> {
+      typedef RefSCMatrix value;
+      typedef value refvalue;
+    };
+    // computes the type of the object that parses the labels for two-body MO integrals
+    // with the given number of centers
+    template <int NumCenters> struct ParsedTwoBodyIntKey;
+    template <> struct ParsedTwoBodyIntKey<4> {
+      typedef ParsedTwoBodyFourCenterIntKey value;
+    };
+    template <> struct ParsedTwoBodyIntKey<3> {
+      typedef ParsedTwoBodyThreeCenterIntKey value;
+    };
+    template <> struct ParsedTwoBodyIntKey<2> {
+      typedef ParsedTwoBodyTwoCenterIntKey value;
+    };
+  };
+
+  /**
+   *    Smart runtime support for computing MO-basis integrals.
+   */
+  template <int NumCenters>
+  class TwoBodyMOIntsRuntime : virtual public SavableState {
+    public:
+      typedef TwoBodyMOIntsRuntime this_type;
+      typedef typename detail::TwoBodyIntEval<NumCenters>::value TwoBodyIntEval;
+      typedef typename detail::TwoBodyIntEval<NumCenters>::refvalue TwoBodyIntEvalRef;
+      typedef typename NCentersToDescr<NumCenters,2>::value TwoBodyIntDescr;
+      typedef typename detail::ParsedTwoBodyIntKey<NumCenters>::value ParsedTwoBodyIntKey;
+
+      TwoBodyMOIntsRuntime(const Ref<MOIntsTransformFactory>& factory);
+      TwoBodyMOIntsRuntime(StateIn& si);
+      void save_data_state(StateOut& so);
+
+      /** Returns true if the given TwoBodyIntEval is available
+        */
+      bool exists(const std::string& key) const;
+
+      /** Returns the TwoBodyIntEval that contains the integrals described by key.
+
+          key must be in format recognized by ParsedTwoBodyIntKey, which matched the format used by key() or key_mulliken().
+          If this key is not known, the integrals will be computed.
+        */
+      TwoBodyIntEvalRef get(const std::string& key);   // non-const: can compute integrals
+
+      /** Returns key that corresponds to descr.
+          \sa params_key
+        */
+      std::string descr_key(const Ref<TwoBodyIntDescr>& descr);
+
+      /// returns the factory
+      const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
+
+    private:
+      Ref<MOIntsTransformFactory> factory_;  // that creates transforms
+
+      // Map to TwoBodyIntEval objects that have been computed previously
+      typedef Registry<std::string, TwoBodyIntEvalRef, detail::NonsingletonCreationPolicy > EvalRegistry;
+      Ref<EvalRegistry> evals_;
+
+      // creates a TwoBodyIntEval object for a given key
+      const TwoBodyIntEvalRef& create_eval(const std::string& key);
+
+      /** creates TwoBodyIntDescr given the operator and params keys.
+          params_key must be in params_map_.
+       */
+      Ref<TwoBodyIntDescr> create_descr(const std::string& oper_key,
+                                        const std::string& params_key);
+
+      static ClassDesc class_desc_;
+
+  };
+
+  template <int NumCenters>
+    ClassDesc
+    TwoBodyMOIntsRuntime<NumCenters>::class_desc_(typeid(this_type),
+                                                  (std::string("TwoBodyMOIntsRuntime<") +
+                                                   std::string('0' + NumCenters) +
+                                                   std::string(">")).c_str(),
+                                                  1,
+                                                  "virtual public SavableState", 0, 0,
+                                                  create<this_type> );
+
+  template <int NumCenters>
+  TwoBodyMOIntsRuntime<NumCenters>::TwoBodyMOIntsRuntime(const Ref<MOIntsTransformFactory>& f) : factory_(f),
+    evals_(EvalRegistry::instance())
+  {
+  }
+
+  template <int NumCenters>
+  TwoBodyMOIntsRuntime<NumCenters>::TwoBodyMOIntsRuntime(StateIn& si)
+  {
+    factory_ << SavableState::restore_state(si);
+    evals_ = EvalRegistry::restore_instance(si);
+  }
+
+  template <int NumCenters>
+  void
+  TwoBodyMOIntsRuntime<NumCenters>::save_data_state(StateOut& so)
+  {
+    SavableState::save_state(factory_.pointer(),so);
+    EvalRegistry::save_instance(evals_,so);
+  }
+
+  template <int NumCenters>
+  bool
+  TwoBodyMOIntsRuntime<NumCenters>::exists(const std::string& key) const
+  {
+    return evals_->key_exists(key);
+  }
+
+
+  template <int NumCenters>
+  typename TwoBodyMOIntsRuntime<NumCenters>::TwoBodyIntEvalRef
+  TwoBodyMOIntsRuntime<NumCenters>::get(const std::string& key)
+  {
+    if (evals_->key_exists(key)) {
+      return evals_->value(key);
+    }
+    else {  // if not found
+      try { ParsedTwoBodyIntKey parsedkey(key); }
+      catch (...) {
+        std::ostringstream oss;
+        oss << "TwoBodyMOIntsRuntime<NumCenters>::get() -- key " << key << " does not match the format";
+        throw ProgrammingError(oss.str().c_str(),__FILE__,__LINE__);
+      }
+      // then create evaluated tform
+      const TwoBodyIntEvalRef& eval = create_eval(key);
+      return eval;
+    }
+    assert(false); // unreachable
+  }
+
+  template <int NumCenters>
+  std::string
+  TwoBodyMOIntsRuntime<NumCenters>::descr_key(const Ref<TwoBodyIntDescr>& descr)
+  {
+    std::string result = ParsedTwoBodyIntKey::key(descr);
+    Ref<IntParams> p = descr->params();
+    result += ParamsRegistry::instance()->key(p);
+    return result;
+  }
+
+  template <int NumCenters>
+  Ref<typename TwoBodyMOIntsRuntime<NumCenters>::TwoBodyIntDescr>
+  TwoBodyMOIntsRuntime<NumCenters>::create_descr(const std::string& oper_key,
+                                                 const std::string& params_key)
+  {
+    Ref<IntParams> p = ParamsRegistry::instance()->value(params_key);
+    const Ref<Integral>& integral = factory()->integral();
+    return ParsedTwoBodyIntKey::create_descr(oper_key,p,integral);
+  }
+
+  //////////////////////
+  // for compatibility with the old code use this typedef
+  typedef TwoBodyMOIntsRuntime<4> MOIntsRuntime;
+
+  // new typedefs
+  typedef TwoBodyMOIntsRuntime<4> TwoBodyFourCenterMOIntsRuntime;
+  typedef TwoBodyMOIntsRuntime<3> TwoBodyThreeCenterMOIntsRuntime;
+  typedef TwoBodyMOIntsRuntime<2> TwoBodyTwoCenterMOIntsRuntime;
 
 } // end of namespace sc
 

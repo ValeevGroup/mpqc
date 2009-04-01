@@ -122,7 +122,7 @@ namespace sc {
                               const Ref<CorrelationFactor>& corrfactor,
                               bool CorrFunctionInBra = false,
                               bool CorrFunctionInKet = false,
-                              std::string layout_key = std::string(MOIntsRuntime::Layout_b1b2_k1k2));
+                              std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2));
       /// Implementation of RangeCreator::operator()
       ObjT operator()();
 

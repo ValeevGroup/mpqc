@@ -355,7 +355,7 @@ int main(int argc, char **argv) {
     tim->exit();
   }
 
-#define TEST_TWOBODYTWOCENTERINTOP 0
+#define TEST_TWOBODYTWOCENTERINTOP 1
 #if TEST_TWOBODYTWOCENTERINTOP
   {
     integral->set_basis(fbs,fbs);
@@ -368,8 +368,17 @@ int main(int argc, char **argv) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     RefSymmSCMatrix kernel = kit->symmmatrix(new SCDimension(fbs->nbasis()));
     kernel->convert(kernel_ao);
+
     kernel_ref.print("testing TwoBodyTwoCenterIntOp: eri kernel(ref)");
     kernel.print("testing TwoBodyTwoCenterIntOp: eri kernel(intop)");
+
+    // try the new runtime
+    Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
+    factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
+    Ref<TwoBodyTwoCenterMOIntsRuntime> rtime = new TwoBodyTwoCenterMOIntsRuntime(factory);
+    const std::string key = ParsedTwoBodyTwoCenterIntKey::key("Mu","Mu","ERI","");
+    RefSCMatrix kernel_from_rtime = rtime->get(key);
+    kernel_from_rtime.print("testing TwoBodyTwoCenterIntOp: eri kernel(factory)");
   }
 #endif
 

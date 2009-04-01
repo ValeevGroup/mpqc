@@ -1,6 +1,6 @@
 % Test -*- KeyVal -*- input for the DensityFitting class.
 
-molecule = $:ne
+molecule = $:h
 basis = $:stdbasis
 fitbasis = $:stdfitbasis
 

@@ -184,11 +184,13 @@ public:
   Ref<TwoBodyMOIntsTransform>
   twobody_transform_12(const std::string& id, const Ref<TwoBodyIntDescr>& descr = 0);
 
+#if 1
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored according to storage */
   Ref<TwoBodyMOIntsTransform>
   twobody_transform(StorageType storage, const std::string& id,
                     const Ref<TwoBodyIntDescr>& descr = 0);
+#endif
 
   /// Creates an TwoBodyMOIntsTransform object of type T
   Ref<TwoBodyMOIntsTransform> twobody_transform(MOIntsTransform::TwoBodyTransformType T,

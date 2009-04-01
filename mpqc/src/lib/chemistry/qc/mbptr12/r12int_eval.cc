@@ -1861,8 +1861,8 @@ R12IntEval::compute()
       }
       else { // pure MP2 -- manually construct transform
         const std::string descr_key = r12info()->moints_runtime()->descr_key(new TwoBodyIntDescrERI(r12info()->integral()));
-        const std::string layout_key = std::string(MOIntsRuntime::Layout_b1b2_k1k2);
-        tform_key = ParsedTwoBodyIntKey::key(occ1_act->id(),occ2_act->id(),
+        const std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2);
+        tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
                                              vir1_act->id(),vir2_act->id(),
                                              descr_key,
                                              layout_key);

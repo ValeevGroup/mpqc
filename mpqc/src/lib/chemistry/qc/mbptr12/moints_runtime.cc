@@ -57,7 +57,7 @@ namespace {
   }
 }
 
-ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
+ParsedTwoBodyFourCenterIntKey::ParsedTwoBodyFourCenterIntKey(const std::string& key) :
   key_(key)
 {
   typedef std::string::const_iterator citer;
@@ -90,7 +90,7 @@ ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
   }
 
 #if 0
-  ExEnv::out0() << indent << "ParsedTwoBodyIntKey::ParsedTwoBodyIntKey():" << std::endl << incindent;
+  ExEnv::out0() << indent << "ParsedTwoBodyFourCenterIntKey::ParsedTwoBodyFourCenterIntKey():" << std::endl << incindent;
   ExEnv::out0() << indent << "key = " << key_ << std::endl;
   ExEnv::out0() << indent << "bra1 = " << bra1_ << std::endl;
   ExEnv::out0() << indent << "bra2 = " << bra2_ << std::endl;
@@ -103,7 +103,7 @@ ParsedTwoBodyIntKey::ParsedTwoBodyIntKey(const std::string& key) :
 }
 
 std::string
-ParsedTwoBodyIntKey::key(const std::string& bra1,
+ParsedTwoBodyFourCenterIntKey::key(const std::string& bra1,
                          const std::string& bra2,
                          const std::string& ket1,
                          const std::string& ket2,
@@ -116,7 +116,7 @@ ParsedTwoBodyIntKey::key(const std::string& bra1,
 }
 
 std::string
-ParsedTwoBodyIntKey::key(const std::string& bra1,
+ParsedTwoBodyFourCenterIntKey::key(const std::string& bra1,
                          const std::string& bra2,
                          const std::string& ket1,
                          const std::string& ket2,
@@ -130,7 +130,7 @@ ParsedTwoBodyIntKey::key(const std::string& bra1,
 
 
 std::string
-ParsedTwoBodyIntKey::key(const Ref<TwoBodyIntDescr>& descr)
+ParsedTwoBodyFourCenterIntKey::key(const Ref<TwoBodyIntDescr>& descr)
 {
   Ref<TwoBodyIntDescrERI> eridescr; eridescr << descr;
   Ref<TwoBodyIntDescrR12> r12descr; r12descr << descr;
@@ -159,7 +159,7 @@ ParsedTwoBodyIntKey::key(const Ref<TwoBodyIntDescr>& descr)
 }
 
 Ref<TwoBodyIntDescr>
-ParsedTwoBodyIntKey::create_descr(const std::string& oper_key,
+ParsedTwoBodyFourCenterIntKey::create_descr(const std::string& oper_key,
                                   const Ref<IntParams>& p,
                                   const Ref<Integral>& integral)
 {
@@ -189,159 +189,201 @@ ParsedTwoBodyIntKey::create_descr(const std::string& oper_key,
     if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrGenG12(integral,params_cast);
   }
-  throw ProgrammingError("ParsedTwoBodyIntKey::create_descr() -- unknown oper",
+  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
+                         __FILE__,__LINE__);
+}
+
+////
+
+ParsedTwoBodyThreeCenterIntKey::ParsedTwoBodyThreeCenterIntKey(const std::string& key) :
+  pkey_(key)
+{
+}
+
+std::string
+ParsedTwoBodyThreeCenterIntKey::key(const std::string& bra1,
+                       const std::string& bra2,
+                       const std::string& ket1,
+                       const std::string& oper,
+                       const std::string& params) {
+  return ParsedTwoBodyFourCenterIntKey::key(bra1,bra2,ket1,"",oper,params,"");
+}
+std::string
+ParsedTwoBodyThreeCenterIntKey::key(const std::string& bra1,
+                                    const std::string& bra2,
+                                    const std::string& ket1,
+                                    const std::string& descr) {
+  return ParsedTwoBodyFourCenterIntKey::key(bra1,bra2,ket1,"",descr,"");
+}
+std::string
+ParsedTwoBodyThreeCenterIntKey::key(const Ref<TwoBodyThreeCenterIntDescr>& descr) {
+    Ref<TwoBodyThreeCenterIntDescrERI> eridescr; eridescr << descr;
+    Ref<TwoBodyThreeCenterIntDescrR12> r12descr; r12descr << descr;
+    Ref<TwoBodyThreeCenterIntDescrG12> g12descr; g12descr << descr;
+    Ref<TwoBodyThreeCenterIntDescrG12NC> g12ncdescr; g12ncdescr << descr;
+    Ref<TwoBodyThreeCenterIntDescrG12DKH> g12dkhdescr; g12dkhdescr << descr;
+
+    std::string result;
+    if (eridescr.nonnull()) {
+      result = std::string("ERI");
+    }
+    if (r12descr.nonnull()) {
+      result = std::string("R12");
+    }
+    if (g12descr.nonnull()) {
+      result = std::string("G12");
+    }
+    if (g12ncdescr.nonnull()) {
+      result = std::string("G12'");
+    }
+    if (g12dkhdescr.nonnull()) {
+      result = std::string("G12DKH");
+    }
+
+    return result;
+}
+
+Ref<TwoBodyThreeCenterIntDescr>
+ParsedTwoBodyThreeCenterIntKey::create_descr(const std::string& oper_key,
+                                             const Ref<IntParams>& p,
+                                             const Ref<Integral>& integral) {
+  if (oper_key == std::string("ERI")) {
+    return new TwoBodyThreeCenterIntDescrERI(integral);
+  }
+  if (oper_key == std::string("R12")) {
+    return new TwoBodyThreeCenterIntDescrR12(integral);
+  }
+  if (oper_key == std::string("G12")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyThreeCenterIntDescrG12(integral,params_cast);
+  }
+  if (oper_key == std::string("G12'")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyThreeCenterIntDescrG12NC(integral,params_cast);
+  }
+  if (oper_key == std::string("G12DKH")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyThreeCenterIntDescrG12DKH(integral,params_cast);
+  }
+  if (oper_key == std::string("GenG12")) {
+    Ref<IntParamsGenG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyThreeCenterIntDescrGenG12(integral,params_cast);
+  }
+  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
+                         __FILE__,__LINE__);
+}
+
+////
+
+ParsedTwoBodyTwoCenterIntKey::ParsedTwoBodyTwoCenterIntKey(const std::string& key) :
+  pkey_(key)
+{
+}
+
+std::string
+ParsedTwoBodyTwoCenterIntKey::key(const std::string& bra1,
+                       const std::string& bra2,
+                       const std::string& oper,
+                       const std::string& params) {
+  return ParsedTwoBodyFourCenterIntKey::key(bra1,bra2,"","",oper,params,"");
+}
+std::string
+ParsedTwoBodyTwoCenterIntKey::key(const std::string& bra1,
+                                    const std::string& bra2,
+                                    const std::string& descr) {
+  return ParsedTwoBodyFourCenterIntKey::key(bra1,bra2,"","",descr,"");
+}
+std::string
+ParsedTwoBodyTwoCenterIntKey::key(const Ref<TwoBodyTwoCenterIntDescr>& descr) {
+    Ref<TwoBodyTwoCenterIntDescrERI> eridescr; eridescr << descr;
+    Ref<TwoBodyTwoCenterIntDescrR12> r12descr; r12descr << descr;
+    Ref<TwoBodyTwoCenterIntDescrG12> g12descr; g12descr << descr;
+    Ref<TwoBodyTwoCenterIntDescrG12NC> g12ncdescr; g12ncdescr << descr;
+    Ref<TwoBodyTwoCenterIntDescrG12DKH> g12dkhdescr; g12dkhdescr << descr;
+
+    std::string result;
+    if (eridescr.nonnull()) {
+      result = std::string("ERI");
+    }
+    if (r12descr.nonnull()) {
+      result = std::string("R12");
+    }
+    if (g12descr.nonnull()) {
+      result = std::string("G12");
+    }
+    if (g12ncdescr.nonnull()) {
+      result = std::string("G12'");
+    }
+    if (g12dkhdescr.nonnull()) {
+      result = std::string("G12DKH");
+    }
+
+    return result;
+}
+
+Ref<TwoBodyTwoCenterIntDescr>
+ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& oper_key,
+                                             const Ref<IntParams>& p,
+                                             const Ref<Integral>& integral) {
+  if (oper_key == std::string("ERI")) {
+    return new TwoBodyTwoCenterIntDescrERI(integral);
+  }
+  if (oper_key == std::string("R12")) {
+    return new TwoBodyTwoCenterIntDescrR12(integral);
+  }
+  if (oper_key == std::string("G12")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyTwoCenterIntDescrG12(integral,params_cast);
+  }
+  if (oper_key == std::string("G12'")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyTwoCenterIntDescrG12NC(integral,params_cast);
+  }
+  if (oper_key == std::string("G12DKH")) {
+    Ref<IntParamsG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyTwoCenterIntDescrG12DKH(integral,params_cast);
+  }
+  if (oper_key == std::string("GenG12")) {
+    Ref<IntParamsGenG12> params_cast; params_cast << p;
+    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    return new TwoBodyTwoCenterIntDescrGenG12(integral,params_cast);
+  }
+  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-static ClassDesc MOIntsRuntime_cd(
-  typeid(MOIntsRuntime),"MOIntsRuntime",1,"virtual public SavableState",
-  0, 0, create<MOIntsRuntime>);
+Ref<ParamsRegistry> ParamsRegistry::instance_ = new ParamsRegistry;
 
-MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& f) : factory_(f),
-  params_(ParamRegistry::instance()), tforms_(TformRegistry::instance())
-{
+const Ref<ParamsRegistry>&
+ParamsRegistry::instance() { return instance_; }
+
+ParamsRegistry::ParamsRegistry() : params_(RegistryType::instance()){
   // associate empty params key with IntParamsVoid
   Ref<IntParams> voidparams = new IntParamsVoid;
-  register_params(std::string(""),voidparams);
-}
-
-MOIntsRuntime::MOIntsRuntime(StateIn& si)
-{
-  factory_ << SavableState::restore_state(si);
-  params_ = ParamRegistry::restore_instance(si);
-  tforms_ = TformRegistry::restore_instance(si);
-}
-
-void
-MOIntsRuntime::save_data_state(StateOut& so)
-{
-  SavableState::save_state(factory_.pointer(),so);
-  ParamRegistry::save_instance(params_,so);
-  TformRegistry::save_instance(tforms_,so);
-}
-
-bool
-MOIntsRuntime::exists(const std::string& key) const
-{
-  return tforms_->key_exists(key);
-}
-
-Ref<MOIntsRuntime::TwoBodyIntsTransform>
-MOIntsRuntime::get(const std::string& key)
-{
-  if (tforms_->key_exists(key)) {
-    return tforms_->value(key);
-  }
-  else {  // if not found
-    try { ParsedTwoBodyIntKey parsedkey(key); }
-    catch (...) {
-      std::ostringstream oss;
-      oss << "MOIntsRuntime::get() -- key " << key << " does not match the format";
-      throw ProgrammingError(oss.str().c_str(),__FILE__,__LINE__);
-    }
-    // then create tform
-    const Ref<TwoBodyMOIntsTransform>& tform = create_tform(key);
-    tform->compute();
-    return tform;
-  }
-  assert(false); // unreachable
-}
-
-
-const Ref<TwoBodyMOIntsTransform>&
-MOIntsRuntime::create_tform(const std::string& key)
-{
-  // parse the key
-  ParsedTwoBodyIntKey pkey(key);
-  const std::string& bra1_str = pkey.bra1();
-  const std::string& bra2_str = pkey.bra2();
-  const std::string& ket1_str = pkey.ket1();
-  const std::string& ket2_str = pkey.ket2();
-  const std::string& oper_str = pkey.oper();
-  const std::string& params_str = pkey.params();
-
-  // get the spaces and construct the descriptor
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
-  Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
-  Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
-  Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
-  Ref<OrbitalSpace> ket2 = idxreg->value(ket2_str);
-  factory()->set_spaces(bra1,ket1,bra2,ket2);    // factory assumes chemists' convention
-  Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
-
-  // create the transform
-  Ref<TwoBodyMOIntsTransform> tform;
-  const Layout layout(pkey.layout());
-  if(layout == Layout_b1b2_k1k2) {
-    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
-
-    // is this a partial transform?
-    if (aoidxreg->value_exists(ket1) &&
-        aoidxreg->value_exists(ket2))
-      tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_iRjS,key,descr);
-    else { // if not, look for a partial transform
-
-      Ref<OrbitalSpace> aoket1 = aoidxreg->value(ket1->basis());
-      Ref<OrbitalSpace> aoket2 = aoidxreg->value(ket2->basis());
-      const std::string half_tform_key =
-        ParsedTwoBodyIntKey::key(idxreg->key(bra1),
-                                 idxreg->key(bra2),
-                                 idxreg->key(aoket1),
-                                 idxreg->key(aoket2),
-                                 oper_str,
-                                 params_str,
-                                 pkey.layout());
-
-#define ALWAYS_USE_PARTIAL_TRANSFORMS 1
-#define ALWAYS_USE_IXJY 0
-
-      if (tforms_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
-        tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
-        tform->partially_transformed_ints( tforms_->value(half_tform_key)->ints_acc() );
-      }
-#if ALWAYS_USE_PARTIAL_TRANSFORMS
-      else { // create partial transform and use it
-        const Ref<TwoBodyMOIntsTransform>& half_tform = create_tform(half_tform_key);
-        half_tform->compute();
-        return create_tform(key);
-      }
-#else
-      else { // decide the best algorithm
-#if !ALWAYS_USE_IXJY
-        if (ket1->rank() <= ket1->basis()->nbasis()) {
-          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ikjy,key,descr);
-        }
-        else
-#endif
-        {
-          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
-        }
-      }
-#endif
-    }
-  }
-  else if (layout == Layout_b1k1_b2k2)
-    tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijxy,key,descr);
-
-  // add to the map
-  tforms_->add(key,tform);
-
-  return tforms_->value(key);
+  const std::string key("");
+  params_->add(key,voidparams);
 }
 
 std::string
-MOIntsRuntime::params_key(const Ref<IntParams>& params) const
+ParamsRegistry::key(const Ref<IntParams>& params) const
 {
   if (params_->value_exists(params))
     return params_->key(params);
   else  // if not found, register
-    return register_params(params);
+    return this->add(params);
 }
 
 Ref<IntParams>
-MOIntsRuntime::params(const std::string& key) const
+ParamsRegistry::value(const std::string& key) const
 {
   if (params_->key_exists(key))
     return params_->value(key);
@@ -350,7 +392,7 @@ MOIntsRuntime::params(const std::string& key) const
 }
 
 std::string
-MOIntsRuntime::register_params(const Ref<IntParams>& params) const
+ParamsRegistry::add(const Ref<IntParams>& params) const
 {
   std::string key;
   bool unique;
@@ -376,74 +418,56 @@ MOIntsRuntime::register_params(const Ref<IntParams>& params) const
 }
 
 void
-MOIntsRuntime::register_params(const std::string& key, const Ref<IntParams>& params) const
+ParamsRegistry::add(const std::string& key, const Ref<IntParams>& params) const
 {
   assert(! params_->key_exists(key));
   assert(! params_->value_exists(params));
   params_->add(key,params);
 }
 
-std::string
-MOIntsRuntime::descr_key(const Ref<TwoBodyIntDescr>& descr)
-{
-  std::string result = ParsedTwoBodyIntKey::key(descr);
-  Ref<IntParams> p = descr->params();
-  result += params_key(p);
-  return result;
-}
-
-Ref<TwoBodyIntDescr>
-MOIntsRuntime::create_descr(const std::string& oper_key,
-                            const std::string& params_key)
-{
-  Ref<IntParams> p = params(params_key);
-  const Ref<Integral>& integral = factory()->integral();
-  return ParsedTwoBodyIntKey::create_descr(oper_key,p,integral);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
-MOIntsRuntime::Layout::Layout(const std::string& str)
+TwoBodyIntLayout::TwoBodyIntLayout(const std::string& str)
 {
   if (str == std::string("(b1 b2|k1 k2)")) {
-    type_ = b1b2_k1k2;
+    type_ = _b1b2_k1k2;
   }
   else if (str == std::string("(b1 k1|b2 k2)")) {
-    type_ = b1k1_b2k2;
+    type_ = _b1k1_b2k2;
   }
   else
-    throw ProgrammingError("MOIntsRuntime::Layout::Layout() -- unknown initializer string",__FILE__,__LINE__);
+    throw ProgrammingError("TwoBodyIntLayout::Layout() -- unknown initializer string",__FILE__,__LINE__);
 }
 
-MOIntsRuntime::Layout::Layout(const Layout& other) :
+TwoBodyIntLayout::TwoBodyIntLayout(const TwoBodyIntLayout& other) :
   type_(other.type_)
 {
 }
 
-MOIntsRuntime::Layout::operator std::string() {
+TwoBodyIntLayout::operator std::string() {
   switch (type_) {
-    case b1b2_k1k2:
+    case _b1b2_k1k2:
       return std::string("(b1 b2|k1 k2)");
-    case b1k1_b2k2:
+    case _b1k1_b2k2:
       return std::string("(b1 k1|b2 k2)");
   }
 }
 
-MOIntsRuntime::Layout&
-MOIntsRuntime::Layout::operator=(const Layout& other)
+TwoBodyIntLayout&
+TwoBodyIntLayout::operator=(const TwoBodyIntLayout& other)
 {
   type_ = other.type_;
   return *this;
 }
 
 bool
-MOIntsRuntime::Layout::operator==(const Layout& other) const
+TwoBodyIntLayout::operator==(const TwoBodyIntLayout& other) const
 {
   return type_ == other.type_;
 }
 
-MOIntsRuntime::Layout MOIntsRuntime::Layout_b1b2_k1k2(std::string("(b1 b2|k1 k2)"));
-MOIntsRuntime::Layout MOIntsRuntime::Layout_b1k1_b2k2(std::string("(b1 k1|b2 k2)"));
+TwoBodyIntLayout TwoBodyIntLayout::b1b2_k1k2(std::string("(b1 b2|k1 k2)"));
+TwoBodyIntLayout TwoBodyIntLayout::b1k1_b2k2(std::string("(b1 k1|b2 k2)"));
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -475,6 +499,169 @@ namespace sc{   namespace detail {
   }
 
 }}
+
+/////////////////////////////////////////////////////////////////////////////
+
+namespace sc {
+
+template <>
+const TwoBodyMOIntsRuntime<4>::TwoBodyIntEvalRef&
+TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
+{
+  // parse the key
+  ParsedTwoBodyIntKey pkey(key);
+  const std::string& bra1_str = pkey.bra1();
+  const std::string& bra2_str = pkey.bra2();
+  const std::string& ket1_str = pkey.ket1();
+  const std::string& ket2_str = pkey.ket2();
+  const std::string& oper_str = pkey.oper();
+  const std::string& params_str = pkey.params();
+
+  // get the spaces and construct the descriptor
+  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
+  Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
+  Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
+  Ref<OrbitalSpace> ket2 = idxreg->value(ket2_str);
+  factory()->set_spaces(bra1,ket1,bra2,ket2);    // factory assumes chemists' convention
+  Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
+
+  // create the transform
+  Ref<TwoBodyIntEval> tform;
+  const TwoBodyIntLayout layout(pkey.layout());
+  if(layout == TwoBodyIntLayout::b1b2_k1k2) {
+    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+
+    // is this a partial transform?
+    if (aoidxreg->value_exists(ket1) &&
+        aoidxreg->value_exists(ket2))
+      tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_iRjS,key,descr);
+    else { // if not, look for a partial transform
+
+      Ref<OrbitalSpace> aoket1 = aoidxreg->value(ket1->basis());
+      Ref<OrbitalSpace> aoket2 = aoidxreg->value(ket2->basis());
+      const std::string half_tform_key =
+        ParsedTwoBodyIntKey::key(idxreg->key(bra1),
+                                 idxreg->key(bra2),
+                                 idxreg->key(aoket1),
+                                 idxreg->key(aoket2),
+                                 oper_str,
+                                 params_str,
+                                 pkey.layout());
+
+#define ALWAYS_USE_PARTIAL_TRANSFORMS 1
+#define ALWAYS_USE_IXJY 0
+
+      if (evals_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
+        tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
+        tform->partially_transformed_ints( evals_->value(half_tform_key)->ints_acc() );
+      }
+#if ALWAYS_USE_PARTIAL_TRANSFORMS
+      else { // create partial transform and use it
+        const Ref<TwoBodyIntEval>& half_tform = create_eval(half_tform_key);
+        half_tform->compute();
+        return create_eval(key);
+      }
+#else
+      else { // decide the best algorithm
+#if !ALWAYS_USE_IXJY
+        if (ket1->rank() <= ket1->basis()->nbasis()) {
+          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ikjy,key,descr);
+        }
+        else
+#endif
+        {
+          tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
+        }
+      }
+#endif
+    }
+  }
+  else if (layout == TwoBodyIntLayout::b1k1_b2k2)
+    tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijxy,key,descr);
+
+  // add to the map
+  evals_->add(key,tform);
+
+  return evals_->value(key);
+}
+
+template <>
+const TwoBodyMOIntsRuntime<3>::TwoBodyIntEvalRef&
+TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
+{
+  // parse the key
+  ParsedTwoBodyIntKey pkey(key);
+  const std::string& bra1_str = pkey.bra1();
+  const std::string& bra2_str = pkey.bra2();
+  const std::string& ket1_str = pkey.ket1();
+  const std::string& oper_str = pkey.oper();
+  const std::string& params_str = pkey.params();
+
+  // get the spaces and construct the descriptor
+  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
+  Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
+  Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
+  factory()->set_spaces(bra1,ket1,bra2,0);    // factory assumes chemists' convention
+  Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
+
+  // create the transform
+  Ref<TwoBodyIntEval> tform =
+    factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,key,descr);
+
+  // add to the map
+  evals_->add(key,tform);
+
+  return evals_->value(key);
+}
+
+template <>
+const TwoBodyMOIntsRuntime<2>::TwoBodyIntEvalRef&
+TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
+{
+  // parse the key
+  ParsedTwoBodyIntKey pkey(key);
+  const std::string& bra1_str = pkey.bra1();
+  const std::string& bra2_str = pkey.bra2();
+  const std::string& oper_str = pkey.oper();
+  const std::string& params_str = pkey.params();
+
+  // currently can only handle Coulomb integrals
+  assert(oper_str == "ERI");
+
+  // get the spaces and construct the descriptor
+  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
+  Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
+  Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
+
+  // compute the matrix
+  RefSCMatrix result;
+  {
+    Ref<GaussianBasisSet> brabas = bra1->basis();
+    Ref<GaussianBasisSet> ketbas = bra2->basis();
+    Ref<Integral> localints = factory()->integral()->clone();
+    localints->set_basis(brabas,ketbas);
+
+    // form 2-center Coulomb in AO basis
+    RefSCMatrix ao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
+    ao.assign(0.0);
+    Ref<SCElementOp> sc =
+        new TwoBodyTwoCenterIntOp(localints->electron_repulsion2());
+    ao.element_op(sc);
+    sc = 0;
+
+    result = ao;
+  }
+
+  // add to the map
+  evals_->add(key,result);
+
+  return evals_->value(key);
+}
+
+}; // end of namespace sc
 
 /////////////////////////////////////////////////////////////////////////////
 

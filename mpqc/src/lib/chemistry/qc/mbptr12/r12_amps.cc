@@ -159,7 +159,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   // if OBS == VBS then use (ip|ip) and (imjx) integrals
   if (obs_eq_vbs) {
     {
-      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime(),
+      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime4(),
         occ1_act,
         refinfo->orbs(spin1),
         occ2_act,
@@ -168,7 +168,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         tform0_pp_key = tform_creator();
     }
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime4(),
         xspace1,
         refinfo->orbs(spin1),
         xspace2,
@@ -178,7 +178,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         fill_container(tformkey_creator,tform_pp_keys);
     }
     {
-      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime(),
+      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
@@ -188,7 +188,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
         fill_container(tform_creator,tform_mx_keys);
     }
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime4(),
         xspace1,
         cabs1,
         xspace2,

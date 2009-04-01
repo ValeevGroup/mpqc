@@ -110,11 +110,11 @@ namespace sc {
                        const Ref<GaussianBasisSet>& pbs,
                        const Ref<Integral>& integral);
 
-    RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
+    RefSCMatrix coulomb(const Ref<TwoBodyFourCenterMOIntsRuntime>& ints_rtime,
                         const Ref<OrbitalSpace>& occspace,
                         const Ref<OrbitalSpace>& braspace,
                         const Ref<OrbitalSpace>& ketspace);
-    RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
+    RefSCMatrix exchange(const Ref<TwoBodyFourCenterMOIntsRuntime>& ints_rtime,
                          const Ref<OrbitalSpace>& occspace,
                          const Ref<OrbitalSpace>& braspace,
                          const Ref<OrbitalSpace>& ketspace);
@@ -303,7 +303,7 @@ namespace sc {
                         const Ref<OrbitalSpace>& ketspace,
                         const Ref<OrbitalSpace>& occspace_A,
                         const Ref<OrbitalSpace>& occspace_B,
-                        const Ref<MOIntsRuntime>& ints_rtime) :
+                        const Ref<TwoBodyFourCenterMOIntsRuntime>& ints_rtime) :
                           compute_J_(compute_J),
                           compute_K_(compute_K),
                           compute_F_(compute_J && compute_K)

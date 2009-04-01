@@ -105,7 +105,7 @@ R12IntEval::contrib_to_VXB_a_()
       std::vector<std::string> tforms_f12;
       {
 	  R12TwoBodyIntKeyCreator tformkey_creator(
-	      r12info()->moints_runtime(),
+	      r12info()->moints_runtime4(),
 	      xspace1,
 	      orbs1,
 	      xspace2,
@@ -116,7 +116,7 @@ R12IntEval::contrib_to_VXB_a_()
       }
       if (!occ12_in_x12) {
 	  R12TwoBodyIntKeyCreator tformkey_creator(
-	      r12info()->moints_runtime(),
+	      r12info()->moints_runtime4(),
 	      occ1_act,
 	      orbs1,
 	      occ2_act,
@@ -223,7 +223,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  std::vector<std::string> tforms_f12_xmyP;
 	  {
 	      R12TwoBodyIntKeyCreator tformkey_creator(
-		  r12info()->moints_runtime(),
+		  r12info()->moints_runtime4(),
 		  xspace1,
 		  occ1,
 		  xspace2,
@@ -234,7 +234,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  }
 	  if (!occ12_in_x12) {
 	      R12TwoBodyIntKeyCreator tformkey_creator(
-		  r12info()->moints_runtime(),
+		  r12info()->moints_runtime4(),
 		  occ1_act,
 		  occ1,
 		  occ2_act,
@@ -310,7 +310,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      std::vector<std::string> tforms_f12_xPym;
 	      {
 		  R12TwoBodyIntKeyCreator tformkey_creator(
-		      r12info()->moints_runtime(),
+		      r12info()->moints_runtime4(),
 		      xspace1,
 		      rispace1,
 		      xspace2,
@@ -321,7 +321,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      }
 	      if (!occ12_in_x12) {
 		  R12TwoBodyIntKeyCreator tformkey_creator(
-		      r12info()->moints_runtime(),
+		      r12info()->moints_runtime4(),
 		      occ1_act,
 		      rispace1,
 		      occ2_act,

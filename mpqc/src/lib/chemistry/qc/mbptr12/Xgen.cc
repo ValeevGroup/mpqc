@@ -201,7 +201,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         // (i k |j l) tforms
         std::vector<std::string> tforms_ikjl;
         {
-	    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,ket1,bra2,ket2,
+	    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,ket1,bra2,ket2,
 	                                             r12info()->corrfactor(),true,true);
 	    fill_container(tformkey_creator,tforms_ikjl);
         }
@@ -238,14 +238,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    // (i p |j p) tforms
 	    std::vector<std::string> tforms_ipjp;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,orbs1,bra2,orbs2,
+		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,orbs1,bra2,orbs2,
 		                                         r12info()->corrfactor(),true);
 		fill_container(tformkey_creator,tforms_ipjp);
 	    }
 	    // (k p |l p) tforms
 	    std::vector<std::string> tforms_kplp;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,orbs1,ket2,orbs2,
+		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,orbs1,ket2,orbs2,
                                                  r12info()->corrfactor(),true);
 		fill_container(tformkey_creator,tforms_kplp);
 	    }
@@ -273,13 +273,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,cs1,bra2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,cs1,ket2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
@@ -296,13 +296,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,cs1,bra2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,cs1,ket2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
@@ -319,13 +319,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,cs1,bra2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,cs1,ket2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
@@ -342,13 +342,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,cs1,bra2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,cs1,ket2,cs2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
@@ -368,14 +368,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    // (i m |j a') tforms
 	    std::vector<std::string> tforms_imjA;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,occ1,bra2,ribs2,
+		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,occ1,bra2,ribs2,
                                                  r12info()->corrfactor(),true);
 		fill_container(tformkey_creator,tforms_imjA);
 	    }
 	    // (k m |l a') tforms
 	    std::vector<std::string> tforms_kmlA;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,occ1,ket2,ribs2,
+		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,occ1,ket2,ribs2,
                                                  r12info()->corrfactor(),true);
 		fill_container(tformkey_creator,tforms_kmlA);
 	    }
@@ -403,14 +403,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		// (i a' |j m) tforms
 		std::vector<std::string> tforms_iAjm;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,ribs1,bra2,occ2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,ribs1,bra2,occ2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_iAjm);
 		}
 		// (k a' |l m) tforms
 		std::vector<std::string> tforms_kAlm;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,ribs1,ket2,occ2,
+		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,ribs1,ket2,occ2,
 	                                                 r12info()->corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_kAlm);
 		}

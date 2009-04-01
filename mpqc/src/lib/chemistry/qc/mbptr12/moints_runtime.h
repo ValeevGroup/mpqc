@@ -368,13 +368,42 @@ namespace sc {
   }
 
   //////////////////////
-  // for compatibility with the old code use this typedef
-  typedef TwoBodyMOIntsRuntime<4> MOIntsRuntime;
 
-  // new typedefs
   typedef TwoBodyMOIntsRuntime<4> TwoBodyFourCenterMOIntsRuntime;
   typedef TwoBodyMOIntsRuntime<3> TwoBodyThreeCenterMOIntsRuntime;
   typedef TwoBodyMOIntsRuntime<2> TwoBodyTwoCenterMOIntsRuntime;
+
+  /** MOIntsRuntime provides runtime support for computing 2-, 3-, and 4-center MO-basis integrals
+      (with or without density fitting).
+    */
+  class MOIntsRuntime : virtual public SavableState {
+    public:
+      typedef MOIntsRuntime this_type;
+
+      MOIntsRuntime(const Ref<MOIntsTransformFactory>&);
+      ~MOIntsRuntime();
+      MOIntsRuntime(StateIn&);
+      void save_data_state(StateOut&);
+
+      /// factory for creating AO->MO transforms
+      const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
+      /// runtime for 2-center integrals
+      const Ref<TwoBodyTwoCenterMOIntsRuntime>& runtime_2c() const { return runtime_2c_; }
+      /// runtime for 3-center integrals
+      const Ref<TwoBodyThreeCenterMOIntsRuntime>& runtime_3c() const { return runtime_3c_; }
+      /// runtime for 4-center integrals
+      const Ref<TwoBodyFourCenterMOIntsRuntime>& runtime_4c() const { return runtime_4c_; }
+
+    private:
+      static ClassDesc class_desc_;
+
+      Ref<MOIntsTransformFactory> factory_;
+      Ref<TwoBodyTwoCenterMOIntsRuntime> runtime_2c_;
+      Ref<TwoBodyThreeCenterMOIntsRuntime> runtime_3c_;
+      Ref<TwoBodyFourCenterMOIntsRuntime> runtime_4c_;
+  };
+
+  // new typedefs
 
 } // end of namespace sc
 

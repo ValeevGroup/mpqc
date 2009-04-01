@@ -171,22 +171,22 @@ ParsedTwoBodyFourCenterIntKey::create_descr(const std::string& oper_key,
   }
   if (oper_key == std::string("G12")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrG12(integral,params_cast);
   }
   if (oper_key == std::string("G12'")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrG12NC(integral,params_cast);
   }
   if (oper_key == std::string("G12DKH")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrG12DKH(integral,params_cast);
   }
   if (oper_key == std::string("GenG12")) {
     Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrGenG12(integral,params_cast);
   }
   throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
@@ -255,25 +255,25 @@ ParsedTwoBodyThreeCenterIntKey::create_descr(const std::string& oper_key,
   }
   if (oper_key == std::string("G12")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyThreeCenterIntDescrG12(integral,params_cast);
   }
   if (oper_key == std::string("G12'")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyThreeCenterIntDescrG12NC(integral,params_cast);
   }
   if (oper_key == std::string("G12DKH")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyThreeCenterIntDescrG12DKH(integral,params_cast);
   }
   if (oper_key == std::string("GenG12")) {
     Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyThreeCenterIntDescrGenG12(integral,params_cast);
   }
-  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
+  throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
 
@@ -337,25 +337,25 @@ ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& oper_key,
   }
   if (oper_key == std::string("G12")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyTwoCenterIntDescrG12(integral,params_cast);
   }
   if (oper_key == std::string("G12'")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyTwoCenterIntDescrG12NC(integral,params_cast);
   }
   if (oper_key == std::string("G12DKH")) {
     Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyTwoCenterIntDescrG12DKH(integral,params_cast);
   }
   if (oper_key == std::string("GenG12")) {
     Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("MOIntsRuntime::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
+    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyTwoCenterIntDescrGenG12(integral,params_cast);
   }
-  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
+  throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
 
@@ -662,6 +662,42 @@ TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
 }
 
 }; // end of namespace sc
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc
+MOIntsRuntime::class_desc_(typeid(this_type),
+                           "MOIntsRuntime",
+                           1,
+                           "virtual public SavableState",
+                           0,
+                           0,
+                           create<this_type> );
+
+MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory) :
+  factory_(factory),
+  runtime_2c_(new TwoBodyTwoCenterMOIntsRuntime(0)),  // non need for transforms for 2-center integrals
+  runtime_3c_(new TwoBodyThreeCenterMOIntsRuntime(factory_)),
+  runtime_4c_(new TwoBodyFourCenterMOIntsRuntime(factory_)) {
+}
+
+MOIntsRuntime::~MOIntsRuntime() {
+}
+
+MOIntsRuntime::MOIntsRuntime(StateIn& si) {
+  factory_ << SavableState::restore_state(si);
+  runtime_2c_ << SavableState::restore_state(si);
+  runtime_3c_ << SavableState::restore_state(si);
+  runtime_4c_ << SavableState::restore_state(si);
+}
+
+void
+MOIntsRuntime::save_data_state(StateOut& so) {
+  SavableState::save_state(factory_.pointer(),so);
+  SavableState::save_state(runtime_2c_.pointer(),so);
+  SavableState::save_state(runtime_3c_.pointer(),so);
+  SavableState::save_state(runtime_4c_.pointer(),so);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -90,7 +90,7 @@ R12IntEval::init_intermeds_g12_()
       // use xpyq if OBS == VBS
       if (obs_eq_vbs) {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           obs1,
           xspace2,
@@ -102,7 +102,7 @@ R12IntEval::init_intermeds_g12_()
       }
       else {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
 	      xspace1,
 	      occ1,
 	      xspace2,
@@ -125,7 +125,7 @@ R12IntEval::init_intermeds_g12_()
       std::vector<std::string> tforms_f12f12_xzyw_keys;
       {
       R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           xspace1,
           xspace2,
@@ -190,7 +190,7 @@ R12IntEval::init_intermeds_g12_()
 	      // <xy|hJ z> tforms
 	      std::vector<std::string> tforms_xyHz_keys;
 	      {
-		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
 		                                           xspace1,hj_x1,xspace2,xspace2,
 		                                           r12info()->corrfactor(),
 		                                           true,true);
@@ -199,7 +199,7 @@ R12IntEval::init_intermeds_g12_()
 	      // <hJ z|xy> tforms
 	      std::vector<std::string> tforms_Hzxy_keys;
 	      {
-		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
 		                                           hj_x1,xspace1,xspace2,xspace2,
 		                                           r12info()->corrfactor(),
 		                                           true,true);
@@ -225,7 +225,7 @@ R12IntEval::init_intermeds_g12_()
 		  // <xy|z hJ> tforms
 		  std::vector<std::string> tforms_xyzH_keys;
 		  {
-		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
 		                                               xspace1,xspace1,xspace2,hj_x2,
 		                                               r12info()->corrfactor(),
 		                                               true,true);
@@ -234,7 +234,7 @@ R12IntEval::init_intermeds_g12_()
 		  // <z hJ|xy> tforms
 		  std::vector<std::string> tforms_zHxy_keys;
 		  {
-		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
 		                                               xspace1,xspace1,hj_x2,xspace2,
 		                                               r12info()->corrfactor(),
 		                                               true,true);

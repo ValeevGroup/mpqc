@@ -69,18 +69,18 @@ namespace sc {
       unsigned int ncreated_;
   };
 
-  /** Creates new R12IntsAcc using MOIntsRuntime and a vector of transform keys */
+  /** Creates new R12IntsAcc using TwoBodyFourCenterMOIntsRuntime and a vector of transform keys */
   class R12IntsAccCreator: public RangeCreator<Ref<R12IntsAcc> > {
     public:
       typedef Ref<R12IntsAcc> ObjT;
 
-      R12IntsAccCreator(const Ref<MOIntsRuntime>& moints_rtime,
+      R12IntsAccCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                         const std::vector<std::string>& tform_keys);
       /// Implementation of RangeCreator::operator()
       ObjT operator()();
 
     private:
-      const Ref<MOIntsRuntime>& moints_rtime_;
+      const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime_;
       const std::vector<std::string>& tform_keys_;
   };
 
@@ -114,7 +114,7 @@ namespace sc {
     public:
       typedef std::string ObjT;
 
-      R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime_,
+      R12TwoBodyIntKeyCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime_,
                               const Ref<OrbitalSpace>& bra1,
                               const Ref<OrbitalSpace>& ket1,
                               const Ref<OrbitalSpace>& bra2,
@@ -129,7 +129,7 @@ namespace sc {
       ObjT null() const;
 
     private:
-      Ref<MOIntsRuntime> moints_rtime_;
+      Ref<TwoBodyFourCenterMOIntsRuntime> moints_rtime_;
       Ref<CorrelationFactor> corrfactor_;
       const Ref<OrbitalSpace>& bra1_;
       const Ref<OrbitalSpace>& bra2_;

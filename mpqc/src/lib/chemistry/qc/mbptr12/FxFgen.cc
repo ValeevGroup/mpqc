@@ -135,14 +135,14 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   // (bra1 intkx1 |bra2 int2) tforms
   std::vector<std::string> tforms_Fbra_k1;
   {
-    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,intkx1,bra2,int2,
+    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,intkx1,bra2,int2,
                                              r12info()->corrfactor(),true);
     fill_container(tformkey_creator,tforms_Fbra_k1);
   }
   // (ket1 intk1 |ket2 int2) tforms
   std::vector<std::string> tforms_Fket_k1;
   {
-    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,intk1,ket2,int2,
+    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,intk1,ket2,int2,
                                              r12info()->corrfactor(),true);
     fill_container(tformkey_creator,tforms_Fket_k1);
   }
@@ -170,14 +170,14 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
     // (bra1 intb1 |bra2 intkx2) tforms
     std::vector<std::string> tforms_Fbra_k2;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),bra1,int1,bra2,intkx2,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,int1,bra2,intkx2,
                                                r12info()->corrfactor(),true);
       fill_container(tformkey_creator,tforms_Fbra_k2);
     }
     // (ket1 int1 |ket2 intk2) tforms
     std::vector<std::string> tforms_Fket_k2;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),ket1,int1,ket2,intk2,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,int1,ket2,intk2,
                                                r12info()->corrfactor(),true);
       fill_container(tformkey_creator,tforms_Fket_k2);
     }

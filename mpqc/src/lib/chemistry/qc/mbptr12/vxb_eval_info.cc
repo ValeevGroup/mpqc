@@ -237,11 +237,13 @@ R12IntEvalInfo::initialize()
       obs_eq_vbs_ = basis()->equiv(basis_vir());
       obs_eq_ribs_ = basis()->equiv(basis_ri());
 
-      tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
+      tfactory_ = new MOIntsTransformFactory(integral());
       tfactory_->set_memory(memory_);
       tfactory_->set_dynamic(dynamic_);
       tfactory_->set_ints_method(ints_method_);
       tfactory_->set_file_prefix(ints_file_);
+      const Ref<OrbitalSpace>& p = refinfo()->orbs(Alpha);
+      tfactory_->set_spaces(p,p,p,p);
       initialized_ = true;
 
       // provide hints to the factory about the likely use of transforms

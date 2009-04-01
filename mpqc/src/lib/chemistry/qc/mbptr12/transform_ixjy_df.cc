@@ -38,6 +38,7 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ixjy_df.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/blas.h>
@@ -61,14 +62,14 @@ static ClassDesc TwoBodyMOIntsTransform_ixjy_df_cd(
   typeid(TwoBodyMOIntsTransform_ixjy_df),"TwoBodyMOIntsTransform_ixjy_df",1,"public TwoBodyMOIntsTransform",
   0, 0, create<TwoBodyMOIntsTransform_ixjy_df>);
 
-TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const Ref<MOIntsRuntime>& runtime,
                                                                const Ref<TwoBodyIntDescr>& tbintdescr,
                                                                const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                                                const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4,
                                                                const Ref<GaussianBasisSet>& dfbasis12,
                                                                const Ref<GaussianBasisSet>& dfbasis34) :
-  TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,space2,space3,space4),
-  dfbasis12_(dfbasis12), dfbasis34_(dfbasis34.null() ? dfbasis12 : dfbasis34)
+  TwoBodyMOIntsTransform(name,runtime->factory(),tbintdescr,space1,space2,space3,space4),
+  runtime_(runtime), dfbasis12_(dfbasis12), dfbasis34_(dfbasis34.null() ? dfbasis12 : dfbasis34)
 {
   // assuming for now that all densities will be fit in the same basis
   // TODO generalize to different fitting basis sets
@@ -76,7 +77,7 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
 
   // make sure Registries know about the fitting bases
   Ref<OrbitalSpaceRegistry> orbreg = OrbitalSpaceRegistry::instance();
-  Ref<Integral> integral = factory->integral();
+  Ref<Integral> integral = runtime_->factory()->integral();
   if (orbreg->key_exists("Mu") == false) {
     // TODO how to generate unique labels
     Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", dfbasis12_, integral);
@@ -94,6 +95,7 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
 
 TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(StateIn& si) : TwoBodyMOIntsTransform(si)
 {
+  runtime_ << SavableState::restore_state(si);
   dfbasis12_ << SavableState::restore_state(si);
   dfbasis34_ << SavableState::restore_state(si);
 
@@ -108,6 +110,7 @@ void
 TwoBodyMOIntsTransform_ixjy_df::save_data_state(StateOut& so)
 {
   TwoBodyMOIntsTransform::save_data_state(so);
+  SavableState::save_state(runtime_.pointer(),so);
   SavableState::save_state(dfbasis12_.pointer(),so);
   SavableState::save_state(dfbasis34_.pointer(),so);
 }
@@ -293,7 +296,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   Ref<R12IntsAcc> C12, cC12;
   {
-    Ref<DensityFitting> df12 = new DensityFitting(factory(), "1/r_{12}",
+    Ref<DensityFitting> df12 = new DensityFitting(runtime(), "1/r_{12}",
                                                   space1(), space2(),
                                                   dfbasis12());
     df12->compute();
@@ -308,7 +311,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   Ref<R12IntsAcc> C34, cC34;
   if (!equiv_12_34) {
     Ref<DensityFitting> df34;
-    df34 = new DensityFitting(factory(), "1/r_{12}",
+    df34 = new DensityFitting(runtime(), "1/r_{12}",
                               space3(), space4(),
                               dfbasis34());
     df34->compute();

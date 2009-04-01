@@ -105,7 +105,7 @@ R12IntEval::V(SpinCase2 spincase2,
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     std::vector<std::string> tforms_f12_xmyn;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
 					xspace1,p1,
 					xspace2,p2,
 					r12info()->corrfactor(),true
@@ -141,7 +141,7 @@ R12IntEval::V(SpinCase2 spincase2,
   std::vector<std::string> tforms_f12;
   {
     R12TwoBodyIntKeyCreator tformkey_creator(
-				      r12info()->moints_runtime(),
+				      r12info()->moints_runtime4(),
 				      xspace1,
 				      orbs1,
 				      xspace2,
@@ -206,7 +206,7 @@ R12IntEval::V(SpinCase2 spincase2,
     std::vector<std::string> tforms_f12_xmyP;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-					r12info()->moints_runtime(),
+					r12info()->moints_runtime4(),
 					xspace1,
 					occ1,
 					xspace2,
@@ -246,7 +246,7 @@ R12IntEval::V(SpinCase2 spincase2,
       std::vector<std::string> tforms_f12_xPym;
       {
 	R12TwoBodyIntKeyCreator tformkey_creator(
-					  r12info()->moints_runtime(),
+					  r12info()->moints_runtime4(),
 					  xspace1,
 					  rispace1,
 					  xspace2,
@@ -358,7 +358,7 @@ R12IntEval::P(SpinCase2 spincase2)
   if (r12ptr.nonnull()) {
     std::vector<std::string> tforms_f12_xoyw;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
                     xspace1,orbs1,
                     xspace2,orbs2,
                     r12info()->corrfactor(),
@@ -377,7 +377,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12f12_xoyw;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         xspace1,
         xspace2,
@@ -414,7 +414,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xpyq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
@@ -437,7 +437,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xpyq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
@@ -478,7 +478,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xiyA;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
@@ -502,7 +502,7 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xiyA;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
@@ -537,7 +537,7 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<std::string> tforms_f12_xAyi;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
@@ -561,7 +561,7 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<std::string> tforms_f12_xAyi;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,

@@ -136,14 +136,14 @@ namespace sc {
     const size_t num_tforms_bra = tformkeys_bra.size();
     tformvec transforms_bra(num_tforms_bra);
     for (unsigned int t = 0; t < num_tforms_bra; ++t) {
-      transforms_bra[t] = r12info()->moints_runtime()->get(tformkeys_bra[t]);
+      transforms_bra[t] = r12info()->moints_runtime4()->get(tformkeys_bra[t]);
     }
 
     // ket transforms
     const size_t num_tforms_ket = tformkeys_ket.size();
     tformvec transforms_ket(num_tforms_ket);
     for (unsigned int t = 0; t < num_tforms_ket; ++t) {
-      transforms_ket[t] = r12info()->moints_runtime()->get(tformkeys_ket[t]);
+      transforms_ket[t] = r12info()->moints_runtime4()->get(tformkeys_ket[t]);
     }
 
     //

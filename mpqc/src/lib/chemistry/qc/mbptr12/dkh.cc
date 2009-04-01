@@ -151,7 +151,7 @@ void R12IntEval::compute_B_DKH_() {
     // <xy|z T> tforms
     std::vector<std::string> tforms_xyzT;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, xspace1, xspace2,
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(), xspace1, xspace1, xspace2,
           t_x2, r12info()->corrfactor(), true, true);
       fill_container(tformkey_creator, tforms_xyzT);
     }
@@ -166,7 +166,7 @@ void R12IntEval::compute_B_DKH_() {
       // <xy|T z> tforms
       std::vector<std::string> tforms_xyTz;
       {
-        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(), xspace1, t_x1, xspace2,
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(), xspace1, t_x1, xspace2,
             xspace2, r12info()->corrfactor(), true, true);
         fill_container(tformkey_creator, tforms_xyTz);
       }
@@ -222,7 +222,7 @@ void R12IntEval::compute_B_DKH_() {
                                                      new IntParamsG12(g12nccorrfact->function(0),
                                                                       g12nccorrfact->function(0));
     Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(), params);
-    const std::string descr_key = r12info()->moints_runtime()->descr_key(descr_g12dkh);
+    const std::string descr_key = r12info()->moints_runtime4()->descr_key(descr_g12dkh);
     const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(xspace1->id(),xspace2->id(),
                                                            xspace1->id(),xspace2->id(),
                                                            descr_key,
@@ -349,7 +349,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xy_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
@@ -362,7 +362,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xy_pTq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         p_tP1,
         xspace2,
@@ -375,7 +375,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xy_pqT;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
@@ -388,7 +388,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xTy_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         x_tP1,
         orbs1,
         xspace2,
@@ -401,7 +401,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xyT_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime(),
+        r12info()->moints_runtime4(),
         xspace1,
         orbs1,
         x_tP2,
@@ -503,7 +503,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           occ1,
           xspace2,
@@ -516,7 +516,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mTA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           m_tP1,
           xspace2,
@@ -529,7 +529,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mAT;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           occ1,
           xspace2,
@@ -542,7 +542,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xTy_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           x_tP1,
           occ1,
           xspace2,
@@ -555,7 +555,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xyT_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           occ1,
           x_tP2,
@@ -569,7 +569,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
@@ -582,7 +582,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_AmT;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
@@ -595,7 +595,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_ATm;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           A_tP1,
           xspace2,
@@ -608,7 +608,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xTy_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           x_tP1,
           cabs1,
           xspace2,
@@ -621,7 +621,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xyT_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime(),
+          r12info()->moints_runtime4(),
           xspace1,
           cabs1,
           x_tP2,

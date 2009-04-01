@@ -58,19 +58,10 @@ static ClassDesc MOIntsTransformFactory_cd(
   typeid(MOIntsTransformFactory),"MOIntsTransformFactory",1,"virtual public SavableState",
   0, 0, create<MOIntsTransformFactory>);
 
-MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
-                                               const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
-                                               const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
+MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral) :
   integral_(integral), tbintdescr_(new DefaultTwoBodyIntDescr(integral)),
-  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  space1_(0), space2_(0), space3_(0), space4_(0)
 {
-  if (space2.null())
-    space2_ = space1_;
-  if (space3.null())
-    space3_ = space2_;
-  if (space4.null())
-    space4_ = space3_;
-
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();

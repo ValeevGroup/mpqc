@@ -55,7 +55,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   //
   // If transform not given, construct appropriately, otherwise notify user which transform is used
   //
-  Ref<TwoBodyMOIntsTransform> tform = r12info()->moints_runtime()->get(tform_key);
+  Ref<TwoBodyMOIntsTransform> tform = r12info()->moints_runtime4()->get(tform_key);
 
   //
   // Initialize spaces and maps

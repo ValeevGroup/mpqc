@@ -300,8 +300,9 @@ int main(int argc, char **argv) {
     AOSpaceRegistry::instance()->add(bs, bs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
+    Ref<MOIntsRuntime> runtime = new MOIntsRuntime(factory);
     Ref<TwoBodyMOIntsTransform> ixjy_tform =
-      new TwoBodyMOIntsTransform_ixjy_df("test", factory,
+      new TwoBodyMOIntsTransform_ixjy_df("test", runtime,
                                          descr,
                                          bs_space, bs_space,
                                          bs_space, bs_space,
@@ -375,9 +376,9 @@ int main(int argc, char **argv) {
     // try the new runtime
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
-    Ref<TwoBodyTwoCenterMOIntsRuntime> rtime = new TwoBodyTwoCenterMOIntsRuntime(factory);
+    Ref<TwoBodyTwoCenterMOIntsRuntime> rtime2 = new TwoBodyTwoCenterMOIntsRuntime(factory);
     const std::string key = ParsedTwoBodyTwoCenterIntKey::key("Mu","Mu","ERI","");
-    RefSCMatrix kernel_from_rtime = rtime->get(key);
+    RefSCMatrix kernel_from_rtime = rtime2->get(key);
     kernel_from_rtime.print("testing TwoBodyTwoCenterIntOp: eri kernel(factory)");
   }
 #endif

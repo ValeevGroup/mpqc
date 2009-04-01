@@ -79,7 +79,7 @@ namespace sc {
       const size_t num_tforms = transform_keys.size();
       tformvec transforms(num_tforms);
       for(unsigned int t=0; t<num_tforms; ++t) {
-        transforms[t] = r12info()->moints_runtime()->get(transform_keys[t]);
+        transforms[t] = r12info()->moints_runtime4()->get(transform_keys[t]);
       }
 
       Timer tim_generic_tensor("Generic tensor");

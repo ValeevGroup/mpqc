@@ -37,7 +37,7 @@
 #include <util/group/memory.h>
 #include <math/scmat/result.h>
 #include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/moints_runtime.h>
 
 namespace sc {
 
@@ -54,7 +54,7 @@ namespace sc {
    \f]
    The kernel \f$\hat{W} \f$ is any operator.
 
-   \param factory is the MOIntsTransformFactory object used to compute integrals
+   \param runtime is the MOIntsRuntime object used to compute MO/AO integrals
    \param kernel_key denotes the kernel operator to be used for fitting. Currently only "1/r_{12}" is supported.
    \param space1 is space r in |rs) product space
    \param space2 is space s in |rs) product space
@@ -64,7 +64,7 @@ namespace sc {
   class DensityFitting: virtual public SavableState {
     public:
       ~DensityFitting();
-      DensityFitting(const Ref<MOIntsTransformFactory>& factory,
+      DensityFitting(const Ref<MOIntsRuntime>& rtime,
                      const std::string& kernel_key,
                      const Ref<OrbitalSpace>& space1,
                      const Ref<OrbitalSpace>& space2,
@@ -72,9 +72,9 @@ namespace sc {
       DensityFitting(StateIn&);
       void save_data_state(StateOut&);
 
-      const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
+      const Ref<MOIntsRuntime>& runtime() const { return runtime_; }
       const Ref<Integral>& integral() const {
-        return factory_->integral();
+        return runtime()->factory()->integral();
       }
       /// returns the kernel matrix in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
       const RefSymmSCMatrix& kernel() const {
@@ -104,7 +104,7 @@ namespace sc {
       RefSymmSCMatrix kernel_;
       Ref<R12IntsAcc> cC_;
 
-      Ref<MOIntsTransformFactory> factory_;
+      Ref<MOIntsRuntime> runtime_;
       Ref<GaussianBasisSet> fbasis_;
       Ref<OrbitalSpace> space1_;
       Ref<OrbitalSpace> space2_;

@@ -33,7 +33,7 @@
 
 using namespace sc;
 
-R12IntsAccCreator::R12IntsAccCreator(const Ref<MOIntsRuntime>& moints_rtime,
+R12IntsAccCreator::R12IntsAccCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                                      const std::vector<std::string>& tform_keys) :
   RangeCreator<ObjT> (tform_keys.size()), moints_rtime_(moints_rtime),
       tform_keys_(tform_keys) {
@@ -96,7 +96,7 @@ void TwoBodyIntDescrCreator::increment_indices() {
 
 ////
 
-R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<MOIntsRuntime>& moints_rtime,
+R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                                                  const Ref<OrbitalSpace>& bra1,
                                                  const Ref<OrbitalSpace>& ket1,
                                                  const Ref<OrbitalSpace>& bra2,

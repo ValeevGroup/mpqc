@@ -49,12 +49,12 @@ static ClassDesc DensityFitting_cd(
 
 DensityFitting::~DensityFitting() {}
 
-DensityFitting::DensityFitting(const Ref<MOIntsTransformFactory>& factory,
+DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                const std::string& kernel_key,
                                const Ref<OrbitalSpace>& space1,
                                const Ref<OrbitalSpace>& space2,
                                const Ref<GaussianBasisSet>& fitting_basis) :
-                                 factory_(factory),
+                                 runtime_(mointsruntime),
                                  space1_(space1),
                                  space2_(space2),
                                  fbasis_(fitting_basis)
@@ -71,7 +71,7 @@ DensityFitting::DensityFitting(const Ref<MOIntsTransformFactory>& factory,
 
 DensityFitting::DensityFitting(StateIn& si) :
   SavableState(si) {
-  factory_ << SavableState::restore_state(si);
+  runtime_ << SavableState::restore_state(si);
   fbasis_ << SavableState::restore_state(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
@@ -84,7 +84,7 @@ DensityFitting::DensityFitting(StateIn& si) :
 
 void
 DensityFitting::save_data_state(StateOut& so) {
-  SavableState::save_state(factory_.pointer(),so);
+  SavableState::save_state(runtime_.pointer(),so);
   SavableState::save_state(fbasis_.pointer(),so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
@@ -108,14 +108,14 @@ DensityFitting::compute()
   // compute cC_ first
   const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
   Ref<IntParams> p = new IntParamsVoid;
-  factory()->set_spaces(space1_,
-                        space2_,
-                        aoidxreg->value(fbasis_),
-                        0);
+  runtime()->factory()->set_spaces(space1_,
+                                   space2_,
+                                   aoidxreg->value(fbasis_),
+                                   0);
   Ref<TwoBodyThreeCenterIntDescr> descr = IntDescrFactory::make<3>(integral,
       TwoBodyOperSet::ERI,
       p);
-  Ref<TwoBodyThreeCenterMOIntsTransform> tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
+  Ref<TwoBodyThreeCenterMOIntsTransform> tform = runtime()->factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
                                                                               "",
                                                                               descr);
   tform->compute();
@@ -133,7 +133,7 @@ DensityFitting::compute()
 
     std::vector<int> readers;
     const int nreaders = cC_->tasks_with_access(readers);
-    const int me = factory()->msg()->me();
+    const int me = runtime()->factory()->msg()->me();
 
     if (cC_->has_access(me)) {
       RefSCMatrix cC_jR = kernel_.kit()->matrix(new SCDimension(nj),
@@ -155,7 +155,7 @@ DensityFitting::compute()
     // print out the result
     cC.print("DensityFitting: cC");
 
-    factory_->mem()->sync();
+    runtime()->factory()->mem()->sync();
   }
 #endif
 
@@ -183,7 +183,7 @@ DensityFitting::compute()
   C_->activate();
   cC_->activate();
   {
-    const int me = factory()->msg()->me();
+    const int me = runtime()->factory()->msg()->me();
     std::vector<int> writers;
     const int nwriters = C_->tasks_with_access(writers);
 
@@ -225,7 +225,7 @@ DensityFitting::compute()
   if (C_->data_persistent()) C_->deactivate();
   if (cC_->data_persistent()) cC_->deactivate();
 
-  factory_->mem()->sync();
+  runtime()->factory()->mem()->sync();
 }
 
 /////////////////////////////////////////////////////////////////////////////

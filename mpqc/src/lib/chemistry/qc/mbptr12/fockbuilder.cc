@@ -631,7 +631,7 @@ namespace sc {
 
     }
 
-    RefSCMatrix coulomb(const Ref<MOIntsRuntime>& ints_rtime,
+    RefSCMatrix coulomb(const Ref<TwoBodyFourCenterMOIntsRuntime>& ints_rtime,
                         const Ref<OrbitalSpace>& occ_space,
                         const Ref<OrbitalSpace>& bra_space,
                         const Ref<OrbitalSpace>& ket_space) {
@@ -721,7 +721,7 @@ namespace sc {
       return J;
     }
 
-    RefSCMatrix exchange(const Ref<MOIntsRuntime>& ints_rtime,
+    RefSCMatrix exchange(const Ref<TwoBodyFourCenterMOIntsRuntime>& ints_rtime,
                          const Ref<OrbitalSpace>& occ_space,
                          const Ref<OrbitalSpace>& bra_space,
                          const Ref<OrbitalSpace>& ket_space) {

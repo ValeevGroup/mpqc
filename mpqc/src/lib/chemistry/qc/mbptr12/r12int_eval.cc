@@ -1842,7 +1842,7 @@ R12IntEval::compute()
       std::string tform_key;
       // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
       if (obs_eq_vbs && nocorrptr.null()) {
-        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
                                            occ1_act,
                                            r12info()->refinfo()->orbs(spin1),
                                            occ2_act,
@@ -1851,7 +1851,7 @@ R12IntEval::compute()
         tform_key = tformkey_creator();
       }
       else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
-        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
                                               occ1_act,
                                               vir1_act,
                                               occ2_act,
@@ -1860,7 +1860,7 @@ R12IntEval::compute()
         tform_key = tformkey_creator();
       }
       else { // pure MP2 -- manually construct transform
-        const std::string descr_key = r12info()->moints_runtime()->descr_key(new TwoBodyIntDescrERI(r12info()->integral()));
+        const std::string descr_key = r12info()->moints_runtime4()->descr_key(new TwoBodyIntDescrERI(r12info()->integral()));
         const std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2);
         tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
                                              vir1_act->id(),vir2_act->id(),

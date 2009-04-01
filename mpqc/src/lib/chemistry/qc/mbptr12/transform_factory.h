@@ -122,9 +122,7 @@ private:
 public:
 
   MOIntsTransformFactory(StateIn&);
-  MOIntsTransformFactory(const Ref<Integral>& integral,
-                         const Ref<OrbitalSpace>& space1 = 0, const Ref<OrbitalSpace>& space2 = 0,
-                         const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
+  MOIntsTransformFactory(const Ref<Integral>& integral);
   ~MOIntsTransformFactory();
 
   void save_data_state(StateOut&);

@@ -97,7 +97,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   //
   std::vector<std::string> tform4f_keys; // get 1 3 |F12| 2 4_f
   {
-    R12TwoBodyIntKeyCreator tform_creator(r12info()->moints_runtime(),
+    R12TwoBodyIntKeyCreator tform_creator(r12info()->moints_runtime4(),
       space1,
       space2,
       space3,
@@ -116,7 +116,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   else {
     std::vector<std::string> tform2f_keys;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
         space1,
         fspace2,
         space3,

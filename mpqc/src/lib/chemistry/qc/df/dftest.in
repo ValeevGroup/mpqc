@@ -24,6 +24,13 @@ ne<Molecule>: (
    }
 )
 
+h<Molecule>: (
+  symmetry=c1
+   { atoms    geometry } = {
+      H  [ 0.0 0.0 0.0 ]
+   }
+)
+
 h2o<Molecule>: (
   symmetry=c1
   { atoms geometry} = {
@@ -178,9 +185,12 @@ test: (
    wfn = $:wfn
 )   
 
-stdbasis<GaussianBasisSet>: (
-  basisdir = "./"
-  basisfiles = [ "tmp" ]
+stdbasis<SplitBasisSet>: (
+  basis = $:stdmbasis
+)
+stdmbasis<GaussianBasisSet>: (
+  %basisdir = "./"
+  %basisfiles = [ "tmp" ]
   molecule = $:molecule
   name = "DZ (Dunning)"
   %name = "1s"
@@ -196,4 +206,3 @@ stdfitmbasis<GaussianBasisSet>: (
   molecule = $:molecule
   name = "aug-cc-pVDZ"
 )
-

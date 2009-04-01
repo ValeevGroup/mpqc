@@ -38,6 +38,7 @@
 #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace sc;
 
@@ -159,34 +160,14 @@ DensityFitting::compute()
 #endif
 
   // compute the kernel second
-  // TODO: parallelize (do I need to bother parallelizing N^2 steps??)
   {
-    const Ref<GaussianBasisSet>& b = fbasis_;
-    integral->set_basis(b, b);
-    Ref<TwoBodyTwoCenterInt> coulomb2int = integral->electron_repulsion2();
-    const double* buffer = coulomb2int->buffer();
-    for (int s1 = 0; s1 < b->nshell(); ++s1) {
-      const int s1offset = b->shell_to_function(s1);
-      const int nf1 = b->shell(s1).nfunction();
-      for (int s2 = 0; s2 <= s1; ++s2) {
-        const int s2offset = b->shell_to_function(s2);
-        const int nf2 = b->shell(s2).nfunction();
-
-        // compute shell doublet
-        coulomb2int->compute_shell(s1, s2);
-
-        // copy buffer into kernel_
-        const double* bufptr = buffer;
-        for(int f1=0; f1<nf1; ++f1) {
-          for(int f2=0; f2<nf2; ++f2, ++bufptr) {
-            kernel_.set_element(f1+s1offset, f2+s2offset, *bufptr);
-          }
-        }
-
-      }
-    }
-    factory_->mem()->sync();
+    RefSymmSCMatrix kernel_so = detail::twobody_twocenter_coulomb(fbasis_,integral);
+    integral->set_basis(fbasis_);
+    Ref<PetiteList> pl = integral->petite_list();
+    RefSymmSCMatrix kernel_ao = pl->to_AO_basis(kernel_so);
+    kernel_->convert(kernel_ao);
   }
+  kernel_.print("DensityFitting::kernel");
 
   // solve the linear system C_ * kernel = cC_
   //
@@ -365,6 +346,8 @@ test::DensityFitting::compute()
       }
     }
   }
+
+  kernel_.print("test::DensityFitting::kernel");
 
   // compute the conjugate coefficient matrix
   {

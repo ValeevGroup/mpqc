@@ -177,7 +177,11 @@ namespace sc {
   typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::G12NC> TwoBodyThreeCenterIntDescrG12NC;
   typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::G12NC> TwoBodyTwoCenterIntDescrG12NC;
   typedef TwoBodyNCenterIntDescr<4,TwoBodyOperSet::GenG12> TwoBodyIntDescrGenG12;
+  typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::GenG12> TwoBodyThreeCenterIntDescrGenG12;
+  typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::GenG12> TwoBodyTwoCenterIntDescrGenG12;
   typedef TwoBodyNCenterIntDescr<4,TwoBodyOperSet::G12DKH> TwoBodyIntDescrG12DKH;
+  typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::G12DKH> TwoBodyThreeCenterIntDescrG12DKH;
+  typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::G12DKH> TwoBodyTwoCenterIntDescrG12DKH;
 
   struct IntDescrFactory {
     template <int NumCenters>

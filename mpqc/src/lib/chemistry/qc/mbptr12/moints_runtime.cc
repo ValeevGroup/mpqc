@@ -676,7 +676,7 @@ MOIntsRuntime::class_desc_(typeid(this_type),
 
 MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory) :
   factory_(factory),
-  runtime_2c_(new TwoBodyTwoCenterMOIntsRuntime(0)),  // non need for transforms for 2-center integrals
+  runtime_2c_(new TwoBodyTwoCenterMOIntsRuntime(factory_)),  // non need for transforms for 2-center integrals
   runtime_3c_(new TwoBodyThreeCenterMOIntsRuntime(factory_)),
   runtime_4c_(new TwoBodyFourCenterMOIntsRuntime(factory_)) {
 }

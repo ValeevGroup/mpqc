@@ -107,17 +107,12 @@ DensityFitting::compute()
 
   // compute cC_ first
   const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
-  Ref<IntParams> p = new IntParamsVoid;
-  runtime()->factory()->set_spaces(space1_,
-                                   space2_,
-                                   aoidxreg->value(fbasis_),
-                                   0);
-  Ref<TwoBodyThreeCenterIntDescr> descr = IntDescrFactory::make<3>(integral,
-      TwoBodyOperSet::ERI,
-      p);
-  Ref<TwoBodyThreeCenterMOIntsTransform> tform = runtime()->factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
-                                                                              "",
-                                                                              descr);
+  // TODO need non-Coulomb fitting kernels?
+  const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(space1_->id(),
+                                                                 aoidxreg->value(fbasis_)->id(),
+                                                                 space2_->id(),
+                                                                 "ERI", "");
+  Ref<TwoBodyThreeCenterMOIntsTransform> tform = runtime()->runtime_3c()->get(cC_key);
   tform->compute();
   cC_ = tform->ints_acc();
 
@@ -161,11 +156,13 @@ DensityFitting::compute()
 
   // compute the kernel second
   {
-    RefSymmSCMatrix kernel_so = detail::twobody_twocenter_coulomb(fbasis_,integral);
-    integral->set_basis(fbasis_);
-    Ref<PetiteList> pl = integral->petite_list();
-    RefSymmSCMatrix kernel_ao = pl->to_AO_basis(kernel_so);
-    kernel_->convert(kernel_ao);
+    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+    const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(aoidxreg->value(fbasis_)->id(),
+                                                                     aoidxreg->value(fbasis_)->id(),
+                                                                     "ERI", "");
+    RefSCMatrix kernel_rect = runtime()->runtime_2c()->get(kernel_key);
+    const int nfbs = kernel_.dim().n();
+    kernel_.assign_subblock(kernel_rect, 0, nfbs-1, 0, nfbs-1);
   }
   kernel_.print("DensityFitting::kernel");
 

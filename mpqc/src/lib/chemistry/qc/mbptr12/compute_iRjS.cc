@@ -261,12 +261,12 @@ TwoBodyMOIntsTransform_iRjS::compute()
               for(int j=0; j<rank3; ++j) {
                 ExEnv::out0() << indent << "te_type = " << te_type << " i = " << i << " j = " << j << endl;
                 Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
-                RefSCMatrix xy_buf_mat = kit->matrix(new SCDimension(rank2),
-                                                     new SCDimension(rank4));
+                RefSCMatrix yx_buf_mat = kit->matrix(new SCDimension(rank4),
+                                                     new SCDimension(rank2));
 
-                const double* xy_buf = ints_acc_->retrieve_pair_block(i, j, te_type);
-                xy_buf_mat.assign(xy_buf);
-                xy_buf_mat.print("block");
+                const double* yx_buf = ints_acc_->retrieve_pair_block(i, j, te_type);
+                yx_buf_mat.assign(yx_buf);
+                yx_buf_mat.print("block");
                 ints_acc_->release_pair_block(i, j, te_type);
 
               }

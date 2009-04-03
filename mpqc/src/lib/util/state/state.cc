@@ -172,6 +172,26 @@ SavableState::save_data_state(StateOut& so)
 
 /////////////////////////////////////////////////////////////////////////////
 
+DummySavableState::DummySavableState() {}
+
+DummySavableState::DummySavableState(StateIn& si) {
+}
+
+void
+DummySavableState::save_data_state(StateOut& so) {
+}
+
+ClassDesc
+DummySavableState::class_desc_(typeid(this_type),
+                               "DummySavableState",
+                               1,
+                               "virtual public SavableState",
+                               create<this_type>,
+                               0,
+                               create<this_type> );
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ"

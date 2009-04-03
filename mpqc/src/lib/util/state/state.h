@@ -113,6 +113,19 @@ class SavableState: public DescribedClass {
     SavableState(StateIn&);
   };
 
+  /// useful as a dummy template argument
+  struct DummySavableState : virtual public SavableState {
+  public:
+    typedef DummySavableState this_type;
+
+    DummySavableState();
+    DummySavableState(StateIn& si);
+    void save_data_state(StateOut&);
+
+  private:
+    static ClassDesc class_desc_;
+  };
+
 }
 
 #endif

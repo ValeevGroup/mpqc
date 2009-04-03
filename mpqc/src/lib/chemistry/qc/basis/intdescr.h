@@ -29,12 +29,12 @@
 #pragma interface
 #endif
 
+#ifndef _chemistry_qc_basis_intdescr_h
+#define _chemistry_qc_basis_intdescr_h
+
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/basis/inttraits.h>
-
-#ifndef _chemistry_qc_basis_intdescr_h
-#define _chemistry_qc_basis_intdescr_h
 
 namespace sc {
 
@@ -98,7 +98,7 @@ namespace sc {
 
         static const unsigned int num_intsets = TraitsType::size;
         TwoBodyNCenterIntDescr(const Ref<Integral>& IF,
-                               const Ref<ParamsType>& params = Ref<ParamsType>()) :
+                               const Ref<ParamsType>& params = Ref<ParamsType>(dynamic_cast<ParamsType*>(new IntParamsVoid))) :
                                  factory_(IF),
                                  params_(params) { }
         TwoBodyNCenterIntDescr(const Ref<Integral>& IF,

@@ -44,11 +44,15 @@ using namespace std;
 
 namespace sc {
 
+  enum R12IntsAccStorage {R12IntsAccStorage_XY, R12IntsAccStorage_YX};
+
   struct R12IntsAccDimensions {
     public:
       static const R12IntsAccDimensions& default_dim() { return default_dim_; }
-      R12IntsAccDimensions(int num_te_types, int n1, int n2, int n3, int n4) :
-        num_te_types_(num_te_types), n1_(n1), n2_(n2), n3_(n3), n4_(n4)
+      R12IntsAccDimensions(int num_te_types, int n1, int n2, int n3, int n4,
+                           R12IntsAccStorage storage = R12IntsAccStorage_XY) :
+        num_te_types_(num_te_types), n1_(n1), n2_(n2), n3_(n3), n4_(n4),
+        storage_(storage)
         {
         }
       int num_te_types() const { return num_te_types_; }
@@ -56,6 +60,7 @@ namespace sc {
       int n2() const { return n2_; }
       int n3() const { return n3_; }
       int n4() const { return n4_; }
+      R12IntsAccStorage storage() const { return storage_; }
     private:
       static R12IntsAccDimensions default_dim_;
       int num_te_types_;
@@ -63,6 +68,7 @@ namespace sc {
       int n2_;
       int n3_;
       int n4_;
+      R12IntsAccStorage storage_;
   };
   bool operator==(const R12IntsAccDimensions& A,
                   const R12IntsAccDimensions& B);
@@ -76,7 +82,8 @@ namespace sc {
    where i, j, x, and, y are indices with ranges [0,ni), [0,nj), etc. and O labels
    the operator type and ranges from 0 to num_te_types. The data is stored and accessed as follows:
    each ij block is a set of num_te_types base-0 contiguous 2-dimensional array with dimensions
-   nx and ny. How blocks are stored and accessed is determined in the derived class.
+   nx and ny. How blocks are stored and accessed is determined in the derived class. It is also possible
+   to have the physical storage to be xy or yx. \sa R12IntsAcc::storage()
 
    Public interface of R12IntsAcc is designed to accomodate the needs of the TwoBodyMOIntsTransform
    objects. Parallel AO->MO integral transforms are performed in single or multiple passes.
@@ -87,12 +94,14 @@ namespace sc {
    After all batches have been stored, the content of R12IntsAcc needs to be "committed"
    using <tt>commit</tt>. After that blocks of MO integrals can be accessed using
    <tt>retrieve_pair_block</tt>.
+
     */
 
 class R12IntsAcc: virtual public SavableState {
   public:
     // mem will be used to fetch data
-    R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny);
+    R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny,
+               R12IntsAccStorage storage = R12IntsAccStorage_XY);
     R12IntsAcc(StateIn&);
     virtual ~R12IntsAcc();
     void save_data_state(StateOut&);
@@ -115,6 +124,8 @@ class R12IntsAcc: virtual public SavableState {
     int nx() const { return nx_; }
     /// Rank of index space y
     int ny() const { return ny_; }
+    /// physical storage of the integrals. The default storage is XY. Can be changed
+    const R12IntsAccStorage& storage() const { return storage_; }
     /// Size of each block of the integrals of one type, in double words
     size_t blocksize() const { return blocksize_; };
     // return blksize_
@@ -126,11 +137,11 @@ class R12IntsAcc: virtual public SavableState {
     virtual void deactivate() { active_ = false; }
     /// if this returns false, call to deactivate may destroy data
     virtual bool data_persistent() const =0;
-    /// Retrieves an ij block of integrals
+    /// Retrieves an ij block of integrals. Note that it comes stored according to storage().
     virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Releases the buffer that holds ij block of integrals
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
-    /// Stores an ij pair block of integrals
+    /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().
     virtual void store_pair_block(int i, int j, tbint_type oper_type, const double* ints) =0;
 
     int ij_index(int i, int j) const { return i*nj_ + j; };
@@ -154,6 +165,7 @@ class R12IntsAcc: virtual public SavableState {
     Ref<MessageGrp> msg_;
     int ni_, nj_;
     int nx_, ny_;
+    R12IntsAccStorage storage_;
     size_t nxy_;        // nx_ * ny_  - the number of integrals of one type in a block
     size_t blksize_;    // the same in bytes
     size_t blocksize_;  // hence the size of the block of num_te_types of integrals is blksize_ * num_te_types
@@ -192,10 +204,11 @@ namespace detail {
   void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
                        int ni, const size_t blksize_memgrp = 0);
 
-  /** Reverse of store_memorygrp()
+  /** Reverse of store_memorygrp(). storage specifies the target storage of integrals in mem.
+   * Give acc->storage() to maintain the same storage as in acc.
    */
   void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
-                         int ni, const size_t blksize_memgrp = 0);
+                         int ni, R12IntsAccStorage storage, const size_t blksize_memgrp = 0);
 
 }
 

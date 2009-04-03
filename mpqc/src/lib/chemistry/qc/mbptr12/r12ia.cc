@@ -40,7 +40,21 @@
 using namespace std;
 using namespace sc;
 
-R12IntsAccDimensions R12IntsAccDimensions::default_dim_(-1,-1,-1,-1,-1);
+namespace {
+  // transposes src into dst
+  void memcpy_transpose(double* dst, const double* src, int nrow, int ncol) {
+    for(int r=0; r<nrow; ++r) {
+      double* dst_ptr = dst + r;
+      for(int c=0; c<ncol; ++c) {
+        *dst_ptr = *src;
+        ++src;
+        dst_ptr += nrow;
+      }
+    }
+  }
+};
+
+R12IntsAccDimensions R12IntsAccDimensions::default_dim_(-1,-1,-1,-1,-1,R12IntsAccStorage_XY);
 namespace sc {
   bool operator==(const R12IntsAccDimensions& A,
                   const R12IntsAccDimensions& B) {
@@ -49,7 +63,8 @@ namespace sc {
     A.n1() == B.n1() &&
     A.n2() == B.n2() &&
     A.n3() == B.n3() &&
-    A.n4() == B.n4();
+    A.n4() == B.n4() &&
+    A.storage() == B.storage();
   }
 }
 
@@ -60,8 +75,10 @@ static ClassDesc R12IntsAcc_cd(
   typeid(R12IntsAcc),"R12IntsAcc",2,"virtual public SavableState",
   0, 0, 0);
 
-R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny) :
+R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny,
+                       R12IntsAccStorage storage) :
   num_te_types_(num_te_types), ni_(ni), nj_(nj), nx_(nx), ny_(ny),
+  storage_(storage),
   nxy_(nx*ny), blksize_(nxy_*sizeof(double)), blocksize_(blksize_*num_te_types_),
   msg_(MessageGrp::get_default_messagegrp()), active_(false)
 {
@@ -75,6 +92,7 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si),
   si.get(nj_);
   si.get(nx_);
   si.get(ny_);
+  int s; si.get(s); storage_ = static_cast<R12IntsAccStorage>(s);
 
   nxy_ = nx_ * ny_;
   blksize_ = nxy_*sizeof(double);
@@ -92,12 +110,13 @@ void R12IntsAcc::save_data_state(StateOut& so)
   so.put(nj_);
   so.put(nx_);
   so.put(ny_);
+  so.put((int)storage_);
 }
 
 int
 R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
 {
-  int nproc = ntasks();
+  const int nproc = ntasks();
 
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
@@ -201,10 +220,19 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
 }
 
 void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
-                       int ni, const size_t blksize_memgrp) {
+                       int ni, R12IntsAccStorage storage, const size_t blksize_memgrp) {
   // if this task cannot get the data from the accumulator, bolt
   if (acc->has_access(mem->me()) == false)
     return;
+
+  const bool transpose_xy = (storage != acc->storage());
+  int nrow=-1, ncol=-1;
+  if (transpose_xy) {
+    // number of row indices in blocks as stored in acc
+    nrow = (acc->storage() == R12IntsAccStorage_XY) ? acc->nx() : acc->ny();
+    // number of column indices in blocks as stored in acc
+    ncol = (acc->storage() == R12IntsAccStorage_XY) ? acc->ny() : acc->nx();
+  }
 
   // determine over how many tasks the work can be split
   vector<int> readers;
@@ -233,7 +261,13 @@ void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
         for (int te_type = 0; te_type < num_te_types; ++te_type) {
           const double* data = acc->retrieve_pair_block(ii, j, te_type);
           double* buffer = (double *) mem->obtain_writeonly(moffset, blksize);
-          ::memcpy((void*)buffer, (const void*)data, blksize);
+
+          if (!transpose_xy)
+            ::memcpy((void*)buffer, (const void*)data, blksize);
+          else {
+            memcpy_transpose(buffer, data, nrow, ncol);
+          }
+
           mem->release_writeonly(const_cast<void*>(static_cast<const void*>(buffer)), moffset, blksize);
           moffset += blksize_memgrp;
         }
@@ -243,7 +277,13 @@ void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
         const size_t blksize = acc->blksize();
         for (int te_type=0; te_type < num_te_types; te_type++) {
           const double* data = acc->retrieve_pair_block(ii, j, te_type);
-          ::memcpy((void*)buffer, (const void*)data, blksize);
+
+          if (!transpose_xy)
+            ::memcpy((void*)buffer, (const void*)data, blksize);
+          else {
+            memcpy_transpose(buffer, data, nrow, ncol);
+          }
+
           acc->release_pair_block(ii, j, te_type);
           buffer = (double*) ((size_t) buffer + blksize_memgrp);
         }

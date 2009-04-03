@@ -53,8 +53,9 @@ static ClassDesc R12IntsAcc_Node0File_cd(
   0, 0, create<R12IntsAcc_Node0File>);
 
 R12IntsAcc_Node0File::R12IntsAcc_Node0File(const char* filename, int num_te_types,
-                                           int ni, int nj, int nx, int ny) :
-  R12IntsAcc(num_te_types, ni, nj, nx, ny)
+                                           int ni, int nj, int nx, int ny,
+                                           R12IntsAccStorage storage) :
+  R12IntsAcc(num_te_types, ni, nj, nx, ny, storage)
 {
   filename_ = strdup(filename);
   init(false);
@@ -127,10 +128,11 @@ R12IntsAcc_Node0File::clone(const R12IntsAccDimensions& dim) {
   Ref<R12IntsAcc_Node0File> result;
   if (dim == R12IntsAccDimensions::default_dim())
     result = new R12IntsAcc_Node0File(clonename.c_str(), num_te_types(),
-                                      ni(), nj(), nx(), ny());
+                                      ni(), nj(), nx(), ny(), storage());
   else
     result = new R12IntsAcc_Node0File(clonename.c_str(), dim.num_te_types(),
-                                      dim.n1(), dim.n2(), dim.n3(), dim.n4());
+                                      dim.n1(), dim.n2(), dim.n3(), dim.n4(),
+                                      dim.storage());
 
   result->set_clonelist(clonelist_);
   return result;
@@ -227,102 +229,6 @@ R12IntsAcc_Node0File::deactivate()
     ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
-#if 0
-void
-R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
-{
-  if (committed_) {
-    ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called after all data has been committed" << endl;
-    abort();
-  }
-  // mem must be the same as mem_
-  else if (mem_ != mem) {
-    ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "mem != R12IntsAcc_Node0File::mem_" << endl;
-    abort();
-  }
-  // Will store integrals on node 0
-  else if (taskid() != 0)
-    return;
-  else if (ni > ni()) {
-    ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_Node0File::ni()" << endl;
-    abort();
-  }
-  else if (next_orbital() + ni > ni()) {
-    ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_Node0File::ni()" << endl;
-    abort();
-  }
-  else {
-    size_t blksize_memgrp = blksize;
-    if (blksize_memgrp == 0)
-      blksize_memgrp = blksize_;
-
-    // Now do some extra work to figure layout of data in MemoryGrp
-    // Compute global offsets to each processor's data
-    int i,j,ij;
-    int me = taskid();
-    int nproc = ntasks();
-
-    // Append the data to the file
-    datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
-    for (int i=0; i<ni; i++)
-      for (int j=0; j<nj(); j++) {
-	double *data;
-	int ij = ij_index(i,j);
-	int proc = ij%nproc;
-	int local_ij_index = ij/nproc;
-	if (proc != me) {
-	  distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp*num_te_types() + mem->offset(proc);
-          for(int te_type=0; te_type < num_te_types(); te_type++) {
-            data = (double *) mem->obtain_readonly(moffset, blksize_);
-            ssize_t wrote_this_much = write(datafile_, data, blksize_);
-            if (wrote_this_much != blksize_)
-              throw FileOperationFailed("R12IntsAcc_Node0File::store_memorygrp() failed",
-                                        __FILE__,
-                                        __LINE__,
-                                        filename_,
-                                        FileOperationFailed::Write);
-            mem->release_readonly(data, moffset, blksize_);
-            moffset += blksize_memgrp;
-          }
-	}
-	else {
-          data = (double *) ((size_t)mem->localdata() + blksize_memgrp*num_te_types()*local_ij_index);
-          for(int te_type=0; te_type < num_te_types(); te_type++) {
-            ssize_t wrote_this_much = write(datafile_, data, blksize_);
-            if (wrote_this_much != blksize_)
-              throw FileOperationFailed("R12IntsAcc_Node0File::store_memorygrp() failed",
-                                        __FILE__,
-                                        __LINE__,
-                                        filename_,
-                                        FileOperationFailed::Write);
-            data = (double*) ((size_t) data + blksize_memgrp);
-          }
-	}
-      }
-    // Close the file and update the i counter
-    close(datafile_);
-  }
-
-  inc_next_orbital(ni);
-}
-
-void
-R12IntsAcc_Node0File::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
-{
-  // mem must be the same as mem()
-  if (mem() != mem) {
-    throw ProgrammingError("R12IntsAcc_Node0File::restore_memorygrp() -- mem != R12IntsAcc_Node0File::mem()",__FILE__,__LINE__);
-  }
-  if (ni != ni()) {
-    throw ProgrammingError("R12IntsAcc_Node0File::restore_memorygrp() -- ni != R12IntsAcc_Node0File::ni()",__FILE__,__LINE__);
-  }
-  throw FeatureNotImplemented("R12IntsAcc_Node0File::restore_memorygrp()");
-}
-#endif
-
 void
 R12IntsAcc_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const double *data)
 {
@@ -354,18 +260,6 @@ R12IntsAcc_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
                               filename_, FileOperationFailed::Write);
   }
 }
-
-#if 0
-void
-R12IntsAcc_Node0File::commit()
-{
-  mem()->set_localsize(0);
-  mem()->sync();
-  mem()->deactivate();
-  R12IntsAcc::commit();
-}
-
-#endif
 
 const double * R12IntsAcc_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type) const {

@@ -120,6 +120,10 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
   const int nij = compute_nij(batchsize_, space4()->rank(), msg_->n(), msg_->me());
   const size_t localmem = num_te_types() * nij * memgrp_blksize();
 
+  //
+  // NOTE: results come out stored as YX for the sake maximizing the size of messages
+  //       in TwoBodyMOIntsTransform_13Inds !!!
+  //
   switch (ints_method_) {
 
   case MOIntsTransform::StoreMethod::mem_only:
@@ -131,7 +135,8 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
-                                           memgrp_blksize());
+                                           memgrp_blksize(),
+                                           R12IntsAccStorage_YX);
     }
     break;
 
@@ -143,7 +148,8 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
-                                           memgrp_blksize());
+                                           memgrp_blksize(),
+                                           R12IntsAccStorage_YX);
       break;
     }
     // else use the next case
@@ -151,7 +157,8 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
   case MOIntsTransform::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1()->rank(), space3()->rank(),
-                                         space2()->rank(), space4()->rank());
+                                         space2()->rank(), space4()->rank(),
+                                         R12IntsAccStorage_YX);
     break;
 
 #if HAVE_MPIIO
@@ -163,7 +170,8 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
-                                           memgrp_blksize());
+                                           memgrp_blksize(),
+                                           R12IntsAccStorage_YX);
       break;
     }
     // else use the next case
@@ -171,7 +179,8 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
   case MOIntsTransform::StoreMethod::mpi:
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1()->rank(), space3()->rank(),
-                                             space2()->rank(), space4()->rank());
+                                             space2()->rank(), space4()->rank(),
+                                             R12IntsAccStorage_YX);
     break;
 #endif
 

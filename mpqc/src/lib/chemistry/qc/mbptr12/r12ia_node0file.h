@@ -79,7 +79,8 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     int ij_proc(int i, int j) const { return 0;};
 
   public:
-    R12IntsAcc_Node0File(const char *filename, int num_te_types, int ni, int nj, int nx, int ny);
+    R12IntsAcc_Node0File(const char *filename, int num_te_types, int ni, int nj, int nx, int ny,
+                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
     R12IntsAcc_Node0File(StateIn&);
     ~R12IntsAcc_Node0File();
     void save_data_state(StateOut&);

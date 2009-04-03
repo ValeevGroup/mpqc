@@ -69,7 +69,8 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
   public:
     R12IntsAcc_MemoryGrp(const Ref<MemoryGrp>&, int num_te_types,
                          int ni, int nj, int nx, int ny,
-                         size_t memorygrp_blksize);
+                         size_t memorygrp_blksize,
+                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
     R12IntsAcc_MemoryGrp(StateIn&);
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);

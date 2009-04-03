@@ -47,8 +47,10 @@ static ClassDesc R12IntsAcc_MemoryGrp_cd(
   0, 0, create<R12IntsAcc_MemoryGrp>);
 
 R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(const Ref<MemoryGrp>& mem, int num_te_types,
-                                           int ni, int nj, int nx, int ny, size_t blksize_memgrp) :
-  R12IntsAcc(num_te_types, ni, nj, nx, ny), blksize_memgrp_(blksize_memgrp), mem_(mem)
+                                           int ni, int nj, int nx, int ny,
+                                           size_t blksize_memgrp,
+                                           R12IntsAccStorage storage) :
+  R12IntsAcc(num_te_types, ni, nj, nx, ny, storage), blksize_memgrp_(blksize_memgrp), mem_(mem)
 {
   init();
 }
@@ -91,11 +93,13 @@ R12IntsAcc_MemoryGrp::clone(const R12IntsAccDimensions& dim)
   if (dim == R12IntsAccDimensions::default_dim())
     result = new R12IntsAcc_MemoryGrp(newmem, num_te_types(),
                                       ni(), nj(), nx(), ny(),
-                                      blksize_memgrp_);
+                                      blksize_memgrp_,
+                                      storage());
   else
     result = new R12IntsAcc_MemoryGrp(newmem, dim.num_te_types(),
                                       dim.n1(), dim.n2(), dim.n3(), dim.n4(),
-                                      dim.n3() * dim.n4() * sizeof(double));
+                                      dim.n3() * dim.n4() * sizeof(double),
+                                      dim.storage());
 
   return result;
 }
@@ -113,81 +117,8 @@ void R12IntsAcc_MemoryGrp::init() {
         pairblk_[ij].ints_[type] = NULL;
         pairblk_[ij].refcount_[type] = 0;
       }
-      // not sure if MemoryGrp::set_localsize has been called yet, hence it's offsets may be meaningless. Compute them on the fly
-#if 0
-      int local_ij_index = ij_index(i, j)/n;
-      pairblk_[ij].offset_ = (distsize_t)local_ij_index*blksize_memgrp_
-          *num_te_types() + mem_->offset(ij_proc(i,j));
-#endif
     }
 }
-
-#if 0
-void
-R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
-{
-  if (committed_) {
-    ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called after all data has been committed" << endl;
-    abort();
-  }
-  // mem must be the same as mem_
-  else if (mem_ != mem) {
-    ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
-    abort();
-  }
-  else if (ni != ni_) {
-    ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni != R12IntsAcc_MemoryGrp::ni_" << endl;
-    abort();
-  }
-  else {
-    if (blksize != 0 && blksize != blksize_memgrp_) {
-      blksize_memgrp_ = blksize;
-      init();
-    }
-
-    for (int i=0; i<ni_; i++)
-      for (int j=0; j<nj_; j++)
-        if (is_local(i,j)) {
-          int local_ij_index = ij_index(i,j)/nproc_;
-          double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
-              blksize_memgrp_*num_te_types()*local_ij_index);
-          store_pair_block(i,j,integral_ij_offset);
-        }
-  }
-
-  inc_next_orbital(ni);
-}
-
-void
-R12IntsAcc_MemoryGrp::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
-{
-  // mem must be the same as mem_
-  if (mem_ != mem) {
-    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- mem != R12IntsAcc_MemoryGrp::mem_",__FILE__,__LINE__);
-  }
-  if (ni != ni_) {
-    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- ni != R12IntsAcc_MemoryGrp::ni_",__FILE__,__LINE__);
-  }
-  const size_t blksize_memgrp = (blksize == 0) ? blksize_memgrp_ : blksize;
-  if (blksize_memgrp < blksize_memgrp_) {
-    throw ProgrammingError("R12IntsAcc_MemoryGrp::restore_memorygrp() -- blksize < R12IntsAcc_MemoryGrp::blksize_memgrp_",__FILE__,__LINE__);
-  }
-
-  // loop over all local blocks in reverse and resize
-  for (int i=ni_-1; i>=0; i--)
-    for (int j=nj_-1; j>=0; j--)
-      if (is_local(i,j)) {
-        int local_ij_index = ij_index(i,j)/nproc_;
-        double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
-            blksize_memgrp_*num_te_types()*local_ij_index);
-        //store_pair_block(i,j,integral_ij_offset);
-      }
-
-  throw FeatureNotImplemented("R12IntsAcc_MemoryGrp::restore_memorygrp()");
-}
-#endif
 
 void
 R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)

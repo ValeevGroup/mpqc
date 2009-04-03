@@ -82,7 +82,8 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 
   public:
     R12IntsAcc_MPIIOFile(const char *filename, int num_te_types,
-                         int ni, int nj, int nx, int ny);
+                         int ni, int nj, int nx, int ny,
+                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
     R12IntsAcc_MPIIOFile(StateIn&);
     ~R12IntsAcc_MPIIOFile();
     void save_data_state(StateOut&);
@@ -129,11 +130,13 @@ template <typename Derived>
     if (dim == R12IntsAccDimensions::default_dim())
       result = new Derived(clonename.c_str(), num_te_types(),
                            ni(), nj(),
-                           nx(), ny());
+                           nx(), ny(),
+                           storage());
     else
       result = new Derived(clonename.c_str(), dim.num_te_types(),
                            dim.n1(), dim.n2(),
-                           dim.n3(), dim.n4());
+                           dim.n3(), dim.n4(),
+                           dim.storage());
 
     result->set_clonelist(clonelist_);
     return result;
@@ -152,27 +155,14 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
 
   public:
     R12IntsAcc_MPIIOFile_Ind(const char *filename, int num_te_types,
-                             int ni, int nj, int nx, int ny);
+                             int ni, int nj, int nx, int ny,
+                             R12IntsAccStorage storage = R12IntsAccStorage_XY);
     R12IntsAcc_MPIIOFile_Ind(StateIn&);
     ~R12IntsAcc_MPIIOFile_Ind();
     void save_data_state(StateOut&);
 
     Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
 
-#if 0
-    /** Stores all pair block of integrals held in mem.
-        By default blocks are appended to the end of the same file, i.e.
-        they are assumed to have come from consecutive passes of
-        the same transformation.
-        This is a collective operation.
-        See documentation for R12IntsAcc::store_memorygrp()
-        for more info.
-        mem must be the same MemoryGrp used to construct this.
-      */
-    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
-    /// Implements R12IntsAcc::restore_memorygrp(). mem must be the same MemoryGrp used to construct this.
-    void restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize = 0) const;
-#endif
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
     /// Retrieves an ij pair block of integrals from the file

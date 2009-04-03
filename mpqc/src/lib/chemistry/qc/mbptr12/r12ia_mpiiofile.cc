@@ -48,8 +48,9 @@ static ClassDesc R12IntsAcc_MPIIOFile_cd(
   0, 0, 0);
 
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(const char* filename, int nte_types,
-                                           int ni, int nj, int nx, int ny) :
-    R12IntsAcc(nte_types, ni, nj, nx, ny), datafile_(MPI_FILE_NULL)
+                                           int ni, int nj, int nx, int ny,
+                                           R12IntsAccStorage storage) :
+    R12IntsAcc(nte_types, ni, nj, nx, ny, storage), datafile_(MPI_FILE_NULL)
 {
   filename_ = strdup(filename);
 
@@ -199,8 +200,9 @@ R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
 }
 
 R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(const char* filename, int num_te_types,
-                                                   int ni, int nj, int nx, int ny) :
-  R12IntsAcc_MPIIOFile(filename,num_te_types,ni,nj,nx,ny)
+                                                   int ni, int nj, int nx, int ny,
+                                                   R12IntsAccStorage storage) :
+  R12IntsAcc_MPIIOFile(filename,num_te_types,ni,nj,nx,ny, storage)
 {
 }
 
@@ -218,84 +220,6 @@ Ref<R12IntsAcc>
 R12IntsAcc_MPIIOFile_Ind::clone(const R12IntsAccDimensions& dim) {
   return R12IntsAcc_MPIIOFile::clone<R12IntsAcc_MPIIOFile_Ind>(dim);
 }
-
-#if 0
-void
-R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
-{
-  if (committed_) {
-    ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called after all data has been committed" << endl;
-    abort();
-  }
-  // mem must be the same as mem_
-  else if (mem_ != mem) {
-    ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
-    abort();
-  }
-  else if (ni > ni()) {
-    ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_MPIIOFile_Ind::ni()" << endl;
-    abort();
-  }
-  else if (next_orbital() + ni > ni()) {
-    ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::ni()" << endl;
-    abort();
-  }
-  else {
-    size_t blksize_memgrp = blksize;
-    if (blksize_memgrp == 0)
-      blksize_memgrp = blksize();
-
-    // Now do some extra work to figure layout of data in MemoryGrp
-    // Compute global offsets to each processor's data
-    int i,j,ij;
-    int me = mem->me();
-    int nproc = mem->n();
-
-    // Append the data to the file
-    int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_APPEND | MPI_MODE_WRONLY, MPI_INFO_NULL, &datafile_);
-    check_error_code_(errcod);
-
-    for (int i=0; i<ni; i++)
-      for (int j=0; j<nj(); j++) {
-	int ij = ij_index(i,j);
-	int proc = ij%nproc;
-        if (proc != me) continue;
-	int local_ij_index = ij/nproc;
-        double *data = (double *) ((size_t)mem->localdata() + blksize_memgrp*num_te_types()*local_ij_index);
-        for(int te_type=0; te_type < num_te_types(); te_type++) {
-          int IJ = ij_index(i+next_orbital(),j);
-          int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_+(MPI_Offset)te_type*blksize(), MPI_SEEK_SET);
-          check_error_code_(errcod);
-          MPI_Status status;
-          errcod = MPI_File_write(datafile_, (void *)data, nxy(), MPI_DOUBLE, &status);
-          check_error_code_(errcod);
-          data = (double*) ((size_t) data + blksize_memgrp);
-        }
-      }
-    // Close the file and update the i counter
-    errcod = MPI_File_close(&datafile_);
-    check_error_code_(errcod);
-  }
-
-  inc_next_orbital(ni);
-}
-
-void
-R12IntsAcc_MPIIOFile_Ind::restore_memorygrp(Ref<MemoryGrp>& mem, int ioffset, int ni, const size_t blksize) const
-{
-  // mem must be the same as mem_
-  if (mem_ != mem) {
-    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- mem != R12IntsAcc_MPIIOFile_Ind::mem_",__FILE__,__LINE__);
-  }
-  if (ni != ni()) {
-    throw ProgrammingError("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp() -- ni != R12IntsAcc_MPIIOFile_Ind::ni()",__FILE__,__LINE__);
-  }
-  throw FeatureNotImplemented("R12IntsAcc_MPIIOFile_Ind::restore_memorygrp()");
-}
-#endif
 
 void R12IntsAcc_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,

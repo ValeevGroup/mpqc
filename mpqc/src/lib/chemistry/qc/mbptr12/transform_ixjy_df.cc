@@ -285,7 +285,9 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   if (restart_orbital_ != 0)
     return;
 
-  ExEnv::out0() << indent << "Started TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << std::endl;
+  std::string tim_label("tbint_tform_ixjy_df ");
+  tim_label += this->name();
+  Timer tim(tim_label);
 
   const bool equiv_12_34 = (*space1() == *space3() && *space2() == *space4());
 
@@ -534,8 +536,9 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     for (int te_type=0; te_type<num_te_types(); ++te_type)
       delete[] kernel[te_type];
 
-  ExEnv::out0() << indent << "Finished TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << std::endl;
   restart_orbital_ = 1;
+  tim.exit();
+  ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -108,8 +108,9 @@ DensityFitting::compute()
   const std::string name = ParsedDensityFittingKey::key(space1_->id(),
                                                         space2_->id(),
                                                         AOSpaceRegistry::instance()->value(fbasis_)->id());
-  ExEnv::out0() << indent << "Started DensityFitting: name = " << name << std::endl;
-
+  std::string tim_label("DensityFitting ");
+  tim_label += name;
+  Timer tim(tim_label);
 
   const Ref<Integral>& integral = this->integral();
 
@@ -232,7 +233,8 @@ DensityFitting::compute()
 
   runtime()->factory()->mem()->sync();
 
-  ExEnv::out0() << indent << "Finished DensityFitting: name = " << name << std::endl;
+  tim.exit();
+  ExEnv::out0() << indent << "Built DensityFitting: name = " << name << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -213,7 +213,9 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   if (space3()->rank() == restart_orbital_)
     return;
 
-  ExEnv::out0() << indent << "Started TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+  std::string tim_label("tbint_tform_ijR ");
+  tim_label += this->name();
+  Timer tim(tim_label);
 
   const int nproc = mem_->n();
   const int me = mem_->me();
@@ -355,8 +357,9 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   detail::store_memorygrp(ints_acc_,mem_,0,1,memgrp_blocksize);
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 
-  ExEnv::out0() << indent << "Finished TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
   restart_orbital_ = space3()->rank();
+  tim.exit();
+  ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -38,7 +38,6 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ixjy_df.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/blas.h>
@@ -62,14 +61,12 @@ static ClassDesc TwoBodyMOIntsTransform_ixjy_df_cd(
   typeid(TwoBodyMOIntsTransform_ixjy_df),"TwoBodyMOIntsTransform_ixjy_df",1,"public TwoBodyMOIntsTransform",
   0, 0, create<TwoBodyMOIntsTransform_ixjy_df>);
 
-TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const Ref<MOIntsRuntime>& runtime,
+TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const DensityFittingInfo* df_info,
                                                                const Ref<TwoBodyIntDescr>& tbintdescr,
                                                                const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
-                                                               const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4,
-                                                               const Ref<GaussianBasisSet>& dfbasis12,
-                                                               const Ref<GaussianBasisSet>& dfbasis34) :
-  TwoBodyMOIntsTransform(name,runtime->factory(),tbintdescr,space1,space2,space3,space4),
-  runtime_(runtime), dfbasis12_(dfbasis12), dfbasis34_(dfbasis34.null() ? dfbasis12 : dfbasis34)
+                                                               const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
+  TwoBodyMOIntsTransform(name,df_info->runtime()->moints_runtime()->factory(),tbintdescr,space1,space2,space3,space4),
+  runtime_(df_info->runtime()), dfbasis12_(df_info->basis1()), dfbasis34_(df_info->basis2())
 {
   // assuming for now that all densities will be fit in the same basis
   // TODO generalize to different fitting basis sets
@@ -77,7 +74,7 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
 
   // make sure Registries know about the fitting bases
   Ref<OrbitalSpaceRegistry> orbreg = OrbitalSpaceRegistry::instance();
-  Ref<Integral> integral = runtime_->factory()->integral();
+  Ref<Integral> integral = runtime_->moints_runtime()->factory()->integral();
   if (orbreg->key_exists("Mu") == false) {
     // TODO how to generate unique labels
     Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", dfbasis12_, integral);
@@ -284,6 +281,12 @@ void
 TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   init_acc();
+
+  if (restart_orbital_ != 0)
+    return;
+
+  ExEnv::out0() << indent << "Started TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << std::endl;
+
   const bool equiv_12_34 = (*space1() == *space3() && *space2() == *space4());
 
   // Prerequivisites:
@@ -296,46 +299,68 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   Ref<R12IntsAcc> C12, cC12;
   {
-    Ref<DensityFitting> df12 = new DensityFitting(runtime(), "1/r_{12}",
-                                                  space1(), space2(),
-                                                  dfbasis12());
-    df12->compute();
-    C12 = df12->C();
+    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+    const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
+    const std::string C12_key = ParsedDensityFittingKey::key(space1()->id(),
+                                                             space2()->id(),
+                                                             dfspace12->id());
+    C12 = runtime()->get(C12_key);
     C12->activate();
-    if (coulomb_only) {
-      cC12 = df12->conjugateC();
-      cC12->activate();
-    }
   }
 
   Ref<R12IntsAcc> C34, cC34;
   if (!equiv_12_34) {
-    Ref<DensityFitting> df34;
-    df34 = new DensityFitting(runtime(), "1/r_{12}",
-                              space3(), space4(),
-                              dfbasis34());
-    df34->compute();
-    C34 = df34->C();
+    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+    const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
+    const std::string C34_key = ParsedDensityFittingKey::key(space3()->id(),
+                                                             space4()->id(),
+                                                             dfspace34->id());
+    C34 = runtime()->get(C34_key);
     C34->activate();
-    if (coulomb_only) {
-      cC34 = df34->conjugateC();
-      cC34->activate();
-    }
   }
   else {
     C34 = C12;
-    cC34 = cC12;
   }
 
   Ref<IntParams> params = intdescr()->params();
   Ref<TwoBodyThreeCenterIntDescr> descr = IntDescrFactory::make<3>(factory()->integral(),
       oset,
       params);
+  const std::string descr_key = runtime()->moints_runtime()->runtime_3c()->descr_key(descr);
+
+  // compute the 3-center operator matrices
+  {
+    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+    const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
+    const std::string cC12_key = ParsedTwoBodyThreeCenterIntKey::key(space1()->id(),
+                                                                     dfspace12->id(),
+                                                                     space2()->id(),
+                                                                     descr_key);
+    Ref<TwoBodyThreeCenterMOIntsTransform> cC12_tform = runtime()->moints_runtime()->runtime_3c()->get(cC12_key);
+    cC12_tform->compute();
+    cC12 = cC12_tform->ints_acc();
+    cC12->activate();
+
+    if (!equiv_12_34) {
+      const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
+      const std::string cC34_key = ParsedTwoBodyThreeCenterIntKey::key(space3()->id(),
+                                                                       dfspace34->id(),
+                                                                       space4()->id(),
+                                                                       descr_key);
+      Ref<TwoBodyThreeCenterMOIntsTransform> cC34_tform = runtime()->moints_runtime()->runtime_3c()->get(cC34_key);
+      cC34_tform->compute();
+      cC34 = cC34_tform->ints_acc();
+      cC34->activate();
+    }
+    else
+      cC34 = cC12;
+  }
 
   double** kernel;
   Ref<R12IntsAcc> L12;   // L12 = C12 * kernel
   if (!coulomb_only) {
 
+    // TODO convert to using two-body two-center ints runtime
     const int ntypes = num_te_types();
     kernel = new double*[TwoBodyOper::max_ntypes];
     // compute the kernel for each integral type
@@ -431,34 +456,6 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     }
     if (L12->data_persistent()) L12->deactivate();
     L12->activate();
-
-    // lastly, compute the 3-center operator matrices
-    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
-    const std::string tform12_name = "crap12";
-    const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
-    factory()->set_spaces(space1(),space2(),dfspace12,0);
-    Ref<TwoBodyThreeCenterMOIntsTransform> cC12_tform =
-      factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
-                                   tform12_name,
-                                   descr);
-    cC12_tform->compute();
-    cC12 = cC12_tform->ints_acc();
-    cC12->activate();
-
-    if (!equiv_12_34) {
-      const std::string tform34_name = "crap34";
-      const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
-      factory()->set_spaces(space3(),space4(),dfspace34,0);
-      Ref<TwoBodyThreeCenterMOIntsTransform> cC34_tform =
-        factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,
-                                     tform34_name,
-                                     descr);
-      cC34_tform->compute();
-      cC34 = cC34_tform->ints_acc();
-      cC34->activate();
-    }
-    else
-      cC34 = cC12;
   }
 
   // split the work between tasks who can write the integrals
@@ -524,6 +521,9 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   if (kernel[0] != 0)
     for (int te_type=0; te_type<num_te_types(); ++te_type)
       delete[] kernel[te_type];
+
+  ExEnv::out0() << indent << "Finished TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << std::endl;
+  restart_orbital_ = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

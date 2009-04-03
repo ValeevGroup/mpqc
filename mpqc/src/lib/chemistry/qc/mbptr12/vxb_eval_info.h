@@ -88,6 +88,7 @@ private:
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
+  Ref<GaussianBasisSet> bs_df_;
   bool obs_eq_vbs_;
   bool obs_eq_ribs_;
   Ref<SCMatrixKit> matrixkit_;
@@ -196,7 +197,7 @@ public:
 		 unsigned int nfzc,
 		 unsigned int nfzv,
 		 bool spinadapted,
-		 bool deflayed_initialization = false);
+		 bool delayed_initialization = false);
   ~R12IntEvalInfo();
 
   void save_data_state(StateOut&);
@@ -229,6 +230,8 @@ public:
   Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
+  /// Returns the density fitting basis set object
+  Ref<GaussianBasisSet> basis_df() const { return bs_df_; };
   /// Returns true if VBS is equivalent to OBS
   bool obs_eq_vbs() const;
   /// Returns true if RIBS is equivalent to OBS

@@ -37,9 +37,9 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 TARGET_TO_MAKE = libSCdf
 BIN_OR_LIB = LIB
 
-CXXSRC = df.cc
+CXXSRC = df.cc df_runtime.cc
 
-INC = df.h
+INC = df.h df_runtime.h
 
 TESTSRC = dftest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

@@ -53,7 +53,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",10,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",11,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(
@@ -87,6 +87,11 @@ R12IntEvalInfo::R12IntEvalInfo(
       );
   if (bs_vir_.pointer() == NULL)
       bs_vir_ = ref->basis();
+
+  bs_df_ = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("df_basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
 
   // Determine how to store MO integrals
   std::string ints_str = keyval->stringvalue("store_ints",KeyValValuestring("posix"));
@@ -152,6 +157,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   bs_aux_ << SavableState::restore_state(si);
   bs_vir_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 11) {
+    bs_df_ << SavableState::restore_state(si);
+  }
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -205,6 +213,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(bs_aux_.pointer(),so);
   SavableState::save_state(bs_vir_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
+  SavableState::save_state(bs_df_.pointer(),so);
 
   so.put((int)spinadapted_);
   so.put((int)ints_method_);
@@ -294,7 +303,7 @@ R12IntEvalInfo::initialize()
         }
 
         // create MO integrals runtime
-        moints_runtime_ = new MOIntsRuntime(tfactory_);
+        moints_runtime_ = new MOIntsRuntime(tfactory_, bs_df_);
         // and Fock build runtime
         RefSymmSCMatrix Pa, Pb;
         Ref<SCF> ref = refinfo()->ref();
@@ -478,6 +487,10 @@ R12IntEvalInfo::print(std::ostream& o) const {
   if (!bs_aux_->equiv(basis())) {
       o << indent << "Auxiliary Basis Set (ABS):" << endl;
       o << incindent; bs_aux_->print(o); o << decindent << endl;
+  }
+  if (bs_df_.nonnull()) {
+      o << indent << "Density-Fitting Basis Set (DFBS):" << endl;
+      o << incindent; bs_df_->print(o); o << decindent << endl;
   }
 
   r12tech()->print(o);

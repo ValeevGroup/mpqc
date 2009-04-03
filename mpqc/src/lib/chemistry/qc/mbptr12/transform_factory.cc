@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
 #include <chemistry/qc/mbptr12/transform_iRjS.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
+#include <chemistry/qc/mbptr12/transform_ixjy_df.h>
 #include <chemistry/qc/mbptr12/transform_factory.timpl.h>
 
 // Set to 1 if want to use ixjy transforms only
@@ -150,15 +151,20 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
   Ref<TwoBodyMOIntsTransform> result;
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
 
-  if (space2_->rank() <= space2_->basis()->nbasis()) {
+  if (df_info_ == 0) { // no density-fitting
+    if (space2_->rank() <= space2_->basis()->nbasis()) {
 #if USE_IXJY_ALWAYS
-    result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
+      result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
 #else
-    result = new TwoBodyMOIntsTransform_ikjy(name,this,descr,space1_,space2_,space3_,space4_);
+      result = new TwoBodyMOIntsTransform_ikjy(name,this,descr,space1_,space2_,space3_,space4_);
 #endif
+    }
+    else {
+      result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
+    }
   }
   else {
-    result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ixjy_df(name,df_info_,descr,space1_,space2_,space3_,space4_);
   }
 
   if (top_mole_.nonnull())
@@ -227,6 +233,8 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
   switch (T) {
     case MOIntsTransform::TwoBodyTransformType_ixjy:
       return twobody_transform<TwoBodyMOIntsTransform_ixjy>(name,descrarg);
+    case MOIntsTransform::TwoBodyTransformType_ixjy_df:
+      return twobody_transform<TwoBodyMOIntsTransform_ixjy_df>(name,descrarg);
     case MOIntsTransform::TwoBodyTransformType_ikjy:
       return twobody_transform<TwoBodyMOIntsTransform_ikjy>(name,descrarg);
     case MOIntsTransform::TwoBodyTransformType_ijxy:

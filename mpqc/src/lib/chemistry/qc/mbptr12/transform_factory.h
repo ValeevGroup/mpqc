@@ -72,6 +72,10 @@ namespace sc {
 
 class TwoBodyMOIntsTransform;
 class TwoBodyThreeCenterMOIntsTransform;
+class DensityFittingInfo;
+namespace detail {
+  template <bool DF> struct MakeTwoBodyTransform;
+};
 
   /** MOIntsTransformFactory is a factory that produces MOIntsTransform objects. */
 
@@ -98,6 +102,7 @@ private:
   Ref<OrbitalSpace> space2_;
   Ref<OrbitalSpace> space3_;
   Ref<OrbitalSpace> space4_;
+  DensityFittingInfo* df_info_;
 
   CreateTransformHints hints_;
   size_t memory_;
@@ -119,6 +124,9 @@ private:
     twobody_transform(const std::string& name,
                       const Ref<TwoBodyThreeCenterIntDescr>& descrarg);
 
+  // this class helps to form correct transform constructor calls
+  template <bool DF> friend struct sc::detail::MakeTwoBodyTransform;
+
 public:
 
   MOIntsTransformFactory(StateIn&);
@@ -130,6 +138,9 @@ public:
   /// Sets the orbital spaces
   void set_spaces(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2 = 0,
                   const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
+  /// provides the DensityFittingInfo object
+  const DensityFittingInfo* df_info() const { return const_cast<const DensityFittingInfo*>(df_info_); }
+  void df_info(const DensityFittingInfo* i) { df_info_ = const_cast<DensityFittingInfo*>(i); }
 
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }

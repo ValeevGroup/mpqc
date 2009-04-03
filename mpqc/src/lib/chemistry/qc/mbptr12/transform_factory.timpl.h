@@ -37,19 +37,102 @@
 
 namespace sc {
 
+  namespace detail {
+
+    // these classes are needed for type-indirection
+    template <bool DF> struct MakeTwoBodyTransform;
+    template <> struct MakeTwoBodyTransform<false> {
+      static const int i = 1;
+      template <typename TransformType> static
+      Ref<TwoBodyMOIntsTransform>
+      evaluate(MOIntsTransformFactory* factory,
+          const std::string& name,
+          const Ref<TwoBodyIntDescr>& descrarg) {
+        Ref<TwoBodyMOIntsTransform> result;
+        const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? factory->tbintdescr() : descrarg);
+        result = new TransformType(name,factory,descr,
+                                   factory->space1_,
+                                   factory->space2_,
+                                   factory->space3_,
+                                   factory->space4_);
+
+        if (factory->top_mole_.nonnull())
+          result->set_top_mole(factory->top_mole_);
+        result->set_debug(factory->debug());
+        factory->reserve_memory(result->memory());
+
+        return result;
+      }
+    };
+    template <> struct MakeTwoBodyTransform<true> {
+      static const int i = 1;
+      template <typename TransformType> static
+      Ref<TwoBodyMOIntsTransform>
+      evaluate(MOIntsTransformFactory* factory,
+          const std::string& name,
+          const Ref<TwoBodyIntDescr>& descrarg) {
+        Ref<TwoBodyMOIntsTransform> result;
+        const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? factory->tbintdescr() : descrarg);
+        result = new TransformType(name,factory->df_info(),descr,
+                                   factory->space1_,
+                                   factory->space2_,
+                                   factory->space3_,
+                                   factory->space4_);
+
+        if (factory->top_mole_.nonnull())
+          result->set_top_mole(factory->top_mole_);
+        result->set_debug(factory->debug());
+        factory->reserve_memory(result->memory());
+
+        return result;
+      }
+    };
+
+    template <typename TransformType> struct NeedDF {
+      static const bool value = false;
+    };
+    template <> struct NeedDF<TwoBodyMOIntsTransform_ixjy_df> {
+      static const bool value = true;
+    };
+
+    // convert a transform type to the DF-based transform. Default is to not use a DF-based transform
+    template <typename TransformType> struct ToDensityFittingType {
+      typedef TransformType value;
+    };
+    template <> struct ToDensityFittingType<TwoBodyMOIntsTransform_iRjS> {
+      typedef TwoBodyMOIntsTransform_ixjy_df value;
+    };
+#if 0
+    template <> struct ToDensityFittingType<TwoBodyMOIntsTransform_ixjy> {
+      typedef TwoBodyMOIntsTransform_ixjy_df value;
+    };
+    template <> struct ToDensityFittingType<TwoBodyMOIntsTransform_ikjy> {
+      typedef TwoBodyMOIntsTransform_ixjy_df value;
+    };
+#endif
+
+    // compare types
+    template <typename A, typename B> struct EqualTypes {
+      static const bool value = false;
+    };
+    template <typename A> struct EqualTypes<A,A> {
+      static const bool value = true;
+    };
+  }
+
   template <typename TransformType> Ref<TwoBodyMOIntsTransform>
     MOIntsTransformFactory::twobody_transform(const std::string& name,
                                               const Ref<TwoBodyIntDescr>& descrarg)
   {
-    Ref<TwoBodyMOIntsTransform> result;
-    const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
-    result = new TransformType(name,this,descr,space1_,space2_,space3_,space4_);
+    // is density fitting is possible, try calling for a DF-based transform (unless already asked for a DF-based transform)
+    if (df_info() != 0 &&
+        ! detail::EqualTypes<TransformType, TwoBodyMOIntsTransform_ixjy_df>::value &&
+        ! detail::EqualTypes<TransformType, typename detail::ToDensityFittingType<TransformType>::value>::value) {
+      return this->twobody_transform< typename detail::ToDensityFittingType<TransformType>::value >(name, descrarg);
+    }
 
-    if (top_mole_.nonnull())
-      result->set_top_mole(top_mole_);
-    result->set_debug(debug());
-    reserve_memory(result->memory());
-
+    typedef detail::MakeTwoBodyTransform< detail::NeedDF<TransformType>::value > TformMaker;
+    Ref<TwoBodyMOIntsTransform> result = TformMaker::template evaluate<TransformType>(this,name,descrarg);
     return result;
   }
 

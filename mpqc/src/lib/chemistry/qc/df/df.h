@@ -37,7 +37,7 @@
 #include <util/group/memory.h>
 #include <math/scmat/result.h>
 #include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/mbptr12/tbint_runtime.h>
 
 namespace sc {
 
@@ -63,6 +63,8 @@ namespace sc {
    */
   class DensityFitting: virtual public SavableState {
     public:
+      typedef TwoBodyMOIntsRuntimeUnion23 MOIntsRuntime;
+
       ~DensityFitting();
       DensityFitting(const Ref<MOIntsRuntime>& rtime,
                      const std::string& kernel_key,

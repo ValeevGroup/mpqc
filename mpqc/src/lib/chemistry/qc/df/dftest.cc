@@ -300,13 +300,13 @@ int main(int argc, char **argv) {
     AOSpaceRegistry::instance()->add(bs, bs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
-    Ref<MOIntsRuntime> runtime = new MOIntsRuntime(factory);
+    Ref<DensityFittingRuntime> dfruntime = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory));
+    const DensityFittingInfo* df_info = new DensityFittingInfo(fbs, fbs, dfruntime);
     Ref<TwoBodyMOIntsTransform> ixjy_tform =
-      new TwoBodyMOIntsTransform_ixjy_df("test", runtime,
+      new TwoBodyMOIntsTransform_ixjy_df("test", df_info,
                                          descr,
                                          bs_space, bs_space,
-                                         bs_space, bs_space,
-                                         fbs, fbs);
+                                         bs_space, bs_space);
 
     ixjy_tform->compute();
     Ref<R12IntsAcc> ixjy_acc = ixjy_tform->ints_acc();
@@ -356,7 +356,7 @@ int main(int argc, char **argv) {
     tim->exit();
   }
 
-#define TEST_TWOBODYTWOCENTERINTOP 1
+#define TEST_TWOBODYTWOCENTERINTOP 0
 #if TEST_TWOBODYTWOCENTERINTOP
   {
     integral->set_basis(fbs,fbs);

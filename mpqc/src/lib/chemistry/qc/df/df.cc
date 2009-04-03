@@ -148,7 +148,7 @@ DensityFitting::compute()
     // broadcast to all tasks
 
     // print out the result
-    cC.print("DensityFitting: cC");
+    //cC.print("DensityFitting: cC");
 
     runtime()->factory()->mem()->sync();
   }
@@ -164,7 +164,7 @@ DensityFitting::compute()
     const int nfbs = kernel_.dim().n();
     kernel_.assign_subblock(kernel_rect, 0, nfbs-1, 0, nfbs-1);
   }
-  kernel_.print("DensityFitting::kernel");
+  //kernel_.print("DensityFitting::kernel");
 
   // solve the linear system C_ * kernel = cC_
   //

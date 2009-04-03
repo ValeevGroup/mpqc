@@ -29,26 +29,28 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_transformixjy_h
-#define _chemistry_qc_mbptr12_transformixjy_h
+#ifndef _chemistry_qc_mbptr12_transformixjydf_h
+#define _chemistry_qc_mbptr12_transformixjydf_h
 
 #include <string>
 #include <util/ref/ref.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/df/df_runtime.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
 using namespace std;
 
 namespace sc {
 
+  class DensityFittingInfo;
+
   /** TwoBodyMOIntsTransform_ixjy_df computes (ix|jy) integrals
       using parallel integral-direct density-fitting. */
 
 class TwoBodyMOIntsTransform_ixjy_df : public TwoBodyMOIntsTransform {
 
-  // DF-based transforms cannot be handled by factory only -- need to know about other components
-  Ref<MOIntsRuntime> runtime_;
+  // DensityFitting objects are managed by DensityFittingRuntime
+  Ref<DensityFittingRuntime> runtime_;
   Ref<GaussianBasisSet> dfbasis12_;
   Ref<GaussianBasisSet> dfbasis34_;
 
@@ -60,12 +62,10 @@ class TwoBodyMOIntsTransform_ixjy_df : public TwoBodyMOIntsTransform {
 public:
 
   TwoBodyMOIntsTransform_ixjy_df(StateIn&);
-  TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const Ref<MOIntsRuntime>& runtime,
+  TwoBodyMOIntsTransform_ixjy_df(const std::string& name, const DensityFittingInfo* df_info,
                                  const Ref<TwoBodyIntDescr>& tbintdescr,
                                  const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
-                                 const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4,
-                                 const Ref<GaussianBasisSet>& dfbasis12,
-                                 const Ref<GaussianBasisSet>& dfbasis34 = 0);
+                                 const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4);
   ~TwoBodyMOIntsTransform_ixjy_df();
 
   void save_data_state(StateOut&);
@@ -83,7 +83,7 @@ public:
   void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
 
   /// the runtime used to compute this object
-  const Ref<MOIntsRuntime>& runtime() const { return runtime_; }
+  const Ref<DensityFittingRuntime>& runtime() const { return runtime_; }
   /// returns the basis set used to fit the product of space1 and space2
   const Ref<GaussianBasisSet>& dfbasis12() const { return dfbasis12_; }
   /// returns the basis set used to fit the product of space3 and space4

@@ -209,6 +209,12 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
 void
 TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
 
+  // if all integrals are already computed, do nothing
+  if (space3()->rank() == restart_orbital_)
+    return;
+
+  ExEnv::out0() << indent << "Started TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+
   const int nproc = mem_->n();
   const int me = mem_->me();
 
@@ -349,6 +355,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   detail::store_memorygrp(ints_acc_,mem_,0,1,memgrp_blocksize);
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 
+  ExEnv::out0() << indent << "Finished TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+  restart_orbital_ = space3()->rank();
 }
 
 /////////////////////////////////////////////////////////////////////////////

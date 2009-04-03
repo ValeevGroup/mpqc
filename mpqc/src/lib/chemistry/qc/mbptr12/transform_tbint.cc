@@ -448,7 +448,8 @@ TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(const std::
     tbintdescr_(tbintdescr),
     space1_(space1), space2_(space2), space3_(space3),
     ints_method_(factory_->ints_method()),
-    file_prefix_(factory_->file_prefix())
+    file_prefix_(factory_->file_prefix()),
+    restart_orbital_(0)
   {
   }
 

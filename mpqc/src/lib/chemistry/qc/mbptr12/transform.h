@@ -48,7 +48,8 @@ namespace sc {
     enum TwoBodyTransformType {
       TwoBodyTransformType_ixjy=0, TwoBodyTransformType_ikjy=1,
       TwoBodyTransformType_ijxy=2, TwoBodyTransformType_iRjS=3,
-      TwoBodyTransformType_ijR=4,
+      TwoBodyTransformType_ixjy_df=4,
+      TwoBodyTransformType_ijR=5,
       TwoBodyTransformType_First=TwoBodyTransformType_ixjy,
       TwoBodyTransformType_Last=TwoBodyTransformType_ijR
     };

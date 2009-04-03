@@ -47,7 +47,7 @@ using namespace sc;
 // AtomInfo
 
 struct AtomInfo::atom
-AtomInfo::elements_[Nelement] = 
+AtomInfo::elements_[Nelement] =
   {{1, "hydrogen",   "H"},
    {2, "helium",     "He"},
    {3, "lithium",    "Li"},
@@ -257,6 +257,9 @@ AtomInfo::initialize_names()
     }
 }
 
+bool
+AtomInfo::has_announced_library_source_ = false;
+
 void
 AtomInfo::load_library_values()
 {
@@ -281,7 +284,10 @@ AtomInfo::load_library_values()
 #endif
           filename = ainfo;
         }
-      ExEnv::out0() << indent << "Reading file " << filename << "." << endl;
+      if (!has_announced_library_source_) {
+        ExEnv::out0() << indent << "Reading file " << filename << "." << endl;
+        has_announced_library_source_ = true;
+      }
       ifstream is(filename.c_str());
       ostringstream ostrs;
       is >> ostrs.rdbuf();

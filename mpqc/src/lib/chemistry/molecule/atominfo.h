@@ -88,6 +88,11 @@ class AtomInfo: public SavableState {
     double lookup_value(const std::map<int,double>& values, int Z) const;
     double lookup_array_value(const std::map<int,std::vector<double> >& values,
                               int Z, int i) const;
+
+    // set to true after load_library_values() has been called
+    // to avoid repeatedly printing out "Reading file ..." message
+    static bool has_announced_library_source_;
+
   public:
     AtomInfo();
 

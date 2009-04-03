@@ -103,6 +103,14 @@ DensityFitting::product_dimension() const {
 void
 DensityFitting::compute()
 {
+  if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
+    return;
+  const std::string name = ParsedDensityFittingKey::key(space1_->id(),
+                                                        space2_->id(),
+                                                        AOSpaceRegistry::instance()->value(fbasis_)->id());
+  ExEnv::out0() << indent << "Started DensityFitting: name = " << name << std::endl;
+
+
   const Ref<Integral>& integral = this->integral();
 
   // compute cC_ first
@@ -223,6 +231,8 @@ DensityFitting::compute()
   if (cC_->data_persistent()) cC_->deactivate();
 
   runtime()->factory()->mem()->sync();
+
+  ExEnv::out0() << indent << "Finished DensityFitting: name = " << name << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

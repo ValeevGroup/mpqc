@@ -35,6 +35,7 @@
 #include <util/state/state.h>
 #include <util/state/state_text.h>
 #include <util/state/state_bin.h>
+#include <math/scmat/local.h>
 
 using namespace sc;
 
@@ -249,6 +250,31 @@ TwoBodyMOIntsTransform_iRjS::compute()
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
+
+#define DEBUG 0
+#if DEBUG
+        {
+          ExEnv::out0() << indent << "TwoBodyMOIntsTransform_iRjS: name = " << this->name() << endl;
+          ints_acc_->activate();
+          for(int te_type=0; te_type<num_te_types(); ++te_type) {
+            for(int i=0; i<rank1; ++i) {
+              for(int j=0; j<rank3; ++j) {
+                ExEnv::out0() << indent << "te_type = " << te_type << " i = " << i << " j = " << j << endl;
+                Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
+                RefSCMatrix xy_buf_mat = kit->matrix(new SCDimension(rank2),
+                                                     new SCDimension(rank4));
+
+                const double* xy_buf = ints_acc_->retrieve_pair_block(i, j, te_type);
+                xy_buf_mat.assign(xy_buf);
+                xy_buf_mat.print("block");
+                ints_acc_->release_pair_block(i, j, te_type);
+
+              }
+            }
+          }
+          if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+        }
+#endif
 
   print_footer();
 

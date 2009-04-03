@@ -111,6 +111,8 @@ namespace sc {
       Ref<OrbitalSpace> space1_;
       Ref<OrbitalSpace> space2_;
 
+      bool evaluated_;
+
   };
 
 

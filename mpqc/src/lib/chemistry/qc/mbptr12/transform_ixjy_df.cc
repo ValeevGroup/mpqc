@@ -416,12 +416,11 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
     // now compute L12 = C12 * k
     R12IntsAccDimensions L12_dims(this->num_te_types(),C12->ni(),C12->nj(),C12->nx(),C12->ny());
+    // cloning C12 assumes that the fitting bases for 12 and 34 are same
+    assert(dfbasis12()->nbasis() == dfbasis34()->nbasis());
     L12 = C12->clone(L12_dims);
     L12->activate();
     {
-      // cloning C12 assumes that the fitting bases for 12 and 34 are same
-      assert(dfbasis12()->nbasis() == dfbasis34()->nbasis());
-
       // split the work between tasks who can write the integrals
       //
       // assume that the density fitting matrices are available from
@@ -504,6 +503,19 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
                   1.0, xy_buf, rank4);
           C34->release_pair_block(0, j, 0);
         }
+
+#define DEBUG 0
+#if DEBUG
+        {
+          ExEnv::out0() << indent << "TwoBodyMOIntsTransform_ixjy_df: name = " << this->name() << endl;
+          ExEnv::out0() << indent << "te_type = " << te_type << " i = " << i << " j = " << j << endl;
+          Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
+          RefSCMatrix xy_buf_mat = kit->matrix(new SCDimension(rank2),
+                                               new SCDimension(rank4));
+          xy_buf_mat.assign(xy_buf);
+          xy_buf_mat.print("block");
+        }
+#endif
 
         ints_acc_->store_pair_block(i, j, te_type, xy_buf);
 

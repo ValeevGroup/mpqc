@@ -358,7 +358,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       cC34 = cC12;
   }
 
-  double** kernel;
+  double** kernel = 0;
   Ref<DistArray4> L12;   // L12 = C12 * kernel
   if (!coulomb_only) {
 
@@ -532,7 +532,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 
   delete[] xy_buf;
-  if (kernel[0] != 0)
+  if (kernel != 0)
     for (int te_type=0; te_type<num_te_types(); ++te_type)
       delete[] kernel[te_type];
 

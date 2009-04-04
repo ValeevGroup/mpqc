@@ -287,7 +287,7 @@ namespace sc {
         const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
         tformb->compute();
-        Ref<R12IntsAcc> accumb = tformb->ints_acc();
+        Ref<DistArray4> accumb = tformb->ints_acc();
 
         unsigned int fketoffset = 0;
         for (unsigned int fket = 0; fket < nketsets; ++fket, fketoffset += nket) {
@@ -297,7 +297,7 @@ namespace sc {
           const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
 
           tformk->compute();
-          Ref<R12IntsAcc> accumk = tformk->ints_acc();
+          Ref<DistArray4> accumk = tformk->ints_acc();
 
           if (debug_ >= DefaultPrintThresholds::diagnostics) {
             ExEnv::out0() << indent << "Using transforms " << tformb->name()

@@ -1,5 +1,5 @@
 //
-// r12ia_mpiiofile.cc
+// distarray4_mpiiofile.cc
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -36,29 +36,29 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#include <chemistry/qc/mbptr12/distarray4_mpiiofile.h>
 
 using namespace std;
 using namespace sc;
 
 ///////////////////////////////////////////////////////////////
 
-static ClassDesc R12IntsAcc_MPIIOFile_cd(
-  typeid(R12IntsAcc_MPIIOFile),"R12IntsAcc_MPIIOFile",1,"public R12IntsAcc",
+static ClassDesc DistArray4_MPIIOFile_cd(
+  typeid(DistArray4_MPIIOFile),"DistArray4_MPIIOFile",1,"public DistArray4",
   0, 0, 0);
 
-R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(const char* filename, int nte_types,
+DistArray4_MPIIOFile::DistArray4_MPIIOFile(const char* filename, int nte_types,
                                            int ni, int nj, int nx, int ny,
-                                           R12IntsAccStorage storage) :
-    R12IntsAcc(nte_types, ni, nj, nx, ny, storage), datafile_(MPI_FILE_NULL)
+                                           DistArray4Storage storage) :
+    DistArray4(nte_types, ni, nj, nx, ny, storage), datafile_(MPI_FILE_NULL)
 {
   filename_ = strdup(filename);
 
   init(false);
 }
 
-R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
-  SavableState(si), R12IntsAcc(si)
+DistArray4_MPIIOFile::DistArray4_MPIIOFile(StateIn& si) :
+  SavableState(si), DistArray4(si)
 {
   si.getstring(filename_);
   clonelist_ = ListOfClones::restore_instance(si);
@@ -66,7 +66,7 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
   init(true);
 }
 
-R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile() {
+DistArray4_MPIIOFile::~DistArray4_MPIIOFile() {
   for (int i = 0; i < ni(); i++)
     for (int j = 0; j < nj(); j++) {
       int ij = ij_index(i, j);
@@ -74,7 +74,7 @@ R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile() {
         if (pairblk_[ij].ints_[oper_type] != NULL) {
           ExEnv::outn() << indent << me() << ": i = " << i << " j = "
               << j << " oper_type = " << oper_type << endl;
-          throw ProgrammingError("R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile -- some nonlocal blocks have not been released!",
+          throw ProgrammingError("DistArray4_MPIIOFile::~DistArray4_MPIIOFile -- some nonlocal blocks have not been released!",
                                  __FILE__,__LINE__);
         }
     }
@@ -83,15 +83,15 @@ R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile() {
 }
 
 void
-R12IntsAcc_MPIIOFile::save_data_state(StateOut& so)
+DistArray4_MPIIOFile::save_data_state(StateOut& so)
 {
-  R12IntsAcc::save_data_state(so);
+  DistArray4::save_data_state(so);
   so.putstring(filename_);
   ListOfClones::save_instance(clonelist_,so);
 }
 
 void
-R12IntsAcc_MPIIOFile::init(bool restart)
+DistArray4_MPIIOFile::init(bool restart)
 {
   int nproc = ntasks();
   int errcod;
@@ -124,7 +124,7 @@ R12IntsAcc_MPIIOFile::init(bool restart)
 }
 
 void
-R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
+DistArray4_MPIIOFile::check_error_code_(int errcod) const
 {
 
   if (errcod != MPI_SUCCESS) {
@@ -137,24 +137,24 @@ R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
       char* errstr = new char[MPI_MAX_ERROR_STRING];
       int errstrlen;
       MPI_Error_string(errcod, errstr, &errstrlen);
-      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr
+      ExEnv::out0() << "DistArray4_MPIIOFile::DistArray4_MPIIOFile -- MPI-I/O error: " << errstr
                     << " on file " << filename_ << endl;
       delete[] errstr;
-      throw std::runtime_error("R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error");
+      throw std::runtime_error("DistArray4_MPIIOFile::DistArray4_MPIIOFile -- MPI-I/O error");
     }
   }
 
 }
 
 void
-R12IntsAcc_MPIIOFile::set_clonelist(const Ref<ListOfClones>& cl) {
+DistArray4_MPIIOFile::set_clonelist(const Ref<ListOfClones>& cl) {
   clonelist_ = cl;
 }
 
 void
-R12IntsAcc_MPIIOFile::activate()
+DistArray4_MPIIOFile::activate()
 {
-  R12IntsAcc::activate();
+  DistArray4::activate();
   int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDWR, MPI_INFO_NULL, &datafile_);
   check_error_code_(errcod);
   if (classdebug() > 0)
@@ -162,23 +162,23 @@ R12IntsAcc_MPIIOFile::activate()
 }
 
 void
-R12IntsAcc_MPIIOFile::deactivate()
+DistArray4_MPIIOFile::deactivate()
 {
   int errcod = MPI_File_close(&datafile_);
   check_error_code_(errcod);
-  R12IntsAcc::deactivate();
+  DistArray4::deactivate();
   if (classdebug() > 0)
     ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
 }
 
 void
-R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) const
+DistArray4_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
     ExEnv::outn() << indent << me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
-    throw ProgrammingError("R12IntsAcc_MPIIOFile::release_pair_block -- refcount is already zero!",
+    throw ProgrammingError("DistArray4_MPIIOFile::release_pair_block -- refcount is already zero!",
                            __FILE__,__LINE__);
   }
   if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
@@ -190,38 +190,38 @@ R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) con
 
 ///////////////////////////////////////////////////////////////
 
-static ClassDesc R12IntsAcc_MPIIOFile_Ind_cd(
-  typeid(R12IntsAcc_MPIIOFile_Ind),"R12IntsAcc_MPIIOFile_Ind",1,"public R12IntsAcc",
-  0, 0, create<R12IntsAcc_MPIIOFile_Ind>);
+static ClassDesc DistArray4_MPIIOFile_Ind_cd(
+  typeid(DistArray4_MPIIOFile_Ind),"DistArray4_MPIIOFile_Ind",1,"public DistArray4",
+  0, 0, create<DistArray4_MPIIOFile_Ind>);
 
-R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
-  SavableState(si), R12IntsAcc_MPIIOFile(si)
+DistArray4_MPIIOFile_Ind::DistArray4_MPIIOFile_Ind(StateIn& si) :
+  SavableState(si), DistArray4_MPIIOFile(si)
 {
 }
 
-R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(const char* filename, int num_te_types,
+DistArray4_MPIIOFile_Ind::DistArray4_MPIIOFile_Ind(const char* filename, int num_te_types,
                                                    int ni, int nj, int nx, int ny,
-                                                   R12IntsAccStorage storage) :
-  R12IntsAcc_MPIIOFile(filename,num_te_types,ni,nj,nx,ny, storage)
+                                                   DistArray4Storage storage) :
+  DistArray4_MPIIOFile(filename,num_te_types,ni,nj,nx,ny, storage)
 {
 }
 
-R12IntsAcc_MPIIOFile_Ind::~R12IntsAcc_MPIIOFile_Ind()
+DistArray4_MPIIOFile_Ind::~DistArray4_MPIIOFile_Ind()
 {
 }
 
 void
-R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
+DistArray4_MPIIOFile_Ind::save_data_state(StateOut&so)
 {
-  R12IntsAcc_MPIIOFile::save_data_state(so);
+  DistArray4_MPIIOFile::save_data_state(so);
 }
 
-Ref<R12IntsAcc>
-R12IntsAcc_MPIIOFile_Ind::clone(const R12IntsAccDimensions& dim) {
-  return R12IntsAcc_MPIIOFile::clone<R12IntsAcc_MPIIOFile_Ind>(dim);
+Ref<DistArray4>
+DistArray4_MPIIOFile_Ind::clone(const DistArray4Dimensions& dim) {
+  return DistArray4_MPIIOFile::clone<DistArray4_MPIIOFile_Ind>(dim);
 }
 
-void R12IntsAcc_MPIIOFile_Ind::store_pair_block(int i, int j,
+void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,
                                                 const double *ints)
 {
@@ -247,7 +247,7 @@ void R12IntsAcc_MPIIOFile_Ind::store_pair_block(int i, int j,
 }
 
 const double*
-R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type) const
+DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];

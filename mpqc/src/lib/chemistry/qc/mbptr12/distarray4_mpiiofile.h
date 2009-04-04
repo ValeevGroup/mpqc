@@ -1,5 +1,5 @@
 //
-// r12ia_mpiiofile.h
+// distarray4_mpiiofile.h
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_r12ia_mpiiofile_h
-#define _chemistry_qc_mbptr12_r12ia_mpiiofile_h
+#ifndef _chemistry_qc_mbptr12_distarray4_mpiiofile_h
+#define _chemistry_qc_mbptr12_distarray4_mpiiofile_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -37,12 +37,12 @@
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
 #include <chemistry/qc/mbptr12/registry.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 namespace sc {
 
 //////////////////////////////////////////////////////////////////////////
-/** R12IntsAcc_MPIIOFile handles transformed integrals stored in a binary
+/** DistArray4_MPIIOFile handles transformed integrals stored in a binary
     file accessed through MPI-IO. This is an abstract base for MPIIO-based
     accumulators using individual and collective I/O.
 
@@ -51,7 +51,7 @@ namespace sc {
     Each pair block has size of num_te_types*nbasis1*nbasis2
 */
 
-class R12IntsAcc_MPIIOFile: public R12IntsAcc {
+class DistArray4_MPIIOFile: public DistArray4 {
 
   protected:
 
@@ -78,21 +78,21 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     int ij_proc(int i, int j) const { return 0;};
 
     /// helps to implement clone of Derived class
-    template <typename Derived> Ref<R12IntsAcc> clone();
+    template <typename Derived> Ref<DistArray4> clone();
 
   public:
-    R12IntsAcc_MPIIOFile(const char *filename, int num_te_types,
+    DistArray4_MPIIOFile(const char *filename, int num_te_types,
                          int ni, int nj, int nx, int ny,
-                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
-    R12IntsAcc_MPIIOFile(StateIn&);
-    ~R12IntsAcc_MPIIOFile();
+                         DistArray4Storage storage = DistArray4Storage_XY);
+    DistArray4_MPIIOFile(StateIn&);
+    ~DistArray4_MPIIOFile();
     void save_data_state(StateOut&);
 
-     /// implementation of R12IntsAcc::activate()
+     /// implementation of DistArray4::activate()
     void activate();
-    /// implementation of R12IntsAcc::deactivate()
+    /// implementation of DistArray4::deactivate()
     void deactivate();
-    /// implementation of R12IntsAcc::data_persistent()
+    /// implementation of DistArray4::data_persistent()
     bool data_persistent() const { return true; }
     /// Releases an ij pair block of integrals
     void release_pair_block(int i, int j, tbint_type oper_type) const;
@@ -110,7 +110,7 @@ namespace detail {
 }
 
 template <typename Derived>
-  Ref<R12IntsAcc> R12IntsAcc_MPIIOFile::clone(const R12IntsAccDimensions& dim) {
+  Ref<DistArray4> DistArray4_MPIIOFile::clone(const DistArray4Dimensions& dim) {
 
     int id = 0;
     std::string clonename;
@@ -127,7 +127,7 @@ template <typename Derived>
     clonelist_->add(clonename, id);
 
     Ref<Derived> result;
-    if (dim == R12IntsAccDimensions::default_dim())
+    if (dim == DistArray4Dimensions::default_dim())
       result = new Derived(clonename.c_str(), num_te_types(),
                            ni(), nj(),
                            nx(), ny(),
@@ -143,7 +143,7 @@ template <typename Derived>
   }
 
 //////////////////////////////////////////////////////////////////////////////
-/** R12IntsAcc_MPIIOFile_Ind handles transformed integrals stored in a binary
+/** DistArray4_MPIIOFile_Ind handles transformed integrals stored in a binary
     file accessed through MPI-IO individual I/O routines.
 
     The ordering of integrals in blocks is not specified
@@ -151,17 +151,17 @@ template <typename Derived>
     Each pair block has size of num_te_types*nbasis*nbasis
 */
 
-class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
+class DistArray4_MPIIOFile_Ind: public DistArray4_MPIIOFile {
 
   public:
-    R12IntsAcc_MPIIOFile_Ind(const char *filename, int num_te_types,
+    DistArray4_MPIIOFile_Ind(const char *filename, int num_te_types,
                              int ni, int nj, int nx, int ny,
-                             R12IntsAccStorage storage = R12IntsAccStorage_XY);
-    R12IntsAcc_MPIIOFile_Ind(StateIn&);
-    ~R12IntsAcc_MPIIOFile_Ind();
+                             DistArray4Storage storage = DistArray4Storage_XY);
+    DistArray4_MPIIOFile_Ind(StateIn&);
+    ~DistArray4_MPIIOFile_Ind();
     void save_data_state(StateOut&);
 
-    Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
+    Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim());
 
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);

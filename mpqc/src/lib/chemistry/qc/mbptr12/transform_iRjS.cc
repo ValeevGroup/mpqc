@@ -31,10 +31,10 @@
 
 #include <chemistry/qc/mbptr12/transform_iRjS.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
-#include <chemistry/qc/mbptr12/r12ia_node0file.h>
+#include <chemistry/qc/mbptr12/distarray4_memgrp.h>
+#include <chemistry/qc/mbptr12/distarray4_node0file.h>
 #ifdef HAVE_MPIIO
-#  include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#  include <chemistry/qc/mbptr12/distarray4_mpiiofile.h>
 #endif
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
@@ -132,11 +132,11 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
-                                           R12IntsAccStorage_YX);
+                                           DistArray4Storage_YX);
     }
     break;
 
@@ -145,20 +145,20 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
-                                           R12IntsAccStorage_YX);
+                                           DistArray4Storage_YX);
       break;
     }
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1()->rank(), space3()->rank(),
                                          space2()->rank(), space4()->rank(),
-                                         R12IntsAccStorage_YX);
+                                         DistArray4Storage_YX);
     break;
 
 #if HAVE_MPIIO
@@ -167,20 +167,20 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
-                                           R12IntsAccStorage_YX);
+                                           DistArray4Storage_YX);
       break;
     }
     // else use the next case
 
   case MOIntsTransform::StoreMethod::mpi:
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1()->rank(), space3()->rank(),
                                              space2()->rank(), space4()->rank(),
-                                             R12IntsAccStorage_YX);
+                                             DistArray4Storage_YX);
     break;
 #endif
 

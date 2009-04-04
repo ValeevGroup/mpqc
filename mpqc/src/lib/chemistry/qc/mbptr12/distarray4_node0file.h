@@ -1,5 +1,5 @@
 //
-// r12ia_node0file.h
+// distarray4_node0file.h
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_r12ia_node0file_h
-#define _chemistry_qc_mbptr12_r12ia_node0file_h
+#ifndef _chemistry_qc_mbptr12_distarray4_node0file_h
+#define _chemistry_qc_mbptr12_distarray4_node0file_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -36,12 +36,12 @@
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
 #include <chemistry/qc/mbptr12/registry.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 namespace sc {
 
 /////////////////////////////////////////////////////////////////////
-/** R12IntsAcc_Node0File handles transformed integrals stored in file
+/** DistArray4_Node0File handles transformed integrals stored in file
     on node 0 (file is a usual POSIX binary file)
 
     Transferring integrals to the file from nodes is done via MemoryGrp
@@ -53,7 +53,7 @@ namespace sc {
     Each pair block has size of num_te_types*nbasis1*nbasis2
 */
 
-class R12IntsAcc_Node0File: public R12IntsAcc {
+class DistArray4_Node0File: public DistArray4 {
 
     char *filename_;
     int datafile_;
@@ -79,19 +79,19 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     int ij_proc(int i, int j) const { return 0;};
 
   public:
-    R12IntsAcc_Node0File(const char *filename, int num_te_types, int ni, int nj, int nx, int ny,
-                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
-    R12IntsAcc_Node0File(StateIn&);
-    ~R12IntsAcc_Node0File();
+    DistArray4_Node0File(const char *filename, int num_te_types, int ni, int nj, int nx, int ny,
+                         DistArray4Storage storage = DistArray4Storage_XY);
+    DistArray4_Node0File(StateIn&);
+    ~DistArray4_Node0File();
     void save_data_state(StateOut&);
 
-    Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
+    Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim());
 
-    /// implementation of R12IntsAcc::activate()
+    /// implementation of DistArray4::activate()
     void activate();
-    /// implementation of R12IntsAcc::deactivate()
+    /// implementation of DistArray4::deactivate()
     void deactivate();
-    /// implementation of R12IntsAcc::data_persistent()
+    /// implementation of DistArray4::data_persistent()
     bool data_persistent() const { return true; }
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double* ints);

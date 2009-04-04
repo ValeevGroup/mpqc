@@ -42,7 +42,7 @@
 namespace sc {
 
   class OrbitalSpace;
-  class R12IntsAcc;
+  class DistArray4;
 
   /** Decomposition by density fitting with respect to some kernel. The definition is as follows:
    \f[
@@ -83,7 +83,7 @@ namespace sc {
         return kernel_;
       }
       /// returns the fitting coeffcients
-      const Ref<R12IntsAcc>& C() const {
+      const Ref<DistArray4>& C() const {
         return C_;
       }
       /** returns the conjugate expansion matrix defined as \f$ \tilde{C}^{rs}_A \equiv (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
@@ -91,7 +91,7 @@ namespace sc {
           product returns reconstructed integrals:
           \f$ (pq|rs) \approx \sum_A  \tilde{C}^A_{pq} C^{rs}_A \f$
         */
-      const Ref<R12IntsAcc>& conjugateC() const {
+      const Ref<DistArray4>& conjugateC() const {
         return cC_;
       }
 
@@ -102,9 +102,9 @@ namespace sc {
 
     private:
 
-      Ref<R12IntsAcc> C_;
+      Ref<DistArray4> C_;
       RefSymmSCMatrix kernel_;
-      Ref<R12IntsAcc> cC_;
+      Ref<DistArray4> cC_;
 
       Ref<MOIntsRuntime> runtime_;
       Ref<GaussianBasisSet> fbasis_;

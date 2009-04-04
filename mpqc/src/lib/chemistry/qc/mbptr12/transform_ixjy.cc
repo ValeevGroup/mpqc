@@ -39,20 +39,20 @@
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 
-// set to 1 when finished rewriting R12IntsAcc_MemoryGrp
+// set to 1 when finished rewriting DistArray4_MemoryGrp
 #define HAVE_R12IA_MEMGRP 1
 #if HAVE_R12IA_MEMGRP
-  #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+  #include <chemistry/qc/mbptr12/distarray4_memgrp.h>
 #endif
 #include <cassert>
 
-#include <chemistry/qc/mbptr12/r12ia_node0file.h>
+#include <chemistry/qc/mbptr12/distarray4_node0file.h>
 
-// set to 1 when finished rewriting R12IntsAcc_MPIIO
+// set to 1 when finished rewriting DistArray4_MPIIO
 #define HAVE_R12IA_MPIIO 1
 #ifdef HAVE_MPIIO
 #  if HAVE_R12IA_MPIIO
-  #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+  #include <chemistry/qc/mbptr12/distarray4_mpiiofile.h>
 #  endif
 #endif
 
@@ -161,7 +161,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
     }
@@ -176,7 +176,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -187,7 +187,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;
 
@@ -198,7 +198,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -210,7 +210,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
 
   case MOIntsTransform::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
 #else
     assert(false);
@@ -228,7 +228,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
 void
 TwoBodyMOIntsTransform_ixjy::check_int_symm(double threshold) throw (ProgrammingError)
 {
-  Ref<R12IntsAcc> iacc = ints_acc();
+  Ref<DistArray4> iacc = ints_acc();
   iacc->activate();
   int num_te_types = iacc->num_te_types();
   int ni = iacc->ni();
@@ -255,7 +255,7 @@ TwoBodyMOIntsTransform_ixjy::check_int_symm(double threshold) throw (Programming
         continue;
 
       for(int t=0; t<num_te_types; t++) {
-        const double* ints = iacc->retrieve_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+        const double* ints = iacc->retrieve_pair_block(i,j,static_cast<DistArray4::tbint_type>(t));
         int xy=0;
         for(int x=0; x<nx; x++) {
           int xsym = xsyms[x];
@@ -268,14 +268,14 @@ TwoBodyMOIntsTransform_ixjy::check_int_symm(double threshold) throw (Programming
             }
           }
         }
-        iacc->release_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+        iacc->release_pair_block(i,j,static_cast<DistArray4::tbint_type>(t));
       }
     }
   }
 }
 
 void
-TwoBodyMOIntsTransform_ixjy::partially_transformed_ints(const Ref<R12IntsAcc>& ints_acc)
+TwoBodyMOIntsTransform_ixjy::partially_transformed_ints(const Ref<DistArray4>& ints_acc)
 {
   partially_tformed_ints_ = ints_acc;
 }

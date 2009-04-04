@@ -41,7 +41,7 @@
 namespace sc {
 
   class TwoBodyMOIntsTransform;
-  class R12IntsAcc;
+  class DistArray4;
   class F12Amplitudes;
 
   /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.

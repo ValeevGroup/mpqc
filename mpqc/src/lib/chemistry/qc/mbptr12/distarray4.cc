@@ -1,5 +1,5 @@
 //
-// r12ia.cc
+// distarray4.cc
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -35,7 +35,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <math/scmat/local.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 using namespace std;
 using namespace sc;
@@ -54,10 +54,10 @@ namespace {
   }
 };
 
-R12IntsAccDimensions R12IntsAccDimensions::default_dim_(-1,-1,-1,-1,-1,R12IntsAccStorage_XY);
+DistArray4Dimensions DistArray4Dimensions::default_dim_(-1,-1,-1,-1,-1,DistArray4Storage_XY);
 namespace sc {
-  bool operator==(const R12IntsAccDimensions& A,
-                  const R12IntsAccDimensions& B) {
+  bool operator==(const DistArray4Dimensions& A,
+                  const DistArray4Dimensions& B) {
     if (&A == &B) return true;
     return A.num_te_types() == B.num_te_types() &&
     A.n1() == B.n1() &&
@@ -69,14 +69,14 @@ namespace sc {
 }
 
 /*--------------------------------
-  R12IntsAcc
+  DistArray4
  --------------------------------*/
-static ClassDesc R12IntsAcc_cd(
-  typeid(R12IntsAcc),"R12IntsAcc",2,"virtual public SavableState",
+static ClassDesc DistArray4_cd(
+  typeid(DistArray4),"DistArray4",2,"virtual public SavableState",
   0, 0, 0);
 
-R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny,
-                       R12IntsAccStorage storage) :
+DistArray4::DistArray4(int num_te_types, int ni, int nj, int nx, int ny,
+                       DistArray4Storage storage) :
   num_te_types_(num_te_types), ni_(ni), nj_(nj), nx_(nx), ny_(ny),
   storage_(storage),
   nxy_(nx*ny), blksize_(nxy_*sizeof(double)), blocksize_(blksize_*num_te_types_),
@@ -84,7 +84,7 @@ R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny,
 {
 }
 
-R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si),
+DistArray4::DistArray4(StateIn& si) : SavableState(si),
   msg_(MessageGrp::get_default_messagegrp()), active_(false)
 {
   si.get(num_te_types_);
@@ -92,18 +92,18 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si),
   si.get(nj_);
   si.get(nx_);
   si.get(ny_);
-  int s; si.get(s); storage_ = static_cast<R12IntsAccStorage>(s);
+  int s; si.get(s); storage_ = static_cast<DistArray4Storage>(s);
 
   nxy_ = nx_ * ny_;
   blksize_ = nxy_*sizeof(double);
   blocksize_ = blksize_*num_te_types_;
 }
 
-R12IntsAcc::~R12IntsAcc()
+DistArray4::~DistArray4()
 {
 }
 
-void R12IntsAcc::save_data_state(StateOut& so)
+void DistArray4::save_data_state(StateOut& so)
 {
   so.put(num_te_types_);
   so.put(ni_);
@@ -114,7 +114,7 @@ void R12IntsAcc::save_data_state(StateOut& so)
 }
 
 int
-R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
+DistArray4::tasks_with_access(vector<int>& twa_map) const
 {
   const int nproc = ntasks();
 
@@ -139,7 +139,7 @@ R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
 
 namespace sc{ namespace detail {
 
-void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
+void store_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
                      int ni, const size_t blksize_memgrp) {
   // if the accumulator does not accept data from this task, bolt
   if (acc->has_access(mem->me()) == false)
@@ -219,8 +219,8 @@ void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
   }
 }
 
-void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
-                       int ni, R12IntsAccStorage storage, const size_t blksize_memgrp) {
+void restore_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
+                       int ni, DistArray4Storage storage, const size_t blksize_memgrp) {
   // if this task cannot get the data from the accumulator, bolt
   if (acc->has_access(mem->me()) == false)
     return;
@@ -229,9 +229,9 @@ void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
   int nrow=-1, ncol=-1;
   if (transpose_xy) {
     // number of row indices in blocks as stored in acc
-    nrow = (acc->storage() == R12IntsAccStorage_XY) ? acc->nx() : acc->ny();
+    nrow = (acc->storage() == DistArray4Storage_XY) ? acc->nx() : acc->ny();
     // number of column indices in blocks as stored in acc
-    ncol = (acc->storage() == R12IntsAccStorage_XY) ? acc->ny() : acc->nx();
+    ncol = (acc->storage() == DistArray4Storage_XY) ? acc->ny() : acc->nx();
   }
 
   // determine over how many tasks the work can be split

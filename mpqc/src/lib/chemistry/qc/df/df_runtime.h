@@ -65,7 +65,7 @@ namespace sc {
   class DensityFittingRuntime : virtual public SavableState {
     public:
       typedef DensityFittingRuntime this_type;
-      typedef R12IntsAcc Result;
+      typedef DistArray4 Result;
       typedef Ref<Result> ResultRef;
       typedef ParsedDensityFittingKey ParsedResultKey;
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
@@ -79,10 +79,10 @@ namespace sc {
         */
       bool exists(const std::string& key) const;
 
-      /** Returns the R12IntsAcc object corresponding to this key.
+      /** Returns the DistArray4 object corresponding to this key.
 
           key must be in format recognized by ParsedDensityFittingKey.
-          If this key is not known, the R12IntsAcc object will be created
+          If this key is not known, the DistArray4 object will be created
           and (possibly) computed.
         */
       ResultRef get(const std::string& key);   // non-const: can compute something

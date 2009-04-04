@@ -161,7 +161,7 @@ namespace sc {
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
 
           tform->compute();
-          Ref<R12IntsAcc> accum = tform->ints_acc();
+          Ref<DistArray4> accum = tform->ints_acc();
 
           // split work over tasks which have access to integrals
           vector<int> proc_with_ints;

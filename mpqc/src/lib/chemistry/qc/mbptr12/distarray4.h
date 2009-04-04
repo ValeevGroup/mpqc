@@ -1,5 +1,5 @@
 //
-// r12ia.h
+// distarray4.h
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_r12ia_h
-#define _chemistry_qc_mbptr12_r12ia_h
+#ifndef _chemistry_qc_mbptr12_distarray4_h
+#define _chemistry_qc_mbptr12_distarray4_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -44,13 +44,13 @@ using namespace std;
 
 namespace sc {
 
-  enum R12IntsAccStorage {R12IntsAccStorage_XY, R12IntsAccStorage_YX};
+  enum DistArray4Storage {DistArray4Storage_XY, DistArray4Storage_YX};
 
-  struct R12IntsAccDimensions {
+  struct DistArray4Dimensions {
     public:
-      static const R12IntsAccDimensions& default_dim() { return default_dim_; }
-      R12IntsAccDimensions(int num_te_types, int n1, int n2, int n3, int n4,
-                           R12IntsAccStorage storage = R12IntsAccStorage_XY) :
+      static const DistArray4Dimensions& default_dim() { return default_dim_; }
+      DistArray4Dimensions(int num_te_types, int n1, int n2, int n3, int n4,
+                           DistArray4Storage storage = DistArray4Storage_XY) :
         num_te_types_(num_te_types), n1_(n1), n2_(n2), n3_(n3), n4_(n4),
         storage_(storage)
         {
@@ -60,21 +60,21 @@ namespace sc {
       int n2() const { return n2_; }
       int n3() const { return n3_; }
       int n4() const { return n4_; }
-      R12IntsAccStorage storage() const { return storage_; }
+      DistArray4Storage storage() const { return storage_; }
     private:
-      static R12IntsAccDimensions default_dim_;
+      static DistArray4Dimensions default_dim_;
       int num_te_types_;
       int n1_;
       int n2_;
       int n3_;
       int n4_;
-      R12IntsAccStorage storage_;
+      DistArray4Storage storage_;
   };
-  bool operator==(const R12IntsAccDimensions& A,
-                  const R12IntsAccDimensions& B);
+  bool operator==(const DistArray4Dimensions& A,
+                  const DistArray4Dimensions& B);
 
 /////////////////////////////////////////////////////////////////
-/**R12IntsAcc contains a set of one or more distributed dense 4-index arrays.
+/**DistArray4 contains a set of one or more distributed dense 4-index arrays.
    These 4-index quantities are typically AO or MO
    integrals. Since integrals are typically computed in sets -- for example, R12 methods
    require integrals of operators 1/r12, r12, [t1,r12], and [t2,r12] at the same time -- several sets of
@@ -83,34 +83,34 @@ namespace sc {
    the operator type and ranges from 0 to num_te_types. The data is stored and accessed as follows:
    each ij block is a set of num_te_types base-0 contiguous 2-dimensional array with dimensions
    nx and ny. How blocks are stored and accessed is determined in the derived class. It is also possible
-   to have the physical storage to be xy or yx. \sa R12IntsAcc::storage()
+   to have the physical storage to be xy or yx. \sa DistArray4::storage()
 
-   Public interface of R12IntsAcc is designed to accomodate the needs of the TwoBodyMOIntsTransform
+   Public interface of DistArray4 is designed to accomodate the needs of the TwoBodyMOIntsTransform
    objects. Parallel AO->MO integral transforms are performed in single or multiple passes.
    In the latter case all (jxy)^O integrals are produces for a particular subrange of i.
    These integrals are contained in a MemoryGrp object. The contents of the MemoryGrp object is
    "stored" in accumulator using <tt>store_memorygrp(Ref<MemoryGrp>& mem, int ni)</tt>, where
    ni is the size of the subrange of i produced in this pass.
-   After all batches have been stored, the content of R12IntsAcc needs to be "committed"
+   After all batches have been stored, the content of DistArray4 needs to be "committed"
    using <tt>commit</tt>. After that blocks of MO integrals can be accessed using
    <tt>retrieve_pair_block</tt>.
 
     */
 
-class R12IntsAcc: virtual public SavableState {
+class DistArray4: virtual public SavableState {
   public:
     // mem will be used to fetch data
-    R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny,
-               R12IntsAccStorage storage = R12IntsAccStorage_XY);
-    R12IntsAcc(StateIn&);
-    virtual ~R12IntsAcc();
+    DistArray4(int num_te_types, int ni, int nj, int nx, int ny,
+               DistArray4Storage storage = DistArray4Storage_XY);
+    DistArray4(StateIn&);
+    virtual ~DistArray4();
     void save_data_state(StateOut&);
 
     /** how to clone. optional dim allows to obtain an object of the same type but different size.
         the default is to obtain an object of the same size. */
-    virtual Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim()) =0;
+    virtual Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim()) =0;
 
-    /// Types of two-body operators that R12IntsAcc understands
+    /// Types of two-body operators that DistArray4 understands
     typedef unsigned int tbint_type;
     static const unsigned int max_num_te_types_ = TwoBodyOper::max_ntypes;
 
@@ -125,7 +125,7 @@ class R12IntsAcc: virtual public SavableState {
     /// Rank of index space y
     int ny() const { return ny_; }
     /// physical storage of the integrals. The default storage is XY. Can be changed
-    const R12IntsAccStorage& storage() const { return storage_; }
+    const DistArray4Storage& storage() const { return storage_; }
     /// Size of each block of the integrals of one type, in double words
     size_t blocksize() const { return blocksize_; };
     // return blksize_
@@ -165,7 +165,7 @@ class R12IntsAcc: virtual public SavableState {
     Ref<MessageGrp> msg_;
     int ni_, nj_;
     int nx_, ny_;
-    R12IntsAccStorage storage_;
+    DistArray4Storage storage_;
     size_t nxy_;        // nx_ * ny_  - the number of integrals of one type in a block
     size_t blksize_;    // the same in bytes
     size_t blocksize_;  // hence the size of the block of num_te_types of integrals is blksize_ * num_te_types
@@ -201,14 +201,14 @@ namespace detail {
    blksize_memgrp may be larger than blksize_ because an ij-block of partially
    transformed integrals may be larger than the block of fully transformed integrals.
    */
-  void store_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
+  void store_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
                        int ni, const size_t blksize_memgrp = 0);
 
   /** Reverse of store_memorygrp(). storage specifies the target storage of integrals in mem.
    * Give acc->storage() to maintain the same storage as in acc.
    */
-  void restore_memorygrp(Ref<R12IntsAcc>& acc, Ref<MemoryGrp>& mem, int i_offset,
-                         int ni, R12IntsAccStorage storage, const size_t blksize_memgrp = 0);
+  void restore_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
+                         int ni, DistArray4Storage storage, const size_t blksize_memgrp = 0);
 
 }
 

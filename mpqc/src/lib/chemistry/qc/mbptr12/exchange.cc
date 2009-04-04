@@ -42,7 +42,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
@@ -73,7 +73,7 @@ R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
   mxny_tform->compute();
-  Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
+  Ref<DistArray4> mnxy_acc = mxny_tform->ints_acc();
 
   const int nocc = occ_space->rank();
   const int nbra = bra_space->rank();

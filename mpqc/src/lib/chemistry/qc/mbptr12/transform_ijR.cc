@@ -31,10 +31,10 @@
 
 // includes go here
 #include<chemistry/qc/mbptr12/transform_ijR.h>
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
-#include <chemistry/qc/mbptr12/r12ia_node0file.h>
+#include <chemistry/qc/mbptr12/distarray4_memgrp.h>
+#include <chemistry/qc/mbptr12/distarray4_node0file.h>
 #ifdef HAVE_MPIIO
-#  include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#  include <chemistry/qc/mbptr12/distarray4_mpiiofile.h>
 #endif
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
@@ -155,7 +155,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem, num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -167,7 +167,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem, num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -176,7 +176,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          1, space1()->rank(), space2()->rank(), space3()->rank());
     break;
 
@@ -186,7 +186,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem, num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -195,7 +195,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     // else use the next case
 
   case MOIntsTransform::StoreMethod::mpi:
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              1, space1()->rank(), space2()->rank(), space3()->rank());
     break;
 #endif
@@ -352,7 +352,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
 
   mem_->sync();
 
-  // dump integrals from MemoryGrp to R12IntsAcc
+  // dump integrals from MemoryGrp to DistArray4
   ints_acc_->activate();
   detail::store_memorygrp(ints_acc_,mem_,0,1,memgrp_blocksize);
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();

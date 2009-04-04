@@ -35,7 +35,7 @@
 #include <string>
 #include <util/state/state.h>
 #include <chemistry/qc/basis/intdescr.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 

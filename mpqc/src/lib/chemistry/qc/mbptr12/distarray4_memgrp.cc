@@ -1,5 +1,5 @@
 //
-// r12ia_memgrp.cc
+// distarray4_memgrp.cc
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -35,34 +35,34 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+#include <chemistry/qc/mbptr12/distarray4_memgrp.h>
 
 using namespace std;
 using namespace sc;
 
 ///////////////////////////////////////////////////////////////
 
-static ClassDesc R12IntsAcc_MemoryGrp_cd(
-  typeid(R12IntsAcc_MemoryGrp),"R12IntsAcc_MemoryGrp",1,"public R12IntsAcc",
-  0, 0, create<R12IntsAcc_MemoryGrp>);
+static ClassDesc DistArray4_MemoryGrp_cd(
+  typeid(DistArray4_MemoryGrp),"DistArray4_MemoryGrp",1,"public DistArray4",
+  0, 0, create<DistArray4_MemoryGrp>);
 
-R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(const Ref<MemoryGrp>& mem, int num_te_types,
+DistArray4_MemoryGrp::DistArray4_MemoryGrp(const Ref<MemoryGrp>& mem, int num_te_types,
                                            int ni, int nj, int nx, int ny,
                                            size_t blksize_memgrp,
-                                           R12IntsAccStorage storage) :
-  R12IntsAcc(num_te_types, ni, nj, nx, ny, storage), blksize_memgrp_(blksize_memgrp), mem_(mem)
+                                           DistArray4Storage storage) :
+  DistArray4(num_te_types, ni, nj, nx, ny, storage), blksize_memgrp_(blksize_memgrp), mem_(mem)
 {
   init();
 }
 
-R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(StateIn& si) : R12IntsAcc(si), mem_(MemoryGrp::get_default_memorygrp())
+DistArray4_MemoryGrp::DistArray4_MemoryGrp(StateIn& si) : DistArray4(si), mem_(MemoryGrp::get_default_memorygrp())
 {
   si.get(blksize_memgrp_);
 
   init();
 }
 
-R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp() {
+DistArray4_MemoryGrp::~DistArray4_MemoryGrp() {
   for (int i=0; i<ni(); i++)
     for (int j=0; j<nj(); j++)
       if (!is_local(i, j)) {
@@ -71,32 +71,32 @@ R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp() {
           if (pairblk_[ij].ints_[oper_type] != NULL) {
             ExEnv::outn() << indent << me() << ": i = " << i << " j = "
                 << j << " oper_type = " << oper_type << endl;
-            throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::~ : some nonlocal blocks have not been released!");
+            throw std::runtime_error("Logic error: DistArray4_MemoryGrp::~ : some nonlocal blocks have not been released!");
           }
       }
   delete[] pairblk_;
 }
 
 void
-R12IntsAcc_MemoryGrp::save_data_state(StateOut& so)
+DistArray4_MemoryGrp::save_data_state(StateOut& so)
 {
-  R12IntsAcc::save_data_state(so);
+  DistArray4::save_data_state(so);
   so.put(blksize_memgrp_);
 }
 
-Ref<R12IntsAcc>
-R12IntsAcc_MemoryGrp::clone(const R12IntsAccDimensions& dim)
+Ref<DistArray4>
+DistArray4_MemoryGrp::clone(const DistArray4Dimensions& dim)
 {
   Ref<MemoryGrp> newmem = mem_->clone();
   newmem->set_localsize(mem_->localsize());
-  Ref<R12IntsAcc> result;
-  if (dim == R12IntsAccDimensions::default_dim())
-    result = new R12IntsAcc_MemoryGrp(newmem, num_te_types(),
+  Ref<DistArray4> result;
+  if (dim == DistArray4Dimensions::default_dim())
+    result = new DistArray4_MemoryGrp(newmem, num_te_types(),
                                       ni(), nj(), nx(), ny(),
                                       blksize_memgrp_,
                                       storage());
   else
-    result = new R12IntsAcc_MemoryGrp(newmem, dim.num_te_types(),
+    result = new DistArray4_MemoryGrp(newmem, dim.num_te_types(),
                                       dim.n1(), dim.n2(), dim.n3(), dim.n4(),
                                       dim.n3() * dim.n4() * sizeof(double),
                                       dim.storage());
@@ -104,7 +104,7 @@ R12IntsAcc_MemoryGrp::clone(const R12IntsAccDimensions& dim)
   return result;
 }
 
-void R12IntsAcc_MemoryGrp::init() {
+void DistArray4_MemoryGrp::init() {
   const int n = ntasks();
 
   // Now do some extra work to figure layout of data in MemoryGrp
@@ -121,7 +121,7 @@ void R12IntsAcc_MemoryGrp::init() {
 }
 
 void
-R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
+DistArray4_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
 {
   // store blocks local to this node ONLY
   assert(is_local(i,j));
@@ -137,14 +137,14 @@ R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const
 }
 
 void
-R12IntsAcc_MemoryGrp::deactivate()
+DistArray4_MemoryGrp::deactivate()
 {
-  R12IntsAcc::deactivate();
+  DistArray4::deactivate();
   mem_->sync();
 }
 
 const double *
-R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type) const
+DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type) const
 {
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
@@ -165,13 +165,13 @@ R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type) co
 }
 
 void
-R12IntsAcc_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) const
+DistArray4_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
     ExEnv::outn() << indent << me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
-    throw ProgrammingError("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!",__FILE__,__LINE__);
+    throw ProgrammingError("Logic error: DistArray4_MemoryGrp::release_pair_block: refcount is already zero!",__FILE__,__LINE__);
   }
   if (classdebug() > 0)
     ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]

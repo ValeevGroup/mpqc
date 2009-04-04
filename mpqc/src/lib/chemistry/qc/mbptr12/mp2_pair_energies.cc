@@ -101,7 +101,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   SpinMOPairIter iter24(space2,space4,S);
 
   tform->compute();
-  Ref<R12IntsAcc> accum = tform->ints_acc();
+  Ref<DistArray4> accum = tform->ints_acc();
 
   Timer tim_mp2_pair_energies("MP2 pair energies");
   std::ostringstream oss;

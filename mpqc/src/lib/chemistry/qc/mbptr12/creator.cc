@@ -33,13 +33,13 @@
 
 using namespace sc;
 
-R12IntsAccCreator::R12IntsAccCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
+DistArray4Creator::DistArray4Creator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                                      const std::vector<std::string>& tform_keys) :
   RangeCreator<ObjT> (tform_keys.size()), moints_rtime_(moints_rtime),
       tform_keys_(tform_keys) {
 }
 
-R12IntsAccCreator::ObjT R12IntsAccCreator::operator()() {
+DistArray4Creator::ObjT DistArray4Creator::operator()() {
   if (!can_create()) return null();
 
   const std::string& tform_key = tform_keys_.at(ncreated());

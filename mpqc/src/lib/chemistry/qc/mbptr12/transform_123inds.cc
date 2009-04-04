@@ -95,7 +95,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 {
   Ref<MemoryGrp> mem = tform_->mem();
   Ref<MessageGrp> msg = tform_->msg();
-  Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
+  Ref<DistArray4> ints_acc = tform_->ints_acc();
   const int me = msg->me();
   const int nproc = msg->n();
   Ref<OrbitalSpace> space1 = tform_->space1();

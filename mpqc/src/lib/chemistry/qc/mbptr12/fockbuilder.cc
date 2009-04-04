@@ -652,7 +652,7 @@ namespace sc {
                                                              std::string("ERI"),
                                                              std::string(TwoBodyIntLayout::b1k1_b2k2));
       Ref<TwoBodyMOIntsTransform> mnxy_tform = ints_rtime->get(tform_key);
-      Ref<R12IntsAcc> mnxy_acc = mnxy_tform->ints_acc();
+      Ref<DistArray4> mnxy_acc = mnxy_tform->ints_acc();
 
       const int nocc = occ_space->rank();
       const int nbra = bra_space->rank();
@@ -742,7 +742,7 @@ namespace sc {
                                                              std::string("ERI"),
                                                              std::string(TwoBodyIntLayout::b1b2_k1k2));
       Ref<TwoBodyMOIntsTransform> mxny_tform = ints_rtime->get(tform_key);
-      Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
+      Ref<DistArray4> mnxy_acc = mxny_tform->ints_acc();
 
       const int nocc = occ_space->rank();
       const int nbra = bra_space->rank();

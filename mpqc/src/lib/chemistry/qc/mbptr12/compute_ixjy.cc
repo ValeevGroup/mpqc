@@ -44,7 +44,7 @@
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 using namespace std;
 using namespace sc;
@@ -202,7 +202,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
     if (partially_tformed_ints_.nonnull()) {
       partially_tformed_ints_->activate();
       detail::restore_memorygrp(partially_tformed_ints_, mem_, i_offset, ni,
-                                R12IntsAccStorage_YX,            // need integrals in YX layout!
+                                DistArray4Storage_YX,            // need integrals in YX layout!
                                                                  // otherwise the size of RDMA writes in 1+2 QT will be small
                                 memgrp_blocksize);
       if (partially_tformed_ints_->data_persistent()) partially_tformed_ints_->deactivate();

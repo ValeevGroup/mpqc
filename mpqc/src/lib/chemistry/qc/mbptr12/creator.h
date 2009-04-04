@@ -69,12 +69,12 @@ namespace sc {
       unsigned int ncreated_;
   };
 
-  /** Creates new R12IntsAcc using TwoBodyFourCenterMOIntsRuntime and a vector of transform keys */
-  class R12IntsAccCreator: public RangeCreator<Ref<R12IntsAcc> > {
+  /** Creates new DistArray4 using TwoBodyFourCenterMOIntsRuntime and a vector of transform keys */
+  class DistArray4Creator: public RangeCreator<Ref<DistArray4> > {
     public:
-      typedef Ref<R12IntsAcc> ObjT;
+      typedef Ref<DistArray4> ObjT;
 
-      R12IntsAccCreator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
+      DistArray4Creator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                         const std::vector<std::string>& tform_keys);
       /// Implementation of RangeCreator::operator()
       ObjT operator()();

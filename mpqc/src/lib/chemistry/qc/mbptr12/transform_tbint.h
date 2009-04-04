@@ -38,7 +38,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/basis/distshpair.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
@@ -49,7 +49,7 @@ namespace sc {
   /** TwoBodyMOIntsTransform computes two-body integrals in MO basis
       using parallel integrals-direct AO->MO transformation.
 
-      The target MO integrals are put into an R12IntsAcc object.
+      The target MO integrals are put into an DistArray4 object.
 
       */
 class TwoBodyMOIntsTransform : virtual public SavableState {
@@ -82,7 +82,7 @@ protected:
   Ref<ThreadGrp> thr_;
   Ref<TwoBodyIntDescr> tbintdescr_;
   // Integrals accumulator
-  Ref<R12IntsAcc> ints_acc_;
+  Ref<DistArray4> ints_acc_;
 
   Ref<OrbitalSpace> space1_;
   Ref<OrbitalSpace> space2_;
@@ -169,7 +169,7 @@ public:
   /// Returns the integral set descriptor
   const Ref<TwoBodyIntDescr>& intdescr() const;
   /** Returns the integrals accumulator object. */
-  const Ref<R12IntsAcc>& ints_acc();
+  const Ref<DistArray4>& ints_acc();
   /// Returns OrbitalSpace object 1
   const Ref<OrbitalSpace>& space1() const;
   /// Returns OrbitalSpace object 2
@@ -180,7 +180,7 @@ public:
   const Ref<OrbitalSpace>& space4() const;
 
   /// Supplies the partially transformed integrals.
-  virtual void partially_transformed_ints(const Ref<R12IntsAcc>&);
+  virtual void partially_transformed_ints(const Ref<DistArray4>&);
 
 
   /// Returns amount of memory used by this object after compute() has been called
@@ -230,7 +230,7 @@ private:
 /** TwoBodyThreeCenterMOIntsTransform computes (xy|z) integrals,
     using parallel integral-direct AO->MO transformation.
 
-    The target MO integrals are put into an R12IntsAcc object stored as (0 x|y z), where 0 is the
+    The target MO integrals are put into an DistArray4 object stored as (0 x|y z), where 0 is the
     dummy index.
 
     */
@@ -258,7 +258,7 @@ class TwoBodyThreeCenterMOIntsTransform: virtual public SavableState {
     /// Returns the integral set descriptor
     const Ref<TwoBodyThreeCenterIntDescr>& intdescr() const { return tbintdescr_; }
     /** Returns the integrals accumulator object. */
-    const Ref<R12IntsAcc>& ints_acc();
+    const Ref<DistArray4>& ints_acc();
     /// Returns OrbitalSpace object 1
     const Ref<OrbitalSpace>& space1() const { return space1_; }
     /// Returns OrbitalSpace object 2
@@ -285,7 +285,7 @@ class TwoBodyThreeCenterMOIntsTransform: virtual public SavableState {
     Ref<MemoryGrp> mem_;
     Ref<TwoBodyThreeCenterIntDescr> tbintdescr_;
     // Integrals accumulator
-    Ref<R12IntsAcc> ints_acc_;
+    Ref<DistArray4> ints_acc_;
 
     Ref<OrbitalSpace> space1_;
     Ref<OrbitalSpace> space2_;

@@ -51,7 +51,7 @@ class TwoBodyMOIntsTransform_ixjy : public TwoBodyMOIntsTransform {
   // Compute required dynamic memory for a given batch size
   distsize_t compute_transform_dynamic_memory_(int ni) const;
 
-  Ref<R12IntsAcc> partially_tformed_ints_;  // partially transformed integrals
+  Ref<DistArray4> partially_tformed_ints_;  // partially transformed integrals
 
 public:
 
@@ -76,7 +76,7 @@ public:
   /// Check symmetry of transformed integrals
   void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
 
-  void partially_transformed_ints(const Ref<R12IntsAcc>&);
+  void partially_transformed_ints(const Ref<DistArray4>&);
 
 };
 

@@ -43,10 +43,10 @@
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/df/df.h>
 
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
-#include <chemistry/qc/mbptr12/r12ia_node0file.h>
+#include <chemistry/qc/mbptr12/distarray4_memgrp.h>
+#include <chemistry/qc/mbptr12/distarray4_node0file.h>
 #ifdef HAVE_MPIIO
-#  include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#  include <chemistry/qc/mbptr12/distarray4_mpiiofile.h>
 #endif
 
 using namespace std;
@@ -164,7 +164,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
     }
@@ -179,7 +179,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -190,7 +190,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;
 
@@ -201,7 +201,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem(), num_te_types(),
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -213,7 +213,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 
   case MOIntsTransform::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
 #else
     assert(false);
@@ -231,7 +231,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
 void
 TwoBodyMOIntsTransform_ixjy_df::check_int_symm(double threshold) throw (ProgrammingError)
 {
-  Ref<R12IntsAcc> iacc = ints_acc();
+  Ref<DistArray4> iacc = ints_acc();
   iacc->activate();
   int num_te_types = iacc->num_te_types();
   int ni = iacc->ni();
@@ -258,7 +258,7 @@ TwoBodyMOIntsTransform_ixjy_df::check_int_symm(double threshold) throw (Programm
         continue;
 
       for(int t=0; t<num_te_types; t++) {
-        const double* ints = iacc->retrieve_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+        const double* ints = iacc->retrieve_pair_block(i,j,static_cast<DistArray4::tbint_type>(t));
         int xy=0;
         for(int x=0; x<nx; x++) {
           int xsym = xsyms[x];
@@ -271,7 +271,7 @@ TwoBodyMOIntsTransform_ixjy_df::check_int_symm(double threshold) throw (Programm
             }
           }
         }
-        iacc->release_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+        iacc->release_pair_block(i,j,static_cast<DistArray4::tbint_type>(t));
       }
     }
   }
@@ -299,7 +299,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   TwoBodyOperSet::type oset = intdescr()->operset();
   const bool coulomb_only = (oset == TwoBodyOperSet::ERI);
 
-  Ref<R12IntsAcc> C12, cC12;
+  Ref<DistArray4> C12, cC12;
   {
     const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
@@ -310,7 +310,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     C12->activate();
   }
 
-  Ref<R12IntsAcc> C34, cC34;
+  Ref<DistArray4> C34, cC34;
   if (!equiv_12_34) {
     const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
@@ -359,7 +359,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   }
 
   double** kernel;
-  Ref<R12IntsAcc> L12;   // L12 = C12 * kernel
+  Ref<DistArray4> L12;   // L12 = C12 * kernel
   if (!coulomb_only) {
 
     // TODO convert to using two-body two-center ints runtime
@@ -417,7 +417,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     }
 
     // now compute L12 = C12 * k
-    R12IntsAccDimensions L12_dims(this->num_te_types(),C12->ni(),C12->nj(),C12->nx(),C12->ny());
+    DistArray4Dimensions L12_dims(this->num_te_types(),C12->ni(),C12->nj(),C12->nx(),C12->ny());
     // cloning C12 assumes that the fitting bases for 12 and 34 are same
     assert(dfbasis12()->nbasis() == dfbasis34()->nbasis());
     L12 = C12->clone(L12_dims);

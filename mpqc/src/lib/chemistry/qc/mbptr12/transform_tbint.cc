@@ -139,14 +139,14 @@ TwoBodyMOIntsTransform::msg() const {return msg_; }
 const Ref<TwoBodyIntDescr>&
 TwoBodyMOIntsTransform::intdescr() const { return tbintdescr_; }
 
-const Ref<R12IntsAcc>&
+const Ref<DistArray4>&
 TwoBodyMOIntsTransform::ints_acc() {
   init_acc();
   return ints_acc_;
 }
 
 void
-TwoBodyMOIntsTransform::partially_transformed_ints(const Ref<R12IntsAcc>& ints_acc)
+TwoBodyMOIntsTransform::partially_transformed_ints(const Ref<DistArray4>& ints_acc)
 {
   throw FeatureNotImplemented("TwoBodyMOIntsTransform::partially_transformed_ints() -- not implemented for this type of transform",__FILE__,__LINE__);
 }
@@ -274,7 +274,7 @@ TwoBodyMOIntsTransform::init_vars()
   }
 
   // At this point I need to figure out how much memory will be used after compute() has been called
-  // R12IntsAcc object will either use none or all of the dynamical memory
+  // DistArray4 object will either use none or all of the dynamical memory
   // this will call init_acc() implicitly
   const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
   if (!ints_acc()->data_persistent()) { // data is held in memory
@@ -526,7 +526,7 @@ TwoBodyThreeCenterMOIntsTransform::init_vars()
   }
 
   // At this point I need to figure out how much memory will be used after compute() has been called
-  // R12IntsAcc object will either use none or all of the dynamical memory
+  // DistArray4 object will either use none or all of the dynamical memory
   // this will call init_acc() implicitly
   const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory());
   if (!ints_acc()->data_persistent()) { // data is held in memory
@@ -631,7 +631,7 @@ TwoBodyThreeCenterMOIntsTransform::print_footer(std::ostream& os) const
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
 
-const Ref<R12IntsAcc>&
+const Ref<DistArray4>&
 TwoBodyThreeCenterMOIntsTransform::ints_acc() {
   init_acc();
   return ints_acc_;

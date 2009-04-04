@@ -37,8 +37,8 @@ TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc \
-  r12ia.cc \
-  r12ia_node0file.cc r12ia_memgrp.cc \
+  distarray4.cc \
+  distarray4_node0file.cc distarray4_memgrp.cc \
   vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \
   multipole_ints.cc ri_basis.cc \
@@ -65,9 +65,9 @@ CXXSRCS = mbptr12.cc \
   orbitalspace_runtime.cc  transform_ijR.cc \
   transform_ixjy_df.cc  tbint_runtime.cc
   
-INC = r12ia_memgrp.h \
-ansatz.h                        r12ia_mpiiofile.h \
-r12ia_node0file.h compute_tbint_tensor.h r12int_eval.h \
+INC = distarray4_memgrp.h \
+ansatz.h                        distarray4_mpiiofile.h \
+distarray4_node0file.h compute_tbint_tensor.h r12int_eval.h \
 container.h                     r12technology.h \
 contract_tbint_tensor.h         singlerefinfo.h \
 creator.h                       spin.h \
@@ -83,13 +83,13 @@ pairiter.h                      twoparticlecontraction.h \
 print.h                         utils.h \
 print_scmat_norms.h             utils.impl.h \
 r12_amps.h                      vxb_eval_info.h \
-r12ia.h				moints_runtime.h \
+distarray4.h				moints_runtime.h \
 fockbuilder.h                   fockbuild_runtime.h \
 orbitalspace_runtime.h		transform_ijR.h \
 tbint_runtime.h
 
 ifeq ($(HAVE_MPIIO),yes)
-  CXXSRCS += r12ia_mpiiofile.cc
+  CXXSRCS += distarray4_mpiiofile.cc
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)

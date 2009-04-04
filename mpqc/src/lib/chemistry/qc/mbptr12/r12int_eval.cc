@@ -150,7 +150,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   }
 
 #if 0
-  // WARNING Can use R12IntsAcc_MemoryGrp only for MP2 computations
+  // WARNING Can use DistArray4_MemoryGrp only for MP2 computations
   bool mp2_only = false;
   {
     Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << r12info()->corrfactor();

@@ -136,9 +136,9 @@ int main(int argc, char **argv) {
     // assemble reconstructed matrix
     {
       Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      Ref<R12IntsAcc> C = df->C();
+      Ref<DistArray4> C = df->C();
       C->activate();
-      Ref<R12IntsAcc> cC = df->conjugateC();
+      Ref<DistArray4> cC = df->conjugateC();
       C->activate();
       const int nbs = bs->nbasis();
       const int nfbs = fbs->nbasis();
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
                                          fbs, fbs);
 
     ixjy_tform->compute();
-    Ref<R12IntsAcc> ixjy_acc = ixjy_tform->ints_acc();
+    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_acc();
     ixjy_acc->activate();
 
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
                                          bs_space, bs_space);
 
     ixjy_tform->compute();
-    Ref<R12IntsAcc> ixjy_acc = ixjy_tform->ints_acc();
+    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_acc();
     ixjy_acc->activate();
 
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;

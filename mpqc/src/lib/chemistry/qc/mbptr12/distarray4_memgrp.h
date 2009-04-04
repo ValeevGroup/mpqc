@@ -1,5 +1,5 @@
 //
-// r12ia_memgrp.h
+// distarray4_memgrp.h
 //
 // Copyright (C) 2002 Edward Valeev
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_r12ia_memgrp_h
-#define _chemistry_qc_mbptr12_r12ia_memgrp_h
+#ifndef _chemistry_qc_mbptr12_distarray4_memgrp_h
+#define _chemistry_qc_mbptr12_distarray4_memgrp_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -34,12 +34,12 @@
 
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 namespace sc {
 
 /////////////////////////////////////////////////////////////////////
-/** R12IntsAcc_MemoryGrp handles transformed integrals held in memory
+/** DistArray4_MemoryGrp handles transformed integrals held in memory
     by MemoryGrp
 
     The ordering of integrals in MemoryGrp buffers is not specified
@@ -47,7 +47,7 @@ namespace sc {
     Each pair block has size of num_te_types*nbasis1*nbasis2
 */
 
-class R12IntsAcc_MemoryGrp: public R12IntsAcc {
+class DistArray4_MemoryGrp: public DistArray4 {
 
     Ref<MemoryGrp> mem_;     /// The MemoryGrp that holds integrals
     /// The size of the ij-block in held memory, may be larger than that returned by blksize().
@@ -67,19 +67,19 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     int ij_proc(int i, int j) const { return ij_index(i,j)%ntasks();};
 
   public:
-    R12IntsAcc_MemoryGrp(const Ref<MemoryGrp>&, int num_te_types,
+    DistArray4_MemoryGrp(const Ref<MemoryGrp>&, int num_te_types,
                          int ni, int nj, int nx, int ny,
                          size_t memorygrp_blksize,
-                         R12IntsAccStorage storage = R12IntsAccStorage_XY);
-    R12IntsAcc_MemoryGrp(StateIn&);
-    ~R12IntsAcc_MemoryGrp();
+                         DistArray4Storage storage = DistArray4Storage_XY);
+    DistArray4_MemoryGrp(StateIn&);
+    ~DistArray4_MemoryGrp();
     void save_data_state(StateOut&);
 
-    Ref<R12IntsAcc> clone(const R12IntsAccDimensions& dim = R12IntsAccDimensions::default_dim());
+    Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim());
 
-    // Implementation of R12IntsAcc_MemoryGrp
+    // Implementation of DistArray4_MemoryGrp
     void deactivate();
-    /// implementation of R12IntsAcc::data_persistent()
+    /// implementation of DistArray4::data_persistent()
     bool data_persistent() const { return false; }
     /// Stores an ij pair block of integrals (assumes the block resides locally)
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);

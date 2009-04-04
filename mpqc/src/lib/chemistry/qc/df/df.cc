@@ -34,8 +34,8 @@
 #include <util/state/statein.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
-#include <chemistry/qc/mbptr12/r12ia.h>
-#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
+#include <chemistry/qc/mbptr12/distarray4_memgrp.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>

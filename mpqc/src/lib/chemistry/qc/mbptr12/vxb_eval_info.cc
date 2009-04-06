@@ -480,7 +480,7 @@ R12IntEvalInfo::print(std::ostream& o) const {
   o << indent << "R12IntEvalInfo:" << endl;
   o << incindent;
 
-  if (bs_vir_->equiv(basis())) {
+  if (!bs_vir_->equiv(basis())) {
       o << indent << "Virtuals Basis Set (VBS):" << endl;
       o << incindent; bs_vir_->print(o); o << decindent << endl;
   }

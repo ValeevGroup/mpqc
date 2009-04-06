@@ -166,7 +166,7 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
   o << indent << "Use new MP2R12Energy: " << (new_energy_ ? "true" : "false") << endl;
 
-  r12evalinfo()->r12tech()->print(o);
+  r12evalinfo()->print(o);
 
   MBPT2::print(o);
   o << decindent;

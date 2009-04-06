@@ -49,14 +49,25 @@ using namespace std;
 void
 R12IntEvalInfo::construct_ri_basis_(bool safe)
 {
+  // RI basis is only needed if corrfactor != none
+  Ref<LinearR12::NullCorrelationFactor> null_cf; null_cf << r12tech()->corrfactor();
+  const bool ri_basis_not_needed = null_cf.nonnull();
+
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
   if (bs_aux_->equiv(obs)) {
     bs_ri_ = obs;
-    if (r12tech()->abs_method() == LinearR12::ABS_CABS ||
-	r12tech()->abs_method() == LinearR12::ABS_CABSPlus)
+    if (!ri_basis_not_needed &&
+        (r12tech()->abs_method() == LinearR12::ABS_CABS ||
+	     r12tech()->abs_method() == LinearR12::ABS_CABSPlus
+	    )
+	   )
       throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- ABS methods CABS and CABS+ can only be used when ABS != OBS");
   }
   else {
+    if (ri_basis_not_needed) {
+      bs_ri_ = bs_aux_;
+    }
+    else {
     switch(r12tech()->abs_method()) {
       case LinearR12::ABS_ABS:
 	construct_ri_basis_ks_(safe);
@@ -72,6 +83,7 @@ R12IntEvalInfo::construct_ri_basis_(bool safe)
 	break;
       default:
 	throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- invalid ABS method");
+    }
     }
   }
 }

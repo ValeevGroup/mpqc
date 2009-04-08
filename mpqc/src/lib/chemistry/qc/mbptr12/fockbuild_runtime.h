@@ -40,9 +40,11 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/registry.h>
 #include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/df/df_runtime.h>
 
 namespace sc {
 
+  /// Build Fock matrices using some combination of FockBuilder objects
   class FockBuildRuntime : virtual public SavableState {
     public:
       FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
@@ -69,8 +71,16 @@ namespace sc {
       const Ref<MessageGrp>& msg() const { return msg_; }
       const Ref<ThreadGrp>& thr() const { return thr_; }
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
+      const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
+      void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
 
     private:
+
+      // set to 1 to debug this class
+      static int debug() { return 0; }
+
+      Ref<DensityFittingInfo> dfinfo_;
+      bool use_density_fitting() { return dfinfo_.nonnull(); }
 
       Ref<Integral> integral_;
       Ref<MessageGrp> msg_;

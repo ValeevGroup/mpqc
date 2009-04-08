@@ -74,6 +74,7 @@ R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
   mxny_tform->compute();
   Ref<DistArray4> mnxy_acc = mxny_tform->ints_acc();
+  mnxy_acc->activate();
 
   const int nocc = occ_space->rank();
   const int nbra = bra_space->rank();

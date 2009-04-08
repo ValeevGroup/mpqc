@@ -61,7 +61,7 @@ static ClassDesc MOIntsTransformFactory_cd(
 
 MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral) :
   integral_(integral), tbintdescr_(new DefaultTwoBodyIntDescr(integral)),
-  space1_(0), space2_(0), space3_(0), space4_(0)
+  space1_(0), space2_(0), space3_(0), space4_(0), df_info_(0)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();

@@ -319,6 +319,7 @@ R12IntEvalInfo::initialize()
         fockbuild_runtime_ = new FockBuildRuntime(basis(), Pa, Pb, ref->integral(),
                                                   msg(),
                                                   thr());
+        fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
       }
   }
 }

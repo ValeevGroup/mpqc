@@ -74,6 +74,7 @@ R12IntEval::coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>
   Ref<TwoBodyMOIntsTransform> mnxy_tform = tfactory->twobody_transform_12("(mn|xy)");
   mnxy_tform->compute();
   Ref<DistArray4> mnxy_acc = mnxy_tform->ints_acc();
+  mnxy_acc->activate();
 
   const int nocc = occ_space->rank();
   const int nbra = bra_space->rank();

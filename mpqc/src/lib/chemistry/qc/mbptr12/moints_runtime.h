@@ -44,7 +44,7 @@ namespace sc {
     public:
       typedef MOIntsRuntime this_type;
 
-      /// give density fitting basis to enable density fitting in computing 4-center integrals
+      /// give density fitting basis to enable density fitting, when possible
       MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory,
                     const Ref<GaussianBasisSet>& dfbasis = 0);
       ~MOIntsRuntime();

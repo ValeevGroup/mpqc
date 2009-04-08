@@ -811,6 +811,312 @@ namespace sc {
       return K;
     }
 
+    RefSCMatrix coulomb_df(const Ref<DensityFittingInfo>& df_info,
+                           const RefSymmSCMatrix& P,
+                           const Ref<GaussianBasisSet>& brabs,
+                           const Ref<GaussianBasisSet>& ketbs,
+                           const Ref<GaussianBasisSet>& obs) {
+
+      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+
+      Timer tim("coulomb(DF)");
+
+      int me = msg->me();
+      int nproc = msg->n();
+      ExEnv::out0() << endl << indent
+               << "Entered Coulomb(DF) matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
+
+      ExEnv::out0() << indent << "Begin computation of Coulomb(DF) matrix" << endl;
+
+      //////////////////////////////////////////////////////////////
+      //
+      // Evaluation of the coulomb matrix proceeds as follows:
+      //
+      // density-fit (mu nu| -> C_pq^Mu
+      // contract C_pq^Mu with P_pq to yield Q^Mu
+      // contract cC_ab^Mu with Q^Mu to produce J_ab
+      //
+      /////////////////////////////////////////////////////////////////////////////////
+
+      const Ref<AOSpaceRegistry> ao_registry = AOSpaceRegistry::instance();
+      const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
+      const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
+      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
+      const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+
+      const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
+      const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
+
+      const std::string C_key = ParsedDensityFittingKey::key(obs_space->id(),
+                                                             obs_space->id(),
+                                                             dfspace->id());
+      Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
+
+      const int nobs = obs_space->rank();
+      const int ndf = dfspace->rank();
+      double* Q = new double[ndf];
+      memset(Q,0,ndf*sizeof(double));
+
+      {
+        // Compute the number of tasks that have full access to the integrals
+        // and split the work among them
+        vector<int> proc_with_ints;
+        int nproc_with_ints = C->tasks_with_access(proc_with_ints);
+
+        if (C->has_access(me)) {
+
+          double** P_blk = new double*[nobs];
+          P_blk[0] = new double[nobs*nobs];
+          for(int i=1; i<nobs; ++i) {
+            P_blk[i] = P_blk[i-1] + nobs;
+          }
+          for(int i=0; i<nobs; ++i)
+            for(int j=0; j<=i; ++j)
+              P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
+
+          for (int p = 0; p < nobs; ++p) {
+            const int proc = p % nproc_with_ints;
+            if (proc != proc_with_ints[me])
+              continue;
+
+            const double* C_p_qR_buf = C->retrieve_pair_block(0, p, 0);
+            const double* P_p_q = P_blk[p];
+
+            const char notrans = 'n';
+            const double one = 1.0;
+            const int unit_stride = 1;
+            F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
+                      &unit_stride, &one, Q, &unit_stride);
+
+            C->release_pair_block(0, p, TwoBodyOper::eri);
+
+          }
+
+          // cleanup
+          delete[] P_blk[0];
+          delete[] P_blk;
+
+        }
+
+        // sum all contributions
+        msg->sum(Q, ndf);
+      }
+
+      // intermediate cleanup
+      C = 0;
+
+      const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(braspace->id(),
+                                                                     dfspace->id(),
+                                                                     ketspace->id(),
+                                                                     "ERI","");
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& cC_tform = int3c_rtime->get(cC_key);
+      cC_tform->compute();
+      Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
+
+      const int nbra = braspace->rank();
+      const int nket = ketspace->rank();
+      const int nbraket = nbra * nket;
+      double* J = new double[nbraket];
+      memset(J,0,sizeof(double)*nbraket);
+      {
+        // Compute the number of tasks that have full access to the integrals
+        // and split the work among them
+        vector<int> proc_with_ints;
+        int nproc_with_ints = cC->tasks_with_access(proc_with_ints);
+
+        if (cC->has_access(me)) {
+
+          for (int a = 0; a < nbra; ++a) {
+            const int proc = a % nproc_with_ints;
+            if (proc != proc_with_ints[me])
+              continue;
+
+            const double* cC_a_bR_buf = cC->retrieve_pair_block(0, a,
+                                                                TwoBodyOper::eri);
+            double* J_a = J + a*nket;
+
+            const char trans = 't';
+            const double one = 1.0;
+            const int unit_stride = 1;
+            F77_DGEMV(&trans, &ndf, &nket, &one, cC_a_bR_buf, &ndf, Q,
+                      &unit_stride, &one, J_a, &unit_stride);
+
+            cC->release_pair_block(0, a, TwoBodyOper::eri);
+
+          }
+
+        }
+
+        // sum all contributions
+        msg->sum(J, nbraket);
+      }
+
+      ExEnv::out0() << indent << "End of computation of Coulomb(DF) matrix" << endl;
+
+      Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
+      localints->set_basis(brabs);
+      Ref<PetiteList> brapl = localints->petite_list();
+      localints->set_basis(ketbs);
+      Ref<PetiteList> ketpl = localints->petite_list();
+      RefSCDimension bradim = brapl->AO_basisdim();
+      RefSCDimension ketdim = ketpl->AO_basisdim();
+      RefSCMatrix result(bradim,
+                         ketdim,
+                         brabs->so_matrixkit());
+
+      result.assign(J);
+      delete[] J;
+      delete[] Q;
+
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator" << endl;
+      tim.exit();
+
+      return result;
+    }
+
+    RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
+                            const RefSymmSCMatrix& P,
+                            const Ref<GaussianBasisSet>& brabs,
+                            const Ref<GaussianBasisSet>& ketbs,
+                            const Ref<GaussianBasisSet>& obs) {
+
+      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+
+      Timer tim("exchange(DF)");
+
+      int me = msg->me();
+      int nproc = msg->n();
+      ExEnv::out0() << endl << indent
+               << "Entered exchange(DF) matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
+
+      ExEnv::out0() << indent << "Begin computation of exchange(DF) matrix" << endl;
+
+      //////////////////////////////////////////////////////////////
+      //
+      // Evaluation of the exchange matrix proceeds as follows:
+      //
+      //
+      /////////////////////////////////////////////////////////////////////////////////
+
+      const Ref<AOSpaceRegistry> ao_registry = AOSpaceRegistry::instance();
+      const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
+      const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
+      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
+      const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+
+      const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
+      const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
+
+      const std::string C_key = ParsedDensityFittingKey::key(braspace->id(),
+                                                             obs_space->id(),
+                                                             dfspace->id());
+      Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
+
+      const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(ketspace->id(),
+                                                                     dfspace->id(),
+                                                                     obs_space->id(),
+                                                                     "ERI","");
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& cC_tform = int3c_rtime->get(cC_key);
+      cC_tform->compute();
+      Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
+
+      const int nobs = obs_space->rank();
+      const int ndf = dfspace->rank();
+      const unsigned int nbra = braspace->rank();
+      const unsigned int nket = ketspace->rank();
+      const unsigned int nbraket = nbra * nket;
+      double* K = new double[nbraket];
+      memset(K,0,sizeof(double)*nbraket);
+      const int nobs2 = nobs*nobs;
+      double* scratch = new double[nobs2];
+
+      {
+        // Compute the number of tasks that have full access to the integrals
+        // and split the work among them
+        // assume that C and cC have the same access
+        vector<int> proc_with_ints;
+        int nproc_with_ints = C->tasks_with_access(proc_with_ints);
+
+        if (C->has_access(me)) {
+
+          double** P_blk = new double*[nobs];
+          P_blk[0] = new double[nobs*nobs];
+          for(int i=1; i<nobs; ++i) {
+            P_blk[i] = P_blk[i-1] + nobs;
+          }
+          for(int i=0; i<nobs; ++i)
+            for(int j=0; j<=i; ++j)
+              P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
+
+          int ab = 0;
+          for (int a = 0; a < nbra; ++a) {
+
+            const double* C_a_pR_buf = 0;
+
+            for (int b = 0; b < nket; ++b, ++ab) {
+
+              const int proc = ab % nproc_with_ints;
+              if (proc != proc_with_ints[me])
+                continue;
+
+              if (C_a_pR_buf == 0)
+                C_a_pR_buf = C->retrieve_pair_block(0, a, 0);
+
+              const double* cC_b_pR_buf = cC->retrieve_pair_block(0, b,
+                                                                  TwoBodyOper::eri);
+
+              C_DGEMM('n', 't', nobs, nobs, ndf, 1.0, C_a_pR_buf, ndf, cC_b_pR_buf, ndf,
+                      0.0, scratch, nobs);
+
+              cC->release_pair_block(0, b, TwoBodyOper::eri);
+
+              const int unit_stride = 1;
+              const double K_ab = F77_DDOT(&nobs2, scratch, &unit_stride, P_blk[0], &unit_stride);
+
+              K[ab] += K_ab;
+            } // end of b loop
+
+            if (C_a_pR_buf)
+              C->release_pair_block(0, a, 0);
+
+          } // end of a loop
+
+          // cleanup
+          delete[] P_blk[0];
+          delete[] P_blk;
+
+        }
+
+        // sum all contributions
+        msg->sum(K, nbraket);
+      }
+
+      ExEnv::out0() << indent << "End of computation of exchange(DF) matrix" << endl;
+
+      Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
+      localints->set_basis(brabs);
+      Ref<PetiteList> brapl = localints->petite_list();
+      localints->set_basis(ketbs);
+      Ref<PetiteList> ketpl = localints->petite_list();
+      RefSCDimension bradim = brapl->AO_basisdim();
+      RefSCDimension ketdim = ketpl->AO_basisdim();
+      RefSCMatrix result(bradim,
+                         ketdim,
+                         brabs->so_matrixkit());
+
+      result.assign(K);
+      delete[] K;
+
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;
+      tim.exit();
+
+      return result;
+    }
+
 }} // namespace sc::detail
 
 /////////////////////////////////////////////////////////////////////////////

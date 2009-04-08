@@ -119,6 +119,17 @@ namespace sc {
                          const Ref<OrbitalSpace>& braspace,
                          const Ref<OrbitalSpace>& ketspace);
 
+    RefSCMatrix coulomb_df(const Ref<DensityFittingInfo>& df_info,
+                           const RefSymmSCMatrix& P,
+                           const Ref<GaussianBasisSet>& brabs,
+                           const Ref<GaussianBasisSet>& ketbs,
+                           const Ref<GaussianBasisSet>& obs);
+    RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
+                            const RefSymmSCMatrix& P,
+                            const Ref<GaussianBasisSet>& brabs,
+                            const Ref<GaussianBasisSet>& ketbs,
+                            const Ref<GaussianBasisSet>& obs);
+
   } // end of namespace detail
 
 
@@ -292,11 +303,11 @@ namespace sc {
   }; // class TwoBodyFockMatrixBuilder
 
   /// Builds the two-body part of the Fock matrix in MO basis using AO->MO transforms
-  class TwoBodyFockTransformBuilder: public RefCount {
+  class TwoBodyFockMatrixTransformBuilder: public RefCount {
 
     public:
 
-      TwoBodyFockTransformBuilder(bool compute_J,
+      TwoBodyFockMatrixTransformBuilder(bool compute_J,
                         bool compute_K,
                         SpinCase1 spin,
                         const Ref<OrbitalSpace>& braspace,
@@ -355,7 +366,105 @@ namespace sc {
       bool compute_F_;
       RefSCMatrix result_[3];
 
-  }; // class TwoBodyFockTransformBuilder
+  }; // class TwoBodyFockMatrixTransformBuilder
+
+  /// Builds the two-body part of the Fock matrix in AO basis using DF-based algorithm
+  class TwoBodyFockMatrixDFBuilder: public RefCount {
+
+    typedef RefSCMatrix ResultType;
+
+    public:
+
+      TwoBodyFockMatrixDFBuilder(bool compute_F,
+                                 bool compute_J,
+                                 bool compute_K,
+                           const Ref<GaussianBasisSet>& brabasis,
+                           const Ref<GaussianBasisSet>& ketbasis,
+                           const Ref<GaussianBasisSet>& densitybasis,
+                           const RefSymmSCMatrix& density,
+                           const RefSymmSCMatrix& openshelldensity,
+                           const Ref<DensityFittingInfo>& df_info) :
+                          compute_J_(compute_J),
+                          compute_K_(compute_K),
+                          compute_F_(compute_F),
+                          ntypes_(openshelldensity.nonnull() ? 2 : 1)
+      {
+
+        // DF-based builds are separate for J and K separately
+        // Determine whether we really need to compute J and K, or F
+        const bool really_compute_F = compute_F_;
+        const bool really_compute_J = compute_J_ || compute_F_;
+        const bool really_compute_K = compute_K_ || compute_F_;
+
+        for(int t=0; t<ntypes_; ++t) {
+          const SpinCase1 spin = static_cast<SpinCase1>(t);
+          for(int c=0; c<3; ++c) {
+
+            if (really_compute_J == false && c == 0) continue;
+            if (really_compute_K == false && c == 1) continue;
+            if (really_compute_F == false && c == 2) continue;
+            // J matrices are spin-independent
+            if (c == 0 && t == 1) continue;
+
+            if (c == 0) { // coulomb
+              result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
+            }
+
+            if (c == 1) { // exchange
+              RefSymmSCMatrix Pspin;
+              if (openshelldensity.nonnull())
+                Pspin = (spin == Alpha) ? density + openshelldensity : density - openshelldensity;
+              else {
+                Pspin = density.copy();
+              }
+              Pspin.scale(0.5);
+              result_[t][c] = detail::exchange_df(df_info, Pspin, brabasis, ketbasis, densitybasis);
+            }
+
+            if (c == 2) { // fock
+              result_[t][2] = result_[0][0] - result_[t][1];
+            }
+          }
+        }
+
+      }
+
+      const ResultType& F(unsigned int t = 0) const {
+        assert(compute_F_ && t < ntypes_);
+        return result_[t][2];
+      }
+      const ResultType& J(unsigned int t = 0) const {
+        assert(compute_J_ && t < ntypes_);
+        return result_[t][0];
+      }
+      const ResultType& K(unsigned int t = 0) const {
+        assert(compute_K_ && t < ntypes_);
+        return result_[t][1];
+      }
+      ResultType F(SpinCase1 spin) const {
+        if (ntypes_ == 1)
+          return F(0);
+        else {
+          return (spin == Alpha) ? F(0) + F(1) : F(0) - F(1);
+        }
+      }
+      ResultType K(SpinCase1 spin) const {
+        if (ntypes_ == 1)
+          return K(0);
+        else {
+          return (spin == Alpha) ? K(0) + K(1) : K(0) - K(1);
+        }
+      }
+
+    private:
+
+      bool compute_J_;
+      bool compute_K_;
+      bool compute_F_;
+      int ntypes_;
+      ResultType result_[2][3];
+
+  }; // class TwoBodyFockMatrixDFBuilder
 
   /// Builds the one-body part of the Fock matrix in AO basis
   template<bool bra_eq_ket> class OneBodyFockMatrixBuilder: public RefCount {

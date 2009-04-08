@@ -5,6 +5,10 @@ extern void F77_DGEMM(const char*, const char*, const int*,
 const int*, const int*, const double*, const double*, const int*,
 const double*, const int*, const double*, double*, const int*);
 
+extern void F77_DGEMV(const char* trans, const int* m, const int* n, const double* alpha,
+                      const double* A, const int* lda, const double* X, const int* incX,
+                      const double* beta, double* Y, const int* incY);
+
 extern void F77_DAXPY(const int* n, const double* da, const double* dx,
 const int* incx, double* dy, const int* incy);
 

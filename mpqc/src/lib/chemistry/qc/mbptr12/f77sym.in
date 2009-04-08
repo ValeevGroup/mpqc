@@ -1,5 +1,6 @@
 
 #define F77_DGEMM
+#define F77_DGEMV
 #define F77_DAXPY
 #define F77_DDOT
 #define F77_DGESVD

@@ -180,8 +180,8 @@ namespace sc {
         // FockBuild can compute either J and K separately, or the total F.
         // Determine whether we really need to compute J and K, or F
         const bool really_compute_F = compute_F_ && !compute_J_ && !compute_K_;
-        const bool really_compute_J = !really_compute_F;
-        const bool really_compute_K = !really_compute_F;
+        const bool really_compute_J = !really_compute_F && compute_J_;
+        const bool really_compute_K = !really_compute_F && compute_K_;
 
         // FockBuild only accepts matrices created with appropriate basisdim(), which are not blocked, hence must
         // use non-blocked kit
@@ -208,6 +208,8 @@ namespace sc {
         Ref<FockDistribution> fd = new FockDistribution;
         fb_ = new FockBuild(fd, fc, prefetch_blocks, brabasis, ketbasis, densitybasis, msg, thr, localints);
         fb_->set_accuracy(accuracy);
+        fb_->set_compute_J(really_compute_J);
+        fb_->set_compute_K(really_compute_K);
         fb_->build();
 
         Ref<GPetiteList2> pl = GPetiteListFactory::plist2(brabasis,ketbasis);

@@ -724,6 +724,9 @@ class FockBuildThread : public Thread {
                     double coef_K);
     void set_contrib(const Ref<FockContribution>&c) { contrib_ = c; }
     void set_accuracy(double acc) { accuracy_ = acc; }
+    void set_compute_J(bool compute_J) { compute_J_ = compute_J; }
+    void set_compute_K(bool compute_K) { compute_K_ = compute_K; }
+    void set_coef_K(double coef_K) { coef_K_ = coef_K; }
     void set_pmax(const signed char *pmax) { pmax_ = pmax; }
     const Ref<RegionTimer> get_timer() const { return timer_; }
 };

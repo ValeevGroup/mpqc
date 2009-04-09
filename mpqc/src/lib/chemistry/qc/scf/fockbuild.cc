@@ -448,6 +448,7 @@ ReplFockBuildMatrix::data_to_symmat() const
 void
 ReplFockBuildMatrix::data_to_scmat() const
 {
+  if (blockpointers_ == 0) return;
   if (symmmat_.nonnull()) {
       if (rectmat_.nonnull()) {
           throw std::runtime_error("data_to_scmat: both mats nonnull");
@@ -478,7 +479,8 @@ ReplFockBuildMatrix::accum(const Ref<FockBuildMatrix> &fa)
 void
 ReplFockBuildMatrix::accum_remote(const Ref<MessageGrp> &msg)
 {
-  msg->sum(blockpointers_[0], ndata_);
+  if (blockpointers_)
+    msg->sum(blockpointers_[0], ndata_);
 //   std::cout << "after accum_remote blockpointers_[0][ndata_-2] = "
 //             << blockpointers_[0][ndata_-2]
 //             << std::endl;
@@ -1295,6 +1297,7 @@ DistFockBuildMatrix::accum_remote(const Ref<MessageGrp> &msg)
       // This is a no-op, since data is distributed.
     }
   else {
+    if (blockpointers_)
       msg_->sum(blockpointers_[0], ndata_);
     }
 }
@@ -2586,6 +2589,9 @@ FockBuild::build()
           contribs[i]->copy_matrices(i);
         }
       thread_[i]->set_accuracy(accuracy_);
+      thread_[i]->set_compute_J(compute_J_);
+      thread_[i]->set_compute_K(compute_K_);
+      thread_[i]->set_coef_K(coef_K_);
       thread_[i]->set_pmax(pmax);
       thread_[i]->set_contrib(contribs[i]);
       thr_->add_thread(i, thread_[i]);

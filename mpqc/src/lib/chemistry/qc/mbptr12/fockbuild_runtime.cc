@@ -194,12 +194,23 @@ FockBuildRuntime::get(const std::string& key) {
       registry_->add(hkey, H);
     }
 
-    if (!use_density_fitting()) {
     { // J, K, and F
       const Ref<GaussianBasisSet>& obs = basis_;
       const bool compute_F = false;
-      const bool compute_J = true;
+      const bool compute_J = use_density_fitting() ? false : true;
       const bool compute_K = true;
+
+      Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
+      if (use_density_fitting())
+        fmb_df = new TwoBodyFockMatrixDFBuilder(false,
+                                               true,
+                                               false,
+                                               bs1, bs2, obs,
+                                               P_,
+                                               Po_,
+                                               dfinfo());
+
+
       double nints;
       if (bs1_eq_bs2) {
         Ref<TwoBodyFockMatrixBuilder<true> > fmb =
@@ -208,7 +219,7 @@ FockBuildRuntime::get(const std::string& key) {
                                                 Po_, integral(), msg(), thr());
         nints = fmb->nints();
         {
-          RefSCMatrix J = SymmToRect(fmb->J());
+          RefSCMatrix J = use_density_fitting() ? fmb_df->J() : SymmToRect(fmb->J());
           const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
           registry_->add(jkey, J);
 
@@ -237,7 +248,7 @@ FockBuildRuntime::get(const std::string& key) {
                                                  thr());
         nints = fmb->nints();
         {
-          RefSCMatrix J = fmb->J();
+          RefSCMatrix J = use_density_fitting() ? fmb_df->J() : fmb->J();
           const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
           registry_->add(jkey, J);
 
@@ -257,7 +268,8 @@ FockBuildRuntime::get(const std::string& key) {
         }
       }
     }
-    }
+
+#if 0
     else { // use density-fitting-based Fock builder
 
       const Ref<GaussianBasisSet>& obs = basis_;
@@ -293,6 +305,8 @@ FockBuildRuntime::get(const std::string& key) {
         }
       }
     } // end of DF-based computation
+#endif
+
     // now all components are available, call itself again
     return get(key);
   }

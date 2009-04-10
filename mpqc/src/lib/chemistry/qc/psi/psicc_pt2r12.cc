@@ -94,6 +94,9 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   // cannot do ebc=false either
   if (!r12tech->ebc())
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- ebc = false is not yet implemented",__FILE__,__LINE__);
+  // cannot do coupling=true either
+  if (r12tech->coupling())
+    throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- coupling = true is not yet implemented",__FILE__,__LINE__);
 
   set_desired_value_accuracy(desired_value_accuracy());
 }
@@ -176,8 +179,6 @@ void PsiCCSD_PT2R12::compute() {
 
   const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
   const Ref<R12Technology> r12tech = r12info->r12tech();
-  // params
-  const bool ebc = r12tech->ebc();
 
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();

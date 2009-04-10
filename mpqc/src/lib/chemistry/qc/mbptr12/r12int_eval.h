@@ -106,6 +106,9 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> hj_i_P_[NSpinCases1];
   Ref<OrbitalSpace> hj_i_m_[NSpinCases1];
   Ref<OrbitalSpace> hj_i_a_[NSpinCases1];
+  Ref<OrbitalSpace> hj_m_m_[NSpinCases1];
+  Ref<OrbitalSpace> hj_m_p_[NSpinCases1];
+  Ref<OrbitalSpace> hj_a_A_[NSpinCases1];
   Ref<OrbitalSpace> hj_p_p_[NSpinCases1];
   Ref<OrbitalSpace> hj_p_A_[NSpinCases1];
   Ref<OrbitalSpace> hj_p_P_[NSpinCases1];
@@ -135,14 +138,20 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> F_p_a_[NSpinCases1];
   Ref<OrbitalSpace> F_m_m_[NSpinCases1];
   Ref<OrbitalSpace> F_m_a_[NSpinCases1];
+  Ref<OrbitalSpace> F_m_p_[NSpinCases1];
   Ref<OrbitalSpace> F_m_P_[NSpinCases1];
   Ref<OrbitalSpace> F_m_A_[NSpinCases1];
   Ref<OrbitalSpace> F_i_A_[NSpinCases1];
   Ref<OrbitalSpace> F_i_m_[NSpinCases1];
   Ref<OrbitalSpace> F_i_a_[NSpinCases1];
   Ref<OrbitalSpace> F_i_p_[NSpinCases1];
+  Ref<OrbitalSpace> F_i_P_[NSpinCases1];
   Ref<OrbitalSpace> F_a_a_[NSpinCases1];
   Ref<OrbitalSpace> F_a_A_[NSpinCases1];
+  Ref<OrbitalSpace> h_P_P_[NSpinCases1];
+  Ref<OrbitalSpace> J_i_p_[NSpinCases1];
+  Ref<OrbitalSpace> J_i_P_[NSpinCases1];
+  Ref<OrbitalSpace> J_P_P_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -341,6 +350,9 @@ class R12IntEval : virtual public SavableState {
   /** Compute B using standard approximation C */
   void compute_BC_();
 
+  /** Compute B using standard approximation C' */
+  void compute_BCp_();
+
   /** Compute B using standard approximation A'' -- exchange is dropped completely! */
   void compute_BApp_();
 
@@ -385,9 +397,6 @@ public:
   R12IntEval(StateIn&);
   /** Constructs R12IntEval. */
   R12IntEval(const Ref<R12IntEvalInfo>& info);
-  /*R12IntEval(const Ref<R12IntEvalInfo>& info, bool gbc = true, bool ebc = true,
-             LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
-             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);*/
   ~R12IntEval();
 
   void save_data_state(StateOut&);
@@ -407,6 +416,7 @@ public:
   bool spin_polarized() const { return r12info()->refinfo()->spin_polarized(); }
   bool gbc() const { return r12info()->gbc(); }
   bool ebc() const { return r12info()->ebc(); }
+  bool coupling() const { return r12info()->coupling(); }
   LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
   bool omit_P() const { return r12info()->omit_P(); }
 
@@ -502,6 +512,12 @@ public:
   const Ref<OrbitalSpace>& hj_i_m(SpinCase1 S);
   /// Form <a|h+J|i> space
   const Ref<OrbitalSpace>& hj_i_a(SpinCase1 S);
+  /// Form <m|h+J|m> space
+  const Ref<OrbitalSpace>& hj_m_m(SpinCase1 S);
+  /// Form <p|h+J|m> space
+  const Ref<OrbitalSpace>& hj_m_p(SpinCase1 S);
+  /// Form <A|h+J|a> space
+  const Ref<OrbitalSpace>& hj_a_A(SpinCase1 S);
   /// Form <P|h+J|p> space
   const Ref<OrbitalSpace>& hj_p_P(SpinCase1 S);
   /// Form <A|h+J|p> space
@@ -512,6 +528,8 @@ public:
   const Ref<OrbitalSpace>& hj_p_m(SpinCase1 S);
   /// Form <a|h+J|p> space
   const Ref<OrbitalSpace>& hj_p_a(SpinCase1 S);
+  /// Form <P|h+J|P> space
+  const Ref<OrbitalSpace>& hj_P_P(SpinCase1 S);
   /// Form <P|K|x> space
   const Ref<OrbitalSpace>& K_x_P(SpinCase1 S);
   /// Form <A|K|x> space
@@ -578,6 +596,8 @@ public:
   const Ref<OrbitalSpace>& F_m_m(SpinCase1 S);
   /// Form <a|F|m> space
   const Ref<OrbitalSpace>& F_m_a(SpinCase1 S);
+  /// Form <p|F|m> space
+  const Ref<OrbitalSpace>& F_m_p(SpinCase1 S);
   /// Form <P|F|m> space
   const Ref<OrbitalSpace>& F_m_P(SpinCase1 S);
   /// Form <A|F|m> space
@@ -598,6 +618,16 @@ public:
   const Ref<OrbitalSpace>& F_p_a(SpinCase1 S);
   /// Form <P|F|P> space
   const Ref<OrbitalSpace>& F_P_P(SpinCase1 S);
+  /// Form <P|h|P> space
+  const Ref<OrbitalSpace>& h_P_P(SpinCase1 S);
+  /// Form <p|J|x> space
+  const Ref<OrbitalSpace>& J_x_p(SpinCase1 S);
+  /// Form <p|J|i> space
+  const Ref<OrbitalSpace>& J_i_p(SpinCase1 S);
+  /// Form <P|J|i> space
+  const Ref<OrbitalSpace>& J_i_P(SpinCase1 S);
+  /// Form <P|J|P> space
+  const Ref<OrbitalSpace>& J_P_P(SpinCase1 S);
 
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

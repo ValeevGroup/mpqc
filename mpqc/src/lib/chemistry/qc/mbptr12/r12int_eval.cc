@@ -52,6 +52,7 @@ using namespace std;
 using namespace sc;
 
 #define INCLUDE_EBC_CODE 1
+#define INCLUDE_COUPLING_CODE 1
 #define INCLUDE_GBC_CODE 1
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
@@ -132,9 +133,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_C)
-        B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (ebc() == false) {
+      if (coupling() == true) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
@@ -191,9 +190,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_C)
-        B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (ebc() == false) {
+      if (coupling() == true) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
@@ -472,10 +469,8 @@ R12IntEval::init_intermeds_()
     B_[s].assign(0.0);
     if (stdapprox() == LinearR12::StdApprox_B)
       BB_[s].assign(0.0);
-    if (stdapprox() == LinearR12::StdApprox_C)
-      B_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
-    if (ebc() == false) {
+    if (coupling() == true) {
       A_[s].assign(0.0);
     }
   }
@@ -891,6 +886,60 @@ R12IntEval::hj_i_a(SpinCase1 spin)
 }
 
 const Ref<OrbitalSpace>&
+R12IntEval::hj_m_m(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_m_m(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = occ(spin);
+  const Ref<OrbitalSpace>& intspace = occ(spin);
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,false,true,false,
+        null,
+        hj_m_m_[s],
+        null,
+        extspace,intspace);
+  return hj_m_m_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::hj_m_p(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_m_p(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = occ(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->refinfo()->orbs(spin);
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,false,true,false,
+        null,
+        hj_m_p_[s],
+        null,
+        extspace,intspace);
+  return hj_m_p_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::hj_a_A(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_a_A(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = vir_act(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space(spin);
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,false,true,false,
+        null,
+        hj_a_A_[s],
+        null,
+        extspace,intspace);
+  return hj_a_A_[s];
+}
+
+const Ref<OrbitalSpace>&
 R12IntEval::hj_p_P(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -978,6 +1027,24 @@ R12IntEval::hj_p_a(SpinCase1 spin)
 	    null,
 	    extspace,intspace);
   return hj_p_a_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::hj_P_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return hj_P_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = r12info()->ribs_space();
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,false,true,false,
+        null,
+        hj_P_P_[s],
+        null,
+        extspace,intspace);
+  return hj_P_P_[s];
 }
 
 const Ref<OrbitalSpace>&
@@ -1297,6 +1364,45 @@ R12IntEval::F_P_P(SpinCase1 spin)
 }
 
 const Ref<OrbitalSpace>&
+R12IntEval::h_P_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return h_P_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  if (h_P_P_[s].nonnull()) return h_P_P_[s];
+
+  const Ref<OrbitalSpace>& extspace = r12info()->ribs_space();
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+
+  RefSCMatrix h_i_e = fock(intspace, extspace, spin, 0.0, 0.0, 1.0);
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    std::string label("h matrix in ");
+    label += intspace->id();
+    label += "/";
+    label += extspace->id();
+    label += " basis";
+    h_i_e.print(label.c_str());
+  }
+  std::string id = extspace->id();
+  id += "_h(";
+  id += intspace->id();
+  id += ")";
+  id = ParsedOrbitalSpaceKey::key(id, spin);
+  std::string name = "h-weighted space";
+  name = prepend_spincase(spin, name);
+
+  h_P_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * h_i_e,
+                               intspace->basis());
+
+  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(h_P_P_[s]));
+
+  return h_P_P_[s];
+}
+
+
+const Ref<OrbitalSpace>&
 R12IntEval::F_p_A(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -1402,6 +1508,24 @@ R12IntEval::F_m_a(SpinCase1 spin)
 	    null,
 	    extspace,intspace);
   return F_m_a_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::F_m_p(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_m_p(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->occ(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->refinfo()->orbs(spin);
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_m_p_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_m_p_[s];
 }
 
 const Ref<OrbitalSpace>&
@@ -1513,6 +1637,24 @@ R12IntEval::F_i_a(SpinCase1 spin)
 }
 
 const Ref<OrbitalSpace>&
+R12IntEval::F_i_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_i_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->occ_act(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_i_P_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_i_P_[s];
+}
+
+const Ref<OrbitalSpace>&
 R12IntEval::F_a_a(SpinCase1 spin)
 {
   if (!spin_polarized() && spin == Beta)
@@ -1548,6 +1690,119 @@ R12IntEval::F_a_A(SpinCase1 spin)
   return F_a_A_[s];
 }
 
+const Ref<OrbitalSpace>&
+R12IntEval::J_i_p(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return J_i_p(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  if (J_i_p_[s].nonnull()) return J_i_p_[s];
+
+  const Ref<OrbitalSpace>& extspace = occ_act(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->refinfo()->orbs(spin);
+
+  RefSCMatrix J_i_e = fock(intspace, extspace, spin, 1.0, 0.0, 0.0);
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    std::string label("J matrix in ");
+    label += intspace->id();
+    label += "/";
+    label += extspace->id();
+    label += " basis";
+    J_i_e.print(label.c_str());
+  }
+  std::string id = extspace->id();
+  id += "_J(";
+  id += intspace->id();
+  id += ")";
+  id = ParsedOrbitalSpaceKey::key(id, spin);
+  std::string name = "J-weighted space";
+  name = prepend_spincase(spin, name);
+
+  J_i_p_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
+                                intspace->basis());
+
+  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(J_i_p_[s]));
+
+  return J_i_p_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::J_i_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return J_i_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  if (J_i_P_[s].nonnull()) return J_i_P_[s];
+
+  const Ref<OrbitalSpace>& extspace = occ_act(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+
+  RefSCMatrix J_i_e = fock(intspace, extspace, spin, 1.0, 0.0, 0.0);
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    std::string label("J matrix in ");
+    label += intspace->id();
+    label += "/";
+    label += extspace->id();
+    label += " basis";
+    J_i_e.print(label.c_str());
+  }
+  std::string id = extspace->id();
+  id += "_J(";
+  id += intspace->id();
+  id += ")";
+  id = ParsedOrbitalSpaceKey::key(id, spin);
+  std::string name = "J-weighted space";
+  name = prepend_spincase(spin, name);
+
+  J_i_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
+                                intspace->basis());
+
+  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(J_i_P_[s]));
+
+  return J_i_P_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::J_P_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return J_P_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  if (J_P_P_[s].nonnull()) return J_P_P_[s];
+
+  const Ref<OrbitalSpace>& extspace = r12info()->ribs_space();
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+
+  RefSCMatrix J_i_e = fock(intspace, extspace, spin, 1.0, 0.0, 0.0);
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    std::string label("J matrix in ");
+    label += intspace->id();
+    label += "/";
+    label += extspace->id();
+    label += " basis";
+    J_i_e.print(label.c_str());
+  }
+  std::string id = extspace->id();
+  id += "_J(";
+  id += intspace->id();
+  id += ")";
+  id = ParsedOrbitalSpaceKey::key(id, spin);
+  std::string name = "J-weighted space";
+  name = prepend_spincase(spin, name);
+
+  J_P_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
+                                intspace->basis());
+
+  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(J_P_P_[s]));
+
+  return J_P_P_[s];
+}
 
 void
 R12IntEval::f_bra_ket(
@@ -1737,7 +1992,8 @@ R12IntEval::compute()
     }
     // whereas other methods that include X (A' and B) can use the simple fX form
     else {
-      if (stdapprox() != LinearR12::StdApprox_C) {
+      if (stdapprox() == LinearR12::StdApprox_Ap ||
+          stdapprox() == LinearR12::StdApprox_B) {
         compute_B_fX_();
       }
     }
@@ -1750,23 +2006,38 @@ R12IntEval::compute()
           BB_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. B) contribution").c_str());
     }
 
-    if (stdapprox() == LinearR12::StdApprox_C &&
-        !r12info()->r12tech()->omit_B()) {
-#define TEST_DARWIN 0
-#if TEST_DARWIN
-      {
-        RefSCMatrix tmp = Delta_DKH_(occ(Alpha),occ(Alpha),Alpha);
+    if (!r12info()->r12tech()->omit_B()) {
+      if (stdapprox() == LinearR12::StdApprox_C) {
+        compute_BC_();
+        if (debug_ >= DefaultPrintThresholds::O4)
+          for(int s=0; s<nspincases2(); s++)
+            B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
       }
-#endif
-      compute_BC_();
-      if (debug_ >= DefaultPrintThresholds::O4)
-        for(int s=0; s<nspincases2(); s++)
-          B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
+      if (stdapprox() == LinearR12::StdApprox_Cp) {
+        compute_BCp_();
+        if (debug_ >= DefaultPrintThresholds::O4)
+          for(int s=0; s<nspincases2(); s++)
+            B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C') intermediate").c_str());
+      }
     }
 
 #if INCLUDE_EBC_CODE
     const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty && !r12info()->r12tech()->omit_B();
     if (nonzero_ebc_terms) {
+      // EBC contribution to B only appears in commutator-based projector 2 case
+      if (ansatz()->projector() == LinearR12::Projector_2 &&
+          (stdapprox() == LinearR12::StdApprox_Ap ||
+           stdapprox() == LinearR12::StdApprox_App ||
+           stdapprox() == LinearR12::StdApprox_B)
+          ) {
+        AF12_contrib_to_B_();
+      }
+    }
+#endif
+
+#if INCLUDE_COUPLING_CODE
+    const bool nonzero_coupling_terms = coupling() && !cabs_empty && !vir_empty;
+    if (nonzero_coupling_terms) {
 
       // compute A, T2, and F12
       for(int s=0; s<nspincases2(); s++) {
@@ -1801,10 +2072,6 @@ R12IntEval::compute()
       }
 
       AT2_contrib_to_V_();
-      // EBC contribution to B only appears in non-StdApproxC projector 2 case
-      if (ansatz()->projector() == LinearR12::Projector_2 && stdapprox() != LinearR12::StdApprox_C) {
-        AF12_contrib_to_B_();
-      }
     }
 #endif
 
@@ -1946,7 +2213,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (stdapprox() == LinearR12::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
-    if (ebc() == false) {
+    if (coupling() == true) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
     }
   }
@@ -2189,6 +2456,33 @@ R12IntEval::F_x_a(SpinCase1 S)
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
+
+const Ref<OrbitalSpace>&
+R12IntEval::F_x_P(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+    return(F_i_P(S));
+    case LinearR12::OrbProd_pq:
+    abort();
+    default:
+    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::J_x_p(SpinCase1 S)
+{
+    switch(r12info()->ansatz()->orbital_product()) {
+    case LinearR12::OrbProd_ij:
+    return(J_i_p(S));
+    case LinearR12::OrbProd_pq:
+      abort();
+    default:
+    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    }
+}
+
 
 namespace {
   /// Convert 2 spaces to SpinCase2

@@ -47,8 +47,9 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
   const bool obs_eq_vbs = r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12info()->obs_eq_ribs();
-  // commutators never appear in StdApprox C
-  const bool compute_B = (stdapprox() != LinearR12::StdApprox_C);
+  // commutators only appear in A', A'', and B
+  const bool compute_B = (stdapprox() == LinearR12::StdApprox_Ap ||
+      stdapprox() == LinearR12::StdApprox_App || stdapprox() == LinearR12::StdApprox_B);
 
   if (obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if OBS == VBS",__FILE__,__LINE__);

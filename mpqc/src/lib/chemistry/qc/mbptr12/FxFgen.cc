@@ -85,10 +85,12 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   if (!correct_semantics)
     throw ProgrammingError("R12IntEval::compute_FxF_() -- incorrect call semantics",__FILE__,__LINE__);
 
+#if 0
   // check if summation spaces consistent with part1_equiv_part2
   const bool int_1_equiv_2 = (int1 == int2 && intk1 == intk2 && intkx1 == intkx2);
   if (part1_equiv_part2 ^ int_1_equiv_2)
     throw ProgrammingError("R12IntEval::compute_FxF_() -- contraction spaces must have same permutational symmetry as outer spaces",__FILE__,__LINE__);
+#endif
 
   // heuristic rules to make supporting half-transformed integral types less numerous
   // 1) if p1 and p2 are not equivalent, both types of integrals (x1_2 and 1_x2) will be needed -- nothing can be done here

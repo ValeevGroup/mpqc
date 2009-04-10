@@ -57,7 +57,7 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
 // default values
 double TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
 int TwoBodyMOIntsTransform::debug_ = 0;
-double TwoBodyMOIntsTransform::print_percent_ = 0.1;
+double TwoBodyMOIntsTransform::print_percent_ = 10.0;
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& fact,
                                                const Ref<TwoBodyIntDescr>& tbintdescr,
@@ -434,7 +434,7 @@ static ClassDesc TwoBodyThreeCenterMOIntsTransform_cd(
 
 // default values
 int TwoBodyThreeCenterMOIntsTransform::debug_ = 0;
-double TwoBodyThreeCenterMOIntsTransform::print_percent_ = 0.1;
+double TwoBodyThreeCenterMOIntsTransform::print_percent_ = 10.0;
 
 TwoBodyThreeCenterMOIntsTransform::~TwoBodyThreeCenterMOIntsTransform() {}
 

@@ -52,6 +52,7 @@ class R12Technology: virtual public SavableState {
     unsigned int maxnabs_;
     bool gbc_;
     bool ebc_;
+    bool coupling_;
     bool omit_P_;
     LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli_;
     bool H0_dk_keep_;
@@ -119,6 +120,11 @@ class R12Technology: virtual public SavableState {
 	  with linear R12 terms in standard approximation C.
           Only energies can be computed with the MP2-R12/C method.
 
+          <dt><tt>C</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
+      with linear R12 terms in standard approximation C' (simplified variant of approximation C,
+      in which only integrals with 1 ABS index are used. Refer to: Valeev, to be published).
+          Only energies can be computed with the MP2-R12/C' method.
+
         </dl>
 
         <dt><tt>ansatz</tt><dd> This object specifies the ansatz (see LinearR12Ansatz).
@@ -126,12 +132,18 @@ class R12Technology: virtual public SavableState {
         <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
         Condition (GBC) is assumed to hold. The default is "true". This keyword is
         only valid if stdapprox=A'.
-        The effect of setting this keyword to true is very small --
+        The effect of setting this keyword to false is very small --
         hence it is not recommended to use this keyword.
 
         <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
         Condition (EBC) is assumed to hold. The default is "true". This keyword
         is only valid if stdapprox=A'.
+        The effect of setting this keyword to false is small --
+        hence it is not recommended to use this keyword.
+
+        <dt><tt>coupling</tt><dd> This boolean specifies whether the doubles-geminal block of the zeroth-order
+        operator is included. The default is "false". This keyword
+        is not valid if stdapprox=A'.
         The effect of setting this keyword to true is small --
         hence it is not recommended to use this keyword.
 
@@ -214,6 +226,7 @@ class R12Technology: virtual public SavableState {
     unsigned int maxnabs() const;
     bool gbc() const;
     bool ebc() const;
+    bool coupling() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     const Ref<LinearR12Ansatz>& ansatz() const;

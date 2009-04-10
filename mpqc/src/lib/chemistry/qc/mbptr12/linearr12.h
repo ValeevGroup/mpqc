@@ -56,7 +56,9 @@ namespace sc {
       StdApprox_Ap = 1,
       StdApprox_App = 2,
       StdApprox_B = 3,
-      StdApprox_C = 4};
+      StdApprox_C = 4,
+      StdApprox_Cp = 5
+      };
     enum ABSMethod {ABS_ABS = 0,
       ABS_ABSPlus = 1,
       ABS_CABS = 2,

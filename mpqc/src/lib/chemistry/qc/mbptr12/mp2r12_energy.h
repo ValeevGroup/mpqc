@@ -93,7 +93,6 @@ class MP2R12Energy : virtual public SavableState {
   protected:
     Ref<R12EnergyIntermediates> r12intermediates_;
     Ref<R12IntEval> r12eval_;
-    bool ebc_;
     int debug_;
     bool evaluated_;
 
@@ -113,12 +112,6 @@ class MP2R12Energy : virtual public SavableState {
     Ref<R12IntEval> r12eval() const;
     const Ref<R12EnergyIntermediates>& r12intermediates() const;
     LinearR12::StandardApproximation stdapprox() const;
-    /** Returns whether Generalized Brillouin Condition (GBC) was used in evaluation of
-        the MP2-R12 intermediates */
-    bool gbc() const;
-    /** Returns whether Extended Brillouin Condition (EBC) was used in evaluation of
-        the MP2-R12 intermediates and the MP2-R12 energy */
-    bool ebc() const;
     void set_debug(int debug);
     int get_debug() const;
 

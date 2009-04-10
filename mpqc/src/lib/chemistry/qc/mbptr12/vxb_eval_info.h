@@ -259,6 +259,7 @@ public:
   bool bc() const;
   bool gbc() const { return r12tech()->gbc(); }
   bool ebc() const { return r12tech()->ebc(); }
+  bool coupling() const { return r12tech()->coupling(); }
   bool spinadapted() const { return spinadapted_; }
   unsigned int maxnabs() const { return r12tech()->maxnabs(); }
   bool omit_P() const { return r12tech()->omit_P(); }

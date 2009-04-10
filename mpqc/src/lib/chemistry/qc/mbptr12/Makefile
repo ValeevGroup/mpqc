@@ -57,7 +57,7 @@ CXXSRCS = mbptr12.cc \
   twoparticlecontraction.cc spin.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
-  creator.cc approxC.cc approxApp.cc ansatz.cc \
+  creator.cc approxC.cc approxCp.cc approxApp.cc ansatz.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
   singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \

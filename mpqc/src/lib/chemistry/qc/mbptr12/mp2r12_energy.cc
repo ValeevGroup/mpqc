@@ -244,8 +244,6 @@ void MP2R12Energy::obsolete()
 Ref<R12IntEval> MP2R12Energy::r12eval() const { return r12eval_; };
 const Ref<R12EnergyIntermediates>& MP2R12Energy::r12intermediates() const { return(r12intermediates_); };
 LinearR12::StandardApproximation MP2R12Energy::stdapprox() const { return(r12intermediates_->stdapprox()); };
-bool MP2R12Energy::ebc() const { return ebc_; };
-bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
 void MP2R12Energy::set_debug(int debug) { debug_ = debug; };
 int MP2R12Energy::get_debug() const { return debug_; };
 
@@ -355,6 +353,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     case LinearR12::StdApprox_App: SA_str = "A''";  break;
     case LinearR12::StdApprox_B:   SA_str = "B";   break;
     case LinearR12::StdApprox_C:   SA_str = "C";   break;
+    case LinearR12::StdApprox_Cp:  SA_str = "C'";   break;
     default:
       throw InputError("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid",
                        __FILE__,__LINE__);
@@ -908,6 +907,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     case LinearR12::StdApprox_App: SA_str = "A''";  break;
     case LinearR12::StdApprox_B:   SA_str = "B";   break;
     case LinearR12::StdApprox_C:   SA_str = "C";   break;
+    case LinearR12::StdApprox_Cp:  SA_str = "C'";   break;
     default:
       throw InputError("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid",
                        __FILE__,__LINE__);

@@ -64,6 +64,7 @@ R12Technology::R12Technology(StateIn& s)
 
   int gbc; s.get(gbc); gbc_ = (bool)gbc;
   int ebc; s.get(ebc); ebc_ = (bool)ebc;
+  int coupling; s.get(coupling); coupling_ = (bool)coupling;
   int omit_P; s.get(omit_P); omit_P_ = (bool)omit_P;
   int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
@@ -125,6 +126,12 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	    sa_string == "c" ) {
     stdapprox_ = LinearR12::StdApprox_C;
   }
+  else if ( sa_string == "Cp" ||
+            sa_string == "cp" ||
+            sa_string == "C'" ||
+            sa_string == "c'") {
+    stdapprox_ = LinearR12::StdApprox_Cp;
+  }
   else {
     throw std::runtime_error("R12Technology::R12Technology() -- unrecognized value for stdapprox");
   }
@@ -184,11 +191,13 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(exponent,1.0));
         params.push_back(vtmp);
       }
-      // If stdapprox_ == C, no need for commutators
-      if (stdapprox_ == LinearR12::StdApprox_C)
-	  corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+      // If stdapprox_ == A', A'', or B, need commutators
+      if (stdapprox_ == LinearR12::StdApprox_Ap ||
+          stdapprox_ == LinearR12::StdApprox_App ||
+          stdapprox_ == LinearR12::StdApprox_B)
+        corrfactor_ = new LinearR12::G12CorrelationFactor(params);
       else
-	  corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+        corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
     }
     else
       throw ProgrammingError("R12Technology::R12Technology() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
@@ -327,11 +336,13 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	delete w;
     }
 
-    // If stdapprox_ == C, no need for commutators
-    if (stdapprox_ == LinearR12::StdApprox_C)
-	corrfactor_ = new LinearR12::G12NCCorrelationFactor(params,gdesc);
+    // If stdapprox_ == A', A'', or B, need commutators
+    if (stdapprox_ == LinearR12::StdApprox_Ap ||
+        stdapprox_ == LinearR12::StdApprox_App ||
+        stdapprox_ == LinearR12::StdApprox_B)
+      corrfactor_ = new LinearR12::G12CorrelationFactor(params);
     else
-	corrfactor_ = new LinearR12::G12CorrelationFactor(params,gdesc);
+      corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
   }
   //
   // no explicit correlation
@@ -346,6 +357,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
   // Default is to assume EBC
   ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
+  // Default is to not include coupling
+  coupling_ = keyval->booleanvalue("coupling",KeyValValueboolean((int)false));
 
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
@@ -389,9 +402,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     ansatz_ = new LinearR12Ansatz;
   if (ansatz()->projector() == LinearR12::Projector_1)
     throw InputError("R12Technology::R12Technology -- projector 1 has not been implemented yet",__FILE__,__LINE__);
-  if (ansatz()->projector() == LinearR12::Projector_3 &&
-      stdapprox_ != LinearR12::StdApprox_C)
-    throw InputError("R12Technology::R12Technology -- projector 3 is only valid when stdapprox=C",__FILE__,__LINE__);
+  if (ansatz()->projector() == LinearR12::Projector_3)
+    throw InputError("R12Technology::R12Technology -- projector 3 is obsolete",__FILE__,__LINE__);
 
   // Default is to include all integrals, unless using A'' method
   int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
@@ -455,16 +467,17 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   {
     Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
     if (gg12ptr.nonnull() && stdapprox_ != LinearR12::StdApprox_C) {
-	throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
+      throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
     }
   }
 
   // Klopper and Samson's ABS method is only implemented for certain "old" methods
   // Make sure that the ABS method is available for the requested MP2-R12 energy
   const bool must_use_cabs = (!gbc_ ||
-			      !ebc_ ||
+			      !ebc_ || !coupling_ ||
 			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs_) ||
 			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs_) ||
+			      (stdapprox_ == LinearR12::StdApprox_Cp && !abs_eq_obs_) ||
 			      (stdapprox_ == LinearR12::StdApprox_App && !abs_eq_obs_) ||
                               !vbs_eq_obs_);
   if (must_use_cabs &&
@@ -496,6 +509,7 @@ R12Technology::save_data_state(StateOut& s)
 {
   s.put((int)gbc_);
   s.put((int)ebc_);
+  s.put((int)coupling_);
   s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
@@ -516,6 +530,7 @@ R12Technology::print(ostream&o) const
   if (!safety_check())
     o << indent << "WARNING: ---- safety checks SKIPPED ----" << endl;
   corrfactor()->print(o); o << endl;
+  o << indent << "Coupling included: " << (coupling_ ? "true" : "false") << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: Valeev" << endl;
@@ -553,6 +568,9 @@ R12Technology::print(ostream&o) const
     break;
     case LinearR12::StdApprox_C :
       o << indent << "Standard Approximation: C" << endl;
+    break;
+    case LinearR12::StdApprox_Cp :
+      o << indent << "Standard Approximation: C'" << endl;
     break;
   }
   ansatz()->print(o);
@@ -638,6 +656,14 @@ bool
 R12Technology::ebc() const
 {
   return ebc_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+R12Technology::coupling() const
+{
+  return coupling_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

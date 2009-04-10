@@ -85,11 +85,11 @@ MP2R12Energy_SpinOrbital::compute()
   const bool obs_eq_vbs = r12info->obs_eq_vbs();
   const bool obs_eq_ribs = r12info->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-  bool ebc = r12eval()->ebc();
+  bool coupling = r12eval()->coupling();
   if (r12eval()->vir(Alpha)->rank()==0 ||
       r12eval()->vir(Beta)->rank()==0 ||
       cabs_empty)
-    ebc = true;
+    coupling = false;
   const bool diag=r12info->r12tech()->ansatz()->diag();
   if (diag)
     throw ProgrammingError("MP2R12Energy_SpinOrbital::compute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
@@ -187,7 +187,7 @@ MP2R12Energy_SpinOrbital::compute()
       }
 
       RefSCMatrix A;
-      if (ebc == false) {
+      if (coupling == true) {
         if(r12intermediates_->A_computed()){
           A = r12intermediates_->get_A(spincase2);
         }
@@ -339,8 +339,8 @@ MP2R12Energy_SpinOrbital::compute()
               const double fx = - (evals_xspace1[x] + evals_xspace2[y]) * X.get_element(xyf,xyg);
               B_ij.accumulate_element(xyf,xyg,fx);
 
-              // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
-              if (ebc == false) {
+              // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
+              if (coupling == true) {
                 double fy = 0.0;
                 SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
                 for (cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -439,8 +439,8 @@ MP2R12Energy_SpinOrbital::compute()
 
                   B_ij.accumulate_element(kl,ow,fx);
 
-                  // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
-                  if (ebc == false) {
+                  // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                  if (coupling == true) {
                     double fy = 0.0;
                     SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
                     for(cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -625,11 +625,11 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
   const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-  bool ebc = r12eval()->ebc();
+  bool coupling = r12eval()->coupling();
   if (r12eval()->vir(Alpha)->rank()==0 ||
       r12eval()->vir(Beta)->rank()==0 ||
       cabs_empty)
-    ebc = true;
+    coupling = false;
   SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
 
   Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,dim_oo,dim_xy,dim_xc,nocc1_act);
@@ -660,8 +660,8 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
           }
         }
 
-        // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
-        if (ebc == false) {
+        // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
+        if (coupling == true) {
           double fy = 0.0;
           SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
           for(cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -674,7 +674,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
           }  // loop over cd_iter
 
           B_ij.accumulate_element(xyf,xyg,fy);
-        }  // ebc == false
+        }  // coupling == true
 
       }  // loop over geminal index g
     }  // loop over geminal index f
@@ -715,11 +715,11 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
   const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-  bool ebc = r12eval()->ebc();
+  bool coupling = r12eval()->coupling();
   if (r12eval()->vir(Alpha)->rank()==0 ||
       r12eval()->vir(Beta)->rank()==0 ||
       cabs_empty)
-    ebc = true;
+    coupling = false;
   SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
 
   RefSymmSCMatrix B_ij = B.clone();
@@ -760,8 +760,8 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
 
           B_ij.accumulate_element(kl,ow,fx);
 
-          // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
-          if (ebc == false) {
+          // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+          if (coupling == true) {
             double fy = 0.0;
             SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
             for(cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -774,7 +774,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
             }
 
             B_ij.accumulate_element(kl,ow,fy);
-          }  // ebc == false
+          }  // coupling == true
 
         }  // loop over ow_iter
       }  // loop over geminal index g
@@ -915,11 +915,11 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     const bool obs_eq_vbs = r12info->obs_eq_vbs();
     const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-    bool ebc = r12eval()->ebc();
+    bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
-      ebc = true;
+      coupling = false;
 
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
@@ -955,16 +955,13 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));
       }
-      else if(stdapprox()==LinearR12::StdApprox_C) {
-        B = r12eval()->B(spincase2);
-      }
       else {
         B = r12eval()->B(spincase2);
       }
     }
 
     RefSCMatrix A;
-    if (ebc == false) {
+    if (coupling == true) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);
       }
@@ -1019,11 +1016,11 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
     const bool obs_eq_vbs = r12info->obs_eq_vbs();
     const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-    bool ebc = r12eval()->ebc();
+    bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
-      ebc = true;
+      coupling = false;
 
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
@@ -1060,16 +1057,13 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));
       }
-      else if(stdapprox()==LinearR12::StdApprox_C) {
-        B = r12eval()->B(spincase2);
-      }
       else {
         B = r12eval()->B(spincase2);
       }
     }
 
     RefSCMatrix A;
-    if (ebc == false) {
+    if (coupling == true) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);
       }
@@ -1120,11 +1114,11 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
     const bool obs_eq_vbs = r12info->obs_eq_vbs();
     const bool obs_eq_ribs = r12info->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
-    bool ebc = r12eval()->ebc();
+    bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
         r12eval()->vir(Beta)->rank()==0 ||
         cabs_empty)
-      ebc = true;
+      coupling = false;
 
     // WARNING only RHF and UHF are considered
     const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
@@ -1160,16 +1154,13 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));
       }
-      else if(stdapprox()==LinearR12::StdApprox_C) {
-        B = r12eval()->B(spincase2);
-      }
       else {
         B = r12eval()->B(spincase2);
       }
     }
 
     RefSCMatrix A;
-    if (ebc == false) {
+    if (coupling == true) {
       if(r12intermediates_->A_computed()){
         A = r12intermediates_->get_A(spincase2);
       }

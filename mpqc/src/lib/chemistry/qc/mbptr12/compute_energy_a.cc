@@ -117,10 +117,11 @@ MBPT2_R12::compute_energy_()
   } // end of != ansatz_3
 
   // MP2-F12/C
-  if (r12info->stdapprox() == LinearR12::StdApprox_C) {
+  if (r12info->stdapprox() == LinearR12::StdApprox_C ||
+      r12info->stdapprox() == LinearR12::StdApprox_Cp) {
     Timer tim2("mp2-f12/c pair energies");
     if (r12c_energy_.null()){
-      r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_C);
+      r12intermediates=new R12EnergyIntermediates(r12eval_,r12info->stdapprox());
       r12c_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
     }
     r12c_energy_->print_pair_energies(r12info->spinadapted());
@@ -144,6 +145,7 @@ MBPT2_R12::compute_energy_()
       case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
       case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;
       case LinearR12::StdApprox_C:    wfn_to_plot = r12c_energy_;   break;
+      case LinearR12::StdApprox_Cp:   wfn_to_plot = r12c_energy_;   break;
     }
     for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
       wfn_to_plot->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],

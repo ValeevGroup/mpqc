@@ -160,8 +160,10 @@ R12IntEval::init_intermeds_g12_()
           if (debug_ >= DefaultPrintThresholds::mostO4)
             B_[s].print(prepend_spincase(spincase2,"B(diag;symm)").c_str());
 	  RefSCMatrix Banti = B_[s].clone(); Banti.assign(0.0);
-	  // the handling of the second term differs between standard approximations {A,A',B} and {C}
-	  if (stdapprox() != LinearR12::StdApprox_C) {
+	  // the handling of the second term differs between standard approximations {A,A',B} and {C,C'}
+	  if (stdapprox() == LinearR12::StdApprox_Ap ||
+	      stdapprox() == LinearR12::StdApprox_App ||
+	      stdapprox() == LinearR12::StdApprox_B) {
 	      // 1) in standard approximations A and B the commutators are explicitly evaluated:
 	      //    the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
 	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -267,9 +269,6 @@ R12IntEval::init_intermeds_g12_()
             Banti.print(prepend_spincase(spincase2,"B(diag;antisymm)").c_str());
 	  B_[s].accumulate(Banti);
       }
-      // Finally, copy B to BC, since their "diagonal" parts are the same
-      //if (stdapprox() == LinearR12::StdApprox_C)
-	  //BC_[s].assign(B_[s]);
   }
 
   ExEnv::out0() << decindent;

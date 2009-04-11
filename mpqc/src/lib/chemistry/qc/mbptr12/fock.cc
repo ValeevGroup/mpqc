@@ -20,7 +20,7 @@
 //
 // You should have received a copy of the GNU Library General Public License
 // along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// the Free Software Foundation, 67 Mass Ave, Cambridge, MA 02139, USA.
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
@@ -219,17 +219,18 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   }
 
   } else { // USE_NEWFOCKBUILD
-    if (scale_J != 0.0 || scale_K != 0.0) {
       Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
-      const std::string hkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("H"));
-      RefSCMatrix H = fb_rtime->get(hkey);
-      const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
-      RefSCMatrix J = fb_rtime->get(jkey);
-      const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
-      const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
-      RefSCMatrix K = fb_rtime->get(kkey);
-      F.accumulate(J*scale_J - K*scale_K);
-    }
+      if (scale_J != 0.0) {
+        const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
+        RefSCMatrix J = fb_rtime->get(jkey);
+        F.accumulate(J*scale_J);
+      }
+      if (scale_K != 0.0) {
+        const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
+        const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
+        RefSCMatrix K = fb_rtime->get(kkey);
+        F.accumulate( (-scale_K) * K);
+      }
   }
 
   if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS) {

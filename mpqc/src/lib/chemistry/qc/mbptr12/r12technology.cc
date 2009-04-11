@@ -340,9 +340,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     if (stdapprox_ == LinearR12::StdApprox_Ap ||
         stdapprox_ == LinearR12::StdApprox_App ||
         stdapprox_ == LinearR12::StdApprox_B)
-      corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+      corrfactor_ = new LinearR12::G12CorrelationFactor(params,gdesc);
     else
-      corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+      corrfactor_ = new LinearR12::G12NCCorrelationFactor(params,gdesc);
   }
   //
   // no explicit correlation

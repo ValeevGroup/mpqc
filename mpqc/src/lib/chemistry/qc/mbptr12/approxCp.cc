@@ -83,16 +83,16 @@ void R12IntEval::compute_BCp_() {
   // some combinations are not implemented yet or are not sane
   if (ansatz()->projector() == LinearR12::Projector_3)
     throw FeatureNotImplemented(
-                                "B(C, gbc) cannot be evaluated yet when using ansatz 3",
+                                "B(C') cannot be evaluated yet when using ansatz 3",
                                 __FILE__, __LINE__);
   if (this->dk() > 0)
     throw FeatureNotImplemented(
-                                "B(C, gbc) cannot be evaluated yet when df > 0",
+                                "B(C') cannot be evaluated yet when df > 0",
                                 __FILE__, __LINE__);
 
-  Timer tim_B_app_C("B(app. C, gbc) intermediate");
+  Timer tim_B_app_C("B(app. C') intermediate");
   ExEnv::out0() << endl << indent
-      << "Entered B(app. C, gbc) intermediate evaluator" << endl;
+      << "Entered B(app. C', gbc) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
   for (int s = 0; s < nspincases2(); s++) {
@@ -119,7 +119,7 @@ void R12IntEval::compute_BCp_() {
     Ref<OrbitalSpace> hJ_x1, hJ_x2;
     hJ_x1 = hj_x_P(spin1);
     hJ_x2 = hj_x_P(spin2);
-    std::string Qlabel = prepend_spincase(spincase2, "Q(C) intermediate");
+    std::string Qlabel = prepend_spincase(spincase2, "Q(C') intermediate");
     Timer tim_Q(Qlabel);
     ExEnv::out0() << endl << indent << "Entered " << Qlabel << " evaluator"
         << endl;
@@ -144,7 +144,7 @@ void R12IntEval::compute_BCp_() {
     if (debug_ >= DefaultPrintThresholds::mostO4
         || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
       globally_sum_intermeds_();
-      std::string label = prepend_spincase(spincase2, "Q(C) contribution");
+      std::string label = prepend_spincase(spincase2, "Q(C') contribution");
       Q.print(label.c_str());
     }
     B_[s].accumulate(Q);
@@ -158,11 +158,11 @@ void R12IntEval::compute_BCp_() {
     if (!abs_eq_obs && absmethod != LinearR12::ABS_CABS && absmethod
         != LinearR12::ABS_CABSPlus) {
       throw FeatureNotImplemented(
-                                  "R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",
+                                  "R12IntEval::compute_BCp_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",
                                   __FILE__, __LINE__);
     }
 
-    std::string Plabel = prepend_spincase(spincase2, "P(C) intermediate");
+    std::string Plabel = prepend_spincase(spincase2, "P(C') intermediate");
     Timer tim_P(Plabel);
     ExEnv::out0() << endl << indent << "Entered " << Plabel << " evaluator"
         << endl;
@@ -301,14 +301,14 @@ void R12IntEval::compute_BCp_() {
 
     if (debug_ >= DefaultPrintThresholds::mostO4
         || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
-      std::string label = prepend_spincase(spincase2, "P(C) contribution");
+      std::string label = prepend_spincase(spincase2, "P(C') contribution");
       P.print(label.c_str());
     }
 
     B_[s].accumulate(P);
     P = 0;
 #endif // INCLUDE_P
-    // Bra-Ket symmetrize the B(C) contribution
+    // Bra-Ket symmetrize the B(C') contribution
     B_[s].scale(0.5);
     RefSCMatrix B_t = B_[s].t();
     B_[s].accumulate(B_t);
@@ -317,7 +317,7 @@ void R12IntEval::compute_BCp_() {
   globally_sum_intermeds_();
 
   ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited B(app. C) intermediate evaluator" << endl;
+  ExEnv::out0() << indent << "Exited B(app. C') intermediate evaluator" << endl;
 
   tim_B_app_C.exit();
 }

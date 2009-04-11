@@ -212,11 +212,13 @@ FockBuildRuntime::get(const std::string& key) {
 
       double nints;
       if (bs1_eq_bs2) {
-        Ref<TwoBodyFockMatrixBuilder<true> > fmb =
-            new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J,
+        Ref<TwoBodyFockMatrixBuilder<true> > fmb;
+        if ((!use_density_fitting() && compute_J) || compute_K) {
+          fmb = new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J,
                                                 compute_K, bs1, bs2, obs, P_,
                                                 Po_, integral(), msg(), thr());
-        nints = fmb->nints();
+          nints = fmb->nints();
+        }
         {
           RefSCMatrix J;
           if (compute_J) {
@@ -252,13 +254,15 @@ FockBuildRuntime::get(const std::string& key) {
 
       } else { // result is rectangular already
 
-        Ref<TwoBodyFockMatrixBuilder<false> > fmb =
-            new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J,
+        Ref<TwoBodyFockMatrixBuilder<false> > fmb;
+        if ((!use_density_fitting() && compute_J) || compute_K) {
+          fmb = new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J,
                                                  compute_K, bs1, bs2, obs, P_,
                                                  Po_, integral(),
                                                  msg(),
                                                  thr());
-        nints = fmb->nints();
+          nints = fmb->nints();
+        }
         {
           RefSCMatrix J;
 

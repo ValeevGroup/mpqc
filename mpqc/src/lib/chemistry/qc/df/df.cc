@@ -38,7 +38,10 @@
 #include <chemistry/qc/mbptr12/distarray4_memgrp.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>
+
+#define USE_KERNEL_INVERSE 1
 
 using namespace sc;
 
@@ -176,6 +179,9 @@ DensityFitting::compute()
   //kernel_.print("DensityFitting::kernel");
 
   // solve the linear system C_ * kernel = cC_
+  // directly
+  // OR
+  // as C_ = cC_ * kernel^-1
   //
   // create C_ as a clone cC_
   // parallelize over all tasks that can read from cC_
@@ -200,9 +206,25 @@ DensityFitting::compute()
       const int n3 = fbasis_->nbasis();
       // scratch for holding solution vectors
       double* C_jR = new double[n2 * n3];
+
+#if USE_KERNEL_INVERSE
+      // compute the kernel inverse
+      RefSymmSCMatrix kernel_i_mat = kernel_.gi();
+      //kernel_i_mat.print("DensityFitting::kernel^{-1}");
+      // convert kernel_i to dense rectangular form
+      double* kernel_i = new double [n3 * n3];
+      int rc = 0;
+      for(int r=0; r<n3; ++r) {
+        for(int c=0; c<n3; ++c, ++rc) {
+          kernel_i[rc] = kernel_i_mat.get_element(r,c);
+        }
+      }
+      kernel_i_mat = 0;
+#else
       // convert kernel_ to a packed upper-triangle form
       double* kernel_packed = new double[n3 * (n3 + 1) / 2];
       kernel_->convert(kernel_packed);
+#endif
 
       for (int i = 0; i < n1; ++i) {
 
@@ -213,7 +235,12 @@ DensityFitting::compute()
         const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyOper::eri);
 
         // solve the linear system
+#if USE_KERNEL_INVERSE
+        C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, kernel_i, n3,
+                0.0, C_jR, n3);
+#else
         sc::exp::lapack_linsolv_symmnondef(kernel_packed, n3, C_jR, cC_jR, n2);
+#endif
 
         // write
         C_->store_pair_block(0, i, TwoBodyOper::eri, C_jR);
@@ -224,7 +251,11 @@ DensityFitting::compute()
       }
 
       delete[] C_jR;
+#if USE_KERNEL_INVERSE
+      delete[] kernel_i;
+#else
       delete[] kernel_packed;
+#endif
     }
 
   }

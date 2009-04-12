@@ -1,5 +1,5 @@
 //
-// approxC_gbc.cc
+// approxCp.cc
 //
 // Copyright (C) 2006 Edward Valeev
 //
@@ -92,7 +92,7 @@ void R12IntEval::compute_BCp_() {
 
   Timer tim_B_app_C("B(app. C') intermediate");
   ExEnv::out0() << endl << indent
-      << "Entered B(app. C', gbc) intermediate evaluator" << endl;
+      << "Entered B(app. C') intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
   for (int s = 0; s < nspincases2(); s++) {

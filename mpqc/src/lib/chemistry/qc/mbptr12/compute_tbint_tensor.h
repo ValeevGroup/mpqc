@@ -162,6 +162,7 @@ namespace sc {
 
           tform->compute();
           Ref<DistArray4> accum = tform->ints_acc();
+          accum->activate();
 
           // split work over tasks which have access to integrals
           vector<int> proc_with_ints;
@@ -226,6 +227,8 @@ namespace sc {
 
             } // bra loop
           } // loop over tasks with access
+
+          if (accum->data_persistent()) accum->deactivate();
 
         } // ket blocks
       } // bra blocks

@@ -64,6 +64,8 @@ namespace sc {
 
     private:
 
+      static ClassDesc class_desc_;
+
       int compute_transform_batchsize(size_t mem_static, int rank_R);
       // implements TwoBodyThreeCenterMOIntsTransform::compute_transform_dynamic_memory()
       distsize_t compute_transform_dynamic_memory(int batchsize = -1) const;
@@ -71,6 +73,37 @@ namespace sc {
       void init_acc();
       // implements TwoBodyThreeCenterMOIntsTransform::extra_memory_report()
       void extra_memory_report(std::ostream& os = ExEnv::out0()) const;
+  };
+
+  /** TwoBodyThreeCenterMOIntsTransform_ijR computes (ij|R) integrals,
+      where R are atomic orbitals, using (iq|R) integrals
+      */
+  class TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR: public TwoBodyThreeCenterMOIntsTransform_ijR {
+    public:
+      TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(StateIn&);
+      TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(const std::string& name,
+                                                      const Ref<TwoBodyThreeCenterMOIntsTransform_ijR>& iqR_tform,
+                                                      const Ref<OrbitalSpace>& space2);
+      ~TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR();
+      void save_data_state(StateOut&);
+
+      // implements TwoBodyThreeCenterMOIntsTransform::type();
+      std::string type() const {
+        return "ijR";
+      }
+
+      /// Computes transformed integrals
+      void compute();
+
+    private:
+
+      static ClassDesc class_desc_;
+
+      Ref<TwoBodyThreeCenterMOIntsTransform_ijR> iqR_tform_;
+
+      int compute_transform_batchsize(size_t mem_static, int rank_R);
+      // reimplements TwoBodyThreeCenterMOIntsTransform::compute_transform_dynamic_memory()
+      distsize_t compute_transform_dynamic_memory(int batchsize = -1) const;
   };
 
 } // end of namespace sc

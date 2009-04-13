@@ -78,13 +78,38 @@ namespace sc {
       const Ref<Integral>& integral() const {
         return runtime()->factory()->integral();
       }
-      /// returns the kernel matrix in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
-      const RefSymmSCMatrix& kernel() const {
-        return kernel_;
-      }
+      const Ref<OrbitalSpace>& space1() const { return space1_; }
+      const Ref<OrbitalSpace>& space2() const { return space2_; }
+      const Ref<GaussianBasisSet>& fbasis() const { return fbasis_; }
       /// returns the fitting coeffcients
       const Ref<DistArray4>& C() const {
         return C_;
+      }
+      /// produces RefSCDimension that corresponds to the product space
+      RefSCDimension product_dimension() const;
+
+      virtual void compute();
+
+    private:
+
+      Ref<MOIntsRuntime> runtime_;
+      Ref<GaussianBasisSet> fbasis_;
+      Ref<OrbitalSpace> space1_;
+      Ref<OrbitalSpace> space2_;
+
+      bool evaluated_;
+
+      static ClassDesc class_desc_;
+
+    protected:
+
+      Ref<DistArray4> C_;
+      RefSymmSCMatrix kernel_;
+      Ref<DistArray4> cC_;
+
+      /// returns the kernel matrix in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
+      const RefSymmSCMatrix& kernel() const {
+        return kernel_;
       }
       /** returns the conjugate expansion matrix defined as \f$ \tilde{C}^{rs}_A \equiv (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
           \f$ \tilde{C} \f$ is conjugate to \f$ C \f$ in the sense that their
@@ -95,26 +120,34 @@ namespace sc {
         return cC_;
       }
 
-      /// produces RefSCDimension that corresponds to the product space
-      RefSCDimension product_dimension() const;
+  };
 
-      void compute();
+  /// Computes density fitting for |ij) density from fitting of |iq) DensityFitting where q is the AO space supporting j
+  class TransformedDensityFitting: public DensityFitting {
+    public:
+      typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
+
+      ~TransformedDensityFitting();
+      /// compute density fitting for |mo1 mo2) from |mo1 ao2)
+      TransformedDensityFitting(const Ref<MOIntsRuntime>& rtime,
+                                const std::string& kernel_key,
+                                const Ref<OrbitalSpace>& space1,
+                                const Ref<OrbitalSpace>& space2,
+                                const Ref<GaussianBasisSet>& fitting_basis,
+                                const Ref<DistArray4>& mo1_ao2_df);
+      TransformedDensityFitting(StateIn&);
+      void save_data_state(StateOut&);
 
     private:
 
-      Ref<DistArray4> C_;
-      RefSymmSCMatrix kernel_;
-      Ref<DistArray4> cC_;
+      Ref<DistArray4> mo1_ao2_df_;
 
-      Ref<MOIntsRuntime> runtime_;
-      Ref<GaussianBasisSet> fbasis_;
-      Ref<OrbitalSpace> space1_;
-      Ref<OrbitalSpace> space2_;
+      // overloads DensityFitting::compute()
+      void compute();
 
-      bool evaluated_;
+      static ClassDesc class_desc_;
 
   };
-
 
   namespace test {
 

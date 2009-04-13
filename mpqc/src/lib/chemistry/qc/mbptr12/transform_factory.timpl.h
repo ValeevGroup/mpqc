@@ -102,7 +102,7 @@ namespace sc {
     template <> struct ToDensityFittingType<TwoBodyMOIntsTransform_iRjS> {
       typedef TwoBodyMOIntsTransform_ixjy_df value;
     };
-#if 0
+#if 1
     template <> struct ToDensityFittingType<TwoBodyMOIntsTransform_ixjy> {
       typedef TwoBodyMOIntsTransform_ixjy_df value;
     };

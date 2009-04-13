@@ -45,7 +45,7 @@
 
 using namespace sc;
 
-static ClassDesc DensityFitting_cd(
+ClassDesc DensityFitting::class_desc_(
   typeid(DensityFitting),"DensityFitting",1,
   "virtual public SavableState",
   0, 0, create<DensityFitting>);
@@ -243,7 +243,7 @@ DensityFitting::compute()
 #endif
 
         // write
-        C_->store_pair_block(0, i, TwoBodyOper::eri, C_jR);
+        C_->store_pair_block(0, i, 0, C_jR);
 
         // release this block
         cC_->release_pair_block(0, i, TwoBodyOper::eri);
@@ -266,6 +266,116 @@ DensityFitting::compute()
 
   tim.exit();
   ExEnv::out0() << indent << "Built DensityFitting: name = " << name << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc TransformedDensityFitting::class_desc_(
+  typeid(TransformedDensityFitting),"TransformedDensityFitting",1,
+  "public DensityFitting",
+  0, 0, create<TransformedDensityFitting>);
+
+TransformedDensityFitting::~TransformedDensityFitting() {}
+
+TransformedDensityFitting::TransformedDensityFitting(const Ref<MOIntsRuntime>& rtime,
+                                                     const std::string& kernel_key,
+                                                     const Ref<OrbitalSpace>& space1,
+                                                     const Ref<OrbitalSpace>& space2,
+                                                     const Ref<GaussianBasisSet>& fitting_basis,
+                                                     const Ref<DistArray4>& mo1_ao2_df) :
+                       DensityFitting(rtime, kernel_key, space1, space2, fitting_basis),
+                       mo1_ao2_df_(mo1_ao2_df)
+{
+  // make sure that mo1_ao2_df is a valid input
+  assert(mo1_ao2_df->ni() == 1 &&
+         mo1_ao2_df->nj() == space1->rank() &&
+         mo1_ao2_df->nx() == space2->basis()->nbasis() &&
+         mo1_ao2_df->ny() == fitting_basis->nbasis());
+}
+
+TransformedDensityFitting::TransformedDensityFitting(StateIn& si) :
+  DensityFitting(si) {
+  mo1_ao2_df_ << SavableState::restore_state(si);
+}
+
+void
+TransformedDensityFitting::save_data_state(StateOut& so) {
+  SavableState::save_state(mo1_ao2_df_.pointer(),so);
+}
+
+void
+TransformedDensityFitting::compute()
+{
+  if (C_.nonnull()) // nothing to compute then
+    return;
+  const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
+                                                        this->space2()->id(),
+                                                        AOSpaceRegistry::instance()->value(this->fbasis())->id());
+  std::string tim_label("TransformedDensityFitting ");
+  tim_label += name;
+  Timer tim(tim_label);
+
+  const int n1 = space1()->rank();
+  const int n2 = space2()->rank();
+  const int n2_ao = space2()->basis()->nbasis();
+  const int n3 = fbasis()->nbasis();
+
+  Ref<DistArray4> C_ao = mo1_ao2_df_;
+  DistArray4Dimensions Cdims(1,
+                             1, n1, n2, n3,
+                             DistArray4Storage_XY);
+  C_ = C_ao->clone(Cdims);
+  C_->activate();
+  C_ao->activate();
+  {
+    const int me = runtime()->factory()->msg()->me();
+    std::vector<int> writers;
+    const int nwriters = C_->tasks_with_access(writers);
+
+    if (C_->has_access(me)) {
+
+      // scratch for holding transformed vectors
+      double* C_jR = new double[n2 * n3];
+
+      // AO->MO coefficents, rows are AOs
+      double* tform = new double[n2_ao * n2];
+      space2()->coefs().convert(tform);
+
+      for (int i = 0; i < n1; ++i) {
+
+        // distribute work in round robin
+        if (i % nwriters != writers[me])
+          continue;
+
+        const double* C_qR = C_ao->retrieve_pair_block(0, i, 0);
+
+        // transform
+        C_DGEMM('t', 'n',
+                n2, n3, n2_ao,
+                1.0, tform, n2,
+                C_qR, n3,
+                0.0, C_jR, n3);
+
+        // write
+        C_->store_pair_block(0, i, 0, C_jR);
+
+        // release this block
+        C_ao->release_pair_block(0, i, 0);
+
+      }
+
+      delete[] C_jR;
+      delete[] tform;
+    }
+
+  }
+  if (C_->data_persistent()) C_->deactivate();
+  if (C_ao->data_persistent()) C_ao->deactivate();
+
+  runtime()->factory()->mem()->sync();
+
+  tim.exit();
+  ExEnv::out0() << indent << "Built TransformedDensityFitting: name = " << name << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

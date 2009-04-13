@@ -288,6 +288,7 @@ namespace sc {
 
         tformb->compute();
         Ref<DistArray4> accumb = tformb->ints_acc();
+        accumb->activate();
 
         unsigned int fketoffset = 0;
         for (unsigned int fket = 0; fket < nketsets; ++fket, fketoffset += nket) {
@@ -298,6 +299,7 @@ namespace sc {
 
           tformk->compute();
           Ref<DistArray4> accumk = tformk->ints_acc();
+          accumk->activate();
 
           if (debug_ >= DefaultPrintThresholds::diagnostics) {
             ExEnv::out0() << indent << "Using transforms " << tformb->name()
@@ -506,7 +508,14 @@ namespace sc {
           //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
           //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
           //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+          if (accumb != accumk) {
+            if (accumk->data_persistent()) accumk->deactivate();
+          }
+
         } // ket blocks
+
+        if (accumb->data_persistent()) accumb->deactivate();
+
       } // bra blocks
     } // int blocks
 

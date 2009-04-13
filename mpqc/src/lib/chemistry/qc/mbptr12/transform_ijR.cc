@@ -43,7 +43,7 @@
 
 using namespace sc;
 
-static ClassDesc TwoBodyThreeCenterMOIntsTransform_ijR_cd(
+ClassDesc TwoBodyThreeCenterMOIntsTransform_ijR::class_desc_(
   typeid(TwoBodyThreeCenterMOIntsTransform_ijR),"TwoBodyThreeCenterMOIntsTransform_ijR",1,
   "public TwoBodyThreeCenterMOIntsTransform",
   0, 0, create<TwoBodyThreeCenterMOIntsTransform_ijR>);
@@ -217,6 +217,12 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   tim_label += this->name();
   Timer tim(tim_label);
 
+  // determine whether space1, space2, and space3 are AO spaces
+  const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( this->space1() );
+  const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( this->space2() );
+  const bool space3_is_ao = AOSpaceRegistry::instance()->value_exists( this->space3() );
+  assert(space3_is_ao);
+
   const int nproc = mem_->n();
   const int me = mem_->me();
 
@@ -244,16 +250,26 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   double** pq_ints = new double*[num_te_types];
   for(int te_type=0; te_type<num_te_types; te_type++)
     pq_ints[te_type] = new double[nbasis1 * nbasis2 * nfuncmax3];
-  double* iq_ints = new double[n1 * nbasis2 * nfuncmax3];
-  memset(iq_ints, 0, n1 * nbasis2 * nfuncmax3 * sizeof(double));
-  double* jR_ints = new double[n2 * nfuncmax3];
-  memset(jR_ints, 0, n2 * nfuncmax3 * sizeof(double));
-  RefSCMatrix mocoefs1 = space1_->coefs();   // (pi)
-  double* pi = new double[nbasis1 * n1];
-  mocoefs1.convert(pi);  mocoefs1 = 0;
-  RefSCMatrix mocoefs2 = space2_->coefs();   // (pi)
-  double* qj = new double[nbasis2 * n2];
-  mocoefs2.convert(qj);  mocoefs2 = 0;
+
+  double* iq_ints;
+  double* pi;
+  if (!space1_is_ao) {
+    iq_ints = new double[n1 * nbasis2 * nfuncmax3];
+    memset(iq_ints, 0, n1 * nbasis2 * nfuncmax3 * sizeof(double));
+    RefSCMatrix mocoefs1 = space1_->coefs();   // (pi)
+    pi = new double[nbasis1 * n1];
+    mocoefs1.convert(pi);  mocoefs1 = 0;
+  }
+
+  double* jR_ints;
+  double* qj;
+  if (!space2_is_ao) {
+    jR_ints = new double[n2 * nfuncmax3];
+    memset(jR_ints, 0, n2 * nfuncmax3 * sizeof(double));
+    RefSCMatrix mocoefs2 = space2_->coefs();   // (pi)
+    qj = new double[nbasis2 * n2];
+    mocoefs2.convert(qj);  mocoefs2 = 0;
+  }
 
   // get the integral evaluator
   Ref<Integral> integral = tbintdescr_->factory();
@@ -316,14 +332,30 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
     const double one = 1.0;
     const double zero = 0.0;
     for(int te_type=0; te_type < num_te_types; ++te_type) {
+
       // (iq|R) = (ip) * (pq|R)
-      F77_DGEMM(&notransp,&transp,&nb2f3,&n1,&nbasis1,&one,pq_ints[te_type],&nb2f3,
-                pi,&n1,&zero,iq_ints,&nb2f3);
+      if (!space1_is_ao) {
+        F77_DGEMM(&notransp,&transp,
+                  &nb2f3,&n1,&nbasis1,
+                  &one,pq_ints[te_type],&nb2f3,
+                  pi,&n1,
+                  &zero,iq_ints,&nb2f3);
+      }
+      else
+        iq_ints = pq_ints[te_type];
+
       // for each i: (ij|R) = (jq) * (iq|R)
       const double* qR_ints = iq_ints;
       for(int i=0; i<n1; ++i) {
-        F77_DGEMM(&notransp,&transp,&nf3,&n2,&nbasis2,&one,qR_ints,&nf3,
-                  qj,&n2,&zero,jR_ints,&nf3);
+
+        if (!space2_is_ao)
+          F77_DGEMM(&notransp,&transp,
+                    &nf3,&n2,&nbasis2,
+                    &one,qR_ints,&nf3,
+                    qj,&n2,
+                    &zero,jR_ints,&nf3);
+        else
+          jR_ints = const_cast<double*>(qR_ints);
 
         // accumulate to each memory location
         const int i_proc = i % nproc;
@@ -357,9 +389,164 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   detail::store_memorygrp(ints_acc_,mem_,0,1,memgrp_blocksize);
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 
+  // cleanup
+  delete[] pq_ints[0];
+  delete[] pq_ints;
+  if (!space1_is_ao) {
+    delete[] iq_ints;
+    delete[] pi;
+  }
+  if (!space2_is_ao) {
+    delete[] jR_ints;
+    delete[] qj;
+  }
+  delete[] buffer;
+
   restart_orbital_ = space3()->rank();
   tim.exit();
   ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::class_desc_(
+  typeid(TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR),"TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR",1,
+  "public TwoBodyThreeCenterMOIntsTransform_ijR",
+  0, 0, create<TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR>);
+
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::~TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR() {}
+
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(const std::string& name,
+  const Ref<TwoBodyThreeCenterMOIntsTransform_ijR>& iqR_tform, const Ref<OrbitalSpace>& space2) :
+    TwoBodyThreeCenterMOIntsTransform_ijR(name, iqR_tform->factory(), iqR_tform->intdescr(),
+                                          iqR_tform->space1(), space2, iqR_tform->space3()),
+                                          iqR_tform_(iqR_tform)
+{
+  // determine whether space1, space2, and space3 are AO spaces
+  const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( this->space1() );
+  const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( this->space2() );
+  const bool space3_is_ao = AOSpaceRegistry::instance()->value_exists( this->space3() );
+  assert(!space2_is_ao);
+  assert(space3_is_ao);
+  assert( AOSpaceRegistry::instance()->value_exists(iqR_tform->space2()) );
+}
+
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(StateIn& si) :
+  TwoBodyThreeCenterMOIntsTransform_ijR(si) {
+  assert(false);
+  init_vars();
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::save_data_state(StateOut& so) {
+  assert(false);
+}
+
+int
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute_transform_batchsize(size_t mem_static, int rank_R)
+{
+  // assuming can hold qR and jR matrices in-core
+  return rank_R;
+}
+
+distsize_t
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute_transform_dynamic_memory(int batchsize) const
+{
+  const bool using_memgrp = (ints_method_ == MOIntsTransform::StoreMethod::mem_only) ||
+    (!factory()->hints().data_persistent() && (ints_method_ == MOIntsTransform::StoreMethod::mem_posix ||
+                                               ints_method_ == MOIntsTransform::StoreMethod::mem_mpi));
+  const unsigned int rank1 = space1()->rank();
+  const unsigned int rank2 = space2()->rank();
+  const unsigned int rank3 = space3()->rank();
+  if (batchsize == -1)
+    batchsize = rank3;
+  // can only do 1-pass transformation
+  assert(batchsize == rank3);
+
+  const distsize_t result = using_memgrp ?
+                              num_te_types() * rank1 * static_cast<distsize_t>(rank2 * rank3 * sizeof(double)) :
+                              0;
+  return result;
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
+
+  // if all integrals are already computed, do nothing
+  if (space3()->rank() == restart_orbital_)
+    return;
+
+  std::string tim_label("tbint_tform_ijR_using_iqR ");
+  tim_label += this->name();
+  Timer tim(tim_label);
+
+  const int nproc = mem_->n();
+  const int me = mem_->me();
+
+  const int num_te_types = this->num_te_types();
+  const int n1 = this->space1()->rank();
+  const int n2 = this->space2()->rank();
+  const int n3 = this->space3()->rank();
+  const int n23 = n2*n3;
+  const int nbasis2 = this->space2()->basis()->nbasis();
+
+  iqR_tform_->compute();
+  Ref<DistArray4> iqR_data = iqR_tform_->ints_acc();
+  Ref<DistArray4> ijR_data = ints_acc_;
+  iqR_data->activate();
+  ijR_data->activate();
+  {
+    std::vector<int> writers;
+    const int nwriters = ijR_data->tasks_with_access(writers);
+
+    if (ijR_data->has_access(me)) {
+
+      // scratch for holding transformed vectors
+      double* C_jR = new double[n2 * n3];
+
+      // AO->MO coefficents, rows are AOs
+      double* tform = new double[nbasis2 * n2];
+      space2()->coefs().convert(tform);
+
+      int task_count = 0;
+      for(int te_type=0; te_type<num_te_types; ++te_type) {
+        for(int i = 0; i < n1; ++i, ++task_count) {
+
+          // distribute work in round robin
+          if (task_count % nwriters != writers[me])
+            continue;
+
+          const double* C_qR = iqR_data->retrieve_pair_block(0, i, te_type);
+
+          // transform
+          C_DGEMM('t', 'n',
+                  n2, n3, nbasis2,
+                  1.0, tform, n2,
+                  C_qR, n3,
+                  0.0, C_jR, n3);
+
+          // write
+          ijR_data->store_pair_block(0, i, te_type, C_jR);
+
+          // release this block
+          iqR_data->release_pair_block(0, i, te_type);
+
+        }
+      }
+
+      delete[] C_jR;
+      delete[] tform;
+    }
+
+  }
+  if (iqR_data->data_persistent()) iqR_data->deactivate();
+  if (ijR_data->data_persistent()) ijR_data->deactivate();
+
+  mem_->sync();
+
+  restart_orbital_ = space3()->rank();
+  tim.exit();
+  ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR_from_iqR: name = " << this->name() << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

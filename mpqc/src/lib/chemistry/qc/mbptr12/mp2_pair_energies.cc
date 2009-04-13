@@ -102,6 +102,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
 
   tform->compute();
   Ref<DistArray4> accum = tform->ints_acc();
+  accum->activate();
 
   Timer tim_mp2_pair_energies("MP2 pair energies");
   std::ostringstream oss;
@@ -182,6 +183,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       emp2pair.set_element(ij,emp2);
     }
   }
+
+  if (accum->data_persistent()) accum->deactivate();
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Exited MP2 pair energies (" << label << ") evaluator" << endl;

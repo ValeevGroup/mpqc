@@ -145,6 +145,9 @@ DensityFittingRuntime::get(const std::string& key)
   assert(false); // unreachable
 }
 
+#define USE_TRANSFORMED_DF 1
+#define ALWAYS_MAKE_AO2_DF 1
+
 const DensityFittingRuntime::ResultRef&
 DensityFittingRuntime::create_result(const std::string& key)
 {
@@ -161,13 +164,39 @@ DensityFittingRuntime::create_result(const std::string& key)
   Ref<OrbitalSpace> fspace = idxreg->value(fspace_str);
 
   // create the result
-  Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}",
-                                              space1, space2, fspace->basis());
-  df->compute();
-  ResultRef result = df->C();
-
-  // add to the map
-  results_->add(key,result);
+#if USE_TRANSFORMED_DF
+  Ref<OrbitalSpace> space2_ao = AOSpaceRegistry::instance()->value( space2->basis() );
+  const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( space2 );
+  const std::string aokey = ParsedResultKey::key(space1->id(), space2_ao->id(), fspace->id());
+  if (!space2_is_ao && this->exists(aokey)) {
+    Ref<DensityFitting> df = new TransformedDensityFitting(moints_runtime_, "1/r_{12}",
+                                                           space1, space2, fspace->basis(),
+                                                           this->get(aokey));
+    df->compute();
+    ResultRef result = df->C();
+    // add to the map
+    results_->add(key,result);
+  } else
+#endif
+  {
+#if ALWAYS_MAKE_AO2_DF && USE_TRANSFORMED_DF
+    if (!space2_is_ao) {
+      Ref<DensityFitting> df_ao = new DensityFitting(moints_runtime_, "1/r_{12}",
+                                                     space1, space2_ao, fspace->basis());
+      df_ao->compute();
+      results_->add(aokey, df_ao->C());
+      return this->create_result(key);
+    } else
+#endif
+    {
+      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}",
+                                                  space1, space2, fspace->basis());
+      df->compute();
+      ResultRef result = df->C();
+      // add to the map
+      results_->add(key,result);
+    }
+  }
 
   return results_->value(key);
 }

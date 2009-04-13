@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbptr12/tbint_runtime.h>
 #include <chemistry/qc/mbptr12/registry.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
+#include <chemistry/qc/mbptr12/transform_ijR.h>
 
 using namespace sc;
 
@@ -554,8 +555,8 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
                                  params_str,
                                  pkey.layout());
 
-#define ALWAYS_USE_PARTIAL_TRANSFORMS 1
-#define ALWAYS_USE_IXJY 0
+#define ALWAYS_USE_PARTIAL_TRANSFORMS 0
+#define ALWAYS_USE_IXJY 1
 
       if (evals_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
         tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
@@ -591,6 +592,9 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
   return evals_->value(key);
 }
 
+#define USE_IQR_TFORM 1
+#define ALWAYS_CREATE_IQR_TFORM 1
+
 template <>
 const TwoBodyMOIntsRuntime<3>::TwoBodyIntEvalRef&
 TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
@@ -608,15 +612,45 @@ TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
   Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
   Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
   Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
-  factory()->set_spaces(bra1,ket1,bra2,0);    // factory assumes chemists' convention
   Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
 
   // create the transform
-  Ref<TwoBodyIntEval> tform =
-    factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,key,descr);
+  Ref<TwoBodyIntEval> result;
+#if USE_IQR_TFORM
+  const bool ket1_is_ao = AOSpaceRegistry::instance()->value_exists(ket1);
+  Ref<OrbitalSpace> ket1_ao = AOSpaceRegistry::instance()->value(ket1->basis());
 
-  // add to the map
-  evals_->add(key,tform);
+  const std::string key_ao = ParsedTwoBodyIntKey::key(bra1->id(), bra2->id(),
+                                                      ket1_ao->id(), oper_str, params_str);
+  if (!ket1_is_ao && this->exists(key_ao)) { // partially transformed iqR transform exists (or this is a partially transformed tform)
+    Ref<TwoBodyThreeCenterMOIntsTransform_ijR> iqR_tform;
+    iqR_tform << this->get(key_ao);
+    factory()->set_spaces(bra1,ket1,bra2,0);    // factory assumes chemists' convention
+    result = new TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(key,iqR_tform,ket1);
+    // add to the map
+    evals_->add(key,result);
+  } else
+#endif
+  {
+#if USE_IQR_TFORM && ALWAYS_CREATE_IQR_TFORM
+    if (!ket1_is_ao) {
+      // create partial transform, then try again
+      Ref<OrbitalSpace> ket1_ao = AOSpaceRegistry::instance()->value(ket1->basis());
+      const std::string key_ao = ParsedTwoBodyIntKey::key(bra1->id(), bra2->id(),
+                                                          ket1_ao->id(), oper_str, params_str);
+      factory()->set_spaces(bra1,ket1_ao,bra2,0);    // factory assumes chemists' convention
+      Ref<TwoBodyIntEval> iqR_tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,key_ao,descr);
+      evals_->add(key_ao,iqR_tform);
+      return this->create_eval(key);
+    } else
+#endif
+    {
+      factory()->set_spaces(bra1,ket1,bra2,0);    // factory assumes chemists' convention
+      result = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ijR,key,descr);
+      // add to the map
+      evals_->add(key,result);
+    }
+  }
 
   return evals_->value(key);
 }

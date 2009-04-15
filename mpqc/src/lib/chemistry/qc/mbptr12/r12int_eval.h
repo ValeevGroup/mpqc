@@ -714,6 +714,15 @@ public:
                    // leave at default to use R12Technology's pauli flag, else set to 0 or 1
                    int override_pauli = -1);
 
+  /** Compute V using ABS/ABS+ approach */
+  RefSCMatrix V_abs(SpinCase2 spincase2,
+                    const Ref<OrbitalSpace>& p,
+                    const Ref<OrbitalSpace>& q);
+  /** Compute V using CABS/CABS+ approach */
+  RefSCMatrix V_cabs(SpinCase2 spincase2,
+                     const Ref<OrbitalSpace>& p,
+                     const Ref<OrbitalSpace>& q);
+
 };
 
 class TransformNotFound: public ProgrammingError {

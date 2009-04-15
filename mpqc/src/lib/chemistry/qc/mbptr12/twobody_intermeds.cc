@@ -41,8 +41,25 @@ using namespace sc;
 
 RefSCMatrix
 R12IntEval::V(SpinCase2 spincase2,
-	      const Ref<OrbitalSpace>& p1,
-	      const Ref<OrbitalSpace>& p2)
+              const Ref<OrbitalSpace>& p1,
+              const Ref<OrbitalSpace>& p2)
+{
+  const LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
+  // it involves this term +O1O2-V1V2
+  if ((absmethod == LinearR12::ABS_ABS ||
+       absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
+      ansatz()->projector() == LinearR12::Projector_2)
+    return this->V_abs(spincase2, p1, p2);
+  else
+    return this->V_cabs(spincase2, p1, p2);
+}
+
+RefSCMatrix
+R12IntEval::V_abs(SpinCase2 spincase2,
+                  const Ref<OrbitalSpace>& p1,
+                  const Ref<OrbitalSpace>& p2)
 {
   using namespace sc::LinearR12;
 
@@ -123,19 +140,9 @@ R12IntEval::V(SpinCase2 spincase2,
     V.print(prepend_spincase(spincase2,"Vpqxy: diag contribution").c_str());
   }
 
-  Ref<TwoParticleContraction> tpcontract;
-  const ABSMethod absmethod = r12info()->abs_method();
-  // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-  // it involves this term +O1O2-V1V2
-  if ((absmethod == LinearR12::ABS_ABS ||
-       absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
-      ansatz()->projector() == LinearR12::Projector_2)
-    tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
-					 refinfo->occ(spin1)->rank(),
-					 refinfo->occ(spin2)->rank());
-  else
-    // involves this term -P1P2
-    tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
+  Ref<TwoParticleContraction> tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
+                                                                   refinfo->occ(spin1)->rank(),
+                                                                   refinfo->occ(spin2)->rank());
 
   std::vector<std::string> tforms;
   std::vector<std::string> tforms_f12;
@@ -181,6 +188,7 @@ R12IntEval::V(SpinCase2 spincase2,
   // These terms only contribute if Projector=2
   if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
 
+    const LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			      absmethod == LinearR12::ABS_CABSPlus);
     const Ref<OrbitalSpace>& occ1 = occ(spin1);
@@ -296,6 +304,222 @@ R12IntEval::V(SpinCase2 spincase2,
   }
 }
 
+
+RefSCMatrix
+R12IntEval::V_cabs(SpinCase2 spincase2,
+                   const Ref<OrbitalSpace>& p1,
+                   const Ref<OrbitalSpace>& p2)
+{
+  using namespace sc::LinearR12;
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+
+  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+
+  const bool p1_eq_p2 = (p1 == p2);
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 =  spincase2 != AlphaBeta || p1_eq_p2;
+  // Need to antisymmetrize 1 and 2
+  const bool antisymmetrize = spincase2 != AlphaBeta;
+  //if (!p1_eq_p2 && antisymmetrize)
+  //  throw FeatureNotImplemented("R12IntEval::V() -- p1 == p2 must be true if AA or BB spin case",__FILE__,__LINE__);
+
+  const SpinCase1 spin1 = case1(spincase2);
+  const SpinCase1 spin2 = case2(spincase2);
+  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+
+  RefSCMatrix V;
+  if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
+    const unsigned int nx1 = xspace(spin1)->rank();
+    const unsigned int np1 = p1->rank();
+    V = local_matrix_kit->matrix(dim_f12(spincase2),
+                 new SCDimension(np1*(np1-1)/2));
+    RefSCMatrix Vab = this->V(AlphaBeta,p1,p1);
+    sc::antisymmetrize(V,Vab,xspace(Alpha),p1);
+    return V;
+  }
+
+  Timer tim("R12 intermeds (tensor contract): Vpqxy");
+
+  const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
+  const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+
+  // some transforms can be skipped if p1/p2 is a subset of x1/x2
+  const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
+
+  // allocate V
+  const unsigned int np12 = p1_eq_p2 && spincase2 != AlphaBeta ? p1->rank()*(p1->rank()-1)/2 : p1->rank()*p2->rank();
+  RefSCDimension dim_p12 = new SCDimension(np12);
+  V = local_matrix_kit->matrix(dim_f12(spincase2), dim_p12);
+  V.assign(0.0);
+
+  // The diagonal contribution
+  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+  if (r12ptr.nonnull()) {
+    RefSCMatrix I = compute_I_(xspace1,xspace2,p1,p2);
+    if (!antisymmetrize)
+      V.accumulate(I);
+    else
+      sc::antisymmetrize<true>(V,I,xspace1,xspace2,p1,p2);
+  }
+  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+    std::vector<std::string> tforms_f12_xmyn;
+    {
+      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
+                    xspace1,p1,
+                    xspace2,p2,
+                    r12info()->corrfactor(),true
+                    );
+      fill_container(tformkey_creator,tforms_f12_xmyn);
+    }
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+      V, corrfactor()->tbint_type_f12eri(),
+      xspace1, p1,
+      xspace2, p2,
+      antisymmetrize,
+      tforms_f12_xmyn);
+  }
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    V.print(prepend_spincase(spincase2,"Vpqxy: diag contribution").c_str());
+  }
+
+  std::vector<std::string> tforms;
+  std::vector<std::string> tforms_f12;
+  {
+    R12TwoBodyIntKeyCreator tformkey_creator(
+                      r12info()->moints_runtime4(),
+                      xspace1,
+                      orbs1,
+                      xspace2,
+                      orbs2,
+                      r12info()->corrfactor(),true
+                      );
+    fill_container(tformkey_creator,tforms_f12);
+  }
+  if (!p1p2_in_x1x2) {
+    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
+                                                           orbs1->id(),orbs1->id(),
+                                                           std::string("ERI"),
+                                                           std::string(TwoBodyIntLayout::b1b2_k1k2));
+    tforms.push_back(tform_key);
+  }
+  else
+    tforms.push_back(tforms_f12[0]);
+
+  contract_tbint_tensor<true,false>
+    (
+     V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+     -1.0,
+     xspace1, xspace2,
+     orbs1, orbs2,
+     p1, p2,
+     orbs1, orbs2,
+     spincase2!=AlphaBeta, tforms_f12, tforms
+     );
+
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS contribution").c_str());
+  }
+
+  // These terms only contribute if Projector=2
+  if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
+
+    const Ref<OrbitalSpace>& occ1 = occ(spin1);
+    const Ref<OrbitalSpace>& occ2 = occ(spin2);
+    Ref<OrbitalSpace> rispace1, rispace2;
+    rispace1 = r12info()->ribs_space(spin1);
+    rispace2 = r12info()->ribs_space(spin2);
+    // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
+    // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
+    const double perm_factor = part1_equiv_part2 ? -2.0 : -1.0;
+
+    std::vector<std::string> tforms_imjP;
+    std::vector<std::string> tforms_f12_xmyP;
+    {
+      R12TwoBodyIntKeyCreator tformkey_creator(
+                    r12info()->moints_runtime4(),
+                    xspace1,
+                    occ1,
+                    xspace2,
+                    rispace2,
+                    r12info()->corrfactor(),true
+                    );
+      fill_container(tformkey_creator,tforms_f12_xmyP);
+    }
+    if (!p1p2_in_x1x2) {
+      const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
+                                                             occ1->id(),rispace2->id(),
+                                                             std::string("ERI"),
+                                                             std::string(TwoBodyIntLayout::b1b2_k1k2));
+      tforms_imjP.push_back(tform_key);
+    }
+    else
+      tforms_imjP.push_back(tforms_f12_xmyP[0]);
+
+    contract_tbint_tensor<true,false>
+      (
+       V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+       perm_factor,
+       xspace1, xspace2,
+       occ1, rispace2,
+       p1, p2,
+       occ1, rispace2,
+       antisymmetrize, tforms_f12_xmyP, tforms_imjP
+       );
+
+    // If particles 1 and 2 are not equivalent, also need another set of terms
+    if (!part1_equiv_part2) {
+
+      std::vector<std::string> tforms_iPjm;
+      std::vector<std::string> tforms_f12_xPym;
+      {
+    R12TwoBodyIntKeyCreator tformkey_creator(
+                      r12info()->moints_runtime4(),
+                      xspace1,
+                      rispace1,
+                      xspace2,
+                      occ2,
+                      r12info()->corrfactor(),true
+                      );
+    fill_container(tformkey_creator,tforms_f12_xPym);
+      }
+      if (!p1p2_in_x1x2) {
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
+                                                               rispace1->id(),occ2->id(),
+                                                               std::string("ERI"),
+                                                               std::string(TwoBodyIntLayout::b1b2_k1k2));
+        tforms_iPjm.push_back(tform_key);
+      }
+      else
+    tforms_iPjm.push_back(tforms_f12_xPym[0]);
+
+      contract_tbint_tensor<true,false>
+    (
+     V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+     -1.0,
+     xspace1, xspace2,
+     rispace1, occ2,
+     p1, p2,
+     rispace1, occ2,
+     antisymmetrize, tforms_f12_xPym, tforms_iPjm
+     );
+    } // if part1_equiv_part2
+  } // ABS != OBS
+
+  if (!antisymmetrize && part1_equiv_part2) {
+    symmetrize<false>(V,V,xspace1,p1);
+  }
+
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS+ABS contribution").c_str());
+  }
+}
 
 RefSymmSCMatrix
 R12IntEval::P(SpinCase2 spincase2)

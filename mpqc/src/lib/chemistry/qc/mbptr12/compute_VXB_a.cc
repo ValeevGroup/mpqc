@@ -120,17 +120,6 @@ R12IntEval::contrib_to_VXB_a_()
       else
 	  tforms.push_back(tforms_f12[0]);
 
-      contract_tbint_tensor<true,true>
-          (
-          X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-          -1.0,
-          xspace1, xspace2,
-          orbs1, orbs2,
-          xspace1, xspace2,
-          orbs1, orbs2,
-          spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
-
       contract_tbint_tensor<true,false>
           (
 	      V_[s],
@@ -142,6 +131,17 @@ R12IntEval::contrib_to_VXB_a_()
 	      orbs1, orbs2,
 	      spincase2!=AlphaBeta, tforms_f12, tforms
 	  );
+
+      contract_tbint_tensor<true,true>
+      (
+          X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+          -1.0,
+          xspace1, xspace2,
+          orbs1, orbs2,
+          xspace1, xspace2,
+          orbs1, orbs2,
+          spincase2!=AlphaBeta, tforms_f12, tforms_f12
+      );
 
       if (compute_B) {
 	  contract_tbint_tensor<true,true>

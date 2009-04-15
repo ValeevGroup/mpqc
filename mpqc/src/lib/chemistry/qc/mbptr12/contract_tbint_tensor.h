@@ -737,9 +737,9 @@ namespace sc {
     const size_t nij_ket = nket;
     // size of each integral block |int1 int2)
     const unsigned int blksize_int = space1_intb->rank() * space2_intb->rank();
-    // maximum tile size is determined by the available memory, grab 1/2 memory
-    const size_t memory_available = r12info()->tfactory()->memory() / 2;
-    const size_t max_tile_size = memory_available / (2 * blksize_int);
+    // maximum tile size is determined by the available memory
+    const size_t memory_available = r12info()->tfactory()->memory();
+    const size_t max_tile_size = memory_available / (2 * blksize_int * sizeof(double));
     if (max_tile_size == 0) {
       throw AlgorithmException("not enough memory for even single tile", __FILE__, __LINE__);
     }

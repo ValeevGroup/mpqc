@@ -1973,8 +1973,12 @@ R12IntEval::compute()
     }
 
     if (obs_eq_vbs) {
-      contrib_to_VXB_a_();
-      //contrib_to_VXB_abs_();
+	  LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
+	  if (absmethod == LinearR12::ABS_CABS ||
+	      absmethod == LinearR12::ABS_CABSPlus)
+	    contrib_to_VXB_a_();
+	  else
+	    contrib_to_VXB_abs_();
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();

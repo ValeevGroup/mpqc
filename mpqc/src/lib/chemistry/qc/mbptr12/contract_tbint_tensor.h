@@ -838,7 +838,7 @@ namespace sc {
                           << ": obtained ij blocks" << endl;
                       ExEnv::outn() << indent
                                     << "i = " << ijt.i0_
-                                    << "j = " << ijt.i1_ << endl;
+                                    << " j = " << ijt.i1_ << endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));
@@ -853,7 +853,7 @@ namespace sc {
                 if (ket_tile == 0) {
                   ket_tile = T_ket;
                   for (size_t i=0; iterket && i<tile_size_ket; ++i, iterket.next()) {
-                    const uint3 ijt(iterbra.i(), iterbra.j(), iterbra.ij());
+                    const uint3 ijt(iterket.i(), iterket.j(), iterket.ij());
                     ket_ij.push_back(ijt);
 
                     double* blk_ptr = ket_tile + i*blksize_int;
@@ -868,7 +868,7 @@ namespace sc {
                           << ": obtained kl blocks" << endl;
                       ExEnv::outn() << indent
                                     << "k = " << ijt.i0_
-                                    << "l = " << ijt.i1_ << endl;
+                                    << " l = " << ijt.i1_ << endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));

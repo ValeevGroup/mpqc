@@ -34,7 +34,6 @@
 
 #include <unistd.h>
 #include <cmath>
-#include <tuple>
 #include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
@@ -538,6 +537,28 @@ namespace sc {
     tim_gen_tensor_contract.exit();
   }
 
+  namespace detail {
+    // replace with standard tuple when we switch C++0x
+    template <typename T0, typename T1, typename T2>
+    struct triple {
+      public:
+        triple() {}
+        triple(const T0& i0,
+               const T1& i1,
+               const T2& i2) : i0_(i0), i1_(i1), i2_(i2) {}
+        triple(const triple& other) : i0_(other.i0_), i1_(other.i1_), i2_(other.i2_) {}
+        triple& operator=(const triple& other) {
+          i0_ = other.i0_;
+          i1_ = other.i1_;
+          i2_ = other.i2_;
+        }
+        T0 i0_;
+        T1 i1_;
+        T2 i2_;
+    };
+
+  };
+
   template<bool CorrFactorInBra, bool CorrFactorInKet>
   void R12IntEval::contract_tbint_tensor(
                                          RefSCMatrix& T,
@@ -777,7 +798,7 @@ namespace sc {
             size_t task_count = 0;
 
             // these will keep track of each tile's sets of i and j values
-            typedef std::tuple<unsigned int, unsigned int, unsigned int> uint3;
+            typedef detail::triple<unsigned int, unsigned int, unsigned int> uint3;
             std::vector<uint3> bra_ij;
             iterbra.start();
             // loop over bra tiles for this set
@@ -807,8 +828,8 @@ namespace sc {
 
                     double* blk_ptr = bra_tile + i*blksize_int;
                     Timer tim_intsretrieve("MO ints retrieve");
-                    const double* blk_cptr = accumb->retrieve_pair_block(get<0>(ijt),
-                                                                         get<1>(ijt),
+                    const double* blk_cptr = accumb->retrieve_pair_block(ijt.i0_,
+                                                                         ijt.i1_,
                                                                          intsetidx_bra,
                                                                          blk_ptr);
                     tim_intsretrieve.exit();
@@ -816,8 +837,8 @@ namespace sc {
                       ExEnv::outn() << indent << "task " << me
                           << ": obtained ij blocks" << endl;
                       ExEnv::outn() << indent
-                                    << "i = " << get<0>(ijt)
-                                    << "j = " << get<1>(ijt) << endl;
+                                    << "i = " << ijt.i0_
+                                    << "j = " << ijt.i1_ << endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));
@@ -837,8 +858,8 @@ namespace sc {
 
                     double* blk_ptr = ket_tile + i*blksize_int;
                     Timer tim_intsretrieve("MO ints retrieve");
-                    const double* blk_cptr = accumk->retrieve_pair_block(get<0>(ijt),
-                                                                         get<1>(ijt),
+                    const double* blk_cptr = accumk->retrieve_pair_block(ijt.i0_,
+                                                                         ijt.i1_,
                                                                          intsetidx_ket,
                                                                          blk_ptr);
                     tim_intsretrieve.exit();
@@ -846,8 +867,8 @@ namespace sc {
                       ExEnv::outn() << indent << "task " << me
                           << ": obtained kl blocks" << endl;
                       ExEnv::outn() << indent
-                                    << "k = " << get<0>(ijt)
-                                    << "l = " << get<1>(ijt) << endl;
+                                    << "k = " << ijt.i0_
+                                    << "l = " << ijt.i1_ << endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));
@@ -886,16 +907,16 @@ namespace sc {
 
                 // copy the result
                 for(size_t ij=0; ij<nbra_ij; ++ij) {
-                  const size_t IJ = get<2>(bra_ij[ij]) + fbraoffset;
+                  const size_t IJ = bra_ij[ij].i2_ + fbraoffset;
                   for(size_t kl=0; kl<nket_ij; ++kl) {
-                    const size_t KL = get<2>(ket_ij[kl]) + fketoffset;
+                    const size_t KL = ket_ij[kl].i2_ + fketoffset;
                     const double T_ijkl = T_result[ij * tile_size_ket + kl];
 
                     if (debug_ >= DefaultPrintThresholds::allO2N2) {
-                      const int i = get<0>(bra_ij[ij]);
-                      const int j = get<1>(bra_ij[ij]);
-                      const int k = get<0>(ket_ij[kl]);
-                      const int l = get<1>(ket_ij[kl]);
+                      const int i = bra_ij[ij].i0_;
+                      const int j = bra_ij[ij].i1_;
+                      const int k = ket_ij[kl].i0_;
+                      const int l = ket_ij[kl].i1_;
                       ExEnv::out0() << indent << "i = " << i << " j = " << j
                           << " k = " << k << " l = " << l << incindent << endl;
                       ExEnv::out0() << decindent << indent << " <ij|kl> = "
@@ -909,8 +930,8 @@ namespace sc {
 
                 if (ket_tile != 0) {
                   for(size_t kl=0; kl<nket_ij; ++kl) {
-                    accumk->release_pair_block(get<0>(ket_ij[kl]),
-                                               get<1>(ket_ij[kl]),
+                    accumk->release_pair_block(ket_ij[kl].i0_,
+                                               ket_ij[kl].i1_,
                                                intsetidx_ket);
                   }
                   ket_tile = 0;
@@ -922,8 +943,8 @@ namespace sc {
               if (bra_tile != 0) {
                 const size_t nbra_ij = bra_ij.size();
                 for(size_t ij=0; ij<nbra_ij; ++ij) {
-                  accumb->release_pair_block(get<0>(bra_ij[ij]),
-                                             get<1>(bra_ij[ij]),
+                  accumb->release_pair_block(bra_ij[ij].i0_,
+                                             bra_ij[ij].i1_,
                                              intsetidx_bra);
                 }
                 bra_tile = 0;

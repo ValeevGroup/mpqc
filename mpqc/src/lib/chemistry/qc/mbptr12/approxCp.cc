@@ -198,9 +198,6 @@ void R12IntEval::compute_BCp_() {
       Ref<OrbitalSpace> j_x_p2 = J_i_p(spin2);
       // R_klPm R_Pmip (J)_pj
       {
-        using namespace LinearR12;
-        Ref<TwoParticleContraction> dircontract =
-          new Direct_Contraction(occ1->rank(),ribs2->rank(),2.0);
         std::vector<std::string> tforms_bra;
         {
           R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,occ1,xspace2,ribs2,
@@ -214,18 +211,14 @@ void R12IntEval::compute_BCp_() {
           fill_container(tformkey_creator,tforms_ket);
         }
         // contract
-        contract_tbint_tensor<
-          ManyBodyTensors::I_to_T,
-          ManyBodyTensors::I_to_T,
-          ManyBodyTensors::I_to_T,
-          true,true,false>
+        contract_tbint_tensor<true,true>
           (
             P, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+            2.0,
             xspace1, xspace2,
             occ1, ribs2,
             xspace1, j_x_p2,
             occ1, ribs2,
-            dircontract,
             spincase2!=AlphaBeta, tforms_bra, tforms_ket
           );
       }

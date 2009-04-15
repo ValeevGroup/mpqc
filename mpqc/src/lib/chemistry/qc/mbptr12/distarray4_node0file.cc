@@ -147,6 +147,7 @@ DistArray4_Node0File::init(bool restart)
     for(j=0;j<nj();j++,ij++) {
       for(int type=0; type<num_te_types(); type++) {
         pairblk_[ij].ints_[type] = NULL;
+        pairblk_[ij].manage_[type] = false;
         pairblk_[ij].refcount_[type] = 0;
         if (classdebug() > 0)
           ExEnv::outn() << indent << me() << ":refcount=" << pairblk_[ij].refcount_[type]
@@ -262,7 +263,8 @@ DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
 }
 
 const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
-                                                   tbint_type oper_type) const {
+                                                   tbint_type oper_type,
+                                                   double* buf) const {
   // Can write blocks?
   if (!is_avail(i, j))
     throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",
@@ -285,7 +287,14 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
           __LINE__,
           filename_,
           FileOperationFailed::Other);
-    pb->ints_[oper_type] = new double[nxy()];
+    if (buf != 0) {
+      pb->ints_[oper_type] = buf;
+      pb->manage_[oper_type] = false;
+    }
+    else {
+      pb->ints_[oper_type] = new double[nxy()];
+      pb->manage_[oper_type] = true;
+    }
     ssize_t read_this_much = read(datafile_, pb->ints_[oper_type], blksize());
     if (read_this_much != blksize())
       throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_block() -- read failed",
@@ -294,12 +303,19 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
           filename_,
           FileOperationFailed::Read);
   }
+  else { // data is already available
+    if (buf != 0 && buf != pb->ints_[oper_type]) // may need to copy
+      std::copy(pb->ints_[oper_type], pb->ints_[oper_type] + this->nxy(), buf);
+  }
   pb->refcount_[oper_type] += 1;
   if (classdebug() > 0)
     ExEnv::outn() << indent << me() << ":refcount="
         << pb->refcount_[oper_type] << ": i = " << i << " j = " << j
         << " tbint_type = " << oper_type << endl;
-  return pb->ints_[oper_type];
+  if (buf)
+    return buf;
+  else
+    return pb->ints_[oper_type];
 }
 
 void
@@ -314,9 +330,11 @@ DistArray4_Node0File::release_pair_block(int i, int j, tbint_type oper_type) con
     }
     if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
       if (classdebug() > 0)
-    ExEnv::out0() << indent << "releasing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
-      delete[] pb->ints_[oper_type];
+        ExEnv::out0() << indent << "releasing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
+      if (pb->manage_[oper_type]) // deallocate if managed by me
+        delete[] pb->ints_[oper_type];
       pb->ints_[oper_type] = NULL;
+      pb->manage_[oper_type] = false;
     }
     pb->refcount_[oper_type] -= 1;
     if (classdebug() > 0)

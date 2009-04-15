@@ -32,13 +32,16 @@
 #ifndef _chemistry_qc_mbptr12_contracttbinttensor_h
 #define _chemistry_qc_mbptr12_contracttbinttensor_h
 
+#include <unistd.h>
 #include <cmath>
+#include <tuple>
 #include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/blas.h>
 
 namespace sc {
 
@@ -487,13 +490,13 @@ namespace sc {
                       << endl;
                   ExEnv::out0() << indent << " +<ij|T|kl> = " << T_ijkl << endl;
                 }
+                Tcontr.accumulate_element(ij + fbraoffset, kl + fketoffset,
+                                          T_ijkl);
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::out0() << indent << " <ij|T|kl>(new) = "
                       << Tcontr.get_element(ij + fbraoffset, kl + fketoffset)
                       << endl;
                 }
-                Tcontr.accumulate_element(ij + fbraoffset, kl + fketoffset,
-                                          T_ijkl);
 
                 accumk->release_pair_block(kk, ll, intsetidx_ket);
 
@@ -528,6 +531,431 @@ namespace sc {
 
     delete[] T_ij;
     delete[] T_kl;
+
+    ExEnv::out0() << decindent;
+    ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"
+        << endl;
+    tim_gen_tensor_contract.exit();
+  }
+
+  template<bool CorrFactorInBra, bool CorrFactorInKet>
+  void R12IntEval::contract_tbint_tensor(
+                                         RefSCMatrix& T,
+                                         TwoBodyOper::type tbint_type_bra,
+                                         TwoBodyOper::type tbint_type_ket,
+                                         double scale,
+                                         const Ref<OrbitalSpace>& space1_bra,
+                                         const Ref<OrbitalSpace>& space2_bra,
+                                         const Ref<OrbitalSpace>& space1_intb,
+                                         const Ref<OrbitalSpace>& space2_intb,
+                                         const Ref<OrbitalSpace>& space1_ket,
+                                         const Ref<OrbitalSpace>& space2_ket,
+                                         const Ref<OrbitalSpace>& space1_intk,
+                                         const Ref<OrbitalSpace>& space2_intk,
+                                         bool antisymmetrize,
+                                         const std::vector<std::string>& tformkeys_bra,
+                                         const std::vector<std::string>& tformkeys_ket) {
+
+    // are external spaces of particles 1 and 2 equivalent?
+    const bool part1_strong_equiv_part2 = (space1_bra == space2_bra
+        && space1_ket == space2_ket);
+    // can external spaces of particles 1 and 2 be equivalent?
+    const bool part1_weak_equiv_part2 = (space1_bra->rank()
+        == space2_bra->rank() && space1_ket->rank() == space2_ket->rank());
+    // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
+    bool correct_semantics = (antisymmetrize && (part1_weak_equiv_part2
+        || part1_strong_equiv_part2)) || !antisymmetrize;
+    // also
+    correct_semantics
+        = (correct_semantics && (space1_intb->rank() == space1_intk->rank())
+            && (space2_intb->rank() == space2_intk->rank()));
+    if (!correct_semantics)
+      throw ProgrammingError(
+                             "R12IntEval::contract_tbint_tensor_() -- incorrect call semantics",
+                             __FILE__, __LINE__);
+
+    //
+    // How is permutational symmetry implemented?
+    //
+    // 1) if need to antisymmetrize && internal spaces for p1 and p2 are same, then
+    // can antisymmetrize each integral explicitly and compute antisymmetric tensor
+    // 2) if need to antisymmetrize but internal spaces for p1 and p2 do not match,
+    // then compute as AlphaBeta and antisymmetrize at the end. I have to allocate temporary
+    // result.
+    //
+
+    // are internal spaces of particles 1 and 2 equivalent?
+    const bool part1_intequiv_part2 = (space1_intb == space2_intb
+        && space1_intk == space2_intk);
+    // Will antisymmetrize each integral? If no, then result will be computed
+    // as AlphaBeta and antisymmetrized at the end
+    const bool alphabeta = !(antisymmetrize && part1_strong_equiv_part2
+        && part1_intequiv_part2);
+
+    //
+    // NOTE! Even if computing in AlphaBeta, internal sums can be over AlphaAlpha!!!
+    // Logic should not become much more complicated. Only need time to implement.
+    //
+
+    const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions()
+                                                   : 1);
+    const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions()
+                                                   : 1);
+
+    //
+    // create transforms, if needed
+    //
+    typedef std::vector<Ref<TwoBodyMOIntsTransform> > tformvec;
+
+    // bra transforms
+    const size_t num_tforms_bra = tformkeys_bra.size();
+    tformvec transforms_bra(num_tforms_bra);
+    for (unsigned int t = 0; t < num_tforms_bra; ++t) {
+      transforms_bra[t] = r12info()->moints_runtime4()->get(tformkeys_bra[t]);
+    }
+
+    // ket transforms
+    const size_t num_tforms_ket = tformkeys_ket.size();
+    tformvec transforms_ket(num_tforms_ket);
+    for (unsigned int t = 0; t < num_tforms_ket; ++t) {
+      transforms_ket[t] = r12info()->moints_runtime4()->get(tformkeys_ket[t]);
+    }
+
+    //
+    // Generate contract label
+    //
+    Timer tim_gen_tensor_contract("Generic tensor contract");
+    std::string label;
+    {
+      std::ostringstream oss_bra;
+      oss_bra << "<" << space1_bra->id() << " " << space2_bra->id()
+          << (antisymmetrize ? "||" : "|") << space1_intb->id() << " "
+          << space2_intb->id() << ">";
+      const std::string label_bra = oss_bra.str();
+      std::ostringstream oss_ket;
+      oss_ket << "<" << space1_ket->id() << " " << space2_ket->id()
+          << (antisymmetrize ? "||" : "|") << space1_intk->id() << " "
+          << space2_intk->id() << ">";
+      const std::string label_ket = oss_ket.str();
+      std::ostringstream oss;
+      oss << "<" << space1_bra->id() << " " << space2_bra->id()
+          << (antisymmetrize ? "||" : "|") << space1_ket->id() << " "
+          << space2_ket->id() << "> = " << label_bra << " . " << label_ket
+          << "^T";
+      label = oss.str();
+    }
+    ExEnv::out0() << endl << indent << "Entered generic contraction (" << label
+        << ")" << endl;
+    ExEnv::out0() << incindent;
+
+    //
+    // make sure that these are the needed transforms
+    //
+    {
+      Ref<OrbitalSpace> tspace1_bra = transforms_bra[0]->space1();
+      Ref<OrbitalSpace> tspace2_bra = transforms_bra[0]->space3();
+      Ref<OrbitalSpace> tspace1_intb = transforms_bra[0]->space2();
+      Ref<OrbitalSpace> tspace2_intb = transforms_bra[0]->space4();
+      Ref<OrbitalSpace> tspace1_ket = transforms_ket[0]->space1();
+      Ref<OrbitalSpace> tspace2_ket = transforms_ket[0]->space3();
+      Ref<OrbitalSpace> tspace1_intk = transforms_ket[0]->space2();
+      Ref<OrbitalSpace> tspace2_intk = transforms_ket[0]->space4();
+      assert(tspace1_bra == space1_bra);
+      assert(tspace2_bra == space2_bra);
+      assert(tspace1_ket == space1_ket);
+      assert(tspace2_ket == space2_ket);
+      assert(tspace1_intb == space1_intb);
+      assert(tspace2_intb == space2_intb);
+      assert(tspace1_intk == space1_intk);
+      assert(tspace2_intk == space2_intk);
+    }
+
+    const unsigned int bratform_block_ncols = space2_intb->rank();
+    const unsigned int kettform_block_ncols = space2_intk->rank();
+    const RefDiagSCMatrix evals1_bra = space1_bra->evals();
+    const RefDiagSCMatrix evals2_bra = space2_bra->evals();
+    const RefDiagSCMatrix evals1_ket = space1_ket->evals();
+    const RefDiagSCMatrix evals2_ket = space2_ket->evals();
+    const RefDiagSCMatrix evals1_intb = space1_intb->evals();
+    const RefDiagSCMatrix evals2_intb = space2_intb->evals();
+    const RefDiagSCMatrix evals1_intk = space1_intk->evals();
+    const RefDiagSCMatrix evals2_intk = space2_intk->evals();
+
+    // Using spinorbital iterators means I don't take into account perm symmetry
+    // More efficient algorithm will require generic code
+    const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
+    SpinMOPairIter
+        iterbra(space1_bra, (alphabeta ? space2_bra : space1_bra), S);
+    SpinMOPairIter
+        iterket(space1_ket, (alphabeta ? space2_ket : space1_ket), S);
+    SpinMOPairIter iterint(space1_intb,
+                           (alphabeta ? space2_intb : space1_intb), S);
+    // size of one block of <space1_bra space2_bra|
+    const unsigned int nbra = iterbra.nij();
+    // size of one block of <space1_ket space2_ket|
+    const unsigned int nket = iterket.nij();
+    // size of one block of |space1_int space2_int>
+    const unsigned int nint = iterint.nij();
+
+    RefSCMatrix Tcontr;
+    // Allocate storage for the result, if need to antisymmetrize at the end; else accumulate directly to T
+    if (antisymmetrize && alphabeta) {
+      Tcontr = T.kit()->matrix(new SCDimension(nbra * nbrasets),
+                               new SCDimension(nket * nketsets));
+      Tcontr.assign(0.0);
+    } else
+      Tcontr = T;
+
+    //
+    // data will be accessed in tiles
+    // determine tiling here
+    //
+    // total number of (bra1 bra2| index combinations
+    const size_t nij_bra = nbra;
+    // total number of (ket1 ket2| index combinations
+    const size_t nij_ket = nket;
+    // size of each integral block |int1 int2)
+    const unsigned int blksize_int = space1_intb->rank() * space2_intb->rank();
+    // maximum tile size is determined by the available memory, grab 1/2 memory
+    const size_t memory_available = r12info()->tfactory()->memory() / 2;
+    const size_t max_tile_size = memory_available / (2 * blksize_int);
+    if (max_tile_size == 0) {
+      throw AlgorithmException("not enough memory for even single tile", __FILE__, __LINE__);
+    }
+    // try tiling nij_bra and nij_ket into nproc tiles
+    const int nproc = r12info()->msg()->n();
+    size_t try_tile_size_bra = (nij_bra + nproc - 1) / nproc;
+    size_t try_tile_size_ket = (nij_ket + nproc - 1) / nproc;
+    try_tile_size_bra = std::min(try_tile_size_bra, max_tile_size);
+    try_tile_size_ket = std::min(try_tile_size_ket, max_tile_size);
+    const size_t ntiles_bra = (nij_bra + try_tile_size_bra - 1) / try_tile_size_bra;
+    const size_t ntiles_ket = (nij_ket + try_tile_size_ket - 1) / try_tile_size_ket;
+    const size_t tile_size_bra = (nij_bra + ntiles_bra - 1) / ntiles_bra;
+    const size_t tile_size_ket = (nij_ket + ntiles_ket - 1) / ntiles_ket;
+
+    double* T_bra = new double[tile_size_bra * blksize_int];
+    double* T_ket = new double[tile_size_ket * blksize_int];
+    double* T_result = new double[tile_size_bra * tile_size_ket];
+
+    //
+    // Contraction loops
+    //
+
+    unsigned int fbraoffset = 0;
+    for (unsigned int fbra = 0; fbra < nbrasets; ++fbra, fbraoffset+=nbra) {
+      Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbra];
+      const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
+      const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
+
+      tformb->compute();
+      Ref<DistArray4> accumb = tformb->ints_acc();
+      accumb->activate();
+
+      unsigned int fketoffset = 0;
+      for (unsigned int fket = 0; fket < nketsets; ++fket, fketoffset+=nket) {
+          Ref<TwoBodyMOIntsTransform> tformk = transforms_ket[fket];
+          const Ref<TwoBodyIntDescr>& intdescrk = tformk->intdescr();
+          const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
+
+          tformk->compute();
+          Ref<DistArray4> accumk = tformk->ints_acc();
+          accumk->activate();
+
+          if (debug_ >= DefaultPrintThresholds::diagnostics) {
+            ExEnv::out0() << indent << "Using transforms " << tformb->name()
+            << " and " << tformk->name() << std::endl;
+          }
+
+          // split work over tasks which have access to integrals
+          // WARNING: assuming same accessibility for both bra and ket transforms
+          vector<int> proc_with_ints;
+          const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
+          const int me = r12info()->msg()->me();
+
+          if (accumb->has_access(me)) {
+
+            size_t task_count = 0;
+
+            // these will keep track of each tile's sets of i and j values
+            typedef std::tuple<unsigned int, unsigned int, unsigned int> uint3;
+            std::vector<uint3> bra_ij;
+            iterbra.start();
+            // loop over bra tiles for this set
+            size_t tbra_offset = 0;
+            for (size_t tbra = 0; tbra < ntiles_bra; ++tbra, tbra_offset += tile_size_bra) {
+              double* bra_tile = 0;   // zero indicates it needs to be loaded
+
+              // these will keep track of each tile's sets of i and j values
+              std::vector<uint3> ket_ij;
+              iterket.start();
+              // loop over ket tiles for this set
+              size_t tket_offset = 0;
+              for (size_t tket = 0; tket < ntiles_ket; ++tket, tket_offset += tile_size_ket, ++task_count) {
+                double* ket_tile = 0;   // zero indicates it needs to be loaded
+
+                // distribute tasks by round-robin
+                const int task_proc = task_count % nproc_with_ints;
+                if (task_proc != proc_with_ints[me])
+                  continue;
+
+                // has the bra tile been loaded?
+                if (bra_tile == 0) {
+                  bra_tile = T_bra;
+                  for (size_t i=0; iterbra && i<tile_size_bra; ++i, iterbra.next()) {
+                    const uint3 ijt(iterbra.i(), iterbra.j(), iterbra.ij());
+                    bra_ij.push_back(ijt);
+
+                    double* blk_ptr = bra_tile + i*blksize_int;
+                    Timer tim_intsretrieve("MO ints retrieve");
+                    const double* blk_cptr = accumb->retrieve_pair_block(get<0>(ijt),
+                                                                         get<1>(ijt),
+                                                                         intsetidx_bra,
+                                                                         blk_ptr);
+                    tim_intsretrieve.exit();
+                    if (debug_ >= DefaultPrintThresholds::allO2N2) {
+                      ExEnv::outn() << indent << "task " << me
+                          << ": obtained ij blocks" << endl;
+                      ExEnv::outn() << indent
+                                    << "i = " << get<0>(ijt)
+                                    << "j = " << get<1>(ijt) << endl;
+
+                      RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
+                                                                                       new SCDimension(space2_intb->rank()));
+                      blk_scmat.assign(blk_cptr);
+                      blk_scmat.print("ij block");
+                    }
+
+                  }
+                }
+
+                // has the ket tile been loaded?
+                if (ket_tile == 0) {
+                  ket_tile = T_ket;
+                  for (size_t i=0; iterket && i<tile_size_ket; ++i, iterket.next()) {
+                    const uint3 ijt(iterbra.i(), iterbra.j(), iterbra.ij());
+                    ket_ij.push_back(ijt);
+
+                    double* blk_ptr = ket_tile + i*blksize_int;
+                    Timer tim_intsretrieve("MO ints retrieve");
+                    const double* blk_cptr = accumk->retrieve_pair_block(get<0>(ijt),
+                                                                         get<1>(ijt),
+                                                                         intsetidx_ket,
+                                                                         blk_ptr);
+                    tim_intsretrieve.exit();
+                    if (debug_ >= DefaultPrintThresholds::allO2N2) {
+                      ExEnv::outn() << indent << "task " << me
+                          << ": obtained kl blocks" << endl;
+                      ExEnv::outn() << indent
+                                    << "k = " << get<0>(ijt)
+                                    << "l = " << get<1>(ijt) << endl;
+
+                      RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
+                                                                                       new SCDimension(space2_intb->rank()));
+                      blk_scmat.assign(blk_cptr);
+                      blk_scmat.print("kl block");
+                    }
+
+                  }
+                }
+
+                // let's not worry about open-shell at the moment
+                assert(alphabeta);
+
+                // contract matrices
+                const size_t nbra_ij = bra_ij.size();
+                const size_t nket_ij = ket_ij.size();
+                C_DGEMM('n', 't',
+                        nbra_ij, nket_ij, blksize_int,
+                        scale, bra_tile, blksize_int,
+                        ket_tile, blksize_int,
+                        0.0, T_result, tile_size_ket);
+                if (debug_ >= DefaultPrintThresholds::allO2N2) {
+                  ExEnv::outn() << indent << "task " << me
+                      << ": nbra_ij = " << nbra_ij << " nket_ij = " << nket_ij << endl;
+                  ExEnv::outn() << indent << "task " << me
+                      << ": tile_size_bra = " << tile_size_bra << " tile_size_ket = " << tile_size_ket << endl;
+                  ExEnv::outn() << indent << "task " << me
+                      << ": T_result[0] = " << T_result[0] << endl;
+
+
+                  RefSCMatrix tmp_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(tile_size_bra),
+                                                                                   new SCDimension(tile_size_ket));
+                  tmp_scmat.assign(T_result);
+                  tmp_scmat.print("ijkl");
+                }
+
+                // copy the result
+                for(size_t ij=0; ij<nbra_ij; ++ij) {
+                  const size_t IJ = get<2>(bra_ij[ij]) + fbraoffset;
+                  for(size_t kl=0; kl<nket_ij; ++kl) {
+                    const size_t KL = get<2>(ket_ij[kl]) + fketoffset;
+                    const double T_ijkl = T_result[ij * tile_size_ket + kl];
+
+                    if (debug_ >= DefaultPrintThresholds::allO2N2) {
+                      const int i = get<0>(bra_ij[ij]);
+                      const int j = get<1>(bra_ij[ij]);
+                      const int k = get<0>(ket_ij[kl]);
+                      const int l = get<1>(ket_ij[kl]);
+                      ExEnv::out0() << indent << "i = " << i << " j = " << j
+                          << " k = " << k << " l = " << l << incindent << endl;
+                      ExEnv::out0() << decindent << indent << " <ij|kl> = "
+                          << T_ijkl << endl;
+                    }
+
+                    Tcontr.accumulate_element(IJ, KL,
+                                              T_ijkl);
+                  }
+                }
+
+                if (ket_tile != 0) {
+                  for(size_t kl=0; kl<nket_ij; ++kl) {
+                    accumk->release_pair_block(get<0>(ket_ij[kl]),
+                                               get<1>(ket_ij[kl]),
+                                               intsetidx_ket);
+                  }
+                  ket_tile = 0;
+                  ket_ij.resize(0);
+                }
+
+              } // ket tile loop
+
+              if (bra_tile != 0) {
+                const size_t nbra_ij = bra_ij.size();
+                for(size_t ij=0; ij<nbra_ij; ++ij) {
+                  accumb->release_pair_block(get<0>(bra_ij[ij]),
+                                             get<1>(bra_ij[ij]),
+                                             intsetidx_bra);
+                }
+                bra_tile = 0;
+                bra_ij.resize(0);
+              }
+
+            } // bra tile loop
+          } // loop over tasks with access
+
+          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
+          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
+          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+          if (accumb != accumk) {
+            if (accumk->data_persistent()) accumk->deactivate();
+          }
+
+        } // ket blocks
+
+        if (accumb->data_persistent()) accumb->deactivate();
+
+      } // bra blocks
+
+    if (antisymmetrize && alphabeta) {
+      // antisymmetrization implies equivalent particles -- hence symmetrize before antisymmetrize
+      symmetrize<false> (Tcontr, Tcontr, space1_bra, space1_ket);
+      sc::antisymmetrize(T, Tcontr, space1_bra, space1_ket, true);
+      Tcontr = 0;
+    }
+
+    delete[] T_bra;
+    delete[] T_ket;
+    delete[] T_result;
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"

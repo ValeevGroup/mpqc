@@ -43,6 +43,11 @@ R12IntEval::contrib_to_VXB_a_()
   if (evaluated_)
     return;
 
+  const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+  const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
+      absmethod == LinearR12::ABS_CABSPlus);
+  assert(cabs_method == true);
+
   const bool obs_eq_vbs = r12info()->obs_eq_vbs();
   const bool obs_eq_ribs = r12info()->obs_eq_ribs();
   // commutators only appear in A', A'', and B
@@ -88,20 +93,6 @@ R12IntEval::contrib_to_VXB_a_()
       // for now it's always true since can only use ij and pq products to generate geminals
       const bool occ12_in_x12 = true;
 
-      Ref<TwoParticleContraction> tpcontract;
-      const ABSMethod absmethod = r12info()->abs_method();
-      // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-      // it involves this term +O1O2-V1V2
-      if ((absmethod == LinearR12::ABS_ABS ||
-	   absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
-	  ansatz()->projector() == LinearR12::Projector_2)
-          tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
-                                               refinfo->occ(spin1)->rank(),
-                                               refinfo->occ(spin2)->rank());
-      else
-	  // involves this term -P1P2
-          tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
-
       std::vector<std::string> tforms;
       std::vector<std::string> tforms_f12;
       {
@@ -129,58 +120,48 @@ R12IntEval::contrib_to_VXB_a_()
       else
 	  tforms.push_back(tforms_f12[0]);
 
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,false,false>
+      contract_tbint_tensor<true,true>
           (
-	      V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+          X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+          -1.0,
+          xspace1, xspace2,
+          orbs1, orbs2,
+          xspace1, xspace2,
+          orbs1, orbs2,
+          spincase2!=AlphaBeta, tforms_f12, tforms_f12
+          );
+
+      contract_tbint_tensor<true,false>
+          (
+	      V_[s],
+	      corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+	      -1.0,
 	      xspace1, xspace2,
 	      orbs1, orbs2,
 	      occ1_act, occ2_act,
 	      orbs1, orbs2,
-	      tpcontract,
 	      spincase2!=AlphaBeta, tforms_f12, tforms
 	  );
 
-      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  ManyBodyTensors::I_to_T,
-	  true,true,false>
-          (
-	      X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      xspace1, xspace2,
-	      orbs1, orbs2,
-	      tpcontract,
-	      spincase2!=AlphaBeta, tforms_f12, tforms_f12
-          );
       if (compute_B) {
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,true,false>
+	  contract_tbint_tensor<true,true>
 	      (
 		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		  -1.0,
 		  xspace1, xspace2,
 		  orbs1, orbs2,
 		  xspace1, xspace2,
 		  orbs1, orbs2,
-		  tpcontract,
 		  spincase2!=AlphaBeta, tforms_f12, tforms_f12
 	      );
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,true,false>
+	  contract_tbint_tensor<true,true>
 	      (
 		  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		  -1.0,
 		  xspace1, xspace2,
 		  orbs1, orbs2,
 		  xspace1, xspace2,
 		  orbs1, orbs2,
-		  tpcontract,
 		  spincase2!=AlphaBeta, tforms_f12, tforms_f12
 	      );
 	  B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
@@ -199,26 +180,14 @@ R12IntEval::contrib_to_VXB_a_()
       // These terms only contribute if Projector=2
       if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
 
-	  const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-				    absmethod == LinearR12::ABS_CABSPlus);
 	  const Ref<OrbitalSpace>& occ1 = occ(spin1);
 	  const Ref<OrbitalSpace>& occ2 = occ(spin2);
 	  Ref<OrbitalSpace> rispace1, rispace2;
-	  if (cabs_method) {
-	    rispace1 = r12info()->ribs_space(spin1);
-	    rispace2 = r12info()->ribs_space(spin2);
-	  }
-	  else {
-	    rispace1 = r12info()->ribs_space();
-	    rispace2 = r12info()->ribs_space();
-	  }
+	  rispace1 = r12info()->ribs_space(spin1);
+	  rispace2 = r12info()->ribs_space(spin2);
 	  // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
 	  // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
-          Ref<TwoParticleContraction> tpcontract =
-	      new Direct_Contraction(
-		  occ1->rank(),
-		  rispace2->rank(),part1_equiv_part2 ? -2.0 : -1.0
-		  );
+	  const double scale = part1_equiv_part2 ? -2.0 : -1.0;
 
 	  std::vector<std::string> tforms_imjP;
 	  std::vector<std::string> tforms_f12_xmyP;
@@ -247,58 +216,46 @@ R12IntEval::contrib_to_VXB_a_()
 	  else
 	      tforms_imjP.push_back(tforms_f12_xmyP[0]);
 
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,false,false>
+	  contract_tbint_tensor<true,false>
 	      (
 		  V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+		  scale,
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  occ1_act, occ2_act,
 		  occ1, rispace2,
-		  tpcontract,
 		  antisymmetrize, tforms_f12_xmyP, tforms_imjP
 	      );
-	  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      ManyBodyTensors::I_to_T,
-	      true,true,false>
+	  contract_tbint_tensor<true,true>
 	      (
 		  X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+		  scale,
 		  xspace1, xspace2,
 		  occ1, rispace2,
 		  xspace1, xspace2,
 		  occ1, rispace2,
-		  tpcontract,
 		  antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 	      );
 
 	  if (compute_B) {
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,true,false>
+	      contract_tbint_tensor<true,true>
 		  (
 		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+		      scale,
 		      xspace1, xspace2,
 		      occ1, rispace2,
 		      xspace1, xspace2,
 		      occ1, rispace2,
-		      tpcontract,
 		      antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 		  );
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,true,false>
+	      contract_tbint_tensor<true,true>
 		  (
 		      B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+		      scale,
 		      xspace1, xspace2,
 		      occ1, rispace2,
 		      xspace1, xspace2,
 		      occ1, rispace2,
-		      tpcontract,
 		      antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
 		  );
 	      B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
@@ -334,64 +291,46 @@ R12IntEval::contrib_to_VXB_a_()
 	      else
 		  tforms_iPjm.push_back(tforms_f12_xPym[0]);
 
-	      Ref<TwoParticleContraction> tpcontract =
-		  new Direct_Contraction(
-		      rispace1->rank(),
-		      occ2->rank(),-1.0
-		      );
-
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,false,false>
+	      contract_tbint_tensor<true,false>
 		  (
 		      V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+		      -1.0,
 		      xspace1, xspace2,
 		      rispace1, occ2,
 		      occ1_act, occ2_act,
 		      rispace1, occ2,
-		      tpcontract,
 		      antisymmetrize, tforms_f12_xPym, tforms_iPjm
 		      );
-	      contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  ManyBodyTensors::I_to_T,
-		  true,true,false>
+	      contract_tbint_tensor<true,true>
 		  (
 		      X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+		      -1.0,
 		      xspace1, xspace2,
 		      rispace1, occ2,
 		      xspace1, xspace2,
 		      rispace1, occ2,
-		      tpcontract,
 		      antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
 
 	      if (compute_B) {
-		  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		      ManyBodyTensors::I_to_T,
-		      ManyBodyTensors::I_to_T,
-		      true,true,false>
+		  contract_tbint_tensor<true,true>
 		      (
 			  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+			  -1.0,
 			  xspace1, xspace2,
 			  rispace1, occ2,
 			  xspace1, xspace2,
 			  rispace1, occ2,
-			  tpcontract,
 			  antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
-		  contract_tbint_tensor<ManyBodyTensors::I_to_T,
-		      ManyBodyTensors::I_to_T,
-		      ManyBodyTensors::I_to_T,
-		      true,true,false>
+		  contract_tbint_tensor<true,true>
 		      (
 			  B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+			  -1.0,
 			  xspace1, xspace2,
 			  rispace1, occ2,
 			  xspace1, xspace2,
 			  rispace1, occ2,
-			  tpcontract,
 			  antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
 		      );
 

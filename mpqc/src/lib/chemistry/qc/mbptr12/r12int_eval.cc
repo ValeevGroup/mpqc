@@ -1974,6 +1974,7 @@ R12IntEval::compute()
 
     if (obs_eq_vbs) {
       contrib_to_VXB_a_();
+      //contrib_to_VXB_abs_();
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();

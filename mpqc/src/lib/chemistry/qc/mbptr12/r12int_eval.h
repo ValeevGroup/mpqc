@@ -208,8 +208,10 @@ class R12IntEval : virtual public SavableState {
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;
 
-  /// New version which uses tensor contract functions
+  /// New version which uses optimized contract functions
   void contrib_to_VXB_a_();
+  /// The version which uses slow tensor contract functions
+  void contrib_to_VXB_abs_();
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_vbsneqobs_();
   /// extra single-commutator contributions to B from relativistic terms
@@ -287,6 +289,27 @@ class R12IntEval : virtual public SavableState {
            const Ref<OrbitalSpace>& space1_intk,
            const Ref<OrbitalSpace>& space2_intk,
            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+           bool antisymmetrize,
+           const std::vector<std::string>& tformkeys_bra,
+           const std::vector<std::string>& tformkeys_ket);
+
+  /** overload of the above when no pre- and post-processing is needed
+   */
+  template <bool CorrFactorInBra,
+            bool CorrFactorInKet>
+    void contract_tbint_tensor(
+           RefSCMatrix& T,
+           TwoBodyOper::type tbint_type_bra,
+           TwoBodyOper::type tbint_type_ket,
+           double scale,
+           const Ref<OrbitalSpace>& space1_bra,
+           const Ref<OrbitalSpace>& space2_bra,
+           const Ref<OrbitalSpace>& space1_intb,
+           const Ref<OrbitalSpace>& space2_intb,
+           const Ref<OrbitalSpace>& space1_ket,
+           const Ref<OrbitalSpace>& space2_ket,
+           const Ref<OrbitalSpace>& space1_intk,
+           const Ref<OrbitalSpace>& space2_intk,
            bool antisymmetrize,
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);

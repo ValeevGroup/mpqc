@@ -66,6 +66,7 @@ class DistArray4_MPIIOFile: public DistArray4 {
 
     struct PairBlkInfo {
       mutable double* ints_[max_num_te_types_];      // blocks corresponding to each operator type
+      mutable bool manage_[max_num_te_types_];       // am I managing memory of this ints_?
       mutable int refcount_[max_num_te_types_];      // number of references
       MPI_Offset offset_;      // location in file (in bytes)
     } *pairblk_;
@@ -166,7 +167,8 @@ class DistArray4_MPIIOFile_Ind: public DistArray4_MPIIOFile {
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
     /// Retrieves an ij pair block of integrals from the file
-    const double* retrieve_pair_block(int i, int j, tbint_type oper_type) const;
+    const double* retrieve_pair_block(int i, int j, tbint_type oper_type,
+                                      double* buf = 0) const;
 };
 
 }

@@ -132,8 +132,6 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);
 
   if (do_x1_2) {
-  Ref<TwoParticleContraction> dircontract_k1 =
-    new Direct_Contraction(intk1->rank(),int2->rank(),perm_pfac);
   // (bra1 intkx1 |bra2 int2) tforms
   std::vector<std::string> tforms_Fbra_k1;
   {
@@ -149,26 +147,20 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
     fill_container(tformkey_creator,tforms_Fket_k1);
   }
   // contract
-  contract_tbint_tensor<
-    ManyBodyTensors::I_to_T,
-    ManyBodyTensors::I_to_T,
-    ManyBodyTensors::I_to_T,
-    true,true,false>
+  contract_tbint_tensor<true,true>
     (
       FxF, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+      perm_pfac,
       bra1, bra2,
       intkx1, int2,
       ket1, ket2,
       intk1, int2,
-      dircontract_k1,
       spincase2!=AlphaBeta, tforms_Fbra_k1, tforms_Fket_k1
     );
   }
 
   if (do_1_x2) {
 
-    Ref<TwoParticleContraction> dircontract_k2 =
-      new Direct_Contraction(int1->rank(),intk2->rank(),perm_pfac);
     // (bra1 intb1 |bra2 intkx2) tforms
     std::vector<std::string> tforms_Fbra_k2;
     {
@@ -184,18 +176,14 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
       fill_container(tformkey_creator,tforms_Fket_k2);
     }
     // contract
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      true,true,false>
+    contract_tbint_tensor<true,true>
       (
         FxF, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+        perm_pfac,
         bra1, bra2,
         int1, intkx2,
         ket1, ket2,
         int1, intk2,
-        dircontract_k2,
         spincase2!=AlphaBeta, tforms_Fbra_k2, tforms_Fket_k2
       );
   }

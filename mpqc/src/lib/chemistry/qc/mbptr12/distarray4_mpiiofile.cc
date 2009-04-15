@@ -104,6 +104,7 @@ DistArray4_MPIIOFile::init(bool restart)
     for(j=0;j<nj();j++,ij++) {
       for(int type=0; type<num_te_types(); type++) {
         pairblk_[ij].ints_[type] = NULL;
+        pairblk_[ij].manage_[type] = false;
         pairblk_[ij].refcount_[type] = 0;
         }
       pairblk_[ij].offset_ = (MPI_Offset)ij*blocksize();
@@ -182,7 +183,10 @@ DistArray4_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) con
                            __FILE__,__LINE__);
   }
   if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
-    delete[] pb->ints_[oper_type];
+    if (pb->manage_[oper_type]) { // deallocate only if I am in charge
+      delete[] pb->ints_[oper_type];
+      pb->manage_[oper_type] = false;
+    }
     pb->ints_[oper_type] = NULL;
   }
   pb->refcount_[oper_type] -= 1;
@@ -247,7 +251,8 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
 }
 
 const double*
-DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type) const
+DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type,
+                                              double* buf) const
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
@@ -256,14 +261,29 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
     MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize();
     int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
     check_error_code_(errcod);
-    double *buffer = new double[nxy()];
+    double *buffer;
+    if (buf == 0) {
+      buffer = new double[nxy()];
+      pb->manage_[oper_type] = true;
+    }
+    else {
+      buffer = buf;
+      pb->manage_[oper_type] = false;
+    }
     MPI_Status status;
     errcod = MPI_File_read(datafile_, (void *)buffer, nxy(), MPI_DOUBLE, &status);
     check_error_code_(errcod);
     pb->ints_[oper_type] = buffer;
   }
+  else { // if data is already available may need to copy the buffer
+    if (buf != 0 && buf != pb->ints_[oper_type])
+      std::copy(pb->ints_[oper_type], pb->ints_[oper_type]+this->nxy(), buf);
+  }
   pb->refcount_[oper_type] += 1;
-  return pb->ints_[oper_type];
+  if (buf)
+    return buf;
+  else
+    return pb->ints_[oper_type];
 }
 
 void detail::clone_filename(std::string& result, const char* original, int id) {

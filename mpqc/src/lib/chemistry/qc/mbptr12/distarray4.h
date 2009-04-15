@@ -137,8 +137,11 @@ class DistArray4: virtual public SavableState {
     virtual void deactivate() { active_ = false; }
     /// if this returns false, call to deactivate may destroy data
     virtual bool data_persistent() const =0;
-    /// Retrieves an ij block of integrals. Note that it comes stored according to storage().
-    virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type) const =0;
+    /** Retrieves an ij block of integrals. Note that it comes stored according to storage().
+        Optional place_ptr specifies the buffer in which to write the data (if not provided, will allocate dynamically).
+      */
+    virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type,
+                                               double* buf = 0) const =0;
     /// Releases the buffer that holds ij block of integrals
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().

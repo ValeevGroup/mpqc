@@ -60,7 +60,7 @@
 using namespace std;
 using namespace sc;
 
-#define DEBUG_PRINT_ALL_B_CONTRIBUTIONS 1
+#define DEBUG_PRINT_ALL_B_CONTRIBUTIONS 0
 #define INCLUDE_Q 1
 #define INCLUDE_P 1
 #define INCLUDE_P_PKP 1

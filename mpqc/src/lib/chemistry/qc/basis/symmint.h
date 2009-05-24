@@ -41,6 +41,7 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/// Iterator over symmetry unique shell pairs
 class SymmOneBodyIntIter : public OneBodyIntIter {
   protected:
     Ref<PetiteList> pl;
@@ -58,6 +59,7 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
     Ref<OneBodyIntIter> clone();
 };
 
+/// Iterator over symmetry unique shell quartets
 class SymmTwoBodyIntIter : public TwoBodyIntIter {
   protected:
     Ref<PetiteList> pl;
@@ -72,6 +74,7 @@ class SymmTwoBodyIntIter : public TwoBodyIntIter {
     double scale() const;
 };
 
+/// Iterator over symmetry unique shell pairs
 class SymmTwoBodyTwoCenterIntIter : public TwoBodyTwoCenterIntIter {
   protected:
     Ref<PetiteList> pl;

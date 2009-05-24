@@ -34,6 +34,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 
 #include <string.h>
 #include <stdlib.h>
@@ -359,8 +360,6 @@ class AssignedKeyVal: public KeyVal {
     void clear();
 };
 
-
-
 /** StringKeyVal is a base class for KeyVal implementations
     that store all values in a string format.  These are
     converted to other data types through KeyValValue.
@@ -564,6 +563,73 @@ class ParsedKeyVal : public StringKeyVal {
     void print_unseen(std::ostream&fp=ExEnv::out0());
     int have_unseen();
     //@}
+};
+
+namespace detail {
+  /// GetValue(keyval, key, i) grabs the value corresponding to key
+  template <typename T> struct GetValue;
+  template <> struct GetValue<bool> {
+    static bool eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->booleanvalue(key, i);
+    }
+  };
+  template <> struct GetValue<double> {
+    static double eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->doublevalue(key, i);
+    }
+  };
+  template <> struct GetValue<float> {
+    static float eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->floatvalue(key, i);
+    }
+  };
+  template <> struct GetValue<int> {
+    static int eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->intvalue(key, i);
+    }
+  };
+  template <> struct GetValue<long> {
+    static long eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->longvalue(key, i);
+    }
+  };
+  template <> struct GetValue<std::size_t> {
+    static std::size_t eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->sizevalue(key, i);
+    }
+  };
+  template <> struct GetValue<char> {
+    static char eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->charvalue(key, i);
+    }
+  };
+  template <> struct GetValue<std::string> {
+    static std::string eval(const Ref<KeyVal>& kv, const char* key, int i) {
+      return kv->stringvalue(key, i);
+    }
+  };
+}
+
+class Keyword {
+  public:
+    Keyword(const Ref<KeyVal>& kv,
+            const char* key) : kv_(kv), key_(key) {}
+
+    const Ref<KeyVal>& keyval() const { return kv_; }
+    const char* key() const { return key_; }
+
+    template <typename T> Keyword& operator>>(std::vector<T>& vec) {
+      const std::size_t n = kv_->count(key_);
+      vec.resize(n);
+      for(std::size_t i=0; i<n; ++i) {
+        vec[i] = detail::GetValue<T>::eval(kv_, key_, i);
+      }
+      return *this;
+    }
+
+  private:
+    Ref<KeyVal> kv_;
+    const char* key_;
 };
 
 }

@@ -263,11 +263,11 @@ class Integral : public SavableState {
     virtual Ref<OneBodyInt> nuclear() = 0;
 
     /** Return a OneBodyInt that computes \f$\bar{p}\cdot V\bar{p}\f$, where
-        $V$ is the nuclear potential. */
+        \f$V\f$ is the nuclear potential. */
     virtual Ref<OneBodyInt> p_dot_nuclear_p();
 
     /** Return a OneBodyInt that computes \f$\bar{p}\times V\bar{p}\f$, where
-        $V$ is the nuclear potential. This is different than most other
+        \f$V\f$ is the nuclear potential. This is different than most other
         one body integrals, in that each entry in the integral buffer
         is a vector of three integrals. */
     virtual Ref<OneBodyInt> p_cross_nuclear_p();
@@ -282,12 +282,15 @@ class Integral : public SavableState {
         dotted with a given vector. */
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
-    /** Return a OneBodyInt that computes electric dipole moment integrals.
-	The canonical order of integrals in a set is x, y, z. */
+    /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals
+        of the \f$e \mathbf{r}\f$ operator. Multiply by -1 to obtain electronic electric dipole
+        integrals. The canonical order of integrals in a set is x, y, z. */
     virtual Ref<OneBodyInt> dipole(const Ref<DipoleData>&) =0;
 
-    /** Return a OneBodyInt that computes electric quadrupole moment integrals.
-	The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2. */
+    /** Return a OneBodyInt that computes electric quadrupole moment integrals,
+        i.e. integrals of the \f$e \mathbf{r} \v \mathbf{r}\f$ operator.
+        Multiply by -1 to obtain electronic electric quadrupole integrals.
+	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2. */
     virtual Ref<OneBodyInt> quadrupole(const Ref<DipoleData>&) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.

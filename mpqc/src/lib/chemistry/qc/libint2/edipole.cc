@@ -51,7 +51,7 @@ void Int1eLibint2::edipole(int sh1, int sh2)
     double d[3] = {0.0, 0.0, 0.0};
     set_multipole_origin(new DipoleData(d));
   }
-  
+
   edipole_full_general_();
 }
 
@@ -104,11 +104,11 @@ void Int1eLibint2::edipole_full_general_()
     double a1 = int_shell1_->exponent(p1);
     for (int p2=0; p2<int_shell2_->nprimitive(); p2++) {
       double a2 = int_shell2_->exponent(p2);
-      
+
       double gamma = a1+a2;
       double oog = 1.0/gamma;
       double over_pf = exp(-a1*a2*doublet_info_.AB2*oog)*sqrt(M_PI*oog)*M_PI*oog;
-      
+
       double P[3], PA[3], PB[3], BO[3];
       for(int xyz=0; xyz<3; xyz++) {
 	P[xyz] = (a1*doublet_info_.A[xyz] + a2*doublet_info_.B[xyz])*oog;
@@ -128,7 +128,7 @@ void Int1eLibint2::edipole_full_general_()
 	  double norm2 = int_shell2_->coefficient_unnorm(gc2,p2);
 	  int am2 = int_shell2_->am(gc2);
 	  double total_pf = over_pf * norm1 * norm2;
-	  
+
 	  int k1,l1,m1,k2,l2,m2;
 	  FOR_CART(k1,l1,m1,am1)
 	    FOR_CART(k2,l2,m2,am2)
@@ -138,15 +138,16 @@ void Int1eLibint2::edipole_full_general_()
 	      double x1 = OIX_[k1][k2+1];
 	      double y1 = OIY_[l1][l2+1];
 	      double z1 = OIZ_[m1][m2+1];
-	      double mx = -total_pf * (x1 + BO[0]*x0) * y0 * z0;
-	      double my = -total_pf * (y1 + BO[1]*y0) * z0 * x0;
-	      double mz = -total_pf * (z1 + BO[2]*z0) * x0 * y0;
+	      // electron charge is not included
+	      double mx = total_pf * (x1 + BO[0]*x0) * y0 * z0;
+	      double my = total_pf * (y1 + BO[1]*y0) * z0 * x0;
+	      double mz = total_pf * (z1 + BO[2]*z0) * x0 * y0;
 	      *(ints_buf++) += mx;
 	      *(ints_buf++) += my;
 	      *(ints_buf++) += mz;
 	    END_FOR_CART
 	  END_FOR_CART
-	  
+
 	}
       }
     }

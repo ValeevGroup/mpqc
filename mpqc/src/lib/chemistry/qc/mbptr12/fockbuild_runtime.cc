@@ -48,11 +48,15 @@ FockBuildRuntime::FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
                                    const RefSymmSCMatrix& aodensity_alpha,
                                    const RefSymmSCMatrix& aodensity_beta,
                                    const Ref<Integral>& integral,
+                                   const RefSCVector& efield,
                                    Ref<MessageGrp> msg,
                                    Ref<ThreadGrp> thr) :
   P_(aodensity_alpha+aodensity_beta), Po_(0), basis_(refbasis), integral_(integral),
-  msg_(msg), thr_(thr),
+  efield_(efield), msg_(msg), thr_(thr),
   registry_(FockMatrixRegistry::instance()) {
+
+  if (efield_) throw ProgrammingError("FockBuildRuntime -- nonzero electric fields not supported yet",
+                                      __FILE__,__LINE__);
 
   RefSymmSCMatrix Po = aodensity_alpha - aodensity_beta;
   spin_polarized_ = Po->maxabs() > DBL_EPSILON;
@@ -76,6 +80,9 @@ FockBuildRuntime::FockBuildRuntime(StateIn& si) {
   integral_ << SavableState::restore_state(si);
   registry_ = FockMatrixRegistry::restore_instance(si);
 
+  efield_ = SCMatrixKit::default_matrixkit()->vector(new SCDimension(3));
+  efield_.restore(si);
+
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 }
@@ -88,6 +95,7 @@ void FockBuildRuntime::save_data_state(StateOut& so) {
     Po_.save(so);
   SavableState::save_state(basis_.pointer(), so);
   SavableState::save_state(integral_.pointer(), so);
+  efield_.save(so);
   FockMatrixRegistry::save_instance(registry_, so);
 }
 

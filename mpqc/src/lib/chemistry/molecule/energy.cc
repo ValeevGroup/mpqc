@@ -48,7 +48,7 @@ using namespace sc;
 // MolecularEnergy
 
 static ClassDesc MolecularEnergy_cd(
-  typeid(MolecularEnergy),"MolecularEnergy",7,"public Function",
+  typeid(MolecularEnergy),"MolecularEnergy",8,"public Function",
   0, 0, 0);
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
@@ -62,6 +62,7 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   ckpt_ = mole.ckpt_;
   ckpt_file_ = mole.ckpt_file_;
   ckpt_freq_ = mole.ckpt_freq_;
+  efield_ = mole.efield_;
 }
 
 MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
@@ -140,7 +141,13 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   if (keyval->error() != KeyVal::OK) {
     ckpt_freq_ = 1;
   }
-  
+
+  if (keyval->exists("electric_field")) {
+    std::vector<double> ef; Keyword(keyval,"electric_field") >> ef;
+    efield_ = matrixkit()->vector(new SCDimension(3));
+    efield_.assign(&ef[0]);
+  }
+
   do_value(1);
   do_gradient(0);
   do_hessian(0);
@@ -187,6 +194,10 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
       cartesian_hessian_ = matrixkit()->symmmatrix(moldim_);
       cartesian_hessian_.restore(s);
     }
+  if (s.version(::class_desc<MolecularEnergy>()) >= 8) {
+      efield_ = matrixkit()->vector(new SCDimension(3));
+      efield_.restore(s);
+    }
 }
 
 MolecularEnergy&
@@ -218,6 +229,12 @@ MolecularEnergy::save_data_state(StateOut&s)
   cartesian_gradient_.save(s);
   cartesian_hessian_.save(s);
  }
+
+bool
+MolecularEnergy::nonzero_efield_supported() const {
+  // by default nonzero electric field is not supported
+  return false;
+}
 
 void
 MolecularEnergy::set_checkpoint()
@@ -314,7 +331,7 @@ MolecularEnergy::x_to_molecule()
 
   if (mc_.null()) {
     int c = 0;
-    
+
     for (int i=0; i<mol_->natom(); i++) {
       mol_->r(i,0) = x(c); c++;
       mol_->r(i,1) = x(c); c++;

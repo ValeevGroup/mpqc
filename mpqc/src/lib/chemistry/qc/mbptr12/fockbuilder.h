@@ -96,6 +96,13 @@ namespace sc {
     RefSCMatrix overlap(const Ref<GaussianBasisSet>& brabs,
                         const Ref<GaussianBasisSet>& ketbs,
                         const Ref<Integral>& integral);
+    /// computes electric dipole matrix in SO basis (assuming electronic dipole, hence minus sign included)
+    void edipole(const Ref<GaussianBasisSet>& basis,
+                 const Ref<Integral>& integral,
+                 RefSymmSCMatrix& mu_x,
+                 RefSymmSCMatrix& mu_y,
+                 RefSymmSCMatrix& mu_z
+                 );
     /// computes 2-center 2-body Coulomb operator matrix in SO matrix
     RefSymmSCMatrix twobody_twocenter_coulomb(const Ref<GaussianBasisSet>& bas,
                                               const Ref<Integral>& integral);

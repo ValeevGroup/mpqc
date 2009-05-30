@@ -240,7 +240,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     Integral* default_intf = Integral::get_default_integral();
     integral_ = default_intf->clone();
   }
-  
+
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();
 
@@ -752,6 +752,62 @@ Wavefunction::core_hamiltonian_dk(int dk,
   p_pl->symmetrize(V_skel,V);
   V_skel = 0;
 
+  // include contributions from external electric field, if needed
+  if (electric_field() != 0) {
+    RefSymmSCMatrix mu_so;
+    RefSymmSCMatrix mu(p_ao_dim, p_kit);
+    mu.assign(0.0);
+
+    double E[3];  for(int xyz=0; xyz<3; ++xyz) E[xyz] = electric_field().get_element(xyz);
+    Ref<GaussianBasisSet> bs = p_bas;
+    const int nshell = bs->nshell();
+    integral()->set_basis(bs,bs);
+    Ref<OneBodyInt> m1_ints = integral()->dipole(0);
+    for(int sh1=0; sh1<nshell; sh1++) {
+      int bf1_offset = bs->shell_to_function(sh1);
+      int nbf1 = bs->shell(sh1).nfunction();
+
+      int sh2max = sh1;
+      for(int sh2=0; sh2<=sh2max; sh2++) {
+        int bf2_offset = bs->shell_to_function(sh2);
+        int nbf2 = bs->shell(sh2).nfunction();
+
+        m1_ints->compute_shell(sh1,sh2);
+        const double *m1intsptr = m1_ints->buffer();
+
+        int bf1_index = bf1_offset;
+        for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, m1intsptr+=3*nbf2) {
+          int bf2_index = bf2_offset;
+          const double *ptr1 = m1intsptr;
+          int bf2max;
+          if (sh1 == sh2)
+            bf2max = bf1;
+          else
+            bf2max = nbf2-1;
+          for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++) {
+
+            // V = - mu \dot E; additional -1 accounts for the negative charge of the electron
+            const double V = (ptr1[0] * E[0] + ptr1[1] * E[1] + ptr1[2] * E[2]);
+            mu.set_element(bf1_index, bf2_index, V);
+            ptr1 += 3;
+
+          }
+        }
+      }
+    }
+    m1_ints = 0;
+
+    const int nbasis = bs->nbasis();
+    for(int bf1=0; bf1<nbasis; bf1++)
+      for(int bf2=0; bf2<=bf1; bf2++) {
+        mu(bf2,bf1) = mu(bf1,bf2);
+      }
+
+    mu_so = p_pl->to_SO_basis(mu);
+    mu = 0;
+    V.accumulate(mu_so);
+  }
+
 #if DK_DEBUG
   V.print("V");
 #endif
@@ -928,7 +984,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
     S_bas = so_kit->symmmatrix(so_dim);
     pl->symmetrize(S_skel, S_bas);
   }
-  
+
   integral()->set_basis(basis());
 
 #if DK_DEBUG
@@ -937,9 +993,9 @@ Wavefunction::core_hamiltonian_dk(int dk,
     tmp.print("S(OBS,pbasis) * S(pbasis)^-1 * S(pbasis,OBS)");
     ExEnv::out0() << indent << " trace = " << tmp.trace() << endl;
     S_bas.print("S(OBS)");
-    
-    ExEnv::out0() << indent << " trace = " << S_bas.trace() << endl;    
-  
+
+    ExEnv::out0() << indent << " trace = " << S_bas.trace() << endl;
+
     ExEnv::out0() << indent << "nso = " << pl->SO_basisdim()->n() << endl;
   }
 #endif
@@ -1084,9 +1140,70 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
       cd_tbint=0;
     }
 
+    // include contributions from external electric field, if needed
+    RefSymmSCMatrix mu_so;
+    if (electric_field() != 0) {
+      {
+        RefSymmSCMatrix mu = hao.clone();
+        mu.assign(0.0);
+
+        double E[3];  for(int xyz=0; xyz<3; ++xyz) E[xyz] = electric_field().get_element(xyz);
+        Ref<GaussianBasisSet> bs = basis();
+        const int nshell = bs->nshell();
+        integral()->set_basis(bs,bs);
+        Ref<OneBodyInt> m1_ints = integral()->dipole(0);
+        for(int sh1=0; sh1<nshell; sh1++) {
+          int bf1_offset = bs->shell_to_function(sh1);
+          int nbf1 = bs->shell(sh1).nfunction();
+
+          int sh2max = sh1;
+          for(int sh2=0; sh2<=sh2max; sh2++) {
+            int bf2_offset = bs->shell_to_function(sh2);
+            int nbf2 = bs->shell(sh2).nfunction();
+
+            m1_ints->compute_shell(sh1,sh2);
+            const double *m1intsptr = m1_ints->buffer();
+
+            int bf1_index = bf1_offset;
+            for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, m1intsptr+=3*nbf2) {
+              int bf2_index = bf2_offset;
+              const double *ptr1 = m1intsptr;
+              int bf2max;
+              if (sh1 == sh2)
+                bf2max = bf1;
+              else
+                bf2max = nbf2-1;
+              for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++) {
+
+                // V = - mu \dot E; additional -1 accounts for the negative charge of the electron
+                const double V = (ptr1[0] * E[0] + ptr1[1] * E[1] + ptr1[2] * E[2]);
+                mu.set_element(bf1_index, bf2_index, V);
+                ptr1 += 3;
+
+              }
+            }
+          }
+        }
+        m1_ints = 0;
+
+        const int nbasis = bs->nbasis();
+        for(int bf1=0; bf1<nbasis; bf1++)
+          for(int bf2=0; bf2<=bf1; bf2++) {
+            mu(bf2,bf1) = mu(bf1,bf2);
+          }
+
+        mu_so = pl->to_SO_basis(mu);
+
+      }
+    }
+
     // now symmetrize Hso
     RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);
+
+    if (electric_field() != 0) {
+      h.accumulate(mu_so);
+    }
 
     hcore = h;
     integral()->set_basis(basis());
@@ -1124,9 +1241,20 @@ Wavefunction::set_up_charge_types(
 double
 Wavefunction::nuclear_repulsion_energy()
 {
-  if (atom_basis_.null()) return molecule()->nuclear_repulsion_energy();
+  // include the energy of nuclei in the presence of electric field, if needed
+  double ext_efield_contribution = 0.0;
+  if (electric_field() != 0) {
+    const int natoms = molecule()->natom();
+    for(int a=0; a<natoms; ++a) {
+      ext_efield_contribution -= electric_field()->get_element(0) * molecule()->charge(a) * molecule()->r(a, 0);
+      ext_efield_contribution -= electric_field()->get_element(1) * molecule()->charge(a) * molecule()->r(a, 1);
+      ext_efield_contribution -= electric_field()->get_element(2) * molecule()->charge(a) * molecule()->r(a, 2);
+    }
+  }
 
-  double nucrep = 0.0;
+  if (atom_basis_.null()) return ext_efield_contribution + molecule()->nuclear_repulsion_energy();
+
+  double nucrep = ext_efield_contribution;
 
   std::vector<int> q_pc, q_cd, n_pc, n_cd;
   set_up_charge_types(q_pc,q_cd,n_pc,n_cd);
@@ -1488,7 +1616,7 @@ Wavefunction::print(ostream&o) const
     if (print_nao_) naos.print("NAO");
   }
 }
-    
+
 RefSymmSCMatrix
 Wavefunction::alpha_density()
 {
@@ -1655,6 +1783,14 @@ Wavefunction::scale_atom_basis_coef()
     }
     coef_offset += nshell;
   }
+}
+
+bool
+Wavefunction::nonzero_efield_supported() const {
+  // support efields in C1 symmetry only
+  if (molecule()->point_group()->char_table().order() == 1)
+    return true;
+  return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////

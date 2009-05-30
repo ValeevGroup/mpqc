@@ -56,13 +56,15 @@ class MolecularEnergy: public Function {
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
 
+    RefSCVector efield_;  //< electric field vector
+
     /// Whether to do intermediate checkpointing of this object
     bool ckpt_;
     /// Name of the file into which to checkpoint this object
     std::string ckpt_file_;
     /// How often this object should be checkpointed (only matters in iterative methods)
     int ckpt_freq_;
-    
+
   protected:
     Ref<PointGroup> initial_pg_;
 
@@ -80,6 +82,10 @@ class MolecularEnergy: public Function {
     void molecule_to_x();
 
     int print_molecule_when_changed_;
+
+    /// overload this in classes that support computations in nonzero electric field
+    virtual bool nonzero_efield_supported() const;
+
   public:
     MolecularEnergy(const MolecularEnergy&);
     /** The KeyVal constructor.
@@ -146,15 +152,15 @@ class MolecularEnergy: public Function {
     bool if_to_checkpoint() const;
     const char* checkpoint_file() const;
     int checkpoint_freq() const;
-    
+
     MolecularEnergy & operator=(const MolecularEnergy&);
-    
+
     /// A wrapper around value();
     virtual double energy();
 
     virtual Ref<Molecule> molecule() const;
     virtual RefSCDimension moldim() const;
-    
+
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
@@ -179,7 +185,10 @@ class MolecularEnergy: public Function {
     virtual void symmetry_changed();
 
     Ref<NonlinearTransform> change_coordinates();
-    
+
+    /// returns the electric field vector
+    const RefSCVector& electric_field() const { return efield_; }
+
     /// Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &,
                        const char *t=0, std::ostream&o=ExEnv::out0()) const;

@@ -317,6 +317,7 @@ R12IntEvalInfo::initialize()
         }
         // use Integral used by reference wfn!
         fockbuild_runtime_ = new FockBuildRuntime(basis(), Pa, Pb, ref->integral(),
+                                                  wfn()->electric_field(),
                                                   msg(),
                                                   thr());
         fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );

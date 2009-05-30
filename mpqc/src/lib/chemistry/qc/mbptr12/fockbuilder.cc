@@ -77,6 +77,76 @@ namespace sc {
       abort();
     }
 
+    void edipole(const Ref<GaussianBasisSet>& bas,
+                 const Ref<Integral>& integral,
+                 RefSymmSCMatrix& mu_x,
+                 RefSymmSCMatrix& mu_y,
+                 RefSymmSCMatrix& mu_z) {
+
+      Ref<Integral> localints = integral->clone();
+      localints->set_basis(bas);
+      Ref<PetiteList> pl = localints->petite_list();
+      Ref<OneBodyInt> m1_ints = localints->dipole(0);
+
+      // form skeleton mu_i in AO basis
+      RefSymmSCMatrix mu_x_ao(bas->basisdim(), bas->matrixkit()); mu_x_ao.assign(0.0);
+      RefSymmSCMatrix mu_y_ao(bas->basisdim(), bas->matrixkit()); mu_y_ao.assign(0.0);
+      RefSymmSCMatrix mu_z_ao(bas->basisdim(), bas->matrixkit()); mu_z_ao.assign(0.0);
+
+      const int nshell = bas->nshell();
+      for(int sh1=0; sh1<nshell; sh1++) {
+        int bf1_offset = bas->shell_to_function(sh1);
+        int nbf1 = bas->shell(sh1).nfunction();
+
+        int sh2max = sh1;
+        for(int sh2=0; sh2<=sh2max; sh2++) {
+          int bf2_offset = bas->shell_to_function(sh2);
+          int nbf2 = bas->shell(sh2).nfunction();
+
+          m1_ints->compute_shell(sh1,sh2);
+          const double *m1intsptr = m1_ints->buffer();
+
+          int bf1_index = bf1_offset;
+          for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, m1intsptr+=3*nbf2) {
+            int bf2_index = bf2_offset;
+            const double *ptr1 = m1intsptr;
+            int bf2max;
+            if (sh1 == sh2)
+              bf2max = bf1;
+            else
+              bf2max = nbf2-1;
+            for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++) {
+
+              // the negative charge of the electron is not included
+              mu_x_ao.set_element(bf1_index, bf2_index, ptr1[0]);
+              mu_y_ao.set_element(bf1_index, bf2_index, ptr1[1]);
+              mu_z_ao.set_element(bf1_index, bf2_index, ptr1[2]);
+              ptr1 += 3;
+
+            }
+          }
+        }
+      }
+      m1_ints = 0;
+
+      const int nbasis = bas->nbasis();
+      for(int bf1=0; bf1<nbasis; bf1++)
+        for(int bf2=0; bf2<=bf1; bf2++) {
+          mu_x_ao(bf2,bf1) = mu_x_ao(bf1,bf2);
+          mu_y_ao(bf2,bf1) = mu_y_ao(bf1,bf2);
+          mu_z_ao(bf2,bf1) = mu_z_ao(bf1,bf2);
+        }
+
+
+      // now symmetrize
+      mu_x = bas->so_matrixkit()->symmmatrix(pl->SO_basisdim());
+      mu_y = bas->so_matrixkit()->symmmatrix(pl->SO_basisdim());
+      mu_z = bas->so_matrixkit()->symmmatrix(pl->SO_basisdim());
+      pl->symmetrize(mu_x_ao, mu_x);
+      pl->symmetrize(mu_y_ao, mu_y);
+      pl->symmetrize(mu_z_ao, mu_z);
+    }
+
     RefSymmSCMatrix nonrelativistic(const Ref<GaussianBasisSet>& bas,
                                     const Ref<Integral>& integral) {
 

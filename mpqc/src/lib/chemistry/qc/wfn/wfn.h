@@ -119,6 +119,9 @@ class Wavefunction: public MolecularEnergy {
                                       const RefSCMatrix &so_to_p,
                                       const RefSymmSCMatrix &pxVp);
 
+    /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
+    /// general support is coming in the future.
+    bool nonzero_efield_supported() const;
 
   protected:
 

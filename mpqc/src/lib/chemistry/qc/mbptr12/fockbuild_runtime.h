@@ -51,6 +51,7 @@ namespace sc {
                        const RefSymmSCMatrix& aodensity_alpha,
                        const RefSymmSCMatrix& aodensity_beta,
                        const Ref<Integral>& integral,
+                       const RefSCVector& electric_field,
                        Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp(),
                        Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp());
       FockBuildRuntime(StateIn& si);
@@ -71,6 +72,7 @@ namespace sc {
       const Ref<MessageGrp>& msg() const { return msg_; }
       const Ref<ThreadGrp>& thr() const { return thr_; }
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
+      const RefSCVector& electric_field() const { return efield_; }
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
 
@@ -86,6 +88,7 @@ namespace sc {
       Ref<MessageGrp> msg_;
       Ref<ThreadGrp> thr_;
       Ref<GaussianBasisSet> basis_;
+      RefSCVector efield_;
       bool spin_polarized_;
 
       // Densities

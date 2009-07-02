@@ -79,7 +79,8 @@ class DistArray4_MPIIOFile: public DistArray4 {
     int ij_proc(int i, int j) const { return 0;};
 
     /// helps to implement clone of Derived class
-    template <typename Derived> Ref<DistArray4> clone(const DistArray4Dimensions& dim);
+    template <typename Derived> Ref<DistArray4> clone(const DistArray4Dimensions& dim =
+                                                      DistArray4Dimensions::default_dim());
 
   public:
     DistArray4_MPIIOFile(const char *filename, int num_te_types,

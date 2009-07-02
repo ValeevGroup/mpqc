@@ -531,27 +531,6 @@ TwoBodyMOIntsRuntime<2>::TwoBodyMOIntsRuntime(StateIn& si)
 }
 
 template <>
-ClassDesc
-TwoBodyMOIntsRuntime<4>::class_desc_(typeid(this_type),
-                                     "TwoBodyMOIntsRuntime<4>", 1,
-                                     "virtual public SavableState", 0, 0,
-                                     create<this_type> );
-
-template <>
-ClassDesc
-TwoBodyMOIntsRuntime<3>::class_desc_(typeid(this_type),
-                                     "TwoBodyMOIntsRuntime<3>", 1,
-                                     "virtual public SavableState", 0, 0,
-                                     create<this_type> );
-
-template <>
-ClassDesc
-TwoBodyMOIntsRuntime<2>::class_desc_(typeid(this_type),
-                                     "TwoBodyMOIntsRuntime<2>", 1,
-                                     "virtual public SavableState", 0, 0,
-                                     create<this_type> );
-
-template <>
 const TwoBodyMOIntsRuntime<4>::TwoBodyIntEvalRef&
 TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
 {

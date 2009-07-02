@@ -265,6 +265,7 @@ namespace sc {
       TwoBodyMOIntsRuntime(const Ref<MOIntsTransformFactory>& factory);
       TwoBodyMOIntsRuntime(StateIn& si);
       void save_data_state(StateOut& so);
+      ~TwoBodyMOIntsRuntime();
 
       /// return the params object that determines optional aspects of behavior of the runtime
       const Params* params() const { return const_cast<const Params*>(params_); } // cast because of serialization this can't be const
@@ -316,7 +317,7 @@ namespace sc {
     ClassDesc
     TwoBodyMOIntsRuntime<NumCenters>::class_desc_(typeid(this_type),
                                                   (std::string("TwoBodyMOIntsRuntime<") +
-                                                   std::string('0' + NumCenters) +
+                                                   static_cast<char>('0' + NumCenters) +
                                                    std::string(">")).c_str(),
                                                   1,
                                                   "virtual public SavableState", 0, 0,
@@ -335,6 +336,13 @@ namespace sc {
     SavableState::save_state(factory_.pointer(),so);
     EvalRegistry::save_instance(evals_,so);
     SavableState::save_state(params_,so);
+  }
+
+  template <int NumCenters>
+  TwoBodyMOIntsRuntime<NumCenters>::~TwoBodyMOIntsRuntime()
+  {
+    // some compilers must be tricked ...
+    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
   }
 
   template <int NumCenters>

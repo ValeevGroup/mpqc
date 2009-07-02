@@ -329,14 +329,6 @@ namespace sc {
   }
 
   template <int NumCenters>
-  TwoBodyMOIntsRuntime<NumCenters>::TwoBodyMOIntsRuntime(StateIn& si)
-  {
-    factory_ << SavableState::restore_state(si);
-    evals_ = EvalRegistry::restore_instance(si);
-    params_ << SavableState::restore_state(si);
-  }
-
-  template <int NumCenters>
   void
   TwoBodyMOIntsRuntime<NumCenters>::save_data_state(StateOut& so)
   {

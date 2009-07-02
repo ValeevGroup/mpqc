@@ -36,6 +36,7 @@
 #include <chemistry/qc/mbptr12/registry.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
+#include <chemistry/qc/df/df_runtime.h>
 
 using namespace sc;
 
@@ -504,6 +505,51 @@ namespace sc{   namespace detail {
 /////////////////////////////////////////////////////////////////////////////
 
 namespace sc {
+
+template <>
+TwoBodyMOIntsRuntime<4>::TwoBodyMOIntsRuntime(StateIn& si)
+{
+  factory_ << SavableState::restore_state(si);
+  evals_ << EvalRegistry::restore_instance(si);
+  params_ = require_dynamic_cast<Params*>(SavableState::restore_state(si),"restored pointer of unexpected type");
+}
+
+template <>
+TwoBodyMOIntsRuntime<3>::TwoBodyMOIntsRuntime(StateIn& si)
+{
+  factory_ << SavableState::restore_state(si);
+  evals_ << EvalRegistry::restore_instance(si);
+  params_ = require_dynamic_cast<Params*>(SavableState::restore_state(si),"restored pointer of unexpected type");
+}
+
+template <>
+TwoBodyMOIntsRuntime<2>::TwoBodyMOIntsRuntime(StateIn& si)
+{
+  factory_ << SavableState::restore_state(si);
+  evals_ << EvalRegistry::restore_instance(si);
+  params_ = require_dynamic_cast<Params*>(SavableState::restore_state(si),"restored pointer of unexpected type");
+}
+
+template <>
+ClassDesc
+TwoBodyMOIntsRuntime<4>::class_desc_(typeid(this_type),
+                                     "TwoBodyMOIntsRuntime<4>", 1,
+                                     "virtual public SavableState", 0, 0,
+                                     create<this_type> );
+
+template <>
+ClassDesc
+TwoBodyMOIntsRuntime<3>::class_desc_(typeid(this_type),
+                                     "TwoBodyMOIntsRuntime<3>", 1,
+                                     "virtual public SavableState", 0, 0,
+                                     create<this_type> );
+
+template <>
+ClassDesc
+TwoBodyMOIntsRuntime<2>::class_desc_(typeid(this_type),
+                                     "TwoBodyMOIntsRuntime<2>", 1,
+                                     "virtual public SavableState", 0, 0,
+                                     create<this_type> );
 
 template <>
 const TwoBodyMOIntsRuntime<4>::TwoBodyIntEvalRef&

@@ -36,6 +36,8 @@
 #include <stdexcept>
 #include <util/group/thread.h>
 #include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 
 namespace sc {
 
@@ -78,10 +80,19 @@ namespace sc {
           return new T;
         }
         static Ref<T> instance(StateIn& si) {
-          return new T(si);
+          bool nonnull; si.get(nonnull);
+          if (nonnull)
+            return new T(si);
+          else
+            return 0;
         }
         static void save_instance(const Ref<T>& instance, StateOut& so) {
-          instance->save_data_state(so);
+          if (instance) {
+            so.put(true);
+            instance->save_data_state(so);
+          }
+          else
+            so.put(false);
         }
     };
 

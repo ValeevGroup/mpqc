@@ -116,6 +116,7 @@ class MP2R12Energy : virtual public SavableState {
     int get_debug() const;
 
     virtual void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()) = 0;
+    /// total correlation energy (including OBS singles for non-Brillouin references)
     virtual double energy() = 0;
     virtual const RefSCVector& ef12(SpinCase2 S) const {};
 

@@ -71,6 +71,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int unv; s.get(unv); new_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
+  s.get(cabs_singles_);
+  s.get(cabs_singles_energy_);
 
   twopdm_grid_ << SavableState::restore_state(s);
   s.get(plot_pair_function_[0]);
@@ -94,6 +96,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
+
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+  if (r12evalinfo_->obs_eq_ribs()) cabs_singles_ = false;
 
   const bool diag = r12evalinfo()->ansatz()->diag();
   const bool optimized_amplitudes = r12evalinfo()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
@@ -128,6 +133,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12b_energy_ = 0;
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
+  cabs_singles_energy_ = 0.0;
 
   this->set_desired_value_accuracy(desired_value_accuracy());
 }
@@ -151,6 +157,8 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)spinadapted_);
   s.put((int)new_energy_);
   s.put(mp2_corr_energy_);
+  s.put(cabs_singles_);
+  s.put(cabs_singles_energy_);
 
   SavableState::save_state(twopdm_grid_.pointer(),s);
   s.put((int)plot_pair_function_[0]);
@@ -165,6 +173,11 @@ MBPT2_R12::print(ostream&o) const
 
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
   o << indent << "Use new MP2R12Energy: " << (new_energy_ ? "true" : "false") << endl;
+  o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << endl;
+  if (cabs_singles_) {
+    o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)
+                                          << endl;
+  }
 
   r12evalinfo()->print(o);
 
@@ -225,6 +238,7 @@ MBPT2_R12::obsolete()
   r12b_energy_ = 0;
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
+  cabs_singles_energy_ = 0.0;
   MBPT2::obsolete();
 }
 
@@ -261,7 +275,7 @@ double
 MBPT2_R12::corr_energy()
 {
   energy();
-  return energy() - ref_energy();
+  return energy() - ref_energy() - cabs_singles_energy();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -270,7 +284,16 @@ double
 MBPT2_R12::r12_corr_energy()
 {
   energy();
-  return energy() - mp2_corr_energy_ - ref_energy();
+  return energy() - mp2_corr_energy_ - ref_energy() - cabs_singles_energy();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+double
+MBPT2_R12::cabs_singles_energy()
+{
+  energy();
+  return cabs_singles_energy_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

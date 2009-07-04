@@ -83,6 +83,9 @@ class MBPT2_R12: public MBPT2 {
 
     double mp2_corr_energy_;
 
+    bool cabs_singles_;
+    double cabs_singles_energy_;
+
     // calculate the MP2-R12 energy (or energies, depending on which approximation is chosen)
     void compute_energy_();
 
@@ -112,6 +115,9 @@ class MBPT2_R12: public MBPT2 {
     preferred since it has many more security checks, such as checks of positive definiteness of B etc.
     The default value of this variable is false.
 
+    <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
+    CABS singles and include it into the MBPT(2)-R12 energy. The default is false.
+
     </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
     ~MBPT2_R12();
@@ -123,8 +129,12 @@ class MBPT2_R12: public MBPT2 {
     /// this changes the correlation factor
     void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
 
+    // total MBPT(2)-R12 energy (does not include CABS singles)
     double corr_energy();
+    // R12 doubles contribution to the MBPT(2)-R12 energy
     double r12_corr_energy();
+    // CABS singles contribution to the total energy
+    double cabs_singles_energy();
 
     RefSymmSCMatrix density();
 

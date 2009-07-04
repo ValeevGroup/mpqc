@@ -65,7 +65,7 @@ static ClassDesc R12IntEval_cd(
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
-  r12info_(r12i), evaluated_(false), debug_(0), emp2_singles_(0.0)
+  r12info_(r12i), evaluated_(false), debug_(0), emp2_obs_singles_(0.0)
 {
   this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
@@ -225,7 +225,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
   if (si.version(::class_desc<R12IntEval>()) >= 3)
-    si.get(emp2_singles_);
+    si.get(emp2_obs_singles_);
 
   init_tforms_();
 }
@@ -265,7 +265,7 @@ R12IntEval::save_data_state(StateOut& so)
 
   so.put((int)evaluated_);
   so.put(debug_);
-  so.put(emp2_singles_);
+  so.put(emp2_obs_singles_);
 }
 
 void
@@ -378,10 +378,19 @@ R12IntEval::amps()
 }
 
 double
-R12IntEval::emp2_singles()
+R12IntEval::emp2_obs_singles()
 {
   compute();
-  return emp2_singles_;
+  return emp2_obs_singles_;
+}
+
+double
+R12IntEval::emp2_cabs_singles()
+{
+  compute();
+  if (emp2_cabs_singles_ == 0.0)
+    emp2_cabs_singles_ = compute_emp2_cabs_singles();
+  return emp2_cabs_singles_;
 }
 
 const RefSCVector&
@@ -2149,8 +2158,16 @@ R12IntEval::compute()
   // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
   if (!r12info()->bc()) {
     const bool obs_singles = true;
-    emp2_singles_ = compute_singles_emp2_(obs_singles);
+    emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
   }
+
+#define TEST_CABS_SINGLES 0
+#if TEST_CABS_SINGLES
+  {
+    const double value = compute_emp2_cabs_singles();
+    ExEnv::out0() << "CABS singles energy = " << value << endl;
+  }
+#endif
 
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);

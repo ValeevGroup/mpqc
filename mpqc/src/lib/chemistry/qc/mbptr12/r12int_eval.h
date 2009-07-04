@@ -76,7 +76,8 @@ class R12IntEval : virtual public SavableState {
 
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
-  double emp2_singles_;
+  double emp2_obs_singles_;
+  double emp2_cabs_singles_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -88,6 +89,8 @@ class R12IntEval : virtual public SavableState {
 
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
+  /// compute canonical CABS space for spin s
+  const Ref<OrbitalSpace>& cabs_space_canonical(SpinCase1 s);
 
   /// This is the new way to generate needed spaces
   /// generates fock, h+J, or K weighted spaces
@@ -382,11 +385,13 @@ class R12IntEval : virtual public SavableState {
   /** Compute the mass-velocity contributions to B that appear when DKH-based R12 calculations are requested */
   void compute_B_DKH_();
 
-  /** Compute singles contribution to the MP2 energy.
+  /** Compute OBS singles contribution to the MP2 energy.
       If obs_singles is set to true, use OBS virtuals, else use correlating virtuals (these
       virtuals differ if VBS != OBS).
     */
-  double compute_singles_emp2_(bool obs_singles);
+  double compute_emp2_obs_singles(bool obs_singles);
+  /** Compute CABS singles contribution to the MP2 energy. */
+  double compute_emp2_cabs_singles();
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/
@@ -490,8 +495,10 @@ public:
   /// Compute P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
 
-  /// Returns the singles MP2 energy
-  double emp2_singles();
+  /// Returns the OBS singles MP2 energy
+  double emp2_obs_singles();
+  /// Returns the CABS singles MP2 energy
+  double emp2_cabs_singles();
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S

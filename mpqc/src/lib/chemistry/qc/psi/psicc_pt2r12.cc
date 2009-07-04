@@ -143,7 +143,6 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
 }
 
 void PsiCCSD_PT2R12::import_occupations() {
-  const double reference_energy_mpqc = mbptr12_->ref_energy();
   reference()->import_occupations(mbptr12_->ref());
 }
 
@@ -725,6 +724,8 @@ void PsiCCSD_PT2R12::compute() {
     ExEnv::out0() << indent << "E2(t)         = "<< scprintf("%20.15lf",3.0*E2[AlphaAlpha])
                   << endl;
   }
+  // e2 will include cabs singles energy, if mbpt2-r12 includes it
+  e2 += mbptr12_->cabs_singles_energy();
 
   ExEnv::out0() << indent << "E2(MP2)       = "<< scprintf("%20.15lf",mbptr12_->r12_corr_energy())
                 << endl;

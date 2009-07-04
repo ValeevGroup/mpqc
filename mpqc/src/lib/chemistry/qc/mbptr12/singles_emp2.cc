@@ -38,6 +38,7 @@
 #include <util/state/state_text.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
@@ -50,13 +51,13 @@ using namespace std;
 using namespace sc;
 
 double
-R12IntEval::compute_singles_emp2_(bool obs_singles)
+R12IntEval::compute_emp2_obs_singles(bool obs_singles)
 {
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
 
-  Timer tim("singles MP2 energy");
+  Timer tim("OBS singles MP2 energy");
   std::string evalname;
   {
     std::ostringstream oss;
@@ -100,11 +101,123 @@ R12IntEval::compute_singles_emp2_(bool obs_singles)
     }
   }
 
-  ExEnv::out0() << indent << "E(MP2 singles) = " << scprintf("%15.9lf",result) << endl;
+  ExEnv::out0() << indent << "E(MP2 OBS singles) = " << scprintf("%25.15lf",result) << endl;
   ExEnv::out0() << decindent << indent << "Exited " << evalname << endl;
 
   return result;
 }
+
+double
+R12IntEval::compute_emp2_cabs_singles()
+{
+  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MemoryGrp> mem = r12info()->mem();
+  Ref<ThreadGrp> thr = r12info()->thr();
+
+  Timer tim("CABS singles MP2 energy");
+  std::string evalname("CABS singles MP2 energy evaluator");
+  ExEnv::out0() << endl << indent << "Entered " << evalname << endl;
+  ExEnv::out0() << incindent;
+
+  int me = msg->me();
+  int nproc = msg->n();
+
+  double result = 0.0;
+  for(int s=0; s<nspincases1(); s++) {
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+
+    Ref<OrbitalSpace> occ = r12info_->refinfo()->occ(spin);
+    Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
+    RefSCMatrix FiA = fock(occ,cabs,spin);
+
+    const int ni = occ->rank();
+    const int nA = cabs->rank();
+    const RefDiagSCMatrix& ievals = occ->evals();
+    const RefDiagSCMatrix& Aevals = cabs->evals();
+
+    for(int i=0; i<ni; i++) {
+      for(int a=0; a<nA; a++) {
+        const double fia = FiA.get_element(i,a);
+        result -= fia*fia/(-ievals(i)+Aevals(a));
+      }
+    }
+  }
+
+  ExEnv::out0() << indent << "E(MP2 CABS singles) = " << scprintf("%25.15lf",result) << endl;
+  ExEnv::out0() << decindent << indent << "Exited " << evalname << endl;
+
+  return result;
+}
+
+// rotates CABS so that the Fock matrix is diagonal
+const Ref<OrbitalSpace>&
+R12IntEval::cabs_space_canonical(SpinCase1 spin)
+{
+  static Ref<OrbitalSpace> cabs_canonical[] = {0, 0};
+
+  assert(r12info()->obs_eq_ribs() == false);
+
+  if (cabs_canonical[spin] != 0)
+    return cabs_canonical[spin];
+
+  Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
+  const int ncabs = cabs->rank();
+
+  // note that I'm overriding pauli flag here -- true Fock matrix must always be used
+  const double scale_J = 1.0;
+  const double scale_K = 1.0;
+  const double scale_H = 1.0;
+  const int pauli = 0;
+  RefSCMatrix F_cabs = fock(cabs,cabs,spin,scale_J,scale_K,scale_H,pauli);
+  RefSymmSCMatrix F_cabs_lt(F_cabs.rowdim(),F_cabs->kit());
+  F_cabs_lt.assign(0.0);
+  // CABS is a blocked space, convert to a symmetric matrix block by block
+  {
+    BlockedSCMatrix* bF = require_dynamic_cast<BlockedSCMatrix*>(F_cabs.pointer(),"expected a blocked matrix");
+    BlockedSymmSCMatrix* bF_lt = require_dynamic_cast<BlockedSymmSCMatrix*>(F_cabs_lt.pointer(),"expected a blocked matrix");
+    Ref<SCBlockInfo> blocks = F_cabs.rowdim()->blocks();
+    const int nb = blocks->nblock();
+    for(int b=0; b<nb; ++b) {
+      const int bsize = blocks->size(b);
+      bF_lt->block(b).assign_subblock(bF->block(b),0,bsize-1,0,bsize-1);
+    }
+  }
+#define TEST_CABS_CANONICAL 0
+#if TEST_CABS_CANONICAL
+  F_cabs.print("Fock matrix in the original CABS basis");
+  F_cabs_lt.print("Fock matrix in the original CABS basis");
+#endif
+
+  std::string id_sb, id;
+  if (spin_polarized()) {
+    id = ParsedOrbitalSpaceKey::key(std::string("c'"),Alpha);
+  }
+  else {
+    id = "c'";
+  }
+  std::ostringstream oss;  oss << "CABS (" << to_string(spin) << ";canonicalized)";
+  cabs_canonical[spin] = new OrbitalSpace(id, oss.str(),
+                                          cabs->coefs()*F_cabs_lt.eigvecs(),
+                                          cabs->basis(),
+                                          cabs->integral(),
+                                          F_cabs_lt.eigvals(),
+                                          0, 0,
+                                          OrbitalSpace::symmetry);
+
+  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(cabs_canonical[spin]));
+
+#if TEST_CABS_CANONICAL
+  {
+    RefSCMatrix F_CC = fock(cabs_canonical[spin],cabs_canonical[spin],spin);
+    F_CC.print("Fock matrix in the CABS canonical basis");
+    cabs_canonical[spin]->evals().print("eigenvalues of CABS canonical basis");
+  }
+#endif
+
+  return cabs_canonical[spin];
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 

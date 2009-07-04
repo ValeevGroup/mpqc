@@ -129,10 +129,15 @@ MBPT2_R12::compute_energy_()
     ef12 = er12(r12c_energy_);
   }
 
+  if (cabs_singles_) {
+    cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
+  }
+
   tim.exit();
 
   mp2_corr_energy_ = etotal - ef12;
   etotal += ref_energy();
+  etotal += cabs_singles_energy_;
   set_energy(etotal);
   set_actual_value_accuracy(reference_->actual_value_accuracy()
                             *ref_to_mp2r12_acc());

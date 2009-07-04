@@ -192,7 +192,7 @@ namespace sc {
       psiinput->write_keyword("puream", "true");
     psiinput->write_geom(molecule());
     psiinput->end_section();
-    {
+    if (electric_field()) {
       double E[3];  for(int xyz=0; xyz<3; ++xyz) { E[xyz] = electric_field().get_element(xyz); }
       psiinput->write_keyword_array("psi:efield", 3, E);
     }

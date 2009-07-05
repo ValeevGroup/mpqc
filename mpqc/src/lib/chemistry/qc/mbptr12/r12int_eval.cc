@@ -61,11 +61,11 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEval
  -----------------*/
 static ClassDesc R12IntEval_cd(
-  typeid(R12IntEval),"R12IntEval",3,"virtual public SavableState",
+  typeid(R12IntEval),"R12IntEval",4,"virtual public SavableState",
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
-  r12info_(r12i), evaluated_(false), debug_(0), emp2_obs_singles_(0.0)
+  r12info_(r12i), evaluated_(false), debug_(0), emp2_obs_singles_(0.0), emp2_cabs_singles_(0.0)
 {
   this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
@@ -226,6 +226,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   si.get(debug_);
   if (si.version(::class_desc<R12IntEval>()) >= 3)
     si.get(emp2_obs_singles_);
+  if (si.version(::class_desc<R12IntEval>()) >= 4)
+    si.get(emp2_cabs_singles_);
 
   init_tforms_();
 }
@@ -266,12 +268,16 @@ R12IntEval::save_data_state(StateOut& so)
   so.put((int)evaluated_);
   so.put(debug_);
   so.put(emp2_obs_singles_);
+  so.put(emp2_cabs_singles_);
 }
 
 void
 R12IntEval::obsolete()
 {
   evaluated_ = false;
+
+  emp2_obs_singles_ = 0.0;
+  emp2_cabs_singles_ = 0.0;
 
   // make all transforms obsolete
   TformMap::iterator first_tform = tform_map_.begin();

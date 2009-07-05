@@ -98,7 +98,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
 
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
-  if (r12evalinfo_->obs_eq_ribs()) cabs_singles_ = false;
 
   const bool diag = r12evalinfo()->ansatz()->diag();
   const bool optimized_amplitudes = r12evalinfo()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;

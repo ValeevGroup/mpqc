@@ -129,7 +129,7 @@ MBPT2_R12::compute_energy_()
     ef12 = er12(r12c_energy_);
   }
 
-  if (cabs_singles_) {
+  if (cabs_singles_ && r12evalinfo_->obs_eq_ribs() == false) {
     cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
   }
 

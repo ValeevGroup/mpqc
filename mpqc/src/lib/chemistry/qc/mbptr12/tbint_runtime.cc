@@ -580,7 +580,8 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
                                  params_str,
                                  pkey.layout());
 
-#define ALWAYS_USE_PARTIAL_TRANSFORMS 0
+// if not using density-fitting, use partial transforms
+#define ALWAYS_USE_PARTIAL_TRANSFORMS 1
 #define ALWAYS_USE_IXJY 1
 
       if (evals_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
@@ -588,12 +589,12 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
         tform->partially_transformed_ints( evals_->value(half_tform_key)->ints_acc() );
       }
 #if ALWAYS_USE_PARTIAL_TRANSFORMS
-      else { // create partial transform and use it
+      else if (factory()->df_info() == 0) { // if not doing density-fitting create partial transform and use it
         const Ref<TwoBodyIntEval>& half_tform = create_eval(half_tform_key);
         half_tform->compute();
         return create_eval(key);
       }
-#else
+#endif
       else { // decide the best algorithm
 #if !ALWAYS_USE_IXJY
         if (ket1->rank() <= ket1->basis()->nbasis()) {
@@ -605,7 +606,6 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
           tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
         }
       }
-#endif
     }
   }
   else if (layout == TwoBodyIntLayout::b1k1_b2k2)

@@ -183,6 +183,7 @@ class ReplSCMatrix: public SCMatrix {
     Ref<ReplSCMatrixKit> skit();
 };
 
+/// Replicated SymmSCMatrix
 class ReplSymmSCMatrix: public SymmSCMatrix {
     friend class ReplSCMatrix;
     friend class ReplDiagSCMatrix;
@@ -230,7 +231,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     double solve_this(SCVector*);
     double trace();
     double determ_this();
-    void gen_invert_this();
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
@@ -260,6 +261,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     Ref<ReplSCMatrixKit> skit();
 };
 
+/// Replicated DiagSCMatrix
 class ReplDiagSCMatrix: public DiagSCMatrix {
     friend class ReplSCMatrix;
     friend class ReplSymmSCMatrix;
@@ -284,7 +286,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     double invert_this();
     double determ_this();
     double trace();
-    void gen_invert_this();
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

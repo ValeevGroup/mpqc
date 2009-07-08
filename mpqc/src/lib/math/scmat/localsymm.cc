@@ -26,6 +26,7 @@
 //
 
 #include <math.h>
+#include <algorithm>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -33,6 +34,7 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/offset.h>
+#include <math/scmat/predicate.h>
 
 #include <math/scmat/mops.h>
 
@@ -127,7 +129,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   RefSCDimension dnrow = (nsrow==n()) ? dim().pointer():new SCDimension(nsrow);
   RefSCDimension dncol = (nscol==n()) ? dim().pointer():new SCDimension(nscol);
 
@@ -140,7 +142,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       lsb->rows[i][j] = get_element(i+br,j+bc);
-      
+
   return sb;
 }
 
@@ -156,7 +158,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   RefSCDimension dnrow = new SCDimension(nsrow);
 
   SymmSCMatrix * sb = kit()->symmmatrix(dnrow);
@@ -168,7 +170,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er)
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       lsb->rows[i][j] = get_element(i+br,j+br);
-      
+
   return sb;
 }
 
@@ -188,7 +190,7 @@ LocalSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       set_element(i+br,j+bc,lsb->rows[i][j]);
@@ -209,7 +211,7 @@ LocalSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       set_element(i+br,j+br,lsb->rows[i][j]);
@@ -232,7 +234,7 @@ LocalSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int 
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
@@ -254,7 +256,7 @@ LocalSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
@@ -269,7 +271,7 @@ LocalSymmSCMatrix::get_row(int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   SCVector * v = kit()->vector(dim());
 
   LocalSCVector *lv =
@@ -277,7 +279,7 @@ LocalSymmSCMatrix::get_row(int i)
 
   for (int j=0; j < n(); j++)
     lv->set_element(j,get_element(i,j));
-      
+
   return v;
 }
 
@@ -290,14 +292,14 @@ LocalSymmSCMatrix::assign_row(SCVector *v, int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   if (v->n() != n()) {
     ExEnv::errn() << indent
          << "LocalSymmSCMatrix::assign_row: vector is wrong size "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
   }
-  
+
   LocalSCVector *lv =
     require_dynamic_cast<LocalSCVector*>(v, "LocalSymmSCMatrix::assign_row");
 
@@ -315,14 +317,14 @@ LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   if (v->n() != n()) {
     ExEnv::errn() << indent
          << "LocalSymmSCMatrix::accumulate_row: vector is wrong size"
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
   }
-  
+
   LocalSCVector *lv =
     require_dynamic_cast<LocalSCVector*>(v, "LocalSymmSCMatrix::accumulate_row");
 
@@ -374,7 +376,7 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
 {
   LocalSCVector* lv =
     require_dynamic_cast<LocalSCVector*>(v,"LocalSymmSCMatrix::solve_this");
-  
+
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
       ExEnv::errn() << indent
@@ -387,26 +389,27 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
-LocalSymmSCMatrix::gen_invert_this()
+LocalSymmSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   if (n() == 0) return;
 
   double *evals = new double[n()];
   double **evecs = cmat_new_square_matrix(n());
-  
-  cmat_diag(rows,evals,evecs,n(),1,1.0e-15);
 
+  cmat_diag(rows,evals,evecs,n(),1,1.0e-15);
+  const double sigma_max = * std::max_element(evals, evals+n(), fabs_less<double>());
+  const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < n(); i++) {
-    if (fabs(evals[i]) > 1.0e-8)
+    if (fabs(evals[i]) > sigma_min_threshold)
       evals[i] = 1.0/evals[i];
     else
       evals[i] = 0;
   }
 
   cmat_transform_diagonal_matrix(rows, n(), evals, n(), evecs, 0);
-  
+
   delete[] evals;
-  cmat_delete_matrix(evecs);  
+  cmat_delete_matrix(evecs);
 }
 
 void
@@ -556,7 +559,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 
   if (nr==0 || nc==0)
     return;
-  
+
   int nproc = messagegrp()->n();
 
   double **ablock = cmat_new_square_matrix(D1);
@@ -576,7 +579,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
           if (nj > D1) nj = D1;
 
           for (k=0; k < nc; k += D1) {
-        
+
               int nk = nc-k;
               if (nk > D1) nk = D1;
 
@@ -584,7 +587,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
                   copy_block(ablock, la->rows, i, ni, k, nk);
               else
                   copy_trans_block(ablock, la->rows, i, ni, k, nk);
-          
+
               copy_sym_block(bblock, lb->rows, j, nj, k, nk);
               copy_block(cblock, temp, 0, ni, j, nj);
               mult_block(ablock, bblock, cblock, ni, nj, nk);
@@ -598,9 +601,9 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
           if (nj > D1) nj = D1;
 
           memset(cblock[0], 0, sizeof(double)*D1*D1);
-      
+
           for (k=0; k < nc; k += D1) {
-        
+
               int nk = nc-k;
               if (nk > D1) nk = D1;
 
@@ -609,7 +612,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
                   copy_block(bblock, la->rows, j, nj, k, nk);
               else
                   copy_trans_block(bblock, la->rows, j, nj, k, nk);
-          
+
               mult_block(ablock, bblock, cblock, ni, nj, nk);
             }
 

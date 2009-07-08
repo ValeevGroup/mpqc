@@ -97,6 +97,7 @@ class DistSCVector: public SCVector {
     Ref<DistSCMatrixKit> skit();
 };
 
+/// Distributed SCMatrix
 class DistSCMatrix: public SCMatrix {
     friend class DistSymmSCMatrix;
     friend class DistDiagSCMatrix;
@@ -117,7 +118,7 @@ class DistSCMatrix: public SCMatrix {
     Ref<SCMatrixBlock> block_to_block(int, int) const;
     Ref<SCBlockInfo> rowblocks() const { return d1->blocks(); }
     Ref<SCBlockInfo> colblocks() const { return d2->blocks(); }
-    
+
     enum VecOp {CopyFromVec, CopyToVec, AccumFromVec, AccumToVec};
     enum Form { Row, Col } form;
     void create_vecform(Form, int nvec = -1);
@@ -154,7 +155,8 @@ class DistSCMatrix: public SCMatrix {
     double solve_this(SCVector*);
     double determ_this();
     double trace();
-    void gen_invert_this();
+    /// uses invert_this()
+    void gen_invert_this(double condition_number_threshold = 1e8);
     void schmidt_orthog(SymmSCMatrix*,int);
     int schmidt_orthog_tol(SymmSCMatrix*, double tol, double *res=0);
     void element_op(const Ref<SCElementOp>&);
@@ -173,6 +175,7 @@ class DistSCMatrix: public SCMatrix {
     Ref<DistSCMatrixKit> skit();
 };
 
+/// Distributed SymmSCMatrix
 class DistSymmSCMatrix: public SymmSCMatrix {
     friend class DistSCMatrix;
     friend class DistDiagSCMatrix;
@@ -213,7 +216,8 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     double solve_this(SCVector*);
     double trace();
     double determ_this();
-    void gen_invert_this();
+    /// uses invert_this()
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     void diagonalize(DiagSCMatrix*,SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
@@ -231,6 +235,7 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     Ref<DistSCMatrixKit> skit();
 };
 
+/// Distributed DiagSCMatrix
 class DistDiagSCMatrix: public DiagSCMatrix {
     friend class DistSCMatrix;
     friend class DistSymmSCMatrix;
@@ -256,7 +261,8 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     double invert_this();
     double determ_this();
     double trace();
-    void gen_invert_this();
+    /// generalized-invert this
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

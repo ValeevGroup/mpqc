@@ -618,11 +618,19 @@ BlockedSCMatrix::invert_this()
 }
 
 void
-BlockedSCMatrix::gen_invert_this()
+BlockedSCMatrix::gen_invert_this(double condition_number_threshold)
 {
-  ExEnv::errn() << indent
-       << "BlockedSCMatrix::gen_invert_this: SVD not implemented yet\n";
-  abort();
+  // if this matrix is block-diagonal use SVD
+  if (d1->blocks()->nblock() == d2->blocks()->nblock()) {
+    for (int i=0; i < nblocks_; i++)
+      if (mats_[i].nonnull())
+        mats_[i]->gen_invert_this(condition_number_threshold);
+  }
+  else {
+    ExEnv::errn() << indent
+         << "BlockedSCMatrix::gen_invert_this: SVD not implemented yet for non-block-diagonal matrices\n";
+    abort();
+  }
 }
 
 double

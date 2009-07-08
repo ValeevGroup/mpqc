@@ -128,7 +128,7 @@ BlockedDiagSCMatrix::invert_this()
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det *= mats_[i]->invert_this();
-  
+
   return det;
 }
 
@@ -140,7 +140,7 @@ BlockedDiagSCMatrix::determ_this()
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det *= mats_[i]->determ_this();
-  
+
   return det;
 }
 
@@ -152,16 +152,16 @@ BlockedDiagSCMatrix::trace()
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det += mats_[i]->trace();
-  
+
   return det;
 }
 
 void
-BlockedDiagSCMatrix::gen_invert_this()
+BlockedDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
-      mats_[i]->gen_invert_this();
+      mats_[i]->gen_invert_this(condition_number_threshold);
 }
 
 void
@@ -170,7 +170,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
   BlockedSCElementOp *bop = dynamic_cast<BlockedSCElementOp*>(op.pointer());
 
   int nb = d->blocks()->nblock();
-  
+
   op->defer_collect(1);
   for (int i=0; i < nb; i++) {
     if (bop)
@@ -196,7 +196,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
   BlockedSCElementOp2 *bop = dynamic_cast<BlockedSCElementOp2*>(op.pointer());
 
   int nb = d->blocks()->nblock();
-  
+
   op->defer_collect(1);
   for (int i=0; i < nb; i++) {
     if (bop)
@@ -225,7 +225,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
   BlockedSCElementOp3 *bop = dynamic_cast<BlockedSCElementOp3*>(op.pointer());
 
   int nb = d->blocks()->nblock();
-  
+
   op->defer_collect(1);
   for (int i=0; i < nb; i++) {
     if (bop)
@@ -246,7 +246,7 @@ BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   for (int i=0; i < d->blocks()->nblock(); i++) {
     if (mats_[i].null())
       continue;
-    
+
     sprintf(newtitle,"%s:  block %d",title,i+1);
     mats_[i]->print(newtitle, os, prec);
   }

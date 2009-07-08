@@ -27,12 +27,14 @@
 
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/predicate.h>
 
 using namespace std;
 using namespace sc;
@@ -258,14 +260,16 @@ DistDiagSCMatrix::trace()
 }
 
 void
-DistDiagSCMatrix::gen_invert_this()
+DistDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       int n = I->block()->ndat();
       double *data = I->block()->dat();
+      const double sigma_max = * std::max_element(data, data+n, fabs_less<double>());
+      const double sigma_min_threshold = sigma_max / condition_number_threshold;
       for (int i=0; i<n; i++) {
-          if (fabs(data[i]) > 1.0e-8)
+          if (fabs(data[i]) > sigma_min_threshold)
               data[i] = 1.0/data[i];
           else
               data[i] = 0.0;

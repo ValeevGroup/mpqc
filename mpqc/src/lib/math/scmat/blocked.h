@@ -112,6 +112,7 @@ class BlockedSCVector: public SCVector {
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
+/// Blocked SCMatrix
 class BlockedSCMatrix: public SCMatrix {
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
@@ -120,7 +121,7 @@ class BlockedSCMatrix: public SCMatrix {
     Ref<SCMatrixKit> subkit;
     RefSCMatrix *mats_;
     int nblocks_;
-    
+
     void resize(SCDimension*, SCDimension*);
 
   public:
@@ -168,7 +169,8 @@ class BlockedSCMatrix: public SCMatrix {
     double solve_this(SCVector*);
     double determ_this();
     double trace();
-    void gen_invert_this();
+    /// generalized-invert this. \sa SCMatrix::gen_invert_this()
+    void gen_invert_this(double condition_number_threshold = 1e8);
     void schmidt_orthog(SymmSCMatrix*,int);
     int schmidt_orthog_tol(SymmSCMatrix*, double tol, double *res=0);
 
@@ -193,6 +195,7 @@ class BlockedSCMatrix: public SCMatrix {
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
+/// Blocked SymmSCMatrix
 class BlockedSymmSCMatrix: public SymmSCMatrix {
     friend class BlockedSCMatrix;
     friend class BlockedDiagSCMatrix;
@@ -237,7 +240,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     double determ_this();
     double trace();
     double solve_this(SCVector*);
-    void gen_invert_this();
+    /// generalized-invert this. \sa SymmSCMatrix::gen_invert_this()
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
@@ -273,6 +277,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
+/// Blocked DiagSCMatrix
 class BlockedDiagSCMatrix: public DiagSCMatrix {
     friend class BlockedSCMatrix;
     friend class BlockedSymmSCMatrix;
@@ -299,7 +304,8 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     double invert_this();
     double determ_this();
     double trace();
-    void gen_invert_this();
+    /// generalized-invert this. \sa DiagSCMatrix::gen_invert_this()
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,
@@ -322,7 +328,7 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
 class BlockedSCElementOp : public SCElementOp {
   private:
     int current_block_;
-    
+
   public:
     BlockedSCElementOp();
     void working_on(int);
@@ -332,7 +338,7 @@ class BlockedSCElementOp : public SCElementOp {
 class BlockedSCElementOp2 : public SCElementOp2 {
   private:
     int current_block_;
-    
+
   public:
     BlockedSCElementOp2();
     void working_on(int);
@@ -342,7 +348,7 @@ class BlockedSCElementOp2 : public SCElementOp2 {
 class BlockedSCElementOp3 : public SCElementOp3 {
   private:
     int current_block_;
-    
+
   public:
     BlockedSCElementOp3();
     void working_on(int);

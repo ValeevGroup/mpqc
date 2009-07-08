@@ -223,7 +223,7 @@ SCVector *
 DistSCMatrix::get_column(int i)
 {
   double *col = new double[nrow()];
-  
+
   Ref<SCMatrixSubblockIter> iter = local_blocks(SCMatrixSubblockIter::Read);
   for (iter->begin(); iter->ready(); iter->next()) {
     SCMatrixRectBlock *b = dynamic_cast<SCMatrixRectBlock*>(iter->block());
@@ -233,11 +233,11 @@ DistSCMatrix::get_column(int i)
     int joff = i-b->jstart;
     int jlen = b->jend-b->jstart;
     int ist = 0;
-    
+
     for (int ii=b->istart; ii < b->iend; ii++,ist++)
       col[ii] = b->data[ist*jlen+joff];
   }
-  
+
   SCVector * rcol = kit_->vector(rowdim());
   rcol->assign(col);
 
@@ -611,7 +611,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
                            << " -> " << dat[blockoffset] << endl;
                 }
               else {
-                  blockoffset = (k-b2start)*nbj+j+off; 
+                  blockoffset = (k-b2start)*nbj+j+off;
                 }
               if (blockoffset >= b->ndat()) {
                   fail("bad offset");
@@ -714,7 +714,7 @@ DistSCMatrix::transpose_this()
             }
         }
     }
-  
+
 }
 
 double
@@ -736,7 +736,7 @@ DistSCMatrix::invert_this()
 }
 
 void
-DistSCMatrix::gen_invert_this()
+DistSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   invert_this();
 }
@@ -771,7 +771,7 @@ DistSCMatrix::trace()
         }
     }
   messagegrp()->sum(ret);
-  
+
   return ret;
 }
 
@@ -779,7 +779,7 @@ double
 DistSCMatrix::solve_this(SCVector*v)
 {
   error("no solve_this");
-  
+
   // make sure that the dimensions match
   if (!rowdim()->equiv(v->dim())) {
       ExEnv::errn() << indent << "DistSCMatrix::solve_this(SCVector*v): "

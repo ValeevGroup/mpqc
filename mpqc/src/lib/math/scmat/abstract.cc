@@ -356,7 +356,7 @@ SCMatrix::copy()
 }
 
 void
-SCMatrix::gen_invert_this()
+SCMatrix::gen_invert_this(double condition_number_threshold)
 {
   int i;
 
@@ -371,9 +371,11 @@ SCMatrix::gen_invert_this()
   svd_this(U.pointer(),sigma.pointer(),V.pointer());
 
   // compute the epsilon rank of this
+  const double sigma_max = sigma->maxabs();
+  const double sigma_min_threshold = sigma_max / condition_number_threshold;
   int rank = 0;
   for (i=0; i<nmin; i++) {
-      if (fabs(sigma(i)) > 0.0000001) rank++;
+      if (sigma(i) > sigma_min_threshold) rank++;
     }
 
   RefSCDimension drank = new SCDimension(rank);
@@ -743,7 +745,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b,
   tmp->assign(0.0);
 
   RefSCMatrix res;
-  
+
   if (t == SCMatrix::TransposeTransform) {
       RefSCMatrix at = a->copy();
       at->transpose_this();

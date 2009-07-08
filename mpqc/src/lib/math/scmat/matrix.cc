@@ -43,10 +43,10 @@ namespace sc {
 // SCDimension reference member functions
 
 RefSCDimension::RefSCDimension() {}
-             
+
 RefSCDimension::RefSCDimension (const RefSCDimension & o):
   Ref<SCDimension> (o) {}
-             
+
 RefSCDimension::RefSCDimension (SCDimension * o): Ref<SCDimension> (o) {}
 
 RefSCDimension::~RefSCDimension () {}
@@ -97,9 +97,9 @@ RefSCDimension::operator int() const
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference member functions
 RefSCMatrix::RefSCMatrix() {}
-             
+
 RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): Ref<SCMatrix> (o) {}
-             
+
 RefSCMatrix::RefSCMatrix (SCMatrix * o): Ref<SCMatrix> (o) {}
 
 RefSCMatrix::~RefSCMatrix () {}
@@ -200,7 +200,7 @@ RefSCMatrix::operator+(const RefSCMatrix&a) const
   a.require_nonnull();
 
   RefSCMatrix ret(rowdim(),coldim(),kit());
-  
+
   ret->assign(pointer());
   ret->accumulate(a.pointer());
 
@@ -214,7 +214,7 @@ RefSCMatrix::operator-(const RefSCMatrix&a) const
   a.require_nonnull();
 
   RefSCMatrix ret(rowdim(),coldim(),kit());
-  
+
   ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
@@ -226,7 +226,7 @@ RefSCMatrix
 RefSCMatrix::t() const
 {
   require_nonnull();
-  
+
   RefSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
@@ -238,7 +238,7 @@ RefSCMatrix
 RefSCMatrix::i() const
 {
   require_nonnull();
-  
+
   RefSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
@@ -247,14 +247,14 @@ RefSCMatrix::i() const
 }
 
 RefSCMatrix
-RefSCMatrix::gi() const
+RefSCMatrix::gi(double condition_number_threshold) const
 {
   require_nonnull();
-  
+
   RefSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
-  ret->gen_invert_this();
+  ret->gen_invert_this(condition_number_threshold);
   return ret;
 }
 
@@ -310,7 +310,7 @@ RefSCMatrix
 RefSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {
   require_nonnull();
-  
+
   RefSCMatrix ret = pointer()->get_subblock(br,er,bc,ec);
   return ret;
 }
@@ -338,7 +338,7 @@ RefSCVector
 RefSCMatrix::get_row(int i) const
 {
   require_nonnull();
-  
+
   RefSCVector ret = pointer()->get_row(i);
   return ret;
 }
@@ -347,7 +347,7 @@ RefSCVector
 RefSCMatrix::get_column(int i) const
 {
   require_nonnull();
-  
+
   RefSCVector ret = pointer()->get_column(i);
   return ret;
 }
@@ -623,12 +623,12 @@ RefSCMatrix::block(int i) const
 RefSymmSCMatrix::RefSymmSCMatrix()
 {
 }
-             
+
 RefSymmSCMatrix::RefSymmSCMatrix (const RefSymmSCMatrix & o):
   Ref<SymmSCMatrix> (o)
 {
 }
-             
+
 RefSymmSCMatrix::RefSymmSCMatrix (SymmSCMatrix * o):
   Ref<SymmSCMatrix> (o)
 {
@@ -683,7 +683,7 @@ RefSCMatrix
 RefSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {
   require_nonnull();
-  
+
   RefSCMatrix ret = pointer()->get_subblock(br,er,bc,ec);
   return ret;
 }
@@ -692,7 +692,7 @@ RefSymmSCMatrix
 RefSymmSCMatrix::get_subblock(int br, int er)
 {
   require_nonnull();
-  
+
   RefSymmSCMatrix ret = pointer()->get_subblock(br,er);
   return ret;
 }
@@ -735,7 +735,7 @@ RefSCVector
 RefSymmSCMatrix::get_row(int i)
 {
   require_nonnull();
-  
+
   RefSCVector ret = pointer()->get_row(i);
   return ret;
 }
@@ -803,7 +803,7 @@ RefSymmSCMatrix::operator+(const RefSymmSCMatrix&a) const
   a.require_nonnull();
 
   RefSymmSCMatrix ret(dim(),kit());
-  
+
   ret->assign(pointer());
   ret->accumulate(a.pointer());
 
@@ -817,7 +817,7 @@ RefSymmSCMatrix::operator-(const RefSymmSCMatrix&a) const
   a.require_nonnull();
 
   RefSymmSCMatrix ret(dim(),kit());
-  
+
   ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
@@ -829,7 +829,7 @@ RefSymmSCMatrix
 RefSymmSCMatrix::i() const
 {
   require_nonnull();
-  
+
   RefSymmSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
@@ -838,14 +838,14 @@ RefSymmSCMatrix::i() const
 }
 
 RefSymmSCMatrix
-RefSymmSCMatrix::gi() const
+RefSymmSCMatrix::gi(double condition_number_threshold) const
 {
   require_nonnull();
-  
+
   RefSymmSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
-  ret->gen_invert_this();
+  ret->gen_invert_this(condition_number_threshold);
   return ret;
 }
 
@@ -907,7 +907,7 @@ double
 RefSymmSCMatrix::solve_lin(const RefSCVector& v) const
 {
   require_nonnull();
-  
+
   RefSymmSCMatrix ret = clone();
   ret->assign(pointer());
   return ret->solve_this(v.pointer());
@@ -917,7 +917,7 @@ double
 RefSymmSCMatrix::determ() const
 {
   require_nonnull();
-  
+
   RefSymmSCMatrix ret = clone();
   ret->assign(pointer());
   return ret->determ_this();
@@ -1183,12 +1183,12 @@ RefSymmSCMatrix::block(int i) const
 RefDiagSCMatrix::RefDiagSCMatrix()
 {
 }
-             
+
 RefDiagSCMatrix::RefDiagSCMatrix (const RefDiagSCMatrix & o):
   Ref<DiagSCMatrix> (o)
 {
 }
-             
+
 RefDiagSCMatrix::RefDiagSCMatrix (DiagSCMatrix * o):
   Ref<DiagSCMatrix> (o)
 {
@@ -1283,7 +1283,7 @@ RefDiagSCMatrix::operator+(const RefDiagSCMatrix&a) const
   a.require_nonnull();
 
   RefDiagSCMatrix ret(dim(),kit());
-  
+
   ret->assign(pointer());
   ret->accumulate(a.pointer());
 
@@ -1297,7 +1297,7 @@ RefDiagSCMatrix::operator-(const RefDiagSCMatrix&a) const
   a.require_nonnull();
 
   RefDiagSCMatrix ret(dim(),kit());
-  
+
   ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
@@ -1309,7 +1309,7 @@ RefDiagSCMatrix
 RefDiagSCMatrix::i() const
 {
   require_nonnull();
-  
+
   RefDiagSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
@@ -1318,14 +1318,14 @@ RefDiagSCMatrix::i() const
 }
 
 RefDiagSCMatrix
-RefDiagSCMatrix::gi() const
+RefDiagSCMatrix::gi(double condition_number_threshold) const
 {
   require_nonnull();
-  
+
   RefDiagSCMatrix ret;
   ret = clone();
   ret->assign(pointer());
-  ret->gen_invert_this();
+  ret->gen_invert_this(condition_number_threshold);
   return ret;
 }
 
@@ -1536,12 +1536,12 @@ RefDiagSCMatrix::block(int i) const
 RefSCVector::RefSCVector()
 {
 }
-             
+
 RefSCVector::RefSCVector (const RefSCVector & o):
   Ref<SCVector> (o)
 {
 }
-             
+
 RefSCVector::RefSCVector (SCVector * o):
   Ref<SCVector> (o)
 {
@@ -1600,7 +1600,7 @@ RefSCVector::operator+(const RefSCVector&a) const
   a.require_nonnull();
 
   RefSCVector ret(dim(),kit());
-  
+
   ret->assign(pointer());
   ret->accumulate(a.pointer());
 
@@ -1614,7 +1614,7 @@ RefSCVector::operator-(const RefSCVector&a) const
   a.require_nonnull();
 
   RefSCVector ret(dim(),kit());
-  
+
   ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());

@@ -164,7 +164,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   RefSCDimension dnrow = (nsrow==n()) ? dim().pointer():new SCDimension(nsrow);
   RefSCDimension dncol = (nscol==n()) ? dim().pointer():new SCDimension(nscol);
 
@@ -177,7 +177,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       lsb->rows[i][j] = get_element(i+br,j+bc);
-      
+
   return sb;
 }
 
@@ -193,7 +193,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er)
          << ") from (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   RefSCDimension dnrow = new SCDimension(nsrow);
 
   SymmSCMatrix * sb = kit()->symmmatrix(dnrow);
@@ -205,7 +205,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er)
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       lsb->rows[i][j] = get_element(i+br,j+br);
-      
+
   return sb;
 }
 
@@ -225,7 +225,7 @@ ReplSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
          << ") to (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       set_element(i+br,j+bc,lsb->rows[i][j]);
@@ -246,7 +246,7 @@ ReplSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
          << ") to (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       set_element(i+br,j+br,lsb->rows[i][j]);
@@ -268,7 +268,7 @@ ReplSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int e
          << ") to (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
@@ -289,7 +289,7 @@ ReplSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
          << ") to (" << n() << "," << n() << ")\n";
     abort();
   }
-  
+
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
       set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
@@ -303,7 +303,7 @@ ReplSymmSCMatrix::get_row(int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   SCVector * v = kit()->vector(dim());
 
   ReplSCVector *lv =
@@ -311,7 +311,7 @@ ReplSymmSCMatrix::get_row(int i)
 
   for (int j=0; j < n(); j++)
     lv->set_element(j,get_element(i,j));
-      
+
   return v;
 }
 
@@ -324,13 +324,13 @@ ReplSymmSCMatrix::assign_row(SCVector *v, int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   if (v->n() != n()) {
     ExEnv::errn() << indent << "ReplSymmSCMatrix::assign_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
   }
-  
+
   ReplSCVector *lv =
     require_dynamic_cast<ReplSCVector*>(v, "ReplSymmSCMatrix::assign_row");
 
@@ -347,14 +347,14 @@ ReplSymmSCMatrix::accumulate_row(SCVector *v, int i)
          << i << " max " << n() << endl;
     abort();
   }
-  
+
   if (v->n() != n()) {
     ExEnv::errn() << indent
          << "ReplSymmSCMatrix::accumulate_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
   }
-  
+
   ReplSCVector *lv =
     require_dynamic_cast<ReplSCVector*>(v, "ReplSymmSCMatrix::accumulate_row");
 
@@ -489,7 +489,7 @@ ReplSymmSCMatrix::solve_this(SCVector*v)
 {
   ReplSCVector* lv =
     require_dynamic_cast<ReplSCVector*>(v,"ReplSymmSCMatrix::solve_this");
-  
+
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
       ExEnv::errn() << indent << "ReplSymmSCMatrix::solve_this(SCVector*v): "
@@ -501,7 +501,7 @@ ReplSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
-ReplSymmSCMatrix::gen_invert_this()
+ReplSymmSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   RefSCMatrix evecs = kit()->matrix(dim(),dim());
   RefDiagSCMatrix evals = kit()->diagmatrix(dim());
@@ -511,9 +511,10 @@ ReplSymmSCMatrix::gen_invert_this()
   ReplSCMatrix *levecs = require_dynamic_cast<ReplSCMatrix*>(evecs,name);
 
   this->diagonalize(evals.pointer(), evecs.pointer());
-
+  const double sigma_max = evals->maxabs();
+  const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < n(); i++) {
-      if (fabs(levals->matrix[i]) > 1.0e-8)
+      if (fabs(levals->matrix[i]) > sigma_min_threshold)
           levals->matrix[i] = 1.0/levals->matrix[i];
       else
           levals->matrix[i] = 0;
@@ -527,7 +528,7 @@ void
 ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
   int i;
-  
+
   const char* name = "ReplSymmSCMatrix::diagonalize";
   // make sure that the arguments is of the correct type
   ReplDiagSCMatrix* la = require_dynamic_cast<ReplDiagSCMatrix*>(a,name);
@@ -555,7 +556,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   else {
       int nvec = n/nproc + (me<(n%nproc)?1:0);
       int mvec = n/nproc + ((n%nproc) ? 1 : 0);
-      
+
       int *ivec = new int[nvec];
       for (i=0; i<nvec; i++)
           ivec[i] = i*nproc + me;
@@ -574,7 +575,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
           for (; j < n; j++)
               rect[i][j] = rows[j][c];
         }
-  
+
       dist_diagonalize(n, nvec, rect[0], eigvals, eigvecs[0], messagegrp());
 
       la->assign(eigvals);
@@ -583,7 +584,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
       int *tivec = new int [mvec];
       for (i=0; i < nproc; i++) {
           int tnvec;
-          
+
           if (i==me) {
               messagegrp()->bcast(nvec, me);
               messagegrp()->bcast(eigvecs[0], n*nvec, me);
@@ -678,7 +679,7 @@ ReplSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
         }
     }
 }
-    
+
 // this += a * b * transpose(a)
 void
 ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
@@ -716,7 +717,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 
   if (nr==0 || nc==0)
     return;
-  
+
   int nproc = messagegrp()->n();
 
   double **ablock = cmat_new_square_matrix(D1);
@@ -738,7 +739,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
         if (nj > D1) nj = D1;
 
         for (k=0; k < nc; k += D1) {
-        
+
           int nk = nc-k;
           if (nk > D1) nk = D1;
 
@@ -746,7 +747,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
             copy_block(ablock, la->rows, i, ni, k, nk);
           else
             copy_trans_block(ablock, la->rows, i, ni, k, nk);
-          
+
           copy_sym_block(bblock, lb->rows, j, nj, k, nk);
           copy_block(cblock, temp, 0, ni, j, nj);
           mult_block(ablock, bblock, cblock, ni, nj, nk);
@@ -760,9 +761,9 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
         if (nj > D1) nj = D1;
 
         memset(cblock[0], 0, sizeof(double)*D1*D1);
-      
+
         for (k=0; k < nc; k += D1) {
-        
+
           int nk = nc-k;
           if (nk > D1) nk = D1;
 
@@ -771,7 +772,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
             copy_block(bblock, la->rows, j, nj, k, nk);
           else
             copy_trans_block(bblock, la->rows, j, nj, k, nk);
-          
+
           mult_block(ablock, bblock, cblock, ni, nj, nk);
         }
 
@@ -801,7 +802,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 
     double **temp = cmat_new_rect_matrix(nr,nc);
     memset(temp[0], 0, sizeof(double)*nr*nc);
-    
+
     for (i=0; i < nc; i += D1) {
       int ni = nc-i;
       if (ni > D1) ni = D1;
@@ -809,13 +810,13 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
       for (k=0; k < nc; k += D1) {
         int nk = nc-k;
         if (nk > D1) nk = D1;
-          
+
         copy_sym_block(ablock, lb->rows, i, ni, k, nk);
 
         for (j=jstart; j < jend; j += D1) {
           int nj = jend-j;
           if (nj > D1) nj = D1;
-          
+
           if (t == SCMatrix::NormalTransform)
             copy_block(bblock, la->rows, j, nj, k, nk);
           else
@@ -843,20 +844,20 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
     for (i=0; i < nr; i += D1) {
       int ni = nr-i;
       if (ni > D1) ni = D1;
-        
+
       for (j=0; j <= i; j += D1, ind++) {
         if (ind%nproc != me)
           continue;
-        
+
         int nj = nr-j;
         if (nj > D1) nj = D1;
-        
+
         memset(cblock[0], 0, sizeof(double)*D1*D1);
-      
+
         for (k=0; k < nc; k += D1) {
           int nk = nc-k;
           if (nk > D1) nk = D1;
-            
+
           if (t == SCMatrix::NormalTransform)
             copy_block(ablock, la->rows, i, ni, k, nk);
           else
@@ -876,7 +877,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
         }
       }
     }
-    
+
     ind=0;
     for (i=0; i < nr; i += D1) {
       int ni = nr-i;
@@ -890,7 +891,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 
         if (proc==me)
           copy_sym_block(ablock, rows, i, ni, j, nj);
-          
+
         messagegrp()->bcast(ablock[0], D1*D1, proc);
 
         if (i==j) {

@@ -176,11 +176,13 @@ ReplDiagSCMatrix::trace()
 }
 
 void
-ReplDiagSCMatrix::gen_invert_this()
+ReplDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   int nelem = n();
+  const double sigma_max = this->maxabs();
+  const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < nelem; i++) {
-    if (fabs(matrix[i]) > 1.0e-8)
+    if (fabs(matrix[i]) > sigma_min_threshold)
       matrix[i] = 1.0/matrix[i];
     else
       matrix[i] = 0;

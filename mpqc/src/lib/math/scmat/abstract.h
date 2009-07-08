@@ -58,7 +58,7 @@ matrices are consistent.  */
 class SCMatrixKit: public DescribedClass {
   protected:
     Ref<MessageGrp> grp_;
-    
+
   public:
     SCMatrixKit();
     SCMatrixKit(const Ref<KeyVal>&);
@@ -85,7 +85,7 @@ class SCMatrixKit: public DescribedClass {
                              const RefSCDimension&);
     SymmSCMatrix* restore_symmmatrix(StateIn&,
                                      const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&,             
+    DiagSCMatrix* restore_diagmatrix(StateIn&,
                                      const RefSCDimension&);
     SCVector* restore_vector(StateIn&,
                              const RefSCDimension&);
@@ -178,7 +178,7 @@ class SCVector: public DescribedClass {
 
     /// Returns the message group used by the matrix kit
     Ref<MessageGrp> messagegrp() const;
-    
+
     /** Returns iterators for the local (rapidly accessible) blocks used in
         this vector.  Only one iterator is allowed for a matrix is it has
         Accum or Write access is allowed.  Multiple Read iterators are
@@ -199,7 +199,7 @@ class SCMatrix: public DescribedClass {
   public:
     // used to control transformations
     enum Transform { NormalTransform = 0, TransposeTransform = 1 };
-    
+
     // concrete functions (some can be overridden)
     SCMatrix(const RefSCDimension&, const RefSCDimension&, SCMatrixKit *);
     virtual ~SCMatrix();
@@ -262,7 +262,7 @@ class SCMatrix: public DescribedClass {
     virtual double get_element(int,int) const = 0;
     virtual void set_element(int,int,double) = 0;
     virtual void accumulate_element(int,int,double) = 0;
-    
+
     /** Return a subblock of this.  The subblock is defined as
         the rows starting at br and ending at er, and the
         columns beginning at bc and ending at ec. */
@@ -273,7 +273,7 @@ class SCMatrix: public DescribedClass {
 
     /// Sum m into a subblock of this.
     virtual void accumulate_subblock(SCMatrix *m, int, int, int, int, int=0,int=0) =0;
-    
+
     /// Return a row or column of this.
     virtual SCVector * get_row(int i) =0;
     virtual SCVector * get_column(int i) =0;
@@ -281,11 +281,11 @@ class SCMatrix: public DescribedClass {
     /// Assign v to a row or column of this.
     virtual void assign_row(SCVector *v, int i) =0;
     virtual void assign_column(SCVector *v, int i) =0;
-    
+
     /// Sum v to a row or column of this.
     virtual void accumulate_row(SCVector *v, int i) =0;
     virtual void accumulate_column(SCVector *v, int i) =0;
-    
+
     /// Sum m into this.
     virtual void accumulate(const SCMatrix* m) = 0;
     virtual void accumulate(const SymmSCMatrix* m) = 0;
@@ -330,7 +330,12 @@ class SCMatrix: public DescribedClass {
         possibly destroying this. */
     virtual void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
     virtual double solve_this(SCVector*) = 0;
-    virtual void gen_invert_this();
+    /** Return the generalized inverse of this using SVD decomposition.
+    \param condition_number_threshold specifies the extent of truncation of the singular numbers.
+    The greater the threshold the fewer singular numbers will be discarded, but numerical errors
+    will result for threshold reaching the inverse of the machine precision.
+    */
+    virtual void gen_invert_this(double condition_number_threshold = 1e8);
 
     /** Schmidt orthogonalize this.  S is the overlap matrix.
         n is the number of columns to orthogonalize. */
@@ -340,7 +345,7 @@ class SCMatrix: public DescribedClass {
         tolerance.  The number of linearly independent vectors is
         returned. */
     virtual int schmidt_orthog_tol(SymmSCMatrix*, double tol, double*res=0)=0;
-    
+
     /// Perform the element operation op on each element of this.
     virtual void element_op(const Ref<SCElementOp>&) = 0;
     virtual void element_op(const Ref<SCElementOp2>&,
@@ -356,7 +361,7 @@ class SCMatrix: public DescribedClass {
 
     /// Returns the message group used by the matrix kit
     Ref<MessageGrp> messagegrp() const;
-    
+
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
     virtual Ref<SCMatrixSubblockIter> local_blocks(
@@ -450,7 +455,7 @@ class SymmSCMatrix: public DescribedClass {
 
     /// Assign v to a row of this.
     virtual void assign_row(SCVector *v, int i) =0;
-    
+
     /// Sum v to a row of this.
     virtual void accumulate_row(SCVector *v, int i) =0;
 
@@ -464,7 +469,7 @@ class SymmSCMatrix: public DescribedClass {
     virtual void accumulate_symmetric_product(SCMatrix*);
     virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*,
                             SCMatrix::Transform = SCMatrix::NormalTransform);
-    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*, 
+    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*,
                             SCMatrix::Transform = SCMatrix::NormalTransform);
     virtual void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
     virtual void accumulate_symmetric_outer_product(SCVector*);
@@ -479,7 +484,8 @@ class SymmSCMatrix: public DescribedClass {
     virtual double determ_this() = 0;
 
     virtual double solve_this(SCVector*) = 0;
-    virtual void gen_invert_this() = 0;
+    /// Return the generalized inverse of this using SVD decomposition. \sa SCMatrix::gen_invert_this()
+    virtual void gen_invert_this(double condition_number_threshold = 1e8) = 0;
 
     /// Perform the element operation op on each element of this.
     virtual void element_op(const Ref<SCElementOp>&) = 0;
@@ -496,7 +502,7 @@ class SymmSCMatrix: public DescribedClass {
 
     /// Returns the message group used by the matrix kit
     Ref<MessageGrp> messagegrp() const;
-    
+
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
     virtual Ref<SCMatrixSubblockIter> local_blocks(
@@ -568,8 +574,8 @@ class DiagSCMatrix: public DescribedClass {
     virtual double determ_this() = 0;
     /// Invert this.
     virtual double invert_this() = 0;
-    /// Do a generalized inversion of this.
-    virtual void gen_invert_this() = 0;
+    /// Return the generalized inverse of this using SVD decomposition. \sa SCMatrix::gen_invert_this()
+    virtual void gen_invert_this(double condition_number_threshold = 1e8) = 0;
     /// Perform the element operation op on each element of this.
     virtual void element_op(const Ref<SCElementOp>&) = 0;
     virtual void element_op(const Ref<SCElementOp2>&,
@@ -585,7 +591,7 @@ class DiagSCMatrix: public DescribedClass {
 
     /// Returns the message group used by the matrix kit
     Ref<MessageGrp> messagegrp() const;
-    
+
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
     virtual Ref<SCMatrixSubblockIter> local_blocks(

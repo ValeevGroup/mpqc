@@ -342,7 +342,7 @@ DistSymmSCMatrix::solve_this(SCVector*v)
 {
   DistSCVector* lv =
     require_dynamic_cast<DistSCVector*>(v,"DistSymmSCMatrix::solve_this");
-  
+
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
       ExEnv::errn() << indent << "DistSymmSCMatrix::solve_this(SCVector*v): "
@@ -356,7 +356,7 @@ DistSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
-DistSymmSCMatrix::gen_invert_this()
+DistSymmSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   invert_this();
 }

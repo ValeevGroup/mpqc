@@ -91,7 +91,7 @@ class LocalSCVector: public SCVector {
 
     // return a pointer to the data for fast access
     double *get_data();
-    
+
     Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
@@ -153,11 +153,12 @@ class LocalSCMatrix: public SCMatrix {
     // return a pointer to the data for fast access
     double *get_data();
     double **get_rows();
-    
+
     Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
+/// Local SymmSCMatrix
 class LocalSymmSCMatrix: public SymmSCMatrix {
     friend class LocalSCMatrix;
     friend class LocalDiagSCMatrix;
@@ -194,7 +195,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     double solve_this(SCVector*);
     double trace();
     double determ_this();
-    void gen_invert_this();
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
@@ -217,11 +218,12 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     // return a pointer to the data for fast access
     double *get_data();
     double **get_rows();
-    
+
     Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
+/// Local DiagSCMatrix
 class LocalDiagSCMatrix: public DiagSCMatrix {
     friend class LocalSCMatrix;
     friend class LocalSymmSCMatrix;
@@ -242,7 +244,7 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     double invert_this();
     double determ_this();
     double trace();
-    void gen_invert_this();
+    void gen_invert_this(double condition_number_threshold = 1e8);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

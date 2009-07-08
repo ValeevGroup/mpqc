@@ -175,8 +175,9 @@ class RefSCMatrix: public Ref<SCMatrix> {
     RefSCMatrix t() const;
     /// Return the inverse of this.
     RefSCMatrix i() const;
-    /// Return the generalized inverse of this.
-    RefSCMatrix gi() const;
+    /** Return the generalized inverse of this using SVD decomposition. \sa SCMatrix::gen_invert_this()
+      */
+    RefSCMatrix gi(double condition_number_threshold = 1e8) const;
 
     /** These call the SCMatrix members of the same name
         after checking for references to 0. */
@@ -291,8 +292,8 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     RefSymmSCMatrix operator-(const RefSymmSCMatrix&) const;
     /// Return the inverse of this.
     RefSymmSCMatrix i() const;
-    /// Return the generalized inverse of this.
-    RefSymmSCMatrix gi() const;
+    /// Return the generalized inverse of this. \sa SCMatrix::gi()
+    RefSymmSCMatrix gi(double condition_number_threshold = 1e8) const;
     /** These call the SCMatrix members of the same name after checking for
         references to 0. */
     RefSymmSCMatrix clone() const;
@@ -410,8 +411,8 @@ class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     RefDiagSCMatrix operator-(const RefDiagSCMatrix&) const;
     /// Return the inverse of this.
     RefDiagSCMatrix i() const;
-    /// Return the generalized inverse of this.
-    RefDiagSCMatrix gi() const;
+    /// Return the generalized inverse of this. \sa SCMatrix::gi()
+    RefDiagSCMatrix gi(double condition_number_threshold = 1e8) const;
     /// These call the SCMatrix members of the same name
     /// after checking for references to 0.
     RefDiagSCMatrix clone() const;
@@ -463,7 +464,7 @@ class SCVectordouble {
   private:
     RefSCVector vector;
     int i;
-    
+
     SCVectordouble(SCVector*,int);
   public:
     SCVectordouble(const SCVectordouble&);
@@ -480,7 +481,7 @@ class SCMatrixdouble {
     RefSCMatrix matrix;
     int i;
     int j;
-    
+
     SCMatrixdouble(SCMatrix*,int,int);
   public:
     SCMatrixdouble(const SCMatrixdouble&);
@@ -497,7 +498,7 @@ class SymmSCMatrixdouble {
     RefSymmSCMatrix matrix;
     int i;
     int j;
-    
+
     SymmSCMatrixdouble(SymmSCMatrix*,int,int);
   public:
     SymmSCMatrixdouble(const SCMatrixdouble&);
@@ -514,7 +515,7 @@ class DiagSCMatrixdouble {
     RefDiagSCMatrix matrix;
     int i;
     int j;
-    
+
     DiagSCMatrixdouble(DiagSCMatrix*,int,int);
   public:
     DiagSCMatrixdouble(const SCMatrixdouble&);

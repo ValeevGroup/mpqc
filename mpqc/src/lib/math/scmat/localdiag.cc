@@ -26,12 +26,14 @@
 //
 
 #include <math.h>
+#include <algorithm>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/predicate.h>
 
 using namespace std;
 using namespace sc;
@@ -140,12 +142,14 @@ LocalDiagSCMatrix::trace()
 }
 
 void
-LocalDiagSCMatrix::gen_invert_this()
+LocalDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   int nelem = n();
   double *data = block->data;
+  const double sigma_max = * std::max_element(data, data+n(), fabs_less<double>());
+  const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < nelem; i++) {
-    if (fabs(data[i]) > 1.0e-8)
+    if (fabs(data[i]) > sigma_min_threshold)
       data[i] = 1.0/data[i];
     else
       data[i] = 0;

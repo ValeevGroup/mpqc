@@ -358,6 +358,44 @@ namespace sc {
       return nevals_lessthan_threshold;
     }
 
+    void
+    gen_invert(RefSymmSCMatrix& A, double condition_number_threshold)
+    {
+      RefSCDimension dim = A.dim();
+      const int n = dim.n();
+      Ref<SCMatrixKit> kit = A.kit();
+      RefSCMatrix A_rect(dim, dim, kit); A_rect.assign(0.0);
+      A_rect.accumulate(A);
+
+      // Compute the singular value decomposition of A
+      RefSCMatrix U(dim,dim,kit);
+      RefSCMatrix V(dim,dim,kit);
+      RefDiagSCMatrix sigma(dim,kit);
+      lapack_svd(A_rect, U, sigma, V);
+
+      // compute the epsilon rank of this
+      const double sigma_max = sigma->maxabs();
+      const double sigma_min_threshold = sigma_max / condition_number_threshold;
+      int rank = 0;
+      for (int i=0; i<n; i++) {
+          if (sigma(i) > sigma_min_threshold) rank++;
+        }
+
+      RefSCDimension drank = new SCDimension(rank);
+      RefDiagSCMatrix sigma_i(drank,kit);
+      for (int i=0; i<rank; i++) {
+          sigma_i(i) = 1.0/sigma(i);
+        }
+      RefSCMatrix Ur(dim, drank, kit);
+      RefSCMatrix Vr(dim, drank, kit);
+      Ur.assign_subblock(U, 0, n-1, 0, drank.n()-1, 0, 0);
+      Vr.assign_subblock(V, 0, n-1, 0, drank.n()-1, 0, 0);
+
+      A_rect = Vr * sigma_i * Ur.t();
+      A.assign_subblock(A_rect, 0, n-1, 0, n-1);
+    }
+
+
   };
 
 };

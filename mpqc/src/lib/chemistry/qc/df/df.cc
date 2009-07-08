@@ -208,8 +208,15 @@ DensityFitting::compute()
       double* C_jR = new double[n2 * n3];
 
 #if USE_KERNEL_INVERSE
+
+#define USE_SVD_BASED_INVERSE 1
+#if USE_SVD_BASED_INVERSE
+      RefSymmSCMatrix kernel_i_mat = kernel_.clone(); kernel_i_mat.assign(kernel_);
+      exp::gen_invert(kernel_i_mat, 1e15);
+#else
       // compute the kernel inverse
-      RefSymmSCMatrix kernel_i_mat = kernel_.gi();
+      RefSymmSCMatrix kernel_i_mat = kernel_.gi(1e15);
+#endif
       //kernel_i_mat.print("DensityFitting::kernel^{-1}");
       // convert kernel_i to dense rectangular form
       double* kernel_i = new double [n3 * n3];

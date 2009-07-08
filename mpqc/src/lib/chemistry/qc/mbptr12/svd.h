@@ -72,6 +72,8 @@ namespace sc {
                                    const double* Bt,
                                    int ncolB);
 
+    /// do what SCMatrix::gen_invert_this() does, except for a symmetric matrix
+    void gen_invert(RefSymmSCMatrix& A, double condition_number_threshold);
   }
 }
 

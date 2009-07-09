@@ -142,7 +142,7 @@ class DistArray4: virtual public SavableState {
       */
     virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type,
                                                double* buf = 0) const =0;
-    /// Releases the buffer that holds ij block of integrals
+    /// Releases the buffer that holds ij block of integrals. If it was allocated by DistArray4, it will be freed.
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().
     virtual void store_pair_block(int i, int j, tbint_type oper_type, const double* ints) =0;

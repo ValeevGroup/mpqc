@@ -10,3 +10,7 @@
 #define F77_DSPTRI
 #define F77_DLANSP
 #define F77_DSPCON
+#define F77_DLAMCH
+#define F77_DLACPY
+#define F77_DSPTRS
+#define F77_DSPRFS

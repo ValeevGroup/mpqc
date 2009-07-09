@@ -72,13 +72,39 @@ namespace sc {
                                    const double* Bt,
                                    int ncolB);
 
-    /** invert symmetric non-definite matrix using DSPTRI LAPACK routine based on diagonal pivoting factorization
-     *
+    /** invert symmetric non-definite matrix using DSPTRF LAPACK routine
+        that implements using the Bunch-Kaufman diagonal pivoting method.
+
       \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
       exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
       Negative threshold will prompt the estimate of the condition number of A to be printed out to ExEnv::out0().
       */
     void lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold = 0.0);
+
+    /** Compute factorization of a symmetric non-definite matrix using DSPTRF LAPACK routine
+        that implements using the Bunch-Kaufman diagonal pivoting method.
+        The resulting factorization (AF and ipiv) can be used to solve a linear system A X = B
+        using lapack_linsolv_symmnondef();
+
+      \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
+      exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
+      Negative threshold will prompt the estimate of the condition number of A to be printed out to ExEnv::out0().
+
+      \param AF array of size A.dim().n() * (A.dim().n() + 1)/2. On output contains the desired factorization.
+
+      \param ipiv integer array of sizeA.dim().n()
+
+      */
+    void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF,
+                               int* ipiv, double condition_number_threshold = 0.0);
+
+    void lapack_linsolv_dpf_symmnondef(const double* A,
+                                       int nA,
+                                       const double* AF,
+                                       const int* ipiv,
+                                       double* Xt,
+                                       const double* Bt,
+                                       int ncolB);
   }
 }
 

@@ -41,7 +41,7 @@
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>
 
-#define USE_KERNEL_INVERSE 1
+#define USE_KERNEL_INVERSE 0
 
 using namespace sc;
 
@@ -205,22 +205,22 @@ DensityFitting::compute()
       const int n2 = space2_->rank();
       const int n3 = fbasis_->nbasis();
       // scratch for holding solution vectors
-      double* C_jR = new double[n2 * n3];
+      std::vector<double> C_jR(n2 * n3);
 
 #if USE_KERNEL_INVERSE
 
-#define USE_LAPACK_BASED_INVERSE 1
-#if USE_LAPACK_BASED_INVERSE
+ #define USE_LAPACK_BASED_INVERSE 1
+ #if USE_LAPACK_BASED_INVERSE
       RefSymmSCMatrix kernel_i_mat = kernel_.clone(); kernel_i_mat.assign(kernel_);
       exp::lapack_invert_symmnondef(kernel_i_mat, -1.0);
       //(kernel_i_mat * kernel_).print("inverse test: should be 1");
-#else
+ #else
       // compute the kernel inverse
       RefSymmSCMatrix kernel_i_mat = kernel_.gi(1e15);
-#endif
+ #endif
       //kernel_i_mat.print("DensityFitting::kernel^{-1}");
       // convert kernel_i to dense rectangular form
-      double* kernel_i = new double [n3 * n3];
+      std::vector<double> kernel_i(n3 * n3);
       int rc = 0;
       for(int r=0; r<n3; ++r) {
         for(int c=0; c<n3; ++c, ++rc) {
@@ -230,8 +230,12 @@ DensityFitting::compute()
       kernel_i_mat = 0;
 #else
       // convert kernel_ to a packed upper-triangle form
-      double* kernel_packed = new double[n3 * (n3 + 1) / 2];
-      kernel_->convert(kernel_packed);
+      std::vector<double> kernel_packed(n3 * (n3 + 1) / 2);
+      kernel_->convert(&(kernel_packed[0]));
+      // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
+      std::vector<double> kernel_factorized(n3 * (n3 + 1) / 2);
+      std::vector<int> ipiv(n3);
+      sc::exp::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]), &(ipiv[0]), -1.0);
 #endif
 
       for (int i = 0; i < n1; ++i) {
@@ -244,26 +248,23 @@ DensityFitting::compute()
 
         // solve the linear system
 #if USE_KERNEL_INVERSE
-        C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, kernel_i, n3,
-                0.0, C_jR, n3);
+        C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, &(kernel_i[0]), n3,
+                0.0, &(C_jR[0]), n3);
 #else
-        sc::exp::lapack_linsolv_symmnondef(kernel_packed, n3, C_jR, cC_jR, n2);
+        //sc::exp::lapack_linsolv_symmnondef(&(kernel_packed[0]), n3, &(C_jR[0]), cC_jR, n2);
+        sc::exp::lapack_linsolv_dpf_symmnondef(&(kernel_packed[0]), n3,
+                                               &(kernel_factorized[0]),
+                                               &(ipiv[0]), &(C_jR[0]), cC_jR, n2);
 #endif
 
         // write
-        C_->store_pair_block(0, i, 0, C_jR);
+        C_->store_pair_block(0, i, 0, &(C_jR[0]));
 
         // release this block
         cC_->release_pair_block(0, i, TwoBodyOper::eri);
 
       }
 
-      delete[] C_jR;
-#if USE_KERNEL_INVERSE
-      delete[] kernel_i;
-#else
-      delete[] kernel_packed;
-#endif
     }
 
   }

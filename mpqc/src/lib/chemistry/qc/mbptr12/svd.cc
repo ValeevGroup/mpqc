@@ -365,44 +365,16 @@ namespace sc {
       const int n = A.dim().n();
       const int ntri = n*(n+1)/2;
       char uplo = 'U';
-      double* A_packed = new double[ntri];  A.convert(A_packed);
-      int* ipiv = new int[n];
+      std::vector<double> AF(ntri);
+      std::vector<int> ipiv(n);
       int info;
-      double* work = new double[2*n];
-      int *iwork = new int[n];
+      std::vector<double> work(2*n);
 
-      // compute the infinity-norm of A
-      char norm = 'I';
-      const double anorm = F77_DLANSP(&norm, &uplo, &n, A_packed, work);
-
-      // factorize A = U.D.Ut
-      F77_DSPTRF(&uplo, &n, A_packed, ipiv, &info);
-      if (info) {
-        if (info < 0)
-          throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRF is invalid");
-        if (info > 0)
-          throw std::runtime_error("lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
-        assert(false);  // unreachable
-      }
-
-      // estimate the condition number and throw if above condition_number_threshold
-      double rcond;
-      F77_DSPCON(&uplo, &n, A_packed, ipiv, &anorm, &rcond, work, iwork, &info);
-      if (info) {
-        if (info < 0)
-          throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPCON is invalid");
-        assert(false);  // unreachable
-      }
-      if (condition_number_threshold != 0.0) {
-        if (condition_number_threshold < 0.0)
-          ExEnv::out0() << indent << "condition number estimate in lapack_invert_symmnondef() = " << 1.0/rcond << std::endl;
-        else if (1.0/rcond > condition_number_threshold)
-          ExEnv::err0() << indent << "WARNING: large condition number in lapack_invert_symmnondef(): threshold = "
-                        << condition_number_threshold << " actual = " << 1.0/rcond << std::endl;
-      }
+      // compute factorization of A
+      lapack_dpf_symmnondef(A, &(AF[0]), &(ipiv[0]), condition_number_threshold);
 
       // compute the inverse
-      F77_DSPTRI(&uplo, &n, A_packed, ipiv, work, &info);
+      F77_DSPTRI(&uplo, &n, &(AF[0]), &(ipiv[0]), &(work[0]), &info);
       if (info) {
         if (info < 0)
           throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRI is invalid");
@@ -411,13 +383,87 @@ namespace sc {
         assert(false);  // unreachable
       }
 
-      A.assign(A_packed);
-      delete[] work;
-      delete[] iwork;
-      delete[] ipiv;
-      delete[] A_packed;
+      A.assign( &(AF[0]) );
     }
 
+    void lapack_dpf_symmnondef(const RefSymmSCMatrix& A,
+                               double* AF,
+                               int* ipiv,
+                               double condition_number_threshold) {
+
+      const int n = A.dim().n();
+      char uplo = 'U';
+      int info;
+      std::vector<double> work(2*n);
+      std::vector<int> iwork(n);
+
+      // compute the infinity-norm of A
+      A.convert(AF);
+      char norm = 'I';
+      const double anorm = F77_DLANSP(&norm, &uplo, &n, AF, &(work[0]));
+
+      // factorize A = U.D.Ut
+      F77_DSPTRF(&uplo, &n, AF, ipiv, &info);
+      if (info) {
+        if (info < 0)
+          throw std::runtime_error("lapack_dpf_symmnondef() -- one of the arguments to F77_DSPTRF is invalid");
+        if (info > 0)
+          throw std::runtime_error("lapack_dpf_symmnondef() -- matrix A has factors which are exactly zero");
+        assert(false);  // unreachable
+      }
+
+      // estimate the condition number
+      double rcond;
+      F77_DSPCON(&uplo, &n, AF, ipiv, &anorm, &rcond, &(work[0]), &(iwork[0]), &info);
+      if (info) {
+        if (info < 0)
+          throw std::runtime_error("lapack_dpf_symmnondef() -- one of the arguments to F77_DSPCON is invalid");
+        assert(false);  // unreachable
+      }
+      // if the condition number is above the threshold or its inverse below the working precision, throw
+      if (condition_number_threshold != 0.0) {
+        if (condition_number_threshold < 0.0)
+          ExEnv::out0() << indent << "condition number estimate in lapack_dpf_symmnondef() = " << 1.0/rcond << std::endl;
+        else if (1.0/rcond > condition_number_threshold)
+          ExEnv::err0() << indent << "WARNING: large condition number in lapack_dpf_symmnondef(): threshold = "
+                        << condition_number_threshold << " actual = " << 1.0/rcond << std::endl;
+        const char epsilon = 'E';
+        if (rcond < F77_DLAMCH(&epsilon))
+          ExEnv::err0() << indent << "WARNING: condition number in lapack_dpf_symmnondef() exceeds the working precision" << std::endl;
+      }
+
+    }
+
+    void
+    lapack_linsolv_dpf_symmnondef(const double* A,
+                                  int nA,
+                                  const double* AF,
+                                  const int* ipiv,
+                                  double* Xt,
+                                  const double* Bt,
+                                  int ncolB)
+    {
+      const int n = nA;
+      const char uplo = 'U';
+      int info;
+
+      // copy B into X
+      const char full = 'F';
+      F77_DLACPY(&full, &n, &ncolB, Bt, &n, Xt, &n, &info);
+
+      // solve the linear system
+      F77_DSPTRS(&uplo, &n, &ncolB, AF, ipiv, Xt, &n, &info);
+
+      // Use iterative refinement to improve the computed solutions and
+      // compute error bounds and backward error estimates for them.
+      std::vector<double> ferr(ncolB);
+      std::vector<double> berr(ncolB);
+      std::vector<double> work(3*n);
+      std::vector<int> iwork(n);
+      F77_DSPRFS(&uplo, &n, &ncolB, A, AF, ipiv, Bt, &n, Xt, &n, &(ferr[0]),
+                 &(berr[0]), &(work[0]), &(iwork[0]), &info);
+
+    }
 
   };
 

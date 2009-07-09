@@ -72,8 +72,10 @@ namespace sc {
                                    const double* Bt,
                                    int ncolB);
 
-    /// do what SCMatrix::gen_invert_this() does, except for a symmetric matrix
-    void gen_invert(RefSymmSCMatrix& A, double condition_number_threshold);
+    /** invert symmetric non-definite matrix using DSPTRI LAPACK routine based on diagonal pivoting factorization
+      \param condition_number_threshold not used yet
+      */
+    void lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold);
   }
 }
 

@@ -359,40 +359,34 @@ namespace sc {
     }
 
     void
-    gen_invert(RefSymmSCMatrix& A, double condition_number_threshold)
+    lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold)
     {
-      RefSCDimension dim = A.dim();
-      const int n = dim.n();
-      Ref<SCMatrixKit> kit = A.kit();
-      RefSCMatrix A_rect(dim, dim, kit); A_rect.assign(0.0);
-      A_rect.accumulate(A);
+      const int n = A.dim().n();
+      const int ntri = n*(n+1)/2;
+      char uplo = 'U';
+      double* A_packed = new double[ntri];  A.convert(A_packed);
+      int* ipiv = new int[n];
+      int info;
 
-      // Compute the singular value decomposition of A
-      RefSCMatrix U(dim,dim,kit);
-      RefSCMatrix V(dim,dim,kit);
-      RefDiagSCMatrix sigma(dim,kit);
-      lapack_svd(A_rect, U, sigma, V);
+      F77_DSPTRF(&uplo, &n, A_packed, ipiv, &info);
 
-      // compute the epsilon rank of this
-      const double sigma_max = sigma->maxabs();
-      const double sigma_min_threshold = sigma_max / condition_number_threshold;
-      int rank = 0;
-      for (int i=0; i<n; i++) {
-          if (sigma(i) > sigma_min_threshold) rank++;
-        }
+      if (info) {
+        if (info < 0)
+          throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRF is invalid");
+        if (info > 0)
+          throw std::runtime_error("lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
+      }
 
-      RefSCDimension drank = new SCDimension(rank);
-      RefDiagSCMatrix sigma_i(drank,kit);
-      for (int i=0; i<rank; i++) {
-          sigma_i(i) = 1.0/sigma(i);
-        }
-      RefSCMatrix Ur(dim, drank, kit);
-      RefSCMatrix Vr(drank, dim, kit);
-      Ur.assign_subblock(U, 0, n-1, 0, rank-1, 0, 0);
-      Vr.assign_subblock(V, 0, rank-1, 0, n-1, 0, 0);
+      double* work = new double[n];
+      F77_DSPTRI(&uplo, &n, A_packed, ipiv, work, &info);
+      if (info) {
+        if (info < 0)
+          throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRI is invalid");
+        if (info > 0)
+          throw std::runtime_error("lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
+      }
 
-      A_rect = Vr.t() * sigma_i * Ur.t();
-      A.assign_subblock(A_rect, 0, n-1, 0, n-1);
+      A.assign(A_packed);
     }
 
 

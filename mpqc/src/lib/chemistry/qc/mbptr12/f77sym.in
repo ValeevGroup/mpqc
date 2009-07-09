@@ -6,4 +6,6 @@
 #define F77_DGESVD
 #define F77_DSPSVX
 #define F77_DSYEVD
+#define F77_DSPTRF
+#define F77_DSPTRI
 

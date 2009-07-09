@@ -73,9 +73,12 @@ namespace sc {
                                    int ncolB);
 
     /** invert symmetric non-definite matrix using DSPTRI LAPACK routine based on diagonal pivoting factorization
-      \param condition_number_threshold not used yet
+     *
+      \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
+      exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
+      Negative threshold will prompt the estimate of the condition number of A to be printed out to ExEnv::out0().
       */
-    void lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold);
+    void lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold = 0.0);
   }
 }
 

@@ -30,6 +30,7 @@
 #endif
 
 #include <cmath>
+#include <cassert>
 #include <stdexcept>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
@@ -367,26 +368,54 @@ namespace sc {
       double* A_packed = new double[ntri];  A.convert(A_packed);
       int* ipiv = new int[n];
       int info;
+      double* work = new double[2*n];
+      int *iwork = new int[n];
 
+      // compute the infinity-norm of A
+      char norm = 'I';
+      const double anorm = F77_DLANSP(&norm, &uplo, &n, A_packed, work);
+
+      // factorize A = U.D.Ut
       F77_DSPTRF(&uplo, &n, A_packed, ipiv, &info);
-
       if (info) {
         if (info < 0)
           throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRF is invalid");
         if (info > 0)
           throw std::runtime_error("lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
+        assert(false);  // unreachable
       }
 
-      double* work = new double[n];
+      // estimate the condition number and throw if above condition_number_threshold
+      double rcond;
+      F77_DSPCON(&uplo, &n, A_packed, ipiv, &anorm, &rcond, work, iwork, &info);
+      if (info) {
+        if (info < 0)
+          throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPCON is invalid");
+        assert(false);  // unreachable
+      }
+      if (condition_number_threshold != 0.0) {
+        if (condition_number_threshold < 0.0)
+          ExEnv::out0() << indent << "condition number estimate in lapack_invert_symmnondef() = " << 1.0/rcond << std::endl;
+        else if (1.0/rcond > condition_number_threshold)
+          ExEnv::err0() << indent << "WARNING: large condition number in lapack_invert_symmnondef(): threshold = "
+                        << condition_number_threshold << " actual = " << 1.0/rcond << std::endl;
+      }
+
+      // compute the inverse
       F77_DSPTRI(&uplo, &n, A_packed, ipiv, work, &info);
       if (info) {
         if (info < 0)
           throw std::runtime_error("lapack_invert_symmnondef() -- one of the arguments to F77_DSPTRI is invalid");
         if (info > 0)
           throw std::runtime_error("lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
+        assert(false);  // unreachable
       }
 
       A.assign(A_packed);
+      delete[] work;
+      delete[] iwork;
+      delete[] ipiv;
+      delete[] A_packed;
     }
 
 

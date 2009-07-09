@@ -18,5 +18,10 @@ extern void F77_DSPTRF(const char* uplo, const int* n, double* AP, int* ipiv, in
 
 extern void F77_DSPTRI(const char* uplo, const int* n, double* AP, const int* ipiv, double* work, int* info);
 
+extern double F77_DLANSP(const char* norm, const char* uplo, const int* n, const double* A_packed, double* work);
+
+extern void F77_DSPCON(const char* uplo, const int* n, const double* A_packed, const int* ipiv,
+                       const double* anorm, double* rcond, double* work, int* iwork, int* info);
+
 }
 

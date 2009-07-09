@@ -8,4 +8,5 @@
 #define F77_DSYEVD
 #define F77_DSPTRF
 #define F77_DSPTRI
-
+#define F77_DLANSP
+#define F77_DSPCON

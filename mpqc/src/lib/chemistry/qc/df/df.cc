@@ -212,7 +212,7 @@ DensityFitting::compute()
 #define USE_LAPACK_BASED_INVERSE 1
 #if USE_LAPACK_BASED_INVERSE
       RefSymmSCMatrix kernel_i_mat = kernel_.clone(); kernel_i_mat.assign(kernel_);
-      exp::lapack_invert_symmnondef(kernel_i_mat, 1e15);
+      exp::lapack_invert_symmnondef(kernel_i_mat, -1.0);
       //(kernel_i_mat * kernel_).print("inverse test: should be 1");
 #else
       // compute the kernel inverse

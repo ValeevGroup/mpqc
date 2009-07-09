@@ -387,11 +387,11 @@ namespace sc {
           sigma_i(i) = 1.0/sigma(i);
         }
       RefSCMatrix Ur(dim, drank, kit);
-      RefSCMatrix Vr(dim, drank, kit);
-      Ur.assign_subblock(U, 0, n-1, 0, drank.n()-1, 0, 0);
-      Vr.assign_subblock(V, 0, n-1, 0, drank.n()-1, 0, 0);
+      RefSCMatrix Vr(drank, dim, kit);
+      Ur.assign_subblock(U, 0, n-1, 0, rank-1, 0, 0);
+      Vr.assign_subblock(V, 0, rank-1, 0, n-1, 0, 0);
 
-      A_rect = Vr * sigma_i * Ur.t();
+      A_rect = Vr.t() * sigma_i * Ur.t();
       A.assign_subblock(A_rect, 0, n-1, 0, n-1);
     }
 

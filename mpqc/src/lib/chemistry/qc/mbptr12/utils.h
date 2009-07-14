@@ -38,9 +38,9 @@
 #define _chemistry_qc_mbptr12_utils_h
 
 namespace sc {
-  
+
   class OrbitalSpace;
-  
+
   /** Takes the 4-index quantity <ij|A|kl> and returns,
       depending on the value of the PureSpinCase2 spin,
       a Singlet or Triplet spinadapted matrix.
@@ -84,6 +84,12 @@ namespace sc {
   template <bool accumulate>
     void antisymmetrize(RefSymmSCMatrix& Aanti, const RefSymmSCMatrix& A,
                         const Ref<OrbitalSpace>& bra1);
+    /** Antisymmetrizes square matrix A of size n. Aanti is the lower-triangle of the result.
+        The dimension of Aanti is n*(n-1)/2.
+      */
+    template <bool accumulate>
+      void antisymmetrize(double* Aanti, const double* A,
+                          const int n);
   /** Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>)
       and saves to Asymm. Row dimension has to be an integer multiple of
       bra->rank()*bra->rank(). Same for ket. Asymm and A can be the same matrix.
@@ -135,17 +141,17 @@ namespace sc {
   /** Converts RefDiagSCMatrix to std::vector<double>
   */
   std::vector<double> convert(const RefDiagSCMatrix& A);
-  
+
   /// print out the Fortran-style matrix
   void print_f77_mat(const std::string& comment,
                      const double* A,
                      unsigned int nrow,
                      unsigned int ncol,
                      bool transpose = false);
-  
+
   /// Returns the lower triangle of the matrix B (which should be symmetric)
   RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B);
-  
+
 }
 
 #endif

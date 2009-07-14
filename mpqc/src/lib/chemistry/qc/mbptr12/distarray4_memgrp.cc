@@ -149,6 +149,8 @@ DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
 {
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
+  // if it's local all is easy
+  // if it's not -- read it if it's not already available;
   if (!is_local(i,j) && pb->ints_[oper_type] == 0) {
     const int local_ij_index = ij / ntasks();
     // this offset could not be computed in ::init(), compute here and store so that release can reuse its value
@@ -157,19 +159,17 @@ DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
     if (classdebug() > 0)
       ExEnv::out0() << indent << "retrieving remote block:  i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
     pb->ints_[oper_type] = (double *) mem_->obtain_readonly(offset, blksize());
-
-    // if user provided the buffer, copy to it
-    if (buf != 0) {
-      std::copy(pb->ints_[oper_type], pb->ints_[oper_type] + this->nxy(), buf);
-    }
-
   }
   pb->refcount_[oper_type] += 1;
   if (classdebug() > 0)
     ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
                   << ": i = " << i << " j = " << j << " tbint_type = " << oper_type  << " ptr = " << pb->ints_[oper_type] << endl;
-  if (buf)
+
+  if (buf) {
+    // if user provided the buffer, copy to it
+    std::copy(pb->ints_[oper_type], pb->ints_[oper_type] + this->nxy(), buf);
     return const_cast<const double*>(buf);
+  }
   else
     return pb->ints_[oper_type];
 }

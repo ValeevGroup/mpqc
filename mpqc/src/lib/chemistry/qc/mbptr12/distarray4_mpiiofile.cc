@@ -257,7 +257,9 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // Always first check if it's already in memory
-  if (pb->ints_[oper_type] == 0) {
+  // if this block is not managed, assume that user takes care of the details
+  // hence read it in again
+  if (pb->ints_[oper_type] == 0 || pb->manage_[oper_type] == false) {
     MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize();
     int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
     check_error_code_(errcod);

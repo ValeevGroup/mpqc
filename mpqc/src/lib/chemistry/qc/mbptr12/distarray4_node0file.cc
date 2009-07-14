@@ -273,7 +273,9 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
   const int ij = ij_index(i, j);
   const PairBlkInfo* pb = &pairblk_[ij];
   // Always first check if it's already in memory
-  if (pb->ints_[oper_type] == 0) {
+  // if I don't manage the memory for this block, assume that the user is in charge of memory management
+  // therefore read in again
+  if (pb->ints_[oper_type] == 0 || pb->manage_[oper_type] == false) {
 
     if (classdebug() > 0)
       ExEnv::out0() << indent << "retrieving block: file=" << filename_

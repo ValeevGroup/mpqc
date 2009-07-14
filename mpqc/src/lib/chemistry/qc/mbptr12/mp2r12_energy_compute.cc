@@ -1213,11 +1213,13 @@ void MP2R12Energy_SpinOrbital_new::compute() {
     compute_MP2R12_nondiag();
   }  // not diag_
 
-  C_[BetaBeta] = C_[AlphaAlpha];
-
-  ef12_[BetaBeta] = ef12_[AlphaAlpha];
-
-  emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
+  // Alpha-alpha same as beta-beta?
+  const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
+  if (num_unique_spincases2 == 2) {
+    C_[BetaBeta] = C_[AlphaAlpha];
+    ef12_[BetaBeta] = ef12_[AlphaAlpha];
+    emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
+  }
 
   evaluated_=true;
 

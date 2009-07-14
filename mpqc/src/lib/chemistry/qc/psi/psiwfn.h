@@ -209,7 +209,7 @@ namespace sc {
 
       void write_basic_input(int conv);
       int spin_polarized() {
-        return 0;
+        return 1;
       }
       ;
       int gradient_implemented() const {

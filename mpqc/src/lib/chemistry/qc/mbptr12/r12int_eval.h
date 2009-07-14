@@ -269,9 +269,10 @@ class R12IntEval : virtual public SavableState {
       Semantics: 1) ranks of internal spaces must match, although the spaces don't have to be the same;
       2) if antisymmetrize is true, external (bra and ket) particle spaces
       should be strongly (identity) or weakly(rank) equivalent. If internal spaces do not match
-      but antisymmetrization is requested
+      but antisymmetrization is requested, symmetrization w.r.t. particle swap will be performed,
+      then antisymmetrization.
 
-      Of course, this ugliness should become function/operator on 2 ManyBodyOperators
+      Of course, this ugliness should become function/operator on 2 ManyBodyOperators.
    */
   template <typename DataProcessBra,
             typename DataProcessKet,
@@ -279,7 +280,7 @@ class R12IntEval : virtual public SavableState {
             bool CorrFactorInBra,
             bool CorrFactorInKet,
             bool CorrFactorInInt>
-    void contract_tbint_tensor(
+  DEPRECATED void contract_tbint_tensor(
            RefSCMatrix& T,
            TwoBodyOper::type tbint_type_bra,
            TwoBodyOper::type tbint_type_ket,
@@ -296,7 +297,12 @@ class R12IntEval : virtual public SavableState {
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
 
-  /** overload of the above when no pre- and post-processing is needed
+  /** overload of the above when no pre- and post-processing is needed.
+      this version is also much more efficient since it does contraction
+      as a DGEMM (hence it tiles loads).
+
+      \param antisymmetrize indicates whether the target tensor is antisymmetric w.r.t permutation of
+      particles or now.
    */
   template <bool CorrFactorInBra,
             bool CorrFactorInKet>
@@ -488,11 +494,11 @@ public:
   /// Returns S block of intermediate F12
   const RefSCMatrix& F12(SpinCase2 S);
 
-  /** Compute \f$V = 1/2 g_{pq}^{\alpha\beta} R_{\alpha\beta}^{xy}\f$ */
+  /** Compute \f$ V_{pq}^{xy} = \frac{1}{2} \bar{g}_{pq}^{\alpha\beta} \bar{R}_{\alpha\beta}^{xy}\f$ */
   RefSCMatrix V(SpinCase2 spincase2,
                 const Ref<OrbitalSpace>& p,
                 const Ref<OrbitalSpace>& q);
-  /// Compute P = RgR
+  /// Compute \f$ P_{uv}^{xy} = \frac{1}{4} \bar{R}^{\alpha\beta}_{uv} \bar{g}_{\alpha\beta}^{\gamma\delta} \bar{R}_{\gamma\delta}^{xy}\f$ P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
 
   /// Returns the OBS singles MP2 energy

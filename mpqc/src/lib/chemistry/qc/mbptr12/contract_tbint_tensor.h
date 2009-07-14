@@ -599,17 +599,29 @@ namespace sc {
     // How is permutational symmetry implemented?
     //
     // 1) if need to antisymmetrize && internal spaces for p1 and p2 are same, then
-    // can antisymmetrize each integral explicitly and compute antisymmetric tensor
+    // can antisymmetrize each integral explicitly and compute antisymmetric tensor:
+    // \f$
+    //   T_{ij}^{kl} = \sum_{p<q} (A_{ij}^{pq} - A_{ij}^{qp}) (B^{kl}_{pq} - B^{kl}_{qp})
+    // \f$
     // 2) if need to antisymmetrize but internal spaces for p1 and p2 do not match,
-    // then compute as AlphaBeta and antisymmetrize at the end. I have to allocate temporary
-    // result.
+    // then compute as AlphaBeta and antisymmetrize at the end. Temporary storage
+    // will be allocated.
     //
 
     // are internal spaces of particles 1 and 2 equivalent?
     const bool part1_intequiv_part2 = (space1_intb == space2_intb
         && space1_intk == space2_intk);
-    // Will antisymmetrize each integral? If no, then result will be computed
-    // as AlphaBeta and antisymmetrized at the end
+    // If antisymmetrize == true and particles 1 and 2 are equivalent, then the target is computed as:
+    // T_{ij}^{kl} = \sum_{p<q} (A_{ij}^{pq} - A_{ij}^{qp}) (B^{kl}_{pq} - B^{kl}_{qp})
+    // i.e. each block of A and B is antisymmetrized first (for each i<j, k<l).
+    // In all other cases, even when antisymmetric target T tensor is requested,
+    // compute alpha-beta T and then antisymmetrize the result, i.e.
+    // V_{ij}^{kl} = \sum_{pq} A_{ij}^{pq} B^{kl}_{pq}
+    // for all i,j,k,l, then
+    // T_{ij}^{kl} = V_{ij}{kl} - V_{ij}^{lk}
+    // for i<j, k<l
+    // this flag determines whether to contract as alpha-beta. If not, each source integral will be antisymmetrized
+    // first
     const bool alphabeta = !(antisymmetrize && part1_strong_equiv_part2
         && part1_intequiv_part2);
 
@@ -715,8 +727,6 @@ namespace sc {
     const unsigned int nbra = iterbra.nij();
     // size of one block of <space1_ket space2_ket|
     const unsigned int nket = iterket.nij();
-    // size of one block of |space1_int space2_int>
-    const unsigned int nint = iterint.nij();
 
     RefSCMatrix Tcontr;
     // Allocate storage for the result, if need to antisymmetrize at the end; else accumulate directly to T
@@ -736,7 +746,9 @@ namespace sc {
     // total number of (ket1 ket2| index combinations
     const size_t nij_ket = nket;
     // size of each integral block |int1 int2)
-    const unsigned int blksize_int = space1_intb->rank() * space2_intb->rank();
+    const unsigned int blksize_int_sq = space1_intb->rank() * space2_intb->rank();
+    const unsigned int blksize_int_tri = space1_intb->rank() * (space1_intb->rank() - 1) / 2;
+    const unsigned int blksize_int = alphabeta ? blksize_int_sq : blksize_int_tri;
     // maximum tile size is determined by the available memory
     const size_t memory_available = r12info()->tfactory()->memory();
     const size_t max_tile_size = memory_available / (2 * blksize_int * sizeof(double));
@@ -757,6 +769,10 @@ namespace sc {
     double* T_bra = new double[tile_size_bra * blksize_int];
     double* T_ket = new double[tile_size_ket * blksize_int];
     double* T_result = new double[tile_size_bra * tile_size_ket];
+    double* tmp_blk = 0;
+    if (!alphabeta) { // if need to antisymmetrize each block, need scratch to hold a block of integrals
+      tmp_blk = new double[blksize_int_sq];
+    }
 
     //
     // Contraction loops
@@ -827,12 +843,19 @@ namespace sc {
                     bra_ij.push_back(ijt);
 
                     double* blk_ptr = bra_tile + i*blksize_int;
+                    // where to read the integrals? if not antisymmetrizing read directly to T_bra, else read to scratch
+                    // buffer, then antisymmetrize to T_bra
+                    double* blk_ptr_read = alphabeta ? blk_ptr : tmp_blk;
                     Timer tim_intsretrieve("MO ints retrieve");
                     const double* blk_cptr = accumb->retrieve_pair_block(ijt.i0_,
                                                                          ijt.i1_,
                                                                          intsetidx_bra,
-                                                                         blk_ptr);
+                                                                         blk_ptr_read);
                     tim_intsretrieve.exit();
+                    // antisymmetrize, if necessary
+                    if (!alphabeta)
+                      sc::antisymmetrize<false>(blk_ptr, blk_ptr_read, space1_intb->rank());
+
                     if (debug_ >= DefaultPrintThresholds::allO2N2) {
                       ExEnv::outn() << indent << "task " << me
                           << ": obtained ij blocks" << endl;
@@ -857,12 +880,19 @@ namespace sc {
                     ket_ij.push_back(ijt);
 
                     double* blk_ptr = ket_tile + i*blksize_int;
+                    // where to read the integrals? if not antisymmetrizing read directly to T_ket, else read to scratch
+                    // buffer, then antisymmetrize to T_ket
+                    double* blk_ptr_read = alphabeta ? blk_ptr : tmp_blk;
                     Timer tim_intsretrieve("MO ints retrieve");
                     const double* blk_cptr = accumk->retrieve_pair_block(ijt.i0_,
                                                                          ijt.i1_,
                                                                          intsetidx_ket,
-                                                                         blk_ptr);
+                                                                         blk_ptr_read);
                     tim_intsretrieve.exit();
+                    // antisymmetrize, if necessary
+                    if (!alphabeta)
+                      sc::antisymmetrize<false>(blk_ptr, blk_ptr_read, space1_intb->rank());
+
                     if (debug_ >= DefaultPrintThresholds::allO2N2) {
                       ExEnv::outn() << indent << "task " << me
                           << ": obtained kl blocks" << endl;
@@ -879,10 +909,7 @@ namespace sc {
                   }
                 }
 
-                // let's not worry about open-shell at the moment
-                assert(alphabeta);
-
-                // contract matrices
+                // contract bra and ket blocks
                 const size_t nbra_ij = bra_ij.size();
                 const size_t nket_ij = ket_ij.size();
                 C_DGEMM('n', 't',
@@ -977,6 +1004,7 @@ namespace sc {
     delete[] T_bra;
     delete[] T_ket;
     delete[] T_result;
+    if (!alphabeta)  delete[] tmp_blk;
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"

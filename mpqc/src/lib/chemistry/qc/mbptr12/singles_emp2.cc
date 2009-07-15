@@ -170,7 +170,7 @@ R12IntEval::compute_emp2_cabs_singles()
       // and the contribution from the EBC block to H0
       RefSCMatrix H1_H0_inv = FaA.t() * H0_i_inv_vv;  H1_H0_inv.scale(-1.0);
       H0_i.accumulate(H1_H0_inv * FaA);
-      // ... and to fiA
+      // ... and to H1
       RefSCVector fia = H1_H0_inv.kit()->vector(H1_H0_inv.coldim());  fia.assign(Fia_ptr + i*na);
       H1_i.accumulate( H1_H0_inv * fia );
 #endif

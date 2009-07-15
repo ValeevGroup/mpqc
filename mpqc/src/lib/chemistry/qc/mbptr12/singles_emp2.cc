@@ -99,6 +99,8 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
         result -= fia*fia/(-ievals(i)+aevals(a));
       }
     }
+
+    if (! spin_polarized()) result *= 2.0;
   }
 
   ExEnv::out0() << indent << "E(MP2 OBS singles) = " << scprintf("%25.15lf",result) << endl;
@@ -127,20 +129,60 @@ R12IntEval::compute_emp2_cabs_singles()
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
     Ref<OrbitalSpace> occ = r12info_->refinfo()->occ(spin);
+    Ref<OrbitalSpace> vir = r12info_->vir(spin);
+#if 0
     Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
+#endif
+    Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
     RefSCMatrix FiA = fock(occ,cabs,spin);
+    RefSCMatrix Fia = fock(occ,vir,spin);
+    RefSCMatrix FaA = fock(vir,cabs,spin);
+    RefSCMatrix FAA = fock(cabs,cabs,spin);
 
     const int ni = occ->rank();
+    const int na = vir->rank();
     const int nA = cabs->rank();
     const RefDiagSCMatrix& ievals = occ->evals();
-    const RefDiagSCMatrix& Aevals = cabs->evals();
+    const RefDiagSCMatrix& aevals = vir->evals();
+
+    double* FiA_ptr = new double[ni * nA];
+    FiA.convert(FiA_ptr);
+    double* Fia_ptr = new double[ni * na];
+    Fia.convert(Fia_ptr);
 
     for(int i=0; i<ni; i++) {
+      const double ieval = ievals(i);
+
+      // zeroth-order Hamiltonian in CABS basis includes the standard contribution
+      RefSCMatrix H0_i = FAA.copy();
       for(int a=0; a<nA; a++) {
-        const double fia = FiA.get_element(i,a);
-        result -= fia*fia/(-ievals(i)+Aevals(a));
+        H0_i.accumulate_element(a, a, -ieval);
       }
+      RefSCVector H1_i = H0_i.kit()->vector(H0_i.coldim());  H1_i.assign(FiA_ptr + i*nA);
+
+#define INCLUDE_EBC_BLOCK_ZEROTH_ORDER 1
+#if INCLUDE_EBC_BLOCK_ZEROTH_ORDER
+      RefDiagSCMatrix H0_i_inv_vv = FaA.kit()->diagmatrix(FaA.rowdim());
+      for(int c=0; c<na; c++) {
+        H0_i_inv_vv.set_element(c, 1.0/(aevals(c) - ieval));
+      }
+
+      // and the contribution from the EBC block to H0
+      RefSCMatrix H1_H0_inv = FaA.t() * H0_i_inv_vv;  H1_H0_inv.scale(-1.0);
+      H0_i.accumulate(H1_H0_inv * FaA);
+      // ... and to fiA
+      RefSCVector fia = H1_H0_inv.kit()->vector(H1_H0_inv.coldim());  fia.assign(Fia_ptr + i*na);
+      H1_i.accumulate( H1_H0_inv * fia );
+#endif
+
+      RefSCVector C1_i = H0_i.gi() * H1_i; C1_i.scale(-1.0);
+      result += H1_i.dot(C1_i);
+
     }
+
+    if (! spin_polarized()) result *= 2.0;
+
+    delete[] FiA_ptr;
   }
 
   ExEnv::out0() << indent << "E(MP2 CABS singles) = " << scprintf("%25.15lf",result) << endl;

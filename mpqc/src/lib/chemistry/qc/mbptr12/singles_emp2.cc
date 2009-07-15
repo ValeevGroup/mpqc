@@ -154,14 +154,21 @@ R12IntEval::compute_emp2_cabs_singles()
       const double ieval = ievals(i);
 
       // zeroth-order Hamiltonian in CABS basis includes the standard contribution
+      // H0(i)_AB = F_AB - \delta_AB F_ii
       RefSCMatrix H0_i = FAA.copy();
       for(int a=0; a<nA; a++) {
         H0_i.accumulate_element(a, a, -ieval);
       }
+      // H1(i)_A = F_iA
       RefSCVector H1_i = H0_i.kit()->vector(H0_i.coldim());  H1_i.assign(FiA_ptr + i*nA);
 
 #define INCLUDE_EBC_BLOCK_ZEROTH_ORDER 1
 #if INCLUDE_EBC_BLOCK_ZEROTH_ORDER
+      // if including EBC block of the Fock matrix (F_aA), then it's easy to block diagonalize it
+      // so that I only need to invert F_AA
+      // this is done in the same manner as the coupling is handled in MP2-R12
+      // H0(i)_AB -= F_Aa * (H0(i)_ab)^{-1} * F_bB, where H0(i)_ab is diagonal for canonicalized references
+      // H1(i)_A -= F_Ac * (H0(i)_ab)^{-1} * H1(i)_b   <--- this term is nonzero only for non-Brillouin references
       RefDiagSCMatrix H0_i_inv_vv = FaA.kit()->diagmatrix(FaA.rowdim());
       for(int c=0; c<na; c++) {
         H0_i_inv_vv.set_element(c, 1.0/(aevals(c) - ieval));

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cassert>
 #include <stdexcept>
 #include <cstdlib>
 #include <sstream>
@@ -293,6 +294,100 @@ void restore_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
 }
 
 }} // end of namespace sc::detail
+
+namespace sc {
+
+  /** Algorithm:
+   *  given src = (ij|xy), clone to create (ix|jy), t is the number of te types
+   *  tile x such that the entire jy block can be held (X*nj*ny <= memory, where Y is the tilesize)
+   *  loop over all i, t
+   *    loop over x tiles
+   *      assign i,t,xtile to a worker
+   *      loop over all j
+   *        read xtile,y block
+   *        sort to x,j,y
+   *      end j loop
+   *      loop over x in this tile
+   *        write jy
+   *      end x loop
+   *    end x tile loop
+   *  end i, t loop
+   */
+  Ref<DistArray4> permute23(const Ref<DistArray4>& src,
+                            size_t available_memory) {
+
+    const int nt = src->num_te_types();
+    const int ni = src->ni();
+    const int nj = src->nj();
+    const int nx = src->nx();
+    const int ny = src->ny();
+    const int njy = nj * ny;
+    DistArray4Dimensions result_dims(nt, ni, nx, nj, ny, DistArray4Storage_XY);
+    Ref<DistArray4> result = src->clone(result_dims);
+
+    // determine the size and number of x tiles
+    const size_t jy_blksize = njy * sizeof(double);
+    int tilesize = (available_memory + jy_blksize - 1) / jy_blksize;
+    if (tilesize > nx)  tilesize = nx;
+    const int ntiles = (nx + tilesize - 1) / tilesize;
+    tilesize = (nx + ntiles - 1) / ntiles;  // recompute the tile size for a given number of tiles
+                                            // to make the tiles more even
+
+    // allocate memory for the work buffers
+    double* xjy_buf = new double[tilesize * njy];
+    double* xy_buf = new double[tilesize * ny];
+
+    // determine how many workers we have
+    std::vector<int> worker_id;
+    const int nworkers = src->tasks_with_access(worker_id);
+    const int me = MessageGrp::get_default_messagegrp()->me();
+
+    // sort!
+    int task_id = 0;
+    for(int i=0; i<ni; ++i) {
+      for(int t=0; t<nt; ++t) {
+
+        int xoffset = 0;
+        for(int tile=0; tile<ntiles; ++tile, xoffset+=tilesize, ++task_id){
+
+          // round-robin task allocation
+          if(task_id%nworkers != worker_id[me])
+            continue;
+
+          int xfence = xoffset+tilesize;
+          if (xfence > nx) xfence = nx;
+          const int this_tilesize = xfence - xoffset;
+          for(int j=0; j<nj; ++j) {
+            src->retrieve_pair_subblock(i, j, t,
+                                        xoffset, xfence, 0, ny,
+                                        xy_buf);
+
+            double* xj_ptr = xjy_buf + j*ny;
+            const double* x_ptr = xy_buf;
+            // copy each y row to its location in xjy_buf
+            for(int x=0; x<this_tilesize; ++x, x_ptr+=ny, xj_ptr+=njy) {
+              std::copy(x_ptr, x_ptr+ny, xj_ptr);
+            }
+          }
+
+          // write i,x blocks to the destination
+          const double* x_ptr = xjy_buf;
+          for(int x=0; x<this_tilesize; ++x, x_ptr+=njy) {
+            result->store_pair_block(i, x+xoffset, t, x_ptr);
+          }
+
+        }
+
+      }
+    }
+
+    delete[] xjy_buf;
+    delete[] xy_buf;
+
+    return result;
+  }
+
+} // end of namespace sc
 
 ///////////////////////////////////////////////////////////////
 

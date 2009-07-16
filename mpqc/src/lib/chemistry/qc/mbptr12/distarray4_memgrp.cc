@@ -175,6 +175,58 @@ DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
 }
 
 void
+DistArray4_MemoryGrp::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                             int xstart, int xfence, int ystart, int yfence,
+                                             double* buf) const
+{
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  const int ij = ij_index(i,j);
+  struct PairBlkInfo *pb = &pairblk_[ij];
+  // if it's not local nor available, read
+  if (!is_local(i,j) && pb->ints_[oper_type] == 0) {
+    const int local_ij_index = ij / ntasks();
+    const distsize_t ijxy_offset = mem_->offset(ij_proc(i,j))
+                                  + (distsize_t)local_ij_index*blksize_memgrp_*num_te_types()
+                                  + (distsize_t)oper_type*blksize_memgrp_
+                                  + (distsize_t)(xstart*ny() + ystart)*sizeof(double);
+
+    if (contiguous) { // read all at once
+      double* tmpbuf = (double *) mem_->obtain_readonly(ijxy_offset, bufsize);
+      std::copy(tmpbuf, tmpbuf + xysize, buf);
+      mem_->release_readonly(tmpbuf, ijxy_offset, bufsize);
+    }
+    else { // read row by row
+      distsize_t offset = ijxy_offset;
+      double* outbuf = buf;
+      const distsize_t stride = ny()*sizeof(double);
+      const int rdsize = ysize*sizeof(double);
+      for(int x=0; x<xsize; ++x, offset+=stride, outbuf+=ysize) {
+        double* tmpbuf = (double *) mem_->obtain_readonly(offset, rdsize);
+        std::copy(tmpbuf, tmpbuf + ysize, outbuf);
+        mem_->release_readonly(tmpbuf, offset, rdsize);
+      }
+    }
+  }
+  else { // it's local or available
+    double* outbuf = buf;
+    const double* srcbuf = pb->ints_[oper_type] + (xstart * ny() + ystart);
+    if (contiguous) { // read all at once
+      std::copy(srcbuf, srcbuf + xysize, outbuf);
+    }
+    else { // read row by row
+      for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
+        std::copy(srcbuf, srcbuf + ysize, outbuf);
+      }
+    }
+  }
+}
+
+void
 DistArray4_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) const
 {
   int ij = ij_index(i,j);

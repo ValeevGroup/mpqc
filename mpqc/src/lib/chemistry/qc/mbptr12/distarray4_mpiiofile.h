@@ -170,6 +170,9 @@ class DistArray4_MPIIOFile_Ind: public DistArray4_MPIIOFile {
     /// Retrieves an ij pair block of integrals from the file
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type,
                                       double* buf = 0) const;
+    void retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                int xstart, int xfence, int ystart, int yfence,
+                                double* buf) const;
 };
 
 }

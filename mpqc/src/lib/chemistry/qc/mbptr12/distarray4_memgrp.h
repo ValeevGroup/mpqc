@@ -86,6 +86,9 @@ class DistArray4_MemoryGrp: public DistArray4 {
     /// Retrieves an ij pair block of integrals
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type,
                                       double* buf = 0) const;
+    void retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                int xstart, int xfence, int ystart, int yfence,
+                                double* buf) const;
     /// Releases an ij pair block of integrals (if needed)
     void release_pair_block(int i, int j, tbint_type oper_type) const;
 

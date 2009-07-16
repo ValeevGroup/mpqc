@@ -124,11 +124,11 @@ class DistArray4: virtual public SavableState {
     int nx() const { return nx_; }
     /// Rank of index space y
     int ny() const { return ny_; }
-    /// physical storage of the integrals. The default storage is XY. Can be changed
+    /// physical storage of the integrals. The default storage is XY. Storage is not mutable.
     const DistArray4Storage& storage() const { return storage_; }
     /// Size of each block of the integrals of one type, in double words
     size_t blocksize() const { return blocksize_; };
-    // return blksize_
+    // same as blocksize(), but in bytes
     size_t blksize() const { return blksize_; }
 
     /// call this before operations on this object can begin
@@ -138,10 +138,15 @@ class DistArray4: virtual public SavableState {
     /// if this returns false, call to deactivate may destroy data
     virtual bool data_persistent() const =0;
     /** Retrieves an ij block of integrals. Note that it comes stored according to storage().
-        Optional place_ptr specifies the buffer in which to write the data (if not provided, will allocate dynamically).
+        Optional buf specifies the buffer in which to write the data (if not provided, will allocate dynamically).
       */
     virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type,
                                                double* buf = 0) const =0;
+    /** Retrieves a rectangular subblock of ij block of integrals. \sa retrieve_pair_block()
+      */
+    virtual void retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                        int xstart, int xfence, int ystart, int yfence,
+                                        double* buf) const =0;
     /// Releases the buffer that holds ij block of integrals. If it was allocated by DistArray4, it will be freed.
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
     /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().
@@ -189,6 +194,11 @@ class DistArray4: virtual public SavableState {
 
 };
 
+/** creates an array in which indices 2 and 3 are permuted
+ * \param available_memory specifies how much memory is available, in bytes.
+*/
+Ref<DistArray4> permute23(const Ref<DistArray4>& src,
+                          size_t available_memory);
 
 namespace detail {
 

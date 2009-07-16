@@ -265,7 +265,7 @@ DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
 const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type,
                                                    double* buf) const {
-  // Can write blocks?
+  // Can read blocks?
   if (!is_avail(i, j))
     throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",
         __FILE__,__LINE__);
@@ -318,6 +318,74 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
     return buf;
   else
     return pb->ints_[oper_type];
+}
+
+void
+DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                             int xstart, int xfence, int ystart, int yfence,
+                                             double* buf) const
+{
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  // Can read blocks?
+  if (!is_avail(i, j))
+    throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",
+        __FILE__,__LINE__);
+
+  const int ij = ij_index(i, j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+  // Always first check if it's already in memory
+  // if I don't manage the memory for this block, assume that the user is in charge of memory management
+  // therefore need to read in again
+  if (pb->ints_[oper_type] == 0 || pb->manage_[oper_type] == false) {
+
+    off_t offset = pb->offset_ + (off_t)oper_type*blksize() +
+                   (off_t)(xstart*ny() + ystart)*sizeof(double);
+    off_t result_offset = lseek(datafile_, offset, SEEK_SET);
+    if (offset == (off_t)-1 || result_offset != offset)
+      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_subblock() -- lseek failed",
+          __FILE__,
+          __LINE__,
+          filename_,
+          FileOperationFailed::Other);
+
+    // assume there is enough memory to read all rows at once to avoid multiple seeks and reads
+    double* readbuf = contiguous ? buf : new double[xysize];
+    size_t readbuf_size = contiguous ? bufsize : xsize * ny() * sizeof(double);
+    const ssize_t read_this_much = read(datafile_, readbuf, readbuf_size);
+    if (read_this_much != readbuf_size)
+      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_subblock() -- read failed",
+                                __FILE__,
+                                __LINE__,
+                                filename_,
+                                FileOperationFailed::Read);
+
+    // hence may need to copy the required data to the buffer
+    if (!contiguous) {
+      double* outbuf = buf;
+      const double* srcbuf = readbuf;
+      for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
+        std::copy(srcbuf, srcbuf + ysize, outbuf);
+      }
+      delete[] readbuf;
+    }
+  }
+  else { // data is already available
+    double* outbuf = buf;
+    const double* srcbuf = pb->ints_[oper_type] + (xstart * ny() + ystart);
+    if (contiguous) { // read all at once
+      std::copy(srcbuf, srcbuf + xysize, outbuf);
+    }
+    else { // read row by row
+      for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
+        std::copy(srcbuf, srcbuf + ysize, outbuf);
+      }
+    }
+  }
 }
 
 void

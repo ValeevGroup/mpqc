@@ -288,6 +288,61 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
     return pb->ints_[oper_type];
 }
 
+void
+DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
+                                                 int xstart, int xfence, int ystart, int yfence,
+                                                 double* buf) const
+{
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  int ij = ij_index(i,j);
+  struct PairBlkInfo *pb = &pairblk_[ij];
+  // Always first check if it's already in memory
+  // if this block is not managed, assume that user takes care of the details
+  // hence read it in again
+  if (pb->ints_[oper_type] == 0 || pb->manage_[oper_type] == false) {
+    MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize() +
+                        (MPI_Offset)(xstart*ny() + ystart)*sizeof(double);
+    int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
+    check_error_code_(errcod);
+
+    // assume there is enough memory to read all rows at once to avoid multiple seeks and reads
+    double* readbuf = contiguous ? buf : new double[xysize];
+    const int readbuf_size = contiguous ? xysize : xsize * ny();
+
+    // read
+    MPI_Status status;
+    errcod = MPI_File_read(datafile_, (void *)readbuf, readbuf_size, MPI_DOUBLE, &status);
+    check_error_code_(errcod);
+
+    // hence may need to copy the required data to the buffer
+    if (!contiguous) {
+      double* outbuf = buf;
+      const double* srcbuf = readbuf;
+      for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
+        std::copy(srcbuf, srcbuf + ysize, outbuf);
+      }
+      delete[] readbuf;
+    }
+  }
+  else { // if data is already available need to copy to the buffer
+    double* outbuf = buf;
+    const double* srcbuf = pb->ints_[oper_type] + (xstart * ny() + ystart);
+    if (contiguous) { // read all at once
+      std::copy(srcbuf, srcbuf + xysize, outbuf);
+    }
+    else { // read row by row
+      for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
+        std::copy(srcbuf, srcbuf + ysize, outbuf);
+      }
+    }
+  }
+}
+
 void detail::clone_filename(std::string& result, const char* original, int id) {
   std::ostringstream oss;
   oss << original << ".clone" << id;

@@ -324,6 +324,7 @@ namespace sc {
     const int njy = nj * ny;
     DistArray4Dimensions result_dims(nt, ni, nx, nj, ny, DistArray4Storage_XY);
     Ref<DistArray4> result = src->clone(result_dims);
+    result->activate();
 
     // determine the size and number of x tiles
     const size_t jy_blksize = njy * sizeof(double);

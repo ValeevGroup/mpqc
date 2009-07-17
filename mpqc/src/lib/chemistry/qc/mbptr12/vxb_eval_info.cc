@@ -321,6 +321,14 @@ R12IntEvalInfo::initialize()
                                                   msg(),
                                                   thr());
         fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
+
+        if (bs_df_) { // DF-BS
+          Ref<Integral> integral = moints_runtime_->factory()->integral();
+          // TODO how to generate unique labels
+          Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", bs_df_, integral);
+          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
+          AOSpaceRegistry::instance()->add(bs_df_, fbs_space);
+        }
       }
   }
 }

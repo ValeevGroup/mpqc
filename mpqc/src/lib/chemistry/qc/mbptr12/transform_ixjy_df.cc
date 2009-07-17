@@ -73,19 +73,8 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
   assert(dfbasis12_->equiv(dfbasis34_));
 
   // make sure Registries know about the fitting bases
-  Ref<OrbitalSpaceRegistry> orbreg = OrbitalSpaceRegistry::instance();
-  Ref<Integral> integral = runtime_->moints_runtime()->factory()->integral();
-  if (orbreg->key_exists("Mu") == false) {
-    // TODO how to generate unique labels
-    Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", dfbasis12_, integral);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
-    AOSpaceRegistry::instance()->add(dfbasis12_, fbs_space);
-  }
-  if (orbreg->key_exists("Mu") == false) {
-    Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", dfbasis34_, integral);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
-    AOSpaceRegistry::instance()->add(dfbasis34_, fbs_space);
-  }
+  assert(AOSpaceRegistry::instance()->key_exists(dfbasis12_) &&
+         AOSpaceRegistry::instance()->key_exists(dfbasis34_));
 
   init_vars();
 }

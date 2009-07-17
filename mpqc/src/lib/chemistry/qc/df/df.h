@@ -81,6 +81,7 @@ namespace sc {
       const Ref<OrbitalSpace>& space1() const { return space1_; }
       const Ref<OrbitalSpace>& space2() const { return space2_; }
       const Ref<GaussianBasisSet>& fbasis() const { return fbasis_; }
+      const std::string& kernel_key() const { return kernel_key_; }
       /// returns the fitting coeffcients
       const Ref<DistArray4>& C() const {
         return C_;
@@ -96,6 +97,7 @@ namespace sc {
       Ref<GaussianBasisSet> fbasis_;
       Ref<OrbitalSpace> space1_;
       Ref<OrbitalSpace> space2_;
+      std::string kernel_key_;
 
       bool evaluated_;
 
@@ -141,6 +143,32 @@ namespace sc {
     private:
 
       Ref<DistArray4> mo1_ao2_df_;
+
+      // overloads DensityFitting::compute()
+      void compute();
+
+      static ClassDesc class_desc_;
+
+  };
+
+  /// Computes density fitting for |ij) density from fitting of |ji) DensityFitting
+  class PermutedDensityFitting: public DensityFitting {
+    public:
+      ~PermutedDensityFitting();
+      /// compute density fitting for |mo1 mo2) from |mo1 ao2)
+      PermutedDensityFitting(const Ref<DensityFitting>& df21);
+      /// compute density fitting for |mo1 mo2) from |mo1 ao2)
+      PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
+                             const std::string& kernel_key,
+                             const Ref<OrbitalSpace>& space1,
+                             const Ref<OrbitalSpace>& space2,
+                             const Ref<GaussianBasisSet>& fitting_basis,
+                             const Ref<DistArray4>& df21);
+      PermutedDensityFitting(StateIn&);
+      void save_data_state(StateOut&);
+
+    private:
+      Ref<DistArray4> df21_;
 
       // overloads DensityFitting::compute()
       void compute();

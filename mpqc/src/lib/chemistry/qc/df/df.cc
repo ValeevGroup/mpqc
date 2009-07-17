@@ -60,10 +60,11 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                  runtime_(mointsruntime),
                                  space1_(space1),
                                  space2_(space2),
-                                 fbasis_(fitting_basis)
+                                 fbasis_(fitting_basis),
+                                 kernel_key_(kernel_key)
                                  {
   // only Coulomb fitting is supported at the moment
-  if (kernel_key != std::string("1/r_{12}"))
+  if (kernel_key_ != std::string("1/r_{12}"))
     throw FeatureNotImplemented("Non-Coulomb fitting kernels are not supported",__FILE__,__LINE__);
 
   // fitting dimension
@@ -78,6 +79,7 @@ DensityFitting::DensityFitting(StateIn& si) :
   fbasis_ << SavableState::restore_state(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
+  si.get(kernel_key_);
   cC_ << SavableState::restore_state(si);
   C_ << SavableState::restore_state(si);
 
@@ -91,6 +93,7 @@ DensityFitting::save_data_state(StateOut& so) {
   SavableState::save_state(fbasis_.pointer(),so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
+  so.put(kernel_key_);
   SavableState::save_state(cC_.pointer(),so);
   SavableState::save_state(C_.pointer(),so);
 
@@ -209,16 +212,9 @@ DensityFitting::compute()
 
 #if USE_KERNEL_INVERSE
 
- #define USE_LAPACK_BASED_INVERSE 1
- #if USE_LAPACK_BASED_INVERSE
       RefSymmSCMatrix kernel_i_mat = kernel_.clone(); kernel_i_mat.assign(kernel_);
-      exp::lapack_invert_symmnondef(kernel_i_mat, -1.0);
-      //(kernel_i_mat * kernel_).print("inverse test: should be 1");
- #else
-      // compute the kernel inverse
-      RefSymmSCMatrix kernel_i_mat = kernel_.gi(1e15);
- #endif
-      //kernel_i_mat.print("DensityFitting::kernel^{-1}");
+      exp::lapack_invert_symmnondef(kernel_i_mat, 1e10);
+
       // convert kernel_i to dense rectangular form
       std::vector<double> kernel_i(n3 * n3);
       int rc = 0;
@@ -235,7 +231,7 @@ DensityFitting::compute()
       // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
       std::vector<double> kernel_factorized(n3 * (n3 + 1) / 2);
       std::vector<int> ipiv(n3);
-      sc::exp::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]), &(ipiv[0]), -1.0);
+      sc::exp::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]), &(ipiv[0]), 1e10);
 #endif
 
       for (int i = 0; i < n1; ++i) {
@@ -385,6 +381,73 @@ TransformedDensityFitting::compute()
 
   tim.exit();
   ExEnv::out0() << indent << "Built TransformedDensityFitting: name = " << name << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc PermutedDensityFitting::class_desc_(
+  typeid(PermutedDensityFitting),"PermutedDensityFitting",1,
+  "public DensityFitting",
+  0, 0, create<PermutedDensityFitting>);
+
+PermutedDensityFitting::~PermutedDensityFitting() {}
+
+PermutedDensityFitting::PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
+                                               const std::string& kernel_key,
+                                               const Ref<OrbitalSpace>& space1,
+                                               const Ref<OrbitalSpace>& space2,
+                                               const Ref<GaussianBasisSet>& fitting_basis,
+                                               const Ref<DistArray4>& df21) :
+                 DensityFitting(rtime, kernel_key, space1, space2, fitting_basis),
+                 df21_(df21)
+{
+  // make sure that mo1_ao2_df is a valid input
+  assert(df21->ni() == 1 &&
+         df21->nj() == space2->rank() &&
+         df21->nx() == space1->rank() &&
+         df21->ny() == fitting_basis->nbasis());
+}
+
+PermutedDensityFitting::PermutedDensityFitting(const Ref<DensityFitting>& df21) :
+                       DensityFitting(df21->runtime(), df21->kernel_key(),
+                                      df21->space2(), df21->space1(),   // swapped!
+                                      df21->fbasis()),
+                       df21_(df21->C())
+{}
+
+PermutedDensityFitting::PermutedDensityFitting(StateIn& si) :
+  DensityFitting(si) {
+  df21_ << SavableState::restore_state(si);
+}
+
+void
+PermutedDensityFitting::save_data_state(StateOut& so) {
+  SavableState::save_state(df21_.pointer(),so);
+}
+
+void
+PermutedDensityFitting::compute()
+{
+  if (C_.nonnull()) // nothing to compute then
+    return;
+
+  const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
+                                                        this->space2()->id(),
+                                                        AOSpaceRegistry::instance()->value(this->fbasis())->id());
+  std::string tim_label("PermutedDensityFitting ");
+  tim_label += name;
+  Timer tim(tim_label);
+
+  Ref<DistArray4> C21 = df21_;
+  C21->activate();
+  C_ = permute23(C21, 1000000000);
+  if (C_->data_persistent()) C_->deactivate();
+  if (C21->data_persistent()) C21->deactivate();
+
+  runtime()->factory()->mem()->sync();
+
+  tim.exit();
+  ExEnv::out0() << indent << "Built PermutedDensityFitting: name = " << name << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

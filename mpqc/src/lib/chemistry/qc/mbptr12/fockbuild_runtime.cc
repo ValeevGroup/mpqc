@@ -209,22 +209,16 @@ FockBuildRuntime::get(const std::string& key) {
       bool compute_K = (oper_key == "K" || oper_key == "F");
 
       Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
-      if (use_density_fitting() && compute_J)
-        fmb_df = new TwoBodyFockMatrixDFBuilder(false,
-                                               true,
-                                               false,
-                                               bs1, bs2, obs,
-                                               P_,
-                                               Po_,
-                                               dfinfo());
+      if (use_density_fitting())
+        fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J, compute_K,
+                                               bs1, bs2, obs, P_, Po_, dfinfo());
 
       double nints;
       if (bs1_eq_bs2) {
         Ref<TwoBodyFockMatrixBuilder<true> > fmb;
-        if ((!use_density_fitting() && compute_J) || compute_K) {
-          fmb = new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J,
-                                                compute_K, bs1, bs2, obs, P_,
-                                                Po_, integral(), msg(), thr());
+        if (!use_density_fitting()) {
+          fmb = new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J, compute_K,
+                                                    bs1, bs2, obs, P_, Po_, integral(), msg(), thr());
           nints = fmb->nints();
         }
         {
@@ -240,7 +234,7 @@ FockBuildRuntime::get(const std::string& key) {
 
           RefSCMatrix K;
           if (compute_K) {
-            K = SymmToRect(fmb->K(spin));
+            K = use_density_fitting() ? fmb_df->K() : SymmToRect(fmb->K(spin));
             const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
             registry_->add(kkey, K);
             if (debug()) {
@@ -263,12 +257,9 @@ FockBuildRuntime::get(const std::string& key) {
       } else { // result is rectangular already
 
         Ref<TwoBodyFockMatrixBuilder<false> > fmb;
-        if ((!use_density_fitting() && compute_J) || compute_K) {
-          fmb = new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J,
-                                                 compute_K, bs1, bs2, obs, P_,
-                                                 Po_, integral(),
-                                                 msg(),
-                                                 thr());
+        if (!use_density_fitting()) {
+          fmb = new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J, compute_K,
+                                                     bs1, bs2, obs, P_, Po_, integral(), msg(), thr());
           nints = fmb->nints();
         }
         {
@@ -285,7 +276,7 @@ FockBuildRuntime::get(const std::string& key) {
 
           RefSCMatrix K;
           if (compute_K) {
-            K = fmb->K(spin);
+            K = use_density_fitting() ? fmb_df->K() : fmb->K(spin);
             const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
             registry_->add(kkey, K);
             if (debug()) {

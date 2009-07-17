@@ -1067,7 +1067,9 @@ namespace sc {
       //////////////////////////////////////////////////////////////
       //
       // Evaluation of the exchange matrix proceeds as follows:
-      //
+      // compute S so that S*S^t = P (S is a "square root" of the density)
+      // density-fit (a S| -> C_aS^Mu
+      // contract C_aS^Mu with cC_bS^Mu to yield K_ab
       //
       /////////////////////////////////////////////////////////////////////////////////
 
@@ -1080,28 +1082,64 @@ namespace sc {
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
 
-      const std::string C_key = ParsedDensityFittingKey::key(braspace->id(),
-                                                             obs_space->id(),
+      // compute square root of P
+      RefDiagSCMatrix Pevals = P.eigvals();
+      RefSCMatrix Pevecs = P.eigvecs();
+      const double Peval_max = Pevals->maxabs();
+      const double Peval_threshold = Peval_max * 1e-8;
+      const int nao = obs_space->rank();
+      int Srank = 0;
+      for(int ao=0; ao<nao; ++ao)
+        if (Pevals(ao) > Peval_threshold)
+          ++Srank;
+      RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
+      RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
+      {  // compute S from Pevecs
+         // since both a blocked matrcies with 1 block, must operates on the blocks directly
+        RefSCMatrix Sblk = S.block(0);
+        RefSCMatrix Ublk = Pevecs.block(0);
+        int s = 0;
+        for (int ao = 0; ao < nao; ++ao) {
+          const double peval = Pevals(ao);
+          if (peval > Peval_threshold) {
+            Sblk.assign_subblock(Ublk.get_subblock(0, nao - 1, ao, ao)
+                * sqrt(peval), 0, nao - 1, s, s);
+            ++s;
+          }
+        }
+      }
+
+      // make an orbital space out of sqrt(P)
+      Ref<OrbitalSpace> Sspace = new OrbitalSpace("PP", "sqrt(P)",
+                                                  obs_space->coefs() * S,
+                                                  obs_space->basis(),
+                                                  obs_space->integral());
+      OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Sspace));
+
+      // little optimization here ... since DensityFittingRuntime currently always fits (iq| to get to (ij|
+      // and since rank of S will be smaller than rank of OBS when Hartree-Fock of CAS references are used
+      // compute density fitting of (S bra| and permute to get (bra S|
+      const std::string C_key = ParsedDensityFittingKey::key(Sspace->id(),
+                                                             braspace->id(),
                                                              dfspace->id());
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
+      C = permute23(C,1000000000);
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(ketspace->id(),
                                                                      dfspace->id(),
-                                                                     obs_space->id(),
+                                                                     Sspace->id(),
                                                                      "ERI","");
       const Ref<TwoBodyThreeCenterMOIntsTransform>& cC_tform = int3c_rtime->get(cC_key);
       cC_tform->compute();
       Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
 
-      const int nobs = obs_space->rank();
       const int ndf = dfspace->rank();
+      const int nsdf = Srank * ndf;
       const unsigned int nbra = braspace->rank();
       const unsigned int nket = ketspace->rank();
       const unsigned int nbraket = nbra * nket;
       double* K = new double[nbraket];
       memset(K,0,sizeof(double)*nbraket);
-      const int nobs2 = nobs*nobs;
-      double* scratch = new double[nobs2];
 
       {
         // Compute the number of tasks that have full access to the integrals
@@ -1111,15 +1149,6 @@ namespace sc {
         int nproc_with_ints = C->tasks_with_access(proc_with_ints);
 
         if (C->has_access(me)) {
-
-          double** P_blk = new double*[nobs];
-          P_blk[0] = new double[nobs*nobs];
-          for(int i=1; i<nobs; ++i) {
-            P_blk[i] = P_blk[i-1] + nobs;
-          }
-          for(int i=0; i<nobs; ++i)
-            for(int j=0; j<=i; ++j)
-              P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
 
           int ab = 0;
           for (int a = 0; a < nbra; ++a) {
@@ -1138,13 +1167,10 @@ namespace sc {
               const double* cC_b_pR_buf = cC->retrieve_pair_block(0, b,
                                                                   TwoBodyOper::eri);
 
-              C_DGEMM('n', 't', nobs, nobs, ndf, 1.0, C_a_pR_buf, ndf, cC_b_pR_buf, ndf,
-                      0.0, scratch, nobs);
+              const int unit_stride = 1;
+              const double K_ab = F77_DDOT(&nsdf, C_a_pR_buf, &unit_stride, cC_b_pR_buf, &unit_stride);
 
               cC->release_pair_block(0, b, TwoBodyOper::eri);
-
-              const int unit_stride = 1;
-              const double K_ab = F77_DDOT(&nobs2, scratch, &unit_stride, P_blk[0], &unit_stride);
 
               K[ab] += K_ab;
             } // end of b loop
@@ -1153,10 +1179,6 @@ namespace sc {
               C->release_pair_block(0, a, 0);
 
           } // end of a loop
-
-          // cleanup
-          delete[] P_blk[0];
-          delete[] P_blk;
 
         }
 

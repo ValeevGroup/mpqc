@@ -288,11 +288,33 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
     return pb->ints_[oper_type];
 }
 
+namespace {
+  template <typename T>
+  class ScratchBuffer {
+    public:
+    ScratchBuffer() : size_(0), buf_(0) {}
+    ~ScratchBuffer() { if (buf_) free(buf_); buf_ = 0; size_ = 0;}
+    T* buffer(size_t size) {
+      if (size <= size_) return buf_;
+      buf_ = (T*)realloc((void*)buf_,size);
+      size_ = size;
+      return buf_;
+    }
+
+    private:
+      size_t size_;
+      T* buf_;
+  };
+}
+
 void
 DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                                  int xstart, int xfence, int ystart, int yfence,
                                                  double* buf) const
 {
+  static ScratchBuffer<char> scratch;
+  Ref<ThreadLock> scratch_lock = ThreadGrp::get_default_threadgrp()->new_lock();
+
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
   const int ysize = yfence - ystart;
@@ -310,9 +332,13 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_t
     int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
     check_error_code_(errcod);
 
-    // assume there is enough memory to read all rows at once to avoid multiple seeks and reads
-    double* readbuf = contiguous ? buf : new double[xysize];
-    const int readbuf_size = contiguous ? xysize : xsize * ny();
+    // do not assume that there is enough memory -- use static scratch and lock, if necessary
+    size_t readbuf_size = contiguous ? bufsize : ((xsize-1) * ny() + ysize) * sizeof(double);
+    void* readbuf = buf;
+    if (!contiguous) {
+      scratch_lock->lock();
+      readbuf = scratch.buffer(readbuf_size);
+    }
 
     // read
     MPI_Status status;
@@ -322,11 +348,12 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_t
     // hence may need to copy the required data to the buffer
     if (!contiguous) {
       double* outbuf = buf;
-      const double* srcbuf = readbuf;
+      const double* srcbuf = (const double*) readbuf;
       for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
         std::copy(srcbuf, srcbuf + ysize, outbuf);
       }
-      delete[] readbuf;
+      // release scratch if necessary
+      if (!contiguous) scratch_lock->unlock();
     }
   }
   else { // if data is already available need to copy to the buffer

@@ -143,7 +143,7 @@ PsiExEnv::PsiExEnv() :
   outputname_ = fileprefix_ + "." + defaultoutputname_;
   stdout_ = fileprefix_ + "." + defaultstdout_;
   stderr_ = fileprefix_ + "." + defaultstderr_;
-  
+
   char *s = new char[cwd_.size() + inputname_.size() + 2];
   sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
   psiinput_ = new PsiInput(s);
@@ -213,7 +213,7 @@ void PsiExEnv::run_psi_module(const char *module)
 {
   // can only run on node 0
   if (me_ != 0) return;
-  
+
   std::ostringstream oss;
   oss << "cd " << cwd_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
       << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;
@@ -221,9 +221,11 @@ void PsiExEnv::run_psi_module(const char *module)
   if (errcod) {
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
-      if (strcmp(module,"psiclean"))
+      // DO NOT throw if cleaning -- nothing to be gained, and has potential to obscure pending exception
+      if (strcmp(module,"psiclean")) {
         run_psi_module("psiclean");
-      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+        throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+      }
   }
 }
 

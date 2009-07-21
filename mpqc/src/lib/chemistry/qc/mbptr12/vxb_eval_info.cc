@@ -272,6 +272,7 @@ R12IntEvalInfo::initialize()
           idxreg->add(make_keyspace_pair(vir_act()));
           idxreg->add(make_keyspace_pair(vir()));
           idxreg->add(make_keyspace_pair(refinfo()->orbs()));
+          idxreg->add(make_keyspace_pair(refinfo()->orbs_sb()));
         }
         else {
           for(int s=Alpha; s!=InvalidSpinCase1; ++s) {
@@ -281,6 +282,7 @@ R12IntEvalInfo::initialize()
             idxreg->add(make_keyspace_pair(vir_act(spin)));
             idxreg->add(make_keyspace_pair(vir(spin)));
             idxreg->add(make_keyspace_pair(refinfo()->orbs(spin)));
+            idxreg->add(make_keyspace_pair(refinfo()->orbs_sb(spin)));
           }
         }
 

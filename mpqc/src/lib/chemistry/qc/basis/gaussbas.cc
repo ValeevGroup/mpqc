@@ -34,6 +34,7 @@
 
 #include <scconfig.h>
 #include <sstream>
+#include <algorithm>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
@@ -1372,6 +1373,74 @@ GaussianBasisSetSum::fblock_to_function(int b) const { return fblock_to_function
 int
 GaussianBasisSetSum::fblock_size(int b) const { return fblock_size_[b]; }
 
+////
+
+namespace sc {
+
+  BasisFunctionMap operator<<(const GaussianBasisSet& B, const GaussianBasisSet& A) {
+
+    typedef std::vector<int> BFMap;
+    const bool must_use_same_basis = true;
+    BFMap int_map = map(B, A);
+    BFMap::iterator i = std::find(int_map.begin(), int_map.end(), -1);
+    if (i != int_map.end())
+      throw std::logic_error("Cannot construct basis function map");
+
+    BasisFunctionMap result(int_map.size());
+    std::copy(int_map.begin(), int_map.end(), result.begin());
+    return result;
+  }
+
+  std::vector<int>
+  map(const GaussianBasisSet& B, const GaussianBasisSet& A) {
+
+    // validate input
+    // TODO implement Molecule::operator==()
+    const bool valid_input = ( A.molecule().pointer() == B.molecule().pointer() // no Molecule::operator== yet, hence compare pointers
+                             );
+    if (!valid_input)
+      throw std::logic_error("Cannot construct basis function map");
+
+    std::vector<int> map(A.nbasis());
+    // loop over shells in A
+    for(int sa=0; sa<A.nshell(); ++sa) {
+      const int center = A.shell_to_center(sa);
+      const GaussianShell& a = A[sa];
+      bool found_equivalent = false;
+      const int fa_start = A.shell_to_function(sa);
+      const int fa_fence = fa_start + a.nfunction();
+
+      // loop over all shells in A on the same center
+      const int sb_start = B.shell_on_center(center,0);
+      const int sb_fence = sb_start + B.nshell_on_center(center);
+      for(int sb=sb_start; sb<sb_fence; ++sb) {
+        const GaussianShell& b = B[sb];
+
+        if (a.equiv(b)) {
+          if (found_equivalent) throw std::logic_error("found more than 1 match for a shell in operator<<(GaussianBasisSet,GaussianBasisSet)");
+          found_equivalent = true;
+
+          // map each basis function
+          const int fb_start = B.shell_to_function(sb);
+          const int fb_fence = fb_start + b.nfunction();
+          for(int fa=fa_start, fb=fb_start; fa<fa_fence; ++fa, ++fb)
+            map[fa] = fb;
+
+        }
+
+      }
+
+      if (!found_equivalent) {
+        for(int fa=fa_start; fa<fa_fence; ++fa)
+          map[fa] = -1;
+      }
+
+    }
+
+    return map;
+  }
+
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

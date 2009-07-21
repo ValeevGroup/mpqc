@@ -689,46 +689,193 @@ NonblockedOrbitalSpace::NonblockedOrbitalSpace(const std::string& id,
 
 /////////////////////////////////////////////////////////////////////////////
 
+static ClassDesc OrbitalSpaceUnion_cd(typeid(OrbitalSpaceUnion), "OrbitalSpaceUnion", 1,
+                                           "public OrbitalSpace", 0, 0, create<OrbitalSpaceUnion> );
+
+OrbitalSpaceUnion::OrbitalSpaceUnion(StateIn& si) :
+  OrbitalSpace(si) {}
+
+void
+OrbitalSpaceUnion::save_data_state(StateOut& so) {
+  OrbitalSpace::save_data_state(so);
+}
+
+OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& name,
+                                     const OrbitalSpace& s1, const OrbitalSpace& s2,
+                                     bool merge_blocks) :
+  OrbitalSpace() {
+
+  // validate input
+  if (s1.integral()->equiv(s2.integral()) == false)
+    throw std::logic_error("OrbitalSpaceUnion::OrbitalSpaceUnion -- incompatible integral matrices are not yet supported");
+  if (merge_blocks && s1.nblocks() != s2.nblocks())
+    throw std::logic_error("OrbitalSpaceUnion::OrbitalSpaceUnion : merge_blocks is true but different number of blocks");
+  const unsigned int nblocks = merge_blocks ? s1.nblocks() : s1.nblocks() + s2.nblocks();
+
+  // compute the basis set
+  // try 3 cases:
+  // s1.basis() is contained in s2
+  // s2.basis() is contained in s1
+  // neither, get s1.basis() + s2.basis()
+  Ref<GaussianBasisSet> bs = 0;
+  try { BasisFunctionMap tmp = *(s1.basis()) << *(s2.basis()); bs = s1.basis(); }
+  catch (...) { }
+  if (bs == 0) {
+    try { BasisFunctionMap tmp = *(s2.basis()) << *(s1.basis()); bs = s2.basis(); }
+    catch (...) { }
+  }
+  if (bs == 0) {
+    bs = s1.basis() + s2.basis();
+  }
+  const BasisFunctionMap map1 = (*bs) << (*s1.basis());
+  const BasisFunctionMap map2 = (*bs) << (*s2.basis());
+
+  const unsigned int nao1 = s1.basis()->nbasis();
+  const unsigned int norbs1 = s1.rank();
+  const vector<unsigned int>& orbsym1 = s1.orbsym();
+  const unsigned int nao2 = s2.basis()->nbasis();
+  const unsigned int norbs2 = s2.rank();
+  const vector<unsigned int>& orbsym2 = s2.orbsym();
+
+  // merge coefficient, energy and symmetry data, don't pay attention to blocking yet
+  Ref<SCMatrixKit> so_matrixkit = bs->so_matrixkit();
+  const int norbs = norbs1 + norbs2;
+  const int nbs = bs->nbasis();
+  RefSCDimension dim = new SCDimension(norbs, 1, &norbs);
+  dim->blocks()->set_subdim(0, new SCDimension(norbs) );
+  RefSCDimension aodim = new SCDimension(nbs, 1, &nbs);
+  aodim->blocks()->set_subdim(0, bs->basisdim());
+  RefSCMatrix coefs = so_matrixkit->matrix(aodim, dim);
+  RefDiagSCMatrix evals = so_matrixkit->diagmatrix(dim);
+  std::vector<unsigned int> orbsym(dim.n());
+  int ii = 0;
+  for (unsigned int i=0; i<norbs1; ++i, ++ii) {
+    orbsym[ii] = orbsym1[i];
+    for (unsigned int j=0; j<nao1; j++) {
+      const unsigned int jj = map1[j];
+      coefs(jj, ii) = s1.coefs().get_element(j, i);
+    }
+    evals(ii) = s1.evals().get_element(i);
+  }
+  for (unsigned int i=0; i<norbs2; ++i, ++ii) {
+    orbsym[ii] = orbsym2[i];
+    for (unsigned int j=0; j<nao1; j++) {
+      const unsigned int jj = map2[j];
+      coefs(jj, ii) = s2.coefs().get_element(j, i);
+    }
+    evals(ii) = s2.evals().get_element(i);
+  }
+
+  // create vector of BlockedOrbitals
+  std::vector<BlockedOrbital> blocked_orbs;
+  const std::vector<unsigned int>& block_sizes1 = s1.block_sizes();
+  const std::vector<unsigned int>& block_sizes2 = s2.block_sizes();
+  // blocking info depends on merge_blocks
+  if (!merge_blocks) {
+    size_t block_offset = 0;
+    unsigned int bb = 0;
+    for (unsigned int b = 0; b < block_sizes1.size(); ++b, ++bb) {
+      const size_t block_size = block_sizes1[b];
+      for (size_t o = 0; o < block_size; ++o) {
+        const size_t oo = o + block_offset;
+        blocked_orbs.push_back(BlockedOrbital(oo, bb));
+      }
+      block_offset += block_size;
+    }
+    for (unsigned int b = 0; b < block_sizes2.size(); ++b, ++bb) {
+      const size_t block_size = block_sizes2[b];
+      for (size_t o = 0; o < block_size; ++o) {
+        const size_t oo = o + block_offset;
+        blocked_orbs.push_back(BlockedOrbital(oo, bb));
+      }
+      block_offset += block_size;
+    }
+  }
+  else { // if merging blocks, get rid of duplicate orbitals
+    assert(false);
+  }
+
+  init(id, name,
+       bs,
+       s1.integral(),
+       coefs,
+       evals,
+       orbsym,
+       nblocks, blocked_orbs);
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 MOIndexMap sc::operator<<(const OrbitalSpace& s2, const OrbitalSpace& s1) {
+  typedef std::vector<int> OrbitalMap;
+  const bool must_use_same_basis = true;
+  OrbitalMap int_map = map(s2, s1, must_use_same_basis);
+  OrbitalMap::iterator i = std::find(int_map.begin(), int_map.end(), -1);
+  if (i != int_map.end())
+    throw CannotConstructMap();
+
+  MOIndexMap result(int_map.size());
+  std::copy(int_map.begin(), int_map.end(), result.begin());
+  return result;
+}
+
+std::vector<int>
+sc::map(const OrbitalSpace& s2, const OrbitalSpace& s1, bool expect_same_basis) {
   const unsigned int rank1 = s1.rank();
   const unsigned int rank2 = s2.rank();
-  if (rank1 > rank2 || s1.basis() != s2.basis() || s1.integral()->class_desc()
-      != s2.integral()->class_desc())
+  if (!s1.integral()->equiv(s2.integral()))
     throw CannotConstructMap();
+  const bool same_basis = (s1.basis() == s2.basis());
+  if (expect_same_basis && !same_basis)
+    throw CannotConstructMap();
+  std::vector<int> bfmap;
+  if (!same_basis) {
+    try {
+      bfmap = sc::map(*(s2.basis()),*(s1.basis()));
+    }
+    catch (...) {
+      throw CannotConstructMap();
+    }
+  }
 
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
 #if 0
-  c1.print("operator<<(OrbitalSpace,OrbitalSpace): c1");
-  c2.print("operator<<(OrbitalSpace,OrbitalSpace): c2");
+  c1.print("map(OrbitalSpace,OrbitalSpace): c1");
+  c2.print("map(OrbitalSpace,OrbitalSpace): c2");
 #endif
-  const unsigned int nao = c1.coldim().n();
+  const unsigned int nao1 = c1.coldim().n();
+  const unsigned int nao2 = c2.coldim().n();
 
-  typedef std::vector<unsigned int> maptype;
-  maptype map(rank1);
+  typedef std::vector<int> maptype;
+  maptype result(rank1);
 
   // if objects are the same, map is trivial
   if (&s1 == &s2) {
     for (unsigned int mo1 = 0; mo1 < rank1; mo1++)
-      map[mo1] = mo1;
-    return map;
+      result[mo1] = mo1;
+    return result;
   }
 
-  std::vector<int> has_been_mapped(rank2, -1);
   // for each MO in 1 find vector in 2
   for (unsigned int mo1 = 0; mo1 < rank1; mo1++) {
     bool found_match = false;
     for (unsigned int mo2 = 0; mo2 < rank2; mo2++) {
-      // if mo2 is not yet mapped by one of MOs in 1
-      if (has_been_mapped[mo2] != -1)
-        continue;
       bool vectors_do_not_match = false;
       // compare vectors
-      for (unsigned int ao = 0; ao < nao; ao++) {
-        if (fabs(c1.get_element(mo1, ao) - c2.get_element(mo2, ao)) > 1.0e-12) {
+      for (int ao1 = 0; ao1 < nao1; ++ao1) {
+        const int ao2 = same_basis ? ao1 : bfmap[ao1];
+        if (ao2 == -1) { // ao1 does not have a match in s2.basis() -- this is OK as long as its coefficient is 0
+          if (fabs(c1.get_element(mo1, ao1)) > 1.0e-12) {
+            vectors_do_not_match = true;
+            break;
+          }
+        }
+        else if (fabs(c1.get_element(mo1, ao1) - c2.get_element(mo2, ao2)) > 1.0e-12) {
           vectors_do_not_match = true;
 #if 0
-          ExEnv::out0() << "operator<<(OrbitalSpace,OrbitalSpace): (mo1,mo2,ao) = "
+          ExEnv::out0() << "map(OrbitalSpace,OrbitalSpace): (mo1,mo2,ao) = "
           << mo1 << "," << mo2 << "," << ao << "  delta = "
           << fabs(c1.get_element(mo1,ao)-c2.get_element(mo2,ao)) << std::endl;
 #endif
@@ -739,20 +886,25 @@ MOIndexMap sc::operator<<(const OrbitalSpace& s2, const OrbitalSpace& s1) {
       if (!vectors_do_not_match) {
         found_match = true;
 #if 0
-        ExEnv::out0() << "operator<<(OrbitalSpace,OrbitalSpace): found match (mo1,mo2) = "
+        ExEnv::out0() << "map(OrbitalSpace,OrbitalSpace): found match (mo1,mo2) = "
         << mo1 << "," << mo2 << std::endl;
 #endif
-        map[mo1] = mo2;
-        has_been_mapped[mo2] = 1;
+        result[mo1] = mo2;
         mo2 = rank2;
       }
     }
     // if this mo1 doesn't match any mo2 -- punt
     if (!found_match)
-      throw CannotConstructMap();
+      result[mo1] = -1;
   }
 
-  return map;
+#if 0
+  ExEnv::out0() << "map(OrbitalSpace,OrbitalSpace):" << endl;
+  for(int i=0; i<rank1; ++i)
+    ExEnv::out0() << result[i] << endl;
+#endif
+
+  return result;
 }
 
 sc::SparseMOIndexMap sc::sparsemap(const OrbitalSpace& s2,

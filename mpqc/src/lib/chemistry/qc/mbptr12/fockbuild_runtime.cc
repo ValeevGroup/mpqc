@@ -179,8 +179,8 @@ FockBuildRuntime::get(const std::string& key) {
     const Ref<GaussianBasisSet>& bs1 = bra->basis();
     const Ref<GaussianBasisSet>& bs2 = ket->basis();
     const bool bs1_eq_bs2 = bs1->equiv(bs2);
+    RefSCMatrix H;
     { // core hamiltonian
-      RefSCMatrix H;
       const Ref<GaussianBasisSet>& obs = basis_;
       if (bs1_eq_bs2) {
         Ref<OneBodyFockMatrixBuilder<true> >
@@ -244,7 +244,7 @@ FockBuildRuntime::get(const std::string& key) {
 
           RefSCMatrix F;
           if (compute_J && compute_K) {
-            F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J);
+            F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
             const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
             registry_->add(fkey, F);
             if (debug()) {
@@ -286,7 +286,7 @@ FockBuildRuntime::get(const std::string& key) {
 
           RefSCMatrix F;
           if (compute_J && compute_K) {
-            F= K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J);
+            F= K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
             const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
             registry_->add(fkey, F);
             if (debug()) {

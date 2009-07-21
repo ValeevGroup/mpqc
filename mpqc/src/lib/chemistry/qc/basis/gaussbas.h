@@ -146,7 +146,7 @@ class GaussianBasisSet: virtual public SavableState
 {
   private:
     friend class GaussianBasisSetSum;
-    
+
     // nonnull if keyword "name" was provided
     std::string name_;
     // same as name_ if name_!=0, else something else
@@ -203,7 +203,7 @@ class GaussianBasisSet: virtual public SavableState
               int have_userkeyval,
               int pure);
     void init2(int skip_ghosts=0,bool include_q=0);
-    
+
   protected:
     /** This CTOR leaves it up to the derived class to completely
         initialize the basis set. */
@@ -222,7 +222,7 @@ class GaussianBasisSet: virtual public SavableState
               const Ref<SCMatrixKit> &so_matrixkit,
               GaussianShell **shell,
               const std::vector<int> shell_to_center);
-    
+
   public:
     /** This holds scratch data needed to compute basis function values. */
     class ValueData {
@@ -494,7 +494,7 @@ class GaussianBasisSet: virtual public SavableState
     /** The location of center icenter.  The xyz argument is 0 for x, 1 for
         y, and 2 for z. */
     double r(int icenter,int xyz) const;
-    
+
     /** Compute the values for this basis set at position r.  The
         basis_values argument must be vector of length nbasis. */
     int values(const SCVector3& r, ValueData *, double* basis_values) const;
@@ -541,7 +541,7 @@ Ref<GaussianBasisSet>
 operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
 
 /** Find A in bs on center icenter and return its index */
-int 
+int
 ishell_on_center(int icenter, const Ref<GaussianBasisSet>& bs,
 	             const GaussianShell& A);
 
@@ -558,7 +558,7 @@ class GaussianBasisSetSum : virtual public SavableState {
                         const Ref<GaussianBasisSet>& bs2);
     GaussianBasisSetSum(StateIn&);
     virtual ~GaussianBasisSetSum();
-    
+
     void save_data_state(StateOut&);
 
     /// return bs1
@@ -567,8 +567,8 @@ class GaussianBasisSetSum : virtual public SavableState {
     const Ref<GaussianBasisSet>& bs2() const;
     /// return bs1 + bs2
     const Ref<GaussianBasisSet>& bs12() const;
-    
-    
+
+
     /// return 1 (shell of the composite basis came from bs1_) or 2
     int shell_to_basis(int s) const;
     /// return 1 (function of the composite basis came from bs1_) or 2
@@ -586,12 +586,12 @@ class GaussianBasisSetSum : virtual public SavableState {
     int fblock_to_function(int b) const;
     /// the number of basis function in fblock b
     int fblock_size(int b) const;
-    
+
   private:
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
     Ref<GaussianBasisSet> bs12_;
-    
+
     /////////
     // maps
     /////////
@@ -607,16 +607,23 @@ class GaussianBasisSetSum : virtual public SavableState {
     std::vector<int> fblock_to_function_;
     /// return the size of fblock
     std::vector<int> fblock_size_;
-    
+
     /// sets bs12_ = A + B
     void sum(const Ref<GaussianBasisSet>& A,
              const Ref<GaussianBasisSet>& B);
-    
+
 };
 
 /// Nonmember operator+ is more convenient to use than the member operator+
 Ref<GaussianBasisSet>
 operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
+
+typedef std::vector<unsigned int> BasisFunctionMap;
+/** computes a map from basis functions in A to the equivalent basis functions in B. A must be contained in B,
+    else will throw */
+BasisFunctionMap operator<<(const GaussianBasisSet& B, const GaussianBasisSet& A);
+/// same as operator<<, except A does not have to be contained in B, map[a] = -1 if function a is not in B
+std::vector<int> map(const GaussianBasisSet& B, const GaussianBasisSet& A);
 
 }
 

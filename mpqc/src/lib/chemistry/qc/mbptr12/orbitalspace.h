@@ -517,6 +517,7 @@ namespace sc {
       }
   };
 
+  typedef std::vector<unsigned int> MOIndexMap;
   /** s2<<s1 returns map from s1 to s2. Throws CannotConstructMap if map cannot be constructed.
    Map can be constructed if and only if:
    1) s1.basis() == s2.basis()
@@ -524,9 +525,14 @@ namespace sc {
    2) s1.rank() <= s2.rank()
    3) for every MO in s1 there is an identical (for now, including phase) MO in s2
    */
-  typedef std::vector<unsigned int> MOIndexMap;
   MOIndexMap operator<<(const OrbitalSpace& space2, const OrbitalSpace& space1);
 
+  /** same as operator<<(), except if some orbital in space1 is not contained in space2, map it to -1.
+      \param expect_same_bases setting to true will enforce space1.basis() == space2.basis()
+    */
+  std::vector<int> map(const OrbitalSpace& space2, const OrbitalSpace& space1, bool expect_same_bases = true);
+
+  typedef std::vector<std::pair<unsigned int, double> > SparseMOIndexMap;
   /** sparsemap(s2,s1) returns a sparse one-to-one map from s1 to s2. Throws CannotConstructMap if map cannot be constructed.
    Map can be constructed if and only if:
    1) s1.basis() == s2.basis()
@@ -534,7 +540,6 @@ namespace sc {
    2) s1.rank() <= s2.rank()
    3) for every MO in s1 there is an MO in s2 that differs by at most the sign.
    */
-  typedef std::vector<std::pair<unsigned int, double> > SparseMOIndexMap;
   SparseMOIndexMap sparsemap(const OrbitalSpace& space2,
                              const OrbitalSpace& space1, double hardzero =
                                  1e-12);
@@ -764,6 +769,23 @@ namespace sc {
       AtomicOrbitalSpace(StateIn&);
       void save_data_state(StateOut&);
 
+  };
+
+  ////////////////////////////////
+
+  /** This is a union of two OrbitalSpaces s1 and s2. s1 and s2 may be supported by different basis sets.
+   */
+  class OrbitalSpaceUnion : public OrbitalSpace {
+    public:
+      /// \param merge_blocks if set to true, will make sure that s1 and s2 have the same blocking structure and the result
+      /// will have the same number of blocks. If set to false, the total number of blocks in the result will be
+      /// sum of the number of blocks in each.
+      OrbitalSpaceUnion(const std::string& id, const std::string& name,
+                        const OrbitalSpace& s1, const OrbitalSpace& s2,
+                        bool merge_blocks = true);
+
+      OrbitalSpaceUnion(StateIn&);
+      void save_data_state(StateOut&);
   };
 
 }

@@ -43,13 +43,21 @@
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
-#  include <chemistry/qc/mbptr12/linkage.h>
-#endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
 #  include <chemistry/qc/cints/linkage.h>
 #endif
-//#include <chemistry/qc/psi/linkage.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#  include <chemistry/qc/libint2/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
+#  include <chemistry/qc/mbptr12/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
+#  include <chemistry/qc/ccr12/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#  include <chemistry/qc/psi/linkage.h>
+#endif
 #include <util/state/linkage.h>
 
 using namespace std;
@@ -161,14 +169,14 @@ main(int argc, char *argv[])
            << endl;
       exit(0);
     }
-  
+
   if (version) {
       ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
-  
+
   if (warranty) {
       ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl
@@ -176,7 +184,7 @@ main(int argc, char *argv[])
          << SCFormIO::warranty;
     exit(0);
   }
-  
+
   if (license) {
       ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl

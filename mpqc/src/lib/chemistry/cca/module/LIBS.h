@@ -7,12 +7,15 @@
 #endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
 #  include <chemistry/qc/cints/LIBS.h>
- #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
- #    include <chemistry/qc/mbptr12/LIBS.h>
- #endif
 #endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
 #  include <chemistry/qc/libint2/LIBS.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
+#  include <chemistry/qc/mbptr12/LIBS.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
+#  include <chemistry/qc/ccr12/LIBS.h>
 #endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA
 #  include <chemistry/cca/int/LIBS.h>

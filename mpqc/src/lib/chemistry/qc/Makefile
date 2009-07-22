@@ -46,6 +46,9 @@ endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 SUBDIRS := $(SUBDIRS) mbptr12 df
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
+SUBDIRS := $(SUBDIRS) ccr12
+endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
 SUBDIRS := $(SUBDIRS) psi
 endif

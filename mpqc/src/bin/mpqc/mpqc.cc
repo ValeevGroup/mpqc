@@ -92,13 +92,15 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
 #  include <chemistry/qc/mbptr12/linkage.h>
 #endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
+#  include <chemistry/qc/ccr12/linkage.h>
+#endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
 #  include <chemistry/qc/cints/linkage.h>
 #endif
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
 #endif
-//#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
 #  include <chemistry/qc/cc/linkage.h>
@@ -189,7 +191,7 @@ try_main(int argc, char *argv[])
   options.enroll("i", GetLongOpt::NoValue, "convert simple to OO input", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
-  options.enroll("cca-path", GetLongOpt::OptionalValue, 
+  options.enroll("cca-path", GetLongOpt::OptionalValue,
                  "cca component path", "");
   options.enroll("cca-load", GetLongOpt::OptionalValue,
                  "cca components to load", "");
@@ -213,7 +215,7 @@ try_main(int argc, char *argv[])
     options.usage(ExEnv::out0());
     exit(0);
   }
-  
+
   if (options.retrieve("v")) {
     ExEnv::out0()
          << indent << "MPQC version " << SC_VERSION << endl
@@ -221,7 +223,7 @@ try_main(int argc, char *argv[])
          << SCFormIO::copyright;
     exit(0);
   }
-  
+
   if (options.retrieve("w")) {
     ExEnv::out0()
          << indent << "MPQC version " << SC_VERSION << endl
@@ -230,7 +232,7 @@ try_main(int argc, char *argv[])
          << SCFormIO::warranty;
     exit(0);
   }
-  
+
   if (options.retrieve("L")) {
     ExEnv::out0()
          << indent << "MPQC version " << SC_VERSION << endl
@@ -338,7 +340,7 @@ try_main(int argc, char *argv[])
   Timer timer;
 
   timer.enter("input");
-  
+
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   int ntitle1 = sizeof(title1);
@@ -400,7 +402,7 @@ try_main(int argc, char *argv[])
 
   if(cca_path.size()==0) {
     #ifdef CCA_PATH
-      cca_path = CCA_PATH;                                 
+      cca_path = CCA_PATH;
     #endif
   }
   if(cca_load.size()==0) {
@@ -443,7 +445,7 @@ try_main(int argc, char *argv[])
   ExEnv::out0() << endl << indent
        << "Using " << integral->class_name()
        << " by default for molecular integrals evaluation" << endl << endl;
-  
+
   // check for a molecular energy and optimizer
   std::string basename = SCFormIO::default_basename();
   KeyValValuestring molnamedef(basename);
@@ -453,10 +455,10 @@ try_main(int argc, char *argv[])
 
   std::string ckptfile = molname;
   ckptfile += ".ckpt";
-  
+
   std::string restartfile = keyval->stringvalue("restart_file",
                                                 KeyValValuestring(ckptfile));
-  
+
   std::string wfn_file = keyval->stringvalue("wfn_file");
   if (wfn_file.empty()) {
     wfn_file = molname;
@@ -469,7 +471,7 @@ try_main(int argc, char *argv[])
 
   int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
   int checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
-  
+
   int savestate = keyval->booleanvalue("savestate",truevalue);
 
   struct stat sb;
@@ -538,7 +540,7 @@ try_main(int argc, char *argv[])
   molhess << keyval->describedclassvalue("hess");
   Ref<MolecularFrequencies> molfreq;
   molfreq << keyval->describedclassvalue("freq");
-  
+
   int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
   if (limit) {
@@ -556,19 +558,19 @@ try_main(int argc, char *argv[])
          << "Exiting since the check option is on." << endl;
     exit(0);
   }
-  
+
   timer.change("calc");
 
   int do_energy = keyval->booleanvalue("do_energy",truevalue);
-  
+
   int do_grad = keyval->booleanvalue("do_gradient",falsevalue);
 
   int do_opt = keyval->booleanvalue("optimize",truevalue);
-  
+
   int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
-  
+
   int print_mole = keyval->booleanvalue("print_mole",truevalue);
-  
+
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
   // Read in all of the runnable objects now, so we can get rid of
@@ -610,7 +612,7 @@ try_main(int argc, char *argv[])
 
   // sanity checks for the benefit of reasonable looking output
   if (opt.null()) do_opt=0;
-  
+
   ExEnv::out0() << endl << indent
        << "MPQC options:" << endl << incindent
        << indent << "matrixkit     = <"
@@ -723,7 +725,7 @@ try_main(int argc, char *argv[])
       if (grp->me() != 0) {
         wfn_file = devnull;
       }
-  
+
       StateOutBin so(wfn_file.c_str());
       SavableState::save_state(mole.pointer(),so);
       so.close();
@@ -839,7 +841,7 @@ try_main(int argc, char *argv[])
       ofstream pdbfile(ckptfile.c_str());
       mole->molecule()->print_pdb(pdbfile);
     }
-    
+
   }
   else {
     ExEnv::out0() << "mpqc: The molecular energy object is null" << endl

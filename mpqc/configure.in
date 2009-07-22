@@ -1810,8 +1810,38 @@ fi
 
 dnl ----------- make sure we have everything for mbptr12 ----------
 
+HAVE_R12_INTEGRALS=yes
 if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
+  HAVE_R12_INTEGRALS=no
+fi
+
+if test X$HAVE_R12_INTEGRALS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
+fi
+
+dnl ----------- make sure we have everything for ccr12 ----------
+
+AC_ARG_ENABLE(ccr12,
+[  --enable-ccr12          Compile experimental SMITH-based CC-R12 code],
+[
+case $enableval in
+  yes)
+    HAVE_CCR12=yes
+  ;;
+  no)
+    HAVE_CCR12=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-ccr12 ($enableval)])
+  ;;
+esac
+],[
+    HAVE_CCR12=no
+]
+)
+
+if test X$HAVE_CCR12 = Xno -o X$HAVE_R12_INTEGRALS = Xno; then
+  EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CCR12 $EXCLUDED_DIRS"
 fi
 
 dnl ----------- Psi program checks --------------

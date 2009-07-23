@@ -878,10 +878,11 @@ namespace sc {
     const std::vector<unsigned int>& occpi = reference_->occpi(spin);
     const int nirreps = occpi.size();
     std::vector<bool> occ_mask(nmo, false);
-    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep, irrep_offset+=mopi[irrep]) {
+    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep) {
       for(int i=0; i<occpi[irrep]; ++i) {
         occ_mask[i + irrep_offset] = true;
       }
+      irrep_offset += mopi[irrep];
     }
 
     const std::string id(spin==Alpha ? "I" : "i");
@@ -907,11 +908,12 @@ namespace sc {
     const std::vector<unsigned int>& uoccpi = reference_->uoccpi(spin);
     const int nirreps = uoccpi.size();
     std::vector<bool> uocc_mask(nmo, false);
-    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep, irrep_offset+=mopi[irrep]) {
+    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep) {
       const unsigned int nocc = mopi[irrep] - uoccpi[irrep];
       for(int i=0; i<uoccpi[irrep]; ++i) {
         uocc_mask[i + irrep_offset + nocc] = true;
       }
+      irrep_offset += mopi[irrep];
     }
 
     const std::string id(spin==Alpha ? "A" : "a");

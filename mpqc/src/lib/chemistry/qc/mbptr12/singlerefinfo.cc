@@ -62,6 +62,7 @@ SingleRefInfo::SingleRefInfo(StateIn& si) :
   docc_sb_ << SavableState::restore_state(si);
   docc_ << SavableState::restore_state(si);
   docc_act_ << SavableState::restore_state(si);
+  socc_sb_ << SavableState::restore_state(si);
   socc_ << SavableState::restore_state(si);
   uocc_sb_ << SavableState::restore_state(si);
   uocc_ << SavableState::restore_state(si);
@@ -95,6 +96,7 @@ SingleRefInfo::save_data_state(StateOut& so)
   SavableState::save_state(docc_sb_.pointer(),so);
   SavableState::save_state(docc_.pointer(),so);
   SavableState::save_state(docc_act_.pointer(),so);
+  SavableState::save_state(socc_sb_.pointer(),so);
   SavableState::save_state(socc_.pointer(),so);
   SavableState::save_state(uocc_sb_.pointer(),so);
   SavableState::save_state(uocc_.pointer(),so);
@@ -213,28 +215,36 @@ SingleRefInfo::init_spinindependent_spaces()
   Ref<PetiteList> plist = integral->petite_list();
   RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
 
-  int ndocc = 0;
-  int nsocc = 0;
-  int nuocc = 0;
   const int nmo = evecs_ao.coldim().n();
+  std::vector<bool> docc_mask(nmo, false);
+  std::vector<bool> socc_mask(nmo, false);
+  std::vector<bool> uocc_mask(nmo, false);
   for (int i=0; i<nmo; i++) {
     if (ref()->occupation(i) == 2.0)
-      ndocc++;
+      docc_mask[i] = true;
     else if (ref()->occupation(i) == 1.0)
-      nsocc++;
+      socc_mask[i] = true;
     else
-      nuocc++;
+      uocc_mask[i] = true;
   }
 
   orbs_sb_ = new OrbitalSpace("p(sym)","symmetry-blocked MOs", evecs_ao, bs, integral, evals, 0, 0, OrbitalSpace::symmetry);
   orbs_ = new OrbitalSpace("p","energy-ordered MOs", evecs_ao, bs, integral, evals, 0, 0);
-  docc_sb_ = new OrbitalSpace("m(sym)","doubly-occupied symmetry-blocked MOs", evecs_ao, bs, integral, evals, 0, nuocc+nsocc, OrbitalSpace::symmetry);
-  docc_ = new OrbitalSpace("m","doubly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, 0, nuocc+nsocc);
-  docc_act_ = new OrbitalSpace("i","active doubly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, nfzc(), nuocc+nsocc);
-  socc_ = new OrbitalSpace("x","singly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc, nuocc);
-  uocc_sb_ = new OrbitalSpace("e(sym)","unoccupied symmetry-blocked MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, 0, OrbitalSpace::symmetry);
-  uocc_ = new OrbitalSpace("e","unoccupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, 0);
-  uocc_act_ = new OrbitalSpace("a","active unoccupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, nfzv());
+  // since occupations may not match orbital energies (i.e. some occupied orbitals may have higher energies than the unoccupied)
+  // construct spaces using masks
+  docc_sb_ = new MaskedOrbitalSpace("m(sym)","doubly-occupied symmetry-blocked MOs", orbs_sb_, docc_mask);
+  docc_ = new OrbitalSpace("m","doubly-occupied energy-ordered MOs", docc_sb_->coefs(), docc_sb_->basis(),
+                           docc_sb_->integral(), docc_sb_->evals(), 0, 0);
+  docc_act_ = new OrbitalSpace("i","active doubly-occupied energy-ordered MOs", docc_sb_->coefs(), docc_sb_->basis(),
+                               docc_sb_->integral(), docc_sb_->evals(), nfzc(), 0);
+  socc_sb_ = new MaskedOrbitalSpace("x(sym)","singly-occupied symmetry-blocked MOs", orbs_sb_, socc_mask);
+  socc_ = new OrbitalSpace("x","singly-occupied energy-ordered MOs", socc_sb_->coefs(), socc_sb_->basis(),
+                           socc_sb_->integral(), socc_sb_->evals(), 0, 0);
+  uocc_sb_ = new MaskedOrbitalSpace("e(sym)","unoccupied symmetry-blocked MOs", orbs_sb_, uocc_mask);
+  uocc_ = new OrbitalSpace("e","unoccupied energy-ordered MOs", uocc_sb_->coefs(), uocc_sb_->basis(),
+                           uocc_sb_->integral(), uocc_sb_->evals(), 0, 0);
+  uocc_act_ = new OrbitalSpace("a","active unoccupied energy-ordered MOs", uocc_sb_->coefs(), uocc_sb_->basis(),
+                               uocc_sb_->integral(), uocc_sb_->evals(), 0, nfzv());
 }
 
 
@@ -378,12 +388,14 @@ SingleRefInfo::SpinSpaces::init(
         unsigned int nfzc,
         unsigned int nfzv)
 {
-  int nocc = 0, nuocc = 0, nmo = occs.size();
+  int nmo = occs.size();
+  std::vector<bool> occ_mask(nmo, false);
+  std::vector<bool> uocc_mask(nmo, false);
   for(int i=0; i<nmo; i++) {
     if (occs[i] == 1.0)
-      nocc++;
+      occ_mask[i] = true;
     else
-      nuocc++;
+      uocc_mask[i] = true;
   }
   const std::string prefix(to_string(spin));
   using std::ostringstream;
@@ -391,49 +403,53 @@ SingleRefInfo::SpinSpaces::init(
     ostringstream oss;
     oss << prefix << " symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("p(sym)"),spin);
-    orbs_sb_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, 0, 0, OrbitalSpace::symmetry);
+    orbs_sb_ = new OrbitalSpace(id, oss.str(), evecs, bs, integral, evals, 0, 0, OrbitalSpace::symmetry);
   }
   {
     ostringstream oss;
     oss << prefix << " energy-ordered MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("p"),spin);
-    orbs_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, 0, 0);
+    orbs_ = new OrbitalSpace(id, oss.str(), evecs, bs, integral, evals, 0, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("m(sym)"),spin);
-    occ_sb_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, 0, nuocc, OrbitalSpace::symmetry);
+    occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_mask);
   }
   {
     ostringstream oss;
     oss << prefix << " occupied MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("m"),spin);
-    occ_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, 0, nuocc);
+    occ_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
+                            occ_sb_->integral(), occ_sb_->evals(), 0, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("i"),spin);
-    occ_act_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, nfzc, nuocc);
+    occ_act_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
+                                occ_sb_->integral(), occ_sb_->evals(), nfzc, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spin);
-    uocc_sb_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, nocc, 0, OrbitalSpace::symmetry);
+    uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
   }
   {
     ostringstream oss;
     oss << prefix << " unoccupied MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e"),spin);
-    uocc_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, nocc, 0);
+    uocc_ = new OrbitalSpace(id, oss.str(), uocc_sb_->coefs(), uocc_sb_->basis(),
+                             uocc_sb_->integral(), uocc_sb_->evals(), 0, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " active unoccupied MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("a"),spin);
-    uocc_act_ = new OrbitalSpace(id,oss.str(),evecs, bs, integral, evals, nocc, nfzv);
+    uocc_act_ = new OrbitalSpace(id, oss.str(),uocc_sb_->coefs(), uocc_sb_->basis(),
+                                 uocc_sb_->integral(), uocc_sb_->evals(), 0, nfzv);
   }
 }
 

@@ -77,6 +77,8 @@ namespace sc {
     const Ref<OrbitalSpace>& docc() const;
     /// Return the space of active doubly-occupied MOs
     const Ref<OrbitalSpace>& docc_act() const;
+    /// Return the space of symmetry-blocked singly-occupied MOs
+    const Ref<OrbitalSpace>& socc_sb() const;
     /// Return the space of singly-occupied MOs
     const Ref<OrbitalSpace>& socc() const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs
@@ -139,6 +141,7 @@ namespace sc {
     Ref<OrbitalSpace> docc_sb_;
     Ref<OrbitalSpace> docc_;
     Ref<OrbitalSpace> docc_act_;
+    Ref<OrbitalSpace> socc_sb_;
     Ref<OrbitalSpace> socc_;
     Ref<OrbitalSpace> uocc_sb_;
     Ref<OrbitalSpace> uocc_;

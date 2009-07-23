@@ -424,7 +424,7 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
   const unsigned int norbs = indexmap.size();
   block_offsets_.resize(nblocks);
   block_sizes_.resize(nblocks);
-  size_t current_block = indexmap[0].attr();
+  size_t current_block = (norbs > 0) ? indexmap[0].attr() : 0;
   assert(current_block == 0);
   block_offsets_[current_block] = 0;
   size_t current_size = 0;

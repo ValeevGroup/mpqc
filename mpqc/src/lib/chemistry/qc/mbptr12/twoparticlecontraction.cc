@@ -144,9 +144,11 @@ ABS_OBS_Contraction::contract(const double* A, const double* B) const
   const double* Aoff = A;
   const double* Boff = B;
   double result = 0.0;
+  /// contracting occ-occ blocks of A and B.
   for(int o=0; o<nocc1_; o++,Aoff+=nobs,Boff+=nobs)
     result += F77_DDOT(&nocc2,Aoff,&unitstride,Boff,&unitstride);
 
+  /// contracting vir-vir blocks of A and B
   Aoff = A + nocc1_*nobs + nocc2_;  Boff = B + nocc1_*nobs + nocc2_;
   for(int v=0; v<nvir1; v++,Aoff+=nobs,Boff+=nobs)
     result -= F77_DDOT(&nvir2,Aoff,&unitstride,Boff,&unitstride);

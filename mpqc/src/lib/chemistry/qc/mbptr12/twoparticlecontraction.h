@@ -41,6 +41,8 @@ namespace sc {
   namespace LinearR12 {
     
     /** TwoParticleContraction contracts nrow-by-ncol bra- or ket-blocks of two 2-particle tensors
+        i.e. each ij element of the first tensor is multiplied with the ij element of the ij element
+        of the second tensor and all ij-ij products are summed.
     */
     class TwoParticleContraction : virtual public SavableState {
       public:
@@ -64,7 +66,8 @@ namespace sc {
       unsigned int ncol_;
     };
     
-    /** Direct_Contraction is a straight scalar (dot) product of 2 rectangular blocks, scaled by scale
+    /** Direct_Contraction is a straight scalar (dot) product of 2 rectangular blocks, scaled by scale.
+        Does the same as TwoParticleContraction but also scales the result.
     */
     class Direct_Contraction : public TwoParticleContraction {
       public:
@@ -81,7 +84,9 @@ namespace sc {
     };
     
     /** ABS_OBS_Contraction contracts 2 square nobs-by-nobs blocks
-        for the ABS approach
+        for the ABS approach.
+        Contracts only the occ-occ and vir-vir subblocks of the
+        obs-obs blocks.
     */
     class ABS_OBS_Contraction : public TwoParticleContraction {
       public:
@@ -99,7 +104,8 @@ namespace sc {
     };
     
     /** CABS_OBS_Contraction contracts 2 square nobs-by-nobs blocks
-        for the CABS approach
+        for the CABS approach. Does effectively the same as
+        TwoParticleContraction, but multiplies the result by -1.
     */
     class CABS_OBS_Contraction : public TwoParticleContraction {
       public:

@@ -745,7 +745,7 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   dim->blocks()->set_subdim(0, new SCDimension(norbs) );
   RefSCDimension aodim = new SCDimension(nbs, 1, &nbs);
   aodim->blocks()->set_subdim(0, bs->basisdim());
-  RefSCMatrix coefs = so_matrixkit->matrix(aodim, dim);  coef->assign(0.0);
+  RefSCMatrix coefs = so_matrixkit->matrix(aodim, dim);  coefs->assign(0.0);
   RefDiagSCMatrix evals = so_matrixkit->diagmatrix(dim);
   std::vector<unsigned int> orbsym(dim.n());
   int ii = 0;

@@ -99,6 +99,25 @@ void FockBuildRuntime::save_data_state(StateOut& so) {
   FockMatrixRegistry::save_instance(registry_, so);
 }
 
+void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
+                                     const RefSymmSCMatrix& aodensity_beta) {
+  bool new_P = false;
+  RefSymmSCMatrix P, Po;
+
+  P = aodensity_alpha.copy(); P.accumulate(aodensity_beta);
+  new_P = new_P || (P - P_)->maxabs() > DBL_EPSILON;
+  //(P - P_).print("FockBuildRuntime::set_densities() -- \"new - old\" density");
+  if (Po_) {
+    Po = aodensity_alpha - aodensity_beta;
+    new_P = new_P || (Po - Po_)->maxabs() > DBL_EPSILON;
+  }
+  if (new_P) {
+    registry_->clear();
+    P_ = P;
+    if (Po_) Po_ = Po;
+  }
+}
+
 void FockBuildRuntime::validate_key(const std::string& key) const {
   try {
     ParsedOneBodyIntKey parsedkey(key);

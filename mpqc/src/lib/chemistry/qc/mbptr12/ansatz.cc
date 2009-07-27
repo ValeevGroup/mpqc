@@ -36,13 +36,13 @@ static ClassDesc LinearR12Ansatz_cd(
   typeid(LinearR12Ansatz),"LinearR12Ansatz",3,"virtual public SavableState",
   create<LinearR12Ansatz>, create<LinearR12Ansatz>, create<LinearR12Ansatz>);
 
-LinearR12Ansatz::LinearR12Ansatz() :
-  projector_(LinearR12::Projector_2),
-  diag_(false),
-  amplitudes_(LinearR12::GeminalAmplitudeAnsatz_fullopt),
-  wof_(false),
-  orbital_product_(LinearR12::OrbProd_ij) {
-}
+LinearR12Ansatz::LinearR12Ansatz()
+  : projector_(LinearR12::Projector_2),
+    diag_(false),
+    amplitudes_(LinearR12::GeminalAmplitudeAnsatz_fullopt),
+    wof_(false),
+    orbital_product_GG_(LinearR12::OrbProdGG_ij),
+    orbital_product_gg_(LinearR12::OrbProdgg_ij) {}
 
 LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
 {
@@ -68,16 +68,21 @@ LinearR12Ansatz::LinearR12Ansatz(const Ref<KeyVal>& keyval)
     throw InputError("LinearR12Ansatz::LinearR12Ansatz -- amplitudes can only be fixed if diag is true",__FILE__,__LINE__);
   }
 
-  std::string op = keyval->stringvalue("orbital_product",KeyValValuestring("ij"));
+  std::string op = keyval->stringvalue("orbital_product_GG",KeyValValuestring("ij"));
   if (op == "ij")
-    orbital_product_ = LinearR12::OrbProd_ij;
+    orbital_product_GG_ = LinearR12::OrbProdGG_ij;
   else if (op == "pq")
-    orbital_product_ = LinearR12::OrbProd_pq;
+    orbital_product_GG_ = LinearR12::OrbProdGG_pq;
   else
-    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- invalid value for orbital_product",__FILE__,__LINE__);
-  if (orbital_product_ != LinearR12::OrbProd_ij && diag_) {
-    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- diagonal ansatz only allowed when orbital_product = ij",__FILE__,__LINE__);
-  }
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- invalid value for orbital_product_GG",__FILE__,__LINE__);
+
+  op = keyval->stringvalue("orbital_product_gg",KeyValValuestring("ij"));
+  if (op == "ij")
+    orbital_product_gg_ = LinearR12::OrbProdgg_ij;
+  else if (op == "pq")
+    orbital_product_gg_ = LinearR12::OrbProdgg_pq;
+  else
+    throw InputError("LinearR12Ansatz::LinearR12Ansatz -- invalid value for orbital_product_gg",__FILE__,__LINE__);
 }
 
 LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
@@ -90,7 +95,8 @@ LinearR12Ansatz::LinearR12Ansatz(StateIn& s) :
     int w; s.get(w); wof_ = (bool)w;
   }
   if (s.version(::class_desc<LinearR12Ansatz>()) >= 2) {
-    int o; s.get(o); orbital_product_ = (LinearR12::OrbitalProduct)o;
+    int o; s.get(o); orbital_product_GG_ = (LinearR12::OrbitalProduct_GG)o;
+    s.get(o); orbital_product_gg_ = (LinearR12::OrbitalProduct_gg)o;
   }
 }
 
@@ -103,7 +109,8 @@ LinearR12Ansatz::save_data_state(StateOut& s)
   s.put((int)diag_);
   s.put((int)amplitudes_);
   s.put((int)wof_);
-  s.put((int)orbital_product_);
+  s.put((int)orbital_product_GG_);
+  s.put((int)orbital_product_gg_);
 }
 
 void
@@ -112,10 +119,17 @@ LinearR12Ansatz::print(std::ostream& o) const
   o << indent << "LinearR12Ansatz:" << std::endl;
   o << incindent;
 
-  o << indent << "Orbital Product Space: ";
-  switch(orbital_product_) {
-    case LinearR12::OrbProd_ij: o << "ij"; break;
-    case LinearR12::OrbProd_pq: o << "pq"; break;
+  o << indent << "Geminal orbital Product Space: ";
+  switch(orbital_product_GG_) {
+    case LinearR12::OrbProdGG_ij: o << "ij"; break;
+    case LinearR12::OrbProdGG_pq: o << "pq"; break;
+  }
+  o << std::endl;
+
+  o << indent << "Space of orbital products from which geminal substitutions are allowed: ";
+  switch(orbital_product_gg_) {
+    case LinearR12::OrbProdgg_ij: o << "ij"; break;
+    case LinearR12::OrbProdgg_pq: o << "pq"; break;
   }
   o << std::endl;
 
@@ -155,5 +169,9 @@ LinearR12Ansatz::amplitudes() const { return amplitudes_; }
 bool
 LinearR12Ansatz::wof() const { return wof_; }
 
-LinearR12::OrbitalProduct
-LinearR12Ansatz::orbital_product() const { return orbital_product_; }
+LinearR12::OrbitalProduct_GG
+LinearR12Ansatz::orbital_product_GG() const { return orbital_product_GG_; }
+
+LinearR12::OrbitalProduct_gg LinearR12Ansatz::orbital_product_gg() const {
+  return(orbital_product_gg_);
+}

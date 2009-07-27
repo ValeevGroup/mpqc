@@ -56,6 +56,8 @@ namespace sc {
     const Ref<SCF>& ref() const;
     /// Returns true if alpha and beta densities are not equal. Thus only false for CLSCF references.
     bool spin_polarized() const;
+    /// Returns true if alpha and beta orbitals are not equivalent. Thus only true for UnrestrictedSCF references.
+    bool spin_unrestricted() const;
     /// Return number of frozen occupied orbitals
     unsigned int nfzc() const;
     /// Return number of frozen unoccupied orbitals
@@ -156,7 +158,9 @@ namespace sc {
 
     /// throws if ref_ is spin-polarized
     void throw_if_spin_polarized() const;
-
+    /// throws if ref_ is spin-unrestricted
+    void throw_if_spin_unrestricted() const;
+    
   };
 
 };

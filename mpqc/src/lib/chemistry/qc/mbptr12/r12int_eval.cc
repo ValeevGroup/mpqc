@@ -98,26 +98,44 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   dim_vv_[BetaBeta] = new SCDimension((navir_b*(navir_b-1))/2);
   dim_aa_[BetaBeta] = new SCDimension((nall_b*(nall_b-1))/2);
 
-  switch(r12info()->ansatz()->orbital_product()) {
-  case LinearR12::OrbProd_ij:
-      dim_xy_[AlphaAlpha] = dim_oo_[AlphaAlpha];
-      dim_xy_[AlphaBeta] = dim_oo_[AlphaBeta];
-      dim_xy_[BetaBeta] = dim_oo_[BetaBeta];
+  switch(r12info()->ansatz()->orbital_product_gg()) {
+    case LinearR12::OrbProdgg_ij:
+      dim_gg_[AlphaAlpha] = dim_oo_[AlphaAlpha];
+      dim_gg_[AlphaBeta] = dim_oo_[AlphaBeta];
+      dim_gg_[BetaBeta] = dim_oo_[BetaBeta];
       break;
-  case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdgg_pq:
       {
         const unsigned int norbs_a = r12info()->refinfo()->orbs(Alpha)->rank();
         const unsigned int norbs_b = r12info()->refinfo()->orbs(Beta)->rank();
-        dim_xy_[AlphaAlpha] = new SCDimension((norbs_a*(norbs_a-1))/2);
-        dim_xy_[AlphaBeta] = new SCDimension(norbs_a*norbs_b);
-        dim_xy_[BetaBeta] = new SCDimension((norbs_b*(norbs_b-1))/2);
+        dim_gg_[AlphaAlpha] = new SCDimension((norbs_a*(norbs_a-1))/2);
+        dim_gg_[AlphaBeta] = new SCDimension(norbs_a*norbs_b);
+        dim_gg_[BetaBeta] = new SCDimension((norbs_b*(norbs_b-1))/2);
+      }
+      break;
+    default:
+        throw ProgrammingError("R12IntEval::R12IntEval -- invalid orbital_product_gg for the R12 ansatz",__FILE__,__LINE__);
+  }
+  switch(r12info()->ansatz()->orbital_product_GG()) {
+  case LinearR12::OrbProdGG_ij:
+      dim_GG_[AlphaAlpha] = dim_oo_[AlphaAlpha];
+      dim_GG_[AlphaBeta] = dim_oo_[AlphaBeta];
+      dim_GG_[BetaBeta] = dim_oo_[BetaBeta];
+      break;
+  case LinearR12::OrbProdGG_pq:
+      {
+        const unsigned int norbs_a = r12info()->refinfo()->orbs(Alpha)->rank();
+        const unsigned int norbs_b = r12info()->refinfo()->orbs(Beta)->rank();
+        dim_GG_[AlphaAlpha] = new SCDimension((norbs_a*(norbs_a-1))/2);
+        dim_GG_[AlphaBeta] = new SCDimension(norbs_a*norbs_b);
+        dim_GG_[BetaBeta] = new SCDimension((norbs_b*(norbs_b-1))/2);
       }
       break;
   default:
-      throw ProgrammingError("R12IntEval::R12IntEval -- invalid orbital_product for the R12 ansatz",__FILE__,__LINE__);
+      throw ProgrammingError("R12IntEval::R12IntEval -- invalid orbital_product_GG for the R12 ansatz",__FILE__,__LINE__);
   }
   for(int s=0; s<NSpinCases2; s++) {
-    dim_f12_[s] = new SCDimension(corrfactor()->nfunctions()*dim_xy_[s].n());
+    dim_f12_[s] = new SCDimension(corrfactor()->nfunctions()*dim_GG_[s].n());
   }
 
   if (!spin_polarized()) {
@@ -128,7 +146,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   for(int s=0; s<NSpinCases2; s++) {
     if (spin_polarized() || s != BetaBeta) {
-      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
+      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_B)
@@ -136,7 +154,9 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       if (coupling() == true) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
-      emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
+      emp2pair_[s] = local_matrix_kit->vector(dim_gg_[s]);
+      const SpinCase2 pairspin = static_cast<SpinCase2>(s);
+      cuspconsistentgeminalcoefficient_[s] = new CuspConsistentGeminalCoefficient(pairspin,r12i->r12tech()->corrfactor()->geminaldescriptor());
     }
     else {
       V_[BetaBeta] = V_[AlphaAlpha];
@@ -145,6 +165,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
+      cuspconsistentgeminalcoefficient_[BetaBeta] = cuspconsistentgeminalcoefficient_[AlphaAlpha];
     }
   }
 
@@ -182,10 +203,11 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     dim_vv_[s] << SavableState::restore_state(si);
     dim_f12_[s] << SavableState::restore_state(si);
     if (si.version(::class_desc<R12IntEval>()) >= 2) {
-	dim_xy_[s] << SavableState::restore_state(si);
+	dim_GG_[s] << SavableState::restore_state(si);
+	dim_gg_[s] << SavableState::restore_state(si);
     }
     if (!(spin_polarized() && s == BetaBeta)) {
-      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
+      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == LinearR12::StdApprox_B)
@@ -194,6 +216,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
+      const SpinCase2 pairspin = static_cast<SpinCase2>(s);
+      cuspconsistentgeminalcoefficient_[s] = new CuspConsistentGeminalCoefficient(pairspin,r12info_->r12tech()->corrfactor()->geminaldescriptor());
 
       V_[s].restore(si);
       X_[s].restore(si);
@@ -209,6 +233,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
+      cuspconsistentgeminalcoefficient_[BetaBeta] = cuspconsistentgeminalcoefficient_[AlphaAlpha];
     }
   }
 
@@ -245,7 +270,8 @@ R12IntEval::save_data_state(StateOut& so)
     SavableState::save_state(dim_oo_[s].pointer(),so);
     SavableState::save_state(dim_vv_[s].pointer(),so);
     SavableState::save_state(dim_f12_[s].pointer(),so);
-    SavableState::save_state(dim_xy_[s].pointer(),so);
+    SavableState::save_state(dim_GG_[s].pointer(),so);
+    SavableState::save_state(dim_gg_[s].pointer(),so);
     if (!(spin_polarized() && s == BetaBeta)) {
       V_[s].save(so);
       X_[s].save(so);
@@ -304,6 +330,24 @@ int R12IntEval::dk() const {
 #endif
 }
 
+RefSymmSCMatrix R12IntEval::opdm_blocked(const SpinCase1 &spin) {
+  const RefSymmSCMatrix opdm_nonblocked = opdm(spin);
+  const RefSCMatrix coeffs = r12info_->refinfo()->orbs(spin)->coefs();
+  const RefSCDimension nmodim = coeffs->coldim();
+  const int nmo = nmodim.n();
+  const Ref<SCMatrixKit> kit = coeffs->kit();
+  RefSymmSCMatrix opdm_blocked = kit->symmmatrix(nmodim);
+
+  //opdm_blocked.assign(opdm_nonblocked);
+  for(int i=0; i<nmo; i++) {
+    for(int j=0; j<=i; j++) {
+      opdm_blocked.set_element(i,j,opdm_nonblocked.get_element(i,j));
+    }
+  }
+
+  return(opdm_blocked);
+}
+
 const Ref<R12IntEvalInfo>& R12IntEval::r12info() const { return r12info_; };
 RefSCDimension R12IntEval::dim_oo_s() const { return dim_ij_s_; };
 RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
@@ -311,16 +355,37 @@ RefSCDimension R12IntEval::dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
 RefSCDimension R12IntEval::dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
 RefSCDimension R12IntEval::dim_aa(SpinCase2 S) const { return dim_aa_[S]; }
 RefSCDimension R12IntEval::dim_f12(SpinCase2 S) const { return dim_f12_[S]; }
-RefSCDimension R12IntEval::dim_xy(SpinCase2 S) const { return dim_xy_[S]; }
+RefSCDimension R12IntEval::dim_GG(SpinCase2 S) const { return dim_GG_[S]; }
+RefSCDimension R12IntEval::dim_gg(SpinCase2 S) const { return dim_gg_[S]; }
 
 const RefSCMatrix&
 R12IntEval::V(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],
-                   xspace(Alpha),
-                   occ_act(Alpha));
+                   GGspace(Alpha),
+                   ggspace(Alpha));
   return V_[S];
+}
+
+double R12IntEval::C_CuspConsistent(int i,int j,int k,int l,SpinCase2 pairspin) {
+  return(cuspconsistentgeminalcoefficient_[pairspin]->C(i,j,k,l));
+}
+
+namespace {
+  /// Returns the lower triangle of the matrix B (which should be symmetric)
+  RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B) {
+    RefSymmSCMatrix Bs = B.kit()->symmmatrix(B.rowdim());
+    int n = B.nrow();
+    double* b = new double[n*n];
+    B.convert(b);
+    const double* b_ptr = b;
+    for(int i=0; i<n; i++, b_ptr += i)
+      for(int j=i; j<n; j++, b_ptr++)
+        Bs.set_element(i,j,*b_ptr);
+    delete[] b;
+    return Bs;
+  }
 }
 
 RefSymmSCMatrix
@@ -328,8 +393,8 @@ R12IntEval::X(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
-                   xspace(Alpha),
-                   xspace(Alpha));
+                   GGspace(Alpha),
+                   GGspace(Alpha));
   return to_lower_triangle(X_[S]);
 }
 
@@ -338,8 +403,8 @@ R12IntEval::B(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],
-                   xspace(Alpha),
-                   xspace(Alpha));
+                   GGspace(Alpha),
+                   GGspace(Alpha));
   return to_lower_triangle(B_[S]);
 }
 
@@ -350,8 +415,8 @@ R12IntEval::BB(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(BB_[AlphaAlpha],BB_[AlphaBeta],
-                   xspace(Alpha),
-                   xspace(Alpha));
+                   GGspace(Alpha),
+                   GGspace(Alpha));
   return to_lower_triangle(BB_[S]);
 }
 
@@ -360,7 +425,7 @@ R12IntEval::A(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
-                   xspace(Alpha),
+                   GGspace(Alpha),
                    vir_act(Alpha));
   return A_[S];
 }
@@ -518,19 +583,26 @@ R12IntEval::init_intermeds_r12_()
 {
   for(int s=0; s<nspincases2(); s++) {
 
-	const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    SpinCase1 spin1 = case1(spincase2);
+    SpinCase1 spin2 = case2(spincase2);
+
 	const Ref<OrbitalSpace>& occ1_act = occ_act(case1(spincase2));
 	const Ref<OrbitalSpace>& occ2_act = occ_act(case2(spincase2));
 	const Ref<OrbitalSpace>& xspace1 = xspace(case1(spincase2));
 	const Ref<OrbitalSpace>& xspace2 = xspace(case2(spincase2));
+    const Ref<OrbitalSpace>& gg1space = ggspace(spin1);
+    const Ref<OrbitalSpace>& gg2space = ggspace(spin2);
+    const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
+    const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
 
 	// compute identity operator in xc.pair/act.occ.pair basis
-	RefSCMatrix I = compute_I_(xspace1,xspace2,occ1_act,occ2_act);
+	RefSCMatrix I = compute_I_(GG1space,GG2space,gg1space,gg2space);
 	if (spincase2 == AlphaBeta) {
 	  V_[s].accumulate(I);
 	}
 	else {
-	  antisymmetrize(V_[s],I,xspace1,occ1_act);
+	  antisymmetrize(V_[s],I,GG1space,gg1space);
 	}
 
 	if (r12info_->msg()->me() == 0)
@@ -708,8 +780,8 @@ R12IntEval::r2_contrib_to_X_new_()
   for(int s=0; s<nspincases2(); s++) {
 
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-    const Ref<OrbitalSpace>& space1 = xspace(case1(spincase2));
-    const Ref<OrbitalSpace>& space2 = xspace(case2(spincase2));
+    const Ref<OrbitalSpace>& space1 = GGspace(case1(spincase2));
+    const Ref<OrbitalSpace>& space2 = GGspace(case2(spincase2));
 
     // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
     RefSCMatrix R2 = compute_r2_(space1,space2,space1,space2);
@@ -1341,6 +1413,52 @@ R12IntEval::K_P_P(SpinCase1 spin)
   const unsigned int s = static_cast<unsigned int>(spin);
   const Ref<OrbitalSpace>& extspace = r12info()->ribs_space();
   const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+
+#define TEST_FOCKBUILD_RUNTIME 0
+#if TEST_FOCKBUILD_RUNTIME
+  {
+    Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
+    const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
+
+    // get AO basis matrix
+    const Ref<OrbitalSpace>& ribs = intspace;
+    Ref<OrbitalSpace> ribs_ao = AOSpaceRegistry::instance()->value(ribs->basis());
+    Ref<OrbitalSpace> null;
+    Ref<OrbitalSpace> K1;
+    f_bra_ket(spin,false,false,true,
+          null,
+          null,
+          K1,
+          ribs_ao,ribs_ao);
+    K1->coefs().print("K in CABS+/CABS+ AO basis using old transform-based build");
+
+    const std::string kkey_ao = ParsedOneBodyIntKey::key(ribs_ao->id(),ribs_ao->id(),std::string("K"),realspin);
+    RefSCMatrix K2 = fb_rtime->get(kkey_ao);
+    K2.print("K in CABS+/CABS+ AO basis using new build");
+
+    const std::string kkey = ParsedOneBodyIntKey::key(ribs->id(),ribs->id(),std::string("K"),realspin);
+    RefSCMatrix K3 = fb_rtime->get(kkey);
+    K3.print("K in CABS+/CABS+ basis using new build");
+
+    Ref<OrbitalSpace> orbs = r12info()->refinfo()->orbs(spin);
+    Ref<OrbitalSpace> obs_ao = AOSpaceRegistry::instance()->value(orbs->basis());
+    Ref<OrbitalSpace> K4;
+    f_bra_ket(spin,false,false,true,
+          null,
+          null,
+          K4,
+          obs_ao,obs_ao);
+    K4->coefs().print("K in OBS/OBS AO basis using old transform-based build");
+
+    {
+    const std::string kkey_ao = ParsedOneBodyIntKey::key(obs_ao->id(),obs_ao->id(),std::string("K"),realspin);
+    RefSCMatrix K5 = fb_rtime->get(kkey_ao);
+    K5.print("K in OBS/OBS AO basis using new build");
+    }
+
+  }
+#endif
+
   Ref<OrbitalSpace> null;
   f_bra_ket(spin,true,false,true,
 	    F_P_P_[s],
@@ -1416,6 +1534,78 @@ R12IntEval::h_P_P(SpinCase1 spin)
   return h_P_P_[s];
 }
 
+
+const Ref<OrbitalSpace>&
+R12IntEval::gamma_p_p(SpinCase1 S) {
+  if (!spin_polarized() && S == Beta)
+    return gamma_p_p(Alpha);
+
+  if (gamma_p_p_[S].null()) {
+    const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->orbs(S);
+    const Ref<OrbitalSpace>& intspace = r12info()->refinfo()->orbs(S);
+    std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
+    std::string name = "gamma-weighted space";
+    gamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * opdm_blocked(S),
+                                     intspace->basis());
+  }
+  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gamma_p_p_[S]));
+  return gamma_p_p_[S];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
+  if (!spin_polarized() && S == Beta)
+    return gammaFgamma_p_p(Alpha);
+
+  if (gammaFgamma_p_p_[S].null()) {
+    const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->orbs(S);
+    const Ref<OrbitalSpace>& intspace = r12info()->refinfo()->orbs(S);
+    RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
+    std::string id = extspace->id();  id += "_gFg(";  id += intspace->id();  id += ")";
+    std::string name = "gammaFgamma-weighted space";
+    gammaFgamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * opdm_blocked(S)*F_i_e*opdm_blocked(S),
+                                           intspace->basis());
+  }
+  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gammaFgamma_p_p_[S]));
+  return gammaFgamma_p_p_[S];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::Fgamma_p_P(SpinCase1 S) {
+  if (!spin_polarized() && S == Beta)
+    return(Fgamma_p_P(Alpha));
+  if(Fgamma_p_P_[S].null()) {
+    const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->orbs(S);
+    const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+    RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
+    std::string id = extspace->id();  id += "_Fg(";  id += intspace->id();  id += ")";
+    std::string name = "Fgamma-weighted space";
+    Fgamma_p_P_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs()*F_i_e*opdm_blocked(S),
+                                      intspace->basis());
+  }
+  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Fgamma_p_P_[S]));
+  return Fgamma_p_P_[S];
+}
+
+Ref<OrbitalSpace> R12IntEval::obtensor_p_A(const RefSCMatrix &obtensor,SpinCase1 S) {
+  const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->orbs(S);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space(S);
+
+  RefSCDimension dimA = intspace->coefs()->coldim();
+  RefSCDimension dimp = extspace->coefs()->coldim();
+  RefSCMatrix obtensor_blkd = intspace->coefs()->kit()->matrix(dimA,dimp);
+  for(int i=0; i<dimA.n(); i++) {
+    for(int j=0; j<dimp.n(); j++) {
+      obtensor_blkd.set_element(i,j,obtensor.get_element(i,j));
+    }
+  }
+
+  std::string id = extspace->id();  id += "_obt(";  id += intspace->id();  id += ")";
+  std::string name = "obtensor-weighted space";
+  Ref<OrbitalSpace> obtensor_moidx = new OrbitalSpace(id, name, extspace, intspace->coefs()*obtensor_blkd,
+                                                      intspace->basis());
+  return(obtensor_moidx);
+}
 
 const Ref<OrbitalSpace>&
 R12IntEval::F_p_A(SpinCase1 spin)
@@ -1819,6 +2009,39 @@ R12IntEval::J_P_P(SpinCase1 spin)
   return J_P_P_[s];
 }
 
+const Ref<OrbitalSpace>& R12IntEval::F_A_A(SpinCase1 spin) {
+  if (!spin_polarized() && spin == Beta)
+    return F_A_A(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = r12info()->ribs_space(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space(spin);
+
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_A_A_[s],
+        null,
+        null,
+        extspace,intspace);
+  return(F_A_A_[s]);
+}
+
+const Ref<OrbitalSpace>& R12IntEval::F_p_P(SpinCase1 spin) {
+  if (!spin_polarized() && spin == Beta)
+    return(F_p_P(Alpha));
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = r12info()->refinfo()->orbs(spin);
+  const Ref<OrbitalSpace>& intspace = r12info()->ribs_space();
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_p_P_[s],
+        null,
+        null,
+        extspace,intspace);
+  return(F_p_P_[s]);
+}
+
 void
 R12IntEval::f_bra_ket(
     SpinCase1 spin,
@@ -1874,9 +2097,8 @@ R12IntEval::f_bra_ket(
 
     RefSCMatrix K_i_e;
     if (make_K && K.null()) {
-      const Ref<OrbitalSpace>& occ_space = occ(spin);
       if (!USE_FOCKBUILD)
-        K_i_e = exchange_(occ_space, intspace, extspace);
+        K_i_e = exchange_(spin, intspace, extspace);
       else {
         K_i_e = fock(intspace, extspace, spin, 0.0, 1.0, 0.0);
         K_i_e.scale(-1.0);
@@ -1912,9 +2134,8 @@ R12IntEval::f_bra_ket(
           F_i_e.scale(-1.0);
           F_i_e.accumulate(hJ_i_e);
         } else {
-          const Ref<OrbitalSpace>& occ_space = occ(spin);
           if (!USE_FOCKBUILD) {
-            F_i_e = exchange_(occ_space, intspace, extspace);
+            F_i_e = exchange_(spin, intspace, extspace);
             F_i_e.scale(-1.0);
           } else {
             F_i_e = fock(intspace, extspace, spin, 0.0, 1.0, 0.0);
@@ -1988,12 +2209,17 @@ R12IntEval::compute()
     }
 
     if (obs_eq_vbs) {
-	  LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
-	  if (absmethod == LinearR12::ABS_CABS ||
-	      absmethod == LinearR12::ABS_CABSPlus)
-	    contrib_to_VXB_a_();
-	  else
-	    contrib_to_VXB_abs_();
+      if(r12info()->ansatz()->projector()==LinearR12::Projector_1) {
+        R12IntEval::contrib_to_VXB_c_ansatz1_();
+      }
+      else {
+        if(r12info_->opdm_is_zero()) {
+          contrib_to_VXB_a_();
+        }
+        else {
+          contrib_to_VX_GenRefansatz2_();
+        }
+      }
     }
     else {
       contrib_to_VXB_a_vbsneqobs_();
@@ -2019,7 +2245,8 @@ R12IntEval::compute()
     }
 
     // This is app B contribution to B -- only valid for projector 2
-    if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() == LinearR12::Projector_2 && !r12info()->r12tech()->omit_B()) {
+    if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() ==
+         LinearR12::Projector_2 && !r12info()->r12tech()->omit_B()) {
       compute_BB_();
       if (debug_ >= DefaultPrintThresholds::O4)
         for (int s=0; s<nspincases2(); s++)
@@ -2028,7 +2255,17 @@ R12IntEval::compute()
 
     if (!r12info()->r12tech()->omit_B()) {
       if (stdapprox() == LinearR12::StdApprox_C) {
-        compute_BC_();
+        if(r12info()->ansatz()->projector()==LinearR12::Projector_1){
+          compute_BC_ansatz1_();
+        }
+        else {
+          if(r12info_->opdm_is_zero()) {
+            compute_BC_();
+          }
+          else {
+            compute_BC_GenRefansatz2_();
+          }
+        }
         if (debug_ >= DefaultPrintThresholds::O4)
           for(int s=0; s<nspincases2(); s++)
             B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
@@ -2065,16 +2302,18 @@ R12IntEval::compute()
         const SpinCase1 spin1 = case1(spincase2);
         const SpinCase1 spin2 = case2(spincase2);
 
-        Ref<OrbitalSpace> xspace1 = xspace(spin1);
-        Ref<OrbitalSpace> xspace2 = xspace(spin2);
         Ref<OrbitalSpace> vir1_act = vir_act(spin1);
         Ref<OrbitalSpace> vir2_act = vir_act(spin2);
         Ref<OrbitalSpace> fvir1_act = F_a_A(spin1);
         Ref<OrbitalSpace> fvir2_act = F_a_A(spin2);
+        const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
+        const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
+
+        const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
         compute_A_direct_(A_[s],
-                          xspace1, vir1_act,
-                          xspace2, vir2_act,
+                          GG1space, vir1_act,
+                          GG2space, vir2_act,
                           fvir1_act, fvir2_act,
                           spincase2!=AlphaBeta);
       }
@@ -2111,7 +2350,7 @@ R12IntEval::compute()
     }
 #endif
 
-  }
+  } // nontrivial correlation factor
 
   // Finally, compute MP2 energies
   const int nspincases_for_emp2pairs = (spin_polarized() ? 3 : 2);
@@ -2293,23 +2532,39 @@ R12IntEval::vir(SpinCase1 S) const
 const Ref<OrbitalSpace>&
 R12IntEval::xspace(SpinCase1 S) const
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
-	return(occ_act(S));
-    case LinearR12::OrbProd_pq:
-	return(r12info()->refinfo()->orbs(S));
-    default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
-    }
+  return GGspace(S);
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::GGspace(SpinCase1 S) const {
+  switch(r12info()->ansatz()->orbital_product_GG()) {
+  case LinearR12::OrbProdGG_ij:
+  return(occ_act(S));
+  case LinearR12::OrbProdGG_pq:
+  return(r12info()->refinfo()->orbs(S));
+  default:
+  throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+  }
+}
+
+const Ref<OrbitalSpace>& R12IntEval::ggspace(SpinCase1 S) const {
+  switch(r12info()->ansatz()->orbital_product_gg()) {
+  case LinearR12::OrbProdgg_ij:
+  return(occ_act(S));
+  case LinearR12::OrbProdgg_pq:
+  return(r12info()->refinfo()->orbs(S));
+  default:
+  throw ProgrammingError("R12IntEval::ggspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+  }
 }
 
 const Ref<OrbitalSpace>&
 R12IntEval::hj_x_P(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(hj_i_P(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(hj_p_P(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2319,10 +2574,10 @@ R12IntEval::hj_x_P(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::hj_x_p(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(hj_i_p(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(hj_p_p(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2332,10 +2587,10 @@ R12IntEval::hj_x_p(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::hj_x_m(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
         return(hj_i_m(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
         return(hj_p_m(S));
     default:
         throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2345,10 +2600,10 @@ R12IntEval::hj_x_m(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::hj_x_a(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
         return(hj_i_a(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
         return(hj_p_a(S));
     default:
         throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2358,10 +2613,10 @@ R12IntEval::hj_x_a(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::hj_x_A(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(hj_i_A(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(hj_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2371,10 +2626,10 @@ R12IntEval::hj_x_A(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::K_x_P(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(K_i_P(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(K_p_P(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2384,10 +2639,10 @@ R12IntEval::K_x_P(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::K_x_p(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(K_i_p(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(K_p_p(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2397,10 +2652,10 @@ R12IntEval::K_x_p(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::K_x_m(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(K_i_m(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(K_p_m(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2410,10 +2665,10 @@ R12IntEval::K_x_m(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::K_x_a(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(K_i_a(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(K_p_a(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2423,10 +2678,10 @@ R12IntEval::K_x_a(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::K_x_A(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(K_i_A(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(K_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2436,10 +2691,10 @@ R12IntEval::K_x_A(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::F_x_A(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
 	return(F_i_A(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
 	return(F_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2449,10 +2704,10 @@ R12IntEval::F_x_A(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::F_x_p(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
     return(F_i_p(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
     return(F_p_p(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2462,10 +2717,10 @@ R12IntEval::F_x_p(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::F_x_m(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
     return(F_i_m(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
     return(F_p_m(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2475,10 +2730,10 @@ R12IntEval::F_x_m(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::F_x_a(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
     return(F_i_a(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
     return(F_p_a(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2488,10 +2743,10 @@ R12IntEval::F_x_a(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::F_x_P(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
     return(F_i_P(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
     abort();
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2501,10 +2756,10 @@ R12IntEval::F_x_P(SpinCase1 S)
 const Ref<OrbitalSpace>&
 R12IntEval::J_x_p(SpinCase1 S)
 {
-    switch(r12info()->ansatz()->orbital_product()) {
-    case LinearR12::OrbProd_ij:
+    switch(r12info()->ansatz()->orbital_product_GG()) {
+    case LinearR12::OrbProdGG_ij:
     return(J_i_p(S));
-    case LinearR12::OrbProd_pq:
+    case LinearR12::OrbProdGG_pq:
       abort();
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);

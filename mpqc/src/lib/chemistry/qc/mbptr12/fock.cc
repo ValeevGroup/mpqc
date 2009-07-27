@@ -86,16 +86,11 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     RefSCDimension aodim2 = vec2.rowdim();
     Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-    // cast Wavefunction to MBPT2
-    MBPT2 *mp2wfn = dynamic_cast<MBPT2*> (r12info()->wfn());
-    if (mp2wfn == 0) {
-      throw ProgrammingError("r12info()->wfn() was not an MBPT2 object",
-                             __FILE__, __LINE__, class_desc());
-    }
+    Ref<OneBodyWavefunction> reference = r12info()->refinfo()->ref();
     // Form the DK correction in the current basis using the momentum
     // basis of the reference wavefunction.  The momentum basis in the
     // reference should be a superset of hcore_basis
-    Ref<GaussianBasisSet> p_basis = mp2wfn->ref()->momentum_basis();
+    Ref<GaussianBasisSet> p_basis = reference->momentum_basis();
     Ref<GaussianBasisSet> hcore_basis;
     Ref<GaussianBasisSetSum> bs1_plus_bs2;
     if (bs1_eq_bs2) {
@@ -105,7 +100,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
       hcore_basis = bs1_plus_bs2->bs12();
     }
 
-    const int dk = r12info()->refinfo()->ref()->dk();
+    const int dk = reference->dk();
     if (dk > 0) {
       // momentum basis in DKH calculations must span both bra and ket basis sets.
       // easiest to achieve if both are included in p_basis
@@ -127,7 +122,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
       hsymm = pauli(hcore_basis);
     } else {
       // include the full DKH-Hamiltionian, or the NR-Hamiltonian, depending on the reference
-      hsymm = mp2wfn->ref()->core_hamiltonian_for_basis(hcore_basis, p_basis);
+      hsymm = reference->core_hamiltonian_for_basis(hcore_basis, p_basis);
     }
 
     // convert hsymm to the AO basis
@@ -203,7 +198,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     if (occ(sc)->rank() == 0)
       continue;
     if (scale_J != 0.0) {
-      RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
+      RefSCMatrix J = coulomb_(sc,bra_space,ket_space);
       J.scale(J_prefactor*scale_J);
       if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
         J.print("Coulomb contribution");
@@ -211,7 +206,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     }
   }
   if (scale_K != 0.0) {
-    RefSCMatrix K = exchange_(occ(spin),bra_space,ket_space);
+    RefSCMatrix K = exchange_(spin,bra_space,ket_space);
     K.scale(-1.0*scale_K);
     if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
       K.print("Exchange contribution");
@@ -263,13 +258,6 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   RefSCDimension aodim2 = vec2.rowdim();
   Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-  // cast Wavefunction to MBPT2
-  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
-  if (mp2wfn == 0) {
-      throw ProgrammingError(
-          "r12info()->wfn() was not an MBPT2 object",
-          __FILE__, __LINE__, class_desc());
-  }
   // use R12IntEval::dk() here because deltaDKH is only needed if the MV term is treated analytically
   const int dk = this->dk();
 #if !TEST_DELTA_DKH
@@ -279,7 +267,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   }
 #endif
 
-  Ref<SCF> ref = mp2wfn->ref();
+  Ref<SCF> ref = r12info()->refinfo()->ref();
 
   Ref<GaussianBasisSet> hcore_basis;
   Ref<GaussianBasisSetSum> bs1_plus_bs2;
@@ -463,8 +451,6 @@ RefSymmSCMatrix
 R12IntEval::hcore_plus_massvelocity_(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas,
                                      bool include_T, bool include_V, bool include_MV)
 {
-  // cast Wavefunction to MBPT2
-  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
 #define DK_DEBUG 0
 
   ExEnv::out0() << indent << "Entering hcore_plus_massvelocity_"<< incindent << endl;
@@ -748,19 +734,19 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
   Darwin.assign(0.0);
   {
     const double darwin_prefac = M_PI/(c*c*2.0);
-    MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
+    Wavefunction *wfn = r12info()->wfn();
 
     GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,localints);
     const int nbasis1 = bas->nbasis();
     double* values1=new double[nbasis1];
-    const int natom=mp2wfn->molecule()->natom();
+    const int natom=wfn->molecule()->natom();
 
     for (int iatom=0; iatom<natom; iatom++) {
 
-      SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
+      SCVector3 R_iatom=wfn->molecule()->r(iatom);
       // this puts values of basis functions evaluated at R_iatom into values1
       bas->values(R_iatom, vdata1, values1);
-      const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
+      const double prefac=darwin_prefac*wfn->molecule()->charge(iatom);
 
       for (int ibasis=0; ibasis<bas->nbasis(); ibasis++) {
         for (int jbasis=0; jbasis<=ibasis; jbasis++) {
@@ -789,17 +775,16 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
 RefSymmSCMatrix
 R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas)
 {
-  // cast Wavefunction to MBPT2
-  MBPT2 *mp2wfn = dynamic_cast<MBPT2*>(r12info()->wfn());
+  Wavefunction *wfn = r12info()->wfn();
 #define PAULI_DEBUG 0
 
   ExEnv::out0() << indent<< "Using the Pauli Hamiltonian for the R12 treatment " << endl;
 
   // The one electron integrals will be computed in the momentum basis.
   // Use mbptr12's integrals.
-  mp2wfn->integral()->set_basis(p_bas);
+  wfn->integral()->set_basis(p_bas);
 
-  Ref<PetiteList> p_pl = mp2wfn->integral()->petite_list();
+  Ref<PetiteList> p_pl = wfn->integral()->petite_list();
 
   RefSCDimension p_so_dim = p_pl->SO_basisdim();
   RefSCDimension p_ao_dim = p_pl->AO_basisdim();
@@ -810,7 +795,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
   RefSymmSCMatrix S_skel(p_ao_dim, p_kit);
   S_skel.assign(0.0);
   Ref<SCElementOp> hc =
-    new OneBodyIntOp(new SymmOneBodyIntIter(mp2wfn->integral()->overlap(), p_pl));
+    new OneBodyIntOp(new SymmOneBodyIntIter(wfn->integral()->overlap(), p_pl));
   S_skel.element_op(hc);
   hc=0;
   RefSymmSCMatrix S(p_so_dim, p_so_kit);
@@ -827,8 +812,8 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
                 << "Orthogonalizing the momentum basis"
                 << std::endl;
   Ref<OverlapOrthog> p_orthog
-    = new OverlapOrthog(mp2wfn->orthog_method(), S, p_so_kit,
-                        mp2wfn->lindep_tol(), debug_);
+    = new OverlapOrthog(wfn->orthog_method(), S, p_so_kit,
+                        wfn->lindep_tol(), debug_);
 
   RefSCDimension p_oso_dim = p_orthog->orthog_dim();
 
@@ -837,7 +822,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
   T_skel.assign(0.0);
 
   hc =
-    new OneBodyIntOp(new SymmOneBodyIntIter(mp2wfn->integral()->kinetic(), p_pl));
+    new OneBodyIntOp(new SymmOneBodyIntIter(wfn->integral()->kinetic(), p_pl));
   T_skel.element_op(hc);
   hc=0;
 
@@ -896,7 +881,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
 #endif
 
   // compute the V integrals
-  Ref<OneBodyInt> V_obi = mp2wfn->integral()->nuclear();
+  Ref<OneBodyInt> V_obi = wfn->integral()->nuclear();
   V_obi->reinitialize();
   hc = new OneBodyIntOp(new SymmOneBodyIntIter(V_obi, p_pl));
   RefSymmSCMatrix V_skel(p_ao_dim, p_kit);
@@ -943,11 +928,11 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
 
   // Construct the transform from the momentum basis to the
   // coordinate basis.
-  mp2wfn->integral()->set_basis(bas,p_bas);
-  Ref<PetiteList> pl = mp2wfn->integral()->petite_list();
+  wfn->integral()->set_basis(bas,p_bas);
+  Ref<PetiteList> pl = wfn->integral()->petite_list();
   RefSCMatrix S_ao_p(pl->AO_basisdim(), p_ao_dim, p_kit);
   S_ao_p.assign(0.0);
-  hc = new OneBodyIntOp(mp2wfn->integral()->overlap());
+  hc = new OneBodyIntOp(wfn->integral()->overlap());
   S_ao_p.element_op(hc);
   hc=0;
   // convert s_ao_p into the so ao and so p basis
@@ -964,8 +949,8 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
                                *p_orthog->overlap_inverse()
                                *p_to_so, h_pbas);
 
-  mp2wfn->integral()->set_basis(mp2wfn->basis());
-  Ref<PetiteList> bas_pl = mp2wfn->integral()->petite_list();
+  wfn->integral()->set_basis(wfn->basis());
+  Ref<PetiteList> bas_pl = wfn->integral()->petite_list();
 
 #if 0
   // Check to see if the momentum basis spans the coordinate basis.  The
@@ -974,7 +959,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
   double S_ao_projected_trace
     = (S_ao_p_so * p_orthog->overlap_inverse() * S_ao_p_so.t()).trace()
     / pl->SO_basisdim()->n();
-  double S_ao_trace = mp2wfn->overlap().trace() / bas_pl->SO_basisdim()->n();
+  double S_ao_trace = wfn->overlap().trace() / bas_pl->SO_basisdim()->n();
   ExEnv::out0() << indent
                 << "Tr(orbital basis overlap)/N = "
                 << S_ao_trace
@@ -983,7 +968,7 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
                 << "Tr(orbital basis overlap projected into momentum basis)/N = "
                 << S_ao_projected_trace
                 << std::endl;
-  if (fabs(S_ao_projected_trace-S_ao_trace)>mp2wfn->lindep_tol()) {
+  if (fabs(S_ao_projected_trace-S_ao_trace)>wfn->lindep_tol()) {
     ExEnv::out0() << indent
                   << "WARNING: the momentum basis does not span the orbital basis"
                   << std::endl;
@@ -1007,18 +992,18 @@ R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<Gaus
   {
     const double darwin_prefac = M_PI/(c*c*2.0);
 
-    mp2wfn->integral()->set_basis(bas);
-    GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,mp2wfn->integral());
+    wfn->integral()->set_basis(bas);
+    GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,wfn->integral());
     const int nbasis1 = bas->nbasis();
     double* values1=new double[nbasis1];
-    const int natom=mp2wfn->molecule()->natom();
+    const int natom=wfn->molecule()->natom();
 
     for (int iatom=0; iatom<natom; iatom++) {
 
-      SCVector3 R_iatom=mp2wfn->molecule()->r(iatom);
+      SCVector3 R_iatom=wfn->molecule()->r(iatom);
       // this puts values of basis functions evaluated at R_iatom into values1
       bas->values(R_iatom, vdata1, values1);
-      const double prefac=darwin_prefac*mp2wfn->molecule()->charge(iatom);
+      const double prefac=darwin_prefac*wfn->molecule()->charge(iatom);
 
       for (int ibasis=0; ibasis<bas->nbasis(); ibasis++) {
         for (int jbasis=0; jbasis<=ibasis; jbasis++) {

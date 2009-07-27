@@ -31,6 +31,8 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/container.h>
 
 using namespace std;
 using namespace sc;

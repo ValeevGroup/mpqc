@@ -51,6 +51,112 @@
 using namespace std;
 using namespace sc;
 
+RefSCMatrix R12IntEval::exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>& bra_space,
+                      const Ref<OrbitalSpace>& ket_space) {
+
+  Ref<MessageGrp> msg = r12info()->msg();
+
+  int me = msg->me();
+  int nproc = msg->n();
+
+  Ref<OrbitalSpace> contr_space;
+  if(opdm(Alpha).null()) {
+    contr_space = r12info()->refinfo()->occ(spin);
+    return(exchange_(contr_space,bra_space,ket_space));
+  }
+  else {
+    contr_space = r12info()->refinfo()->orbs(spin);
+  }
+
+  Timer tim_exchange("general exchange");
+  ExEnv::out0() << endl << indent
+                << "Entered general exchange matrix evaluator" << endl;
+  ExEnv::out0() << incindent;
+  const int ncontr = contr_space->rank();
+  const int nbra = bra_space->rank();
+  const int nket = ket_space->rank();
+  const int nbraket = nbra*nket;
+  if (debug_ >= DefaultPrintThresholds::fine) {
+    ExEnv::out0() << indent << "nbra = " << nbra << endl;
+    ExEnv::out0() << indent << "nket = " << nket << endl;
+    ExEnv::out0() << indent << "ncontr = " << ncontr << endl;
+  }
+
+  // Do the AO->MO transform
+  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
+  // Gaussians are real, hence contr_space and bra_space can be swapped
+  tfactory->set_spaces(contr_space,bra_space,
+                       contr_space,ket_space);
+  // Only need 1/r12 integrals
+  Ref<TwoBodyMOIntsTransform> rpsq_tform = tfactory->twobody_transform_13("(pr|qs)");
+  rpsq_tform->compute();
+  Ref<DistArray4> rpsq_acc = rpsq_tform->ints_acc();
+
+  // Compute the number of tasks that have full access to the integrals
+  // and split the work among them
+  vector<int> proc_with_ints;
+  const int nproc_with_ints = rpsq_acc->tasks_with_access(proc_with_ints);
+
+  Timer tim_mo_ints_retrieve;
+  tim_mo_ints_retrieve.set_default("MO ints retrieve");
+
+  double* K_pq = new double[nbraket];
+  memset(K_pq,0,nbraket*sizeof(double));
+  if (rpsq_acc->has_access(me)) {
+    for(int r=0; r<ncontr; r++) {
+      for(int s=0; s<ncontr; s++) {
+        int rs = r*ncontr+s;
+        const int rs_proc = rs%nproc_with_ints;
+        if (rs_proc != proc_with_ints[me])
+          continue;
+
+        if (debug_ >= DefaultPrintThresholds::fine)
+          ExEnv::outn() << indent << "task " << me << ": working on (r,s) = " << r << "," << s << " " << endl;
+
+        const double onepdm = opdm(spin)->get_element(s,r);
+
+        // Get (|1/r12|) integrals
+        tim_mo_ints_retrieve.enter_default();
+        const double *rspq_buf_eri = rpsq_acc->retrieve_pair_block(r,s,corrfactor()->tbint_type_eri());
+        tim_mo_ints_retrieve.exit_default();
+
+        if (debug_ >= DefaultPrintThresholds::fine)
+          ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
+
+        //for(int p=0; p<nbra; p++) {
+        //  for(int q=0; q<nket; q++) {
+        //    int pq = p*nket+q;
+        //    K_pq[pq] += rspq_buf_eri[pq]*onepdm;
+        //  }
+        //}
+        const int unit_stride = 1;
+        F77_DAXPY(&nbraket,&onepdm,rspq_buf_eri,&unit_stride,K_pq,&unit_stride);
+        rpsq_acc->release_pair_block(r,s,corrfactor()->tbint_type_eri());
+      }
+    }
+  }
+
+  ExEnv::out0() << indent << "End of computation of exchange matrix" << endl;
+  if (rpsq_acc->data_persistent()) rpsq_acc->deactivate();
+
+  msg->sum(K_pq,nbraket);
+
+  RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
+  K.assign(K_pq);
+  delete [] K_pq;
+
+  if (debug_ >= DefaultPrintThresholds::allN2) {
+    K.print("Exchange matrix");
+  }
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited general exchange matrix evaluator" << endl;
+
+  tim_exchange.exit();
+
+  return(K);
+}
+
 RefSCMatrix
 R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
                       const Ref<OrbitalSpace>& ket_space)

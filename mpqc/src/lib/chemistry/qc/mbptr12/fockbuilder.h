@@ -159,7 +159,7 @@ namespace sc {
                         const Ref<Integral>& integral,
                         const Ref<MessageGrp>& msg,
                         const Ref<ThreadGrp>& thr,
-                        double accuracy = 1e-12) :
+                        double accuracy = 1e-20) :
                           compute_F_(compute_F),
                           compute_J_(compute_J),
                           compute_K_(compute_K)

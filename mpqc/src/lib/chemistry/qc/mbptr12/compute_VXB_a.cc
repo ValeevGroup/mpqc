@@ -107,15 +107,11 @@ R12IntEval::contrib_to_VXB_a_()
 	  fill_container(tformkey_creator,tforms_f12);
       }
       if (!occ12_in_x12) {
-	  R12TwoBodyIntKeyCreator tformkey_creator(
-	      r12info()->moints_runtime4(),
-	      occ1_act,
-	      orbs1,
-	      occ2_act,
-	      orbs2,
-          r12info()->corrfactor()
-	      );
-	  fill_container(tformkey_creator,tforms);
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+                                                                         orbs1->id(),orbs2->id(),
+                                                                         std::string("ERI"),
+                                                                         std::string(TwoBodyIntLayout::b1b2_k1k2));
+        tforms.push_back(tform_key);
       }
       else
 	  tforms.push_back(tforms_f12[0]);
@@ -203,15 +199,11 @@ R12IntEval::contrib_to_VXB_a_()
 	      fill_container(tformkey_creator,tforms_f12_xmyP);
 	  }
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(
-		  r12info()->moints_runtime4(),
-		  occ1_act,
-		  occ1,
-		  occ2_act,
-		  rispace2,
-          r12info()->corrfactor()
-		  );
-	      fill_container(tformkey_creator,tforms_imjP);
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+                                                                         occ1->id(),rispace2->id(),
+                                                                         std::string("ERI"),
+                                                                         std::string(TwoBodyIntLayout::b1b2_k1k2));
+        tforms_imjP.push_back(tform_key);
 	  }
 	  else
 	      tforms_imjP.push_back(tforms_f12_xmyP[0]);
@@ -278,15 +270,11 @@ R12IntEval::contrib_to_VXB_a_()
 		  fill_container(tformkey_creator,tforms_f12_xPym);
 	      }
 	      if (!occ12_in_x12) {
-		  R12TwoBodyIntKeyCreator tformkey_creator(
-		      r12info()->moints_runtime4(),
-		      occ1_act,
-		      rispace1,
-		      occ2_act,
-		      occ2,
-	          r12info()->corrfactor()
-		      );
-		  fill_container(tformkey_creator,tforms_iPjm);
+	        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+	                                                                         rispace1->id(),occ2->id(),
+	                                                                         std::string("ERI"),
+	                                                                         std::string(TwoBodyIntLayout::b1b2_k1k2));
+	        tforms_iPjm.push_back(tform_key);
 	      }
 	      else
 		  tforms_iPjm.push_back(tforms_f12_xPym[0]);

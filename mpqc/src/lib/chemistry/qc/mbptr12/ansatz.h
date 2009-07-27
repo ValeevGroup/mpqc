@@ -39,12 +39,15 @@
 
 namespace sc {
 
+  /**
+   * LinearR12Ansatz specifies the properties of the R12 Ansatz.
+   */
   class LinearR12Ansatz : virtual public SavableState {
     public:
     /** The KeyVal constructor.
     <dl>
 
-    <dt><tt>orbital_product</tt><dd> This specifies how the geminal space is generated.
+    <dt><tt>orbital_product_GG</tt><dd> This specifies how the geminal space is generated.
     Geminal functions are products of the correlation factor and 2 orbitals.
     This keyword specifies which orbital products are allowed.
     Valid choices are:
@@ -52,6 +55,9 @@ namespace sc {
         <dt><tt>ij</tt><dd> Biproducts of occupied orbitals. This is the default.
         <dt><tt>pq</tt><dd> Biproducts of any Hartree-Fock orbitals. This has not been implemented yet.
       </dl>
+      
+    <dt><tt>orbital_product_gg</tt><dd> Space of orbital products from which geminal substitutions are allowed.
+    Specified in the same way as orbital_product_GG.
 
     <dt><tt>projector</tt><dd> This specifies the form of the orthogonal projector.
     Valid values are:
@@ -91,7 +97,8 @@ namespace sc {
     bool diag() const;
     LinearR12::GeminalAmplitudeAnsatz amplitudes() const;
     bool wof() const;
-    LinearR12::OrbitalProduct orbital_product() const;
+    LinearR12::OrbitalProduct_GG orbital_product_GG() const;
+    LinearR12::OrbitalProduct_gg orbital_product_gg() const;
 
     private:
     LinearR12::Projector projector_;
@@ -99,7 +106,8 @@ namespace sc {
     LinearR12::GeminalAmplitudeAnsatz amplitudes_;
     bool scaled_;     //<
     bool wof_;
-    LinearR12::OrbitalProduct orbital_product_;
+    LinearR12::OrbitalProduct_GG orbital_product_GG_;
+    LinearR12::OrbitalProduct_gg orbital_product_gg_;
   };
 
 }

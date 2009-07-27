@@ -37,6 +37,7 @@
 #include <chemistry/qc/psi/psiexenv.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/mbptr12/mbptr12.h>
 
 namespace sc {
 
@@ -56,7 +57,8 @@ namespace sc {
 
     protected:
       int nirrep_;
-      char *memory_;
+      size_t memory_;
+      char *memory_str_;
       /// Prepares a complete Psi input file. The input file is assumed to have been opened.
       virtual void write_input(int conv) =0;
 
@@ -132,7 +134,7 @@ namespace sc {
       std::vector<int> socc_;
       int multp_;
       int charge_;
-      static const int maxiter = 100;
+      static const int maxiter = 200;
 
       /// guess wave function is only used to get the occupations
       Ref<OneBodyWavefunction> guess_wfn_;
@@ -256,6 +258,7 @@ namespace sc {
       Ref<PsiSCF> reference_;
       Ref<OrbitalSpace> occ_act_sb_[NSpinCases1];
       Ref<OrbitalSpace> vir_act_sb_[NSpinCases1];
+      Ref<OrbitalSpace> orbitals_sb_[NSpinCases1];
       unsigned int nfzc_;
       unsigned int nfzv_;
       mutable std::vector<unsigned int> frozen_docc_;
@@ -286,14 +289,128 @@ namespace sc {
       unsigned int nfzc() const;
       /// total # of frozen unoccupied orbitals
       unsigned int nfzv() const;
+      /// symmetry-blocked space of MO's from Psi3
+      const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
       /// # of frozen doubly-occupied orbitals per irrep
       const std::vector<unsigned int>& frozen_docc() const;
       /// # of frozen unoccupied orbitals per irrep
       const std::vector<unsigned int>& frozen_uocc() const;
+      /// # of occupied active orbitals per irrep
+      const std::vector<unsigned int> docc_act();
+      const std::vector<unsigned int> socc();
+      const std::vector<unsigned int> uocc_act();
 
       /// reference energy
       virtual double reference_energy();
 
+      /// one- and two-particle Density matrices
+      /// return one-particle density matrix as a symmetric matrix indexed by (moindex1,moindex2).
+      RefSymmSCMatrix onepdm(const SpinCase1 &spin);
+      RefSymmSCMatrix onepdm();
+      /// this twopdm is stored in chemist's (Mulliken) notation order. Access element (ij|km) by get_element(ordinary_INDEX(i,j), ordinary_INDEX(k,m))
+      RefSymmSCMatrix twopdm();
+      /// this twopdm is stored in Dirac notation order.
+      RefSymmSCMatrix twopdm_dirac();
+      RefSymmSCMatrix twopdm_dirac_from_components();
+      RefSymmSCMatrix twopdm_dirac(const SpinCase2 &pairspin);
+      void print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL);
+      void print_onepdm_mat(FILE *output,const RefSymmSCMatrix &opdm,double TOL);
+      void print_twopdm_mat(FILE *output,const RefSymmSCMatrix &tpdm, double TOL);
+      void print_twopdm_arr(FILE *output,double *tpdm,double TOL);
+  };
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// PsiCorrWavefunction_PT2R12: a corrlated wave function with a perturbational explicitly correlated correction.
+
+  class PsiCorrWavefunction_PT2R12 : public PsiCorrWavefunction {
+    protected:
+      size_t memory_r12_;
+      Ref<SCF> reference_mpqc_;
+      Ref<R12IntEval> r12eval_;
+      Ref<R12IntEvalInfo> r12evalinfo_;
+      enum onepdm_type { HF = 0, correlated = 1 };
+      onepdm_type opdm_type_;
+      bool tpdm_from_opdms_;
+      bool exactgamma_phi_twoelec_;  /// use the exact gamma for two-electron systems.
+      int debug_;
+    protected:
+      /// MPQC to Psi transform matrix if Psi uses QT ordering.
+      virtual RefSCMatrix MPQC2PSI_transform_matrix(SpinCase1 spin) = 0;
+      /// MPQC to Psi transform matrix if Psi uses ras ordering.
+      //RefSCMatrix MPQC2PSI_transform_matrix(SpinCase1 spin,
+      //                                      const std::vector<unsigned int> &ras1,
+      //                                      const std::vector<unsigned int> &ras2,
+      //                                      const std::vector<unsigned int> &ras3);
+      void write_input(int convergence);
+      /// Returns Hcore in MO basis
+      RefSymmSCMatrix hcore_mo();
+      RefSymmSCMatrix hcore_mo(SpinCase1 spin);
+      /// molecular integrals in chemist's notation
+      RefSymmSCMatrix moints();  // closed shell case
+      RefSCMatrix moints(SpinCase2 pairspin);
+      /// This is the g (in Dirac notation) that should be used.
+      RefSCMatrix g(SpinCase2 pairspin);
+      /**
+       * general-reference Fock atrix (cf. eqn. (71b) of W. Kutzelnigg, D. Mukherjee, J. Chem Phys. 107 (1997) p. 432)
+       * if opdm_ in R12IntEvalInfo is set, otherwise it returns the ordinary Fock operator.
+       */
+      RefSCMatrix f(SpinCase1 spin);
+      /// phi of a single-reference Hartree-Fock reference (needed only for debugging)
+      RefSCMatrix phi_HF(SpinCase2 pairspin);
+      /**
+       * phi not truncated in lambda, but without the three-pdm. This should be always used for
+       * two-electron systems.
+       */
+      RefSCMatrix phi_twoelec(SpinCase2 pairspin);
+      /*
+       * phi truncated in lambda: terms with three-particle lambda's or higher or terms with
+       * squares (or higher) of two-particle lambda's are neglected.
+       */
+      RefSCMatrix phi(SpinCase2 pairspin);
+
+      /// Returns the Psi3 computed correlated onepdm's transformed to MPQC MO's. Function called from function onepdm_refmo.
+      RefSymmSCMatrix onepdm_transformed(const SpinCase1 &spin);
+      /// Returns the closed shell total onepdm_transformed, i.e. Alpha plus Beta, transformed to MPQC MO's.
+      RefSymmSCMatrix onepdm_transformed();
+      /// Returns the Hartree-Fock onepdm (Just 1's on the occ-occ block diagonal).
+      RefSymmSCMatrix onepdm_refmo_HF(const SpinCase1 &spin);
+      /// Returns the closed shell total twopdm_transformed, i.e. Alpha plus Beta, in chemist's (Mulliken) notation, transformed to MPQC MO's.
+      RefSymmSCMatrix twopdm_transformed();
+      /// Returns the closed shell total twopdm_transformed, i.e. Alpha plus Beta, in Dirac notation, transformed to MPQC MO's.
+      RefSymmSCMatrix twopdm_transformed_dirac();
+      /// Returns the Psi3 computed correlated twopdm's tranformed to MPQC MO's. Function called from function twopdm_refmo.
+      RefSymmSCMatrix twopdm_transformed_dirac(const SpinCase2 &pairspin);
+      /// Returns the Psi3 computed correlated onepdm's tranformed to MPQC MO's
+      RefSymmSCMatrix twopdm_refmo_from_onepdm(const SpinCase2 &pairspin);
+    public:
+      PsiCorrWavefunction_PT2R12(const Ref<KeyVal> &keyval);
+      PsiCorrWavefunction_PT2R12(StateIn &s);
+      ~PsiCorrWavefunction_PT2R12();
+      void save_data_state(StateOut &s);
+      /// This function should be used to get the onepdm's from Psi, transformed to reference MO's.
+      RefSymmSCMatrix onepdm_refmo(const SpinCase1 &spin);
+      /// This function should be used to get the onepdm's from Psi, transformed to reference MO's.
+      RefSymmSCMatrix twopdm_refmo(const SpinCase2 &pairspin);
+      /// This function should be used to get the two-particle lambda's from Psi, transformed to reference MO's.
+      RefSymmSCMatrix lambda_refmo(const SpinCase2 &pairspin);
+      /// Returns the geminal coefficients.
+      RefSCMatrix C(SpinCase2 S);
+      RefSCMatrix V_genref_projector2(SpinCase2 pairspin);
+      RefSCMatrix V_transformed_by_C(SpinCase2 pairspin);
+      RefSymmSCMatrix X_transformed_by_C(SpinCase2 pairspin);
+      RefSymmSCMatrix B_transformed_by_C(SpinCase2 pairspin);
+      /// computes the projected contribution to the energy.
+      double compute_DC_energy_GenRefansatz2();
+      /// Returns the dipole moments for closed shell wave functions from onepdm's (mainly for testing).
+      RefSCVector dipolemoments(const Ref<DipoleData> &dipoledata = new DipoleData());
+      double energy_HF();
+      double energy_conventional();
+      double energy_conventional_so();
+      /// This function computes the "old" General_PT2R12 correction, i.e. the one invoking projector 1.
+      double energy_PT2R12(SpinCase2 pairspin);
+      double energy_PT2R12_projector2(SpinCase2 pairspin);
+      /// Prints the pair energies as a trace of the given matrix Contrib_mat
+      void print_pair_energies(const RefSCMatrix &Contrib_mat,SpinCase2 pairspin);
   };
 
 }

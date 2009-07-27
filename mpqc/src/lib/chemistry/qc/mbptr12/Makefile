@@ -59,9 +59,11 @@ CXXSRCS = mbptr12.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxCp.cc approxApp.cc ansatz.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc \
-  compute_VXB_abs.cc compute_VXB_a_vbsneqobs.cc \
+  compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
-  singles_emp2.cc bc_contrib.cc blas.cc dkh.cc \
+  singles_emp2.cc bc_contrib.cc blas.cc dkh.cc fixedcoefficient.cc \
+  compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
+  compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \
   moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
   orbitalspace_runtime.cc  transform_ijR.cc \
   transform_ixjy_df.cc  tbint_runtime.cc
@@ -70,7 +72,8 @@ INC = distarray4_memgrp.h \
 ansatz.h                        distarray4_mpiiofile.h \
 distarray4_node0file.h compute_tbint_tensor.h r12int_eval.h \
 container.h                     r12technology.h \
-contract_tbint_tensor.h         singlerefinfo.h \
+contract_tbint_tensor.h  contract_tbint_tensors_to_obtensor.h \
+singlerefinfo.h \
 creator.h                       spin.h \
 gaussianfit.h gaussianfit.timpl.h transform_123inds.h \
 transform_12inds.h linearr12.h transform_13inds.h \
@@ -80,6 +83,7 @@ mbptr12.h                       transform_ikjy.h \
 orbitalspace.h                  transform_ixjy.h \
 mp2r12_energy.h                 transform_tbint.h \
 mp2r12_energy_util.h            twobodygrid.h \
+twobodytensorinfo.h \
 pairiter.h                      twoparticlecontraction.h \
 print.h                         utils.h \
 print_scmat_norms.h             utils.impl.h \
@@ -87,7 +91,7 @@ r12_amps.h                      vxb_eval_info.h \
 distarray4.h				moints_runtime.h \
 fockbuilder.h                   fockbuild_runtime.h \
 orbitalspace_runtime.h		transform_ijR.h \
-tbint_runtime.h
+tbint_runtime.h                 fixedcoefficient.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += distarray4_mpiiofile.cc

@@ -81,6 +81,15 @@ namespace sc {
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  void
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::clear()
+  {
+    lock_->lock();
+    map_.clear();
+    lock_->unlock();
+  }
+
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   typename Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::const_iterator
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::find_by_key(const Key& key) const
   {

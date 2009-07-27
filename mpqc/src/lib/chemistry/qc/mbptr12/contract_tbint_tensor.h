@@ -510,9 +510,7 @@ namespace sc {
           //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
           //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
           //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
-          if (accumb != accumk) {
-            if (accumk->data_persistent()) accumk->deactivate();
-          }
+          if (accumb != accumk && accumk->data_persistent()) accumk->deactivate();
 
         } // ket blocks
 
@@ -984,9 +982,7 @@ namespace sc {
           //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
           //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
           //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
-          if (accumb != accumk) {
-            if (accumk->data_persistent()) accumk->deactivate();
-          }
+          if (accumb != accumk && accumk->data_persistent()) accumk->deactivate();
 
         } // ket blocks
 

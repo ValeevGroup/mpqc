@@ -98,9 +98,9 @@ namespace sc {
 
   } // end of namespace detail
 
-  /** Registry contains is an extension of std::map with configurable Creation policy.
-      Registry is not a SavableState, but it behaves like one (see save_instance and restore_instance methods).
-      Therefore both Key and Value are assumed to be usable with StateIn and StateOut.
+  /** Registry wraps std::map and can be policy-configured to act as a Singleton or a regular object.
+      Registry is not a SavableState, but it can be serialized (see save_instance and restore_instance methods).
+      Therefore both Key and Value are assumed to be serializable with StateIn and StateOut.
 
       KeyEqual and ValueEqual are Functor types that define the
       equivalence of two Key (or Value) objects. By default std::equal_to is used.
@@ -119,6 +119,8 @@ namespace sc {
         static void save_instance(const Ref<Registry>&, StateOut&);
         static Ref<Registry> restore_instance(StateIn&);
 
+        /// erases all entries
+        void clear();
         /// key exists?
         bool key_exists(const Key& key) const;
         /// value exists?

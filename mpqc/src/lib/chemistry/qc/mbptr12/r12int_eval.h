@@ -34,6 +34,8 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/mbptr12/fixedcoefficient.h>
+#include <chemistry/qc/mbptr12/twobodytensorinfo.h>
 
 #ifndef _chemistry_qc_mbptr12_r12inteval_h
 #define _chemistry_qc_mbptr12_r12inteval_h
@@ -65,14 +67,20 @@ class R12IntEval : virtual public SavableState {
   RefSCMatrix B_[NSpinCases2];
   RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
   RefSCMatrix A_[NSpinCases2];
+  /// array of Ref<CuspConsistentGeminalCoefficient> for the generation of cusp consistent geminal coefficients
+  Ref<CuspConsistentGeminalCoefficient> cuspconsistentgeminalcoefficient_[NSpinCases2];
 
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
   /// a is any index in a given basis
   RefSCDimension dim_aa_[NSpinCases2];
+  /// space of all geminal functions
   RefSCDimension dim_f12_[NSpinCases2];
-  RefSCDimension dim_xy_[NSpinCases2];
+  /// space of orbital products multiplied by f(r12) to produce the above
+  RefSCDimension dim_GG_[NSpinCases2];
+  /// space of orbital products from which geminal substitutions are allowed
+  RefSCDimension dim_gg_[NSpinCases2];
 
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
@@ -155,6 +163,11 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> J_i_p_[NSpinCases1];
   Ref<OrbitalSpace> J_i_P_[NSpinCases1];
   Ref<OrbitalSpace> J_P_P_[NSpinCases1];
+  Ref<OrbitalSpace> F_A_A_[NSpinCases1];
+  Ref<OrbitalSpace> F_p_P_[NSpinCases1];
+  Ref<OrbitalSpace> gamma_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> gammaFgamma_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> Fgamma_p_P_[NSpinCases1];
 
   /// Initialize standard transforms
   void init_tforms_();
@@ -201,10 +214,15 @@ class R12IntEval : virtual public SavableState {
   RefSymmSCMatrix pauli_realspace(const Ref<GaussianBasisSet> &bas);
   RefSymmSCMatrix pauli_momentumspace(const Ref<GaussianBasisSet> &bas,
                         const Ref<GaussianBasisSet> &p_bas);
-  /// Compute the coulomb matrix between 2 spaces
+
+  /// Compute the coulomb matrix between 2 spaces. Coulomb contribution computed w.r.t. density of spincase spin only
+  RefSCMatrix coulomb_(const SpinCase1 &spin, const Ref<OrbitalSpace>& bra_space,
+                       const Ref<OrbitalSpace>& ket_space);
   RefSCMatrix coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
                        const Ref<OrbitalSpace>& ket_space);
   /// Compute the exchange matrix between 2 spaces
+  RefSCMatrix exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>& bra_space,
+                        const Ref<OrbitalSpace>& ket_space);
   RefSCMatrix exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
                         const Ref<OrbitalSpace>& ket_space);
 
@@ -213,8 +231,8 @@ class R12IntEval : virtual public SavableState {
 
   /// New version which uses optimized contract functions
   void contrib_to_VXB_a_();
-  /// The version which uses slow tensor contract functions
-  void contrib_to_VXB_abs_();
+  void contrib_to_VXB_c_ansatz1_();
+  void contrib_to_VX_GenRefansatz2_();
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_vbsneqobs_();
   /// extra single-commutator contributions to B from relativistic terms
@@ -233,7 +251,7 @@ class R12IntEval : virtual public SavableState {
       Bra (rows) are blocked by correlation function index.
       AlphaBeta amplitudes are computed.
       If tform is not given (it should be!), this function will construct a generic
-      transform. */
+      transform.  */
   void compute_A_direct_(RefSCMatrix& A,
                          const Ref<OrbitalSpace>& space1,
                          const Ref<OrbitalSpace>& space2,
@@ -243,12 +261,31 @@ class R12IntEval : virtual public SavableState {
                          const Ref<OrbitalSpace>& rispace4,
                          bool antisymmetrize);
 
+  // make compute_tbint_tensor_ public for now
+  public:
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
       Computed tensor T is added to its previous contents.
       Class DataProcess defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
 
       Of course, this ugliness should become constructor/member function of ManyBodyOperator
+
+      template parameters:
+      DataProcess                       -- classes in namespace ManyBodyTensors that describe
+                                           the operator whose matrix
+                                           elements are needed, e.g. Apply_H0minusE0<sign>
+      CorrFactorInBra, CorrFactorInKet  -- 'true' if there is a correlation factor.
+
+      function parameters:
+      tbint_type                        -- type of tensor to be computed.
+      space1, space2, space3, space4    -- index spaces of the tensor in chemist's (Mulliken) notation:
+                                           ( space1 space2 | space3 space4 ).
+      antisymmetrize                    -- if true, the computed tensor is antisymmetrized.
+      tforms                            -- TwoBodyMOIntsTransform vector (dimension: number
+                                           of correlation factors) that describes the transformation
+                                           of the  tensor from the AO to the MO space.
+      tbintdescrs                       -- integral descriptor of the tensor to be computed.
+
    */
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
     void compute_tbint_tensor(RefSCMatrix& T,
@@ -260,20 +297,46 @@ class R12IntEval : virtual public SavableState {
                               bool antisymmetrize,
                               const std::vector<std::string>& tform_keys);
 
-  /** contract_tbint_tensor computes a 2-body tensor T as a sum over mn : <ij|Tbra|mn> * <kl|Tket|mn>^t
-      bra and ket integrals come from tforms_bra and tforms_ket.
-      Computed tensor T is added to its previous contents.
-      Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
-      Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
+  private:
+  /**
+     contract_tbint_tensor computes a 2-body tensor T as a sum over mn : <ij|Tbra|mn> * <kl|Tket|mn>^t
+     bra and ket integrals come from tforms_bra and tforms_ket.
+     Computed tensor T is added to its previous contents.
+     Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
+     The I2T() functions are implemented as members of classes in the namespace ManyBodyTensors.
+     Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
 
-      Semantics: 1) ranks of internal spaces must match, although the spaces don't have to be the same;
-      2) if antisymmetrize is true, external (bra and ket) particle spaces
-      should be strongly (identity) or weakly(rank) equivalent. If internal spaces do not match
-      but antisymmetrization is requested, symmetrization w.r.t. particle swap will be performed,
+     Semantics: 1) ranks of internal spaces must match, although the spaces don't have to be the same;
+     2) if antisymmetrize is true, external (bra and ket) particle spaces
+     should be strongly (identity) or weakly(rank) equivalent. If internal spaces do not match
+     but antisymmetrization is requested, symmetrization w.r.t. particle swap will be performed,
       then antisymmetrization.
 
-      Of course, this ugliness should become function/operator on 2 ManyBodyOperators.
-   */
+     Of course, this ugliness should become function/operator on 2 ManyBodyOperators
+
+     template parameters:
+     DataProcessBra, DataProcessKet,
+     DataProcessBraKet                 -- classes in namespace ManyBodyTensors that describe the operator whose matrix
+                                          elements are needed, e.g. Apply_H0minusE0<sign>
+     CorrFactorInBra, CorrFactorInKet,
+     CorrFactorInInt                   -- 'true' if there is a correlation factor.
+
+     function parameters:
+     tbint_type_bra and tbint_type_ket -- type of the first and second tensor.
+     space1_bra and space2_bra         -- space of the first and second bra index of the first tensor - external indices.
+     space1_intb and space2_intb       -- space of the first and second ket index of the first tensor - internal indices.
+     space1_ket and space2_ket         -- space of the first and second ket index of the second tensor - external indices.
+     space1_intk and space2_intk       -- space of the first and second bra index of the second tensor - internal indices.
+     tpcontract                        -- provides information on how the two tensors are to be contracted - see
+                                          document of class LinearR12::TwoParticleContraction and the classes derived
+                                          from it.
+     antisymmetrize                    -- antisymmetrize the final contracted product.
+     tforms_bra and tforms_ket         -- TwoBodyMOIntsTransform vectors (dimension: number of correlation factors) that
+                                          describe the transformation of the bra and ket tensor respectively from the AO
+                                          MO space.
+     intdescrs_bra and intdescrs_ket   -- integral descriptors belonging to the bra and ket tensor respectively.
+     <space1_bra space2_bra|T1|space1_intb space2_intb> * <space1_intk space2_intk|T2|space1_ket space2_ket>
+  */
   template <typename DataProcessBra,
             typename DataProcessKet,
             typename DataProcessBraKet,
@@ -323,6 +386,65 @@ class R12IntEval : virtual public SavableState {
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
 
+  // for now make it public
+  public:
+  /** <space1bra space1_intb |Tbra| space2_intb space3_intb> * <space2_intk space3_intk |Tket| space1ket space1_intk>
+   *  contract_tbint_tensors_to_obtensor computes a 1-body tensor T as a sum over kmn : <ik|Tbra|mn><jk|Tket|mn>^t.
+   *  The notation used here is analoguous to that of the routine contract_tbint_tensor.
+   *  bra and ket integrals come from tforms_bra and tforms_ket.
+   *  Computed tensor T is added to its previous contents.
+   *  Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
+   *  The I2T() functions are implemented as members of classes in the namespace ManyBodyTensors.
+   *  Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
+   *
+   *  Semantics: ranks of internal spaces must match, although the spaces don't have to be the same.
+   *
+   *  Of course, this ugliness should become function/operator on 2 ManyBodyOperators
+   *
+   *  template parameters:
+   *  DataProcessBra, DataProcessKet,   -- classes in namespace ManyBodyTensors that describe the operator whose matrix
+   *                                       elements are needed, e.g. Apply_H0minusE0<sign>
+   *  CorrFactorInBra, CorrFactorInKet,
+   *  CorrFactorInInt                   -- 'true' if there is a correlation factor.
+   *
+   *  function parameters:
+   *  tbtensor_type_bra,
+   *  tbtensor_type_ket                 -- type of the first and second tensor.
+   *  space1_bra                        -- space of the first bra index of the first tensor - external index.
+   *  space1_intb, space2_intb,
+   *  space3_intb                       -- space of the first bra and first and second ket index of the first tensor - internal indices.
+   *  space1_ket                        -- space of the first ket index of the second tensor - external index.
+   *  space1_intk, space2_intk,
+   *  space3_intk                       -- space of the first bra and first and second ket index of the second tensor - internal indices.
+   *  tpcontract                        -- provides information on how the two tensors are to be contracted - see
+   *                                       document of class LinearR12::TwoParticleContraction and the classes derived
+   *                                       from it.
+   *  tforms_bra and tforms_ket         -- TwoBodyMOIntsTransform vectors (dimension: number of correlation factors) that
+   *                                       describe the transformation of the bra and ket tensor respectively from the AO
+   *                                       MO space.
+   *  intdescrs_bra and intdescrs_ket   -- integral descriptors belonging to the bra and ket tensor respectively. */
+  template <typename DataProcessBra,
+            typename DataProcessKet,
+            bool CorrFactorInBra,
+            bool CorrFactorInKet,
+            bool CorrFactorInInt>
+    void contract_tbint_tensors_to_obtensor(RefSCMatrix& T,
+                                            SpinCase2 pairspin,
+                                            TwoBodyTensorInfo tbtensor_type_bra,
+                                            TwoBodyTensorInfo tbtensor_type_ket,
+                                            const Ref<OrbitalSpace>& space1_bra,
+                                            const Ref<OrbitalSpace>& space1_intb,
+                                            const Ref<OrbitalSpace>& space2_intb,
+                                            const Ref<OrbitalSpace>& space3_intb,
+                                            const Ref<OrbitalSpace>& space1_ket,
+                                            const Ref<OrbitalSpace>& space1_intk,
+                                            const Ref<OrbitalSpace>& space2_intk,
+                                            const Ref<OrbitalSpace>& space3_intk,
+                                            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+                                            const std::vector<std::string>& tformkeys_bra,
+                                            const std::vector<std::string>& tformkeys_ket);
+
+  private:
   /** Compute X intermediate (F12 F12) in basis <bra1 bra2 | ket1 ket2>. sc2 specifies the spin case
       of particles 1 and 2. Resulting X is symmetric w.r.t bra-ket permutation, but will not be
       symmetric w.r.t. permutation of particles 1 and 2 if bra1 != bra2 || ket1 != ket2.
@@ -348,6 +470,16 @@ class R12IntEval : virtual public SavableState {
       symmetric w.r.t. permutation of particles 1 and 2.
       If FxF is null, then allocate, otherwise check dimensions and accumulate result into FxF.
       intkx1 is the "combined" space |intb1> <intb1|x|intk1>, etc.
+
+      Example: term \f$\overline{r}^{p' q'}_{\bf p q} k^{s'}_{p'} \overline{r}^{\bf r s}_{s' q'} \f$.
+      All tensors are generated from the integrals over AO's by means of the MO coefficients. In this
+      case, \f$ \overline{r}^{p' q'}_{\bf p q} k^{s'}_{p'} = \overline{r}^{s'_k q'}_{\bf p q}\f$ as an
+      ordinary tensor matrix element of \f$\overline{r}\f$, but with the new MO coefficient
+      \f$C^{s'_k}_{\mu'} = C^{p'}_{\mu'} k^{s'}_{p'} \f$. compute_FxF_ then computes the product
+      \f$\overline{r}^{s'_k q'}_{\bf p q} \overline{r}^{\bf r s}_{s' q'}\f$. The OrbitalSpace of
+      \f$C^{s'_k}_{\mu'}\f$ is generated by the function K_p_p. For each internal index, the spin1
+      and spin2 version is needed. Because of this there as six internal indices.
+      <bra1 bra2|F12|intkx1 int2> * <intk1 int2|F12|ket1 ket2> + <bra1 bra2|F12|int1 intkx2> * <int1 intk2|F12|ket1 ket2>.
   */
   void compute_FxF_(RefSCMatrix& FxF,
                     SpinCase2 sc2,
@@ -381,6 +513,8 @@ class R12IntEval : virtual public SavableState {
 
   /** Compute B using standard approximation C */
   void compute_BC_();
+  void compute_BC_ansatz1_();
+  void compute_BC_GenRefansatz2_();
 
   /** Compute B using standard approximation C' */
   void compute_BCp_();
@@ -453,6 +587,8 @@ public:
   bool coupling() const { return r12info()->coupling(); }
   LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
   bool omit_P() const { return r12info()->omit_P(); }
+  RefSymmSCMatrix opdm(const SpinCase1 &spin) const { return(r12info()->opdm(spin)); }
+  RefSymmSCMatrix opdm_blocked(const SpinCase1 &spin);
 
   const Ref<R12IntEvalInfo>& r12info() const;
 
@@ -464,10 +600,12 @@ public:
   RefSCDimension dim_vv(SpinCase2 S) const;
   /// Dimension for any/any pairs of spin case S
   RefSCDimension dim_aa(SpinCase2 S) const;
-  /// Dimension for geminal functions of spin case S = # of correlation factors x dim_xy
+  /// Dimension for geminal functions of spin case S = # of correlation factors x dim_GG
   RefSCDimension dim_f12(SpinCase2 S) const;
-  /// Dimension of orbital product space used to generate geminal functions
-  RefSCDimension dim_xy(SpinCase2 S) const;
+  /// Dimension of orbital product space that multiply the correlation factor to produce geminal functions
+  RefSCDimension dim_GG(SpinCase2 S) const;
+  /// Dimension of orbital product space from which geminal substitutions are allowed
+  RefSCDimension dim_gg(SpinCase2 S) const;
   /// Returns the number of unique spin cases
   int nspincases1() const { return ::sc::nspincases1(spin_polarized()); }
   /// Returns the number of unique combinations of 2 spin cases
@@ -500,6 +638,8 @@ public:
                 const Ref<OrbitalSpace>& q);
   /// Compute \f$ P_{uv}^{xy} = \frac{1}{4} \bar{R}^{\alpha\beta}_{uv} \bar{g}_{\alpha\beta}^{\gamma\delta} \bar{R}_{\gamma\delta}^{xy}\f$ P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
+  /** Returns the cusp consistent coefficient \f$C_{ij}^{kl}\f$. */
+  double C_CuspConsistent(int i,int j,int k,int l,SpinCase2 pairspin);
 
   /// Returns the OBS singles MP2 energy
   double emp2_obs_singles();
@@ -525,8 +665,12 @@ public:
   const Ref<OrbitalSpace>& vir_act(SpinCase1 S) const;
   /// Returns the vir space for spin case S
   const Ref<OrbitalSpace>& vir(SpinCase1 S) const;
+  // same as GGspace()
+  const Ref<OrbitalSpace>& DEPRECATED xspace(SpinCase1 S) const;
   /// Returns the geminal-generating orbital space for spin case S
-  const Ref<OrbitalSpace>& xspace(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& GGspace(SpinCase1 S) const;
+  /// Returns the space for spin case S from which geminal-generating substitutions are allowed
+  const Ref<OrbitalSpace>& ggspace(SpinCase1 S) const;
 
   /// Form <P|h+J|x> space
   const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
@@ -642,6 +786,8 @@ public:
   const Ref<OrbitalSpace>& F_a_a(SpinCase1 S);
   /// Form <A|F|a> space
   const Ref<OrbitalSpace>& F_a_A(SpinCase1 S);
+  /// Form <A|F|A> space
+  const Ref<OrbitalSpace>& F_A_A(SpinCase1 S);
   /// Form <P|F|p> space
   const Ref<OrbitalSpace>& F_p_P(SpinCase1 S);
   /// Form <A|F|p> space
@@ -664,6 +810,18 @@ public:
   const Ref<OrbitalSpace>& J_i_P(SpinCase1 S);
   /// Form <P|J|P> space
   const Ref<OrbitalSpace>& J_P_P(SpinCase1 S);
+
+  /// Form <p|gamma|p> space
+  const Ref<OrbitalSpace>& gamma_p_p(SpinCase1 S);
+  /// Form <p|gammaFgamma|p> space
+  const Ref<OrbitalSpace>& gammaFgamma_p_p(SpinCase1 S);
+  /// Form <P|Fgamma|p> space
+  const Ref<OrbitalSpace>& Fgamma_p_P(SpinCase1 S);
+//  const Ref<OrbitalSpace>& Fgamma_P_p(SpinCase1 S,const RefSymmSCMatrix &gamma,Ref<OrbitalSpace>& FGamma);
+//  const Ref<OrbitalSpace>& gammaF_p_P(SpinCase1 S,const RefSymmSCMatrix &gamma,Ref<OrbitalSpace>& GammaF);
+  /** Form <A|obtensor|p> space
+   *  obtensor should have the dimension ncabs*norbs */
+  Ref<OrbitalSpace> obtensor_p_A(const RefSCMatrix &obtensor,SpinCase1 S);
 
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */
@@ -735,6 +893,7 @@ public:
   RefSCMatrix V_cabs(SpinCase2 spincase2,
                      const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
+
 
 };
 

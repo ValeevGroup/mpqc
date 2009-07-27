@@ -120,7 +120,7 @@ R12IntEval::compute_B_fX_()
     else { // bc = true, vbs==obs
 
       const int num_f12 = r12info()->corrfactor()->nfunctions();
-      const int nxy = dim_xy(spincase2).n();
+      const int nxy = dim_GG(spincase2).n();
       RefDiagSCMatrix evals_xspace1 = xspace1->evals();
       RefDiagSCMatrix evals_xspace2 = xspace2->evals();
 

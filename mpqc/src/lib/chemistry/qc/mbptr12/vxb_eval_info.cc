@@ -35,6 +35,7 @@
 #include <util/ref/ref.h>
 #include <util/misc/string.h>
 #include <util/class/scexception.h>
+#include <math/scmat/local.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -70,6 +71,9 @@ R12IntEvalInfo::R12IntEvalInfo(
     refinfo_(new SingleRefInfo(ref,nfzc,nfzv,delayed_initialization))
 {
   // Default values
+  for(int s=0; s<NSpinCases1; s++) {
+    opdm_[s] = 0;
+  }
   memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
   print_percent_ = 10.0;
@@ -197,6 +201,13 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     refinfo_ << SavableState::restore_state(si);
   }
 
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  for(int s=0; s<NSpinCases1; s++) {
+    SpinCase1 spin = static_cast<SpinCase1>(s);
+    opdm_[s] = local_matrix_kit->symmmatrix(refinfo_->orbs(spin)->dim());
+    opdm_[s].restore(si);
+  }
+
   obs_eq_vbs_ = refinfo_->ref()->basis()->equiv(bs_vir_);
   obs_eq_ribs_ = refinfo_->ref()->basis()->equiv(bs_ri_);
 
@@ -232,6 +243,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(fockbuild_runtime_.pointer(),so);
   SavableState::save_state(refinfo_.pointer(),so);
+  for(int s=0; s<NSpinCases1; s++) {
+    opdm_[s].save(so);
+  }
   so.put(initialized_);
 }
 
@@ -306,16 +320,20 @@ R12IntEvalInfo::initialize()
 
         // create MO integrals runtime
         moints_runtime_ = new MOIntsRuntime(tfactory_, bs_df_);
+        Ref<SCF> ref = refinfo()->ref();
         // and Fock build runtime
         RefSymmSCMatrix Pa, Pb;
-        Ref<SCF> ref = refinfo()->ref();
-        if (!ref->spin_polarized()) {
-          Pa = ref->ao_density();  Pa.scale(0.5);
-          Pb = Pa;
-        }
-        else {
-          Pa = ref->alpha_ao_density();
-          Pb = ref->beta_ao_density();
+        if (opdm_[Alpha].null()) {
+          if (!ref->spin_polarized()) {
+            Pa = ref->ao_density();  Pa.scale(0.5);
+            Pb = Pa;
+          }
+          else {
+            Pa = ref->alpha_ao_density();
+            Pb = ref->beta_ao_density();
+          }
+        } else { // user supplied densities should be provided via set_opdm() after initialize()
+          assert(false);
         }
         // use Integral used by reference wfn!
         fockbuild_runtime_ = new FockBuildRuntime(basis(), Pa, Pb, ref->integral(),
@@ -370,6 +388,51 @@ R12IntEvalInfo::set_memory(const size_t memory)
   if (memory > 0)
     memory_ = memory;
   tfactory_->set_memory(memory_);
+}
+
+void R12IntEvalInfo::set_opdm(const RefSymmSCMatrix &opdm_a,const RefSymmSCMatrix &opdm_b) {
+  if (opdm_a.null() || opdm_b.null())
+    throw ProgrammingError("R12IntEvalInfo::set_opdm -- null arguments given");
+  opdm_[Alpha] = opdm_a;
+  opdm_[Beta] = opdm_b;
+  { // update FockBuildRuntime
+    RefSymmSCMatrix Pa, Pb;
+    // transform to AO basis
+    { // Alpha
+      Ref<OrbitalSpace> orbs = refinfo()->orbs(Alpha);
+      RefSCMatrix C = orbs->coefs();
+      Pa = C.kit()->symmmatrix(C.rowdim()); Pa.assign(0.0);
+      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim()); opdm_blkd->convert(opdm_a);
+      Pa.accumulate_transform(C, opdm_blkd);
+    }
+    if (opdm_a != opdm_b) {
+      Ref<OrbitalSpace> orbs = refinfo()->orbs(Beta);
+      RefSCMatrix C = orbs->coefs();
+      Pb = C.kit()->symmmatrix(C.rowdim()); Pb.assign(0.0);
+      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim()); opdm_blkd->convert(opdm_b);
+      Pb.accumulate_transform(C, opdm_blkd);
+    }
+    else
+      Pb = Pa;
+    fockbuild_runtime_->set_densities(Pa, Pb);
+  }
+}
+
+RefSymmSCMatrix R12IntEvalInfo::opdm(const SpinCase1 &spin) const {
+  return(opdm_[spin]);
+}
+
+bool R12IntEvalInfo::opdm_is_zero() const {
+  int nzero_opdm=0;
+  for(int s=0; s<NSpinCases1; s++) {
+    if(opdm_[s]==0) {
+      ++nzero_opdm;
+    }
+  }
+  if(nzero_opdm!=0 && nzero_opdm!=NSpinCases1) {
+    throw ProgrammingError("Error in R12IntEvalInfo::opdm_is_zero() -- opdm for only some and not all SpinCases1 is zero.",__FILE__,__LINE__);
+  }
+  return((nzero_opdm==0) ?  false : true);
 }
 
 void

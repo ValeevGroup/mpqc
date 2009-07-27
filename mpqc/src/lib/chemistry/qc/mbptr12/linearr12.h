@@ -64,11 +64,18 @@ namespace sc {
       ABS_CABS = 2,
       ABS_CABSPlus = 3};
 
-    enum OrbitalProduct {
-      OrbProd_ij = 0,
-      OrbProd_pq = 1
+    /// geminal generating space
+    enum OrbitalProduct_GG {
+      OrbProdGG_ij = 0,
+      OrbProdGG_pq = 1,
     };
-
+    
+    /// space of orbital products from which geminal substitutions are allowed
+    enum OrbitalProduct_gg {
+      OrbProdgg_ij = 0,
+      OrbProdgg_pq = 1,
+    };
+    
     enum PositiveDefiniteB {
       PositiveDefiniteB_no = 0,
       PositiveDefiniteB_yes = 1,

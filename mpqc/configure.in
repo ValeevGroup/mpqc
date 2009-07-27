@@ -1957,9 +1957,11 @@ if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes -a X$HAVE_LIBCHKPT
   dnl - libdpd's dpd_init requires libciomr
   LIBS="$PSILIBS $SAVELIBS"
   AC_CHECK_LIB(PSI_dpd,dpd_init,[HAVE_LIBDPD=yes;PSILIBS="-lPSI_dpd $PSILIBS"],HAVE_LIBDPD=no)
+  dnl - libiwl's iwl_buf_close requires libpsio
+  AC_CHECK_LIB(PSI_iwl,iwl_buf_close,[HAVE_LIBIWL=yes;PSILIBS="-lPSI_iwl $PSILIBS"],HAVE_LIBIWL=no)  
   AC_LANG_RESTORE
   
-  if test X$HAVE_LIBCIOMR = Xyes -a X$HAVE_LIBDPD = Xyes; then
+  if test X$HAVE_LIBCIOMR = Xyes -a X$HAVE_LIBDPD = Xyes -a X$HAVE_LIBIWL = Xyes; then
     HAVE_OTHER_PSILIBS=yes
     LIBS="$PSILIBS $SAVELIBS"
   else

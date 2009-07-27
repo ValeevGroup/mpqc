@@ -285,6 +285,9 @@ void
 MP2R12Energy_SpinOrbital::init_()
 {
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+  if(r12info->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+    throw InputError("MP2R12Energy_SpinOrbital::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
+  }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
@@ -823,6 +826,9 @@ void
 MP2R12Energy_SpinOrbital_new::init_()
 {
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+  if(r12info->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+    throw InputError("MP2R12Energy_SpinOrbital_new::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
+  }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();

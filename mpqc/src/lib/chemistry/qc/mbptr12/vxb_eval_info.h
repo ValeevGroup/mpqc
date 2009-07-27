@@ -50,8 +50,6 @@
 
 namespace sc {
 
-class MBPT2_R12;
-
   /** Class R12IntEvalInfo contains information necessary for R12 intermediate
       evaluators */
 
@@ -62,7 +60,7 @@ class R12IntEvalInfo : virtual public SavableState {
 
 public:
 
-  /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
+  /// Describes the method of storing transformed MO integrals.
   typedef MOIntsTransform::StoreMethod StoreMethod;
 
   /// Maintains virtual orbitals and RI space info if VBS != OBS
@@ -84,6 +82,7 @@ private:
 
   /// R12IntEval must be owned by a Wavefunction
   Wavefunction* wfn_;
+  RefSymmSCMatrix opdm_[NSpinCases1];  //< open-electron densities in hartree-fock MO basis
   Ref<R12Technology> r12tech_;
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
@@ -219,6 +218,9 @@ public:
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
   void set_memory(const size_t nbytes);
+  void set_opdm(const RefSymmSCMatrix &opdm_a,const RefSymmSCMatrix &opdm_b);
+  RefSymmSCMatrix opdm(const SpinCase1 &spin) const;
+  bool opdm_is_zero() const;
 
   Wavefunction* wfn() const { return wfn_; }
   Ref<R12Technology> r12tech() const { return r12tech_; }

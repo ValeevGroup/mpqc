@@ -400,8 +400,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // Default constructor for LinearR12Ansatz specifies the default
   if (ansatz_.null())
     ansatz_ = new LinearR12Ansatz;
-  if (ansatz()->projector() == LinearR12::Projector_1)
-    throw InputError("R12Technology::R12Technology -- projector 1 has not been implemented yet",__FILE__,__LINE__);
+  if (ansatz()->projector() == LinearR12::Projector_1 && stdapprox() != LinearR12::StdApprox_C)
+    throw InputError("R12Technology::R12Technology -- projector 1 has not been implemented yet for a standard approximation other than C",__FILE__,__LINE__);
   if (ansatz()->projector() == LinearR12::Projector_3)
     throw InputError("R12Technology::R12Technology -- projector 3 is obsolete",__FILE__,__LINE__);
 
@@ -519,6 +519,7 @@ R12Technology::save_data_state(StateOut& s)
   s.put((int)omit_B_);
   s.put((int)H0_dk_approx_pauli_);
   s.put((int)H0_dk_keep_);
+  s.put((int)omit_B_);
 }
 
 void

@@ -60,86 +60,74 @@ R12IntEval::init_intermeds_g12_()
 
       const Ref<OrbitalSpace>& occ1 = occ(spin1);
       const Ref<OrbitalSpace>& occ2 = occ(spin2);
+      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
       const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
       const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
-      const Ref<OrbitalSpace>& obs1 = refinfo->orbs(spin1);
-      const Ref<OrbitalSpace>& obs2 = refinfo->orbs(spin2);
       const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
       const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-
+      const Ref<OrbitalSpace>& gg1space = ggspace(spin1);
+      const Ref<OrbitalSpace>& gg2space = ggspace(spin2);
+      const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
+      const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
+      
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1 == occ2);
       const bool x1_eq_x2 = (xspace1 == xspace2);
-      if (occ1_eq_occ2 ^ x1_eq_x2) {
-	  throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- this orbital_product cannot be handled yet",__FILE__,__LINE__);
+      const bool gg1_eq_gg2 = (gg1space == gg2space);
+      const bool GG1_eq_GG2 = (GG1space == GG2space);
+      if(gg1_eq_gg2 ^ GG1_eq_GG2) {
+        throw ProgrammingError("R12IntEval::init_intermeds_g12_ -- this orbital_product cannot be handled yet",__FILE__,__LINE__);
       }
 
       // are particles 1 and 2 equivalent?
-      const bool part1_equiv_part2 =  spincase2 != AlphaBeta || occ1_eq_occ2;
+      const bool part1_equiv_part2 =  spincase2 != AlphaBeta || gg1_eq_gg2;
       // Need to antisymmetrize 1 and 2
       const bool antisymmetrize = spincase2 != AlphaBeta;
 
       // some transforms can be skipped if occ1/occ2 is a subset of x1/x2
       // for now it's always true since can only use ij and pq products to generate geminals
       const bool occ12_in_x12 = true;
+      const bool gg1_in_gg2 = true;
 
-      std::vector<std::string> tforms_f12_xiyj_keys;
-      {
-      // xiyj is needed, but it's a subset of integrals needed later
-	  // use xmyn if OBS != VBS
-      // use xpyq if OBS == VBS
-      if (obs_eq_vbs) {
+      std::vector<std::string> tforms_f12_xmyn_keys;
         R12TwoBodyIntKeyCreator tformkey_creator(
           r12info()->moints_runtime4(),
-          xspace1,
-          obs1,
-          xspace2,
-          obs2,
+          GG1space,
+          gg1space,
+          GG2space,
+          gg2space,
           r12info()->corrfactor(),
           true
           );
-        fill_container(tformkey_creator,tforms_f12_xiyj_keys);
-      }
-      else {
-        R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
-	      xspace1,
-	      occ1,
-	      xspace2,
-	      occ2,
-	      r12info()->corrfactor(),
-          true
-	      );
-        fill_container(tformkey_creator,tforms_f12_xiyj_keys);
-      }
-      }
+        fill_container(tformkey_creator,tforms_f12_xmyn_keys);
 
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
 	  V_[s], corrfactor()->tbint_type_f12eri(),
-	  xspace1, occ1_act,
-	  xspace2, occ2_act,
+      GG1space, gg1space,
+      GG2space, gg2space,
 	  antisymmetrize,
-	  tforms_f12_xiyj_keys
+	  tforms_f12_xmyn_keys
 	  );
 
+      // g12*g12' operator
       std::vector<std::string> tforms_f12f12_xzyw_keys;
       {
       R12TwoBodyIntKeyCreator tformkey_creator(
           r12info()->moints_runtime4(),
-          xspace1,
-          xspace1,
-          xspace2,
-          xspace2,
+          GG1space,
+          GG1space,
+          GG2space,
+          GG2space,
           r12info()->corrfactor(),
           true,true
           );
       fill_container(tformkey_creator,tforms_f12f12_xzyw_keys);
       }
-      // g12*g12' operator
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
       X_[s], corrfactor()->tbint_type_f12f12(),
-      xspace1, xspace1,
-      xspace2, xspace2,
+      GG1space, GG1space,
+      GG2space, GG2space,
       antisymmetrize,
       tforms_f12f12_xzyw_keys
       );
@@ -148,12 +136,12 @@ R12IntEval::init_intermeds_g12_()
       // where the last step valid is for 2 primitive gaussians only (must be contracted otherwise)
       // The first term is symmetric with respect to permutation of g12 and g12' and computed directly,
       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-	  B_[s], corrfactor()->tbint_type_f12t1f12(),
-	  xspace1, xspace1,
-	  xspace2, xspace2,
-	  antisymmetrize,
+      B_[s], corrfactor()->tbint_type_f12t1f12(),
+      GG1space, GG1space,
+      GG2space, GG2space,
+      antisymmetrize,
 	  tforms_f12f12_xzyw_keys
-	  );
+      );
       // the second is antisymmetric wrt such permutation and is only needed when number of geminals > 1
       if (r12info()->corrfactor()->nfunctions() > 1) {
 
@@ -166,20 +154,20 @@ R12IntEval::init_intermeds_g12_()
 	      stdapprox() == LinearR12::StdApprox_B) {
 	      // 1) in standard approximations A and B the commutators are explicitly evaluated:
 	      //    the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
-	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-		  Banti, corrfactor()->tbint_type_t1f12(),
-		  xspace1, xspace1,
-		  xspace2, xspace2,
-		  antisymmetrize,
-		  tforms_f12f12_xzyw_keys
-		  );
-	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
-		  Banti, corrfactor()->tbint_type_t2f12(),
-		  xspace1, xspace1,
-		  xspace2, xspace2,
-		  antisymmetrize,
-		  tforms_f12f12_xzyw_keys
-		  );
+	       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+	       Banti, corrfactor()->tbint_type_t1f12(),
+	       GG1space, GG1space,
+	       GG2space, GG2space,
+	       antisymmetrize,
+           tforms_f12f12_xzyw_keys
+	       );
+	       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+           Banti, corrfactor()->tbint_type_t2f12(),
+           GG1space, GG1space,
+           GG2space, GG2space,
+           antisymmetrize,
+           tforms_f12f12_xzyw_keys
+           );
 	  }
 	  else {
 	      // 2) in standard approximation C the commutators are evaluated via RI:
@@ -193,7 +181,7 @@ R12IntEval::init_intermeds_g12_()
 	      std::vector<std::string> tforms_xyHz_keys;
 	      {
 		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
-		                                           xspace1,hj_x1,xspace2,xspace2,
+		                                           GG1space,hj_x1,GG2space,GG2space,
 		                                           r12info()->corrfactor(),
 		                                           true,true);
 		  fill_container(tformkey_creator,tforms_xyHz_keys);
@@ -202,7 +190,7 @@ R12IntEval::init_intermeds_g12_()
 	      std::vector<std::string> tforms_Hzxy_keys;
 	      {
 		  R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
-		                                           hj_x1,xspace1,xspace2,xspace2,
+		                                           hj_x1,GG1space,GG2space,GG2space,
 		                                           r12info()->corrfactor(),
 		                                           true,true);
 		  fill_container(tformkey_creator,tforms_Hzxy_keys);
@@ -210,15 +198,15 @@ R12IntEval::init_intermeds_g12_()
 
 	      compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 		  Banti, corrfactor()->tbint_type_f12f12_anti(),
-		  xspace1, hj_x1,
-		  xspace2, xspace2,
+          GG1space, hj_x1,
+          GG2space, GG2space,
 		  antisymmetrize,
 		  tforms_xyHz_keys
 		  );
 	      compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
 		  Banti, corrfactor()->tbint_type_f12f12_anti(),
-		  hj_x1, xspace1,
-		  xspace2, xspace2,
+          hj_x1, GG1space,
+          GG2space, GG2space,
 		  antisymmetrize,
 		  tforms_Hzxy_keys
 		  );
@@ -228,7 +216,7 @@ R12IntEval::init_intermeds_g12_()
 		  std::vector<std::string> tforms_xyzH_keys;
 		  {
 		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
-		                                               xspace1,xspace1,xspace2,hj_x2,
+		                                               GG1space,GG1space,GG2space,hj_x2,
 		                                               r12info()->corrfactor(),
 		                                               true,true);
 		      fill_container(tformkey_creator,tforms_xyzH_keys);
@@ -237,7 +225,7 @@ R12IntEval::init_intermeds_g12_()
 		  std::vector<std::string> tforms_zHxy_keys;
 		  {
 		      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
-		                                               xspace1,xspace1,hj_x2,xspace2,
+		                                               GG1space,GG1space,hj_x2,GG2space,
 		                                               r12info()->corrfactor(),
 		                                               true,true);
 		      fill_container(tformkey_creator,tforms_zHxy_keys);
@@ -245,23 +233,23 @@ R12IntEval::init_intermeds_g12_()
 
 		  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
 		      Banti, corrfactor()->tbint_type_f12f12_anti(),
-		      xspace1, xspace2,
-		      xspace2, hj_x2,
+		      GG1space, GG1space,
+              GG2space, hj_x2,
 		      antisymmetrize,
 		      tforms_xyzH_keys
 		      );
 		  compute_tbint_tensor<ManyBodyTensors::I_to_mT,true,true>(
 		      Banti, corrfactor()->tbint_type_f12f12_anti(),
-		      xspace1, xspace1,
-		      hj_x2, xspace2,
+              GG1space, GG1space,
+              hj_x2, GG2space,
 		      antisymmetrize,
 		      tforms_zHxy_keys
 		      );
 	      }
 	      else {
                   // contribution from particle 2 is the same as from particle 1
-		  Banti.scale(2.0);
-                  symmetrize<false>(Banti,Banti,xspace1,xspace1);
+		    Banti.scale(2.0);
+            symmetrize<false>(Banti,Banti,GG1space,GG1space);
 	      }
 	  }
 	  Banti.scale(-0.5);

@@ -31,6 +31,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <math/scmat/abstract.h>
+#include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
@@ -55,6 +56,29 @@ MBPT2_R12::compute_energy_()
 
   const Ref<R12IntEvalInfo>& r12info = r12evalinfo_;
   r12info->initialize();
+
+  // test app. C general-density B builder by feeding HF densities to it
+#define TEST_GENERAL_FOCK_BUILD 0
+#if TEST_GENERAL_FOCK_BUILD
+  {
+    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+    RefSymmSCMatrix P[2];
+    for(int s=0; s<NSpinCases1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      Ref<OrbitalSpace> occ = r12info->refinfo()->occ(spin);
+      Ref<OrbitalSpace> orbs = r12info->refinfo()->orbs(spin);
+      std::vector<unsigned int> occ2orbs = (*orbs << *occ);
+      P[s] = localkit->symmmatrix(new SCDimension(orbs->rank()));
+      P[s].assign(0.0);
+      for(std::vector<unsigned int>::iterator i=occ2orbs.begin();
+          i!=occ2orbs.end();
+          ++i)
+        P[s](*i, *i) = 1.0;
+    }
+    r12info->set_opdm(P[0], P[1]);
+  }
+#endif
+
   if (r12eval_.null()) {
     // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
     r12evalinfo_->set_print_percent(print_percent_);

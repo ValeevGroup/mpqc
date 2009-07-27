@@ -117,7 +117,7 @@ void
 SingleRefInfo::initialize()
 {
   if (!initialized_) {
-    if (!spin_polarized())
+    if (!spin_unrestricted())
       init_spinindependent_spaces();
     init_spinspecific_spaces();
     initialized_ = true;
@@ -133,8 +133,15 @@ SingleRefInfo::ref() const
 bool
 SingleRefInfo::spin_polarized() const
 {
-  // false for closed-shell, true for any open-shell (will use semicanonical orbitals for HSOSHF).
+  // false for closed-shell, true for any open-shell (will use semicanonical orbitals for HSOSSCF).
   return ref()->spin_polarized();
+}
+
+bool
+SingleRefInfo::spin_unrestricted() const
+{
+  // false for CLSCF, HSOSSCF, true for USCF
+  return ref()->spin_unrestricted();
 }
 
 unsigned int
@@ -162,6 +169,7 @@ SingleRefInfo::init_spinspecific_spaces()
     bocc.push_back(ref()->beta_occupation(mo));
   }
   Ref<PetiteList> plist = ref()->integral()->petite_list();
+  
   if (spin_polarized()) {
     RefSCMatrix alpha_evecs, beta_evecs;
     RefDiagSCMatrix alpha_evals, beta_evals;
@@ -252,7 +260,7 @@ const Ref<OrbitalSpace>&
 SingleRefInfo::orbs_sb() const
 {
   // can throw
-  throw_if_spin_polarized();
+  throw_if_spin_unrestricted();
   return orbs_sb_;
 }
 
@@ -260,7 +268,7 @@ const Ref<OrbitalSpace>&
 SingleRefInfo::orbs() const
 {
   // can throw
-  throw_if_spin_polarized();
+  throw_if_spin_unrestricted();
   return orbs_;
 }
 
@@ -372,6 +380,14 @@ SingleRefInfo::throw_if_spin_polarized() const
 {
   if (spin_polarized())
     throw ProgrammingError("SingleRefInfo -- spin-independent space is requested but the reference function is spin-polarized",
+        __FILE__,__LINE__);
+}
+
+void
+SingleRefInfo::throw_if_spin_unrestricted() const
+{
+  if (spin_unrestricted())
+    throw ProgrammingError("SingleRefInfo -- spin-independent subspace is requested but the reference function is spin-unrestricted",
         __FILE__,__LINE__);
 }
 

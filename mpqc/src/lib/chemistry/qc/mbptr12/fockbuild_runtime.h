@@ -76,6 +76,10 @@ namespace sc {
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
 
+      /// sets AO densities. Unless these are identical to the current densities, contents will be cleared.
+      void set_densities(const RefSymmSCMatrix& aodensity_alpha,
+                         const RefSymmSCMatrix& aodensity_beta);
+
     private:
 
       // set to 1 to debug this class

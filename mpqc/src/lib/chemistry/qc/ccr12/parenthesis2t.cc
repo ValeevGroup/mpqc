@@ -21,8 +21,8 @@ Parenthesis2t::~Parenthesis2t(){
 }
 
 
-double Parenthesis2t::compute(Parenthesis2tNum* eval_left, 
-                              Parenthesis2tNum* eval_right){
+double Parenthesis2t::compute(Ref<Parenthesis2tNum> eval_left, 
+                              Ref<Parenthesis2tNum> eval_right){
 
  double energy=0.0;
  double* dummy;

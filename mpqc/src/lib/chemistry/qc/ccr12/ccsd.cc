@@ -150,9 +150,9 @@ void CCSD::compute(){
 
     // ccsd(t) calls specific driver, because it is a bit
     // different from others (i.e. (2)t etc)
-    Ref<CCSD_PT_LEFT>   eval_left = new CCSD_PT_LEFT(info());
+    Ref<CCSD_PT_LEFT> eval_left = new CCSD_PT_LEFT(info());
     Ref<CCSD_PT_RIGHT> eval_right = new CCSD_PT_RIGHT(info());
-    Ref<CCSD_PT>          ccsd_pt = new CCSD_PT(info());
+    Ref<CCSD_PT> ccsd_pt = new CCSD_PT(info());
     const double ccsd_pt_correction = ccsd_pt->compute(eval_left,eval_right);
     print_correction(ccsd_pt_correction, energy, "CCSD(T)");
 

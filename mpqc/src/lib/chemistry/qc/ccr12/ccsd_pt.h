@@ -31,7 +31,7 @@ class CCSD_PT : public Parenthesis2t {
   public:
    CCSD_PT(CCR12_Info* info);
    
-   double compute(Ref<CCSD_PT_LEFT>&, Ref<CCSD_PT_RIGHT>&);
+   double compute(Ref<Parenthesis2tNum>, Ref<Parenthesis2tNum>);
 
 };
 

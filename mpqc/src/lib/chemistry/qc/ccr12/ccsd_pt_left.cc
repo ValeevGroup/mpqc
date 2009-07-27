@@ -16,10 +16,6 @@ CCSD_PT_LEFT::CCSD_PT_LEFT(CCR12_Info* info):Parenthesis2tNum(info){};
   
 void CCSD_PT_LEFT::compute_amp(double* a_i0,const long t_p4b,const long t_p5b,const long t_p6b,const long t_h1b,const long t_h2b,const long t_h3b,const long toggle){
   
-in.resize(8);
-kn.resize(64);
-i1xn.resize(16);
-  
 if (toggle==2L) {
 smith_0_1(a_i0,t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b);
 }

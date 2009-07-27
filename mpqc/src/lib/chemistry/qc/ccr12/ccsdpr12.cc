@@ -23,6 +23,9 @@
 #include <chemistry/qc/ccr12/ccsdpr12_t1.h>
 #include <chemistry/qc/ccr12/ccsdpr12_t2.h>
 #include <chemistry/qc/ccr12/lambdapenergy.h>
+#include <chemistry/qc/ccr12/ccsd_pt.h>
+#include <chemistry/qc/ccr12/ccsd_r12_pt_right.h>
+#include <chemistry/qc/ccr12/ccsd_pt_left.h>
 
 using namespace std;
 using namespace sc;
@@ -142,6 +145,22 @@ void CCSDPR12::compute(){
     print_correction(lambda_corr, energy, "Lambda contribution");
     energy += lambda_corr;
     delete lambda_correction;
+  }
+
+  // using BOTH T2 and geminal amplitudes
+  if (perturbative_ == "(T)") {
+    timer_->enter("(T) correction");
+    iter_start = timer_->get_wall_time();
+
+    Ref<CCSD_PT_LEFT> eval_left = new CCSD_PT_LEFT(info());
+    Ref<CCSD_R12_PT_RIGHT> eval_right = new CCSD_R12_PT_RIGHT(info());
+    Ref<CCSD_PT> ccsd_pt = new CCSD_PT(info());
+    const double ccsd_pt_correction = ccsd_pt->compute(eval_left, eval_right);
+    print_correction(ccsd_pt_correction, energy, "CCSD(T)-R12");
+
+    print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
+    timer_->exit("(T) correction");
+    energy += ccsd_pt_correction;
   }
 
 

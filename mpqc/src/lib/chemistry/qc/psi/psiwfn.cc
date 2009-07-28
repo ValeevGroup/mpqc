@@ -2662,9 +2662,6 @@ namespace sc {
     const Ref<OrbitalSpace>& f_p_A2 = r12eval_->F_p_A(spin2);
 
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    RefSCMatrix A = localkit->matrix(r12eval_->dim_GG(pairspin),r12eval_->dim_gg(pairspin));
-    A.assign(0.0);
-
     RefSCMatrix V_genref = localkit->matrix(r12eval_->dim_GG(pairspin),r12eval_->dim_gg(pairspin));
     V_genref.assign(0.0);
 
@@ -2679,6 +2676,9 @@ namespace sc {
     //
     // ij|A|kl = ij|f12|kl_f, symmetrized if part1_equiv_part2
     //
+    RefSCMatrix A = localkit->matrix(r12eval_->dim_GG(pairspin),r12eval_->dim_gg(pairspin));
+    A.assign(0.0);
+
     {
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       {
@@ -3041,7 +3041,10 @@ namespace sc {
     phi.assign(0.0);
     phi.accumulate(tpdm*J);
 
-    if(debug_>=DefaultPrintThresholds::mostN4) {
+    // redefined the sign for phi to correspond directly to the Fock operator
+    phi.scale(-1.0);
+
+    if(debug_>=DefaultPrintThresholds::mostO4) {
       phi->print(prepend_spincase(pairspin,"phi").c_str());
     }
 
@@ -3052,7 +3055,6 @@ namespace sc {
   // In this function, the statements commented out with "#if 0" would be more
   // efficient, but are not tested yet.
   RefSCMatrix PsiCorrWavefunction_PT2R12::phi(SpinCase2 pairspin) {
-    double energ_PT2R12[NSpinCases2];
     RefSCMatrix fmat[NSpinCases1];
     RefSymmSCMatrix opdm[NSpinCases1];
     RefSymmSCMatrix tpdm[NSpinCases2];
@@ -3176,6 +3178,11 @@ namespace sc {
           }
         }
       }  // i!=Alpha
+
+      const SpinCase1 spin = static_cast<SpinCase1>(i);
+      L[i].print(prepend_spincase(spin,"K").c_str());
+      I[i].print(prepend_spincase(spin,"I").c_str());
+      M[i].print(prepend_spincase(spin,"M").c_str());
 
     }
 
@@ -3347,14 +3354,253 @@ namespace sc {
 #endif
     }  // pairspin!=AlphaBeta
 
-    if(debug_>=DefaultPrintThresholds::mostN4) {
+    // redefined sign so that phi corresponds to the Fock matrix
+    phi.scale(-1.0);
+
+    if(debug_>=DefaultPrintThresholds::mostO4) {
       phi->print(prepend_spincase(pairspin,"phi").c_str());
     }
 
     return(phi);
   }
 
-  double PsiCorrWavefunction_PT2R12::energy_PT2R12(SpinCase2 pairspin) {
+  RefSymmSCMatrix PsiCorrWavefunction_PT2R12::phi_cumulant(SpinCase2 spin12) {
+    RefSCMatrix fmat[NSpinCases1];
+    RefSymmSCMatrix opdm[NSpinCases1];
+    RefSymmSCMatrix tpcm[NSpinCases2];
+
+    for(int s=0; s<NSpinCases1; s++) {
+      SpinCase1 spin = static_cast<SpinCase1>(s);
+      fmat[s] = f(spin);
+      opdm[s] = onepdm_refmo(spin);
+    }
+    const int nmo = opdm[0].dim().n();
+
+    // R12 intermediates, transformed with geminal amplitude matrix
+    for(int i=0; i<NSpinCases2; i++) {
+      SpinCase2 S = static_cast<SpinCase2>(i);
+      tpcm[i] = lambda_refmo(S);
+    }
+
+    // precompute intermediates
+    RefSCMatrix K[NSpinCases1];   // \gamma f
+    RefSCMatrix I[NSpinCases1];   // \gamma f \gamma
+    RefSCMatrix M[NSpinCases1];   // trace(f lambda)
+    for(int i=0; i<NSpinCases1; i++) {
+      K[i] = fmat[i].clone();
+      K[i].assign(0.0);
+      for(int u=0; u<nmo; u++) {
+        for(int z=0; z<nmo; z++) {
+          for(int y=0; y<nmo; y++) {
+            K[i].accumulate_element(u,z,opdm[i].get_element(u,y)*fmat[i].get_element(y,z));
+          }
+        }
+      }
+      I[i] = fmat[i].clone();
+      I[i].assign(0.0);
+      for(int q=0; q<nmo; q++) {
+        for(int v=0; v<nmo; v++) {
+          for(int z=0; z<nmo; z++) {
+              I[i].accumulate_element(q,v,K[i].get_element(q,z)*opdm[i].get_element(z,v));
+          }
+        }
+      }
+    }
+#if 0
+    for(int s=0; s<NSpinCases1; ++s) {
+      K[s] = opdm[s] * fmat[s];
+      I[s] = K[s] * opdm[s];
+    }
+#endif
+
+    M[Alpha] = fmat[Alpha].clone(); M[Alpha].assign(0.0);
+    M[Beta] = fmat[Beta].clone(); M[Beta].assign(0.0);
+    // each M has contributions from 2 pairspincases
+    // AlphaAlpha contributes to Alpha only
+    for(int P=0; P<nmo; ++P) {
+      for(int Q=0; Q<nmo; ++Q) {
+        int PQ_aa, sign_PQ=+1;
+        if (P > Q) {
+          PQ_aa = P*(P-1)/2 + Q;
+        }
+        else {
+          PQ_aa = Q*(Q-1)/2 + P;
+          sign_PQ = -1;
+        }
+        const int PQ_ab = P * nmo + Q;
+        const int QP_ab = Q * nmo + P;
+        for(int U=0; U<nmo; ++U) {
+          for(int V=0; V<nmo; ++V) {
+            int UV_aa, sign_UV=+1;
+            if (U > V) {
+              UV_aa = U*(U-1)/2 + V;
+            }
+            else {
+              UV_aa = V*(V-1)/2 + U;
+              sign_UV = -1;
+            }
+            const int UV_ab = U * nmo + V;
+            const int VU_ab = V * nmo + U;
+
+            double M_PU_a = 0.0;
+            double M_PU_b = 0.0;
+            if (P!=Q && U!=V) {
+              M_PU_a += sign_PQ * sign_UV * fmat[Alpha].get_element(Q, V) * tpcm[AlphaAlpha].get_element(PQ_aa, UV_aa);
+              M_PU_b += sign_PQ * sign_UV * fmat[Beta].get_element(Q, V) * tpcm[BetaBeta].get_element(PQ_aa, UV_aa);
+            }
+            M_PU_a += fmat[Beta].get_element(Q, V) * tpcm[AlphaBeta].get_element(PQ_ab, UV_ab);
+            M_PU_b += fmat[Alpha].get_element(Q, V) * tpcm[AlphaBeta].get_element(QP_ab, VU_ab);
+            M[Alpha].accumulate_element(P, U, M_PU_a);
+            M[Beta].accumulate_element(P, U, M_PU_b);
+          }
+        }
+      }
+    }
+
+    for(int s=0; s<NSpinCases1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      K[s].print(prepend_spincase(spin,"K new").c_str());
+      I[s].print(prepend_spincase(spin,"I new").c_str());
+      M[s].print(prepend_spincase(spin,"M new").c_str());
+    }
+
+    // compute phi:
+    // \phi^{u v}_{p q} = & P(p q) P(u v) (\gamma^u_p \gamma^{q_3}_q f^{q_2}_{q_3} \gamma^v_{q_2}
+    //                                     + \frac{1}{2} \gamma^v_{q_2} f^{q_2}_{q_3} \lambda^{u q_3}_{p q}
+    //                                     + \frac{1}{2} \gamma^{q_2}_p f^{q_3}_{q_2} \lambda^{u v}_{q_3 q}
+    //                                     - \gamma^u_p f^{q_2}_{q_3} \lambda^{q_3 v}_{q_2 q})
+    RefSymmSCMatrix phi = tpcm[spin12].clone();
+    phi.assign(0.0);
+    const SpinCase1 spin1 = case1(spin12);
+    const SpinCase1 spin2 = case2(spin12);
+
+    if (spin12 == AlphaBeta) {
+      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),spin12);
+      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),spin12);
+      for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
+        int P = PQ_iter.i();
+        int Q = PQ_iter.j();
+        int PQ = PQ_iter.ij();
+        for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
+          int U = UV_iter.i();
+          int V = UV_iter.j();
+          int UV = UV_iter.ij();
+
+          // first term is easy
+          double phi_PQ_UV = (   I[Alpha].get_element(P, U) * opdm[Beta].get_element(Q, V) +
+                              opdm[Alpha].get_element(P, U) *    I[Beta].get_element(Q, V)
+                             );
+
+          // second and third terms contain contributions from the cumulant of same spin
+          for(int Q3=0; Q3<nmo; ++Q3) {
+            int UQ3 = U * nmo + Q3;
+            int Q3V = Q3 * nmo + V;
+            int PQ3 = P * nmo + Q3;
+            int Q3Q = Q3 * nmo + Q;
+            // +1 instead of +1/2 because there are 2 permutation operators!
+            phi_PQ_UV += (tpcm[AlphaBeta].get_element(PQ, UQ3) * K[Beta].get_element(V, Q3) +
+                          tpcm[AlphaBeta].get_element(PQ, Q3V) * K[Alpha].get_element(U, Q3) +
+                          tpcm[AlphaBeta].get_element(PQ3, UV) * K[Beta].get_element(Q, Q3) +
+                          tpcm[AlphaBeta].get_element(Q3Q, UV) * K[Alpha].get_element(P, Q3)
+                         );
+          }
+
+          // fourth term is also easy
+          phi_PQ_UV -= (   M[Alpha].get_element(P, U) * opdm[Beta].get_element(Q, V) +
+                        opdm[Alpha].get_element(P, U) *    M[Beta].get_element(Q, V)
+                       );
+
+          phi(PQ,UV) = phi_PQ_UV;
+        }
+      }
+    }
+    else if (spin12 == AlphaAlpha || spin12 == BetaBeta) {
+      const SpinCase1 spin = spin1;
+      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),spin12);
+      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),spin12);
+      for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
+        int P = PQ_iter.i();
+        int Q = PQ_iter.j();
+        int PQ = PQ_iter.ij();
+        for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
+          int U = UV_iter.i();
+          int V = UV_iter.j();
+          int UV = UV_iter.ij();
+
+          // first term is easy
+          double phi_PQ_UV = (   I[spin].get_element(P, U) * opdm[spin].get_element(Q, V) +
+                              opdm[spin].get_element(P, U) *    I[spin].get_element(Q, V) -
+                                 I[spin].get_element(P, V) * opdm[spin].get_element(Q, U) -
+                              opdm[spin].get_element(P, V) *    I[spin].get_element(Q, U)
+                             );
+
+          // second and third terms contain contributions from the cumulant of same spin
+          // +1 instead of +1/2 because there are 2 permutation operators!
+          // V
+          for(int Q3=0; Q3<U; ++Q3) {
+            const int UQ3 = U * (U-1)/2 + Q3;
+            phi_PQ_UV += tpcm[spin12].get_element(PQ, UQ3) * K[spin].get_element(V, Q3);
+          }
+          for(int Q3=U+1; Q3<nmo; ++Q3) {
+            const int Q3U = Q3 * (Q3-1)/2 + U;
+            // - sign!
+            phi_PQ_UV -= tpcm[spin12].get_element(PQ, Q3U) * K[spin].get_element(V, Q3);
+          }
+          // U
+          for(int Q3=0; Q3<V; ++Q3) {
+            const int VQ3 = V * (V-1)/2 + Q3;
+            // - sign!
+            phi_PQ_UV -= tpcm[spin12].get_element(PQ, VQ3) * K[spin].get_element(U, Q3);
+          }
+          for(int Q3=V+1; Q3<nmo; ++Q3) {
+            const int Q3V = Q3 * (Q3-1)/2 + V;
+            phi_PQ_UV += tpcm[spin12].get_element(PQ, Q3V) * K[spin].get_element(U, Q3);
+          }
+          // Q
+          for(int Q3=0; Q3<P; ++Q3) {
+            const int PQ3 = P * (P-1)/2 + Q3;
+            phi_PQ_UV += tpcm[spin12].get_element(PQ3, UV) * K[spin].get_element(Q, Q3);
+          }
+          for(int Q3=P+1; Q3<nmo; ++Q3) {
+            const int Q3P = Q3 * (Q3-1)/2 + P;
+            // - sign!
+            phi_PQ_UV -= tpcm[spin12].get_element(Q3P, UV) * K[spin].get_element(Q, Q3);
+          }
+          // P
+          for(int Q3=0; Q3<Q; ++Q3) {
+            const int QQ3 = Q * (Q-1)/2 + Q3;
+            // - sign!
+            phi_PQ_UV -= tpcm[spin12].get_element(QQ3, UV) * K[spin].get_element(P, Q3);
+          }
+          for(int Q3=Q+1; Q3<nmo; ++Q3) {
+            const int Q3Q = Q3 * (Q3-1)/2 + Q;
+            // -1 instead of -1/2 because there are 2 permutation operators!
+            phi_PQ_UV += tpcm[spin12].get_element(Q3Q, UV) * K[spin].get_element(P, Q3);
+          }
+
+          // fourth term is also easy
+          phi_PQ_UV -= (    M[spin].get_element(P, U) * opdm[spin].get_element(Q, V) +
+                         opdm[spin].get_element(P, U) *    M[spin].get_element(Q, V) -
+                            M[spin].get_element(P, V) * opdm[spin].get_element(Q, U) -
+                         opdm[spin].get_element(P, V) *    M[spin].get_element(Q, U)
+                       );
+
+          phi(PQ,UV) = phi_PQ_UV;
+        }
+      }
+    }
+    else { // invalid spin12
+      assert(false);
+    }
+
+    if(debug_>=DefaultPrintThresholds::mostO4) {
+      phi->print(prepend_spincase(spin12,"phi (new)").c_str());
+    }
+
+    return phi;
+  }
+
+  double PsiCorrWavefunction_PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
     const int nelectron = reference_->nelectron();
     SpinCase1 spin1 = case1(pairspin);
     SpinCase1 spin2 = case2(pairspin);
@@ -3371,8 +3617,8 @@ namespace sc {
       Phi = phi(pairspin);
     }
     RefSCMatrix VT = V_transformed_by_C(pairspin);
-    RefSymmSCMatrix XT = X_transformed_by_C(pairspin);
-    RefSymmSCMatrix BT = B_transformed_by_C(pairspin);
+    RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
+    RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
 
 
     ExEnv::out0() << "pairspin "
@@ -3380,9 +3626,9 @@ namespace sc {
 
     // printing pair energies
     RefSCMatrix VT_t_tpdm = 2.0*VT*tpdm;
-    RefSCMatrix BT_t_tpdm = BT*tpdm;
-    RefSCMatrix XT_t_Phi = XT*Phi;
-    RefSCMatrix HylleraasMatrix = VT_t_tpdm + BT_t_tpdm + XT_t_Phi;
+    RefSCMatrix TBT_t_tpdm = TBT*tpdm;
+    RefSCMatrix TXT_t_Phi = TXT*Phi;
+    RefSCMatrix HylleraasMatrix = VT_t_tpdm + TBT_t_tpdm - TXT_t_Phi;
 
     ExEnv::out0() << "pair energies:" << endl;
     for(gg_iter.start(); int(gg_iter); gg_iter.next()) {
@@ -3422,34 +3668,28 @@ namespace sc {
     Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
     SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
 
-    RefSymmSCMatrix BT = B_transformed_by_C(pairspin);
+    RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
     RefSymmSCMatrix tpdm = twopdm_refmo(pairspin);
-    // RefSCMatrix BT_t_tpdm = BT*tpdm;
-    RefSCMatrix HylleraasMatrix = BT*tpdm;
-    BT=0;
+    RefSCMatrix HylleraasMatrix = TBT*tpdm;
+    TBT=0;
     tpdm=0;
 
-    RefSymmSCMatrix XT = X_transformed_by_C(pairspin);
-    RefSCMatrix Phi;
-    if(exactgamma_phi_twoelec_ && (nelectron==2)) {
-      Phi = phi_twoelec(pairspin);
+    RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
+    if(exactgamma_phi_twoelec_ && (nelectron==2)) { // cannot compute exact phi for 2-e systems
+      assert(false);
     }
-    else {
-      Phi = phi(pairspin);
-    }
-    //RefSCMatrix XT_t_Phi = XT*Phi;
-    HylleraasMatrix.accumulate(XT*Phi);
-    XT=0;
+    RefSymmSCMatrix Phi = phi_cumulant(pairspin);
+    RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
+    HylleraasMatrix.accumulate(TXT_t_Phi);
+    TXT=0;
     Phi=0;
+    TXT_t_Phi=0;
 
     RefSCMatrix V_genref = V_genref_projector2(pairspin);
     RefSCMatrix T = C(pairspin);
-    //RefSCMatrix VT = V_genref.t()*T;
     HylleraasMatrix.accumulate(2.0*V_genref.t()*T);
     T=0;
     V_genref=0;
-
-    //RefSCMatrix HylleraasMatrix = 2.0*VT + BT_t_tpdm + XT_t_Phi;
 
     ExEnv::out0() << "pair energies:" << endl;
     for(gg_iter.start(); int(gg_iter); gg_iter.next()) {

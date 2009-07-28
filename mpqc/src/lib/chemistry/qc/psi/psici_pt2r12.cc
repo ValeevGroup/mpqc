@@ -864,7 +864,7 @@ namespace sc {
       if(r12evalinfo_->ansatz()->projector()==LinearR12::Projector_1) {
         for(int i=0; i<NSpinCases2; i++) {
           SpinCase2 pairspin = static_cast<SpinCase2>(i);
-          energy_pt2r12[i] = energy_PT2R12(pairspin);
+          energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
           energy_correction_r12 +=  energy_pt2r12[i];
         }
       }

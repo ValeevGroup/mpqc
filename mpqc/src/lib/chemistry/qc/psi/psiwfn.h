@@ -367,6 +367,14 @@ namespace sc {
        * squares (or higher) of two-particle lambda's are neglected.
        */
       RefSCMatrix phi(SpinCase2 pairspin);
+      /*
+       * phi truncated in lambda: terms with three-particle lambda's or higher or terms with
+       * squares (or higher) of two-particle lambda's are neglected.
+       *
+       * \sa PsiCorrWavefunction::phi()
+       *  this version does not use 2-pdm, but a 2-body cumulant (2-lambda)
+       */
+      RefSymmSCMatrix phi_cumulant(SpinCase2 pairspin);
 
       /// Returns the Psi3 computed correlated onepdm's transformed to MPQC MO's. Function called from function onepdm_refmo.
       RefSymmSCMatrix onepdm_transformed(const SpinCase1 &spin);
@@ -407,7 +415,7 @@ namespace sc {
       double energy_conventional();
       double energy_conventional_so();
       /// This function computes the "old" General_PT2R12 correction, i.e. the one invoking projector 1.
-      double energy_PT2R12(SpinCase2 pairspin);
+      double energy_PT2R12_projector1(SpinCase2 pairspin);
       double energy_PT2R12_projector2(SpinCase2 pairspin);
       /// Prints the pair energies as a trace of the given matrix Contrib_mat
       void print_pair_energies(const RefSCMatrix &Contrib_mat,SpinCase2 pairspin);

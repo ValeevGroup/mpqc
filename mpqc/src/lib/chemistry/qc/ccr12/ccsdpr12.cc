@@ -156,7 +156,7 @@ void CCSDPR12::compute(){
     Ref<CCSD_R12_PT_RIGHT> eval_right = new CCSD_R12_PT_RIGHT(info());
     Ref<CCSD_PT> ccsd_pt = new CCSD_PT(info());
     const double ccsd_pt_correction = ccsd_pt->compute(eval_left, eval_right);
-    print_correction(ccsd_pt_correction, energy, "CCSD(T)-R12");
+    print_correction(ccsd_pt_correction, energy, "CCSD(T)(R12)");
 
     print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
     timer_->exit("(T) correction");

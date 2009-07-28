@@ -422,18 +422,16 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
 
   // compute block info
   const unsigned int norbs = indexmap.size();
-  block_offsets_.resize(nblocks);
-  block_sizes_.resize(nblocks);
+  block_offsets_.resize(nblocks);  std::fill(block_offsets_.begin(), block_offsets_.end(), 0);
+  block_sizes_.resize(nblocks);  std::fill(block_sizes_.begin(), block_sizes_.end(), 0);
   size_t current_block = (norbs > 0) ? indexmap[0].attr() : 0;
-  assert(current_block == 0);
-  block_offsets_[current_block] = 0;
   size_t current_size = 0;
   for(size_t o=0; o<norbs; ++o) {
     const size_t next_block = indexmap[o].attr();
     if (next_block == current_block)
       ++current_size;
     else {
-      assert(next_block > current_block);  // blocks must be in increasing order
+      assert(next_block > current_block);  // blocks must be in increasing order!!!
       while (next_block - current_block > 0) { // update current_block and current_size safely: blocks may be empty!
         block_sizes_[current_block] = current_size;
         ++current_block;
@@ -443,7 +441,10 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
       ++current_size;
     }
   }
-  block_sizes_[current_block] = current_size; // complete the last block
+  block_sizes_[current_block] = current_size; // complete the last touched block
+  // and update offsets of all blocks following the last block
+  for(size_t block = current_block+1; block<nblocks; ++block)
+    block_offsets_[block] = norbs;
 
   // build new blocked dimension
   int* nfunc_per_block = new int[nblocks];

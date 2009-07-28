@@ -32,6 +32,7 @@
 #include <chemistry/qc/mbptr12/spin.h>
 #include <util/class/scexception.h>
 #include <ctype.h>
+#include <cassert>
 
 namespace sc {
   unsigned int nspincases1(bool spin_polarized) { return spin_polarized ? 2 : 1; }
@@ -39,7 +40,7 @@ namespace sc {
   unsigned int npurespincases2(){ return(NPureSpinCases2); }
   SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
   SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
-  SpinCase2 case12(SpinCase1 S1, SpinCase2 S2) {
+  SpinCase2 case12(SpinCase1 S1, SpinCase1 S2) {
     if (S1 == Alpha && S2 == Alpha) return AlphaAlpha;
     if (S1 == Alpha && S2 == Beta) return AlphaBeta;
     if (S1 == Beta && S2 == Beta) return BetaBeta;

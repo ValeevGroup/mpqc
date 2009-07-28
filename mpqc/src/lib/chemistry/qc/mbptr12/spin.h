@@ -53,7 +53,7 @@ namespace sc {
   /// returns the second spin case of the 2-spin S
   SpinCase1 case2(SpinCase2 S);
   /// combines 2 spins to give 1 2-spin
-  SpinCase2 case12(SpinCase1 S1, SpinCase2 S2);
+  SpinCase2 case12(SpinCase1 S1, SpinCase1 S2);
 
   std::string to_string(SpinCase1 S);
   std::string to_string(SpinCase2 S);

@@ -261,21 +261,24 @@ R12IntEvalInfo::initialize()
       obs_eq_ribs_ = basis()->equiv(basis_ri());
 
       tfactory_ = new MOIntsTransformFactory(integral());
-      tfactory_->set_memory(memory_);
       tfactory_->set_dynamic(dynamic_);
       tfactory_->set_ints_method(ints_method_);
       tfactory_->set_file_prefix(ints_file_);
       const Ref<OrbitalSpace>& p = refinfo()->orbs(Alpha);
       tfactory_->set_spaces(p,p,p,p);
-      initialized_ = true;
 
       // provide hints to the factory about the likely use of transforms
-      // 1) if stdapprox is A' or A'' most transforms will never be reused
-      // 2) otherwise use persistent transforms
-      if (stdapprox() == LinearR12::StdApprox_Ap || stdapprox() == LinearR12::StdApprox_App)
-        tfactory_->hints().data_persistent(false);
-      else
-        tfactory_->hints().data_persistent(true);
+      {
+        // 1) if stdapprox is A' or A'' most transforms will never be reused
+        // 2) otherwise use persistent transforms
+        if (stdapprox() == LinearR12::StdApprox_Ap || stdapprox() == LinearR12::StdApprox_App)
+          tfactory_->hints().data_persistent(false);
+        else
+          tfactory_->hints().data_persistent(true);
+      }
+
+      this->set_memory(memory_);
+      initialized_ = true;
 
       {
         // RI-related spaces should already be in the registry. Push all OBS-based spaces onto the registry also

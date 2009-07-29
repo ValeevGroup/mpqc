@@ -42,15 +42,15 @@ CXXSRC = ccr12.cc ccr12_info.cc ccr12_info_offset.cc \
          ccsd.cc ccsd_t1.cc ccsd_t2.cc ccsd_e.cc tensorextrap.cc \
          ccsdt.cc ccsdt_t1.cc ccsdt_t2.cc ccsdt_t3.cc \
          ccsd_pt_right.cc ccsd_pt_left.cc ccsd_pt.cc \
-         lambda_ccsd_t1.cc lambda_ccsd_t2.cc \
          parenthesis2t.cc parenthesis2q.cc parenthesis2tnum.cc \
          ccsd_2t_left.cc ccsd_2t_right.cc ccsd_2q_left.cc ccsd_2q_right.cc \
          ccsdtq.cc ccsdtq_t2.cc ccsdtq_t3.cc ccsdtq_t4.cc \
          ccr12_info_drivers_r12.cc ccr12_info_intermediates.cc \
          ccsd_r12.cc ccsd_r12_e.cc ccsd_r12_t1.cc ccsd_r12_t2.cc \
          ccsdpr12.cc ccsdpr12_t1.cc ccsdpr12_t2.cc lambda_energy.cc lambdapenergy.cc mtensor.cc \
-         ccsd_sub_r12_right.cc ccsd_sub_r12_left.cc ccsd_sub_r12_energy.cc \
-         ccsd_r12_pt_right.cc
+         ccsd_sub_r12_right.cc ccsd_sub_r12_left.cc ccsd_sub_r12_energy.cc ccsd_r12_pt_right.cc \
+         lambda_ccsd_t1.cc lambda_ccsd_t2.cc lambda_ccsdpr12_t1.cc lambda_ccsdpr12_t2.cc \
+         ccsd_2t_pr12_right.cc ccsd_2t_r12_left.cc
 
 INC = 
 

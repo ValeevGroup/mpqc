@@ -50,6 +50,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   irrep_y_ = 0L;
 
   // this will be modified to use input etc.
+  // TODO
   bool do_lambda = true;
 
   needs();

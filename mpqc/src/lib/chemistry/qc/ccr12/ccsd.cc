@@ -225,30 +225,30 @@ void CCSD::compute(){
     print_iteration_footer_short();
 
     if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ") {
-      timer_->enter("(2)_T correction");
+      timer_->enter("(2)T correction");
       iter_start = timer_->get_wall_time();
 
       Ref<CCSD_2T_LEFT>   eval_left = new CCSD_2T_LEFT(info());
       Ref<CCSD_2T_RIGHT> eval_right = new CCSD_2T_RIGHT(info());
       Ref<Parenthesis2t>    ccsd_2t = new Parenthesis2t(info());
       const double ccsd_2t_correction = ccsd_2t->compute(eval_left, eval_right);
-      print_correction(ccsd_2t_correction, energy, "CCSD(2)_T");
+      print_correction(ccsd_2t_correction, energy, "CCSD(2)T");
 
-      print_timing(timer_->get_wall_time() - iter_start, "(2)_T correction");
-      timer_->exit("(2)_T correction");
+      print_timing(timer_->get_wall_time() - iter_start, "(2)T correction");
+      timer_->exit("(2)T correction");
 
       energy += ccsd_2t_correction;
 
       if (perturbative_ == "(2)TQ") {
-       timer_->enter("(2)_Q correction");
+       timer_->enter("(2)Q correction");
        Ref<CCSD_2Q_LEFT>   eval_left_q = new CCSD_2Q_LEFT(info());
        Ref<CCSD_2Q_RIGHT> eval_right_q = new CCSD_2Q_RIGHT(info());
        Ref<Parenthesis2q>      ccsd_2q = new Parenthesis2q(info());
        const double ccsd_2q_correction = ccsd_2q->compute(eval_left_q,eval_right_q);
-       print_correction(ccsd_2q_correction + ccsd_2t_correction, energy, "CCSD(2)_TQ");
+       print_correction(ccsd_2q_correction + ccsd_2t_correction, energy, "CCSD(2)TQ");
 
-       print_timing(timer_->get_wall_time() - iter_start, "(2)_Q correction");
-       timer_->exit("(2)_Q correction");
+       print_timing(timer_->get_wall_time() - iter_start, "(2)Q correction");
+       timer_->exit("(2)Q correction");
 
        energy += ccsd_2q_correction;
       }

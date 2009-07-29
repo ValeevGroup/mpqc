@@ -26,6 +26,10 @@
 #include <chemistry/qc/ccr12/ccsd_pt.h>
 #include <chemistry/qc/ccr12/ccsd_r12_pt_right.h>
 #include <chemistry/qc/ccr12/ccsd_pt_left.h>
+#include <chemistry/qc/ccr12/lambda_ccsdpr12_t1.h>
+#include <chemistry/qc/ccr12/lambda_ccsdpr12_t2.h>
+#include <chemistry/qc/ccr12/ccsd_2t_pr12_right.h>
+#include <chemistry/qc/ccr12/ccsd_2t_r12_left.h>
 
 using namespace std;
 using namespace sc;
@@ -169,61 +173,51 @@ void CCSDPR12::compute(){
   delete ccsd_r12_e;
 
 
-// this was copied from CCSD::compute(); needs some modification;
-// commented out for a while to use in the future development
-#if 0
-  if (perturbative_=="(T)") {
-    timer_->enter("(T) correction");
-    iter_start=timer_->get_wall_time();
-
-    // ccsd(t) calls specific driver, because it is a bit
-    // different from others (i.e. (2)t etc)
-    Ref<CCSD_PT_LEFT>     eval_left=new CCSD_PT_LEFT(info());
-    Ref<CCSD_PT_RIGHT>   eval_right=new CCSD_PT_RIGHT(info());
-    Ref<CCSD_PT>            ccsd_pt=new CCSD_PT(info());
-    const double ccsd_pt_correction=ccsd_pt->compute(eval_left,eval_right);
-    print_correction(ccsd_pt_correction,energy,"CCSD(T)");
-
-    print_timing(timer_->get_wall_time()-iter_start,"(T) correction");
-    timer_->exit("(T) correction");
-  }
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
+// *  Note that the Lagrangian of CCSD(R12) in SP ansatz is explicitly written in 
+//    A. Kohn, J. Chem. Phys. 130, 104104 (2009) [eq. 13] 
+// *  For ijkl ansatz, see 
+//    T. Shiozaki, E. F. Valeev, and S. Hirata, J. Chem. Phys. 131, 044118 (2009).
 
 
-  bool do_lambda=false; // will be judeged from input keywords
+  bool do_lambda = false; // will be judeged from input keywords
   // more will come; e.g. dipole, etc
-  if (perturbative_=="(2)T" or perturbative_=="(2)TQ") do_lambda=true;
+  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ") do_lambda = true;
 
   if (do_lambda) {
-    Ref<DIIS> l1diis=new DIIS(diis_start_,ndiis_,0.005,3,1,0.0);
-    Ref<DIIS> l2diis=new DIIS(diis_start_,ndiis_,0.005,3,1,0.0);
+    // so far, we asssume SP ansatz
+    assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
+    assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+    // if optimzed, guess_glambda2 has not yet been called.
+    if (false) ccr12_info_->guess_glambda2(); // glambda2 = gt2^dagger
 
-    LAMBDA_CCSD_T1* lambda_ccsd_t1=new LAMBDA_CCSD_T1(info());
-    LAMBDA_CCSD_T2* lambda_ccsd_t2=new LAMBDA_CCSD_T2(info());
+    Ref<DIIS> l1diis=new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
+    Ref<DIIS> l2diis=new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
 
-    Ref<Tensor> lr1=new Tensor("lr1",mem_);
-    Ref<Tensor> lr2=new Tensor("lr2",mem_);
+    LAMBDA_CCSDPR12_T1* lambda_ccsdpr12_t1=new LAMBDA_CCSDPR12_T1(info());
+    LAMBDA_CCSDPR12_T2* lambda_ccsdpr12_t2=new LAMBDA_CCSDPR12_T2(info());
+
+    Ref<Tensor> lr1 = new Tensor("lr1",mem_);
+    Ref<Tensor> lr2 = new Tensor("lr2",mem_);
     ccr12_info_->offset_l1(lr1);
     ccr12_info_->offset_l2(lr2);
 
     ccr12_info_->guess_lambda1();
     ccr12_info_->guess_lambda2();
 
-    iter_end=timer_->get_wall_time();
+    iter_end = timer_->get_wall_time();
 
-    std::string headername="Lambda CCSD";
+    std::string headername = "Lambda CCSD(R12)";
     print_iteration_header_short(headername);
 
-    for (int iter=0;iter<maxiter_;++iter){
-     iter_start=iter_end;
+    for (int iter = 0; iter < maxiter_; ++iter){
+     iter_start = iter_end;
 
      lr1->zero();
      lr2->zero();
 
-     lambda_ccsd_t1->compute_amp(lr1);
-     lambda_ccsd_t2->compute_amp(lr2);
+     lambda_ccsdpr12_t1->compute_amp(lr1);
+     lambda_ccsdpr12_t2->compute_amp(lr2);
 
      // compute new amplitudes from the residuals
      Ref<Tensor> lambda1_old = info()->lambda1()->copy();
@@ -238,33 +232,37 @@ void CCSDPR12::compute(){
 
      const double lr1norm = RMS(*lambda1_err);
      const double lr2norm = RMS(*lambda2_err);
-     double rnorm =std::sqrt(lr1norm*lr1norm+lr2norm*lr2norm);
+     double rnorm =std::sqrt(lr1norm * lr1norm + lr2norm * lr2norm);
 
-     iter_end=timer_->get_wall_time();
-     print_iteration_short(iter,rnorm,iter_start,iter_end);
+     iter_end = timer_->get_wall_time();
+     print_iteration_short(iter, rnorm, iter_start, iter_end);
 
-     if (rnorm<ccthresh_) break;
+     if (rnorm < ccthresh_) break;
 
      // extrapolate
-     l1diis->extrapolate(info()->edata(info()->lambda1()),info()->eerr(lambda1_err));
-     l2diis->extrapolate(info()->edata(info()->lambda2()),info()->eerr(lambda2_err));
+     l1diis->extrapolate(info()->edata(info()->lambda1()), info()->eerr(lambda1_err));
+     l2diis->extrapolate(info()->edata(info()->lambda2()), info()->eerr(lambda2_err));
     }
 
     print_iteration_footer_short();
 
-    if (perturbative_=="(2)T" or perturbative_=="(2)TQ") {
-      timer_->enter("(2)_T correction");
+    if (perturbative_=="(2)T" || perturbative_=="(2)TQ") {
+      timer_->enter("(2)T correction");
       iter_start=timer_->get_wall_time();
 
-      Ref<CCSD_2T_LEFT>    eval_left=new CCSD_2T_LEFT(info());
-      Ref<CCSD_2T_RIGHT>  eval_right=new CCSD_2T_RIGHT(info());
-      Ref<Parenthesis2t>     ccsd_2t=new Parenthesis2t(info());
-      const double ccsd_2t_correction=ccsd_2t->compute(eval_left,eval_right);
-      print_correction(ccsd_2t_correction,energy,"CCSD(2)_T");
+      // NOTE that left hand side is common with -R12 methods
+      Ref<CCSD_2T_R12_LEFT> eval_left = new CCSD_2T_R12_LEFT(info());
+      Ref<CCSD_2T_PR12_RIGHT> eval_right = new CCSD_2T_PR12_RIGHT(info());
+      Ref<Parenthesis2t> ccsd_2t = new Parenthesis2t(info());
+      const double ccsd_2t_correction = ccsd_2t->compute(eval_left, eval_right);
+      print_correction(ccsd_2t_correction, energy, "CCSD(2)T(R12)");
 
-      print_timing(timer_->get_wall_time()-iter_start,"(2)_T correction");
-      timer_->exit("(2)_T correction");
+      print_timing(timer_->get_wall_time() - iter_start, "(2)T correction");
+      timer_->exit("(2)T correction");
 
+      energy += ccsd_2t_correction;
+
+#if 0
       if (perturbative_=="(2)TQ") {
        timer_->enter("(2)_Q correction");
        Ref<CCSD_2Q_LEFT>    eval_left_q=new CCSD_2Q_LEFT(info());
@@ -276,13 +274,13 @@ void CCSDPR12::compute(){
        print_timing(timer_->get_wall_time()-iter_start,"(2)_Q correction");
        timer_->exit("(2)_Q correction");
       }
+#endif
     }
 
-    delete lambda_ccsd_t1;
-    delete lambda_ccsd_t2;
+    delete lambda_ccsdpr12_t1;
+    delete lambda_ccsdpr12_t2;
 
   } // end of do_lambda
-#endif
 
   set_energy(energy);
   mem_->sync();

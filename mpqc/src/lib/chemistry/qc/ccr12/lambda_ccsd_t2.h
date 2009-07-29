@@ -19,7 +19,6 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12.h>
-#include <chemistry/qc/ccr12/ccsd.h>
 
 
 namespace sc {

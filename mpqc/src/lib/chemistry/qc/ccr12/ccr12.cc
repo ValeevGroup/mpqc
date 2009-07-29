@@ -56,8 +56,8 @@ void CCR12::common_init(string theory){
 
   if(theory_=="notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
   ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl << endl;
-  perturbative_=keyval_->stringvalue("perturbative",KeyValValuechar());
-  std::transform(perturbative_.begin(),perturbative_.end(),perturbative_.begin(),(int (*)(int))std::toupper);
+  perturbative_ = keyval_->stringvalue("perturbative", KeyValValuechar());
+  std::transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
   ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
 
   ndiis_=keyval_->intvalue("ndiis",KeyValValueint(2));

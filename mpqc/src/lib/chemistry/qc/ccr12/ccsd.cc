@@ -159,47 +159,14 @@ void CCSD::compute(){
     print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
     timer_->exit("(T) correction");
     energy += ccsd_pt_correction;
-
-  } else if (perturbative_ == "(2)R12") {
-    timer_->enter("(2)R12 correction");
-    iter_start = timer_->get_wall_time();
-
-    CCSD_SUB_R12_RIGHT* eval_right = new CCSD_SUB_R12_RIGHT(info());
-    CCSD_SUB_R12_LEFT* eval_left = new CCSD_SUB_R12_LEFT(info());
-    Ref<Tensor> num_right = new Tensor("num_right", mem_);
-    Ref<Tensor> num_left = new Tensor("num_left", mem_);
-    ccr12_info_->offset_gt2(num_right, false);
-    ccr12_info_->offset_gt2(num_left, false);
-
-    eval_right->compute_amp(num_right);
-    eval_left->compute_amp(num_left);
-
-    // here, we need to apply the denominator TODO
-    cout << "!!! THE DENOMINATOR HAS NOT BEEN CONSIDERED IN THE CCSD(2)R12 method !!!" << endl;
-
-    // then evaluate the energy contribution
-    e0->zero();
-    CCSD_SUB_R12_ENERGY* eval_energy = new CCSD_SUB_R12_ENERGY(info());
-    eval_energy->compute_amp(num_right, num_left, e0);
-    const double ccsd_sub_r12_correction = ccr12_info_->get_e(e0);
-    print_correction(ccsd_sub_r12_correction, energy, "CCSD(2)R12");
-
-    delete eval_energy;
-    delete eval_left;
-    delete eval_right;
-
-    print_timing(timer_->get_wall_time() - iter_start, "(2)R12 correction");
-    timer_->exit("(2)R12 correction");
-    energy += ccsd_sub_r12_correction;
   }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
   bool do_lambda = false; // will be judeged by input keywords
   // more will come; e.g. dipole, etc
-  if (perturbative_ == "(2)T" or perturbative_ == "(2)TQ") do_lambda = true;
+  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12") do_lambda = true;
 
   if (do_lambda) {
     Ref<DIIS> l1diis = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
@@ -257,7 +224,7 @@ void CCSD::compute(){
 
     print_iteration_footer_short();
 
-    if (perturbative_ == "(2)T" or perturbative_ == "(2)TQ") {
+    if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ") {
       timer_->enter("(2)_T correction");
       iter_start = timer_->get_wall_time();
 
@@ -285,6 +252,39 @@ void CCSD::compute(){
 
        energy += ccsd_2q_correction;
       }
+
+    } else if (perturbative_ == "(2)R12") {
+
+      timer_->enter("(2)R12 correction");
+      iter_start = timer_->get_wall_time();
+
+      CCSD_SUB_R12_RIGHT* eval_right = new CCSD_SUB_R12_RIGHT(info());
+      CCSD_SUB_R12_LEFT* eval_left = new CCSD_SUB_R12_LEFT(info());
+      Ref<Tensor> num_right = new Tensor("num_right", mem_);
+      Ref<Tensor> num_left = new Tensor("num_left", mem_);
+      ccr12_info_->offset_gt2(num_right, false);
+      ccr12_info_->offset_gt2(num_left, false);
+
+      eval_right->compute_amp(num_right);
+      eval_left->compute_amp(num_left);
+
+      // here, we need to apply the denominator TODO
+      cout << "!!! THE DENOMINATOR HAS NOT BEEN CONSIDERED IN THE CCSD(2)R12 method !!!" << endl;
+
+      // then evaluate the energy contribution
+      e0->zero();
+      CCSD_SUB_R12_ENERGY* eval_energy = new CCSD_SUB_R12_ENERGY(info());
+      eval_energy->compute_amp(num_right, num_left, e0);
+      const double ccsd_sub_r12_correction = ccr12_info_->get_e(e0);
+      print_correction(ccsd_sub_r12_correction, energy, "CCSD(2)R12");
+
+      delete eval_energy;
+      delete eval_left;
+      delete eval_right;
+
+      print_timing(timer_->get_wall_time() - iter_start, "(2)R12 correction");
+      timer_->exit("(2)R12 correction");
+      energy += ccsd_sub_r12_correction;
     }
 
     delete lambda_ccsd_t1;

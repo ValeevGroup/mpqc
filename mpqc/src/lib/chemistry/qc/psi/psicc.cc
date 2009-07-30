@@ -173,7 +173,7 @@ namespace sc {
     // Grab T matrices
     const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
     T2_[spin2] = T2(spin2, kwd);
-    if (debug() >= DefaultPrintThresholds::mostN2)
+    if (debug() >= DefaultPrintThresholds::mostO2N2)
       T2_[spin2].print(prepend_spincase(spin2,"T2 amplitudes").c_str());
 
     return T2_[spin2];

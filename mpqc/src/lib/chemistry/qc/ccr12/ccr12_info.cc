@@ -49,9 +49,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   irrep_t_ = 0L;
   irrep_y_ = 0L;
 
-  // this will be modified to use input etc.
-  // TODO
-  bool do_lambda = true;
+  // TODO More to come... e.g. dipole,...
+  bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12");
 
   needs();
 

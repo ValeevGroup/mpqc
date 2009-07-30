@@ -205,8 +205,8 @@ void CCR12_Info::fill_in_fr_and_fd() {
   // d_fr2 = aAii
   {
     MTensor<4>::tile_ranges aAii(4);
-    aAii[0] = MTensor<4>::tile_range(this->noab(), this->noab() + this->nvab());
-    aAii[1] = MTensor<4>::tile_range(this->noab(), this->nab());
+    aAii[0] = MTensor<4>::tile_range(0, this->nab());
+    aAii[1] = MTensor<4>::tile_range(0, this->nab());
     aAii[2] = MTensor<4>::tile_range(0, this->noab());
     aAii[3] = MTensor<4>::tile_range(0, this->noab());
     MTensor<4> F(this,d_fr2.pointer(),aAii);
@@ -225,8 +225,8 @@ void CCR12_Info::fill_in_fr_and_fd() {
     MTensor<4>::tile_ranges iiaA(4);
     iiaA[0] = MTensor<4>::tile_range(0, this->noab());
     iiaA[1] = MTensor<4>::tile_range(0, this->noab());
-    iiaA[2] = MTensor<4>::tile_range(this->noab(), this->noab() + this->nvab());
-    iiaA[3] = MTensor<4>::tile_range(this->noab(), this->nab());
+    iiaA[2] = MTensor<4>::tile_range(0, this->nab());
+    iiaA[3] = MTensor<4>::tile_range(0, this->nab());
     MTensor<4> F(this,d_fd2.pointer(),iiaA);
     MTensor<4>::element_ranges iiaA_erange(4);
     iiaA_erange[0] = MTensor<4>::element_range(0, nocc_act);

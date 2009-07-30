@@ -86,8 +86,9 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
   if (src->has_access(me)) {
 
     // how do I determine max size of the tiles?
-    const size_t maxsize2 = 50 * 50;
-    const size_t maxsize4 = 50 * 50 * 50 * 50;
+    const size_t maxsize1 = info_->maxtilesize();
+    const size_t maxsize2 = maxsize1 * maxsize1;
+    const size_t maxsize4 = maxsize2 * maxsize2; 
     double* data = info_->mem()->malloc_local_double(maxsize4);
     double* buf1 = new double[maxsize2];
     double* buf2 = new double[maxsize2];

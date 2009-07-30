@@ -170,7 +170,8 @@ namespace sc {
         if (1) {
 
           // how do I determine max size of the tiles?
-          const size_t maxtilesize = 50 * 50 * 50 * 50;
+          const size_t maxsize1 = info_->maxtilesize();
+          const size_t maxtilesize = maxsize1 * maxsize1 * maxsize1 * maxsize1;
           double* data = info_->mem()->malloc_local_double(maxtilesize);
 
           for (long t0 = range_[0].first; t0 < range_[0].second; ++t0) {
@@ -380,7 +381,8 @@ namespace sc {
         if (1) {
 
           // how do I determine max size of the tiles?
-          const size_t maxtilesize = 50 * 50;
+          const size_t maxsize1 = info_->maxtilesize();
+          const size_t maxtilesize = maxsize1 * maxsize1;
           double* data = info_->mem()->malloc_local_double(maxtilesize);
 
           for (long t0 = range_[0].first; t0 < range_[0].second; ++t0) {

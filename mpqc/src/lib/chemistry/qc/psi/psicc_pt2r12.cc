@@ -360,6 +360,7 @@ void PsiCCSD_PT2R12::compute() {
   if (nspincases1 == 1) {
     MPQC2PSI_tform_oa[Beta] = MPQC2PSI_tform_oa[Alpha];
     MPQC2PSI_tform_va[Beta] = MPQC2PSI_tform_va[Alpha];
+    T1[Beta] = T1[Alpha];
   }
 
 #define TRY_USING_SPARSEMAP 0

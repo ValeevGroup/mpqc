@@ -760,7 +760,7 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   }
   for (unsigned int i=0; i<norbs2; ++i, ++ii) {
     orbsym[ii] = orbsym2[i];
-    for (unsigned int j=0; j<nao1; j++) {
+    for (unsigned int j=0; j<nao2; j++) {
       const unsigned int jj = map2[j];
       coefs(jj, ii) = s2.coefs().get_element(j, i);
     }

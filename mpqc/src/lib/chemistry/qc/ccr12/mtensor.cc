@@ -46,6 +46,8 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                          element_ranges const* mapped_element_ranges,
                          bool src_is_2301) {
 
+  assert(mapped_element_ranges != 0);
+
   // split work over tasks which have access to integrals
   vector<int> proc_with_ints;
   const int nproc_with_ints = src->tasks_with_access(proc_with_ints);
@@ -57,29 +59,14 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
   const size_t ntiles2 = range_[2].second - range_[2].first;
   const size_t ntiles3 = range_[3].second - range_[3].first;
 
-  // if space0 is equivalent to space1, or space2 equivalent to space3,
-  // can compute antisymmetric integrals using only (space0 space1| space2 space3)
-  // else also need (space0 space1| space3 space2), or an equivalent
-  const bool space0_eq_space1 = (range_[0] == range_[1]);
-  const bool space2_eq_space3 = (range_[2] == range_[3]);
-  const bool can_always_antisymmetrize = (space0_eq_space1 || space2_eq_space3);
+  // if espace0 is equivalent to espace1, or espace2 equivalent to espace3,
+  // can compute antisymmetric integrals using only (espace0 espace1| espace2 espace3)
+  // else also need (espace0 espace1| espace3 espace2), or an equivalent
+  const bool espace0_eq_espace1 = ((*mapped_element_ranges)[0] == (*mapped_element_ranges)[1]);
+  const bool espace2_eq_espace3 = ((*mapped_element_ranges)[2] == (*mapped_element_ranges)[3]);
+  const bool can_always_antisymmetrize = (espace0_eq_espace1 || espace2_eq_espace3);
   assert(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
                                               // I clearly don't understand enough at the moment
-  const tile_range space0_n_space1 = intersect(range_[0], range_[1]);
-  const tile_range space2_n_space3 = intersect(range_[2], range_[3]);
-
-  // check that the needed index ranges are present in src
-#if 0  // assume that the user knows what she's doing
-  element_range src_range[4];
-  src_range[0] = this->map_range(range_[0], eimap0);
-  src_range[1] = this->map_range(range_[1], eimap1);
-  src_range[2] = this->map_range(range_[2], eimap2);
-  src_range[3] = this->map_range(range_[3], eimap3);
-  assert(src_range[0].second <= src->ni());
-  assert(src_range[1].second <= src->nj());
-  assert(src_range[2].second <= src->nx());
-  assert(src_range[3].second <= src->ny());
-#endif
 
   // TODO check if equivalence of MTensor spaces is matched by their relationship in src
 
@@ -157,17 +144,10 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                 long size = size0 * size1 * size2 * size3;
                 std::fill(data, data+size, 0.0);
 
-                // antisymmetrization is only possible if:
-                // 1) t0 and t1 belong to the intersection of range[0] and range[1], or
-                // 2) t2 and t3 belong to the intersection of range[2] and range[3]
-                // if range[0] == range[1], clearly can antisymmetrize 0 and 1
-                // if range[2] == range[3], clearly can antisymmetrize 2 and 3
-                bool antisymmetrize01 = space0_eq_space1;
-                if (!antisymmetrize01)
-                  antisymmetrize01 = in(t0,space0_n_space1) && in(t1,space0_n_space1);
-                bool antisymmetrize23 = space2_eq_space3;
-                if (!antisymmetrize23)
-                  antisymmetrize23 = in(t2,space2_n_space3) && in(t3,space2_n_space3);
+                // if erange[0] == erange[1], clearly can antisymmetrize 0 and 1
+                // if erange[2] == erange[3], clearly can antisymmetrize 2 and 3
+                bool antisymmetrize01 = espace0_eq_espace1;
+                bool antisymmetrize23 = espace2_eq_espace3;
                 // prefer to antisymmetrize 23 since can do that with 1 block of DistArray4
                 if (antisymmetrize23 && !src_is_2301) antisymmetrize01 = false;
                 // if src is transposed: prefer to antisymmetrize 01 since can do that with 1 block of DistArray4

@@ -32,6 +32,7 @@
 // includes go here
 #include <chemistry/qc/ccr12/mtensor.h>
 
+using namespace std;
 using namespace sc;
 
 namespace sc {

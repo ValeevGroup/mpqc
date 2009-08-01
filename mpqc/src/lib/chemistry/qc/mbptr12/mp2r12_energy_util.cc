@@ -31,6 +31,7 @@
 
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
 
+using namespace std;
 using namespace sc;
 
 /*******************************

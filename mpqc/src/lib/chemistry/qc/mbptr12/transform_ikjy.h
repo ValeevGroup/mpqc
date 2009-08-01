@@ -37,7 +37,7 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 

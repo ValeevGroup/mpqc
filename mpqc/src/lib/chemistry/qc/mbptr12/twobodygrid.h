@@ -39,7 +39,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 
@@ -49,8 +49,8 @@ namespace sc {
 class TwoBodyGrid : virtual public SavableState {
 
   std::string name_;               // String identifier for the grid
-  vector<SCVector3> r1_;           // Cartesian coordinates of particle 1
-  vector<SCVector3> r2_;           // Cartesian coordinates of particle 2
+  std::vector<SCVector3> r1_;           // Cartesian coordinates of particle 1
+  std::vector<SCVector3> r2_;           // Cartesian coordinates of particle 2
   SCVector3 O_;                   // The origin with respect to which r1 and r2 are defined
 
 public:

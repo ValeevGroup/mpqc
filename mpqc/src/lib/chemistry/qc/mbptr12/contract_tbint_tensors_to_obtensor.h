@@ -156,8 +156,8 @@ namespace sc {
               << label_bra << " . " << label_ket << "^T";
       label = oss.str();
     }
-    ExEnv::out0() << endl << indent
-                  << "Entered generic contraction (" << label << ")" << endl;
+    ExEnv::out0() << std::endl << indent
+                  << "Entered generic contraction (" << label << ")" << std::endl;
     ExEnv::out0() << incindent;
 
     //
@@ -290,7 +290,7 @@ namespace sc {
 
           // split work over tasks which have access to integrals
           // WARNING: assuming same accessibility for both bra and ket transforms
-          vector<int> proc_with_ints;
+          std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
           const int me = r12info()->msg()->me();
           const bool nket_ge_nevals = (nket >= nproc_with_ints);
@@ -327,7 +327,7 @@ namespace sc {
                 }
 
                 if (debug_ >= DefaultPrintThresholds::mostO4)
-                  ExEnv::outn() << indent << "task " << me << ": obtained alphap blocks" << endl;
+                  ExEnv::outn() << indent << "task " << me << ": obtained alphap blocks" << std::endl;
 
                 for(unsigned int q=0; q<nmo_space1_ket; q++) {  // external ket index
                   unsigned int pq = p*nmo_space1_ket + q;  // pq is a rectangular index pair
@@ -339,7 +339,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4)
                       ExEnv::outn() << indent << "task " << me << ": working on <alpha,p | q,p> = <"
-                                    << alpha << "," << p << " | " << q << "," << p << ">" << endl;
+                                    << alpha << "," << p << " | " << q << "," << p << ">" << std::endl;
 
                     const double *qp_buf;
                     if(!r12coeffs_ket) {
@@ -349,7 +349,7 @@ namespace sc {
                     }
 
                     if (debug_ >= DefaultPrintThresholds::mostO4)
-                      ExEnv::outn() << indent << "task " << me << ": obtained qp blocks" << endl;
+                      ExEnv::outn() << indent << "task " << me << ": obtained qp blocks" << std::endl;
 
                     // zero out intblocks
                     memset(T_alphap, 0, blksize_int*sizeof(double));
@@ -357,7 +357,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4) {
                       ExEnv::out0() << indent << "alpha = " << alpha << " p = " << p << " q = " << q
-                                    << incindent << endl;
+                                    << incindent << std::endl;
                     }
 
                     for(iterint.start(); iterint; iterint.next()) {  // internal pair index. Add \f$ \bar{r}_{p_{\gamma f\gamma} \alpha}^{rs} t_{rs}^{pq} \f$. rs is a rectangular index pair.
@@ -392,12 +392,12 @@ namespace sc {
                       }
 
                       if (debug_ >= DefaultPrintThresholds::mostO6) {
-                        ExEnv::out0() << indent << " r = " << r << " s = " << s << endl;
+                        ExEnv::out0() << indent << " r = " << r << " s = " << s << std::endl;
                       }
 
                       if (debug_ >= DefaultPrintThresholds::mostO6) {
-                        ExEnv::out0() << indent << " <alphap|rs> = " << I_alphaprs << endl
-                                      << indent << "     <qp|rs> = " << I_qprs << endl;
+                        ExEnv::out0() << indent << " <alphap|rs> = " << I_alphaprs << std::endl
+                                      << indent << "     <qp|rs> = " << I_qprs << std::endl;
                       }
 
                       double T_alphaprs;
@@ -419,8 +419,8 @@ namespace sc {
                       }
 
                       if (debug_ >= DefaultPrintThresholds::mostO6) {
-                        ExEnv::out0() << indent << " <alphap|T|rs> = " << T_alphaprs << endl
-                                      << indent << "     <qp|T|rs> = " << T_qprs << endl;
+                        ExEnv::out0() << indent << " <alphap|T|rs> = " << T_alphaprs << std::endl
+                                      << indent << "     <qp|T|rs> = " << T_qprs << std::endl;
                       }
 
                       T_alphap[rs] = T_alphaprs;
@@ -434,7 +434,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4) {
                       ExEnv::out0() << decindent << indent
-                                    << " <alphap|qp> = " << T_alphapqp << endl;
+                                    << " <alphap|qp> = " << T_alphapqp << std::endl;
                     }
 
                     T.accumulate_element(alpha,q,T_alphapqp);
@@ -453,7 +453,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4)
                       ExEnv::outn() << indent << "task " << me << ": working on <alpha,p | q,p> = <"
-                                    << alpha << "," << p << " | " << q << "," << p << ">" << endl;
+                                    << alpha << "," << p << " | " << q << "," << p << ">" << std::endl;
 
                     const double *qp_buf;
                     const double *pq_buf;
@@ -469,7 +469,7 @@ namespace sc {
                     }
 
                     if (debug_ >= DefaultPrintThresholds::mostO4)
-                      ExEnv::outn() << indent << "task " << me << ": obtained qp blocks" << endl;
+                      ExEnv::outn() << indent << "task " << me << ": obtained qp blocks" << std::endl;
 
                     // zero out intblocks
                     memset(T_alphap, 0, blksize_int*sizeof(double));
@@ -477,7 +477,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4) {
                       ExEnv::out0() << indent << "alpha = " << alpha << " p = " << p << " q = " << q
-                                    << incindent << endl;
+                                    << incindent << std::endl;
                     }
 
                     for(iterint.start(); iterint; iterint.next()) {  // internal pair index
@@ -525,7 +525,7 @@ namespace sc {
                       }
 
                       if (debug_ >= DefaultPrintThresholds::mostO6) {
-                        ExEnv::out0() << indent << " r = " << r << " s = " << s << endl;
+                        ExEnv::out0() << indent << " r = " << r << " s = " << s << std::endl;
                       }
 
                       if(q>p) {  /// Add \f$ - \bar{r}_{p_{\gamma f\gamma} \alpha}^{rs} t_{rs}^{qp} \f$. qp is a triangular index.
@@ -538,8 +538,8 @@ namespace sc {
                         }
 
                         if (debug_ >= DefaultPrintThresholds::mostO6) {
-                          ExEnv::out0() << indent << " <alphap|rs> = " << I_alphaprs << endl
-                                        << indent << "     <qp|rs> = " << I_qprs << endl;
+                          ExEnv::out0() << indent << " <alphap|rs> = " << I_alphaprs << std::endl
+                                        << indent << "     <qp|rs> = " << I_qprs << std::endl;
                         }
 
                         double I_qpsr;
@@ -551,10 +551,10 @@ namespace sc {
                         }
 
                         if (debug_ >= DefaultPrintThresholds::mostO6) {
-                          ExEnv::out0() << " <alphap|rs> = " << I_alphaprs << endl
-                                        << " <alphap|sr> = " << I_alphapsr << endl
-                                        << "     <qp|rs> = " << I_qprs << endl
-                                        << "     <qp|sr> = " << I_qpsr << endl;
+                          ExEnv::out0() << " <alphap|rs> = " << I_alphaprs << std::endl
+                                        << " <alphap|sr> = " << I_alphapsr << std::endl
+                                        << "     <qp|rs> = " << I_qprs << std::endl
+                                        << "     <qp|sr> = " << I_qpsr << std::endl;
                         }
 
                         double T_alphaprs;
@@ -597,10 +597,10 @@ namespace sc {
                         }
 
                         if (debug_ >= DefaultPrintThresholds::mostO6) {
-                          ExEnv::out0() << " <alphap|rs> = " << I_alphaprs << endl
-                                        << " <alphap|rs> = " << I_alphapsr << endl
-                                        << "     <pq|rs> = " << I_pqrs << endl
-                                        << "     <pq|sr> = " << I_pqsr << endl;
+                          ExEnv::out0() << " <alphap|rs> = " << I_alphaprs << std::endl
+                                        << " <alphap|rs> = " << I_alphapsr << std::endl
+                                        << "     <pq|rs> = " << I_pqrs << std::endl
+                                        << "     <pq|sr> = " << I_pqsr << std::endl;
                         }
 
                         double T_alphaprs;
@@ -632,7 +632,7 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::mostO4) {
                       ExEnv::out0() << decindent << indent
-                                    << " <alphap|qp> = " << T_alphapqp << endl;
+                                    << " <alphap|qp> = " << T_alphapqp << std::endl;
                     }
 
                     T.accumulate_element(alpha,q,T_alphapqp);
@@ -672,7 +672,7 @@ namespace sc {
     delete[] T_qp;
 
     ExEnv::out0() << decindent;
-    ExEnv::out0() << indent << "Exited generic contraction (" << label << ")" << endl;
+    ExEnv::out0() << indent << "Exited generic contraction (" << label << ")" << std::endl;
 
     timer.exit();
   }

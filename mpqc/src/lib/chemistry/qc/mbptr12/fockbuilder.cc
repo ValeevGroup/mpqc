@@ -35,6 +35,7 @@
 #include<chemistry/qc/mbptr12/blas.h>
 #include<chemistry/qc/mbptr12/fockbuilder.h>
 
+using namespace std;
 using namespace sc;
 
 namespace sc {

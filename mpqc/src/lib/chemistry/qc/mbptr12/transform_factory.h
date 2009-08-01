@@ -41,7 +41,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/transform.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 

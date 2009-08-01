@@ -15,6 +15,7 @@
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/mtensor.h>
 
+using namespace std;
 using namespace sc;
 
 void CCR12_Info::compute_corr_space() {

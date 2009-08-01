@@ -34,7 +34,7 @@
 
 #include <math/scmat/matrix.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 

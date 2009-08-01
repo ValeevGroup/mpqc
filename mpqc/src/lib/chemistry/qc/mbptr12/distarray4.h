@@ -40,7 +40,7 @@
 #include <util/group/memory.h>
 #include <chemistry/qc/basis/tbint.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 
@@ -163,7 +163,7 @@ class DistArray4: virtual public SavableState {
     /** Returns the total number of tasks with access to integrals.
         If task i has access to the integrals, then twa_map[i] is its index among
         the tasks with access, -1 otherwise. */
-    int tasks_with_access(vector<int>& twa_map) const;
+    int tasks_with_access(std::vector<int>& twa_map) const;
 
   private:
     /// Set to nonzero to debug this and derived classes

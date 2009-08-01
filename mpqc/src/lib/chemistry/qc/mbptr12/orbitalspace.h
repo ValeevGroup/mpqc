@@ -45,7 +45,7 @@
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/registry.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 
@@ -488,13 +488,13 @@ namespace sc {
       /// Returns the "eigenvalues" matrix
       const RefDiagSCMatrix& evals() const;
       /// Returns the orbital symmetry array
-      const vector<unsigned int>& orbsym() const;
+      const std::vector<unsigned int>& orbsym() const;
       /// Returns the rank of the space
       unsigned int rank() const;
       /// Returns the number of blocks
       unsigned int nblocks() const;
       /// Returns the number of orbitals in each block
-      const vector<unsigned int>& block_sizes() const;
+      const std::vector<unsigned int>& block_sizes() const;
 
       /// Returns how much "significant" (i.e. O^2) memory this object uses
       size_t memory_in_use() const;

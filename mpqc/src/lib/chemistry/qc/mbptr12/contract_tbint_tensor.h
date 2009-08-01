@@ -171,8 +171,8 @@ namespace sc {
           << "^T";
       label = oss.str();
     }
-    ExEnv::out0() << endl << indent << "Entered generic contraction (" << label
-        << ")" << endl;
+    ExEnv::out0() << std::endl << indent << "Entered generic contraction (" << label
+        << ")" << std::endl;
     ExEnv::out0() << incindent;
 
     //
@@ -310,7 +310,7 @@ namespace sc {
 
           // split work over tasks which have access to integrals
           // WARNING: assuming same accessibility for both bra and ket transforms
-          vector<int> proc_with_ints;
+          std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
           const int me = r12info()->msg()->me();
           const bool nket_ge_nevals = (nket >= nproc_with_ints);
@@ -346,7 +346,7 @@ namespace sc {
               tim_intsretrieve.exit();
               if (debug_ >= DefaultPrintThresholds::allO2N2)
                 ExEnv::outn() << indent << "task " << me
-                    << ": obtained ij blocks" << endl;
+                    << ": obtained ij blocks" << std::endl;
 
               for (iterket.start(); iterket; iterket.next(), ijkl++) {
                 const int kl = iterket.ij();
@@ -363,14 +363,14 @@ namespace sc {
                 if (debug_ >= DefaultPrintThresholds::allO2N2)
                   ExEnv::outn() << indent << "task " << me
                       << ": working on (i,j | k,l) = (" << i << "," << j
-                      << " | " << k << "," << l << ")" << endl;
+                      << " | " << k << "," << l << ")" << std::endl;
                 tim_intsretrieve.enter("MO ints retrieve");
                 const double *kl_buf =
                     accumk->retrieve_pair_block(kk, ll, intsetidx_ket);
                 tim_intsretrieve.exit();
                 if (debug_ >= DefaultPrintThresholds::allO2N2)
                   ExEnv::outn() << indent << "task " << me
-                      << ": obtained kl blocks" << endl;
+                      << ": obtained kl blocks" << std::endl;
 
                 // zero out intblocks
                 memset(T_ij, 0, blksize_int * sizeof(double));
@@ -378,7 +378,7 @@ namespace sc {
 
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::out0() << indent << "i = " << i << " j = " << j
-                      << " k = " << k << " l = " << l << incindent << endl;
+                      << " k = " << k << " l = " << l << incindent << std::endl;
                 }
 
                 for (iterint.start(); iterint; iterint.next()) {
@@ -402,13 +402,13 @@ namespace sc {
 
                   if (debug_ >= DefaultPrintThresholds::mostO6) {
                     ExEnv::out0() << indent << " m = " << m << " n = " << n
-                        << endl;
+                        << std::endl;
                   }
 
                   if (alphabeta) {
                     if (debug_ >= DefaultPrintThresholds::mostO6) {
                       ExEnv::out0() << indent << " <ij|mn> = " << I_ijmn
-                          << endl << indent << " <kl|mn> = " << I_klmn << endl;
+                          << std::endl << indent << " <kl|mn> = " << I_klmn << std::endl;
                     }
                     const double T_ijmn = DataProcess_Bra::I2T(I_ijmn, i, j, m,
                                                                n, evals1_bra,
@@ -422,8 +422,8 @@ namespace sc {
                                                                evals2_intk);
                     if (debug_ >= DefaultPrintThresholds::mostO6) {
                       ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn
-                          << endl << indent << " <kl|T|mn> = " << T_klmn
-                          << endl;
+                          << std::endl << indent << " <kl|T|mn> = " << T_klmn
+                          << std::endl;
                     }
 
                     T_ij[mn] = T_ijmn;
@@ -446,9 +446,9 @@ namespace sc {
                     const double I_klnm = kl_buf[NM_ket];
 
                     if (debug_ >= DefaultPrintThresholds::mostO6) {
-                      ExEnv::out0() << " <ij|mn> = " << I_ijmn << endl
-                          << " <ij|nm> = " << I_ijnm << endl << " <kl|mn> = "
-                          << I_klmn << endl << " <kl|nm> = " << I_klnm << endl;
+                      ExEnv::out0() << " <ij|mn> = " << I_ijmn << std::endl
+                          << " <ij|nm> = " << I_ijnm << std::endl << " <kl|mn> = "
+                          << I_klmn << std::endl << " <kl|nm> = " << I_klnm << std::endl;
                     }
 
                     const double T_ijmn = DataProcess_Bra::I2T(I_ijmn - I_ijnm,
@@ -465,8 +465,8 @@ namespace sc {
                                                                evals2_intk);
                     if (debug_ >= DefaultPrintThresholds::mostO6) {
                       ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn
-                          << endl << indent << " <kl|T|mn> = " << T_klmn
-                          << endl;
+                          << std::endl << indent << " <kl|T|mn> = " << T_klmn
+                          << std::endl;
                     }
                     T_ij[mn] = T_ijmn;
                     T_kl[mn] = T_klmn;
@@ -478,7 +478,7 @@ namespace sc {
                 double T_ijkl = tpcontract->contract(T_ij, T_kl);
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::out0() << decindent << indent << " <ij|kl> = "
-                      << T_ijkl << endl;
+                      << T_ijkl << std::endl;
                 }
                 T_ijkl = DataProcess_BraKet::I2T(T_ijkl, i, j, k, l,
                                                  evals1_bra, evals1_ket,
@@ -486,15 +486,15 @@ namespace sc {
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::out0() << indent << " <ij|T|kl>(ref) = "
                       << Tcontr.get_element(ij + fbraoffset, kl + fketoffset)
-                      << endl;
-                  ExEnv::out0() << indent << " +<ij|T|kl> = " << T_ijkl << endl;
+                      << std::endl;
+                  ExEnv::out0() << indent << " +<ij|T|kl> = " << T_ijkl << std::endl;
                 }
                 Tcontr.accumulate_element(ij + fbraoffset, kl + fketoffset,
                                           T_ijkl);
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::out0() << indent << " <ij|T|kl>(new) = "
                       << Tcontr.get_element(ij + fbraoffset, kl + fketoffset)
-                      << endl;
+                      << std::endl;
                 }
 
                 accumk->release_pair_block(kk, ll, intsetidx_ket);
@@ -507,9 +507,9 @@ namespace sc {
             } // bra loop
           } // loop over tasks with access
 
-          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
-          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
-          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << std::endl;
           if (accumb != accumk && accumk->data_persistent()) accumk->deactivate();
 
         } // ket blocks
@@ -531,7 +531,7 @@ namespace sc {
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"
-        << endl;
+        << std::endl;
     tim_gen_tensor_contract.exit();
   }
 
@@ -675,8 +675,8 @@ namespace sc {
           << "^T";
       label = oss.str();
     }
-    ExEnv::out0() << endl << indent << "Entered generic contraction (" << label
-        << ")" << endl;
+    ExEnv::out0() << std::endl << indent << "Entered generic contraction (" << label
+        << ")" << std::endl;
     ExEnv::out0() << incindent;
 
     //
@@ -803,7 +803,7 @@ namespace sc {
 
           // split work over tasks which have access to integrals
           // WARNING: assuming same accessibility for both bra and ket transforms
-          vector<int> proc_with_ints;
+          std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
           const int me = r12info()->msg()->me();
 
@@ -856,10 +856,10 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::allO2N2) {
                       ExEnv::outn() << indent << "task " << me
-                          << ": obtained ij blocks" << endl;
+                          << ": obtained ij blocks" << std::endl;
                       ExEnv::outn() << indent
                                     << "i = " << ijt.i0_
-                                    << " j = " << ijt.i1_ << endl;
+                                    << " j = " << ijt.i1_ << std::endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));
@@ -893,10 +893,10 @@ namespace sc {
 
                     if (debug_ >= DefaultPrintThresholds::allO2N2) {
                       ExEnv::outn() << indent << "task " << me
-                          << ": obtained kl blocks" << endl;
+                          << ": obtained kl blocks" << std::endl;
                       ExEnv::outn() << indent
                                     << "k = " << ijt.i0_
-                                    << " l = " << ijt.i1_ << endl;
+                                    << " l = " << ijt.i1_ << std::endl;
 
                       RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space1_intb->rank()),
                                                                                        new SCDimension(space2_intb->rank()));
@@ -917,11 +917,11 @@ namespace sc {
                         0.0, T_result, tile_size_ket);
                 if (debug_ >= DefaultPrintThresholds::allO2N2) {
                   ExEnv::outn() << indent << "task " << me
-                      << ": nbra_ij = " << nbra_ij << " nket_ij = " << nket_ij << endl;
+                      << ": nbra_ij = " << nbra_ij << " nket_ij = " << nket_ij << std::endl;
                   ExEnv::outn() << indent << "task " << me
-                      << ": tile_size_bra = " << tile_size_bra << " tile_size_ket = " << tile_size_ket << endl;
+                      << ": tile_size_bra = " << tile_size_bra << " tile_size_ket = " << tile_size_ket << std::endl;
                   ExEnv::outn() << indent << "task " << me
-                      << ": T_result[0] = " << T_result[0] << endl;
+                      << ": T_result[0] = " << T_result[0] << std::endl;
 
 
                   RefSCMatrix tmp_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(tile_size_bra),
@@ -943,9 +943,9 @@ namespace sc {
                       const int k = ket_ij[kl].i0_;
                       const int l = ket_ij[kl].i1_;
                       ExEnv::out0() << indent << "i = " << i << " j = " << j
-                          << " k = " << k << " l = " << l << incindent << endl;
+                          << " k = " << k << " l = " << l << incindent << std::endl;
                       ExEnv::out0() << decindent << indent << " <ij|kl> = "
-                          << T_ijkl << endl;
+                          << T_ijkl << std::endl;
                     }
 
                     Tcontr.accumulate_element(IJ, KL,
@@ -979,9 +979,9 @@ namespace sc {
             } // bra tile loop
           } // loop over tasks with access
 
-          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << endl;
-          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << endl;
-          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << endl;
+          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << std::endl;
           if (accumb != accumk && accumk->data_persistent()) accumk->deactivate();
 
         } // ket blocks
@@ -1004,7 +1004,7 @@ namespace sc {
 
     ExEnv::out0() << decindent;
     ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"
-        << endl;
+        << std::endl;
     tim_gen_tensor_contract.exit();
   }
 

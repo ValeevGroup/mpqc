@@ -55,11 +55,11 @@ namespace sc {
       A.element_op(twonorm_op);
       const double twonorm = twonorm_op->result();
 
-      os << indent << "Norms of " << label << endl;
-      os << indent << "------------------------" << endl;
-      os << indent << "||A||_{\\infty} = " << scprintf("%10.5lf",maxabs) << endl;
-      os << indent << "||A||_1        = " << scprintf("%10.5lf",onenorm) << endl;
-      os << indent << "||A||_2        = " << scprintf("%10.5lf",twonorm) << endl << endl;
+      os << indent << "Norms of " << label << std::endl;
+      os << indent << "------------------------" << std::endl;
+      os << indent << "||A||_{\\infty} = " << scprintf("%10.5lf",maxabs) << std::endl;
+      os << indent << "||A||_1        = " << scprintf("%10.5lf",onenorm) << std::endl;
+      os << indent << "||A||_2        = " << scprintf("%10.5lf",twonorm) << std::endl << std::endl;
     }
 
 

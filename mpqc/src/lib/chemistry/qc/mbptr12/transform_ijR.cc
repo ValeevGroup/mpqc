@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 
+using namespace std;
 using namespace sc;
 
 ClassDesc TwoBodyThreeCenterMOIntsTransform_ijR::class_desc_(

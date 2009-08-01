@@ -87,8 +87,8 @@ namespace sc {
       oss << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
       << space1_ket->id() << " " << space2_ket->id() << ">";
       const std::string label = oss.str();
-      ExEnv::out0() << endl << indent
-      << "Entered generic tensor (" << label << ") evaluator" << endl;
+      ExEnv::out0() << std::endl << indent
+      << "Entered generic tensor (" << label << ") evaluator" << std::endl;
       ExEnv::out0() << incindent;
 
       //
@@ -154,8 +154,8 @@ namespace sc {
         for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket,++fbraket) {
 
           Ref<TwoBodyMOIntsTransform> tform = transforms[fbraket];
-	  const Ref<TwoBodyIntDescr>& intdescr = tform->intdescr();
-	  const unsigned int intsetidx = intdescr->intset(tbint_type);
+          const Ref<TwoBodyIntDescr>& intdescr = tform->intdescr();
+          const unsigned int intsetidx = intdescr->intset(tbint_type);
 
           if (debug_ > DefaultPrintThresholds::diagnostics)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
@@ -165,7 +165,7 @@ namespace sc {
           accum->activate();
 
           // split work over tasks which have access to integrals
-          vector<int> proc_with_ints;
+          std::vector<int> proc_with_ints;
           const int nproc_with_ints = accum->tasks_with_access(proc_with_ints);
           const int me = r12info()->msg()->me();
 
@@ -183,12 +183,12 @@ namespace sc {
               const unsigned int jj = map2_bra[j];
 
 	      if (debug_ > DefaultPrintThresholds::allO2N2)
-                ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+                ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << std::endl;
               Timer tim_intsretrieve("MO ints retrieve");
               const double *ij_buf = accum->retrieve_pair_block(ii,jj,intsetidx);
               tim_intsretrieve.exit();
 	      if (debug_ > DefaultPrintThresholds::allO2N2)
-                ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
+                ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << std::endl;
 
               for(iterket.start(); iterket; iterket.next()) {
                 const unsigned int a = iterket.i();
@@ -203,7 +203,7 @@ namespace sc {
                 if (alphabeta) {
 		  if (debug_ > DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-                    << " <ij|ab> = " << I_ijab << endl;
+                    << " <ij|ab> = " << I_ijab << std::endl;
                   }
                   const double T_ijab = DataProcess::I2T(I_ijab,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
                   Tresult.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
@@ -215,7 +215,7 @@ namespace sc {
                   const double I_ijba = ij_buf[BA];
 		  if (debug_ > DefaultPrintThresholds::allO2N2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-                    << " <ij|ab> = " << I_ijab << " <ij|ba> = " << I_ijba << endl;
+                    << " <ij|ab> = " << I_ijab << " <ij|ba> = " << I_ijba << std::endl;
                   }
                   const double I_anti = I_ijab - I_ijba;
                   const double T_ijab = DataProcess::I2T(I_anti,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
@@ -241,7 +241,7 @@ namespace sc {
       }
 
       ExEnv::out0() << decindent;
-      ExEnv::out0() << indent << "Exited generic tensor (" << label << ") evaluator" << endl;
+      ExEnv::out0() << indent << "Exited generic tensor (" << label << ") evaluator" << std::endl;
       tim_generic_tensor.exit();
     }
 

@@ -11,7 +11,7 @@
 #include <cmath>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
-
+using namespace std;
 using namespace sc;
 
 

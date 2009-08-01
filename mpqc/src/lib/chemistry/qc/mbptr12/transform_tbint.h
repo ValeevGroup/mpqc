@@ -42,7 +42,7 @@
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
-using namespace std;
+//using namespace std;
 
 namespace sc {
 

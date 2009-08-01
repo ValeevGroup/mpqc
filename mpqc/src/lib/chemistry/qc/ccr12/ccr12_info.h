@@ -340,9 +340,9 @@ class CCR12_Info : virtual public RefCount {
 
 
 
-    /// no longer needed
-/*  long next_value();
-    void reset_counter(); */
+    /// For debugging purpose only.
+    /// TODO remove after debugged Fr2 and Fd2 fill-in functions
+    void fr2_real_norm(Ref<Tensor>&);
 };
 
 }

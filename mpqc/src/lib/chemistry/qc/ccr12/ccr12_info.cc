@@ -172,6 +172,15 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     mem_->sync();
 
     fill_in_fr_and_fd();
+#define LOCALDEBUG
+#ifdef LOCALDEBUG
+    {
+      Ref<Tensor> e0 = new Tensor("etest", mem_);
+      offset_e(e0);
+      fr2_real_norm(e0);
+      cout << "Fr * Fd = " << setprecision(15) << get_e(e0) << endl;
+    }
+#endif
 
     // X intermediate
     d_xs2 = new Tensor("xs2", mem_);

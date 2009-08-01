@@ -79,9 +79,6 @@ void CCSDTQ::compute(){
   CCSDTQ_T3* ccsdtq_t3 = new CCSDTQ_T3(info());
   CCSDTQ_T4* ccsdtq_t4 = new CCSDTQ_T4(info());
 
-  //ccr12_info_->in.resize(5);
-  //ccr12_info_->kn.resize(50);
-
   string theory_ = "CCSDTQ";
   print_iteration_header(theory_);
 

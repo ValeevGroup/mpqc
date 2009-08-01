@@ -144,3 +144,63 @@ for (long h3b=0L;h3b<noab();++h3b) {
 mem()->sync(); 
 } 
 
+
+//
+// This is for debugging purpose only.
+//
+// TODO remove after debug is done
+//
+void CCR12_Info::fr2_real_norm(Ref<Tensor>& out) {
+if (out->is_this_local(0L)) {
+  long dimc=1;
+  double* k_c_sort=mem()->malloc_local_double(dimc);
+  std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0);
+  for (long h3b=0L;h3b<noab();++h3b) {
+   for (long h4b=h3b;h4b<noab();++h4b) {
+    for (long p1b=noab();p1b<noab()+nvab();++p1b) {
+     for (long q2b=noab()+nvab();q2b<nab();++q2b) {
+      if (get_spin(p1b)+get_spin(q2b)==get_spin(h3b)+get_spin(h4b)) {
+       if ((get_sym(p1b)^(get_sym(q2b)^(get_sym(h3b)^get_sym(h4b))))==irrep_e()) {
+        long p1b_0,q2b_0,h3b_0,h4b_0;
+        restricted_4(p1b,q2b,h3b,h4b,p1b_0,q2b_0,h3b_0,h4b_0);
+        long h3b_1,h4b_1,p1b_1,q2b_1;
+        restricted_4(h3b,h4b,p1b,q2b,h3b_1,h4b_1,p1b_1,q2b_1);
+        long dim_common=get_range(h3b)*get_range(h4b)*get_range(p1b)*get_range(q2b);
+        long dima0_sort=1L;
+        long dima0=dim_common*dima0_sort;
+        long dima1_sort=1L;
+        long dima1=dim_common*dima1_sort;
+        if (dima0>0L && dima1>0L) {
+         double* k_a0_sort=mem()->malloc_local_double(dima0);
+         double* k_a0=mem()->malloc_local_double(dima0);
+         fr2()->get_block(h4b_0+noab()*(h3b_0+noab()*(q2b_0+(nab())*(p1b_0))),k_a0);
+         sort_indices4(k_a0,k_a0_sort,get_range(p1b),get_range(q2b),get_range(h3b),get_range(h4b),1,0,3,2,+1.0,false);
+         mem()->free_local_double(k_a0);
+         double* k_a1_sort=mem()->malloc_local_double(dima1);
+         double* k_a1=mem()->malloc_local_double(dima1);
+         fd2()->get_block(q2b_1+(nab())*(p1b_1+(nab())*(h4b_1+noab()*(h3b_1))),k_a1);
+         sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(p1b),get_range(q2b),3,2,1,0,+1.0,false);
+         mem()->free_local_double(k_a1);
+         double factor=1.0;
+         if (h3b==h4b) {
+          factor=factor/2.0;
+         }
+         smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort);
+         mem()->free_local_double(k_a1_sort);
+         mem()->free_local_double(k_a0_sort);
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+  double* k_c=mem()->malloc_local_double(dimc);
+  sort_indices0(k_c_sort,k_c,1.0,false);
+  out->add_block((0),k_c);
+  mem()->free_local_double(k_c);
+  mem()->free_local_double(k_c_sort);
+}
+mem()->sync();
+}
+

@@ -364,6 +364,37 @@ void CCR12_Info::offset_fr2(){
 }
 
 
+/// F12^ii_AA tensor (referred to as d_fd2 in smith)
+void CCR12_Info::offset_fd2(){
+  long size=0L;
+  for (long h1b=0L;h1b<noab();++h1b) {
+   for (long h2b=h1b;h2b<noab();++h2b) {
+    for (long g3b=0L;g3b<nab();++g3b) {
+     for (long g4b=g3b;g4b<nab();++g4b) {
+      if (get_spin(h1b)+get_spin(h2b)==get_spin(g3b)+get_spin(g4b)) {
+       if ((get_sym(h1b)^(get_sym(h2b)^(get_sym(g3b)^get_sym(g4b))))==irrep_v_) {
+        if (!restricted_ || get_spin(h1b)+get_spin(h2b)+get_spin(g3b)+get_spin(g4b)!=8L) {
+         if (g3b>=noab() && g4b>=noab()+nvab()) {
+                              // make sure that tags are still evaluated with nab()
+                              // ** modified ansatz 2
+          if (!need_FAA_ && g3b>=noab()+nvab()) continue;
+          d_fd2->input_offset(g4b+nab()*(g3b+nab()*(h2b+noab()*h1b)),size);
+          size+=get_range(h1b)*get_range(h2b)*get_range(g3b)*get_range(g4b);
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+  d_fd2->set_filesize(size);
+  ExEnv::out0() << indent << "F12d file:   " << d_fd2->filename() << endl;
+  ExEnv::out0() << indent << "size     : "   << setw(10) << size  << " doubles" << endl << endl;
+  d_fd2->createfile();
+}
+
+
 void CCR12_Info::offset_qy(){
   long size = 0L;
   for (long p3b = noab(); p3b < noab() + nvab(); ++p3b) {
@@ -453,37 +484,6 @@ void CCR12_Info::offset_lx(){
   }
   d_lx->set_filesize(size);
   d_lx->createfile();
-}
-
-
-/// F12^ii_AA tensor (referred to as d_fd2 in smith)
-void CCR12_Info::offset_fd2(){
-  long size=0L;
-  for (long h1b=0L;h1b<noab();++h1b) {
-   for (long h2b=h1b;h2b<noab();++h2b) {
-    for (long g3b=0L;g3b<nab();++g3b) {
-     for (long g4b=g3b;g4b<nab();++g4b) {
-      if (get_spin(h1b)+get_spin(h2b)==get_spin(g3b)+get_spin(g4b)) {
-       if ((get_sym(h1b)^(get_sym(h2b)^(get_sym(g3b)^get_sym(g4b))))==irrep_v_) {
-        if (!restricted_ || get_spin(h1b)+get_spin(h2b)+get_spin(g3b)+get_spin(g4b)!=8L) {
-         if (g3b>=noab() && g4b>=noab()+nvab()) {
-                              // make sure that tags are still evaluated with nab()
-                              // ** modified ansatz 2
-          if (!need_FAA_ && g3b>=noab()+nvab()) continue;
-          d_fd2->input_offset(g4b+nab()*(g3b+nab()*(h2b+noab()*h1b)),size);
-          size+=get_range(h1b)*get_range(h2b)*get_range(g3b)*get_range(g4b);
-         }
-        }
-       }
-      }
-     }
-    }
-   }
-  }
-  d_fd2->set_filesize(size);
-  ExEnv::out0() << indent << "F12d file:   " << d_fd2->filename() << endl;
-  ExEnv::out0() << indent << "size     : "   << setw(10) << size  << " doubles" << endl << endl;
-  d_fd2->createfile();
 }
 
 

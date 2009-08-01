@@ -75,9 +75,6 @@ void CCSDT::compute(){
   CCSDT_T2* ccsdt_t2 = new CCSDT_T2(info());
   CCSDT_T3* ccsdt_t3 = new CCSDT_T3(info());
 
-  //ccr12_info_->in.resize(5);
-  //ccr12_info_->kn.resize(50);
-
   string theory_ = "CCSDT";
   print_iteration_header(theory_);
 

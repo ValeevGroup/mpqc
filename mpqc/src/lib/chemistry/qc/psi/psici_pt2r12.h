@@ -143,6 +143,11 @@ namespace sc {
         <dt><tt>valence_obwfn</tt><dd> Specifies the OneBodyWavefunction object used to determine the valence orbitals.
         Recommended to use the minimal-basis HF wavefunction.
 
+        <dt><tt>root</tt><dd> Specifies which CI vector to pick in DETCI. The default is 1, i.e. the lowest root.
+
+        <dt><tt>detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI. The default is the value specified with keyword
+        root. \sa keyword "detcas_detci_num_roots"
+
        */
       PsiCI_PT2R12(const Ref<KeyVal> &keyval);
       PsiCI_PT2R12(StateIn &s);

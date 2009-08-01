@@ -293,75 +293,22 @@ namespace sc {
     rasscf_ = keyval->booleanvalue("rasscf",KeyValValueboolean(false));
     wfn_type_ = rasscf_ ? "detcas" : "detci";
 
-    if(keyval->exists("opdm_print")) {
-      opdm_print_ = keyval->booleanvalue("opdm_print");
+    opdm_print_ = keyval->booleanvalue("opdm_print", KeyValValueboolean(false));
+    tpdm_print_ = keyval->booleanvalue("tpdm_print", KeyValValueboolean(false));
+
+    root_ = keyval->intvalue("root", KeyValValueint(1));
+    detci_num_roots_ = keyval->intvalue("detci_num_roots", KeyValValueint(root_));
+    if(detci_num_roots_<root_) {
+      throw InputError("PsiCI_PT2R12::PsiCI_PT2R12(const Ref<KeyVal> &) -- detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
     }
-    else {
-      opdm_print_ = false;
+    detcas_detci_num_roots_ = keyval->intvalue("detcas_detci_num_roots", KeyValValueint(root_));
+    if(detcas_detci_num_roots_<root_) {
+      throw InputError("PsiCI_PT2R12::PsiCI_PT2R12(const Ref<KeyVal> &) -- detcas_detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
     }
 
-    if(keyval->exists("tpdm_print")) {
-      tpdm_print_ = keyval->booleanvalue("tpdm_print");
-    }
-    else {
-      tpdm_print_ = false;
-    }
-
-    if(keyval->exists("root")) {
-      root_ = keyval->intvalue("root");
-    }
-    else {
-      root_ = 1;   /// corresponds to ground state.
-    }
-
-    if(keyval->exists("num_roots")) {
-      detci_num_roots_ = keyval->intvalue("num_roots");
-      if(detci_num_roots_<root_) {
-        throw InputError("PsiCI_PT2R12::PsiCI_PT2R12(const Ref<KeyVal> &) -- num_roots should not be smaller than root.",__FILE__,__LINE__);
-      }
-    }
-    else {
-      detci_num_roots_ = root_;
-    }
-    if(keyval->exists("detci_num_roots")) {
-      detci_num_roots_ = keyval->intvalue("detci_num_roots");
-      if(detci_num_roots_<root_) {
-        throw InputError("PsiCI_PT2R12::PsiCI_PT2R12(const Ref<KeyVal> &) -- detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
-      }
-    }
-    else {
-      detci_num_roots_ = root_;
-    }
-    if(keyval->exists("detcas_detci_num_roots")) {
-      detcas_detci_num_roots_ = keyval->intvalue("detcas_detci_num_roots");
-      if(detcas_detci_num_roots_<root_) {
-        throw InputError("PsiCI_PT2R12::PsiCI_PT2R12(const Ref<KeyVal> &) -- detcas_detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
-      }
-    }
-    else {
-      detcas_detci_num_roots_ = root_;
-    }
-
-    if(keyval->exists("h0_blocksize")) {
-      h0_blocksize_ = keyval->intvalue("h0_blocksize");
-    }
-    else {
-      h0_blocksize_ = 40;
-    }
-
-    if(keyval->exists("ex_lvl")) {
-      ex_lvl_ = keyval->intvalue("ex_lvl");
-    }
-    else {
-      ex_lvl_ = 2;
-    }
-
-    if(keyval->exists("repl_otf")) {
-      repl_otf_ = keyval->booleanvalue("repl_otf");
-    }
-    else {
-      repl_otf_ = false;
-    }
+    h0_blocksize_ = keyval->intvalue("h0_blocksize", KeyValValueint(40));
+    ex_lvl_ = keyval->intvalue("ex_lvl", KeyValValueint(2));
+    repl_otf_ = keyval->booleanvalue("repl_otf", KeyValValueboolean(false));
 
     print_all_blocks();
 

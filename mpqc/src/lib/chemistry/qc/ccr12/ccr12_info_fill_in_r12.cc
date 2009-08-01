@@ -216,7 +216,9 @@ void CCR12_Info::fill_in_fr_and_fd() {
     aAii_erange[2] = MTensor<4>::element_range(0, nocc_act);
     aAii_erange[3] = MTensor<4>::element_range(0, nocc_act);
     const bool transpose_23_01 = true;
-    F.convert(iiaA_acc_[AlphaBeta], r12evalinfo_->corrfactor()->tbint_type_f12(),
+    Ref<TwoBodyIntDescr> tbintdescr = r12evalinfo_->corrfactor()->tbintdescr(r12evalinfo_->integral(), 0);
+    assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
+    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12evalinfo_->corrfactor()->tbint_type_f12() ),
               aamap, aAmap, aimap, aimap, &aAii_erange, transpose_23_01);
   }
 
@@ -233,9 +235,13 @@ void CCR12_Info::fill_in_fr_and_fd() {
     iiaA_erange[1] = MTensor<4>::element_range(0, nocc_act);
     iiaA_erange[2] = MTensor<4>::element_range(0, nvir_act);
     iiaA_erange[3] = MTensor<4>::element_range(0, ncabs);
-    F.convert(iiaA_acc_[AlphaBeta], r12evalinfo_->corrfactor()->tbint_type_f12(),
+    Ref<TwoBodyIntDescr> tbintdescr = r12evalinfo_->corrfactor()->tbintdescr(r12evalinfo_->integral(), 0);
+    assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
+    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12evalinfo_->corrfactor()->tbint_type_f12() ),
               aimap, aimap, aamap, aAmap, &iiaA_erange);
   }
+
+  //ExEnv::out0() << "Norms of fd2 and fr2 = " << RMS(*d_fd2) << " " << RMS(*d_fr2) << endl;
 
 }
 

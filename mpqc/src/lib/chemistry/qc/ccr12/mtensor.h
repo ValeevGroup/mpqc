@@ -104,7 +104,7 @@ namespace sc {
        *
        *  \param src_is_2301 set to true if src contains <2 3|0 1> integrals
        */
-      void convert(const Ref<DistArray4>& src, DistArray4::tbint_type type,
+      void convert(const Ref<DistArray4>& src, unsigned int tbtype,
                    const element_index_map& eimap0,
                    const element_index_map& eimap1,
                    const element_index_map& eimap2,

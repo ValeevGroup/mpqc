@@ -40,8 +40,6 @@
 #include <util/group/memory.h>
 #include <chemistry/qc/basis/tbint.h>
 
-//using namespace std;
-
 namespace sc {
 
   enum DistArray4Storage {DistArray4Storage_XY, DistArray4Storage_YX};

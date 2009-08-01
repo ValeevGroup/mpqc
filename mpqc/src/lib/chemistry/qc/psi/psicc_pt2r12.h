@@ -37,9 +37,9 @@
 #include <chemistry/qc/psi/psicc.h>
 
 namespace sc {
-  
+
   class MBPT2_R12;
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiCCSD_PT2R12 is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12}}\f$ method
   class PsiCCSD_PT2R12 : public PsiCC {
@@ -54,7 +54,7 @@ namespace sc {
       /// set to true to use Ts instead of Lambdas
       static const bool replace_Lambda_with_T_ = true;
       /// default is to include up to 3rd-order terms in the energy
-      static const unsigned int completeness_order_for_energy_ = 3;
+      static const unsigned int completeness_order_for_energy_ = 10;
       /// the max order for the intermediates is one less
       static const unsigned int
           completeness_order_for_intermediates_ = completeness_order_for_energy_
@@ -73,13 +73,13 @@ namespace sc {
 
       /// reimplementation of PsiCorrWavefunction::set_desired_value_accuracy
       void set_desired_value_accuracy(double acc);
-      
+
       /// CCSD energy
       double eccsd();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
   };
-  
+
   ///////////////////////////////////////////////////////////////////
   /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12,T}}\f$ method
   class PsiCCSD_PT2R12T : public PsiCCSD_PT2R12 {

@@ -39,8 +39,6 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
-//using namespace std;
-
 namespace sc {
 
   /** Class TwoBodyGrid describes a set of coordinates of 2 particles.
@@ -56,7 +54,7 @@ class TwoBodyGrid : virtual public SavableState {
 public:
   TwoBodyGrid(StateIn&);
   /** The KeyVal constructor
-      
+
       <dl>
 
       <dt><tt>name</tt><dd> This string specifies the name for this grid.

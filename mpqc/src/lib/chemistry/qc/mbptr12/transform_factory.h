@@ -41,8 +41,6 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/transform.h>
 
-//using namespace std;
-
 namespace sc {
 
   /** Provides hints to the constructors of a Transform class that help configure

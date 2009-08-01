@@ -84,13 +84,12 @@ namespace sc {
       const std::vector<std::string>& tform_keys_;
   };
 
-  using LinearR12::CorrelationFactor;
   /** Creates TwoBodyIntDescr for correlation factor C */
   class TwoBodyIntDescrCreator: public RangeCreator<Ref<TwoBodyIntDescr> > {
     public:
       typedef Ref<TwoBodyIntDescr> ObjT;
 
-      TwoBodyIntDescrCreator(const Ref<CorrelationFactor>& corrfactor,
+      TwoBodyIntDescrCreator(const Ref<LinearR12::CorrelationFactor>& corrfactor,
                              const Ref<Integral>& integral,
                              bool CorrFunctionInBra = false,
                              bool CorrFunctionInKet = false);
@@ -98,7 +97,7 @@ namespace sc {
       ObjT operator()();
 
     private:
-      Ref<CorrelationFactor> corrfactor_;
+      Ref<LinearR12::CorrelationFactor> corrfactor_;
       Ref<Integral> integral_;
       bool CorrFunctionInBraKet_;
       unsigned int nf12bra_;
@@ -119,7 +118,7 @@ namespace sc {
                               const Ref<OrbitalSpace>& ket1,
                               const Ref<OrbitalSpace>& bra2,
                               const Ref<OrbitalSpace>& ket2,
-                              const Ref<CorrelationFactor>& corrfactor,
+                              const Ref<LinearR12::CorrelationFactor>& corrfactor,
                               bool CorrFunctionInBra = false,
                               bool CorrFunctionInKet = false,
                               std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2));
@@ -130,7 +129,7 @@ namespace sc {
 
     private:
       Ref<TwoBodyFourCenterMOIntsRuntime> moints_rtime_;
-      Ref<CorrelationFactor> corrfactor_;
+      Ref<LinearR12::CorrelationFactor> corrfactor_;
       const Ref<OrbitalSpace>& bra1_;
       const Ref<OrbitalSpace>& bra2_;
       const Ref<OrbitalSpace>& ket1_;

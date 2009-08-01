@@ -120,20 +120,20 @@ namespace sc {
        *
        *  \param overlap is the overlap between a reference wfn (e.g. minimal basis HF) and a given wfn
        */
-      vector<int> map_to_valence_order(const RefSCMatrix &overlap);
+      std::vector<int> map_to_valence_order(const RefSCMatrix &overlap);
       /** Returns a vector of the corresponding symmetry (block) indices for each MO
        *  in energy order. */
-      vector<int> mo_symmetries_in_energetic_order();
+      std::vector<int> mo_symmetries_in_energetic_order();
       virtual RefSCMatrix MPQC2PSI_transform_matrix(SpinCase1 spin);
-      vector<unsigned int> mo_blocks();
-      vector<unsigned int> frzc_blocks();
-      vector<unsigned int> docc_blocks();
-      vector<unsigned int> docc_act_blocks();
-      vector<unsigned int> socc_blocks();
-      vector<unsigned int> uocc_act_blocks();
-      vector<unsigned int> uocc_blocks();
-      vector<unsigned int> frzv_blocks();
-      void print_all_blocks(ostream &o=ExEnv::out0());
+      std::vector<unsigned int> mo_blocks();
+      std::vector<unsigned int> frzc_blocks();
+      std::vector<unsigned int> docc_blocks();
+      std::vector<unsigned int> docc_act_blocks();
+      std::vector<unsigned int> socc_blocks();
+      std::vector<unsigned int> uocc_act_blocks();
+      std::vector<unsigned int> uocc_blocks();
+      std::vector<unsigned int> frzv_blocks();
+      void print_all_blocks(std::ostream &o=ExEnv::out0());
 
     public:
       /**

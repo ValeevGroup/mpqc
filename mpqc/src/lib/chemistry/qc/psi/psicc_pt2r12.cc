@@ -708,45 +708,45 @@ void PsiCCSD_PT2R12::compute() {
 
   double e2;
   ExEnv::out0() << indent << "E2(AB)        = "<< scprintf("%20.15lf",E2[AlphaBeta])
-                << endl;
+                << std::endl;
   if (num_unique_spincases2 > 2) {
     e2 = E2[AlphaBeta] + E2[AlphaAlpha] + E2[BetaBeta];
     ExEnv::out0() << indent << "E2(BB)        = "<< scprintf("%20.15lf",E2[BetaBeta])
-                  << endl;
+                  << std::endl;
     ExEnv::out0() << indent << "E2(AA)        = "<< scprintf("%20.15lf",E2[AlphaAlpha])
-                  << endl;
+                  << std::endl;
   }
   else {
     e2 = E2[AlphaBeta] + 2.0*E2[AlphaAlpha];
     ExEnv::out0() << indent << "E2(AA)        = "<< scprintf("%20.15lf",2.0*E2[AlphaAlpha])
-                  << endl;
+                  << std::endl;
     ExEnv::out0() << indent << "E2(s)         = "<< scprintf("%20.15lf",E2[AlphaBeta] - E2[AlphaAlpha])
-                  << endl;
+                  << std::endl;
     ExEnv::out0() << indent << "E2(t)         = "<< scprintf("%20.15lf",3.0*E2[AlphaAlpha])
-                  << endl;
+                  << std::endl;
   }
   // e2 will include cabs singles energy, if mbpt2-r12 includes it
   e2 += mbptr12_->cabs_singles_energy();
 
   ExEnv::out0() << indent << "E2(MP2)       = "<< scprintf("%20.15lf",mbptr12_->r12_corr_energy())
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "EMP2          = "<< scprintf("%20.15lf",mbptr12_->corr_energy() - mbptr12_->r12_corr_energy())
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "EMP2R12       = "<< scprintf("%20.15lf",mbptr12_->corr_energy())
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "E2            = "<< scprintf("%20.15lf",e2)
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "ECCSD         = "<< scprintf("%20.15lf",eccsd_)
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "ECCSD_PT2R12  = "<< scprintf("%20.15lf",e2 + eccsd_)
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "ECCSD_PT2R12+REF = "<< scprintf("%20.15lf", reference_energy() + e2 + eccsd_)
-                << endl;
+                << std::endl;
 
   set_energy(reference_energy() + e2 + eccsd_);
 }
 
-void PsiCCSD_PT2R12::print(ostream&o) const {
+void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << indent << "PsiCCSD_PT2R12:" << std::endl;
   o << incindent;
   o << indent << "New (symmetric) approach: " << (new_approach_ ? "true" : "false") << std::endl;
@@ -803,15 +803,15 @@ void PsiCCSD_PT2R12T::compute() {
   const double e_ccsd_pt2r12 = value() - reference_energy();
   if (!mp2_only_) e_t_ = exenv()->chkpt().rd_e_t();
   const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
-  ExEnv::out0() << indent << "E(T)          = " << scprintf("%20.15lf",e_t_) << endl;
+  ExEnv::out0() << indent << "E(T)          = " << scprintf("%20.15lf",e_t_) << std::endl;
   ExEnv::out0() << indent << "ECCSD_PT2R12T = " << scprintf("%20.15lf",e_ccsd_pt2r12t)
-                << endl;
+                << std::endl;
   ExEnv::out0() << indent << "ECCSD_PT2R12T+REF = "<< scprintf("%20.15lf", reference_energy() + e_ccsd_pt2r12t)
-                << endl;
+                << std::endl;
   set_energy(e_ccsd_pt2r12t + reference_energy());
 }
 
-void PsiCCSD_PT2R12T::print(ostream&o) const {
+void PsiCCSD_PT2R12T::print(std::ostream&o) const {
   o << indent << "PsiCCSD_PT2R12T:" << std::endl;
   o << incindent;
   PsiCCSD_PT2R12::print(o);

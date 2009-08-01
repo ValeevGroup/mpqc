@@ -37,8 +37,6 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
-//using namespace std;
-
 namespace sc {
 
   /** TwoBodyMOIntsTransform_ixjy computes (ix|jy) integrals

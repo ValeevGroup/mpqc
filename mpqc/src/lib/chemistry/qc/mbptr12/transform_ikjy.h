@@ -37,8 +37,6 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
-//using namespace std;
-
 namespace sc {
 
   /** TwoBodyMOIntsTransform_ikjy computes (ik|jy) integrals
@@ -50,7 +48,7 @@ class TwoBodyMOIntsTransform_ikjy : public TwoBodyMOIntsTransform {
   void init_acc();
   // Compute required dynamic memory for a given batch size
   distsize_t compute_transform_dynamic_memory_(int ni) const;
-  
+
 public:
 
   TwoBodyMOIntsTransform_ikjy(StateIn&);

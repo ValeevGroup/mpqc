@@ -5,8 +5,6 @@
 #ifndef _chemistry_qc_psi_file11_h
 #define _chemistry_qc_psi_file11_h
 
-using namespace std;
-
 #include <fstream>
 #include <string>
 #include<util/ref/ref.h>
@@ -22,7 +20,7 @@ class PsiExEnv;
 
 class PsiFile11: public RefCount {
 
-  string filename_;
+  std::string filename_;
   std::fstream file_;
 
   // No default constructor
@@ -33,9 +31,9 @@ class PsiFile11: public RefCount {
   void rewind();
 
   public:
-    PsiFile11(const string& name);
+    PsiFile11(const std::string& name);
     ~PsiFile11();
-    
+
     void open();
     void close();
     void remove();

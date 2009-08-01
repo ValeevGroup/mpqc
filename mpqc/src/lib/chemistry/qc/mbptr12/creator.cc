@@ -32,6 +32,7 @@
 #include <chemistry/qc/mbptr12/creator.h>
 
 using namespace sc;
+using sc::LinearR12::CorrelationFactor;
 
 DistArray4Creator::DistArray4Creator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                                      const std::vector<std::string>& tform_keys) :

@@ -32,8 +32,6 @@
 #ifndef _chemistry_qc_psi_input_h
 #define _chemistry_qc_psi_input_h
 
-using namespace std;
-
 #include <fstream>
 #include <string>
 #include<util/ref/ref.h>
@@ -50,20 +48,20 @@ class CorrelationTable;
 
 class PsiInput: public RefCount {
 
-  string filename_;
+  std::string filename_;
   std::ofstream file_;
   int me_;                // task id
 
   int indentation_;
-  
+
   // No default constructor
   PsiInput() {};
 
   // can run on me_?
   bool can_run_on_me() { return me_ == 0; }
-  
+
   public:
-    PsiInput(const string& name);
+    PsiInput(const std::string& name);
     ~PsiInput();
     void open();
     void close();
@@ -90,7 +88,7 @@ class PsiInput: public RefCount {
     /// Write basis sets explicitly
     void write_basis_sets(const Ref<GaussianBasisSet>&);
     void write_geom(const Ref<Molecule>&);
-    
+
     void write_defaults(const Ref<PsiExEnv>&, const char *dertype);
 };
 

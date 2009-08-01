@@ -34,8 +34,6 @@
 
 #include <math/scmat/matrix.h>
 
-//using namespace std;
-
 namespace sc {
 
   namespace exp {

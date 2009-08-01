@@ -45,8 +45,6 @@
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/registry.h>
 
-//using namespace std;
-
 namespace sc {
 
   /// Orbital = index + attributes

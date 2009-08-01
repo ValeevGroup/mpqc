@@ -38,8 +38,6 @@
 #include <chemistry/qc/df/df_runtime.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
-//using namespace std;
-
 namespace sc {
 
   class DensityFittingInfo;

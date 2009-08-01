@@ -36,8 +36,6 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
-//using namespace std;
-
 namespace sc {
 
   /** TwoBodyMOIntsTransform_ijxy computes (ij|xy) integrals

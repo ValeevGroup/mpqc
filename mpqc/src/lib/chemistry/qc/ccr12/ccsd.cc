@@ -29,20 +29,9 @@
 #pragma implementation
 #endif
 
-#include <stdexcept>
-#include <sstream>
-#include <vector>
 #include <cmath>
-#include <ctime>
 #include <util/misc/regtime.h>
-#include <util/misc/string.h>
-#include <util/class/scexception.h>
-#include <util/misc/formio.h>
-#include <util/misc/exenv.h>
-#include <util/state/stateio.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/ccsd.h>
@@ -54,10 +43,8 @@
 #include <chemistry/qc/ccr12/ccsd_pt_right.h>
 #include <chemistry/qc/ccr12/lambda_ccsd_t1.h>
 #include <chemistry/qc/ccr12/lambda_ccsd_t2.h>
-#include <chemistry/qc/ccr12/tensorextrap.h>
 #include <chemistry/qc/ccr12/parenthesis2t.h>
 #include <chemistry/qc/ccr12/parenthesis2q.h>
-#include <chemistry/qc/ccr12/parenthesis2tnum.h>
 #include <chemistry/qc/ccr12/ccsd_2t_left.h>
 #include <chemistry/qc/ccr12/ccsd_2t_right.h>
 #include <chemistry/qc/ccr12/ccsd_2q_left.h>

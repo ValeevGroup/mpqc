@@ -30,9 +30,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 using namespace sc;

@@ -25,14 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/misc/exenv.h>
-#include <util/state/stateio.h>
-#include <math/scmat/blocked.h>
-#include <util/class/scexception.h>
 #include <algorithm>
-
 #include <chemistry/qc/ccr12/parenthesis2q.h>
-#include <chemistry/qc/ccr12/parenthesis2tnum.h>
 
 using namespace sc;
   
@@ -48,8 +42,8 @@ Parenthesis2q::~Parenthesis2q(){
 }
 
 
-double Parenthesis2q::compute(Parenthesis2tNum* eval_left, 
-                              Parenthesis2tNum* eval_right){
+double Parenthesis2q::compute(Ref<Parenthesis2tNum> eval_left, 
+                              Ref<Parenthesis2tNum> eval_right){
 
  double energy=0.0;
  double* dummy;

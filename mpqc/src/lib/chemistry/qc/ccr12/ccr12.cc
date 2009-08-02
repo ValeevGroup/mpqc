@@ -29,22 +29,11 @@
 #pragma implementation
 #endif
 
-#include <stdexcept>
-#include <sstream>
-#include <vector>
-#include <ctime>
-#include <util/misc/string.h>
 #include <util/class/scexception.h>
-#include <util/misc/formio.h>
-#include <util/misc/exenv.h>
-#include <util/state/stateio.h>
-#include <math/scmat/blocked.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
-
 #include <chemistry/qc/ccr12/ccr12.h>
 
-using std::vector;
 using namespace std;
 using namespace sc;
 using namespace sc::LinearR12;

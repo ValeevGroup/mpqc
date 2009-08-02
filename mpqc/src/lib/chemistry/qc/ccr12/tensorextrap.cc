@@ -25,15 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <stdexcept>
-#include <cassert>
-#include <util/class/scexception.h>
-#include <util/misc/string.h>
-#include <util/misc/formio.h>
-#include <util/misc/exenv.h>
-#include <util/state/stateio.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/tensorextrap.h>
+#include <util/class/scexception.h>
 
 
 using namespace sc;

@@ -25,16 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <string>
 #include <cassert>
 #include <vector>
 #include <algorithm>
-#include <math.h>
 #include <chemistry/qc/mbptr12/blas.h>
-
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/mtensor.h>
 

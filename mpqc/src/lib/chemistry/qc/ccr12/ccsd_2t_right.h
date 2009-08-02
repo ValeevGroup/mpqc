@@ -32,13 +32,6 @@
 #pragma interface
 #endif
 
-#include <string>
-#include <math/scmat/blocked.h>
-#include <util/misc/compute.h>
-#include <util/group/memory.h>
-#include <util/group/message.h>
-#include <util/group/thread.h>
-
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/parenthesis2tnum.h>
 

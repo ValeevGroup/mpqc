@@ -26,14 +26,9 @@
 //
 
 #include <algorithm>
-#include <util/misc/exenv.h>
-#include <math/scmat/blocked.h>
-
 #include <chemistry/qc/ccr12/ccsd_pt.h>
-#include <chemistry/qc/ccr12/ccsd_pt_left.h>
-#include <chemistry/qc/ccr12/ccsd_pt_right.h>
-#include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/parenthesis2t.h>
+
 using namespace sc;
   
 

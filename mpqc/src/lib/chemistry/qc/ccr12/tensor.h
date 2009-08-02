@@ -28,15 +28,14 @@
 #ifndef _chemistry_qc_ccr12_tensor_h
 #define _chemistry_qc_ccr12_tensor_h
 
+#include <string>
+#include <vector>
 #include <util/misc/compute.h>
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
 #include <util/group/message.h>
 #include <util/group/thread.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <string>
-#include <vector>
-#include <cassert>
 
 namespace sc {
 

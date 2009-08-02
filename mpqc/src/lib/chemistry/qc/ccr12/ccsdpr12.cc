@@ -29,20 +29,10 @@
 #pragma implementation
 #endif
 
-#include <stdexcept>
-#include <sstream>
-#include <vector>
 #include <cmath>
-#include <ctime>
 #include <util/misc/regtime.h>
-#include <util/misc/string.h>
-#include <util/class/scexception.h>
-#include <util/misc/formio.h>
-#include <util/misc/exenv.h>
 #include <util/state/stateio.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/ccsdpr12.h>

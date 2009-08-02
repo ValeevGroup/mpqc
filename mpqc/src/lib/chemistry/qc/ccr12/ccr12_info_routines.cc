@@ -27,9 +27,6 @@
 
 #include <string>
 #include <algorithm>
-#include <math.h>
-#include <cassert>
-//F77 blas routines
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 

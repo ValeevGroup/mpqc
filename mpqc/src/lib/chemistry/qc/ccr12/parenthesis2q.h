@@ -46,7 +46,7 @@ class Parenthesis2q : virtual public RefCount {
    Parenthesis2q(CCR12_Info* );
    ~Parenthesis2q();
    
-   double compute(Parenthesis2tNum*, Parenthesis2tNum*);
+   double compute(Ref<Parenthesis2tNum>, Ref<Parenthesis2tNum>);
 
 };
 

@@ -29,31 +29,16 @@
 #pragma implementation
 #endif
 
-#include <stdexcept>
-#include <sstream>
 #include <cassert>
 #include <string>
 #include <algorithm>
 #include <cmath>
-#include <vector>
 #include <numeric>
-#include <util/misc/string.h>
-#include <util/class/scexception.h>
-#include <util/misc/formio.h>
 #include <util/misc/exenv.h>
-#include <util/state/stateio.h>
-#include <math/scmat/blocked.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-//F77 blas routines
 #include <chemistry/qc/mbptr12/blas.h>
-
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
-using std::map;
-using std::pair;
-using std::vector;
 using namespace std;
 using namespace sc;
 
@@ -61,7 +46,7 @@ static ClassDesc Tensor_cd(
   typeid(Tensor), "Tensor", 1, "virtual public RefCount",
   0, 0, 0);
 
-Tensor::Tensor(std::string filename, const Ref<MemoryGrp>& mem): mem_(mem) {
+Tensor::Tensor(string filename, const Ref<MemoryGrp>& mem): mem_(mem) {
   filename_ = ".smith_" + filename;
   file_allocated_ = false;
 }
@@ -216,13 +201,13 @@ void Tensor::zero(){
 void Tensor::assign(double a){
   double* buffer = (double *) file()->localdata();
   const size_t dsize = (size_t)file()->localsize() / sizeof(double);
-  std::fill(buffer, buffer + dsize, a);
+  fill(buffer, buffer + dsize, a);
   sync();
 }
 
 namespace {
   // UnaryFunction scales its argument by a constant
-  struct ElementScaler : public std::unary_function<double&, void> {
+  struct ElementScaler : public unary_function<double&, void> {
     public:
       ElementScaler(double scale) : scale_(scale) {}
       void operator()(double& v) { v *= scale_; }
@@ -234,7 +219,7 @@ void Tensor::scale(double a){
   double* buffer=(double *) file()->localdata();
   const size_t dsize =(size_t)file()->localsize() / sizeof(double);
   ElementScaler scaler(a);
-  std::for_each(buffer, buffer + dsize, scaler);
+  for_each(buffer, buffer + dsize, scaler);
   sync();
 }
 

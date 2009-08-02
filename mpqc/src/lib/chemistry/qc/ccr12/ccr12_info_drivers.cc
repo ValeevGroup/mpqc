@@ -25,7 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <string>
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/tensor.h>

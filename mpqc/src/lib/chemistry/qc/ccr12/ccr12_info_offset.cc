@@ -25,12 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-#include <string>
-#include <vector>
 #include <algorithm>
-#include <cmath>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 using namespace std;

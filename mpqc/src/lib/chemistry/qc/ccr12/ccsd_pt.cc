@@ -42,7 +42,7 @@ CCSD_PT::CCSD_PT(CCR12_Info* info): Parenthesis2t(info){
 } 
 
 
-double CCSD_PT::compute(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2tNum> eval_right){
+double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2tNum> eval_right){
 
  double energy=0.0;
 

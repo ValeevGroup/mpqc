@@ -31,7 +31,7 @@
 using namespace sc;
   
 static ClassDesc Parenthesis2t_cd(
-  typeid(Parenthesis2t),"Parenthesis2t",1,"virtual public RefCount"
+  typeid(Parenthesis2t),"Parenthesis2t",1,"public RefCount"
   ,0,0,0);
   
 Parenthesis2t::Parenthesis2t(CCR12_Info* info): z(info){
@@ -42,8 +42,8 @@ Parenthesis2t::~Parenthesis2t(){
 }
 
 
-double Parenthesis2t::compute(Ref<Parenthesis2tNum> eval_left, 
-                              Ref<Parenthesis2tNum> eval_right){
+double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left, 
+                                     Ref<Parenthesis2tNum> eval_right){
 
  double energy=0.0;
  double* dummy;

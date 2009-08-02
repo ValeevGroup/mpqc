@@ -30,7 +30,7 @@
 using namespace sc;
 
 static ClassDesc Parenthesis2tNum_cd(
-  typeid(Parenthesis2tNum),"Parenthesis2tNum",1,"virtual public RefCount"
+  typeid(Parenthesis2tNum),"Parenthesis2tNum",1,"public RefCount"
   ,0,0,0);
 
 Parenthesis2tNum::Parenthesis2tNum(CCR12_Info* info): z(info){
@@ -39,11 +39,11 @@ Parenthesis2tNum::Parenthesis2tNum(CCR12_Info* info): z(info){
 Parenthesis2tNum::~Parenthesis2tNum(){
 }
 
-void Parenthesis2tNum::compute_amp(double*,const long,const long,const long,
-                                   const long,const long,const long,const long){
+void Parenthesis2tNum::compute_amp(double*, const long, const long, const long,
+                                            const long, const long, const long, const long){
 } 
 
-void Parenthesis2tNum::compute_amp(double*,const long,const long,const long,const long,
-                                   const long,const long,const long,const long,const long){
+void Parenthesis2tNum::compute_amp(double*, const long, const long, const long, const long,
+                                            const long, const long, const long, const long, const long){
 } 
 

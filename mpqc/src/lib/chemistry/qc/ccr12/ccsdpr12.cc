@@ -176,7 +176,7 @@ void CCSDPR12::compute(){
     Ref<CCSD_PT_LEFT> eval_left = new CCSD_PT_LEFT(info());
     Ref<CCSD_R12_PT_RIGHT> eval_right = new CCSD_R12_PT_RIGHT(info());
     Ref<CCSD_PT> ccsd_pt = new CCSD_PT(info());
-    const double ccsd_pt_correction = ccsd_pt->compute(eval_left, eval_right);
+    const double ccsd_pt_correction = ccsd_pt->compute_energy(eval_left, eval_right);
     print_correction(ccsd_pt_correction, energy, "CCSD(T)(R12)");
 
     print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
@@ -271,7 +271,7 @@ void CCSDPR12::compute(){
       Ref<CCSD_2T_R12_LEFT> eval_left = new CCSD_2T_R12_LEFT(info());
       Ref<CCSD_2T_PR12_RIGHT> eval_right = new CCSD_2T_PR12_RIGHT(info());
       Ref<Parenthesis2t> ccsd_2t = new Parenthesis2t(info());
-      const double ccsd_2t_correction = ccsd_2t->compute(eval_left, eval_right);
+      const double ccsd_2t_correction = ccsd_2t->compute_energy(eval_left, eval_right);
       print_correction(ccsd_2t_correction, energy, "CCSD(2)T(R12)");
 
       print_timing(timer_->get_wall_time() - iter_start, "(2)T correction");
@@ -285,7 +285,7 @@ void CCSDPR12::compute(){
        Ref<CCSD_2Q_LEFT>    eval_left_q=new CCSD_2Q_LEFT(info());
        Ref<CCSD_2Q_RIGHT>  eval_right_q=new CCSD_2Q_RIGHT(info());
        Ref<Parenthesis2q>     ccsd_2q=new Parenthesis2q(info());
-       const double ccsd_2q_correction=ccsd_2q->compute(eval_left_q,eval_right_q);
+       const double ccsd_2q_correction=ccsd_2q->compute_energy(eval_left_q,eval_right_q);
        print_correction(ccsd_2q_correction+ccsd_2t_correction,energy,"CCSD(2)_TQ");
 
        print_timing(timer_->get_wall_time()-iter_start,"(2)_Q correction");

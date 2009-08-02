@@ -28,15 +28,12 @@
 #ifndef _chemistry_qc_ccr12_parenthesis2tnum_h
 #define _chemistry_qc_ccr12_parenthesis2tnum_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
+#include <util/ref/ref.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 namespace sc {
 
-class Parenthesis2tNum : virtual public RefCount {
+class Parenthesis2tNum : public RefCount {
 
   protected:
    CCR12_Info* z;

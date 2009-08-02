@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_ccr12_ccsd_2q_left_h
 #define _chemistry_qc_ccr12_ccsd_2q_left_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/parenthesis2tnum.h>
 

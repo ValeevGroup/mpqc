@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_ccr12_ccsd_pt_h
 #define _chemistry_qc_ccr12_ccsd_pt_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/parenthesis2t.h>
 
@@ -44,7 +40,7 @@ class CCSD_PT : public Parenthesis2t {
   public:
    CCSD_PT(CCR12_Info* info);
    
-   double compute(Ref<Parenthesis2tNum>, Ref<Parenthesis2tNum>);
+   double compute_energy(Ref<Parenthesis2tNum>, Ref<Parenthesis2tNum>);
 
 };
 

@@ -49,6 +49,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 {
   restricted_ = !ref()->spin_polarized();
 
+  needs();
+
   set_naocc(r12evalinfo_->refinfo()->occ_act(Alpha)->rank(),
             r12evalinfo_->refinfo()->occ_act(Beta )->rank());
   // only fixed amplitude ansatz is supported at the moment
@@ -57,12 +59,17 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   set_fixed(r12evalinfo_->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fixed);
   set_navir(r12evalinfo_->refinfo()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
             r12evalinfo_->refinfo()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
-  set_ncabs(r12evalinfo_->ribs_space(Alpha)->rank(),
-            r12evalinfo_->ribs_space(Beta )->rank());
   set_mosym(r12evalinfo_->refinfo()->orbs(Alpha)->orbsym(),
             r12evalinfo_->refinfo()->orbs(Beta )->orbsym());
-  set_cabssym(r12evalinfo_->ribs_space(Alpha)->orbsym(),
-              r12evalinfo_->ribs_space(Beta )->orbsym());
+
+  if (need_w1_) {
+    set_ncabs(r12evalinfo_->ribs_space(Alpha)->rank(),
+              r12evalinfo_->ribs_space(Beta )->rank());
+    set_cabssym(r12evalinfo_->ribs_space(Alpha)->orbsym(),
+                r12evalinfo_->ribs_space(Beta )->orbsym());
+  } else {
+    set_ncabs(0L, 0L);
+  }
 
   determine_tilesizes();
   if (mem_->me() == 0) print_tile_info();
@@ -75,8 +82,6 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   // TODO More to come... e.g. dipole,...
   bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12");
-
-  needs();
 
   // compute the correlated spin-orbital space used by SMITH
   compute_corr_space();

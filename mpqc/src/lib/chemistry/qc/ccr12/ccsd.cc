@@ -254,17 +254,17 @@ void CCSD::compute(){
       energy += ccsd_2t_correction;
 
       if (perturbative_ == "(2)TQ") {
-       timer_->enter("(2)Q correction");
-       Ref<CCSD_2Q_LEFT>   eval_left_q = new CCSD_2Q_LEFT(info());
-       Ref<CCSD_2Q_RIGHT> eval_right_q = new CCSD_2Q_RIGHT(info());
-       Ref<Parenthesis2q>      ccsd_2q = new Parenthesis2q(info());
-       const double ccsd_2q_correction = ccsd_2q->compute_energy(eval_left_q,eval_right_q);
-       print_correction(ccsd_2q_correction + ccsd_2t_correction, energy, "CCSD(2)TQ");
+        timer_->enter("(2)Q correction");
+        Ref<CCSD_2Q_LEFT>   eval_left_q = new CCSD_2Q_LEFT(info());
+        Ref<CCSD_2Q_RIGHT> eval_right_q = new CCSD_2Q_RIGHT(info());
+        Ref<Parenthesis2q>      ccsd_2q = new Parenthesis2q(info());
+        const double ccsd_2q_correction = ccsd_2q->compute_energy(eval_left_q,eval_right_q);
+        print_correction(ccsd_2t_correction + ccsd_2q_correction, energy - ccsd_2t_correction, "CCSD(2)TQ");
 
-       print_timing(timer_->get_wall_time() - iter_start, "(2)Q correction");
-       timer_->exit("(2)Q correction");
+        print_timing(timer_->get_wall_time() - iter_start, "(2)Q correction");
+        timer_->exit("(2)Q correction");
 
-       energy += ccsd_2q_correction;
+        energy += ccsd_2q_correction;
       }
 
     } else if (perturbative_ == "(2)R12") {

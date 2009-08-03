@@ -53,48 +53,47 @@ CCR12::CCR12(StateIn& s): MBPT2_R12(s){
 
 CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2_R12(keyval){
 
-  keyval_=keyval;
-
+  keyval_ = keyval;
 
 }
+
 
 void CCR12::common_init(string theory){
 
   theory_ = theory;
-  thrgrp_=ThreadGrp::get_default_threadgrp();
-  msggrp_=MessageGrp::get_default_messagegrp();
-  mem_=MemoryGrp::get_default_memorygrp();
-  timer_=new RegionTimer();
+  thrgrp_ = ThreadGrp::get_default_threadgrp();
+  msggrp_ = MessageGrp::get_default_messagegrp();
+  mem_ = MemoryGrp::get_default_memorygrp();
+  timer_ = new RegionTimer();
 
   ExEnv::out0() << endl << indent << "-------- CCR12 calculation --------"<< endl;
-  if (sizeof(long)<8)
+  if (sizeof(long) < 8)
     ExEnv::out0() << indent << "!!!!!!!!!! \"long int\" less than 8 bytes !!!!!!!!!!" << endl;
 
-  if(theory_=="notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
+  if(theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
+
   ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl << endl;
   perturbative_ = keyval_->stringvalue("perturbative", KeyValValuechar());
   std::transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
   ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
 
-  ndiis_=keyval_->intvalue("ndiis",KeyValValueint(2));
-  diis_start_=keyval_->intvalue("diis_start",KeyValValueint(0));
+  ndiis_=keyval_->intvalue("ndiis", KeyValValueint(2));
+  diis_start_ = keyval_->intvalue("diis_start", KeyValValueint(0));
 
   CLSCF* clscfref=dynamic_cast<CLSCF*>(ref().pointer());
   rhf_=(clscfref!=0);
 
-//init_variables(); // inherent in mbpt.h; returns nocc, nsocc, nvir
-
-
-  //maxiter
+  // maxiter
   maxiter_=keyval_->intvalue("maxiter",   KeyValValueint(100));
-  //cctresh
+  // cctresh
   ccthresh_=keyval_->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
   // get the memory sizes
-  memorysize_=keyval_->longvalue("memory",   KeyValValueint(200000000));
+  memorysize_ = keyval_->longvalue("memory",   KeyValValueint(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
   worksize_=keyval_->longvalue("workmemory",   KeyValValueint(50000000));
   ExEnv::out0() << indent << "Work   size per node: " << worksize_   << endl;
 }
+
 
 CCR12::~CCR12(){
   mem_->sync();

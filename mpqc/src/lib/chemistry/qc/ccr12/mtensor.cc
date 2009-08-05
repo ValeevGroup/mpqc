@@ -145,6 +145,9 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                 long size = size0 * size1 * size2 * size3;
                 std::fill(data, data+size, 0.0);
 
+#if 0
+                std::cout << "MTensor::convert: " << t0 << " " << t1 << " " << t2 << " " << t3 << " " << tile_key << std::endl;
+#endif
                 // if erange[0] == erange[1], clearly can antisymmetrize 0 and 1
                 // if erange[2] == erange[3], clearly can antisymmetrize 2 and 3
                 bool antisymmetrize01 = espace0_eq_espace1;
@@ -340,6 +343,10 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                 const double sum = std::accumulate(data, data+size, 0.0);
                 ExEnv::out0() << "tiles = (" << t0 << "," << t1 << "," << t2 << "," << t3
                               << ")  key = " << tile_key  << " sum = " << sum << endl;
+
+                for(int i=0; i<size; ++i) {
+                  ExEnv::out0() << "data[" << i << "] = " << data[i] << std::endl;
+                }
 #endif
             } // if this task will process this tile
 

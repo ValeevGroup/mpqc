@@ -60,20 +60,24 @@ SingleRefInfo::SingleRefInfo(StateIn& si) :
   orbs_sb_ << SavableState::restore_state(si);
   orbs_ << SavableState::restore_state(si);
   docc_sb_ << SavableState::restore_state(si);
+  docc_act_sb_ << SavableState::restore_state(si);
   docc_ << SavableState::restore_state(si);
   docc_act_ << SavableState::restore_state(si);
   socc_sb_ << SavableState::restore_state(si);
   socc_ << SavableState::restore_state(si);
   uocc_sb_ << SavableState::restore_state(si);
+  uocc_act_sb_ << SavableState::restore_state(si);
   uocc_ << SavableState::restore_state(si);
   uocc_act_ << SavableState::restore_state(si);
   for(int spin=0; spin<2; spin++) {
     spinspaces_[spin].orbs_sb_ << SavableState::restore_state(si);
     spinspaces_[spin].orbs_ << SavableState::restore_state(si);
     spinspaces_[spin].occ_sb_ << SavableState::restore_state(si);
+    spinspaces_[spin].occ_act_sb_ << SavableState::restore_state(si);
     spinspaces_[spin].occ_ << SavableState::restore_state(si);
     spinspaces_[spin].occ_act_ << SavableState::restore_state(si);
     spinspaces_[spin].uocc_sb_ << SavableState::restore_state(si);
+    spinspaces_[spin].uocc_act_sb_ << SavableState::restore_state(si);
     spinspaces_[spin].uocc_ << SavableState::restore_state(si);
     spinspaces_[spin].uocc_act_ << SavableState::restore_state(si);
   }
@@ -94,20 +98,24 @@ SingleRefInfo::save_data_state(StateOut& so)
   SavableState::save_state(orbs_sb_.pointer(),so);
   SavableState::save_state(orbs_.pointer(),so);
   SavableState::save_state(docc_sb_.pointer(),so);
+  SavableState::save_state(docc_act_sb_.pointer(),so);
   SavableState::save_state(docc_.pointer(),so);
   SavableState::save_state(docc_act_.pointer(),so);
   SavableState::save_state(socc_sb_.pointer(),so);
   SavableState::save_state(socc_.pointer(),so);
   SavableState::save_state(uocc_sb_.pointer(),so);
+  SavableState::save_state(uocc_act_sb_.pointer(),so);
   SavableState::save_state(uocc_.pointer(),so);
   SavableState::save_state(uocc_act_.pointer(),so);
   for(int spin=0; spin<2; spin++) {
     SavableState::save_state(spinspaces_[spin].orbs_sb_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].orbs_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].occ_sb_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].occ_act_sb_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].occ_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].occ_act_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_sb_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].uocc_act_sb_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_act_.pointer(),so);
   }
@@ -169,7 +177,7 @@ SingleRefInfo::init_spinspecific_spaces()
     bocc.push_back(ref()->beta_occupation(mo));
   }
   Ref<PetiteList> plist = ref()->integral()->petite_list();
-  
+
   if (spin_polarized()) {
     RefSCMatrix alpha_evecs, beta_evecs;
     RefDiagSCMatrix alpha_evals, beta_evals;
@@ -204,9 +212,11 @@ SingleRefInfo::init_spinspecific_spaces()
       spinspaces_[s].orbs_sb_ = orbs_sb_;
       spinspaces_[s].orbs_ = orbs_;
       spinspaces_[s].occ_sb_ = docc_sb();
+      spinspaces_[s].occ_act_sb_ = docc_act_sb();
       spinspaces_[s].occ_ = docc();
       spinspaces_[s].occ_act_ = docc_act();
       spinspaces_[s].uocc_sb_ = uocc_sb_;
+      spinspaces_[s].uocc_act_sb_ = uocc_act_sb_;
       spinspaces_[s].uocc_ = uocc_;
       spinspaces_[s].uocc_act_ = uocc_act_;
     }
@@ -241,6 +251,8 @@ SingleRefInfo::init_spinindependent_spaces()
   // since occupations may not match orbital energies (i.e. some occupied orbitals may have higher energies than the unoccupied)
   // construct spaces using masks
   docc_sb_ = new MaskedOrbitalSpace("m(sym)","doubly-occupied symmetry-blocked MOs", orbs_sb_, docc_mask);
+  docc_act_sb_ = new OrbitalSpace("i(sym)","active doubly-occupied symmetry-blocked MOs", docc_sb_->coefs(), docc_sb_->basis(),
+                                  docc_sb_->integral(), docc_sb_->evals(), nfzc(), 0, OrbitalSpace::symmetry);
   docc_ = new OrbitalSpace("m","doubly-occupied energy-ordered MOs", docc_sb_->coefs(), docc_sb_->basis(),
                            docc_sb_->integral(), docc_sb_->evals(), 0, 0);
   docc_act_ = new OrbitalSpace("i","active doubly-occupied energy-ordered MOs", docc_sb_->coefs(), docc_sb_->basis(),
@@ -249,6 +261,8 @@ SingleRefInfo::init_spinindependent_spaces()
   socc_ = new OrbitalSpace("x","singly-occupied energy-ordered MOs", socc_sb_->coefs(), socc_sb_->basis(),
                            socc_sb_->integral(), socc_sb_->evals(), 0, 0);
   uocc_sb_ = new MaskedOrbitalSpace("e(sym)","unoccupied symmetry-blocked MOs", orbs_sb_, uocc_mask);
+  uocc_act_sb_ = new OrbitalSpace("a(sym)","active unoccupied symmetry-blocked MOs", uocc_sb_->coefs(), uocc_sb_->basis(),
+                                  uocc_sb_->integral(), uocc_sb_->evals(), 0, nfzv(), OrbitalSpace::symmetry);
   uocc_ = new OrbitalSpace("e","unoccupied energy-ordered MOs", uocc_sb_->coefs(), uocc_sb_->basis(),
                            uocc_sb_->integral(), uocc_sb_->evals(), 0, 0);
   uocc_act_ = new OrbitalSpace("a","active unoccupied energy-ordered MOs", uocc_sb_->coefs(), uocc_sb_->basis(),
@@ -281,6 +295,14 @@ SingleRefInfo::docc_sb() const
 }
 
 const Ref<OrbitalSpace>&
+SingleRefInfo::docc_act_sb() const
+{
+  // can throw
+  throw_if_spin_polarized();
+  return docc_act_sb_;
+}
+
+const Ref<OrbitalSpace>&
 SingleRefInfo::docc() const
 {
   // can throw
@@ -309,6 +331,14 @@ SingleRefInfo::uocc_sb() const
   // can throw
   throw_if_spin_polarized();
   return uocc_sb_;
+}
+
+const Ref<OrbitalSpace>&
+SingleRefInfo::uocc_act_sb() const
+{
+  // can throw
+  throw_if_spin_polarized();
+  return uocc_act_sb_;
 }
 
 const Ref<OrbitalSpace>&
@@ -346,6 +376,12 @@ SingleRefInfo::occ_sb(SpinCase1 s) const
 }
 
 const Ref<OrbitalSpace>&
+SingleRefInfo::occ_act_sb(SpinCase1 s) const
+{
+  return spinspaces_[s].occ_act_sb_;
+}
+
+const Ref<OrbitalSpace>&
 SingleRefInfo::occ(SpinCase1 s) const
 {
   return spinspaces_[s].occ_;
@@ -361,6 +397,12 @@ const Ref<OrbitalSpace>&
 SingleRefInfo::uocc_sb(SpinCase1 s) const
 {
   return spinspaces_[s].uocc_sb_;
+}
+
+const Ref<OrbitalSpace>&
+SingleRefInfo::uocc_act_sb(SpinCase1 s) const
+{
+  return spinspaces_[s].uocc_act_sb_;
 }
 
 const Ref<OrbitalSpace>&
@@ -435,6 +477,13 @@ SingleRefInfo::SpinSpaces::init(
   }
   {
     ostringstream oss;
+    oss << prefix << " active occupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("i(sym)"),spin);
+    occ_act_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
+                                occ_sb_->integral(), occ_sb_->evals(), nfzc, 0, OrbitalSpace::symmetry);
+  }
+  {
+    ostringstream oss;
     oss << prefix << " occupied MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("m"),spin);
     occ_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
@@ -452,6 +501,13 @@ SingleRefInfo::SpinSpaces::init(
     oss << prefix << " unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spin);
     uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active unoccupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("a(sym)"),spin);
+    uocc_act_sb_ = new OrbitalSpace(id, oss.str(),uocc_sb_->coefs(), uocc_sb_->basis(),
+                                    uocc_sb_->integral(), uocc_sb_->evals(), 0, nfzv, OrbitalSpace::symmetry);
   }
   {
     ostringstream oss;

@@ -364,6 +364,13 @@ void CCR12_Info::offset_fr2(){
                               // make sure that tags are still evaluated with nab()
                               // ** modified ansatz 2
           if (!need_FAA_ && g1b>=noab()+nvab()) continue;
+#define LOCAL_DEBUG 0
+#if LOCAL_DEBUG
+          // only keep different spin
+          //if (get_spin(h3b) == get_spin(h4b)) continue;
+          const long offset = h4b+noab()*(h3b+noab()*(g2b+nab()*g1b));
+          std::cout << "offset_fr2: added " << g1b << " " << g2b << " " << h3b << " " << h4b << " " << offset << std::endl;
+#endif
           d_fr2->input_offset(h4b+noab()*(h3b+noab()*(g2b+nab()*g1b)),size);
           size+=get_range(g1b)*get_range(g2b)*get_range(h3b)*get_range(h4b);
          }
@@ -395,6 +402,13 @@ void CCR12_Info::offset_fd2(){
                               // make sure that tags are still evaluated with nab()
                               // ** modified ansatz 2
           if (!need_FAA_ && g3b>=noab()+nvab()) continue;
+#define LOCAL_DEBUG 0
+#if LOCAL_DEBUG
+          // only keep different spin
+          //if (get_spin(h1b) == get_spin(h2b)) continue;
+          const long offset = g4b+nab()*(g3b+nab()*(h2b+noab()*h1b));
+          std::cout << "offset_fd2: added " << h1b << " " << h2b << " " << g3b << " " << g4b << " " << offset << std::endl;
+#endif
           d_fd2->input_offset(g4b+nab()*(g3b+nab()*(h2b+noab()*h1b)),size);
           size+=get_range(h1b)*get_range(h2b)*get_range(g3b)*get_range(g4b);
          }

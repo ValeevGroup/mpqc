@@ -75,6 +75,8 @@ namespace sc {
     const Ref<OrbitalSpace>& orbs() const;
     /// Return the space of symmetry-blocked doubly-occupied MOs
     const Ref<OrbitalSpace>& docc_sb() const;
+    /// Return the space of symmetry-blocked active doubly-occupied MOs
+    const Ref<OrbitalSpace>& docc_act_sb() const;
     /// Return the space of doubly-occupied MOs
     const Ref<OrbitalSpace>& docc() const;
     /// Return the space of active doubly-occupied MOs
@@ -85,6 +87,8 @@ namespace sc {
     const Ref<OrbitalSpace>& socc() const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs
     const Ref<OrbitalSpace>& uocc_sb() const;
+    /// Return the space of symmetry-blocked active unoccupied (virtual) MOs
+    const Ref<OrbitalSpace>& uocc_act_sb() const;
     /// Return the space of unoccupied (virtual) MOs
     const Ref<OrbitalSpace>& uocc() const;
     /// Return the space of active unoccupied (virtual) MOs
@@ -97,15 +101,19 @@ namespace sc {
     const Ref<OrbitalSpace>& orbs(SpinCase1 spin) const;
     /// Return the space of symmery-blocked occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin) const;
+    /// Return the space of symmery-blocked active occupied MOs of the given spin
+    const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ(SpinCase1 spin) const;
-    /// Return the space of occupied MOs of the given spin
+    /// Return the space of active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act(SpinCase1 spin) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin) const;
+    /// Return the space of symmetry-blocked active unoccupied (virtual) MOs of the given spin
+    const Ref<OrbitalSpace>& uocc_act_sb(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc(SpinCase1 spin) const;
-    /// Return the space of unoccupied (virtual) MOs of the given spin
+    /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin) const;
 
     private:
@@ -123,9 +131,11 @@ namespace sc {
       Ref<OrbitalSpace> orbs_sb_;
       Ref<OrbitalSpace> orbs_;
       Ref<OrbitalSpace> occ_sb_;
+      Ref<OrbitalSpace> occ_act_sb_;
       Ref<OrbitalSpace> occ_;
       Ref<OrbitalSpace> occ_act_;
       Ref<OrbitalSpace> uocc_sb_;
+      Ref<OrbitalSpace> uocc_act_sb_;
       Ref<OrbitalSpace> uocc_;
       Ref<OrbitalSpace> uocc_act_;
       /// "constructor"
@@ -141,11 +151,13 @@ namespace sc {
     Ref<OrbitalSpace> orbs_sb_;
     Ref<OrbitalSpace> orbs_;
     Ref<OrbitalSpace> docc_sb_;
+    Ref<OrbitalSpace> docc_act_sb_;
     Ref<OrbitalSpace> docc_;
     Ref<OrbitalSpace> docc_act_;
     Ref<OrbitalSpace> socc_sb_;
     Ref<OrbitalSpace> socc_;
     Ref<OrbitalSpace> uocc_sb_;
+    Ref<OrbitalSpace> uocc_act_sb_;
     Ref<OrbitalSpace> uocc_;
     Ref<OrbitalSpace> uocc_act_;
     SpinSpaces spinspaces_[NSpinCases1];
@@ -160,7 +172,7 @@ namespace sc {
     void throw_if_spin_polarized() const;
     /// throws if ref_ is spin-unrestricted
     void throw_if_spin_unrestricted() const;
-    
+
   };
 
 };

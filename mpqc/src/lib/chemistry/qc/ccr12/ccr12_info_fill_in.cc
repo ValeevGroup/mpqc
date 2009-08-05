@@ -288,8 +288,8 @@ CCR12_Info::compute_source_integrals_rhf() {
     Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12evalinfo()->integral(),0);
     const std::string descr_key = r12evalinfo()->moints_runtime4()->descr_key(tbdescr);
     {
-      Ref<OrbitalSpace> aocc_space = r12evalinfo_->refinfo()->occ_act(Alpha);
-      Ref<OrbitalSpace> avir_space = r12evalinfo_->vir_act(Alpha);
+      Ref<OrbitalSpace> aocc_space = r12evalinfo_->refinfo()->occ_act_sb(Alpha);
+      Ref<OrbitalSpace> avir_space = r12evalinfo_->vir_act_sb(Alpha);
       const std::string
         tkey = ParsedTwoBodyFourCenterIntKey::key(aocc_space->id(), aocc_space->id(),
                                                   avir_space->id(), cabs_space->id(),

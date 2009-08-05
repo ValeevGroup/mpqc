@@ -832,28 +832,38 @@ R12IntEval::form_canonvir_space_()
     delete[] F_full;
     delete[] F_lowtri;
 
-    std::string id_sb, id;
+    std::string id_sb, id, id_act_sb, id_act;
     if (spin_polarized()) {
       id_sb = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spincase);
       id = ParsedOrbitalSpaceKey::key(std::string("e"),spincase);
+      id_act_sb = ParsedOrbitalSpaceKey::key(std::string("a(sym)"),spincase);
+      id_act = ParsedOrbitalSpaceKey::key(std::string("a"),spincase);
     }
     else {
       id_sb = "e(sym)";
       id = "e";
+      id_act_sb = "a(sym)";
+      id_act = "a";
     }
-    Ref<OrbitalSpace> canonvir_space_symblk = new OrbitalSpace(id_sb, "VBS",
+    Ref<OrbitalSpace> canonvir_space_symblk = new OrbitalSpace(id_sb, "canonical symmetry-blocked VBS",
                                                                vir_space, vir_space->coefs()*F_vir_lt.eigvecs(),
                                                                vir_space->basis());
     r12info()->vir_sb(spincase, canonvir_space_symblk);
 
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
-    Ref<OrbitalSpace> vir_act = new OrbitalSpace(id, "VBS",
+    Ref<OrbitalSpace> vir_act_sb = new OrbitalSpace(id_act_sb, "active canonical symmetry-blocked VBS",
+                                                    canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                                    r12info()->integral(),
+                                                    F_vir_evals, 0, r12info()->refinfo()->nfzv(),
+                                                    OrbitalSpace::symmetry);
+    r12info()->vir_act_sb(spincase, vir_act_sb);
+    Ref<OrbitalSpace> vir_act = new OrbitalSpace(id_act, "active canonical energy-ordered VBS",
                                                  canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
                                                  r12info()->integral(),
                                                  F_vir_evals, 0, r12info()->refinfo()->nfzv(),
                                                  OrbitalSpace::energy);
     r12info()->vir_act(spincase, vir_act);
-    Ref<OrbitalSpace> vir = new OrbitalSpace(id, "VBS",
+    Ref<OrbitalSpace> vir = new OrbitalSpace(id, "canonical energy-ordered VBS",
                                              canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
                                              r12info()->integral(),
                                              F_vir_evals, 0, 0,
@@ -864,6 +874,7 @@ R12IntEval::form_canonvir_space_()
     idxreg->add(make_keyspace_pair(vir));
     idxreg->add(make_keyspace_pair(vir_act));
     idxreg->add(make_keyspace_pair(canonvir_space_symblk));
+    idxreg->add(make_keyspace_pair(vir_act_sb));
   }
 }
 

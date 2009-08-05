@@ -189,6 +189,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     vir_act_ << SavableState::restore_state(si);
     vir_ << SavableState::restore_state(si);
     vir_sb_ << SavableState::restore_state(si);
+    vir_act_sb_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
 
@@ -239,6 +240,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_act_.pointer(),so);
   SavableState::save_state(vir_.pointer(),so);
   SavableState::save_state(vir_sb_.pointer(),so);
+  SavableState::save_state(vir_act_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(fockbuild_runtime_.pointer(),so);
@@ -286,8 +288,12 @@ R12IntEvalInfo::initialize()
         if (!refinfo()->spin_polarized()) {
           idxreg->add(make_keyspace_pair(refinfo()->docc_act()));
           idxreg->add(make_keyspace_pair(refinfo()->docc()));
+          idxreg->add(make_keyspace_pair(refinfo()->docc_act_sb()));
+          idxreg->add(make_keyspace_pair(refinfo()->docc_sb()));
           idxreg->add(make_keyspace_pair(vir_act()));
           idxreg->add(make_keyspace_pair(vir()));
+          idxreg->add(make_keyspace_pair(vir_act_sb()));
+          idxreg->add(make_keyspace_pair(vir_sb()));
           idxreg->add(make_keyspace_pair(refinfo()->orbs()));
           idxreg->add(make_keyspace_pair(refinfo()->orbs_sb()));
         }
@@ -296,8 +302,12 @@ R12IntEvalInfo::initialize()
             SpinCase1 spin = static_cast<SpinCase1>(s);
             idxreg->add(make_keyspace_pair(refinfo()->occ_act(spin)));
             idxreg->add(make_keyspace_pair(refinfo()->occ(spin)));
+            idxreg->add(make_keyspace_pair(refinfo()->occ_act_sb(spin)));
+            idxreg->add(make_keyspace_pair(refinfo()->occ_sb(spin)));
             idxreg->add(make_keyspace_pair(vir_act(spin)));
             idxreg->add(make_keyspace_pair(vir(spin)));
+            idxreg->add(make_keyspace_pair(vir_act_sb(spin)));
+            idxreg->add(make_keyspace_pair(vir_sb(spin)));
             idxreg->add(make_keyspace_pair(refinfo()->orbs(spin)));
             idxreg->add(make_keyspace_pair(refinfo()->orbs_sb(spin)));
           }
@@ -449,6 +459,7 @@ void
 R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase)
 {
   vir_sb_ = refinfo->uocc_sb(spincase);
+  vir_act_sb_ = refinfo->uocc_act_sb(spincase);
   vir_ = refinfo->uocc(spincase);
   vir_act_ = refinfo->uocc_act(spincase);
 }
@@ -462,6 +473,7 @@ R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
   vir_sb_ = R12IntEvalInfo::orthog_comp(refinfo->occ_sb(spincase), vbs, id, "VBS", refinfo->ref()->lindep_tol());
   // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
   // Need to move all relevant code outside of MBPT2-F12 code
+  vir_act_sb_ = vir_sb_;
   vir_ = vir_sb_;
   vir_act_ = vir_;
 }
@@ -480,6 +492,7 @@ R12IntEvalInfo::construct_orthog_vir_()
       vir_ = refinfo()->uocc();
       vir_sb_ = refinfo()->uocc_sb();
       vir_act_ = refinfo()->uocc_act();
+      vir_act_sb_ = refinfo()->uocc_act_sb();
     }
     vir_spaces_[Alpha].init(refinfo(),Alpha);
     vir_spaces_[Beta].init(refinfo(),Beta);
@@ -498,10 +511,12 @@ R12IntEvalInfo::construct_orthog_vir_()
       // Need to move all relevant code outside of MBPT2-F12 code
       if (refinfo()->nfzv() != 0)
         throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+      vir_act_sb_ = vir_sb_;
       vir_ = vir_sb_;
       vir_act_ = vir_sb_;
       for(int s=0; s<NSpinCases1; s++) {
         vir_spaces_[s].vir_sb_ = vir_sb_;
+        vir_spaces_[s].vir_act_sb_ = vir_sb_;
         vir_spaces_[s].vir_ = vir_;
         vir_spaces_[s].vir_act_ = vir_act_;
       }
@@ -549,6 +564,19 @@ R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<OrbitalSpace>& sp)
     vir_spaces_[Alpha].vir_act_ = sp;
     vir_spaces_[Beta].vir_act_ = sp;
     vir_act_ = sp;
+  }
+}
+
+void
+R12IntEvalInfo::vir_act_sb(const SpinCase1& S, const Ref<OrbitalSpace>& sp)
+{
+  if (refinfo()->spin_polarized()) {
+    vir_spaces_[S].vir_act_sb_ = sp;
+  }
+  else {
+    vir_spaces_[Alpha].vir_act_sb_ = sp;
+    vir_spaces_[Beta].vir_act_sb_ = sp;
+    vir_act_sb_ = sp;
   }
 }
 

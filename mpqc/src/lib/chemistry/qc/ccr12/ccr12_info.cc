@@ -51,8 +51,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   needs();
 
-  set_naocc(r12evalinfo_->refinfo()->occ_act(Alpha)->rank(),
-            r12evalinfo_->refinfo()->occ_act(Beta )->rank());
+  set_naocc(r12evalinfo_->refinfo()->occ_act_sb(Alpha)->rank(),
+            r12evalinfo_->refinfo()->occ_act_sb(Beta )->rank());
   // only fixed amplitude ansatz is supported at the moment
   assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
   assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
@@ -443,7 +443,7 @@ void CCR12_Info::needs(){
 
   if (perturbative_ == "(2)R12") {
     need_w1_ = true;
-  } 
+  }
 
 }
 

@@ -68,6 +68,7 @@ public:
     //Ref<OrbitalSpace> vbs_sb_;
     //Ref<OrbitalSpace> vbs_;
     Ref<OrbitalSpace> vir_sb_;
+    Ref<OrbitalSpace> vir_act_sb_;
     Ref<OrbitalSpace> vir_;
     Ref<OrbitalSpace> vir_act_;
     // RI space
@@ -114,6 +115,7 @@ private:
   SpinSpaces vir_spaces_[NSpinCases1];
   Ref<OrbitalSpace> vir_act_;
   Ref<OrbitalSpace> vir_;
+  Ref<OrbitalSpace> vir_act_sb_;
   Ref<OrbitalSpace> vir_sb_;
   /// Initializes all spaces that relate to the reference determinant
   Ref<SingleRefInfo> refinfo_;
@@ -274,17 +276,22 @@ public:
   const Ref<OrbitalSpace>& vir_sb() const { throw_if_spin_polarized(); return vir_sb_; };
   /// Returns the OrbitalSpace object for the active unoccupied MOs
   const Ref<OrbitalSpace>& vir_act() const { throw_if_spin_polarized(); return vir_act_; };
+  /// Returns the OrbitalSpace object for the active unoccupied MOs ordered by symmetry
+  const Ref<OrbitalSpace>& vir_act_sb() const { throw_if_spin_polarized(); return vir_act_sb_; };
   /// Returns the OrbitalSpace object for all unoccupied MOs ordered by energy
   const Ref<OrbitalSpace>& vir(const SpinCase1& S) const { return vir_spaces_[S].vir_; };
   /// Returns the OrbitalSpace object for all unoccupied MOs ordered by symmetry
   const Ref<OrbitalSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
   /// Returns the OrbitalSpace object for the active unoccupied MOs
   const Ref<OrbitalSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
+  /// Returns the OrbitalSpace object for the active unoccupied MOs ordered by symmetry
+  const Ref<OrbitalSpace>& vir_act_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_act_sb_; };
 
   /// Cheating! fock() is not available yet standalone, thus these spaces must be modified after canonicalization
   void vir(const SpinCase1& S, const Ref<OrbitalSpace>& space);
   void vir_sb(const SpinCase1& S, const Ref<OrbitalSpace>& space);
   void vir_act(const SpinCase1& S, const Ref<OrbitalSpace>& space);
+  void vir_act_sb(const SpinCase1& S, const Ref<OrbitalSpace>& space);
 
   /// Returns the OrbitalSpace object for ABS
   const Ref<OrbitalSpace>& abs_space() const { return abs_space_; };

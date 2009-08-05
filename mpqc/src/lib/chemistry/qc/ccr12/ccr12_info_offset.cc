@@ -39,7 +39,7 @@ void CCR12_Info::offset_f1(){
     if (get_spin(g1b) == get_spin(g2b)) {
      if ((get_sym(g1b) ^ get_sym(g2b)) == irrep_f_) {
       if (!restricted_ || get_spin(g1b) + get_spin(g2b) != 4L) {
-       if (!need_w1() && !need_w2() && (g1b<noab()+nvab() || g2b<noab()+nvab())){
+       if (!need_w1() && !need_w2() && g1b<noab()+nvab() && g2b<noab()+nvab()){
         // OBS only
         d_f1->input_offset(g2b + nab() * g1b, size);
         size += get_range(g1b)*get_range(g2b);

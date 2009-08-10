@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <climits>
 #include <cassert>
 #include <string>
 #include <algorithm>
@@ -66,7 +67,7 @@ void Tensor::input_offset(long tag, long offset){
 void Tensor::set_filesize(long i){
   assert(hash_table_.size() > 0);
   filesize_ = i;
-  long tag = LONG_MAX / 100; // infty; divided by 100 so that it will not raise any problems
+  long tag = LONG_MAX - 1;
   hash_table_.insert(std::map<long, long>::value_type(tag, i));
 }
 
@@ -76,7 +77,7 @@ void Tensor::createfile(){
  vector<long> filesizes = determine_filesizes();
  long maxsize = *max_element(filesizes.begin(), filesizes.end());
 
- file_ = new MemoryGrpRegion(mem_, sizeof(double) * maxsize);  // should be modified
+ file_ = new MemoryGrpRegion(mem_, sizeof(double) * maxsize);
  file()->set_localsize(sizeof(double) * filesizes[mem_->me()]);
 
  file_allocated_ = true;

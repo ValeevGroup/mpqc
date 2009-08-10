@@ -363,11 +363,9 @@ class CCR12_Info : virtual public RefCount {
     /// utilities for fill-in routines
     long momap(long i) const {return momap_[i];};
 
+    /// utilities for Lambda contribution in fixed-amp approaches
+    void prod_iiii(Ref<Tensor>&, Ref<Tensor>&, Ref<Tensor>&);
 
-
-    /// For debugging purpose only.
-    /// TODO remove after debugged Fr2 and Fd2 fill-in functions
-    void fr2_real_norm(Ref<Tensor>&);
 };
 
 }

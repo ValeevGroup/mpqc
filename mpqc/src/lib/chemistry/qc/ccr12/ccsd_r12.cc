@@ -39,7 +39,6 @@
 #include <chemistry/qc/ccr12/ccsd_r12_e.h>
 #include <chemistry/qc/ccr12/ccsd_r12_t1.h>
 #include <chemistry/qc/ccr12/ccsd_r12_t2.h>
-#include <chemistry/qc/ccr12/lambda_energy.h>
 
 using namespace std;
 using namespace sc;
@@ -150,25 +149,23 @@ void CCSD_R12::compute(){
 
   // if not fully optimized, we need to add the geminal-lambda contribution.
   if (ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+    assert(false);
     timer_->enter("Lambda contribution");
     iter_start = timer_->get_wall_time();
 
     e0->zero();
     ccr12_info_->guess_glambda2(); // glambda2 = gt2^dagger
-    ccr12_info_->update_ly();
 // to be implemented >>
 // qx = F^AA_ii * gt2
-// lx = gl2 * F_AA^ii
 //
-//  ccr12_info_->update_lx();
 //  ccr12_info_->update_qx();
 // <<<<<<<<<<<<<<<<<<<<
-    LAMBDA_ENERGY* lambda_correction = new LAMBDA_ENERGY(info());
-    lambda_correction->compute_amp(e0);
+
+    // TODO implement ccsd_r12_c and use it
+    // TODO not yet implemented
     const double lambda_corr = ccr12_info_->get_e(e0);
     print_correction(lambda_corr, energy, "Lambda contribution");
     energy += lambda_corr;
-    delete lambda_correction;
 
     print_timing(timer_->get_wall_time()-iter_start,"Lambda contribution");
     timer_->exit("Lambda contribution");

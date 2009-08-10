@@ -39,7 +39,7 @@
 #include <chemistry/qc/ccr12/ccsd_r12_e.h>
 #include <chemistry/qc/ccr12/ccsdpr12_t1.h>
 #include <chemistry/qc/ccr12/ccsdpr12_t2.h>
-#include <chemistry/qc/ccr12/lambdapenergy.h>
+#include <chemistry/qc/ccr12/ccsdpr12_c.h>
 #include <chemistry/qc/ccr12/ccsd_pt.h>
 #include <chemistry/qc/ccr12/ccsd_r12_pt_right.h>
 #include <chemistry/qc/ccr12/ccsd_pt_left.h>
@@ -85,6 +85,8 @@ void CCSDPR12::compute(){
   ccr12_info_->offset_t1(r1,false);
   Ref<Tensor> r2 = new Tensor("r2",mem_);
   ccr12_info_->offset_t2(r2,false);
+  Ref<Tensor> gr2 = new Tensor("gr2",mem_);
+  ccr12_info_->offset_gt2(gr2,false);
 
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSDPR12_T1* ccsdpr12_t1 = new CCSDPR12_T1(info());
@@ -158,14 +160,16 @@ void CCSDPR12::compute(){
   // if not fully optimized, we need to add the geminal-lambda contribution.
   if (ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
     e0->zero();
-    ccr12_info_->guess_glambda2(); // glambda2 = gt2^dagger
-    ccr12_info_->update_ly();
-    LAMBDAPENERGY* lambda_correction = new LAMBDAPENERGY(info());
-    lambda_correction->compute_amp(e0);
+    CCSDPR12_C*  ccsdpr12_c = new CCSDPR12_C(info());
+    ccsdpr12_c->compute_amp(gr2);
+    Ref<Tensor> fixed_amp = info()->gt2();
+    info()->prod_iiii(gr2, fixed_amp, e0);
+
     const double lambda_corr = ccr12_info_->get_e(e0);
     print_correction(lambda_corr, energy, "Lambda contribution");
     energy += lambda_corr;
-    delete lambda_correction;
+
+    delete ccsdpr12_c;
   }
 
   // using BOTH T2 and geminal amplitudes

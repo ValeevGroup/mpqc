@@ -118,7 +118,8 @@ class Tensor : virtual public RefCount {
     /// sync
     void sync() const { const_cast<MemoryGrpRegion*>(file_)->sync();};
 
-
+    /// print
+    void print(const std::string& label, std::ostream& os = ExEnv::out0()) const;
 };
 
 /** Computes the ``RMS norm'' of the tensor, defined as tensor->norm() divided by the size of the tensor.

@@ -38,13 +38,14 @@
 #include <math/scmat/matrix.h>
 
 namespace {
-void print_tile(double* data, int n01, int n23) {
-  using namespace sc;
-  RefSCMatrix mat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(n01),
-                                                             new SCDimension(n23));
-  mat.assign(data);
-  mat.print("tile");
-}
+  void print_tile(double* data, int n01, int n23) {
+    using namespace sc;
+    RefSCMatrix mat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(n01),
+                                                               new SCDimension(n23));
+    mat.assign(data);
+    mat.print("tile");
+  }
+
 }
 
 namespace sc {
@@ -132,6 +133,12 @@ namespace sc {
         assert(NDIM == 4);
         assert(mapped_element_ranges != 0);
 
+        // determine which tiles map to the allowed element ranges in src
+        const std::vector<bool> tile0_in_erange = tiles_in_erange(range_[0], eimap0, (*mapped_element_ranges)[0]);
+        const std::vector<bool> tile1_in_erange = tiles_in_erange(range_[1], eimap1, (*mapped_element_ranges)[1]);
+        const std::vector<bool> tile2_in_erange = tiles_in_erange(range_[2], eimap2, (*mapped_element_ranges)[2]);
+        const std::vector<bool> tile3_in_erange = tiles_in_erange(range_[3], eimap3, (*mapped_element_ranges)[3]);
+
         // split work over tasks assuming that all tasks can access src
         const int nproc_with_ints = info_->mem()->n();
         const int me = info_->mem()->me();
@@ -162,40 +169,32 @@ namespace sc {
 
           for (long t0 = range_[0].first; t0 < range_[0].second; ++t0) {
             const long size0 = info_->get_range(t0);
-            const int offset0 = eimap0[info_->get_offset(t0)];
-            const int fence0 = offset0 + size0;
+            const long offset0 = info_->get_offset(t0);
             const long spin0 = info_->get_spin(t0);
-            const bool in_erange0 = mapped_element_ranges ? in(element_range(offset0,fence0),(*mapped_element_ranges)[0])
-                                                          : true;
+            const bool in_erange0 = tile0_in_erange[t0];
 
             for (long t1 = std::max(range_[1].first, t0); t1 < range_[1].second; ++t1) {
               const long size1 = info_->get_range(t1);
-              const int offset1 = eimap1[info_->get_offset(t1)];
-              const int fence1 = offset1 + size1;
+              const long offset1 = info_->get_offset(t1);
               const long spin1 = info_->get_spin(t1);
-              const bool in_erange1 = mapped_element_ranges ? in(element_range(offset1,fence1),(*mapped_element_ranges)[1])
-                                                            : true;
+              const bool in_erange1 = tile1_in_erange[t1];
 
               const bool aaaa = (spin0 == spin1);
 
               for (long t2 = range_[2].first; t2 < range_[2].second; ++t2) {
                 const long size2 = info_->get_range(t2);
-                const int offset2 = eimap2[info_->get_offset(t2)];
-                const int fence2 = offset2 + size2;
+                const long offset2 = info_->get_offset(t2);
                 const long spin2 = info_->get_spin(t2);
-                const bool in_erange2 = mapped_element_ranges ? in(element_range(offset2,fence2),(*mapped_element_ranges)[2])
-                                                              : true;
+                const bool in_erange2 = tile2_in_erange[t2];
 
                 const bool abab = ((spin0 != spin1) && (spin0 == spin2));
                 const bool abba = ((spin0 != spin1) && (spin0 != spin2));
 
                 for (long t3 = std::max(range_[3].first, t2); t3 < range_[3].second; ++t3) {
                   const long size3 = info_->get_range(t3);
-                  const int offset3 = eimap3[info_->get_offset(t3)];
-                  const int fence3 = offset3 + size3;
+                  const long offset3 = info_->get_offset(t3);
                   const long spin3 = info_->get_spin(t3);
-                  const bool in_erange3 = mapped_element_ranges ? in(element_range(offset3,fence3),(*mapped_element_ranges)[3])
-                                                                : true;
+                  const bool in_erange3 = tile3_in_erange[t3];
 
                   // cartesian ordinal is used as a key for hashing tiles
                   const long tile_key = (t3-range_[3].first) +
@@ -208,8 +207,7 @@ namespace sc {
                   // since all procs can access integrals, use locality
                   if (tensor_->exists(tile_key) && tensor_->is_this_local(tile_key)) {
 
-                    if (mapped_element_ranges &&
-                        (!in_erange0 || !in_erange1 || !in_erange2 || !in_erange3))
+                    if ((!in_erange0 || !in_erange1 || !in_erange2 || !in_erange3))
                         continue;
 
                     // if erange[0] == erange[1], clearly can antisymmetrize 0 and 1
@@ -224,9 +222,9 @@ namespace sc {
 
                       long i0123 = 0;
                       for (int i0 = 0; i0 < size0; ++i0) {
-                        const int ii0 = i0 + offset0;
+                        const int ii0 = eimap0[offset0 + i0];
                         for (int i1 = 0; i1 < size1; ++i1) {
-                          const int ii1 = i1 + offset1;
+                          const int ii1 = eimap1[offset1 + i1];
 
                           //if (ii0 == ii1 && aaaa) continue;
 
@@ -246,9 +244,9 @@ namespace sc {
                           if (antisymmetrize23) {
 
                             for (int i2 = 0; i2 < size2; ++i2) {
-                              const int ii2 = i2 + offset2;
+                              const int ii2 = eimap2[offset2 + i2];
                               for (int i3 = 0; i3 < size3; ++i3, ++i0123) {
-                                const int ii3 = i3 + offset3;
+                                const int ii3 = eimap3[offset3 + i3];
 
                                 const int i23 = ii2 * n3 + ii3;
                                 const int i32 = ii3 * n3 + ii2;
@@ -275,9 +273,9 @@ namespace sc {
                             const int i10 = i1 * n1 + i0;
 
                             for (int i2 = 0; i2 < size2; ++i2) {
-                              const int ii2 = i2 + offset2;
+                              const int ii2 = eimap2[offset2 + i2];
                               for (int i3 = 0; i3 < size3; ++i3, ++i0123) {
-                                const int ii3 = i3 + offset3;
+                                const int ii3 = eimap3[offset3 + i3];
 
                                 const int i23 = ii2 * n3 + ii3;
 
@@ -338,6 +336,10 @@ namespace sc {
 
         assert(NDIM == 2);
 
+        // determine which tiles map to the allowed element ranges in src
+        const std::vector<bool> tile0_in_erange = tiles_in_erange(range_[0], eimap0, (*mapped_element_ranges)[0]);
+        const std::vector<bool> tile1_in_erange = tiles_in_erange(range_[1], eimap1, (*mapped_element_ranges)[1]);
+
         // split work over tasks assuming that all tasks can access src
         const int nproc_with_ints = info_->mem()->n();
         const int me = info_->mem()->me();
@@ -366,19 +368,15 @@ namespace sc {
 
           for (long t0 = range_[0].first; t0 < range_[0].second; ++t0) {
             const long size0 = info_->get_range(t0);
-            const int offset0 = eimap0[info_->get_offset(t0)];
-            const int fence0 = offset0 + size0;
+            const long offset0 = info_->get_offset(t0);
             const long spin0 = info_->get_spin(t0);
-            const bool in_erange0 = mapped_element_ranges ? in(element_range(offset0,fence0),(*mapped_element_ranges)[0])
-                                                          : true;
+            const bool in_erange0 = tile0_in_erange[t0];
 
             for (long t1 = range_[1].first; t1 < range_[1].second; ++t1) {
               const long size1 = info_->get_range(t1);
-              const int offset1 = eimap1[info_->get_offset(t1)];
-              const int fence1 = offset1 + size1;
+              const long offset1 = info_->get_offset(t1);
               const long spin1 = info_->get_spin(t1);
-              const bool in_erange1 = mapped_element_ranges ? in(element_range(offset1,fence1),(*mapped_element_ranges)[1])
-                                                            : true;
+              const bool in_erange1 = tile1_in_erange[t1];
 
               // cartesian ordinal is used as a key for hashing tiles
               const long tile_key = (t1-range_[1].first) + ntiles1 * (t0-range_[0].first);
@@ -386,7 +384,7 @@ namespace sc {
               // since all procs can access integrals, use locality
               if (tensor_->exists(tile_key) && tensor_->is_this_local(tile_key)) {
 
-                if (mapped_element_ranges && (!in_erange0 || !in_erange1))
+                if ((!in_erange0 || !in_erange1))
                   continue;
 
                 long size = size0 * size1;
@@ -394,9 +392,9 @@ namespace sc {
 
                 long i01 = 0;
                 for (int i0 = 0; i0 < size0; ++i0) {
-                  const int ii0 = i0 + offset0;
+                  const int ii0 = eimap0[offset0 + i0];
                   for (int i1 = 0; i1 < size1; ++i1, ++i01) {
-                    const int ii1 = i1 + offset1;
+                    const int ii1 = eimap1[offset1 + i1];
 
                     data[i01] = src(ii0, ii1);
                   }
@@ -420,6 +418,10 @@ namespace sc {
 
       } // MTensor<2>::convert() from RefSCMatrix or RefSymmSCMatrix
 
+      void print(const std::string& label, std::ostream& os = ExEnv::out0()) const {
+        tensor_->print(label, os);
+      }
+
     private:
       Info const* info_;
       Tensor* tensor_;
@@ -432,8 +434,28 @@ namespace sc {
                              eimap[rng.first]);
         for(element_index i=rng.first; i != rng.second; ++i) {
           const element_index ii = eimap[i];
-          result.first = std::min(rng.first, ii);
-          result.second = std::max(rng.second, ii);
+          result.first = std::min(result.first, ii);
+          result.second = std::max(result.second, ii);
+        }
+        return result;
+      }
+
+      // given tile range [start, fence), element map, and element_range, result[t] is true if all elements within
+      // the tile map to inside element_range
+      std::vector<bool>
+      tiles_in_erange(const tile_range& range,
+                      const element_index_map& eimap,
+                      const element_range& erange) {
+
+        std::vector<bool> result(range.second, false);
+        for(long t=range.first; t!=range.second; ++t) {
+          const long start = info_->get_offset(t);
+          const long size = info_->get_range(t);
+          const long fence = start + size;
+          const element_range tile(start, fence);
+          // map elements
+          const element_range mapped_tile = map_range(tile, eimap);
+          result[t] = in(mapped_tile,erange);
         }
         return result;
       }

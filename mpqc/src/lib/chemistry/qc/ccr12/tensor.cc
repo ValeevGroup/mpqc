@@ -299,3 +299,26 @@ double sc::RMS(const Tensor& t) {
   return t.norm() / t.get_filesize();
 }
 
+void Tensor::print(const std::string& label,
+                   std::ostream& os) const {
+  os << indent << label << " Tensor" << std::endl;
+  typedef std::map<long, long>::const_iterator iter_t;
+  for(iter_t i = hash_table_.begin();
+      i != hash_table_.end();
+      ++i) {
+
+    iter_t ii = i;  ++ii;
+    if (ii != hash_table_.end()) {
+      long doffset = i->second;
+      long dsize   = ii->second-doffset;
+      distsize_t offset = (distsize_t)doffset * sizeof(double);
+      const int    size =        (int)dsize   * sizeof(double); // in byte
+      double* buffer = (double*) file()->obtain_readonly(offset, size);
+      os << indent << "tile " << i->first << std::endl;
+      for(int k=0; k<dsize; ++k)
+        os << indent << "tile[" << k << "] = " << buffer[k] << std::endl;
+      file()->release_readonly(buffer, offset, size);
+    }
+
+  }
+}

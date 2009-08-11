@@ -210,9 +210,6 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
     // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
     RefSCMatrix C_[NSpinCases2];
 
-    double emp2f12tot(SpinCase2 S) const;
-    double ef12tot(SpinCase2 S) const;
-
     // Initialize SCVectors and SCMatrices
     void init_();
 
@@ -278,6 +275,9 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
   const RefSCVector& ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy
   double energy();
+
+  double emp2f12tot(SpinCase2 S) const;
+  double ef12tot(SpinCase2 S) const;
 
   /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
   */

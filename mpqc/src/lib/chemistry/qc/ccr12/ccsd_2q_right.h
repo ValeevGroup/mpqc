@@ -36,14 +36,12 @@ namespace sc {
 class CCSD_2Q_RIGHT : public Parenthesis2tNum {
 
   protected:
-   void offset_k0();
-   void smith_k0(); //z->t1(),z->v2()=>kn.at(0)
    void offset_smith_0_1();
    void offset_smith_1_1();
    void smith_1_1_0(); //z->v2()=>in.at(2)
    void offset_smith_2_4();
    void smith_2_4_0(); //z->v2()=>in.at(3)
-   void smith_2_4_1(); //kn.at(0)=>in.at(3)
+   void smith_3_8(); //z->t1(),z->v2()=>in.at(3)
    void smith_2_4(); //z->t1(),in.at(3)=>in.at(2)
    void smith_2_13(); //z->t2(),z->v2()=>in.at(2)
    void smith_1_1(); //z->t2(),in.at(2)=>in.at(1x0)
@@ -51,7 +49,7 @@ class CCSD_2Q_RIGHT : public Parenthesis2tNum {
    void smith_1_2_0(); //z->v2()=>in.at(2)
    void offset_smith_2_5();
    void smith_2_5_0(); //z->v2()=>in.at(3)
-   void smith_2_5_1(); //kn.at(0)=>in.at(3)
+   void smith_3_10(); //z->t1(),z->v2()=>in.at(3)
    void smith_2_5(); //z->t1(),in.at(3)=>in.at(2)
    void smith_2_7(); //z->t1(),z->v2()=>in.at(2)
    void smith_2_12(); //z->t2(),z->v2()=>in.at(2)

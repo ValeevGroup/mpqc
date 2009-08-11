@@ -42,7 +42,6 @@ CCSD_2T_LEFT::CCSD_2T_LEFT(CCR12_Info* info): Parenthesis2tNum(info) {
 void CCSD_2T_LEFT::compute_amp(double* a_i0,const long t_h4b,const long t_h5b,const long t_h6b,const long t_p1b,const long t_p2b,const long t_p3b,const long toggle){
   
 in.resize(8);
-kn.resize(64);
 i1xn.resize(16);
   
 if (toggle==2L) {

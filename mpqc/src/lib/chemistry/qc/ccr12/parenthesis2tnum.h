@@ -39,7 +39,6 @@ class Parenthesis2tNum : public RefCount {
    CCR12_Info* z;
 
    std::vector<Tensor*> in; 
-   std::vector<Tensor*> kn; 
    std::vector<Tensor*> i1xn; 
 
   public:

@@ -1,5 +1,5 @@
 //
-// ccsd_2t_pr12_right.cc
+// ccsd_2t_right.cc
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -31,6 +31,7 @@
 #include <chemistry/qc/ccr12/ccsd_2t_pr12_right.h>
 #include <chemistry/qc/ccr12/parenthesis2tnum.h>
 using namespace sc;
+  
   
 CCSD_2T_PR12_RIGHT::CCSD_2T_PR12_RIGHT(CCR12_Info* info):Parenthesis2tNum(info){};
   
@@ -96,8 +97,22 @@ if (toggle==1L) {
 i1xn.at(1)=new Tensor("ccsd_2t_pr12_right_1x1_1",z->mem());
 offset_smith_0_2();
 smith_0_2_0(); //z->v2()=>in.at(1x1)
-smith_1_7(); //z->t1(),z->v2()=>in.at(1x1)
 in.at(2)=new Tensor("ccsd_2t_pr12_right_2_0",z->mem());
+offset_smith_1_6();
+smith_1_6_0(); //z->v2()=>in.at(2)
+in.at(3)=new Tensor("ccsd_2t_pr12_right_3_0",z->mem());
+offset_smith_2_12();
+smith_2_12_0(); //z->v2()=>in.at(3)
+smith_3_26(); //z->t1(),z->v2()=>in.at(3)
+smith_2_12(); //z->t1(),in.at(3)=>in.at(2)
+delete in.at(3);
+smith_2_13(); //z->t1(),z->v2()=>in.at(2)
+smith_2_30(); //z->t2(),z->v2()=>in.at(2)
+smith_2_36(); //z->qy(),z->v2()=>in.at(2)
+smith_1_6(); //z->t1(),in.at(2)=>in.at(1x1)
+delete in.at(2);
+smith_1_7(); //z->t1(),z->v2()=>in.at(1x1)
+in.at(2)=new Tensor("ccsd_2t_pr12_right_2_1",z->mem());
 offset_smith_1_16();
 smith_1_16_0(); //z->v2()=>in.at(2)
 smith_2_28(); //z->t1(),z->v2()=>in.at(2)
@@ -113,66 +128,40 @@ if (toggle==1L) {
 i1xn.at(2)=new Tensor("ccsd_2t_pr12_right_1x2_2",z->mem());
 offset_smith_0_3();
 smith_0_3_0(); //z->v2()=>in.at(1x2)
+in.at(2)=new Tensor("ccsd_2t_pr12_right_2_0",z->mem());
+offset_smith_1_8();
+smith_1_8_0(); //z->v2()=>in.at(2)
+in.at(3)=new Tensor("ccsd_2t_pr12_right_3_27",z->mem());
+offset_smith_2_27();
+smith_3_27(); //z->t1(),z->v2()=>in.at(3)
+smith_2_27(); //z->t1(),in.at(3)=>in.at(2)
+delete in.at(3);
+smith_2_33(); //z->t2(),z->v2()=>in.at(2)
+smith_1_8(); //z->t1(),in.at(2)=>in.at(1x2)
+delete in.at(2);
 smith_1_9(); //z->t1(),z->v2()=>in.at(1x2)
+in.at(2)=new Tensor("ccsd_2t_pr12_right_2_14",z->mem());
+offset_smith_1_14();
+smith_2_14(); //z->t1(),z->t1()=>in.at(2)
+smith_1_14(); //z->v2(),in.at(2)=>in.at(1x2)
+delete in.at(2);
+in.at(2)=new Tensor("ccsd_2t_pr12_right_2_15",z->mem());
+offset_smith_1_15();
+smith_2_15(); //z->t1(),z->t1()=>in.at(2)
+smith_1_15(); //z->v2(),in.at(2)=>in.at(1x2)
+delete in.at(2);
+in.at(2)=new Tensor("ccsd_2t_pr12_right_2_1",z->mem());
+offset_smith_1_20();
+smith_1_20_0(); //z->v2()=>in.at(2)
+smith_2_34(); //z->t1(),z->v2()=>in.at(2)
+smith_1_20(); //z->t2(),in.at(2)=>in.at(1x2)
+delete in.at(2);
 smith_1_21(); //z->t2(),z->v2()=>in.at(1x2)
 }
 if (toggle==2L) {
 smith_0_3(a_i0,t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b);
 }
-if (toggle==1L) {
-i1xn.at(3)=new Tensor("ccsd_2t_pr12_right_1x3_3",z->mem());
-offset_smith_0_6();
-in.at(2)=new Tensor("ccsd_2t_pr12_right_2_0",z->mem());
-offset_smith_1_6();
-smith_1_6_0(); //z->v2()=>in.at(2)
-smith_2_13(); //z->t1(),z->v2()=>in.at(2)
-smith_2_30(); //z->t2(),z->v2()=>in.at(2)
-smith_2_36(); //z->qy(),z->v2()=>in.at(2)
-smith_1_6(); //z->t2(),in.at(2)=>in.at(1x3)
-delete in.at(2);
-in.at(2)=new Tensor("ccsd_2t_pr12_right_2_1",z->mem());
-offset_smith_1_8();
-smith_1_8_0(); //z->v2()=>in.at(2)
-smith_2_15(); //z->t1(),z->v2()=>in.at(2)
-smith_2_33(); //z->t2(),z->v2()=>in.at(2)
-smith_1_8(); //z->qy(),in.at(2)=>in.at(1x3)
-delete in.at(2);
-in.at(2)=new Tensor("ccsd_2t_pr12_right_2_2",z->mem());
-offset_smith_1_12();
-in.at(3)=new Tensor("ccsd_2t_pr12_right_3_0",z->mem());
-offset_smith_2_12();
-smith_2_12_0(); //z->v2()=>in.at(3)
-smith_3_26(); //z->t1(),z->v2()=>in.at(3)
-smith_2_12(); //z->t2(),in.at(3)=>in.at(2)
-delete in.at(3);
-in.at(3)=new Tensor("ccsd_2t_pr12_right_3_1",z->mem());
-offset_smith_2_14();
-smith_2_14_0(); //z->v2()=>in.at(3)
-smith_3_27(); //z->t1(),z->v2()=>in.at(3)
-smith_2_14(); //z->qy(),in.at(3)=>in.at(2)
-delete in.at(3);
-smith_1_12(); //z->t1(),in.at(2)=>in.at(1x3)
-delete in.at(2);
-}
-if (toggle==2L) {
-smith_0_6(a_i0,t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b);
-}
-if (toggle==1L) {
-i1xn.at(4)=new Tensor("ccsd_2t_pr12_right_1x4_4",z->mem());
-offset_smith_0_20();
-in.at(2)=new Tensor("ccsd_2t_pr12_right_2_0",z->mem());
-offset_smith_1_20();
-smith_1_20_0(); //z->v2()=>in.at(2)
-smith_2_34(); //z->t1(),z->v2()=>in.at(2)
-smith_1_20(); //z->qy(),in.at(2)=>in.at(1x4)
-delete in.at(2);
-}
-if (toggle==2L) {
-smith_0_20(a_i0,t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b);
-}
 if (toggle==3L) {
-delete i1xn.at(4);
-delete i1xn.at(3);
 delete i1xn.at(2);
 delete i1xn.at(1);
 delete i1xn.at(0);
@@ -441,113 +430,6 @@ for (long permutation=0L;permutation<9L;++permutation) {
 } 
 } 
   
-void CCSD_2T_PR12_RIGHT::smith_0_20(double* a_i0,const long t_p4b,const long t_p5b,const long t_p6b,const long t_h1b,const long t_h2b,const long t_h3b){ 
-      
-const long perm[3][6]={0,1,2,3,4,5, 0,2,1,3,4,5, 1,2,0,3,4,5}; 
-const long t_b[6]={t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b}; 
-for (long permutation=0L;permutation<3L;++permutation) { 
- const long p4b=t_b[perm[permutation][0]]; 
- const long p5b=t_b[perm[permutation][1]]; 
- const long p6b=t_b[perm[permutation][2]]; 
- const long h1b=t_b[perm[permutation][3]]; 
- const long h2b=t_b[perm[permutation][4]]; 
- const long h3b=t_b[perm[permutation][5]]; 
- bool skip=false; 
- for (long p_p=0L;p_p<permutation;++p_p) { 
-  if(p4b==t_b[perm[p_p][0]] 
-  && p5b==t_b[perm[p_p][1]] 
-  && p6b==t_b[perm[p_p][2]] 
-  && h1b==t_b[perm[p_p][3]] 
-  && h2b==t_b[perm[p_p][4]] 
-  && h3b==t_b[perm[p_p][5]]) skip=true; 
- } 
- if (skip) continue; 
- if (!z->restricted() || z->get_spin(p4b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-  if (z->get_spin(p4b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-   if ((z->get_sym(p4b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^(z->irrep_e()^z->irrep_v()))) { 
-    long dimc=z->get_range(p4b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-    double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-    std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-    for (long h7b=0L;h7b<z->noab();++h7b) { 
-     for (long h8b=h7b;h8b<z->noab();++h8b) { 
-      if (z->get_spin(p4b)+z->get_spin(p5b)==z->get_spin(h7b)+z->get_spin(h8b)) { 
-       if ((z->get_sym(p4b)^(z->get_sym(p5b)^(z->get_sym(h7b)^z->get_sym(h8b))))==z->irrep_t()) { 
-        long p4b_0,p5b_0,h7b_0,h8b_0; 
-        z->restricted_4(p4b,p5b,h7b,h8b,p4b_0,p5b_0,h7b_0,h8b_0); 
-        long h7b_1,h8b_1,p6b_1,h1b_1,h2b_1,h3b_1; 
-        z->restricted_6(h7b,h8b,p6b,h1b,h2b,h3b,h7b_1,h8b_1,p6b_1,h1b_1,h2b_1,h3b_1); 
-        long dim_common=z->get_range(h7b)*z->get_range(h8b); 
-        long dima0_sort=z->get_range(p4b)*z->get_range(p5b); 
-        long dima0=dim_common*dima0_sort; 
-        long dima1_sort=z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-        long dima1=dim_common*dima1_sort; 
-        if (dima0>0L && dima1>0L) { 
-         double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-         double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->t2()->get_block(h8b_0+z->noab()*(h7b_0+z->noab()*(p5b_0-z->noab()+z->nvab()*(p4b_0-z->noab()))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(p4b),z->get_range(p5b),z->get_range(h7b),z->get_range(h8b),1,0,3,2,+1.0,false); 
-         z->mem()->free_local_double(k_a0); 
-         double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-         double* k_a1=z->mem()->malloc_local_double(dima1); 
-         i1xn[4]->get_block(h3b_1+z->noab()*(h2b_1+z->noab()*(h1b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h8b_1+z->noab()*(h7b_1))))),k_a1); 
-         z->sort_indices6(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),z->get_range(h3b),5,4,3,2,1,0,+1.0,false); 
-         z->mem()->free_local_double(k_a1); 
-         double factor=1.0; 
-         if (h7b==h8b) { 
-          factor=factor/2.0; 
-         } 
-         z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-         z->mem()->free_local_double(k_a1_sort); 
-         z->mem()->free_local_double(k_a0_sort); 
-        } 
-       } 
-      } 
-     } 
-    } 
-    if (p6b>=p5b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),5,4,3,2,1,0,+0.5/0.5); 
-    } 
-    if (p5b>=p6b && p6b>=p4b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),5,3,4,2,1,0,-0.5/0.5); 
-    } 
-    if (p4b>=p6b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),3,5,4,2,1,0,+0.5/0.5); 
-    } 
-    z->mem()->free_local_double(k_c_sort); 
-   } 
-  } 
- } 
-} 
-} 
-  
-void CCSD_2T_PR12_RIGHT::offset_smith_0_20(){ 
- 
-long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=h2b;h3b<z->noab();++h3b) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_e()^z->irrep_v())) { 
-        if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-         i1xn[4]->input_offset(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),size); 
-         size+=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-        } 
-       } 
-      } 
-     } 
-    } 
-   } 
-  } 
- } 
-} 
-i1xn[4]->set_filesize(size); 
-i1xn[4]->createfile(); 
-z->mem()->sync(); 
-} 
-  
 void CCSD_2T_PR12_RIGHT::smith_0_2_0(){ 
       
 for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
@@ -770,180 +652,62 @@ i1xn[2]->createfile();
 z->mem()->sync(); 
 } 
   
-void CCSD_2T_PR12_RIGHT::smith_0_6(double* a_i0,const long t_p4b,const long t_p5b,const long t_p6b,const long t_h1b,const long t_h2b,const long t_h3b){ 
+void CCSD_2T_PR12_RIGHT::smith_1_14(){ 
       
-const long perm[3][6]={0,1,2,3,4,5, 1,0,2,3,4,5, 2,0,1,3,4,5}; 
-const long t_b[6]={t_p4b,t_p5b,t_p6b,t_h1b,t_h2b,t_h3b}; 
-for (long permutation=0L;permutation<3L;++permutation) { 
- const long p4b=t_b[perm[permutation][0]]; 
- const long p5b=t_b[perm[permutation][1]]; 
- const long p6b=t_b[perm[permutation][2]]; 
- const long h1b=t_b[perm[permutation][3]]; 
- const long h2b=t_b[perm[permutation][4]]; 
- const long h3b=t_b[perm[permutation][5]]; 
- bool skip=false; 
- for (long p_p=0L;p_p<permutation;++p_p) { 
-  if(p4b==t_b[perm[p_p][0]] 
-  && p5b==t_b[perm[p_p][1]] 
-  && p6b==t_b[perm[p_p][2]] 
-  && h1b==t_b[perm[p_p][3]] 
-  && h2b==t_b[perm[p_p][4]] 
-  && h3b==t_b[perm[p_p][5]]) skip=true; 
- } 
- if (skip) continue; 
- if (!z->restricted() || z->get_spin(p4b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-  if (z->get_spin(p4b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-   if ((z->get_sym(p4b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^(z->irrep_t()^z->irrep_v()))) { 
-    long dimc=z->get_range(p4b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-    double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-    std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-    for (long h7b=0L;h7b<z->noab();++h7b) { 
-     if (z->get_spin(p4b)==z->get_spin(h7b)) { 
-      if ((z->get_sym(p4b)^z->get_sym(h7b))==z->irrep_t()) { 
-       long p4b_0,h7b_0; 
-       z->restricted_2(p4b,h7b,p4b_0,h7b_0); 
-       long h7b_1,p5b_1,p6b_1,h1b_1,h2b_1,h3b_1; 
-       z->restricted_6(h7b,p5b,p6b,h1b,h2b,h3b,h7b_1,p5b_1,p6b_1,h1b_1,h2b_1,h3b_1); 
-       long dim_common=z->get_range(h7b); 
-       long dima0_sort=z->get_range(p4b); 
-       long dima0=dim_common*dima0_sort; 
-       long dima1_sort=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-       long dima1=dim_common*dima1_sort; 
-       if (dima0>0L && dima1>0L) { 
-        double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-        double* k_a0=z->mem()->malloc_local_double(dima0); 
-        z->t1()->get_block(h7b_0+z->noab()*(p4b_0-z->noab()),k_a0); 
-        z->sort_indices2(k_a0,k_a0_sort,z->get_range(p4b),z->get_range(h7b),0,1,+1.0,false); 
-        z->mem()->free_local_double(k_a0); 
-        double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-        double* k_a1=z->mem()->malloc_local_double(dima1); 
-        i1xn[3]->get_block(h3b_1+z->noab()*(h2b_1+z->noab()*(h1b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(p5b_1-z->noab()+z->nvab()*(h7b_1))))),k_a1); 
-        z->sort_indices6(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p5b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),z->get_range(h3b),5,4,3,2,1,0,+1.0,false); 
-        z->mem()->free_local_double(k_a1); 
-        double factor=1.0; 
-        z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-        z->mem()->free_local_double(k_a1_sort); 
-        z->mem()->free_local_double(k_a0_sort); 
-       } 
-      } 
-     } 
-    } 
-    if (p5b>=p4b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),5,4,3,2,1,0,+1.0); 
-    } 
-    if (p6b>=p4b && p4b>=p5b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),4,5,3,2,1,0,-1.0); 
-    } 
-    if (p4b>=p6b) { 
-     z->sort_indices_acc6(k_c_sort,a_i0,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(p5b),z->get_range(p4b),4,3,5,2,1,0,+1.0); 
-    } 
-    z->mem()->free_local_double(k_c_sort); 
-   } 
-  } 
- } 
-} 
-} 
-  
-void CCSD_2T_PR12_RIGHT::offset_smith_0_6(){ 
- 
-long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
-  for (long p6b=p5b;p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=h2b;h3b<z->noab();++h3b) { 
-      if (z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^z->irrep_v())) { 
-        if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-         i1xn[3]->input_offset(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),size); 
-         size+=z->get_range(h7b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-        } 
-       } 
-      } 
-     } 
-    } 
-   } 
-  } 
- } 
-} 
-i1xn[3]->set_filesize(size); 
-i1xn[3]->createfile(); 
-z->mem()->sync(); 
-} 
-  
-void CCSD_2T_PR12_RIGHT::smith_1_12(){ 
-      
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=h2b;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (p5b<p6b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      if (i1xn[3]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^(z->irrep_t()^z->irrep_v()))) { 
-          long dimc=z->get_range(h7b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long h8b=0L;h8b<z->noab();++h8b) { 
-           if (z->get_spin(p5b)==z->get_spin(h8b)) { 
-            if ((z->get_sym(p5b)^z->get_sym(h8b))==z->irrep_t()) { 
-             long p5b_0,h8b_0; 
-             z->restricted_2(p5b,h8b,p5b_0,h8b_0); 
-             long h7b_1,h8b_1,p6b_1,h1b_1,h2b_1,h3b_1; 
-             z->restricted_6(h7b,h8b,p6b,h1b,h2b,h3b,h7b_1,h8b_1,p6b_1,h1b_1,h2b_1,h3b_1); 
-             long dim_common=z->get_range(h8b); 
-             long dima0_sort=z->get_range(p5b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              z->t1()->get_block(h8b_0+z->noab()*(p5b_0-z->noab()),k_a0); 
-              z->sort_indices2(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(h8b),0,1,+1.0,false); 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              if (h7b<h8b) { 
-               in[2]->get_block(h3b_1+z->noab()*(h2b_1+z->noab()*(h1b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h8b_1+z->noab()*(h7b_1))))),k_a1); 
-               z->sort_indices6(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),z->get_range(h3b),5,4,3,2,0,1,+1.0,false); 
-              } 
-              else if (h8b<=h7b) { 
-               in[2]->get_block(h3b_1+z->noab()*(h2b_1+z->noab()*(h1b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h7b_1+z->noab()*(h8b_1))))),k_a1); 
-               z->sort_indices6(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h7b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),z->get_range(h3b),5,4,3,2,1,0,-1.0,false); 
-              } 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=p5b;p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    long tileoffset; 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    if (i1xn[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_v()^(z->irrep_t()^z->irrep_t()))) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h8b=0L;h8b<z->noab();++h8b) { 
+         for (long h9b=h8b;h9b<z->noab();++h9b) { 
+          if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+           if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==z->irrep_v()) { 
+            long h8b_0,h9b_0,h3b_0,q7b_0; 
+            z->restricted_4(h8b,h9b,h3b,q7b,h8b_0,h9b_0,h3b_0,q7b_0); 
+            long p5b_1,p6b_1,h8b_1,h9b_1; 
+            z->restricted_4(p5b,p6b,h8b,h9b,p5b_1,p6b_1,h8b_1,h9b_1); 
+            long dim_common=z->get_range(h8b)*z->get_range(h9b); 
+            long dima0_sort=z->get_range(h3b)*z->get_range(q7b); 
+            long dima0=dim_common*dima0_sort; 
+            long dima1_sort=z->get_range(p5b)*z->get_range(p6b); 
+            long dima1=dim_common*dima1_sort; 
+            if (dima0>0L && dima1>0L) { 
+             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+             double* k_a0=z->mem()->malloc_local_double(dima0); 
+             z->v2()->get_block(q7b_0+(z->nab())*(h3b_0+(z->nab())*(h9b_0+(z->nab())*(h8b_0))),k_a0); 
+             z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(q7b),3,2,1,0,+1.0,false); 
+             z->mem()->free_local_double(k_a0); 
+             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+             double* k_a1=z->mem()->malloc_local_double(dima1); 
+             in[2]->get_block(h9b_1+z->noab()*(h8b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(p5b_1-z->noab()))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(p5b),z->get_range(p6b),z->get_range(h8b),z->get_range(h9b),1,0,3,2,+1.0,false); 
+             z->mem()->free_local_double(k_a1); 
+             double factor=1.0; 
+             if (h8b==h9b) { 
+              factor=factor/2.0; 
              } 
+             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+             z->mem()->free_local_double(k_a1_sort); 
+             z->mem()->free_local_double(k_a0_sort); 
             } 
            } 
           } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (p6b>=p5b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(h7b),z->get_range(p5b),4,5,3,2,1,0,+0.5,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),z->get_range(h7b),z->get_range(p5b),4,3,5,2,1,0,-0.5,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
          } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p6b),z->get_range(p5b),z->get_range(q7b),z->get_range(h3b),1,0,3,2,+0.5/0.5,false); 
+        i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
       } 
      } 
@@ -955,22 +719,117 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
 z->mem()->sync(); 
 } 
   
-void CCSD_2T_PR12_RIGHT::offset_smith_1_12(){ 
+void CCSD_2T_PR12_RIGHT::offset_smith_1_14(){ 
  
 long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=h2b;h3b<z->noab();++h3b) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^z->irrep_v())) { 
-        if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-         in[2]->input_offset(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),size); 
-         size+=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=p5b;p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h8b=0L;h8b<z->noab();++h8b) { 
+   for (long h9b=h8b;h9b<z->noab();++h9b) { 
+    if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h8b)+z->get_spin(h9b)) { 
+     if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h8b)^z->get_sym(h9b))))==(z->irrep_t()^z->irrep_t())) { 
+      if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h8b)+z->get_spin(h9b)!=8L) { 
+       in[2]->input_offset(h9b+z->noab()*(h8b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),size); 
+       size+=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h8b)*z->get_range(h9b); 
+      } 
+     } 
+    } 
+   } 
+  } 
+ } 
+} 
+in[2]->set_filesize(size); 
+in[2]->createfile(); 
+z->mem()->sync(); 
+} 
+  
+void CCSD_2T_PR12_RIGHT::smith_1_15(){ 
+      
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    long tileoffset; 
+    if (p5b<p6b) { 
+     tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    } 
+    else if (p6b<=p5b) { 
+     tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    } 
+    if (i1xn[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_v()^(z->irrep_t()^z->irrep_t()))) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h8b=0L;h8b<z->noab();++h8b) { 
+         for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
+          if (z->get_spin(h8b)+z->get_spin(p5b)==z->get_spin(p9b)+z->get_spin(q7b)) { 
+           if ((z->get_sym(h8b)^(z->get_sym(p5b)^(z->get_sym(p9b)^z->get_sym(q7b))))==z->irrep_v()) { 
+            long h8b_0,p5b_0,p9b_0,q7b_0; 
+            z->restricted_4(h8b,p5b,p9b,q7b,h8b_0,p5b_0,p9b_0,q7b_0); 
+            long p6b_1,p9b_1,h3b_1,h8b_1; 
+            z->restricted_4(p6b,p9b,h3b,h8b,p6b_1,p9b_1,h3b_1,h8b_1); 
+            long dim_common=z->get_range(h8b)*z->get_range(p9b); 
+            long dima0_sort=z->get_range(p5b)*z->get_range(q7b); 
+            long dima0=dim_common*dima0_sort; 
+            long dima1_sort=z->get_range(p6b)*z->get_range(h3b); 
+            long dima1=dim_common*dima1_sort; 
+            if (dima0>0L && dima1>0L) { 
+             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+             double* k_a0=z->mem()->malloc_local_double(dima0); 
+             z->v2()->get_block(q7b_0+(z->nab())*(p9b_0+(z->nab())*(p5b_0+(z->nab())*(h8b_0))),k_a0); 
+             z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(p5b),z->get_range(p9b),z->get_range(q7b),3,1,2,0,+1.0,false); 
+             z->mem()->free_local_double(k_a0); 
+             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+             double* k_a1=z->mem()->malloc_local_double(dima1); 
+             in[2]->get_block(h8b_1+z->noab()*(h3b_1+z->noab()*(p9b_1-z->noab()+z->nvab()*(p6b_1-z->noab()))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(p6b),z->get_range(p9b),z->get_range(h3b),z->get_range(h8b),2,0,1,3,+1.0,false); 
+             z->mem()->free_local_double(k_a1); 
+             double factor=1.0; 
+             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+             z->mem()->free_local_double(k_a1_sort); 
+             z->mem()->free_local_double(k_a0_sort); 
+            } 
+           } 
+          } 
+         } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        if (p6b>=p5b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(q7b),z->get_range(p5b),3,1,0,2,+1.0,false); 
+         i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        } 
+        if (p5b>=p6b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(q7b),z->get_range(p5b),1,3,0,2,-1.0,false); 
+         i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        } 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
+      } 
+     } 
+    } 
+   } 
+  } 
+ } 
+} 
+z->mem()->sync(); 
+} 
+  
+void CCSD_2T_PR12_RIGHT::offset_smith_1_15(){ 
+ 
+long size=0L; 
+for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+ for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long h8b=0L;h8b<z->noab();++h8b) { 
+    if (z->get_spin(p6b)+z->get_spin(p9b)==z->get_spin(h3b)+z->get_spin(h8b)) { 
+     if ((z->get_sym(p6b)^(z->get_sym(p9b)^(z->get_sym(h3b)^z->get_sym(h8b))))==(z->irrep_t()^z->irrep_t())) { 
+      if (!z->restricted() || z->get_spin(p6b)+z->get_spin(p9b)+z->get_spin(h3b)+z->get_spin(h8b)!=8L) { 
+       in[2]->input_offset(h8b+z->noab()*(h3b+z->noab()*(p9b-z->noab()+z->nvab()*(p6b-z->noab()))),size); 
+       size+=z->get_range(p6b)*z->get_range(p9b)*z->get_range(h3b)*z->get_range(h8b); 
       } 
      } 
     } 
@@ -1439,77 +1298,60 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_20(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=0L;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      if (i1xn[4]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_e()^z->irrep_v())) { 
-          long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
-           if (z->get_spin(p6b)+z->get_spin(q9b)==z->get_spin(h1b)+z->get_spin(h2b)) { 
-            if ((z->get_sym(p6b)^(z->get_sym(q9b)^(z->get_sym(h1b)^z->get_sym(h2b))))==z->irrep_e()) { 
-             long p6b_0,q9b_0,h1b_0,h2b_0; 
-             z->restricted_4(p6b,q9b,h1b,h2b,p6b_0,q9b_0,h1b_0,h2b_0); 
-             long h7b_1,h8b_1,h3b_1,q9b_1; 
-             z->restricted_4(h7b,h8b,h3b,q9b,h7b_1,h8b_1,h3b_1,q9b_1); 
-             long dim_common=z->get_range(q9b); 
-             long dima0_sort=z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              z->qy()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(q9b_0-z->noab()-z->nvab()+z->ncab()*(p6b_0-z->noab()))),k_a0); 
-              z->sort_indices4(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(q9b),z->get_range(h1b),z->get_range(h2b),3,2,0,1,+1.0,false); 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              in[2]->get_block(q9b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(h8b_1+z->noab()*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),2,1,0,3,+1.0,false); 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=p5b;p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    long tileoffset; 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    if (i1xn[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h8b=0L;h8b<z->noab();++h8b) { 
+         for (long h9b=h8b;h9b<z->noab();++h9b) { 
+          if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h8b)+z->get_spin(h9b)) { 
+           if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h8b)^z->get_sym(h9b))))==z->irrep_t()) { 
+            long p5b_0,p6b_0,h8b_0,h9b_0; 
+            z->restricted_4(p5b,p6b,h8b,h9b,p5b_0,p6b_0,h8b_0,h9b_0); 
+            long h8b_1,h9b_1,h3b_1,q7b_1; 
+            z->restricted_4(h8b,h9b,h3b,q7b,h8b_1,h9b_1,h3b_1,q7b_1); 
+            long dim_common=z->get_range(h8b)*z->get_range(h9b); 
+            long dima0_sort=z->get_range(p5b)*z->get_range(p6b); 
+            long dima0=dim_common*dima0_sort; 
+            long dima1_sort=z->get_range(h3b)*z->get_range(q7b); 
+            long dima1=dim_common*dima1_sort; 
+            if (dima0>0L && dima1>0L) { 
+             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+             double* k_a0=z->mem()->malloc_local_double(dima0); 
+             z->t2()->get_block(h9b_0+z->noab()*(h8b_0+z->noab()*(p6b_0-z->noab()+z->nvab()*(p5b_0-z->noab()))),k_a0); 
+             z->sort_indices4(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(p6b),z->get_range(h8b),z->get_range(h9b),1,0,3,2,+1.0,false); 
+             z->mem()->free_local_double(k_a0); 
+             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+             double* k_a1=z->mem()->malloc_local_double(dima1); 
+             in[2]->get_block(q7b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(h9b_1+z->noab()*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(q7b),3,2,1,0,+1.0,false); 
+             z->mem()->free_local_double(k_a1); 
+             double factor=1.0; 
+             if (h8b==h9b) { 
+              factor=factor/2.0; 
              } 
+             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+             z->mem()->free_local_double(k_a1_sort); 
+             z->mem()->free_local_double(k_a0_sort); 
             } 
            } 
           } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,3,0,+1.0,false); 
-           i1xn[4]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,0,3,-1.0,false); 
-           i1xn[4]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,0,4,3,+1.0,false); 
-           i1xn[4]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
          } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h3b),z->get_range(p6b),z->get_range(p5b),3,2,1,0,+0.5/0.5,false); 
+        i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
       } 
      } 
@@ -1523,31 +1365,31 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_20_0(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
     long tileoffset; 
-    tileoffset=(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==z->irrep_v()) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
-        long h7b_0,h8b_0,h3b_0,q9b_0; 
-        z->restricted_4(h7b,h8b,h3b,q9b,h7b_0,h8b_0,h3b_0,q9b_0); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==z->irrep_v()) { 
+        long dimc=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
+        long h8b_0,h9b_0,h3b_0,q7b_0; 
+        z->restricted_4(h8b,h9b,h3b,q7b,h8b_0,h9b_0,h3b_0,q7b_0); 
         long dim_common=1L; 
-        long dima0_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
+        long dima0_sort=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
         long dima0=dim_common*dima0_sort; 
         if (dima0>0L) { 
          double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
          double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->v2()->get_block(q9b_0+(z->nab())*(h3b_0+(z->nab())*(h8b_0+(z->nab())*(h7b_0))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),0,1,2,3,+1.0,false); 
+         z->v2()->get_block(q7b_0+(z->nab())*(h3b_0+(z->nab())*(h9b_0+(z->nab())*(h8b_0))),k_a0); 
+         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(q7b),0,1,2,3,+1.0,false); 
          z->mem()->free_local_double(k_a0); 
          double* k_c=z->mem()->malloc_local_double(dimc); 
-         z->sort_indices4(k_a0_sort,k_c,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),0,1,2,3,-1.0,false); 
-         in[2]->add_block(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
+         z->sort_indices4(k_a0_sort,k_c,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(q7b),0,1,2,3,-1.0,false); 
+         in[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),k_c); 
          z->mem()->free_local_double(k_c); 
          z->mem()->free_local_double(k_a0_sort); 
         } 
@@ -1565,15 +1407,15 @@ z->mem()->sync();
 void CCSD_2T_PR12_RIGHT::offset_smith_1_20(){ 
  
 long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
-    if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-     if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==(z->irrep_t()^z->irrep_v())) { 
-      if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-       in[2]->input_offset(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),size); 
-       size+=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+     if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+      if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+       in[2]->input_offset(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),size); 
+       size+=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
       } 
      } 
     } 
@@ -2418,104 +2260,66 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_6(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=0L;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (p5b<p6b && h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p5b<p6b && h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p5b<p6b && h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      if (i1xn[3]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^z->irrep_v())) { 
-          long dimc=z->get_range(h7b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
-           if (z->get_spin(p5b)+z->get_spin(p8b)==z->get_spin(h1b)+z->get_spin(h2b)) { 
-            if ((z->get_sym(p5b)^(z->get_sym(p8b)^(z->get_sym(h1b)^z->get_sym(h2b))))==z->irrep_t()) { 
-             long p5b_0,p8b_0,h1b_0,h2b_0; 
-             z->restricted_4(p5b,p8b,h1b,h2b,p5b_0,p8b_0,h1b_0,h2b_0); 
-             long h7b_1,p6b_1,h3b_1,p8b_1; 
-             z->restricted_4(h7b,p6b,h3b,p8b,h7b_1,p6b_1,h3b_1,p8b_1); 
-             long dim_common=z->get_range(p8b); 
-             long dima0_sort=z->get_range(p5b)*z->get_range(h1b)*z->get_range(h2b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              if (p5b<p8b) { 
-               z->t2()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(p8b_0-z->noab()+z->nvab()*(p5b_0-z->noab()))),k_a0); 
-               z->sort_indices4(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(p8b),z->get_range(h1b),z->get_range(h2b),3,2,0,1,+1.0,false); 
-              } 
-              else if (p8b<=p5b) { 
-               z->t2()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(p5b_0-z->noab()+z->nvab()*(p8b_0-z->noab()))),k_a0); 
-               z->sort_indices4(k_a0,k_a0_sort,z->get_range(p8b),z->get_range(p5b),z->get_range(h1b),z->get_range(h2b),3,2,1,0,-1.0,false); 
-              } 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              in[2]->get_block(p8b_1-z->noab()+z->nvab()*(h3b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(p8b),2,1,0,3,+1.0,false); 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
-             } 
-            } 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
+    long tileoffset; 
+    if (p5b<p6b) { 
+     tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    } 
+    else if (p6b<=p5b) { 
+     tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    } 
+    if (i1xn[1]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h8b=0L;h8b<z->noab();++h8b) { 
+         if (z->get_spin(p5b)==z->get_spin(h8b)) { 
+          if ((z->get_sym(p5b)^z->get_sym(h8b))==z->irrep_t()) { 
+           long p5b_0,h8b_0; 
+           z->restricted_2(p5b,h8b,p5b_0,h8b_0); 
+           long h8b_1,p6b_1,h3b_1,p7b_1; 
+           z->restricted_4(h8b,p6b,h3b,p7b,h8b_1,p6b_1,h3b_1,p7b_1); 
+           long dim_common=z->get_range(h8b); 
+           long dima0_sort=z->get_range(p5b); 
+           long dima0=dim_common*dima0_sort; 
+           long dima1_sort=z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
+           long dima1=dim_common*dima1_sort; 
+           if (dima0>0L && dima1>0L) { 
+            double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+            double* k_a0=z->mem()->malloc_local_double(dima0); 
+            z->t1()->get_block(h8b_0+z->noab()*(p5b_0-z->noab()),k_a0); 
+            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(h8b),0,1,+1.0,false); 
+            z->mem()->free_local_double(k_a0); 
+            double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+            double* k_a1=z->mem()->malloc_local_double(dima1); 
+            in[2]->get_block(p7b_1-z->noab()+z->nvab()*(h3b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h8b_1))),k_a1); 
+            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(p7b),3,2,1,0,+1.0,false); 
+            z->mem()->free_local_double(k_a1); 
+            double factor=1.0; 
+            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+            z->mem()->free_local_double(k_a1_sort); 
+            z->mem()->free_local_double(k_a0_sort); 
            } 
           } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (p6b>=p5b && h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,4,3,0,+1.0,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p6b>=p5b && h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,4,0,3,-1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p6b>=p5b && h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,0,4,3,+1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,4,3,0,-1.0,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,4,0,3,+1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,0,4,3,-1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
          } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        if (p6b>=p5b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h3b),z->get_range(p6b),z->get_range(p5b),3,2,1,0,+1.0,false); 
+         i1xn[1]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        } 
+        if (p5b>=p6b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h3b),z->get_range(p6b),z->get_range(p5b),2,3,1,0,-1.0,false); 
+         i1xn[1]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        } 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
       } 
      } 
@@ -2529,31 +2333,31 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_6_0(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p8b))))==z->irrep_v()) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
-        long h7b_0,p6b_0,h3b_0,p8b_0; 
-        z->restricted_4(h7b,p6b,h3b,p8b,h7b_0,p6b_0,h3b_0,p8b_0); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==z->irrep_v()) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
+        long h8b_0,p6b_0,h3b_0,p7b_0; 
+        z->restricted_4(h8b,p6b,h3b,p7b,h8b_0,p6b_0,h3b_0,p7b_0); 
         long dim_common=1L; 
-        long dima0_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
+        long dima0_sort=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
         long dima0=dim_common*dima0_sort; 
         if (dima0>0L) { 
          double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
          double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->v2()->get_block(p8b_0+(z->nab())*(h3b_0+(z->nab())*(p6b_0+(z->nab())*(h7b_0))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(p8b),0,1,2,3,+1.0,false); 
+         z->v2()->get_block(p7b_0+(z->nab())*(h3b_0+(z->nab())*(p6b_0+(z->nab())*(h8b_0))),k_a0); 
+         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(p7b),0,1,2,3,+1.0,false); 
          z->mem()->free_local_double(k_a0); 
          double* k_c=z->mem()->malloc_local_double(dimc); 
-         z->sort_indices4(k_a0_sort,k_c,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(p8b),0,1,2,3,-1.0,false); 
-         in[2]->add_block(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+         z->sort_indices4(k_a0_sort,k_c,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(p7b),0,1,2,3,+1.0,false); 
+         in[2]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
          z->mem()->free_local_double(k_c); 
          z->mem()->free_local_double(k_a0_sort); 
         } 
@@ -2571,15 +2375,15 @@ z->mem()->sync();
 void CCSD_2T_PR12_RIGHT::offset_smith_1_6(){ 
  
 long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
-    if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p8b)) { 
-     if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p8b))))==(z->irrep_t()^z->irrep_v())) { 
-      if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p8b)!=8L) { 
-       in[2]->input_offset(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),size); 
-       size+=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
+    if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+     if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+      if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+       in[2]->input_offset(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),size); 
+       size+=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
       } 
      } 
     } 
@@ -2662,98 +2466,66 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_8(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=0L;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (p5b<p6b && h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p5b<p6b && h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p5b<p6b && h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      else if (p6b<=p5b && h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b)))))); 
-      } 
-      if (i1xn[3]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_e()^z->irrep_v())) { 
-          long dimc=z->get_range(h7b)*z->get_range(p5b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long q8b=z->noab()+z->nvab();q8b<z->nab();++q8b) { 
-           if (z->get_spin(p5b)+z->get_spin(q8b)==z->get_spin(h1b)+z->get_spin(h2b)) { 
-            if ((z->get_sym(p5b)^(z->get_sym(q8b)^(z->get_sym(h1b)^z->get_sym(h2b))))==z->irrep_e()) { 
-             long p5b_0,q8b_0,h1b_0,h2b_0; 
-             z->restricted_4(p5b,q8b,h1b,h2b,p5b_0,q8b_0,h1b_0,h2b_0); 
-             long h7b_1,p6b_1,h3b_1,q8b_1; 
-             z->restricted_4(h7b,p6b,h3b,q8b,h7b_1,p6b_1,h3b_1,q8b_1); 
-             long dim_common=z->get_range(q8b); 
-             long dima0_sort=z->get_range(p5b)*z->get_range(h1b)*z->get_range(h2b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              z->qy()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(q8b_0-z->noab()-z->nvab()+z->ncab()*(p5b_0-z->noab()))),k_a0); 
-              z->sort_indices4(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(q8b),z->get_range(h1b),z->get_range(h2b),3,2,0,1,+1.0,false); 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              in[2]->get_block(q8b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(q8b),2,1,0,3,+1.0,false); 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
-             } 
-            } 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
+ for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    long tileoffset; 
+    if (p5b<p6b) { 
+     tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    } 
+    else if (p6b<=p5b) { 
+     tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    } 
+    if (i1xn[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h8b=0L;h8b<z->noab();++h8b) { 
+         if (z->get_spin(p5b)==z->get_spin(h8b)) { 
+          if ((z->get_sym(p5b)^z->get_sym(h8b))==z->irrep_t()) { 
+           long p5b_0,h8b_0; 
+           z->restricted_2(p5b,h8b,p5b_0,h8b_0); 
+           long h8b_1,p6b_1,h3b_1,q7b_1; 
+           z->restricted_4(h8b,p6b,h3b,q7b,h8b_1,p6b_1,h3b_1,q7b_1); 
+           long dim_common=z->get_range(h8b); 
+           long dima0_sort=z->get_range(p5b); 
+           long dima0=dim_common*dima0_sort; 
+           long dima1_sort=z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+           long dima1=dim_common*dima1_sort; 
+           if (dima0>0L && dima1>0L) { 
+            double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+            double* k_a0=z->mem()->malloc_local_double(dima0); 
+            z->t1()->get_block(h8b_0+z->noab()*(p5b_0-z->noab()),k_a0); 
+            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(h8b),0,1,+1.0,false); 
+            z->mem()->free_local_double(k_a0); 
+            double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+            double* k_a1=z->mem()->malloc_local_double(dima1); 
+            in[2]->get_block(q7b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(p6b_1-z->noab()+z->nvab()*(h8b_1))),k_a1); 
+            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(q7b),3,2,1,0,+1.0,false); 
+            z->mem()->free_local_double(k_a1); 
+            double factor=1.0; 
+            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+            z->mem()->free_local_double(k_a1_sort); 
+            z->mem()->free_local_double(k_a0_sort); 
            } 
           } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (p6b>=p5b && h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,4,3,0,+1.0,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p6b>=p5b && h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,4,0,3,-1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p6b>=p5b && h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,5,1,0,4,3,+1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,4,3,0,-1.0,false); 
-           i1xn[3]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,4,0,3,+1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          if (p5b>=p6b && h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(p6b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p5b),2,1,5,0,4,3,-1.0,false); 
-           i1xn[3]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()+z->nvab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
          } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        if (p6b>=p5b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h3b),z->get_range(p6b),z->get_range(p5b),3,2,1,0,+1.0,false); 
+         i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        } 
+        if (p5b>=p6b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h3b),z->get_range(p6b),z->get_range(p5b),2,3,1,0,-1.0,false); 
+         i1xn[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        } 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
       } 
      } 
@@ -2767,31 +2539,31 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_1_8_0(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q8b=z->noab()+z->nvab();q8b<z->nab();++q8b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
     long tileoffset; 
-    tileoffset=(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q8b))))==z->irrep_v()) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q8b); 
-        long h7b_0,p6b_0,h3b_0,q8b_0; 
-        z->restricted_4(h7b,p6b,h3b,q8b,h7b_0,p6b_0,h3b_0,q8b_0); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==z->irrep_v()) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        long h8b_0,p6b_0,h3b_0,q7b_0; 
+        z->restricted_4(h8b,p6b,h3b,q7b,h8b_0,p6b_0,h3b_0,q7b_0); 
         long dim_common=1L; 
-        long dima0_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q8b); 
+        long dima0_sort=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
         long dima0=dim_common*dima0_sort; 
         if (dima0>0L) { 
          double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
          double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->v2()->get_block(q8b_0+(z->nab())*(h3b_0+(z->nab())*(p6b_0+(z->nab())*(h7b_0))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(q8b),0,1,2,3,+1.0,false); 
+         z->v2()->get_block(q7b_0+(z->nab())*(h3b_0+(z->nab())*(p6b_0+(z->nab())*(h8b_0))),k_a0); 
+         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(q7b),0,1,2,3,+1.0,false); 
          z->mem()->free_local_double(k_a0); 
          double* k_c=z->mem()->malloc_local_double(dimc); 
-         z->sort_indices4(k_a0_sort,k_c,z->get_range(h7b),z->get_range(p6b),z->get_range(h3b),z->get_range(q8b),0,1,2,3,-1.0,false); 
-         in[2]->add_block(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+         z->sort_indices4(k_a0_sort,k_c,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(q7b),0,1,2,3,+1.0,false); 
+         in[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
          z->mem()->free_local_double(k_c); 
          z->mem()->free_local_double(k_a0_sort); 
         } 
@@ -2809,15 +2581,15 @@ z->mem()->sync();
 void CCSD_2T_PR12_RIGHT::offset_smith_1_8(){ 
  
 long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q8b=z->noab()+z->nvab();q8b<z->nab();++q8b) { 
-    if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q8b)) { 
-     if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q8b))))==(z->irrep_t()^z->irrep_v())) { 
-      if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q8b)!=8L) { 
-       in[2]->input_offset(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),size); 
-       size+=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q8b); 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+     if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^(z->irrep_t()^z->irrep_v()))) { 
+      if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+       in[2]->input_offset(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),size); 
+       size+=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
       } 
      } 
     } 
@@ -3100,83 +2872,61 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_12(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=0L;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      if (in[2]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_t()^z->irrep_v())) { 
-          long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
-           if (z->get_spin(p6b)+z->get_spin(p9b)==z->get_spin(h1b)+z->get_spin(h2b)) { 
-            if ((z->get_sym(p6b)^(z->get_sym(p9b)^(z->get_sym(h1b)^z->get_sym(h2b))))==z->irrep_t()) { 
-             long p6b_0,p9b_0,h1b_0,h2b_0; 
-             z->restricted_4(p6b,p9b,h1b,h2b,p6b_0,p9b_0,h1b_0,h2b_0); 
-             long h7b_1,h8b_1,h3b_1,p9b_1; 
-             z->restricted_4(h7b,h8b,h3b,p9b,h7b_1,h8b_1,h3b_1,p9b_1); 
-             long dim_common=z->get_range(p9b); 
-             long dima0_sort=z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              if (p6b<p9b) { 
-               z->t2()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(p9b_0-z->noab()+z->nvab()*(p6b_0-z->noab()))),k_a0); 
-               z->sort_indices4(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(p9b),z->get_range(h1b),z->get_range(h2b),3,2,0,1,+1.0,false); 
-              } 
-              else if (p9b<=p6b) { 
-               z->t2()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(p6b_0-z->noab()+z->nvab()*(p9b_0-z->noab()))),k_a0); 
-               z->sort_indices4(k_a0,k_a0_sort,z->get_range(p9b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),3,2,1,0,-1.0,false); 
-              } 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              in[3]->get_block(p9b_1-z->noab()+z->nvab()*(h3b_1+z->noab()*(h8b_1+z->noab()*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p9b),2,1,0,3,+1.0,false); 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
-             } 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
+    long tileoffset; 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
+    if (in[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h9b=0L;h9b<z->noab();++h9b) { 
+         if (z->get_spin(p6b)==z->get_spin(h9b)) { 
+          if ((z->get_sym(p6b)^z->get_sym(h9b))==z->irrep_t()) { 
+           long p6b_0,h9b_0; 
+           z->restricted_2(p6b,h9b,p6b_0,h9b_0); 
+           long h8b_1,h9b_1,h3b_1,p7b_1; 
+           z->restricted_4(h8b,h9b,h3b,p7b,h8b_1,h9b_1,h3b_1,p7b_1); 
+           long dim_common=z->get_range(h9b); 
+           long dima0_sort=z->get_range(p6b); 
+           long dima0=dim_common*dima0_sort; 
+           long dima1_sort=z->get_range(h8b)*z->get_range(h3b)*z->get_range(p7b); 
+           long dima1=dim_common*dima1_sort; 
+           if (dima0>0L && dima1>0L) { 
+            double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+            double* k_a0=z->mem()->malloc_local_double(dima0); 
+            z->t1()->get_block(h9b_0+z->noab()*(p6b_0-z->noab()),k_a0); 
+            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(h9b),0,1,+1.0,false); 
+            z->mem()->free_local_double(k_a0); 
+            double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+            double* k_a1=z->mem()->malloc_local_double(dima1); 
+            if (h8b<h9b) { 
+             in[3]->get_block(p7b_1-z->noab()+z->nvab()*(h3b_1+z->noab()*(h9b_1+z->noab()*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(p7b),3,2,0,1,+1.0,false); 
             } 
+            else if (h9b<=h8b) { 
+             in[3]->get_block(p7b_1-z->noab()+z->nvab()*(h3b_1+z->noab()*(h8b_1+z->noab()*(h9b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h9b),z->get_range(h8b),z->get_range(h3b),z->get_range(p7b),3,2,1,0,-1.0,false); 
+            } 
+            z->mem()->free_local_double(k_a1); 
+            double factor=1.0; 
+            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+            z->mem()->free_local_double(k_a1_sort); 
+            z->mem()->free_local_double(k_a0_sort); 
            } 
           } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,3,0,+1.0,false); 
-           in[2]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,0,3,-1.0,false); 
-           in[2]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,0,4,3,+1.0,false); 
-           in[2]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
          } 
         } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h3b),z->get_range(h8b),z->get_range(p6b),2,3,1,0,+0.5,false); 
+        in[2]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
        } 
       } 
      } 
@@ -3190,31 +2940,31 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_12_0(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p9b-z->noab()+z->nvab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(h9b+z->noab()*(h8b)))); 
     if (in[3]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(p9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(p9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(p9b))))==z->irrep_v()) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(p9b); 
-        long h7b_0,h8b_0,h3b_0,p9b_0; 
-        z->restricted_4(h7b,h8b,h3b,p9b,h7b_0,h8b_0,h3b_0,p9b_0); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(p7b))))==z->irrep_v()) { 
+        long dimc=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(p7b); 
+        long h8b_0,h9b_0,h3b_0,p7b_0; 
+        z->restricted_4(h8b,h9b,h3b,p7b,h8b_0,h9b_0,h3b_0,p7b_0); 
         long dim_common=1L; 
-        long dima0_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(p9b); 
+        long dima0_sort=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(p7b); 
         long dima0=dim_common*dima0_sort; 
         if (dima0>0L) { 
          double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
          double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->v2()->get_block(p9b_0+(z->nab())*(h3b_0+(z->nab())*(h8b_0+(z->nab())*(h7b_0))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p9b),0,1,2,3,+1.0,false); 
+         z->v2()->get_block(p7b_0+(z->nab())*(h3b_0+(z->nab())*(h9b_0+(z->nab())*(h8b_0))),k_a0); 
+         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(p7b),0,1,2,3,+1.0,false); 
          z->mem()->free_local_double(k_a0); 
          double* k_c=z->mem()->malloc_local_double(dimc); 
-         z->sort_indices4(k_a0_sort,k_c,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p9b),0,1,2,3,-1.0,false); 
-         in[3]->add_block(p9b-z->noab()+z->nvab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
+         z->sort_indices4(k_a0_sort,k_c,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(p7b),0,1,2,3,-1.0,false); 
+         in[3]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),k_c); 
          z->mem()->free_local_double(k_c); 
          z->mem()->free_local_double(k_a0_sort); 
         } 
@@ -3232,15 +2982,15 @@ z->mem()->sync();
 void CCSD_2T_PR12_RIGHT::offset_smith_2_12(){ 
  
 long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
-    if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(p9b)) { 
-     if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(p9b))))==(z->irrep_t()^z->irrep_v())) { 
-      if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(p9b)!=8L) { 
-       in[3]->input_offset(p9b-z->noab()+z->nvab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),size); 
-       size+=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(p9b); 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
+    if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+     if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+      if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+       in[3]->input_offset(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),size); 
+       size+=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(p7b); 
       } 
      } 
     } 
@@ -3255,17 +3005,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_13(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p8b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
@@ -3273,12 +3023,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
           if ((z->get_sym(p9b)^z->get_sym(h3b))==z->irrep_t()) { 
            long p9b_0,h3b_0; 
            z->restricted_2(p9b,h3b,p9b_0,h3b_0); 
-           long h7b_1,p6b_1,p8b_1,p9b_1; 
-           z->restricted_4(h7b,p6b,p8b,p9b,h7b_1,p6b_1,p8b_1,p9b_1); 
+           long h8b_1,p6b_1,p7b_1,p9b_1; 
+           z->restricted_4(h8b,p6b,p7b,p9b,h8b_1,p6b_1,p7b_1,p9b_1); 
            long dim_common=z->get_range(p9b); 
            long dima0_sort=z->get_range(h3b); 
            long dima0=dim_common*dima0_sort; 
-           long dima1_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(p8b); 
+           long dima1_sort=z->get_range(h8b)*z->get_range(p6b)*z->get_range(p7b); 
            long dima1=dim_common*dima1_sort; 
            if (dima0>0L && dima1>0L) { 
             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -3288,13 +3038,13 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
             z->mem()->free_local_double(k_a0); 
             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
             double* k_a1=z->mem()->malloc_local_double(dima1); 
-            if (p8b<p9b) { 
-             z->v2()->get_block(p9b_1+(z->nab())*(p8b_1+(z->nab())*(p6b_1+(z->nab())*(h7b_1))),k_a1); 
-             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(p8b),z->get_range(p9b),2,1,0,3,+1.0,false); 
+            if (p7b<p9b) { 
+             z->v2()->get_block(p9b_1+(z->nab())*(p7b_1+(z->nab())*(p6b_1+(z->nab())*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(p7b),z->get_range(p9b),2,1,0,3,+1.0,false); 
             } 
-            else if (p9b<=p8b) { 
-             z->v2()->get_block(p8b_1+(z->nab())*(p9b_1+(z->nab())*(p6b_1+(z->nab())*(h7b_1))),k_a1); 
-             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(p9b),z->get_range(p8b),3,1,0,2,-1.0,false); 
+            else if (p9b<=p7b) { 
+             z->v2()->get_block(p7b_1+(z->nab())*(p9b_1+(z->nab())*(p6b_1+(z->nab())*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(p6b),z->get_range(p9b),z->get_range(p7b),3,1,0,2,-1.0,false); 
             } 
             z->mem()->free_local_double(k_a1); 
             double factor=1.0; 
@@ -3306,8 +3056,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(p8b),z->get_range(p6b),z->get_range(h7b),z->get_range(h3b),2,1,3,0,+1.0,false); 
-        in[2]->add_block(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(p6b),z->get_range(h8b),z->get_range(h3b),2,1,3,0,-1.0,false); 
+        in[2]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -3323,202 +3073,76 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_14(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-   for (long h1b=0L;h1b<z->noab();++h1b) { 
-    for (long h2b=h1b;h2b<z->noab();++h2b) { 
-     for (long h3b=0L;h3b<z->noab();++h3b) { 
-      long tileoffset; 
-      if (h2b<h3b) { 
-       tileoffset=(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h1b<h3b && h3b<=h2b) { 
-       tileoffset=(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      else if (h3b<=h1b) { 
-       tileoffset=(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b)))))); 
-      } 
-      if (in[2]->is_this_local(tileoffset)) { 
-       if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-        if (z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-         if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==(z->irrep_e()^z->irrep_v())) { 
-          long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b); 
-          double* k_c_sort=z->mem()->malloc_local_double(dimc); 
-          std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-          for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
-           if (z->get_spin(p6b)+z->get_spin(q9b)==z->get_spin(h1b)+z->get_spin(h2b)) { 
-            if ((z->get_sym(p6b)^(z->get_sym(q9b)^(z->get_sym(h1b)^z->get_sym(h2b))))==z->irrep_e()) { 
-             long p6b_0,q9b_0,h1b_0,h2b_0; 
-             z->restricted_4(p6b,q9b,h1b,h2b,p6b_0,q9b_0,h1b_0,h2b_0); 
-             long h7b_1,h8b_1,h3b_1,q9b_1; 
-             z->restricted_4(h7b,h8b,h3b,q9b,h7b_1,h8b_1,h3b_1,q9b_1); 
-             long dim_common=z->get_range(q9b); 
-             long dima0_sort=z->get_range(p6b)*z->get_range(h1b)*z->get_range(h2b); 
-             long dima0=dim_common*dima0_sort; 
-             long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b); 
-             long dima1=dim_common*dima1_sort; 
-             if (dima0>0L && dima1>0L) { 
-              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-              double* k_a0=z->mem()->malloc_local_double(dima0); 
-              z->qy()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(q9b_0-z->noab()-z->nvab()+z->ncab()*(p6b_0-z->noab()))),k_a0); 
-              z->sort_indices4(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(q9b),z->get_range(h1b),z->get_range(h2b),3,2,0,1,+1.0,false); 
-              z->mem()->free_local_double(k_a0); 
-              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-              double* k_a1=z->mem()->malloc_local_double(dima1); 
-              in[3]->get_block(q9b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(h8b_1+z->noab()*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),2,1,0,3,+1.0,false); 
-              z->mem()->free_local_double(k_a1); 
-              double factor=1.0; 
-              z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-              z->mem()->free_local_double(k_a1_sort); 
-              z->mem()->free_local_double(k_a0_sort); 
-             } 
-            } 
-           } 
-          } 
-          double* k_c=z->mem()->malloc_local_double(dimc); 
-          if (h3b>=h2b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,3,0,+1.0,false); 
-           in[2]->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h2b>=h3b && h3b>=h1b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,4,0,3,-1.0,false); 
-           in[2]->add_block(h2b+z->noab()*(h3b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          if (h1b>=h3b) { 
-           z->sort_indices6(k_c_sort,k_c,z->get_range(h3b),z->get_range(h8b),z->get_range(h7b),z->get_range(h2b),z->get_range(h1b),z->get_range(p6b),2,1,5,0,4,3,+1.0,false); 
-           in[2]->add_block(h2b+z->noab()*(h1b+z->noab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b+z->noab()*(h7b))))),k_c); 
-          } 
-          z->mem()->free_local_double(k_c); 
-          z->mem()->free_local_double(k_c_sort); 
-         } 
-        } 
-       } 
-      } 
-     } 
-    } 
-   } 
-  } 
- } 
-} 
-z->mem()->sync(); 
-} 
-  
-void CCSD_2T_PR12_RIGHT::smith_2_14_0(){ 
-      
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
-    long tileoffset; 
-    tileoffset=(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
-    if (in[3]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==z->irrep_v()) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
-        long h7b_0,h8b_0,h3b_0,q9b_0; 
-        z->restricted_4(h7b,h8b,h3b,q9b,h7b_0,h8b_0,h3b_0,q9b_0); 
-        long dim_common=1L; 
-        long dima0_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
-        long dima0=dim_common*dima0_sort; 
-        if (dima0>0L) { 
-         double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-         double* k_a0=z->mem()->malloc_local_double(dima0); 
-         z->v2()->get_block(q9b_0+(z->nab())*(h3b_0+(z->nab())*(h8b_0+(z->nab())*(h7b_0))),k_a0); 
-         z->sort_indices4(k_a0,k_a0_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),0,1,2,3,+1.0,false); 
-         z->mem()->free_local_double(k_a0); 
-         double* k_c=z->mem()->malloc_local_double(dimc); 
-         z->sort_indices4(k_a0_sort,k_c,z->get_range(h7b),z->get_range(h8b),z->get_range(h3b),z->get_range(q9b),0,1,2,3,-1.0,false); 
-         in[3]->add_block(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
-         z->mem()->free_local_double(k_c); 
-         z->mem()->free_local_double(k_a0_sort); 
-        } 
-       } 
-      } 
-     } 
-    } 
-   } 
-  } 
- } 
-} 
-z->mem()->sync(); 
-} 
-  
-void CCSD_2T_PR12_RIGHT::offset_smith_2_14(){ 
- 
-long size=0L; 
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
-  for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
-    if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-     if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==(z->irrep_t()^z->irrep_v())) { 
-      if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-       in[3]->input_offset(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),size); 
-       size+=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
-      } 
-     } 
-    } 
-   } 
-  } 
- } 
-} 
-in[3]->set_filesize(size); 
-in[3]->createfile(); 
-z->mem()->sync(); 
-} 
-  
-void CCSD_2T_PR12_RIGHT::smith_2_15(){ 
-      
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long p5b=z->noab();p5b<z->noab()+z->nvab();++p5b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-  for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q8b=z->noab()+z->nvab();q8b<z->nab();++q8b) { 
+  for (long h8b=0L;h8b<z->noab();++h8b) { 
+   for (long h9b=0L;h9b<z->noab();++h9b) { 
     long tileoffset; 
-    tileoffset=(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    if (p5b<p6b && h8b<h9b) { 
+     tileoffset=(h9b+z->noab()*(h8b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    } 
+    else if (p5b<p6b && h9b<=h8b) { 
+     tileoffset=(h8b+z->noab()*(h9b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab())))); 
+    } 
+    else if (p6b<=p5b && h8b<h9b) { 
+     tileoffset=(h9b+z->noab()*(h8b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    } 
+    else if (p6b<=p5b && h9b<=h8b) { 
+     tileoffset=(h8b+z->noab()*(h9b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    } 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q8b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q8b); 
+     if (!z->restricted() || z->get_spin(p5b)+z->get_spin(p6b)+z->get_spin(h8b)+z->get_spin(h9b)!=8L) { 
+      if (z->get_spin(p5b)+z->get_spin(p6b)==z->get_spin(h8b)+z->get_spin(h9b)) { 
+       if ((z->get_sym(p5b)^(z->get_sym(p6b)^(z->get_sym(h8b)^z->get_sym(h9b))))==(z->irrep_t()^z->irrep_t())) { 
+        long dimc=z->get_range(p5b)*z->get_range(p6b)*z->get_range(h8b)*z->get_range(h9b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
-        for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
-         if (z->get_spin(p9b)==z->get_spin(h3b)) { 
-          if ((z->get_sym(p9b)^z->get_sym(h3b))==z->irrep_t()) { 
-           long p9b_0,h3b_0; 
-           z->restricted_2(p9b,h3b,p9b_0,h3b_0); 
-           long h7b_1,p6b_1,p9b_1,q8b_1; 
-           z->restricted_4(h7b,p6b,p9b,q8b,h7b_1,p6b_1,p9b_1,q8b_1); 
-           long dim_common=z->get_range(p9b); 
-           long dima0_sort=z->get_range(h3b); 
-           long dima0=dim_common*dima0_sort; 
-           long dima1_sort=z->get_range(h7b)*z->get_range(p6b)*z->get_range(q8b); 
-           long dima1=dim_common*dima1_sort; 
-           if (dima0>0L && dima1>0L) { 
-            double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
-            double* k_a0=z->mem()->malloc_local_double(dima0); 
-            z->t1()->get_block(h3b_0+z->noab()*(p9b_0-z->noab()),k_a0); 
-            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p9b),z->get_range(h3b),1,0,+1.0,false); 
-            z->mem()->free_local_double(k_a0); 
-            double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
-            double* k_a1=z->mem()->malloc_local_double(dima1); 
-            z->v2()->get_block(q8b_1+(z->nab())*(p9b_1+(z->nab())*(p6b_1+(z->nab())*(h7b_1))),k_a1); 
-            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(p6b),z->get_range(p9b),z->get_range(q8b),3,1,0,2,+1.0,false); 
-            z->mem()->free_local_double(k_a1); 
-            double factor=1.0; 
-            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-            z->mem()->free_local_double(k_a1_sort); 
-            z->mem()->free_local_double(k_a0_sort); 
-           } 
+        if (z->get_spin(p5b)==z->get_spin(h8b)) { 
+         if ((z->get_sym(p5b)^z->get_sym(h8b))==z->irrep_t()) { 
+          long p5b_0,h8b_0; 
+          z->restricted_2(p5b,h8b,p5b_0,h8b_0); 
+          long p6b_1,h9b_1; 
+          z->restricted_2(p6b,h9b,p6b_1,h9b_1); 
+          long dim_common=1L; 
+          long dima0_sort=z->get_range(p5b)*z->get_range(h8b); 
+          long dima0=dim_common*dima0_sort; 
+          long dima1_sort=z->get_range(p6b)*z->get_range(h9b); 
+          long dima1=dim_common*dima1_sort; 
+          if (dima0>0L && dima1>0L) { 
+           double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+           double* k_a0=z->mem()->malloc_local_double(dima0); 
+           z->t1()->get_block(h8b_0+z->noab()*(p5b_0-z->noab()),k_a0); 
+           z->sort_indices2(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(h8b),1,0,+1.0,false); 
+           z->mem()->free_local_double(k_a0); 
+           double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+           double* k_a1=z->mem()->malloc_local_double(dima1); 
+           z->t1()->get_block(h9b_1+z->noab()*(p6b_1-z->noab()),k_a1); 
+           z->sort_indices2(k_a1,k_a1_sort,z->get_range(p6b),z->get_range(h9b),1,0,+1.0,false); 
+           z->mem()->free_local_double(k_a1); 
+           double factor=1.0; 
+           z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+           z->mem()->free_local_double(k_a1_sort); 
+           z->mem()->free_local_double(k_a0_sort); 
           } 
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(q8b),z->get_range(p6b),z->get_range(h7b),z->get_range(h3b),2,1,3,0,-1.0,false); 
-        in[2]->add_block(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+        if (p6b>=p5b && h9b>=h8b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h9b),z->get_range(p6b),z->get_range(h8b),z->get_range(p5b),3,1,2,0,-0.5,false); 
+         in[2]->add_block(h9b+z->noab()*(h8b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        } 
+        if (p6b>=p5b && h8b>=h9b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h9b),z->get_range(p6b),z->get_range(h8b),z->get_range(p5b),3,1,0,2,+0.5,false); 
+         in[2]->add_block(h8b+z->noab()*(h9b+z->noab()*(p6b-z->noab()+z->nvab()*(p5b-z->noab()))),k_c); 
+        } 
+        if (p5b>=p6b && h9b>=h8b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h9b),z->get_range(p6b),z->get_range(h8b),z->get_range(p5b),1,3,2,0,+0.5,false); 
+         in[2]->add_block(h9b+z->noab()*(h8b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        } 
+        if (p5b>=p6b && h8b>=h9b) { 
+         z->sort_indices4(k_c_sort,k_c,z->get_range(h9b),z->get_range(p6b),z->get_range(h8b),z->get_range(p5b),1,3,0,2,-0.5,false); 
+         in[2]->add_block(h8b+z->noab()*(h9b+z->noab()*(p5b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        } 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -3529,6 +3153,158 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
   } 
  } 
 } 
+z->mem()->sync(); 
+} 
+  
+void CCSD_2T_PR12_RIGHT::smith_2_15(){ 
+      
+for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+ for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long h8b=0L;h8b<z->noab();++h8b) { 
+    long tileoffset; 
+    tileoffset=(h8b+z->noab()*(h3b+z->noab()*(p9b-z->noab()+z->nvab()*(p6b-z->noab())))); 
+    if (in[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(p6b)+z->get_spin(p9b)+z->get_spin(h3b)+z->get_spin(h8b)!=8L) { 
+      if (z->get_spin(p6b)+z->get_spin(p9b)==z->get_spin(h3b)+z->get_spin(h8b)) { 
+       if ((z->get_sym(p6b)^(z->get_sym(p9b)^(z->get_sym(h3b)^z->get_sym(h8b))))==(z->irrep_t()^z->irrep_t())) { 
+        long dimc=z->get_range(p6b)*z->get_range(p9b)*z->get_range(h3b)*z->get_range(h8b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        if (z->get_spin(p9b)==z->get_spin(h3b)) { 
+         if ((z->get_sym(p9b)^z->get_sym(h3b))==z->irrep_t()) { 
+          long p9b_0,h3b_0; 
+          z->restricted_2(p9b,h3b,p9b_0,h3b_0); 
+          long p6b_1,h8b_1; 
+          z->restricted_2(p6b,h8b,p6b_1,h8b_1); 
+          long dim_common=1L; 
+          long dima0_sort=z->get_range(p9b)*z->get_range(h3b); 
+          long dima0=dim_common*dima0_sort; 
+          long dima1_sort=z->get_range(p6b)*z->get_range(h8b); 
+          long dima1=dim_common*dima1_sort; 
+          if (dima0>0L && dima1>0L) { 
+           double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+           double* k_a0=z->mem()->malloc_local_double(dima0); 
+           z->t1()->get_block(h3b_0+z->noab()*(p9b_0-z->noab()),k_a0); 
+           z->sort_indices2(k_a0,k_a0_sort,z->get_range(p9b),z->get_range(h3b),1,0,+1.0,false); 
+           z->mem()->free_local_double(k_a0); 
+           double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+           double* k_a1=z->mem()->malloc_local_double(dima1); 
+           z->t1()->get_block(h8b_1+z->noab()*(p6b_1-z->noab()),k_a1); 
+           z->sort_indices2(k_a1,k_a1_sort,z->get_range(p6b),z->get_range(h8b),1,0,+1.0,false); 
+           z->mem()->free_local_double(k_a1); 
+           double factor=1.0; 
+           z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+           z->mem()->free_local_double(k_a1_sort); 
+           z->mem()->free_local_double(k_a0_sort); 
+          } 
+         } 
+        } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(h8b),z->get_range(p6b),z->get_range(h3b),z->get_range(p9b),1,3,2,0,-1.0,false); 
+        in[2]->add_block(h8b+z->noab()*(h3b+z->noab()*(p9b-z->noab()+z->nvab()*(p6b-z->noab()))),k_c); 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
+       } 
+      } 
+     } 
+    } 
+   } 
+  } 
+ } 
+} 
+z->mem()->sync(); 
+} 
+  
+void CCSD_2T_PR12_RIGHT::smith_2_27(){ 
+      
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    long tileoffset; 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
+    if (in[2]->is_this_local(tileoffset)) { 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^(z->irrep_t()^z->irrep_v()))) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
+        double* k_c_sort=z->mem()->malloc_local_double(dimc); 
+        std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+        for (long h9b=0L;h9b<z->noab();++h9b) { 
+         if (z->get_spin(p6b)==z->get_spin(h9b)) { 
+          if ((z->get_sym(p6b)^z->get_sym(h9b))==z->irrep_t()) { 
+           long p6b_0,h9b_0; 
+           z->restricted_2(p6b,h9b,p6b_0,h9b_0); 
+           long h8b_1,h9b_1,h3b_1,q7b_1; 
+           z->restricted_4(h8b,h9b,h3b,q7b,h8b_1,h9b_1,h3b_1,q7b_1); 
+           long dim_common=z->get_range(h9b); 
+           long dima0_sort=z->get_range(p6b); 
+           long dima0=dim_common*dima0_sort; 
+           long dima1_sort=z->get_range(h8b)*z->get_range(h3b)*z->get_range(q7b); 
+           long dima1=dim_common*dima1_sort; 
+           if (dima0>0L && dima1>0L) { 
+            double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
+            double* k_a0=z->mem()->malloc_local_double(dima0); 
+            z->t1()->get_block(h9b_0+z->noab()*(p6b_0-z->noab()),k_a0); 
+            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(h9b),0,1,+1.0,false); 
+            z->mem()->free_local_double(k_a0); 
+            double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
+            double* k_a1=z->mem()->malloc_local_double(dima1); 
+            if (h8b<h9b) { 
+             in[3]->get_block(q7b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(h9b_1+z->noab()*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(h3b),z->get_range(q7b),3,2,0,1,+1.0,false); 
+            } 
+            else if (h9b<=h8b) { 
+             in[3]->get_block(q7b_1-z->noab()-z->nvab()+z->ncab()*(h3b_1+z->noab()*(h8b_1+z->noab()*(h9b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h9b),z->get_range(h8b),z->get_range(h3b),z->get_range(q7b),3,2,1,0,-1.0,false); 
+            } 
+            z->mem()->free_local_double(k_a1); 
+            double factor=1.0; 
+            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+            z->mem()->free_local_double(k_a1_sort); 
+            z->mem()->free_local_double(k_a0_sort); 
+           } 
+          } 
+         } 
+        } 
+        double* k_c=z->mem()->malloc_local_double(dimc); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h3b),z->get_range(h8b),z->get_range(p6b),2,3,1,0,+0.5,false); 
+        in[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
+        z->mem()->free_local_double(k_c); 
+        z->mem()->free_local_double(k_c_sort); 
+       } 
+      } 
+     } 
+    } 
+   } 
+  } 
+ } 
+} 
+z->mem()->sync(); 
+} 
+  
+void CCSD_2T_PR12_RIGHT::offset_smith_2_27(){ 
+ 
+long size=0L; 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
+  for (long h3b=0L;h3b<z->noab();++h3b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
+    if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+     if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+      if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+       in[3]->input_offset(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),size); 
+       size+=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
+      } 
+     } 
+    } 
+   } 
+  } 
+ } 
+} 
+in[3]->set_filesize(size); 
+in[3]->createfile(); 
 z->mem()->sync(); 
 } 
   
@@ -3676,17 +3452,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_30(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p8b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long h10b=0L;h10b<z->noab();++h10b) { 
@@ -3695,12 +3471,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
            if ((z->get_sym(p6b)^(z->get_sym(p9b)^(z->get_sym(h3b)^z->get_sym(h10b))))==z->irrep_t()) { 
             long p6b_0,p9b_0,h3b_0,h10b_0; 
             z->restricted_4(p6b,p9b,h3b,h10b,p6b_0,p9b_0,h3b_0,h10b_0); 
-            long h7b_1,h10b_1,p8b_1,p9b_1; 
-            z->restricted_4(h7b,h10b,p8b,p9b,h7b_1,h10b_1,p8b_1,p9b_1); 
+            long h8b_1,h10b_1,p7b_1,p9b_1; 
+            z->restricted_4(h8b,h10b,p7b,p9b,h8b_1,h10b_1,p7b_1,p9b_1); 
             long dim_common=z->get_range(h10b)*z->get_range(p9b); 
             long dima0_sort=z->get_range(p6b)*z->get_range(h3b); 
             long dima0=dim_common*dima0_sort; 
-            long dima1_sort=z->get_range(h7b)*z->get_range(p8b); 
+            long dima1_sort=z->get_range(h8b)*z->get_range(p7b); 
             long dima1=dim_common*dima1_sort; 
             if (dima0>0L && dima1>0L) { 
              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -3724,21 +3500,21 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
              z->mem()->free_local_double(k_a0); 
              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
              double* k_a1=z->mem()->malloc_local_double(dima1); 
-             if (h7b<h10b && p8b<p9b) { 
-              z->v2()->get_block(p9b_1+(z->nab())*(p8b_1+(z->nab())*(h10b_1+(z->nab())*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h10b),z->get_range(p8b),z->get_range(p9b),2,0,3,1,+1.0,false); 
+             if (h8b<h10b && p7b<p9b) { 
+              z->v2()->get_block(p9b_1+(z->nab())*(p7b_1+(z->nab())*(h10b_1+(z->nab())*(h8b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h10b),z->get_range(p7b),z->get_range(p9b),2,0,3,1,+1.0,false); 
              } 
-             else if (h7b<h10b && p9b<=p8b) { 
-              z->v2()->get_block(p8b_1+(z->nab())*(p9b_1+(z->nab())*(h10b_1+(z->nab())*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h10b),z->get_range(p9b),z->get_range(p8b),3,0,2,1,-1.0,false); 
+             else if (h8b<h10b && p9b<=p7b) { 
+              z->v2()->get_block(p7b_1+(z->nab())*(p9b_1+(z->nab())*(h10b_1+(z->nab())*(h8b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h10b),z->get_range(p9b),z->get_range(p7b),3,0,2,1,-1.0,false); 
              } 
-             else if (h10b<=h7b && p8b<p9b) { 
-              z->v2()->get_block(p9b_1+(z->nab())*(p8b_1+(z->nab())*(h7b_1+(z->nab())*(h10b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h7b),z->get_range(p8b),z->get_range(p9b),2,1,3,0,-1.0,false); 
+             else if (h10b<=h8b && p7b<p9b) { 
+              z->v2()->get_block(p9b_1+(z->nab())*(p7b_1+(z->nab())*(h8b_1+(z->nab())*(h10b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h8b),z->get_range(p7b),z->get_range(p9b),2,1,3,0,-1.0,false); 
              } 
-             else if (h10b<=h7b && p9b<=p8b) { 
-              z->v2()->get_block(p8b_1+(z->nab())*(p9b_1+(z->nab())*(h7b_1+(z->nab())*(h10b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h7b),z->get_range(p9b),z->get_range(p8b),3,1,2,0,+1.0,false); 
+             else if (h10b<=h8b && p9b<=p7b) { 
+              z->v2()->get_block(p7b_1+(z->nab())*(p9b_1+(z->nab())*(h8b_1+(z->nab())*(h10b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h8b),z->get_range(p9b),z->get_range(p7b),3,1,2,0,+1.0,false); 
              } 
              z->mem()->free_local_double(k_a1); 
              double factor=1.0; 
@@ -3751,8 +3527,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(p8b),z->get_range(h7b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,+1.0,false); 
-        in[2]->add_block(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,-1.0,false); 
+        in[2]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -3903,17 +3679,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_33(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q8b=z->noab()+z->nvab();q8b<z->nab();++q8b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
     long tileoffset; 
-    tileoffset=(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q8b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q8b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(q7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long h10b=0L;h10b<z->noab();++h10b) { 
@@ -3922,12 +3698,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
            if ((z->get_sym(p6b)^(z->get_sym(p9b)^(z->get_sym(h3b)^z->get_sym(h10b))))==z->irrep_t()) { 
             long p6b_0,p9b_0,h3b_0,h10b_0; 
             z->restricted_4(p6b,p9b,h3b,h10b,p6b_0,p9b_0,h3b_0,h10b_0); 
-            long h7b_1,h10b_1,p9b_1,q8b_1; 
-            z->restricted_4(h7b,h10b,p9b,q8b,h7b_1,h10b_1,p9b_1,q8b_1); 
+            long h8b_1,h10b_1,p9b_1,q7b_1; 
+            z->restricted_4(h8b,h10b,p9b,q7b,h8b_1,h10b_1,p9b_1,q7b_1); 
             long dim_common=z->get_range(h10b)*z->get_range(p9b); 
             long dima0_sort=z->get_range(p6b)*z->get_range(h3b); 
             long dima0=dim_common*dima0_sort; 
-            long dima1_sort=z->get_range(h7b)*z->get_range(q8b); 
+            long dima1_sort=z->get_range(h8b)*z->get_range(q7b); 
             long dima1=dim_common*dima1_sort; 
             if (dima0>0L && dima1>0L) { 
              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -3951,13 +3727,13 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
              z->mem()->free_local_double(k_a0); 
              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
              double* k_a1=z->mem()->malloc_local_double(dima1); 
-             if (h7b<h10b) { 
-              z->v2()->get_block(q8b_1+(z->nab())*(p9b_1+(z->nab())*(h10b_1+(z->nab())*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h10b),z->get_range(p9b),z->get_range(q8b),3,0,2,1,+1.0,false); 
+             if (h8b<h10b) { 
+              z->v2()->get_block(q7b_1+(z->nab())*(p9b_1+(z->nab())*(h10b_1+(z->nab())*(h8b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h10b),z->get_range(p9b),z->get_range(q7b),3,0,2,1,+1.0,false); 
              } 
-             else if (h10b<=h7b) { 
-              z->v2()->get_block(q8b_1+(z->nab())*(p9b_1+(z->nab())*(h7b_1+(z->nab())*(h10b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h7b),z->get_range(p9b),z->get_range(q8b),3,1,2,0,-1.0,false); 
+             else if (h10b<=h8b) { 
+              z->v2()->get_block(q7b_1+(z->nab())*(p9b_1+(z->nab())*(h8b_1+(z->nab())*(h10b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h8b),z->get_range(p9b),z->get_range(q7b),3,1,2,0,-1.0,false); 
              } 
              z->mem()->free_local_double(k_a1); 
              double factor=1.0; 
@@ -3970,8 +3746,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(q8b),z->get_range(h7b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,-1.0,false); 
-        in[2]->add_block(q8b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,+1.0,false); 
+        in[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -3987,17 +3763,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_34(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
     long tileoffset; 
-    tileoffset=(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long p10b=z->noab();p10b<z->noab()+z->nvab();++p10b) { 
@@ -4005,12 +3781,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
           if ((z->get_sym(p10b)^z->get_sym(h3b))==z->irrep_t()) { 
            long p10b_0,h3b_0; 
            z->restricted_2(p10b,h3b,p10b_0,h3b_0); 
-           long h7b_1,h8b_1,p10b_1,q9b_1; 
-           z->restricted_4(h7b,h8b,p10b,q9b,h7b_1,h8b_1,p10b_1,q9b_1); 
+           long h8b_1,h9b_1,p10b_1,q7b_1; 
+           z->restricted_4(h8b,h9b,p10b,q7b,h8b_1,h9b_1,p10b_1,q7b_1); 
            long dim_common=z->get_range(p10b); 
            long dima0_sort=z->get_range(h3b); 
            long dima0=dim_common*dima0_sort; 
-           long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(q9b); 
+           long dima1_sort=z->get_range(h8b)*z->get_range(h9b)*z->get_range(q7b); 
            long dima1=dim_common*dima1_sort; 
            if (dima0>0L && dima1>0L) { 
             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -4020,8 +3796,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
             z->mem()->free_local_double(k_a0); 
             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
             double* k_a1=z->mem()->malloc_local_double(dima1); 
-            z->v2()->get_block(q9b_1+(z->nab())*(p10b_1+(z->nab())*(h8b_1+(z->nab())*(h7b_1))),k_a1); 
-            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p10b),z->get_range(q9b),3,1,0,2,+1.0,false); 
+            z->v2()->get_block(q7b_1+(z->nab())*(p10b_1+(z->nab())*(h9b_1+(z->nab())*(h8b_1))),k_a1); 
+            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(p10b),z->get_range(q7b),3,1,0,2,+1.0,false); 
             z->mem()->free_local_double(k_a1); 
             double factor=1.0; 
             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
@@ -4032,8 +3808,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(q9b),z->get_range(h8b),z->get_range(h7b),z->get_range(h3b),2,1,3,0,-1.0,false); 
-        in[2]->add_block(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h9b),z->get_range(h8b),z->get_range(h3b),2,1,3,0,-1.0,false); 
+        in[2]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -4115,17 +3891,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_2_36(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
  for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p8b=z->noab();p8b<z->noab()+z->nvab();++p8b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b)))); 
     if (in[2]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p8b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p8b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p8b))))==(z->irrep_e()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p8b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(p6b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(p6b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(p6b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_e()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(p6b)*z->get_range(h3b)*z->get_range(p7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long h10b=0L;h10b<z->noab();++h10b) { 
@@ -4134,12 +3910,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
            if ((z->get_sym(p6b)^(z->get_sym(q9b)^(z->get_sym(h3b)^z->get_sym(h10b))))==z->irrep_e()) { 
             long p6b_0,q9b_0,h3b_0,h10b_0; 
             z->restricted_4(p6b,q9b,h3b,h10b,p6b_0,q9b_0,h3b_0,h10b_0); 
-            long h7b_1,h10b_1,p8b_1,q9b_1; 
-            z->restricted_4(h7b,h10b,p8b,q9b,h7b_1,h10b_1,p8b_1,q9b_1); 
+            long h8b_1,h10b_1,p7b_1,q9b_1; 
+            z->restricted_4(h8b,h10b,p7b,q9b,h8b_1,h10b_1,p7b_1,q9b_1); 
             long dim_common=z->get_range(h10b)*z->get_range(q9b); 
             long dima0_sort=z->get_range(p6b)*z->get_range(h3b); 
             long dima0=dim_common*dima0_sort; 
-            long dima1_sort=z->get_range(h7b)*z->get_range(p8b); 
+            long dima1_sort=z->get_range(h8b)*z->get_range(p7b); 
             long dima1=dim_common*dima1_sort; 
             if (dima0>0L && dima1>0L) { 
              double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -4155,13 +3931,13 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
              z->mem()->free_local_double(k_a0); 
              double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
              double* k_a1=z->mem()->malloc_local_double(dima1); 
-             if (h7b<h10b) { 
-              z->v2()->get_block(q9b_1+(z->nab())*(p8b_1+(z->nab())*(h10b_1+(z->nab())*(h7b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h10b),z->get_range(p8b),z->get_range(q9b),2,0,3,1,+1.0,false); 
+             if (h8b<h10b) { 
+              z->v2()->get_block(q9b_1+(z->nab())*(p7b_1+(z->nab())*(h10b_1+(z->nab())*(h8b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h10b),z->get_range(p7b),z->get_range(q9b),2,0,3,1,+1.0,false); 
              } 
-             else if (h10b<=h7b) { 
-              z->v2()->get_block(q9b_1+(z->nab())*(p8b_1+(z->nab())*(h7b_1+(z->nab())*(h10b_1))),k_a1); 
-              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h7b),z->get_range(p8b),z->get_range(q9b),2,1,3,0,-1.0,false); 
+             else if (h10b<=h8b) { 
+              z->v2()->get_block(q9b_1+(z->nab())*(p7b_1+(z->nab())*(h8b_1+(z->nab())*(h10b_1))),k_a1); 
+              z->sort_indices4(k_a1,k_a1_sort,z->get_range(h10b),z->get_range(h8b),z->get_range(p7b),z->get_range(q9b),2,1,3,0,-1.0,false); 
              } 
              z->mem()->free_local_double(k_a1); 
              double factor=1.0; 
@@ -4174,8 +3950,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(p8b),z->get_range(h7b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,+1.0,false); 
-        in[2]->add_block(p8b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h8b),z->get_range(h3b),z->get_range(p6b),1,3,2,0,-1.0,false); 
+        in[2]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(p6b-z->noab()+z->nvab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -4388,17 +4164,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_3_26(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long p9b=z->noab();p9b<z->noab()+z->nvab();++p9b) { 
+   for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) { 
     long tileoffset; 
-    tileoffset=(p9b-z->noab()+z->nvab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
+    tileoffset=(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(h9b+z->noab()*(h8b)))); 
     if (in[3]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(p9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(p9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(p9b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(p9b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(p7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(p7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(p7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(p7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long p10b=z->noab();p10b<z->noab()+z->nvab();++p10b) { 
@@ -4406,12 +4182,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
           if ((z->get_sym(p10b)^z->get_sym(h3b))==z->irrep_t()) { 
            long p10b_0,h3b_0; 
            z->restricted_2(p10b,h3b,p10b_0,h3b_0); 
-           long h7b_1,h8b_1,p9b_1,p10b_1; 
-           z->restricted_4(h7b,h8b,p9b,p10b,h7b_1,h8b_1,p9b_1,p10b_1); 
+           long h8b_1,h9b_1,p7b_1,p10b_1; 
+           z->restricted_4(h8b,h9b,p7b,p10b,h8b_1,h9b_1,p7b_1,p10b_1); 
            long dim_common=z->get_range(p10b); 
            long dima0_sort=z->get_range(h3b); 
            long dima0=dim_common*dima0_sort; 
-           long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(p9b); 
+           long dima1_sort=z->get_range(h8b)*z->get_range(h9b)*z->get_range(p7b); 
            long dima1=dim_common*dima1_sort; 
            if (dima0>0L && dima1>0L) { 
             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -4421,13 +4197,13 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
             z->mem()->free_local_double(k_a0); 
             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
             double* k_a1=z->mem()->malloc_local_double(dima1); 
-            if (p9b<p10b) { 
-             z->v2()->get_block(p10b_1+(z->nab())*(p9b_1+(z->nab())*(h8b_1+(z->nab())*(h7b_1))),k_a1); 
-             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p9b),z->get_range(p10b),2,1,0,3,+1.0,false); 
+            if (p7b<p10b) { 
+             z->v2()->get_block(p10b_1+(z->nab())*(p7b_1+(z->nab())*(h9b_1+(z->nab())*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(p7b),z->get_range(p10b),2,1,0,3,+1.0,false); 
             } 
-            else if (p10b<=p9b) { 
-             z->v2()->get_block(p9b_1+(z->nab())*(p10b_1+(z->nab())*(h8b_1+(z->nab())*(h7b_1))),k_a1); 
-             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p10b),z->get_range(p9b),3,1,0,2,-1.0,false); 
+            else if (p10b<=p7b) { 
+             z->v2()->get_block(p7b_1+(z->nab())*(p10b_1+(z->nab())*(h9b_1+(z->nab())*(h8b_1))),k_a1); 
+             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(p10b),z->get_range(p7b),3,1,0,2,-1.0,false); 
             } 
             z->mem()->free_local_double(k_a1); 
             double factor=1.0; 
@@ -4439,8 +4215,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(p9b),z->get_range(h8b),z->get_range(h7b),z->get_range(h3b),2,1,3,0,+1.0,false); 
-        in[3]->add_block(p9b-z->noab()+z->nvab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(p7b),z->get_range(h9b),z->get_range(h8b),z->get_range(h3b),2,1,3,0,+1.0,false); 
+        in[3]->add_block(p7b-z->noab()+z->nvab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 
@@ -4456,17 +4232,17 @@ z->mem()->sync();
   
 void CCSD_2T_PR12_RIGHT::smith_3_27(){ 
       
-for (long h7b=0L;h7b<z->noab();++h7b) { 
- for (long h8b=h7b;h8b<z->noab();++h8b) { 
+for (long h8b=0L;h8b<z->noab();++h8b) { 
+ for (long h9b=h8b;h9b<z->noab();++h9b) { 
   for (long h3b=0L;h3b<z->noab();++h3b) { 
-   for (long q9b=z->noab()+z->nvab();q9b<z->nab();++q9b) { 
+   for (long q7b=z->noab()+z->nvab();q7b<z->nab();++q7b) { 
     long tileoffset; 
-    tileoffset=(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b)))); 
+    tileoffset=(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b)))); 
     if (in[3]->is_this_local(tileoffset)) { 
-     if (!z->restricted() || z->get_spin(h7b)+z->get_spin(h8b)+z->get_spin(h3b)+z->get_spin(q9b)!=8L) { 
-      if (z->get_spin(h7b)+z->get_spin(h8b)==z->get_spin(h3b)+z->get_spin(q9b)) { 
-       if ((z->get_sym(h7b)^(z->get_sym(h8b)^(z->get_sym(h3b)^z->get_sym(q9b))))==(z->irrep_t()^z->irrep_v())) { 
-        long dimc=z->get_range(h7b)*z->get_range(h8b)*z->get_range(h3b)*z->get_range(q9b); 
+     if (!z->restricted() || z->get_spin(h8b)+z->get_spin(h9b)+z->get_spin(h3b)+z->get_spin(q7b)!=8L) { 
+      if (z->get_spin(h8b)+z->get_spin(h9b)==z->get_spin(h3b)+z->get_spin(q7b)) { 
+       if ((z->get_sym(h8b)^(z->get_sym(h9b)^(z->get_sym(h3b)^z->get_sym(q7b))))==(z->irrep_t()^z->irrep_v())) { 
+        long dimc=z->get_range(h8b)*z->get_range(h9b)*z->get_range(h3b)*z->get_range(q7b); 
         double* k_c_sort=z->mem()->malloc_local_double(dimc); 
         std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
         for (long p10b=z->noab();p10b<z->noab()+z->nvab();++p10b) { 
@@ -4474,12 +4250,12 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
           if ((z->get_sym(p10b)^z->get_sym(h3b))==z->irrep_t()) { 
            long p10b_0,h3b_0; 
            z->restricted_2(p10b,h3b,p10b_0,h3b_0); 
-           long h7b_1,h8b_1,p10b_1,q9b_1; 
-           z->restricted_4(h7b,h8b,p10b,q9b,h7b_1,h8b_1,p10b_1,q9b_1); 
+           long h8b_1,h9b_1,p10b_1,q7b_1; 
+           z->restricted_4(h8b,h9b,p10b,q7b,h8b_1,h9b_1,p10b_1,q7b_1); 
            long dim_common=z->get_range(p10b); 
            long dima0_sort=z->get_range(h3b); 
            long dima0=dim_common*dima0_sort; 
-           long dima1_sort=z->get_range(h7b)*z->get_range(h8b)*z->get_range(q9b); 
+           long dima1_sort=z->get_range(h8b)*z->get_range(h9b)*z->get_range(q7b); 
            long dima1=dim_common*dima1_sort; 
            if (dima0>0L && dima1>0L) { 
             double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
@@ -4489,8 +4265,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
             z->mem()->free_local_double(k_a0); 
             double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
             double* k_a1=z->mem()->malloc_local_double(dima1); 
-            z->v2()->get_block(q9b_1+(z->nab())*(p10b_1+(z->nab())*(h8b_1+(z->nab())*(h7b_1))),k_a1); 
-            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p10b),z->get_range(q9b),3,1,0,2,+1.0,false); 
+            z->v2()->get_block(q7b_1+(z->nab())*(p10b_1+(z->nab())*(h9b_1+(z->nab())*(h8b_1))),k_a1); 
+            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h8b),z->get_range(h9b),z->get_range(p10b),z->get_range(q7b),3,1,0,2,+1.0,false); 
             z->mem()->free_local_double(k_a1); 
             double factor=1.0; 
             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
@@ -4501,8 +4277,8 @@ for (long h7b=0L;h7b<z->noab();++h7b) {
          } 
         } 
         double* k_c=z->mem()->malloc_local_double(dimc); 
-        z->sort_indices4(k_c_sort,k_c,z->get_range(q9b),z->get_range(h8b),z->get_range(h7b),z->get_range(h3b),2,1,3,0,-1.0,false); 
-        in[3]->add_block(q9b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h8b+z->noab()*(h7b))),k_c); 
+        z->sort_indices4(k_c_sort,k_c,z->get_range(q7b),z->get_range(h9b),z->get_range(h8b),z->get_range(h3b),2,1,3,0,-1.0,false); 
+        in[3]->add_block(q7b-z->noab()-z->nvab()+z->ncab()*(h3b+z->noab()*(h9b+z->noab()*(h8b))),k_c); 
         z->mem()->free_local_double(k_c); 
         z->mem()->free_local_double(k_c_sort); 
        } 

@@ -1,5 +1,5 @@
 //
-// ccsdpr12_t1.h --- computes the T1 residual vector of CCSD(R12)
+// ccsdpr12_c.h --- computes the GT2 residual vector of CCSD(R12)
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -43,36 +43,40 @@ class CCSDPR12_C {
    std::vector<Tensor*> in;
    std::vector<Tensor*> kn;
 
-   void offset_k0();
-   void smith_k0(); //z->t1(),z->fy()=>kn.at(0)
-   void offset_k1();
-   void smith_k1(); //z->t1(),z->v2()=>kn.at(1)
    void offset_smith_0_1();
    void smith_0_1_0(); //z->vd2()=>in.at(1)
    void offset_smith_1_1();
    void smith_1_1_0(); //z->f1()=>in.at(2)
    void smith_2_12(); //z->t1(),z->v2()=>in.at(2)
    void smith_1_1(); //z->fy(),in.at(2)=>in.at(1)
-   void smith_1_14(); //z->v2(),kn.at(0)=>in.at(1)
+   void offset_smith_1_14();
+   void smith_2_14(); //z->t1(),z->fy()=>in.at(2)
+   void smith_1_14(); //z->v2(),in.at(2)=>in.at(1)
    void smith_0_1(Ref<Tensor>&); //z->t2(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_2();
-   void smith_1_2(); //z->gt2(),z->f1()=>in.at(1)
+   void smith_1_2(); //z->c2(),z->f1()=>in.at(1)
    void smith_0_2(Ref<Tensor>&); //z->xs2(),in.at(1)=>Ref<Tensor>&
-   void smith_0_3(Ref<Tensor>&); //z->gt2(),z->bs2()=>Ref<Tensor>&
+   void smith_0_3(Ref<Tensor>&); //z->c2(),z->bs2()=>Ref<Tensor>&
    void smith_0_4(Ref<Tensor>&); //z->vd2()=>Ref<Tensor>&
-   void smith_0_5(Ref<Tensor>&); //z->v2(),kn.at(0)=>Ref<Tensor>&
+   void offset_smith_0_5();
+   void smith_1_5(); //z->t1(),z->fy()=>in.at(1)
+   void smith_0_5(Ref<Tensor>&); //z->v2(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_6();
    void smith_0_6_0(); //z->vd2()=>in.at(1)
-   void smith_1_7(); //z->v2(),kn.at(0)=>in.at(1)
+   void offset_smith_1_7();
+   void smith_2_7(); //z->t1(),z->fy()=>in.at(2)
+   void smith_1_7(); //z->v2(),in.at(2)=>in.at(1)
    void smith_1_8(); //z->t1(),z->vd2()=>in.at(1)
    void smith_0_6(Ref<Tensor>&); //z->t1(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_9();
    void offset_smith_1_9();
    void smith_1_9_0(); //z->v2()=>in.at(2)
-   void smith_1_9_1(); //kn.at(1)=>in.at(2)
+   void smith_2_13(); //z->t1(),z->v2()=>in.at(2)
    void smith_1_9(); //z->t2(),in.at(2)=>in.at(1)
    void offset_smith_1_11();
-   void smith_2_11(); //z->t1(),kn.at(1)=>in.at(2)
+   void offset_smith_2_11();
+   void smith_3_11(); //z->t1(),z->v2()=>in.at(3)
+   void smith_2_11(); //z->t1(),in.at(3)=>in.at(2)
    void smith_1_11(); //z->t1(),in.at(2)=>in.at(1)
    void smith_0_9(Ref<Tensor>&); //z->fy(),in.at(1)=>Ref<Tensor>&
 

@@ -159,9 +159,9 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   }
   if (!p1p2_in_x1x2) {
     const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
-                                                           orbs1->id(),orbs1->id(),
-                                                           std::string("ERI"),
-                                                           std::string(TwoBodyIntLayout::b1b2_k1k2));
+                                                                     orbs1->id(),orbs2->id(),
+                                                                     std::string("ERI"),
+                                                                     std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms.push_back(tform_key);
   }
   else
@@ -404,9 +404,9 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   }
   if (!p1p2_in_x1x2) {
     const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
-                                                           orbs1->id(),orbs2->id(),
-                                                           std::string("ERI"),
-                                                           std::string(TwoBodyIntLayout::b1b2_k1k2));
+                                                                     orbs1->id(),orbs2->id(),
+                                                                     std::string("ERI"),
+                                                                     std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms.push_back(tform_key);
   }
   else

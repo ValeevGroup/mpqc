@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccsd_r12_e.h>
 #include <chemistry/qc/ccr12/tensor.h>
+#include <chemistry/qc/ccr12/mtensor.h>
 using namespace sc;
 
 
@@ -224,6 +225,8 @@ z->mem()->sync();
 
 void CCSD_R12_E::smith_0_4(Ref<Tensor>& out){
 
+  const int debug_print = 0;
+
 long tileoffset;
 if (out->is_this_local(0L)) {
  if (z->irrep_e()==(z->irrep_t()^z->irrep_e())) {
@@ -236,8 +239,6 @@ if (out->is_this_local(0L)) {
      for (long h4b=h3b;h4b<z->noab();++h4b) {
       if (z->get_spin(h1b)+z->get_spin(h2b)==z->get_spin(h3b)+z->get_spin(h4b)) {
        if ((z->get_sym(h1b)^(z->get_sym(h2b)^(z->get_sym(h3b)^z->get_sym(h4b))))==z->irrep_t()) {
-        // only include alpha-alpha and beta-beta
-        //if (z->get_spin(h1b) != z->get_spin(h2b)) continue;
         long h1b_0,h2b_0,h3b_0,h4b_0;
         z->restricted_4(h1b,h2b,h3b,h4b,h1b_0,h2b_0,h3b_0,h4b_0);
         long h3b_1,h4b_1,h1b_1,h2b_1;
@@ -251,15 +252,19 @@ if (out->is_this_local(0L)) {
          double* k_a0_sort=z->mem()->malloc_local_double(dima0);
          double* k_a0=z->mem()->malloc_local_double(dima0);
          z->gt2()->get_block(h4b_0+z->noab()*(h3b_0+z->noab()*(h2b_0+z->noab()*(h1b_0))),k_a0);
-         //ExEnv::out0() << "GT2" << endl;
-         //print_tile(k_a0, z->get_range(h1b)*z->get_range(h2b), z->get_range(h3b)*z->get_range(h4b));
+         if (debug_print) {
+         ExEnv::out0() << "GT2" << std::endl;
+         print_tile(k_a0, z->get_range(h1b)*z->get_range(h2b), z->get_range(h3b)*z->get_range(h4b));
+         }
          z->sort_indices4(k_a0,k_a0_sort,z->get_range(h1b),z->get_range(h2b),z->get_range(h3b),z->get_range(h4b),3,2,1,0,+1.0,false);
          z->mem()->free_local_double(k_a0);
          double* k_a1_sort=z->mem()->malloc_local_double(dima1);
          double* k_a1=z->mem()->malloc_local_double(dima1);
          z->vr2()->get_block(h2b_1+z->noab()*(h1b_1+z->noab()*(h4b_1+(z->nab())*(h3b_1))),k_a1);
-         //ExEnv::out0() << "VR2" << endl;
-         //print_tile(k_a1, z->get_range(h1b)*z->get_range(h2b), z->get_range(h3b)*z->get_range(h4b));
+         if (debug_print) {
+         ExEnv::out0() << "VR2" << std::endl;
+         print_tile(k_a1, z->get_range(h1b)*z->get_range(h2b), z->get_range(h3b)*z->get_range(h4b));
+         }
          z->sort_indices4(k_a1,k_a1_sort,z->get_range(h3b),z->get_range(h4b),z->get_range(h1b),z->get_range(h2b),1,0,3,2,+1.0,false);
          z->mem()->free_local_double(k_a1);
          double factor=1.0;
@@ -273,7 +278,9 @@ if (out->is_this_local(0L)) {
          z->mem()->free_local_double(k_a1_sort);
          z->mem()->free_local_double(k_a0_sort);
 
-         //ExEnv::out0() << "tiles = " << h1b << "," << h2b << "," << h3b << "," << h4b << " energy = " << k_c_sort[0] << endl;
+         if (debug_print) {
+         ExEnv::out0() << "tiles = " << h1b << "," << h2b << "," << h3b << "," << h4b << " energy = " << k_c_sort[0] << std::endl;
+         }
         }
        }
       }

@@ -43,12 +43,12 @@ class CCSDPR12_T1 {
    std::vector<Tensor*> in;
    std::vector<Tensor*> kn;
 
-   void offset_k0();
-   void smith_k0(); //z->t1(),z->v2()=>kn.at(0)
    void offset_smith_0_1();
    void smith_0_1_0(); //z->f1()=>in.at(1)
    void smith_1_4(); //z->t1(),z->v2()=>in.at(1)
-   void smith_1_10(); //z->t1(),kn.at(0)=>in.at(1)
+   void offset_smith_1_10();
+   void smith_2_10(); //z->t1(),z->v2()=>in.at(2)
+   void smith_1_10(); //z->t1(),in.at(2)=>in.at(1)
    void smith_1_13(); //z->t2(),z->v2()=>in.at(1)
    void smith_1_16(); //z->c2(),z->vr2()=>in.at(1)
    void smith_0_1(Ref<Tensor>&); //z->t1(),in.at(1)=>Ref<Tensor>&
@@ -67,7 +67,9 @@ class CCSDPR12_T1 {
    void smith_1_15(); //z->t1(),z->v2()=>in.at(1)
    void smith_0_8(Ref<Tensor>&); //z->qy(),in.at(1)=>Ref<Tensor>&
    void smith_0_9(Ref<Tensor>&); //z->c2(),z->vr2()=>Ref<Tensor>&
-   void smith_0_11(Ref<Tensor>&); //z->t2(),kn.at(0)=>Ref<Tensor>&
+   void offset_smith_0_11();
+   void smith_1_11(); //z->t1(),z->v2()=>in.at(1)
+   void smith_0_11(Ref<Tensor>&); //z->t2(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_14();
    void smith_1_14(); //z->t1(),z->v2()=>in.at(1)
    void smith_0_14(Ref<Tensor>&); //z->qy(),in.at(1)=>Ref<Tensor>&

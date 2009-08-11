@@ -43,7 +43,6 @@ class CCSD_R12_E {
    CCR12_Info* z;
  
    std::vector<Tensor*> in;
-   std::vector<Tensor*> kn;
 
    void offset_smith_0_1();
    void smith_0_1_0(); //z->f1()=>z->in[1]

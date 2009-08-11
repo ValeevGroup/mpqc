@@ -43,16 +43,13 @@ class CCSD_R12_T1 {
   protected:
    CCR12_Info* z;
    std::vector<Tensor*> in;
-   std::vector<Tensor*> kn;
 
-   void offset_k0();
-   void smith_k0(); //z->t1(),z->v2()=>kn.at(0)
    void smith_0_1(Ref<Tensor>&); //z->f1()=>Ref<Tensor>&
    void offset_smith_0_2();
    void smith_0_2_0(); //z->f1()=>in.at(1)
    void offset_smith_1_4();
    void smith_1_4_0(); //z->f1()=>in.at(2)
-   void smith_1_4_1(); //kn.at(0)=>in.at(2)
+   void smith_2_14(); //z->t1(),z->v2()=>in.at(2)
    void smith_1_4(); //z->t1(),in.at(2)=>in.at(1)
    void smith_1_8(); //z->t1(),z->v2()=>in.at(1)
    void smith_1_17(); //z->t2(),z->v2()=>in.at(1)
@@ -64,7 +61,7 @@ class CCSD_R12_T1 {
    void smith_0_3(Ref<Tensor>&); //z->t1(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_5();
    void smith_0_5_0(); //z->f1()=>in.at(1)
-   void smith_0_5_1(); //kn.at(0)=>in.at(1)
+   void smith_1_15(); //z->t1(),z->v2()=>in.at(1)
    void smith_0_5(Ref<Tensor>&); //z->t2(),in.at(1)=>Ref<Tensor>&
    void offset_smith_0_6();
    void smith_0_6_0(); //z->f1()=>in.at(1)

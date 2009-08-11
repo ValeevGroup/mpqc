@@ -41,7 +41,6 @@ CCSD_E::~CCSD_E(){};
 void CCSD_E::compute_amp(Ref<Tensor>& out){ //k_i0_offset,z->f1(),z->in.at(0),z->t1(),z->t2()=>z->v2()
   
 in.resize(8);
-kn.resize(64);
   
 in.at(1)=new Tensor("ccsd_e_1_0",z->mem());
 offset_smith_0_1();

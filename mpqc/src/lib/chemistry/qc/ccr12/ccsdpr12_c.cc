@@ -41,7 +41,6 @@ CCSDPR12_C::~CCSDPR12_C(){};
 void CCSDPR12_C::compute_amp(Ref<Tensor>& out){ //k_i0_offset,z->bs2(),z->gt2(),z->f1(),z->fd2(),z->in.at(0),z->t1(),z->t2(),z->v2(),z->vd2()=>z->xs2()
   
 in.resize(8);
-kn.resize(64);
   
 in.at(1)=new Tensor("ccsdpr12_c_1_0",z->mem());
 offset_smith_0_1();

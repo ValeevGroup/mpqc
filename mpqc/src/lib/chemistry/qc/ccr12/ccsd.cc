@@ -51,7 +51,6 @@
 #include <chemistry/qc/ccr12/ccsd_2q_right.h>
 #include <chemistry/qc/ccr12/ccsd_sub_r12_left.h>
 #include <chemistry/qc/ccr12/ccsd_sub_r12_right.h>
-#include <chemistry/qc/ccr12/ccsd_sub_r12_energy.h>
 
 using namespace std;
 using namespace sc;
@@ -287,12 +286,10 @@ void CCSD::compute(){
 
       // then evaluate the energy contribution
       e0->zero();
-      CCSD_SUB_R12_ENERGY* eval_energy = new CCSD_SUB_R12_ENERGY(info());
-      eval_energy->compute_amp(num_right, num_left, e0);
+      ccr12_info_->prod_iiii(num_right, num_left, e0);
       const double ccsd_sub_r12_correction = ccr12_info_->get_e(e0);
       print_correction(ccsd_sub_r12_correction, energy, "CCSD(2)R12");
 
-      delete eval_energy;
       delete eval_left;
       delete eval_right;
 

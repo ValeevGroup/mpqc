@@ -33,13 +33,13 @@
 using namespace sc;
   
   
-CCSD_2T_R12_LEFT::CCSD_2T_R12_LEFT(CCR12_Info* info): Parenthesis2tNum(info) {};
+CCSD_2T_R12_LEFT::CCSD_2T_R12_LEFT(CCR12_Info* info):Parenthesis2tNum(info){};
+  
   
   
 void CCSD_2T_R12_LEFT::compute_amp(double* a_i0,const long t_h4b,const long t_h5b,const long t_h6b,const long t_p1b,const long t_p2b,const long t_p3b,const long toggle){
   
 in.resize(8);
-kn.resize(64);
 i1xn.resize(16);
   
 if (toggle==2L) {
@@ -62,7 +62,11 @@ smith_1_7(); //z->t1(),z->v2()=>in.at(1x1)
 }
 if (toggle==2L) {
 smith_0_3(a_i0,t_h4b,t_h5b,t_h6b,t_p1b,t_p2b,t_p3b);
+}
+if (toggle==2L) {
 smith_0_4(a_i0,t_h4b,t_h5b,t_h6b,t_p1b,t_p2b,t_p3b);
+}
+if (toggle==2L) {
 smith_0_5(a_i0,t_h4b,t_h5b,t_h6b,t_p1b,t_p2b,t_p3b);
 }
 if (toggle==1L) {
@@ -1002,4 +1006,3 @@ for (long h5b=0L;h5b<z->noab();++h5b) {
 } 
 z->mem()->sync(); 
 } 
-

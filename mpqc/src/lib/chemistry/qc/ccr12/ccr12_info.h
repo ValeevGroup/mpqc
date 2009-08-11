@@ -279,11 +279,6 @@ class CCR12_Info : virtual public RefCount {
                      const double*,const long,const double,double*,const long);
 
 
-    /// intermediate tensors
-    //std::vector<Tensor*> in;
-    //std::vector<Tensor*> kn;
-
-
     /// Constatnts used in specific (i.e. derived) CC-R12 object
     bool need_t1() const {return need_t1_;};
     bool need_t2() const {return need_t2_;};

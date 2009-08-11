@@ -48,7 +48,7 @@ CXXSRC = ccr12.cc ccr12_info.cc ccr12_info_offset.cc \
          ccr12_info_drivers_r12.cc ccr12_info_intermediates.cc \
          ccsd_r12.cc ccsd_r12_e.cc ccsd_r12_t1.cc ccsd_r12_t2.cc \
          ccsdpr12.cc ccsdpr12_t1.cc ccsdpr12_t2.cc ccsdpr12_c.cc \
-         ccsd_sub_r12_right.cc ccsd_sub_r12_left.cc ccsd_sub_r12_energy.cc ccsd_r12_pt_right.cc \
+         ccsd_sub_r12_right.cc ccsd_sub_r12_left.cc ccsd_r12_pt_right.cc \
          lambda_ccsd_t1.cc lambda_ccsd_t2.cc lambda_ccsdpr12_t1.cc lambda_ccsdpr12_t2.cc \
          ccsd_2t_pr12_right.cc ccsd_2t_r12_left.cc
 

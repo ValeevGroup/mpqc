@@ -43,36 +43,39 @@ class CCSD_SUB_R12_RIGHT {
     CCR12_Info* z;
 
     std::vector<Tensor*> in; 
-    std::vector<Tensor*> kn; 
 
-    void offset_k0();
-    void smith_k0(); //z->t1(),z->fy()=>kn.at(0)
-    void offset_k1();
-    void smith_k1(); //z->t1(),z->v2()=>kn.at(1)
     void offset_smith_0_1();
     void smith_0_1_0(); //z->vd2()=>in.at(1)
     void offset_smith_1_1();
     void smith_1_1_0(); //z->f1()=>in.at(2)
     void smith_2_10(); //z->t1(),z->v2()=>in.at(2)
     void smith_1_1(); //z->fy(),in.at(2)=>in.at(1)
-    void smith_1_12(); //z->v2(),kn.at(0)=>in.at(1)
-    void smith_0_1(Ref<Tensor>&); //z->t2(),in.at(1)=>out
-    void smith_0_2(Ref<Tensor>&); //z->vd2()=>out
-    void smith_0_3(Ref<Tensor>&); //z->v2(),kn.at(0)=>out
+    void offset_smith_1_12();
+    void smith_2_12(); //z->t1(),z->fy()=>in.at(2)
+    void smith_1_12(); //z->v2(),in.at(2)=>in.at(1)
+    void smith_0_1(Ref<Tensor>&); //z->t2(),in.at(1)=>Ref<Tensor>&
+    void smith_0_2(Ref<Tensor>&); //z->vd2()=>Ref<Tensor>&
+    void offset_smith_0_3();
+    void smith_1_3(); //z->t1(),z->fy()=>in.at(1)
+    void smith_0_3(Ref<Tensor>&); //z->v2(),in.at(1)=>Ref<Tensor>&
     void offset_smith_0_4();
     void smith_0_4_0(); //z->vd2()=>in.at(1)
-    void smith_1_5(); //z->v2(),kn.at(0)=>in.at(1)
+    void offset_smith_1_5();
+    void smith_2_5(); //z->t1(),z->fy()=>in.at(2)
+    void smith_1_5(); //z->v2(),in.at(2)=>in.at(1)
     void smith_1_6(); //z->t1(),z->vd2()=>in.at(1)
-    void smith_0_4(Ref<Tensor>&); //z->t1(),in.at(1)=>out
+    void smith_0_4(Ref<Tensor>&); //z->t1(),in.at(1)=>Ref<Tensor>&
     void offset_smith_0_7();
     void offset_smith_1_7();
     void smith_1_7_0(); //z->v2()=>in.at(2)
-    void smith_1_7_1(); //kn.at(1)=>in.at(2)
+    void smith_2_11(); //z->t1(),z->v2()=>in.at(2)
     void smith_1_7(); //z->t2(),in.at(2)=>in.at(1)
     void offset_smith_1_9();
-    void smith_2_9(); //z->t1(),kn.at(1)=>in.at(2)
+    void offset_smith_2_9();
+    void smith_3_9(); //z->t1(),z->v2()=>in.at(3)
+    void smith_2_9(); //z->t1(),in.at(3)=>in.at(2)
     void smith_1_9(); //z->t1(),in.at(2)=>in.at(1)
-    void smith_0_7(Ref<Tensor>&); //z->fy(),in.at(1)=>out
+    void smith_0_7(Ref<Tensor>&); //z->fy(),in.at(1)=>Ref<Tensor>&
 
   public:
     CCSD_SUB_R12_RIGHT(CCR12_Info* info);

@@ -159,13 +159,10 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   // if OBS == VBS then use (ip|ip) and (imjx) integrals
   if (obs_eq_vbs) {
     {
-      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime4(),
-        occ1_act,
-        refinfo->orbs(spin1),
-        occ2_act,
-        refinfo->orbs(spin2),
-        r12info->corrfactor());
-        tform0_pp_key = tform_creator();
+      tform0_pp_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+                                                         refinfo->orbs(spin1)->id(),refinfo->orbs(spin2)->id(),
+                                                         std::string("ERI"),
+                                                         std::string(TwoBodyIntLayout::b1b2_k1k2));
     }
     {
       R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime4(),

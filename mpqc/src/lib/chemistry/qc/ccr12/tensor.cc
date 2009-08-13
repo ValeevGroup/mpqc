@@ -341,18 +341,18 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
     const size_t readsize = rsize * sizeof(double);
     const size_t position = size_now * sizeof(double); 
 
-    this->file()->clear();
-    this->file()->seekg(position);
-    other->file()->clear();
-    other->file()->seekg(position);
+    this->file_->clear();
+    this->file_->seekg(position);
+    other->file_->clear();
+    other->file_->seekg(position);
 
-    this->file()->read((char*)aux_array, readsize);
-    other->file()->read((char*)aux_array2, readsize);
+    this->file_->read((char*)aux_array, readsize);
+    other->file_->read((char*)aux_array2, readsize);
     F77_DAXPY(&rsize, &a, aux_array2, &unit, aux_array, &unit);
 
-    this->file()->clear();
-    this->file()->seekp(position);
-    this->file()->write((const char*)aux_array, readsize); 
+    this->file_->clear();
+    this->file_->seekp(position);
+    this->file_->write((const char*)aux_array, readsize); 
 
     size_now += cachesize;
     size_back -= cachesize;
@@ -461,20 +461,23 @@ double Tensor::ddot(Ref<Tensor>& other) const {
   msg_->sum(ddotproduct);
 #else
   file_->clear();
-  other->file()->clear();
-  file_->seekg(0);
-  other->file()->seekg(0);
+  other->file_->clear();
   double* aux_array = new double[cachesize];
   double* aux_array2 = new double[cachesize];
   double ddotproduct = 0.0;
   long size_back = filesize_; 
+  size_t size_now = 0LU;
   while (size_back > 0L) {
     const int rsize = min(cachesize, size_back);
     const size_t readsize = rsize * sizeof(double);
+    const size_t position = size_now * sizeof(double);
+    file_->seekg(position);
     file_->read((char*)aux_array, readsize);
-    other->file()->read((char*)aux_array2, readsize);
+    other->file_->seekg(position);
+    other->file_->read((char*)aux_array2, readsize);
     ddotproduct += F77_DDOT(&rsize, aux_array, &unit, aux_array2, &unit);
     size_back -= cachesize;
+    size_now += cachesize;
   }
   delete[] aux_array;
   delete[] aux_array2;

@@ -90,7 +90,10 @@ void CCR12::common_init(string theory){
   // get the memory sizes
   memorysize_ = keyval_->longvalue("memory",   KeyValValueint(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
-  worksize_=keyval_->longvalue("workmemory",   KeyValValueint(50000000));
+  worksize_ = keyval_->longvalue("workmemory",   KeyValValueint(50000000));
+#ifdef DISK_BASED_SMITH
+  worksize_ = memorysize_; 
+#endif
   ExEnv::out0() << indent << "Work   size per node: " << worksize_   << endl;
 }
 

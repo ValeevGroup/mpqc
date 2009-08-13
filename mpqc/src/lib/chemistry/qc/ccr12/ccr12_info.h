@@ -143,7 +143,7 @@ class CCR12_Info : virtual public RefCount {
     std::vector<unsigned int> mosyma_,mosymb_;
     std::vector<unsigned int> cabssyma_,cabssymb_;
     const Ref<R12IntEvalInfo>& r12evalinfo_;
-    int workmemsize_;
+    size_t workmemsize_;
 
     // orbital data after sorted
     std::vector<double> orbital_evl_sorted_;

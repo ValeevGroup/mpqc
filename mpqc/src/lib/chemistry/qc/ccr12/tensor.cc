@@ -75,7 +75,7 @@ void Tensor::set_filesize(long i){
 
 
 #ifdef DISK_BASED_SMITH
-// must be fit into the cache of the hard drive (?)
+// must fit into the cache of the hard drive (?)
 static const long cachesize = 100000;
 #endif
 
@@ -246,7 +246,7 @@ bool Tensor::is_this_local(long tag){
   long nextoffset_ = (long)(file()->localsize()) + localoffset_;
   return localoffset_ <= myoffset_ && myoffset_ < nextoffset_;
 #else
-  // Serial runs are only supported with DISK_BASED_SMITH
+  // Only serial runs are supported with DISK_BASED_SMITH so far
   return true;
 #endif
 }
@@ -330,6 +330,8 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
   F77_DAXPY(&dsize, &a, buffer2, &unit, buffer1, &unit);
   sync();
 #else
+// Assuming that this and other point to different Tensor's. Probably OK, right?
+// Otherwise, we need to insert fstream::clear for the last block.
   double* aux_array = new double[cachesize];
   double* aux_array2 = new double[cachesize];
   size_t size_now = 0UL; 
@@ -342,9 +344,8 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
     const size_t position = size_now * sizeof(double); 
 
     this->file_->seekg(position);
-    other->file_->seekg(position);
-
     this->file_->read((char*)aux_array, readsize);
+    other->file_->seekg(position);
     other->file_->read((char*)aux_array2, readsize);
     F77_DAXPY(&rsize, &a, aux_array2, &unit, aux_array, &unit);
 

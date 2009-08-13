@@ -306,12 +306,10 @@ void Tensor::scale(double a){
    const size_t readsize = rsize * sizeof(double);
    const size_t position = size_now * sizeof(double);
 
-   file_->clear();
    file_->seekg(position);
    file_->read((char*)aux_array, readsize); 
    for_each(aux_array, aux_array + rsize, scaler);
 
-   file_->clear();
    file_->seekp(position);
    file_->write((const char*)aux_array, readsize); 
 
@@ -336,21 +334,20 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
   double* aux_array2 = new double[cachesize];
   size_t size_now = 0UL; 
   long size_back = filesize_;
+  this->file_->clear();
+  other->file_->clear();
   while (size_back > 0L) {
     const int rsize = min(cachesize, size_back);
     const size_t readsize = rsize * sizeof(double);
     const size_t position = size_now * sizeof(double); 
 
-    this->file_->clear();
     this->file_->seekg(position);
-    other->file_->clear();
     other->file_->seekg(position);
 
     this->file_->read((char*)aux_array, readsize);
     other->file_->read((char*)aux_array2, readsize);
     F77_DAXPY(&rsize, &a, aux_array2, &unit, aux_array, &unit);
 
-    this->file_->clear();
     this->file_->seekp(position);
     this->file_->write((const char*)aux_array, readsize); 
 

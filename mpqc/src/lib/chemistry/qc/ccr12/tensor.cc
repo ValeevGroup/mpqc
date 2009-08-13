@@ -460,9 +460,9 @@ double Tensor::ddot(Ref<Tensor>& other) const {
   Ref<MessageGrp> msg_ = MessageGrp::get_default_messagegrp();
   msg_->sum(ddotproduct);
 #else
-  this->file()->clear();
+  file_->clear();
   other->file()->clear();
-  this->file()->seekg(0);
+  file_->seekg(0);
   other->file()->seekg(0);
   double* aux_array = new double[cachesize];
   double* aux_array2 = new double[cachesize];
@@ -471,7 +471,7 @@ double Tensor::ddot(Ref<Tensor>& other) const {
   while (size_back > 0L) {
     const int rsize = min(cachesize, size_back);
     const size_t readsize = rsize * sizeof(double);
-    this->file()->read((char*)aux_array, readsize);
+    file_->read((char*)aux_array, readsize);
     other->file()->read((char*)aux_array2, readsize);
     ddotproduct += F77_DDOT(&rsize, aux_array, &unit, aux_array2, &unit);
     size_back -= cachesize;

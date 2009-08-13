@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbptr12/distarray4.h>
 
 // note disk-based algorithm does not support parallel execution so far.
-//#define DISK_BASED_SMITH
+#define DISK_BASED_SMITH
 
 #ifdef DISK_BASED_SMITH
 #include <fstream>

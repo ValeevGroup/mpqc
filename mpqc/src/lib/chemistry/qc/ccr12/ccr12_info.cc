@@ -273,7 +273,11 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 /// The tensors would better be inverted before they are transformed
 /// into block-wise structure.
 
+#ifndef DISK_BASED_SMITH
   long input_tensors = static_size / 1000000L / nnode;
+#else
+  long input_tensors = 0L;
+#endif
   long work_space    = workmem / 1000000L;
   long intermediates = memsize / 1000000L - work_space - input_tensors;
 

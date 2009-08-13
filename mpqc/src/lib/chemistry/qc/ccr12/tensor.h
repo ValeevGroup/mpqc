@@ -37,6 +37,13 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
 
+// note disk-based algorithm does not support parallel execution so far.
+//#define DISK_BASED_SMITH
+
+#ifdef DISK_BASED_SMITH
+#include <fstream>
+#endif
+
 namespace sc {
 
 class Tensor : virtual public RefCount {
@@ -53,7 +60,11 @@ class Tensor : virtual public RefCount {
     long filesize_;
 
     /// data area
+#ifndef DISK_BASED_SMITH
     MemoryGrpRegion* file_;
+#else
+    std::fstream* file_;
+#endif
     bool file_allocated_;
 
     /// determines the distribution of blocks to nodes
@@ -67,7 +78,11 @@ class Tensor : virtual public RefCount {
     std::string filename() const {return filename_;};
 
     /// returns MemoryGrpRegion for this tensor
+#ifndef DISK_BASED_SMITH
     MemoryGrpRegion* file() const {return file_;};
+#else
+    std::fstream* file() { return file_; };
+#endif
 
     /// set/get the filesize of the tensor
     void set_filesize(long i);
@@ -116,7 +131,11 @@ class Tensor : virtual public RefCount {
     void scale(double a);
 
     /// sync
+#ifndef DISK_BASED_SMITH 
     void sync() const { const_cast<MemoryGrpRegion*>(file_)->sync();};
+#else
+    void sync() const {}; // disk-based algorithm does not support parallel runs so far
+#endif
 
     /// print
     void print(const std::string& label, std::ostream& os = ExEnv::out0()) const;

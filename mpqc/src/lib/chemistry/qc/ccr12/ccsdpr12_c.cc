@@ -1,5 +1,5 @@
 //
-// ccsdpr12_c.h --- computes the GT2 residual vector of CCSD(R12)
+// ccsdpr12_c.cc
 //
 // Copyright (C) 2009 Toru Shiozaki
 //

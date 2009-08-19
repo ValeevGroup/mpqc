@@ -159,6 +159,8 @@ void CCSDPR12::compute(){
 
   // if not fully optimized, we need to add the geminal-lambda contribution.
   if (ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+    timer_->enter("Lambda contribution");
+    iter_start = timer_->get_wall_time();
     e0->zero();
     CCSDPR12_C*  ccsdpr12_c = new CCSDPR12_C(info());
     ccsdpr12_c->compute_amp(gr2);
@@ -169,6 +171,8 @@ void CCSDPR12::compute(){
     print_correction(lambda_corr, energy, "Lambda contribution");
     energy += lambda_corr;
 
+    print_timing(timer_->get_wall_time() - iter_start, "Lambda contribution");
+    timer_->exit("Lambda contribution");
     delete ccsdpr12_c;
   }
 

@@ -297,18 +297,16 @@ StateIn::get_array_void(void*p,int s)
 void
 StateIn::get_directory()
 {
-  int i, length;
-
   // read the type information
 #if DEBUG
   ExEnv::outn() << "Directory length location = " << tell() << endl;
 #endif
-  get(length);
+  std::size_t length; get(length);
 #if DEBUG
   ExEnv::outn() << "Directory length = " << length << endl;
   ExEnv::outn() << "Directory entries location = " << tell() << endl;
 #endif
-  for (i=0; i<length; i++) {
+  for (std::size_t i=0; i<length; i++) {
       char *name;
       int version, classid;
       getstring(name);
@@ -329,7 +327,7 @@ StateIn::get_directory()
 
   // read the object information
   get(length);
-  for (i=0; i<length; i++) {
+  for (std::size_t i=0; i<length; i++) {
       int n;
       get(n);
       StateInData num;
@@ -525,7 +523,7 @@ StateIn::get(const ClassDesc**cd)
 {
   int r=0;
 
-  // if a list of class descriptors exist then read it in 
+  // if a list of class descriptors exist then read it in
   if (!use_directory()) {
       int size;
       r += get(size);

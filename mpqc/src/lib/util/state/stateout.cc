@@ -52,6 +52,8 @@
 using namespace std;
 using namespace sc;
 
+#define DEBUG 0
+
 static ClassDesc StateOut_cd(
     typeid(StateOut),"StateOut",1,"public DescribedClass");
 
@@ -240,8 +242,15 @@ StateOut::put_directory()
   std::map<ClassDescP,int>::iterator iid;
   std::map<Ref<SavableState>,StateOutData>::iterator isd;
 
-  // write the class information
+  // write the type information
+#if DEBUG
+  ExEnv::outn() << "StateOut::put_directory(): directory length location = " << tell() << endl;
+  ExEnv::outn() << "StateOut::put_directory(): directory length = " << classidmap_.size() << endl;
+#endif
   put(classidmap_.size());
+#if DEBUG
+  ExEnv::outn() << "StateOut::put_directory(): directory entries location = " << tell() << endl;
+#endif
   for (iid=classidmap_.begin(); iid!=classidmap_.end(); iid++) {
       const ClassDesc *cd = iid->first;
       int classid = iid->second;
@@ -281,7 +290,14 @@ StateOut::putstring(const char*s)
   int r=0;
   if (s) {
       int size = strlen(s)+1;
+#if DEBUG
+  ExEnv::outn() << "StateOut::putstring: string length location = " << tell() << endl;
+  ExEnv::outn() << "StateOut::putstring: string length = " << size << endl;
+#endif
       r += put(size);
+#if DEBUG
+      ExEnv::outn() << "StateOut::putstring: string location = " << tell() << endl;
+#endif
       r += put_array_char(s,size-1);
     }
   else {

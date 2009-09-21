@@ -767,8 +767,15 @@ SCF::obsolete()
 {
   OneBodyWavefunction::obsolete();
   if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
+  // do I need different semantics for obsolete? I can envision 2 possible interpretations of "obsolete":
+  // 1) it's "value" is no longer valid
+  // 2) 1 + purge its caches
+  // since SCF does not know the context in which obsolete() was called
+  // (i.e. whether geometry changed, which calls for 1, or orthog method was changed, which calls for 2)
+  // use the strong obsoletion here, i.e. purge the vector as well..
   obsolete_vector();
-  initial_vector(1);
+  // vector initialization will be handled when compute() is called or explicitly by the user of the class.
+  //initial_vector(1);
 }
 
 void

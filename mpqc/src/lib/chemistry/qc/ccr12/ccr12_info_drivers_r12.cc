@@ -45,7 +45,7 @@ void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_
 
   /// obtain d_r2/Diag
   Ref<Tensor> t2_mp2 = new Tensor("t2_mp2_local",mem_);
-  offset_t2(t2_mp2,false); 
+  offset_t2(t2_mp2, false); 
   jacobi_t2_(d_r2_,t2_mp2); 
 
   /// obtain duplicate of d_gr2  
@@ -313,12 +313,12 @@ void CCR12_Info::form_ad(Ref<Tensor>& out) {
              double* k_a0_sort=mem()->malloc_local_double(dima0); 
              double* k_a0=mem()->malloc_local_double(dima0); 
              fd2()->get_block(q5b_0+nab()*(p1b_0+nab()*(h4b_0+noab()*h3b_0)),k_a0); 
-             sort_indices4(k_a0,k_a0_sort,get_range(h3b),get_range(h4b),get_range(p1b),get_range(q5b),2,1,0,3,+1.0,false); 
+             sort_indices4(k_a0,k_a0_sort,get_range(h3b),get_range(h4b),get_range(p1b),get_range(q5b),2,1,0,3,+1.0); 
              mem()->free_local_double(k_a0); 
              double* k_a1_sort=mem()->malloc_local_double(dima1); 
              double* k_a1=mem()->malloc_local_double(dima1); 
              f1()->get_block(p2b_1+nab()*q5b_1,k_a1); 
-             sort_indices2(k_a1,k_a1_sort,get_range(q5b),get_range(p2b),1,0,+1.0,false); 
+             sort_indices2(k_a1,k_a1_sort,get_range(q5b),get_range(p2b),1,0,+1.0); 
              mem()->free_local_double(k_a1); 
              double factor=1.0; 
              smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
@@ -330,11 +330,11 @@ void CCR12_Info::form_ad(Ref<Tensor>& out) {
          } 
          double* k_c=mem()->malloc_local_double(dimc); 
          if (p2b>=p1b) { 
-          sort_indices4(k_c_sort,k_c,get_range(p2b),get_range(p1b),get_range(h4b),get_range(h3b),3,2,1,0,+1.0,false); 
+          sort_indices4(k_c_sort,k_c,get_range(p2b),get_range(p1b),get_range(h4b),get_range(h3b),3,2,1,0,+1.0); 
           out->add_block(p2b-noab()+nvab()*(p1b-noab()+nvab()*(h4b+noab()*h3b)),k_c); 
          } 
          if (p1b>=p2b) { 
-          sort_indices4(k_c_sort,k_c,get_range(p2b),get_range(p1b),get_range(h4b),get_range(h3b),3,2,0,1,-1.0,false); 
+          sort_indices4(k_c_sort,k_c,get_range(p2b),get_range(p1b),get_range(h4b),get_range(h3b),3,2,0,1,-1.0); 
           out->add_block(p1b-noab()+nvab()*(p2b-noab()+nvab()*(h4b+noab()*h3b)),k_c); 
          } 
          mem()->free_local_double(k_c); 
@@ -382,12 +382,12 @@ void CCR12_Info::form_adt(const Ref<Tensor>& inp_l2, const Ref<Tensor>& inp_t2, 
               double* k_a0_sort=mem()->malloc_local_double(dima0); 
               double* k_a0=mem()->malloc_local_double(dima0); 
               inp_t2->get_block(h2b_0+noab()*(h1b_0+noab()*(p6b_0-noab()+nvab()*(p5b_0-noab()))),k_a0); 
-              sort_indices4(k_a0,k_a0_sort,get_range(p5b),get_range(p6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0,false); 
+              sort_indices4(k_a0,k_a0_sort,get_range(p5b),get_range(p6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0); 
               mem()->free_local_double(k_a0); 
               double* k_a1_sort=mem()->malloc_local_double(dima1); 
               double* k_a1=mem()->malloc_local_double(dima1); 
               inp_l2->get_block(p6b_1-noab()+nvab()*(p5b_1-noab()+nvab()*(h4b_1+noab()*(h3b_1))),k_a1); 
-              sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(p5b),get_range(p6b),1,0,3,2,+1.0,false); 
+              sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(p5b),get_range(p6b),1,0,3,2,+1.0); 
               mem()->free_local_double(k_a1); 
               double factor=1.0; 
               if (p5b==p6b) factor=factor/2.0; 
@@ -400,7 +400,7 @@ void CCR12_Info::form_adt(const Ref<Tensor>& inp_l2, const Ref<Tensor>& inp_t2, 
           } 
          } 
          double* k_c=mem()->malloc_local_double(dimc); 
-         sort_indices4(k_c_sort,k_c,get_range(h4b),get_range(h3b),get_range(h2b),get_range(h1b),1,0,3,2,+0.5/0.5,false); 
+         sort_indices4(k_c_sort,k_c,get_range(h4b),get_range(h3b),get_range(h2b),get_range(h1b),1,0,3,2,+0.5/0.5); 
          out->add_block(h2b+noab()*(h1b+noab()*(h4b+noab()*(h3b))),k_c); 
          mem()->free_local_double(k_c); 
          mem()->free_local_double(k_c_sort); 
@@ -448,17 +448,17 @@ void CCR12_Info::form_ca(const Ref<Tensor>& c_, const Ref<Tensor>& ad_, Ref<Tens
               double* k_a0=mem()->malloc_local_double(dima0); 
 
               //a_->get_block(h6b_0+noab()*(h5b_0+noab()*(p4b_0-noab()+nvab()*(p3b_0-noab()))),k_a0); 
-              //sort_indices4(k_a0,k_a0_sort,get_range(p3b),get_range(p4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0,false); 
+              //sort_indices4(k_a0,k_a0_sort,get_range(p3b),get_range(p4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0); 
               // we are reusing a conjugate tensor
               ad_->get_block(p4b_0-noab()+nvab()*(p3b_0-noab()+nvab()*(h6b_0+noab()*h5b_0)),k_a0); 
-              //sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p3b),get_range(p4b),2,3,0,1,+1.0,false); 
-              sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p3b),get_range(p4b),3,2,1,0,+1.0,false); 
+              //sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p3b),get_range(p4b),2,3,0,1,+1.0); 
+              sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p3b),get_range(p4b),3,2,1,0,+1.0); 
 
               mem()->free_local_double(k_a0); 
               double* k_a1_sort=mem()->malloc_local_double(dima1); 
               double* k_a1=mem()->malloc_local_double(dima1); 
               c_->get_block(h2b_1+noab()*(h1b_1+noab()*(h6b_1+noab()*h5b_1)),k_a1); 
-              sort_indices4(k_a1,k_a1_sort,get_range(h5b),get_range(h6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0,false); 
+              sort_indices4(k_a1,k_a1_sort,get_range(h5b),get_range(h6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0); 
               mem()->free_local_double(k_a1); 
               double factor=1.0; 
               if (h5b==h6b) factor=factor/2.0; 
@@ -471,7 +471,7 @@ void CCR12_Info::form_ca(const Ref<Tensor>& c_, const Ref<Tensor>& ad_, Ref<Tens
           } 
          } 
          double* k_c=mem()->malloc_local_double(dimc); 
-         sort_indices4(k_c_sort,k_c,get_range(h2b),get_range(h1b),get_range(p4b),get_range(p3b),3,2,1,0,+0.5/0.5,false); 
+         sort_indices4(k_c_sort,k_c,get_range(h2b),get_range(h1b),get_range(p4b),get_range(p3b),3,2,1,0,+0.5/0.5); 
          out->add_block(h2b+noab()*(h1b+noab()*(p4b-noab()+nvab()*(p3b-noab()))),k_c); 
          mem()->free_local_double(k_c); 
          mem()->free_local_double(k_c_sort); 

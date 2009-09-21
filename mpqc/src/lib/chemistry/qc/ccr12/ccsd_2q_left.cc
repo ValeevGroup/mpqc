@@ -94,12 +94,12 @@ for (long permutation=0L;permutation<36L;++permutation) {
        double* k_a0_sort=z->mem()->malloc_local_double(dima0); 
        double* k_a0=z->mem()->malloc_local_double(dima0); 
        z->lambda2()->get_block(p2b_0-z->noab()+z->nvab()*(p1b_0-z->noab()+z->nvab()*(h6b_0+z->noab()*(h5b_0))),k_a0); 
-       z->sort_indices4(k_a0,k_a0_sort,z->get_range(h5b),z->get_range(h6b),z->get_range(p1b),z->get_range(p2b),3,2,1,0,+1.0,false); 
+       z->sort_indices4(k_a0,k_a0_sort,z->get_range(h5b),z->get_range(h6b),z->get_range(p1b),z->get_range(p2b),3,2,1,0,+1.0); 
        z->mem()->free_local_double(k_a0); 
        double* k_a1_sort=z->mem()->malloc_local_double(dima1); 
        double* k_a1=z->mem()->malloc_local_double(dima1); 
        z->v2()->get_block(p4b_1+(z->nab())*(p3b_1+(z->nab())*(h8b_1+(z->nab())*(h7b_1))),k_a1); 
-       z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p3b),z->get_range(p4b),3,2,1,0,+1.0,false); 
+       z->sort_indices4(k_a1,k_a1_sort,z->get_range(h7b),z->get_range(h8b),z->get_range(p3b),z->get_range(p4b),3,2,1,0,+1.0); 
        z->mem()->free_local_double(k_a1); 
        double factor=1.0; 
        z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 

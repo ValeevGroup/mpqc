@@ -262,15 +262,15 @@ class CCR12_Info : virtual public RefCount {
                       long&, long&, long&, long&, long&, long&);
     void restricted_8(const long, const long, const long, const long, const long, const long, const long, const long,
                       long&, long&, long&, long&, long&, long&, long&, long&);
-    void sort_indices0(const double* a,double* b,const double facter,const bool conjg) {*b=facter*(*a);};
+    void sort_indices0(const double* a,double* b,const double facter) {*b=facter*(*a);};
     void sort_indices2(const double*, double*, const long, const long,
-                       const int, const int, const double, const bool);
+                       const int, const int, const double);
     void sort_indices4(const double*, double*, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const double, const bool);
+                       const int, const int, const int, const int, const double);
     void sort_indices6(const double*, double*, const long, const long, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const int, const int, const double, const bool);
+                       const int, const int, const int, const int, const int, const int, const double);
     void sort_indices8(const double*, double*, const long, const long, const long, const long, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const int, const int, const int, const int, const double, const bool);
+                       const int, const int, const int, const int, const int, const int, const int, const int, const double);
     void sort_indices_acc6(const double*, double*, const long, const long, const long, const long, const long, const long,
                            const int, const int, const int, const int, const int, const int, const double);
     void sort_indices_acc8(const double*, double*, const long, const long, const long, const long, const long, const long, const long, const long,

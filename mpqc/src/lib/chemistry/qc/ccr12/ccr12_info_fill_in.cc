@@ -102,7 +102,7 @@ void CCR12_Info::compute_corr_space() {
     corr_space_ = full_space_minus_fc;
   }
   // minus frozen virtuals
-  {
+  if (nfzv_ != 0) {
     typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> >
         FVMask;
     FVMask fvmask(2 * nfzv_, corr_space_->evals());

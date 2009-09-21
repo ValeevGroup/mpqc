@@ -64,12 +64,12 @@ for (long p3b=noab();p3b<noab()+nvab();++p3b) {
              double* k_a0_sort=mem()->malloc_local_double(dima0); 
              double* k_a0=mem()->malloc_local_double(dima0); 
              fr2()->get_block(h6b_0+noab()*(h5b_0+noab()*(q4b_0+(nab())*(p3b_0))),k_a0); 
-             sort_indices4(k_a0,k_a0_sort,get_range(p3b),get_range(q4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0,false); 
+             sort_indices4(k_a0,k_a0_sort,get_range(p3b),get_range(q4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0); 
              mem()->free_local_double(k_a0); 
              double* k_a1_sort=mem()->malloc_local_double(dima1); 
              double* k_a1=mem()->malloc_local_double(dima1); 
              gt2()->get_block(h2b_1+noab()*(h1b_1+noab()*(h6b_1+noab()*(h5b_1))),k_a1); 
-             sort_indices4(k_a1,k_a1_sort,get_range(h5b),get_range(h6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0,false); 
+             sort_indices4(k_a1,k_a1_sort,get_range(h5b),get_range(h6b),get_range(h1b),get_range(h2b),3,2,1,0,+1.0); 
              mem()->free_local_double(k_a1); 
              double factor=1.0; 
              if (h5b==h6b) { 
@@ -84,7 +84,7 @@ for (long p3b=noab();p3b<noab()+nvab();++p3b) {
          } 
         } 
         double* k_c=mem()->malloc_local_double(dimc); 
-        sort_indices4(k_c_sort,k_c,get_range(h2b),get_range(h1b),get_range(q4b),get_range(p3b),3,2,1,0,+0.5/0.5,false); 
+        sort_indices4(k_c_sort,k_c,get_range(h2b),get_range(h1b),get_range(q4b),get_range(p3b),3,2,1,0,+0.5/0.5); 
         qy()->add_block(h2b+noab()*(h1b+noab()*(q4b-noab()-nvab()+ncab()*(p3b-noab()))),k_c); 
         mem()->free_local_double(k_c); 
         mem()->free_local_double(k_c_sort); 
@@ -132,12 +132,12 @@ for (long h3b=0L;h3b<noab();++h3b) {
              double* k_a0_sort=mem()->malloc_local_double(dima0); 
              double* k_a0=mem()->malloc_local_double(dima0); 
              fd2()->get_block(q2b_0+(nab())*(p1b_0+(nab())*(h6b_0+noab()*(h5b_0))),k_a0); 
-             sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p1b),get_range(q2b),3,2,1,0,+1.0,false); 
+             sort_indices4(k_a0,k_a0_sort,get_range(h5b),get_range(h6b),get_range(p1b),get_range(q2b),3,2,1,0,+1.0); 
              mem()->free_local_double(k_a0); 
              double* k_a1_sort=mem()->malloc_local_double(dima1); 
              double* k_a1=mem()->malloc_local_double(dima1); 
              glambda2()->get_block(h6b_1+noab()*(h5b_1+noab()*(h4b_1+noab()*(h3b_1))),k_a1); 
-             sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0,false); 
+             sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(h5b),get_range(h6b),1,0,3,2,+1.0); 
              mem()->free_local_double(k_a1); 
              double factor=1.0; 
              if (h5b==h6b) { 
@@ -152,7 +152,7 @@ for (long h3b=0L;h3b<noab();++h3b) {
          } 
         } 
         double* k_c=mem()->malloc_local_double(dimc); 
-        sort_indices4(k_c_sort,k_c,get_range(h4b),get_range(h3b),get_range(q2b),get_range(p1b),1,0,3,2,+0.5/0.5,false); 
+        sort_indices4(k_c_sort,k_c,get_range(h4b),get_range(h3b),get_range(q2b),get_range(p1b),1,0,3,2,+0.5/0.5); 
         ly()->add_block(q2b-noab()-nvab()+ncab()*(p1b-noab()+nvab()*(h4b+noab()*(h3b))),k_c); 
         mem()->free_local_double(k_c); 
         mem()->free_local_double(k_c_sort); 
@@ -194,12 +194,12 @@ if (out->is_this_local(0L)) {
          double* k_a0_sort=mem()->malloc_local_double(dima0); 
          double* k_a0=mem()->malloc_local_double(dima0); 
          a->get_block(h4b_0+noab()*(h3b_0+noab()*(h2b_0+noab()*(h1b_0))),k_a0); 
-         sort_indices4(k_a0,k_a0_sort,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),3,2,1,0,+1.0,false); 
+         sort_indices4(k_a0,k_a0_sort,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),3,2,1,0,+1.0); 
          mem()->free_local_double(k_a0); 
          double* k_a1_sort=mem()->malloc_local_double(dima1); 
          double* k_a1=mem()->malloc_local_double(dima1); 
          b->get_block(h2b_1+noab()*(h1b_1+noab()*(h4b_1+noab()*(h3b_1))),k_a1); 
-         sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(h1b),get_range(h2b),1,0,3,2,+1.0,false); 
+         sort_indices4(k_a1,k_a1_sort,get_range(h3b),get_range(h4b),get_range(h1b),get_range(h2b),1,0,3,2,+1.0); 
          mem()->free_local_double(k_a1); 
          double factor=1.0; 
          if (h1b==h2b) { 
@@ -219,7 +219,7 @@ if (out->is_this_local(0L)) {
    } 
   } 
   double* k_c=mem()->malloc_local_double(dimc); 
-  sort_indices0(k_c_sort,k_c,1.0,false); 
+  sort_indices0(k_c_sort,k_c,1.0); 
   out->add_block((0),k_c); 
   mem()->free_local_double(k_c); 
   mem()->free_local_double(k_c_sort); 

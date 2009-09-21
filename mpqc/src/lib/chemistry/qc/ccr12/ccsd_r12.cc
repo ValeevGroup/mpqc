@@ -74,9 +74,9 @@ void CCSD_R12::compute(){
   ccr12_info_->offset_e(e0);
 
   Ref<Tensor> r1 = new Tensor("r1",mem_);
-  ccr12_info_->offset_t1(r1,false);
+  ccr12_info_->offset_t1(r1, false);
   Ref<Tensor> r2 = new Tensor("r2",mem_);
-  ccr12_info_->offset_t2(r2,false);
+  ccr12_info_->offset_t2(r2, false);
 
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSD_R12_T1* ccsd_r12_t1 = new CCSD_R12_T1(info());

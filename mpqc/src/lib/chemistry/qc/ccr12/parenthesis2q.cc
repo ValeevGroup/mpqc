@@ -88,7 +88,7 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
    
            z->sort_indices8(data_left,data_left_sorted,z->get_range(t_h1b),z->get_range(t_h2b),z->get_range(t_h3b),z->get_range(t_h4b),
                                                        z->get_range(t_p5b),z->get_range(t_p6b),z->get_range(t_p7b),z->get_range(t_p8b),
-                                                       4,5,6,7,0,1,2,3,1.0,false);
+                                                       4,5,6,7,0,1,2,3,1.0);
    
            double factor=1.0;
            if (z->restricted() && z->get_spin(t_p5b)+z->get_spin(t_p6b)+z->get_spin(t_p7b)+z->get_spin(t_p8b)

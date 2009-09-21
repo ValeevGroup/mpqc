@@ -88,7 +88,7 @@ double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left,
  
          z->sort_indices6(data_left, data_left_sorted, z->get_range(t_h1b), z->get_range(t_h2b), z->get_range(t_h3b),
                                                        z->get_range(t_p4b), z->get_range(t_p5b), z->get_range(t_p6b),
-                                                       3, 4, 5, 0, 1, 2, 1.0, false);
+                                                       3, 4, 5, 0, 1, 2, 1.0);
  
          double factor = 1.0;
          if (z->restricted()) factor *= 2.0; 

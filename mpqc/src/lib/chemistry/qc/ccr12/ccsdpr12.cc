@@ -82,11 +82,11 @@ void CCSDPR12::compute(){
   ccr12_info_->offset_e(e0);
 
   Ref<Tensor> r1 = new Tensor("r1",mem_);
-  ccr12_info_->offset_t1(r1,false);
+  ccr12_info_->offset_t1(r1, false);
   Ref<Tensor> r2 = new Tensor("r2",mem_);
-  ccr12_info_->offset_t2(r2,false);
+  ccr12_info_->offset_t2(r2, false);
   Ref<Tensor> gr2 = new Tensor("gr2",mem_);
-  ccr12_info_->offset_gt2(gr2,false);
+  ccr12_info_->offset_gt2(gr2, false);
 
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSDPR12_T1* ccsdpr12_t1 = new CCSDPR12_T1(info());

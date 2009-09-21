@@ -134,7 +134,7 @@ void CCR12_Info::restricted_8(const long inp1,const long inp2,const long inp3,co
 
 void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
                                const long a,const long b,
-                               const int i,const int j,const double factor,const bool conjg)
+                               const int i,const int j,const double factor)
 { 
   // prototype
   if (i==0) {
@@ -162,7 +162,7 @@ void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
 void CCR12_Info::sort_indices4(const double* unsorted,double* sorted,
                                const long a,const long b,const long c,const long d,
                                const int i,const int j,const int k,const int l,
-                               const double factor,const bool conjg)
+                               const double factor)
 {
   // prototype
   std::vector<int> id(4,0);
@@ -192,7 +192,7 @@ void CCR12_Info::sort_indices6(const double* unsorted,double* sorted,
                                const long d,const long e,const long f,
                                const int i,const int j,const int k,
                                const int l,const int m,const int n,
-                               const double factor,const bool conjg)
+                               const double factor)
 {
   // prototype
   std::vector<int> id(6,0);
@@ -229,7 +229,7 @@ void CCR12_Info::sort_indices8(const double* unsorted,double* sorted,
                                const long e,const long f,const long g,const long h,
                                const int i,const int j,const int k,const int l,
                                const int m,const int n,const int o,const int p,
-                               const double factor,const bool conjg)
+                               const double factor)
 {
   // prototype
   std::vector<int> id(8,0);

@@ -301,7 +301,7 @@ void CCR12_Info::guess_lambda1(Ref<Tensor>& d_lambda1_){
      double* data2=mem()->malloc_local_double(size); 
 
      d_t1->get_block(h2b+noab()*(p1b-noab()),data1); 
-     sort_indices2(data1,data2,get_range(p1b),get_range(h2b),1,0,1.0,false);
+     sort_indices2(data1,data2,get_range(p1b),get_range(h2b),1,0,1.0);
      d_lambda1_->put_block(p1b-noab()+nvab()*h2b,data2); 
 
      mem()->free_local_double(data2);
@@ -322,7 +322,7 @@ void CCR12_Info::guess_lambda2(Ref<Tensor>& d_lambda2_){
        double* data2=mem()->malloc_local_double(size); 
 
        d_t2->get_block(h4b+noab()*(h3b+noab()*(p2b-noab()+nvab()*(p1b-noab()))),data1); 
-       sort_indices4(data1,data2,get_range(p1b),get_range(p2b),get_range(h3b),get_range(h4b),2,3,0,1,1.0,false);
+       sort_indices4(data1,data2,get_range(p1b),get_range(p2b),get_range(h3b),get_range(h4b),2,3,0,1,1.0);
        d_lambda2_->put_block(p2b-noab()+nvab()*(p1b-noab()+nvab()*(h4b+noab()*h3b)),data2); 
 
        mem()->free_local_double(data2);
@@ -346,7 +346,7 @@ void CCR12_Info::guess_glambda2(Ref<Tensor>& d_glambda2_){
        double* data2=mem()->malloc_local_double(size); 
 
        d_gt2->get_block(h4b+noab()*(h3b+noab()*(h2b+noab()*h1b)),data1); 
-       sort_indices4(data1,data2,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),2,3,0,1,1.0,false);
+       sort_indices4(data1,data2,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),2,3,0,1,1.0);
        d_glambda2_->put_block(h2b+noab()*(h1b+noab()*(h4b+noab()*h3b)),data2); 
 
        mem()->free_local_double(data2);

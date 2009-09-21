@@ -1654,138 +1654,146 @@ AC_CHECK_HEADERS(libint2/libint2.h,
         funcptr();
       ]]
       ),
-    HAVE_LIBINT2=yes
-    AC_DEFINE(HAVE_LIBINT2)
-    AC_SUBST(HAVE_LIBINT2)
-    REF_LIBS="-lint2 $LIBS"
-    AC_MSG_RESULT(yes)
-    )
+    [can_link_libint2=yes
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
+  )
   LIBS=$REF_LIBS
-  AC_MSG_CHECKING([libint2 ordering of cartesian gaussians in shells])
-  libint2_cgshell_ordering=none
-  dnl -- try libint = cca --
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
-        void present_if_defined() {}
-        #endif
-      ]],
-      [[
-        present_if_defined();
-      ]]
-    ),
-    [libint2_cgshell_ordering=cca
-     AC_MSG_RESULT(cca)]
-  )
-  if test X$libint2_cgshell_ordering = Xnone; then
-  dnl -- else try intv3 --
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
-        void present_if_defined() {}
-        #endif
-      ]],
-      [[
-        present_if_defined();
-      ]]
-    ),
-    [libint2_cgshell_ordering=intv3
-     AC_MSG_RESULT(intv3)]
-  )
-  fi
-  if test X$libint2_cgshell_ordering = Xnone; then
-    AC_MSG_ERROR([could not determine -- this libint2 library is too old or uses an unsupported ordering])
-  fi
-  AC_MSG_CHECKING([if libint2 can compute ERI])
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_SUPPORT_ERI
-        void libint2_support_eri() {}
-        #endif
-      ]],
-      [[
-        libint2_support_eri();
-      ]]
-      ),
-    [HAVE_LIBINT2_ERI=yes
-     AC_SUBST(HAVE_LIBINT2_ERI)
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)]
-    )
-  AC_MSG_CHECKING([if libint2 can compute G12])
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_SUPPORT_G12
-        void libint2_support_g12() {}
-        #endif
-      ]],
-      [[
-        libint2_support_g12();
-      ]]
-      ),
-    [HAVE_LIBINT2_G12=yes
-     AC_SUBST(HAVE_LIBINT2_G12)
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)]
-    )
-  if test X$HAVE_LIBINT2_G12 = Xyes; then
-    AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
+  if test X$can_link_libint2 = Xyes; then
+    AC_MSG_CHECKING([libint2 ordering of cartesian gaussians in shells])
+    libint2_cgshell_ordering=none
+    dnl -- try libint = cca --
     AC_COMPILE_IFELSE(
       AC_LANG_PROGRAM(
         [[#include <libint2/libint2.h>
-          #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
-          void libint2_support_t1g12() {}
+          #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
+          void present_if_defined() {}
           #endif
         ]],
         [[
-          libint2_support_t1g12();
+          present_if_defined();
         ]]
       ),
-      [HAVE_LIBINT2_G12_T1G12=yes
-       AC_SUBST(HAVE_LIBINT2_G12_T1G12)
+      [libint2_cgshell_ordering=cca
+       AC_MSG_RESULT(cca)]
+    )
+    if test X$libint2_cgshell_ordering = Xnone; then
+      dnl -- else try intv3 --
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+          [[#include <libint2/libint2.h>
+            #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
+            void present_if_defined() {}
+            #endif
+          ]],
+          [[
+            present_if_defined();
+          ]]
+        ),
+        [libint2_cgshell_ordering=intv3
+         AC_MSG_RESULT(intv3)]
+      )
+    fi
+    if test X$libint2_cgshell_ordering = Xnone; then
+      AC_MSG_RESULT([could not determine (this libint2 library is too old or uses an unsupported ordering)])
+    else
+      HAVE_LIBINT2=yes
+      AC_DEFINE(HAVE_LIBINT2)
+      AC_SUBST(HAVE_LIBINT2)
+      REF_LIBS="-lint2 $LIBS"
+      LIBS=$REF_LIBS
+    fi
+  fi
+  if test X$HAVE_LIBINT2 = Xyes; then
+    AC_MSG_CHECKING([if libint2 can compute ERI])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_ERI
+          void libint2_support_eri() {}
+          #endif
+        ]],
+        [[
+          libint2_support_eri();
+        ]]
+      ),
+      [HAVE_LIBINT2_ERI=yes
+       AC_SUBST(HAVE_LIBINT2_ERI)
+       AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)]
+    )
+    AC_MSG_CHECKING([if libint2 can compute G12])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_G12
+          void libint2_support_g12() {}
+          #endif
+        ]],
+        [[
+          libint2_support_g12();
+        ]]
+      ),
+      [HAVE_LIBINT2_G12=yes
+       AC_SUBST(HAVE_LIBINT2_G12)
+       AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)]
+    )
+    if test X$HAVE_LIBINT2_G12 = Xyes; then
+      AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+          [[#include <libint2/libint2.h>
+            #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
+            void libint2_support_t1g12() {}
+            #endif
+          ]],
+          [[
+            libint2_support_t1g12();
+          ]]
+        ),
+        [HAVE_LIBINT2_G12_T1G12=yes
+         AC_SUBST(HAVE_LIBINT2_G12_T1G12)
+         AC_MSG_RESULT(yes)],
+        [AC_MSG_RESULT(no)]
+      )
+    fi
+    AC_MSG_CHECKING([if libint2 can compute general G12])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_GENG12
+          void libint2_support_geng12() {}
+          #endif
+        ]],
+        [[
+          libint2_support_geng12();
+        ]]
+      ),
+      [HAVE_LIBINT2_GENG12=yes
+       AC_SUBST(HAVE_LIBINT2_GENG12)
+       AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)]
+    )
+    AC_MSG_CHECKING([if libint2 can compute G12DKH])
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if LIBINT2_SUPPORT_G12DKH
+          void libint2_support_g12dkh() {}
+          #endif
+        ]],
+        [[
+          libint2_support_g12dkh();
+        ]]
+      ),
+      [HAVE_LIBINT2_G12DKH=yes
+       AC_SUBST(HAVE_LIBINT2_G12DKH)
        AC_MSG_RESULT(yes)],
       [AC_MSG_RESULT(no)]
     )
   fi
-  AC_MSG_CHECKING([if libint2 can compute general G12])
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_SUPPORT_GENG12
-        void libint2_support_geng12() {}
-        #endif
-      ]],
-      [[
-        libint2_support_geng12();
-      ]]
-      ),
-    [HAVE_LIBINT2_GENG12=yes
-     AC_SUBST(HAVE_LIBINT2_GENG12)
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)]
-    )
-  AC_MSG_CHECKING([if libint2 can compute G12DKH])
-  AC_COMPILE_IFELSE(
-    AC_LANG_PROGRAM(
-      [[#include <libint2/libint2.h>
-        #if LIBINT2_SUPPORT_G12DKH
-        void libint2_support_g12dkh() {}
-        #endif
-      ]],
-      [[
-        libint2_support_g12dkh();
-      ]]
-      ),
-    [HAVE_LIBINT2_G12DKH=yes
-     AC_SUBST(HAVE_LIBINT2_G12DKH)
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)]
-    )
-  )
+)
 AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------

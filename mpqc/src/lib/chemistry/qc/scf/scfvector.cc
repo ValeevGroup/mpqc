@@ -105,10 +105,10 @@ SCF::savestate_iter(int iter)
   char *ckptfile=0, *oldckptfile=0;
   const char *devnull=0;
   const char *filename=0;
- 
+
   bool savestate = if_to_checkpoint();
   int savestate_freq = checkpoint_freq();
-  
+
   if (savestate && ( (iter+1)%savestate_freq==0) ) {
     ostringstream sstr;
     const char *filename = checkpoint_file();
@@ -125,15 +125,15 @@ SCF::compute_vector(double& eelec, double nucrep)
 
   // reinitialize the extrapolation object
   extrap_->reinitialize(initial_extrap_data());
-  
+
   // create level shifter
   LevelShift *level_shift = new LevelShift(this);
   level_shift->reference();
-  
+
   // calculate the core Hamiltonian
   hcore_ = core_hamiltonian();
 
-  // add density independant contributions to Hcore
+  // add density independent contributions to Hcore
   accumdih_->accum(hcore_);
 
   // set up subclass for vector calculation
@@ -149,7 +149,7 @@ SCF::compute_vector(double& eelec, double nucrep)
                 << "Beginning iterations.  Basis is "
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
-    // form the density from the current vector 
+    // form the density from the current vector
     tim.enter("density");
     delta = new_density();
     tim.exit("density");
@@ -159,7 +159,7 @@ SCF::compute_vector(double& eelec, double nucrep)
       reset_density();
       iter_since_reset = 0;
     }
-      
+
     // form the AO basis fock matrix & add density dependant H
     tim.enter("fock");
     double base_accuracy = delta;
@@ -186,7 +186,7 @@ SCF::compute_vector(double& eelec, double nucrep)
                   << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                               iter+1, eelec+eother+nucrep, delta)
                   << endl;
-    
+
     // check convergence
     if (delta < desired_value_accuracy()
         && accuracy < desired_value_accuracy()
@@ -282,7 +282,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     // diagonalize effective MO fock to get MO vector
     tim.enter("evals");
     RefSCMatrix nvector(oso_dimension(),oso_dimension(),basis_matrixkit());
-  
+
     RefSymmSCMatrix eff = effective_fock();
 
     // level shift effective fock
@@ -314,7 +314,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     if (debug_>0) {
       evals.print("scf eigenvalues");
     }
-    
+
     if (reset_occ_)
       set_occupations(evals);
 
@@ -326,7 +326,7 @@ SCF::compute_vector(double& eelec, double nucrep)
 
     savestate_iter(iter);
   }
- 
+
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
   eigenvalues_.set_actual_accuracy(accuracy<delta?delta:accuracy);
@@ -335,9 +335,9 @@ SCF::compute_vector(double& eelec, double nucrep)
   // first convert evals to something we can deal with easily
   BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "SCF::compute_vector");
-  
+
   CharacterTable ct = molecule()->point_group()->char_table();
-  
+
   int homo_ir=0, lumo_ir=0;
   int homo_mo = -1, lumo_mo = -1;
   double homo=-1e99, lumo=1e99;
@@ -383,7 +383,7 @@ SCF::compute_vector(double& eelec, double nucrep)
   if (homo_mo >= 0) {
     ExEnv::out0() << endl << indent
          << scprintf("HOMO is %5d %3s = %10.6f",
-                     homo_mo+1, 
+                     homo_mo+1,
                      ct.gamma(homo_ir).symbol(),
                      homo)
          << endl;
@@ -391,7 +391,7 @@ SCF::compute_vector(double& eelec, double nucrep)
   if (lumo_mo >= 0) {
     ExEnv::out0() << indent
          << scprintf("LUMO is %5d %3s = %10.6f",
-                     lumo_mo+1, 
+                     lumo_mo+1,
                      ct.gamma(lumo_ir).symbol(),
                      lumo)
          << endl;
@@ -399,7 +399,7 @@ SCF::compute_vector(double& eelec, double nucrep)
 
   // free up evals
   evals = 0;
-  
+
   oso_eigenvectors_ = oso_scf_vector_;
   oso_eigenvectors_.computed() = 1;
   oso_eigenvectors_.set_actual_accuracy(delta);
@@ -439,7 +439,7 @@ class ExtrapErrorOp : public BlockedSCElementOp {
 
     void process(SCMatrixBlockIter& bi) {
       int ir=current_block();
-      
+
       for (bi.reset(); bi; bi++) {
         int i=bi.i();
         int j=bi.j();
@@ -453,10 +453,10 @@ Ref<SCExtrapError>
 SCF::extrap_error()
 {
   RefSymmSCMatrix mofock = effective_fock();
-  
+
   Ref<SCElementOp> op = new ExtrapErrorOp(this);
   mofock.element_op(op);
-  
+
   RefSymmSCMatrix aoerror(so_dimension(), basis_matrixkit());
   aoerror.assign(0.0);
   aoerror.accumulate_transform(so_to_orthog_so().t()*oso_scf_vector_, mofock);

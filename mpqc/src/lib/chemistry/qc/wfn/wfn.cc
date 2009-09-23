@@ -1713,6 +1713,7 @@ Wavefunction::set_orthog_method(const OverlapOrthog::OrthogMethod& omethod)
     orthog_method_ = omethod;
     init_orthog();
     obsolete();
+    purge();
   }
 }
 

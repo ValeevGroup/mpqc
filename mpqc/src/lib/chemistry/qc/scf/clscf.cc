@@ -72,7 +72,7 @@ CLSCF::CLSCF(StateIn& s) :
     basis_matrixkit()->symmmatrix(so_dimension());
   cl_fock_.restore_state(s);
   cl_fock_.result_noupdate().restore(s);
-  
+
   s.get(user_occupations_);
   s.get(tndocc_);
   s.get(nirrep_);
@@ -95,10 +95,10 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
 {
   int i;
   int me = scf_grp_->me();
-  
+
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
-  
+
   // calculate the total nuclear charge
   double Znuc=molecule()->nuclear_charge();
 
@@ -106,7 +106,7 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
   double charge = keyval->doublevalue("total_charge");
 
   int nelectron = (int)((Znuc-charge+1.0e-4));
-  
+
   // now see if ndocc was specified
   if (keyval->exists("ndocc")) {
     tndocc_ = keyval->intvalue("ndocc");
@@ -169,7 +169,7 @@ CLSCF::save_data_state(StateOut& s)
 
   cl_fock_.save_data_state(s);
   cl_fock_.result_noupdate().save(s);
-  
+
   s.put(user_occupations_);
   s.put(tndocc_);
   s.put(nirrep_);
@@ -236,13 +236,13 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     ExEnv::out0() << indent
          << "CLSCF: WARNING: reforming occupation vector from scratch" << endl;
   }
-  
+
   int i,j;
-  
+
   RefDiagSCMatrix evals;
-  
+
   if (ev.null()) {
-    initial_vector(0);
+    initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
   else
@@ -319,7 +319,7 @@ CLSCF::init_vector()
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
-  
+
   cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
@@ -332,8 +332,8 @@ CLSCF::init_vector()
     cl_fock_.result_noupdate().assign(0.0);
   }
 
-  // set up trial vector
-  initial_vector(1);
+  // make sure trial vector is set up
+  initial_vector();
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 
@@ -387,15 +387,15 @@ CLSCF::new_density()
   // add the new density to this to get the density difference.
   cl_dens_diff_.assign(cl_dens_);
   cl_dens_diff_.scale(-1.0);
-  
+
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
 
   cl_dens_diff_.accumulate(cl_dens_);
-  
+
   Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   cl_dens_diff_.element_op(sp.pointer(), cl_dens_diff_);
-  
+
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
@@ -514,12 +514,12 @@ CLSCF::lagrangian()
 
   Ref<SCElementOp> op = new CLLag(this);
   mofock.element_op(op);
-  
+
   // transform MO lagrangian to SO basis
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_, mofock);
-  
+
   // and then from SO to AO
   Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
@@ -533,12 +533,12 @@ CLSCF::gradient_density()
 {
   cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   cl_dens_.assign(0.0);
-  
+
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
-  
+
   Ref<PetiteList> pl = integral()->petite_list(basis());
-  
+
   cl_dens_ = pl->to_AO_basis(cl_dens_);
 
   return cl_dens_;
@@ -573,16 +573,16 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
   double **grads = new double*[nthread];
   Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
-  for (i=0; i < nthread; i++) { 
+  for (i=0; i < nthread; i++) {
     tbis[i] = integral()->electron_repulsion_deriv();
     grads[i] = new double[na3];
     memset(grads[i], 0, sizeof(double)*na3);
   }
-  
+
   Ref<PetiteList> pl = integral()->petite_list();
-  
+
   tim.change("contribution");
-  
+
   // now try to figure out the matrix specialization we're dealing with.
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to a local matrix
@@ -633,7 +633,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
     for (i=0; i < na3; i++)
       tbgrad[i] += grads[0][i];
-    
+
     delete[] grads[0];
     delete[] tblds;
     delete[] grads;
@@ -649,7 +649,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
   for (i=0; i < nthread; i++)
     tbis[i] = 0;
   delete[] tbis;
-  
+
   tim.exit("contribution");
 }
 

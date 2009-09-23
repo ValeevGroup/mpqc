@@ -396,7 +396,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
   RefDiagSCMatrix evals;
 
   if (ev.null()) {
-    initial_vector(0);
+    initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
   else
@@ -528,8 +528,8 @@ HSOSSCF::init_vector()
     op_fock_.result_noupdate().assign(0.0);
   }
 
-  // set up trial vector
-  initial_vector(1);
+  // make sure trial vector is set up
+  initial_vector();
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }

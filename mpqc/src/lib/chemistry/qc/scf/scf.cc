@@ -63,7 +63,6 @@ SCF::SCF(StateIn& s) :
   SavableState(s),
   OneBodyWavefunction(s)
 {
-  need_vec_ = 1;
   compute_guess_ = 0;
 
   s.get(maxiter_,"maxiter");
@@ -115,7 +114,6 @@ SCF::SCF(StateIn& s) :
 
 SCF::SCF(const Ref<KeyVal>& keyval) :
   OneBodyWavefunction(keyval),
-  need_vec_(1),
   compute_guess_(0),
   maxiter_(100),
   miniter_(0),
@@ -413,61 +411,57 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 //////////////////////////////////////////////////////////////////////////////
 
 void
-SCF::initial_vector(int needv)
+SCF::initial_vector()
 {
-  if (need_vec_) {
-    if (always_use_guess_wfn_ || oso_eigenvectors_.result_noupdate().null()) {
-      // if guess_wfn_ is non-null then try to get a guess vector from it.
-      // First check that the same basis is used...if not, then project the
-      // guess vector into the present basis.
-      if (guess_wfn_.nonnull()) {
-        if (basis()->equiv(guess_wfn_->basis())
-            &&orthog_method() == guess_wfn_->orthog_method()
-            &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
-          ExEnv::out0() << indent
-               << "Using guess wavefunction as starting vector" << endl;
+  const bool vector_is_null = oso_eigenvectors_.result_noupdate().null();
+  if (vector_is_null) {
+    // if guess_wfn_ is non-null then try to get a guess vector from it.
+    // First check that the same basis is used...if not, then project the
+    // guess vector into the present basis.
+    if (guess_wfn_.nonnull()) {
+      if (basis()->equiv(guess_wfn_->basis())
+          &&orthog_method() == guess_wfn_->orthog_method()
+          &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
+        ExEnv::out0() << indent
+                      << "Using guess wavefunction as starting vector" << endl;
 
-          // indent output of eigenvectors() call if there is any
-          ExEnv::out0() << incindent << incindent;
-          SCF *g = dynamic_cast<SCF*>(guess_wfn_.pointer());
-          if (!g || compute_guess_) {
-            oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
-            eigenvalues_ = guess_wfn_->eigenvalues().copy();
-          } else {
-            oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
-            eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
-          }
-          ExEnv::out0() << decindent << decindent;
+        // indent output of eigenvectors() call if there is any
+        ExEnv::out0() << incindent << incindent;
+        SCF *g = dynamic_cast<SCF*>(guess_wfn_.pointer());
+        if (!g || compute_guess_) {
+          oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
+          eigenvalues_ = guess_wfn_->eigenvalues().copy();
         } else {
-          ExEnv::out0() << indent
-               << "Projecting guess wavefunction into the present basis set"
-               << endl;
-
-          // indent output of projected_eigenvectors() call if there is any
-          ExEnv::out0() << incindent << incindent;
-          oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
-          eigenvalues_ = projected_eigenvalues(guess_wfn_);
-          ExEnv::out0() << decindent << decindent;
+          oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
+          eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
         }
-
-        // we should only have to do this once, so free up memory used
-        // for the old wavefunction, unless told otherwise
-        if (!keep_guess_wfn_) guess_wfn_=0;
-
-        ExEnv::out0() << endl;
-
+        ExEnv::out0() << decindent << decindent;
       } else {
-        ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
-             << endl;
-        oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
-      }
-    } else {
-      // this is just an old vector
-    }
-  }
+        ExEnv::out0() << indent
+                      << "Projecting guess wavefunction into the present basis set"
+                      << endl;
 
-  need_vec_=needv;
-}
+        // indent output of projected_eigenvectors() call if there is any
+        ExEnv::out0() << incindent << incindent;
+        oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
+        eigenvalues_ = projected_eigenvalues(guess_wfn_);
+        ExEnv::out0() << decindent << decindent;
+      }
+      // we should only have to do this once, so free up memory used
+      // for the old wavefunction, unless told otherwise
+      if (!keep_guess_wfn_) guess_wfn_=0;
+
+      ExEnv::out0() << endl;
+
+    } else {
+      ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
+                    << endl;
+      oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
+    }
+  } else {
+    // if vector exists do nothing
+  }
+} // end of initial_vector()
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -767,15 +761,10 @@ SCF::obsolete()
 {
   OneBodyWavefunction::obsolete();
   if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
-  // do I need different semantics for obsolete? I can envision 2 possible interpretations of "obsolete":
-  // 1) it's "value" is no longer valid
-  // 2) 1 + purge its caches
-  // since SCF does not know the context in which obsolete() was called
-  // (i.e. whether geometry changed, which calls for 1, or orthog method was changed, which calls for 2)
-  // use the strong obsoletion here, i.e. purge the vector as well..
-  obsolete_vector();
-  // vector initialization will be handled when compute() is called or explicitly by the user of the class.
-  //initial_vector(1);
+  // do I need to obsolete the vector also here? Yes, if always_use_guess_wfn_ is set to true.
+  // Otherwise, the user of this class knows the context of the call to be able to call purge(), e.g.
+  // in geometry optimization vector may be reused, but in set_orthog_method it currently can't
+  if (always_use_guess_wfn_) purge();
 }
 
 void
@@ -784,12 +773,9 @@ SCF::obsolete_vector() {
 }
 
 void
-SCF::set_orthog_method(const OverlapOrthog::OrthogMethod& omethod)
-{
-  if (orthog_method() != omethod) {
-    Wavefunction::set_orthog_method(omethod);
-    obsolete_vector();
-  }
+SCF::purge() {
+  Wavefunction::purge();
+  obsolete_vector();
 }
 
 Ref<SCExtrapData>

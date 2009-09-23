@@ -48,7 +48,6 @@ namespace sc {
 field procedure to solve an effective one body problem. */
 class SCF: public OneBodyWavefunction {
   protected:
-    int need_vec_;
     int compute_guess_;
 
     int keep_guess_wfn_;
@@ -113,16 +112,11 @@ class SCF: public OneBodyWavefunction {
     RefSymmSCMatrix get_local_data(const RefSymmSCMatrix&, double*&, Access);
 
     // create the initial scf vector.  either use the eigenvectors in
-    // guess_wfn_, or use a core Hamiltonian guess.  Call this with needv
-    // equal to 0 if you expect to call it twice with the same geometry
-    // (eg. when calling from both set_occupations() and init_vector()).
-    virtual void initial_vector(int needv=1);
+    // guess_wfn_, or use a core Hamiltonian guess.
+    virtual void initial_vector();
 
     /// Obsolete scf vector so that next call to initial_vector() will cause recomputation
     virtual void obsolete_vector();
-
-    // overload Wavefunction::set_orthog_method()
-    void set_orthog_method(const OverlapOrthog::OrthogMethod&);
 
     // given the total number of density and fock matrices, figure out
     // how much memory that will require and then set the local_dens_
@@ -234,6 +228,7 @@ class SCF: public OneBodyWavefunction {
     void symmetry_changed();
 
     void obsolete();
+    void purge();
 
     void print(std::ostream&o=ExEnv::out0()) const;
 

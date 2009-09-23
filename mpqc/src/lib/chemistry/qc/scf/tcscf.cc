@@ -71,19 +71,19 @@ TCSCF::TCSCF(StateIn& s) :
   focka_.result_noupdate() = basis_matrixkit()->symmmatrix(so_dimension());
   focka_.restore_state(s);
   focka_.result_noupdate().restore(s);
-  
+
   fockb_.result_noupdate() = basis_matrixkit()->symmmatrix(so_dimension());
   fockb_.restore_state(s);
   fockb_.result_noupdate().restore(s);
-  
+
   ka_.result_noupdate() = basis_matrixkit()->symmmatrix(so_dimension());
   ka_.restore_state(s);
   ka_.result_noupdate().restore(s);
-  
+
   kb_.result_noupdate() = basis_matrixkit()->symmmatrix(so_dimension());
   kb_.restore_state(s);
   kb_.result_noupdate().restore(s);
-  
+
   s.get(user_occupations_);
   s.get(tndocc_);
   s.get(nirrep_);
@@ -108,16 +108,16 @@ TCSCF::TCSCF(const Ref<KeyVal>& keyval) :
 {
   focka_.compute()=0;
   focka_.computed()=0;
-  
+
   fockb_.compute()=0;
   fockb_.computed()=0;
-  
+
   ka_.compute()=0;
   ka_.computed()=0;
-  
+
   kb_.compute()=0;
   kb_.computed()=0;
-  
+
   // calculate the total nuclear charge
   double Znuc=molecule()->nuclear_charge();
 
@@ -152,7 +152,7 @@ TCSCF::TCSCF(const Ref<KeyVal>& keyval) :
 
   occa_=occb_=1.0;
   ci1_=ci2_ = 0.5*sqrt(2.0);
-  
+
   if (keyval->exists("ci1")) {
     ci1_ = keyval->doublevalue("ci1");
     ci2_ = sqrt(1.0 - ci1_*ci1_);
@@ -232,19 +232,19 @@ void
 TCSCF::save_data_state(StateOut& s)
 {
   SCF::save_data_state(s);
-  
+
   focka_.save_data_state(s);
   focka_.result_noupdate().save(s);
-  
+
   fockb_.save_data_state(s);
   fockb_.result_noupdate().save(s);
-  
+
   ka_.save_data_state(s);
   ka_.result_noupdate().save(s);
-  
+
   kb_.save_data_state(s);
   kb_.result_noupdate().save(s);
-  
+
   s.put(user_occupations_);
   s.put(tndocc_);
   s.put(nirrep_);
@@ -326,7 +326,7 @@ void
 TCSCF::print(ostream&o) const
 {
   int i;
-  
+
   SCF::print(o);
 
   o << indent << "TCSCF Parameters:\n" << incindent
@@ -352,13 +352,13 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
   if (user_occupations_)
     return;
-  
+
   int i,j;
-  
+
   RefDiagSCMatrix evals;
-  
+
   if (ev.null()) {
-    initial_vector(0);
+    initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
   else
@@ -367,7 +367,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   // first convert evals to something we can deal with easily
   BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "TCSCF::set_occupations");
-  
+
   double **vals = new double*[nirrep_];
   for (i=0; i < nirrep_; i++) {
     int nf=oso_dimension()->blocks()->size(i);
@@ -406,7 +406,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   }
 
   int osa=-1, osb=-1;
-  
+
   for (i=0; i < 2; i++) {
     // find lowest eigenvalue
     int lir=0,ln=0;
@@ -442,7 +442,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
      osa=osb;
      osb=tmp;
    }
-  
+
   // get rid of vals
   for (i=0; i < nirrep_; i++)
     if (vals[i])
@@ -475,7 +475,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
     }
 
     memcpy(ndocc_,newdocc,sizeof(int)*nirrep_);
-    
+
     delete[] newdocc;
   }
 }
@@ -505,19 +505,19 @@ TCSCF::init_vector()
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
-  
+
   cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
   op_densa_ = hcore_.clone();
   op_densa_.assign(0.0);
-  
+
   op_densa_diff_ = hcore_.clone();
   op_densa_diff_.assign(0.0);
 
   op_densb_ = hcore_.clone();
   op_densb_.assign(0.0);
-  
+
   op_densb_diff_ = hcore_.clone();
   op_densb_diff_.assign(0.0);
 
@@ -546,8 +546,8 @@ TCSCF::init_vector()
     kb_.result_noupdate().assign(0.0);
   }
 
-  // set up trial vector
-  initial_vector(1);
+  // make sure trial vector is set up
+  initial_vector();
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
@@ -556,7 +556,7 @@ void
 TCSCF::done_vector()
 {
   done_threads();
-  
+
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
   op_densa_ = 0;
@@ -583,17 +583,17 @@ TCSCF::density()
 
     so_density(dens, 2.0);
     dens.scale(2.0);
-  
+
     so_density(dens1, occa_);
     dens1.scale(occa_);
     dens.accumulate(dens1);
-  
+
     so_density(dens1, occb_);
     dens1.scale(occb_);
     dens.accumulate(dens1);
-    
+
     dens1=0;
-    
+
     density_ = dens;
     // only flag the density as computed if the calc is converged
     if (!value_needed()) density_.computed() = 1;
@@ -634,7 +634,7 @@ void
 TCSCF::reset_density()
 {
   cl_dens_diff_.assign(cl_dens_);
-  
+
   ao_gmata_.assign(0.0);
   op_densa_diff_.assign(op_densa_);
 
@@ -677,10 +677,10 @@ TCSCF::new_density()
   RefSymmSCMatrix del = cl_dens_diff_.copy();
   del.accumulate(op_densa_diff_);
   del.accumulate(op_densb_diff_);
-  
+
   Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   del.element_op(sp.pointer(), del);
-  
+
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
@@ -723,7 +723,7 @@ TCSCF::scf_energy()
   eop->reset();
   t.element_op(op, op_densa_);
   double h12 = eop->result();
-  
+
   op=0;
   eop->dereference();
   delete eop;
@@ -734,7 +734,7 @@ TCSCF::scf_energy()
   RefSymmSCMatrix h = lkit->symmmatrix(l2);
   RefSCMatrix hv = lkit->matrix(l2,l2);
   RefDiagSCMatrix hl = lkit->diagmatrix(l2);
-  
+
   h.set_element(0,0,h11);
   h.set_element(1,1,h22);
   h.set_element(1,0,h12);
@@ -747,12 +747,12 @@ TCSCF::scf_energy()
   ExEnv::out0() << indent
                << scprintf("c1 = %10.7f c2 = %10.7f", ci1_, ci2_)
                << endl;
-  
+
   occa_ = 2*ci1_*ci1_;
   occb_ = 2*ci2_*ci2_;
-  
+
   double eelec = 0.5*occa_*h11 + 0.5*occb_*h22 + 2.0*c1c2*h12;
-  
+
   return eelec;
 }
 
@@ -764,10 +764,10 @@ TCSCF::extrap_data()
   m[1] = fockb_.result_noupdate();
   m[2] = ka_.result_noupdate();
   m[3] = kb_.result_noupdate();
-  
+
   Ref<SCExtrapData> data = new SymmSCMatrixNSCExtrapData(4, m);
   delete[] m;
-  
+
   return data;
 }
 
@@ -803,7 +803,7 @@ TCSCF::effective_fock()
                             SCMatrix::TransposeTransform);
   mokb.accumulate_transform(vec, fock(3),
                             SCMatrix::TransposeTransform);
-  
+
   mofocka.scale(ci1_*ci1_);
   mofockb.scale(ci2_*ci2_);
   moka.scale(ci1_*ci2_);
@@ -817,7 +817,7 @@ TCSCF::effective_fock()
   BlockedSymmSCMatrix *Fb = dynamic_cast<BlockedSymmSCMatrix*>(mofockb.pointer());
   BlockedSymmSCMatrix *Ka = dynamic_cast<BlockedSymmSCMatrix*>(moka.pointer());
   BlockedSymmSCMatrix *Kb = dynamic_cast<BlockedSymmSCMatrix*>(mokb.pointer());
-  
+
   double scalea = (fabs(ci1_) < fabs(ci2_)) ? 1.0/(ci1_*ci1_ + 0.05) : 1.0;
   double scaleb = (fabs(ci2_) < fabs(ci1_)) ? 1.0/(ci2_*ci2_ + 0.05) : 1.0;
 
@@ -831,7 +831,7 @@ TCSCF::effective_fock()
       int i,j;
 
       i=ndocc_[b];
-      for (j=0; j < ndocc_[b]; j++) 
+      for (j=0; j < ndocc_[b]; j++)
         f->set_element(i,j,
                        scaleb*(fb->get_element(i,j)-kb->get_element(i,j)));
 
@@ -839,7 +839,7 @@ TCSCF::effective_fock()
       for (i=ndocc_[b]+1; i < f->n(); i++)
         f->set_element(i,j,
                        scalea*(fa->get_element(i,j)+kb->get_element(i,j)));
-      
+
     } else if (b==osb_) {
       RefSymmSCMatrix f = F->block(b);
       RefSymmSCMatrix fa = Fa->block(b);
@@ -849,7 +849,7 @@ TCSCF::effective_fock()
       int i,j;
 
       i=ndocc_[b];
-      for (j=0; j < ndocc_[b]; j++) 
+      for (j=0; j < ndocc_[b]; j++)
         f->set_element(i,j,
                        scalea*(fa->get_element(i,j)-ka->get_element(i,j)));
 
@@ -927,14 +927,14 @@ TCSCF::lagrangian()
 
   dynamic_cast<BlockedSymmSCMatrix*>(moka.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(mokb.pointer())->block(osa_)->assign(0.0);
-  
+
   moka.accumulate(mokb);
   mokb=0;
 
   // FC = c1^2*Fa + c2^2*Fb
   mofocka.accumulate(mofockb);
   mofockb=0;
-  
+
   Ref<SCElementOp2> op = new MOLagrangian(this);
   mofocka.element_op(op, moka);
   moka=0;
@@ -944,7 +944,7 @@ TCSCF::lagrangian()
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(vec, mofocka);
-  
+
   // and then from SO to AO
   Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
@@ -960,21 +960,21 @@ TCSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   op_densa_ = cl_dens_.clone();
   op_densb_ = cl_dens_.clone();
-  
+
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
-  
+
   so_density(op_densa_, occa_);
   op_densa_.scale(occa_);
-  
+
   so_density(op_densb_, occb_);
   op_densb_.scale(occb_);
-  
+
   dynamic_cast<BlockedSymmSCMatrix*>(op_densa_.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(op_densb_.pointer())->block(osa_)->assign(0.0);
-  
+
   Ref<PetiteList> pl = integral()->petite_list(basis());
-  
+
   cl_dens_ = pl->to_AO_basis(cl_dens_);
   op_densa_ = pl->to_AO_basis(op_densa_);
   op_densb_ = pl->to_AO_basis(op_densb_);
@@ -985,7 +985,7 @@ TCSCF::gradient_density()
 
   op_densa_.scale(2.0/occa_);
   op_densb_.scale(2.0/occb_);
-  
+
   return tdens;
 }
 

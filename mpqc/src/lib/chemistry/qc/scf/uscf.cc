@@ -79,7 +79,6 @@ UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   focka_(this),
   fockb_(this)
 {
-  need_vec_ = 1;
   compute_guess_ = 0;
 
   oso_eigenvectors_beta_.result_noupdate() =
@@ -417,71 +416,69 @@ UnrestrictedSCF::print(ostream&o) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
-UnrestrictedSCF::initial_vector(int needv)
+UnrestrictedSCF::initial_vector()
 {
-  if (need_vec_) {
-    if (always_use_guess_wfn_ || oso_eigenvectors_.result_noupdate().null()) {
-      // if guess_wfn_ is non-null then try to get a guess vector from it.
-      // First check that the same basis is used...if not, then project the
-      // guess vector into the present basis.
-      // right now the check is crude...there should be an equiv member in
-      // GaussianBasisSet
-      if (guess_wfn_.nonnull()) {
-        if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
-          ExEnv::out0() << indent
-               << "Using guess wavefunction as starting vector" << endl;
+  const bool vector_is_null = oso_eigenvectors_.result_noupdate().null();
+  if (vector_is_null) {
+    // if guess_wfn_ is non-null then try to get a guess vector from it.
+    // First check that the same basis is used...if not, then project the
+    // guess vector into the present basis.
+    // right now the check is crude...there should be an equiv member in
+    // GaussianBasisSet
+    if (guess_wfn_.nonnull()) {
+      if (basis()->equiv(guess_wfn_->basis())
+          &&orthog_method() == guess_wfn_->orthog_method()
+          &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
+        ExEnv::out0() << indent
+                      << "Using guess wavefunction as starting vector" << endl;
 
-          // indent output of eigenvectors() call if there is any
-          ExEnv::out0() << incindent << incindent;
-          UnrestrictedSCF *ug =
-            dynamic_cast<UnrestrictedSCF*>(guess_wfn_.pointer());
-          if (!ug || compute_guess_) {
-            oso_eigenvectors_ = guess_wfn_->oso_alpha_eigenvectors().copy();
-            eigenvalues_ = guess_wfn_->alpha_eigenvalues().copy();
-            oso_eigenvectors_beta_ = guess_wfn_->oso_beta_eigenvectors().copy();
-            eigenvalues_beta_ = guess_wfn_->beta_eigenvalues().copy();
-          } else if (ug) {
-            oso_eigenvectors_ = ug->oso_eigenvectors_.result_noupdate().copy();
-            eigenvalues_ = ug->eigenvalues_.result_noupdate().copy();
-            oso_eigenvectors_beta_
-              = ug->oso_eigenvectors_beta_.result_noupdate().copy();
-            eigenvalues_beta_ = ug->eigenvalues_beta_.result_noupdate().copy();
-          }
-          ExEnv::out0() << decindent << decindent;
-        } else {
-          ExEnv::out0() << indent
-               << "Projecting guess wavefunction into the present basis set"
-               << endl;
-
-          // indent output of projected_eigenvectors() call if there is any
-          ExEnv::out0() << incindent << incindent;
-          oso_eigenvectors_ = projected_eigenvectors(guess_wfn_, 1);
-          eigenvalues_ = projected_eigenvalues(guess_wfn_, 1);
-          oso_eigenvectors_beta_ = projected_eigenvectors(guess_wfn_, 0);
-          eigenvalues_beta_ = projected_eigenvalues(guess_wfn_, 0);
-          ExEnv::out0() << decindent << decindent;
+        // indent output of eigenvectors() call if there is any
+        ExEnv::out0() << incindent << incindent;
+        UnrestrictedSCF *ug =
+          dynamic_cast<UnrestrictedSCF*>(guess_wfn_.pointer());
+        if (!ug || compute_guess_) {
+          oso_eigenvectors_ = guess_wfn_->oso_alpha_eigenvectors().copy();
+          eigenvalues_ = guess_wfn_->alpha_eigenvalues().copy();
+          oso_eigenvectors_beta_ = guess_wfn_->oso_beta_eigenvectors().copy();
+          eigenvalues_beta_ = guess_wfn_->beta_eigenvalues().copy();
+        } else if (ug) {
+          oso_eigenvectors_ = ug->oso_eigenvectors_.result_noupdate().copy();
+          eigenvalues_ = ug->eigenvalues_.result_noupdate().copy();
+          oso_eigenvectors_beta_ = ug->oso_eigenvectors_beta_.result_noupdate().copy();
+          eigenvalues_beta_ = ug->eigenvalues_beta_.result_noupdate().copy();
         }
-
-        // we should only have to do this once, so free up memory used
-        // for the old wavefunction, unless told otherwise
-        if (!keep_guess_wfn_) guess_wfn_=0;
-
-        ExEnv::out0() << endl;
-
+        ExEnv::out0() << decindent << decindent;
       } else {
-        ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
-             << endl;
-        oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
-        oso_eigenvectors_beta_ = oso_eigenvectors_.result_noupdate().copy();
-        eigenvalues_beta_ = eigenvalues_.result_noupdate().copy();
-      }
-    } else {
-      // this is just an old vector
-    }
-  }
+        ExEnv::out0() << indent
+                      << "Projecting guess wavefunction into the present basis set"
+                      << endl;
 
-  need_vec_=needv;
-}
+        // indent output of projected_eigenvectors() call if there is any
+        ExEnv::out0() << incindent << incindent;
+        oso_eigenvectors_ = projected_eigenvectors(guess_wfn_, 1);
+        eigenvalues_ = projected_eigenvalues(guess_wfn_, 1);
+        oso_eigenvectors_beta_ = projected_eigenvectors(guess_wfn_, 0);
+        eigenvalues_beta_ = projected_eigenvalues(guess_wfn_, 0);
+        ExEnv::out0() << decindent << decindent;
+      }
+
+      // we should only have to do this once, so free up memory used
+      // for the old wavefunction, unless told otherwise
+      if (!keep_guess_wfn_) guess_wfn_=0;
+
+      ExEnv::out0() << endl;
+
+    } else {
+      ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
+                    << endl;
+      oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
+      oso_eigenvectors_beta_ = oso_eigenvectors_.result_noupdate().copy();
+      eigenvalues_beta_ = eigenvalues_.result_noupdate().copy();
+    }
+  } else {
+    // if vector exists do nothing
+  }
+} // end of initial_vector()
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -511,7 +508,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   RefDiagSCMatrix evalsa, evalsb;
 
   if (eva.null()) {
-    initial_vector(0);
+    initial_vector();
     evalsa = eigenvalues_.result_noupdate();
     evalsb = eigenvalues_beta_.result_noupdate();
   }
@@ -640,8 +637,8 @@ UnrestrictedSCF::init_vector()
     fockb_.result_noupdate().assign(0.0);
   }
 
-  // set up trial vector
-  initial_vector(1);
+  // make sure trial vector is set up
+  initial_vector();
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
   oso_scf_vector_beta_ = oso_eigenvectors_beta_.result_noupdate();

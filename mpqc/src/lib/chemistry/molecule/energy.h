@@ -186,6 +186,12 @@ class MolecularEnergy: public Function {
 
     Ref<NonlinearTransform> change_coordinates();
 
+    /** This function purges any caches of data in MolecularEnergy. It is useful with MolecularEnergy objects
+        that keep state when obsolete() is called (for example, it makes sense for SCF to keep its old eigenvector
+        and reuse it as a guess when geometry changes). The default implementation does nothing
+        and must be overloaded in classes which need it */
+    virtual void purge();
+
     /// returns the electric field vector
     const RefSCVector& electric_field() const { return efield_; }
 
@@ -198,7 +204,7 @@ class MolecularEnergy: public Function {
     virtual void print(std::ostream& = ExEnv::out0()) const;
 };
 
-
+/// linear combination of MolecularEnergy objects
 class SumMolecularEnergy: public MolecularEnergy {
   protected:
     int n_;
@@ -217,6 +223,8 @@ class SumMolecularEnergy: public MolecularEnergy {
     int hessian_implemented() const;
 
     void set_x(const RefSCVector&);
+
+    void purge();
 };
 
 

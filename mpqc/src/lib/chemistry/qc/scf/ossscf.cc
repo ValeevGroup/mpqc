@@ -69,17 +69,17 @@ OSSSCF::OSSSCF(StateIn& s) :
     basis_matrixkit()->symmmatrix(so_dimension());
   cl_fock_.restore_state(s);
   cl_fock_.result_noupdate().restore(s);
-  
+
   op_focka_.result_noupdate() =
     basis_matrixkit()->symmmatrix(so_dimension());
   op_focka_.restore_state(s);
   op_focka_.result_noupdate().restore(s);
-  
+
   op_fockb_.result_noupdate() =
     basis_matrixkit()->symmmatrix(so_dimension());
   op_fockb_.restore_state(s);
   op_fockb_.result_noupdate().restore(s);
-  
+
   s.get(user_occupations_);
   s.get(tndocc_);
   s.get(nirrep_);
@@ -99,13 +99,13 @@ OSSSCF::OSSSCF(const Ref<KeyVal>& keyval) :
 {
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
-  
+
   op_focka_.compute()=0;
   op_focka_.computed()=0;
-  
+
   op_fockb_.compute()=0;
   op_fockb_.computed()=0;
-  
+
   // calculate the total nuclear charge
   double Znuc=molecule()->nuclear_charge();
 
@@ -140,7 +140,7 @@ OSSSCF::OSSSCF(const Ref<KeyVal>& keyval) :
 
   osa_=-1;
   osb_=-1;
-  
+
   ndocc_ = read_occ(keyval, "docc", nirrep_);
   int *nsocc = read_occ(keyval, "socc", nirrep_);
   if (ndocc_ && nsocc) {
@@ -203,16 +203,16 @@ void
 OSSSCF::save_data_state(StateOut& s)
 {
   SCF::save_data_state(s);
-  
+
   cl_fock_.save_data_state(s);
   cl_fock_.result_noupdate().save(s);
-  
+
   op_focka_.save_data_state(s);
   op_focka_.result_noupdate().save(s);
-  
+
   op_fockb_.save_data_state(s);
   op_fockb_.result_noupdate().save(s);
-  
+
   s.put(user_occupations_);
   s.put(tndocc_);
   s.put(nirrep_);
@@ -281,7 +281,7 @@ void
 OSSSCF::print(ostream&o) const
 {
   int i;
-  
+
   SCF::print(o);
   o << indent << "OSSSCF Parameters:\n" << incindent
     << indent << "ndocc = " << tndocc_ << endl
@@ -303,13 +303,13 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
   if (user_occupations_)
     return;
-  
+
   int i,j;
-  
+
   RefDiagSCMatrix evals;
-  
+
   if (ev.null()) {
-    initial_vector(0);
+    initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
   else
@@ -318,7 +318,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
   // first convert evals to something we can deal with easily
   BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "OSSSCF::set_occupations");
-  
+
   double **vals = new double*[nirrep_];
   for (i=0; i < nirrep_; i++) {
     int nf=oso_dimension()->blocks()->size(i);
@@ -357,7 +357,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
   }
 
   int osa=-1, osb=-1;
-  
+
   for (i=0; i < 2; i++) {
     // find lowest eigenvalue
     int lir=0,ln=0;
@@ -421,7 +421,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
     }
 
     memcpy(ndocc_,newdocc,sizeof(int)*nirrep_);
-    
+
     delete[] newdocc;
   }
 }
@@ -450,19 +450,19 @@ OSSSCF::init_vector()
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
-  
+
   cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
   op_densa_ = hcore_.clone();
   op_densa_.assign(0.0);
-  
+
   op_densa_diff_ = hcore_.clone();
   op_densa_diff_.assign(0.0);
 
   op_densb_ = hcore_.clone();
   op_densb_.assign(0.0);
-  
+
   op_densb_diff_ = hcore_.clone();
   op_densb_diff_.assign(0.0);
 
@@ -486,8 +486,8 @@ OSSSCF::init_vector()
     op_fockb_.result_noupdate().assign(0.0);
   }
 
-  // set up trial vector
-  initial_vector(1);
+  // make sure trial vector is set up
+  initial_vector();
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
@@ -496,7 +496,7 @@ void
 OSSSCF::done_vector()
 {
   done_threads();
-  
+
   cl_gmat_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
@@ -522,7 +522,7 @@ OSSSCF::density()
     so_density(dens1, 1.0);
     dens.accumulate(dens1);
     dens1=0;
-    
+
     density_ = dens;
     // only flag the density as computed if the calc is converged
     if (!value_needed()) density_.computed() = 1;
@@ -600,14 +600,14 @@ OSSSCF::new_density()
   op_densb_.assign(op_densa_);
   dynamic_cast<BlockedSymmSCMatrix*>(op_densa_.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(op_densb_.pointer())->block(osa_)->assign(0.0);
-  
+
   cl_dens_diff_.accumulate(cl_dens_);
   op_densa_diff_.accumulate(op_densa_);
   op_densb_diff_.accumulate(op_densb_);
 
   Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   cl_dens_diff_.element_op(sp.pointer(), cl_dens_diff_);
-  
+
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
@@ -623,18 +623,18 @@ OSSSCF::scf_energy()
   RefSymmSCMatrix ga = op_focka_.result_noupdate().copy();
   ga.scale(-1.0);
   ga.accumulate(cl_fock_.result_noupdate());
-  
+
   RefSymmSCMatrix gb = op_fockb_.result_noupdate().copy();
   gb.scale(-1.0);
   gb.accumulate(cl_fock_.result_noupdate());
-  
+
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
   Ref<SCElementOp2> op = eop;
   t.element_op(op, cl_dens_);
 
   double cl_e = eop->result();
-  
+
   eop->reset();
   ga.element_op(op, op_densa_);
   double opa_e = eop->result();
@@ -651,7 +651,7 @@ OSSSCF::scf_energy()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-    
+
 Ref<SCExtrapData>
 OSSSCF::extrap_data()
 {
@@ -659,10 +659,10 @@ OSSSCF::extrap_data()
   m[0] = cl_fock_.result_noupdate();
   m[1] = op_focka_.result_noupdate();
   m[2] = op_fockb_.result_noupdate();
-  
+
   Ref<SCExtrapData> data = new SymmSCMatrixNSCExtrapData(3, m);
   delete[] m;
-  
+
   return data;
 }
 
@@ -676,7 +676,7 @@ OSSSCF::effective_fock()
 
   RefSymmSCMatrix mofocka(oso_dimension(), basis_matrixkit());
   mofocka.assign(0.0);
-  
+
   RefSymmSCMatrix mofockb(oso_dimension(), basis_matrixkit());
   mofockb.assign(0.0);
 
@@ -694,13 +694,13 @@ OSSSCF::effective_fock()
                                SCMatrix::TransposeTransform);
   mofockb.accumulate_transform(vec, fock(2),
                                SCMatrix::TransposeTransform);
-  
+
   dynamic_cast<BlockedSymmSCMatrix*>(mofocka.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(mofockb.pointer())->block(osa_)->assign(0.0);
-  
+
   mofocka.accumulate(mofockb);
   mofockb=0;
-  
+
   Ref<SCElementOp2> op = new GSGeneralEffH(this);
   mofock.element_op(op, mofocka);
 
@@ -750,20 +750,20 @@ OSSSCF::lagrangian()
   mofocka.assign(0.0);
   mofocka.accumulate_transform(vec, op_focka_.result_noupdate(),
                                SCMatrix::TransposeTransform);
-  
+
   RefSymmSCMatrix mofockb(oso_dimension(), basis_matrixkit());
   mofockb.assign(0.0);
   mofockb.accumulate_transform(vec, op_fockb_.result_noupdate(),
                                SCMatrix::TransposeTransform);
-  
+
   dynamic_cast<BlockedSymmSCMatrix*>(mofocka.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(mofockb.pointer())->block(osa_)->assign(0.0);
-  
+
   mofocka.accumulate(mofockb);
   mofockb=0;
-  
+
   mofock.scale(2.0);
-  
+
   Ref<SCElementOp2> op = new MOLagrangian(this);
   mofock.element_op(op, mofocka);
   mofocka=0;
@@ -772,7 +772,7 @@ OSSSCF::lagrangian()
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(vec, mofock);
-  
+
   // and then from SO to AO
   Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
@@ -788,18 +788,18 @@ OSSSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   op_densa_ = cl_dens_.clone();
   op_densb_ = cl_dens_.clone();
-  
+
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
-  
+
   so_density(op_densa_, 1.0);
   op_densb_.assign(op_densa_);
 
   dynamic_cast<BlockedSymmSCMatrix*>(op_densa_.pointer())->block(osb_)->assign(0.0);
   dynamic_cast<BlockedSymmSCMatrix*>(op_densb_.pointer())->block(osa_)->assign(0.0);
-  
+
   Ref<PetiteList> pl = integral()->petite_list(basis());
-  
+
   cl_dens_ = pl->to_AO_basis(cl_dens_);
   op_densa_ = pl->to_AO_basis(op_densa_);
   op_densb_ = pl->to_AO_basis(op_densb_);
@@ -810,7 +810,7 @@ OSSSCF::gradient_density()
 
   op_densa_.scale(2.0);
   op_densb_.scale(2.0);
-  
+
   return tdens;
 }
 

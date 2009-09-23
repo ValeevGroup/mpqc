@@ -494,6 +494,11 @@ MolecularEnergy::change_coordinates()
 }
 
 void
+MolecularEnergy::purge()
+{
+}
+
+void
 MolecularEnergy::print_natom_3(const RefSCVector &v,
                                const char *title, ostream&o) const
 {
@@ -680,6 +685,15 @@ SumMolecularEnergy::set_x(const RefSCVector&v)
   for (int i=0; i<n_; i++) {
       mole_[i]->set_x(v);
     }
+}
+
+void
+SumMolecularEnergy::purge()
+{
+  MolecularEnergy::purge();
+  for (int i=0; i<n_; i++) {
+    mole_[i]->purge();
+  }
 }
 
 void

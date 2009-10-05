@@ -393,7 +393,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
    throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);
   }
 
-  if (perturbative_ == "(T)"){
+  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]"){
     const int p_maxtilesize = static_cast<int>(::pow(memory / 2.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)T") {
@@ -436,7 +436,7 @@ void CCR12_Info::needs(){
     throw ProgrammingError("CCR12_Info::needs", __FILE__, __LINE__);
   }
 
-  if (perturbative_ == "(2)R12") {
+  if (perturbative_ == "(2)R12" || perturbative_ == "(T)R12[DT]") {
     need_w1_ = true;
   }
 

@@ -51,6 +51,7 @@
 #include <chemistry/qc/ccr12/ccsd_2q_right.h>
 #include <chemistry/qc/ccr12/ccsd_sub_r12_left.h>
 #include <chemistry/qc/ccr12/ccsd_sub_r12_right.h>
+#include <chemistry/qc/ccr12/ccr12_triples.h>
 
 using namespace std;
 using namespace sc;
@@ -157,7 +158,7 @@ void CCSD::compute(){
   delete ccsd_e;
 
 
-  if (perturbative_ == "(T)") {
+  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]") {
     timer_->enter("(T) correction");
     iter_start = timer_->get_wall_time();
 
@@ -172,6 +173,20 @@ void CCSD::compute(){
     print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
     timer_->exit("(T) correction");
     energy += ccsd_pt_correction;
+  }
+
+  // the CCSD(T)_\mathrm{R12[DT]} correction comes here...
+  if (perturbative_ == "(T)R12[DT]") {
+    timer_->enter("R12 triples correction");
+    iter_start = timer_->get_wall_time();
+
+    Ref<CCR12_Triples> triples = new CCR12_Triples(info()); 
+    const double triples_correction = triples->compute();
+    print_correction(triples_correction, energy, "R12 triples");
+
+    print_timing(timer_->get_wall_time() - iter_start, "R12 triples correction");
+    timer_->exit("R12 triples correction");
+    energy += triples_correction;
   }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

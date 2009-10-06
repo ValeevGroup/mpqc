@@ -81,14 +81,12 @@ for (long h4b=0L;h4b<z->noab();++h4b) {
             long dima0=dim_common*dima0_sort; 
             long dima1_sort=z->get_range(h4b)*z->get_range(h5b)*z->get_range(h2b)*z->get_range(h3b); 
             long dima1=dim_common*dima1_sort; 
-            if (dima0>0L && dima1>0L) { 
-             z->t1()->get_block(h1b_0+z->noab()*(p6b_0-z->noab()),k_a0); 
-             z->sort_indices2(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(h1b),1,0,+1.0); 
-             z->vd2()->get_block(h3b_1+(z->nab())*(h2b_1+(z->nab())*(h5b_1+z->noab()*(h4b_1))),k_a1); 
-             z->sort_indices4(k_a1,k_a1_sort,z->get_range(h4b),z->get_range(h5b),z->get_range(h2b),z->get_range(h3b),3,2,1,0,+1.0); 
-             double factor=1.0; 
-             z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
-            } 
+            z->t1()->get_block(h1b_0+z->noab()*(p6b_0-z->noab()),k_a0); 
+            z->sort_indices2(k_a0,k_a0_sort,z->get_range(p6b),z->get_range(h1b),1,0,+1.0); 
+            z->vd2()->get_block(h3b_1+(z->nab())*(h2b_1+(z->nab())*(h5b_1+z->noab()*(h4b_1))),k_a1); 
+            z->sort_indices4(k_a1,k_a1_sort,z->get_range(h4b),z->get_range(h5b),z->get_range(h2b),z->get_range(h3b),3,2,1,0,+1.0); 
+            double factor=1.0; 
+            z->smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
            } 
           } 
           if (h2b>=h1b) { 

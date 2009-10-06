@@ -48,12 +48,22 @@ double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2
 
  long count = 0L;
 
- const size_t maxsize1 = z->maxtilesize();
- const size_t maxsize3 = maxsize1 * maxsize1 * maxsize1;
- const size_t size_alloc = maxsize3 * maxsize3;
+ const size_t maxtile = z->maxtilesize();
+ const size_t mem_singles = maxtile * maxtile;
+ const size_t mem_doubles = mem_singles * mem_singles;
+ const size_t mem_triples = mem_singles * mem_doubles;
 
- double* doubles = z->mem()->malloc_local_double(size_alloc);
- double* singles = z->mem()->malloc_local_double(size_alloc);
+ double* k_a0     = z->mem()->malloc_local_double(mem_doubles); 
+ double* k_a0_sort= z->mem()->malloc_local_double(mem_doubles); 
+ double* k_a1     = z->mem()->malloc_local_double(mem_doubles); 
+ double* k_a1_sort= z->mem()->malloc_local_double(mem_doubles); 
+ double* k_c_sort = z->mem()->malloc_local_double(mem_triples); 
+
+ double* doubles = z->mem()->malloc_local_double(mem_triples);
+ double* singles = z->mem()->malloc_local_double(mem_triples);
+
+ double* work_doubles[6] = {doubles, k_a0, k_a0_sort, k_a1, k_a1_sort, k_c_sort};
+ double* work_singles[6] = {singles, k_a0, k_a0_sort, k_a1, k_a1_sort, k_c_sort};
 
  for (long t_p4b = z->noab(); t_p4b<z->noab() + z->nvab(); ++t_p4b){
   for (long t_p5b = t_p4b;     t_p5b<z->noab() + z->nvab(); ++t_p5b){
@@ -62,7 +72,8 @@ double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2
     for (long t_h1b = 0L;    t_h1b<z->noab(); ++t_h1b){
      for (long t_h2b = t_h1b; t_h2b<z->noab(); ++t_h2b){
       for (long t_h3b  =t_h2b; t_h3b<z->noab(); ++t_h3b){
-// this will be updated
+
+       // Naive way of parallelization; will be updated
        if (count%z->mem()->n() == z->mem()->me()){ 
 
         if(!z->restricted() ||  z->get_spin(t_p4b) + z->get_spin(t_p5b) + z->get_spin(t_p6b)
@@ -76,8 +87,8 @@ double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2
          std::fill(doubles, doubles + size, 0.0);
          std::fill(singles, singles + size, 0.0);
 
-         eval_left->compute_amp(singles, t_p4b, t_p5b, t_p6b, t_h1b, t_h2b, t_h3b, 2L);  
-         eval_right->compute_amp(doubles, t_p4b, t_p5b, t_p6b, t_h1b, t_h2b, t_h3b, 2L);  
+         eval_left->compute_amp(work_singles, t_p4b, t_p5b, t_p6b, t_h1b, t_h2b, t_h3b, 2L);  
+         eval_right->compute_amp(work_doubles, t_p4b, t_p5b, t_p6b, t_h1b, t_h2b, t_h3b, 2L);  
 
          double factor = 1.0;
          if (z->restricted()) factor *= 2.0; 
@@ -125,6 +136,11 @@ double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2
  }
  z->mem()->free_local_double(singles);
  z->mem()->free_local_double(doubles);
+ z->mem()->free_local_double(k_c_sort); 
+ z->mem()->free_local_double(k_a0); 
+ z->mem()->free_local_double(k_a0_sort); 
+ z->mem()->free_local_double(k_a1); 
+ z->mem()->free_local_double(k_a1_sort); 
 
  z->mem()->sync();
  Ref<MessageGrp> msg_=MessageGrp::get_default_messagegrp();

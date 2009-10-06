@@ -46,6 +46,8 @@ class Parenthesis2tNum : public RefCount {
     
    ~Parenthesis2tNum();
 
+   // I need to replace the old ones... 
+   virtual void compute_amp(double**,const long,const long,const long,const long,const long,const long,const long) {};
    virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long);
    virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long,const long,const long);
 

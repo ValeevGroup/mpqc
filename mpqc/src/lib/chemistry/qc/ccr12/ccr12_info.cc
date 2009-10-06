@@ -72,6 +72,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   determine_tilesizes();
+  maxtilesize_ = *max_element(range_.begin(), range_.end());
   if (mem_->me() == 0) print_tile_info();
 
   irrep_e_ = 0L;
@@ -395,24 +396,19 @@ void CCR12_Info::determine_maxtilesize(double memory){
    throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);
   }
 
+  // Perturbative correction needs an additional memory area. 
+  // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
   if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]"){
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 2.0, 1.0 / 6.0));
+    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)T") {
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 3.0, 1.0 / 6.0));
+    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)TQ") {
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 3.0, 1.0 / 8.0));
+    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 8.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)R12") {
     /// nothing happens
-  }
-
-  // In the naive implementation of CCSD(T)_R12[DT], we need to store 6-index quantity...
-  // This will be lifted in future implementation.
-  if (perturbative_ == "(T)R12[DT]"){
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 3.0, 1.0 / 6.0));
-    if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   }
 
 }

@@ -31,25 +31,21 @@
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/parenthesis2tnum.h>
 
-
 namespace sc {
 
 class CCSD_PT_RIGHT : public Parenthesis2tNum {
 
   protected:
 
-   void smith_0_1(double*, const long,const long,const long,const long,const long,const long);
-   void smith_0_2(double*, const long,const long,const long,const long,const long,const long);
-
+   void smith_0_1(double**, const long,const long,const long,const long,const long,const long);
+   void smith_0_2(double**, const long,const long,const long,const long,const long,const long);
 
   public:
    CCSD_PT_RIGHT(CCR12_Info* info);
     
-   void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long);
+   void compute_amp(double**,const long,const long,const long,const long,const long,const long,const long);
 
 };
-
-
 
 }
 

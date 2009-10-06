@@ -382,12 +382,14 @@ void CCR12_Info::determine_maxtilesize(double memory){
   string t = theory_;
  // transform(t.begin(),t.end(),t.begin(),(int (*)(int))tolower);
 
+  const double max_blocks = 7.0;
+
   if (t == "CCSD" || t == "CCSD(R12)" || t == "CCSD-R12"){
-    maxtilesize_=static_cast<int>(::pow(memory / 6.0, 0.25));
+    maxtilesize_=static_cast<int>(::pow(memory / max_blocks, 0.25));
   } else if (t == "CCSDT" || t == "CCSDT(R12)" || t == "CCSDT-R12") {
-    maxtilesize_ = static_cast<int>(::pow(memory / 6.0, 1.0 / 6.0));
+    maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 1.0 / 6.0));
   } else if (t == "CCSDTQ" || t == "CCSDTQ(R12)" || t == "CCSDTQ-R12") {
-    maxtilesize_ = static_cast<int>(::pow(memory / 6.0, 0.125));
+    maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 0.125));
   } else {
     ExEnv::out0() << indent << "theory: " << theory_ << endl;
    throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);

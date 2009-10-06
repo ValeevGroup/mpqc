@@ -61,8 +61,7 @@ Tensor::~Tensor(){
 
 
 void Tensor::input_offset(long tag, long offset){
-  pair<std::map<long, long>::iterator, bool> val = hash_table_.insert(make_pair(tag, offset));
-  assert(val.second);
+  hash_table_.insert(std::map<long, long>::value_type(tag, offset));
 }
 
 

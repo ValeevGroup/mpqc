@@ -407,6 +407,14 @@ void CCR12_Info::determine_maxtilesize(double memory){
   } else if (perturbative_ == "(2)R12") {
     /// nothing happens
   }
+
+  // In the naive implementation of CCSD(T)_R12[DT], we need to store 6-index quantity...
+  // This will be lifted in future implementation.
+  if (perturbative_ == "(T)R12[DT]"){
+    const int p_maxtilesize = static_cast<int>(::pow(memory / 3.0, 1.0 / 6.0));
+    if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
+  }
+
 }
 
 void CCR12_Info::print_tile_info(){

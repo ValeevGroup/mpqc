@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#pragma once
 #ifndef _chemistry_qc_ccr12_parenthesis2tnum_h
 #define _chemistry_qc_ccr12_parenthesis2tnum_h
 
@@ -42,18 +43,14 @@ class Parenthesis2tNum : public RefCount {
    std::vector<Tensor*> i1xn; 
 
   public:
-   Parenthesis2tNum(CCR12_Info* info);
+   Parenthesis2tNum(CCR12_Info* info) : z(info) {};
     
-   ~Parenthesis2tNum();
+   ~Parenthesis2tNum() {};
 
-   // I need to replace the old ones... 
-   virtual void compute_amp(double**,const long,const long,const long,const long,const long,const long,const long) {};
-   virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long);
-   virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long,const long,const long);
+   virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long) {};
+   virtual void compute_amp(double*,const long,const long,const long,const long,const long,const long,const long,const long,const long) {};
 
 };
-
-
 
 }
 

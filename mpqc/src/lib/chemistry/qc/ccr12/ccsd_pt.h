@@ -29,18 +29,20 @@
 #define _chemistry_qc_ccr12_ccsd_pt_h
 
 #include <chemistry/qc/ccr12/ccr12_info.h>
-#include <chemistry/qc/ccr12/parenthesis2t.h>
+#include <chemistry/qc/ccr12/ptnum.h>
 
 namespace sc {
 
-class CCSD_PT : public Parenthesis2t {
+class CCSD_PT : public RefCount {
 
   protected:
+   CCR12_Info* z;
 
   public:
-   CCSD_PT(CCR12_Info* info);
+   CCSD_PT(CCR12_Info* info) : z(info) {};
+   ~CCSD_PT() {};
    
-   double compute_energy(Ref<Parenthesis2tNum>, Ref<Parenthesis2tNum>);
+   double compute_energy(Ref<PTNum>, Ref<PTNum>);
 
 };
 

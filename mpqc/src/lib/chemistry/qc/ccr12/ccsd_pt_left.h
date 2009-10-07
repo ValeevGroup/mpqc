@@ -29,17 +29,18 @@
 #define _chemistry_qc_ccr12_ccsd_pt_left_h
 
 #include <chemistry/qc/ccr12/ccr12_info.h>
-#include <chemistry/qc/ccr12/parenthesis2tnum.h>
+#include <chemistry/qc/ccr12/ptnum.h>
 
 namespace sc {
 
-class CCSD_PT_LEFT : public Parenthesis2tNum {
+class CCSD_PT_LEFT : public PTNum {
 
   protected:
    void smith_0_1(double**, const long,const long,const long,const long,const long,const long);
 
   public:
-   CCSD_PT_LEFT(CCR12_Info* info);
+   CCSD_PT_LEFT(CCR12_Info* info) : PTNum(info) {};
+   ~CCSD_PT_LEFT() {};
     
    void compute_amp(double**,const long,const long,const long,const long,const long,const long,const long);
 

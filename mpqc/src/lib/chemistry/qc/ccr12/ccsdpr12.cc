@@ -47,6 +47,7 @@
 #include <chemistry/qc/ccr12/lambda_ccsdpr12_t2.h>
 #include <chemistry/qc/ccr12/ccsd_2t_pr12_right.h>
 #include <chemistry/qc/ccr12/ccsd_2t_r12_left.h>
+#include <chemistry/qc/ccr12/parenthesis2t.h>
 
 using namespace std;
 using namespace sc;

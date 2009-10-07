@@ -1,5 +1,5 @@
 //
-// parenthesis2tnum.cc
+// ptnum.h --- base class for the numerators in various (T) correction i.e., with or without R12
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -25,25 +25,34 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/ccr12/parenthesis2tnum.h>
+#pragma once
+#ifndef _chemistry_qc_ccr12_ptnum_h
+#define _chemistry_qc_ccr12_ptnum_h
 
-using namespace sc;
+#include <util/ref/ref.h>
+#include <chemistry/qc/ccr12/ccr12_info.h>
 
-static ClassDesc Parenthesis2tNum_cd(
-  typeid(Parenthesis2tNum),"Parenthesis2tNum",1,"public RefCount"
-  ,0,0,0);
+namespace sc {
 
-Parenthesis2tNum::Parenthesis2tNum(CCR12_Info* info): z(info){
-}
+class PTNum : public RefCount {
+
+  protected:
+   CCR12_Info* z;
+
+   std::vector<Tensor*> in; 
+   std::vector<Tensor*> i1xn; 
+
+  public:
+   PTNum(CCR12_Info* info) : z(info) {};
     
-Parenthesis2tNum::~Parenthesis2tNum(){
+   ~PTNum() {};
+
+   virtual void compute_amp(double**,const long,const long,const long,const long,const long,const long,const long) {};
+
+};
+
 }
 
-void Parenthesis2tNum::compute_amp(double*, const long, const long, const long,
-                                            const long, const long, const long, const long){
-} 
+#endif
 
-void Parenthesis2tNum::compute_amp(double*, const long, const long, const long, const long,
-                                            const long, const long, const long, const long, const long){
-} 
 

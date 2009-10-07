@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccsd_pt.h>
-#include <chemistry/qc/ccr12/parenthesis2t.h>
 
 using namespace sc;
   
@@ -37,12 +36,7 @@ static ClassDesc CCSD_PT_cd(
   ,0,0,0);
   
 
-CCSD_PT::CCSD_PT(CCR12_Info* info): Parenthesis2t(info){
-
-} 
-
-
-double CCSD_PT::compute_energy(Ref<Parenthesis2tNum> eval_left, Ref<Parenthesis2tNum> eval_right){
+double CCSD_PT::compute_energy(Ref<PTNum> eval_left, Ref<PTNum> eval_right){
 
  double energy = 0.0;
 

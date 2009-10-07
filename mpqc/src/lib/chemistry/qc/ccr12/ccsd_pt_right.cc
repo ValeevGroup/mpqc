@@ -29,12 +29,8 @@
   
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccsd_pt_right.h>
-#include <chemistry/qc/ccr12/parenthesis2tnum.h>
+#include <chemistry/qc/ccr12/ptnum.h>
 using namespace sc;
-  
-  
-CCSD_PT_RIGHT::CCSD_PT_RIGHT(CCR12_Info* info):Parenthesis2tNum(info){};
-  
   
   
 void CCSD_PT_RIGHT::compute_amp(double** heap,const long t_p4b,const long t_p5b,const long t_p6b,const long t_h1b,const long t_h2b,const long t_h3b,const long toggle){

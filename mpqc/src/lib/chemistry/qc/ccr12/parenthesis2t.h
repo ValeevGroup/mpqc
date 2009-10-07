@@ -47,8 +47,6 @@ class Parenthesis2t : public RefCount {
 
 };
 
-
-
 }
 
 #endif

@@ -957,7 +957,9 @@ Molecule::symmetrize(double tol)
 
       int atom = newmol->atom_at_position(np.data(), tol);
       if (atom < 0) {
-        newmol->add_atom(Z_[i],np[0],np[1],np[2],label(i));
+        const char* c_lbl = label(i);
+        const std::string lbl = (c_lbl ? c_lbl : "");
+        newmol->add_atom(Z_[i],np[0],np[1],np[2],lbl);
       }
       else {
         if (Z(i) != newmol->Z(atom)

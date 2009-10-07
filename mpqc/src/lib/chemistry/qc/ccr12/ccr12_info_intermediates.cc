@@ -172,9 +172,7 @@ void CCR12_Info::prod_iiii(Ref<Tensor>& a, Ref<Tensor>& b, Ref<Tensor>& out){
       
 long tileoffset; 
 if (out->is_this_local(0L)) { 
-  long dimc=1; 
-  double* k_c_sort=mem()->malloc_local_double(dimc); 
-  std::fill(k_c_sort,k_c_sort+(size_t)dimc,0.0); 
+  double k_c =0.0;
   for (long h1b=0L;h1b<noab();++h1b) { 
    for (long h2b=h1b;h2b<noab();++h2b) { 
     for (long h3b=0L;h3b<noab();++h3b) { 
@@ -208,7 +206,7 @@ if (out->is_this_local(0L)) {
          if (h3b==h4b) { 
           factor=factor/2.0; 
          } 
-         smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,k_c_sort,dima0_sort); 
+         smith_dgemm(dima0_sort,dima1_sort,dim_common,factor,k_a0_sort,dim_common,k_a1_sort,dim_common,1.0,&k_c,dima0_sort); 
          mem()->free_local_double(k_a1_sort); 
          mem()->free_local_double(k_a0_sort); 
         } 
@@ -218,11 +216,7 @@ if (out->is_this_local(0L)) {
     } 
    } 
   } 
-  double* k_c=mem()->malloc_local_double(dimc); 
-  sort_indices0(k_c_sort,k_c,1.0); 
-  out->add_block((0),k_c); 
-  mem()->free_local_double(k_c); 
-  mem()->free_local_double(k_c_sort); 
+  out->add_block((0),&k_c); 
 } 
 mem()->sync(); 
 } 

@@ -398,7 +398,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
 
   // Perturbative correction needs an additional memory area. 
   // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
-  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]"){
+  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12" ){
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)T") {

@@ -52,6 +52,7 @@
 #include <chemistry/qc/ccr12/ccsd_sub_r12_left.h>
 #include <chemistry/qc/ccr12/ccsd_sub_r12_right.h>
 #include <chemistry/qc/ccr12/ccr12_triples.h>
+#include <chemistry/qc/ccr12/ccsd_sub_bar_r12.h> 
 
 using namespace std;
 using namespace sc;
@@ -173,6 +174,21 @@ void CCSD::compute(){
     print_timing(timer_->get_wall_time() - iter_start, "(T) correction");
     timer_->exit("(T) correction");
     energy += ccsd_pt_correction;
+  }
+
+  // perturbative treatment of geminal doubles 
+  if (perturbative_ == "(T)R12" || perturbative_ == "(T)R12[DT]") {
+    timer_->enter("R12 doubles correction");
+    iter_start = timer_->get_wall_time();
+
+    Ref<CCSD_Sub_Bar_R12> ccsd_sub_bar_r12 = new CCSD_Sub_Bar_R12(info()); 
+    const double doubles_correction = ccsd_sub_bar_r12->compute();
+    print_correction(doubles_correction, energy, "R12 doubles");
+
+    print_timing(timer_->get_wall_time() - iter_start, "R12 doubles correction");
+    timer_->exit("R12 doubles correction");
+    energy += doubles_correction;
+
   }
 
   // the CCSD(T)_\mathrm{R12[DT]} correction comes here...

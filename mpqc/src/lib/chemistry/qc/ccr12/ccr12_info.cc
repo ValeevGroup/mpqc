@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
+#include <math/scmat/abstract.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 using namespace sc;
@@ -92,6 +93,10 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     compute_source_integrals_rhf();
   else
     compute_source_integrals_uhf();
+
+  // Retrieve B and X intermediate
+  B_ = r12int_eval_->B(AlphaBeta);
+  X_ = r12int_eval_->X(AlphaBeta);
 
   // now get MemoryGrp ready
   mem_->set_localsize(memorysize);

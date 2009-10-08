@@ -59,12 +59,12 @@ class CCSD_Sub_Bar_R12 : public RefCount {
 
     double compute() {
       compute_amp();
-#if 0
+#if 1
       denom_contraction();
 #else    // just for checking...
       intermediate_ = tildeV_;
 #endif
-      z->prod_iiii(tildeV_, intermediate_, energy_); 
+      z->prod_iiii(tildeV_, intermediate_, energy_, true); 
       return z->get_e(energy_);
     };
 

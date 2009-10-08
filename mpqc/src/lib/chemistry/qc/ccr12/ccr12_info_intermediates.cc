@@ -168,9 +168,8 @@ mem()->sync();
 } 
 
 
-void CCR12_Info::prod_iiii(Ref<Tensor>& a, Ref<Tensor>& b, Ref<Tensor>& out){ 
+void CCR12_Info::prod_iiii(Ref<Tensor>& a, Ref<Tensor>& b, Ref<Tensor>& out, const bool transpose){ 
       
-long tileoffset; 
 if (out->is_this_local(0L)) { 
   double k_c =0.0;
   for (long h1b=0L;h1b<noab();++h1b) { 
@@ -192,7 +191,10 @@ if (out->is_this_local(0L)) {
          double* k_a0_sort=mem()->malloc_local_double(dima0); 
          double* k_a0=mem()->malloc_local_double(dima0); 
          a->get_block(h4b_0+noab()*(h3b_0+noab()*(h2b_0+noab()*(h1b_0))),k_a0); 
-         sort_indices4(k_a0,k_a0_sort,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),3,2,1,0,+1.0); 
+         if (!transpose)
+           sort_indices4(k_a0,k_a0_sort,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),3,2,1,0,+1.0); 
+         else
+           sort_indices4(k_a0,k_a0_sort,get_range(h1b),get_range(h2b),get_range(h3b),get_range(h4b),1,0,3,2,+1.0); 
          mem()->free_local_double(k_a0); 
          double* k_a1_sort=mem()->malloc_local_double(dima1); 
          double* k_a1=mem()->malloc_local_double(dima1); 

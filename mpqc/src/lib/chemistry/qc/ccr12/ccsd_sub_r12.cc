@@ -56,9 +56,9 @@ void CCSD_Sub_R12::denom_contraction(){
   }
 
   // this loop structure minimizes the O(o^8) operation...
+  int count = 0;
   for (long h3b = 0L; h3b < z->noab(); ++h3b) { 
     for (long h4b = h3b; h4b < z->noab(); ++h4b) { 
-      int count = 0;
       for (int h3 = 0; h3 < z->get_range(h3b); ++h3) { 
         for (int h4 = 0; h4 < z->get_range(h4b); ++h4, ++count) { 
           if (count % z->mem()->n() != z->mem()->me() ) continue; 
@@ -124,10 +124,11 @@ void CCSD_Sub_R12::denom_contraction(){
                     {
                       const size_t h34 = h4 + z->get_range(h4b) * h3;
                       const size_t stride = z->get_range(h3b) * z->get_range(h4b);
-                      size_t iall = 0L;
+                      size_t iall = h34;
+                      size_t i = 0;
                       for (int h1 = 0; h1 != z->get_range(h1b); ++h1) {
-                        for (int h2 = 0; h2 != z->get_range(h2b); ++h2, ++iall) {
-                          k_c[iall * stride + h34] = k_c_sort[iall];
+                        for (int h2 = 0; h2 != z->get_range(h2b); ++h2, iall += stride, ++i) {
+                          k_c[iall] = k_c_sort[i];
                         }
                       }
                     }

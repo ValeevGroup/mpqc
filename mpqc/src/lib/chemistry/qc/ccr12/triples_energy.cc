@@ -53,7 +53,7 @@ double CCR12_Triples::get_energy() {
    for (long p3b = noab; p3b < noab + nvab; ++p3b) { 
     for (long h4b = 0L; h4b < noab; ++h4b) { 
      for (long h5b = h4b; h5b < noab; ++h5b) { 
-      for (long h6b = h5b; h6b < noab; ++h6b) { 
+      for (long h6b = h5b; h6b < noab; ++h6b, ++count) { 
        // the most primitive way of parallelizing...
        if (count%z->mem()->n() == z->mem()->me()){ 
         if (z->get_spin(h1b) + z->get_spin(h2b) + z->get_spin(p3b) ==
@@ -87,7 +87,6 @@ double CCR12_Triples::get_energy() {
          } 
         } 
        } 
-       ++count;
       } 
      } 
     } 

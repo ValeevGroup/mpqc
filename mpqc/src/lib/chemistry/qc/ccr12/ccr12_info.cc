@@ -95,8 +95,10 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     compute_source_integrals_uhf();
 
   // Retrieve B and X intermediate
-  B_ = r12int_eval_->B(AlphaBeta);
-  X_ = r12int_eval_->X(AlphaBeta);
+  if (need_w1()) {
+    B_ = r12int_eval_->B(AlphaBeta);
+    X_ = r12int_eval_->X(AlphaBeta);
+  }
 
   // now get MemoryGrp ready
   mem_->set_localsize(memorysize);

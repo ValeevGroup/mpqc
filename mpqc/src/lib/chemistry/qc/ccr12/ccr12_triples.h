@@ -63,17 +63,13 @@ class CCR12_Triples : virtual public RefCount {
       singles(); // evaluating singles
       doubles(); // evaluating doubles
       singles_intermediate_->daxpy(doubles_intermediate_, 1.0); // adding doubles to singles to form lhs numerator
-#if 0
       denom_contraction(); // contracting denominator to rhs numerator which is doubles
-#else
-      intermediate_ = doubles_intermediate_->copy(); // just a test 
-#endif
       return get_energy();
     };
 
 };
 
-}; 
+}
 
 #endif
 

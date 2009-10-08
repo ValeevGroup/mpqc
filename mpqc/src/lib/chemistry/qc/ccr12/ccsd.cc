@@ -160,7 +160,23 @@ void CCSD::compute(){
   delete ccsd_e;
 
 
-  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]") {
+  // perturbative treatment of geminal doubles 
+  if (perturbative_ == "(T)R12" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(2)R12") {
+    timer_->enter("R12 doubles correction");
+    iter_start = timer_->get_wall_time();
+
+    Ref<CCSD_Sub_Bar_R12> ccsd_sub_bar_r12 = new CCSD_Sub_Bar_R12(info()); 
+    const double doubles_correction = ccsd_sub_bar_r12->compute();
+    print_correction(doubles_correction, energy, "R12 doubles");
+
+    print_timing(timer_->get_wall_time() - iter_start, "R12 doubles correction");
+    timer_->exit("R12 doubles correction");
+    energy += doubles_correction;
+
+  }
+
+  // conventional perturbative triples
+  if (perturbative_ == "(T)" || perturbative_ == "(T)R12" || perturbative_ == "(T)R12[DT]") {
     timer_->enter("(T) correction");
     iter_start = timer_->get_wall_time();
 
@@ -177,20 +193,6 @@ void CCSD::compute(){
     energy += ccsd_pt_correction;
   }
 
-  // perturbative treatment of geminal doubles 
-  if (perturbative_ == "(T)R12" || perturbative_ == "(T)R12[DT]") {
-    timer_->enter("R12 doubles correction");
-    iter_start = timer_->get_wall_time();
-
-    Ref<CCSD_Sub_Bar_R12> ccsd_sub_bar_r12 = new CCSD_Sub_Bar_R12(info()); 
-    const double doubles_correction = ccsd_sub_bar_r12->compute();
-    print_correction(doubles_correction, energy, "R12 doubles");
-
-    print_timing(timer_->get_wall_time() - iter_start, "R12 doubles correction");
-    timer_->exit("R12 doubles correction");
-    energy += doubles_correction;
-
-  }
 
   // the CCSD(T)_\mathrm{R12[DT]} correction comes here...
   if (perturbative_ == "(T)R12[DT]") {
@@ -211,7 +213,7 @@ void CCSD::compute(){
 
   bool do_lambda = false; // will be judeged by input keywords
   // more will come; e.g. dipole, etc
-  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12") do_lambda = true;
+  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL") do_lambda = true;
 
   if (do_lambda) {
     Ref<DIIS> l1diis = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
@@ -298,9 +300,9 @@ void CCSD::compute(){
         energy += ccsd_2q_correction;
       }
 
-    } else if (perturbative_ == "(2)R12") {
+    } else if (perturbative_ == "(2)R12FULL") {
 
-      timer_->enter("(2)R12 correction");
+      timer_->enter("(2)R12 correction (full)");
       iter_start = timer_->get_wall_time();
 
       Ref<CCSD_SUB_R12_RIGHT> eval_right = new CCSD_SUB_R12_RIGHT(info());
@@ -318,8 +320,8 @@ void CCSD::compute(){
       const double ccsd_sub_r12_correction = ccsd_sub_full_r12->compute();
       print_correction(ccsd_sub_r12_correction, energy, "CCSD(2)R12");
 
-      print_timing(timer_->get_wall_time() - iter_start, "(2)R12 correction");
-      timer_->exit("(2)R12 correction");
+      print_timing(timer_->get_wall_time() - iter_start, "(2)R12 correction (full)");
+      timer_->exit("(2)R12 correction (full)");
       energy += ccsd_sub_r12_correction;
     }
 

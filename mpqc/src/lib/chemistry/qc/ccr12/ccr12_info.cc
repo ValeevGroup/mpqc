@@ -83,7 +83,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   irrep_y_ = 0L;
 
   // TODO More to come... e.g. dipole,...
-  bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12");
+  bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL");
 
   // compute the correlated spin-orbital space used by SMITH
   compute_corr_space();
@@ -196,17 +196,19 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
     fill_in_vr_and_vd();
 
-    d_fr2 = new Tensor("fr2", mem_);
-    offset_fr2();
-    static_size += d_fr2->get_filesize() * sizeof(double);
-    mem_->sync();
+    if (need_F_) {
+      d_fr2 = new Tensor("fr2", mem_);
+      offset_fr2();
+      static_size += d_fr2->get_filesize() * sizeof(double);
+      mem_->sync();
 
-    d_fd2 = new Tensor("fd2", mem_);
-    offset_fd2();
-    static_size += d_fd2->get_filesize() * sizeof(double);
-    mem_->sync();
+      d_fd2 = new Tensor("fd2", mem_);
+      offset_fd2();
+      static_size += d_fd2->get_filesize() * sizeof(double);
+      mem_->sync();
 
-    fill_in_fr_and_fd();
+      fill_in_fr_and_fd();
+    }
 
     // X intermediate
     d_xs2 = new Tensor("xs2", mem_);
@@ -403,7 +405,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
 
   // Perturbative correction needs an additional memory area. 
   // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
-  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12" ){
+  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12"){
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)T") {
@@ -412,7 +414,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
   } else if (perturbative_ == "(2)TQ") {
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 8.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
-  } else if (perturbative_ == "(2)R12") {
+  } else if (perturbative_ == "(2)R12" || perturbative_ == "(2)R12FULL") {
     /// nothing happens
   }
 
@@ -434,21 +436,38 @@ void CCR12_Info::print_tile_info(){
 
 void CCR12_Info::needs(){
   if (theory_ == "CCSD") {
-    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true; need_gt2_ = false; need_t3_ = false; need_t4_ = false; need_FAA_ = false; need_VpA_ = false;
+    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true;
+    need_gt2_ = false; need_t3_ = false; need_t4_ = false; need_FAA_ = false;
+    need_VpA_ = false; need_F_ = false;
   } else if(theory_ == "CCSD-R12") {
-    need_w1_ = true ; need_w2_ = true ; need_t1_ = true; need_t2_ = true; need_gt2_ = true ; need_t3_ = false; need_t4_ = false; need_FAA_ = true ; need_VpA_ = true ;
+    need_w1_ = true; need_w2_ = true; need_t1_ = true; need_t2_ = true;
+    need_gt2_ = true; need_t3_ = false; need_t4_ = false; need_FAA_ = true;
+    need_VpA_ = true; need_F_ = true;
   } else if(theory_ == "CCSD(R12)") {
-    need_w1_ = true ; need_w2_ = false; need_t1_ = true; need_t2_ = true; need_gt2_ = true ; need_t3_ = false; need_t4_ = false; need_FAA_ = false; need_VpA_ = false;
+    need_w1_ = true; need_w2_ = false; need_t1_ = true; need_t2_ = true;
+    need_gt2_ = true; need_t3_ = false; need_t4_ = false; need_FAA_ = false;
+    need_VpA_ = false; need_F_ = true;
   } else if(theory_ == "CCSDT"){
-    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true; need_gt2_ = false; need_t3_ = true ; need_t4_ = false; need_FAA_ = false; need_VpA_ = false;
+    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true;
+    need_gt2_ = false; need_t3_ = true; need_t4_ = false; need_FAA_ = false;
+    need_VpA_ = false; need_F_ = false;
   } else if(theory_ == "CCSDTQ"){
-    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true; need_gt2_ = false; need_t3_ = true ; need_t4_ = true ; need_FAA_ = false; need_VpA_ = false;
+    need_w1_ = false; need_w2_ = false; need_t1_ = true; need_t2_ = true;
+    need_gt2_ = false; need_t3_ = true; need_t4_ = true; need_FAA_ = false;
+    need_VpA_ = false; need_F_ = false;
   } else {
     throw ProgrammingError("CCR12_Info::needs", __FILE__, __LINE__);
   }
 
-  if (perturbative_ == "(2)R12" || perturbative_ == "(T)R12[DT]") {
+  // unscreened version
+  if (perturbative_ == "(2)R12FULL") {
     need_w1_ = true;
+    need_F_ = true;
+  }
+  // screened version
+  if (perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12" || perturbative_ == "(2)R12") {
+    need_w1_ = true;
+    need_F_ = false;
   }
 
 }

@@ -66,7 +66,7 @@ class CCR12_Info : virtual public RefCount {
     Ref<Tensor> d_bs2; // B^ii_ii
     Ref<Tensor> d_xs2; // X^ii_ii
     Ref<Tensor> d_ps2; // P^ii_ii
-    Ref<Tensor> d_fr2; bool need_FAA_; // F12^AA_ii --- sometimes F with two CABS indices is not needed.
+    Ref<Tensor> d_fr2; bool need_FAA_; bool need_F_; // F12^AA_ii --- sometimes F with two CABS indices is not needed.
     Ref<Tensor> d_fd2; // F12^ii_AA
 
     Ref<Tensor> d_qy; // F12 * gt2

@@ -1,5 +1,5 @@
 //
-// ccsd_sub_bar_r12.h : Torheyden & Valeev, Phys Chem Chem Phys 10, 3410 (2008)
+// ccsd_sub_r12.h : Base class for (2)R12 family of methods 
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -26,32 +26,39 @@
 //
 
 #pragma once
-#ifndef __chemistry_qc_ccr12_ccsd_sub_bar_r12_h
-#define __chemistry_qc_ccr12_ccsd_sub_bar_r12_h
+#ifndef __chemistry_qc_ccr12_ccsd_sub_r12_h
+#define __chemistry_qc_ccr12_ccsd_sub_r12_h
 
-#include <chemistry/qc/ccr12/ccsd_sub_r12.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
+#include <cassert>
 
 namespace sc {
 
-class CCSD_Sub_Bar_R12 : public CCSD_Sub_R12 {
-  protected:
+class CCSD_Sub_R12 : public RefCount {
 
-    void compute_amp();
-    void smith_0_1(Ref<Tensor>&); 
-    void smith_0_2(Ref<Tensor>&); 
+  protected:
+    CCR12_Info* z;
+    Ref<Tensor> tildeV_;
+    Ref<Tensor> intermediate_;
+    Ref<Tensor> energy_;
+
+    void denom_contraction();
 
   public:
-    CCSD_Sub_Bar_R12(CCR12_Info* inz) : CCSD_Sub_R12(inz, true) { };
-
-    ~CCSD_Sub_Bar_R12() {};
-
-    double compute() {
-      compute_amp();
-      denom_contraction();
-      z->prod_iiii(tildeV_, intermediate_, energy_, true); 
-      return z->get_e(energy_);
+    CCSD_Sub_R12(CCR12_Info* inz, const bool do_init) : z(inz) {
+      intermediate_ = new Tensor("intermediate", z->mem()); 
+      energy_ = new Tensor("energy", z->mem()); 
+      if (do_init) {
+        tildeV_ = new Tensor("tildeV", z->mem()); 
+        z->offset_gt2(tildeV_, false);
+      }
+      z->offset_gt2(intermediate_, false);
+      z->offset_e(energy_);
     };
+
+    ~CCSD_Sub_R12() {};
+
+    virtual double compute() { assert(false); };
 
 };
 

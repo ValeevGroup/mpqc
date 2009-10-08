@@ -1,5 +1,5 @@
 //
-// ccsd_sub_bar_r12.h : Torheyden & Valeev, Phys Chem Chem Phys 10, 3410 (2008)
+// ccsd_sub_full_r12.h : Valeev, Phys Chem Chem Phys 10, 106 (2008)
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -26,30 +26,30 @@
 //
 
 #pragma once
-#ifndef __chemistry_qc_ccr12_ccsd_sub_bar_r12_h
-#define __chemistry_qc_ccr12_ccsd_sub_bar_r12_h
+#ifndef __chemistry_qc_ccr12_ccsd_sub_full_r12_h
+#define __chemistry_qc_ccr12_ccsd_sub_full_r12_h
 
 #include <chemistry/qc/ccr12/ccsd_sub_r12.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 namespace sc {
 
-class CCSD_Sub_Bar_R12 : public CCSD_Sub_R12 {
+class CCSD_Sub_Full_R12 : public CCSD_Sub_R12 {
   protected:
-
-    void compute_amp();
-    void smith_0_1(Ref<Tensor>&); 
-    void smith_0_2(Ref<Tensor>&); 
+    Ref<Tensor> tildeV_dagger_; // left_hand_side 
 
   public:
-    CCSD_Sub_Bar_R12(CCR12_Info* inz) : CCSD_Sub_R12(inz, true) { };
+    CCSD_Sub_Full_R12(CCR12_Info* inz, Ref<Tensor> right, Ref<Tensor> left)
+     : CCSD_Sub_R12(inz, false) {
+      tildeV_ = right; 
+      tildeV_dagger_ = left;
+    };
 
-    ~CCSD_Sub_Bar_R12() {};
+    ~CCSD_Sub_Full_R12() {};
 
     double compute() {
-      compute_amp();
       denom_contraction();
-      z->prod_iiii(tildeV_, intermediate_, energy_, true); 
+      z->prod_iiii(tildeV_dagger_, intermediate_, energy_, false); 
       return z->get_e(energy_);
     };
 

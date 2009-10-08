@@ -103,8 +103,10 @@ void CCSD_Sub_Bar_R12::smith_0_2(Ref<Tensor>& out){
               long dim_common=z->get_range(p5b)*z->get_range(p6b); 
               long dima0_sort=z->get_range(h1b)*z->get_range(h2b); 
               long dima1_sort=z->get_range(h3b)*z->get_range(h4b); 
+
               z->t2()->get_block(h2b_0+z->noab()*(h1b_0+z->noab()*(p6b_0-z->noab()+z->nvab()*(p5b_0-z->noab()))),k_a0); 
               z->sort_indices4(k_a0,k_a0_sort,z->get_range(p5b),z->get_range(p6b),z->get_range(h1b),z->get_range(h2b),2,3,0,1,+1.0); 
+
               z->vd2()->get_block(p6b_1+(z->nab())*(p5b_1+(z->nab())*(h4b_1+z->noab()*(h3b_1))),k_a1); 
               double factor=1.0; 
               if (p5b==p6b) factor*=0.5; 
@@ -127,7 +129,7 @@ void CCSD_Sub_Bar_R12::smith_0_2(Ref<Tensor>& out){
   z->mem()->free_local_double(k_a0); 
   z->mem()->free_local_double(k_c_sort); 
   z->mem()->sync(); 
-} 
+}
 
 
 void CCSD_Sub_Bar_R12::denom_contraction(){ 
@@ -135,7 +137,6 @@ void CCSD_Sub_Bar_R12::denom_contraction(){
   const size_t singles = z->maxtilesize() * z->maxtilesize();
   const size_t doubles = singles * singles;
   double* k_a0      = z->mem()->malloc_local_double(doubles); 
-  double* k_a0_sort = z->mem()->malloc_local_double(singles); // V has two indices given h3 & h4 
   double* k_a1      = z->mem()->malloc_local_double(doubles); 
   double* k_c       = z->mem()->malloc_local_double(doubles); 
   double* k_c_sort  = z->mem()->malloc_local_double(singles); 
@@ -159,14 +160,14 @@ void CCSD_Sub_Bar_R12::denom_contraction(){
           if (count % z->mem()->n() != z->mem()->me() ) continue; 
 
           // orbital energies
-          Ref<Tensor> denom = new Tensor("denom", z->mem());
-          z->offset_gt2(denom, false);
-
-          MTensor<4> D(z, denom.pointer(), iiii);
           const double eh3 = z->get_orb_energy(z->get_offset(h3b) + h3);
           const double eh4 = z->get_orb_energy(z->get_offset(h4b) + h4);
 
-          // denominator here
+          // current denominator tensor
+          Ref<Tensor> denom = new Tensor("denom", z->mem());
+          z->offset_gt2(denom, false);
+          MTensor<4> D(z, denom.pointer(), iiii);
+
           RefSymmSCMatrix refxminusb = z->X() * (eh3 + eh4) - z->B();
           RefSymmSCMatrix refinverse = refxminusb.gi();
 
@@ -181,14 +182,14 @@ void CCSD_Sub_Bar_R12::denom_contraction(){
                   if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h1b)^z->get_sym(h2b)))) == z->irrep_t()) { 
 
                     // target size
-                    const long dimc_singles = z->get_range(h1b)*z->get_range(h2b); 
-                    std::fill(k_c_sort, k_c_sort+dimc_singles, 0.0); 
+                    const long dimc_singles = z->get_range(h1b)*z->get_range(h2b);
+                    std::fill(k_c_sort, k_c_sort+dimc_singles, 0.0);
 
-                    for (long h5b = 0L; h5b < z->noab(); ++h5b) { 
-                      for (long h6b = h5b; h6b < z->noab(); ++h6b) { 
+                    for (long h5b = 0L; h5b < z->noab(); ++h5b) {
+                      for (long h6b = h5b; h6b < z->noab(); ++h6b) {
 
-                        if (z->get_spin(h3b)+z->get_spin(h4b) == z->get_spin(h5b)+z->get_spin(h6b)) { 
-                          if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h5b)^z->get_sym(h6b)))) == z->irrep_e()) { 
+                        if (z->get_spin(h3b)+z->get_spin(h4b) == z->get_spin(h5b)+z->get_spin(h6b)) {
+                          if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h5b)^z->get_sym(h6b)))) == z->irrep_e()) {
 
                             long h3b_0, h4b_0, h5b_0, h6b_0; 
                             z->restricted_4(h3b, h4b, h5b, h6b, h3b_0, h4b_0, h5b_0, h6b_0); 
@@ -199,35 +200,35 @@ void CCSD_Sub_Bar_R12::denom_contraction(){
                             const int dima1_sort = z->get_range(h1b) * z->get_range(h2b); 
 
                             // read tilde V (redundant read is involved...)
-                            tildeV_->get_block(h4b_0+z->noab()*(h3b_0+z->noab()*(h6b_0+z->noab()*(h5b_0))), k_a0); 
+                            tildeV_->get_block(h4b_0+z->noab()*(h3b_0+z->noab()*(h6b_0+z->noab()*(h5b_0))), k_a0);
 
                             // read denominator
-                            denom->get_block(h6b_1+z->noab()*(h5b_1+z->noab()*(h2b_1+z->noab()*(h1b_1))), k_a1); 
-                            double factor = 1.0; 
-                            if (h5b == h6b) factor *= 0.5; 
+                            denom->get_block(h6b_1+z->noab()*(h5b_1+z->noab()*(h2b_1+z->noab()*(h1b_1))), k_a1);
+                            double factor = 1.0;
+                            if (h5b == h6b) factor *= 0.5;
                             const int unit = 1;
                             const int h34 = h4 + z->get_range(h4b) * h3;
-                            const int stride = z->get_range(h3b) * z->get_range(h4b); 
+                            const int stride = z->get_range(h3b) * z->get_range(h4b);
                             const double one = 1.0;
                             F77_DGEMV("t", &dim_common, &dima1_sort, &factor, k_a1, &dim_common, k_a0 + h34, &stride, &one, k_c_sort, &unit);
                           }
                         } 
                       }
                     }
-                    const long dimc = z->get_range(h3b)*z->get_range(h4b)*z->get_range(h1b)*z->get_range(h2b); 
-                    std::fill(k_c, k_c+dimc, 0.0); 
+                    const long dimc = z->get_range(h3b)*z->get_range(h4b)*z->get_range(h1b)*z->get_range(h2b);
+                    std::fill(k_c, k_c+dimc, 0.0);
                     {
                       const size_t h34 = h4 + z->get_range(h4b) * h3;
-                      const size_t stride = z->get_range(h3b) * z->get_range(h4b); 
+                      const size_t stride = z->get_range(h3b) * z->get_range(h4b);
                       size_t iall = 0L;
                       for (int h1 = 0; h1 != z->get_range(h1b); ++h1) {
                         for (int h2 = 0; h2 != z->get_range(h2b); ++h2, ++iall) {
-                          k_c[iall * stride + h34] = k_c_sort[iall]; 
+                          k_c[iall * stride + h34] = k_c_sort[iall];
                         }
                       }
                     }
                     intermediate_->add_block(h4b+z->noab()*(h3b+z->noab()*(h2b+z->noab()*(h1b))),k_c); 
-                  } 
+                  }
                 }
               }
             } 
@@ -237,7 +238,6 @@ void CCSD_Sub_Bar_R12::denom_contraction(){
     } 
   } 
   z->mem()->free_local_double(k_a1); 
-  z->mem()->free_local_double(k_a0_sort); 
   z->mem()->free_local_double(k_a0); 
   z->mem()->free_local_double(k_c_sort); 
   z->mem()->free_local_double(k_c); 

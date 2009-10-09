@@ -64,9 +64,6 @@ void CCR12_Triples::offset_hhphhh(Ref<Tensor>& t) {
 
 void CCR12_Triples::denom_contraction(){ 
 
-  Ref<Tensor> denom = new Tensor("Denom", z->mem());
-  z->offset_gt2(denom, false);
-
   const size_t maxtile = z->maxtilesize();
   const size_t singles = maxtile * maxtile;
   const size_t doubles = singles * singles;

@@ -333,6 +333,7 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
     for (long h4b = h3b; h4b < noab(); ++h4b) { 
       for (int h3 = 0; h3 < get_range(h3b); ++h3) { 
         for (int h4 = 0; h4 < get_range(h4b); ++h4, ++count) { 
+          if (get_offset(h3b) + h3 >= get_offset(h4b) + h4) continue;
           if (count % mem()->n() != mem()->me() ) continue; 
 
           // orbital energies
@@ -400,7 +401,18 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
                       size_t i = 0;
                       for (int h1 = 0; h1 != get_range(h1b); ++h1) {
                         for (int h2 = 0; h2 != get_range(h2b); ++h2, iall += stride, ++i) {
-                          k_c[iall] = k_c_sort[i];
+                          k_c[iall] += k_c_sort[i];
+                        }
+                      }
+                    }
+                    if (h3b == h4b) {
+                      const size_t h43 = h3 + get_range(h4b) * h4;
+                      const size_t stride = get_range(h3b) * get_range(h4b);
+                      size_t iall = h43;
+                      size_t i = 0;
+                      for (int h1 = 0; h1 != get_range(h1b); ++h1) {
+                        for (int h2 = 0; h2 != get_range(h2b); ++h2, iall += stride, ++i) {
+                          k_c[iall] -= k_c_sort[i];
                         }
                       }
                     }

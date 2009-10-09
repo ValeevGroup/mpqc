@@ -38,6 +38,7 @@ using namespace std;
   
 void CCSD_Sub_R12::denom_contraction(){ 
 
+#if 0
   const size_t singles = z->maxtilesize() * z->maxtilesize();
   const size_t doubles = singles * singles;
   double* k_a0      = z->mem()->malloc_local_double(doubles); 
@@ -147,5 +148,7 @@ void CCSD_Sub_R12::denom_contraction(){
   z->mem()->free_local_double(k_c_sort); 
   z->mem()->free_local_double(k_c); 
   z->mem()->sync(); 
+#endif
+  z->denom_contraction(tildeV_, intermediate_);
 } 
 

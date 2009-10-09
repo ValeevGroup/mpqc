@@ -27,12 +27,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/tensor.h>
+#include <chemistry/qc/ccr12/mtensor.h>
 #include <chemistry/qc/mbptr12/lapack.h>
 
 using namespace sc;
-
+using namespace std;
 
 void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_,
                                     const Ref<Tensor>& d_gr2_,Ref<Tensor>& d_gt2_){
@@ -92,190 +94,10 @@ void CCR12_Info::invert_b(const Ref<Tensor>& vv, Ref<Tensor>& copt){
 // will be parallelized here
      if (count%mem()->n()!=mem()->me()) continue;
 
-     const long i3=get_offset(h3b)+h3;
-     const long i4=get_offset(h4b)+h4;
-     const double fij=get_orb_energy(i3)+get_orb_energy(i4);
-     const bool alphabeta =(get_spin(h3b)!=get_spin(h4b));
-     const bool alphaalpha=(get_spin(h3b)==get_spin(h4b) && get_spin(h3b)==1L);
-#define h3h4 0
-
-#if h3h4
-     if (i3>=i4) continue; // line 138-143
-#endif
-
-//TODO 
-// the inversion step might accomodate the symmetry; 
-// block-wise structure of X, B, etc will reduce the cost;
-// I will come here again after it works correctly
-//
-     
-
-     const long ndim_x=alphabeta ? naoa()*naob() : 
-                    ( alphaalpha ? (naoa()*(naoa()+1L)/2L) : (naob()*(naob()+1L)/2L) ); 
-     const long nele_x=ndim_x*ndim_x;
-     double* matrix=mem_->malloc_local_double(nele_x);
-     double* source=mem_->malloc_local_double(ndim_x);
-
-     /// this is for debug 
-     std::fill(matrix,matrix+nele_x,0.0);
-
-//TODO
-// The following contraction will have v^2o^6 cost, which might be large.
-// This can be avoided by approximating the denominator or through Laplace transform etc. 
-// In paticular LT lowers the scaling to Nv^2o^4 where N is the number of quadruture grids.
-// I will investivate this later.
-//   form_matrix_x_b(matrix,fij,alphabeta,alphaalpha);
-
-     /// prepare matrix
-     
-     /// prepare source
-     /// CAUTION!! Inner loops are superscrits.
-     for (long h1b= 0L;h1b<noab();++h1b) {
-      for (long h2b=h1b;h2b<noab();++h2b) {
-       if (get_spin(h1b)+get_spin(h2b)==get_spin(h3b)+get_spin(h4b)) {
-        if ((get_sym(h1b)^(get_sym(h2b)^(get_sym(h3b)^get_sym(h4b))))==irrep_e_) {
-         if ((!restricted()) || get_spin(h1b)+get_spin(h2b)+get_spin(h3b)+get_spin(h4b)==8L) {
-          const long size=get_range(h1b)*get_range(h2b)*get_range(h3b)*get_range(h4b);
-          double* data_vv=mem_->malloc_local_double(size);
-          vv_in->get_block(h4b+noab()*(h3b+noab()*(h2b+noab()*h1b)),data_vv);
-          for (long h1=0L;h1<get_range(h1b);++h1) {
-           for (long h2=0L;h2<get_range(h2b);++h2) {
-            const long iall=h4+get_range(h4b)*(h3+get_range(h3b)*(h2+get_range(h2b)*h1));
-            const long ivec=h2+get_range(h2b)*h1;
-            source[ivec]=data_vv[iall]; 
-           }
-          }
-          mem_->free_local_double(data_vv);
-         }
-        }
-       }
-      }
-     }
-
-     solve_linear_equation(matrix,source,ndim_x);
-
-     for (long h1b= 0L;h1b<noab();++h1b) {
-      for (long h2b=h1b;h2b<noab();++h2b) {
-       if (get_spin(h1b)+get_spin(h2b)==get_spin(h3b)+get_spin(h4b)) {
-        if ((get_sym(h1b)^(get_sym(h2b)^(get_sym(h3b)^get_sym(h4b))))==irrep_e_) {
-         if ((!restricted()) || get_spin(h1b)+get_spin(h2b)+get_spin(h3b)+get_spin(h4b)==8L) {
-          const long size=get_range(h1b)*get_range(h2b)*get_range(h3b)*get_range(h4b);
-          double* data_vv=mem_->malloc_local_double(size);
-          for (long h1=0L;h1<get_range(h1b);++h1) {
-           for (long h2=0L;h2<get_range(h2b);++h2) {
-            const long iall=h4+get_range(h4b)*(h3+get_range(h3b)*(h2+get_range(h2b)*h1));
-            const long ivec=h2+get_range(h2b)*h1;
-            data_vv[iall]=source[ivec];
-#if h3h4
-            if (h3b==h4b) {
-             const long iall_perm=h3+get_range(h3b)*(h4+get_range(h4b)*(h2+get_range(h2b)*h1));
-             data_vv[iall_perm]=-source[ivec];
-            }
-#endif 
-           }
-          }
-          vv->add_block(h4b+noab()*(h3b+noab()*(h2b+noab()*h1b)),data_vv);
-          mem_->free_local_double(data_vv);
-         }
-        }
-       }
-      }
-     }
-
-     mem_->free_local_double(source);
-     mem_->free_local_double(matrix);
     }
    }
   }
  }
-}
-
-
-void CCR12_Info::form_matrix_x_b(double* mat, const double fij, 
-                                 const bool alphabeta, const bool alphaalpha) {
- /// returns matrix in mat
- /// designed to be called from one process
-
- for (long h1b=0L;h1b<noab();++h1b) {
-  for (long h2b=h1b;h2b<noab();++h2b) {
-   for (long h3b=0L;h3b<noab();++h3b) {
-    for (long h4b=h3b;h4b<noab();++h4b) {
-     if (get_spin(h1b)+get_spin(h2b)==get_spin(h3b)+get_spin(h4b)) {
-      if ((get_sym(h1b)^(get_sym(h2b)^(get_sym(h3b)^get_sym(h4b))))==irrep_e_) {
-       if ((!restricted()) || get_spin(h1b)+get_spin(h2b)+get_spin(h3b)+get_spin(h4b)==8L) {
-
-        const bool alphabeta_loop=(get_spin(h1b)!=get_spin(h2b)); 
-        if (alphabeta!=alphabeta_loop) continue;
-
-        const long size=get_range(h1b)*get_range(h2b)*get_range(h3b)*get_range(h4b);
-        double* data_x=mem_->malloc_local_double(size);
-        double* data_b=mem_->malloc_local_double(size);
-        xs2()->get_block(h4b+noab()*(h3b+noab()*(h2b+noab()*h1b)),data_x);
-        bs2()->get_block(h4b+noab()*(h3b+noab()*(h2b+noab()*h1b)),data_b);
-// TODO additional term may come here
-
-
-
-        long icomp=0L;
-        for (long h1=0L;h1<get_range(h1b);++h1) { // alpha
-         const long i1=get_offset(h1b)+h1;
-         for (long h2=0L;h2<get_range(h2b);++h2) { // beta
-          const long i2=get_offset(h2b)+h2;
-          if (i2<=i1) continue;
-
-          for (long h3=0L;h3<get_range(h3b);++h3) { // alpha
-           const long i3=get_offset(h3b)+h3;
-           for (long h4=0L;h4<get_range(h4b);++h4,++icomp) { // beta
-            const long i4=get_offset(h4b)+h4;
-            if (i4<=i3) continue;
-
-            long imat;
-            if (alphabeta) 
-             imat=i4-naoa()+naob()*(i3+naoa()*(i2-naoa()+naob()*i1));
-            else if (!alphabeta && alphaalpha)
-// better to use packed format TODO
-             imat=i4+naoa()*(i3+naoa()*(i2+naoa()*i1));
-            else if (!alphabeta && !alphaalpha)
-             imat=i4-naoa()+naob()*(i3-naoa()+naob()*(i2-naoa()+naob()*(i1-naoa())));
-            else
-             throw ProgrammingError("strange...",__FILE__,__LINE__);
-
-            const double value=fij*data_x[icomp]-data_b[icomp];
-
-            assert(mat[imat]==0.0 || mat[imat]==value); // avoids illegal overwrites. 
-            mat[imat]=value;               // TODO other term may come 
- 
-           }
-          }
-         }
-        }
-        mem_->free_local_double(data_x);
-        mem_->free_local_double(data_b);
-       }
-      }
-     }
-    }
-   }
-  }
- }
-}
-
-
-void CCR12_Info::solve_linear_equation(double* mat,double* vec,const int ndim){
-  throw ProgrammingError("There are known problem in this code",__FILE__,__LINE__);
-  const char upper ='U';
-  const int  unit  = 1;
-  int*       ipiv  = new int[ndim];
-  const int  lwork = 5 * ndim;
-  double*    work  = new double[lwork];
-  int        info  = 0;
-//  F77_DSYSV(&upper,&ndim,&unit,mat,&ndim,ipiv,vec,&ndim,work,&lwork,&info);
-  if (info!=0) {
-    throw ProgrammingError("solve_linear_equation",__FILE__,__LINE__);
-  } else {
-    delete[] ipiv;
-    delete[] work;
-  }
 }
 
 
@@ -485,3 +307,116 @@ void CCR12_Info::form_ca(const Ref<Tensor>& c_, const Ref<Tensor>& ad_, Ref<Tens
  } 
  mem()->sync(); 
 } 
+
+
+void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
+  const size_t singles = maxtilesize() * maxtilesize();
+  const size_t doubles = singles * singles;
+  double* k_a0      = mem()->malloc_local_double(doubles); 
+  double* k_a1      = mem()->malloc_local_double(doubles); 
+  double* k_c       = mem()->malloc_local_double(doubles); 
+  double* k_c_sort  = mem()->malloc_local_double(singles); 
+
+  const int nocc_act = naoa();
+  MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, noab()));
+  MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
+  vector<long> amap;
+  {
+    vector<int> intmap = sc::map(*(r12evalinfo()->refinfo()->occ_act_sb(Alpha)), *corr_space(), false);
+    amap.resize(intmap.size());
+    std::copy(intmap.begin(), intmap.end(), amap.begin());
+  }
+
+  // this loop structure minimizes the O(o^8) operation...
+  int count = 0;
+  for (long h3b = 0L; h3b < noab(); ++h3b) { 
+    for (long h4b = h3b; h4b < noab(); ++h4b) { 
+      for (int h3 = 0; h3 < get_range(h3b); ++h3) { 
+        for (int h4 = 0; h4 < get_range(h4b); ++h4, ++count) { 
+          if (count % mem()->n() != mem()->me() ) continue; 
+
+          // orbital energies
+          const double eh3 = get_orb_energy(get_offset(h3b) + h3);
+          const double eh4 = get_orb_energy(get_offset(h4b) + h4);
+
+          // current denominator tensor
+          Ref<Tensor> denom = new Tensor("denom", mem());
+          offset_gt2(denom, false);
+          MTensor<4> D(this, denom.pointer(), iiii);
+
+          RefSymmSCMatrix refxminusb = X() * (eh3 + eh4) - B();
+          RefSymmSCMatrix refinverse = refxminusb.gi();
+
+          D.convert(refinverse, nocc_act, nocc_act, false, false,
+                    amap, amap, amap, amap, &iiii_erange);
+
+          for (long h1b = 0L; h1b < noab(); ++h1b) {
+            for (long h2b = h1b; h2b < noab(); ++h2b) {
+
+              if (!restricted() || get_spin(h3b)+get_spin(h4b)+get_spin(h1b)+get_spin(h2b) != 8L) { 
+                if (get_spin(h3b)+get_spin(h4b) == get_spin(h1b)+get_spin(h2b)) { 
+                  if ((get_sym(h3b)^(get_sym(h4b)^(get_sym(h1b)^get_sym(h2b)))) == irrep_t()) { 
+
+                    // target size
+                    const long dimc_singles = get_range(h1b)*get_range(h2b);
+                    std::fill(k_c_sort, k_c_sort+dimc_singles, 0.0);
+
+                    for (long h5b = 0L; h5b < noab(); ++h5b) {
+                      for (long h6b = h5b; h6b < noab(); ++h6b) {
+
+                        if (get_spin(h3b)+get_spin(h4b) == get_spin(h5b)+get_spin(h6b)) {
+                          if ((get_sym(h3b)^(get_sym(h4b)^(get_sym(h5b)^get_sym(h6b)))) == irrep_e()) {
+
+                            long h3b_0, h4b_0, h5b_0, h6b_0; 
+                            restricted_4(h3b, h4b, h5b, h6b, h3b_0, h4b_0, h5b_0, h6b_0); 
+                            long h5b_1, h6b_1, h1b_1, h2b_1; 
+                            restricted_4(h5b, h6b, h1b, h2b, h5b_1, h6b_1, h1b_1, h2b_1); 
+                            const int dim_common = get_range(h5b) * get_range(h6b); 
+                            const int dima0_sort = get_range(h3b) * get_range(h4b); 
+                            const int dima1_sort = get_range(h1b) * get_range(h2b); 
+
+                            // read tilde V (redundant read is involved...)
+                            in->get_block(h4b_0+noab()*(h3b_0+noab()*(h6b_0+noab()*(h5b_0))), k_a0);
+
+                            // read denominator
+                            denom->get_block(h6b_1+noab()*(h5b_1+noab()*(h2b_1+noab()*(h1b_1))), k_a1);
+                            double factor = 1.0;
+                            if (h5b == h6b) factor *= 0.5;
+                            const int unit = 1;
+                            const int h34 = h4 + get_range(h4b) * h3;
+                            const int stride = get_range(h3b) * get_range(h4b);
+                            const double one = 1.0;
+                            F77_DGEMV("t", &dim_common, &dima1_sort, &factor, k_a1, &dim_common, k_a0 + h34, &stride, &one, k_c_sort, &unit);
+                          }
+                        } 
+                      }
+                    }
+                    const long dimc = get_range(h3b)*get_range(h4b)*get_range(h1b)*get_range(h2b);
+                    std::fill(k_c, k_c+dimc, 0.0);
+                    {
+                      const size_t h34 = h4 + get_range(h4b) * h3;
+                      const size_t stride = get_range(h3b) * get_range(h4b);
+                      size_t iall = h34;
+                      size_t i = 0;
+                      for (int h1 = 0; h1 != get_range(h1b); ++h1) {
+                        for (int h2 = 0; h2 != get_range(h2b); ++h2, iall += stride, ++i) {
+                          k_c[iall] = k_c_sort[i];
+                        }
+                      }
+                    }
+                    out->add_block(h4b+noab()*(h3b+noab()*(h2b+noab()*(h1b))),k_c); 
+                  }
+                }
+              }
+            } 
+          } 
+        }
+      } // orbital loops
+    } 
+  } 
+  mem()->free_local_double(k_a1); 
+  mem()->free_local_double(k_a0); 
+  mem()->free_local_double(k_c_sort); 
+  mem()->free_local_double(k_c); 
+  mem()->sync(); 
+}

@@ -171,11 +171,9 @@ class CCR12_Info : virtual public RefCount {
 
     /// local functions for jacobi_t2_and_gt2_ (i.e. a non-iterative MP2-R12 solver)i
     void invert_b(const Ref<Tensor>& vv, Ref<Tensor>& copt);
-    void solve_linear_equation(double*, double*, const int);
     void form_ad(Ref<Tensor>& out);
     void form_ca(const Ref<Tensor>&, const Ref<Tensor>&, Ref<Tensor>&);
     void form_adt(const Ref<Tensor>&, const Ref<Tensor>&, Ref<Tensor>&);
-    void form_matrix_x_b(double*, const double, const bool, const bool);
 
     /// B and X intermediate in RefSymmSCMatrix; to be used in a certain class of methods
     RefSymmSCMatrix B_;
@@ -372,6 +370,8 @@ class CCR12_Info : virtual public RefCount {
     // returns shared pointers of OrbitalSpace objects 
     Ref<OrbitalSpace> corr_space() { return corr_space_; };  // full space
 
+    // used in MP2-R12 updates etc.
+    void denom_contraction(const Ref<Tensor>&, Ref<Tensor>&);
 };
 
 }

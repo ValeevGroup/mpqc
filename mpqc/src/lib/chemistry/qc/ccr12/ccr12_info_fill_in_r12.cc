@@ -76,7 +76,7 @@ void CCR12_Info::fill_in_iiii() {
 
   if (need_gt2()) {
     // (2)R12 methods do not need gt2 tensors (but need all others).
-    // In full o
+    // In fullopt calculations, we still use it for guess functions.
     MTensor<4> GT2(this,d_gt2.pointer(),iiii);
 
     // compute fixed geminal coefficients

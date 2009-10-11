@@ -82,7 +82,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   irrep_t_ = 0L;
   irrep_y_ = 0L;
 
-  // TODO More to come... e.g. dipole,...
+  // More to come... e.g. dipole,...
   bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL");
 
   // compute the correlated spin-orbital space used by SMITH

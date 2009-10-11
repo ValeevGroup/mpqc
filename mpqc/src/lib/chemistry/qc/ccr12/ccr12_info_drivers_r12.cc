@@ -56,6 +56,7 @@ void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_
   /// obtain Ad = f^alpha_a R^ij_alpha b (Eq. 13 of Valeev and Janssen 2004 JCP) 
   Ref<Tensor> ad = new Tensor("ad_local",mem_);
   offset_l2(ad);
+  // form_ad(ad);
 
   /// obtain \v{V} (Eq. 18 of Valeev and Janssen 2004 JCP)
   form_adt(ad,t2_mp2,vv);
@@ -65,7 +66,6 @@ void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_
   Ref<Tensor> copt = d_gr2_->clone();
   denom_contraction(vv, copt);
   d_gt2_->daxpy(copt, 1.0);
-  denom_contraction(d_gr2_, d_gt2_);
 
   /// obtain effective T2 (The numerator of Eq. 20 of Valeev and Janssen 2004 JCP)
   /// we will reuse ad; every time when we ad->get_block, we need to invert it.

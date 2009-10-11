@@ -47,57 +47,35 @@ void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_
 
   /// obtain d_r2/Diag
   Ref<Tensor> t2_mp2 = new Tensor("t2_mp2_local",mem_);
-  offset_t2(t2_mp2, false); 
-  jacobi_t2_(d_r2_,t2_mp2); 
+  offset_t2(t2_mp2, false);
+  jacobi_t2_(d_r2_, t2_mp2);
 
   /// obtain duplicate of d_gr2  
-  Ref<Tensor> vv = d_gr2_->copy(); 
+  Ref<Tensor> vv = d_gr2_->copy();
 
   /// obtain Ad = f^alpha_a R^ij_alpha b (Eq. 13 of Valeev and Janssen 2004 JCP) 
   Ref<Tensor> ad = new Tensor("ad_local",mem_);
-  offset_l2(ad); 
-  form_ad(ad);
+  offset_l2(ad);
 
   /// obtain \v{V} (Eq. 18 of Valeev and Janssen 2004 JCP)
   form_adt(ad,t2_mp2,vv);
 
   /// obtain copt  (Eq. 17 of Valeev and Janssen 2004 JCP)
-  /// note "-1" is multiplied in this step if B is defined by B=B-X(f+f)
-  /// OR it might be better to write a code that avoids storing 6-index quantity.
-  Ref<Tensor> copt=d_gr2_->clone(); 
-  invert_b(vv,copt);  // TODO
-  d_gt2_->daxpy(copt,1.0);
+
+  Ref<Tensor> copt = d_gr2_->clone();
+  denom_contraction(vv, copt);
+  d_gt2_->daxpy(copt, 1.0);
+  denom_contraction(d_gr2_, d_gt2_);
 
   /// obtain effective T2 (The numerator of Eq. 20 of Valeev and Janssen 2004 JCP)
   /// we will reuse ad; every time when we ad->get_block, we need to invert it.
   t2_mp2->zero();
-  t2_mp2->daxpy(d_r2_,1.0); //data copy
-  form_ca(copt,ad,t2_mp2);
+  t2_mp2->daxpy(d_r2_, 1.0); //data copy
+  form_ca(copt, ad, t2_mp2);
   
   /// devide by the denominator and add it to d_t2_
-  jacobi_t2_(t2_mp2,d_t2_); 
+  jacobi_t2_(t2_mp2, d_t2_);
 
-}
-
-
-void CCR12_Info::invert_b(const Ref<Tensor>& vv, Ref<Tensor>& copt){
-
- Ref<Tensor> vv_in=vv->copy();
- vv->zero();
- 
- long count=0L;
- /// CAUTION!! Outer loops are subscripts
- for (long h3b =0L;h3b<noab();++h3b) { 
-  for (long h4b=h3b;h4b<noab();++h4b) { 
-   for (long h3=0L;h3<get_range(h3b);++h3) {
-    for (long h4=0L;h4<get_range(h4b);++h4,++count) {
-// will be parallelized here
-     if (count%mem()->n()!=mem()->me()) continue;
-
-    }
-   }
-  }
- }
 }
 
 

@@ -54,8 +54,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   set_naocc(r12evalinfo_->refinfo()->occ_act_sb(Alpha)->rank(),
             r12evalinfo_->refinfo()->occ_act_sb(Beta )->rank());
-  // only fixed amplitude ansatz is supported at the moment
-  assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
+
+//assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
   assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
   set_fixed(r12evalinfo_->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fixed);
   set_navir(r12evalinfo_->refinfo()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
@@ -276,7 +276,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
      // assuming d_gt2 is already filled in.
      guess_t2_r12(d_t2, d_gt2);
    } else {
-     throw ProgrammingError("fullopt not implemented for CCSD-R12 so far", __FILE__, __LINE__);
+     // now using MP1-R12/SP amplitude even for full-opt calculations
+     guess_t2_r12(d_t2, d_gt2);
    }
 
 /// perhaps we need somehow to obtain 6-index B for Jacobi iterations.
@@ -284,12 +285,12 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 /// into block-wise structure.
 
 #ifndef DISK_BASED_SMITH
-  long input_tensors = static_size / 1000000L / nnode;
+  const long input_tensors = static_size / 1000000L / nnode;
 #else
-  long input_tensors = 0L;
+  const long input_tensors = 0L;
 #endif
-  long work_space    = workmem / 1000000L;
-  long intermediates = memsize / 1000000L - work_space - input_tensors;
+  const long work_space    = workmem / 1000000L;
+  const long intermediates = memsize / 1000000L - work_space - input_tensors;
 
   if(intermediates < 0){
       throw ProgrammingError("CCR12_Info::CCR12_Info --- needs more memory", __FILE__, __LINE__);

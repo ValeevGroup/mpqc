@@ -43,9 +43,13 @@ void CCR12_Triples::offset_hhphhh(Ref<Tensor>& t) {
      for (long h1b=0L;h1b<z->noab();++h1b) { 
       for (long h2b=h1b;h2b<z->noab();++h2b) { 
        for (long h3b=h2b;h3b<z->noab();++h3b) { 
-        if (!z->restricted() || z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) { 
-         if (z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) { 
-          if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==z->irrep_t()) { 
+        if (!z->restricted() ||
+        		z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)
+        		+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) {
+         if (z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)
+        		 ==z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) {
+          if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(p6b)^
+        		  (z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==z->irrep_t()) {
            t->input_offset(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h5b+z->noab()*h4b)))),size);
            size+=z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b)*z->get_range(h4b)*z->get_range(h5b)*z->get_range(p6b);
           }
@@ -115,11 +119,11 @@ void CCR12_Triples::denom_contraction(){
           D.convert(refinverse, nocc_act, nocc_act, false, false,
                     amap, amap, amap, amap, &iiii_erange);
 
-
-          const int h3216 = h3 + z->get_range(h3b) * (h2 + z->get_range(h2b) * (h1 + z->get_range(h1b) * p6));
+          const size_t h3216 = h3 + z->get_range(h3b) * (h2 + z->get_range(h2b) * (h1 + z->get_range(h1b) * p6));
+          const int stride = z->get_range(h3b) * z->get_range(h2b) * z->get_range(h1b) * z->get_range(p6b);
 
           for (long h4b = 0L; h4b < noab; ++h4b) { 
-           for (long h5b = h4b; h5b < noab; ++h5b) { 
+           for (long h5b = h4b; h5b < noab; ++h5b) {
 
             // spin & spatial symmetries... 
             if (!z->restricted() || 
@@ -128,8 +132,8 @@ void CCR12_Triples::denom_contraction(){
               if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))
                   == (z->irrep_t()^z->irrep_t())) { 
 
-               long dimc_singles = z->get_range(h4b)*z->get_range(h5b); 
-               std::fill(k_c_sort, k_c_sort+(size_t)dimc_singles, 0.0); 
+               const size_t dimc_singles = z->get_range(h4b)*z->get_range(h5b);
+               std::fill(k_c_sort, k_c_sort+dimc_singles, 0.0);
 
                // summation loops
                for (long h7b = 0L; h7b < noab; ++h7b) { 
@@ -145,8 +149,8 @@ void CCR12_Triples::denom_contraction(){
                    z->restricted_6(h7b, h8b, p6b, h1b, h2b, h3b,
                                    h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1); 
 
-                   int dim_common = z->get_range(h7b) * z->get_range(h8b); 
-                   int dima0_sort = z->get_range(h4b) * z->get_range(h5b); 
+                   const int dim_common = z->get_range(h7b) * z->get_range(h8b);
+                   const int dima0_sort = z->get_range(h4b) * z->get_range(h5b);
   
                    // read the "denominator" tensor
                    denom->get_block(h8b_0+z->noab()*(h7b_0+z->noab()*(h5b_0+z->noab()*(h4b_0))), k_a0); 
@@ -161,18 +165,19 @@ void CCR12_Triples::denom_contraction(){
                    double factor = 1.0; 
                    if (h7b == h8b) factor *= 0.5; 
                    const int unit = 1;
-                   const int stride = z->get_range(h3b) * z->get_range(h2b) * z->get_range(h1b) * z->get_range(p6b);
                    const double one = 1.0;
-                   F77_DGEMV("t", &dim_common, &dima0_sort, &factor, k_a0, &dim_common, k_a1 + h3216, &stride, &one, k_c_sort, &unit);
+                   F77_DGEMV("t", &dim_common, &dima0_sort, &factor,
+                             k_a0, &dim_common,
+                             k_a1 + h3216, &stride,
+                             &one, k_c_sort, &unit);
                   }
                  }
                 }
                }
-               const long dimc = z->get_range(h4b)*z->get_range(h5b)*z->get_range(p6b)
-                                *z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b);
+               const size_t dimc = z->get_range(h4b)*z->get_range(h5b)*z->get_range(p6b)
+                                  *z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b);
                std::fill(k_c, k_c+dimc, 0.0);
                {
-                const size_t stride = z->get_range(h3b) * z->get_range(h2b) * z->get_range(h1b) * z->get_range(p6b);
                 size_t iall = h3216;
                 size_t i = 0;
                 for (int h4 = 0; h4 != z->get_range(h4b); ++h4) {
@@ -181,20 +186,21 @@ void CCR12_Triples::denom_contraction(){
                  }
                 }
                }
-               intermediate_->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()*(p6b-z->noab()+z->nvab()*(h5b+z->noab()*(h4b))))), k_c); 
+               intermediate_->add_block(h3b+z->noab()*(h2b+z->noab()*(h1b+z->noab()
+            		                  *(p6b-z->noab()+z->nvab()*(h5b+z->noab()*(h4b))))), k_c);
               }
              }
             }
-           } 
-          } 
-         } 
+           }
+          }
+         }
         }
        }
-      } 
-     } 
-    } 
-   } 
-  } 
+      }
+     }
+    }
+   }
+  }
   z->mem()->free_local_double(k_c); 
   z->mem()->free_local_double(k_c_sort); 
   z->mem()->free_local_double(k_a0); 

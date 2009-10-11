@@ -169,8 +169,7 @@ class CCR12_Info : virtual public RefCount {
     void transpose(  double* dest,const double* source,const int dim1,const int dim2,const double factor);
     void transpose_1(double* dest,const double* source,const int dim1,const int dim2);
 
-    /// local functions for jacobi_t2_and_gt2_ (i.e. a non-iterative MP2-R12 solver)i
-    void invert_b(const Ref<Tensor>& vv, Ref<Tensor>& copt);
+    /// local functions for jacobi_t2_and_gt2_ (i.e. a non-iterative MP2-R12 solver)
     void form_ad(Ref<Tensor>& out);
     void form_ca(const Ref<Tensor>&, const Ref<Tensor>&, Ref<Tensor>&);
     void form_adt(const Ref<Tensor>&, const Ref<Tensor>&, Ref<Tensor>&);

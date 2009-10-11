@@ -89,16 +89,18 @@ void CCSDPR12::compute(){
   Ref<Tensor> gr2 = new Tensor("gr2",mem_);
   ccr12_info_->offset_gt2(gr2, false);
 
+  // only fixed amplitude ansatz is supported at the moment
+  const bool fullopt = ccr12_info_->r12evalinfo()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
+//assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
+  assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSDPR12_T1* ccsdpr12_t1 = new CCSDPR12_T1(info());
   CCSDPR12_T2* ccsdpr12_t2 = new CCSDPR12_T2(info());
+  CCSDPR12_C*  ccsdpr12_c  = new CCSDPR12_C( info());
 
   string theory_ = "CCSD(R12)";
   print_iteration_header(theory_);
-
-  // only fixed amplitude ansatz is supported at the moment
-  assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-  assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
 
   timer_->enter("CCR12 iterations");
   double iter_start = 0.0;
@@ -108,6 +110,11 @@ void CCSDPR12::compute(){
 
   Ref<DIIS> t1diis = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
   Ref<DIIS> t2diis = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
+  Ref<DIIS> gt2diis;
+  if (fullopt) {
+    Ref<DIIS> tmp = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
+    gt2diis = tmp;
+  }
 
   // qy = F12 * gt2. Tilde t in our papers
   ccr12_info_->update_qy();
@@ -118,28 +125,41 @@ void CCSDPR12::compute(){
     e0->zero();
     r1->zero();
     r2->zero();
+    if (fullopt) gr2->zero();
 
     ccsd_r12_e->compute_amp(e0);
     ccsdpr12_t1->compute_amp(r1);
     ccsdpr12_t2->compute_amp(r2);
+    if (fullopt) ccsdpr12_c->compute_amp(gr2);
 
     energy = ccr12_info_->get_e(e0);
 
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
+    Ref<Tensor> gt2_old = fullopt ? info()->gt2()->copy() : NULL;
+
     ccr12_info_->jacobi_t1(r1);
-    ccr12_info_->jacobi_t2(r2);
+    if (fullopt) {
+      ccr12_info_->jacobi_t2_and_gt2(r2, gr2);
+    } else {
+      ccr12_info_->jacobi_t2(r2);
+    }
+
     // compute errors
     Ref<Tensor> t1_err = t1_old;
     Ref<Tensor> t2_err = t2_old;
+    Ref<Tensor> gt2_err = fullopt ? gt2_old : NULL;
     t1_err->daxpy(info()->t1(), -1.0);
     t2_err->daxpy(info()->t2(), -1.0);
+    if (fullopt) gt2_err->daxpy(info()->gt2(), -1.0);
 
     const double r1norm = RMS(*t1_err);
     const double r2norm = RMS(*t2_err);
-    const double rnorm  = std::sqrt(r1norm*r1norm+
-                                    r2norm*r2norm);
+    const double gr2norm = fullopt ? RMS(*gt2_err) : 0.0;
+    const double rnorm  = std::sqrt(r1norm * r1norm +
+                                    r2norm * r2norm +
+                                    gr2norm * gr2norm);
 
     iter_end = timer_->get_wall_time();
     print_iteration(iter, energy, rnorm, iter_start, iter_end);
@@ -150,20 +170,20 @@ void CCSDPR12::compute(){
     // extrapolate
     t1diis->extrapolate(info()->edata(info()->t1()), info()->eerr(t1_err));
     t2diis->extrapolate(info()->edata(info()->t2()), info()->eerr(t2_err));
-
-
-
+    if (fullopt) {
+      gt2diis->extrapolate(info()->edata(info()->gt2()), info()->eerr(gt2_err));
+      ccr12_info_->update_qy();
+    }
   }
   timer_->exit("CCR12 iterations");
 
   print_iteration_footer();
 
   // if not fully optimized, we need to add the geminal-lambda contribution.
-  if (ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+  if (!fullopt) {
     timer_->enter("Lambda contribution");
     iter_start = timer_->get_wall_time();
     e0->zero();
-    CCSDPR12_C*  ccsdpr12_c = new CCSDPR12_C(info());
     ccsdpr12_c->compute_amp(gr2);
     Ref<Tensor> fixed_amp = info()->gt2();
     info()->prod_iiii(gr2, fixed_amp, e0);
@@ -174,7 +194,6 @@ void CCSDPR12::compute(){
 
     print_timing(timer_->get_wall_time() - iter_start, "Lambda contribution");
     timer_->exit("Lambda contribution");
-    delete ccsdpr12_c;
   }
 
   // using BOTH T2 and geminal amplitudes
@@ -193,7 +212,7 @@ void CCSDPR12::compute(){
     energy += ccsd_pt_correction;
   }
 
-
+  delete ccsdpr12_c;
   delete ccsdpr12_t2;
   delete ccsdpr12_t1;
   delete ccsd_r12_e;

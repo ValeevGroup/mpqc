@@ -77,21 +77,20 @@ double CCR12_Triples::get_energy() {
           double factor = 1.0; 
           if (h1b==h2b) factor *= 0.5; 
           if (h4b==h5b && h5b==h6b) factor /= 6.0; 
-          else if (h4b==h5b && h4b!=h6b) factor *= 0.5; 
-          else if (h5b==h6b && h5b!=h4b) factor *= 0.5; 
+          else if (h4b==h5b || h5b==h6b) factor *= 0.5;
 
           // adds the contribution from this block
           const int unit = 1;
           energy += factor * F77_DDOT(&dim, work0, &unit, work1, &unit);
 
-         } 
-        } 
-       } 
-      } 
-     } 
-    } 
-   } 
-  } 
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
  }
  z->mem()->free_local_double(work1); 
  z->mem()->free_local_double(work0);

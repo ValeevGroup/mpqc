@@ -85,7 +85,7 @@ for (long p3b=noab();p3b<noab()+nvab();++p3b) {
         } 
         double* k_c=mem()->malloc_local_double(dimc); 
         sort_indices4(k_c_sort,k_c,get_range(h2b),get_range(h1b),get_range(q4b),get_range(p3b),3,2,1,0,+0.5/0.5); 
-        qy()->add_block(h2b+noab()*(h1b+noab()*(q4b-noab()-nvab()+ncab()*(p3b-noab()))),k_c); 
+        qy()->put_block(h2b+noab()*(h1b+noab()*(q4b-noab()-nvab()+ncab()*(p3b-noab()))),k_c);
         mem()->free_local_double(k_c); 
         mem()->free_local_double(k_c_sort); 
        } 
@@ -153,7 +153,7 @@ for (long h3b=0L;h3b<noab();++h3b) {
         } 
         double* k_c=mem()->malloc_local_double(dimc); 
         sort_indices4(k_c_sort,k_c,get_range(h4b),get_range(h3b),get_range(q2b),get_range(p1b),1,0,3,2,+0.5/0.5); 
-        ly()->add_block(q2b-noab()-nvab()+ncab()*(p1b-noab()+nvab()*(h4b+noab()*(h3b))),k_c); 
+        ly()->put_block(q2b-noab()-nvab()+ncab()*(p1b-noab()+nvab()*(h4b+noab()*(h3b))),k_c);
         mem()->free_local_double(k_c); 
         mem()->free_local_double(k_c_sort); 
        } 

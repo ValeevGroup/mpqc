@@ -51,7 +51,8 @@ CXXSRC = ccr12.cc ccr12_info.cc ccr12_info_offset.cc \
          ccsd_sub_r12.cc ccsd_sub_bar_r12.cc ccsd_sub_r12_right.cc ccsd_sub_r12_left.cc ccsd_r12_pt_right.cc \
          lambda_ccsd_t1.cc lambda_ccsd_t2.cc lambda_ccsdpr12_t1.cc lambda_ccsdpr12_t2.cc \
          ccsd_2t_pr12_right.cc ccsd_2t_r12_left.cc \
-         triples_utils.cc triples_doubles.cc triples_singles.cc triples_energy.cc
+         triples_utils.cc triples_doubles.cc triples_singles.cc triples_energy.cc \
+         prediagon.cc
 
 INC = 
 

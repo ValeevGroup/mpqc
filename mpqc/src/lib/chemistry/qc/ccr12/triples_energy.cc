@@ -30,8 +30,10 @@
 #include <chemistry/qc/ccr12/ccr12_triples.h> 
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/mbptr12/blas.h>
+#include <iostream>
 
 using namespace sc;
+using namespace std;
   
 
 double CCR12_Triples::get_energy() { 
@@ -48,22 +50,23 @@ double CCR12_Triples::get_energy() {
  const long nvab = z->nvab();
       
  long count = 0L;
- for (long h1b = 0L; h1b < noab; ++h1b) { 
-  for (long h2b = h1b; h2b < noab; ++h2b) { 
-   for (long p3b = noab; p3b < noab + nvab; ++p3b) { 
-    for (long h4b = 0L; h4b < noab; ++h4b) { 
-     for (long h5b = h4b; h5b < noab; ++h5b) { 
-      for (long h6b = h5b; h6b < noab; ++h6b, ++count) { 
+ for (long h1b = 0L; h1b < noab; ++h1b) {
+  for (long h2b = h1b; h2b < noab; ++h2b) {
+   for (long p3b = noab; p3b < noab + nvab; ++p3b) {
+    for (long h4b = 0L; h4b < noab; ++h4b) {
+     for (long h5b = h4b; h5b < noab; ++h5b) {
+      for (long h6b = h5b; h6b < noab; ++h6b, ++count) {
        // the most primitive way of parallelizing...
        if (count%z->mem()->n() == z->mem()->me()){ 
         if (z->get_spin(h1b) + z->get_spin(h2b) + z->get_spin(p3b) ==
             z->get_spin(h4b) + z->get_spin(h5b) + z->get_spin(h6b)) { 
-         if ((z->get_sym(h1b)^(z->get_sym(h2b)^(z->get_sym(p3b)^(z->get_sym(h4b)^(z->get_sym(h5b)^z->get_sym(h6b)))))) == z->irrep_t()) { 
+         if ((z->get_sym(h1b)^(z->get_sym(h2b)^(z->get_sym(p3b)^
+        		 (z->get_sym(h4b)^(z->get_sym(h5b)^z->get_sym(h6b)))))) == z->irrep_t()) {
 
           // For RHF reference: mapping beta indices to alpha
           long h1ba, h2ba, p3ba, h4ba, h5ba, h6ba; 
           z->restricted_6(h1b, h2b, p3b, h4b, h5b, h6b,
-                          h1ba, h2ba, p3ba, h4ba, h5ba, h6ba); 
+                          h1ba, h2ba, p3ba, h4ba, h5ba, h6ba);
           const int dim = z->get_range(h1b) * z->get_range(h2b)
                         * z->get_range(h4b) * z->get_range(h5b)
                         * z->get_range(h6b) * z->get_range(p3b); 
@@ -82,6 +85,8 @@ double CCR12_Triples::get_energy() {
           // adds the contribution from this block
           const int unit = 1;
           energy += factor * F77_DDOT(&dim, work0, &unit, work1, &unit);
+          //cout << setprecision(15) << endl;
+          //cout << h1b << h2b << p3b << h4b << h5b << h6b << " " << factor * F77_DDOT(&dim, work0, &unit, work1, &unit) << endl;
 
          }
         }

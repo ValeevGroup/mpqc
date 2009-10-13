@@ -178,6 +178,9 @@ class CCR12_Info : virtual public RefCount {
     RefSymmSCMatrix B_;
     RefSymmSCMatrix X_;
 
+    RefDiagSCMatrix bdiag_;
+    RefSCMatrix lmatrix_;
+
   public:
     CCR12_Info(const Ref<R12IntEvalInfo>&,const Ref<MemoryGrp>&,size_t,
                const Ref<SCF>,int,int,int,long,long,int,int,
@@ -371,6 +374,9 @@ class CCR12_Info : virtual public RefCount {
 
     // used in MP2-R12 updates etc.
     void denom_contraction(const Ref<Tensor>&, Ref<Tensor>&);
+    void prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs);
+    RefSCMatrix lmatrix() { return lmatrix_; };
+    RefDiagSCMatrix bdiag() { return bdiag_; };
 };
 
 }

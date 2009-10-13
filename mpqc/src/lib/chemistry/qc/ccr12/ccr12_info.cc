@@ -280,6 +280,11 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
      guess_t2_r12(d_t2, d_gt2);
    }
 
+   // prediagonalization set-up for certain class of methods.
+   if (need_w1()) {
+	 prediagon(bdiag_, lmatrix_);
+   }
+
 /// perhaps we need somehow to obtain 6-index B for Jacobi iterations.
 /// The tensors would better be inverted before they are transformed
 /// into block-wise structure.
@@ -295,7 +300,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   if(intermediates < 0){
       throw ProgrammingError("CCR12_Info::CCR12_Info --- needs more memory", __FILE__, __LINE__);
   }
-
+  if (need_w1()) ExEnv::out0() << endl;
   ExEnv::out0() << indent << "input tensors (total)    : " << setw(6) << input_tensors*nnode << " MB" << endl;
   ExEnv::out0() << indent << "input tensors (per node) : " << setw(6) << input_tensors       << " MB" << endl << endl;
   ExEnv::out0() << indent << "work space    (per node) : " << setw(6) << work_space          << " MB" << endl << endl;

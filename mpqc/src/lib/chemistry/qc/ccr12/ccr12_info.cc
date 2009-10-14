@@ -269,21 +269,23 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   }
 
-   // Making initial guess for t2.
-   if (!need_gt2()) {
-     guess_t2(d_t2);
-   } else if (r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
-     // assuming d_gt2 is already filled in.
-     guess_t2_r12(d_t2, d_gt2);
-   } else {
-     // now using MP1-R12/SP amplitude even for full-opt calculations
-     guess_t2_r12(d_t2, d_gt2);
-   }
+  // prediagonalization set-up for certain class of methods.
+  if (need_w1()) {
+    prediagon(bdiag_, lmatrix_);
+  }
 
-   // prediagonalization set-up for certain class of methods.
-   if (need_w1()) {
-	 prediagon(bdiag_, lmatrix_);
-   }
+  // Making initial guess for t2.
+  if (!need_gt2()) {
+    guess_t2(d_t2);
+  } else if (r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+    // assuming d_gt2 is already filled in.
+    guess_t2_r12(d_t2, d_gt2);
+  } else {
+    // now using MP1-R12/SP amplitude even for full-opt calculations
+    guess_t2_r12(d_t2, d_gt2);
+  }
+
+
 
 /// perhaps we need somehow to obtain 6-index B for Jacobi iterations.
 /// The tensors would better be inverted before they are transformed
@@ -475,7 +477,6 @@ void CCR12_Info::needs(){
   // screened version
   if (perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12" || perturbative_ == "(2)R12") {
     need_w1_ = true;
-    need_F_ = false;
   }
 
 }

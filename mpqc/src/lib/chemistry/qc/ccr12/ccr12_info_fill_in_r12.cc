@@ -51,7 +51,7 @@ void CCR12_Info::fill_in_iiii() {
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo_->refinfo()->occ_act_sb(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }
@@ -136,7 +136,7 @@ void CCR12_Info::fill_in_vr_and_vd() {
   // map corr_space_ to it
   vector<long> aimap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo_->refinfo()->occ_act_sb(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
     aimap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aimap.begin());
   }
@@ -201,14 +201,14 @@ void CCR12_Info::fill_in_fr_and_fd() {
   // map corr_space_ to it
   vector<long> aimap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo_->refinfo()->occ_act_sb(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
     aimap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aimap.begin());
   }
   // a indices are in vir_act_sb(Alpha), map to it also
   vector<long> aamap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo_->vir_act_sb(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->vir_act(Alpha)), *corr_space_, false);
     aamap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aamap.begin());
   }
@@ -221,8 +221,8 @@ void CCR12_Info::fill_in_fr_and_fd() {
   }
 
   // assuming RHF!
-  const int nocc_act = r12evalinfo_->refinfo()->occ_act_sb(Alpha)->rank();
-  const int nvir_act = r12evalinfo_->vir_act_sb(Alpha)->rank();
+  const int nocc_act = r12eval()->occ_act(Alpha)->rank();
+  const int nvir_act = r12eval()->vir_act(Alpha)->rank();
   const int ncabs = r12evalinfo_->ribs_space(Alpha)->rank();
 
   // d_fr2 = aAii

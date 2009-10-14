@@ -53,8 +53,11 @@ namespace sc {
       static const bool mp2_only_ = false;
       /// set to true to use Ts instead of Lambdas
       static const bool replace_Lambda_with_T_ = true;
-      /// default is to include up to 3rd-order terms in the energy
-      static const unsigned int completeness_order_for_energy_ = 10;
+      /** default was to include up to 3rd-order terms in the energy.
+          current default is to include higher-order terms in the energy also -- this means that
+          t1 contributions are included even in closed-shell calculations, in contrast
+          to the original formulation */
+      static const unsigned int completeness_order_for_energy_ = 11;
       /// the max order for the intermediates is one less
       static const unsigned int
           completeness_order_for_intermediates_ = completeness_order_for_energy_

@@ -220,7 +220,9 @@ public:
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
   void set_memory(const size_t nbytes);
+  /// use these MO-basis 1-RDM for computing all intermediates (orbitals are assumed in symmetry-blocked order)
   void set_opdm(const RefSymmSCMatrix &opdm_a,const RefSymmSCMatrix &opdm_b);
+  /// symmetry-ordered MO 1-RDM
   RefSymmSCMatrix opdm(const SpinCase1 &spin) const;
   bool opdm_is_zero() const;
 

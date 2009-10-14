@@ -412,17 +412,27 @@ void R12IntEvalInfo::set_opdm(const RefSymmSCMatrix &opdm_a,const RefSymmSCMatri
     RefSymmSCMatrix Pa, Pb;
     // transform to AO basis
     { // Alpha
-      Ref<OrbitalSpace> orbs = refinfo()->orbs(Alpha);
+      Ref<OrbitalSpace> orbs = refinfo()->orbs_sb(Alpha);
       RefSCMatrix C = orbs->coefs();
       Pa = C.kit()->symmmatrix(C.rowdim()); Pa.assign(0.0);
-      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim()); opdm_blkd->convert(opdm_a);
+      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim());
+      //opdm_blkd->convert(opdm_a);
+      const size_t nmo = opdm_a.dim().n();
+      for(int r=0; r<nmo; ++r)
+        for(int c=0; c<=r; ++c)
+          opdm_blkd.set_element(r,c,opdm_a.get_element(r,c));
       Pa.accumulate_transform(C, opdm_blkd);
     }
     if (opdm_a != opdm_b) {
-      Ref<OrbitalSpace> orbs = refinfo()->orbs(Beta);
+      Ref<OrbitalSpace> orbs = refinfo()->orbs_sb(Beta);
       RefSCMatrix C = orbs->coefs();
       Pb = C.kit()->symmmatrix(C.rowdim()); Pb.assign(0.0);
-      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim()); opdm_blkd->convert(opdm_b);
+      RefSymmSCMatrix opdm_blkd = C.kit()->symmmatrix(C.coldim());
+      //opdm_blkd->convert(opdm_b);
+      const size_t nmo = opdm_b.dim().n();
+      for(int r=0; r<nmo; ++r)
+        for(int c=0; c<=r; ++c)
+          opdm_blkd.set_element(r,c,opdm_b.get_element(r,c));
       Pb.accumulate_transform(C, opdm_blkd);
     }
     else

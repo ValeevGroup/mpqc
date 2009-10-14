@@ -200,8 +200,8 @@ void PsiCCSD_PT2R12::compute() {
       continue;
 
     Ref<R12IntEvalInfo> r12info = r12eval->r12info();
-    const Ref<OrbitalSpace>& p1 = r12info->refinfo()->orbs(spin1);
-    const Ref<OrbitalSpace>& p2 = r12info->refinfo()->orbs(spin2);
+    const Ref<OrbitalSpace>& p1 = r12eval->orbs(spin1);
+    const Ref<OrbitalSpace>& p2 = r12eval->orbs(spin2);
     const unsigned int np1 = p1->rank();
     const unsigned int np2 = p2->rank();
 
@@ -548,6 +548,7 @@ void PsiCCSD_PT2R12::compute() {
       // else compute as Vbar B^-1 Vbar, where Vbar = V + VT
       if (!new_approach_)
         VT2.scale(2.0);
+      //VT2.print("VT2");
       RefSCMatrix HT = VT2;  VT2 = 0;
 
       // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
@@ -556,22 +557,22 @@ void PsiCCSD_PT2R12::compute() {
 
         // Via . T1
         RefSCMatrix VT1_2 = contract_Via_T1ja(true,Via[s],T1[spin2],occ1_act,vir2_act,occ2_act);
-        VT1_2.print("VT1_2");
         RefSCMatrix VT1 = VT1_2.clone(); VT1.assign(VT1_2);
+        //VT1_2.print("VT1_2");
         if (p1_equiv_p2) {
           // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
-          VT1.scale(2.0);
+          VT1_2.scale(2.0);
           const Ref<OrbitalSpace>& xspace1 = r12eval->xspace(spin1);
           const Ref<OrbitalSpace>& xspace2 = r12eval->xspace(spin2);
           if (spincase2 == AlphaBeta)
-            symmetrize12<false,ASymm,ASymm>(VT1, VT1, xspace1, xspace2, occ1_act, occ2_act);
+            symmetrize12<false,ASymm,ASymm>(VT1, VT1_2, xspace1, xspace2, occ1_act, occ2_act);
           else
-            symmetrize12<false,AntiSymm,ASymm>(VT1, VT1, xspace1, xspace2, occ1_act, occ2_act);
+            symmetrize12<false,AntiSymm,ASymm>(VT1, VT1_2, xspace1, xspace2, occ1_act, occ2_act);
         }
         else {
           // Vai^t . T1
           RefSCMatrix VT1_1 = contract_Via_T1ja(false,Vai[s],T1[spin1],occ2_act,vir1_act,occ1_act);
-          VT1_1.print("VT1_1");
+          //VT1_1.print("VT1_1");
           VT1.accumulate(VT1_1);
         }
         // If needed, antisymmetrize VT1
@@ -659,7 +660,6 @@ void PsiCCSD_PT2R12::compute() {
 
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C_MP1 . H1_R0
   // H0_RR is the usual B of the standard MP-R12 theory
-  const int debug = 0;
   const bool diag = r12eval->r12info()->r12tech()->ansatz()->diag();
   Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12info()->r12tech()->stdapprox());
   // In the new approach E2 = - Vbar . B^{-1} . Vbar, where Vbar = V + VT
@@ -674,7 +674,7 @@ void PsiCCSD_PT2R12::compute() {
     r12intermediates->V_computed(true);
   }
   const bool new_energy=(diag==true) ? true : false;
-  Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,debug,new_energy);
+  Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,debug(),new_energy);
 
   std::vector<double> E2(NSpinCases2,0.0);
   const int num_unique_spincases2 = (reference_->spin_polarized() ? 3 : 2);

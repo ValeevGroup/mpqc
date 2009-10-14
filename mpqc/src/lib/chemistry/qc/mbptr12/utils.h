@@ -108,7 +108,7 @@ namespace sc {
       If BraSymm==Symm && KetSymm==ASymm: <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ji|A|lk>) = 1/2 * (<ij|A|kl> + <ij|A|lk>)
       etc.
       and saves to Asymm. Row dimension of A has to be pairdim<BraSymm>(bra1->rank(),bra2->rank()).n().
-      Same for ket. Asymm and A can be the same matrix.
+      Same for ket. Asymm and A cannot be the same matrix.
     */
   template <bool Accumulate, sc::fastpairiter::PairSymm BraSymm, sc::fastpairiter::PairSymm KetSymm>
     void symmetrize12(RefSCMatrix& Asymm, const RefSCMatrix& A,

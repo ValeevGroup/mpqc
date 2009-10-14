@@ -60,11 +60,11 @@ RefSCMatrix R12IntEval::coulomb_(const SpinCase1 &spin, const Ref<OrbitalSpace>&
 
   Ref<OrbitalSpace> contr_space;
   if(opdm(Alpha).null()) {
-    contr_space = r12info()->refinfo()->occ(spin);
+    contr_space = occ(spin);
     return(coulomb_(contr_space,bra_space,ket_space));
   }
   else {
-    contr_space = r12info()->refinfo()->orbs(spin);
+    contr_space = orbs(spin);
   }
 
   Timer tim_coulomb("coulomb general");

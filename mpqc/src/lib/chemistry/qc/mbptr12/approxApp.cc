@@ -101,7 +101,7 @@ R12IntEval::compute_BApp_()
         throw FeatureNotImplemented("Relativistic R12/A'' computations are not supported with ABS==OBS",__FILE__,__LINE__);
 
       // which space is used as RIBS?
-      Ref<OrbitalSpace> ribs = (maxnabs < 2) ? r12info()->refinfo()->orbs(spin) : r12info()->ribs_space();
+      Ref<OrbitalSpace> ribs = (maxnabs < 2) ? this->orbs(spin) : r12info()->ribs_space();
       // get AO space for RIBS
       const Ref<OrbitalSpace>& aoribs =
         AOSpaceRegistry::instance()->value(ribs->basis());

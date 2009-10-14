@@ -28,7 +28,7 @@
 
 #include <sstream>
 #include <algorithm>
-#include <chemistry/qc/ccr12/ccr12_triples.h> 
+#include <chemistry/qc/ccr12/ccr12_triples.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/mtensor.h>
@@ -38,12 +38,12 @@ using namespace std;
 
 void CCR12_Triples::offset_hhphhh(Ref<Tensor>& t) {
   long size=0L;
-  for (long h4b=0L;h4b<z->noab();++h4b) { 
-   for (long h5b=h4b;h5b<z->noab();++h5b) { 
-    for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) { 
-     for (long h1b=0L;h1b<z->noab();++h1b) { 
-      for (long h2b=h1b;h2b<z->noab();++h2b) { 
-       for (long h3b=h2b;h3b<z->noab();++h3b) { 
+  for (long h4b=0L;h4b<z->noab();++h4b) {
+   for (long h5b=h4b;h5b<z->noab();++h5b) {
+    for (long p6b=z->noab();p6b<z->noab()+z->nvab();++p6b) {
+     for (long h1b=0L;h1b<z->noab();++h1b) {
+      for (long h2b=h1b;h2b<z->noab();++h2b) {
+       for (long h3b=h2b;h3b<z->noab();++h3b) {
         if (!z->restricted() ||
         		z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)
         		+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)!=12L) {
@@ -67,12 +67,12 @@ void CCR12_Triples::offset_hhphhh(Ref<Tensor>& t) {
 }
 
 
-void CCR12_Triples::denom_contraction(){ 
+void CCR12_Triples::denom_contraction(){
 
   const size_t maxtile = z->maxtilesize();
   const size_t singles = maxtile * maxtile;
   const size_t doubles = singles * singles;
-  const size_t triples = singles * doubles;  
+  const size_t triples = singles * doubles;
   double* k_c      = z->mem()->malloc_local_double(triples);
   double* k_c_sort = z->mem()->malloc_local_double(singles);
   double* k_a0     = z->mem()->malloc_local_double(doubles);
@@ -86,7 +86,7 @@ void CCR12_Triples::denom_contraction(){
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
   vector<long> amap;
   {
-    vector<int> intmap = sc::map(*(z->r12evalinfo()->refinfo()->occ_act_sb(Alpha)), *z->corr_space(), false);
+    vector<int> intmap = sc::map(*(z->r12eval()->occ_act(Alpha)), *z->corr_space(), false);
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }
@@ -95,7 +95,7 @@ void CCR12_Triples::denom_contraction(){
   int count = 0;
   for (long p6b = noab; p6b < noab+nvab; ++p6b) {
    for (long h1b = 0L; h1b < noab; ++h1b) {
-    for (long h2b = h1b; h2b < noab; ++h2b) { 
+    for (long h2b = h1b; h2b < noab; ++h2b) {
      for (long h3b = h2b; h3b < noab; ++h3b) {
       const int rh1b = z->get_range(h1b);
       const int rh2b = z->get_range(h2b);
@@ -109,7 +109,7 @@ void CCR12_Triples::denom_contraction(){
           if (z->get_offset(h1b) + h1 == z->get_offset(h3b) + h3) continue;
           if (z->get_offset(h3b) + h3 == z->get_offset(h2b) + h2) continue;
 
-          if (count % z->mem()->n() != z->mem()->me() ) continue; 
+          if (count % z->mem()->n() != z->mem()->me() ) continue;
 
           const double ep6 = z->get_orb_energy(z->get_offset(p6b) + p6);
           const double eh1 = z->get_orb_energy(z->get_offset(h1b) + h1);
@@ -132,14 +132,14 @@ void CCR12_Triples::denom_contraction(){
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));
           const int stride = rh3b * rh2b * rh1b * rp6b;
 
-          for (long h4b = 0L; h4b < noab; ++h4b) { 
+          for (long h4b = 0L; h4b < noab; ++h4b) {
            for (long h5b = h4b; h5b < noab; ++h5b) {
 
         	const int rh4b = z->get_range(h4b);
         	const int rh5b = z->get_range(h5b);
 
-            // spin & spatial symmetries... 
-            if (!z->restricted() || 
+            // spin & spatial symmetries...
+            if (!z->restricted() ||
                 z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b)+z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b) != 12L) {
              if (z->get_spin(h4b)+z->get_spin(h5b)+z->get_spin(p6b) == z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) {
               if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(p6b)^(z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))
@@ -148,25 +148,25 @@ void CCR12_Triples::denom_contraction(){
                std::fill(k_c_sort, k_c_sort+rh4b*rh5b, 0.0);
 
                // summation loops
-               for (long h7b = 0L; h7b < noab; ++h7b) { 
+               for (long h7b = 0L; h7b < noab; ++h7b) {
                 for (long h8b = h7b; h8b < noab; ++h8b) {
                  const int rh7b = z->get_range(h7b);
                  const int rh8b = z->get_range(h8b);
 
-                 if (z->get_spin(h4b)+z->get_spin(h5b) == z->get_spin(h7b)+z->get_spin(h8b)) { 
-                  if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(h7b)^z->get_sym(h8b)))) == z->irrep_t()) { 
+                 if (z->get_spin(h4b)+z->get_spin(h5b) == z->get_spin(h7b)+z->get_spin(h8b)) {
+                  if ((z->get_sym(h4b)^(z->get_sym(h5b)^(z->get_sym(h7b)^z->get_sym(h8b)))) == z->irrep_t()) {
 
-                   long h4b_0, h5b_0, h7b_0, h8b_0; 
+                   long h4b_0, h5b_0, h7b_0, h8b_0;
                    z->restricted_4(h4b, h5b, h7b, h8b,
-                                   h4b_0, h5b_0, h7b_0, h8b_0); 
-  
-                   long h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1; 
+                                   h4b_0, h5b_0, h7b_0, h8b_0);
+
+                   long h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1;
                    z->restricted_6(h7b, h8b, p6b, h1b, h2b, h3b,
-                                   h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1); 
+                                   h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1);
 
                    const int dim_common = rh7b * rh8b;
                    const int dima0_sort = rh4b * rh5b;
-  
+
                    // read the "denominator" tensor
                    denom->get_block(h8b_0+noab*(h7b_0+noab*(h5b_0+noab*h4b_0)), k_a0);
 
@@ -174,8 +174,8 @@ void CCR12_Triples::denom_contraction(){
                    doubles_intermediate_->get_block(h3b_1+noab*(h2b_1+noab*(h1b_1+noab
                                                   *(p6b_1-noab+nvab*(h8b_1+noab*h7b_1)))), k_a1);
 
-                   double factor = 1.0; 
-                   if (h7b == h8b) factor *= 0.5; 
+                   double factor = 1.0;
+                   if (h7b == h8b) factor *= 0.5;
                    const int unit = 1;
                    const double one = 1.0;
                    F77_DGEMV("t", &dim_common, &dima0_sort,
@@ -212,10 +212,10 @@ void CCR12_Triples::denom_contraction(){
     }
    }
   }
-  z->mem()->free_local_double(k_c); 
-  z->mem()->free_local_double(k_c_sort); 
-  z->mem()->free_local_double(k_a0); 
-  z->mem()->free_local_double(k_a1); 
-  z->mem()->sync(); 
-} 
+  z->mem()->free_local_double(k_c);
+  z->mem()->free_local_double(k_c_sort);
+  z->mem()->free_local_double(k_a0);
+  z->mem()->free_local_double(k_a1);
+  z->mem()->sync();
+}
 

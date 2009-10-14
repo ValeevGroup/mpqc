@@ -66,8 +66,8 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
 
     const Ref<OrbitalSpace>& gg1_space = ggspace(spin1);
     const Ref<OrbitalSpace>& gg2_space = ggspace(spin2);
-    const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-    const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+    const Ref<OrbitalSpace>& orbs1 = this->orbs(spin1);
+    const Ref<OrbitalSpace>& orbs2 = this->orbs(spin2);
     const Ref<OrbitalSpace>& GG1_space = GGspace(spin1);
     const Ref<OrbitalSpace>& GG2_space = GGspace(spin2);
     const Ref<OrbitalSpace>& abs1 = r12info()->abs_space();
@@ -95,7 +95,7 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
 
     Ref<TwoParticleContraction> tpcontract;
     const ABSMethod absmethod = r12info()->abs_method();
-    tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
+    tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
                     absmethod == LinearR12::ABS_CABSPlus);

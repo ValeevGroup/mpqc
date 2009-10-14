@@ -336,6 +336,8 @@ namespace sc {
                       const Ref<OrbitalSpace>& ket1,
                       const Ref<OrbitalSpace>& ket2)
     {
+      // doesn't make sense if Asymm == A
+      assert(&Asymm != &A);
       using namespace sc::fastpairiter;
       using sc::fastpairiter::MOPairIter;
 
@@ -389,6 +391,8 @@ namespace sc {
                 Asymm.accumulate_element(IJ,KL,Asymm_ijkl);
               else
                 Asymm.set_element(IJ,KL,Asymm_ijkl);
+
+              //ExEnv::out0() << IJ << " " << KL << " " << JI << " " << LK << " " << A_ijkl << " " << A_jilk << " " << Asymm_ijkl << std::endl;
 
             } // end of kl
           } // end of ket blocks

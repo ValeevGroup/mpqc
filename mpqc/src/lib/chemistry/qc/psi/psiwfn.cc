@@ -33,6 +33,8 @@
 #include <cmath>
 #include <sstream>
 #include <numeric>
+#include <functional>
+#include <algorithm>
 
 #include <psifiles.h>
 
@@ -73,16 +75,6 @@
 //#define ordinary_INDEX(i,j,coldim) ((i)*(coldim)+(j))
 
 using namespace std;
-
-namespace {
-  template <typename T> T sum(const std::vector<T>& vec) {
-    T result(0);
-    size_t size = vec.size();
-    for(size_t i=0; i<size; ++i)
-      result += vec[i];
-    return result;
-  }
-}
 
 namespace sc {
 
@@ -224,19 +216,6 @@ namespace sc {
 
   }
 
-  //void init_ioff(void)
-  //{
-  //   int i;
-
-  //   /* set offsets for ij-type canonical ordering */
-  //   ioff = (int *) malloc (IOFF_MAX * sizeof(int)) ;
-  //   ioff[0] = 0;
-  //   for (i = 1; i < IOFF_MAX ; i++) {
-  //      ioff[i] = ioff[i-1] + i;
-  //      }
-  //}
-
-
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiWavefunction_cd(typeid(PsiWavefunction),
@@ -371,9 +350,10 @@ namespace sc {
   }
 
   // Shamelessly borrowed from class SCF
-  std::vector<int> PsiWavefunction::read_occ(const Ref<KeyVal> &keyval,
-                                             const char *name, int nirrep) {
-    std::vector<int> occ;
+  std::vector<unsigned int> PsiWavefunction::read_occ(const Ref<KeyVal> &keyval,
+                                                      const char *name,
+                                                      size_t nirrep) {
+    std::vector<unsigned int> occ;
     if (keyval->exists(name)) {
       if (keyval->count(name) != nirrep) {
         ExEnv::err0() << indent<< "ERROR: PsiWavefunction: have "<< nirrep
@@ -383,7 +363,13 @@ namespace sc {
       }
       occ.resize(nirrep);
       for (int i=0; i<nirrep; i++) {
-        occ[i] = keyval->intvalue(name, i);
+        const int occ_i = keyval->intvalue(name, i);
+        if (occ_i < 0) {
+          std::ostringstream oss;
+          oss << "negative occupancy found in array " << name;
+          throw InputError(oss.str().c_str(),__FILE__,__LINE__);
+        }
+        else occ[i] = occ_i;
       }
     }
     return occ;
@@ -743,8 +729,8 @@ namespace sc {
       throw InputError("PsiSCF::import_occupations(obwfn) -- number of electrons in obwfn does not match this");
 
     // extract occupations
-    std::vector<int> docc_obwfn(nirrep_);
-    std::vector<int> socc_obwfn(nirrep_);
+    std::vector<unsigned int> docc_obwfn(nirrep_, 0u);
+    std::vector<unsigned int> socc_obwfn(nirrep_, 0u);
     for (int h=0; h<nirrep_; ++h) {
       const int nmo = osodim->blocks()->size(h);
       for (int mo=0; mo<nmo; ++mo) {
@@ -781,7 +767,7 @@ namespace sc {
     }
 
     // lastly, update multp_
-    multp_ = 1 + sum(socc_);
+    multp_ = 1 + accumulate(socc_.begin(), socc_.end(), 0);
 
   }
 
@@ -810,7 +796,7 @@ namespace sc {
       }
     }
     else {
-      const int nelectron = sum(docc_) * 2;
+      const int nelectron = accumulate(docc_.begin(), docc_.end(), 0) * 2;
       charge_ = nuclear_charge - nelectron;
     }
   }
@@ -875,9 +861,10 @@ namespace sc {
       }
     }
     else {
-      const int nelectron = sum(docc_) * 2 + sum(socc_);
+      const int nsocc = accumulate(socc_.begin(), socc_.end(), 0);
+      const int nelectron = accumulate(docc_.begin(), docc_.end(), 0) * 2 + nsocc;
       charge_ = nuclear_charge - nelectron;
-      multp_ = sum(socc_) + 1;
+      multp_ = nsocc + 1;
     }
 
   }
@@ -942,9 +929,10 @@ namespace sc {
       }
     }
     else {
-      const int nelectron = sum(docc_) * 2 + sum(socc_);
+      const int nsocc = accumulate(socc_.begin(), socc_.end(), 0);
+      const int nelectron = accumulate(docc_.begin(), docc_.end(), 0) * 2 + nsocc;
       charge_ = nuclear_charge - nelectron;
-      multp_ = sum(socc_) + 1;
+      multp_ = nsocc + 1;
     }
 
   }
@@ -1187,37 +1175,6 @@ namespace sc {
     return frozen_uocc_;
   }
 
-  namespace psiwfnlocal {
-
-    std::vector<unsigned int> vector_binop(const std::vector<unsigned int> &term1,const std::vector<unsigned int> &term2,
-                                         const std::string &binop) {
-      if(term1.size() != term2.size()){
-        throw ProgrammingError("psiwfnlocal::vector_binop -- vectors term1 and term2 don't have the same length.",__FILE__,__LINE__);
-      }
-      std::vector<unsigned int> result(term1.size());
-      std::vector<unsigned int>::iterator result_it = result.begin();
-      if(binop==string("plus")) {
-        for(std::vector<unsigned int>::const_iterator term1_it = term1.begin(), term2_it = term2.begin();
-            term1_it != term1.end() && term2_it != term2.end() && result_it != result.end();
-            term1_it++, term2_it++, result_it++) {
-          (*result_it) = (*term1_it) + (*term2_it);
-        }
-      }
-      else if(binop=="minus") {
-        for(std::vector<unsigned int>::const_iterator term1_it = term1.begin(), term2_it = term2.begin();
-            term1_it != term1.end() && term2_it != term2.end() && result_it != result.end();
-            term1_it++, term2_it++, result_it++) {
-          (*result_it) = (*term1_it) - (*term2_it);
-        }
-      }
-      else {
-        throw ProgrammingError("psiwfnlocal::vector_binop -- this binop is not implemented.",__FILE__,__LINE__);
-      }
-      return(result);
-    }
-
-  }
-
   const std::vector<unsigned int> PsiCorrWavefunction::docc_act() {
     std::vector<unsigned int> occ_act_alpha = reference_->occpi(Alpha);
     unsigned int occ_act_alpha_sum = std::accumulate(occ_act_alpha.begin(),occ_act_alpha.end(),0);
@@ -1227,11 +1184,15 @@ namespace sc {
     std::vector<unsigned int> docc_active(nirrep);
     if(occ_act_alpha_sum > occ_act_beta_sum) {
       // docc_active = occ_act_beta - frozen_docc()
-      docc_active = psiwfnlocal::vector_binop(occ_act_beta,frozen_docc(),string("minus"));
+      std::transform(occ_act_beta.begin(), occ_act_beta.end(), frozen_docc().begin(),
+                     docc_active.begin(),
+                     std::minus<unsigned int>());
     }
     else {
       // docc_active = occ_act_alpha - frozen_docc()
-      docc_active = psiwfnlocal::vector_binop(occ_act_alpha,frozen_docc(),string("minus"));
+      std::transform(occ_act_alpha.begin(), occ_act_alpha.end(), frozen_docc().begin(),
+                     docc_active.begin(),
+                     std::minus<unsigned int>());
     }
 
     return(docc_active);
@@ -1246,11 +1207,15 @@ namespace sc {
     std::vector<unsigned int> singocc(nirrep);
     if(occ_act_alpha_sum > occ_act_beta_sum) {
       // singocc = occ_act_alpha - occ_act_beta
-      singocc = psiwfnlocal::vector_binop(occ_act_alpha,occ_act_beta,string("minus"));
+      std::transform(occ_act_alpha.begin(), occ_act_alpha.end(), occ_act_beta.begin(),
+                     singocc.begin(),
+                     std::minus<unsigned int>());
     }
     else {
       // singocc = occ_act_beta - occ_act_alpha
-      singocc = psiwfnlocal::vector_binop(occ_act_beta,occ_act_alpha,string("minus"));
+      std::transform(occ_act_beta.begin(), occ_act_beta.end(), occ_act_alpha.begin(),
+                     singocc.begin(),
+                     std::minus<unsigned int>());
     }
 
     return(singocc);
@@ -1265,11 +1230,15 @@ namespace sc {
     std::vector<unsigned int> uocc_active(nirrep);
     if(uocc_act_alpha_sum > uocc_act_beta_sum){
       // uocc_active = uocc_act_beta - frozen_uocc()
-      uocc_active = psiwfnlocal::vector_binop(uocc_act_beta,frozen_uocc(),string("minus"));
+      std::transform(uocc_act_beta.begin(), uocc_act_beta.end(), frozen_uocc().begin(),
+                     uocc_active.begin(),
+                     std::minus<unsigned int>());
     }
     else {
       // uocc_active = uocc_act_alpha - frozen_uocc()
-      uocc_active = psiwfnlocal::vector_binop(uocc_act_alpha,frozen_uocc(),string("minus"));
+      std::transform(uocc_act_alpha.begin(), uocc_act_alpha.end(), frozen_uocc().begin(),
+                     uocc_active.begin(),
+                     std::minus<unsigned int>());
     }
 
     return(uocc_active);
@@ -1336,7 +1305,7 @@ namespace sc {
     delete [] opdm_arr;
 
     if(debug_>=DefaultPrintThresholds::mostN2) {
-      opdm_mat.print(prepend_spincase(spin,"opdm").c_str());
+      opdm_mat.print(prepend_spincase(spin,"Psi opdm").c_str());
     }
 
     return(opdm_mat);
@@ -1886,7 +1855,7 @@ namespace sc {
 
   RefSymmSCMatrix PsiCorrWavefunction_PT2R12::hcore_mo() {
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    Ref<OrbitalSpace> space = r12evalinfo_->refinfo()->orbs(Alpha);
+    Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
     RefSCMatrix coeffs = space->coefs();
     RefSCDimension nmodim = coeffs.rowdim();
     RefSCDimension naodim = coeffs.coldim();
@@ -1941,7 +1910,7 @@ namespace sc {
 
   RefSymmSCMatrix PsiCorrWavefunction_PT2R12::hcore_mo(SpinCase1 spin) {
     const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    const Ref<OrbitalSpace> space = r12evalinfo_->refinfo()->orbs(spin);
+    const Ref<OrbitalSpace> space = r12eval_->orbs(spin);
     const int nmo = space->rank();
     const RefSCMatrix coeffs = space->coefs();
     const RefSCDimension nmodim = new SCDimension(nmo);
@@ -1993,7 +1962,7 @@ namespace sc {
 
   RefSymmSCMatrix PsiCorrWavefunction_PT2R12::moints() {
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    Ref<OrbitalSpace> space = r12evalinfo_->refinfo()->orbs(Alpha);
+    Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
 
     RefSCMatrix coeffs = space->coefs();
 
@@ -2108,16 +2077,16 @@ namespace sc {
     Ref<OrbitalSpace> space2;
 
     if(pairspin == AlphaBeta) {
-      space1 = r12evalinfo_->refinfo()->orbs(Alpha);
-      space2 = r12evalinfo_->refinfo()->orbs(Beta);
+      space1 = r12eval_->orbs(Alpha);
+      space2 = r12eval_->orbs(Beta);
     }
     if(pairspin == AlphaAlpha) {
-      space1 = r12evalinfo_->refinfo()->orbs(Alpha);
-      space2 = r12evalinfo_->refinfo()->orbs(Alpha);
+      space1 = r12eval_->orbs(Alpha);
+      space2 = r12eval_->orbs(Alpha);
     }
     if(pairspin == BetaBeta) {
-      space1 = r12evalinfo_->refinfo()->orbs(Beta);
-      space2 = r12evalinfo_->refinfo()->orbs(Beta);
+      space1 = r12eval_->orbs(Beta);
+      space2 = r12eval_->orbs(Beta);
     }
 
     RefSCMatrix coeffs1 = space1->coefs();
@@ -2239,8 +2208,8 @@ namespace sc {
     const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
     const SpinCase1 spin1 = case1(pairspin);
     const SpinCase1 spin2 = case2(pairspin);
-    const Ref<OrbitalSpace> space1 = r12evalinfo_->refinfo()->orbs(spin1);
-    const Ref<OrbitalSpace> space2 = r12evalinfo_->refinfo()->orbs(spin2);
+    const Ref<OrbitalSpace> space1 = r12eval_->orbs(spin1);
+    const Ref<OrbitalSpace> space2 = r12eval_->orbs(spin2);
     Ref<SpinMOPairIter> PQ_iter = new SpinMOPairIter(space1,space2,pairspin);
     const int nmo1 = space1->rank();
     const int nmo2 = space2->rank();
@@ -2288,6 +2257,10 @@ namespace sc {
     RefSymmSCMatrix opdm_PQ = opdm_pq.clone();
     opdm_PQ.assign(0.0);
     opdm_PQ.accumulate_transform(transform,opdm_pq);
+
+    if(debug_>=DefaultPrintThresholds::mostN2) {
+      opdm_PQ.print(prepend_spincase(spin,"Psi opdm (in MPQC orbitals)").c_str());
+    }
 
     return(opdm_PQ);
   }
@@ -2519,8 +2492,8 @@ namespace sc {
   RefSymmSCMatrix PsiCorrWavefunction_PT2R12::twopdm_refmo_from_onepdm(const SpinCase2 &pairspin) {
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
-    int nall_a = r12evalinfo_->refinfo()->orbs(Alpha)->rank();
-    int nall_b = r12evalinfo_->refinfo()->orbs(Beta)->rank();
+    int nall_a = r12eval_->orbs(Alpha)->rank();
+    int nall_b = r12eval_->orbs(Beta)->rank();
     RefSCDimension dim_aa;
     if(pairspin==AlphaBeta) {
       dim_aa = new SCDimension(nall_a*nall_b);
@@ -2539,8 +2512,8 @@ namespace sc {
     const SpinCase1 spin2 = case2(pairspin);
     const RefSymmSCMatrix opdm1 = onepdm_refmo(spin1);
     const RefSymmSCMatrix opdm2  = onepdm_refmo(spin2);
-    const Ref<OrbitalSpace> orbs1 = r12evalinfo_->refinfo()->orbs(spin1);
-    const Ref<OrbitalSpace> orbs2 = r12evalinfo_->refinfo()->orbs(spin2);
+    const Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
+    const Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
     SpinMOPairIter PQ_iter(orbs1,orbs2,pairspin);
     SpinMOPairIter RS_iter(orbs1,orbs2,pairspin);
     for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -2585,8 +2558,8 @@ namespace sc {
     lambda.assign(0.0);
     const int nmo = opdm1.dim().n();
 
-    SpinMOPairIter pq_iter(r12evalinfo_->refinfo()->orbs(spin1),r12evalinfo_->refinfo()->orbs(spin2),pairspin);
-    SpinMOPairIter rs_iter(r12evalinfo_->refinfo()->orbs(spin1),r12evalinfo_->refinfo()->orbs(spin2),pairspin);
+    SpinMOPairIter pq_iter(r12eval_->orbs(spin1),r12eval_->orbs(spin2),pairspin);
+    SpinMOPairIter rs_iter(r12eval_->orbs(spin1),r12eval_->orbs(spin2),pairspin);
     for(pq_iter.start(); int(pq_iter); pq_iter.next()) {
       const int p = pq_iter.i();
       const int q = pq_iter.j();
@@ -2653,8 +2626,8 @@ namespace sc {
 
     const Ref<OrbitalSpace>& GG1_space = r12eval_->GGspace(spin1);
     const Ref<OrbitalSpace>& GG2_space = r12eval_->GGspace(spin2);
-    const Ref<OrbitalSpace>& orbs1 = r12evalinfo_->refinfo()->orbs(spin1);
-    const Ref<OrbitalSpace>& orbs2 = r12evalinfo_->refinfo()->orbs(spin2);
+    const Ref<OrbitalSpace>& orbs1 = r12eval_->orbs(spin1);
+    const Ref<OrbitalSpace>& orbs2 = r12eval_->orbs(spin2);
     const Ref<OrbitalSpace>& cabs1 = r12evalinfo_->ribs_space(spin1);
     const Ref<OrbitalSpace>& cabs2 = r12evalinfo_->ribs_space(spin2);
 
@@ -2757,7 +2730,7 @@ namespace sc {
   RefSCVector PsiCorrWavefunction_PT2R12::dipolemoments(const Ref<DipoleData> &dipoledata) {
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
     Ref<GaussianBasisSet> basis = this->basis();
-    Ref<OrbitalSpace> space = r12evalinfo_->refinfo()->orbs(Alpha);
+    Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
     const int nmo = reference_->nmo();
 
     // computing dipole integrals in MO basis
@@ -2961,8 +2934,8 @@ namespace sc {
     phi.assign(0.0);
 
     if(pairspin==AlphaBeta) {
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),pairspin);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),pairspin);
+      SpinMOPairIter UV_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         const int P = PQ_iter.i();
         const int Q = PQ_iter.j();
@@ -2983,8 +2956,8 @@ namespace sc {
     else {  // pairspin!=AlphaBeta
       SpinCase1 spin = (pairspin == AlphaAlpha) ? Alpha : Beta;
       SpinCase1 otherspin = (spin==Alpha) ? Beta : Alpha;
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),pairspin);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),pairspin);
+      SpinMOPairIter UV_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
 
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         const int P = PQ_iter.i();
@@ -3203,8 +3176,8 @@ namespace sc {
     term5->assign(0.0);
 #endif
     if(pairspin==AlphaBeta) {
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),pairspin);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),pairspin);
+      SpinMOPairIter UV_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         int P = PQ_iter.i();
         int Q = PQ_iter.j();
@@ -3250,8 +3223,8 @@ namespace sc {
         spin = Beta;
         otherspin = Alpha;
       }
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),pairspin);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),pairspin);
+      SpinMOPairIter UV_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         int P = PQ_iter.i();
         int Q = PQ_iter.j();
@@ -3475,8 +3448,8 @@ namespace sc {
     const SpinCase1 spin2 = case2(spin12);
 
     if (spin12 == AlphaBeta) {
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),spin12);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(Alpha),r12evalinfo_->refinfo()->orbs(Beta),spin12);
+      SpinMOPairIter UV_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),spin12);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),spin12);
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         int P = PQ_iter.i();
         int Q = PQ_iter.j();
@@ -3516,8 +3489,8 @@ namespace sc {
     }
     else if (spin12 == AlphaAlpha || spin12 == BetaBeta) {
       const SpinCase1 spin = spin1;
-      SpinMOPairIter UV_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),spin12);
-      SpinMOPairIter PQ_iter(r12evalinfo_->refinfo()->orbs(spin),r12evalinfo_->refinfo()->orbs(spin),spin12);
+      SpinMOPairIter UV_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),spin12);
+      SpinMOPairIter PQ_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),spin12);
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         int P = PQ_iter.i();
         int Q = PQ_iter.j();

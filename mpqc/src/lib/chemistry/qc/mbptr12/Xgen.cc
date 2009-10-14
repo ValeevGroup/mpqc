@@ -148,11 +148,10 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // get orbital spaces and verify their sanity
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
-    Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
-    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> occ1 = occ(spin1);
+    Ref<OrbitalSpace> occ2 = occ(spin2);
+    Ref<OrbitalSpace> orbs1 = orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = orbs(spin2);
     // if orbs1 and orbs2 have different rank -- something is TERRIBLY wrong
     if (orbs1->rank() != orbs2->rank())
 	throw ProgrammingError("R12IntEval::compute_X_() -- orbs1 and orbs2 have different ranks",__FILE__,__LINE__);

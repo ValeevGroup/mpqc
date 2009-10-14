@@ -72,8 +72,8 @@ R12IntEval::contrib_to_VXB_a_()
 
       const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
       const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
-      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+      const Ref<OrbitalSpace>& orbs1 = this->orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = this->orbs(spin2);
       const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
       const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 

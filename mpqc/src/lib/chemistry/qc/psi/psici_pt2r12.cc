@@ -91,7 +91,7 @@ namespace sc {
       ExEnv::out0() << endl;
     }
 
-    void print_vector_int(const vector<int> &vec_int) {
+    template <typename Int> void print_vector_int(const vector<Int> &vec_int) {
       for(int i=0; i<vec_int.size(); i++) {
         ExEnv::out0() << setw(5) << vec_int[i];
       }
@@ -216,7 +216,7 @@ namespace sc {
      *  the MOs of the wave function between which the overlap is the largest. The Element
      *  list has to be sorted.
      */
-    std::map<int,int> reference_val_map(const list<psici_pt2r12::Element> &sorted_elem_list) {
+    std::map<unsigned int, unsigned int> reference_val_map(const list<psici_pt2r12::Element> &sorted_elem_list) {
       // the dimension of the reference_wfn and the wave function is the maximum of
       // element->ind1 and element->ind respectively plus one for all elements element
       // of sorted_elem_list.
@@ -233,7 +233,7 @@ namespace sc {
       dim_ref += 1;
       dim_wfn +=1;
 
-      std::map<int,int> index_map;
+      std::map<unsigned int, unsigned int> index_map;
       vector<int> chk_ref(dim_ref);
       vector<int> chk_wfn(dim_wfn);
       chk_ref.assign(dim_ref,0);
@@ -244,25 +244,17 @@ namespace sc {
         int ind_wfn = elem->ind2;
         if((chk_ref[ind_ref]==0) && (chk_wfn[ind_wfn]==0)) {  // each index of each dimension can be selected only once.
           chk_ref[ind_ref] = 1; chk_wfn[ind_wfn] = 1;
-          index_map.insert(pair<int,int>(ind_ref,ind_wfn));  // insert pair of indices whose overlap is the largest one.
+          index_map.insert(pair<unsigned int, unsigned int>(ind_ref,ind_wfn));  // insert pair of indices whose overlap is the largest one.
         }
       }
       return(index_map);
     }
 
-    void print_int_index_map(const std::map<int,int> &Map) {
-      for(std::map<int,int>::const_iterator elem = Map.begin(); elem != Map.end(); ++elem) {
+    template <typename Int>
+    void print_int_index_map(const std::map<Int,Int> &Map) {
+      for(typename std::map<Int,Int>::const_iterator elem = Map.begin(); elem != Map.end(); ++elem) {
         ExEnv::out0() << setw(7) << elem->first << setw(7) << elem->second << endl;
       }
-    }
-
-    std::vector<unsigned int> vector_int_to_vector_unsignedint(const std::vector<int> &vecint) {
-      int length = vecint.size();
-      std::vector<unsigned int> vecuint(length);
-      for(int i=0; i<length; i++) {
-        vecuint[i] = static_cast<unsigned int>(vecint[i]);
-      }
-      return(vecuint);
     }
 
     void print_blocks(const char *orbs_name,const vector<unsigned int> &orbs_blocks,ostream &o) {
@@ -327,25 +319,27 @@ namespace sc {
 
     /// if ras1 is not given in input, it is docc_act + socc
     if(ras1_.empty()) {
-      ras1_ = vector<int>(length);
-      for(int i=0; i<length; i++) {
-        ras1_[i] = docc_act[i] + socc[i];
-      }
+      ras1_.resize(length);
+      std::transform(docc_act.begin(), docc_act.end(), socc.begin(), ras1_.begin(),
+                     std::plus<unsigned int>());
     }
 
     /// if ras2 is not given in input, it is uocc_act
     if(ras2_.empty()) {
-      ras2_ = vector<int>(length);
-      for(int i=0; i<length; i++) {
-        ras2_[i] = uocc_act[i];
-      }
+      ras2_ = uocc_act;
     }
 
+    // if ras3 empty, ras3_[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - frozen_uocc[i];
     if(ras3_.empty()) {
-      ras3_ = vector<int>(length);
-      for(int i=0; i<length; i++) {
-        ras3_[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - frozen_uocc[i];
-      }
+      ras3_.resize(length);
+      std::transform(mos.begin(), mos.end(), frozen_docc.begin(), ras3_.begin(),
+                     std::minus<unsigned int>());
+      std::transform(ras3_.begin(), ras3_.end(), ras1_.begin(), ras3_.begin(),
+                     std::minus<unsigned int>());
+      std::transform(ras3_.begin(), ras3_.end(), ras2_.begin(), ras3_.begin(),
+                     std::minus<unsigned int>());
+      std::transform(ras3_.begin(), ras3_.end(), frozen_uocc.begin(), ras3_.begin(),
+                     std::minus<unsigned int>());
     }
 
     psici_pt2r12::print_blocks("ras1",ras1_,ExEnv::out0());
@@ -368,11 +362,8 @@ namespace sc {
     detcas_detci_maxiter_ = keyval->intvalue("detcas_detci_maxiter",KeyValValueint(5));
     detci_maxiter_ = keyval->intvalue("detci_maxiter",KeyValValueint(100));
     if(keyval->exists("detcas_detci_average_states")) {
-      int naverage_states = keyval->count("detcas_detci_average_states");
-      detcas_detci_average_states_ = std::vector<int>(naverage_states);
-      for(int i=0; i<naverage_states; i++) {
-        detcas_detci_average_states_[i] = keyval->intvalue("detcas_detci_average_states",i);
-      }
+      const int naverage_states = keyval->count("detcas_detci_average_states");
+      detcas_detci_average_states_ = this->read_occ(keyval,"detcas_detci_average_states",naverage_states);
     }
 
     reorder_ = keyval->stringvalue("reorder");
@@ -406,10 +397,7 @@ namespace sc {
         const int nmo = reference_mpqc_->oso_dimension().n();
         if(keyval->count() != nmo)
           throw InputError("Input error for PsiCI_PT2R12 -- moorder must have nmo elements.",__FILE__,__LINE__);
-        moorder_ = vector<int>(nmo);
-        for(int i=0; i<nmo; i++) {
-          moorder_[i] = keyval->intvalue("moorder",i);
-        }
+        moorder_ = this->read_occ(keyval, "moorder", nmo);
       }
     }
 
@@ -580,151 +568,25 @@ namespace sc {
     input->close();
   }
 
-#define PSI_DENSITY_RAS_ORDER
-#ifndef PSI_DENSITY_RAS_ORDER  /* if Psi MO density is not in RAS order, use standard QT order */
-
   RefSCMatrix PsiCI_PT2R12::MPQC2PSI_transform_matrix(SpinCase1 spin) {
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
-    Ref<OrbitalSpace> orbs_mpqc = r12evalinfo_->refinfo()->orbs(spin);
-    Ref<OrbitalSpace> orbs_symm = orbs_sb(spin);
-    RefSCMatrix coeffqtorder = coeffsymmtoqtorder(orbs_symm->coefs(),
-                                                  this->frozen_docc(),this->docc_act(),this->socc(),this->uocc_act(),this->frozen_uocc());
-
-    int nmo = orbs_symm->coefs().coldim().n();
-    RefSCDimension aodim = orbs_symm->coefs().rowdim();
-
-    RefSCMatrix coeffs_symm = orbs_symm->coefs();
-    RefSCDimension mo_symm_dim_nb = new SCDimension(nmo);
-    RefSCMatrix coeffs_symm_nb = localkit->matrix(aodim,mo_symm_dim_nb);
-    for(int i=0; i<aodim.n(); i++) {
-      for(int j=0; j<nmo; j++) {
-        coeffs_symm_nb.set_element(i,j,coeffs_symm.get_element(i,j));
-      }
-    }
-    //Ref<OrbitalSpace> orbs_mpqc_nb = new OrbitalSpace(string("mompqcnb"),string("MOs in MPQC non-blocked order"),
-    //                                                  orbs_mpqc,coeffmpqc_nb,orbs_mpqc->basis());
-    Ref<OrbitalSpace> orbs_symm_nb = new OrbitalSpace(string("mopsinb"),string("MOs in Psi3 non-blocked order"),
-                                                      orbs_symm,coeffs_symm_nb,orbs_symm->basis());
-
-    std::vector<unsigned int> index_map_symmtoqt = index_map_symmtoqtorder(nmo,this->frozen_docc(),this->docc_act(),this->socc(),this->uocc_act(),this->frozen_uocc());
-    std::vector<unsigned int> index_map_symmtompqc = index_map_symmtompqcorder(orbs_symm->evals());
-    std::vector<unsigned int> index_map_mpqctosymm(nmo);
-    for(int i=0; i<nmo; i++) {
-      index_map_mpqctosymm[index_map_symmtompqc[i]] = i;
-    }
-    std::vector<unsigned int> index_map_mpqctoqt(nmo);
-    for(int i=0; i<nmo; i++) {
-      index_map_mpqctoqt[i] = index_map_symmtoqt[index_map_mpqctosymm[i]];
-    }
-#if 0
-    ExEnv::out0() << "index_map_mpqctosymm:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_mpqctosymm[i];
-    }
-    ExEnv::out0() << std::endl;
-    ExEnv::out0() << "index_map_symmtoqt:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_symmtoqt[i];
-    }
-    ExEnv::out0() << std::endl;
-    ExEnv::out0() << "index_map_mpqctoqt:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_mpqctoqt[i];
-    }
-    ExEnv::out0() << std::endl;
-#endif
-
-    Ref<OrbitalSpace> orbs_qt = new OrbitalSpace(string("moqt"),string("MOs in QT order"),orbs_symm,coeffqtorder,
-                              orbs_symm->basis());
-
-    RefSCMatrix coeffmpqc = orbs_mpqc->coefs();
-    // TODO should use blocked dimensions here, but there are too many changes to be made downstream at the moment
-    // see also psiqtorder.cc
-#if 1
-    RefSCDimension mpqcmodim = new SCDimension(nmo);
-#else
-    int* nfunc_per_block = new int[1];
-    nfunc_per_block[0] = nmo;
-    RefSCDimension mpqcmodim = new SCDimension(nmo, 1, nfunc_per_block, "MOs in MPQC order");
-    if (nmo)
-      mpqcmodim->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
-#endif
-    RefSCMatrix coeffmpqc_nb = localkit->matrix(aodim,mpqcmodim);
-    for(int i=0; i<aodim.n(); i++) {
-      for(int j=0; j<nmo; j++) {
-        coeffmpqc_nb.set_element(i,j,coeffmpqc.get_element(i,j));
-      }
-    }
-    Ref<OrbitalSpace> orbs_mpqc_nb = new OrbitalSpace(string("mompqcnb"),string("MOs in MPQC non-blocked order"),
-                                                      orbs_mpqc,coeffmpqc_nb,orbs_mpqc->basis());
-
-    RefSCMatrix MPQC2PSI_tform = transform(*orbs_qt,*orbs_mpqc_nb,localkit);
-    //RefSCMatrix MPQC2PSI_tform = transform(*orbs_symm_nb,*orbs_mpqc_nb,localkit);
-
-    return(MPQC2PSI_tform);
-  }
-
-#else
-
-  RefSCMatrix PsiCI_PT2R12::MPQC2PSI_transform_matrix(SpinCase1 spin) {
-    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-
-    Ref<OrbitalSpace> orbs_mpqc = r12evalinfo_->refinfo()->orbs(spin);
-    Ref<OrbitalSpace> orbs_symm = orbs_sb(spin);
+    Ref<OrbitalSpace> orbs_mpqc = r12eval_->orbs(spin);   // MPQC symmetry-blocked orbitals
+    Ref<OrbitalSpace> orbs_symm = orbs_sb(spin);          // Psi3 symmetry-blocked orbitals
 
     if(ras1_.empty() || ras2_.empty() || ras3_.empty())
       throw InputError("PsiCI_PT2R12::MPQC2PSI_transform_matrix -- ras1_, ras2_ and ras3_ all have to be specified.",__FILE__,__LINE__);
 
-    std::vector<unsigned int> ras1 = psici_pt2r12::vector_int_to_vector_unsignedint(ras1_);
-    std::vector<unsigned int> ras2 = psici_pt2r12::vector_int_to_vector_unsignedint(ras2_);
-    std::vector<unsigned int> ras3 = psici_pt2r12::vector_int_to_vector_unsignedint(ras3_);
+    std::vector<unsigned int> ras1(ras1_.size()); std::copy(ras1_.begin(), ras1_.end(), ras1.begin());
+    std::vector<unsigned int> ras2(ras2_.size()); std::copy(ras2_.begin(), ras2_.end(), ras2.begin());
+    std::vector<unsigned int> ras3(ras3_.size()); std::copy(ras3_.begin(), ras3_.end(), ras3.begin());
     RefSCMatrix coeffrasorder = coeffsymmtorasorder(orbs_symm->coefs(),
-                                                  this->frozen_docc(),ras1,ras2,ras3,this->frozen_uocc());
+                                                    this->frozen_docc(),
+                                                    ras1, ras2, ras3,
+                                                    this->frozen_uocc());
 
-    int nmo = orbs_symm->coefs().coldim().n();
+    const int nmo = orbs_symm->coefs().coldim().n();
     RefSCDimension aodim = orbs_symm->coefs().rowdim();
-
-    RefSCMatrix coeffs_symm = orbs_symm->coefs();
-    RefSCDimension mo_symm_dim_nb = new SCDimension(nmo);
-    RefSCMatrix coeffs_symm_nb = localkit->matrix(aodim,mo_symm_dim_nb);
-    for(int i=0; i<aodim.n(); i++) {
-      for(int j=0; j<nmo; j++) {
-        coeffs_symm_nb.set_element(i,j,coeffs_symm.get_element(i,j));
-      }
-    }
-    //Ref<OrbitalSpace> orbs_mpqc_nb = new OrbitalSpace(string("mompqcnb"),string("MOs in MPQC non-blocked order"),
-    //                                                  orbs_mpqc,coeffmpqc_nb,orbs_mpqc->basis());
-    Ref<OrbitalSpace> orbs_symm_nb = new OrbitalSpace(string("mopsinb"),string("MOs in Psi3 non-blocked order"),
-                                                      orbs_symm,coeffs_symm_nb,orbs_symm->basis());
-
-    std::vector<unsigned int> index_map_symmtoqt = index_map_symmtoqtorder(nmo,this->frozen_docc(),this->docc_act(),this->socc(),this->uocc_act(),this->frozen_uocc());
-    std::vector<unsigned int> index_map_symmtompqc = index_map_symmtompqcorder(orbs_symm->evals());
-    std::vector<unsigned int> index_map_mpqctosymm(nmo);
-    for(int i=0; i<nmo; i++) {
-      index_map_mpqctosymm[index_map_symmtompqc[i]] = i;
-    }
-    std::vector<unsigned int> index_map_mpqctoqt(nmo);
-    for(int i=0; i<nmo; i++) {
-      index_map_mpqctoqt[i] = index_map_symmtoqt[index_map_mpqctosymm[i]];
-    }
-#if 0
-    ExEnv::out0() << "index_map_mpqctosymm:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_mpqctosymm[i];
-    }
-    ExEnv::out0() << std::endl;
-    ExEnv::out0() << "index_map_symmtoqt:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_symmtoqt[i];
-    }
-    ExEnv::out0() << std::endl;
-    ExEnv::out0() << "index_map_mpqctoqt:" << std::endl;
-    for(int i=0; i<nmo; i++) {
-      ExEnv::out0() << " " << index_map_mpqctoqt[i];
-    }
-    ExEnv::out0() << std::endl;
-#endif
 
     Ref<OrbitalSpace> orbs_ras = new OrbitalSpace(string("moras"),string("MOs in ras order"),orbs_symm,coeffrasorder,
                               orbs_symm->basis());
@@ -750,12 +612,11 @@ namespace sc {
     Ref<OrbitalSpace> orbs_mpqc_nb = new OrbitalSpace(string("mompqcnb"),string("MOs in MPQC non-blocked order"),
                                                       orbs_mpqc,coeffmpqc_nb,orbs_mpqc->basis());
 
+    //RefSCMatrix MPQC2PSI_tform = transform(*orbs_ras,*orbs_mpqc_nb,localkit);
     RefSCMatrix MPQC2PSI_tform = transform(*orbs_ras,*orbs_mpqc_nb,localkit);
 
     return(MPQC2PSI_tform);
   }
-
-#endif
 
   void PsiCI_PT2R12::compute() {
     double energy_rasscf = 0.0;
@@ -857,7 +718,7 @@ namespace sc {
     return(overlap);
   }
 
-  std::map<int,int> PsiCI_PT2R12::reference_index_map(const RefSCMatrix &valuematrix) {
+  std::map<unsigned int, unsigned int> PsiCI_PT2R12::reference_index_map(const RefSCMatrix &valuematrix) {
     /// create list of overlap matrix elements of type 'Element'
     list<psici_pt2r12::Element> elem_list = psici_pt2r12::create_indexed_list_from_value_matrix(valuematrix);
 
@@ -872,25 +733,24 @@ namespace sc {
     /// sort the list of overlap matrix elements
     elem_list.sort(greater<psici_pt2r12::Element>());
 
-    std::map<int,int> index_map = psici_pt2r12::reference_val_map(elem_list);
+    std::map<unsigned int,unsigned int> index_map = psici_pt2r12::reference_val_map(elem_list);
 
     return(index_map);
   }
 
-  std::map<int,int> PsiCI_PT2R12::standard_index_map(const RefSCMatrix &valuematrix) {
+  std::map<unsigned int,unsigned int> PsiCI_PT2R12::standard_index_map(const RefSCMatrix &valuematrix) {
     list<psici_pt2r12::Element> elem_list = psici_pt2r12::create_indexed_list_from_value_matrix(valuematrix);
-    std::map<int,int> index_map;
-    index_map = psici_pt2r12::reference_val_map(elem_list);
+    std::map<unsigned int, unsigned int> index_map = psici_pt2r12::reference_val_map(elem_list);
 
     return(index_map);
   }
 
-  std::map<int,int> PsiCI_PT2R12::psi_index_map(const RefSCMatrix &valuematrix) {
-    std::map<int,int> std_index_map = standard_index_map(valuematrix);
-    std::map<int,int> ref_index_map = reference_index_map(valuematrix);
-    std::map<int,int> new_index_map;
-    for(std::map<int,int>::const_iterator elem1 = std_index_map.begin(); elem1 != std_index_map.end(); ++elem1) {
-      for(std::map<int,int>::const_iterator elem2 = ref_index_map.begin(); elem2 != ref_index_map.end(); ++elem2) {
+  std::map<unsigned int, unsigned int> PsiCI_PT2R12::psi_index_map(const RefSCMatrix &valuematrix) {
+    std::map<unsigned int, unsigned int> std_index_map = standard_index_map(valuematrix);
+    std::map<unsigned int, unsigned int> ref_index_map = reference_index_map(valuematrix);
+    std::map<unsigned int, unsigned int> new_index_map;
+    for(std::map<unsigned int, unsigned int>::const_iterator elem1 = std_index_map.begin(); elem1 != std_index_map.end(); ++elem1) {
+      for(std::map<unsigned int, unsigned int>::const_iterator elem2 = ref_index_map.begin(); elem2 != ref_index_map.end(); ++elem2) {
         if((elem1->first==elem2->first) && (elem1->second!=elem2->second)) {
           new_index_map.insert(pair<int,int>(elem1->second,elem2->second));
         }
@@ -905,18 +765,17 @@ namespace sc {
     return(new_index_map);
   }
 
-  vector<int> PsiCI_PT2R12::map_to_valence_order(const RefSCMatrix &overlap) {
+  vector<unsigned int> PsiCI_PT2R12::map_to_valence_order(const RefSCMatrix &overlap) {
     const int nmo = reference_mpqc_->oso_dimension().n();
-    std::map<int,int> index_map = psi_index_map(overlap);
-    vector<int> orbital_order;
+    std::map<unsigned int, unsigned int> index_map = psi_index_map(overlap);
+    vector<unsigned int> orbital_order;
     if(!index_map.empty()) {
-      orbital_order = vector<int>(nmo);
-      for(int i=0; i<nmo; i++)
-        orbital_order[i] = i;
-      for(std::map<int,int>::const_iterator elem = index_map.begin(); elem != index_map.end(); ++elem) {
-        int ind1 = elem->first;
-        int ind2 = elem->second;
-        int tmp = orbital_order[ind2];
+      orbital_order.resize(nmo);
+      for(int i=0; i<nmo; i++) orbital_order[i] = i;
+      for(std::map<unsigned int, unsigned int>::const_iterator elem = index_map.begin(); elem != index_map.end(); ++elem) {
+        const unsigned int ind1 = elem->first;
+        const unsigned int ind2 = elem->second;
+        const unsigned int tmp = orbital_order[ind2];
         orbital_order[ind2] = orbital_order[ind1];
         orbital_order[ind1] = tmp;
       }
@@ -930,10 +789,10 @@ namespace sc {
     return(orbital_order);
   }
 
-  vector<int> PsiCI_PT2R12::mo_symmetries_in_energetic_order() {
+  vector<unsigned int> PsiCI_PT2R12::mo_symmetries_in_energetic_order() {
     Ref<OrbitalSpace> orbs_sb = r12evalinfo_->refinfo()->orbs_sb();
     RefDiagSCMatrix evals_sb = orbs_sb->evals();
-    int nmo = evals_sb.dim().n();
+    const int nmo = evals_sb.dim().n();
     Ref<SCBlockInfo> blocks_sb = evals_sb.dim()->blocks();
 
     std::vector<psici_pt2r12::Energy_SymmIndex> energy_symmindex_vec(nmo);
@@ -949,7 +808,7 @@ namespace sc {
 
     sort(energy_symmindex_vec.begin(),energy_symmindex_vec.end());
 
-    vector<int> symmindex(nmo);
+    vector<unsigned int> symmindex(nmo);
     for(int i=0; i<nmo; i++) {
       symmindex[i] = energy_symmindex_vec[i].symmindex;
     }
@@ -974,7 +833,7 @@ namespace sc {
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> frzc_vec(nirrep);
     frzc_vec.assign(nirrep,0);
-    vector<int> symmindex = mo_symmetries_in_energetic_order();
+    vector<unsigned int> symmindex = mo_symmetries_in_energetic_order();
     for(int i=0; i<nfzc; i++) {
       frzc_vec[symmindex[i]] += 1;
     }
@@ -1008,8 +867,8 @@ namespace sc {
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> socc(nirrep);
     socc.assign(nirrep,0);
-    vector<int> symmindex = mo_symmetries_in_energetic_order();
-    int nmo = symmindex.size();
+    vector<unsigned int> symmindex = mo_symmetries_in_energetic_order();
+    const int nmo = symmindex.size();
     double tol = 1.0e-6;
     for(int i=0; i<nmo; i++) {
       if(fabs(r12evalinfo_->refinfo()->ref()->occupation(i)-1.0)<tol) {
@@ -1052,7 +911,7 @@ namespace sc {
     int nmo = blocks_sb->nelem();
     vector<unsigned int> frzv_vec(nirrep);
     frzv_vec.assign(nirrep,0);
-    vector<int> symmindex = mo_symmetries_in_energetic_order();
+    vector<unsigned int> symmindex = mo_symmetries_in_energetic_order();
     for(int i=nmo-1,j=0; (j<nfzv) && (i>=0); j++,i--) {
       frzv_vec[symmindex[i]] += 1;
     }

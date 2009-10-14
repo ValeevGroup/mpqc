@@ -62,8 +62,8 @@ namespace sc {
       /// Prepares a complete Psi input file. The input file is assumed to have been opened.
       virtual void write_input(int conv) =0;
 
-      std::vector<int> read_occ(const Ref<KeyVal> &keyval, const char *name,
-                                int nirrep);
+      std::vector<unsigned int> read_occ(const Ref<KeyVal> &keyval, const char *name,
+                                         size_t nirrep);
 
       /// return the debug level
       int debug() const;
@@ -130,8 +130,8 @@ namespace sc {
       std::vector<unsigned int> mopi_;
 
     protected:
-      std::vector<int> docc_;
-      std::vector<int> socc_;
+      std::vector<unsigned int> docc_;
+      std::vector<unsigned int> socc_;
       int multp_;
       int charge_;
       static const int maxiter = 200;

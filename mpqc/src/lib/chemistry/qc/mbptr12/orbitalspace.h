@@ -483,6 +483,8 @@ namespace sc {
       const Ref<Integral>& integral() const;
       /// Returns the coefficient matrix
       const RefSCMatrix& coefs() const;
+      /// Returns the coefficient matrix built with a non-blocked kit
+      RefSCMatrix coefs_nb() const;
       /// Returns the "eigenvalues" matrix
       const RefDiagSCMatrix& evals() const;
       /// Returns the orbital symmetry array

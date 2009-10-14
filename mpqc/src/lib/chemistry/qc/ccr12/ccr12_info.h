@@ -1,5 +1,5 @@
 //
-// ccr12_info.h -- common utilities for all CC/CC-R12 methods 
+// ccr12_info.h -- common utilities for all CC/CC-R12 methods
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -191,6 +191,7 @@ class CCR12_Info : virtual public RefCount {
 
 
     /// constants used in initialization
+    const Ref<R12IntEval>& r12eval() const { return r12int_eval_; }
     const Ref<R12IntEvalInfo>& r12evalinfo() { return r12evalinfo_; }
     const Ref<SCF> ref(){return ref_;};
     bool fixed() const {return fixed_;};
@@ -366,10 +367,10 @@ class CCR12_Info : virtual public RefCount {
     void prod_iiii(Ref<Tensor>&, Ref<Tensor>&, Ref<Tensor>&, const bool transpose = false);
 
     /// returns B and X intermediate for perturbative methods etc.
-    RefSymmSCMatrix B() { return B_; }; 
+    RefSymmSCMatrix B() { return B_; };
     RefSymmSCMatrix X() { return X_; };
 
-    // returns shared pointers of OrbitalSpace objects 
+    // returns shared pointers of OrbitalSpace objects
     Ref<OrbitalSpace> corr_space() { return corr_space_; };  // full space
 
     // used in MP2-R12 updates etc.

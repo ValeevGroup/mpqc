@@ -85,10 +85,10 @@ R12IntEval::compute_BB_()
     const SpinCase1 spin2 = case2(spincase2);
 
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
-    Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
-    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> occ1 = occ(spin1);
+    Ref<OrbitalSpace> occ2 = occ(spin2);
+    Ref<OrbitalSpace> orbs1 = orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);

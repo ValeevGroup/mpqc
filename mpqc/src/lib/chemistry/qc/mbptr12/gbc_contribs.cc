@@ -67,25 +67,25 @@ R12IntEval::compute_B_gbc_()
 {
   if (abs_method() == LinearR12::ABS_ABS || abs_method() == LinearR12::ABS_ABSPlus)
     throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- B(GBC1) term can only be computed using a CABS (or CABS+) approach");
-  
+
   if (evaluated_)
     return;
-  
+
   Timer tim_B_GBC("B(GBC) intermediate");
   ExEnv::out0() << endl << indent
   << "Entered B(GBC) intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
-  
+
   for(int s=0; s<nspincases2(); s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    
+
     Ref<SingleRefInfo> refinfo = r12info()->refinfo();
-    Ref<OrbitalSpace> occ1 = refinfo->occ(spin1);
-    Ref<OrbitalSpace> occ2 = refinfo->occ(spin2);
-    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> occ1 = occ(spin1);
+    Ref<OrbitalSpace> occ2 = occ(spin2);
+    Ref<OrbitalSpace> orbs1 = orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
     Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
     Ref<OrbitalSpace> xspace1 = xspace(spin1);
@@ -96,10 +96,10 @@ R12IntEval::compute_B_gbc_()
     Ref<OrbitalSpace> F_m_A_2 = F_m_A(spin2);
     Ref<OrbitalSpace> F_x_A_1 = F_x_A(spin1);
     Ref<OrbitalSpace> F_x_A_2 = F_x_A(spin2);
-    
+
     RefSCMatrix B_gbc1 = B_[s].clone(); B_gbc1.assign(0.0);
     RefSCMatrix B_gbc2 = B_[s].clone(); B_gbc2.assign(0.0);
-        
+
 #if INCLUDE_GBC1
     if (!omit_P()) {
 
@@ -110,7 +110,7 @@ R12IntEval::compute_B_gbc_()
                  vir1,vir2,
                  occ1,occ2,
                  F_m_A_1,F_m_A_2);
-    
+
     if (r12info()->maxnabs() >= 2) {
       // R_klAB F_Am R_mBij
       compute_FxF_(B_gbc1,spincase2,
@@ -120,18 +120,18 @@ R12IntEval::compute_B_gbc_()
                    occ1,occ2,
                    F_m_A_1,F_m_A_2);
     }
-    
+
     B_gbc1.scale(-1.0);
 
     } // omit P ?
 #endif // include GBC1
-    
+
 #if INCLUDE_GBC2
-    
+
     //
     // GBC2 contribution
     //
-        
+
     compute_X_(B_gbc2,spincase2,xspace1,xspace2,
                xspace1,F_x_A_2);
     if (xspace1 != xspace2) {
@@ -144,9 +144,9 @@ R12IntEval::compute_B_gbc_()
         symmetrize<false>(B_gbc2,B_gbc2,xspace1,xspace1);
       }
     }
-    
+
 #endif // include GBC2 ?
-    
+
     std::string label = prepend_spincase(spincase2,"B(GBC1) contribution");
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       B_gbc1.print(label.c_str());
@@ -172,9 +172,9 @@ R12IntEval::compute_B_gbc_()
     B_gbc.scale(0.5);
     RefSCMatrix B_gbc_t = B_gbc.t();
     B_[s].accumulate(B_gbc); B_[s].accumulate(B_gbc_t);
-    
+
   }
-  
+
   globally_sum_intermeds_();
 
   ExEnv::out0() << decindent;

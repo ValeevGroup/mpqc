@@ -65,10 +65,12 @@ R12IntEval::contrib_to_VXB_abs_()
       if (dim_oo(spincase2).n() == 0)
         continue;
 
+      const Ref<OrbitalSpace>& occ1 = occ(spin1);
+      const Ref<OrbitalSpace>& occ2 = occ(spin2);
       const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
       const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
-      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+      const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
       const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
       const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 
@@ -95,12 +97,12 @@ R12IntEval::contrib_to_VXB_abs_()
       if ((absmethod == LinearR12::ABS_ABS ||
        absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
       ansatz()->projector() == LinearR12::Projector_2)
-          tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
-                                               refinfo->occ(spin1)->rank(),
-                                               refinfo->occ(spin2)->rank());
+          tpcontract = new ABS_OBS_Contraction(orbs1->rank(),
+                                               occ1->rank(),
+                                               occ2->rank());
       else
       // involves this term -P1P2
-          tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
+          tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
       std::vector<std::string> tforms;
       std::vector<std::string> tforms_f12;
@@ -202,8 +204,6 @@ R12IntEval::contrib_to_VXB_abs_()
 
       const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
                     absmethod == LinearR12::ABS_CABSPlus);
-      const Ref<OrbitalSpace>& occ1 = occ(spin1);
-      const Ref<OrbitalSpace>& occ2 = occ(spin2);
       Ref<OrbitalSpace> rispace1, rispace2;
       if (cabs_method) {
         rispace1 = r12info()->ribs_space(spin1);

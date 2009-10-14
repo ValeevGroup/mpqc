@@ -78,7 +78,6 @@ R12IntEval::V_abs(SpinCase2 spincase2,
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
   RefSCMatrix V;
   if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
@@ -95,8 +94,8 @@ R12IntEval::V_abs(SpinCase2 spincase2,
 
   const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
   const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
 
   // some transforms can be skipped if p1/p2 is a subset of x1/x2
   const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
@@ -140,9 +139,9 @@ R12IntEval::V_abs(SpinCase2 spincase2,
     V.print(prepend_spincase(spincase2,"Vpqxy: diag contribution").c_str());
   }
 
-  Ref<TwoParticleContraction> tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
-                                                                   refinfo->occ(spin1)->rank(),
-                                                                   refinfo->occ(spin2)->rank());
+  Ref<TwoParticleContraction> tpcontract = new ABS_OBS_Contraction(orbs1->rank(),
+                                                                   occ(spin1)->rank(),
+                                                                   occ(spin2)->rank());
 
   std::vector<std::string> tforms;
   std::vector<std::string> tforms_f12;
@@ -327,7 +326,6 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
   RefSCMatrix V;
   if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
@@ -344,8 +342,8 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
 
   const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
   const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
 
   // some transforms can be skipped if p1/p2 is a subset of x1/x2
   const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
@@ -533,11 +531,10 @@ R12IntEval::P(SpinCase2 spincase2)
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
   const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-  const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-  const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+  const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
+  const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);
   const Ref<OrbitalSpace>& occ2 = occ(spin2);
   const LinearR12::ABSMethod absmethod = r12info()->abs_method();

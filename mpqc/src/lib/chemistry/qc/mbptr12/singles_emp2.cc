@@ -74,15 +74,15 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
-    Ref<OrbitalSpace> occ_act = r12info_->refinfo()->occ_act(spin);
-    Ref<OrbitalSpace> vir_act = obs_singles ? r12info()->refinfo()->uocc_act(spin) : r12info()->vir_act(spin);
+    Ref<OrbitalSpace> occ_act = this->occ_act(spin);
+    Ref<OrbitalSpace> vir_act = obs_singles ? r12info()->refinfo()->uocc_act_sb(spin) : r12info()->vir_act_sb(spin);
     RefSCMatrix Fia = fock(occ_act,vir_act,spin);
 
 #define DEBUG_EMP2_SINGLES 0
 #if DEBUG_EMP2_SINGLES
     Fia.print(prepend_spincase(spin,"occ/vir Fock matrix").c_str());
 
-    Ref<OrbitalSpace> orbs = r12info_->refinfo()->orbs(spin);
+    Ref<OrbitalSpace> orbs = orbs(spin);
     RefSCMatrix Fpp = fock(orbs,orbs,spin);
     orbs->print_detail(ExEnv::out0());
     Fpp.print(prepend_spincase(spin,"OBS/OBS Fock matrix").c_str());
@@ -128,8 +128,8 @@ R12IntEval::compute_emp2_cabs_singles()
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
-    Ref<OrbitalSpace> occ = r12info_->refinfo()->occ(spin);
-    Ref<OrbitalSpace> vir = r12info_->vir(spin);
+    Ref<OrbitalSpace> occ = this->occ(spin);
+    Ref<OrbitalSpace> vir = this->vir(spin);
 #if 0
     Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
 #endif

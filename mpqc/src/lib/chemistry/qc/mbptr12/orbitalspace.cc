@@ -206,6 +206,28 @@ OrbitalSpace::coefs() const {
   return coefs_;
 }
 
+RefSCMatrix
+OrbitalSpace::coefs_nb() const {
+  RefSCMatrix result = coefs_;
+
+  SCMatrixKit* kit = coefs_.kit().pointer();
+  BlockedSCMatrixKit* bkit = dynamic_cast<BlockedSCMatrixKit*>(kit);
+  if (bkit) { // if using blocked kit, rebuild using subkit (which should be nonblocked
+    SCMatrixKit* subkit = bkit->subkit().pointer();
+    BlockedSCMatrixKit* bsubkit = dynamic_cast<BlockedSCMatrixKit*>(subkit);
+    while (bsubkit) {
+      subkit = bsubkit->subkit().pointer();
+      bsubkit = dynamic_cast<BlockedSCMatrixKit*>(subkit);
+    }
+
+    result = subkit->matrix(coefs_.rowdim(), coefs_.coldim());
+    result->convert(coefs_);
+  }
+  // else do nothing
+
+  return result;
+}
+
 const RefDiagSCMatrix&
 OrbitalSpace::evals() const {
   return evals_;

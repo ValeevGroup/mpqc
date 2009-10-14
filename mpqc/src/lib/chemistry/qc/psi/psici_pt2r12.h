@@ -62,16 +62,16 @@ namespace sc {
       bool detcas_diis_;   /// use DIIS for detcas calculations
       int detcas_detci_maxiter_;    /// maxiter for detci in detcas calculations
       int detci_maxiter_;     /// maxiter for detci (not in detcas calculations)
-      std::vector<int> detcas_detci_average_states_;   /// vector of states over which averaging is performed in a detci of a detcas calculation
+      std::vector<unsigned int> detcas_detci_average_states_;   /// vector of states over which averaging is performed in a detci of a detcas calculation
 
       // do orbital optimization first?
       bool rasscf_;
       std::string wfn_type_;  /// wfn keyword is set to this. can be detci or detcas
 
       // optional RAS info
-      std::vector<int> ras1_;
-      std::vector<int> ras2_;
-      std::vector<int> ras3_;
+      std::vector<unsigned int> ras1_;
+      std::vector<unsigned int> ras2_;
+      std::vector<unsigned int> ras3_;
       int ras3_max_;
 
       double scf_levelshift_;      /// Psi3 cscf levelshift
@@ -96,7 +96,7 @@ namespace sc {
 
       /// orbital reordering
       std::string reorder_;
-      std::vector<int> moorder_;
+      std::vector<unsigned int> moorder_;
 
       void write_input(int convergence);
 
@@ -105,14 +105,14 @@ namespace sc {
       RefSCMatrix overlap_with_valence_obwfn();
       /** Returns a map between the MOs of the reference wave function (first index) and
        *  the MOs of the wave function between which the overlap is the largest. */
-      std::map<int,int> reference_index_map(const RefSCMatrix &overlap);
+      std::map<unsigned int,unsigned int> reference_index_map(const RefSCMatrix &overlap);
       /** Returns a map between the valence_obwfn_->nmo MOs and the lowest MO's of the
        *  corresponding symmetries of the wave function in symmetry blocked MO order. */
-      std::map<int,int> standard_index_map(const RefSCMatrix &overlap);
+      std::map<unsigned int,unsigned int> standard_index_map(const RefSCMatrix &overlap);
       /** Index map from standard symmetry blocked order (as it is used in Psi3) to
        *  a symmetry blocked order where the lowest orbitals correspond to the valence orbitals
        *  from valence_obwfn_. */
-      std::map<int,int> psi_index_map(const RefSCMatrix &overlap);
+      std::map<unsigned int,unsigned int> psi_index_map(const RefSCMatrix &overlap);
       /** Returns a vector of orbital indices in symmetry blocked order where the lowest
        *  MOs correspond to the respective MOs in the valence wfn. This vector
        *  can be used as it is in the Psi3 cscf keyword "reorder" to avoid the inclusion
@@ -120,11 +120,14 @@ namespace sc {
        *
        *  \param overlap is the overlap between a reference wfn (e.g. minimal basis HF) and a given wfn
        */
-      std::vector<int> map_to_valence_order(const RefSCMatrix &overlap);
+      std::vector<unsigned int> map_to_valence_order(const RefSCMatrix &overlap);
       /** Returns a vector of the corresponding symmetry (block) indices for each MO
        *  in energy order. */
-      std::vector<int> mo_symmetries_in_energetic_order();
-      virtual RefSCMatrix MPQC2PSI_transform_matrix(SpinCase1 spin);
+      std::vector<unsigned int> mo_symmetries_in_energetic_order();
+
+      /// since Psi densities are reported in RAS orbitals, this returns MPQC(symmetry-blocked)->Psi(RAS) transform
+      RefSCMatrix MPQC2PSI_transform_matrix(SpinCase1 spin);
+
       std::vector<unsigned int> mo_blocks();
       std::vector<unsigned int> frzc_blocks();
       std::vector<unsigned int> docc_blocks();

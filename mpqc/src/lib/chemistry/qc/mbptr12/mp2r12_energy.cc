@@ -562,12 +562,12 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
 
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
-  Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
-  Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
-  Ref<OrbitalSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
-  Ref<OrbitalSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
-  Ref<OrbitalSpace> occ1 = r12info->refinfo()->occ(spin1);
-  Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
+  Ref<OrbitalSpace> vir1_act = r12eval()->vir_act(spin1);
+  Ref<OrbitalSpace> vir2_act = r12eval()->vir_act(spin2);
+  Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(spin2);
+  Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
+  Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
   Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
   Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
 
@@ -1120,12 +1120,12 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
 
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
-  Ref<OrbitalSpace> vir1_act = r12info->vir_act(spin1);
-  Ref<OrbitalSpace> vir2_act = r12info->vir_act(spin2);
-  Ref<OrbitalSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
-  Ref<OrbitalSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
-  Ref<OrbitalSpace> occ1 = r12info->refinfo()->occ(spin1);
-  Ref<OrbitalSpace> occ2 = r12info->refinfo()->occ(spin2);
+  Ref<OrbitalSpace> vir1_act = r12eval()->vir_act(spin1);
+  Ref<OrbitalSpace> vir2_act = r12eval()->vir_act(spin2);
+  Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(spin2);
+  Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
+  Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
   Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
   Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
 

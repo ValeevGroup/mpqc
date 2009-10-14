@@ -34,35 +34,35 @@
 
 using namespace sc;
 using namespace std;
-  
-  
-void CCSD_Sub_R12::denom_contraction(){ 
+
+
+void CCSD_Sub_R12::denom_contraction(){
 
 #if 0
   const size_t singles = z->maxtilesize() * z->maxtilesize();
   const size_t doubles = singles * singles;
-  double* k_a0      = z->mem()->malloc_local_double(doubles); 
-  double* k_a1      = z->mem()->malloc_local_double(doubles); 
-  double* k_c       = z->mem()->malloc_local_double(doubles); 
-  double* k_c_sort  = z->mem()->malloc_local_double(singles); 
+  double* k_a0      = z->mem()->malloc_local_double(doubles);
+  double* k_a1      = z->mem()->malloc_local_double(doubles);
+  double* k_c       = z->mem()->malloc_local_double(doubles);
+  double* k_c_sort  = z->mem()->malloc_local_double(singles);
 
   const int nocc_act = z->naoa();
   MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, z->noab()));
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
   vector<long> amap;
   {
-    vector<int> intmap = sc::map(*(z->r12evalinfo()->refinfo()->occ_act_sb(Alpha)), *z->corr_space(), false);
+    vector<int> intmap = sc::map(*(z->r12eval()->occ_act(Alpha)), *z->corr_space(), false);
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }
 
   // this loop structure minimizes the O(o^8) operation...
   int count = 0;
-  for (long h3b = 0L; h3b < z->noab(); ++h3b) { 
-    for (long h4b = h3b; h4b < z->noab(); ++h4b) { 
-      for (int h3 = 0; h3 < z->get_range(h3b); ++h3) { 
-        for (int h4 = 0; h4 < z->get_range(h4b); ++h4, ++count) { 
-          if (count % z->mem()->n() != z->mem()->me() ) continue; 
+  for (long h3b = 0L; h3b < z->noab(); ++h3b) {
+    for (long h4b = h3b; h4b < z->noab(); ++h4b) {
+      for (int h3 = 0; h3 < z->get_range(h3b); ++h3) {
+        for (int h4 = 0; h4 < z->get_range(h4b); ++h4, ++count) {
+          if (count % z->mem()->n() != z->mem()->me() ) continue;
 
           // orbital energies
           const double eh3 = z->get_orb_energy(z->get_offset(h3b) + h3);
@@ -82,9 +82,9 @@ void CCSD_Sub_R12::denom_contraction(){
           for (long h1b = 0L; h1b < z->noab(); ++h1b) {
             for (long h2b = h1b; h2b < z->noab(); ++h2b) {
 
-              if (!z->restricted() || z->get_spin(h3b)+z->get_spin(h4b)+z->get_spin(h1b)+z->get_spin(h2b) != 8L) { 
-                if (z->get_spin(h3b)+z->get_spin(h4b) == z->get_spin(h1b)+z->get_spin(h2b)) { 
-                  if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h1b)^z->get_sym(h2b)))) == z->irrep_t()) { 
+              if (!z->restricted() || z->get_spin(h3b)+z->get_spin(h4b)+z->get_spin(h1b)+z->get_spin(h2b) != 8L) {
+                if (z->get_spin(h3b)+z->get_spin(h4b) == z->get_spin(h1b)+z->get_spin(h2b)) {
+                  if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h1b)^z->get_sym(h2b)))) == z->irrep_t()) {
 
                     // target size
                     const long dimc_singles = z->get_range(h1b)*z->get_range(h2b);
@@ -96,13 +96,13 @@ void CCSD_Sub_R12::denom_contraction(){
                         if (z->get_spin(h3b)+z->get_spin(h4b) == z->get_spin(h5b)+z->get_spin(h6b)) {
                           if ((z->get_sym(h3b)^(z->get_sym(h4b)^(z->get_sym(h5b)^z->get_sym(h6b)))) == z->irrep_e()) {
 
-                            long h3b_0, h4b_0, h5b_0, h6b_0; 
-                            z->restricted_4(h3b, h4b, h5b, h6b, h3b_0, h4b_0, h5b_0, h6b_0); 
-                            long h5b_1, h6b_1, h1b_1, h2b_1; 
-                            z->restricted_4(h5b, h6b, h1b, h2b, h5b_1, h6b_1, h1b_1, h2b_1); 
-                            const int dim_common = z->get_range(h5b) * z->get_range(h6b); 
-                            const int dima0_sort = z->get_range(h3b) * z->get_range(h4b); 
-                            const int dima1_sort = z->get_range(h1b) * z->get_range(h2b); 
+                            long h3b_0, h4b_0, h5b_0, h6b_0;
+                            z->restricted_4(h3b, h4b, h5b, h6b, h3b_0, h4b_0, h5b_0, h6b_0);
+                            long h5b_1, h6b_1, h1b_1, h2b_1;
+                            z->restricted_4(h5b, h6b, h1b, h2b, h5b_1, h6b_1, h1b_1, h2b_1);
+                            const int dim_common = z->get_range(h5b) * z->get_range(h6b);
+                            const int dima0_sort = z->get_range(h3b) * z->get_range(h4b);
+                            const int dima1_sort = z->get_range(h1b) * z->get_range(h2b);
 
                             // read tilde V (redundant read is involved...)
                             tildeV_->get_block(h4b_0+z->noab()*(h3b_0+z->noab()*(h6b_0+z->noab()*(h5b_0))), k_a0);
@@ -117,7 +117,7 @@ void CCSD_Sub_R12::denom_contraction(){
                             const double one = 1.0;
                             F77_DGEMV("t", &dim_common, &dima1_sort, &factor, k_a1, &dim_common, k_a0 + h34, &stride, &one, k_c_sort, &unit);
                           }
-                        } 
+                        }
                       }
                     }
                     const long dimc = z->get_range(h3b)*z->get_range(h4b)*z->get_range(h1b)*z->get_range(h2b);
@@ -133,12 +133,12 @@ void CCSD_Sub_R12::denom_contraction(){
                         }
                       }
                     }
-                    intermediate_->add_block(h4b+z->noab()*(h3b+z->noab()*(h2b+z->noab()*(h1b))),k_c); 
+                    intermediate_->add_block(h4b+z->noab()*(h3b+z->noab()*(h2b+z->noab()*(h1b))),k_c);
                   }
                 }
               }
-            } 
-          } 
+            }
+          }
         }
       } // orbital loops
     } 

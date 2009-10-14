@@ -71,7 +71,7 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
   for(int s1=0; s1<NSpinCases1; s1++) {
     SpinCase1 singlespin = static_cast<SpinCase1>(s1);
     Ref<OrbitalSpace> cabs_sgsp = r12eval_->r12info()->ribs_space(singlespin);
-    Ref<OrbitalSpace> orbs_sgsp = r12eval_->r12info()->refinfo()->orbs(singlespin);
+    Ref<OrbitalSpace> orbs_sgsp = r12eval_->orbs(singlespin);
     RefSCDimension cabs_sgsp_dim = cabs_sgsp->dim();
     RefSCDimension orbs_sgsp_dim = orbs_sgsp->dim();
     unsigned int ncabs_sgsp = cabs_sgsp_dim.n();
@@ -96,8 +96,8 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
     Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
     Ref<OrbitalSpace> GG1space = r12eval_->GGspace(spin1);
     Ref<OrbitalSpace> GG2space = r12eval_->GGspace(spin2);
-    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
     Ref<OrbitalSpace> cabs1 = r12eval_->r12info()->ribs_space(spin1);
     Ref<OrbitalSpace> cabs2 = r12eval_->r12info()->ribs_space(spin2);
 
@@ -274,8 +274,8 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
     Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
     Ref<OrbitalSpace> GG1space = r12eval_->GGspace(spin1);
     Ref<OrbitalSpace> GG2space = r12eval_->GGspace(spin2);
-    Ref<OrbitalSpace> orbs1 = refinfo->orbs(spin1);
-    Ref<OrbitalSpace> orbs2 = refinfo->orbs(spin2);
+    Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
+    Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
     Ref<OrbitalSpace> cabs1 = r12eval_->r12info()->ribs_space(spin1);
     Ref<OrbitalSpace> cabs2 = r12eval_->r12info()->ribs_space(spin2);
     Ref<OrbitalSpace> IminusJ_p_A1 = r12eval_->obtensor_p_A(IminusJ[spin1],spin1);

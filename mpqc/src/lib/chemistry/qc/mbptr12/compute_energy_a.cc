@@ -65,8 +65,8 @@ MBPT2_R12::compute_energy_()
     RefSymmSCMatrix P[2];
     for(int s=0; s<NSpinCases1; ++s) {
       const SpinCase1 spin = static_cast<SpinCase1>(s);
-      Ref<OrbitalSpace> occ = r12info->refinfo()->occ(spin);
-      Ref<OrbitalSpace> orbs = r12info->refinfo()->orbs(spin);
+      Ref<OrbitalSpace> occ = occ(spin);
+      Ref<OrbitalSpace> orbs = orbs(spin);
       std::vector<unsigned int> occ2orbs = (*orbs << *occ);
       P[s] = localkit->symmmatrix(new SCDimension(orbs->rank()));
       P[s].assign(0.0);

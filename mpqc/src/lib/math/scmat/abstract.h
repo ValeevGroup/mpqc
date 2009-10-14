@@ -272,7 +272,8 @@ class SCMatrix: public DescribedClass {
     virtual void assign_subblock(SCMatrix *m, int, int, int, int, int=0, int=0) =0;
 
     /// Sum m into a subblock of this.
-    virtual void accumulate_subblock(SCMatrix *m, int, int, int, int, int=0,int=0) =0;
+    virtual void accumulate_subblock(SCMatrix *m, int br, int er, int bc, int ec,
+                                     int source_br = 0, int source_bc = 0) =0;
 
     /// Return a row or column of this.
     virtual SCVector * get_row(int i) =0;

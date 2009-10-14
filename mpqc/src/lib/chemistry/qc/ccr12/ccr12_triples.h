@@ -36,34 +36,55 @@ namespace sc {
 class CCR12_Triples : virtual public RefCount {
   protected:
     CCR12_Info* z;
-    Ref<Tensor> singles_intermediate_; 
-    Ref<Tensor> doubles_intermediate_; 
-    Ref<Tensor> intermediate_; 
+
+    Ref<Tensor> singles_intermediate_;
+    Ref<Tensor> doubles_intermediate_;
+    Ref<Tensor> rhs_intermediate_;
+    Ref<Tensor> lhs_intermediate_;
+
+    // for prediagonalization scheme
+    void prediagon();
+    void fill_in_ltensors();
+    const int pair_size_;
+    RefDiagSCMatrix bdiag_;
+    RefSCMatrix lmatrix_;
+    const RefSymmSCMatrix B_;
+    const RefSymmSCMatrix X_;
+    Ref<Tensor> ltensor1_;
+    Ref<Tensor> ltensor2_;
 
     void singles();
     void doubles();
     void denom_contraction();
+    void denom_contraction_new();
     void offset_hhphhh(Ref<Tensor>&);
+    void offset_bphhh(Ref<Tensor>&);
     double get_energy();
 
   public:
-    CCR12_Triples(CCR12_Info* inz) : z(inz) {
+    CCR12_Triples(CCR12_Info* inz, RefSymmSCMatrix b, RefSymmSCMatrix x)
+     : z(inz), B_(b), X_(x), pair_size_(b.n()) {
+      prediagon();
       singles_intermediate_ = new Tensor("singles_intermediate", z->mem());
       doubles_intermediate_ = new Tensor("doubles_intermediate", z->mem());
-      intermediate_         = new Tensor("intermediate", z->mem());
-      
-      offset_hhphhh(singles_intermediate_);
-      offset_hhphhh(doubles_intermediate_);
-      offset_hhphhh(intermediate_);
     };
 
     ~CCR12_Triples() {};
 
     double compute() {
+      offset_hhphhh(singles_intermediate_);
+      offset_hhphhh(doubles_intermediate_);
       singles(); // evaluating singles
       doubles(); // evaluating doubles
       singles_intermediate_->daxpy(doubles_intermediate_, 1.0); // adding doubles to singles to form lhs numerator
+      rhs_intermediate_ = doubles_intermediate_->clone();
+#if 0
       denom_contraction(); // contracting denominator to rhs numerator which is doubles
+#else
+      fill_in_ltensors();
+      denom_contraction_new();
+#endif
+
       return get_energy();
     };
 

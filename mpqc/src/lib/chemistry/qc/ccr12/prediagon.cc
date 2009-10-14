@@ -47,7 +47,7 @@ void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	// So far, I haven't thought about the reduced dimensional version...
 	// Guessing occupied pairs can hardly be linearly dependent with each other.
 	if(mtilde.coldim() != X_.dim()) {
-	  throw ProgrammingError("Currently occupied pair is assumed to be linearly independent.", __FILE__, __LINE__);
+	  throw ProgrammingError("Currently occupied pairs are assumed to be linearly independent.", __FILE__, __LINE__);
 	}
 
 	RefSCMatrix btilde = mtilde.t() * B_ * mtilde;

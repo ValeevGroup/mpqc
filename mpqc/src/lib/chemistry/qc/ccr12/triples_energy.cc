@@ -74,7 +74,7 @@ double CCR12_Triples::get_energy() {
           // read blocks
           const long tag = h6ba + noab * (h5ba + noab * (h4ba + noab * (p3ba - noab + nvab * (h2ba + noab * h1ba))));
           singles_intermediate_->get_block(tag, work0); 
-          intermediate_->get_block(tag, work1); 
+          rhs_intermediate_->get_block(tag, work1);
 
           // prefactor
           double factor = 1.0; 

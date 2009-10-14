@@ -199,7 +199,10 @@ void CCSD::compute(){
     timer_->enter("R12 triples correction");
     iter_start = timer_->get_wall_time();
 
-    Ref<CCR12_Triples> triples = new CCR12_Triples(info()); 
+    if (!info()->restricted())
+      throw ProgrammingError("Triples corrections are implemented only for RHF reference so far.", __FILE__, __LINE__);
+
+    Ref<CCR12_Triples> triples = new CCR12_Triples(info(), info()->B(), info()->X());
     const double triples_correction = triples->compute();
     print_correction(triples_correction, energy, "R12 triples");
 

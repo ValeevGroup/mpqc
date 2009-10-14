@@ -342,7 +342,7 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
 #if 0
                 const double sum = std::accumulate(data, data+size, 0.0);
                 ExEnv::out0() << "tiles = (" << t0 << "," << t1 << "," << t2 << "," << t3
-                              << ")  key = " << tile_key  << " sum = " << sum << endl;
+                              << ")  key = " << tile_key  << " sum = " << sum << std::endl;
 
                 for(int i=0; i<size; ++i) {
                   ExEnv::out0() << "data[" << i << "] = " << data[i] << std::endl;

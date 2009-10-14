@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin8.11.1
-  User:       evaleev@Brainiamp.local
-  Start Time: Mon Aug 11 16:51:43 2008
+  Machine:    i386-apple-darwin10.0.0
+  User:       evaleev@thinair
+  Start Time: Thu Oct  8 19:33:27 2009
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -13,7 +13,7 @@
 
   Using IntegralLibint2 by default for molecular integrals evaluation
 
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-static/share/mpqc/3.0.0-alpha/atominfo.kv.
 
   IntCoorGen: generated 3 coordinates.
   Forming optimization coordinates:
@@ -21,8 +21,8 @@
       expected 3 coordinates
       found 2 variable coordinates
       found 0 constant coordinates
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
-      Reading file /Users/evaleev/Development/workspace/mpqc-install-cca/share/mpqc/3.0.0-alpha/basis/dz_LdunningR.kv.
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-static/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+      Reading file /Users/evaleev/Development/workspace/mpqc-install-static/share/mpqc/3.0.0-alpha/basis/dz_LdunningR.kv.
 
       CLSCF::init: total charge = 0
 
@@ -43,8 +43,8 @@
 
       nuclear repulsion energy =    9.1571164588
 
-      integral intermediate storage = 96391544 bytes
-      integral cache = 0 bytes
+      integral intermediate storage = 29927176 bytes
+      integral cache = 2071144 bytes
       Beginning iterations.  Basis is DZ (Dunning).
                       4284 integrals
       iter     1 energy =  -75.6929826973 delta = 2.35942e-01
@@ -85,16 +85,14 @@
 
   docc = [ 3 0 1 1 ]
   nbasis = 24
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-cca/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
+  Reading file /Users/evaleev/Development/workspace/mpqc-install-static/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
   ints_file = psiccsdpt2f12_psiccsd_tf12ccpvdzaugccpvdzc2v.moints
-include_DKH_in_Q: false
 
   Molecular formula H2O
 
   The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/psiccsdpt2f12_psiccsd_tf12ccpvdzaugccpvdzc2v.in" were ignored:
     mpqc:mole:mbpt2r12:reference:guess_wavefunction:multiplicity
     mpqc:mole:mbpt2r12:reference:multiplicity
-    mpqc:integrals
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
@@ -109,13 +107,22 @@ include_DKH_in_Q: false
     write_pdb     = no
     print_mole    = yes
     print_timings = yes
+  Using symmetric orthogonalization.
+  n(basis):            11     2     7     4
+  Maximum orthogonalization residual = 3.66509
+  Minimum orthogonalization residual = 0.0352018
+  GaussianBasisSet:
+    nbasis = 24
+    nshell = 11
+    nprim  = 24
+    name = "cc-pVDZ"
 
-  SCF::compute: energy accuracy = 1.0000000e-08
+  SCF::compute: energy accuracy = 1.0000000e-07
 
   nuclear repulsion energy =    9.1571164588
 
-  integral intermediate storage = 96408256 bytes
-  integral cache = 0 bytes
+  integral intermediate storage = 29943888 bytes
+  integral cache = 2051312 bytes
   Beginning iterations.  Basis is cc-pVDZ.
                  31972 integrals
   iter     1 energy =  -75.9894459794 delta = 1.63329e-01
@@ -137,24 +144,11 @@ include_DKH_in_Q: false
   iter     9 energy =  -76.0258882403 delta = 3.87940e-07
                  31972 integrals
   iter    10 energy =  -76.0258882403 delta = 5.58931e-08
-                 31972 integrals
-  iter    11 energy =  -76.0258882403 delta = 1.32428e-08
-                 31972 integrals
-  iter    12 energy =  -76.0258882403 delta = 1.71870e-09
 
   HOMO is     1  B2 =  -0.491067
   LUMO is     4  A1 =   0.185922
 
   total scf energy =  -76.0258882403
-  Using symmetric orthogonalization.
-  n(basis):            11     2     7     4
-  Maximum orthogonalization residual = 3.66509
-  Minimum orthogonalization residual = 0.0352018
-  GaussianBasisSet:
-    nbasis = 24
-    nshell = 11
-    nprim  = 24
-    name = "cc-pVDZ"
 switched off integral check in mbptr12.cc/compute
   Orthogonalizing basis for space RIBS:
     Using symmetric orthogonalization.
@@ -179,79 +173,16 @@ switched off integral check in mbptr12.cc/compute
     Minimum singular value = 1
 
   Entered G12 diagonal intermediates evaluator
-
-    Entered generic tensor (<i i|i i>) evaluator
-      Entered <i i| G12[0] |m m>_bb integrals evaluator (transform type ikjy)
-        Memory available per node:      32000000 Bytes
-        Static memory used per node:    1003840 Bytes
-        Total memory used per node:     1270000 Bytes
-        Memory required for one pass:   1270000 Bytes
-        Minimum memory required:        1058000 Bytes
-        Number of passes:               1
-        Batch size:                     5
-        Beginning pass 1
-        Begin loop over shells (ints, 1+2+3 q.t.)
-          working on shell pair (  0   0),  0.000% complete (0 of 66)
-          working on shell pair (  3   1), 10.606% complete (7 of 66)
-          working on shell pair (  4   4), 21.212% complete (14 of 66)
-          working on shell pair (  6   0), 31.818% complete (21 of 66)
-          working on shell pair (  7   0), 42.424% complete (28 of 66)
-          working on shell pair (  7   7), 53.030% complete (35 of 66)
-          working on shell pair (  8   6), 63.636% complete (42 of 66)
-          working on shell pair (  9   4), 74.242% complete (49 of 66)
-          working on shell pair ( 10   1), 84.848% complete (56 of 66)
-          working on shell pair ( 10   8), 95.455% complete (63 of 66)
-        End of loop over shells
-        Begin fourth q.t.
-        End of fourth q.t.
-      Detecting non-totally-symmetric integrals ... none
-      Computing intermediates on 1 processors
-    Exited generic tensor (<i i|i i>) evaluator
-
-    Entered generic tensor (<i i|i i>) evaluator
-      Entered <i i| G12[0,0] |i i>_bb integrals evaluator (transform type ikjy)
-        Memory available per node:      32000000 Bytes
-        Static memory used per node:    1003840 Bytes
-        Total memory used per node:     1270000 Bytes
-        Memory required for one pass:   1270000 Bytes
-        Minimum memory required:        1058000 Bytes
-        Number of passes:               1
-        Batch size:                     5
-        Beginning pass 1
-        Begin loop over shells (ints, 1+2+3 q.t.)
-          working on shell pair (  0   0),  0.000% complete (0 of 66)
-          working on shell pair (  3   1), 10.606% complete (7 of 66)
-          working on shell pair (  4   4), 21.212% complete (14 of 66)
-          working on shell pair (  6   0), 31.818% complete (21 of 66)
-          working on shell pair (  7   0), 42.424% complete (28 of 66)
-          working on shell pair (  7   7), 53.030% complete (35 of 66)
-          working on shell pair (  8   6), 63.636% complete (42 of 66)
-          working on shell pair (  9   4), 74.242% complete (49 of 66)
-          working on shell pair ( 10   1), 84.848% complete (56 of 66)
-          working on shell pair ( 10   8), 95.455% complete (63 of 66)
-        End of loop over shells
-        Begin fourth q.t.
-        End of fourth q.t.
-      Detecting non-totally-symmetric integrals ... none
-      Computing intermediates on 1 processors
-    Exited generic tensor (<i i|i i>) evaluator
-
-    Entered generic tensor (<i i|i i>) evaluator
-      Computing intermediates on 1 processors
-    Exited generic tensor (<i i|i i>) evaluator
-  Exited G12 diagonal intermediates evaluator
-
-  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
-    Entered <i i| G12[0] |p p>_bb integrals evaluator (transform type ikjy)
+    Entered <i(sym) i(sym)|G12'[p16807]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
       Memory available per node:      32000000 Bytes
-      Static memory used per node:    1011136 Bytes
-      Total memory used per node:     1832704 Bytes
-      Memory required for one pass:   1832704 Bytes
-      Minimum memory required:        1179904 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     699840 Bytes
+      Memory required for one pass:   699840 Bytes
+      Minimum memory required:        143040 Bytes
       Number of passes:               1
       Batch size:                     5
       Beginning pass 1
-      Begin loop over shells (ints, 1+2+3 q.t.)
+      Begin loop over shells (ints, 1+2 q.t.)
         working on shell pair (  0   0),  0.000% complete (0 of 66)
         working on shell pair (  3   1), 10.606% complete (7 of 66)
         working on shell pair (  4   4), 21.212% complete (14 of 66)
@@ -263,381 +194,146 @@ switched off integral check in mbptr12.cc/compute
         working on shell pair ( 10   1), 84.848% complete (56 of 66)
         working on shell pair ( 10   8), 95.455% complete (63 of 66)
       End of loop over shells
-      Begin fourth q.t.
-      End of fourth q.t.
-    Detecting non-totally-symmetric integrals ... none
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
 
-  Entered generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|i i> = <i i|p p> . <i i|p p>^T)
-
-  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
-    Entered <i i| G12[0] |m a'>_bb integrals evaluator (transform type ikjy)
-      Memory available per node:      32000000 Bytes
-      Static memory used per node:    1008456 Bytes
-      Total memory used per node:     1360296 Bytes
-      Memory required for one pass:   1360296 Bytes
-      Minimum memory required:        1080296 Bytes
-      Number of passes:               1
-      Batch size:                     5
-      Beginning pass 1
-      Begin loop over shells (ints, 1+2+3 q.t.)
-        working on shell pair (  0   0),  0.000% complete (0 of 198)
-        working on shell pair (  1   9), 10.101% complete (20 of 198)
-        working on shell pair (  3   7), 20.202% complete (40 of 198)
-        working on shell pair (  5   5), 30.303% complete (60 of 198)
-        working on shell pair (  7   3), 40.404% complete (80 of 198)
-        working on shell pair (  9   1), 50.505% complete (100 of 198)
-        working on shell pair ( 10  10), 60.606% complete (120 of 198)
-        working on shell pair ( 12   8), 70.707% complete (140 of 198)
-        working on shell pair ( 14   6), 80.808% complete (160 of 198)
-        working on shell pair ( 16   4), 90.909% complete (180 of 198)
-      End of loop over shells
-      Begin fourth q.t.
-      End of fourth q.t.
-    Detecting non-totally-symmetric integrals ... none
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
-
-  Entered generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|i i> = <i i|m a'> . <i i|m a'>^T)
-
-  Entered B(app. C) intermediate evaluator
-    florian: DKH in Q: false
-    florian: make_F = false
-    florian: make_hJ = true
-    florian: make_K = false
-
-    Entered Coulomb matrix evaluator
-      Entered (mn|xy) integrals evaluator (transform type ijxy)
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Entered <i(sym) i(sym)|G12'[p16807]|i(sym) i(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
         Memory available per node:      32000000 Bytes
-        Static memory used per node:    1016328 Bytes
-        Total memory used per node:     1250000 Bytes
-        Memory required for one pass:   1250000 Bytes
-        Minimum memory required:        1069360 Bytes
+        Static memory used per node:    0 Bytes
+        Total memory used per node:     699840 Bytes
+        Memory required for one pass:   699840 Bytes
+        Minimum memory required:        143040 Bytes
         Number of passes:               1
         Batch size:                     5
         Beginning pass 1
-        Begin loop over shells (ints, 1+2 q.t.)
-          working on shell pair (  0   0),  0.000% complete (0 of 198)
-          working on shell pair (  1   2), 10.101% complete (20 of 198)
-          working on shell pair (  2   4), 20.202% complete (40 of 198)
-          working on shell pair (  3   6), 30.303% complete (60 of 198)
-          working on shell pair (  4   8), 40.404% complete (80 of 198)
-          working on shell pair (  5  10), 50.505% complete (100 of 198)
-          working on shell pair (  6  12), 60.606% complete (120 of 198)
-          working on shell pair (  7  14), 70.707% complete (140 of 198)
-          working on shell pair (  8  16), 80.808% complete (160 of 198)
-          working on shell pair ( 10   0), 90.909% complete (180 of 198)
-        End of loop over shells
+        Read half-transformed integrals
         Begin third q.t.
         End of third q.t.
         Begin fourth q.t.
         End of fourth q.t.
       Detecting non-totally-symmetric integrals ... none
-      Begin computation of Coulomb matrix
-      Computing intermediates on 1 processors
-      End of computation of Coulomb matrix
-    Exited Coulomb matrix evaluator
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+    Entered <i(sym) i(sym)|G12'[p282475249]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     699840 Bytes
+      Memory required for one pass:   699840 Bytes
+      Minimum memory required:        143040 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 66)
+        working on shell pair (  3   1), 10.606% complete (7 of 66)
+        working on shell pair (  4   4), 21.212% complete (14 of 66)
+        working on shell pair (  6   0), 31.818% complete (21 of 66)
+        working on shell pair (  7   0), 42.424% complete (28 of 66)
+        working on shell pair (  7   7), 53.030% complete (35 of 66)
+        working on shell pair (  8   6), 63.636% complete (42 of 66)
+        working on shell pair (  9   4), 74.242% complete (49 of 66)
+        working on shell pair ( 10   1), 84.848% complete (56 of 66)
+        working on shell pair ( 10   8), 95.455% complete (63 of 66)
+      End of loop over shells
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Entered <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+        Memory available per node:      32000000 Bytes
+        Static memory used per node:    0 Bytes
+        Total memory used per node:     699840 Bytes
+        Memory required for one pass:   699840 Bytes
+        Minimum memory required:        143040 Bytes
+        Number of passes:               1
+        Batch size:                     5
+        Beginning pass 1
+        Read half-transformed integrals
+        Begin third q.t.
+        End of third q.t.
+        Begin fourth q.t.
+        End of fourth q.t.
+      Detecting non-totally-symmetric integrals ... none
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+  Exited G12 diagonal intermediates evaluator
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+    Entered <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     699840 Bytes
+      Memory required for one pass:   699840 Bytes
+      Minimum memory required:        143040 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Beginning pass 1
+      Read half-transformed integrals
+      Begin third q.t.
+      End of third q.t.
+      Begin fourth q.t.
+      End of fourth q.t.
+    Detecting non-totally-symmetric integrals ... none
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+  Entered <i(sym) i(sym)|G12'[p16807]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
+    Memory available per node:      32000000 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     1106880 Bytes
+    Memory required for one pass:   1106880 Bytes
+    Minimum memory required:        223680 Bytes
+    Number of passes:               1
+    Batch size:                     5
+    Beginning pass 1
+    Begin loop over shells (ints, 1+2 q.t.)
+      working on shell pair (  0   0),  0.000% complete (0 of 198)
+      working on shell pair (  1   9), 10.101% complete (20 of 198)
+      working on shell pair (  3   7), 20.202% complete (40 of 198)
+      working on shell pair (  5   5), 30.303% complete (60 of 198)
+      working on shell pair (  7   3), 40.404% complete (80 of 198)
+      working on shell pair (  9   1), 50.505% complete (100 of 198)
+      working on shell pair ( 10  10), 60.606% complete (120 of 198)
+      working on shell pair ( 12   8), 70.707% complete (140 of 198)
+      working on shell pair ( 14   6), 80.808% complete (160 of 198)
+      working on shell pair ( 16   4), 90.909% complete (180 of 198)
+    End of loop over shells
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+    Entered <i(sym) i(sym)|G12'[p16807]|m(sym) a'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+      Memory available per node:      32000000 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     1106880 Bytes
+      Memory required for one pass:   1106880 Bytes
+      Minimum memory required:        223680 Bytes
+      Number of passes:               1
+      Batch size:                     5
+      Beginning pass 1
+      Read half-transformed integrals
+      Begin third q.t.
+      End of third q.t.
+      Begin fourth q.t.
+      End of fourth q.t.
+    Detecting non-totally-symmetric integrals ... none
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+
+  Entered B(app. C) intermediate evaluator
+WARNING: use_pauli = 0
 
     Entered Alpha-beta Q(C) intermediate evaluator
       Entered generic X intermediate evaluator
-
-        Entered generic tensor (<i i|i i_hJ(p')>) evaluator
-          Entered <i i| G12[0,0] |i i_hJ(p')>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1004520 Bytes
-            Total memory used per node:     1356360 Bytes
-            Memory required for one pass:   1356360 Bytes
-            Minimum memory required:        1076360 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 198)
-              working on shell pair (  1   9), 10.101% complete (20 of 198)
-              working on shell pair (  3   7), 20.202% complete (40 of 198)
-              working on shell pair (  5   5), 30.303% complete (60 of 198)
-              working on shell pair (  7   3), 40.404% complete (80 of 198)
-              working on shell pair (  9   1), 50.505% complete (100 of 198)
-              working on shell pair ( 10  10), 60.606% complete (120 of 198)
-              working on shell pair ( 12   8), 70.707% complete (140 of 198)
-              working on shell pair ( 14   6), 80.808% complete (160 of 198)
-              working on shell pair ( 16   4), 90.909% complete (180 of 198)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic tensor (<i i|i i_hJ(p')>) evaluator
-      Exited generic X intermediate evaluator
-    Exited Alpha-beta Q(C) intermediate evaluator
-
-    Alpha-beta Q(C) contribution
-                   1               2               3
-        1  -14.2194221345   -0.3960012050    0.0000000000
-        2   -1.0975581371   -0.9663317440    0.0000000000
-        3    0.0000000000    0.0000000000   -0.7160539693
-        4   -0.3382011269   -0.1365470269    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6   -1.0975581371   -0.0531206097    0.0000000000
-        7   -0.1352289580    0.0019474920    0.0000000000
-        8    0.0000000000    0.0000000000    0.0011351604
-        9   -0.0282169544   -0.0108428609    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0000000000   -0.0339826710
-       12    0.0000000000    0.0000000000    0.0531895735
-       13   -0.0703838823    0.0550354122    0.0000000000
-       14    0.0000000000    0.0000000000    0.0091679539
-       15    0.0000000000    0.0000000000    0.0000000000
-       16   -0.3382011269   -0.0096109531    0.0000000000
-       17   -0.0282169544   -0.0220431838    0.0000000000
-       18    0.0000000000    0.0000000000   -0.0084540284
-       19   -0.0995540844    0.0588578306    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25   -0.1103236736    0.0742332881    0.0000000000
-
-                   4               5               6
-        1   -0.1099159647    0.0000000000   -0.3960012050
-        2   -0.1313055321    0.0000000000   -0.0531206097
-        3    0.0000000000    0.0000000000    0.0000000000
-        4   -0.9078040303    0.0000000000   -0.0096109531
-        5    0.0000000000   -1.0070243872    0.0000000000
-        6   -0.0086293841    0.0000000000   -0.9663317440
-        7   -0.0102666319    0.0000000000    0.0019474920
-        8    0.0000000000    0.0000000000    0.0000000000
-        9   -0.0082227759    0.0000000000   -0.0220431838
-       10    0.0000000000   -0.0050638636    0.0000000000
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13    0.0091014070    0.0000000000    0.0550354122
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16   -0.0460274635    0.0000000000   -0.1365470269
-       17    0.0563274736    0.0000000000   -0.0108428609
-       18    0.0000000000    0.0000000000    0.0000000000
-       19    0.0306084487    0.0000000000    0.0588578306
-       20    0.0000000000   -0.0032539423    0.0000000000
-       21    0.0000000000   -0.0522963986    0.0000000000
-       22    0.0000000000    0.0705968439    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0218898080    0.0000000000
-       25    0.0220552669    0.0000000000    0.0742332881
-
-                   7               8               9
-        1    0.0289877387    0.0000000000    0.0099766172
-        2    0.0257281624    0.0000000000    0.0045464742
-        3    0.0000000000    0.0182316414    0.0000000000
-        4    0.0039702452    0.0000000000    0.0241727394
-        5    0.0000000000    0.0000000000    0.0000000000
-        6    0.0257281624    0.0000000000    0.0092276205
-        7    0.0028847949    0.0000000000    0.0032207938
-        8    0.0000000000    0.0101575429    0.0000000000
-        9    0.0046190631    0.0000000000    0.0174100768
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000   -0.0011995731    0.0000000000
-       12    0.0000000000    0.0032687011    0.0000000000
-       13   -0.0042942545    0.0000000000    0.0008995596
-       14    0.0000000000    0.0006192190    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0039702452    0.0000000000   -0.0005445825
-       17    0.0046190631    0.0000000000    0.0065089670
-       18    0.0000000000    0.0023887317    0.0000000000
-       19   -0.0018185109    0.0000000000    0.0077144477
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25   -0.0020316900    0.0000000000    0.0026515627
-
-                  10              11              12
-        1    0.0000000000    0.0000000000    0.0000000000
-        2    0.0000000000    0.0000000000    0.0000000000
-        3    0.0000000000   -0.0339826710   -0.0011995731
-        4    0.0000000000    0.0000000000    0.0000000000
-        5    0.0267850396    0.0000000000    0.0000000000
-        6    0.0000000000    0.0000000000    0.0000000000
-        7    0.0000000000    0.0000000000    0.0000000000
-        8    0.0000000000    0.0531895735    0.0032687011
-        9    0.0000000000    0.0000000000    0.0000000000
-       10    0.0221665009    0.0000000000    0.0000000000
-       11    0.0000000000   -0.7160539693    0.0182316414
-       12    0.0000000000    0.0011351604    0.0101575429
-       13    0.0000000000    0.0000000000    0.0000000000
-       14    0.0000000000   -0.0084540284    0.0023887317
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0000000000    0.0000000000    0.0000000000
-       17    0.0000000000    0.0000000000    0.0000000000
-       18    0.0000000000    0.0091679539    0.0006192190
-       19    0.0000000000    0.0000000000    0.0000000000
-       20    0.0050404793    0.0000000000    0.0000000000
-       21   -0.0028956792    0.0000000000    0.0000000000
-       22    0.0083914468    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0024254077    0.0000000000    0.0000000000
-       25    0.0000000000    0.0000000000    0.0000000000
-
-                  13              14              15
-        1    0.0024185403    0.0000000000    0.0000000000
-        2   -0.0030454117    0.0000000000    0.0000000000
-        3    0.0000000000   -0.0005679666    0.0000000000
-        4   -0.0005014197    0.0000000000    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6   -0.0030454117    0.0000000000    0.0000000000
-        7    0.0108316566    0.0000000000    0.0000000000
-        8    0.0000000000   -0.0000233336    0.0000000000
-        9   -0.0003036741    0.0000000000    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0067203145    0.0000000000
-       12    0.0000000000    0.0014917386    0.0000000000
-       13    0.0179183639    0.0000000000    0.0000000000
-       14    0.0000000000    0.0181123201    0.0000000000
-       15    0.0000000000    0.0000000000    0.0215381034
-       16   -0.0005014197    0.0000000000    0.0000000000
-       17   -0.0003036741    0.0000000000    0.0000000000
-       18    0.0000000000    0.0036184254    0.0000000000
-       19    0.0027516536    0.0000000000    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0037911541
-       24    0.0000000000    0.0000000000    0.0000000000
-       25    0.0027889390    0.0000000000    0.0000000000
-
-                  16              17              18
-        1   -0.1099159647    0.0099766172    0.0000000000
-        2   -0.0086293841    0.0092276205    0.0000000000
-        3    0.0000000000    0.0000000000    0.0067203145
-        4   -0.0460274635   -0.0005445825    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6   -0.1313055321    0.0045464742    0.0000000000
-        7   -0.0102666319    0.0032207938    0.0000000000
-        8    0.0000000000    0.0000000000    0.0014917386
-        9    0.0563274736    0.0065089670    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0000000000   -0.0005679666
-       12    0.0000000000    0.0000000000   -0.0000233336
-       13    0.0091014070    0.0008995596    0.0000000000
-       14    0.0000000000    0.0000000000    0.0036184254
-       15    0.0000000000    0.0000000000    0.0000000000
-       16   -0.9078040303    0.0241727394    0.0000000000
-       17   -0.0082227759    0.0174100768    0.0000000000
-       18    0.0000000000    0.0000000000    0.0181123201
-       19    0.0306084487    0.0077144477    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25    0.0220552669    0.0026515627    0.0000000000
-
-                  19              20              21
-        1    0.0074991573    0.0000000000    0.0000000000
-        2   -0.0030749396    0.0000000000    0.0000000000
-        3    0.0000000000    0.0000000000    0.0000000000
-        4    0.0055388478    0.0000000000    0.0000000000
-        5    0.0000000000    0.0091372960   -0.0522963986
-        6   -0.0030749396    0.0000000000    0.0000000000
-        7    0.0148364448    0.0000000000    0.0000000000
-        8    0.0000000000    0.0000000000    0.0000000000
-        9    0.0121397506    0.0000000000    0.0000000000
-       10    0.0000000000    0.0073493671    0.0705968439
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13    0.0044851972    0.0000000000    0.0000000000
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0055388478    0.0000000000    0.0000000000
-       17    0.0121397506    0.0000000000    0.0000000000
-       18    0.0000000000    0.0000000000    0.0000000000
-       19    0.0399830168    0.0000000000    0.0000000000
-       20    0.0000000000    0.0317444906    0.0218898080
-       21    0.0000000000   -0.0019002278   -1.0070243872
-       22    0.0000000000    0.0049181062   -0.0050638636
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0067098483   -0.0032539423
-       25    0.0063623370    0.0000000000    0.0000000000
-
-                  22              23              24
-        1    0.0000000000    0.0000000000    0.0000000000
-        2    0.0000000000    0.0000000000    0.0000000000
-        3    0.0000000000    0.0000000000    0.0000000000
-        4    0.0000000000    0.0000000000    0.0000000000
-        5   -0.0028956792    0.0000000000   -0.0019002278
-        6    0.0000000000    0.0000000000    0.0000000000
-        7    0.0000000000    0.0000000000    0.0000000000
-        8    0.0000000000    0.0000000000    0.0000000000
-        9    0.0000000000    0.0000000000    0.0000000000
-       10    0.0083914468    0.0000000000    0.0049181062
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13    0.0000000000    0.0000000000    0.0000000000
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000    0.0037911541    0.0000000000
-       16    0.0000000000    0.0000000000    0.0000000000
-       17    0.0000000000    0.0000000000    0.0000000000
-       18    0.0000000000    0.0000000000    0.0000000000
-       19    0.0000000000    0.0000000000    0.0000000000
-       20    0.0024254077    0.0000000000    0.0067098483
-       21    0.0267850396    0.0000000000    0.0091372960
-       22    0.0221665009    0.0000000000    0.0073493671
-       23    0.0000000000    0.0215381034    0.0000000000
-       24    0.0050404793    0.0000000000    0.0317444906
-       25    0.0000000000    0.0000000000    0.0000000000
-
-                  25
-        1    0.0057308764
-        2   -0.0065321234
-        3    0.0000000000
-        4   -0.0020656868
-        5    0.0000000000
-        6   -0.0065321234
-        7    0.0188145836
-        8    0.0000000000
-        9    0.0046919513
-       10    0.0000000000
-       11    0.0000000000
-       12    0.0000000000
-       13    0.0047933691
-       14    0.0000000000
-       15    0.0000000000
-       16   -0.0020656868
-       17    0.0046919513
-       18    0.0000000000
-       19    0.0070573596
-       20    0.0000000000
-       21    0.0000000000
-       22    0.0000000000
-       23    0.0000000000
-       24    0.0000000000
-       25    0.0487440191
-
-
-    Entered Alpha-beta P(C) intermediate evaluator
-      florian: DKH in Q: false
-      florian: make_F = true
-      florian: make_hJ = false
-      florian: make_K = true
-
-      Entered exchange matrix evaluator
-        Entered (mx|ny) integrals evaluator (transform type ikjy)
+        Entered <i(sym) i(sym)|G12'[p282475249]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
           Memory available per node:      32000000 Bytes
-          Static memory used per node:    1028816 Bytes
-          Total memory used per node:     1462104 Bytes
-          Memory required for one pass:   1462104 Bytes
-          Minimum memory required:        1127544 Bytes
+          Static memory used per node:    0 Bytes
+          Total memory used per node:     1106880 Bytes
+          Memory required for one pass:   1106880 Bytes
+          Minimum memory required:        223680 Bytes
           Number of passes:               1
           Batch size:                     5
           Beginning pass 1
-          Begin loop over shells (ints, 1+2+3 q.t.)
+          Begin loop over shells (ints, 1+2 q.t.)
             working on shell pair (  0   0),  0.000% complete (0 of 198)
             working on shell pair (  1   9), 10.101% complete (20 of 198)
             working on shell pair (  3   7), 20.202% complete (40 of 198)
@@ -649,817 +345,257 @@ switched off integral check in mbptr12.cc/compute
             working on shell pair ( 14   6), 80.808% complete (160 of 198)
             working on shell pair ( 16   4), 90.909% complete (180 of 198)
           End of loop over shells
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of exchange matrix
-        Computing intermediates on 1 processors
-        End of computation of exchange matrix
-      Exited exchange matrix evaluator
 
-      Entered Coulomb matrix evaluator
-        Entered (mn|xy) integrals evaluator (transform type ijxy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1028816 Bytes
-          Total memory used per node:     1407464 Bytes
-          Memory required for one pass:   1407464 Bytes
-          Minimum memory required:        1115304 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 171)
-            working on shell pair (  5   2),  9.942% complete (17 of 171)
-            working on shell pair (  7   6), 19.883% complete (34 of 171)
-            working on shell pair (  9   6), 29.825% complete (51 of 171)
-            working on shell pair ( 11   2), 39.766% complete (68 of 171)
-            working on shell pair ( 12   7), 49.708% complete (85 of 171)
-            working on shell pair ( 13  11), 59.649% complete (102 of 171)
-            working on shell pair ( 14  14), 69.591% complete (119 of 171)
-            working on shell pair ( 16   0), 79.532% complete (136 of 171)
-            working on shell pair ( 17   0), 89.474% complete (153 of 171)
-            working on shell pair ( 17  17), 99.415% complete (170 of 171)
-          End of loop over shells
-          Begin third q.t.
-          End of third q.t.
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of Coulomb matrix
-        Computing intermediates on 1 processors
-        End of computation of Coulomb matrix
-      Exited Coulomb matrix evaluator
+        Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
+          Entered <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1106880 Bytes
+            Memory required for one pass:   1106880 Bytes
+            Minimum memory required:        223680 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
+      Exited generic X intermediate evaluator
+    Exited Alpha-beta Q(C) intermediate evaluator
+
+    Entered Alpha-beta P(C) intermediate evaluator
+WARNING: use_pauli = 0
       Entered generic FxF intermediate evaluator
-
-        Entered generic contraction (<i i|i i> = <i i|p'_K(p') p'> . <i i|p' p'>^T)
-          Entered <i i| G12[0] |p'_K(p') p'>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1028816 Bytes
-            Total memory used per node:     3134904 Bytes
-            Memory required for one pass:   3134904 Bytes
-            Minimum memory required:        1462104 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 198)
-              working on shell pair (  1   9), 10.101% complete (20 of 198)
-              working on shell pair (  3   7), 20.202% complete (40 of 198)
-              working on shell pair (  5   5), 30.303% complete (60 of 198)
-              working on shell pair (  7   3), 40.404% complete (80 of 198)
-              working on shell pair (  9   1), 50.505% complete (100 of 198)
-              working on shell pair ( 10  10), 60.606% complete (120 of 198)
-              working on shell pair ( 12   8), 70.707% complete (140 of 198)
-              working on shell pair ( 14   6), 80.808% complete (160 of 198)
-              working on shell pair ( 16   4), 90.909% complete (180 of 198)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Entered <i i| G12[0] |p' p'>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1028816 Bytes
-            Total memory used per node:     3134904 Bytes
-            Memory required for one pass:   3134904 Bytes
-            Minimum memory required:        1462104 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 198)
-              working on shell pair (  1   9), 10.101% complete (20 of 198)
-              working on shell pair (  3   7), 20.202% complete (40 of 198)
-              working on shell pair (  5   5), 30.303% complete (60 of 198)
-              working on shell pair (  7   3), 40.404% complete (80 of 198)
-              working on shell pair (  9   1), 50.505% complete (100 of 198)
-              working on shell pair ( 10  10), 60.606% complete (120 of 198)
-              working on shell pair ( 12   8), 70.707% complete (140 of 198)
-              working on shell pair ( 14   6), 80.808% complete (160 of 198)
-              working on shell pair ( 16   4), 90.909% complete (180 of 198)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|p'_K(p') p'> . <i i|p' p'>^T)
-      Exited generic FxF intermediate evaluator
-      Entered generic FxF intermediate evaluator
-
-        Entered generic contraction (<i i|i i> = <i i|p'_F(p') m> . <i i|p' m>^T)
-          Entered <i i| G12[0] |p'_F(p') m>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1016328 Bytes
-            Total memory used per node:     2419840 Bytes
-            Memory required for one pass:   2419840 Bytes
-            Minimum memory required:        1304640 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 66)
-              working on shell pair (  3   1), 10.606% complete (7 of 66)
-              working on shell pair (  4   4), 21.212% complete (14 of 66)
-              working on shell pair (  6   0), 31.818% complete (21 of 66)
-              working on shell pair (  7   0), 42.424% complete (28 of 66)
-              working on shell pair (  7   7), 53.030% complete (35 of 66)
-              working on shell pair (  8   6), 63.636% complete (42 of 66)
-              working on shell pair (  9   4), 74.242% complete (49 of 66)
-              working on shell pair ( 10   1), 84.848% complete (56 of 66)
-              working on shell pair ( 10   8), 95.455% complete (63 of 66)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Entered <i i| G12[0] |p' m>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1016328 Bytes
-            Total memory used per node:     2419840 Bytes
-            Memory required for one pass:   2419840 Bytes
-            Minimum memory required:        1304640 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 66)
-              working on shell pair (  3   1), 10.606% complete (7 of 66)
-              working on shell pair (  4   4), 21.212% complete (14 of 66)
-              working on shell pair (  6   0), 31.818% complete (21 of 66)
-              working on shell pair (  7   0), 42.424% complete (28 of 66)
-              working on shell pair (  7   7), 53.030% complete (35 of 66)
-              working on shell pair (  8   6), 63.636% complete (42 of 66)
-              working on shell pair (  9   4), 74.242% complete (49 of 66)
-              working on shell pair ( 10   1), 84.848% complete (56 of 66)
-              working on shell pair ( 10   8), 95.455% complete (63 of 66)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|p'_F(p') m> . <i i|p' m>^T)
-      Exited generic FxF intermediate evaluator
-      florian: DKH in Q: false
-      florian: make_F = true
-      florian: make_hJ = false
-      florian: make_K = false
-
-      Entered Coulomb matrix evaluator
-        Entered (mn|xy) integrals evaluator (transform type ijxy)
+        Entered <i(sym) i(sym)|G12'[p16807]|mu' mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
           Memory available per node:      32000000 Bytes
-          Static memory used per node:    1011136 Bytes
-          Total memory used per node:     1159944 Bytes
-          Memory required for one pass:   1159944 Bytes
-          Minimum memory required:        1044584 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin third q.t.
-          End of third q.t.
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of Coulomb matrix
-        Computing intermediates on 1 processors
-        End of computation of Coulomb matrix
-      Exited Coulomb matrix evaluator
-
-      Entered exchange matrix evaluator
-        Entered (mx|ny) integrals evaluator (transform type ikjy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1011136 Bytes
-          Total memory used per node:     1179904 Bytes
-          Memory required for one pass:   1179904 Bytes
-          Minimum memory required:        1049344 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2+3 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of exchange matrix
-        Computing intermediates on 1 processors
-        End of computation of exchange matrix
-      Exited exchange matrix evaluator
-      Entered generic FxF intermediate evaluator
-
-        Entered generic contraction (<i i|i i> = <i i|p_F(p) e> . <i i|p e>^T)
-          Entered <i i| G12[0] |p_F(p) e>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1010176 Bytes
-            Total memory used per node:     1831744 Bytes
-            Memory required for one pass:   1831744 Bytes
-            Minimum memory required:        1178944 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 66)
-              working on shell pair (  3   1), 10.606% complete (7 of 66)
-              working on shell pair (  4   4), 21.212% complete (14 of 66)
-              working on shell pair (  6   0), 31.818% complete (21 of 66)
-              working on shell pair (  7   0), 42.424% complete (28 of 66)
-              working on shell pair (  7   7), 53.030% complete (35 of 66)
-              working on shell pair (  8   6), 63.636% complete (42 of 66)
-              working on shell pair (  9   4), 74.242% complete (49 of 66)
-              working on shell pair ( 10   1), 84.848% complete (56 of 66)
-              working on shell pair ( 10   8), 95.455% complete (63 of 66)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Entered <i i| G12[0] |p e>_bb integrals evaluator (transform type ikjy)
-            Memory available per node:      32000000 Bytes
-            Static memory used per node:    1010176 Bytes
-            Total memory used per node:     1831744 Bytes
-            Memory required for one pass:   1831744 Bytes
-            Minimum memory required:        1178944 Bytes
-            Number of passes:               1
-            Batch size:                     5
-            Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 66)
-              working on shell pair (  3   1), 10.606% complete (7 of 66)
-              working on shell pair (  4   4), 21.212% complete (14 of 66)
-              working on shell pair (  6   0), 31.818% complete (21 of 66)
-              working on shell pair (  7   0), 42.424% complete (28 of 66)
-              working on shell pair (  7   7), 53.030% complete (35 of 66)
-              working on shell pair (  8   6), 63.636% complete (42 of 66)
-              working on shell pair (  9   4), 74.242% complete (49 of 66)
-              working on shell pair ( 10   1), 84.848% complete (56 of 66)
-              working on shell pair ( 10   8), 95.455% complete (63 of 66)
-            End of loop over shells
-            Begin fourth q.t.
-            End of fourth q.t.
-          Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|p_F(p) e> . <i i|p e>^T)
-      Exited generic FxF intermediate evaluator
-      florian: DKH in Q: false
-      florian: make_F = true
-      florian: make_hJ = false
-      florian: make_K = false
-
-      Entered Coulomb matrix evaluator
-        Entered (mn|xy) integrals evaluator (transform type ijxy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1016328 Bytes
-          Total memory used per node:     1250000 Bytes
-          Memory required for one pass:   1250000 Bytes
-          Minimum memory required:        1069360 Bytes
+          Static memory used per node:    0 Bytes
+          Total memory used per node:     1889560 Bytes
+          Memory required for one pass:   1889560 Bytes
+          Minimum memory required:        380760 Bytes
           Number of passes:               1
           Batch size:                     5
           Beginning pass 1
           Begin loop over shells (ints, 1+2 q.t.)
             working on shell pair (  0   0),  0.000% complete (0 of 198)
-            working on shell pair (  1   2), 10.101% complete (20 of 198)
-            working on shell pair (  2   4), 20.202% complete (40 of 198)
-            working on shell pair (  3   6), 30.303% complete (60 of 198)
-            working on shell pair (  4   8), 40.404% complete (80 of 198)
-            working on shell pair (  5  10), 50.505% complete (100 of 198)
-            working on shell pair (  6  12), 60.606% complete (120 of 198)
-            working on shell pair (  7  14), 70.707% complete (140 of 198)
-            working on shell pair (  8  16), 80.808% complete (160 of 198)
-            working on shell pair ( 10   0), 90.909% complete (180 of 198)
+            working on shell pair (  1   9), 10.101% complete (20 of 198)
+            working on shell pair (  3   7), 20.202% complete (40 of 198)
+            working on shell pair (  5   5), 30.303% complete (60 of 198)
+            working on shell pair (  7   3), 40.404% complete (80 of 198)
+            working on shell pair (  9   1), 50.505% complete (100 of 198)
+            working on shell pair ( 10  10), 60.606% complete (120 of 198)
+            working on shell pair ( 12   8), 70.707% complete (140 of 198)
+            working on shell pair ( 14   6), 80.808% complete (160 of 198)
+            working on shell pair ( 16   4), 90.909% complete (180 of 198)
           End of loop over shells
-          Begin third q.t.
-          End of third q.t.
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of Coulomb matrix
-        Computing intermediates on 1 processors
-        End of computation of Coulomb matrix
-      Exited Coulomb matrix evaluator
 
-      Entered exchange matrix evaluator
-        Entered (mx|ny) integrals evaluator (transform type ikjy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1016328 Bytes
-          Total memory used per node:     1304640 Bytes
-          Memory required for one pass:   1304640 Bytes
-          Minimum memory required:        1081600 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2+3 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of exchange matrix
-        Computing intermediates on 1 processors
-        End of computation of exchange matrix
-      Exited exchange matrix evaluator
-      Entered generic FxF intermediate evaluator
-
-        Entered generic contraction (<i i|i i> = <i i|m_F(p') a'> . <i i|m a'>^T)
-          Entered <i i| G12[0] |m_F(p') a'>_bb integrals evaluator (transform type ikjy)
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|p'_K(p')[A] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
             Memory available per node:      32000000 Bytes
-            Static memory used per node:    1009136 Bytes
-            Total memory used per node:     1445976 Bytes
-            Memory required for one pass:   1445976 Bytes
-            Minimum memory required:        1097976 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1889560 Bytes
+            Memory required for one pass:   1889560 Bytes
+            Minimum memory required:        380760 Bytes
             Number of passes:               1
             Batch size:                     5
             Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 198)
-              working on shell pair (  1   9), 10.101% complete (20 of 198)
-              working on shell pair (  3   7), 20.202% complete (40 of 198)
-              working on shell pair (  5   5), 30.303% complete (60 of 198)
-              working on shell pair (  7   3), 40.404% complete (80 of 198)
-              working on shell pair (  9   1), 50.505% complete (100 of 198)
-              working on shell pair ( 10  10), 60.606% complete (120 of 198)
-              working on shell pair ( 12   8), 70.707% complete (140 of 198)
-              working on shell pair ( 14   6), 80.808% complete (160 of 198)
-              working on shell pair ( 16   4), 90.909% complete (180 of 198)
-            End of loop over shells
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
             Begin fourth q.t.
             End of fourth q.t.
           Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|m_F(p') a'> . <i i|m a'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|p' p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1889560 Bytes
+            Memory required for one pass:   1889560 Bytes
+            Minimum memory required:        380760 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
       Exited generic FxF intermediate evaluator
-      florian: DKH in Q: false
-      florian: make_F = true
-      florian: make_hJ = false
-      florian: make_K = false
-
-      Entered Coulomb matrix evaluator
-        Entered (mn|xy) integrals evaluator (transform type ijxy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1012104 Bytes
-          Total memory used per node:     1125968 Bytes
-          Memory required for one pass:   1125968 Bytes
-          Minimum memory required:        1037488 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 198)
-            working on shell pair (  1   2), 10.101% complete (20 of 198)
-            working on shell pair (  2   4), 20.202% complete (40 of 198)
-            working on shell pair (  3   6), 30.303% complete (60 of 198)
-            working on shell pair (  4   8), 40.404% complete (80 of 198)
-            working on shell pair (  5  10), 50.505% complete (100 of 198)
-            working on shell pair (  6  12), 60.606% complete (120 of 198)
-            working on shell pair (  7  14), 70.707% complete (140 of 198)
-            working on shell pair (  8  16), 80.808% complete (160 of 198)
-            working on shell pair ( 10   0), 90.909% complete (180 of 198)
-          End of loop over shells
-          Begin third q.t.
-          End of third q.t.
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of Coulomb matrix
-        Computing intermediates on 1 processors
-        End of computation of Coulomb matrix
-      Exited Coulomb matrix evaluator
-
-      Entered exchange matrix evaluator
-        Entered (mx|ny) integrals evaluator (transform type ikjy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1012104 Bytes
-          Total memory used per node:     1155648 Bytes
-          Memory required for one pass:   1155648 Bytes
-          Minimum memory required:        1043968 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2+3 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of exchange matrix
-        Computing intermediates on 1 processors
-        End of computation of exchange matrix
-      Exited exchange matrix evaluator
       Entered generic FxF intermediate evaluator
 
-        Entered generic contraction (<i i|i i> = <i i|p_F(a') e> . <i i|p e>^T)
-          Entered <i i| G12[0] |p_F(a') e>_bb integrals evaluator (transform type ikjy)
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) p'_F(p')[A]> . <i(sym) i(sym)|m(sym) p'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|m(sym) p'_F(p')[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
             Memory available per node:      32000000 Bytes
-            Static memory used per node:    1013440 Bytes
-            Total memory used per node:     1920008 Bytes
-            Memory required for one pass:   1920008 Bytes
-            Minimum memory required:        1199208 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1106880 Bytes
+            Memory required for one pass:   1106880 Bytes
+            Minimum memory required:        223680 Bytes
             Number of passes:               1
             Batch size:                     5
             Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 66)
-              working on shell pair (  3   1), 10.606% complete (7 of 66)
-              working on shell pair (  4   4), 21.212% complete (14 of 66)
-              working on shell pair (  6   0), 31.818% complete (21 of 66)
-              working on shell pair (  7   0), 42.424% complete (28 of 66)
-              working on shell pair (  7   7), 53.030% complete (35 of 66)
-              working on shell pair (  8   6), 63.636% complete (42 of 66)
-              working on shell pair (  9   4), 74.242% complete (49 of 66)
-              working on shell pair ( 10   1), 84.848% complete (56 of 66)
-              working on shell pair ( 10   8), 95.455% complete (63 of 66)
-            End of loop over shells
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
             Begin fourth q.t.
             End of fourth q.t.
           Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|p_F(a') e> . <i i|p e>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|m(sym) p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1106880 Bytes
+            Memory required for one pass:   1106880 Bytes
+            Minimum memory required:        223680 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) p'_F(p')[A]> . <i(sym) i(sym)|m(sym) p'>^T)
       Exited generic FxF intermediate evaluator
-      florian: DKH in Q: false
-      florian: make_F = true
-      florian: make_hJ = false
-      florian: make_K = false
-
-      Entered Coulomb matrix evaluator
-        Entered (mn|xy) integrals evaluator (transform type ijxy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1003840 Bytes
-          Total memory used per node:     1057800 Bytes
-          Memory required for one pass:   1057800 Bytes
-          Minimum memory required:        1015400 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin third q.t.
-          End of third q.t.
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of Coulomb matrix
-        Computing intermediates on 1 processors
-        End of computation of Coulomb matrix
-      Exited Coulomb matrix evaluator
-
-      Entered exchange matrix evaluator
-        Entered (mx|ny) integrals evaluator (transform type ikjy)
-          Memory available per node:      32000000 Bytes
-          Static memory used per node:    1003840 Bytes
-          Total memory used per node:     1058000 Bytes
-          Memory required for one pass:   1058000 Bytes
-          Minimum memory required:        1015600 Bytes
-          Number of passes:               1
-          Batch size:                     5
-          Beginning pass 1
-          Begin loop over shells (ints, 1+2+3 q.t.)
-            working on shell pair (  0   0),  0.000% complete (0 of 66)
-            working on shell pair (  3   1), 10.606% complete (7 of 66)
-            working on shell pair (  4   4), 21.212% complete (14 of 66)
-            working on shell pair (  6   0), 31.818% complete (21 of 66)
-            working on shell pair (  7   0), 42.424% complete (28 of 66)
-            working on shell pair (  7   7), 53.030% complete (35 of 66)
-            working on shell pair (  8   6), 63.636% complete (42 of 66)
-            working on shell pair (  9   4), 74.242% complete (49 of 66)
-            working on shell pair ( 10   1), 84.848% complete (56 of 66)
-            working on shell pair ( 10   8), 95.455% complete (63 of 66)
-          End of loop over shells
-          Begin fourth q.t.
-          End of fourth q.t.
-        Detecting non-totally-symmetric integrals ... none
-        Begin computation of exchange matrix
-        Computing intermediates on 1 processors
-        End of computation of exchange matrix
-      Exited exchange matrix evaluator
+WARNING: use_pauli = 0
       Entered generic FxF intermediate evaluator
 
-        Entered generic contraction (<i i|i i> = <i i|m_F(m) a'> . <i i|m a'>^T)
-          Entered <i i| G12[0] |m_F(m) a'>_bb integrals evaluator (transform type ikjy)
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] e(sym)> . <i(sym) i(sym)|p(sym) e(sym)>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
             Memory available per node:      32000000 Bytes
-            Static memory used per node:    1008456 Bytes
-            Total memory used per node:     1360296 Bytes
-            Memory required for one pass:   1360296 Bytes
-            Minimum memory required:        1080296 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     699840 Bytes
+            Memory required for one pass:   699840 Bytes
+            Minimum memory required:        143040 Bytes
             Number of passes:               1
             Batch size:                     5
             Beginning pass 1
-            Begin loop over shells (ints, 1+2+3 q.t.)
-              working on shell pair (  0   0),  0.000% complete (0 of 198)
-              working on shell pair (  1   9), 10.101% complete (20 of 198)
-              working on shell pair (  3   7), 20.202% complete (40 of 198)
-              working on shell pair (  5   5), 30.303% complete (60 of 198)
-              working on shell pair (  7   3), 40.404% complete (80 of 198)
-              working on shell pair (  9   1), 50.505% complete (100 of 198)
-              working on shell pair ( 10  10), 60.606% complete (120 of 198)
-              working on shell pair ( 12   8), 70.707% complete (140 of 198)
-              working on shell pair ( 14   6), 80.808% complete (160 of 198)
-              working on shell pair ( 16   4), 90.909% complete (180 of 198)
-            End of loop over shells
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
             Begin fourth q.t.
             End of fourth q.t.
           Detecting non-totally-symmetric integrals ... none
-          Computing intermediates on 1 processors
-        Exited generic contraction (<i i|i i> = <i i|m_F(m) a'> . <i i|m a'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|p(sym) e(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     699840 Bytes
+            Memory required for one pass:   699840 Bytes
+            Minimum memory required:        143040 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] e(sym)> . <i(sym) i(sym)|p(sym) e(sym)>^T)
+      Exited generic FxF intermediate evaluator
+WARNING: use_pauli = 0
+      Entered generic FxF intermediate evaluator
+
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(p')[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1889560 Bytes
+            Memory required for one pass:   1889560 Bytes
+            Minimum memory required:        380760 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(p')[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
+      Exited generic FxF intermediate evaluator
+WARNING: use_pauli = 0
+      Entered generic FxF intermediate evaluator
+
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|e(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|e(sym) p(sym)>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|e(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1106880 Bytes
+            Memory required for one pass:   1106880 Bytes
+            Minimum memory required:        223680 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+          Entered <i(sym) i(sym)|G12'[p16807]|e(sym) p(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     699840 Bytes
+            Memory required for one pass:   699840 Bytes
+            Minimum memory required:        143040 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|e(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|e(sym) p(sym)>^T)
+      Exited generic FxF intermediate evaluator
+WARNING: use_pauli = 0
+      Entered generic FxF intermediate evaluator
+
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(m(sym))[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
+          Entered <i(sym) i(sym)|G12'[p16807]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+            Memory available per node:      32000000 Bytes
+            Static memory used per node:    0 Bytes
+            Total memory used per node:     1106880 Bytes
+            Memory required for one pass:   1106880 Bytes
+            Minimum memory required:        223680 Bytes
+            Number of passes:               1
+            Batch size:                     5
+            Beginning pass 1
+            Read half-transformed integrals
+            Begin third q.t.
+            End of third q.t.
+            Begin fourth q.t.
+            End of fourth q.t.
+          Detecting non-totally-symmetric integrals ... none
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(m(sym))[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
       Exited generic FxF intermediate evaluator
     Exited Alpha-beta P(C) intermediate evaluator
-
-    Alpha-beta P(C) contribution
-                   1               2               3
-        1   13.7139191413    0.7553519696    0.0000000000
-        2    0.7553519696    0.8681563831    0.0000000000
-        3    0.0000000000    0.0000000000    0.6376563040
-        4    0.2269255585    0.1195733328    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6    0.7553519696    0.0543107362    0.0000000000
-        7    0.0590692605    0.0004970766    0.0000000000
-        8    0.0000000000    0.0000000000   -0.0007535949
-        9    0.0108024641    0.0043210244    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0000000000    0.0281584632
-       12    0.0000000000    0.0000000000   -0.0227760210
-       13    0.0378354723   -0.0207060863    0.0000000000
-       14    0.0000000000    0.0000000000   -0.0041093273
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.2269255585    0.0106282803    0.0000000000
-       17    0.0108024641    0.0093919533    0.0000000000
-       18    0.0000000000    0.0000000000    0.0031917102
-       19    0.0525662260   -0.0216387648    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25    0.0602532930   -0.0272940371    0.0000000000
-
-                   4               5               6
-        1    0.2269255585    0.0000000000    0.7553519696
-        2    0.1195733328    0.0000000000    0.0543107362
-        3    0.0000000000    0.0000000000    0.0000000000
-        4    0.8025700566    0.0000000000    0.0106282803
-        5    0.0000000000    0.8850128540    0.0000000000
-        6    0.0106282803    0.0000000000    0.8681563831
-        7    0.0046991029    0.0000000000    0.0004970766
-        8    0.0000000000    0.0000000000    0.0000000000
-        9    0.0025116018    0.0000000000    0.0093919533
-       10    0.0000000000    0.0006285903    0.0000000000
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13   -0.0034233639    0.0000000000   -0.0207060863
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0379684611    0.0000000000    0.1195733328
-       17   -0.0244114581    0.0000000000    0.0043210244
-       18    0.0000000000    0.0000000000    0.0000000000
-       19   -0.0123182135    0.0000000000   -0.0216387648
-       20    0.0000000000    0.0009439694    0.0000000000
-       21    0.0000000000    0.0409399789    0.0000000000
-       22    0.0000000000   -0.0307855828    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000   -0.0092611294    0.0000000000
-       25   -0.0080759370    0.0000000000   -0.0272940371
-
-                   7               8               9
-        1    0.0590692605    0.0000000000    0.0108024641
-        2    0.0004970766    0.0000000000    0.0043210244
-        3    0.0000000000   -0.0007535949    0.0000000000
-        4    0.0046991029    0.0000000000    0.0025116018
-        5    0.0000000000    0.0000000000    0.0000000000
-        6    0.0004970766    0.0000000000    0.0093919533
-        7   -0.0350155197    0.0000000000   -0.0006600520
-        8    0.0000000000   -0.0341839289    0.0000000000
-        9   -0.0006600520    0.0000000000   -0.0382778200
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000   -0.0227760210    0.0000000000
-       12    0.0000000000   -0.0184131981    0.0000000000
-       13   -0.0198382674    0.0000000000   -0.0001497912
-       14    0.0000000000    0.0005419256    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0046991029    0.0000000000   -0.0244114581
-       17   -0.0006600520    0.0000000000   -0.0185487708
-       18    0.0000000000    0.0005406235    0.0000000000
-       19   -0.0205601964    0.0000000000   -0.0152413065
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25   -0.0232995086    0.0000000000   -0.0074223241
-
-                  10              11              12
-        1    0.0000000000    0.0000000000    0.0000000000
-        2    0.0000000000    0.0000000000    0.0000000000
-        3    0.0000000000    0.0281584632   -0.0227760210
-        4    0.0000000000    0.0000000000    0.0000000000
-        5    0.0006285903    0.0000000000    0.0000000000
-        6    0.0000000000    0.0000000000    0.0000000000
-        7    0.0000000000    0.0000000000    0.0000000000
-        8    0.0000000000   -0.0227760210   -0.0184131981
-        9    0.0000000000    0.0000000000    0.0000000000
-       10   -0.0443671383    0.0000000000    0.0000000000
-       11    0.0000000000    0.6376563040   -0.0007535949
-       12    0.0000000000   -0.0007535949   -0.0341839289
-       13    0.0000000000    0.0000000000    0.0000000000
-       14    0.0000000000    0.0031917102    0.0005406235
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.0000000000    0.0000000000    0.0000000000
-       17    0.0000000000    0.0000000000    0.0000000000
-       18    0.0000000000   -0.0041093273    0.0005419256
-       19    0.0000000000    0.0000000000    0.0000000000
-       20   -0.0066629904    0.0000000000    0.0000000000
-       21   -0.0307855828    0.0000000000    0.0000000000
-       22   -0.0212448227    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24   -0.0065091781    0.0000000000    0.0000000000
-       25    0.0000000000    0.0000000000    0.0000000000
-
-                  13              14              15
-        1    0.0378354723    0.0000000000    0.0000000000
-        2   -0.0207060863    0.0000000000    0.0000000000
-        3    0.0000000000   -0.0041093273    0.0000000000
-        4   -0.0034233639    0.0000000000    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6   -0.0207060863    0.0000000000    0.0000000000
-        7   -0.0198382674    0.0000000000    0.0000000000
-        8    0.0000000000    0.0005419256    0.0000000000
-        9   -0.0001497912    0.0000000000    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0031917102    0.0000000000
-       12    0.0000000000    0.0005406235    0.0000000000
-       13   -0.0422367430    0.0000000000    0.0000000000
-       14    0.0000000000   -0.0365656540    0.0000000000
-       15    0.0000000000    0.0000000000   -0.0402665551
-       16   -0.0034233639    0.0000000000    0.0000000000
-       17   -0.0001497912    0.0000000000    0.0000000000
-       18    0.0000000000   -0.0067121575    0.0000000000
-       19   -0.0067524427    0.0000000000    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000   -0.0055333691
-       24    0.0000000000    0.0000000000    0.0000000000
-       25   -0.0052501084    0.0000000000    0.0000000000
-
-                  16              17              18
-        1    0.2269255585    0.0108024641    0.0000000000
-        2    0.0106282803    0.0093919533    0.0000000000
-        3    0.0000000000    0.0000000000    0.0031917102
-        4    0.0379684611   -0.0244114581    0.0000000000
-        5    0.0000000000    0.0000000000    0.0000000000
-        6    0.1195733328    0.0043210244    0.0000000000
-        7    0.0046991029   -0.0006600520    0.0000000000
-        8    0.0000000000    0.0000000000    0.0005406235
-        9   -0.0244114581   -0.0185487708    0.0000000000
-       10    0.0000000000    0.0000000000    0.0000000000
-       11    0.0000000000    0.0000000000   -0.0041093273
-       12    0.0000000000    0.0000000000    0.0005419256
-       13   -0.0034233639   -0.0001497912    0.0000000000
-       14    0.0000000000    0.0000000000   -0.0067121575
-       15    0.0000000000    0.0000000000    0.0000000000
-       16    0.8025700566    0.0025116018    0.0000000000
-       17    0.0025116018   -0.0382778200    0.0000000000
-       18    0.0000000000    0.0000000000   -0.0365656540
-       19   -0.0123182135   -0.0152413065    0.0000000000
-       20    0.0000000000    0.0000000000    0.0000000000
-       21    0.0000000000    0.0000000000    0.0000000000
-       22    0.0000000000    0.0000000000    0.0000000000
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000    0.0000000000    0.0000000000
-       25   -0.0080759370   -0.0074223241    0.0000000000
-
-                  19              20              21
-        1    0.0525662260    0.0000000000    0.0000000000
-        2   -0.0216387648    0.0000000000    0.0000000000
-        3    0.0000000000    0.0000000000    0.0000000000
-        4   -0.0123182135    0.0000000000    0.0000000000
-        5    0.0000000000    0.0009439694    0.0409399789
-        6   -0.0216387648    0.0000000000    0.0000000000
-        7   -0.0205601964    0.0000000000    0.0000000000
-        8    0.0000000000    0.0000000000    0.0000000000
-        9   -0.0152413065    0.0000000000    0.0000000000
-       10    0.0000000000   -0.0066629904   -0.0307855828
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13   -0.0067524427    0.0000000000    0.0000000000
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000    0.0000000000    0.0000000000
-       16   -0.0123182135    0.0000000000    0.0000000000
-       17   -0.0152413065    0.0000000000    0.0000000000
-       18    0.0000000000    0.0000000000    0.0000000000
-       19   -0.0649745952    0.0000000000    0.0000000000
-       20    0.0000000000   -0.0511545813   -0.0092611294
-       21    0.0000000000   -0.0092611294    0.8850128540
-       22    0.0000000000   -0.0065091781    0.0006285903
-       23    0.0000000000    0.0000000000    0.0000000000
-       24    0.0000000000   -0.0090147205    0.0009439694
-       25   -0.0093089703    0.0000000000    0.0000000000
-
-                  22              23              24
-        1    0.0000000000    0.0000000000    0.0000000000
-        2    0.0000000000    0.0000000000    0.0000000000
-        3    0.0000000000    0.0000000000    0.0000000000
-        4    0.0000000000    0.0000000000    0.0000000000
-        5   -0.0307855828    0.0000000000   -0.0092611294
-        6    0.0000000000    0.0000000000    0.0000000000
-        7    0.0000000000    0.0000000000    0.0000000000
-        8    0.0000000000    0.0000000000    0.0000000000
-        9    0.0000000000    0.0000000000    0.0000000000
-       10   -0.0212448227    0.0000000000   -0.0065091781
-       11    0.0000000000    0.0000000000    0.0000000000
-       12    0.0000000000    0.0000000000    0.0000000000
-       13    0.0000000000    0.0000000000    0.0000000000
-       14    0.0000000000    0.0000000000    0.0000000000
-       15    0.0000000000   -0.0055333691    0.0000000000
-       16    0.0000000000    0.0000000000    0.0000000000
-       17    0.0000000000    0.0000000000    0.0000000000
-       18    0.0000000000    0.0000000000    0.0000000000
-       19    0.0000000000    0.0000000000    0.0000000000
-       20   -0.0065091781    0.0000000000   -0.0090147205
-       21    0.0006285903    0.0000000000    0.0009439694
-       22   -0.0443671383    0.0000000000   -0.0066629904
-       23    0.0000000000   -0.0402665551    0.0000000000
-       24   -0.0066629904    0.0000000000   -0.0511545813
-       25    0.0000000000    0.0000000000    0.0000000000
-
-                  25
-        1    0.0602532930
-        2   -0.0272940371
-        3    0.0000000000
-        4   -0.0080759370
-        5    0.0000000000
-        6   -0.0272940371
-        7   -0.0232995086
-        8    0.0000000000
-        9   -0.0074223241
-       10    0.0000000000
-       11    0.0000000000
-       12    0.0000000000
-       13   -0.0052501084
-       14    0.0000000000
-       15    0.0000000000
-       16   -0.0080759370
-       17   -0.0074223241
-       18    0.0000000000
-       19   -0.0093089703
-       20    0.0000000000
-       21    0.0000000000
-       22    0.0000000000
-       23    0.0000000000
-       24    0.0000000000
-       25   -0.0716560438
-
   Exited B(app. C) intermediate evaluator
+  Entered <i(sym) i(sym)|G12'[p16807]|p p>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+    Memory available per node:      32000000 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     699840 Bytes
+    Memory required for one pass:   699840 Bytes
+    Minimum memory required:        143040 Bytes
+    Number of passes:               1
+    Batch size:                     5
+    Beginning pass 1
+    Read half-transformed integrals
+    Begin third q.t.
+    End of third q.t.
+    Begin fourth q.t.
+    End of fourth q.t.
+  Detecting non-totally-symmetric integrals ... none
 
-  Entered MP2 pair energies (<i i|a a>) evaluator
-    Computing intermediates on 1 processors
-  Exited MP2 pair energies (<i i|a a>) evaluator
+  Entered MP2 pair energies (<i(sym) i(sym)|a(sym) a(sym)>) evaluator
+  Exited MP2 pair energies (<i(sym) i(sym)|a(sym) a(sym)>) evaluator
 
-  Entered MP2 pair energies (<i i|a a>) evaluator
-    Computing intermediates on 1 processors
-  Exited MP2 pair energies (<i i|a a>) evaluator
+  Entered MP2 pair energies (<i(sym) i(sym)|a(sym) a(sym)>) evaluator
+  Exited MP2 pair energies (<i(sym) i(sym)|a(sym) a(sym)>) evaluator
   Computing orthonormal alpha-beta geminal space.
     Using canonical orthogonalization.
     n(basis):            25
@@ -1490,109 +626,130 @@ switched off integral check in mbptr12.cc/compute
   Singlet MBPT2-F12/C pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      1       1     -0.000427901   -0.094470485   -0.094898387
+      1       1     -0.000427901   -0.094470485   -0.094898386
       2       1     -0.000248588   -0.020356223   -0.020604811
-      2       2     -0.008947046   -0.006290642   -0.015237687
-      3       1     -0.000115154   -0.006208054   -0.006323208
-      3       2     -0.012272428   -0.009256146   -0.021528574
-      3       3     -0.019751020   -0.006179842   -0.025930863
-      4       1     -0.000167369   -0.011683185   -0.011850554
-      4       2     -0.009466858   -0.008194703   -0.017661561
-      4       3     -0.012722847   -0.005755114   -0.018477961
-      4       4     -0.017329041   -0.008078962   -0.025408003
-      5       1     -0.000158942   -0.013144531   -0.013303473
-      5       2     -0.009075206   -0.009949034   -0.019024241
-      5       3     -0.008904392   -0.006167783   -0.015072175
-      5       4     -0.010041762   -0.007927174   -0.017968935
-      5       5     -0.016925640   -0.009273619   -0.026199259
+      2       2     -0.008947046   -0.006290642   -0.015237688
+      3       1     -0.000167369   -0.011683186   -0.011850555
+      3       2     -0.009466858   -0.008194704   -0.017661561
+      3       3     -0.017329040   -0.008078963   -0.025408003
+      4       1     -0.000115154   -0.006208054   -0.006323208
+      4       2     -0.012272428   -0.009256146   -0.021528574
+      4       3     -0.012722846   -0.005755115   -0.018477960
+      4       4     -0.019751021   -0.006179842   -0.025930863
+      5       1     -0.000158942   -0.013144529   -0.013303471
+      5       2     -0.009075207   -0.009949034   -0.019024241
+      5       3     -0.010041762   -0.007927174   -0.017968935
+      5       4     -0.008904392   -0.006167783   -0.015072175
+      5       5     -0.016925640   -0.009273619   -0.026199258
 
   Triplet MBPT2-F12/C pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.000033665   -0.010842878   -0.010876543
-      3       1     -0.000352091   -0.007671839   -0.008023930
-      3       2     -0.005940691   -0.002520068   -0.008460760
-      4       1     -0.000396662   -0.013281499   -0.013678162
-      4       2     -0.005621228   -0.003348344   -0.008969572
-      4       3     -0.018814377   -0.003237538   -0.022051916
-      5       1     -0.000433560   -0.017041028   -0.017474588
+      2       1     -0.000033665   -0.010842878   -0.010876544
+      3       1     -0.000396663   -0.013281501   -0.013678163
+      3       2     -0.005621227   -0.003348344   -0.008969572
+      4       1     -0.000352091   -0.007671838   -0.008023930
+      4       2     -0.005940692   -0.002520068   -0.008460760
+      4       3     -0.018814377   -0.003237538   -0.022051915
+      5       1     -0.000433560   -0.017041025   -0.017474586
       5       2     -0.005854165   -0.004217485   -0.010071650
-      5       3     -0.019864522   -0.003795653   -0.023660174
-      5       4     -0.019849686   -0.004731796   -0.024581482
+      5       3     -0.019849686   -0.004731796   -0.024581482
+      5       4     -0.019864522   -0.003795652   -0.023660174
 
-  Singlet MP2 correlation energy [au]:             -0.126554193108
-  Triplet MP2 correlation energy [au]:             -0.077160648691
-  Singlet (MP2)-F12/  C correlation energy [au]:   -0.222935497707
-  Triplet (MP2)-F12/  C correlation energy [au]:   -0.070688127909
-  Singlet MP2-F12/  C correlation energy [au]:     -0.349489690815
-  Triplet MP2-F12/  C correlation energy [au]:     -0.147848776600
+  Singlet MP2 correlation energy [au]:             -0.126554192420
+  Triplet MP2 correlation energy [au]:             -0.077160648934
+  Singlet (MP2)-F12/  C correlation energy [au]:   -0.222935497557
+  Triplet (MP2)-F12/  C correlation energy [au]:   -0.070688126984
+  Singlet MP2-F12/  C correlation energy [au]:     -0.349489689978
+  Triplet MP2-F12/  C correlation energy [au]:     -0.147848775918
 
   RHF energy [au]:                                -76.025888240261
-  MP2 correlation energy [au]:                     -0.203714841798
-  (MBPT2)-F12/  C correlation energy [au]:         -0.293623625616
-  MBPT2-F12/  C correlation energy [au]:           -0.497338467415
-  MBPT2-F12/  C energy [au]:                      -76.523226707676
+  MP2 correlation energy [au]:                     -0.203714841354
+  (MBPT2)-F12/  C correlation energy [au]:         -0.293623624541
+  MBPT2-F12/  C correlation energy [au]:           -0.497338465896
+  MBPT2-F12/  C energy [au]:                      -76.523226706157
 
 
-  Entered generic tensor (<i i|p p>) evaluator
-    Computing intermediates on 1 processors
-  Exited generic tensor (<i i|p p>) evaluator
+  Entered generic tensor (<i(sym) i(sym)|p(sym) p(sym)>) evaluator
+  Exited generic tensor (<i(sym) i(sym)|p(sym) p(sym)>) evaluator
+  Entered <p(sym) p(sym)|ERI|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
+    Memory available per node:      32000000 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     2780544 Bytes
+    Memory required for one pass:   2780544 Bytes
+    Minimum memory required:        126528 Bytes
+    Number of passes:               1
+    Batch size:                     24
+    Beginning pass 1
+    Begin loop over shells (ints, 1+2 q.t.)
+      working on shell pair (  0   0),  0.000% complete (0 of 66)
+      working on shell pair (  3   1), 10.606% complete (7 of 66)
+      working on shell pair (  4   4), 21.212% complete (14 of 66)
+      working on shell pair (  6   0), 31.818% complete (21 of 66)
+      working on shell pair (  7   0), 42.424% complete (28 of 66)
+      working on shell pair (  7   7), 53.030% complete (35 of 66)
+      working on shell pair (  8   6), 63.636% complete (42 of 66)
+      working on shell pair (  9   4), 74.242% complete (49 of 66)
+      working on shell pair ( 10   1), 84.848% complete (56 of 66)
+      working on shell pair ( 10   8), 95.455% complete (63 of 66)
+    End of loop over shells
 
-  Entered generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
-    Entered <p p|p p>_bb integrals evaluator (transform type ikjy)
+  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
+    Entered <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
       Memory available per node:      32000000 Bytes
-      Static memory used per node:    1018432 Bytes
-      Total memory used per node:     3908608 Bytes
-      Memory required for one pass:   3908608 Bytes
-      Minimum memory required:        1144192 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     2780544 Bytes
+      Memory required for one pass:   2780544 Bytes
+      Minimum memory required:        126528 Bytes
       Number of passes:               1
       Batch size:                     24
       Beginning pass 1
-      Begin loop over shells (ints, 1+2+3 q.t.)
-        working on shell pair (  0   0),  0.000% complete (0 of 66)
-        working on shell pair (  3   1), 10.606% complete (7 of 66)
-        working on shell pair (  4   4), 21.212% complete (14 of 66)
-        working on shell pair (  6   0), 31.818% complete (21 of 66)
-        working on shell pair (  7   0), 42.424% complete (28 of 66)
-        working on shell pair (  7   7), 53.030% complete (35 of 66)
-        working on shell pair (  8   6), 63.636% complete (42 of 66)
-        working on shell pair (  9   4), 74.242% complete (49 of 66)
-        working on shell pair ( 10   1), 84.848% complete (56 of 66)
-        working on shell pair ( 10   8), 95.455% complete (63 of 66)
-      End of loop over shells
+      Read half-transformed integrals
+      Begin third q.t.
+      End of third q.t.
       Begin fourth q.t.
       End of fourth q.t.
     Detecting non-totally-symmetric integrals ... none
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
+  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
+  Entered <p(sym) p(sym)|ERI|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
+    Memory available per node:      32000000 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     4659648 Bytes
+    Memory required for one pass:   4659648 Bytes
+    Minimum memory required:        203904 Bytes
+    Number of passes:               1
+    Batch size:                     24
+    Beginning pass 1
+    Begin loop over shells (ints, 1+2 q.t.)
+      working on shell pair (  0   0),  0.000% complete (0 of 198)
+      working on shell pair (  1   9), 10.101% complete (20 of 198)
+      working on shell pair (  3   7), 20.202% complete (40 of 198)
+      working on shell pair (  5   5), 30.303% complete (60 of 198)
+      working on shell pair (  7   3), 40.404% complete (80 of 198)
+      working on shell pair (  9   1), 50.505% complete (100 of 198)
+      working on shell pair ( 10  10), 60.606% complete (120 of 198)
+      working on shell pair ( 12   8), 70.707% complete (140 of 198)
+      working on shell pair ( 14   6), 80.808% complete (160 of 198)
+      working on shell pair ( 16   4), 90.909% complete (180 of 198)
+    End of loop over shells
 
-  Entered generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
-    Entered <p p|m a'>_bb integrals evaluator (transform type ikjy)
+  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
+    Entered <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
       Memory available per node:      32000000 Bytes
-      Static memory used per node:    1015752 Bytes
-      Total memory used per node:     2101432 Bytes
-      Memory required for one pass:   2101432 Bytes
-      Minimum memory required:        1062752 Bytes
+      Static memory used per node:    0 Bytes
+      Total memory used per node:     4659648 Bytes
+      Memory required for one pass:   4659648 Bytes
+      Minimum memory required:        203904 Bytes
       Number of passes:               1
       Batch size:                     24
       Beginning pass 1
-      Begin loop over shells (ints, 1+2+3 q.t.)
-        working on shell pair (  0   0),  0.000% complete (0 of 198)
-        working on shell pair (  1   9), 10.101% complete (20 of 198)
-        working on shell pair (  3   7), 20.202% complete (40 of 198)
-        working on shell pair (  5   5), 30.303% complete (60 of 198)
-        working on shell pair (  7   3), 40.404% complete (80 of 198)
-        working on shell pair (  9   1), 50.505% complete (100 of 198)
-        working on shell pair ( 10  10), 60.606% complete (120 of 198)
-        working on shell pair ( 12   8), 70.707% complete (140 of 198)
-        working on shell pair ( 14   6), 80.808% complete (160 of 198)
-        working on shell pair ( 16   4), 90.909% complete (180 of 198)
-      End of loop over shells
+      Read half-transformed integrals
+      Begin third q.t.
+      End of third q.t.
       Begin fourth q.t.
       End of fourth q.t.
     Detecting non-totally-symmetric integrals ... none
-    Computing intermediates on 1 processors
-  Exited generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
+  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
   Computing orthonormal alpha-beta geminal space.
     Using canonical orthogonalization.
     n(basis):            25
@@ -1619,26 +776,28 @@ switched off integral check in mbptr12.cc/compute
     n(basis):            10
     Maximum orthogonalization residual = 0.0055281
     Minimum orthogonalization residual = 0.000772142
-  E2(AB)        =   -0.2328085919
-  E2(AA)        =   -0.0456085290
-  E2(s)         =   -0.2100043274
-  E2(t)         =   -0.0684127934
-  E2(MP2)       =   -0.2936236256
-  EMP2          =   -0.2037148418
-  EMP2R12       =   -0.4973384674
-  E2            =   -0.2784171209
-  ECCSD         =   -0.2130821615
-  ECCSD_PT2R12  =   -0.4914992823
-  E(T)          =   -0.0030218228
-  ECCSD_PT2R12T =   -0.4945211051
+  E2(AB)        =   -0.232619725855472
+  E2(AA)        =   -0.045707030872180
+  E2(s)         =   -0.209766210419382
+  E2(t)         =   -0.068560546308270
+  E2(MP2)       =   -0.293623624541439
+  EMP2          =   -0.203714841354270
+  EMP2R12       =   -0.497338465895709
+  E2            =   -0.278326756727652
+  ECCSD         =   -0.213082161683320
+  ECCSD_PT2R12  =   -0.491408918410972
+  ECCSD_PT2R12+REF =  -76.517297158668853
+  E(T)          =   -0.003021822863534
+  ECCSD_PT2R12T =   -0.494430741274503
+  ECCSD_PT2R12T+REF =  -76.520318981532384
 
-  Value of the MolecularEnergy:  -76.5204093454
+  Value of the MolecularEnergy:  -76.5203189815
 
   PsiCCSD_PT2R12T:
     PsiCCSD_PT2R12:
       New (symmetric) approach: true
       Function Parameters:
-        value_accuracy    = 1.000000e-06 (1.000000e-06) (computed)
+        value_accuracy    = 1.000000e-09 (1.000000e-09) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -1701,6 +860,7 @@ switched off integral check in mbptr12.cc/compute
             Functional form: G12
             [ Exponent Coefficient] = [ [0.549916 0.360094] [3.13186 0.346982] [20.611 0.198984]  ]
 
+        Coupling included: false
         GBC assumed: true
         EBC assumed: true
         EBC-free method: Valeev
@@ -1708,170 +868,191 @@ switched off integral check in mbptr12.cc/compute
         ABS method variant: CABS  (Valeev)
         Standard Approximation: C
         LinearR12Ansatz:
-          Orbital Product Space: ij
-          Projector: 2  , i.e. (1-P1)(1-P2)-V1V2
-          Ansatz: orbital-invariant
+          Geminal orbital Product Space: ij
+          Space of orbital products from which geminal substitutions are allowed: ij
+          Projector: 2  , i.e. (1-O1)(1-O2)-V1V2
+          Ansatz: orbital-invariant with optimized amplitudes
           WOF: false
+        H0_dk_approx_pauli: false
         Max # ABS indices: 2
-                                                                  CPU  Wall
-mpqc:                                                           44.21 49.44
-  calc:                                                         43.67 48.81
-    R12 intermeds (tensor contract): Vpqxy:                      2.51  2.74
-      Generic tensor:                                            0.00  0.01
-        MO ints retrieve:                                        0.00  0.00
-      Generic tensor contract:                                   2.50  2.73
-        MO ints retrieve:                                        0.27  0.28
-        tbint_tform_ikjy <p p|m a'>_bb:                          0.66  0.69
-          mp2-r12/a passes:                                      0.40  0.42
-            4. q.t.:                                             0.00  0.00
-            MO ints store:                                       0.01  0.01
-            ints+1qt+2qt+3qt:                                    0.39  0.41
-        tbint_tform_ikjy <p p|p p>_bb:                           0.47  0.48
-          mp2-r12/a passes:                                      0.30  0.30
-            4. q.t.:                                             0.01  0.01
-            MO ints store:                                       0.02  0.02
-            ints+1qt+2qt+3qt:                                    0.27  0.27
-    mp2-f12 energy:                                             39.91 41.93
-      "diagonal" part of G12 intermediates:                      3.63  4.77
-        Generic tensor:                                          3.58  4.58
-          MO ints retrieve:                                      0.00  0.00
-          tbint_tform_ikjy <i i| G12[0,0] |i i>_bb:              2.58  3.57
-            mp2-r12/a passes:                                    2.58  3.57
-              4. q.t.:                                           0.00  0.00
-              MO ints store:                                     0.00  0.00
-              ints+1qt+2qt+3qt:                                  2.58  3.57
-          tbint_tform_ikjy <i i| G12[0] |m m>_bb:                0.99  0.99
-            mp2-r12/a passes:                                    0.98  0.99
-              4. q.t.:                                           0.00  0.00
-              MO ints store:                                     0.00  0.00
-              ints+1qt+2qt+3qt:                                  0.98  0.99
-      B(app. C) intermediate:                                   33.00 33.74
-        Alpha-beta P(C) intermediate:                           27.26 27.94
-          coulomb:                                               2.22  2.28
-            MO ints retrieve:                                    0.00  0.00
-            tbint_tform_ijxy (mn|xy):                            2.20  2.24
-              mp2-r12/a passes:                                  1.07  1.09
-                3. q.t.:                                         0.00  0.00
-                4. q.t.:                                         0.00  0.00
-                MO ints store:                                   0.00  0.00
-                ints+1qt+2qt:                                    1.06  1.08
-          exchange:                                              2.52  2.56
-            MO ints retrieve:                                    0.00  0.00
-            tbint_tform_ikjy (mx|ny):                            2.51  2.52
-              mp2-r12/a passes:                                  1.47  1.48
-                4. q.t.:                                         0.00  0.00
-                MO ints store:                                   0.00  0.00
-                ints+1qt+2qt+3qt:                                1.46  1.47
-          generic FxF intermediate:                             22.44 22.97
-            Generic tensor contract:                            22.43 22.96
-              MO ints retrieve:                                  0.04  0.04
-              tbint_tform_ikjy <i i| G12[0] |m_F(m) a'>_bb:      1.95  1.96
-                mp2-r12/a passes:                                1.95  1.96
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.95  1.96
-              tbint_tform_ikjy <i i| G12[0] |m_F(p') a'>_bb:     4.00  4.02
-                mp2-r12/a passes:                                4.00  4.02
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              4.00  4.02
-              tbint_tform_ikjy <i i| G12[0] |p e>_bb:            1.01  1.02
-                mp2-r12/a passes:                                1.01  1.02
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.00  1.01
-              tbint_tform_ikjy <i i| G12[0] |p' m>_bb:           1.98  1.98
-                mp2-r12/a passes:                                1.97  1.98
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.97  1.98
-              tbint_tform_ikjy <i i| G12[0] |p' p'>_bb:          4.10  4.12
-                mp2-r12/a passes:                                4.10  4.12
-                  4. q.t.:                                       0.01  0.01
-                  MO ints store:                                 0.01  0.01
-                  ints+1qt+2qt+3qt:                              4.08  4.10
-              tbint_tform_ikjy <i i| G12[0] |p'_F(p') m>_bb:     2.00  2.02
-                mp2-r12/a passes:                                2.00  2.02
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.99  2.02
-              tbint_tform_ikjy <i i| G12[0] |p'_K(p') p'>_bb:    4.11  4.18
-                mp2-r12/a passes:                                4.11  4.18
-                  4. q.t.:                                       0.01  0.01
-                  MO ints store:                                 0.01  0.01
-                  ints+1qt+2qt+3qt:                              4.09  4.15
-              tbint_tform_ikjy <i i| G12[0] |p_F(a') e>_bb:      1.95  1.96
-                mp2-r12/a passes:                                1.95  1.96
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.94  1.95
-              tbint_tform_ikjy <i i| G12[0] |p_F(p) e>_bb:       1.01  1.02
-                mp2-r12/a passes:                                1.01  1.01
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              1.00  1.01
-        Alpha-beta Q(C) intermediate:                            5.15  5.19
-          generic X intermediate:                                5.15  5.19
-            Generic tensor:                                      5.15  5.19
-              MO ints retrieve:                                  0.00  0.00
-              tbint_tform_ikjy <i i| G12[0,0] |i i_hJ(p')>_bb:   5.15  5.18
-                mp2-r12/a passes:                                5.15  5.18
-                  4. q.t.:                                       0.00  0.00
-                  MO ints store:                                 0.00  0.00
-                  ints+1qt+2qt+3qt:                              5.15  5.18
-        coulomb:                                                 0.55  0.56
-          MO ints retrieve:                                      0.00  0.00
-          tbint_tform_ijxy (mn|xy):                              0.55  0.55
-            mp2-r12/a passes:                                    0.28  0.28
-              3. q.t.:                                           0.00  0.00
-              4. q.t.:                                           0.00  0.00
-              MO ints store:                                     0.00  0.00
-              ints+1qt+2qt:                                      0.28  0.28
-      MP2 pair energies:                                         0.02  0.02
-        MO ints retrieve:                                        0.00  0.00
-      mp2-f12/c pair energies:                                   0.04  0.09
-      mp2-f12a intermeds (tensor contract):                      3.10  3.15
-        Generic tensor contract:                                 3.10  3.15
-          MO ints retrieve:                                      0.02  0.02
-          tbint_tform_ikjy <i i| G12[0] |m a'>_bb:               1.96  1.97
-            mp2-r12/a passes:                                    1.96  1.96
-              4. q.t.:                                           0.00  0.00
-              MO ints store:                                     0.00  0.00
-              ints+1qt+2qt+3qt:                                  1.95  1.96
-          tbint_tform_ikjy <i i| G12[0] |p p>_bb:                1.00  1.01
-            mp2-r12/a passes:                                    1.00  1.01
-              4. q.t.:                                           0.00  0.00
-              MO ints store:                                     0.00  0.00
-              ints+1qt+2qt+3qt:                                  1.00  1.00
-    vector:                                                      1.16  1.16
-      density:                                                   0.00  0.00
-      evals:                                                     0.01  0.01
-      extrap:                                                    0.01  0.01
-      fock:                                                      0.97  0.97
-        accum:                                                   0.00  0.00
-        ao_gmat:                                                 0.91  0.92
-          start thread:                                          0.91  0.91
-          stop thread:                                           0.00  0.00
-        init pmax:                                               0.00  0.00
-        local data:                                              0.00  0.00
-        setup:                                                   0.02  0.02
-        sum:                                                     0.00  0.00
-        symm:                                                    0.03  0.03
-  input:                                                         0.54  0.63
-    vector:                                                      0.28  0.28
-      density:                                                   0.00  0.00
-      evals:                                                     0.00  0.00
-      extrap:                                                    0.01  0.01
-      fock:                                                      0.17  0.17
-        accum:                                                   0.00  0.00
-        ao_gmat:                                                 0.15  0.15
-          start thread:                                          0.14  0.15
-          stop thread:                                           0.00  0.00
-        init pmax:                                               0.00  0.00
-        local data:                                              0.00  0.00
-        setup:                                                   0.01  0.01
-        sum:                                                     0.00  0.00
-        symm:                                                    0.01  0.01
+                                                                                                         CPU  Wall
+mpqc:                                                                                                  54.40 71.65
+  calc:                                                                                                53.62 70.74
+    R12 intermeds (tensor contract): Vpqxy:                                                             3.06  3.51
+      Generic tensor:                                                                                   0.00  0.01
+        MO ints retrieve:                                                                               0.00  0.00
+      Generic tensor contract:                                                                          0.65  0.74
+        MO ints retrieve:                                                                               0.02  0.02
+        tbint_tform_ixjy <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2):                                    0.32  0.33
+          mp2-r12/a passes:                                                                             0.02  0.02
+            3. q.t.:                                                                                    0.00  0.00
+            4. q.t.:                                                                                    0.00  0.00
+            MO ints store:                                                                              0.01  0.01
+        tbint_tform_ixjy <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):                                0.26  0.32
+          mp2-r12/a passes:                                                                             0.08  0.12
+            3. q.t.:                                                                                    0.01  0.05
+            4. q.t.:                                                                                    0.02  0.02
+            MO ints store:                                                                              0.03  0.03
+      tbint_tform_iRjS <p(sym) p(sym)|ERI|mu mu'>(b1 b2|k1 k2):                                         1.53  1.77
+        mp2-r12/a passes:                                                                               0.99  1.16
+          MO ints store:                                                                                0.02  0.05
+          ints+1qt+2qt:                                                                                 0.96  1.10
+      tbint_tform_iRjS <p(sym) p(sym)|ERI|mu mu>(b1 b2|k1 k2):                                          0.86  0.98
+        mp2-r12/a passes:                                                                               0.53  0.61
+          MO ints store:                                                                                0.02  0.02
+          ints+1qt+2qt:                                                                                 0.51  0.58
+    mp2-f12 energy:                                                                                    48.77 62.27
+      "diagonal" part of G12 intermediates:                                                             8.97 13.34
+        Generic tensor:                                                                                 1.29  1.58
+          MO ints retrieve:                                                                             0.00  0.00
+          tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|i(sym) i(sym)>(b1 b2|k1 k2):                     0.40  0.47
+            mp2-r12/a passes:                                                                           0.01  0.01
+              3. q.t.:                                                                                  0.00  0.00
+              4. q.t.:                                                                                  0.00  0.00
+              MO ints store:                                                                            0.00  0.00
+          tbint_tform_ixjy <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)>(b1 b2|k1 k2):                 0.87  1.09
+            mp2-r12/a passes:                                                                           0.01  0.01
+              3. q.t.:                                                                                  0.00  0.00
+              4. q.t.:                                                                                  0.00  0.00
+              MO ints store:                                                                            0.00  0.00
+        tbint_tform_iRjS <i(sym) i(sym)|G12'[p16807]|mu mu>(b1 b2|k1 k2):                               2.07  3.55
+          mp2-r12/a passes:                                                                             1.76  2.44
+            MO ints store:                                                                              0.00  0.01
+            ints+1qt+2qt:                                                                               1.75  2.42
+        tbint_tform_iRjS <i(sym) i(sym)|G12'[p282475249]|mu mu>(b1 b2|k1 k2):                           5.61  8.21
+          mp2-r12/a passes:                                                                             4.63  6.60
+            MO ints store:                                                                              0.01  0.01
+            ints+1qt+2qt:                                                                               4.62  6.60
+      B(app. C) intermediate:                                                                          33.91 41.12
+        Alpha-beta P(C) intermediate:                                                                  19.08 24.10
+          build_only:                                                                                   2.89  3.32
+            FockBuildThreads:                                                                           5.57  6.43
+          generic FxF intermediate:                                                                    13.14 17.22
+            Generic tensor contract:                                                                    5.33  7.11
+              MO ints retrieve:                                                                         0.01  0.01
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|e(sym) p(sym)>(b1 b2|k1 k2):                 0.41  0.90
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|e(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2):        0.59  0.63
+                mp2-r12/a passes:                                                                       0.02  0.02
+                  3. q.t.:                                                                              0.01  0.01
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.01  0.01
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|m(sym) p'>(b1 b2|k1 k2):                     0.75  1.02
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|m(sym) p'_F(p')[A]>(b1 b2|k1 k2):            0.74  1.19
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2):        0.78  0.91
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2):            0.49  0.52
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p' p'>(b1 b2|k1 k2):                         0.51  0.67
+                mp2-r12/a passes:                                                                       0.05  0.06
+                  3. q.t.:                                                                              0.02  0.02
+                  4. q.t.:                                                                              0.02  0.02
+                  MO ints store:                                                                        0.01  0.01
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p'_K(p')[A] p'>(b1 b2|k1 k2):                0.29  0.34
+                mp2-r12/a passes:                                                                       0.03  0.03
+                  3. q.t.:                                                                              0.01  0.01
+                  4. q.t.:                                                                              0.01  0.01
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p(sym) e(sym)>(b1 b2|k1 k2):                 0.24  0.29
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2):    0.48  0.52
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+            tbint_tform_iRjS <i(sym) i(sym)|G12'[p16807]|mu' mu'>(b1 b2|k1 k2):                         7.80 10.10
+              mp2-r12/a passes:                                                                         7.35  9.60
+                MO ints store:                                                                          0.01  0.03
+                ints+1qt+2qt:                                                                           7.34  9.58
+        Alpha-beta Q(C) intermediate:                                                                  13.23 15.12
+          generic X intermediate:                                                                      13.23 15.12
+            Generic tensor:                                                                             1.81  2.09
+              MO ints retrieve:                                                                         0.00  0.00
+              tbint_tform_ixjy <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2):   1.80  2.08
+                mp2-r12/a passes:                                                                       0.01  0.01
+                  3. q.t.:                                                                              0.00  0.00
+                  4. q.t.:                                                                              0.00  0.00
+                  MO ints store:                                                                        0.00  0.00
+            tbint_tform_iRjS <i(sym) i(sym)|G12'[p282475249]|mu mu'>(b1 b2|k1 k2):                     11.42 13.03
+              mp2-r12/a passes:                                                                         9.52 10.87
+                MO ints store:                                                                          0.01  0.01
+                ints+1qt+2qt:                                                                           9.52 10.86
+        build_only:                                                                                     0.67  0.77
+          FockBuildThreads:                                                                             1.52  1.77
+      MP2 pair energies:                                                                                0.03  0.03
+        MO ints retrieve:                                                                               0.00  0.00
+      mp2-f12/c pair energies:                                                                          0.04  0.04
+      mp2-f12a intermeds (tensor contract):                                                             5.45  7.28
+        Generic tensor contract:                                                                        1.17  1.45
+          MO ints retrieve:                                                                             0.00  0.00
+          tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|m(sym) a'>(b1 b2|k1 k2):                         0.78  1.01
+            mp2-r12/a passes:                                                                           0.00  0.06
+              3. q.t.:                                                                                  0.00  0.00
+              4. q.t.:                                                                                  0.00  0.00
+              MO ints store:                                                                            0.00  0.06
+          tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)>(b1 b2|k1 k2):                     0.38  0.41
+            mp2-r12/a passes:                                                                           0.01  0.01
+              3. q.t.:                                                                                  0.00  0.00
+              4. q.t.:                                                                                  0.00  0.00
+              MO ints store:                                                                            0.00  0.00
+        tbint_tform_iRjS <i(sym) i(sym)|G12'[p16807]|mu mu'>(b1 b2|k1 k2):                              4.28  5.83
+          mp2-r12/a passes:                                                                             3.54  4.92
+            MO ints store:                                                                              0.00  0.00
+            ints+1qt+2qt:                                                                               3.53  4.92
+      tbint_tform_ixjy <i(sym) i(sym)|G12'[p16807]|p p>(b1 b2|k1 k2):                                   0.25  0.29
+        mp2-r12/a passes:                                                                               0.01  0.01
+          3. q.t.:                                                                                      0.00  0.00
+          4. q.t.:                                                                                      0.00  0.00
+          MO ints store:                                                                                0.00  0.00
+    vector:                                                                                             1.65  2.38
+      density:                                                                                          0.00  0.00
+      evals:                                                                                            0.01  0.02
+      extrap:                                                                                           0.01  0.01
+      fock:                                                                                             1.41  1.95
+        accum:                                                                                          0.00  0.00
+        ao_gmat:                                                                                        1.34  1.86
+          start thread:                                                                                 1.33  1.86
+          stop thread:                                                                                  0.00  0.00
+        init pmax:                                                                                      0.00  0.00
+        local data:                                                                                     0.00  0.00
+        setup:                                                                                          0.03  0.04
+        sum:                                                                                            0.00  0.00
+        symm:                                                                                           0.04  0.04
+  input:                                                                                                0.78  0.91
+    vector:                                                                                             0.54  0.59
+      density:                                                                                          0.00  0.00
+      evals:                                                                                            0.01  0.01
+      extrap:                                                                                           0.01  0.01
+      fock:                                                                                             0.32  0.34
+        accum:                                                                                          0.00  0.00
+        ao_gmat:                                                                                        0.28  0.30
+          start thread:                                                                                 0.28  0.30
+          stop thread:                                                                                  0.00  0.00
+        init pmax:                                                                                      0.00  0.00
+        local data:                                                                                     0.00  0.00
+        setup:                                                                                          0.02  0.02
+        sum:                                                                                            0.00  0.00
+        symm:                                                                                           0.02  0.02
 
-  End Time: Mon Aug 11 16:52:32 2008
+  End Time: Thu Oct  8 19:34:39 2009
 

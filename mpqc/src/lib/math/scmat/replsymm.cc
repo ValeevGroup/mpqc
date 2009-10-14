@@ -378,7 +378,7 @@ ReplSymmSCMatrix::assign_s(SymmSCMatrix*m)
       memcpy(matrix, lm->matrix, sizeof(double)*d);
     }
   else
-      SymmSCMatrix::assign(m);
+      SymmSCMatrix::assign_s(m);
 }
 
 void

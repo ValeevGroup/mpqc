@@ -33,6 +33,7 @@ mpqc: (
   do_gradient = no
   % method for computing the molecule's energy
   mole<PsiCCSD_PT2R12T>: (
+    value_accuracy = 1e-9
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor

@@ -110,21 +110,24 @@ void CCR12_Triples::fill_in_ltensors() {
 
               // Retrieving source data; not a efficient code since
               // the stride for read isn't small...
-              const double src1 = lmatrix_(h21s, pair);
-              const double src2 = lmatrix_(h21r, pair);
-
               // Anti-symmetrized with respect to h1 and h2.
               if (z->get_spin(h1b) == z->get_spin(h2b)) {
+                const double src1 = lmatrix_(h21s, pair);
+                const double src2 = lmatrix_(h21r, pair);
                 *val = src1 - src2;
+                *val2 = src1;
               } else {
+                const double src1 = lmatrix_(h21s, pair);
                 assert(z->get_spin(h1b) < z->get_spin(h2b));
                 *val = src1;
+                *val2 = src1;
               }
-              *val2 = src1;
+
             }
           }
-          ltensor1_->put_block(h2b + noab * (h1b + noab * pair), work);
-          ltensor2_->put_block(h2b + noab * (h1b + noab * pair), work2);
+          const long tag = h2b + noab * (h1b + noab * pair);
+          ltensor1_->put_block(tag, work);
+          ltensor2_->put_block(tag, work2);
         }
       }
     }

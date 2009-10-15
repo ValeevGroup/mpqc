@@ -270,6 +270,11 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   }
 
+  if (perturbative_ == "(T)R12[DT]") {
+    d_vd2_gen = new Tensor("vd2_gen", mem_);
+    offset_vd2_gen(false, true);
+  }
+
   // prediagonalization set-up for certain class of methods.
   if (need_w1()) {
     prediagon(bdiag_, lmatrix_);
@@ -285,7 +290,6 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     // now using MP1-R12/SP amplitude even for full-opt calculations
     guess_t2_r12(d_t2, d_gt2);
   }
-
 
 
 /// perhaps we need somehow to obtain 6-index B for Jacobi iterations.

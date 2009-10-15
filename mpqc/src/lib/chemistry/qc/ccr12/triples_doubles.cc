@@ -126,5 +126,180 @@ z->mem()->free_local_double(k_a0_sort);
 z->mem()->free_local_double(k_a1); 
 z->mem()->free_local_double(k_a1_sort); 
 z->mem()->sync(); 
-} 
+}
+
+
+void CCR12_Triples::doubles_ig(Ref<Tensor>& in, Ref<Tensor>& out){
+  // "in" is the generalized V tensor
+  // "out" is the tensor of hgp/hhh
+
+  const size_t maxtile = z->maxtilesize();
+  const size_t singles = maxtile * maxtile;
+  const size_t doubles = singles * singles;
+  const size_t triples = singles * doubles;
+
+  double* k_a0      = z->mem()->malloc_local_double(doubles);
+  double* k_a0_sort = z->mem()->malloc_local_double(doubles);
+  double* k_a1      = z->mem()->malloc_local_double(doubles);
+  double* k_a1_sort = z->mem()->malloc_local_double(doubles);
+  double* k_c       = z->mem()->malloc_local_double(triples);
+  double* k_c_sort  = z->mem()->malloc_local_double(triples);
+
+  const long noab = z->noab();
+  const long nvab = z->nvab();
+
+#if 0
+  for (long h4b = 0L; h4b < noab; ++h4b) {
+    for (long p5b = noab; p5b < noab+nvab; ++p5b) {
+      for (long g6b = 0; g6b < noab; ++g6b) { // need to modify by hand...
+#else
+  // index 5 and 6 has been replaced...
+  // this can be checked by looking at the norm, when this is plugged with
+  // the intermediates.
+  for (long h4b = 0L; h4b < noab; ++h4b) {
+    for (long g6b = 0; g6b < noab; ++g6b) { // need to modify by hand...
+      for (long p5b = noab; p5b < noab+nvab; ++p5b) {
+#endif
+        for (long h1b = 0L; h1b < noab; ++h1b) {
+          for (long h2b = h1b; h2b < noab; ++h2b) {
+            for (long h3b = 0L; h3b < noab; ++h3b) {
+              long tileoffset;
+#if 0
+              if (h2b < h3b) {
+                tileoffset = h3b+noab*(h2b+noab*(h1b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b))));
+              } else if (h1b < h3b && h3b <= h2b) {
+                tileoffset = h2b+noab*(h3b+noab*(h1b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b))));
+              } else if (h3b <= h1b) {
+                tileoffset = h2b+noab*(h1b+noab*(h3b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b))));
+              }
+#else
+              if (h2b < h3b) {
+                tileoffset = h3b+noab*(h2b+noab*(h1b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b))));
+              } else if (h1b < h3b && h3b <= h2b) {
+                tileoffset = h2b+noab*(h3b+noab*(h1b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b))));
+              } else if (h3b <= h1b) {
+                tileoffset = h2b+noab*(h1b+noab*(h3b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b))));
+              }
+#endif
+              if (out->is_this_local(tileoffset)) {
+                if (!z->restricted() || z->get_spin(h4b)+z->get_spin(p5b)+z->get_spin(g6b)
+                                       +z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b) != 12L) {
+                  if (z->get_spin(h4b)+z->get_spin(p5b)+z->get_spin(g6b) ==
+                      z->get_spin(h1b)+z->get_spin(h2b)+z->get_spin(h3b)) {
+                    if ((z->get_sym(h4b)^(z->get_sym(p5b)^(z->get_sym(g6b)^
+                        (z->get_sym(h1b)^(z->get_sym(h2b)^z->get_sym(h3b))))))==z->irrep_t()) {
+
+                      const long dimc=z->get_range(h4b)*z->get_range(p5b)*z->get_range(g6b)
+                                     *z->get_range(h1b)*z->get_range(h2b)*z->get_range(h3b);
+                      std::fill(k_c_sort, k_c_sort+dimc, 0.0);
+
+                      // block loop for summation
+                      for (long p7b=z->noab();p7b<z->noab()+z->nvab();++p7b) {
+                        if (z->get_spin(p5b)+z->get_spin(p7b) == z->get_spin(h1b)+z->get_spin(h2b)) {
+                          if ((z->get_sym(p5b)^(z->get_sym(p7b)^(z->get_sym(h1b)^z->get_sym(h2b)))) == z->irrep_t()) {
+
+                            long p5b_0,p7b_0,h1b_0,h2b_0;
+                            z->restricted_4(p5b,p7b,h1b,h2b,p5b_0,p7b_0,h1b_0,h2b_0);
+                            long h4b_1,g6b_1,h3b_1,p7b_1;
+                            z->restricted_4(h4b,g6b,h3b,p7b,h4b_1,g6b_1,h3b_1,p7b_1);
+
+                            const long dim_common = z->get_range(p7b);
+                            const long dima0_sort = z->get_range(p5b)*z->get_range(h1b)*z->get_range(h2b);
+                            const long dima1_sort = z->get_range(h4b)*z->get_range(g6b)*z->get_range(h3b);
+
+                            // Reading a block from T2 tensor.
+                            if (p5b < p7b) {
+                              z->t2()->get_block(h2b_0+noab*(h1b_0+noab*(p7b_0-noab+nvab*(p5b_0-noab))),k_a0);
+                              z->sort_indices4(k_a0, k_a0_sort,
+                                  z->get_range(p5b), z->get_range(p7b),
+                                  z->get_range(h1b), z->get_range(h2b),
+                                  3,2,0,1, +1.0);
+                            } else if (p7b <= p5b) {
+                              z->t2()->get_block(h2b_0+noab*(h1b_0+noab*(p5b_0-noab+nvab*(p7b_0-noab))),k_a0);
+                              z->sort_indices4(k_a0, k_a0_sort,
+                                  z->get_range(p7b), z->get_range(p5b),
+                                  z->get_range(h1b), z->get_range(h2b),
+                                  3,2,1,0, -1.0);
+                            }
+
+                            // Reading a block from the generalized V tensor.
+                            in->get_block(p7b_1-noab+nvab*(h3b_1+noab*(g6b_1+(noab+nvab)*h4b_1)), k_a1);
+                            z->sort_indices4(k_a1, k_a1_sort,
+                                z->get_range(h4b), z->get_range(g6b),
+                                z->get_range(h3b), z->get_range(p7b),
+                                2,1,0,3, +1.0);
+
+                            double factor=1.0;
+                            z->smith_dgemm(dima0_sort, dima1_sort, dim_common,
+                                factor, k_a0_sort, dim_common,
+                                k_a1_sort, dim_common,
+                                1.0, k_c_sort, dima0_sort);
+                          }
+                        }
+                      }
+
+                      // Storing tensor. Taking care of permutation symmetry.
+#if 0
+                      if (h3b >= h2b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,5,1,4,3,0, -1.0);
+                        out->add_block(h3b+noab*(h2b+noab*(h1b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b)))), k_c);
+                      }
+                      if (h2b >= h3b && h3b >= h1b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,5,1,4,0,3, +1.0);
+                        out->add_block(h2b+noab*(h3b+noab*(h1b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b)))), k_c);
+                      }
+                      if (h1b >= h3b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,5,1,0,4,3, -1.0);
+                        out->add_block(h2b+noab*(h1b+noab*(h3b+noab*(g6b+(noab+nvab)*(p5b-noab+nvab*h4b)))), k_c);
+                      }
+#else
+                      if (h3b >= h2b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,1,5,4,3,0, +1.0);
+                        out->add_block(h3b+noab*(h2b+noab*(h1b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b)))), k_c);
+                      }
+                      if (h2b >= h3b && h3b >= h1b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,1,5,4,0,3, -1.0);
+                        out->add_block(h2b+noab*(h3b+noab*(h1b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b)))), k_c);
+                      }
+                      if (h1b >= h3b) {
+                        z->sort_indices6(k_c_sort, k_c,
+                            z->get_range(h3b), z->get_range(g6b), z->get_range(h4b),
+                            z->get_range(h2b), z->get_range(h1b), z->get_range(p5b),
+                            2,1,5,0,4,3, +1.0);
+                        out->add_block(h2b+noab*(h1b+noab*(h3b+noab*(p5b-noab+nvab*(g6b+(noab+nvab)*h4b)))), k_c);
+                      }
+#endif
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  z->mem()->free_local_double(k_a1_sort);
+  z->mem()->free_local_double(k_a1);
+  z->mem()->free_local_double(k_a0_sort);
+  z->mem()->free_local_double(k_a0);
+  z->mem()->free_local_double(k_c_sort);
+  z->mem()->free_local_double(k_c);
+  z->mem()->sync();
+}
 

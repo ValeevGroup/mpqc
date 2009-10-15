@@ -69,6 +69,8 @@ class CCR12_Info : virtual public RefCount {
     Ref<Tensor> d_fr2; bool need_FAA_; bool need_F_; // F12^AA_ii --- sometimes F with two CABS indices is not needed.
     Ref<Tensor> d_fd2; // F12^ii_AA
 
+    Ref<Tensor> d_vd2_gen;
+
     Ref<Tensor> d_qy; // F12 * gt2
     Ref<Tensor> d_qx; // F12 * gt2 with two CABS (for CCSD-R12)
     Ref<Tensor> d_ly; // gl2 * F12^dagger
@@ -341,6 +343,8 @@ class CCR12_Info : virtual public RefCount {
 
     void offset_l1(Ref<Tensor>&);
     void offset_l2(Ref<Tensor>&);
+
+    void offset_vd2_gen(const bool need_AA, const bool need_xx);
 
     /// guess routine
     void guess_t2(Ref<Tensor>& d_t2_);

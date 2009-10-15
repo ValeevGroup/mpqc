@@ -55,6 +55,7 @@ class CCR12_Triples : virtual public RefCount {
 
     void singles();
     void doubles();
+    void doubles_ig(Ref<Tensor>&, Ref<Tensor>&);
     void denom_contraction();
     void denom_contraction_new();
     void offset_hhphhh(Ref<Tensor>&);

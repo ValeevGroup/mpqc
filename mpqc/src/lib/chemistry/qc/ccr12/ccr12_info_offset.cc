@@ -523,7 +523,7 @@ void CCR12_Info::offset_e(Ref<Tensor>& d_e_){
 
 // Generalized Vdagger tensor. Geminal generating space is take as
 // either ix or xx (where x is an OBS index).
-void CCR12_Info::offset_vd2_gen(const bool need_AA, const bool need_xx){
+void CCR12_Info::offset_vd2_gen(const bool need_cabs, const bool need_xx){
   long size=0L;
   const long o = noab();
   const long ov = noab() + nvab();
@@ -538,7 +538,7 @@ void CCR12_Info::offset_vd2_gen(const bool need_AA, const bool need_xx){
               if (!restricted_ || get_spin(x1b)+get_spin(x2b)+get_spin(g3b)+get_spin(g4b) != 8L) {
 
                 if (g3b < ov) { // we don't need AA
-                  if (!need_AA && g4b >= ov) continue; // we don't need pA sometimes.
+                  if (!need_cabs && g4b >= ov) continue; // we don't need pA sometimes (A is in CABS).
                   if (!need_xx && x1b >= o) continue; // we don't need aa in geminal generating space sometimes.
 
                   d_vd2_gen->input_offset(g4b+ovc*(g3b+ovc*(x2b+ov*x1b)), size);

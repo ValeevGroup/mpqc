@@ -122,6 +122,7 @@ class CCR12_Info : virtual public RefCount {
     void offset_vd2();
     void offset_fr2();
     void offset_fd2();
+    void offset_vd2_gen(const bool need_cabs, const bool need_xx);
 
     // tiling data
     int maxtilesize_;
@@ -343,8 +344,6 @@ class CCR12_Info : virtual public RefCount {
 
     void offset_l1(Ref<Tensor>&);
     void offset_l2(Ref<Tensor>&);
-
-    void offset_vd2_gen(const bool need_AA, const bool need_xx);
 
     /// guess routine
     void guess_t2(Ref<Tensor>& d_t2_);

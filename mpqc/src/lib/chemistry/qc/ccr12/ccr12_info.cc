@@ -271,7 +271,11 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   if (perturbative_ == "(T)R12[DT]") {
+    // generalized V intermediate.
     d_vd2_gen = new Tensor("vd2_gen", mem_);
+    // Setting need_CABS = false, need_xx = true.
+    // If we want to fill only (V^dagger)^pp_ip type integrals, set need_xx to false.
+    // We can still improve it by reshaping it to (V^dagger)^ip_ip.
     offset_vd2_gen(false, true);
   }
 

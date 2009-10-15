@@ -249,6 +249,8 @@ class CCR12_Info : virtual public RefCount {
     Ref<Tensor> bs2() const {return d_bs2;};
     Ref<Tensor> ps2() const {return d_ps2;};
 
+    Ref<Tensor> vd2_gen() const {return d_vd2_gen; };
+
     Ref<Tensor> qy() const {return d_qy;};
     Ref<Tensor> qx() const {return d_qx;};
     Ref<Tensor> ly() const {return d_ly;};
@@ -336,6 +338,8 @@ class CCR12_Info : virtual public RefCount {
     void offset_t3(Ref<Tensor>&, bool);
     void offset_t4(Ref<Tensor>&, bool);
     void offset_e(Ref<Tensor>&);
+
+    void offset_x_gen(Ref<Tensor>& t, const bool need_xx, const bool lprint = false);
 
     void offset_qy();
     void update_qy();

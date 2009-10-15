@@ -559,3 +559,41 @@ void CCR12_Info::offset_vd2_gen(const bool need_cabs, const bool need_xx){
 }
 
 
+// Generalized X^dagger tensor etc. The geminal generating space is taken to be
+// either ix or xx (where x runs over OBS).
+void CCR12_Info::offset_x_gen(Ref<Tensor>& t, const bool need_xx, const bool lprint){
+  long size=0L;
+  const long o = noab();
+  const long ov = noab() + nvab();
+
+  for (long x1b = 0L; x1b < ov; ++x1b) {
+    for (long x2b = x1b; x2b < ov; ++x2b) {
+      for (long g3b = 0L; g3b < ov; ++g3b) {
+        for (long g4b = g3b; g4b < ov; ++g4b) {
+          if (get_spin(x1b)+get_spin(x2b) == get_spin(g3b)+get_spin(g4b)) {
+            if ((get_sym(x1b)^(get_sym(x2b)^(get_sym(g3b)^get_sym(g4b)))) == (irrep_t_^irrep_v_)) {
+              if (!restricted_ || get_spin(x1b)+get_spin(x2b)+get_spin(g3b)+get_spin(g4b) != 8L) {
+
+                if (!need_xx && g3b >= o) continue; // we don't need aa in geminal generating space sometimes.
+                if (!need_xx && x1b >= o) continue; // we don't need aa in geminal generating space sometimes.
+
+                t->input_offset(g4b+ov*(g3b+ov*(x2b+ov*x1b)), size);
+                size += get_range(x1b)*get_range(x2b)*get_range(g3b)*get_range(g4b);
+
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  t->set_filesize(size);
+  if (lprint) {
+    ExEnv::out0() << indent << "ipip file:   " << t->filename() << endl;
+    ExEnv::out0() << indent << "size     : "   << setw(10) << size  << " doubles" << endl << endl;
+  }
+  t->createfile();
+}
+
+
+

@@ -272,7 +272,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     // generalized V intermediate.
     d_vd2_gen = new Tensor("vd2_gen", mem_);
     // Setting need_CABS = false, need_xx = true.
-    offset_vd2_gen(false, true);
+    offset_vd2_gen(false, false);
     // Creates B and X intermediates of ip space.
     retrieve_B_and_X_ip();
   }

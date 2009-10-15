@@ -30,6 +30,11 @@
 #define __chemistry_qc_ccr12_ccr12_triples_h
 
 #include <chemistry/qc/ccr12/ccr12_info.h>
+#include <iostream>
+
+
+//define this when GGspace = ip is to be used.
+#define USE_GG_SPACE_EQ_IP
 
 namespace sc {
 
@@ -42,52 +47,40 @@ class CCR12_Triples : virtual public RefCount {
     Ref<Tensor> rhs_intermediate_;
     Ref<Tensor> lhs_intermediate_;
 
-    // for prediagonalization scheme
+    // Prediagonalization scheme
+    // only for ii cases.
     void prediagon();
     void fill_in_ltensors();
-    const int pair_size_;
+    int pair_size_;
+
     RefDiagSCMatrix bdiag_;
     RefSCMatrix lmatrix_;
-    const RefSymmSCMatrix B_;
-    const RefSymmSCMatrix X_;
     Ref<Tensor> ltensor1_;
     Ref<Tensor> ltensor2_;
 
+// Two cases. From here...
+// for GGspace = ii
     void singles();
     void doubles();
-    void doubles_ig(Ref<Tensor>&, Ref<Tensor>&);
     void denom_contraction();
     void denom_contraction_new();
     void offset_hhphhh(Ref<Tensor>&);
-    void offset_bphhh(Ref<Tensor>&);
     double get_energy();
+// for GGspace = ip
+    void doubles_ig(Ref<Tensor>&, Ref<Tensor>&);
+    void singles_ig(Ref<Tensor>&, Ref<Tensor>&) { std::cout << "== singles to be implemented ==" << std::endl;};
+    void denom_contraction_ip();
+    void offset_hgphhh(Ref<Tensor>&);
+    double get_energy_ip();
+// to here...
+
+    void offset_bphhh(Ref<Tensor>&);
 
   public:
-    CCR12_Triples(CCR12_Info* inz, RefSymmSCMatrix b, RefSymmSCMatrix x)
-     : z(inz), B_(b), X_(x), pair_size_(b.n()) {
-      prediagon();
-      singles_intermediate_ = new Tensor("singles_intermediate", z->mem());
-      doubles_intermediate_ = new Tensor("doubles_intermediate", z->mem());
-    };
-
+    CCR12_Triples(CCR12_Info* inz) : z(inz) {};
     ~CCR12_Triples() {};
 
-    double compute() {
-      offset_hhphhh(singles_intermediate_);
-      offset_hhphhh(doubles_intermediate_);
-      singles(); // evaluating singles
-      doubles(); // evaluating doubles
-      singles_intermediate_->daxpy(doubles_intermediate_, 1.0); // adding doubles to singles to form lhs numerator
-      rhs_intermediate_ = doubles_intermediate_->clone();
-#if 0
-      denom_contraction(); // contracting denominator to rhs numerator which is doubles
-#else
-      fill_in_ltensors();
-      denom_contraction_new();
-#endif
-
-      return get_energy();
-    };
+    double compute();
 
 };
 

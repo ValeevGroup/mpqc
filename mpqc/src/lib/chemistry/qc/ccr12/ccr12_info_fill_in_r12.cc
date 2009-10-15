@@ -46,31 +46,31 @@ void CCR12_Info::fill_in_iiii() {
   // fill in X, B and P intermediates, as well as geminal T amplitudes
   assert(need_w1());
 
-  // intermediates are computed in occ_act_sb(Alpha) space
+  // intermediates are computed in GGspace(Alpha) space
   // map corr_space_ to it
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;
   {
-    vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->GGspace(Alpha)), *corr_space_, false);
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }
 
   // assuming RHF!
-  const int nocc_act = this->naoa();
+  const int nG = r12eval()->GGspace(Alpha)->rank();
   MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, this->noab()));
-  MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
+  MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nG) );
   {
     MTensor<4> X(this,d_xs2.pointer(),iiii);
 //  X.convert(r12int_eval_->X(AlphaBeta), nocc_act, nocc_act, false, false,
-    X.convert(X_, nocc_act, nocc_act, false, false,
+    X.convert(X_, nG, nG, false, false,
               amap, amap, amap, amap, &iiii_erange);
   }
 
   {
     MTensor<4> B(this,d_bs2.pointer(),iiii);
 //  B.convert(r12int_eval_->B(AlphaBeta), nocc_act, nocc_act, false, false,
-    B.convert(B_, nocc_act, nocc_act, false, false,
+    B.convert(B_, nG, nG, false, false,
               amap, amap, amap, amap, &iiii_erange);
   }
 
@@ -79,12 +79,27 @@ void CCR12_Info::fill_in_iiii() {
     // In fullopt calculations, we still use it for guess functions.
     MTensor<4> GT2(this,d_gt2.pointer(),iiii);
 
+    // columns of GT2 are computed in product ggspace(Alpha) space
+    // map corr_space_ to it
+    vector<long> amap_o;
+    {
+      vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
+      amap_o.resize(intmap.size());
+      std::copy(intmap.begin(), intmap.end(), amap_o.begin());
+    }
+    const int no = r12eval()->occ_act(Alpha)->rank();
+
     // compute fixed geminal coefficients
-    Ref<R12EnergyIntermediates> r12intermeds = new R12EnergyIntermediates(r12int_eval_, r12evalinfo_->stdapprox());
-    Ref<MP2R12Energy_SpinOrbital_new> mp2r12_energy = new MP2R12Energy_SpinOrbital_new(r12intermeds, 0);
-    RefSCMatrix gt2 = mp2r12_energy->C(AlphaBeta);
-    GT2.convert(gt2, nocc_act, nocc_act, false, false,
-                amap, amap, amap, amap, &iiii_erange);
+    RefSCMatrix gt2 = X_.kit()->matrix(r12int_eval_->dim_oo(AlphaBeta),
+                                       r12int_eval_->dim_oo(AlphaBeta));
+    firstorder_cusp_coefficients(AlphaBeta,
+                                 gt2,
+                                 r12int_eval_->occ_act(Alpha),
+                                 r12int_eval_->occ_act(Beta),
+                                 r12int_eval_->r12info()->r12tech()->corrfactor());
+    MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, no) );
+    GT2.convert(gt2, no, no, false, false,
+                amap_o, amap_o, amap_o, amap_o, &iiii_erange);
 
 #if 0
     ExEnv::out0() << "TEST: mp2-r12 energy = " << mp2r12_energy->energy() << endl;
@@ -132,11 +147,11 @@ void CCR12_Info::fill_in_vr_and_vd() {
   // for V intermediate (denoted as d_vr2 in smith; its inverse is d_vd2)
   assert(need_w1());
 
-  // intermediates are computed using i indices from occ_act_sb(Alpha) space
+  // intermediates are computed using i indices from GGspace(Alpha) space
   // map corr_space_ to it
   vector<long> aimap;
   {
-    vector<int> intmap = sc::map(*(r12eval()->occ_act(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12eval()->GGspace(Alpha)), *corr_space_, false);
     aimap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aimap.begin());
   }
@@ -150,8 +165,8 @@ void CCR12_Info::fill_in_vr_and_vd() {
 
 
   // assuming RHF!
-  const int nocc_act = this->naoa();
-  const int norbs_act = this->naoa() + this->nava();
+  const int nG = r12eval()->GGspace(Alpha)->rank();
+  const int norbs_act = aobs_space_->rank();
 
   // d_vr2 = ggii
   {
@@ -164,9 +179,9 @@ void CCR12_Info::fill_in_vr_and_vd() {
     MTensor<4>::element_ranges ggii_erange(4);
     ggii_erange[0] = MTensor<4>::element_range(0, norbs_act);
     ggii_erange[1] = MTensor<4>::element_range(0, norbs_act);
-    ggii_erange[2] = MTensor<4>::element_range(0, nocc_act);
-    ggii_erange[3] = MTensor<4>::element_range(0, nocc_act);
-    V.convert<RefSCMatrix>(Vgg_[AlphaBeta].t(), norbs_act, nocc_act, false, false,
+    ggii_erange[2] = MTensor<4>::element_range(0, nG);
+    ggii_erange[3] = MTensor<4>::element_range(0, nG);
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta].t(), norbs_act, nG, false, false,
               agmap, agmap, aimap, aimap, &ggii_erange);
   }
 
@@ -179,11 +194,11 @@ void CCR12_Info::fill_in_vr_and_vd() {
     iigg[3] = MTensor<4>::tile_range(0, this->nab());
     MTensor<4> V(this,d_vd2.pointer(),iigg);
     MTensor<4>::element_ranges iigg_erange(4);
-    iigg_erange[0] = MTensor<4>::element_range(0, nocc_act);
-    iigg_erange[1] = MTensor<4>::element_range(0, nocc_act);
+    iigg_erange[0] = MTensor<4>::element_range(0, nG);
+    iigg_erange[1] = MTensor<4>::element_range(0, nG);
     iigg_erange[2] = MTensor<4>::element_range(0, norbs_act);
     iigg_erange[3] = MTensor<4>::element_range(0, norbs_act);
-    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nocc_act, norbs_act, false, false,
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act, false, false,
               aimap, aimap, agmap, agmap, &iigg_erange);
   }
 

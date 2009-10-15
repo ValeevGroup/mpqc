@@ -345,8 +345,8 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
 
-  // some transforms can be skipped if p1/p2 is a subset of x1/x2
-  const bool p1p2_in_x1x2 = in(*p1,*xspace1) && in(*p2,*xspace2);
+  // some transforms can be skipped if p1/p2 equals x1/x2
+  const bool p1p2_eq_x1x2 = (p1 == xspace1) && (p2 == xspace2);
 
   // allocate V
   const unsigned int np12 = p1_eq_p2 && spincase2 != AlphaBeta ? p1->rank()*(p1->rank()-1)/2 : p1->rank()*p2->rank();
@@ -400,7 +400,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
                       );
     fill_container(tformkey_creator,tforms_f12);
   }
-  if (!p1p2_in_x1x2) {
+  if (!p1p2_eq_x1x2) {
     const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                                      orbs1->id(),orbs2->id(),
                                                                      std::string("ERI"),
@@ -450,7 +450,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
                     );
       fill_container(tformkey_creator,tforms_f12_xmyP);
     }
-    if (!p1p2_in_x1x2) {
+    if (!p1p2_eq_x1x2) {
       const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                              occ1->id(),rispace2->id(),
                                                              std::string("ERI"),
@@ -487,7 +487,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
                       );
     fill_container(tformkey_creator,tforms_f12_xPym);
       }
-      if (!p1p2_in_x1x2) {
+      if (!p1p2_eq_x1x2) {
         const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(p1->id(),p2->id(),
                                                                rispace1->id(),occ2->id(),
                                                                std::string("ERI"),

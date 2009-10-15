@@ -76,11 +76,15 @@ R12IntEval::contrib_to_VXB_a_()
       const Ref<OrbitalSpace>& orbs2 = this->orbs(spin2);
       const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
       const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& gspace1 = ggspace(spin1);
+      const Ref<OrbitalSpace>& gspace2 = ggspace(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
+      const bool g1_eq_g2 = (gspace1 == gspace2);
       const bool x1_eq_x2 = (xspace1 == xspace2);
-      if (occ1_eq_occ2 ^ x1_eq_x2) {
+      if (occ1_eq_occ2 ^ x1_eq_x2 ||
+          g1_eq_g2 ^ x1_eq_x2) {
 	  throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- this orbital_product cannot be handled yet",__FILE__,__LINE__);
       }
 
@@ -89,9 +93,8 @@ R12IntEval::contrib_to_VXB_a_()
       // Need to antisymmetrize 1 and 2
       const bool antisymmetrize = spincase2 != AlphaBeta;
 
-      // some transforms can be skipped if occ1/occ2 is a subset of x1/x2
-      // for now it's always true since can only use ij and pq products to generate geminals
-      const bool occ12_in_x12 = true;
+      const bool occ12_eq_x12 = (occ1_act == xspace1) && (occ2_act == xspace2);
+      const bool g12_eq_x12 = (gspace1 == xspace1) && (gspace2 == xspace2);
 
       std::vector<std::string> tforms;
       std::vector<std::string> tforms_f12;
@@ -106,8 +109,8 @@ R12IntEval::contrib_to_VXB_a_()
 	      );
 	  fill_container(tformkey_creator,tforms_f12);
       }
-      if (!occ12_in_x12) {
-        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+      if (!g12_eq_x12) {
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(gspace1->id(),gspace2->id(),
                                                                          orbs1->id(),orbs2->id(),
                                                                          std::string("ERI"),
                                                                          std::string(TwoBodyIntLayout::b1b2_k1k2));
@@ -123,7 +126,7 @@ R12IntEval::contrib_to_VXB_a_()
 	      -1.0,
 	      xspace1, xspace2,
 	      orbs1, orbs2,
-	      occ1_act, occ2_act,
+	      gspace1, gspace2,
 	      orbs1, orbs2,
 	      spincase2!=AlphaBeta, tforms_f12, tforms
 	  );
@@ -198,8 +201,8 @@ R12IntEval::contrib_to_VXB_a_()
 		  );
 	      fill_container(tformkey_creator,tforms_f12_xmyP);
 	  }
-	  if (!occ12_in_x12) {
-        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+	  if (!g12_eq_x12) {
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(gspace1->id(),gspace2->id(),
                                                                          occ1->id(),rispace2->id(),
                                                                          std::string("ERI"),
                                                                          std::string(TwoBodyIntLayout::b1b2_k1k2));
@@ -214,7 +217,7 @@ R12IntEval::contrib_to_VXB_a_()
 		  scale,
 		  xspace1, xspace2,
 		  occ1, rispace2,
-		  occ1_act, occ2_act,
+		  gspace1, gspace2,
 		  occ1, rispace2,
 		  antisymmetrize, tforms_f12_xmyP, tforms_imjP
 	      );
@@ -269,8 +272,8 @@ R12IntEval::contrib_to_VXB_a_()
 		      );
 		  fill_container(tformkey_creator,tforms_f12_xPym);
 	      }
-	      if (!occ12_in_x12) {
-	        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
+	      if (!g12_eq_x12) {
+	        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(gspace1->id(),gspace2->id(),
 	                                                                         rispace1->id(),occ2->id(),
 	                                                                         std::string("ERI"),
 	                                                                         std::string(TwoBodyIntLayout::b1b2_k1k2));
@@ -285,7 +288,7 @@ R12IntEval::contrib_to_VXB_a_()
 		      -1.0,
 		      xspace1, xspace2,
 		      rispace1, occ2,
-		      occ1_act, occ2_act,
+		      gspace1, gspace2,
 		      rispace1, occ2,
 		      antisymmetrize, tforms_f12_xPym, tforms_iPjm
 		      );
@@ -327,7 +330,7 @@ R12IntEval::contrib_to_VXB_a_()
 	  }
 
 	  if (!antisymmetrize && part1_equiv_part2) {
-	      symmetrize<false>(V_[s],V_[s],xspace1,occ1_act);
+	      symmetrize<false>(V_[s],V_[s],xspace1,gspace1);
 	      symmetrize<false>(X_[s],X_[s],xspace1,xspace1);
 	      if (compute_B)
 		  symmetrize<false>(B_[s],B_[s],xspace1,xspace1);

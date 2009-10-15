@@ -292,11 +292,11 @@ MP2R12Energy_SpinOrbital::init_()
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
-      RefSCDimension dim_oo = r12eval()->dim_oo(static_cast<SpinCase2>(s));
+      RefSCDimension dim_gg = r12eval()->dim_gg(static_cast<SpinCase2>(s));
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
-      C_[s] = kit->matrix(dim_f12,dim_oo);
-      ef12_[s] = kit->vector(dim_oo);
-      emp2f12_[s] = kit->vector(dim_oo);
+      C_[s] = kit->matrix(dim_f12,dim_gg);
+      ef12_[s] = kit->vector(dim_gg);
+      emp2f12_[s] = kit->vector(dim_gg);
     }
     else {
       C_[BetaBeta] = C_[AlphaAlpha];
@@ -382,9 +382,9 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
       SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const RefSCVector ef12 = ef12_[s];
       const RefSCVector emp2f12 = emp2f12_[s];
-      const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
-      const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
-      SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+      const Ref<OrbitalSpace> gspace1 = r12eval()->ggspace(case1(spincase2));
+      const Ref<OrbitalSpace> gspace2 = r12eval()->ggspace(case2(spincase2));
+      SpinMOPairIter ij_iter(gspace1, gspace2, spincase2);
 
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
@@ -402,7 +402,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     }
   }
   else {
-
+    assert(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
     RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
@@ -420,8 +420,8 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
-    const Ref<OrbitalSpace> occ_act = r12eval()->occ_act(Alpha);
-    SpatialMOPairIter_eq ij_iter(occ_act);
+    const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
+    SpatialMOPairIter_eq ij_iter(gspace);
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
       const int ij_ab = ij_iter.ij_ab();
@@ -458,8 +458,8 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     so << endl << indent << "Singlet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    int nocc_act = occ_act->rank();
-    for(int i=0,ij=0;i<nocc_act;i++) {
+    int ng = gspace->rank();
+    for(int i=0,ij=0;i<ng;i++) {
       for(int j=0;j<=i;j++,ij++) {
         const double ep_f12_0 = ef12_0.get_element(ij);
         const double ep_mp2f12_0 = emp2f12_0.get_element(ij);
@@ -471,7 +471,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
     so << endl << indent << "Triplet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++) {
+    for(int i=0,ij=0;i<ng;i++) {
       for(int j=0;j<i;j++,ij++) {
         const double ep_f12_1 = ef12_1.get_element(ij);
         const double ep_mp2f12_1 = emp2f12_1.get_element(ij);
@@ -833,15 +833,15 @@ MP2R12Energy_SpinOrbital_new::init_()
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
-      RefSCDimension dim_oo = r12eval()->dim_oo(static_cast<SpinCase2>(s));
+      RefSCDimension dim_gg = r12eval()->dim_gg(static_cast<SpinCase2>(s));
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
-      C_[s] = kit->matrix(dim_f12,dim_oo);
+      C_[s] = kit->matrix(dim_f12,dim_gg);
       C_[s].assign(0.0);
 
-      ef12_[s] = kit->vector(dim_oo);
+      ef12_[s] = kit->vector(dim_gg);
       ef12_[s].assign(0.0);
 
-      emp2f12_[s] = kit->vector(dim_oo);
+      emp2f12_[s] = kit->vector(dim_gg);
       emp2f12_[s].assign(0.0);
     }
     else {
@@ -940,9 +940,9 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
       SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const RefSCVector ef12 = ef12_[s];
       const RefSCVector emp2f12 = emp2f12_[s];
-      const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(case1(spincase2));
-      const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
-      SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+      const Ref<OrbitalSpace> gspace1 = r12eval()->ggspace(case1(spincase2));
+      const Ref<OrbitalSpace> gspace2 = r12eval()->ggspace(case2(spincase2));
+      SpinMOPairIter ij_iter(gspace1, gspace2, spincase2);
 
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
@@ -960,7 +960,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     }
   }
   else {
-
+    assert(r12eval()->dim_gg(AlphaBeta) == r12eval()->dim_oo(AlphaBeta));
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
     RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
@@ -978,8 +978,8 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
-    const Ref<OrbitalSpace> occ_act = r12eval()->occ_act(Alpha);
-    SpatialMOPairIter_eq ij_iter(occ_act);
+    const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
+    SpatialMOPairIter_eq ij_iter(gspace);
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
       const int ij_ab = ij_iter.ij_ab();
@@ -1016,8 +1016,8 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     so << endl << indent << "Singlet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    int nocc_act = occ_act->rank();
-    for(int i=0,ij=0;i<nocc_act;i++) {
+    int ng = gspace->rank();
+    for(int i=0,ij=0;i<ng;i++) {
       for(int j=0;j<=i;j++,ij++) {
         const double ep_f12_0 = ef12_0.get_element(ij);
         const double ep_mp2f12_0 = emp2f12_0.get_element(ij);
@@ -1029,7 +1029,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
     so << endl << indent << "Triplet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++) {
+    for(int i=0,ij=0;i<ng;i++) {
       for(int j=0;j<i;j++,ij++) {
         const double ep_f12_1 = ef12_1.get_element(ij);
         const double ep_mp2f12_1 = emp2f12_1.get_element(ij);

@@ -62,15 +62,13 @@ void CCR12_Info::fill_in_iiii() {
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nG) );
   {
     MTensor<4> X(this,d_xs2.pointer(),iiii);
-//  X.convert(r12int_eval_->X(AlphaBeta), nocc_act, nocc_act, false, false,
-    X.convert(X_, nG, nG, false, false,
+    X.convert(r12int_eval_->X(AlphaBeta), nG, nG, false, false,
               amap, amap, amap, amap, &iiii_erange);
   }
 
   {
     MTensor<4> B(this,d_bs2.pointer(),iiii);
-//  B.convert(r12int_eval_->B(AlphaBeta), nocc_act, nocc_act, false, false,
-    B.convert(B_, nG, nG, false, false,
+    B.convert(r12int_eval_->B(AlphaBeta), nG, nG, false, false,
               amap, amap, amap, amap, &iiii_erange);
   }
 

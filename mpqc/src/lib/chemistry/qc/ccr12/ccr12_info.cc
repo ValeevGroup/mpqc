@@ -97,8 +97,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   // Retrieve B and X intermediate
   if (need_w1()) {
-    B_ = r12int_eval_->B(AlphaBeta);
-    X_ = r12int_eval_->X(AlphaBeta);
+    retrieve_B_and_X_ii();
   }
 
   // now get MemoryGrp ready
@@ -267,16 +266,15 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     }
 
     fill_in_iiii();
-
   }
 
   if (perturbative_ == "(T)R12[DT]") {
     // generalized V intermediate.
     d_vd2_gen = new Tensor("vd2_gen", mem_);
     // Setting need_CABS = false, need_xx = true.
-    // If we want to fill only (V^dagger)^pp_ip type integrals, set need_xx to false.
-    // We can still improve it by reshaping it to (V^dagger)^ip_ip.
     offset_vd2_gen(false, true);
+    // Creates B and X intermediates of ip space.
+    retrieve_B_and_X_ip();
   }
 
   // prediagonalization set-up for certain class of methods.
@@ -546,4 +544,77 @@ void CCR12_Info::orbital_energies(){
     ExEnv::out0() << *i << endl;
 #endif
 }
+
+
+void CCR12_Info::retrieve_B_and_X_ii() {
+  // TODO If GGspace is equal to ii, we can just copy it (need to compare both).
+
+  RefSymmSCMatrix b_tmp = r12int_eval_->B(AlphaBeta);
+  RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);
+
+  const int target_pairsize = naoa() * naoa();
+  RefSCDimension dim_occpair(new SCDimension(target_pairsize));
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  RefSymmSCMatrix b(dim_occpair, kit);
+  RefSymmSCMatrix x(dim_occpair, kit);
+
+  // first make B_ii_, X_ii_.
+
+  const int nG = r12eval()->GGspace(Alpha)->rank();
+  int i01 = 0;
+  for (int i0 = 0; i0 != naoa_; ++i0) {
+    for (int i1 = 0; i1 != naoa_; ++i1, ++i01) {
+      const int i01g = (i1+nfzc_) + nG * (i0+nfzc_);
+      int i23 = 0;
+      for (int i2 = 0; i2 != naoa_; ++i2) {
+        for (int i3 = 0; i3 != naoa_; ++i3, ++i23) {
+          const int i23g = (i3+nfzc_) + nG * (i2+nfzc_);
+          const double data_b = b_tmp.get_element(i01g, i23g);
+          b.set_element(i01, i23, data_b);
+          const double data_x = x_tmp.get_element(i01g, i23g);
+          x.set_element(i01, i23, data_x);
+        }
+      }
+    }
+  }
+  B_ = b;
+  X_ = x;
+}
+
+
+void CCR12_Info::retrieve_B_and_X_ip() {
+
+  RefSymmSCMatrix b_tmp = r12int_eval_->B(AlphaBeta);
+  RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);
+
+  const int norb = r12evalinfo_->refinfo()->orbs(Alpha)->rank();
+  const int target_pairsize = naoa_ * norb;
+  RefSCDimension dim_occpair(new SCDimension(target_pairsize));
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  RefSymmSCMatrix b(dim_occpair, kit);
+  RefSymmSCMatrix x(dim_occpair, kit);
+
+  // first make B_ii_, X_ii_.
+
+  const int nG = r12eval()->GGspace(Alpha)->rank();
+  int i01 = 0;
+  for (int i0 = 0; i0 != naoa_; ++i0) {
+    for (int i1 = 0; i1 != norb; ++i1, ++i01) {
+      const int i01g = i1 + nG * (i0+nfzc_);
+      int i23 = 0;
+      for (int i2 = 0; i2 != naoa_; ++i2) {
+        for (int i3 = 0; i3 != norb; ++i3, ++i23) {
+          const int i23g = i3 + nG * (i2+nfzc_);
+          const double data_b = b_tmp.get_element(i01g, i23g);
+          b.set_element(i01, i23, data_b);
+          const double data_x = x_tmp.get_element(i01g, i23g);
+          x.set_element(i01, i23, data_x);
+        }
+      }
+    }
+  }
+  B_ip_ = b;
+  X_ip_ = x;
+}
+
 

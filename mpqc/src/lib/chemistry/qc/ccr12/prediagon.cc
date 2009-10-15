@@ -41,7 +41,9 @@ void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	// B_ and X_ are RefSymmSCMatrix objects.
 	assert(B_.nonnull() && X_.nonnull());
 
-	OverlapOrthog xorthog(OverlapOrthog::Symmetric, X_, X_.kit(), OverlapOrthog::default_lindep_tol());
+    Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+
+	OverlapOrthog xorthog(OverlapOrthog::Symmetric, X_, kit, OverlapOrthog::default_lindep_tol());
 	RefSCMatrix mtilde = xorthog.basis_to_orthog_basis();
 
 	// So far, I haven't thought about the reduced dimensional version...
@@ -51,11 +53,11 @@ void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	}
 
 	RefSCMatrix btilde = mtilde.t() * B_ * mtilde;
-	RefSymmSCMatrix btilde_symm(btilde.coldim(), btilde.kit());
+	RefSymmSCMatrix btilde_symm(btilde.coldim(), kit);
 	btilde_symm.assign_subblock(btilde, 0, btilde.nrow()-1, 0, btilde.ncol()-1);
 
-	RefDiagSCMatrix beig(mtilde.coldim(), mtilde.kit());
-	RefSCMatrix U(B_.dim(), B_.dim(), B_.kit());
+	RefDiagSCMatrix beig(mtilde.coldim(), kit);
+	RefSCMatrix U(B_.dim(), B_.dim(), kit);
 	btilde_symm.diagonalize(beig, U);
 
 	eigvals = beig;

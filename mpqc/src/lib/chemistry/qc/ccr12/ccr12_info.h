@@ -180,6 +180,10 @@ class CCR12_Info : virtual public RefCount {
     /// B and X intermediate in RefSymmSCMatrix; to be used in a certain class of methods
     RefSymmSCMatrix B_;
     RefSymmSCMatrix X_;
+    void retrieve_B_and_X_ii();
+    RefSymmSCMatrix B_ip_;
+    RefSymmSCMatrix X_ip_;
+    void retrieve_B_and_X_ip();
 
     RefDiagSCMatrix bdiag_;
     RefSCMatrix lmatrix_;
@@ -372,6 +376,8 @@ class CCR12_Info : virtual public RefCount {
     /// returns B and X intermediate for perturbative methods etc.
     RefSymmSCMatrix B() { return B_; };
     RefSymmSCMatrix X() { return X_; };
+    RefSymmSCMatrix B_ip() { return B_ip_; };
+    RefSymmSCMatrix X_ip() { return X_ip_; };
 
     // returns shared pointers of OrbitalSpace objects
     Ref<OrbitalSpace> corr_space() { return corr_space_; };  // full space

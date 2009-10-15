@@ -38,12 +38,15 @@ using namespace std;
 
 
 void CCR12_Triples::prediagon() {
+  {
     // CCR12_Triples::B_ and CCR12_Triples::X_ required.
     // B_ and X_ are RefSymmSCMatrix objects.
     assert(B_.nonnull() && X_.nonnull());
 
+    Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+
     ExEnv::out0() << setprecision(10);
-    OverlapOrthog xorthog(OverlapOrthog::Symmetric, X_, X_.kit(), OverlapOrthog::default_lindep_tol());
+    OverlapOrthog xorthog(OverlapOrthog::Symmetric, X_, kit, OverlapOrthog::default_lindep_tol());
     RefSCMatrix mtilde = xorthog.basis_to_orthog_basis();
 
     // So far, I haven't thought about the reduced dimensional version...
@@ -53,15 +56,50 @@ void CCR12_Triples::prediagon() {
     }
 
     RefSCMatrix btilde = mtilde.t() * B_ * mtilde;
-    RefSymmSCMatrix btilde_symm(btilde.coldim(), btilde.kit());
+    RefSymmSCMatrix btilde_symm(btilde.coldim(), kit);
     btilde_symm.assign_subblock(btilde, 0, btilde.nrow()-1, 0, btilde.ncol()-1);
 
-    RefDiagSCMatrix beig(mtilde.coldim(), mtilde.kit());
-    RefSCMatrix U(B_.dim(), B_.dim(), B_.kit());
+    RefDiagSCMatrix beig(mtilde.coldim(), kit);
+    RefSCMatrix U(B_.dim(), B_.dim(), kit);
     btilde_symm.diagonalize(beig, U);
 
     bdiag_ = beig;
     lmatrix_ = mtilde * U;
+  }
+
+//#define LOCAL_DEBUG_TRIPLES_UTILS
+#ifdef LOCAL_DEBUG_TRIPLES_UTILS
+  {
+    // CCR12_Triples::B_ip_ and CCR12_Triples::X_ip_ required.
+    // B_ip_ and X_ip_ are RefSymmSCMatrix objects.
+    assert(z->B_ip().nonnull() && z->X_ip().nonnull());
+
+    Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+
+    ExEnv::out0() << setprecision(10);
+    OverlapOrthog xorthog(OverlapOrthog::Symmetric, z->X_ip(), kit, OverlapOrthog::default_lindep_tol());
+    RefSCMatrix mtilde = xorthog.basis_to_orthog_basis();
+
+    // So far, I haven't thought about the reduced dimensional version...
+    // Guessing occupied pairs can hardly be linearly dependent with each other.
+    if(mtilde.coldim() != z->X_ip().dim()) {
+      throw ProgrammingError("Currently, geminal functions are assumed to be linearly independent.", __FILE__, __LINE__);
+    }
+
+    RefSCMatrix btilde = mtilde.t() * z->B_ip() * mtilde;
+    RefSymmSCMatrix btilde_symm(btilde.coldim(), kit);
+    btilde_symm.assign_subblock(btilde, 0, btilde.nrow()-1, 0, btilde.ncol()-1);
+
+    RefDiagSCMatrix beig(mtilde.coldim(), kit);
+    RefSCMatrix U(z->B_ip().dim(), z->B_ip().dim(), kit);
+    btilde_symm.diagonalize(beig, U);
+
+    beig.print();
+
+//    bdiag_ = beig;
+//    lmatrix_ = mtilde * U;
+  }
+#endif
 }
 
 

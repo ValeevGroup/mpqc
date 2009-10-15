@@ -48,6 +48,7 @@ CCR12_Info::CCR12_Info(const Ref<R12IntEvalInfo>& r12evalinfo,
 r12evalinfo_(r12evalinfo), mem_(mem), ref_(reference), nfzc_(nfc),
 nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_(per)
 {
+  assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
   restricted_ = !ref()->spin_polarized();
 
   needs();
@@ -413,7 +414,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
    throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);
   }
 
-  // Perturbative correction needs an additional memory area. 
+  // Perturbative correction needs an additional memory area.
   // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
   if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12"){
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));

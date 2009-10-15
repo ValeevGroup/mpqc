@@ -67,7 +67,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12app_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   r12c_energy_ << SavableState::restore_state(s);
-  
+
   if((r12evalinfo()->ansatz()->orbital_product_GG()==LinearR12::OrbProdGG_pq) ||
      (r12evalinfo()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq)) {
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
@@ -101,9 +101,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
   r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
-  
+
   if(r12evalinfo()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+#if 0
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
+#endif
   }
 
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));

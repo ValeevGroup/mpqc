@@ -818,65 +818,15 @@ void MP2R12Energy_SpinOrbital_new::determine_C_non_pairspecific(const RefSymmSCM
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const SpinCase2 &spincase2) {
-  RefSCDimension oodim = r12eval()->dim_oo(spincase2);
-  RefSCDimension xydim = r12eval()->dim_GG(spincase2);
-  RefSCDimension f12dim = r12eval()->dim_f12(spincase2);
 
-  const unsigned int nij = oodim.n();
-  const unsigned int nxy = xydim.n();
-  const unsigned int nf12 = f12dim.n();
-  const unsigned int ngem = nf12/nxy;  // number of geminals
+  // coefficients can only be fixed if geminal dimensions match
+  assert(r12eval_->dim_gg(spincase2) == r12eval_->dim_GG(spincase2));
 
-  RefSCDimension gdim=new SCDimension(ngem);
-  RefSCDimension two_gdim=new SCDimension(2*gdim.n());
-
-  const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
-  const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
-  SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-
-  int nocc2_act = occ2_act->rank();
-  Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,oodim,xydim,f12dim,nocc2_act);
-
-  RefSCVector C_pair;
-  if(!STG(r12eval_->r12info()->r12tech()->corrfactor()->geminaldescriptor())){
-    throw ProgrammingError("MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific -- fixed coefficients can be only determined for Slater type geminals.",__FILE__,__LINE__);
-  }
-  double gamma=single_slater_exponent(r12eval_->r12info()->r12tech()->corrfactor()->geminaldescriptor());
-  double Cp_ij_ij=-1.0/(2.0*gamma);  // singlet
-  double Cm_ij_ij=-1.0/(4.0*gamma);  // triplet
-
-  C_[spincase2].assign(0.0);
-
-  for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
-    int ij = ij_iter.ij();
-    int i = ij_iter.i();
-    int j = ij_iter.j();
-
-    if((spincase2==AlphaBeta) && (i!=j)){
-      C_pair = C_[spincase2].kit()->vector(two_gdim);
-      for(int g=0; g<ngem; g++){
-        int goffset=2*g;
-        C_pair.set_element(goffset  ,0.5*(Cp_ij_ij+Cm_ij_ij));
-        C_pair.set_element(goffset+1,0.5*(Cp_ij_ij-Cm_ij_ij));
-      }
-      util->put(ij,C_[spincase2],C_pair);
-    }  // (spincase2==AlphaBeta) && (i!=j)
-    else {  // (spincase2!=AlphaBeta) || (i==j)
-      C_pair = C_[spincase2].kit()->vector(gdim);
-      if(spincase2==AlphaBeta){
-        for(int g=0; g<ngem; g++){
-          C_pair.set_element(g,Cp_ij_ij);
-        }
-        util->put(ij,C_[spincase2],C_pair);
-      }  // spincase2==AlphaBeta
-      else {  // spincase2!=AlphaBeta
-        for(int g=0; g<ngem; g++){
-          C_pair.set_element(g,Cm_ij_ij);
-        }
-        util->put(ij,C_[spincase2],C_pair);
-      }  // spincase2!=AlphaBeta
-    }  // (spincase2!=AlphaBeta) || (i==j)
-  }
+  firstorder_cusp_coefficients(spincase2,
+                               C_[spincase2],
+                               r12eval()->occ_act(case1(spincase2)),
+                               r12eval()->occ_act(case1(spincase2)),
+                               r12eval_->r12info()->r12tech()->corrfactor());
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,

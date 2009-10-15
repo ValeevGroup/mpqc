@@ -30,6 +30,7 @@
 #endif
 
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
+#include <chemistry/qc/mbptr12/pairiter.h>
 
 using namespace std;
 using namespace sc;
@@ -114,7 +115,7 @@ void MP2R12EnergyUtil_Diag::check_dims(const RefSymmSCMatrix& A) const
 
 
 namespace sc {
-  
+
   /**********************************
    * class MP2R12EnergyUtil_Nondiag *
    **********************************/
@@ -128,26 +129,26 @@ namespace sc {
   unsigned int MP2R12EnergyUtil_Nondiag::nrowblks(const RefSCMatrix& A) const {
     throw ProgrammingError("MP2R12EnergyUtil_Nondiag::nrowblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
-  
-  
+
+
   unsigned int MP2R12EnergyUtil_Nondiag::ncolblks(const RefSCMatrix& A) const {
     throw ProgrammingError("MP2R12EnergyUtil_Nondiag::ncolblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
-  
+
   unsigned int MP2R12EnergyUtil_Nondiag::nblks(
                                                          const RefSymmSCMatrix& A) const {
     throw ProgrammingError("MP2R12EnergyUtil_Nondiag::nblks -- should not be used when Diag=false",__FILE__,__LINE__);
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::invert(RefSymmSCMatrix& A) const {
     A->gen_invert_this();
   }
-  
+
   RefDiagSCMatrix MP2R12EnergyUtil_Nondiag::eigenvalues(
                                               const RefSymmSCMatrix& A) const {
     return A.eigvals();
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::diagonalize(
                                              const RefSymmSCMatrix& A,
                                              RefDiagSCMatrix& evals,
@@ -156,14 +157,14 @@ namespace sc {
     evecs = A.kit()->matrix(A.dim(), A.dim());
     A.diagonalize(evals, evecs);
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::transform(const RefSymmSCMatrix& B,
                                                      const RefDiagSCMatrix& A,
                                                      const RefSCMatrix& U) const {
     B.assign(0.0);
     B.accumulate_transform(U, A);
   }
-  
+
   // Solves A*X = B
   void MP2R12EnergyUtil_Nondiag::solve_linear_system(
                                                      const RefSymmSCMatrix& A,
@@ -171,7 +172,7 @@ namespace sc {
                                                      const RefSCMatrix& B) const {
     sc::exp::lapack_linsolv_symmnondef(A, X, B);
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::solve_linear_system(unsigned int ij,
                                                      const RefSymmSCMatrix& A,
                                                      RefSCMatrix& X,
@@ -181,14 +182,14 @@ namespace sc {
     sc::exp::lapack_linsolv_symmnondef(A,Xij,Bij);
     X.assign_column(Xij,ij);
   }
-  
+
   // computes y = A x
   void MP2R12EnergyUtil_Nondiag::times(const RefSymmSCMatrix& A,
                                        const RefSCMatrix& x,
                                        RefSCMatrix& y) const {
     y = A*x;
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::times(unsigned int ij,
                                        const RefSymmSCMatrix& A,
                                        const RefSCMatrix& x,
@@ -197,7 +198,7 @@ namespace sc {
     RefSCVector yij = A*xij;
     y.assign_column(yij,ij);
   }
-  
+
   RefSCVector MP2R12EnergyUtil_Nondiag::dot_product(
                                                     const RefSCMatrix& A,
                                                     const RefSCMatrix& B) const {
@@ -212,29 +213,29 @@ namespace sc {
       result(ij) = AB.get_element(ij,ij);
     return result;
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefSymmSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  
+
   void MP2R12EnergyUtil_Nondiag::print(const char* label,
                                                  const RefDiagSCMatrix& A,
                                                  std::ostream& os) const {
     A.print(label, os);
   }
-  
+
   /*********************************************
    * class MP2R12EnergyUtil_Diag_DifferentSpin *
    *********************************************/
-  
+
   MP2R12EnergyUtil_Diag_DifferentSpin::MP2R12EnergyUtil_Diag_DifferentSpin(const RefSCDimension& oodim,
                                                                              const RefSCDimension& xydim,
                                                                              const RefSCDimension& f12dim,
@@ -246,25 +247,25 @@ namespace sc {
     if (oodim_.n() != xydim_.n())
       throw ProgrammingError("MP2R12EnergyUtil_Diag_DifferentSpin::MP2R12EnergyUtil_Diag_DifferentSpin -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::nrowblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.rowdim().n()/oodim_.n();
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::ncolblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.coldim().n()/oodim_.n();
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_DifferentSpin::nblks(const RefSymmSCMatrix& A) const {
     check_dims(A);
     return A.dim().n()/oodim_.n();
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
     const int nrow = A.rowdim().n();
@@ -290,7 +291,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     const int nrow = A.rowdim().n();
@@ -333,7 +334,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -366,7 +367,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -393,7 +394,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -419,7 +420,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -457,7 +458,7 @@ namespace sc {
       }
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -490,7 +491,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -516,7 +517,7 @@ namespace sc {
       }
     }  // i==j
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::invert(RefSymmSCMatrix& A) const {
     check_dims(A);
     int i,j;
@@ -533,7 +534,7 @@ namespace sc {
       else {
         Aij = A.kit()->symmmatrix(gdim_);
       }
-      
+
       if(i<=j){
         get(ij, A, Aij);
         //Aij.print("B_pair");
@@ -542,7 +543,7 @@ namespace sc {
       }
     }
   }
-  
+
   RefDiagSCMatrix MP2R12EnergyUtil_Diag_DifferentSpin::eigenvalues(const RefSymmSCMatrix& A) const {
     check_dims(A);
     RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
@@ -560,7 +561,7 @@ namespace sc {
       else {
         Aij = A.kit()->symmmatrix(gdim_);
       }
-      
+
       get(ij, A, Aij);
       RefDiagSCMatrix evals_ij = Aij.eigvals();
       put(ij, evals, evals_ij);
@@ -568,12 +569,12 @@ namespace sc {
 
     return evals;
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
     check_dims(A);
     evals = A.kit()->diagmatrix(A.dim());
     evecs = A.kit()->matrix(A.dim(), A.dim());
-    
+
     //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
     RefSymmSCMatrix Aij;
     //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
@@ -596,14 +597,14 @@ namespace sc {
         evals_ij = A.kit()->diagmatrix(gdim_);
         evecs_ij = A.kit()->matrix(gdim_, gdim_);
       }
-      
+
       get(ij, A, Aij);
       Aij.diagonalize(evals_ij, evecs_ij);
       put(ij, evals, evals_ij);
       put(ij, evecs, evecs_ij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
     check_dims(B);
     check_dims(U);
@@ -630,7 +631,7 @@ namespace sc {
         Aij = A.kit()->diagmatrix(gdim_);
         Uij = U.kit()->matrix(gdim_, gdim_);
       }
-      
+
       get(ij, A, Aij);
       get(ij, U, Uij);
       Bij.assign(0.0);
@@ -638,7 +639,7 @@ namespace sc {
       put(ij, B, Bij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::solve_linear_system(const RefSymmSCMatrix& A,
                                                                  RefSCMatrix& X,
                                                                  const RefSCMatrix& B) const {
@@ -667,14 +668,14 @@ namespace sc {
         Bij = A.kit()->vector(gdim_);
         Xij = A.kit()->vector(gdim_);
       }
-      
+
       get(ij, A, Aij);
       get(ij, B, Bij);
       sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
       put(ij, X, Xij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::solve_linear_system(unsigned int ij,
                                                                 const RefSymmSCMatrix& A,
                                                                 RefSCMatrix& X,
@@ -703,13 +704,13 @@ namespace sc {
       Bij = A.kit()->vector(gdim_);
       Xij = A.kit()->vector(gdim_);
     }
-    
+
     get(ij, A, Aij);
     get(ij, B, Bij);
     sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
     put(ij, X, Xij);
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::times(const RefSymmSCMatrix& A,
                                                    const RefSCMatrix& x,
                                                    RefSCMatrix& y) const {
@@ -738,14 +739,14 @@ namespace sc {
         xij = A.kit()->vector(gdim_);
         yij = A.kit()->vector(gdim_);
       }
-      
+
       get(ij, A, Aij);
       get(ij, x, xij);
       yij = Aij * xij;
       put(ij, y, yij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::times(unsigned int ij,
                                                   const RefSymmSCMatrix& A,
                                                   const RefSCMatrix& x,
@@ -774,13 +775,13 @@ namespace sc {
       xij = A.kit()->vector(gdim_);
       yij = A.kit()->vector(gdim_);
     }
-    
+
     get(ij, A, Aij);
     get(ij, x, xij);
     yij = Aij * xij;
     put(ij, y, yij);
   }
-  
+
   RefSCVector MP2R12EnergyUtil_Diag_DifferentSpin::dot_product(const RefSCMatrix& A,
                                                                 const RefSCMatrix& B) const {
     check_dims(A);
@@ -806,15 +807,15 @@ namespace sc {
         Aij = A.kit()->vector(gdim_);
         Bij = A.kit()->vector(gdim_);
       }
-      
+
       get(ij, A, Aij);
       get(ij, B, Bij);
       result(ij) = Aij.dot(Bij);
     }
-    
+
     return result;
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -831,14 +832,14 @@ namespace sc {
       else {
         Aij = A.kit()->vector(gdim_);
       }
-      
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -855,14 +856,14 @@ namespace sc {
       else {
         Aij = A.kit()->symmmatrix(gdim_);
       }
-      
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_DifferentSpin::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -879,18 +880,18 @@ namespace sc {
       else {
         Aij = A.kit()->diagmatrix(gdim_);
       }
-  
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
+
   /****************************************
    * class MP2R12EnergyUtil_Diag_SameSpin *
    ****************************************/
-  
+
   MP2R12EnergyUtil_Diag_SameSpin::MP2R12EnergyUtil_Diag_SameSpin(const RefSCDimension& oodim,
                                                                    const RefSCDimension& xydim,
                                                                    const RefSCDimension& f12dim,
@@ -902,25 +903,25 @@ namespace sc {
     if (oodim_.n() != xydim_.n())
       throw ProgrammingError("MP2R12EnergyUtil_Diag_SameSpin::MP2R12EnergyUtil_Diag_SameSpin -- number of generating pairs must be as nij if diagonal ansatz is chosen",__FILE__,__LINE__);
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_SameSpin::nrowblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.rowdim().n()/oodim_.n();
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_SameSpin::ncolblks(const RefSCMatrix& A) const {
     check_dims(A);
     return A.coldim().n()/oodim_.n();
   }
-  
+
   // number of blocks should only be needed for diagonal ansatze
   unsigned int MP2R12EnergyUtil_Diag_SameSpin::nblks(const RefSymmSCMatrix& A) const {
     check_dims(A);
     return A.dim().n()/oodim_.n();
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
     const int nrow = A.rowdim().n();
@@ -933,7 +934,7 @@ namespace sc {
       Aij.set_element(g, A.get_element(g*nij+ij, ij));
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     const int nrow = A.rowdim().n();
@@ -956,7 +957,7 @@ namespace sc {
       }
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -970,7 +971,7 @@ namespace sc {
       }
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -984,7 +985,7 @@ namespace sc {
       Aij.set_element(g, A.get_element(gij+ij));
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -998,7 +999,7 @@ namespace sc {
       A.set_element(g*nij+ij, ij, Aij.get_element(g));
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSCMatrix& A, const RefSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -1017,7 +1018,7 @@ namespace sc {
       }
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -1031,7 +1032,7 @@ namespace sc {
       }
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const {
     const unsigned int nij = oodim_.n();
     if (ij >= nij)
@@ -1044,7 +1045,7 @@ namespace sc {
       A.set_element(gij+ij, Aij.get_element(g));
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::invert(RefSymmSCMatrix& A) const {
     check_dims(A);
     int i,j;
@@ -1054,13 +1055,13 @@ namespace sc {
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
       Aij = A.kit()->symmmatrix(gdim_);
-      
+
       get(ij, A, Aij);
       Aij->gen_invert_this();
       put(ij, A, Aij);
     }
   }
-  
+
   RefDiagSCMatrix MP2R12EnergyUtil_Diag_SameSpin::eigenvalues(const RefSymmSCMatrix& A) const {
     check_dims(A);
     RefDiagSCMatrix evals = A.kit()->diagmatrix(f12dim_);
@@ -1071,7 +1072,7 @@ namespace sc {
     const int noo = oodim_.n();
     for (int ij=0; ij<noo; ij++) {
       Aij = A.kit()->symmmatrix(gdim_);
-      
+
       get(ij, A, Aij);
       RefDiagSCMatrix evals_ij = Aij.eigvals();
       put(ij, evals, evals_ij);
@@ -1079,12 +1080,12 @@ namespace sc {
 
     return evals;
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::diagonalize(const RefSymmSCMatrix& A, RefDiagSCMatrix& evals, RefSCMatrix& evecs) const {
     check_dims(A);
     evals = A.kit()->diagmatrix(A.dim());
     evecs = A.kit()->matrix(A.dim(), A.dim());
-    
+
     //RefSymmSCMatrix Aij = A.kit()->symmmatrix(gdim_);
     RefSymmSCMatrix Aij;
     //RefDiagSCMatrix evals_ij = A.kit()->diagmatrix(gdim_);
@@ -1098,14 +1099,14 @@ namespace sc {
       Aij = A.kit()->symmmatrix(gdim_);
       evals_ij = A.kit()->diagmatrix(gdim_);
       evecs_ij = A.kit()->matrix(gdim_, gdim_);
-      
+
       get(ij, A, Aij);
       Aij.diagonalize(evals_ij, evecs_ij);
       put(ij, evals, evals_ij);
       put(ij, evecs, evecs_ij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::transform(const RefSymmSCMatrix& B, const RefDiagSCMatrix& A, const RefSCMatrix& U) const {
     check_dims(B);
     check_dims(U);
@@ -1123,7 +1124,7 @@ namespace sc {
       Bij = B.kit()->symmmatrix(gdim_);
       Aij = A.kit()->diagmatrix(gdim_);
       Uij = U.kit()->matrix(gdim_, gdim_);
-      
+
       get(ij, A, Aij);
       get(ij, U, Uij);
       Bij.assign(0.0);
@@ -1131,7 +1132,7 @@ namespace sc {
       put(ij, B, Bij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::solve_linear_system(const RefSymmSCMatrix& A,
                                                             RefSCMatrix& X,
                                                             const RefSCMatrix& B) const {
@@ -1151,14 +1152,14 @@ namespace sc {
       Aij = A.kit()->symmmatrix(gdim_);
       Bij = A.kit()->vector(gdim_);
       Xij = A.kit()->vector(gdim_);
-      
+
       get(ij, A, Aij);
       get(ij, B, Bij);
       sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
       put(ij, X, Xij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::solve_linear_system(unsigned int ij,
                                                            const RefSymmSCMatrix& A,
                                                            RefSCMatrix& X,
@@ -1178,13 +1179,13 @@ namespace sc {
     Aij = A.kit()->symmmatrix(gdim_);
     Bij = A.kit()->vector(gdim_);
     Xij = A.kit()->vector(gdim_);
-    
+
     get(ij, A, Aij);
     get(ij, B, Bij);
     sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
     put(ij, X, Xij);
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::times(const RefSymmSCMatrix& A,
                                               const RefSCMatrix& x,
                                               RefSCMatrix& y) const {
@@ -1204,14 +1205,14 @@ namespace sc {
       Aij = A.kit()->symmmatrix(gdim_);
       xij = A.kit()->vector(gdim_);
       yij = A.kit()->vector(gdim_);
-      
+
       get(ij, A, Aij);
       get(ij, x, xij);
       yij = Aij * xij;
       put(ij, y, yij);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::times(unsigned int ij,
                                              const RefSymmSCMatrix& A,
                                              const RefSCMatrix& x,
@@ -1231,13 +1232,13 @@ namespace sc {
     Aij = A.kit()->symmmatrix(gdim_);
     xij = A.kit()->vector(gdim_);
     yij = A.kit()->vector(gdim_);
-    
+
     get(ij, A, Aij);
     get(ij, x, xij);
     yij = Aij * xij;
     put(ij, y, yij);
   }
-  
+
   RefSCVector MP2R12EnergyUtil_Diag_SameSpin::dot_product(const RefSCMatrix& A,
                                                            const RefSCMatrix& B) const {
     check_dims(A);
@@ -1255,15 +1256,15 @@ namespace sc {
     for (int ij=0; ij<noo; ij++) {
       Aij = A.kit()->vector(gdim_);
       Bij = A.kit()->vector(gdim_);
-      
+
       get(ij, A, Aij);
       get(ij, B, Bij);
       result(ij) = Aij.dot(Bij);
     }
-    
+
     return result;
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -1273,14 +1274,14 @@ namespace sc {
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
       Aij = A.kit()->vector(gdim_);
-      
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefSymmSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -1290,14 +1291,14 @@ namespace sc {
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
       Aij = A.kit()->symmmatrix(gdim_);
-      
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
+
   void MP2R12EnergyUtil_Diag_SameSpin::print(const char* label, const RefDiagSCMatrix& A, std::ostream& os) const {
     os << indent << label << ":"<< endl;
     int i,j;
@@ -1307,15 +1308,15 @@ namespace sc {
     const unsigned int noo = oodim_.n();
     for (unsigned int ij=0; ij<noo; ++ij) {
       Aij = A.kit()->diagmatrix(gdim_);
-      
+
       get(ij, A, Aij);
       ostringstream oss;
       oss << "Block "<< ij;
       Aij.print(oss.str().c_str(), os);
     }
   }
-  
-  
+
+
   Ref<MP2R12EnergyUtil_Diag> generate_MP2R12EnergyUtil_Diag(SpinCase2 spincase2,
                                                             const RefSCDimension& oodim,
                                                             const RefSCDimension& xydim,
@@ -1333,9 +1334,78 @@ namespace sc {
                     << endl;
       mp2r12energyutil_diag = new MP2R12EnergyUtil_Diag_SameSpin(oodim,xydim,f12dim,nocc_act);
     }
-    
+
     return(mp2r12energyutil_diag);
   }
-  
+
+  /// fills C with
+  void firstorder_cusp_coefficients(const SpinCase2 &spincase2,
+                                    RefSCMatrix& C,
+                                    const Ref<OrbitalSpace>& i1,
+                                    const Ref<OrbitalSpace>& i2,
+                                    const Ref<LinearR12::CorrelationFactor>& corrfactor) {
+    RefSCDimension xydim = C.coldim();
+    RefSCDimension f12dim = C.rowdim();
+    const unsigned int nxy = xydim.n();
+    const unsigned int nf12 = f12dim.n();
+    const unsigned int ngem = nf12/nxy;  // number of geminals
+    assert(ngem == 1);
+
+    RefSCDimension gdim=new SCDimension(ngem);
+    RefSCDimension two_gdim=new SCDimension(2*gdim.n());
+
+    SpinMOPairIter ij_iter(i1, i2, spincase2);
+    Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,xydim,xydim,f12dim,i2->rank());
+
+    double Cp_ij_ij;  // singlet
+    double Cm_ij_ij;  // triplet
+    if (STG(corrfactor->geminaldescriptor())) {
+      const double gamma=single_slater_exponent(corrfactor->geminaldescriptor());
+      Cp_ij_ij=-1.0/(2.0*gamma);
+      Cm_ij_ij=-1.0/(4.0*gamma);
+    }
+    else if (R12(corrfactor->geminaldescriptor())) {
+      Cp_ij_ij=1.0/2.0;
+      Cm_ij_ij=1.0/4.0;
+    }
+    else {
+      throw ProgrammingError("firstorder_cusp_coefficients -- geminal coefficients can be only determined for STG or R12 geminals",__FILE__,__LINE__);
+    }
+
+    C.assign(0.0);
+
+    for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
+      int ij = ij_iter.ij();
+      int i = ij_iter.i();
+      int j = ij_iter.j();
+
+      if ((spincase2==AlphaBeta) && (i!=j)){
+        RefSCVector C_pair = C.kit()->vector(two_gdim);
+        for(int g=0; g<ngem; g++){ // mixed singlet/triplet
+          const int goffset=2*g;
+          C_pair.set_element(goffset  ,0.5*(Cp_ij_ij+Cm_ij_ij));
+          C_pair.set_element(goffset+1,0.5*(Cp_ij_ij-Cm_ij_ij));
+        }
+        util->put(ij,C,C_pair);
+      }
+      else {  // (spincase2!=AlphaBeta) || (i==j)
+        RefSCVector  C_pair = C.kit()->vector(gdim);
+        if(spincase2==AlphaBeta){
+          for(int g=0; g<ngem; g++) { // pure singlet
+            C_pair.set_element(g,Cp_ij_ij);
+          }
+          util->put(ij,C,C_pair);
+        }
+        else {  // spincase2!=AlphaBeta
+          for(int g=0; g<ngem; g++) { // pure triplet
+            C_pair.set_element(g,Cm_ij_ij);
+          }
+          util->put(ij,C,C_pair);
+        }
+      }
+    }
+
+  } // end of firstorder_cusp_coefficients()
+
 }
 

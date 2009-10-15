@@ -37,9 +37,11 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/mbptr12/linearr12.h>
 
 namespace sc {
-  
+
   /** Class MP2R12EnergyUtil_base is the abstract interface to utility functions used by MP2R12Energy derivatives.
   */
   class MP2R12EnergyUtil_base : virtual public RefCount {
@@ -64,12 +66,12 @@ namespace sc {
                           const RefSCDimension& f12dim,
                           const unsigned int nocc_act);
     virtual ~MP2R12EnergyUtil_base();
-    
+
     /// Checks if matrix A has proper dimensions. Throw, if not.
     void check_dims(const RefSCMatrix& A) const;
     /// Checks if matrix A has proper dimensions. Throw, if not.
     void check_dims(const RefSymmSCMatrix& A) const;
-    
+
     /// Prints A
     virtual void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Prints A
@@ -105,7 +107,7 @@ namespace sc {
     virtual RefSCVector dot_product(const RefSCMatrix& A,
                                     const RefSCMatrix& B) const = 0;
   };
-  
+
   class MP2R12EnergyUtil_Diag : virtual public RefCount {
     protected:
       /// number of active occupied orbitals
@@ -128,19 +130,19 @@ namespace sc {
                           const RefSCDimension& f12dim,
                           const unsigned int nocc_act);
     virtual ~MP2R12EnergyUtil_Diag();
-    
+
     /// Checks if matrix A has proper dimensions. Throw, if not.
     void check_dims(const RefSCMatrix& A) const;
     /// Checks if matrix A has proper dimensions. Throw, if not.
     void check_dims(const RefSymmSCMatrix& A) const;
-    
+
     /// Prints A
     virtual void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Prints A
     virtual void print(const char* label, const RefSymmSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
     /// Prints A
     virtual void print(const char* label, const RefDiagSCMatrix& A, std::ostream& os = ExEnv::out0()) const = 0;
-    
+
     /// gets ij block of A
     virtual void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const = 0;
     /// gets ij block of A
@@ -149,7 +151,7 @@ namespace sc {
     virtual void get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const = 0;
     /// gets ij block of A
     virtual void get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const =0;
-    
+
     /// puts ij block into A
     virtual void put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const =0;
     /// puts ij block into A
@@ -158,7 +160,7 @@ namespace sc {
     virtual void put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const = 0;
     /// puts ij block into A
     virtual void put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const = 0;
-    
+
     /// Inverts A in-place
     virtual void invert(RefSymmSCMatrix& A) const = 0;
     /// Computes eigenvalues of A
@@ -188,12 +190,12 @@ namespace sc {
     virtual RefSCVector dot_product(const RefSCMatrix& A,
                                     const RefSCMatrix& B) const = 0;
   };
-  
+
   /** Class MP2R12EnergyUtil provides some misc functions to operate on (blocked)
       ijxy and xyxy matrices. If Diag is true, then each xy block is the same size as ij, and ijxy and xyxy blocks are "diagonal".
       f12-f12 matrix then has nf12 by nf12 blocks, each with diagonal structure.
   */
-  
+
   class MP2R12EnergyUtil_Diag_DifferentSpin : public MP2R12EnergyUtil_Diag {
     private:
       SpinCase2 spincase2_;
@@ -207,14 +209,14 @@ namespace sc {
                                            const RefSCDimension& f12dim,
                                            const unsigned int nocc_act);
       ~MP2R12EnergyUtil_Diag_DifferentSpin() {}
-      
+
       /// Number of oo blocks in row dimension of A
       unsigned int nrowblks(const RefSCMatrix& A) const;
       /// Number of oo blocks in column dimension of A
       unsigned int ncolblks(const RefSCMatrix& A) const;
       /// Number of oo blocks in dimension of A
       unsigned int nblks(const RefSymmSCMatrix& A) const;
-      
+
       /// gets ij block of A
       void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
       /// gets ij block of A
@@ -223,7 +225,7 @@ namespace sc {
       void get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
       /// gets ij block of A
       void get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
-      
+
       /// puts ij block into A
       void put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
       /// puts ij block into A
@@ -232,7 +234,7 @@ namespace sc {
       void put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
       /// puts ij block into A
       void put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
-      
+
       /// Inverts A in-place
       void invert(RefSymmSCMatrix& A) const;
       /// Computes eigenvalues of A
@@ -261,7 +263,7 @@ namespace sc {
       /// Computes "dot" product of A and B: tr[i] = sum_j A[j][i] B[j][i]
       RefSCVector dot_product(const RefSCMatrix& A,
                               const RefSCMatrix& B) const;
-      
+
       /// Prints A
       void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
       /// Prints A
@@ -269,7 +271,7 @@ namespace sc {
       /// Prints A
       void print(const char* label, const RefDiagSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
   };
-  
+
   class MP2R12EnergyUtil_Diag_SameSpin : public MP2R12EnergyUtil_Diag {
     private:
       SpinCase2 spincase2_;
@@ -283,14 +285,14 @@ namespace sc {
                                       const RefSCDimension& f12dim,
                                       const unsigned int nocc_act);
       ~MP2R12EnergyUtil_Diag_SameSpin() {}
-      
+
       /// Number of oo blocks in row dimension of A
       unsigned int nrowblks(const RefSCMatrix& A) const;
       /// Number of oo blocks in column dimension of A
       unsigned int ncolblks(const RefSCMatrix& A) const;
       /// Number of oo blocks in dimension of A
       unsigned int nblks(const RefSymmSCMatrix& A) const;
-      
+
       /// gets ij block of A
       void get(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
       /// gets ij block of A
@@ -299,7 +301,7 @@ namespace sc {
       void get(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
       /// gets ij block of A
       void get(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
-      
+
       /// puts ij block into A
       void put(unsigned int ij, const RefSCMatrix& A, const RefSCVector& Aij) const;
       /// puts ij block into A
@@ -308,7 +310,7 @@ namespace sc {
       void put(unsigned int ij, const RefSymmSCMatrix& A, const RefSymmSCMatrix& Aij) const;
       /// puts ij block into A
       void put(unsigned int ij, const RefDiagSCMatrix& A, const RefDiagSCMatrix& Aij) const;
-      
+
       /// Inverts A in-place
       void invert(RefSymmSCMatrix& A) const;
       /// Computes eigenvalues of A
@@ -336,7 +338,7 @@ namespace sc {
       /// Computes "dot" product of A and B: tr[i] = sum_j A[j][i] B[j][i]
       RefSCVector dot_product(const RefSCMatrix& A,
                               const RefSCMatrix& B) const;
-      
+
       /// Prints A
       void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
       /// Prints A
@@ -344,7 +346,7 @@ namespace sc {
       /// Prints A
       void print(const char* label, const RefDiagSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
   };
-  
+
     class MP2R12EnergyUtil_Nondiag : public MP2R12EnergyUtil_base {
     public:
     /// oodim is a dimension of ij (active occupied pairs)
@@ -355,7 +357,7 @@ namespace sc {
                              const RefSCDimension& f12dim,
                              const unsigned int nocc_act);
     ~MP2R12EnergyUtil_Nondiag() {}
-    
+
     /// Prints A
     void print(const char* label, const RefSCMatrix& A, std::ostream& os = ExEnv::out0()) const;
     /// Prints A
@@ -396,7 +398,7 @@ namespace sc {
     unsigned int ncolblks(const RefSCMatrix& A) const;
     /// Number of oo blocks in dimension of A
     unsigned int nblks(const RefSymmSCMatrix& A) const;
-    
+
   };
 
   Ref<MP2R12EnergyUtil_Diag> generate_MP2R12EnergyUtil_Diag(SpinCase2 spincase2,
@@ -404,7 +406,13 @@ namespace sc {
                                                             const RefSCDimension& xydim,
                                                             const RefSCDimension& f12dim,
                                                             const unsigned int nocc_act);
-  
+
+  /// fills C with coefficients determined by first-order cusp conditions
+  void firstorder_cusp_coefficients(const SpinCase2 &spincase2,
+                                      RefSCMatrix& C,
+                                      const Ref<OrbitalSpace>& i1,
+                                      const Ref<OrbitalSpace>& i2,
+                                      const Ref<LinearR12::CorrelationFactor>& corrfactor);
 }
 
 #endif // include guard

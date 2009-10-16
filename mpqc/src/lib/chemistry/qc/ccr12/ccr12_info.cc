@@ -547,7 +547,7 @@ void CCR12_Info::orbital_energies(){
 
 
 void CCR12_Info::retrieve_B_and_X_ii() {
-  // TODO If GGspace is equal to ii, we can just copy it (need to compare both).
+  // TODO If GGspace is equal to ii, we can just copy it (need to compare both); and it is broken for ii...
 
   RefSymmSCMatrix b_tmp = r12int_eval_->B(AlphaBeta);
   RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);

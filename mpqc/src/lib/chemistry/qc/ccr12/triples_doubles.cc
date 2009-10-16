@@ -31,7 +31,7 @@
 #include <chemistry/qc/ccr12/tensor.h>
 using namespace sc;
 
-void CCR12_Triples::doubles_ig(Ref<Tensor>& in, Ref<Tensor>& out) {
+void CCR12_Triples::doubles_ig(Ref<Tensor>& out) {
 
   const size_t maxtile = z->maxtilesize();
   const size_t singles = maxtile * maxtile;

@@ -67,8 +67,8 @@ class CCR12_Triples : virtual public RefCount {
     void offset_hhphhh(Ref<Tensor>&);
     double get_energy();
 // for GGspace = ip
-    void doubles_ig(Ref<Tensor>&, Ref<Tensor>&);
-    void singles_ig(Ref<Tensor>&, Ref<Tensor>&) { std::cout << "== singles to be implemented ==" << std::endl;};
+    void doubles_ig(Ref<Tensor>& out);
+    void singles_ig(Ref<Tensor>& out) { std::cout << "== singles to be implemented ==" << std::endl;};
     void denom_contraction_ip();
     void offset_hgphhh(Ref<Tensor>&);
     double get_energy_ip();

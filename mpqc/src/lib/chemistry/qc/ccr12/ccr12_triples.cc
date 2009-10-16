@@ -44,13 +44,12 @@ double CCR12_Triples::compute() {
   offset_hgphhh(singles_intermediate_);
   doubles_intermediate_ = singles_intermediate_->clone();
   rhs_intermediate_ = doubles_intermediate_->clone();
-  Ref<Tensor> vd2ip = z->vd2_gen();
 
   // evaluating V * t2
-  doubles_ig(vd2ip, doubles_intermediate_);
+  doubles_ig(doubles_intermediate_);
   // TODO V * t1 is not implemented yet.
   // DOING NOTHING !!!!!!
-  singles_ig(vd2ip, singles_intermediate_);
+  singles_ig(singles_intermediate_);
   singles_intermediate_->daxpy(doubles_intermediate_, 1.0); // adding doubles to singles to form lhs numerator
 
   rhs_intermediate_ = doubles_intermediate_->clone();

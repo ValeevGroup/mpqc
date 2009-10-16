@@ -62,13 +62,13 @@ void CCR12_Info::fill_in_iiii() {
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nG) );
   {
     MTensor<4> X(this,d_xs2.pointer(),iiii);
-    X.convert(r12int_eval_->X(AlphaBeta), nG, nG, false, false,
+    X.convert(r12int_eval_->X(AlphaBeta), nG, nG,
               amap, amap, amap, amap, &iiii_erange);
   }
 
   {
     MTensor<4> B(this,d_bs2.pointer(),iiii);
-    B.convert(r12int_eval_->B(AlphaBeta), nG, nG, false, false,
+    B.convert(r12int_eval_->B(AlphaBeta), nG, nG,
               amap, amap, amap, amap, &iiii_erange);
   }
 
@@ -96,7 +96,7 @@ void CCR12_Info::fill_in_iiii() {
                                  r12int_eval_->occ_act(Beta),
                                  r12int_eval_->r12info()->r12tech()->corrfactor());
     MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, no) );
-    GT2.convert(gt2, no, no, false, false,
+    GT2.convert(gt2, no, no,
                 amap_o, amap_o, amap_o, amap_o, &iiii_erange);
 
 #if 0
@@ -179,7 +179,7 @@ void CCR12_Info::fill_in_vr_and_vd() {
     ggii_erange[1] = MTensor<4>::element_range(0, norbs_act);
     ggii_erange[2] = MTensor<4>::element_range(0, nG);
     ggii_erange[3] = MTensor<4>::element_range(0, nG);
-    V.convert<RefSCMatrix>(Vgg_[AlphaBeta].t(), norbs_act, nG, false, false,
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta].t(), norbs_act, nG,
               agmap, agmap, aimap, aimap, &ggii_erange);
   }
 
@@ -196,7 +196,7 @@ void CCR12_Info::fill_in_vr_and_vd() {
     iigg_erange[1] = MTensor<4>::element_range(0, nG);
     iigg_erange[2] = MTensor<4>::element_range(0, norbs_act);
     iigg_erange[3] = MTensor<4>::element_range(0, norbs_act);
-    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act, false, false,
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act,
               aimap, aimap, agmap, agmap, &iigg_erange);
   }
 
@@ -241,7 +241,7 @@ void CCR12_Info::fill_in_vd2_gen(bool need_cabs, bool need_xx) {
     iigg_erange[1] = MTensor<4>::element_range(0, nG);
     iigg_erange[2] = MTensor<4>::element_range(0, norbs_act);
     iigg_erange[3] = MTensor<4>::element_range(0, norbs_act);
-    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act, false, false,
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act,
               aimap, aimap, agmap, agmap, &iigg_erange);
   }
 

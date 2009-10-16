@@ -254,7 +254,7 @@ void CCR12_Triples::denom_contraction(){
           RefSymmSCMatrix refxminusb = z->X() * (eh1 + eh2 + eh3 - ep6) - z->B();
           RefSymmSCMatrix refinverse = refxminusb.gi();
 
-          D.convert(refinverse, nocc_act, nocc_act, false, false,
+          D.convert(refinverse, nocc_act, nocc_act,
                     amap, amap, amap, amap, &iiii_erange);
 
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));

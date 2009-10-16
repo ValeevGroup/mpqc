@@ -269,6 +269,9 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   if (perturbative_ == "(T)R12[DT]") {
+    if (r12evalinfo_->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq) {
+      throw std::runtime_error("(T)R12[DT] requires GG space to be pq.");
+    }
     // generalized V intermediate.
     d_vd2_gen = new Tensor("vd2_gen", mem_);
     // Setting need_CABS = false, need_xx = true.
@@ -594,7 +597,8 @@ void CCR12_Info::retrieve_B_and_X_ii() {
 void CCR12_Info::retrieve_B_and_X_ip() {
 
   Ref<OrbitalSpace> Gspace = r12eval()->GGspace(Alpha);
-  Ref<OrbitalSpace> pspace = r12eval()->orbs(Alpha);
+  //Ref<OrbitalSpace> pspace = r12eval()->orbs(Alpha);
+  Ref<OrbitalSpace> pspace = aobs_space_;
   Ref<OrbitalSpace> ispace = r12eval()->occ_act(Alpha);
 
   // extract ip subblock

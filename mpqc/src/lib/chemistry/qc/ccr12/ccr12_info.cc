@@ -273,6 +273,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     d_vd2_gen = new Tensor("vd2_gen", mem_);
     // Setting need_CABS = false, need_xx = true.
     offset_vd2_gen(false, false);
+    fill_in_vd2_gen(false, false);
     // Creates B and X intermediates of ip space.
     retrieve_B_and_X_ip();
   }
@@ -547,74 +548,94 @@ void CCR12_Info::orbital_energies(){
 
 
 void CCR12_Info::retrieve_B_and_X_ii() {
-  // TODO If GGspace is equal to ii, we can just copy it (need to compare both); and it is broken for ii...
+
+  Ref<OrbitalSpace> Gspace = r12eval()->GGspace(Alpha);
+  Ref<OrbitalSpace> ispace = r12eval()->occ_act(Alpha);
 
   RefSymmSCMatrix b_tmp = r12int_eval_->B(AlphaBeta);
   RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);
 
-  const int target_pairsize = naoa() * naoa();
+  const unsigned int ni = ispace->rank();
+  const unsigned int nG = Gspace->rank();
+  const int target_pairsize = ni * ni;
   RefSCDimension dim_occpair(new SCDimension(target_pairsize));
   Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
-  RefSymmSCMatrix b(dim_occpair, kit);
-  RefSymmSCMatrix x(dim_occpair, kit);
+  B_ = kit->symmmatrix(dim_occpair);
+  X_ = kit->symmmatrix(dim_occpair);
 
-  // first make B_ii_, X_ii_.
+  // map ispace to Gspace
+  vector<unsigned int> imap = (*Gspace << *ispace);
+  unsigned int r01 = 0;
+  for(unsigned int r0=0; r0<ni; ++r0) {
+    const unsigned int rr0 = imap[r0];
+    for(unsigned int r1=0; r1<ni; ++r1, ++r01) {
+      const unsigned int rr1 = imap[r1];
+      const unsigned int rr01 = rr0 * nG + rr1;
 
-  const int nG = r12eval()->GGspace(Alpha)->rank();
-  int i01 = 0;
-  for (int i0 = 0; i0 != naoa_; ++i0) {
-    for (int i1 = 0; i1 != naoa_; ++i1, ++i01) {
-      const int i01g = (i1+nfzc_) + nG * (i0+nfzc_);
-      int i23 = 0;
-      for (int i2 = 0; i2 != naoa_; ++i2) {
-        for (int i3 = 0; i3 != naoa_; ++i3, ++i23) {
-          const int i23g = (i3+nfzc_) + nG * (i2+nfzc_);
-          const double data_b = b_tmp.get_element(i01g, i23g);
-          b.set_element(i01, i23, data_b);
-          const double data_x = x_tmp.get_element(i01g, i23g);
-          x.set_element(i01, i23, data_x);
+      unsigned int c01 = 0;
+      for(unsigned int c0=0; c0<ni; ++c0) {
+        const unsigned int cc0 = imap[c0];
+        for(unsigned int c1=0; c1<ni; ++c1, ++c01) {
+          const unsigned int cc1 = imap[c1];
+          const unsigned int cc01 = cc0 * nG + cc1;
+
+          const double xval = x_tmp(rr01,cc01);
+          const double bval = b_tmp(rr01,cc01);
+          X_(r01,c01) = xval;
+          B_(r01,c01) = bval;
         }
       }
     }
   }
-  B_ = b;
-  X_ = x;
+
 }
 
 
 void CCR12_Info::retrieve_B_and_X_ip() {
 
+  Ref<OrbitalSpace> Gspace = r12eval()->GGspace(Alpha);
+  Ref<OrbitalSpace> pspace = r12eval()->orbs(Alpha);
+  Ref<OrbitalSpace> ispace = r12eval()->occ_act(Alpha);
+
+  // extract ip subblock
   RefSymmSCMatrix b_tmp = r12int_eval_->B(AlphaBeta);
   RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);
 
-  const int norb = r12evalinfo_->refinfo()->orbs(Alpha)->rank();
-  const int target_pairsize = naoa_ * norb;
+  const unsigned int ni = ispace->rank();
+  const unsigned int np = pspace->rank();
+  const unsigned int nG = Gspace->rank();
+  const int target_pairsize = ni * np;
   RefSCDimension dim_occpair(new SCDimension(target_pairsize));
   Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
-  RefSymmSCMatrix b(dim_occpair, kit);
-  RefSymmSCMatrix x(dim_occpair, kit);
+  B_ip_ = kit->symmmatrix(dim_occpair);
+  X_ip_ = kit->symmmatrix(dim_occpair);
 
-  // first make B_ii_, X_ii_.
+  // map ispace and pspace to Gspace
+  vector<unsigned int> imap = (*Gspace << *ispace);
+  vector<unsigned int> pmap = (*Gspace << *pspace);
+  unsigned int r01 = 0;
+  for(unsigned int r0=0; r0<ni; ++r0) {
+    const unsigned int rr0 = imap[r0];
+    for(unsigned int r1=0; r1<np; ++r1, ++r01) {
+      const unsigned int rr1 = pmap[r1];
+      const unsigned int rr01 = rr0 * nG + rr1;
 
-  const int nG = r12eval()->GGspace(Alpha)->rank();
-  int i01 = 0;
-  for (int i0 = 0; i0 != naoa_; ++i0) {
-    for (int i1 = 0; i1 != norb; ++i1, ++i01) {
-      const int i01g = i1 + nG * (i0+nfzc_);
-      int i23 = 0;
-      for (int i2 = 0; i2 != naoa_; ++i2) {
-        for (int i3 = 0; i3 != norb; ++i3, ++i23) {
-          const int i23g = i3 + nG * (i2+nfzc_);
-          const double data_b = b_tmp.get_element(i01g, i23g);
-          b.set_element(i01, i23, data_b);
-          const double data_x = x_tmp.get_element(i01g, i23g);
-          x.set_element(i01, i23, data_x);
+      unsigned int c01 = 0;
+      for(unsigned int c0=0; c0<ni; ++c0) {
+        const unsigned int cc0 = imap[c0];
+        for(unsigned int c1=0; c1<np; ++c1, ++c01) {
+          const unsigned int cc1 = pmap[c1];
+          const unsigned int cc01 = cc0 * nG + cc1;
+
+          const double xval = x_tmp(rr01,cc01);
+          const double bval = b_tmp(rr01,cc01);
+          X_ip_(r01,c01) = xval;
+          B_ip_(r01,c01) = bval;
         }
       }
     }
   }
-  B_ip_ = b;
-  X_ip_ = x;
+
 }
 
 

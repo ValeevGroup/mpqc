@@ -523,7 +523,7 @@ void CCR12_Info::offset_e(Ref<Tensor>& d_e_){
 
 // Generalized V^dagger tensor. The geminal generating space is taken to be
 // either ix or xx (where x runs over OBS).
-void CCR12_Info::offset_vd2_gen(const bool need_cabs, const bool need_xx){
+void CCR12_Info::offset_vd2_gen(bool need_cabs, bool need_xx){
   long size=0L;
   const long o = noab();
   const long ov = noab() + nvab();

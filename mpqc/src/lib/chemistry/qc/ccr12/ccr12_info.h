@@ -122,7 +122,7 @@ class CCR12_Info : virtual public RefCount {
     void offset_vd2();
     void offset_fr2();
     void offset_fd2();
-    void offset_vd2_gen(const bool need_cabs, const bool need_xx);
+    void offset_vd2_gen(bool need_cabs, bool need_xx);
 
     // tiling data
     int maxtilesize_;
@@ -369,6 +369,7 @@ class CCR12_Info : virtual public RefCount {
     void fill_in_iiii();
     void fill_in_vr_and_vd();
     void fill_in_fr_and_fd();
+    void fill_in_vd2_gen(bool need_cabs, bool need_xx);
 
 
     /// utilities for fill-in routines

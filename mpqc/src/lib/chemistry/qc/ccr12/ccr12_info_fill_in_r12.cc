@@ -142,7 +142,7 @@ void CCR12_Info::fill_in_vr_and_vd() {
   // only RHF is handled so far
   assert(restricted_);
 
-  // for V intermediate (denoted as d_vr2 in smith; its inverse is d_vd2)
+  // for V intermediate (denoted as d_vr2 in smith; its transpose is d_vd2)
   assert(need_w1());
 
   // intermediates are computed using i indices from GGspace(Alpha) space
@@ -202,6 +202,50 @@ void CCR12_Info::fill_in_vr_and_vd() {
 
 }
 
+void CCR12_Info::fill_in_vd2_gen(bool need_cabs, bool need_xx) {
+
+  // only RHF is handled so far
+  assert(restricted_);
+
+  // intermediates are computed using i indices from GGspace(Alpha) space
+  // map corr_space_ to it
+  vector<long> aimap;
+  {
+    vector<int> intmap = sc::map(*(r12eval()->GGspace(Alpha)), *corr_space_, false);
+    aimap.resize(intmap.size());
+    std::copy(intmap.begin(), intmap.end(), aimap.begin());
+  }
+  // g indices are in aobs_space_, map to it also
+  vector<long> agmap;
+  {
+    vector<int> intmap = sc::map(*aobs_space_, *corr_space_, false);
+    agmap.resize(intmap.size());
+    std::copy(intmap.begin(), intmap.end(), agmap.begin());
+  }
+
+  // assuming RHF!
+  const int nG = r12eval()->GGspace(Alpha)->rank();
+  const int norbs_act = aobs_space_->rank();
+
+  // d_vd2 = iigg
+  {
+    MTensor<4>::tile_ranges iigg(4);
+    const int nobs_b = this->noab() + this->nvab();
+    iigg[0] = MTensor<4>::tile_range(0, nobs_b);
+    iigg[1] = MTensor<4>::tile_range(0, nobs_b);
+    iigg[2] = MTensor<4>::tile_range(0, this->nab());
+    iigg[3] = MTensor<4>::tile_range(0, this->nab());
+    MTensor<4> V(this,d_vd2_gen.pointer(),iigg);
+    MTensor<4>::element_ranges iigg_erange(4);
+    iigg_erange[0] = MTensor<4>::element_range(0, nG);
+    iigg_erange[1] = MTensor<4>::element_range(0, nG);
+    iigg_erange[2] = MTensor<4>::element_range(0, norbs_act);
+    iigg_erange[3] = MTensor<4>::element_range(0, norbs_act);
+    V.convert<RefSCMatrix>(Vgg_[AlphaBeta], nG, norbs_act, false, false,
+              aimap, aimap, agmap, agmap, &iigg_erange);
+  }
+
+}
 
 void CCR12_Info::fill_in_fr_and_fd() {
 

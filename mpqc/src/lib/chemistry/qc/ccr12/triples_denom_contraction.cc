@@ -92,14 +92,16 @@ void CCR12_Triples::denom_contraction_ig(){
           Ref<Tensor> denom = new Tensor(ss.str(), z->mem());
           z->offset_x_gen(denom, false, false);
 
-#if CONVERT_IMPLEMENTED
           MTensor<4> D(z, denom.pointer(), iiii);
 
-          RefSymmSCMatrix refxminusb = z->X_ip() * (eh1 + eh2 + eh3 - ep6) - z->B_ip();
-          RefSymmSCMatrix refinverse = refxminusb.gi();
+          RefSymmSCMatrix refxminusb_ipip = z->X_ipip() * (eh1 + eh2 + eh3 - ep6) - z->B_ipip();
+          RefSCMatrix refxminusb_ippi = z->X_ippi() * (eh1 + eh2 + eh3 - ep6) - z->B_ippi();
 
-          D.convert(refinverse, nocc_act, nocc_act, false, false,
-                    amap, amap, amap, amap, &iiii_erange);
+#if CONVERT_IMPLEMENTED
+          RefSymmSCMatrix refinverse_ipip = refxminusb_ipip.gi();
+          RefSCMatrix refinverse_ippi = refxminusb_ippi.gi();
+//        D.convert(refinverse, nocc_act, nocc_act, false, false,
+//                  amap, amap, amap, amap, &iiii_erange);
 #endif
 
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));

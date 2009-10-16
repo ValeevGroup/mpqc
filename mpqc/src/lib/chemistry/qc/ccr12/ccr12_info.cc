@@ -607,8 +607,10 @@ void CCR12_Info::retrieve_B_and_X_ip() {
   const int target_pairsize = ni * np;
   RefSCDimension dim_occpair(new SCDimension(target_pairsize));
   Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
-  B_ip_ = kit->symmmatrix(dim_occpair);
-  X_ip_ = kit->symmmatrix(dim_occpair);
+  B_ipip_ = kit->symmmatrix(dim_occpair);
+  X_ipip_ = kit->symmmatrix(dim_occpair);
+  B_ippi_ = kit->matrix(dim_occpair, dim_occpair);
+  X_ippi_ = kit->matrix(dim_occpair, dim_occpair);
 
   // map ispace and pspace to Gspace
   vector<unsigned int> imap = (*Gspace << *ispace);
@@ -625,12 +627,22 @@ void CCR12_Info::retrieve_B_and_X_ip() {
         const unsigned int cc0 = imap[c0];
         for(unsigned int c1=0; c1<np; ++c1, ++c01) {
           const unsigned int cc1 = pmap[c1];
-          const unsigned int cc01 = cc0 * nG + cc1;
 
-          const double xval = x_tmp(rr01,cc01);
-          const double bval = b_tmp(rr01,cc01);
-          X_ip_(r01,c01) = xval;
-          B_ip_(r01,c01) = bval;
+          { // for ipip
+            const unsigned int cc01 = cc0 * nG + cc1;
+            const double xval = x_tmp(rr01,cc01);
+            const double bval = b_tmp(rr01,cc01);
+            X_ipip_(r01,c01) = xval;
+            B_ipip_(r01,c01) = bval;
+          }
+          { // for ippi, in which c0 and c1 are swapped.
+            const unsigned int c10 = ni * c1 + c0;
+            const unsigned int cc10 = cc1 * nG + cc0;
+            const double xval = x_tmp(rr01,cc10);
+            const double bval = b_tmp(rr01,cc10);
+            X_ippi_(r01,c10) = xval;
+            B_ippi_(r01,c10) = bval;
+          }
         }
       }
     }

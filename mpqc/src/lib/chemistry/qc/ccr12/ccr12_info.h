@@ -181,8 +181,10 @@ class CCR12_Info : virtual public RefCount {
     RefSymmSCMatrix B_;
     RefSymmSCMatrix X_;
     void retrieve_B_and_X_ii();
-    RefSymmSCMatrix B_ip_;
-    RefSymmSCMatrix X_ip_;
+    RefSymmSCMatrix B_ipip_;
+    RefSymmSCMatrix X_ipip_;
+    RefSCMatrix B_ippi_;
+    RefSCMatrix X_ippi_;
     void retrieve_B_and_X_ip();
 
     RefDiagSCMatrix bdiag_;
@@ -381,8 +383,10 @@ class CCR12_Info : virtual public RefCount {
     /// returns B and X intermediate for perturbative methods etc.
     RefSymmSCMatrix B() { return B_; };
     RefSymmSCMatrix X() { return X_; };
-    RefSymmSCMatrix B_ip() { return B_ip_; };
-    RefSymmSCMatrix X_ip() { return X_ip_; };
+    RefSymmSCMatrix B_ipip() { return B_ipip_; };
+    RefSymmSCMatrix X_ipip() { return X_ipip_; };
+    RefSCMatrix B_ippi() { return B_ippi_; };
+    RefSCMatrix X_ippi() { return X_ippi_; };
 
     // returns shared pointers of OrbitalSpace objects
     Ref<OrbitalSpace> corr_space() { return corr_space_; };  // full space

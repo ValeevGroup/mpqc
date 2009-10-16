@@ -37,7 +37,7 @@ using namespace sc;
 using namespace std;
 
 
-void CCR12_Triples::denom_contraction_ip(){
+void CCR12_Triples::denom_contraction_ig(){
 
   const size_t maxtile = z->maxtilesize();
   const size_t singles = maxtile * maxtile;

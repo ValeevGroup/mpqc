@@ -28,7 +28,7 @@
   
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_triples.h> 
-#include <chemistry/qc/ccr12/tensor.h>
+
 using namespace sc;
 
 void CCR12_Triples::doubles_ig(Ref<Tensor>& out) {

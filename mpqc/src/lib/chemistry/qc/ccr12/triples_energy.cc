@@ -36,7 +36,7 @@ using namespace sc;
 using namespace std;
 
 
-double CCR12_Triples::get_energy_ip() {
+double CCR12_Triples::get_energy_ig() {
 
  double energy = 0.0;
 

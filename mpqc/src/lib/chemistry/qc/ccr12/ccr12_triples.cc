@@ -26,10 +26,7 @@
 //
 
 
-#include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_triples.h>
-#include <chemistry/qc/ccr12/tensor.h>
-#include <chemistry/qc/mbptr12/blas.h>
 #include <iostream>
 
 using namespace sc;
@@ -45,17 +42,15 @@ double CCR12_Triples::compute() {
   doubles_intermediate_ = singles_intermediate_->clone();
   rhs_intermediate_ = doubles_intermediate_->clone();
 
-  // evaluating V * t2
+  // evaluating V * t2 and V * t1
   doubles_ig(doubles_intermediate_);
-  // TODO V * t1 is not implemented yet.
-  // DOING NOTHING !!!!!!
   singles_ig(singles_intermediate_);
   singles_intermediate_->daxpy(doubles_intermediate_, 1.0); // adding doubles to singles to form lhs numerator
 
   rhs_intermediate_ = doubles_intermediate_->clone();
-  denom_contraction_ip(); // contracting denominator to rhs numerator which is doubles
+  denom_contraction_ig(); // contracting denominator to rhs numerator which is doubles
 
-  return get_energy_ip();
+  return get_energy_ig();
 
 #else
 

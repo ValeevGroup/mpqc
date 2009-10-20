@@ -52,7 +52,13 @@ void CCR12_Triples::denom_contraction_ig(){
   const long nvab = z->nvab();
 
   const int nocc_act = z->naoa();
-  MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, noab));
+  const int psize = z->naoa() + z->nava();
+  const int target_pairsize = z->naoa() * (z->naoa() + z->nava());
+  const int oosize = z->naoa() * z->naoa();
+  const int oasize = z->naoa() * z->nava();
+
+#if 0
+  MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, noab+nvab));
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
   vector<long> amap;
   {
@@ -60,6 +66,12 @@ void CCR12_Triples::denom_contraction_ig(){
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }
+
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim_pair(new SCDimension(target_pairsize));
+  RefSymmSCMatrix refinverse_ipip = kit->symmmatrix(dim_pair);
+  RefSCMatrix refinverse_ippi = kit->matrix(dim_pair, dim_pair);
+#endif
 
   // the loops are reordered to minimize the inversion...
   int count = 0;
@@ -92,16 +104,25 @@ void CCR12_Triples::denom_contraction_ig(){
           Ref<Tensor> denom = new Tensor(ss.str(), z->mem());
           z->offset_x_gen(denom, false, false);
 
+          RefSymmSCMatrix refxminusb_ip = z->X_ip() * (eh1 + eh2 + eh3 - ep6) - z->B_ip();
+          // this line takes forever.
+          RefSymmSCMatrix refinverse_ip = refxminusb_ip.gi();
+
+          /* X_ip matrix is organized as follows:
+             __ii___ia___ai__
+          ii |    |    |    |
+             |____|____|____|
+          ia |    |    |    |
+             |____|____|____|
+          ai |    |    |    |
+             |____|____|____|
+
+          */
+
+#if 0
           MTensor<4> D(z, denom.pointer(), iiii);
-
-          RefSymmSCMatrix refxminusb_ipip = z->X_ipip() * (eh1 + eh2 + eh3 - ep6) - z->B_ipip();
-          RefSCMatrix refxminusb_ippi = z->X_ippi() * (eh1 + eh2 + eh3 - ep6) - z->B_ippi();
-
-#if CONVERT_IMPLEMENTED
-          RefSymmSCMatrix refinverse_ipip = refxminusb_ipip.gi();
-          RefSCMatrix refinverse_ippi = refxminusb_ippi.gi();
-//        D.convert(refinverse, nocc_act, nocc_act, false, false,
-//                  amap, amap, amap, amap, &iiii_erange);
+          D.convert(refinverse_ipip, refinverse_ippi, nocc_act, nocc_act, false, false,
+                    amap, amap, amap, amap, &iiii_erange);
 #endif
 
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));

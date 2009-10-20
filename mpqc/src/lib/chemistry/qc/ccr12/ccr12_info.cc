@@ -597,8 +597,7 @@ void CCR12_Info::retrieve_B_and_X_ii() {
 void CCR12_Info::retrieve_B_and_X_ip() {
 
   Ref<OrbitalSpace> Gspace = r12eval()->GGspace(Alpha);
-  //Ref<OrbitalSpace> pspace = r12eval()->orbs(Alpha);
-  Ref<OrbitalSpace> pspace = aobs_space_;
+  Ref<OrbitalSpace> aspace = r12eval()->vir_act(Alpha);
   Ref<OrbitalSpace> ispace = r12eval()->occ_act(Alpha);
 
   // extract ip subblock
@@ -606,49 +605,49 @@ void CCR12_Info::retrieve_B_and_X_ip() {
   RefSymmSCMatrix x_tmp = r12int_eval_->X(AlphaBeta);
 
   const unsigned int ni = ispace->rank();
-  const unsigned int np = pspace->rank();
+  const unsigned int na = aspace->rank();
   const unsigned int nG = Gspace->rank();
-  const int target_pairsize = ni * np;
-  RefSCDimension dim_occpair(new SCDimension(target_pairsize));
+  const int target_pairsize = ni * ni + na * ni * 2;
+  RefSCDimension dim_pair(new SCDimension(target_pairsize));
   Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
-  B_ipip_ = kit->symmmatrix(dim_occpair);
-  X_ipip_ = kit->symmmatrix(dim_occpair);
-  B_ippi_ = kit->matrix(dim_occpair, dim_occpair);
-  X_ippi_ = kit->matrix(dim_occpair, dim_occpair);
+  B_ip_ = kit->symmmatrix(dim_pair);
+  X_ip_ = kit->symmmatrix(dim_pair);
 
   // map ispace and pspace to Gspace
   vector<unsigned int> imap = (*Gspace << *ispace);
-  vector<unsigned int> pmap = (*Gspace << *pspace);
+  vector<unsigned int> amap = (*Gspace << *aspace);
+
+  typedef pair<unsigned int, unsigned int> PairUint;
+  vector<PairUint> mapping(target_pairsize);
+  vector<PairUint>::iterator iter = mapping.begin();
+
   unsigned int r01 = 0;
   for(unsigned int r0=0; r0<ni; ++r0) {
     const unsigned int rr0 = imap[r0];
-    for(unsigned int r1=0; r1<np; ++r1, ++r01) {
-      const unsigned int rr1 = pmap[r1];
-      const unsigned int rr01 = rr0 * nG + rr1;
+    for(unsigned int r1=0; r1<ni; ++r1, ++r01, ++iter)
+      *iter = make_pair(r01, rr0*nG+imap[r1]);
+  }
+  for(unsigned int r0=0; r0<ni; ++r0) {
+    const unsigned int rr0 = imap[r0];
+    for(unsigned int r1=0; r1<na; ++r1, ++r01, ++iter)
+      *iter = make_pair(r01, rr0*nG+amap[r1]);
+  }
+  for(unsigned int r0=0; r0<na; ++r0) {
+    const unsigned int rr0 = amap[r0];
+    for(unsigned int r1=0; r1<ni; ++r1, ++r01, ++iter)
+      *iter = make_pair(r01, rr0*nG+imap[r1]);
+  }
 
-      unsigned int c01 = 0;
-      for(unsigned int c0=0; c0<ni; ++c0) {
-        const unsigned int cc0 = imap[c0];
-        for(unsigned int c1=0; c1<np; ++c1, ++c01) {
-          const unsigned int cc1 = pmap[c1];
-
-          { // for ipip
-            const unsigned int cc01 = cc0 * nG + cc1;
-            const double xval = x_tmp(rr01,cc01);
-            const double bval = b_tmp(rr01,cc01);
-            X_ipip_(r01,c01) = xval;
-            B_ipip_(r01,c01) = bval;
-          }
-          { // for ippi, in which c0 and c1 are swapped.
-            const unsigned int c10 = ni * c1 + c0;
-            const unsigned int cc10 = cc1 * nG + cc0;
-            const double xval = x_tmp(rr01,cc10);
-            const double bval = b_tmp(rr01,cc10);
-            X_ippi_(r01,c10) = xval;
-            B_ippi_(r01,c10) = bval;
-          }
-        }
-      }
+  for (vector<PairUint>::const_iterator riter = mapping.begin(); riter != mapping.end(); ++riter) {
+    const unsigned int r01 = riter->first;
+    const unsigned int rr01 = riter->second;
+    for (vector<PairUint>::const_iterator citer = mapping.begin(); citer != mapping.end(); ++citer) {
+      const unsigned int c01 = citer->first;
+      const unsigned int cc01 = citer->second;
+      const double xval = x_tmp(rr01,cc01);
+      const double bval = b_tmp(rr01,cc01);
+      X_ip_(r01,c01) = xval;
+      B_ip_(r01,c01) = bval;
     }
   }
 

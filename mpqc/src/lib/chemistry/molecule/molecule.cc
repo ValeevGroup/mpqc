@@ -208,10 +208,11 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   else {
       pg_ = new PointGroup(input);
 
+      const double conv = geometry_units_->to_atomic_units();
       // translate to the origin of the symmetry frame
       double r[3];
       for (int i=0; i<3; i++) {
-          r[i] = -pg_->origin()[i];
+          r[i] = -pg_->origin()[i] * conv;
           pg_->origin()[i] = 0;
         }
       translate(r);

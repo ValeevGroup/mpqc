@@ -135,6 +135,7 @@ class Molecule: public SavableState
     int *Z_;
     double *charges_;
     int *fragments_;
+    double ref_origin_[3];   //< position of the origin of the reference coordinate system
 
     // symmetry equiv info
     int nuniq_;
@@ -295,7 +296,7 @@ class Molecule: public SavableState
                                     int print_unit = 1,
                                     int number_atoms = 1) const;
 
-    /// Returns the number of atoms in the molcule.
+    /// Returns the number of atoms in the molecule.
     int natom() const { return natoms_; }
 
     int Z(int atom) const { return Z_[atom]; }
@@ -456,6 +457,10 @@ class Molecule: public SavableState
     int n_non_q_atom() const { return non_q_atoms_.size(); }
     /// Retrieve the of non-"Q" atoms.
     int non_q_atom(int i) const { return non_q_atoms_[i]; }
+
+    /// returns the origin of the reference coordinate system (the system in which atoms were specified
+    /// before the center-of-mass shift
+    SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
 };

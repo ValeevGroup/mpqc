@@ -48,7 +48,7 @@ using namespace sc;
 // Molecule
 
 static ClassDesc Molecule_cd(
-  typeid(Molecule),"Molecule",7,"public SavableState",
+  typeid(Molecule),"Molecule",8,"public SavableState",
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
@@ -65,6 +65,7 @@ Molecule::Molecule():
   include_q_ = false;
   include_qq_ = false;
   init_symmetry_info();
+  std::fill(ref_origin_, ref_origin_+3, 0.0);
 }
 
 Molecule::Molecule(const Molecule& mol):
@@ -74,6 +75,7 @@ Molecule::Molecule(const Molecule& mol):
   equiv_ = 0;
   nequiv_ = 0;
   atom_to_uniq_ = 0;
+  std::fill(ref_origin_, ref_origin_+3, 0.0);
   *this=mol;
 }
 
@@ -105,6 +107,7 @@ Molecule::clear()
   Z_ = 0;
   delete[] fragments_;
   fragments_ = 0;
+  std::fill(ref_origin_, ref_origin_+3, 0.0);
 
   clear_symmetry_info();
 }
@@ -131,6 +134,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   equiv_ = 0;
   nequiv_ = 0;
   atom_to_uniq_ = 0;
+  std::fill(ref_origin_, ref_origin_+3, 0.0);
 
   KeyValValueboolean kvfalse(0);
   include_q_ = input->booleanvalue("include_q",kvfalse);
@@ -279,6 +283,8 @@ Molecule::operator=(const Molecule& mol)
       Z_ = new int[natoms_];
       memcpy(Z_, mol.Z_, natoms_*sizeof(int));
     }
+
+  std::copy(mol.ref_origin_, mol.ref_origin_+3, ref_origin_);
 
   init_symmetry_info();
 
@@ -496,6 +502,12 @@ Molecule::print(ostream& os) const
         }
       os << endl;
     }
+
+  os << indent << "Reference origin = "
+     << scprintf(" [% 16.10f", ref_origin_[0])
+     << scprintf(" % 16.10f", ref_origin_[1])
+     << scprintf(" % 16.10f]", ref_origin_[2])
+     << endl;
 }
 
 int
@@ -582,6 +594,7 @@ void Molecule::save_data_state(StateOut& so)
   else {
       so.put(0);
     }
+  so.put_array_double(ref_origin_,3);
 }
 
 Molecule::Molecule(StateIn& si):
@@ -641,6 +654,13 @@ Molecule::Molecule(StateIn& si):
           si.getstring(labels_[i]);
         }
     }
+
+  if (si.version(::class_desc<Molecule>()) > 7) {
+    si.get_array_double(ref_origin_, 3);
+  }
+  else {
+    std::fill(ref_origin_, ref_origin_+3, 0.0);
+  }
 
   for (int i=0; i<natoms_; i++) {
       if (Z_[i] == q_Z_) {
@@ -990,6 +1010,7 @@ Molecule::translate(const double *r)
     r_[i][1] += r[1];
     r_[i][2] += r[2];
   }
+  for(int xyz=0; xyz<3; ++xyz) ref_origin_[xyz] += r[xyz];
 }
 
 // move the molecule to the center of mass

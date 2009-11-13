@@ -460,7 +460,6 @@ R12IntEvalInfo::gen_project(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSp
   // C12 = C1 * S12 * C2
   RefSCMatrix C12;
   compute_overlap_ints(space1,space2,C12);
-  C12.print("C12 matrix");
 
   // Check dimensions of C12 to make sure that projection makes sense
 
@@ -541,9 +540,6 @@ R12IntEvalInfo::gen_project(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSp
         RefSCMatrix utmp = U.get_subblock(0,nrow-1,s_first,s_last);
         RefSCMatrix C12_inv_t = (utmp * stmp) * vtmp;
 
-        (C12_b * C12_inv_t.t()).print("C12 * C12^{-1}");
-        (C12_inv_t * C12_b.t()).print("C12^{-1} * C12");
-
         // Transform V into AO basis and transpose so that vectors are in rows
         RefSCMatrix C2_b = C2.block(b);
         RefSCMatrix X2_t = C12_inv_t * C2_b.t();
@@ -587,9 +583,6 @@ R12IntEvalInfo::gen_project(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSp
   delete[] nvec_per_block;
 
   Ref<OrbitalSpace> proj_space = new OrbitalSpace(id,name,proj,space2->basis(),space2->integral());
-
-  RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
-  S12.print("Check: overlap between space1 and projected space");
 
   return proj_space;
 }

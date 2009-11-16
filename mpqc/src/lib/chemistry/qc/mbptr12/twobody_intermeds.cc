@@ -301,6 +301,8 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS+ABS contribution").c_str());
   }
+
+  return V;
 }
 
 
@@ -517,6 +519,8 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS+ABS contribution").c_str());
   }
+
+  return V;
 }
 
 RefSymmSCMatrix

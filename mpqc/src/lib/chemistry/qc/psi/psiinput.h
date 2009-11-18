@@ -94,4 +94,6 @@ class PsiInput: public RefCount {
 
 }
 
+#include <chemistry/qc/psi/psiinput.timpl.h>
+
 #endif

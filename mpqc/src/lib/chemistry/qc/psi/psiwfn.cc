@@ -60,7 +60,6 @@
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 
 #include <chemistry/qc/psi/psiwfn.h>
-#include <chemistry/qc/psi/psiinput.timpl.h>
 #include <chemistry/qc/psi/psiqtorder.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/scf/clscf.h>

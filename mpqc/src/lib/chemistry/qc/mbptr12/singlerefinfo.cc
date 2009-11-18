@@ -479,7 +479,7 @@ SingleRefInfo::SpinSpaces::init(
     ostringstream oss;
     oss << prefix << " active occupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("i(sym)"),spin);
-    occ_act_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
+    occ_act_sb_ = new OrbitalSpace(id, oss.str(), occ_sb_->coefs(), occ_sb_->basis(),
                                 occ_sb_->integral(), occ_sb_->evals(), nfzc, 0, OrbitalSpace::symmetry);
   }
   {

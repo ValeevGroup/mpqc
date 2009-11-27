@@ -115,6 +115,12 @@ struct SO_block {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/// PetiteList is a petite list  (see Dupuis & King, IJQC 11,613,(1977) ) that can be used
+/// for constructing symmetry-adapted basis functions (``symmetry orbitals'', SO for short)
+/// as well as transforming operators and functions from AO to SO basis, and vice versa.
+///
+/// N.B. Same basis set assumed for all centers. If need generalization for different
+/// basis sets see GPetiteList2 and GPetiteList4.
 class PetiteList : public RefCount {
   private:
     int natom_;
@@ -169,32 +175,46 @@ class PetiteList : public RefCount {
 
     void print(std::ostream& =ExEnv::out0(), int verbose=1);
 
-    // these return blocked dimensions
+    /// blocked AO dimension
     RefSCDimension AO_basisdim();
+    /// blocked SO dimension
     RefSCDimension SO_basisdim();
 
     // return the basis function rotation matrix R(g)
     RefSCMatrix r(int g);
 
-    // return information about the transformation from AOs to SOs
+    /// @return information about the transformation from AOs to SOs
     SO_block * aotoso_info();
+
+    /// @return the AO->SO coefficient matrix. The columns correspond to SOs (see SO_basisdim() )
+    /// and rows to AOs (see AO_basisdim() ). This matrix can be used to transform operators from
+    /// AO to SO basis and functions from SO to AO basis.
     RefSCMatrix aotoso();
+    /// @return the SO->AO coefficient matrix (the inverse of AO->SO; for Abelian point groups it
+    /// is a transpose of AO->SO matrix). The columns correspond to AOs (see AO_basisdim() )
+    /// and rows to SOs (see SO_basisdim() ). This matrix can be used to transform operators from
+    /// SO to AO basis and functions from AO to SO basis.
     RefSCMatrix sotoao();
 
     // given a skeleton matrix, form the symmetrized matrix in the SO basis
     void symmetrize(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym);
 
-    // transform a matrix from AO->SO or SO->AO.
-    // this can take either a blocked or non-blocked AO basis matrix.
-    RefSymmSCMatrix to_SO_basis(const RefSymmSCMatrix&);
+    /// converts an operator matrix from AO to SO basis.
+    /// @param O_ao operator matrix in AO basis, either blocked or non-blocked.
+    /// @return blocked SO basis matrix.
+    RefSymmSCMatrix to_SO_basis(const RefSymmSCMatrix& O_ao);
+    /// converts an operator matrix from SO to AO basis.
+    /// @param O_so blocked operator matrix in SO basis.
+    /// @return non-blocked AO basis matrix.
+    RefSymmSCMatrix to_AO_basis(const RefSymmSCMatrix& O_so);
 
-    // this returns a non-blocked AO basis matrix.
-    RefSymmSCMatrix to_AO_basis(const RefSymmSCMatrix&);
-
-    // these two are just for eigenvectors
-    // returns non-blocked AO basis eigenvectors
+    /// converts a set of functions (vectors) from SO to AO basis.
+    /// @param F_so vectors in SO basis
+    /// @return non-blocked AO basis vectors
     RefSCMatrix evecs_to_AO_basis(const RefSCMatrix&);
-    // returns blocked SO basis eigenvectors
+    /// converts a set of functions (vectors) from AO to SO basis.
+    /// @param F_ao vectors in AO basis, blocked or nonblocked.
+    /// @return blocked SO basis vectors
     RefSCMatrix evecs_to_SO_basis(const RefSCMatrix&);
 };
 

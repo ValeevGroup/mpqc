@@ -696,18 +696,17 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
 RefSCMatrix
 PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
 {
-  ExEnv::err0() << indent
-       << "PetiteList::evecs_to_SO_basis: don't work yet\n";
-  abort();
-  
+  // if C1, then do nothing
+  if (c1_)
+    return aoev.copy();
+
   RefSCMatrix aoevecs = dynamic_cast<BlockedSCMatrix*>(aoev.pointer());
   if (aoevecs.null()) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
     aoevecs->convert(aoev);
   }
 
-  RefSCMatrix soev =  aotoso().t() * aoevecs;
-  soev.print("soev");
+  RefSCMatrix soev =  sotoao() * aoevecs;
 
   RefSCMatrix soevecs(SO_basisdim(), SO_basisdim(), gbs_->so_matrixkit());
   soevecs->convert(soev);

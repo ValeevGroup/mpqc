@@ -137,11 +137,11 @@ namespace sc {
       unsigned int nirreps_;
   };
 
-  /// order by energy first, then by symmetry
-  struct EnergyMOOrder {
+  /// order by energy first, then by symmetry. EnergyCompare specifies the weak strict ordering of orbitals wrt energy
+  template <typename EnergyCompare = std::less<double> > struct EnergyMOOrder {
     public:
       bool operator()(const MolecularOrbital& o1, const MolecularOrbital& o2) const {
-        if (o1.attr().energy() < o2.attr().energy())
+        if ( ecompare(o1.attr().energy(), o2.attr().energy()) )
           return true;
         else if (o1.attr().energy() == o2.attr().energy()) {
           if (o1.attr().irrep() < o2.attr().irrep())
@@ -150,11 +150,13 @@ namespace sc {
         return false;
       }
       unsigned int block(const MolecularOrbital& o) const {
-        return 1;
+        return 0;
       }
       unsigned int nblocks() const {
         return 1;
       }
+    private:
+      EnergyCompare ecompare;
   };
 
   /// order by occupation first, then by symmetry, then by energy

@@ -186,14 +186,30 @@ class PetiteList : public RefCount {
     /// @return information about the transformation from AOs to SOs
     SO_block * aotoso_info();
 
-    /// @return the AO->SO coefficient matrix. The columns correspond to SOs (see SO_basisdim() )
-    /// and rows to AOs (see AO_basisdim() ). This matrix can be used to transform operators from
-    /// AO to SO basis and functions from SO to AO basis.
+    /** @return the AO->SO coefficient matrix. The columns correspond to SOs (see SO_basisdim() )
+        and rows to AOs (see AO_basisdim() ).
+
+        This matrix can be used to transform operators from
+        AO to SO basis and functions from SO to AO basis.
+        An operator in the SO basis is obtained by \f$ X^T O_ao
+        X\f$, where \f$X\f$ is the return value of this function and \f$ O_ao \f$
+        is the operator in the AO basis.
+        A function in the AO basis is obtained by \f$ X F_so \f$, where
+        \f$ F_so \f$ is the function in the SO basis.
+        */
     RefSCMatrix aotoso();
-    /// @return the SO->AO coefficient matrix (the inverse of AO->SO; for Abelian point groups it
-    /// is a transpose of AO->SO matrix). The columns correspond to AOs (see AO_basisdim() )
-    /// and rows to SOs (see SO_basisdim() ). This matrix can be used to transform operators from
-    /// SO to AO basis and functions from AO to SO basis.
+    /** @return the SO->AO coefficient matrix (the inverse of AO->SO; for Abelian point groups it
+        is a transpose of AO->SO matrix). The columns correspond to AOs (see AO_basisdim() )
+        and rows to SOs (see SO_basisdim() ).
+
+        This matrix can be used to transform operators from
+        SO to AO basis and functions from AO to SO basis.
+        An operator in the AO basis is obtained by \f$ X^T O_so
+        X\f$, where \f$X\f$ is the return value of this function and \f$ O_so \f$
+        is the operator in the SO basis.
+        A function in the SO basis is obtained by \f$ X F_ao \f$, where
+        \f$ F_ao \f$ is the function in the AO basis.
+        */
     RefSCMatrix sotoao();
 
     // given a skeleton matrix, form the symmetrized matrix in the SO basis

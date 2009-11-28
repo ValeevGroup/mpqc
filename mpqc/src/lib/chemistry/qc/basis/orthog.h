@@ -114,15 +114,30 @@ class OverlapOrthog: virtual public SavableState {
     double lindep_tol() const { return lindep_tol_; }
 
     /** Returns a matrix which does the requested transform from a basis to
-        an orthogonal basis.  This could be either the symmetric or
-        canonical orthogonalization matrix.  The row dimension is the basis
-        dimension and the column dimension is orthogonal basis dimension.
-        An operator \f$O\f$ in the orthogonal basis is given by \f$X O
-        X^T\f$ where \f$X\f$ is the return value of this function. */
+        an orthogonal basis. The row dimension is the orthogonal basis
+        dimension and the column dimension is the given basis dimension.
+
+        This matrix can be used to transform operators from the given basis to the orthogonal basis
+        and to transform functions from the orthogonal basis to the given basis.
+        An operator in the orthogonal basis is obtained by \f$ X O_bas
+        X^T\f$, where \f$X\f$ is the return value of this function and \f$ O_bas \f$
+        is the operator in the given basis.
+        A function in the given basis is obtained by \f$ X^T F_obas \f$, where
+        \f$ F_obas \f$ is the function in the orthogonal basis.
+        */
     RefSCMatrix basis_to_orthog_basis();
 
     /** Returns the inverse of the transformation returned by
-     * basis_to_orthog_basis.
+        basis_to_orthog_basis() . The column dimension is the orthogonal basis
+        dimension and the row dimension is the given basis dimension.
+
+        This matrix can be used to transform operators from the orthogonal basis
+        to the given basis and to transform functions from the orthogonal basis to the given basis.
+        An operator in the given basis is obtained by \f$X O_obas
+        X^T\f$, where \f$X\f$ is the return value of this function and \f$ O_obas \f$
+        is the operator in the orthogonal basis.
+        A function in the orthogonal basis is obtained by \f$ X^T F_bas \f$, where
+        \f$ F_bas \f$ is the function in the given basis.
      */
     RefSCMatrix basis_to_orthog_basis_inverse();
 

@@ -53,7 +53,7 @@ CXXSRCS = mbptr12.cc \
   coulomb.cc exchange.cc fock.cc \
   r12_amps.cc compute_amps.cc \
   twobodygrid.cc svd.cc linearr12.cc intermeds_g12.cc \
-  singlerefinfo.cc utils.cc \
+  refinfo.cc singlerefinfo.cc utils.cc \
   twoparticlecontraction.cc spin.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \

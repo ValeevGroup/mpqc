@@ -64,10 +64,11 @@ class SCMatrixKit: public DescribedClass {
     SCMatrixKit(const Ref<KeyVal>&);
     ~SCMatrixKit();
 
-    // these members are default in local.cc
-    /** This returns a LocalSCMatrixKit, unless the
-        default has been changed with set_default_matrixkit. */
+    // these members are defined in repl.cc
+    /** This returns the default matrix kit. It is currently a ReplSCMatrixKit, unless the
+        the user has changed it with with set_default_matrixkit. */
     static SCMatrixKit* default_matrixkit();
+    /// change the default matrix kit
     static void set_default_matrixkit(const Ref<SCMatrixKit> &);
 
     Ref<MessageGrp> messagegrp() const;
@@ -197,7 +198,7 @@ class SCMatrix: public DescribedClass {
     RefSCDimension d1,d2;
     Ref<SCMatrixKit> kit_;
   public:
-    // used to control transformations
+    /// types of matrix transforms. Only real-valued matrices are assumed.
     enum Transform { NormalTransform = 0, TransposeTransform = 1 };
 
     // concrete functions (some can be overridden)

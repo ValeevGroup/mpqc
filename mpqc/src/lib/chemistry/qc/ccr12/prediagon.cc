@@ -291,7 +291,7 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
   MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
   vector<long> amap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo()->refinfo()->occ_act_sb(Alpha)), *corr_space(), false);
+    vector<int> intmap = sc::map(*(r12world()->ref()->occ_act_sb(Alpha)), *corr_space(), false);
     amap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), amap.begin());
   }

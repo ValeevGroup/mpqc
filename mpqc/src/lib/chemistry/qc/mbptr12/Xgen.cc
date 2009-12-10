@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -87,23 +87,23 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     using LinearR12::Direct_Contraction;
 
     // equations depend on whether VBS == OBS ..
-    const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+    const bool vbs_eq_obs = r12world()->obs_eq_vbs();
     // .. and ABS == OBS
-    const bool abs_eq_obs = r12info()->obs_eq_ribs();
+    const bool abs_eq_obs = r12world()->obs_eq_ribs();
     // if particle 1 and 2 are equivalent, can use permutational symmetry
     const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
 
     //
     // check number of ABS indices, make sure user-imposed maxnabs not exceeded
     //
-    const Ref<GaussianBasisSet> abs = r12info()->basis_ri();
+    const Ref<GaussianBasisSet> abs = r12world()->basis_ri();
     const unsigned int nabs_in_bra1 = abs_eq_obs ? 0 : (bra1->basis() == abs);
     const unsigned int nabs_in_bra2 = abs_eq_obs ? 0 : (bra2->basis() == abs);
     const unsigned int nabs_in_ket1 = abs_eq_obs ? 0 : (ket1->basis() == abs);
     const unsigned int nabs_in_ket2 = abs_eq_obs ? 0 : (ket2->basis() == abs);
     const unsigned int nabs_in_bra = nabs_in_bra1 + nabs_in_bra2;
     const unsigned int nabs_in_ket = nabs_in_ket1 + nabs_in_ket2;
-    const unsigned int maxnabs = r12info()->maxnabs();
+    const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
     if (!F2_only && (nabs_in_bra > maxnabs ||
 	             nabs_in_ket > maxnabs)) {
 	throw ProgrammingError("R12IntEval::compute_X_() -- maxnabs is exceeded",__FILE__,__LINE__);
@@ -112,7 +112,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // check if RI needs to be done in ABS
     const bool do_ri_in_abs = !abs_eq_obs && (maxnabs - nabs > 0);
     // and check if the ABS method is available for this combination of basis sets
-    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     if ((absmethod == LinearR12::ABS_ABS ||
 	 absmethod == LinearR12::ABS_ABSPlus) && do_ri_in_abs && !vbs_eq_obs)
 	throw  FeatureNotImplemented("R12IntEval::compute_X_() -- cabs and cabs+ methods must be used ",__FILE__,__LINE__);
@@ -169,10 +169,10 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // F12^2 contribution depends on the type of correlation factor
     //
     enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
-    Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
-    Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
-    Ref<LinearR12::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << r12info()->corrfactor();
-    Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << r12info()->corrfactor();
+    Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
+    Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
+    Ref<LinearR12::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << corrfactor();
+    Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << corrfactor();
     if (r12corrptr.nonnull()) corrfac = r12corrfactor;
     if (g12corrptr.nonnull()) corrfac = g12corrfactor;
     if (g12nccorrptr.nonnull()) corrfac = g12corrfactor;
@@ -200,8 +200,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         // (i k |j l) tforms
         std::vector<std::string> tforms_ikjl;
         {
-	    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,ket1,bra2,ket2,
-	                                             r12info()->corrfactor(),true,true);
+	    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,ket1,bra2,ket2,
+	                                             corrfactor(),true,true);
 	    fill_container(tformkey_creator,tforms_ikjl);
         }
         compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
@@ -237,15 +237,15 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	    // (i p |j p) tforms
 	    std::vector<std::string> tforms_ipjp;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,orbs1,bra2,orbs2,
-		                                         r12info()->corrfactor(),true);
+		R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,orbs1,bra2,orbs2,
+		                                         corrfactor(),true);
 		fill_container(tformkey_creator,tforms_ipjp);
 	    }
 	    // (k p |l p) tforms
 	    std::vector<std::string> tforms_kplp;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,orbs1,ket2,orbs2,
-                                                 r12info()->corrfactor(),true);
+		R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,orbs1,ket2,orbs2,
+                                                 corrfactor(),true);
 		fill_container(tformkey_creator,tforms_kplp);
 	    }
 
@@ -272,14 +272,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,cs1,bra2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,cs1,ket2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -295,14 +295,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,cs1,bra2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,cs1,ket2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -318,14 +318,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,cs1,bra2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,cs1,ket2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -341,14 +341,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 		Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 		std::vector<std::string> tforms_f12_ij;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,cs1,bra2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,cs1,bra2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_ij);
 		}
 		std::vector<std::string> tforms_f12_kl;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,cs1,ket2,cs2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,cs1,ket2,cs2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_f12_kl);
 		}
 		contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
@@ -362,20 +362,20 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	// These are only needed in ansatz 2
 	if (ansatz()->projector() == LinearR12::Projector_2 && do_ri_in_abs) {
-	    Ref<OrbitalSpace> ribs2 = r12info()->ribs_space(spin2);
+	    Ref<OrbitalSpace> ribs2 = r12world()->cabs_space(spin2);
 
 	    // (i m |j a') tforms
 	    std::vector<std::string> tforms_imjA;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,occ1,bra2,ribs2,
-                                                 r12info()->corrfactor(),true);
+		R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,occ1,bra2,ribs2,
+                                                 corrfactor(),true);
 		fill_container(tformkey_creator,tforms_imjA);
 	    }
 	    // (k m |l a') tforms
 	    std::vector<std::string> tforms_kmlA;
 	    {
-		R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,occ1,ket2,ribs2,
-                                                 r12info()->corrfactor(),true);
+		R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,occ1,ket2,ribs2,
+                                                 corrfactor(),true);
 		fill_container(tformkey_creator,tforms_kmlA);
 	    }
 
@@ -397,20 +397,20 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	    if (!part1_equiv_part2) {
 
-		Ref<OrbitalSpace> ribs1 = r12info()->ribs_space(spin1);
+		Ref<OrbitalSpace> ribs1 = r12world()->cabs_space(spin1);
 
 		// (i a' |j m) tforms
 		std::vector<std::string> tforms_iAjm;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,ribs1,bra2,occ2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,ribs1,bra2,occ2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_iAjm);
 		}
 		// (k a' |l m) tforms
 		std::vector<std::string> tforms_kAlm;
 		{
-		    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,ribs1,ket2,occ2,
-	                                                 r12info()->corrfactor(),true);
+		    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,ribs1,ket2,occ2,
+	                                                 corrfactor(),true);
 		    fill_container(tformkey_creator,tforms_kAlm);
 		}
 

@@ -1,5 +1,5 @@
 //
-// refinfo.h
+// ref.h
 //
 // Copyright (C) 2005 Edward Valeev
 //
@@ -29,11 +29,12 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_refinfo_h
-#define _chemistry_qc_mbptr12_refinfo_h
+#ifndef _chemistry_qc_mbptr12_ref_h
+#define _chemistry_qc_mbptr12_ref_h
 
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/mbptr12/wfnworld.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/spin.h>
 
@@ -58,6 +59,9 @@ namespace sc {
      * @param active the mask used to freeze orbitals (active[i] == false means i will be frozen)
      * @param energies orbital energies.
      * @param eorder_increasing if true, energy-ordered spaces will order orbitals in the order of increasing energies
+     * @param vbs OrbitalSpace that represents the unoccupied orbitals.
+     *            The default is 0, which means to use empty orbitals from coefs.
+     * @param fbrun the FockBuildRuntime object used to compute Fock matrices. if vbs != 0, fbrun must be specified.
      */
       PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                             const Ref<Integral>& integral,
@@ -65,7 +69,9 @@ namespace sc {
                             const std::vector<double>& occs,
                             const std::vector<bool>& active,
                             const RefDiagSCMatrix& energies,
-                            bool eorder_increasing = true
+                            bool eorder_increasing = true,
+                            Ref<OrbitalSpace> vbs = 0,
+                            Ref<FockBuildRuntime> fbrun = 0
                            );
       PopulatedOrbitalSpace(StateIn& si);
       ~PopulatedOrbitalSpace();
@@ -96,22 +102,46 @@ namespace sc {
   };
 
   /**
-     RefInfo maintains information about the reference wave function used in the R12 calculation,
-     in the form of OrbitalSpace objects.
+     R12RefWavefunction represents the reference wave function used in the R12 calculation.
+
+     Since R12 methods can use a variety of wavefunctions as references, this class is
+     an Adapter. However since Wavefunction does not have proper constructors, it's not implemented
+     as a proper Adapter to Wavefunction and thus implements many member functions of Wavefunction.
+     The main content is a set of OrbitalSpace objects.
   */
-  class RefInfo : virtual public SavableState {
+  class R12RefWavefunction : virtual public SavableState {
     protected:
-      RefInfo(StateIn&);
+      R12RefWavefunction(StateIn&);
+      /// @param world WavefunctionWorld to which this object belongs
       /// @param basis The basis set supporting the reference wave function
       /// @param integral The integral factory used to compute the reference wavefunction
-      RefInfo(const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral);
+      R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                         const Ref<GaussianBasisSet>& basis,
+                         const Ref<Integral>& integral);
 
     public:
-    ~RefInfo();
+    ~R12RefWavefunction();
     void save_data_state(StateOut&);
 
+    const Ref<WavefunctionWorld>& world() const { return world_; }
     const Ref<GaussianBasisSet>& basis() const { return basis_; }
     const Ref<Integral>& integral() const { return integral_; }
+
+    /// @sa MolecularEnergy::energy()
+    virtual double energy() =0;
+    /// @sa Wavefunction::spin_polarized()
+    virtual bool spin_polarized() const =0;
+    /// @sa Wavefunction::dk()
+    virtual int dk() const =0;
+    /// @sa Wavefunction::momentum_basis()
+    virtual Ref<GaussianBasisSet> momentum_basis() const =0;
+    /// @sa Wavefunction::core_hamiltonian_for_basis()
+    virtual RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                       const Ref<GaussianBasisSet> &p_basis) =0;
+    /// return the AO basis density
+    virtual RefSymmSCMatrix ordm(SpinCase1 spin) const =0;
+    /// return the MO basis density (MOs are given by orbs_sb())
+    RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
 
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<OrbitalSpace>& oso_space() const;
@@ -139,6 +169,7 @@ namespace sc {
     private:
     /// initialized? when object is constructed = false. after init() is called = true
     bool initialized_;
+    Ref<WavefunctionWorld> world_;
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
 
@@ -151,29 +182,46 @@ namespace sc {
     virtual void init_spaces() = 0;
   };
 
-  /// RefInfo specialization for a single-determinant wave function
-  class SlaterDeterminantRefInfo : public RefInfo {
+  /// R12RefWavefunction specialization for a single-determinant wave function
+  class SD_R12RefWavefunction : public R12RefWavefunction {
     public:
       /// construct from a OneBodyWavefunction object
+      /// @param world The WavefunctionWorld in which this objects lives.
       /// @param obwfn The OneBodyWavefunction object that specifies the orbitals
       /// @param spin_restricted If false and obwfn is an open-shell spin-restricted OneBodyWavefunction,
       ///        will use semicanonical orbitals. The value of this parameter will be ignored for closed-shell
       ///        and spin-unrestricted open-shell references.
       /// @param nfzc The number of lowest-energy occupied orbitals to be kept inactive
       /// @param nfzv The number of highest-energy unoccupied orbitals to be kept inactive
-      SlaterDeterminantRefInfo(const Ref<OneBodyWavefunction>& obwfn,
+      /// @param vir_space The space describing the unoccupied orbitals. Default is 0, which
+      ///        means use unoccupied orbitals from obwfn.
+      ///
+      /// N.B. This will feed the FockBuildRuntime in world with the density matrices from obwfn!
+      SD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                               const Ref<OneBodyWavefunction>& obwfn,
                                bool spin_restricted = true,
                                unsigned int nfzc = 0,
-                               unsigned int nfzv = 0);
-      SlaterDeterminantRefInfo(StateIn&);
-      ~SlaterDeterminantRefInfo();
+                               unsigned int nfzv = 0,
+                               Ref<OrbitalSpace> vir_space = 0);
+      SD_R12RefWavefunction(StateIn&);
+      ~SD_R12RefWavefunction();
       void save_data_state(StateOut&);
       const Ref<OneBodyWavefunction>& obwfn() const { return obwfn_; }
+      const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
+
+      double energy() { return obwfn()->energy(); }
+      bool spin_polarized() const { return obwfn_->spin_polarized(); }
       bool spin_restricted() const { return spin_restricted_; }
+      int dk() const { return obwfn()->dk(); }
+      Ref<GaussianBasisSet> momentum_basis() const { return obwfn()->momentum_basis(); }
+      RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                 const Ref<GaussianBasisSet> &p_basis);
       unsigned int nfzc() const { return nfzc_; }
       unsigned int nfzv() const { return nfzv_; }
+      RefSymmSCMatrix ordm(SpinCase1 spin) const;
     private:
       Ref<OneBodyWavefunction> obwfn_;
+      Ref<OrbitalSpace> vir_space_;
       bool spin_restricted_;
       unsigned int nfzc_;
       unsigned int nfzv_;
@@ -182,10 +230,11 @@ namespace sc {
       void init_spaces_unrestricted();
   };
 
-  /// RefInfo specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
-  class ORDMRefInfo : public RefInfo {
+  /// R12RefWavefunction specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
+  class ORDM_R12RefWavefunction : public R12RefWavefunction {
     public:
-      /// ORDMRefInfo is specified by the basis and AO-basis 1-RDM for each spin case
+      /// ORDM_R12RefWavefunction is specified by the basis and AO-basis 1-RDM for each spin case
+      /// @param world The WavefunctionWorld in which this objects lives.
       /// @param basis The basis set
       /// @param alpha_1rdm The alpha-spin density matrix in AO basis
       /// @param beta_1rdm The beta-spin density matrix in AO basis (assuming that if alpha and beta densities are
@@ -194,21 +243,29 @@ namespace sc {
       ///        will be same for Alpha and Beta spin cases. If false, and alpha_1rdm != beta_1rdm then will break spin symmetry.
       /// @param nfzc The number of lowest-occupancy occupied orbitals to be kept inactive
       /// @param omit_virtuals If true, make all unoccupied orbitals inactive.
-      ORDMRefInfo(const Ref<GaussianBasisSet>& basis,
+      ORDM_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                  const Ref<GaussianBasisSet>& basis,
                   const Ref<Integral>& integral,
                   const RefSymmSCMatrix& alpha_1rdm,
                   const RefSymmSCMatrix& beta_1rdm,
                   bool spin_restricted = true,
                   unsigned int nfzc = 0,
                   bool omit_virtuals = false);
-      ORDMRefInfo(StateIn&);
-      ~ORDMRefInfo();
+      ORDM_R12RefWavefunction(StateIn&);
+      ~ORDM_R12RefWavefunction();
       void save_data_state(StateOut&);
-      const RefSymmSCMatrix& rdm(SpinCase1 spin) const { return rdm_[spin]; }
+      RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
+
+      double energy() { return 0.0; }
+      bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }
       bool spin_restricted() const { return spin_restricted_; }
+      /// reimplements R12RefWavefunction::dk(). Currently only nonrelativistic references are supported.
+      int dk() const { return 0; }
+      Ref<GaussianBasisSet> momentum_basis() const { return this->basis(); }
+      RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                 const Ref<GaussianBasisSet> &p_basis);
       unsigned int nfzc() const { return nfzc_; }
       bool omit_virtuals() const { return omit_virtuals_; }
-      bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }
     private:
       RefSymmSCMatrix rdm_[NSpinCases1];
       bool spin_restricted_;
@@ -221,12 +278,12 @@ namespace sc {
   };
 
 #if 0
-  /// RefInfo specialization for a general restricted-active-space multiconfiguration wave function
-  class RASRefInfo : public RefInfo {
+  /// R12RefWavefunction specialization for a general restricted-active-space multiconfiguration wave function
+  class RAS_R12RefWavefunction : public R12RefWavefunction {
     public:
-      RASRefInfo();
-      RASRefInfo(StateIn&);
-      ~RASRefInfo();
+      RAS_R12RefWavefunction();
+      RAS_R12RefWavefunction(StateIn&);
+      ~RAS_R12RefWavefunction();
       void save_data_state(StateOut&);
     private:
       void init_spaces();

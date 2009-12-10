@@ -43,7 +43,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -73,7 +73,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
                          const Ref<OrbitalSpace>& intkx2
                         )
 {
-  const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
+  const bool abs_eq_obs = r12world()->basis()->equiv(r12world()->basis_ri());
   const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
 
   // Check semantics
@@ -135,15 +135,15 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   // (bra1 intkx1 |bra2 int2) tforms
   std::vector<std::string> tforms_Fbra_k1;
   {
-    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,intkx1,bra2,int2,
-                                             r12info()->corrfactor(),true);
+    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,intkx1,bra2,int2,
+                                             corrfactor(),true);
     fill_container(tformkey_creator,tforms_Fbra_k1);
   }
   // (ket1 intk1 |ket2 int2) tforms
   std::vector<std::string> tforms_Fket_k1;
   {
-    R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,intk1,ket2,int2,
-                                             r12info()->corrfactor(),true);
+    R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,intk1,ket2,int2,
+                                             corrfactor(),true);
     fill_container(tformkey_creator,tforms_Fket_k1);
   }
   // contract
@@ -164,15 +164,15 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
     // (bra1 intb1 |bra2 intkx2) tforms
     std::vector<std::string> tforms_Fbra_k2;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),bra1,int1,bra2,intkx2,
-                                               r12info()->corrfactor(),true);
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),bra1,int1,bra2,intkx2,
+                                               corrfactor(),true);
       fill_container(tformkey_creator,tforms_Fbra_k2);
     }
     // (ket1 int1 |ket2 intk2) tforms
     std::vector<std::string> tforms_Fket_k2;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),ket1,int1,ket2,intk2,
-                                               r12info()->corrfactor(),true);
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),ket1,int1,ket2,intk2,
+                                               corrfactor(),true);
       fill_container(tformkey_creator,tforms_Fket_k2);
     }
     // contract

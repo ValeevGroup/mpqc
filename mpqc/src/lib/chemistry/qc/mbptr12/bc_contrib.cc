@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -65,10 +65,10 @@ R12IntEval::compute_B_fX_()
   if (evaluated_)
     return;
 
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12world()->world()->msg();
   int me = msg->me();
   int ntasks = msg->n();
-  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
+  const bool vbs_eq_obs = r12world()->obs_eq_vbs();
 
   Timer tim("B(fX) intermediate");
   ExEnv::out0() << endl << indent << "Entered B(fX) intermediate evaluator"
@@ -88,7 +88,7 @@ R12IntEval::compute_B_fX_()
     RefSCMatrix Q = B_[s].clone();
     Q.assign(0.0);
     // if Brillouin condition does not hold or VBS!=OBS, compute X_{kl}^{ij_F} explicitly
-    if (!r12info()->bc() || !vbs_eq_obs) {
+    if (!this->bc() || !vbs_eq_obs) {
       // compute Q = X_{xy}^{xy_{F}}
       if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
         Ref<OrbitalSpace> F_x2 = F_x_p(spin2);
@@ -119,7 +119,7 @@ R12IntEval::compute_B_fX_()
     } // bc = false || vbs!=obs
     else { // bc = true, vbs==obs
 
-      const int num_f12 = r12info()->corrfactor()->nfunctions();
+      const int num_f12 = corrfactor()->nfunctions();
       const int nxy = dim_GG(spincase2).n();
       RefDiagSCMatrix evals_xspace1 = xspace1->evals();
       RefDiagSCMatrix evals_xspace2 = xspace2->evals();

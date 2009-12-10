@@ -126,14 +126,14 @@ namespace sc {
     const size_t num_tforms_bra = tformkeys_bra.size();
     tformvec transforms_bra(num_tforms_bra);
     for (unsigned int t = 0; t < num_tforms_bra; ++t) {
-      transforms_bra[t] = r12info()->moints_runtime4()->get(tformkeys_bra[t]);
+      transforms_bra[t] = moints_runtime4()->get(tformkeys_bra[t]);
     }
 
     // ket transforms
     const size_t num_tforms_ket = tformkeys_ket.size();
     tformvec transforms_ket(num_tforms_ket);
     for (unsigned int t = 0; t < num_tforms_ket; ++t) {
-      transforms_ket[t] = r12info()->moints_runtime4()->get(tformkeys_ket[t]);
+      transforms_ket[t] = moints_runtime4()->get(tformkeys_ket[t]);
     }
 
     //
@@ -292,7 +292,7 @@ namespace sc {
           // WARNING: assuming same accessibility for both bra and ket transforms
           std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
-          const int me = r12info()->msg()->me();
+          const int me = r12world()->world()->msg()->me();
           const bool nket_ge_nevals = (nket >= nproc_with_ints);
 
           Timer tim_mo_ints_retrieve;

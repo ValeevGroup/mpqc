@@ -42,7 +42,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -70,7 +70,7 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
   RefSCMatrix J_alpha_q[NSpinCases1];
   for(int s1=0; s1<NSpinCases1; s1++) {
     SpinCase1 singlespin = static_cast<SpinCase1>(s1);
-    Ref<OrbitalSpace> cabs_sgsp = r12eval_->r12info()->ribs_space(singlespin);
+    Ref<OrbitalSpace> cabs_sgsp = r12eval_->r12world()->cabs_space(singlespin);
     Ref<OrbitalSpace> orbs_sgsp = r12eval_->orbs(singlespin);
     RefSCDimension cabs_sgsp_dim = cabs_sgsp->dim();
     RefSCDimension orbs_sgsp_dim = orbs_sgsp->dim();
@@ -90,16 +90,16 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
     SpinCase1 spin1 = case1(pairspin);
     SpinCase1 spin2 = case2(pairspin);
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    Ref<SingleRefInfo> refinfo = r12info->refinfo();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+    Ref<R12RefWavefunction> ref = r12world->ref();
     Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
     Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
     Ref<OrbitalSpace> GG1space = r12eval_->GGspace(spin1);
     Ref<OrbitalSpace> GG2space = r12eval_->GGspace(spin2);
     Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
     Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
-    Ref<OrbitalSpace> cabs1 = r12eval_->r12info()->ribs_space(spin1);
-    Ref<OrbitalSpace> cabs2 = r12eval_->r12info()->ribs_space(spin2);
+    Ref<OrbitalSpace> cabs1 = r12eval_->r12world()->cabs_space(spin1);
+    Ref<OrbitalSpace> cabs2 = r12eval_->r12world()->cabs_space(spin2);
 
     // computing I contribution
     {
@@ -108,18 +108,18 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
       std::vector<std::string> tforms_bra_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             cabs2,GG2space,gammaFgamma_p_p1,GG1space,
-                            r12info->corrfactor(),true
+                            r12world->r12tech()->corrfactor(),true
                             );
         fill_container(tform_creator,tforms_bra_p_p);
       }
       std::vector<std::string> tforms_ket_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             gg2space,GG2space,gg1space,GG1space,
-                            r12info->corrfactor()
+                            r12world->r12tech()->corrfactor()
                             );
         fill_container(tform_creator,tforms_ket_p_p);
       }
@@ -143,18 +143,18 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
       std::vector<std::string> tforms_bra_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             cabs1,GG1space,gammaFgamma_p_p2,GG2space,
-                            r12info->corrfactor(),true
+                            r12world->r12tech()->corrfactor(),true
                             );
         fill_container(tform_creator,tforms_bra_p_p);
       }
       std::vector<std::string> tforms_ket_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             gg1space,GG1space,gg2space,GG2space,
-                            r12info->corrfactor()
+                            r12world->r12tech()->corrfactor()
                             );
         fill_container(tform_creator,tforms_ket_p_p);
       }
@@ -180,18 +180,18 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
       std::vector<std::string> tforms_bra_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             cabs2,GG2space,Fgamma_p_P1,GG1space,
-                            r12info->corrfactor(),true
+                            r12world->r12tech()->corrfactor(),true
                             );
         fill_container(tform_creator,tforms_bra_p_p);
       }
       std::vector<std::string> tforms_ket_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             gg2space,GG2space,gg1space,GG1space,
-                            r12info->corrfactor()
+                            r12world->r12tech()->corrfactor()
                             );
         fill_container(tform_creator,tforms_ket_p_p);
       }
@@ -215,18 +215,18 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
       std::vector<std::string> tforms_bra_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             cabs1,GG1space,Fgamma_p_P2,GG2space,
-                            r12info->corrfactor(),true
+                            r12world->r12tech()->corrfactor(),true
                             );
         fill_container(tform_creator,tforms_bra_p_p);
       }
       std::vector<std::string> tforms_ket_p_p;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             gg1space,GG1space,gg2space,GG2space,
-                            r12info->corrfactor()
+                            r12world->r12tech()->corrfactor()
                             );
         fill_container(tform_creator,tforms_ket_p_p);
       }
@@ -268,16 +268,16 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
     SpinCase1 spin2 = case2(pairspin);
     const bool antisymmetrize = pairspin!=AlphaBeta;
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-    Ref<SingleRefInfo> refinfo = r12info->refinfo();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+    Ref<R12RefWavefunction> ref = r12world->ref();
     Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
     Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
     Ref<OrbitalSpace> GG1space = r12eval_->GGspace(spin1);
     Ref<OrbitalSpace> GG2space = r12eval_->GGspace(spin2);
     Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
     Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
-    Ref<OrbitalSpace> cabs1 = r12eval_->r12info()->ribs_space(spin1);
-    Ref<OrbitalSpace> cabs2 = r12eval_->r12info()->ribs_space(spin2);
+    Ref<OrbitalSpace> cabs1 = r12eval_->r12world()->cabs_space(spin1);
+    Ref<OrbitalSpace> cabs2 = r12eval_->r12world()->cabs_space(spin2);
     Ref<OrbitalSpace> IminusJ_p_A1 = r12eval_->obtensor_p_A(IminusJ[spin1],spin1);
     Ref<OrbitalSpace> IminusJ_p_A2 = r12eval_->obtensor_p_A(IminusJ[spin2],spin2);
 
@@ -294,9 +294,9 @@ double PsiCorrWavefunction_PT2R12::compute_DC_energy_GenRefansatz2() {
       std::vector<std::string> tforms;
       {
         R12TwoBodyIntKeyCreator tform_creator(
-                            r12info->moints_runtime4(),
+                            r12world->world()->moints_runtime4(),
                             GG1space,orbs1,GG2space,IminusJ_p_A2,
-                            r12info->corrfactor(),true
+                            r12world->r12tech()->corrfactor(),true
                             );
         fill_container(tform_creator,tforms);
       }

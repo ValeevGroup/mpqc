@@ -651,7 +651,7 @@ namespace sc {
     // value_acc is only for check against energy_from_densities;
     // should not be too tight avoid unintentional ProgrammingError to be thrown.
     value_acc = (value_acc>=1.0e-9) ? value_acc : 1.0e-9;
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
       ExEnv::out0() << "conventional total energy for the impatient: " << setprecision(12) << energy_conv << endl;
       energy_from_densities = energy_conventional();
       ExEnv::out0() << "conventional total energy computed from the densities: " << setprecision(12) << energy_from_densities << endl;
@@ -663,13 +663,13 @@ namespace sc {
 
     double energy_correction_r12 = 0.0;
     // compute R12 correction only if given non-null correlation factor
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
       const RefSymmSCMatrix opdm_alpha = onepdm_refmo(Alpha);
       const RefSymmSCMatrix opdm_beta = onepdm_refmo(Beta);
-      r12eval_->r12info()->set_opdm(opdm_alpha,opdm_beta);
+      r12eval_->r12world()->set_opdm(opdm_alpha,opdm_beta);
 
       double energy_pt2r12[NSpinCases2];
-      if(r12evalinfo_->ansatz()->projector()==LinearR12::Projector_1) {
+      if(r12world()->ansatz()->projector()==LinearR12::Projector_1) {
         for(int i=0; i<NSpinCases2; i++) {
           SpinCase2 pairspin = static_cast<SpinCase2>(i);
           energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
@@ -712,8 +712,7 @@ namespace sc {
     Ref<OrbitalSpace> space_wfn = new OrbitalSpace("WFN","SCF MO space",eigenvec_wfn_ao,basis_wfn,integral_wfn);
     Ref<OrbitalSpace> space_reference_wfn = new OrbitalSpace("REFERENCE","SCF reference MO space",eigenvec_valence_obwfn_ao,basis_reference_wfn,integral_reference_wfn);
 
-    RefSCMatrix overlap;
-    R12IntEvalInfo::compute_overlap_ints(space_reference_wfn,space_wfn,overlap);
+    RefSCMatrix overlap = compute_overlap_ints(space_reference_wfn,space_wfn);
 
     return(overlap);
   }
@@ -790,7 +789,7 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::mo_symmetries_in_energetic_order() {
-    Ref<OrbitalSpace> orbs_sb = r12evalinfo_->refinfo()->orbs_sb();
+    Ref<OrbitalSpace> orbs_sb = r12world()->ref()->orbs_sb();
     RefDiagSCMatrix evals_sb = orbs_sb->evals();
     const int nmo = evals_sb.dim().n();
     Ref<SCBlockInfo> blocks_sb = evals_sb.dim()->blocks();
@@ -817,7 +816,7 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::mo_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->orbs_sb()->evals().dim()->blocks();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->orbs_sb()->evals().dim()->blocks();
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> mos(nirrep);
     mos.assign(nirrep,0);
@@ -828,8 +827,8 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::frzc_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->orbs_sb()->evals().dim()->blocks();
-    int nfzc = r12evalinfo_->refinfo()->nfzc();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->orbs_sb()->evals().dim()->blocks();
+    int nfzc = r12world()->ref()->nfzc();
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> frzc_vec(nirrep);
     frzc_vec.assign(nirrep,0);
@@ -841,7 +840,7 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::docc_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->docc_sb()->evals().dim()->blocks();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->occ_sb()->evals().dim()->blocks();
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> docc(nirrep);
     docc.assign(nirrep,0);
@@ -863,7 +862,7 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::socc_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->orbs_sb()->evals().dim()->blocks();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->orbs_sb()->evals().dim()->blocks();
     int nirrep = blocks_sb->nblock();
     vector<unsigned int> socc(nirrep);
     socc.assign(nirrep,0);
@@ -871,7 +870,7 @@ namespace sc {
     const int nmo = symmindex.size();
     double tol = 1.0e-6;
     for(int i=0; i<nmo; i++) {
-      if(fabs(r12evalinfo_->refinfo()->ref()->occupation(i)-1.0)<tol) {
+      if(fabs(r12world()->ref()->occupation(i)-1.0)<tol) {
         socc[symmindex[i]] += 1;
       }
     }
@@ -890,9 +889,9 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::uocc_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->uocc_sb()->evals().dim()->blocks();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->uocc_sb()->evals().dim()->blocks();
     int nirrep = blocks_sb->nblock();
-    int nirrep_docc = r12evalinfo_->refinfo()->docc_sb()->evals().dim()->blocks()->nblock();
+    int nirrep_docc = r12world()->ref()->occ_sb()->evals().dim()->blocks()->nblock();
     vector<unsigned int> uocc(nirrep_docc);
     if(nirrep!=nirrep_docc){
       uocc.assign(uocc.size(),0.0);
@@ -905,8 +904,8 @@ namespace sc {
   }
 
   vector<unsigned int> PsiCI_PT2R12::frzv_blocks() {
-    Ref<SCBlockInfo> blocks_sb = r12evalinfo_->refinfo()->orbs_sb()->evals().dim()->blocks();
-    int nfzv = r12evalinfo_->refinfo()->nfzv();
+    Ref<SCBlockInfo> blocks_sb = r12world()->ref()->orbs_sb()->evals().dim()->blocks();
+    int nfzv = r12world()->ref()->nfzv();
     int nirrep = blocks_sb->nblock();
     int nmo = blocks_sb->nelem();
     vector<unsigned int> frzv_vec(nirrep);

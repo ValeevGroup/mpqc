@@ -44,8 +44,8 @@ R12IntEval::V(SpinCase2 spincase2,
               const Ref<OrbitalSpace>& p1,
               const Ref<OrbitalSpace>& p2)
 {
-  const LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
   // it involves this term +O1O2-V1V2
   if ((absmethod == LinearR12::ABS_ABS ||
@@ -65,8 +65,8 @@ R12IntEval::V_abs(SpinCase2 spincase2,
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
 
   const bool p1_eq_p2 = (p1 == p2);
   // are particles 1 and 2 equivalent?
@@ -121,10 +121,10 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     std::vector<std::string> tforms_f12_xmyn;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),
 					xspace1,p1,
 					xspace2,p2,
-					r12info()->corrfactor(),true
+					corrfactor(),true
 					);
       fill_container(tformkey_creator,tforms_f12_xmyn);
     }
@@ -147,12 +147,12 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   std::vector<std::string> tforms_f12;
   {
     R12TwoBodyIntKeyCreator tformkey_creator(
-				      r12info()->moints_runtime4(),
+				      moints_runtime4(),
 				      xspace1,
 				      orbs1,
 				      xspace2,
 				      orbs2,
-				      r12info()->corrfactor(),true
+				      corrfactor(),true
 				      );
     fill_container(tformkey_creator,tforms_f12);
   }
@@ -187,19 +187,19 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   // These terms only contribute if Projector=2
   if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
 
-    const LinearR12::ABSMethod absmethod = r12info()->r12tech()->abs_method();
+    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			      absmethod == LinearR12::ABS_CABSPlus);
     const Ref<OrbitalSpace>& occ1 = occ(spin1);
     const Ref<OrbitalSpace>& occ2 = occ(spin2);
     Ref<OrbitalSpace> rispace1, rispace2;
     if (cabs_method) {
-      rispace1 = r12info()->ribs_space(spin1);
-      rispace2 = r12info()->ribs_space(spin2);
+      rispace1 = r12world()->cabs_space(spin1);
+      rispace2 = r12world()->cabs_space(spin2);
     }
     else {
-      rispace1 = r12info()->ribs_space();
-      rispace2 = r12info()->ribs_space();
+      rispace1 = r12world()->ribs_space();
+      rispace2 = r12world()->ribs_space();
     }
     // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
     // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
@@ -213,12 +213,12 @@ R12IntEval::V_abs(SpinCase2 spincase2,
     std::vector<std::string> tforms_f12_xmyP;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-					r12info()->moints_runtime4(),
+					moints_runtime4(),
 					xspace1,
 					occ1,
 					xspace2,
 					rispace2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
 					);
       fill_container(tformkey_creator,tforms_f12_xmyP);
     }
@@ -253,12 +253,12 @@ R12IntEval::V_abs(SpinCase2 spincase2,
       std::vector<std::string> tforms_f12_xPym;
       {
 	R12TwoBodyIntKeyCreator tformkey_creator(
-					  r12info()->moints_runtime4(),
+					  moints_runtime4(),
 					  xspace1,
 					  rispace1,
 					  xspace2,
 					  occ2,
-                      r12info()->corrfactor(),true
+                      corrfactor(),true
 					  );
 	fill_container(tformkey_creator,tforms_f12_xPym);
       }
@@ -315,8 +315,8 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
 
   const bool p1_eq_p2 = (p1 == p2);
   // are particles 1 and 2 equivalent?
@@ -371,10 +371,10 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
     std::vector<std::string> tforms_f12_xmyn;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),
                     xspace1,p1,
                     xspace2,p2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
       fill_container(tformkey_creator,tforms_f12_xmyn);
     }
@@ -393,12 +393,12 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   std::vector<std::string> tforms_f12;
   {
     R12TwoBodyIntKeyCreator tformkey_creator(
-                      r12info()->moints_runtime4(),
+                      moints_runtime4(),
                       xspace1,
                       orbs1,
                       xspace2,
                       orbs2,
-                      r12info()->corrfactor(),true
+                      corrfactor(),true
                       );
     fill_container(tformkey_creator,tforms_f12);
   }
@@ -433,8 +433,8 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
     const Ref<OrbitalSpace>& occ1 = occ(spin1);
     const Ref<OrbitalSpace>& occ2 = occ(spin2);
     Ref<OrbitalSpace> rispace1, rispace2;
-    rispace1 = r12info()->ribs_space(spin1);
-    rispace2 = r12info()->ribs_space(spin2);
+    rispace1 = r12world()->cabs_space(spin1);
+    rispace2 = r12world()->cabs_space(spin2);
     // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
     // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
     const double perm_factor = part1_equiv_part2 ? -2.0 : -1.0;
@@ -443,12 +443,12 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
     std::vector<std::string> tforms_f12_xmyP;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     xspace1,
                     occ1,
                     xspace2,
                     rispace2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
       fill_container(tformkey_creator,tforms_f12_xmyP);
     }
@@ -480,12 +480,12 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
       std::vector<std::string> tforms_f12_xPym;
       {
     R12TwoBodyIntKeyCreator tformkey_creator(
-                      r12info()->moints_runtime4(),
+                      moints_runtime4(),
                       xspace1,
                       rispace1,
                       xspace2,
                       occ2,
-                      r12info()->corrfactor(),true
+                      corrfactor(),true
                       );
     fill_container(tformkey_creator,tforms_f12_xPym);
       }
@@ -530,8 +530,8 @@ R12IntEval::P(SpinCase2 spincase2)
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
@@ -541,12 +541,12 @@ R12IntEval::P(SpinCase2 spincase2)
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);
   const Ref<OrbitalSpace>& occ2 = occ(spin2);
-  const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+  const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
   if (absmethod == LinearR12::ABS_ABS ||
       absmethod == LinearR12::ABS_ABSPlus)
     throw InputError("R12IntEval::P() -- cannot use if abs_method = abs/abs+. Try cabs or cabs+.");
-  const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
-  const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
+  const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+  const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
   const RefSCDimension dimf12 = dim_f12(spincase2);
 
   // are particles 1 and 2 equivalent?
@@ -583,10 +583,10 @@ R12IntEval::P(SpinCase2 spincase2)
   if (r12ptr.nonnull()) {
     std::vector<std::string> tforms_f12_xoyw;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),
                     xspace1,orbs1,
                     xspace2,orbs2,
-                    r12info()->corrfactor(),
+                    corrfactor(),
                     true
                     );
       fill_container(tformkey_creator,tforms_f12_xoyw);
@@ -602,12 +602,12 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12f12_xoyw;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         xspace1,
         xspace2,
         xspace2,
-        r12info()->corrfactor(),true,true
+        corrfactor(),true,true
         );
       fill_container(tformkey_creator,tforms_f12f12_xoyw);
     }
@@ -639,12 +639,12 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xpyq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
         orbs2,
-        r12info()->corrfactor(),true,false
+        corrfactor(),true,false
         );
       fill_container(tformkey_creator,tforms_f12_xpyq);
     }
@@ -662,12 +662,12 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xpyq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
         orbs2,
-        r12info()->corrfactor(),true,false
+        corrfactor(),true,false
         );
       fill_container(tformkey_creator,tforms_f12_xpyq);
     }
@@ -703,12 +703,12 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xiyA;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
         cabs2,
-        r12info()->corrfactor(),true,false
+        corrfactor(),true,false
         );
       fill_container(tformkey_creator,tforms_f12_xiyA);
     }
@@ -727,12 +727,12 @@ R12IntEval::P(SpinCase2 spincase2)
     std::vector<std::string> tforms_f12_xiyA;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
         cabs2,
-        r12info()->corrfactor(),true,false
+        corrfactor(),true,false
         );
       fill_container(tformkey_creator,tforms_f12_xiyA);
     }
@@ -762,12 +762,12 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<std::string> tforms_f12_xAyi;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
           occ2,
-          r12info()->corrfactor(),true,false
+          corrfactor(),true,false
           );
         fill_container(tformkey_creator,tforms_f12_xAyi);
       }
@@ -786,12 +786,12 @@ R12IntEval::P(SpinCase2 spincase2)
       std::vector<std::string> tforms_f12_xAyi;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
           occ2,
-          r12info()->corrfactor(),true,false
+          corrfactor(),true,false
           );
         fill_container(tformkey_creator,tforms_f12_xAyi);
       }

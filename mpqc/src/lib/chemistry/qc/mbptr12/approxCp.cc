@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -74,9 +74,9 @@ void R12IntEval::compute_BCp_() {
   if (evaluated_)
     return;
 
-  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
-  const bool abs_eq_obs = r12info()->obs_eq_ribs();
-  const unsigned int maxnabs = r12info()->maxnabs();
+  const bool vbs_eq_obs = r12world()->obs_eq_vbs();
+  const bool abs_eq_obs = r12world()->obs_eq_ribs();
+  const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
 
   const unsigned int nf12 = corrfactor()->nfunctions();
 
@@ -100,7 +100,6 @@ void R12IntEval::compute_BCp_() {
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
 
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<OrbitalSpace> occ1 = occ(spin1);
     Ref<OrbitalSpace> occ2 = occ(spin2);
     Ref<OrbitalSpace> orbs1 = orbs(spin1);
@@ -109,8 +108,8 @@ void R12IntEval::compute_BCp_() {
     Ref<OrbitalSpace> xspace2 = xspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
-    Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
-    Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+    Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
+    Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
 
     bool empty_vir_space = vir1->rank() == 0 || vir2->rank() == 0;
 
@@ -154,7 +153,7 @@ void R12IntEval::compute_BCp_() {
     // compute P
     // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
 
-    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     if (!abs_eq_obs && absmethod != LinearR12::ABS_CABS && absmethod
         != LinearR12::ABS_CABSPlus) {
       throw FeatureNotImplemented(
@@ -173,8 +172,8 @@ void R12IntEval::compute_BCp_() {
       ribs1 = orbs1;
       ribs2 = orbs2;
     } else {
-      ribs1 = r12info()->ribs_space();
-      ribs2 = r12info()->ribs_space();
+      ribs1 = r12world()->ribs_space();
+      ribs2 = r12world()->ribs_space();
     }
     RefSCMatrix P = B_[s].clone();  P.assign(0.0);
 
@@ -200,14 +199,14 @@ void R12IntEval::compute_BCp_() {
       {
         std::vector<std::string> tforms_bra;
         {
-          R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,occ1,xspace2,ribs2,
-                                                   r12info()->corrfactor(),true);
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,occ1,xspace2,ribs2,
+                                                   corrfactor(),true);
           fill_container(tformkey_creator,tforms_bra);
         }
         std::vector<std::string> tforms_ket;
         {
-          R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,occ1,j_x_p2,ribs2,
-                                                   r12info()->corrfactor(),true);
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,occ1,j_x_p2,ribs2,
+                                                   corrfactor(),true);
           fill_container(tformkey_creator,tforms_ket);
         }
         // contract

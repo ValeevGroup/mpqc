@@ -44,7 +44,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 //#include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
 #include <chemistry/qc/mbptr12/ansatz.h>
@@ -55,7 +55,7 @@ namespace sc {
 
 class R12Technology;
 class R12IntEval;
-class R12IntEvalInfo;
+class R12WavefunctionWorld;
 class MP2R12Energy;
 
 /** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
@@ -66,7 +66,7 @@ class MBPT2_R12: public MBPT2 {
     bool new_energy_;
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
-    Ref<R12IntEvalInfo> r12evalinfo_;   // parameters for r12eval_
+    Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
 
     /** These are MP2-R12 energy objects for each MP2-R12 method, since several different energies
         can be evaluated with the same set of intermediates */
@@ -96,7 +96,7 @@ class MBPT2_R12: public MBPT2 {
 
   public:
     MBPT2_R12(StateIn&);
-    /** The KeyVal constructor uses keywords of MBPT2 and R12IntEvalInfo and the following keywords
+    /** The KeyVal constructor uses keywords of MBPT2 and R12WavefunctionWorld and the following keywords
         <dl>
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
@@ -124,7 +124,7 @@ class MBPT2_R12: public MBPT2 {
 
     void save_data_state(StateOut&);
 
-    const Ref<R12IntEvalInfo>& r12evalinfo() const { return r12evalinfo_; }
+    const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
     const Ref<R12IntEval>& r12eval() const { return r12eval_; }
     /// this changes the correlation factor
     void corrfactor(const Ref<LinearR12::CorrelationFactor>&);

@@ -164,7 +164,6 @@ namespace sc {
       }
       int nprimitives=atoi(params[1].c_str());
       double exponent=atof(params[3].c_str());
-      ExEnv::out0() << "exponent = " << exponent << std::endl;
 
       return(exponent);
     }

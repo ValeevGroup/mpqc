@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -71,8 +71,8 @@ R12IntEval::compute_BB_()
   if (evaluated_)
     return;
 
-  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
-  const bool abs_eq_obs = r12info()->obs_eq_ribs();
+  const bool vbs_eq_obs = r12world()->obs_eq_vbs();
+  const bool abs_eq_obs = r12world()->obs_eq_ribs();
 
   Timer tim_B_app_B("B(app. B) intermediate");
   ExEnv::out0() << endl << indent
@@ -84,7 +84,6 @@ R12IntEval::compute_BB_()
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
 
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<OrbitalSpace> occ1 = occ(spin1);
     Ref<OrbitalSpace> occ2 = occ(spin2);
     Ref<OrbitalSpace> orbs1 = orbs(spin1);
@@ -95,7 +94,7 @@ R12IntEval::compute_BB_()
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 
 #if INCLUDE_Q
-    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
                              absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
 
@@ -172,7 +171,7 @@ R12IntEval::compute_BB_()
     // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs && !omit_P()) {
 
-      const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+      const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
       if (absmethod != LinearR12::ABS_CABS &&
           absmethod != LinearR12::ABS_CABSPlus) {
             throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
@@ -184,11 +183,11 @@ R12IntEval::compute_BB_()
                     << "Entered " << Plabel << " evaluator" << endl;
       ExEnv::out0() << incindent;
 
-      Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
-      Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+      Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
+      Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
 
       RefSCMatrix P;
-      if (r12info()->maxnabs() < 2) {
+      if (r12world()->r12tech()->maxnabs() < 2) {
 
 	  if (vbs_eq_obs) {
 	      Ref<OrbitalSpace> kvir1_obs = K_a_p(spin1);

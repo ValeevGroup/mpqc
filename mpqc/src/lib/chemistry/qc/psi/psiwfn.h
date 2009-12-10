@@ -97,8 +97,11 @@ namespace sc {
       virtual void write_basic_input(int conv);
       void compute();
       void print(std::ostream&o=ExEnv::out0()) const;
-      RefSymmSCMatrix density();
       int nirrep() const { return nirrep_; }
+
+      RefSymmSCMatrix density();
+      /// Returns the MO basis density (blocked by symmetry)
+      virtual RefSymmSCMatrix mo_density(SpinCase1 spin = AnySpinCase1) =0;
 
       /// Return an associated PsiExEnv object
       Ref<PsiExEnv> exenv() const {
@@ -125,9 +128,12 @@ namespace sc {
   class PsiSCF : public PsiWavefunction {
       RefDiagSCMatrix evals_[NSpinCases1];
       RefSCMatrix coefs_[NSpinCases1];
+      RefSymmSCMatrix mo_density_[NSpinCases1];
       std::vector<unsigned int> occpi_[NSpinCases1];
       std::vector<unsigned int> uoccpi_[NSpinCases1];
       std::vector<unsigned int> mopi_;
+      std::vector<double> occupation_[NSpinCases1];
+      void compute_occupations(SpinCase1 spin);
 
     protected:
       std::vector<unsigned int> docc_;
@@ -154,9 +160,9 @@ namespace sc {
       /// Returns the PsiSCF::RefType of this particular Psi SCF wave function
       virtual PsiSCF::RefType reftype() const =0;
       /// Returns the eigenvalues matrix
-      virtual const RefDiagSCMatrix& evals(SpinCase1 spin = Alpha);
-      /// Returns the coefficient matrix
-      virtual const RefSCMatrix& coefs(SpinCase1 spin = Alpha);
+      virtual const RefDiagSCMatrix& evals(SpinCase1 spin = AnySpinCase1);
+      /// Returns the coefficient matrix in AO basis
+      virtual const RefSCMatrix& coefs(SpinCase1 spin = AnySpinCase1);
       /// Number of occupied orbitals of spin S per irrep
       const std::vector<unsigned int>& occpi(SpinCase1 S);
       /// Number of unoccupied orbitals of spin S per irrep
@@ -165,6 +171,15 @@ namespace sc {
       const std::vector<unsigned int>& mopi();
       /// Number of electrons
       int nelectron();
+      /// Returns the occupation for alpha orbitals
+      double alpha_occupation(int mo);
+      /// Returns the occupation for beta orbitals
+      double beta_occupation(int mo);
+      RefSymmSCMatrix density();
+      RefSymmSCMatrix alpha_density();
+      RefSymmSCMatrix beta_density();
+
+      RefSymmSCMatrix mo_density(SpinCase1 spin = AnySpinCase1);
 
       /// number of MOs
       unsigned int nmo();
@@ -264,6 +279,7 @@ namespace sc {
       mutable std::vector<unsigned int> frozen_docc_;
       mutable std::vector<unsigned int> frozen_uocc_;
       void write_input(int conv);
+      RefSymmSCMatrix mo_density_[NSpinCases1];
 
       double valacc_to_refacc() const { return 100.0; }
 
@@ -303,11 +319,12 @@ namespace sc {
       /// reference energy
       virtual double reference_energy();
 
-      /// one- and two-particle Density matrices
+      RefSymmSCMatrix mo_density(SpinCase1 spin);
       /// return one-particle density matrix as a symmetric matrix indexed by (moindex1,moindex2).
       RefSymmSCMatrix onepdm(const SpinCase1 &spin);
       RefSymmSCMatrix onepdm();
-      /// this twopdm is stored in chemist's (Mulliken) notation order. Access element (ij|km) by get_element(ordinary_INDEX(i,j), ordinary_INDEX(k,m))
+      /// this twopdm is stored in chemist's (Mulliken) notation order.
+      /// Access element (ij|km) by get_element(ordinary_INDEX(i,j), ordinary_INDEX(k,m))
       RefSymmSCMatrix twopdm();
       /// this twopdm is stored in Dirac notation order.
       RefSymmSCMatrix twopdm_dirac();
@@ -327,7 +344,7 @@ namespace sc {
       size_t memory_r12_;
       Ref<SCF> reference_mpqc_;
       Ref<R12IntEval> r12eval_;
-      Ref<R12IntEvalInfo> r12evalinfo_;
+      Ref<R12WavefunctionWorld> r12world_;
       enum onepdm_type { HF = 0, correlated = 1 };
       onepdm_type opdm_type_;
       bool tpdm_from_opdms_;
@@ -352,7 +369,7 @@ namespace sc {
       RefSCMatrix g(SpinCase2 pairspin);
       /**
        * general-reference Fock atrix (cf. eqn. (71b) of W. Kutzelnigg, D. Mukherjee, J. Chem Phys. 107 (1997) p. 432)
-       * if opdm_ in R12IntEvalInfo is set, otherwise it returns the ordinary Fock operator.
+       * if opdm_ in R12WavefunctionWorld is set, otherwise it returns the ordinary Fock operator.
        */
       RefSCMatrix f(SpinCase1 spin);
       /// phi of a single-reference Hartree-Fock reference (needed only for debugging)
@@ -419,6 +436,8 @@ namespace sc {
       double energy_PT2R12_projector2(SpinCase2 pairspin);
       /// Prints the pair energies as a trace of the given matrix Contrib_mat
       void print_pair_energies(const RefSCMatrix &Contrib_mat,SpinCase2 pairspin);
+
+      const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
   };
 
 }

@@ -86,8 +86,8 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   if (nfzv() != mbptr12_->nfzvirt())
     throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- nfzc here differs from that in mbpt2r12");
 
-  const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
-  const Ref<R12Technology> r12tech = r12info->r12tech();
+  const Ref<R12WavefunctionWorld> r12world = mbptr12_->r12world();
+  const Ref<R12Technology> r12tech = r12world->r12tech();
   // cannot do gbc = false yet
   if (!r12tech->gbc())
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
@@ -176,8 +176,8 @@ void PsiCCSD_PT2R12::compute() {
                     << eref_diff << " but expected less than " << eref_tol << std::endl;
   }
 
-  const Ref<R12IntEvalInfo> r12info = mbptr12_->r12evalinfo();
-  const Ref<R12Technology> r12tech = r12info->r12tech();
+  const Ref<R12WavefunctionWorld> r12world = mbptr12_->r12world();
+  const Ref<R12Technology> r12tech = r12world->r12tech();
 
   // Compute intermediates
   const double mp2r12_energy = mbptr12_->value();
@@ -199,7 +199,7 @@ void PsiCCSD_PT2R12::compute() {
     if (r12eval->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12IntEvalInfo> r12info = r12eval->r12info();
+    Ref<R12WavefunctionWorld> r12world = r12eval->r12world();
     const Ref<OrbitalSpace>& p1 = r12eval->orbs(spin1);
     const Ref<OrbitalSpace>& p2 = r12eval->orbs(spin2);
     const unsigned int np1 = p1->rank();
@@ -261,7 +261,7 @@ void PsiCCSD_PT2R12::compute() {
     else
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
     // Vai[AlphaBeta] is also needed if spin-polarized reference is used
-    if (spincase2 == AlphaBeta && r12info->refinfo()->spin_polarized()) {
+    if (spincase2 == AlphaBeta && r12world->ref()->spin_polarized()) {
       const RefSCDimension v1o2dim = pairdim<ASymm>(nv1,no2);
       Vai[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1o2dim);
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vai[s],v1_to_p1,o2_to_p2,np1,np2);
@@ -322,7 +322,7 @@ void PsiCCSD_PT2R12::compute() {
   for(int s=0; s<nspincases1; ++s) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     // print out MPQC orbitals to compare to Psi orbitals below;
-    const Ref<OrbitalSpace>& orbs_sb_mpqc = r12eval->r12info()->refinfo()->orbs_sb(spin);
+    const Ref<OrbitalSpace>& orbs_sb_mpqc = r12eval->r12world()->ref()->orbs_sb(spin);
     if (debug() >= DefaultPrintThresholds::mostN2) {
       orbs_sb_mpqc->coefs().print(prepend_spincase(spin,"MPQC eigenvector").c_str());
       orbs_sb_mpqc->evals().print(prepend_spincase(spin,"MPQC eigenvalues").c_str());
@@ -553,7 +553,7 @@ void PsiCCSD_PT2R12::compute() {
 
       // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
       if ( completeness_order_for_intermediates_ >= 3 ||
-          (completeness_order_for_intermediates_ >= 2 && !r12eval->r12info()->bc()) ) {
+          (completeness_order_for_intermediates_ >= 2 && !r12eval->bc()) ) {
 
         // Via . T1
         RefSCMatrix VT1_2 = contract_Via_T1ja(true,Via[s],T1[spin2],occ1_act,vir2_act,occ2_act);
@@ -628,7 +628,7 @@ void PsiCCSD_PT2R12::compute() {
                 occ1_act, Tocc1_act_coefs, occ1_act->basis());
             VIj = r12eval->V(spincase2, Tocc1_act, occ2_act);
           }
-          (VIj+ViJ).print("Via.T1 computed with R12IntEvalInfo::V()");
+          (VIj+ViJ).print("Via.T1 computed with R12WavefunctionWorld::V()");
           VT1.print("Via.T1 + T1.Vai");
           //(VT1 - ViJ - VIj).print("Via.T1 - Via.T1 (test): should be zero");
         }
@@ -660,8 +660,8 @@ void PsiCCSD_PT2R12::compute() {
 
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C_MP1 . H1_R0
   // H0_RR is the usual B of the standard MP-R12 theory
-  const bool diag = r12eval->r12info()->r12tech()->ansatz()->diag();
-  Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12info()->r12tech()->stdapprox());
+  const bool diag = r12eval->r12world()->r12tech()->ansatz()->diag();
+  Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12world()->r12tech()->stdapprox());
   // In the new approach E2 = - Vbar . B^{-1} . Vbar, where Vbar = V + VT
   // In the old approach E2 = - V . B^{-1} . Vtilde, where Vtilde = V + 2 VT
   if(new_approach_) {
@@ -751,7 +751,7 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << incindent;
   o << indent << "New (symmetric) approach: " << (new_approach_ ? "true" : "false") << std::endl;
   PsiWavefunction::print(o);
-  mbptr12_->r12eval()->r12info()->r12tech()->print(o);
+  mbptr12_->r12eval()->r12world()->r12tech()->print(o);
   o << decindent;
 }
 

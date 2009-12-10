@@ -45,8 +45,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
   if (evaluated_)
     return;
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // commutators only appear in A', A'', and B
   const bool compute_B = (stdapprox() == LinearR12::StdApprox_Ap ||
       stdapprox() == LinearR12::StdApprox_App || stdapprox() == LinearR12::StdApprox_B);
@@ -54,7 +54,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
   if (obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if OBS == VBS",__FILE__,__LINE__);
 
-  const ABSMethod absmethod = r12info()->abs_method();
+  const ABSMethod absmethod = r12world()->r12tech()->abs_method();
   // Can only use CABS/CABS+
   if (absmethod == LinearR12::ABS_ABS ||
       absmethod == LinearR12::ABS_ABSPlus)
@@ -68,7 +68,6 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
-      Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
       const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
       const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
@@ -78,8 +77,8 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       const Ref<OrbitalSpace>& vir2_act = vir_act(spin2);
       const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
       const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-      const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
-      const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
+      const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+      const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
@@ -105,14 +104,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-	                                               r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	                                               corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
@@ -150,14 +149,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-                                                   r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+                                                   corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
@@ -196,14 +195,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-                                                   r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+                                                   corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
@@ -243,14 +242,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-                                                   r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+                                                   corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
@@ -290,14 +289,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-                                                   r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+                                                   corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else
@@ -337,14 +336,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),xspace1,cs1,xspace2,cs2,
-                                                   r12info()->corrfactor(),true);
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+                                                   corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
 	  std::vector<std::string> tforms;
 	  if (!occ12_in_x12) {
-	      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
-                                                   r12info()->corrfactor());
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),occ1_act,cs1,occ2_act,cs2,
+                                                   corrfactor());
 	      fill_container(tformkey_creator,tforms);
 	  }
 	  else

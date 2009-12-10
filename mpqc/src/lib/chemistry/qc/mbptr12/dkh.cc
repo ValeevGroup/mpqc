@@ -91,13 +91,13 @@ void R12IntEval::compute_B_DKH_() {
     return;
 
   // verify that this contribution should be included
-  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
+  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
   if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
     return;
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
-  const unsigned int maxnabs = r12info()->maxnabs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
+  const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
 
   // Check if the requested calculation is implemented
   if (!obs_eq_vbs && maxnabs < 1)
@@ -115,7 +115,7 @@ void R12IntEval::compute_B_DKH_() {
   // Compute kinetic energy integrals and obtain geminal-generator spaces transformed with them
   //
   Ref<OrbitalSpace> t_x_P[NSpinCases1];
-  Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12info()->refinfo()->orbs() : r12info()->ribs_space();
+  Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12world()->ref()->orbs() : r12world()->ribs_space();
   for(int s=0; s<NSpinCases1; ++s) {
     using namespace sc::LinearR12;
     const SpinCase1 spin = static_cast<SpinCase1>(s);
@@ -131,7 +131,7 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+    Ref<R12RefWavefunction> ref = r12world()->ref();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
@@ -151,8 +151,8 @@ void R12IntEval::compute_B_DKH_() {
     // <xy|z T> tforms
     std::vector<std::string> tforms_xyzT;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(), xspace1, xspace1, xspace2,
-          t_x2, r12info()->corrfactor(), true, true);
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), xspace1, xspace1, xspace2,
+          t_x2, corrfactor(), true, true);
       fill_container(tformkey_creator, tforms_xyzT);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
@@ -166,8 +166,8 @@ void R12IntEval::compute_B_DKH_() {
       // <xy|T z> tforms
       std::vector<std::string> tforms_xyTz;
       {
-        R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(), xspace1, t_x1, xspace2,
-            xspace2, r12info()->corrfactor(), true, true);
+        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), xspace1, t_x1, xspace2,
+            xspace2, corrfactor(), true, true);
         fill_container(tformkey_creator, tforms_xyTz);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
@@ -221,8 +221,8 @@ void R12IntEval::compute_B_DKH_() {
                                                                       g12corrfact->function(0)) :
                                                      new IntParamsG12(g12nccorrfact->function(0),
                                                                       g12nccorrfact->function(0));
-    Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12info()->integral(), params);
-    const std::string descr_key = r12info()->moints_runtime4()->descr_key(descr_g12dkh);
+    Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12world()->integral(), params);
+    const std::string descr_key = moints_runtime4()->descr_key(descr_g12dkh);
     const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(xspace1->id(),xspace2->id(),
                                                            xspace1->id(),xspace2->id(),
                                                            descr_key,
@@ -263,11 +263,11 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   if (evaluated_)
     return;
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
 
   // verify that this contribution should be included
-  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
+  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
   if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
     return;
 
@@ -295,9 +295,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     Ref<OrbitalSpace> x = xspace(spin);
     Ref<OrbitalSpace> m = occ(spin);
-    Ref<OrbitalSpace> obs = r12info()->refinfo()->orbs(spin);
-    Ref<OrbitalSpace> ribs = r12info()->ribs_space();
-    Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
+    Ref<OrbitalSpace> obs = r12world()->ref()->orbs(spin);
+    Ref<OrbitalSpace> ribs = r12world()->ribs_space();
+    Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
 
     t_x_P[s] = sc::detail::t_x_X(x, ribs);
     OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_P[s]));
@@ -322,7 +322,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+    Ref<R12RefWavefunction> ref = r12world()->ref();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
@@ -341,20 +341,20 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     { // pq contribution
       const Ref<OrbitalSpace>& p_tP1 = t_p_P[spin1];
       const Ref<OrbitalSpace>& p_tP2 = t_p_P[spin2];
-      const Ref<OrbitalSpace>& orbs1 = refinfo->orbs(spin1);
-      const Ref<OrbitalSpace>& orbs2 = refinfo->orbs(spin2);
+      const Ref<OrbitalSpace>& orbs1 = ref->orbs(spin1);
+      const Ref<OrbitalSpace>& orbs2 = ref->orbs(spin2);
 
-    Ref<TwoParticleContraction> tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
+    Ref<TwoParticleContraction> tpcontract = new CABS_OBS_Contraction(ref->orbs(spin1)->rank());
     // <x y|p q> tforms
     std::vector<std::string> tforms_xy_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
         orbs2,
-        r12info()->corrfactor(),true
+        corrfactor(),true
         );
       fill_container(tformkey_creator, tforms_xy_pq);
     }
@@ -362,12 +362,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xy_pTq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         p_tP1,
         xspace2,
         orbs2,
-        r12info()->corrfactor(),true
+        corrfactor(),true
         );
       fill_container(tformkey_creator, tforms_xy_pTq);
     }
@@ -375,12 +375,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xy_pqT;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         orbs1,
         xspace2,
         p_tP2,
-        r12info()->corrfactor(),true
+        corrfactor(),true
         );
       fill_container(tformkey_creator, tforms_xy_pqT);
     }
@@ -388,12 +388,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xTy_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         x_tP1,
         orbs1,
         xspace2,
         orbs2,
-        r12info()->corrfactor(),true
+        corrfactor(),true
         );
       fill_container(tformkey_creator, tforms_xTy_pq);
     }
@@ -401,12 +401,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     std::vector<std::string> tforms_xyT_pq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
-        r12info()->moints_runtime4(),
+        moints_runtime4(),
         xspace1,
         orbs1,
         x_tP2,
         orbs2,
-        r12info()->corrfactor(),true
+        corrfactor(),true
         );
       fill_container(tformkey_creator, tforms_xyT_pq);
     }
@@ -486,8 +486,8 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     { // mA contribution
       const Ref<OrbitalSpace>& occ1 = occ(spin1);
       const Ref<OrbitalSpace>& occ2 = occ(spin2);
-      const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
-      const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
+      const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+      const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
       const Ref<OrbitalSpace>& m_tP1 = t_m_P[spin1];
       const Ref<OrbitalSpace>& m_tP2 = t_m_P[spin2];
       const Ref<OrbitalSpace>& A_tP1 = t_A_P[spin1];
@@ -503,12 +503,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           occ1,
           xspace2,
           cabs2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_mA);
       }
@@ -516,12 +516,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mTA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           m_tP1,
           xspace2,
           cabs2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_mTA);
       }
@@ -529,12 +529,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_mAT;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           occ1,
           xspace2,
           A_tP2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_mAT);
       }
@@ -542,12 +542,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xTy_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           x_tP1,
           occ1,
           xspace2,
           cabs2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xTy_mA);
       }
@@ -555,12 +555,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xyT_mA;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           occ1,
           x_tP2,
           cabs2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xyT_mA);
       }
@@ -569,12 +569,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
           occ2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_Am);
       }
@@ -582,12 +582,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_AmT;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           cabs1,
           xspace2,
           m_tP2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_AmT);
       }
@@ -595,12 +595,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xy_ATm;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           A_tP1,
           xspace2,
           occ2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xy_ATm);
       }
@@ -608,12 +608,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xTy_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           x_tP1,
           cabs1,
           xspace2,
           occ2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xTy_Am);
       }
@@ -621,12 +621,12 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       std::vector<std::string> tforms_xyT_Am;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           cabs1,
           x_tP2,
           occ2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
         fill_container(tformkey_creator, tforms_xyT_Am);
       }

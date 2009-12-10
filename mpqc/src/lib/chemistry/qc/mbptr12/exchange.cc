@@ -43,7 +43,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/print.h>
@@ -54,19 +54,20 @@ using namespace sc;
 RefSCMatrix R12IntEval::exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>& bra_space,
                       const Ref<OrbitalSpace>& ket_space) {
 
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12world()->world()->msg();
 
   int me = msg->me();
   int nproc = msg->n();
 
   Ref<OrbitalSpace> contr_space;
-  if(opdm(Alpha).null()) {
+  if(r12world()->sdref()) {
     contr_space = occ(spin);
     return(exchange_(contr_space,bra_space,ket_space));
   }
   else {
     contr_space = orbs(spin);
   }
+  RefSymmSCMatrix opdm = this->ordm(spin);
 
   Timer tim_exchange("general exchange");
   ExEnv::out0() << endl << indent
@@ -83,7 +84,7 @@ RefSCMatrix R12IntEval::exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>
   }
 
   // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
+  Ref<MOIntsTransformFactory> tfactory = this->tfactory();
   // Gaussians are real, hence contr_space and bra_space can be swapped
   tfactory->set_spaces(contr_space,bra_space,
                        contr_space,ket_space);
@@ -113,7 +114,7 @@ RefSCMatrix R12IntEval::exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>
         if (debug_ >= DefaultPrintThresholds::fine)
           ExEnv::outn() << indent << "task " << me << ": working on (r,s) = " << r << "," << s << " " << endl;
 
-        const double onepdm = opdm(spin)->get_element(s,r);
+        const double onepdm = opdm.get_element(s,r);
 
         // Get (|1/r12|) integrals
         tim_mo_ints_retrieve.enter_default();
@@ -161,7 +162,7 @@ RefSCMatrix
 R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>& bra_space,
                       const Ref<OrbitalSpace>& ket_space)
 {
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12world()->world()->msg();
 
   Timer tim_exchange("exchange");
 
@@ -172,7 +173,7 @@ R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace
   ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
+  Ref<MOIntsTransformFactory> tfactory = this->tfactory();
   // Gaussians are real, hence occ_space and bra_space can be swapped
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);

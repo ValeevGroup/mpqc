@@ -54,8 +54,8 @@ MBPT2_R12::compute_energy_()
   //int DebugWait = 1;
   //while (DebugWait) {}
 
-  const Ref<R12IntEvalInfo>& r12info = r12evalinfo_;
-  r12info->initialize();
+  Ref<R12WavefunctionWorld> r12world = r12world_;
+  Ref<R12Technology> r12tech = r12world->r12tech();
 
   // test app. C general-density B builder by feeding HF densities to it
 #define TEST_GENERAL_FOCK_BUILD 0
@@ -75,16 +75,16 @@ MBPT2_R12::compute_energy_()
           ++i)
         P[s](*i, *i) = 1.0;
     }
-    r12info->set_opdm(P[0], P[1]);
+    r12world->set_opdm(P[0], P[1]);
   }
 #endif
 
   if (r12eval_.null()) {
     // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
-    r12evalinfo_->set_print_percent(print_percent_);
-    r12evalinfo_->set_memory(mem_alloc);
-    r12eval_ = new R12IntEval(r12evalinfo_);
-    r12eval_->set_debug(debug_);
+    r12world->world()->print_percent(print_percent_);
+    r12world->world()->memory(mem_alloc);
+    r12eval_ = new R12IntEval(r12world_);
+    r12eval_->debug(debug_);
   }
   // This will actually compute the intermediates
   r12eval_->compute();
@@ -99,41 +99,41 @@ MBPT2_R12::compute_energy_()
   //
 
   // can use projector 3 only for app C
-  if (r12info->ansatz()->projector() != LinearR12::Projector_3) {
+  if (r12tech->ansatz()->projector() != LinearR12::Projector_3) {
 
     // MP2-F12/A'
-    if (r12info->stdapprox() == LinearR12::StdApprox_Ap ||
-        r12info->stdapprox() == LinearR12::StdApprox_B) {
+    if (r12tech->stdapprox() == LinearR12::StdApprox_Ap ||
+        r12tech->stdapprox() == LinearR12::StdApprox_B) {
       Timer tim2("mp2-f12/a' pair energies");
       if (r12ap_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_Ap);
         r12ap_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
-      r12ap_energy_->print_pair_energies(r12info->spinadapted());
+      r12ap_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12ap_energy_->energy();
       ef12 = er12(r12ap_energy_);
     }
 
     // MP2-F12/B
-    if (r12info->stdapprox() == LinearR12::StdApprox_B) {
+    if (r12tech->stdapprox() == LinearR12::StdApprox_B) {
       Timer tim2("mp2-f12/b pair energies");
       if (r12b_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_B);
         r12b_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
-      r12b_energy_->print_pair_energies(r12info->spinadapted());
+      r12b_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12b_energy_->energy();
       ef12 = er12(r12b_energy_);
     }
 
     // MP2-F12/A''
-    if (r12info->stdapprox() == LinearR12::StdApprox_App) {
+    if (r12tech->stdapprox() == LinearR12::StdApprox_App) {
       Timer tim2("mp2-f12/a'' pair energies");
       if (r12app_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_App);
         r12app_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
-      r12app_energy_->print_pair_energies(r12info->spinadapted());
+      r12app_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12app_energy_->energy();
       ef12 = er12(r12app_energy_);
     }
@@ -141,19 +141,19 @@ MBPT2_R12::compute_energy_()
   } // end of != ansatz_3
 
   // MP2-F12/C
-  if (r12info->stdapprox() == LinearR12::StdApprox_C ||
-      r12info->stdapprox() == LinearR12::StdApprox_Cp) {
+  if (r12tech->stdapprox() == LinearR12::StdApprox_C ||
+      r12tech->stdapprox() == LinearR12::StdApprox_Cp) {
     Timer tim2("mp2-f12/c pair energies");
     if (r12c_energy_.null()){
-      r12intermediates=new R12EnergyIntermediates(r12eval_,r12info->stdapprox());
+      r12intermediates=new R12EnergyIntermediates(r12eval_,r12tech->stdapprox());
       r12c_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
     }
-    r12c_energy_->print_pair_energies(r12info->spinadapted());
+    r12c_energy_->print_pair_energies(r12world->spinadapted());
     etotal = r12c_energy_->energy();
     ef12 = er12(r12c_energy_);
   }
 
-  if (cabs_singles_ && (r12evalinfo_->obs_eq_ribs() == false)) {
+  if (cabs_singles_ && (r12world->obs_eq_ribs() == false)) {
     cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
   }
 
@@ -169,7 +169,7 @@ MBPT2_R12::compute_energy_()
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   if (twopdm_grid_.nonnull()) {
     Ref<MP2R12Energy> wfn_to_plot;
-    switch(r12info->stdapprox()) {
+    switch(r12tech->stdapprox()) {
       case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
       case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
       case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;

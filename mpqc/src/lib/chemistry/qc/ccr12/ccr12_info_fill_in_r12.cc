@@ -94,7 +94,7 @@ void CCR12_Info::fill_in_iiii() {
                                  gt2,
                                  r12int_eval_->occ_act(Alpha),
                                  r12int_eval_->occ_act(Beta),
-                                 r12int_eval_->r12info()->r12tech()->corrfactor());
+                                 r12int_eval_->r12world()->r12tech()->corrfactor());
     MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, no) );
     GT2.convert(gt2, no, no,
                 amap_o, amap_o, amap_o, amap_o, &iiii_erange);
@@ -269,10 +269,10 @@ void CCR12_Info::fill_in_fr_and_fd() {
     aamap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aamap.begin());
   }
-  // A indices are in ribs_space(Alpha), map to it also
+  // A indices are in cabs_space(Alpha), map to it also
   vector<long> aAmap;
   {
-    vector<int> intmap = sc::map(*(r12evalinfo_->ribs_space(Alpha)), *corr_space_, false);
+    vector<int> intmap = sc::map(*(r12world()->cabs_space(Alpha)), *corr_space_, false);
     aAmap.resize(intmap.size());
     std::copy(intmap.begin(), intmap.end(), aAmap.begin());
   }
@@ -280,7 +280,7 @@ void CCR12_Info::fill_in_fr_and_fd() {
   // assuming RHF!
   const int nocc_act = r12eval()->occ_act(Alpha)->rank();
   const int nvir_act = r12eval()->vir_act(Alpha)->rank();
-  const int ncabs = r12evalinfo_->ribs_space(Alpha)->rank();
+  const int ncabs = r12world()->cabs_space(Alpha)->rank();
 
   // d_fr2 = aAii
   {
@@ -296,9 +296,9 @@ void CCR12_Info::fill_in_fr_and_fd() {
     aAii_erange[2] = MTensor<4>::element_range(0, nocc_act);
     aAii_erange[3] = MTensor<4>::element_range(0, nocc_act);
     const bool transpose_23_01 = true;
-    Ref<TwoBodyIntDescr> tbintdescr = r12evalinfo_->corrfactor()->tbintdescr(r12evalinfo_->integral(), 0);
-    assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
-    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12evalinfo_->corrfactor()->tbint_type_f12() ),
+    Ref<TwoBodyIntDescr> tbintdescr = r12world()->r12tech()->corrfactor()->tbintdescr(r12world()->integral(), 0);
+    assert(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
+    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12world()->r12tech()->corrfactor()->tbint_type_f12() ),
               aamap, aAmap, aimap, aimap, &aAii_erange, transpose_23_01);
   }
 
@@ -315,9 +315,9 @@ void CCR12_Info::fill_in_fr_and_fd() {
     iiaA_erange[1] = MTensor<4>::element_range(0, nocc_act);
     iiaA_erange[2] = MTensor<4>::element_range(0, nvir_act);
     iiaA_erange[3] = MTensor<4>::element_range(0, ncabs);
-    Ref<TwoBodyIntDescr> tbintdescr = r12evalinfo_->corrfactor()->tbintdescr(r12evalinfo_->integral(), 0);
-    assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
-    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12evalinfo_->corrfactor()->tbint_type_f12() ),
+    Ref<TwoBodyIntDescr> tbintdescr = r12world()->r12tech()->corrfactor()->tbintdescr(r12world()->integral(), 0);
+    assert(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
+    F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12world()->r12tech()->corrfactor()->tbint_type_f12() ),
               aimap, aimap, aamap, aAmap, &iiaA_erange);
   }
 

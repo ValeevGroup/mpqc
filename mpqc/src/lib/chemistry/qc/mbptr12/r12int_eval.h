@@ -30,7 +30,7 @@
 #endif
 
 #include <util/ref/ref.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/spin.h>
@@ -58,7 +58,7 @@ class R12IntEval : virtual public SavableState {
   bool evaluated_;
 
   // Calculation information (number of basis functions, R12 approximation, etc.)
-  Ref<R12IntEvalInfo> r12info_;
+  Ref<R12WavefunctionWorld> r12world_;
 
   RefSCMatrix V_[NSpinCases2];
   RefSCMatrix X_[NSpinCases2];
@@ -88,15 +88,11 @@ class R12IntEval : virtual public SavableState {
   double emp2_cabs_singles_;
   int debug_;
 
-  // Map to TwoBodyMOIntsTransform objects that have been computed previously
-  typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
-  TformMap tform_map_;
+  mutable RefSymmSCMatrix ordm_[NSpinCases1];  //!< 1-RDM in MO basis
 
   /// "Spin-adapt" MO space id and name
   void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
 
-  /// Form space of auxiliary virtuals
-  void form_canonvir_space_();
   /// compute canonical CABS space for spin s
   const Ref<OrbitalSpace>& cabs_space_canonical(SpinCase1 s);
 
@@ -169,8 +165,6 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> gammaFgamma_p_p_[NSpinCases1];
   Ref<OrbitalSpace> Fgamma_p_P_[NSpinCases1];
 
-  /// Initialize standard transforms
-  void init_tforms_();
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
   /// When F12=R12 number of simplifications occur so a specialized code is provided
@@ -564,55 +558,61 @@ class R12IntEval : virtual public SavableState {
 public:
   R12IntEval(StateIn&);
   /** Constructs R12IntEval. */
-  R12IntEval(const Ref<R12IntEvalInfo>& info);
+  R12IntEval(const Ref<R12WavefunctionWorld>& r12w);
   ~R12IntEval();
 
   void save_data_state(StateOut&);
   virtual void obsolete();
 
-  void set_debug(int debug);
-  void set_dynamic(bool dynamic);
-  void set_print_percent(double print_percent);
-  void set_memory(size_t nbytes);
+  void debug(int d) { debug_ = d; }
 
-  /// Indicates whether Douglas-Kroll Hamiltonian is used. For output values see Wavefunction::dk().
-  int dk() const;
+  int dk() const { return r12world()->ref()->dk(); }
 
-  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12info()->corrfactor(); }
-  LinearR12::ABSMethod abs_method() const { return r12info()->abs_method(); }
-  const Ref<LinearR12Ansatz>& ansatz() const { return r12info()->ansatz(); }
-  bool spin_polarized() const { return r12info()->refinfo()->spin_polarized(); }
-  bool gbc() const { return r12info()->gbc(); }
-  bool ebc() const { return r12info()->ebc(); }
-  bool coupling() const { return r12info()->coupling(); }
-  LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
-  bool omit_P() const { return r12info()->omit_P(); }
-  RefSymmSCMatrix opdm(const SpinCase1 &spin) const { return(r12info()->opdm(spin)); }
-  RefSymmSCMatrix opdm_blocked(const SpinCase1 &spin);
+#if 1
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12world()->r12tech()->corrfactor(); }
+  LinearR12::ABSMethod abs_method() const { return r12world()->r12tech()->abs_method(); }
+  const Ref<LinearR12Ansatz>& ansatz() const { return r12world()->r12tech()->ansatz(); }
+  bool spin_polarized() const { return r12world()->ref()->spin_polarized(); }
+  bool gbc() const { return r12world()->r12tech()->gbc(); }
+  bool ebc() const { return r12world()->r12tech()->ebc(); }
+  bool coupling() const { return r12world()->r12tech()->coupling(); }
+  LinearR12::StandardApproximation stdapprox() const { return r12world()->r12tech()->stdapprox(); }
+  bool omit_P() const { return r12world()->r12tech()->omit_P(); }
+  const Ref<MOIntsTransformFactory>& tfactory() const { return r12world()->world()->tfactory(); };
+  const Ref<MOIntsRuntime>& moints_runtime() const { return r12world()->world()->moints_runtime(); };
+  const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_runtime4() const { return r12world()->world()->moints_runtime()->runtime_4c(); };
+  const Ref<FockBuildRuntime>& fockbuild_runtime() const { return r12world()->world()->fockbuild_runtime(); };
 
-  const Ref<R12IntEvalInfo>& r12info() const;
+#endif
 
-  RefSCDimension dim_oo_s() const;
-  RefSCDimension dim_oo_t() const;
+  /// the R12World in which this object lives
+  const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
+
+  RefSCDimension dim_oo_s() const { return dim_ij_s_; }
+  RefSCDimension dim_oo_t() const { return dim_ij_t_; }
   /// Dimension for active-occ/active-occ pairs of spin case S
-  RefSCDimension dim_oo(SpinCase2 S) const;
+  RefSCDimension dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
   /// Dimension for active-vir/active-vir pairs of spin case S
-  RefSCDimension dim_vv(SpinCase2 S) const;
+  RefSCDimension dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
   /// Dimension for any/any pairs of spin case S
-  RefSCDimension dim_aa(SpinCase2 S) const;
+  RefSCDimension dim_aa(SpinCase2 S) const { return dim_aa_[S]; }
   /// Dimension for geminal functions of spin case S = # of correlation factors x dim_GG
-  RefSCDimension dim_f12(SpinCase2 S) const;
+  RefSCDimension dim_f12(SpinCase2 S) const { return dim_f12_[S]; }
   /// Dimension of orbital product space that multiply the correlation factor to produce geminal functions
-  RefSCDimension dim_GG(SpinCase2 S) const;
+  RefSCDimension dim_GG(SpinCase2 S) const { return dim_GG_[S]; }
   /// Dimension of orbital product space from which geminal substitutions are allowed
-  RefSCDimension dim_gg(SpinCase2 S) const;
+  RefSCDimension dim_gg(SpinCase2 S) const { return dim_gg_[S]; }
+
   /// Returns the number of unique spin cases
-  int nspincases1() const { return ::sc::nspincases1(spin_polarized()); }
+  int nspincases1() const { return ::sc::nspincases1(r12world()->ref()->spin_polarized()); }
   /// Returns the number of unique combinations of 2 spin cases
-  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
+  int nspincases2() const { return ::sc::nspincases2(r12world()->ref()->spin_polarized()); }
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
+
+  /// does Brillouin condition hold?
+  bool bc() const;
 
   /// Returns amplitudes of pair correlation functions
   Ref<F12Amplitudes> amps();
@@ -647,15 +647,6 @@ public:
   double emp2_cabs_singles();
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
-  /// Returns the eigenvalues of spin case S
-  const RefDiagSCMatrix& evals(SpinCase1 S) const;
-
-  /// Returns the eigenvalues for the closed-shell case
-  RefDiagSCMatrix evals() const;
-  /// Returns the alpha eigenvalues
-  RefDiagSCMatrix evals_a() const;
-  /// Returns the beta eigenvalues
-  RefDiagSCMatrix evals_b() const;
 
   /// Returns the act occ space for spin case S
   const Ref<OrbitalSpace>& DEPRECATED occ_act(SpinCase1 S) const;
@@ -673,6 +664,8 @@ public:
   const Ref<OrbitalSpace>& GGspace(SpinCase1 S) const;
   /// Returns the space for spin case S from which geminal-generating substitutions are allowed
   const Ref<OrbitalSpace>& ggspace(SpinCase1 S) const;
+  /// Returns the 1-RDM for spin S in the ``MO'' basis (i.e. that provided by orbs(S) )
+  RefSymmSCMatrix ordm(SpinCase1 S) const;
 
   /// Form <P|h+J|x> space
   const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
@@ -825,12 +818,6 @@ public:
    *  obtensor should have the dimension ncabs*norbs */
   Ref<OrbitalSpace> obtensor_p_A(const RefSCMatrix &obtensor,SpinCase1 S);
 
-  /** Returns an already created transform.
-      If the transform is not found then throw TransformNotFound */
-  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&) const;
-  /** Map transform T to label */
-  void add_tform(const std::string& label,
-                 const Ref<TwoBodyMOIntsTransform>& T);
   /// Generates canonical id for transform. no correlation function included
   std::string transform_label(const Ref<OrbitalSpace>& space1,
                               const Ref<OrbitalSpace>& space2,
@@ -897,11 +884,6 @@ public:
                      const Ref<OrbitalSpace>& q);
 
 
-};
-
-class TransformNotFound: public ProgrammingError {
-  public:
-  TransformNotFound(const char *description=0, const char *file=0, int line=0) : ProgrammingError(description,file,line) {}
 };
 
 }

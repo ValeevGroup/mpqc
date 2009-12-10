@@ -43,8 +43,8 @@ R12IntEval::contrib_to_VXB_abs_()
   if (evaluated_)
     return;
 
-  const bool obs_eq_vbs = r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // commutators only appear in A', A'', and B
   const bool compute_B = (stdapprox() == LinearR12::StdApprox_Ap ||
       stdapprox() == LinearR12::StdApprox_App || stdapprox() == LinearR12::StdApprox_B);
@@ -60,7 +60,7 @@ R12IntEval::contrib_to_VXB_abs_()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
-      Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+      Ref<SingleRefInfo> refinfo = r12world()->ref();
 
       if (dim_oo(spincase2).n() == 0)
         continue;
@@ -91,7 +91,7 @@ R12IntEval::contrib_to_VXB_abs_()
       const bool occ12_in_x12 = true;
 
       Ref<TwoParticleContraction> tpcontract;
-      const ABSMethod absmethod = r12info()->abs_method();
+      const ABSMethod absmethod = r12world()->abs_method();
       // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
       // it involves this term +O1O2-V1V2
       if ((absmethod == LinearR12::ABS_ABS ||
@@ -108,23 +108,23 @@ R12IntEval::contrib_to_VXB_abs_()
       std::vector<std::string> tforms_f12;
       {
       R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           orbs1,
           xspace2,
           orbs2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
       fill_container(tformkey_creator,tforms_f12);
       }
       if (!occ12_in_x12) {
       R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           occ1_act,
           orbs1,
           occ2_act,
           orbs2,
-          r12info()->corrfactor()
+          corrfactor()
           );
       fill_container(tformkey_creator,tforms);
       }
@@ -206,12 +206,12 @@ R12IntEval::contrib_to_VXB_abs_()
                     absmethod == LinearR12::ABS_CABSPlus);
       Ref<OrbitalSpace> rispace1, rispace2;
       if (cabs_method) {
-        rispace1 = r12info()->ribs_space(spin1);
-        rispace2 = r12info()->ribs_space(spin2);
+        rispace1 = r12world()->ribs_space(spin1);
+        rispace2 = r12world()->ribs_space(spin2);
       }
       else {
-        rispace1 = r12info()->ribs_space();
-        rispace2 = r12info()->ribs_space();
+        rispace1 = r12world()->ribs_space();
+        rispace2 = r12world()->ribs_space();
       }
       // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
       // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
@@ -225,23 +225,23 @@ R12IntEval::contrib_to_VXB_abs_()
       std::vector<std::string> tforms_f12_xmyP;
       {
           R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           xspace1,
           occ1,
           xspace2,
           rispace2,
-          r12info()->corrfactor(),true
+          corrfactor(),true
           );
           fill_container(tformkey_creator,tforms_f12_xmyP);
       }
       if (!occ12_in_x12) {
           R12TwoBodyIntKeyCreator tformkey_creator(
-          r12info()->moints_runtime4(),
+          moints_runtime4(),
           occ1_act,
           occ1,
           occ2_act,
           rispace2,
-          r12info()->corrfactor()
+          corrfactor()
           );
           fill_container(tformkey_creator,tforms_imjP);
       }
@@ -312,23 +312,23 @@ R12IntEval::contrib_to_VXB_abs_()
           std::vector<std::string> tforms_f12_xPym;
           {
           R12TwoBodyIntKeyCreator tformkey_creator(
-              r12info()->moints_runtime4(),
+              moints_runtime4(),
               xspace1,
               rispace1,
               xspace2,
               occ2,
-              r12info()->corrfactor(),true
+              corrfactor(),true
               );
           fill_container(tformkey_creator,tforms_f12_xPym);
           }
           if (!occ12_in_x12) {
           R12TwoBodyIntKeyCreator tformkey_creator(
-              r12info()->moints_runtime4(),
+              moints_runtime4(),
               occ1_act,
               rispace1,
               occ2_act,
               occ2,
-              r12info()->corrfactor()
+              corrfactor()
               );
           fill_container(tformkey_creator,tforms_iPjm);
           }

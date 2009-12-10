@@ -106,10 +106,10 @@ F12Amplitudes::Fxo(SpinCase2 S)
 void
 F12Amplitudes::compute_(SpinCase2 spincase2)
 {
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<SingleRefInfo> refinfo = r12info->refinfo();
-  const bool obs_eq_vbs = r12info->obs_eq_vbs();
-  const bool spin_polarized = refinfo->spin_polarized();
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  Ref<R12RefWavefunction> ref = r12world->ref();
+  const bool obs_eq_vbs = r12world->obs_eq_vbs();
+  const bool spin_polarized = ref->spin_polarized();
 
   const unsigned int s = static_cast<unsigned int>(spincase2);
   const SpinCase1 spin1 = case1(spincase2);
@@ -120,8 +120,8 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<OrbitalSpace> occ2_act = r12eval_->occ_act(spin2);
   Ref<OrbitalSpace> occ1 = r12eval_->occ(spin1);
   Ref<OrbitalSpace> occ2 = r12eval_->occ(spin2);
-  Ref<OrbitalSpace> cabs1 = r12info->ribs_space(spin1);
-  Ref<OrbitalSpace> cabs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> cabs1 = r12world->cabs_space(spin1);
+  Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
   Ref<OrbitalSpace> vir1_act = r12eval_->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12eval_->vir_act(spin2);
   Ref<OrbitalSpace> xspace1 = r12eval_->xspace(spin1);
@@ -160,37 +160,37 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   if (obs_eq_vbs) {
     {
       tform0_pp_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),occ2_act->id(),
-                                                         refinfo->orbs(spin1)->id(),refinfo->orbs(spin2)->id(),
+                                                         ref->orbs(spin1)->id(),ref->orbs(spin2)->id(),
                                                          std::string("ERI"),
                                                          std::string(TwoBodyIntLayout::b1b2_k1k2));
     }
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12world->world()->moints_runtime4(),
         xspace1,
-        refinfo->orbs(spin1),
+        ref->orbs(spin1),
         xspace2,
-        refinfo->orbs(spin2),
-        r12info->corrfactor(),
+        ref->orbs(spin2),
+        r12world->r12tech()->corrfactor(),
         true);
         fill_container(tformkey_creator,tform_pp_keys);
     }
     {
-      R12TwoBodyIntKeyCreator tform_creator(r12info->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tform_creator(r12world->world()->moints_runtime4(),
         xspace1,
         occ1,
         xspace2,
         cabs2,
-        r12info->corrfactor(),
+        r12world->r12tech()->corrfactor(),
         true);
         fill_container(tform_creator,tform_mx_keys);
     }
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(r12world->world()->moints_runtime4(),
         xspace1,
         cabs1,
         xspace2,
         occ2,
-        r12info->corrfactor(),
+        r12world->r12tech()->corrfactor(),
         true);
         fill_container(tformkey_creator,tform_xm_keys);
     }

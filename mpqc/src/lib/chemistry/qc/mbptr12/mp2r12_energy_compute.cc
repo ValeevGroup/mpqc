@@ -77,20 +77,20 @@ MP2R12Energy_SpinOrbital::compute()
   if (evaluated_)
     return;
 
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MessageGrp> msg = r12info->msg();
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  Ref<MessageGrp> msg = r12world->world()->msg();
   int me = msg->me();
   int ntasks = msg->n();
 
-  const bool obs_eq_vbs = r12info->obs_eq_vbs();
-  const bool obs_eq_ribs = r12info->obs_eq_ribs();
+  const bool obs_eq_vbs = r12world->obs_eq_vbs();
+  const bool obs_eq_ribs = r12world->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   bool coupling = r12eval()->coupling();
   if (r12eval()->vir(Alpha)->rank()==0 ||
       r12eval()->vir(Beta)->rank()==0 ||
       cabs_empty)
     coupling = false;
-  const bool diag=r12info->r12tech()->ansatz()->diag();
+  const bool diag=r12world->r12tech()->ansatz()->diag();
   if (diag)
     throw ProgrammingError("MP2R12Energy_SpinOrbital::compute() -- diag=true is not supported. Use MP2R12Energy_SpinOrbital_new.");
 
@@ -100,15 +100,15 @@ MP2R12Energy_SpinOrbital::compute()
   // 2) in approximations A', A'', B, and C the B matrix is pair-specific
   const bool same_B_for_all_pairs = diag;
   // check positive definiteness of B? -- cannot yet do for diagonal ansatz
-  const bool check_posdef_B = (r12info->safety_check() && !diag);
+  const bool check_posdef_B = (r12world->r12tech()->safety_check() && !diag);
   // make B positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_B = ((r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag && same_B_for_all_pairs);
+  const bool posdef_B = ((r12world->r12tech()->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag && same_B_for_all_pairs);
   // make ~B(ij) positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_Bij = ((r12info->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag && !same_B_for_all_pairs);
-  if (r12info->safety_check()) {
+  const bool posdef_Bij = ((r12world->r12tech()->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag && !same_B_for_all_pairs);
+  if (r12world->r12tech()->safety_check()) {
     if (diag)
       ExEnv::out0() << indent << "WARNING: cannot yet check positive definitess of the B matrix when using the diagonal ansatz." << endl;
-    if ( (r12info->posdef_B() != LinearR12::PositiveDefiniteB_no) && diag)
+    if ( (r12world->r12tech()->posdef_B() != LinearR12::PositiveDefiniteB_no) && diag)
       ExEnv::out0() << indent << "WARNING: cannot yet ensure positive definite B matrix when using the diagonal ansatz." << endl;
   }
 
@@ -122,7 +122,7 @@ MP2R12Energy_SpinOrbital::compute()
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12info->corrfactor();
+    Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12world->r12tech()->corrfactor();
     // if no explicit correlation -- just get MP2 energies
     if (nullcorrptr.nonnull()) {
       ef12_[spin].assign(0.0);
@@ -203,7 +203,7 @@ MP2R12Energy_SpinOrbital::compute()
       if (noo == 0)
         continue;
       const int nxc = dim_xc.n();
-      const int num_f12 = r12info->corrfactor()->nfunctions();
+      const int num_f12 = r12world->r12tech()->corrfactor()->nfunctions();
       const int nxy = nxc / num_f12;
       RefSCDimension dim_xy = new SCDimension(nxy);
 
@@ -230,7 +230,7 @@ MP2R12Energy_SpinOrbital::compute()
       unsigned int nnegevals_B = 0;
       bool negevals_B = false;
       RefSCMatrix UX;                // orthonormalizes the geminal space
-      if (r12info->safety_check()) {
+      if (r12world->r12tech()->safety_check()) {
 
 	//
 	// Check if XC pair basis is linearly dependent and compute the orthonormalizer, if possible
@@ -240,7 +240,7 @@ MP2R12Energy_SpinOrbital::compute()
 	  OverlapOrthog orthog(OverlapOrthog::Canonical,
 			       X,
 			       X.kit(),
-			       r12info->refinfo()->ref()->lindep_tol());
+			       r12world->lindep_tol());
 	  nlindep_g12 = orthog.nlindep();
 	  UX = orthog.basis_to_orthog_basis();
 	  ExEnv::out0() << decindent;
@@ -364,7 +364,7 @@ MP2R12Energy_SpinOrbital::compute()
 	// Compute first-order wave function
 	const bool need_to_transform_f12dim = (lindep_g12 || (posdef_B && negevals_B));
 #if USE_INVERT
-	if (need_to_transform_f12dim && r12info->safety_check())
+	if (need_to_transform_f12dim && r12world->r12tech()->safety_check())
 	  throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
         util->invert(B_ij);
         if (debug_ >= DefaultPrintThresholds::mostO4)
@@ -477,7 +477,7 @@ MP2R12Energy_SpinOrbital::compute()
 	    RefSCMatrix UXB = UX;
 	    unsigned int nnegevals_B_ij = 0;
 	    bool negevals_B_ij = false;
-	    if (r12info->safety_check() && check_posdef_B) {
+	    if (r12world->r12tech()->safety_check() && check_posdef_B) {
 	      RefSymmSCMatrix Borth = B.kit()->symmmatrix(UX.rowdim());
 	      Borth.assign(0.0);
 	      Borth.accumulate_transform(UX,B_ij);
@@ -523,7 +523,7 @@ MP2R12Energy_SpinOrbital::compute()
 
 	    const bool need_to_transform_f12dim = (lindep_g12 || (posdef_Bij && negevals_B_ij));
 #if USE_INVERT
-	    if (need_to_transform_f12dim && r12info->safety_check())
+	    if (need_to_transform_f12dim && r12world->r12tech()->safety_check())
 	      throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
             // The r12 amplitudes B^-1 * V
             util->invert(B_ij);
@@ -581,7 +581,7 @@ MP2R12Energy_SpinOrbital::compute()
   } // end of spincase loop
 
   // Set beta-beta energies to alpha-alpha for closed-shell
-  if (!r12info->refinfo()->spin_polarized()) {
+  if (!r12world->ref()->spin_polarized()) {
     C_[BetaBeta] = C_[AlphaAlpha];
     emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
     ef12_[BetaBeta] = ef12_[AlphaAlpha];
@@ -621,12 +621,12 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(const R
   const RefSCDimension dim_xc = V.rowdim();
   const int noo = dim_oo.n();
   const int nxc = dim_xc.n();
-  const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+  const int num_f12 = r12eval_->corrfactor()->nfunctions();
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
 
-  const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12eval_->r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12eval_->r12world()->obs_eq_ribs();
 
   if(debug_ >= DefaultPrintThresholds::mostN) {
     ExEnv::out0() << indent << "Spin1 " << ((spin1==Alpha) ? "Alpha" : "Beta") << " Hartree Fock eigenvalues" << endl;
@@ -733,12 +733,12 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(const SpinM
   const RefSCDimension dim_xc = V.rowdim();
   const int noo = dim_oo.n();
   const int nxc = dim_xc.n();
-  const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+  const int num_f12 = r12eval_->corrfactor()->nfunctions();
   const int nxy = nxc / num_f12;
   RefSCDimension dim_xy = new SCDimension(nxy);
 
-  const bool obs_eq_vbs = r12eval_->r12info()->obs_eq_vbs();
-  const bool obs_eq_ribs = r12eval_->r12info()->obs_eq_ribs();
+  const bool obs_eq_vbs = r12eval_->r12world()->obs_eq_vbs();
+  const bool obs_eq_ribs = r12eval_->r12world()->obs_eq_ribs();
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   bool coupling = r12eval()->coupling();
   if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -826,7 +826,7 @@ void MP2R12Energy_SpinOrbital_new::determine_C_fixed_non_pairspecific(const Spin
                                C_[spincase2],
                                r12eval()->occ_act(case1(spincase2)),
                                r12eval()->occ_act(case1(spincase2)),
-                               r12eval_->r12info()->r12tech()->corrfactor());
+                               r12eval_->corrfactor());
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,
@@ -838,7 +838,7 @@ void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatri
   util->times(B_ij, C_[spincase2], Binv_C);
   RefSCVector C_Binv_C = util->dot_product(C_[spincase2], Binv_C);
 
-  const bool scaled_amplitudes = r12eval_->r12info()->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_scaledfixed;
+  const bool scaled_amplitudes = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_scaledfixed;
   if (scaled_amplitudes) {
     // scale all amplitudes of this spincase by a factor determined by
     // minimization of the total Hylleraas functional for this spin
@@ -881,14 +881,14 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->obs_eq_vbs();
-    const bool obs_eq_ribs = r12info->obs_eq_ribs();
+    const bool obs_eq_vbs = r12world->obs_eq_vbs();
+    const bool obs_eq_ribs = r12world->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -950,7 +950,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
     const RefSCDimension dim_xc = V.rowdim();
     const int noo = dim_oo.n();
     const int nxc = dim_xc.n();
-    const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+    const int num_f12 = r12eval_->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 
@@ -982,14 +982,14 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->obs_eq_vbs();
-    const bool obs_eq_ribs = r12info->obs_eq_ribs();
+    const bool obs_eq_vbs = r12world->obs_eq_vbs();
+    const bool obs_eq_ribs = r12world->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -1052,7 +1052,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
     const RefSCDimension dim_xc = V.rowdim();
     const int noo = dim_oo.n();
     const int nxc = dim_xc.n();
-    const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+    const int num_f12 = r12eval_->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 
@@ -1080,14 +1080,14 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->obs_eq_vbs();
-    const bool obs_eq_ribs = r12info->obs_eq_ribs();
+    const bool obs_eq_vbs = r12world->obs_eq_vbs();
+    const bool obs_eq_ribs = r12world->obs_eq_ribs();
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool coupling = r12eval()->coupling();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -1149,7 +1149,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
     const RefSCDimension dim_xc = V.rowdim();
     const int noo = dim_oo.n();
     const int nxc = dim_xc.n();
-    const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+    const int num_f12 = r12eval_->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 
@@ -1177,14 +1177,14 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+    Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
     const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nocc2_act = occ2_act->rank();
 
-    const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
-    const bool obs_eq_ribs = r12info->basis_ri()->equiv(r12info->basis());
+    const bool obs_eq_vbs = r12world->basis_vir()->equiv(r12world->basis());
+    const bool obs_eq_ribs = r12world->basis_ri()->equiv(r12world->basis());
     const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
     bool ebc = r12eval()->ebc();
     if (r12eval()->vir(Alpha)->rank()==0 ||
@@ -1222,7 +1222,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fixed_nonhylleraas() {
     const RefSCDimension dim_xc = V.rowdim();
     const int noo = dim_oo.n();
     const int nxc = dim_xc.n();
-    const int num_f12 = r12eval_->r12info()->corrfactor()->nfunctions();
+    const int num_f12 = r12eval_->corrfactor()->nfunctions();
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 

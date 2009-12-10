@@ -41,7 +41,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -74,9 +74,9 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
   using LinearR12::Direct_Contraction;
   Ref<R12IntEval> thisref(this);
 
-  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-  //const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
-  const unsigned int maxnabs = r12info()->maxnabs();
+  const bool vbs_eq_obs = r12world()->basis()->equiv(r12world()->basis_vir());
+  //const bool abs_eq_obs = r12world()->basis()->equiv(r12world()->basis_ri());
+  const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
 
   const unsigned int nf12 = corrfactor()->nfunctions();
   Timer timer("B(app. C) general reference Ansatz2 intermediate");
@@ -154,10 +154,10 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
               << "Entered " << Plabel << " evaluator" << endl;
         ExEnv::out0() << incindent;
 
-        Ref<OrbitalSpace> ribs1 = r12info()->ribs_space();
-        Ref<OrbitalSpace> ribs2 = r12info()->ribs_space();
-        Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
-        Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+        Ref<OrbitalSpace> ribs1 = r12world()->ribs_space();
+        Ref<OrbitalSpace> ribs2 = r12world()->ribs_space();
+        Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
+        Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
         RefSCMatrix P = B_[s].clone();
         P.assign(0.0);
 
@@ -255,18 +255,18 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
           std::vector<std::string> tforms_bra_p_A;
           {
             R12TwoBodyIntKeyCreator tform_creator(
-                                r12info()->moints_runtime4(),
+                                moints_runtime4(),
                                 GG1space,gamma_p_p1,GG2space,cabs2,
-                                r12info()->corrfactor(),true
+                                corrfactor(),true
                                 );
             fill_container(tform_creator,tforms_bra_p_A);
           }
           std::vector<std::string> tforms_ket_p_A;
           {
             R12TwoBodyIntKeyCreator tform_creator(
-                                r12info()->moints_runtime4(),
+                                moints_runtime4(),
                                 GG1space,orbs1,GG2space,f_A_A2,
-                                r12info()->corrfactor(),true
+                                corrfactor(),true
                                 );
             fill_container(tform_creator,tforms_ket_p_A);
           }
@@ -288,18 +288,18 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
             std::vector<std::string> tforms_bra_A_p;
             {
               R12TwoBodyIntKeyCreator tform_creator(
-                                  r12info()->moints_runtime4(),
+                                  moints_runtime4(),
                                   GG1space,cabs1,GG2space,gamma_p_p2,
-                                  r12info()->corrfactor(),true
+                                  corrfactor(),true
                                   );
               fill_container(tform_creator,tforms_bra_A_p);
             }
             std::vector<std::string> tforms_ket_A_p;
             {
               R12TwoBodyIntKeyCreator tform_creator(
-                                  r12info()->moints_runtime4(),
+                                  moints_runtime4(),
                                   GG1space,f_A_A1,GG2space,orbs2,
-                                  r12info()->corrfactor(),true
+                                  corrfactor(),true
                                   );
               fill_container(tform_creator,tforms_ket_A_p);
             }

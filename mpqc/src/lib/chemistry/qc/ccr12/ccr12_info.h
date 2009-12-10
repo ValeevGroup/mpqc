@@ -38,7 +38,7 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/tensorextrap.h>
@@ -145,7 +145,7 @@ class CCR12_Info : virtual public RefCount {
     int nria_, nrib_;
     std::vector<unsigned int> mosyma_,mosymb_;
     std::vector<unsigned int> cabssyma_,cabssymb_;
-    const Ref<R12IntEvalInfo>& r12evalinfo_;
+    const Ref<R12WavefunctionWorld>& r12world_;
     size_t workmemsize_;
 
     // orbital data after sorted
@@ -189,7 +189,7 @@ class CCR12_Info : virtual public RefCount {
     RefSCMatrix lmatrix_;
 
   public:
-    CCR12_Info(const Ref<R12IntEvalInfo>&,const Ref<MemoryGrp>&,size_t,
+    CCR12_Info(const Ref<R12WavefunctionWorld>&,const Ref<MemoryGrp>&,size_t,
                const Ref<SCF>,int,int,int,long,long,int,int,
                std::string,std::string);
     ~CCR12_Info();
@@ -199,7 +199,7 @@ class CCR12_Info : virtual public RefCount {
 
     /// constants used in initialization
     const Ref<R12IntEval>& r12eval() const { return r12int_eval_; }
-    const Ref<R12IntEvalInfo>& r12evalinfo() { return r12evalinfo_; }
+    const Ref<R12WavefunctionWorld>& r12world() { return r12world_; }
     const Ref<SCF> ref(){return ref_;};
     bool fixed() const {return fixed_;};
     long nirrep()const {return (long)nirrep_;};

@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -67,9 +67,9 @@ R12IntEval::compute_BApp_()
   if (evaluated_)
     return;
 
-  const bool vbs_eq_obs = r12info()->obs_eq_vbs();
-  const bool abs_eq_obs = r12info()->obs_eq_ribs();
-  const unsigned int maxnabs = r12info()->maxnabs();
+  const bool vbs_eq_obs = r12world()->obs_eq_vbs();
+  const bool abs_eq_obs = r12world()->obs_eq_ribs();
+  const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
 
   Timer tim_B_app_App("B(app. A'') intermediate");
   ExEnv::out0() << endl << indent
@@ -87,8 +87,8 @@ R12IntEval::compute_BApp_()
   Ref<OrbitalSpace> hJnr[NSpinCases1];
   if (this->dk() > 0) {
 
-    const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12info()->r12tech()->H0_dk_approx_pauli();
-    const bool H0_dk_keep = r12info()->r12tech()->H0_dk_keep();
+    const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
+    const bool H0_dk_keep = r12world()->r12tech()->H0_dk_keep();
 
     const int nspins1 = this->nspincases1();
     for (int s = 0; s < nspins1; ++s) {
@@ -101,7 +101,7 @@ R12IntEval::compute_BApp_()
         throw FeatureNotImplemented("Relativistic R12/A'' computations are not supported with ABS==OBS",__FILE__,__LINE__);
 
       // which space is used as RIBS?
-      Ref<OrbitalSpace> ribs = (maxnabs < 2) ? this->orbs(spin) : r12info()->ribs_space();
+      Ref<OrbitalSpace> ribs = (maxnabs < 2) ? this->orbs(spin) : r12world()->ribs_space();
       // get AO space for RIBS
       const Ref<OrbitalSpace>& aoribs =
         AOSpaceRegistry::instance()->value(ribs->basis());
@@ -115,7 +115,7 @@ R12IntEval::compute_BApp_()
         const std::string nonrel_hkey =
           ParsedOneBodyIntKey::key(aox->id(), aoribs->id(),
                                    std::string("H"));
-        RefSCMatrix Hnr = r12info()->fockbuild_runtime()->get(nonrel_hkey);
+        RefSCMatrix Hnr = fockbuild_runtime()->get(nonrel_hkey);
         RefSCMatrix dH = Hnr.clone();
         dH->convert(Hr);
         Hnr.scale(-1.0);

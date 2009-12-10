@@ -38,7 +38,7 @@
 
 namespace sc {
 
-class R12IntEvalInfo;
+class R12WavefunctionWorld;
 
 class CCSDPR12: public CCR12 {
 

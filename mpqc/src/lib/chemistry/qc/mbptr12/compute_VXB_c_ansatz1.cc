@@ -45,12 +45,12 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
 
   Timer timer("mp2-f12c_ansatz1 intermeds (tensor contract)");
 
-  //if((r12info()->ansatz()->orbital_product_gg() != LinearR12::OrbProdgg_pq) ||
-  //    (r12info()->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq)) {
+  //if((r12world()->ansatz()->orbital_product_gg() != LinearR12::OrbProdgg_pq) ||
+  //    (r12world()->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq)) {
   //  throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1() -- gg space and GG space must be both spanned by a pq orbital product Ansatz.",__FILE__,__LINE__);
   //}
 
-  if(r12info()->ansatz()->projector() != LinearR12::Projector_1) {
+  if(r12world()->r12tech()->ansatz()->projector() != LinearR12::Projector_1) {
     throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1() -- this routine only works with an Ansatz 1 projector.",__FILE__,__LINE__);
   }
 
@@ -59,7 +59,6 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 
     if (dim_oo(spincase2).n() == 0)
       continue;
@@ -70,10 +69,10 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
     const Ref<OrbitalSpace>& orbs2 = this->orbs(spin2);
     const Ref<OrbitalSpace>& GG1_space = GGspace(spin1);
     const Ref<OrbitalSpace>& GG2_space = GGspace(spin2);
-    const Ref<OrbitalSpace>& abs1 = r12info()->abs_space();
-    const Ref<OrbitalSpace>& abs2 = r12info()->abs_space();
-    const Ref<OrbitalSpace>& cabs1 = r12info()->ribs_space(spin1);
-    const Ref<OrbitalSpace>& cabs2 = r12info()->ribs_space(spin2);
+    const Ref<OrbitalSpace>& abs1 = r12world()->abs_space();
+    const Ref<OrbitalSpace>& abs2 = r12world()->abs_space();
+    const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+    const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
 
     const bool gg1_eq_gg2 = (gg1_space==gg2_space);
     const bool GG1_eq_GG2 = (GG1_space==GG2_space);
@@ -94,7 +93,7 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
     const bool gg12_in_GG12 = true;
 
     Ref<TwoParticleContraction> tpcontract;
-    const ABSMethod absmethod = r12info()->abs_method();
+    const ABSMethod absmethod = r12world()->r12tech()->abs_method();
     tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
     const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
@@ -102,8 +101,8 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
 
     Ref<OrbitalSpace> rispace1, rispace2;
     if (cabs_method) {
-      rispace1 = r12info()->ribs_space();
-      rispace2 = r12info()->ribs_space();
+      rispace1 = r12world()->ribs_space();
+      rispace2 = r12world()->ribs_space();
     }
     else {
       throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1 -- Ansatz 1 only implemented with CABS type methods.",__FILE__,__LINE__);
@@ -115,9 +114,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,orbs1,GG2_space,orbs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }
@@ -148,9 +147,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,orbs1,GG2_space,cabs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }
@@ -176,9 +175,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,cabs1,GG2_space,orbs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }
@@ -212,9 +211,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,orbs1,GG2_space,orbs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }
@@ -234,9 +233,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,orbs1,GG2_space,cabs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }
@@ -251,9 +250,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
-                    r12info()->moints_runtime4(),
+                    moints_runtime4(),
                     GG1_space,cabs1,GG2_space,orbs2,
-                    r12info()->corrfactor(),true
+                    corrfactor(),true
                     );
         fill_container(tformkey_creator,tforms_f12);
       }

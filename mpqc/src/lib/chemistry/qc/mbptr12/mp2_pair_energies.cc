@@ -57,7 +57,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   //
   // If transform not given, construct appropriately, otherwise notify user which transform is used
   //
-  Ref<TwoBodyMOIntsTransform> tform = r12info()->moints_runtime4()->get(tform_key);
+  Ref<TwoBodyMOIntsTransform> tform = moints_runtime4()->get(tform_key);
 
   //
   // Initialize spaces and maps
@@ -119,7 +119,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
 
   vector<int> proc_with_ints;
   const int nproc_with_ints = accum->tasks_with_access(proc_with_ints);
-  const int me = r12info()->msg()->me();
+  const int me = r12world()->world()->msg()->me();
 
   if (accum->has_access(me)) {
     for(iter13.start(); iter13; iter13.next()) {

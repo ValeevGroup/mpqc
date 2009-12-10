@@ -66,7 +66,7 @@ FockBuildRuntime::FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
 }
 
 FockBuildRuntime::FockBuildRuntime(StateIn& si) {
-  int spin_polarized;  si.get(spin_polarized);  spin_polarized_ = spin_polarized;
+  si.get(spin_polarized_);
   RefSCDimension pdim;
   pdim << SavableState::restore_state(si);
   Ref<SCMatrixKit> kit = new ReplSCMatrixKit;
@@ -88,7 +88,7 @@ FockBuildRuntime::FockBuildRuntime(StateIn& si) {
 }
 
 void FockBuildRuntime::save_data_state(StateOut& so) {
-  so.put((int)spin_polarized_);
+  so.put(spin_polarized_);
   SavableState::save_state(P_.dim().pointer(), so);
   P_.save(so);
   if (spin_polarized_)
@@ -107,14 +107,15 @@ void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
   P = aodensity_alpha.copy(); P.accumulate(aodensity_beta);
   new_P = new_P || (P - P_)->maxabs() > DBL_EPSILON;
   //(P - P_).print("FockBuildRuntime::set_densities() -- \"new - old\" density");
-  if (Po_) {
-    Po = aodensity_alpha - aodensity_beta;
-    new_P = new_P || (Po - Po_)->maxabs() > DBL_EPSILON;
-  }
+  Po = aodensity_alpha - aodensity_beta;
+  RefSymmSCMatrix dPo = Po_ ? (Po - Po_) : Po;
+  new_P = new_P || dPo->maxabs() > DBL_EPSILON;
   if (new_P) {
     registry_->clear();
     P_ = P;
-    if (Po_) Po_ = Po;
+    spin_polarized_ = Po->maxabs() > DBL_EPSILON;
+    if (spin_polarized_)
+      Po_ = Po;
   }
 }
 

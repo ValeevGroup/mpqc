@@ -43,7 +43,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -81,13 +81,12 @@ R12IntEval::compute_B_gbc_()
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
 
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<OrbitalSpace> occ1 = occ(spin1);
     Ref<OrbitalSpace> occ2 = occ(spin2);
     Ref<OrbitalSpace> orbs1 = orbs(spin1);
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
-    Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
-    Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+    Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
+    Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
     Ref<OrbitalSpace> xspace1 = xspace(spin1);
     Ref<OrbitalSpace> xspace2 = xspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
@@ -111,7 +110,7 @@ R12IntEval::compute_B_gbc_()
                  occ1,occ2,
                  F_m_A_1,F_m_A_2);
 
-    if (r12info()->maxnabs() >= 2) {
+    if (r12world()->r12tech()->maxnabs() >= 2) {
       // R_klAB F_Am R_mBij
       compute_FxF_(B_gbc1,spincase2,
                    xspace1,xspace2,

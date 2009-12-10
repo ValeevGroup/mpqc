@@ -42,7 +42,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -70,9 +70,9 @@ void R12IntEval::compute_BC_ansatz1_() {
   if (evaluated_)
   return;
 
-  const bool vbs_eq_obs = r12info()->basis()->equiv(r12info()->basis_vir());
-  //const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
-  const unsigned int maxnabs = r12info()->maxnabs();
+  const bool vbs_eq_obs = r12world()->basis()->equiv(r12world()->basis_vir());
+  //const bool abs_eq_obs = r12world()->basis()->equiv(r12world()->basis_ri());
+  const unsigned int maxnabs = r12world()->r12tech()->maxnabs();
 
   const unsigned int nf12 = corrfactor()->nfunctions();
 
@@ -85,7 +85,6 @@ void R12IntEval::compute_BC_ansatz1_() {
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
 
-    Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<OrbitalSpace> occ1 = occ(spin1);
     Ref<OrbitalSpace> occ2 = occ(spin2);
     Ref<OrbitalSpace> orbs1 = orbs(spin1);
@@ -153,10 +152,10 @@ void R12IntEval::compute_BC_ansatz1_() {
               << "Entered " << Plabel << " evaluator" << endl;
         ExEnv::out0() << incindent;
 
-        Ref<OrbitalSpace> ribs1 = r12info()->ribs_space();
-        Ref<OrbitalSpace> ribs2 = r12info()->ribs_space();
-        Ref<OrbitalSpace> cabs1 = r12info()->ribs_space(spin1);
-        Ref<OrbitalSpace> cabs2 = r12info()->ribs_space(spin2);
+        Ref<OrbitalSpace> ribs1 = r12world()->ribs_space();
+        Ref<OrbitalSpace> ribs2 = r12world()->ribs_space();
+        Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
+        Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
         RefSCMatrix P;
 
 #if INCLUDE_P_PKP

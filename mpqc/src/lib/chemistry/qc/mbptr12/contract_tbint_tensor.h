@@ -138,14 +138,14 @@ namespace sc {
     const size_t num_tforms_bra = tformkeys_bra.size();
     tformvec transforms_bra(num_tforms_bra);
     for (unsigned int t = 0; t < num_tforms_bra; ++t) {
-      transforms_bra[t] = r12info()->moints_runtime4()->get(tformkeys_bra[t]);
+      transforms_bra[t] = moints_runtime4()->get(tformkeys_bra[t]);
     }
 
     // ket transforms
     const size_t num_tforms_ket = tformkeys_ket.size();
     tformvec transforms_ket(num_tforms_ket);
     for (unsigned int t = 0; t < num_tforms_ket; ++t) {
-      transforms_ket[t] = r12info()->moints_runtime4()->get(tformkeys_ket[t]);
+      transforms_ket[t] = moints_runtime4()->get(tformkeys_ket[t]);
     }
 
     //
@@ -312,7 +312,7 @@ namespace sc {
           // WARNING: assuming same accessibility for both bra and ket transforms
           std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
-          const int me = r12info()->msg()->me();
+          const int me = r12world()->world()->msg()->me();
           const bool nket_ge_nevals = (nket >= nproc_with_ints);
 
           if (accumb->has_access(me)) {
@@ -642,14 +642,14 @@ namespace sc {
     const size_t num_tforms_bra = tformkeys_bra.size();
     tformvec transforms_bra(num_tforms_bra);
     for (unsigned int t = 0; t < num_tforms_bra; ++t) {
-      transforms_bra[t] = r12info()->moints_runtime4()->get(tformkeys_bra[t]);
+      transforms_bra[t] = moints_runtime4()->get(tformkeys_bra[t]);
     }
 
     // ket transforms
     const size_t num_tforms_ket = tformkeys_ket.size();
     tformvec transforms_ket(num_tforms_ket);
     for (unsigned int t = 0; t < num_tforms_ket; ++t) {
-      transforms_ket[t] = r12info()->moints_runtime4()->get(tformkeys_ket[t]);
+      transforms_ket[t] = moints_runtime4()->get(tformkeys_ket[t]);
     }
 
     //
@@ -748,13 +748,13 @@ namespace sc {
     const unsigned int blksize_int_tri = space1_intb->rank() * (space1_intb->rank() - 1) / 2;
     const unsigned int blksize_int = alphabeta ? blksize_int_sq : blksize_int_tri;
     // maximum tile size is determined by the available memory
-    const size_t memory_available = r12info()->tfactory()->memory();
+    const size_t memory_available = tfactory()->memory();
     const size_t max_tile_size = memory_available / (2 * blksize_int * sizeof(double));
     if (max_tile_size == 0) {
       throw AlgorithmException("not enough memory for even single tile", __FILE__, __LINE__);
     }
     // try tiling nij_bra and nij_ket into nproc tiles
-    const int nproc = r12info()->msg()->n();
+    const int nproc = r12world()->world()->msg()->n();
     size_t try_tile_size_bra = (nij_bra + nproc - 1) / nproc;
     size_t try_tile_size_ket = (nij_ket + nproc - 1) / nproc;
     try_tile_size_bra = std::min(try_tile_size_bra, max_tile_size);
@@ -805,7 +805,7 @@ namespace sc {
           // WARNING: assuming same accessibility for both bra and ket transforms
           std::vector<int> proc_with_ints;
           const int nproc_with_ints = accumb->tasks_with_access(proc_with_ints);
-          const int me = r12info()->msg()->me();
+          const int me = r12world()->world()->msg()->me();
 
           if (accumb->has_access(me)) {
 

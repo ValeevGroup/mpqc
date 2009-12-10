@@ -86,8 +86,8 @@ void CCSD_R12::compute(){
   print_iteration_header(theory_);
 
   // only fixed amplitude ansatz is supported at the moment
-  assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-  assert(ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
+  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
 
   timer_->enter("CCR12 iterations");
   double iter_start = 0.0;
@@ -148,7 +148,7 @@ void CCSD_R12::compute(){
   print_iteration_footer();
 
   // if not fully optimized, we need to add the geminal-lambda contribution.
-  if (ccr12_info_->r12evalinfo()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+  if (ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
     assert(false);
     timer_->enter("Lambda contribution");
     iter_start = timer_->get_wall_time();

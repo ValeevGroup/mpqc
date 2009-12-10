@@ -1,5 +1,5 @@
 //
-// refinfo.cc
+// ref.cc
 //
 // Copyright (C) 2005 Edward Valeev
 //
@@ -27,9 +27,10 @@
 
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/mbptr12/refinfo.h>
+#include <chemistry/qc/mbptr12/ref.h>
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/obintfactory.h>
+#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 
 using namespace sc;
 
@@ -124,13 +125,16 @@ static ClassDesc PopulatedOrbitalSpace_cd(
   0, 0, create<PopulatedOrbitalSpace>);
 
 
-PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
+PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
+                                             const Ref<GaussianBasisSet>& bs,
                                              const Ref<Integral>& integral,
                                              const RefSCMatrix& coefs,
                                              const std::vector<double>& occs,
                                              const std::vector<bool>& active,
                                              const RefDiagSCMatrix& energies,
-                                             bool eorder_increasing)
+                                             bool eorder_increasing,
+                                             Ref<OrbitalSpace> vbs,
+                                             Ref<FockBuildRuntime> fbrun)
 {
   const int nmo = occs.size();
   std::vector<bool> occ_mask(nmo, false);
@@ -146,6 +150,15 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianB
       uocc_mask[i] = true;
       uocc_act_mask[i] = true && active[i];
     }
+  }
+  // if VBS is given, recompute the masks for the virtuals
+  if (vbs.nonnull()) {
+    assert(fbrun.nonnull());
+    const int nvirt = vbs->rank();
+    uocc_mask.resize(nvirt);
+    uocc_act_mask.resize(nvirt);
+    std::fill(uocc_mask.begin(), uocc_mask.end(), true);
+    std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
   }
 
   const std::string prefix(to_string(spin));
@@ -192,17 +205,27 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianB
                                            occ_act_sb_,
                                            eorder_increasing);
   }
+
   {
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spin);
-    uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
+    if (vbs.null())
+      uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
+    else {
+      uocc_sb_ = orthog_comp(occ_sb_, vbs, id, "VBS", OverlapOrthog::default_lindep_tol());
+      // canonicalize
+      uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
+    }
   }
   {
     ostringstream oss;
     oss << prefix << " active unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("a(sym)"),spin);
-    uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
+    if (vbs.null())
+      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
+    else
+      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
   }
   {
     ostringstream oss;
@@ -220,6 +243,19 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianB
                                             uocc_act_sb_,
                                             eorder_increasing);
   }
+
+  // register all spaces
+  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  idxreg->add(make_keyspace_pair(orbs_sb_));
+  idxreg->add(make_keyspace_pair(orbs_));
+  idxreg->add(make_keyspace_pair(occ_sb_));
+  idxreg->add(make_keyspace_pair(occ_));
+  idxreg->add(make_keyspace_pair(uocc_sb_));
+  idxreg->add(make_keyspace_pair(uocc_));
+  idxreg->add(make_keyspace_pair(occ_act_sb_));
+  idxreg->add(make_keyspace_pair(occ_act_));
+  idxreg->add(make_keyspace_pair(uocc_act_sb_));
+  idxreg->add(make_keyspace_pair(uocc_act_));
 }
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
@@ -254,22 +290,24 @@ PopulatedOrbitalSpace::save_data_state(StateOut& so) {
 
 ///////////////////////////////////////////////////////////
 
-static ClassDesc RefInfo_cd(
-  typeid(RefInfo),"RefInfo",1,"virtual public SavableState",
+static ClassDesc R12RefWavefunction_cd(
+  typeid(R12RefWavefunction),"R12RefWavefunction",1,"virtual public SavableState",
   0, 0, 0);
 
-RefInfo::RefInfo(const Ref<GaussianBasisSet>& basis,
-                 const Ref<Integral>& integral) :
-  basis_(basis), integral_(integral) {
+R12RefWavefunction::R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                                       const Ref<GaussianBasisSet>& basis,
+                                       const Ref<Integral>& integral) :
+  world_(world), basis_(basis), integral_(integral) {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
 }
 
-RefInfo::RefInfo(StateIn& si) :
+R12RefWavefunction::R12RefWavefunction(StateIn& si) :
   SavableState(si)
 {
+  world_ << SavableState::restore_state(si);
   basis_ << SavableState::restore_state(si);
   integral_ = Integral::get_default_integral();
-  // is the current default Integral compatible with the original factory used to produce this RefInfo?
+  // is the current default Integral compatible with the original factory used to produce this R12RefWavefunction?
   Integral::CartesianOrdering o; int io; si.get(io); o = static_cast<Integral::CartesianOrdering>(io);
   if (o != integral_->cartesian_ordering())
     throw InputError("default Integral is incompatible with the Integral used to produce this object",
@@ -280,13 +318,14 @@ RefInfo::RefInfo(StateIn& si) :
     spinspaces_[spin] << SavableState::restore_state(si);
 }
 
-RefInfo::~RefInfo()
+R12RefWavefunction::~R12RefWavefunction()
 {
 }
 
 void
-RefInfo::save_data_state(StateOut& so)
+R12RefWavefunction::save_data_state(StateOut& so)
 {
+  SavableState::save_state(world_.pointer(),so);
   SavableState::save_state(basis_.pointer(),so);
   so.put(static_cast<int>(integral_->cartesian_ordering()));
 
@@ -295,124 +334,192 @@ RefInfo::save_data_state(StateOut& so)
 }
 
 void
-RefInfo::init() const
+R12RefWavefunction::init() const
 {
   if (spinspaces_[Alpha].null()) {
-    RefInfo* this_nonconst = const_cast<RefInfo*>(this);
+    R12RefWavefunction* this_nonconst = const_cast<R12RefWavefunction*>(this);
     this_nonconst->init_spaces();
   }
 }
 
+RefSymmSCMatrix
+R12RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const {
+  // need to transform density from AO basis to orbs basis
+  // P' = C^t S P S C
+  RefSCMatrix C = orbs_sb(spin)->coefs();
+  RefSymmSCMatrix P_ao = this->ordm(spin);
+  Ref<PetiteList> plist = integral_->petite_list();
+  RefSymmSCMatrix S_so = compute_onebody_matrix<&Integral::overlap>(plist);
+  RefSymmSCMatrix S_ao = plist->to_AO_basis(S_so);
+  S_so = 0;
+  RefSymmSCMatrix SPS_ao = P_ao.kit()->symmmatrix(S_ao.dim()); SPS_ao.assign(0.0);
+  SPS_ao.accumulate_transform(S_ao, P_ao);
+#if 0
+  if (! S_ao.dim()->equiv(P_ao.dim())) { // may need to change the dimension of P_ao to match that of S
+    RefSymmSCMatrix P_ao_redim = P_ao.kit()->symmmatrix(S_ao.dim());
+    P_ao_redim->convert(P_ao);
+    P_ao = P_ao_redim;
+    P_ao.print(prepend_spincase(S, "AO density matrix (after redimensioning)").c_str());
+  }
+#endif
+  RefSymmSCMatrix P_mo = C.kit()->symmmatrix(C.coldim());
+  P_mo.assign(0.0);
+  P_mo.accumulate_transform(C, SPS_ao, SCMatrix::TransposeTransform);
+  return P_mo;
+}
+
+namespace {
+  SpinCase1 valid_spincase(SpinCase1 s) {
+    return s == AnySpinCase1 ? Alpha : s;
+  }
+}
+
 const Ref<OrbitalSpace>&
-RefInfo::orbs_sb(SpinCase1 s) const
+R12RefWavefunction::orbs_sb(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->orbs_sb();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::orbs(SpinCase1 s) const
+R12RefWavefunction::orbs(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->orbs();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::occ_sb(SpinCase1 s) const
+R12RefWavefunction::occ_sb(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->occ_sb();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::occ_act_sb(SpinCase1 s) const
+R12RefWavefunction::occ_act_sb(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->occ_act_sb();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::occ(SpinCase1 s) const
+R12RefWavefunction::occ(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->occ();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::occ_act(SpinCase1 s) const
+R12RefWavefunction::occ_act(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->occ_act();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::uocc_sb(SpinCase1 s) const
+R12RefWavefunction::uocc_sb(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->uocc_sb();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::uocc_act_sb(SpinCase1 s) const
+R12RefWavefunction::uocc_act_sb(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->uocc_act_sb();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::uocc(SpinCase1 s) const
+R12RefWavefunction::uocc(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->uocc();
 }
 
 const Ref<OrbitalSpace>&
-RefInfo::uocc_act(SpinCase1 s) const
+R12RefWavefunction::uocc_act(SpinCase1 s) const
 {
   init();
+  s = valid_spincase(s);
   return spinspaces_[s]->uocc_act();
 }
 
 ///////////////////////////////////////////////////////////////////
 
-static ClassDesc SlaterDeterminantRefInfo_cd(
-  typeid(SlaterDeterminantRefInfo),"SlaterDeterminantRefInfo",1,"public RefInfo",
-  0, 0, create<SlaterDeterminantRefInfo>);
+static ClassDesc SD_R12RefWavefunction_cd(
+  typeid(SD_R12RefWavefunction),"SD_R12RefWavefunction",1,"public R12RefWavefunction",
+  0, 0, create<SD_R12RefWavefunction>);
 
-SlaterDeterminantRefInfo::SlaterDeterminantRefInfo(const Ref<OneBodyWavefunction>& obwfn,
+SD_R12RefWavefunction::SD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                                                   const Ref<OneBodyWavefunction>& obwfn,
                                                    bool spin_restricted,
                                                    unsigned int nfzc,
-                                                   unsigned int nfzv) :
-                                                   RefInfo(obwfn->basis(), obwfn->integral()),
+                                                   unsigned int nfzv,
+                                                   Ref<OrbitalSpace> vir_space) :
+                                                   R12RefWavefunction(world,
+                                                                      obwfn->basis(),
+                                                                      obwfn->integral()),
                                                    obwfn_(obwfn),
                                                    spin_restricted_(spin_restricted),
                                                    nfzc_(nfzc),
-                                                   nfzv_(nfzv) {
+                                                   nfzv_(nfzv),
+                                                   vir_space_(vir_space) {
   // bring spin_restricted in sync with obwfn
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
+  // make sure that FockBuildRuntime uses same densities as the reference wavefunction
+  world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+
+  if (nfzv > 0 && vir_space.nonnull())
+    throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
-SlaterDeterminantRefInfo::SlaterDeterminantRefInfo(StateIn& si) : RefInfo(si) {
+SD_R12RefWavefunction::SD_R12RefWavefunction(StateIn& si) : R12RefWavefunction(si) {
   obwfn_ << SavableState::restore_state(si);
+  vir_space_ << SavableState::restore_state(si);
   si.get(spin_restricted_);
   si.get(nfzc_);
   si.get(nfzv_);
 }
 
-SlaterDeterminantRefInfo::~SlaterDeterminantRefInfo() {
+SD_R12RefWavefunction::~SD_R12RefWavefunction() {
 }
 
 void
-SlaterDeterminantRefInfo::save_data_state(StateOut& so) {
+SD_R12RefWavefunction::save_data_state(StateOut& so) {
   SavableState::save_state(obwfn_.pointer(), so);
+  SavableState::save_state(vir_space_.pointer(), so);
   so.put(spin_restricted_);
   so.put(nfzc_);
   so.put(nfzv_);
 }
 
+RefSymmSCMatrix
+SD_R12RefWavefunction::ordm(SpinCase1 s) const {
+  s = valid_spincase(s);
+  if (spin_restricted()) s = Alpha;
+  if (s == Alpha) return obwfn()->alpha_ao_density();
+  obwfn()->beta_ao_density();
+}
+
+RefSymmSCMatrix
+SD_R12RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                  const Ref<GaussianBasisSet> &p_basis) {
+  return obwfn()->core_hamiltonian_for_basis(basis, p_basis);
+}
+
 void
-SlaterDeterminantRefInfo::init_spaces()
+SD_R12RefWavefunction::init_spaces()
 {
   if (spin_restricted())
     init_spaces_restricted();
@@ -421,8 +528,10 @@ SlaterDeterminantRefInfo::init_spaces()
 }
 
 void
-SlaterDeterminantRefInfo::init_spaces_restricted()
+SD_R12RefWavefunction::init_spaces_restricted()
 {
+  const bool moorder = true;   // order orbitals in the order of increasing energies
+  Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
   const Ref<GaussianBasisSet> bs = obwfn()->basis();
   const RefSCMatrix evecs_so = obwfn()->eigenvectors();
   const RefDiagSCMatrix evals = obwfn()->eigenvalues();
@@ -447,23 +556,31 @@ SlaterDeterminantRefInfo::init_spaces_restricted()
     aoccs[mo] = obwfn()->alpha_occupation(mo);
   }
   if (obwfn()->spin_polarized() == false) { // closed-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao, aoccs, actmask, evals);
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao,
+                                                   aoccs, actmask, evals, moorder,
+                                                   vir_space(), fbrun);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral, evecs_ao, aoccs, actmask, evals);
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral, evecs_ao,
+                                                   aoccs, actmask, evals, moorder,
+                                                   vir_space(), fbrun);
     vector<double> boccs(nmo);
     for(int mo=0; mo<nmo; mo++) {
       boccs[mo] = obwfn()->beta_occupation(mo);
     }
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral, evecs_ao, boccs, actmask, evals);
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral, evecs_ao,
+                                                  boccs, actmask, evals, moorder,
+                                                  vir_space(), fbrun);
   }
 }
 
 
 void
-SlaterDeterminantRefInfo::init_spaces_unrestricted()
+SD_R12RefWavefunction::init_spaces_unrestricted()
 {
+  const bool moorder = true;   // order orbitals in the order of increasing energies
+  Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
   const Ref<GaussianBasisSet> bs = obwfn()->basis();
   const Ref<Integral>& integral = obwfn()->integral();
 
@@ -508,7 +625,8 @@ SlaterDeterminantRefInfo::init_spaces_unrestricted()
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral,
                                                    plist->evecs_to_AO_basis(alpha_evecs),
-                                                   aocc, actmask, alpha_evals);
+                                                   aocc, actmask, alpha_evals, moorder,
+                                                   vir_space(), fbrun);
   }
   { // beta spin
     // compute active orbital mask
@@ -520,25 +638,27 @@ SlaterDeterminantRefInfo::init_spaces_unrestricted()
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
     spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral,
                                                   plist->evecs_to_AO_basis(beta_evecs),
-                                                  bocc, actmask, beta_evals);
+                                                  bocc, actmask, beta_evals, moorder,
+                                                  vir_space(), fbrun);
   }
 }
 
 
 ///////////////////////////////////////////////////////////////////
 
-static ClassDesc ORDMRefInfo_cd(
-  typeid(ORDMRefInfo),"ORDMRefInfo",1,"public RefInfo",
-  0, 0, create<ORDMRefInfo>);
+static ClassDesc ORDM_R12RefWavefunction_cd(
+  typeid(ORDM_R12RefWavefunction),"ORDM_R12RefWavefunction",1,"public R12RefWavefunction",
+  0, 0, create<ORDM_R12RefWavefunction>);
 
-ORDMRefInfo::ORDMRefInfo(const Ref<GaussianBasisSet>& basis,
+ORDM_R12RefWavefunction::ORDM_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+                         const Ref<GaussianBasisSet>& basis,
                          const Ref<Integral>& integral,
                          const RefSymmSCMatrix& alpha_1rdm,
                          const RefSymmSCMatrix& beta_1rdm,
                          bool spin_restricted,
                          unsigned int nfzc,
                          bool omit_virtuals) :
-                         RefInfo(basis, integral),
+                         R12RefWavefunction(world, basis, integral),
                          spin_restricted_(spin_restricted),
                          nfzc_(nfzc),
                          omit_virtuals_(omit_virtuals)
@@ -550,9 +670,11 @@ ORDMRefInfo::ORDMRefInfo(const Ref<GaussianBasisSet>& basis,
     throw ProgrammingError("identical 1-rdms given for alpha and beta spins but spin_restricted = true",__FILE__,__LINE__);
   if (nfzc_ >= basis->nbasis())
     throw ProgrammingError("nfzc > basis set size",__FILE__,__LINE__);
+
+  world->fockbuild_runtime()->set_densities(rdm_[Alpha], rdm_[Beta]);
 }
 
-ORDMRefInfo::ORDMRefInfo(StateIn& si) : RefInfo(si) {
+ORDM_R12RefWavefunction::ORDM_R12RefWavefunction(StateIn& si) : R12RefWavefunction(si) {
   int c = 0;
   detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Alpha], si, c);
   detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Beta], si, c);
@@ -561,11 +683,11 @@ ORDMRefInfo::ORDMRefInfo(StateIn& si) : RefInfo(si) {
   si.get(omit_virtuals_);
 }
 
-ORDMRefInfo::~ORDMRefInfo() {
+ORDM_R12RefWavefunction::~ORDM_R12RefWavefunction() {
 }
 
 void
-ORDMRefInfo::save_data_state(StateOut& so) {
+ORDM_R12RefWavefunction::save_data_state(StateOut& so) {
   int c = 0;
   detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
   detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
@@ -574,8 +696,23 @@ ORDMRefInfo::save_data_state(StateOut& so) {
   so.put(omit_virtuals_);
 }
 
+RefSymmSCMatrix
+ORDM_R12RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                    const Ref<GaussianBasisSet> &p_basis) {
+  const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(basis);
+  const std::string nonrel_hkey =
+    ParsedOneBodyIntKey::key(aox->id(), aox->id(),
+                             std::string("H"));
+  RefSCMatrix Hnr = world()->fockbuild_runtime()->get(nonrel_hkey);
+
+  RefSymmSCMatrix Hnr_symm = Hnr.kit()->symmmatrix(Hnr.rowdim());
+  const int n = Hnr_symm.n();
+  Hnr_symm->assign_subblock(Hnr.pointer(), 0, n-1, 0, n-1);
+  return Hnr_symm;
+}
+
 void
-ORDMRefInfo::init_spaces() {
+ORDM_R12RefWavefunction::init_spaces() {
   if (spin_restricted())
     init_spaces_restricted();
   else
@@ -583,7 +720,7 @@ ORDMRefInfo::init_spaces() {
 }
 
 void
-ORDMRefInfo::init_spaces_restricted() {
+ORDM_R12RefWavefunction::init_spaces_restricted() {
 
   //////////////
   // compute natural orbitals of the total (spin-free) density matrix
@@ -678,7 +815,7 @@ ORDMRefInfo::init_spaces_restricted() {
 }
 
 void
-ORDMRefInfo::init_spaces_unrestricted() {
+ORDM_R12RefWavefunction::init_spaces_unrestricted() {
 
   // compute overlap in SO basis
   Ref<PetiteList> plist = integral()->petite_list();

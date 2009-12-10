@@ -43,7 +43,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 
@@ -53,9 +53,9 @@ using namespace sc;
 double
 R12IntEval::compute_emp2_obs_singles(bool obs_singles)
 {
-  Ref<MessageGrp> msg = r12info()->msg();
-  Ref<MemoryGrp> mem = r12info()->mem();
-  Ref<ThreadGrp> thr = r12info()->thr();
+  Ref<MessageGrp> msg = r12world()->world()->msg();
+  Ref<MemoryGrp> mem = r12world()->world()->mem();
+  Ref<ThreadGrp> thr = r12world()->world()->thr();
 
   Timer tim("OBS singles MP2 energy");
   std::string evalname;
@@ -75,7 +75,7 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
     Ref<OrbitalSpace> occ_act = this->occ_act(spin);
-    Ref<OrbitalSpace> vir_act = obs_singles ? r12info()->refinfo()->uocc_act_sb(spin) : r12info()->vir_act_sb(spin);
+    Ref<OrbitalSpace> vir_act = r12world()->ref()->uocc_act_sb(spin);
     RefSCMatrix Fia = fock(occ_act,vir_act,spin);
 
 #define DEBUG_EMP2_SINGLES 0
@@ -112,9 +112,9 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
 double
 R12IntEval::compute_emp2_cabs_singles()
 {
-  Ref<MessageGrp> msg = r12info()->msg();
-  Ref<MemoryGrp> mem = r12info()->mem();
-  Ref<ThreadGrp> thr = r12info()->thr();
+  Ref<MessageGrp> msg = r12world()->world()->msg();
+  Ref<MemoryGrp> mem = r12world()->world()->mem();
+  Ref<ThreadGrp> thr = r12world()->world()->thr();
 
   Timer tim("CABS singles MP2 energy");
   std::string evalname("CABS singles MP2 energy evaluator");
@@ -133,7 +133,7 @@ R12IntEval::compute_emp2_cabs_singles()
 #if 0
     Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
 #endif
-    Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
+    Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
     RefSCMatrix FiA = fock(occ,cabs,spin);
     RefSCMatrix Fia = fock(occ,vir,spin);
     RefSCMatrix FaA = fock(vir,cabs,spin);
@@ -204,12 +204,12 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
 {
   static Ref<OrbitalSpace> cabs_canonical[] = {0, 0};
 
-  assert(r12info()->obs_eq_ribs() == false);
+  assert(r12world()->obs_eq_ribs() == false);
 
   if (cabs_canonical[spin] != 0)
     return cabs_canonical[spin];
 
-  Ref<OrbitalSpace> cabs = r12info()->ribs_space(spin);
+  Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
   const int ncabs = cabs->rank();
 
   // note that I'm overriding pauli flag here -- true Fock matrix must always be used

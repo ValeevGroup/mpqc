@@ -50,10 +50,12 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/wfnworld.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
+#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -477,14 +479,20 @@ namespace sc {
   }
 
   const RefDiagSCMatrix&PsiSCF::evals(SpinCase1 spin) {
-    if (evals_[spin].nonnull())
-      return evals_[spin];
-
     PsiSCF::RefType ref = reftype();
     if (ref == rhf && spin == Beta)
       return evals(Alpha);
 
-    psi::PSIO& psio = exenv()->psio();
+    if (spin == AnySpinCase1) {
+      if (ref != uhf)
+        return evals(Alpha);
+      else
+        ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
+    }
+
+    if (evals_[spin].nonnull())
+      return evals_[spin];
+
     // grab orbital info
     int num_mo = exenv()->chkpt().rd_nmo();
     int* mopi = exenv()->chkpt().rd_orbspi();
@@ -521,12 +529,19 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiSCF::coefs(SpinCase1 spin) {
-    if (coefs_[spin].nonnull())
-      return coefs_[spin];
-
     PsiSCF::RefType ref = reftype();
     if (ref == rhf && spin == Beta)
       return coefs(Alpha);
+
+    if (spin == AnySpinCase1) {
+      if (ref != uhf)
+        return coefs(Alpha);
+      else
+        ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
+    }
+
+    if (coefs_[spin].nonnull())
+      return coefs_[spin];
 
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
@@ -568,10 +583,11 @@ namespace sc {
       C_so.print(prepend_spincase(spin,"Psi3 eigenvector in SO basis").c_str());
     RefSCMatrix aotoso = basis_matrixkit()->matrix(sodim, sodim_nb);
     aotoso.assign(ao2so[0]);
+    Ref<PetiteList> plist = integral()->petite_list();
     if (debug() >= DefaultPrintThresholds::allN2) {
       aotoso.print("Psi3 SO->AO matrix");
-      integral()->petite_list()->sotoao().print("MPQC SO->AO matrix");
-      integral()->petite_list()->aotoso().print("MPQC AO->SO matrix");
+      plist->sotoao().print("MPQC SO->AO matrix");
+      plist->aotoso().print("MPQC AO->SO matrix");
     }
     coefs_[spin] = aotoso.t() * C_so;
     if (debug() >= DefaultPrintThresholds::allN2)
@@ -649,6 +665,21 @@ namespace sc {
       }
       delete[] tmpvec_orig; delete[] tmpvec_tformed;
     }
+
+    // lastly, change the dimensions to match those used by SCF classes (AO dimension much have subdimension blocked by shells)
+    {
+      RefSCMatrix coefs_redim = coefs_[spin].kit()->matrix(plist->AO_basisdim(), coefs_[spin].coldim());
+      RefSCMatrix coefs = coefs_[spin];
+      const int nrow = coefs.nrow();
+      const int ncol = coefs.ncol();
+      for(int r=0; r<nrow; ++r) {
+        for(int c=0; c<ncol; ++c) {
+          coefs_redim.set_element(r, c, coefs.get_element(r,c) );
+        }
+      }
+      coefs_[spin] = coefs_redim;
+    }
+
     if (debug() >= DefaultPrintThresholds::allN2)
       coefs_[spin].print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered, in MPQC frame)").c_str());
 
@@ -659,6 +690,64 @@ namespace sc {
     Chkpt::free(ao2so);
 
     return coefs_[spin];
+  }
+
+  RefSymmSCMatrix
+  PsiSCF::density() {
+    RefSymmSCMatrix result = this->alpha_density();
+    if (!this->spin_polarized())
+      result.scale(2.0);
+    else
+      result.accumulate(this->beta_density());
+    return result;
+  }
+
+  RefSymmSCMatrix
+  PsiSCF::alpha_density() {
+    Ref<PetiteList> plist = integral()->petite_list();
+    RefSCMatrix C_ao = coefs(Alpha);
+    RefSCMatrix C_so = plist->evecs_to_SO_basis(C_ao);
+
+    RefSymmSCMatrix P = C_so.kit()->symmmatrix(C_so.rowdim()); P.assign(0.0);
+    P.accumulate_transform(C_so, this->mo_density(Alpha));
+    return P;
+  }
+
+  RefSymmSCMatrix
+  PsiSCF::beta_density() {
+    Ref<PetiteList> plist = integral()->petite_list();
+    RefSCMatrix C_ao = coefs(Beta);
+    RefSCMatrix C_so = plist->evecs_to_SO_basis(C_ao);
+
+    RefSymmSCMatrix P = C_so.kit()->symmmatrix(C_so.rowdim()); P.assign(0.0);
+    P.accumulate_transform(C_so, this->mo_density(Beta));
+    return P;
+  }
+
+  RefSymmSCMatrix
+  PsiSCF::mo_density(SpinCase1 spin) {
+    if ((spin == Beta || spin == AnySpinCase1) && !this->spin_polarized())
+      return mo_density(Alpha);
+
+    if (spin == AnySpinCase1 && this->spin_polarized())
+      ProgrammingError("asked for any spin density but the density is spin-polarized");
+
+    if (mo_density_[spin].nonnull())
+      return mo_density_[spin];
+
+    RefSCMatrix C_ao = coefs(spin);
+    RefSymmSCMatrix P_mo = C_ao.kit()->symmmatrix(C_ao.coldim());
+    P_mo.assign(0.0);
+    const int nmo = P_mo.n();
+    for(int mo=0; mo<nmo; ++mo)
+      P_mo.set_element(mo, mo, (spin == Alpha) ? this->alpha_occupation(mo)
+                                               : this->beta_occupation(mo) );
+    mo_density_[spin] = P_mo;
+
+    if (debug() >= DefaultPrintThresholds::mostN)
+      mo_density_[spin].print(prepend_spincase(spin,"Psi MO density").c_str());
+
+    return mo_density_[spin];
   }
 
   const std::vector<unsigned int>& PsiSCF::occpi(SpinCase1 spin) {
@@ -715,6 +804,36 @@ namespace sc {
       uoccpi_[spin][h] = mopi[h] - occpi[h];
 
     return uoccpi_[spin];
+  }
+
+  void PsiSCF::compute_occupations(SpinCase1 spin) {
+    const std::vector<unsigned int>& orbspi = this->mopi();
+    const std::vector<unsigned int>& occpi = this->occpi(spin);
+    const unsigned int nmo = std::accumulate(orbspi.begin(), orbspi.end(), 0);
+    occupation_[spin].resize(nmo);
+    std::fill(occupation_[spin].begin(), occupation_[spin].end(), 0.0);
+
+    const unsigned int nirrep = orbspi.size();
+    typedef std::vector<double>::iterator iter;
+    iter v = occupation_[spin].begin();
+    for(int h=0; h<nirrep; ++h) {
+      const int nocc = occpi[h];
+      for(int o=0; o<nocc; ++o, ++v)
+        *v = 1.0;
+      v += orbspi[h] - nocc;
+    }
+  }
+
+  double
+  PsiSCF::alpha_occupation(int mo) {
+    if (occupation_[Alpha].empty()) compute_occupations(Alpha);
+    return occupation_[Alpha].at(mo);
+  }
+
+  double
+  PsiSCF::beta_occupation(int mo) {
+    if (occupation_[Beta].empty()) compute_occupations(Beta);
+    return occupation_[Beta].at(mo);
   }
 
   void PsiSCF::import_occupations(const Ref<OneBodyWavefunction>& obwfn) {
@@ -1334,6 +1453,50 @@ namespace sc {
     return(opdm_mat);
   }
 
+  RefSymmSCMatrix PsiCorrWavefunction::mo_density(SpinCase1 spin){
+    using psi::Chkpt;
+
+    if ((spin == Beta || spin == AnySpinCase1) && !this->spin_polarized())
+      return mo_density(Alpha);
+
+    if (spin == AnySpinCase1 && this->spin_polarized())
+      ProgrammingError("asked for any spin density but the density is spin-polarized");
+
+    if (mo_density_[spin].nonnull())
+      return mo_density_[spin];
+
+    string opdm_label_str;
+    if(spin==Alpha) {
+      opdm_label_str = "MO-basis Alpha OPDM";
+      outfile = fopen("psiout_opdm_Alpha","w");
+    }
+    else { // spin==Beta
+      opdm_label_str = "MO-basis Beta OPDM";
+      outfile = fopen("psiout_opdm_Beta","w");
+    }
+    char *opdm_label=(char *)opdm_label_str.c_str();
+    const int nmo = reference()->nmo();
+    double** c_opdm = Chkpt::matrix<double>(nmo, nmo);
+    rdopdm(PSIF_MO_OPDM,opdm_label,&(c_opdm[0][0]),nmo*nmo,0,1,outfile);
+    fclose(outfile);
+
+    int* mopi = exenv()->chkpt().rd_orbspi();
+    RefSCDimension modim = new SCDimension(nmo,nirrep_,mopi);
+    for (unsigned int h=0; h<nirrep_; ++h)
+      modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
+    mo_density_[spin] = basis_matrixkit()->symmmatrix(modim);
+    mo_density_[spin].convert(c_opdm);
+
+    Chkpt::free(c_opdm);
+
+    if(debug_>=DefaultPrintThresholds::mostN2) {
+      mo_density_[spin].print(prepend_spincase(spin,"Psi opdm").c_str());
+    }
+
+    Chkpt::free(mopi);
+    return mo_density_[spin];
+  }
+
   RefSymmSCMatrix PsiCorrWavefunction::twopdm(){
     iwlbuf tpdm_buf;
     const int nmo = reference()->nmo();
@@ -1767,20 +1930,17 @@ namespace sc {
         abort();
       }
     copy_orthog_info(reference_mpqc_);
-    bool spinadapted = false;
-    if (dynamic_cast<CLSCF*>(reference_mpqc_.pointer()) != 0)
-      // Default is to use spin-adapted algorithm
-      spinadapted = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
-    r12evalinfo_ = new R12IntEvalInfo(keyval,this,reference_mpqc_,nfzc_, nfzv_, spinadapted, true);
-    // make sure that r12evalinfo is initialized
-    r12evalinfo_->initialize();
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
-      r12eval_ = new R12IntEval(r12evalinfo_);
-      r12eval_->set_memory(memory_);
+    Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+    world->memory(memory_);
+    Ref<R12RefWavefunction> refinfo = new SD_R12RefWavefunction(world, reference_mpqc_, false,
+                                                                nfzc_, nfzv_);
+    r12world_ = new R12WavefunctionWorld(keyval, refinfo);
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+      r12eval_ = new R12IntEval(r12world_);
     }
     // test that Psi3 is compatible to the integral factory used by mbptr12_ object
-    if (r12evalinfo_->integral()->cartesian_ordering() != PsiWavefunction::cartesian_ordering()) {
+    if (r12world()->integral()->cartesian_ordering() != PsiWavefunction::cartesian_ordering()) {
       throw InputError("PsiCorrWavefunction_PT2R12 -- ordering of functions in shells differs between the provided mbpt2r12 and Psi3. Use different Integral factory to construct mbpt2r12.",__FILE__,__LINE__);
     }
 
@@ -1810,26 +1970,24 @@ namespace sc {
     else {
       debug_ = 0;
     }
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
-      r12eval_->set_debug(debug_);
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+      r12eval_->debug(debug_);
     }
   }
 
   PsiCorrWavefunction_PT2R12::PsiCorrWavefunction_PT2R12(StateIn &s)
     : PsiCorrWavefunction(s) {
     reference_mpqc_ << SavableState::restore_state(s);
-    r12evalinfo_ << SavableState::restore_state(s);
-    // make sure that r12evalinfo is initialized
-    r12evalinfo_->initialize();
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+    r12world_ << SavableState::restore_state(s);
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
       r12eval_ << SavableState::restore_state(s);
     }
     int o; s.get(o); opdm_type_ = (onepdm_type)o;
     int t; s.get(t); tpdm_from_opdms_ = (bool)t;
     int e; s.get(e); exactgamma_phi_twoelec_ = (bool)e;
     s.get(debug_);
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
-      r12eval_->set_debug(debug_);
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+      r12eval_->debug(debug_);
     }
   }
 
@@ -1838,8 +1996,8 @@ namespace sc {
   void PsiCorrWavefunction_PT2R12::save_data_state(StateOut &s) {
     PsiCorrWavefunction::save_data_state(s);
     SavableState::save_state(reference_mpqc_, s);
-    SavableState::save_state(r12evalinfo_, s);
-    if(r12evalinfo_->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
+    SavableState::save_state(r12world_, s);
+    if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {
       SavableState::save_state(r12eval_, s);
     }
     s.put((int)opdm_type_);
@@ -2584,7 +2742,7 @@ namespace sc {
     if(S==AlphaBeta) {
       SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha), r12eval_->GGspace(Beta), S );
       SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha), r12eval_->GGspace(Beta), S );
-      Ref<LinearR12::GeminalDescriptor> geminaldesc = r12evalinfo_->corrfactor()->geminaldescriptor();
+      Ref<LinearR12::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
       CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
       for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
         for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -2602,7 +2760,7 @@ namespace sc {
       SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
       SpinMOPairIter OW_iter(r12eval_->GGspace(spin), r12eval_->GGspace(spin), S );
       SpinMOPairIter PQ_iter(r12eval_->ggspace(spin), r12eval_->GGspace(spin), S );
-      Ref<LinearR12::GeminalDescriptor> geminaldesc = r12evalinfo_->corrfactor()->geminaldescriptor();
+      Ref<LinearR12::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
       CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
       for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
         for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -2627,8 +2785,8 @@ namespace sc {
     const Ref<OrbitalSpace>& GG2_space = r12eval_->GGspace(spin2);
     const Ref<OrbitalSpace>& orbs1 = r12eval_->orbs(spin1);
     const Ref<OrbitalSpace>& orbs2 = r12eval_->orbs(spin2);
-    const Ref<OrbitalSpace>& cabs1 = r12evalinfo_->ribs_space(spin1);
-    const Ref<OrbitalSpace>& cabs2 = r12evalinfo_->ribs_space(spin2);
+    const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+    const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
 
     const Ref<OrbitalSpace>& f_p_A1 = r12eval_->F_p_A(spin1);
     const Ref<OrbitalSpace>& f_p_A2 = r12eval_->F_p_A(spin2);
@@ -2734,8 +2892,8 @@ namespace sc {
 
     // computing dipole integrals in MO basis
     RefSCMatrix MX, MY, MZ;
-    RefSCMatrix MXX, MYY, MZZ;
-    r12evalinfo_->compute_multipole_ints(space,space,MX,MY,MZ,MXX,MYY,MZZ);
+    RefSCMatrix MXX, MYY, MZZ, MXY, MXZ, MYZ;
+    compute_multipole_ints(space,space,MX,MY,MZ,MXX,MYY,MZZ,MXY,MXZ,MYZ);
 
     // computing oneparticle density matrix in MO basis
     RefSymmSCMatrix opdm = onepdm_transformed();
@@ -2827,7 +2985,7 @@ namespace sc {
     double oneparticle_energy[NSpinCases1];
     const int npurespincases2 = (r12eval_->spin_polarized()) ? 3 : 2;
     const int npurespincases1 = (r12eval_->spin_polarized()) ? 2 : 1;
-    const int nmo = r12evalinfo_->refinfo()->orbs()->rank();
+    const int nmo = r12world()->ref()->orbs()->rank();
     const RefSCDimension nmodim = new SCDimension(nmo);
     const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 

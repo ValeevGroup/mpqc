@@ -79,7 +79,7 @@ namespace sc {
       const size_t num_tforms = transform_keys.size();
       tformvec transforms(num_tforms);
       for(unsigned int t=0; t<num_tforms; ++t) {
-        transforms[t] = r12info()->moints_runtime4()->get(transform_keys[t]);
+        transforms[t] = moints_runtime4()->get(transform_keys[t]);
       }
 
       Timer tim_generic_tensor("Generic tensor");
@@ -167,7 +167,7 @@ namespace sc {
           // split work over tasks which have access to integrals
           std::vector<int> proc_with_ints;
           const int nproc_with_ints = accum->tasks_with_access(proc_with_ints);
-          const int me = r12info()->msg()->me();
+          const int me = r12world()->world()->msg()->me();
 
           if (accum->has_access(me)) {
             for(iterbra.start(); iterbra; iterbra.next()) {

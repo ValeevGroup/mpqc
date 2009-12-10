@@ -40,35 +40,35 @@ static ClassDesc CCR12_Info_cd(
   typeid(CCR12_Info),"CCR12_Info",1,"virtual public RefCount",
   0,0,0);
 
-CCR12_Info::CCR12_Info(const Ref<R12IntEvalInfo>& r12evalinfo,
+CCR12_Info::CCR12_Info(const Ref<R12WavefunctionWorld>& r12world,
                        const Ref<MemoryGrp>& mem, size_t memorysize,
                        const Ref<SCF> reference, int nfc, int nfv, int nirr,
                        long workmem, long memsize, int nnode, int ndiis,
                        string theory, string per):
-r12evalinfo_(r12evalinfo), mem_(mem), ref_(reference), nfzc_(nfc),
+r12world_(r12world), mem_(mem), ref_(reference), nfzc_(nfc),
 nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_(per)
 {
-  assert(r12evalinfo_->corrfactor()->nfunctions() == 1);
+  assert(r12world_->r12tech()->corrfactor()->nfunctions() == 1);
   restricted_ = !ref()->spin_polarized();
 
   needs();
 
-  set_naocc(r12evalinfo_->refinfo()->occ_act_sb(Alpha)->rank(),
-            r12evalinfo_->refinfo()->occ_act_sb(Beta )->rank());
+  set_naocc(r12world_->ref()->occ_act_sb(Alpha)->rank(),
+            r12world_->ref()->occ_act_sb(Beta )->rank());
 
-//assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-  assert(r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
-  set_fixed(r12evalinfo_->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fixed);
-  set_navir(r12evalinfo_->refinfo()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
-            r12evalinfo_->refinfo()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
-  set_mosym(r12evalinfo_->refinfo()->orbs(Alpha)->orbsym(),
-            r12evalinfo_->refinfo()->orbs(Beta )->orbsym());
+//assert(r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
+  assert(r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+  set_fixed(r12world_->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fixed);
+  set_navir(r12world_->ref()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
+            r12world_->ref()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
+  set_mosym(r12world_->ref()->orbs(Alpha)->orbsym(),
+            r12world_->ref()->orbs(Beta )->orbsym());
 
   if (need_w1_) {
-    set_ncabs(r12evalinfo_->ribs_space(Alpha)->rank(),
-              r12evalinfo_->ribs_space(Beta )->rank());
-    set_cabssym(r12evalinfo_->ribs_space(Alpha)->orbsym(),
-                r12evalinfo_->ribs_space(Beta )->orbsym());
+    set_ncabs(r12world_->cabs_space(Alpha)->rank(),
+              r12world_->cabs_space(Beta )->rank());
+    set_cabssym(r12world_->cabs_space(Alpha)->orbsym(),
+                r12world_->cabs_space(Beta )->orbsym());
   } else {
     set_ncabs(0L, 0L);
   }
@@ -143,7 +143,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     static_size += d_gt2->get_filesize() * sizeof(double) * (ndiis + 1) * 2;
     mem_->sync();
     // needs to be initialized here (with fixed amplitudes or full-opt MP2-R12 amplitudes)...
-    if (do_lambda || r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+    if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
       d_glambda2 = new Tensor("glambda2", mem_);
       offset_gt2(d_glambda2, false);
       static_size += d_glambda2->get_filesize() * sizeof(double);
@@ -240,7 +240,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
         mem_->sync();
       }
 
-      if (do_lambda || r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+      if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
         // gl2 * F^dagger (\tilde{l} in our papers)
         // filled at run-time
         d_ly = new Tensor("ly", mem_);
@@ -269,7 +269,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   if (perturbative_ == "(T)R12[DT]") {
-    if (r12evalinfo_->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq) {
+    if (r12world_->r12tech()->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq) {
       throw std::runtime_error("(T)R12[DT] requires GG space to be pq.");
     }
     // generalized V intermediate.
@@ -289,7 +289,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   // Making initial guess for t2.
   if (!need_gt2()) {
     guess_t2(d_t2);
-  } else if (r12evalinfo_->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+  } else if (r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
     // assuming d_gt2 is already filled in.
     guess_t2_r12(d_t2, d_gt2);
   } else {
@@ -506,8 +506,8 @@ void CCR12_Info::print(ostream& o){
 
 void CCR12_Info::orbital_energies(){
 
-  Ref<OrbitalSpace> aobs_space = r12evalinfo_->refinfo()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> bobs_space = r12evalinfo_->refinfo()->orbs_sb(Beta);
+  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> bobs_space = r12world()->ref()->orbs_sb(Beta);
 
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;

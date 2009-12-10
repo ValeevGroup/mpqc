@@ -43,7 +43,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
@@ -80,7 +80,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   // create transforms, if needed
   std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4_f
   TwoBodyIntDescrCreator descr_creator(corrfactor(),
-                                       r12info()->integral(),
+                                       r12world()->integral(),
                                        true,false);
   fill_container(descr_creator,descrs);
 
@@ -97,12 +97,12 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   //
   std::vector<std::string> tform4f_keys; // get 1 3 |F12| 2 4_f
   {
-    R12TwoBodyIntKeyCreator tform_creator(r12info()->moints_runtime4(),
+    R12TwoBodyIntKeyCreator tform_creator(moints_runtime4(),
       space1,
       space2,
       space3,
       fspace4,
-      r12info()->corrfactor(),
+      corrfactor(),
       true);
       fill_container(tform_creator,tform4f_keys);
   }
@@ -116,12 +116,12 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   else {
     std::vector<std::string> tform2f_keys;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(r12info()->moints_runtime4(),
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),
         space1,
         fspace2,
         space3,
         space4,
-        r12info()->corrfactor(),
+        corrfactor(),
         true);
         fill_container(tformkey_creator,tform2f_keys);
     }
@@ -148,7 +148,7 @@ R12IntEval::AT2_contrib_to_V_()
       }
       if (debug_ >= DefaultPrintThresholds::mostN0)
         print_scmat_norms(V,label.c_str());
-      if (r12info_->msg()->me() == 0)
+      if (r12world()->world()->msg()->me() == 0)
         V_[s].accumulate(V);
     }
 
@@ -160,7 +160,7 @@ R12IntEval::AF12_contrib_to_B_()
 {
   if (evaluated_)
     return;
-  if (r12info_->msg()->me() == 0) {
+  if (r12world()->world()->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
 

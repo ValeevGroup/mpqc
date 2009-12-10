@@ -69,7 +69,6 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   if (bra_space->rank() == 0 || ket_space->rank() == 0)
     return 0;
 
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
   const bool bs1_eq_bs2 = bs1->equiv(bs2);
@@ -86,7 +85,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     RefSCDimension aodim2 = vec2.rowdim();
     Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-    Ref<OneBodyWavefunction> reference = r12info()->refinfo()->ref();
+    Ref<R12RefWavefunction> reference = r12world()->ref();
     // Form the DK correction in the current basis using the momentum
     // basis of the reference wavefunction.  The momentum basis in the
     // reference should be a superset of hcore_basis
@@ -109,13 +108,11 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
 
     // include only the Pauli-Hamiltonian in the R12 treatment of the Fock operator
     bool use_pauli =
-        (override_pauli == -1) ? (r12info()->r12tech()->H0_dk_approx_pauli()
+        (override_pauli == -1) ? (r12world()->r12tech()->H0_dk_approx_pauli()
             == LinearR12::H0_dk_approx_pauli_true) : override_pauli;
     if (dk == 0) {
       use_pauli = false;
     }
-    ExEnv::out0() << "WARNING: use_pauli = " << (use_pauli ? 1 : 0)
-        << std::endl;
 
     RefSymmSCMatrix hsymm;
     if (use_pauli) {
@@ -126,7 +123,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     }
 
     // convert hsymm to the AO basis
-    Ref<Integral> localints = r12info_->integral()->clone();
+    Ref<Integral> localints = r12world()->integral()->clone();
     localints->set_basis(hcore_basis, hcore_basis);
     Ref<PetiteList> hcore_pl = localints->petite_list();
     RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
@@ -214,14 +211,14 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
   }
 
   } else { // USE_NEWFOCKBUILD
-      Ref<FockBuildRuntime> fb_rtime = r12info()->fockbuild_runtime();
+      Ref<FockBuildRuntime> fb_rtime = fockbuild_runtime();
       if (scale_J != 0.0) {
         const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
         RefSCMatrix J = fb_rtime->get(jkey);
         F.accumulate(J*scale_J);
       }
       if (scale_K != 0.0) {
-        const SpinCase1 realspin = r12info()->refinfo()->ref()->spin_polarized() ? spin : AnySpinCase1;
+        const SpinCase1 realspin = r12world()->ref()->spin_polarized() ? spin : AnySpinCase1;
         const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
         RefSCMatrix K = fb_rtime->get(kkey);
         F.accumulate( (-scale_K) * K);
@@ -244,7 +241,6 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
 {
 
   ExEnv::out0() << indent<< "Entering Delta_DKH" <<incindent << endl;
-  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
@@ -267,7 +263,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   }
 #endif
 
-  Ref<SCF> ref = r12info()->refinfo()->ref();
+  Ref<SCF> ref = r12world()->ref()->ref();
 
   Ref<GaussianBasisSet> hcore_basis;
   Ref<GaussianBasisSetSum> bs1_plus_bs2;
@@ -336,7 +332,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   // calculate delta_DKH = H_DKH - H_tvmvd to get the difference Hamiltonian
   // H_tvmvd = T+V+mass-velocity ...
 #if TEST_DELTA_DKH
-  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,r12info()->basis_ri());
+  RefSymmSCMatrix TVmv = hcore_plus_massvelocity_(hcore_basis,r12world()->basis_ri());
 #else
 
 #if EVALUATE_MV_VIA_RI
@@ -379,7 +375,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   // from now on proceed as in fock
 
   // convert hsymm to the AO basis
-  Ref<Integral> localints = r12info_->integral()->clone();
+  Ref<Integral> localints = r12world()->integral()->clone();
   localints->set_basis(hcore_basis,hcore_basis);
   Ref<PetiteList> hcore_pl = localints->petite_list();
   RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
@@ -695,7 +691,7 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
 {
   const double c = 137.0359895; // speed of light in a vacuum in a.u.
 
-  Ref<Integral> localints = r12info_->integral()->clone();
+  Ref<Integral> localints = r12world()->integral()->clone();
   localints->set_basis(bas);
 
   Ref<PetiteList> pl = localints->petite_list();
@@ -734,7 +730,7 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
   Darwin.assign(0.0);
   {
     const double darwin_prefac = M_PI/(c*c*2.0);
-    Wavefunction *wfn = r12info()->wfn();
+    Wavefunction *wfn = r12world()->wfn();
 
     GaussianBasisSet::ValueData* vdata1 = new GaussianBasisSet::ValueData(bas,localints);
     const int nbasis1 = bas->nbasis();
@@ -775,7 +771,7 @@ R12IntEval::pauli_realspace(const Ref<GaussianBasisSet> &bas)
 RefSymmSCMatrix
 R12IntEval::pauli_momentumspace(const Ref<GaussianBasisSet> &bas, const Ref<GaussianBasisSet> &p_bas)
 {
-  Wavefunction *wfn = r12info()->wfn();
+  Wavefunction *wfn = r12world()->wfn();
 #define PAULI_DEBUG 0
 
   ExEnv::out0() << indent<< "Using the Pauli Hamiltonian for the R12 treatment " << endl;

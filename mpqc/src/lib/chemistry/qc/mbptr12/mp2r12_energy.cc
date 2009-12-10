@@ -42,7 +42,7 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
@@ -284,13 +284,13 @@ MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &
 void
 MP2R12Energy_SpinOrbital::init_()
 {
-  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  if(r12info->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+  const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  if(r12world->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
     throw InputError("MP2R12Energy_SpinOrbital::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
   }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
-    const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+    const bool spin_polarized = r12world->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
       RefSCDimension dim_gg = r12eval()->dim_gg(static_cast<SpinCase2>(s));
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
@@ -362,10 +362,10 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
                        __FILE__,__LINE__);
   }
 
-  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  const double escf = r12info->refinfo()->ref()->energy();
+  const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  const double escf = r12world->ref()->energy();
   // WARNING assuming only RHF and ROHF
-  const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12world->ref()->spin_polarized();
   const int num_unique_spincases2 = (spin_polarized ? 3 : 2);
 
   // only used if spinadapted == true
@@ -483,7 +483,7 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
   }
 
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2_obs_singles_energy = r12info->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
                                      emp2f12tot(BetaBeta) +
                                      emp2f12tot(AlphaBeta) +
@@ -535,7 +535,7 @@ void
 MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                                     const Ref<TwoBodyGrid>& tbgrid)
 {
-  const bool spin_polarized = r12eval()->r12info()->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12eval()->r12world()->ref()->spin_polarized();
   const SpinCase2 sc2 = (!spin_polarized && spincase2 == BetaBeta ? AlphaAlpha : spincase2);
   const SpinCase1 spin1 = case1(sc2);
   const SpinCase1 spin2 = case2(sc2);
@@ -561,15 +561,15 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   C = C.t();
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
 
-  Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
+  Ref<R12WavefunctionWorld> r12world = r12eval()->r12world();
   Ref<OrbitalSpace> vir1_act = r12eval()->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12eval()->vir_act(spin2);
   Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(spin1);
   Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(spin2);
   Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
   Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
-  Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
-  Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> ribs1 = r12world->cabs_space(spin1);
+  Ref<OrbitalSpace> ribs2 = r12world->cabs_space(spin2);
 
   // Pair index
   unsigned int ij;
@@ -587,7 +587,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
   }
 
   using LinearR12::CorrelationFactor;
-  const Ref<CorrelationFactor> corrfactor = r12info->corrfactor();
+  const Ref<CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
   const unsigned int nf12 = corrfactor->nfunctions();
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
@@ -689,7 +689,7 @@ RefSCVector
 MP2R12Energy_SpinOrbital::compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const
 {
-  const Ref<Integral> ints = r12eval_->r12info()->integral();
+  const Ref<Integral> ints = r12eval_->r12world()->integral();
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   ints->set_basis(bs1,bs2);
@@ -789,7 +789,7 @@ MP2R12Energy_SpinOrbital::ef12(SpinCase2 s) const
 
 double MP2R12Energy_SpinOrbital::energy()
 {
-  const double emp2_obs_singles_energy = r12eval()->r12info()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
   const double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta) + emp2_obs_singles_energy;
   return value;
 }
@@ -825,13 +825,13 @@ MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermed
 void
 MP2R12Energy_SpinOrbital_new::init_()
 {
-  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  if(r12info->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+  const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  if(r12world->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
     throw InputError("MP2R12Energy_SpinOrbital_new::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
   }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   for(int s=0; s<NSpinCases2; s++) {
-    const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+    const bool spin_polarized = r12world->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
       RefSCDimension dim_gg = r12eval()->dim_gg(static_cast<SpinCase2>(s));
       RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
@@ -895,11 +895,11 @@ double MP2R12Energy_SpinOrbital_new::ef12tot(SpinCase2 s) const {
 }
 
 bool MP2R12Energy_SpinOrbital_new::diag() const {
-  return(r12eval_->r12info()->r12tech()->ansatz()->diag());
+  return(r12eval_->r12world()->r12tech()->ansatz()->diag());
 }
 
 bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
-  const bool result = r12eval_->r12info()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  const bool result = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt;
   return result;
 }
 
@@ -920,10 +920,10 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
                        __FILE__,__LINE__);
   }
 
-  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  const double escf = r12info->refinfo()->ref()->energy();
+  const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  const double escf = r12world->ref()->energy();
   // WARNING assuming only RHF and ROHF
-  const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12world->ref()->spin_polarized();
   const int num_unique_spincases2 = (spin_polarized ? 3 : 2);
 
   // only used if spinadapted == true
@@ -1041,7 +1041,7 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
   }
 
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2_obs_singles_energy = r12info->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
                                      emp2f12tot(BetaBeta) +
                                      emp2f12tot(AlphaBeta) +
@@ -1093,7 +1093,7 @@ void
 MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
                                     const Ref<TwoBodyGrid>& tbgrid)
 {
-  const bool spin_polarized = r12eval()->r12info()->refinfo()->ref()->spin_polarized();
+  const bool spin_polarized = r12eval()->r12world()->ref()->spin_polarized();
   const SpinCase2 sc2 = (!spin_polarized && spincase2 == BetaBeta ? AlphaAlpha : spincase2);
   const SpinCase1 spin1 = case1(sc2);
   const SpinCase1 spin2 = case2(sc2);
@@ -1119,15 +1119,15 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   C = C.t();
   if (debug_ >= DefaultPrintThresholds::mostO2N2) C.print("C amplitudes");
 
-  Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
+  Ref<R12WavefunctionWorld> r12world = r12eval()->r12world();
   Ref<OrbitalSpace> vir1_act = r12eval()->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12eval()->vir_act(spin2);
   Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(spin1);
   Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(spin2);
   Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
   Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
-  Ref<OrbitalSpace> ribs1 = r12info->ribs_space(spin1);
-  Ref<OrbitalSpace> ribs2 = r12info->ribs_space(spin2);
+  Ref<OrbitalSpace> ribs1 = r12world->cabs_space(spin1);
+  Ref<OrbitalSpace> ribs2 = r12world->cabs_space(spin2);
 
   // Pair index
   unsigned int ij;
@@ -1145,7 +1145,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
   }
 
   using LinearR12::CorrelationFactor;
-  const Ref<CorrelationFactor> corrfactor = r12info->corrfactor();
+  const Ref<CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
   const unsigned int nf12 = corrfactor->nfunctions();
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
@@ -1247,7 +1247,7 @@ RefSCVector
 MP2R12Energy_SpinOrbital_new::compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const
 {
-  const Ref<Integral> ints = r12eval_->r12info()->integral();
+  const Ref<Integral> ints = r12eval_->r12world()->integral();
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   ints->set_basis(bs1,bs2);
@@ -1346,7 +1346,7 @@ MP2R12Energy_SpinOrbital_new::ef12(SpinCase2 s) const
 
 double MP2R12Energy_SpinOrbital_new::energy()
 {
-  const double emp2_obs_singles_energy = r12eval()->r12info()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
   const double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta) + emp2_obs_singles_energy;
   return value;
 }

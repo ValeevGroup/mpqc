@@ -42,10 +42,10 @@ void CCR12_Info::compute_corr_space() {
   const std::string label("Active reference spin-orbitals in correlated order");
 
   // Prepare OrbitalSpace that corresponds to the CorrelatedMOOrder assumed by SMITH
-  Ref<OrbitalSpace> occs_a = r12evalinfo()->refinfo()->occ_sb(Alpha);
-  Ref<OrbitalSpace> occs_b = r12evalinfo()->refinfo()->occ_sb(Beta);
-  Ref<OrbitalSpace> orbs_a = r12evalinfo()->refinfo()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> orbs_b = r12evalinfo()->refinfo()->orbs_sb(Beta);
+  Ref<OrbitalSpace> occs_a = r12world()->ref()->occ_sb(Alpha);
+  Ref<OrbitalSpace> occs_b = r12world()->ref()->occ_sb(Beta);
+  Ref<OrbitalSpace> orbs_a = r12world()->ref()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> orbs_b = r12world()->ref()->orbs_sb(Beta);
   const size_t norbs = orbs_a->rank();
   RefDiagSCMatrix occnums_a = orbs_a->evals().clone();
   occnums_a.assign(0.0);
@@ -120,10 +120,10 @@ void CCR12_Info::compute_corr_space() {
   {
     const bool merge_blocks = false;
     Ref<OrbitalSpace> plus_cabs_a = new OrbitalSpaceUnion(id,label,
-                                                          *(corr_space_),*(r12evalinfo_->ribs_space(Alpha)),
+                                                          *(corr_space_),*(r12world()->cabs_space(Alpha)),
                                                           merge_blocks);
     Ref<OrbitalSpace> plus_cabs_ab = new OrbitalSpaceUnion(id,label,
-                                                          *(plus_cabs_a),*(r12evalinfo_->ribs_space(Beta)),
+                                                          *(plus_cabs_a),*(r12world()->cabs_space(Beta)),
                                                           merge_blocks);
     corr_space_ = plus_cabs_ab;
   }
@@ -205,9 +205,9 @@ void
 CCR12_Info::compute_source_integrals_rhf_r12() {
   assert(need_w1());
 
-  Ref<OrbitalSpace> occs = r12evalinfo()->refinfo()->docc_sb();
-  Ref<OrbitalSpace> orbs = r12evalinfo()->refinfo()->orbs_sb();
-  Ref<OrbitalSpace> cabs = r12evalinfo()->refinfo()->orbs_sb();
+  Ref<OrbitalSpace> occs = r12world()->ref()->occ_sb();
+  Ref<OrbitalSpace> orbs = r12world()->ref()->orbs_sb();
+  Ref<OrbitalSpace> cabs = r12world()->ref()->orbs_sb();
 
   abort();
 }
@@ -216,7 +216,7 @@ void
 CCR12_Info::compute_source_integrals_rhf() {
 
   // this function should only be called for rhf
-  if (r12evalinfo()->refinfo()->ref()->spin_polarized())
+  if (r12world()->ref()->spin_polarized())
     throw ProgrammingError("CCR12_Info::compute_source_integrals_rhf -- reference wfn is spin-polarized",
                            __FILE__,__LINE__);
 
@@ -229,8 +229,8 @@ CCR12_Info::compute_source_integrals_rhf() {
   this->compute_corr_space();
 
   // compute Fock matrices in pitzer-order spaces because their occ-virtual blocks may be nonzero
-  Ref<OrbitalSpace> aobs_space = r12evalinfo_->refinfo()->orbs_sb(Alpha);
-  Ref<FockBuildRuntime> fb_rtime = r12evalinfo()->fockbuild_runtime();
+  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
+  Ref<FockBuildRuntime> fb_rtime = r12world()->world()->fockbuild_runtime();
   const std::string fkey = ParsedOneBodyIntKey::key(aobs_space->id(),aobs_space->id(),std::string("F"));
   RefSCMatrix F = fb_rtime->get(fkey);
   F_[Alpha] = F;
@@ -243,7 +243,7 @@ CCR12_Info::compute_source_integrals_rhf() {
                                                 TwoBodyIntLayout::b1b2_k1k2);
 
   Ref<TwoBodyMOIntsTransform> pppp_tform =
-      r12evalinfo()->moints_runtime()->runtime_4c()->get(tkey);
+      r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
   pppp_tform->compute();
   pppp_acc_[AlphaBeta] = pppp_tform->ints_acc();
   pppp_acc_[AlphaBeta]->activate();
@@ -251,9 +251,9 @@ CCR12_Info::compute_source_integrals_rhf() {
   // more integrals are needed for the (R12) calculations
   if (this->need_w1() || this->need_w2()) {
     // get the CABS space
-    Ref<OrbitalSpace> cabs_space = r12evalinfo_->ribs_space(Alpha);
+    Ref<OrbitalSpace> cabs_space = r12world()->cabs_space(Alpha);
 
-    r12int_eval_ = new R12IntEval(r12evalinfo_);
+    r12int_eval_ = new R12IntEval(r12world_);
     r12int_eval_->compute();
 
     Vgg_[AlphaBeta] = r12int_eval_->V(AlphaBeta, aobs_space_, bobs_space_);
@@ -276,26 +276,26 @@ CCR12_Info::compute_source_integrals_rhf() {
                                                     TwoBodyIntLayout::b1b2_k1k2);
 
       Ref<TwoBodyMOIntsTransform> pppA_tform =
-          r12evalinfo()->moints_runtime()->runtime_4c()->get(tkey);
+          r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
       pppA_tform->compute();
       pppA_acc_[AlphaBeta] = pppA_tform->ints_acc();
       pppA_acc_[AlphaBeta]->activate();
     }
 
-    Ref<LinearR12::CorrelationFactor> corrfactor = r12evalinfo()->corrfactor();
+    Ref<LinearR12::CorrelationFactor> corrfactor = r12world()->r12tech()->corrfactor();
     // only 1 correlation factor can be handled
     assert(corrfactor->nfunctions() == 1);
-    Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12evalinfo()->integral(),0);
-    const std::string descr_key = r12evalinfo()->moints_runtime4()->descr_key(tbdescr);
+    Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12world()->integral(),0);
+    const std::string descr_key = r12world()->world()->moints_runtime4()->descr_key(tbdescr);
     {
-      Ref<OrbitalSpace> aocc_space = r12evalinfo_->refinfo()->occ_act_sb(Alpha);
-      Ref<OrbitalSpace> avir_space = r12evalinfo_->vir_act_sb(Alpha);
+      Ref<OrbitalSpace> aocc_space = r12world()->ref()->occ_act_sb(Alpha);
+      Ref<OrbitalSpace> avir_space = r12world()->ref()->uocc_act_sb(Alpha);
       const std::string
         tkey = ParsedTwoBodyFourCenterIntKey::key(aocc_space->id(), aocc_space->id(),
                                                   avir_space->id(), cabs_space->id(),
                                                   descr_key, TwoBodyIntLayout::b1b2_k1k2);
       Ref<TwoBodyMOIntsTransform> iiaA_tform =
-        r12evalinfo()->moints_runtime()->runtime_4c()->get(tkey);
+        r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
       iiaA_tform->compute();
       iiaA_acc_[AlphaBeta] = iiaA_tform->ints_acc();
       iiaA_acc_[AlphaBeta]->activate();
@@ -310,7 +310,7 @@ CCR12_Info::compute_source_integrals_uhf() {
   assert(false);
 
   // this function should only be called for rohf or uhf
-  if (!r12evalinfo()->refinfo()->ref()->spin_polarized())
+  if (!r12world()->ref()->spin_polarized())
     throw ProgrammingError("CCR12_Info::compute_source_integrals_uhf -- reference wfn is not spin-polarized",
                            __FILE__,__LINE__);
 
@@ -322,10 +322,10 @@ CCR12_Info::compute_source_integrals_uhf() {
 
   // Prepare OrbitalSpace that corresponds to the CorrelatedMOOrder assumed by SMITH
 
-  Ref<OrbitalSpace> occs_a = r12evalinfo()->refinfo()->occ_sb(Alpha);
-  Ref<OrbitalSpace> occs_b = r12evalinfo()->refinfo()->occ_sb(Beta);
-  Ref<OrbitalSpace> orbs_a = r12evalinfo()->refinfo()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> orbs_b = r12evalinfo()->refinfo()->orbs_sb(Beta);
+  Ref<OrbitalSpace> occs_a = r12world()->ref()->occ_sb(Alpha);
+  Ref<OrbitalSpace> occs_b = r12world()->ref()->occ_sb(Beta);
+  Ref<OrbitalSpace> orbs_a = r12world()->ref()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> orbs_b = r12world()->ref()->orbs_sb(Beta);
   const size_t norbs = orbs_a->rank();
   RefDiagSCMatrix occnums_a = orbs_a->evals().clone();
   occnums_a.assign(0.0);
@@ -464,7 +464,7 @@ CCR12_Info::compute_source_integrals_uhf() {
   pspace_b->print_detail();
 #endif
 
-  Ref<FockBuildRuntime> fb_rtime = r12evalinfo()->fockbuild_runtime();
+  Ref<FockBuildRuntime> fb_rtime = r12world()->world()->fockbuild_runtime();
   const std::string fkey_a = ParsedOneBodyIntKey::key(pspace_a->id(),pspace_a->id(),std::string("F"),Alpha);
   F_[Alpha] = fb_rtime->get(fkey_a);
   const std::string fkey_b = ParsedOneBodyIntKey::key(pspace_b->id(),pspace_b->id(),std::string("F"),Beta);
@@ -486,7 +486,7 @@ CCR12_Info::compute_source_integrals_uhf() {
                                                 TwoBodyIntLayout::b1b2_k1k2);
 
   Ref<TwoBodyMOIntsTransform> pppp_tform =
-      r12evalinfo()->moints_runtime()->runtime_4c()->get(tkey);
+      r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
   pppp_tform->compute();
   pppp_acc_[AlphaBeta] = pppp_tform->ints_acc();
   pppp_acc_[AlphaBeta]->activate();
@@ -497,8 +497,8 @@ CCR12_Info::compute_source_integrals_uhf() {
 
 void CCR12_Info::fill_in_f1(){
 
-  Ref<OrbitalSpace> aobs_space = r12evalinfo_->refinfo()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> bobs_space = r12evalinfo_->refinfo()->orbs_sb(Beta);
+  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> bobs_space = r12world()->ref()->orbs_sb(Beta);
 
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;
@@ -527,8 +527,8 @@ void CCR12_Info::fill_in_f1(){
   if (need_w1() || need_w2()) {
 
     // get the CABS space
-    Ref<OrbitalSpace> acabs_space = r12evalinfo_->ribs_space(Alpha);
-    Ref<OrbitalSpace> bcabs_space = r12evalinfo_->ribs_space(Beta);
+    Ref<OrbitalSpace> acabs_space = r12world()->cabs_space(Alpha);
+    Ref<OrbitalSpace> bcabs_space = r12world()->cabs_space(Beta);
 
     vector<long> acabsmap;
     {
@@ -608,17 +608,17 @@ void CCR12_Info::fill_in_v2() {
     // compute map from indices in full spin-orbital space to indices in the respective spin spaces
     vector<long> aAmap;
     {
-      vector<int> smith_to_obs = sc::map(*(r12evalinfo_->ribs_space(Alpha)), *corr_space_, false);
+      vector<int> smith_to_obs = sc::map(*(r12world()->cabs_space(Alpha)), *corr_space_, false);
       aAmap.resize(smith_to_obs.size());
       std::copy(smith_to_obs.begin(), smith_to_obs.end(), aAmap.begin());
     }
     vector<long> bAmap;
     {
-      vector<int> smith_to_obs = map(*(r12evalinfo_->ribs_space(Beta)), *corr_space_, false);
+      vector<int> smith_to_obs = map(*(r12world()->cabs_space(Beta)), *corr_space_, false);
       bAmap.resize(smith_to_obs.size());
       std::copy(smith_to_obs.begin(), smith_to_obs.end(), bAmap.begin());
     }
-    const unsigned int ncabs = r12evalinfo_->ribs_space(Alpha)->rank();
+    const unsigned int ncabs = r12world()->cabs_space(Alpha)->rank();
     // pppA
     {
       MTensor<4>::element_ranges pppA_erange(3, MTensor<4>::element_range(0, norbs) );

@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
+#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 
 using namespace std;
 using namespace sc;
@@ -58,18 +59,18 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   MBPT2(s)
 {
   if (s.version(::class_desc<MBPT2_R12>()) < 9)
-      throw InputError("Cannot use MBPT2_R12 class prior to version 9",__FILE__,__LINE__);
+    throw InputError("Cannot use MBPT2_R12 class prior to version 9",__FILE__,__LINE__);
 
   r12eval_ << SavableState::restore_state(s);
-  r12evalinfo_ << SavableState::restore_state(s);
+  r12world_ << SavableState::restore_state(s);
   r12a_energy_ << SavableState::restore_state(s);
   r12ap_energy_ << SavableState::restore_state(s);
   r12app_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   r12c_energy_ << SavableState::restore_state(s);
 
-  if((r12evalinfo()->ansatz()->orbital_product_GG()==LinearR12::OrbProdGG_pq) ||
-     (r12evalinfo()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq)) {
+  if((r12world()->r12tech()->ansatz()->orbital_product_GG()==LinearR12::OrbProdGG_pq) ||
+     (r12world()->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq)) {
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
   }
 
@@ -93,25 +94,32 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (roscfref != 0) {
     ExEnv::out0() << indent << "WARNING: ROHF-based MBPT2-R12 method not completely tested yet" << endl;
   }
-  const bool closedshell = (clscfref != 0);
 
-  spinadapted_ = false;
-  if (closedshell)
-    // Default is to use spin-adapted algorithm
-    spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
-
-  r12evalinfo_ = new R12IntEvalInfo(keyval,this,ref(),nfzcore(), nfzvirt(), spinadapted_, true);
-
-  if(r12evalinfo()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
-#if 0
-    throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
-#endif
+  // MP2-R12 calculations can use virtual orbitals expanded in a separate basis set
+  Ref<GaussianBasisSet> bs_vir = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("vir_basis").pointer(),
+      "MBPT2_R12::MBPT2_R12\n"
+      );
+  Ref<OrbitalSpace> vbs;
+  if (bs_vir.nonnull()) {
+    int nlindep_vir;
+    vbs = orthogonalize("e(sym)", "VBS", bs_vir,
+                        integral(),
+                        this->orthog_method(), this->lindep_tol(),
+                        nlindep_vir);
   }
+
+  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  Ref<R12RefWavefunction> refinfo = new SD_R12RefWavefunction(world, ref(), false,
+                                                              nfzcore(), nfzvirt(),
+                                                              vbs);
+  r12world_ = new R12WavefunctionWorld(keyval, refinfo);
+  Ref<R12Technology> r12tech = r12world_->r12tech();
 
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
 
-  const bool diag = r12evalinfo()->ansatz()->diag();
-  const bool optimized_amplitudes = r12evalinfo()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  const bool diag = r12tech->ansatz()->diag();
+  const bool optimized_amplitudes = r12tech->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
 
   new_energy_ = diag ? true : false;
   new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
@@ -157,7 +165,7 @@ MBPT2_R12::save_data_state(StateOut& s)
 {
   MBPT2::save_data_state(s);
   SavableState::save_state(r12eval_.pointer(),s);
-  SavableState::save_state(r12evalinfo_.pointer(),s);
+  SavableState::save_state(r12world_.pointer(),s);
   SavableState::save_state(r12a_energy_.pointer(),s);
   SavableState::save_state(r12ap_energy_.pointer(),s);
   SavableState::save_state(r12app_energy_.pointer(),s);
@@ -189,7 +197,7 @@ MBPT2_R12::print(ostream&o) const
                                           << endl;
   }
 
-  r12evalinfo()->print(o);
+  r12world()->print(o);
 
   MBPT2::print(o);
   o << decindent;
@@ -273,8 +281,8 @@ MBPT2_R12::value_implemented() const
 void
 MBPT2_R12::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
 {
-    if (!r12evalinfo()->r12tech()->corrfactor()->equiv(cf)) {
-      r12evalinfo()->r12tech()->corrfactor(cf);
+    if (!r12world()->r12tech()->corrfactor()->equiv(cf)) {
+      r12world()->r12tech()->corrfactor(cf);
       obsolete();
   }
 }

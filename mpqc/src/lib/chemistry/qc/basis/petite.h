@@ -175,12 +175,13 @@ class PetiteList : public RefCount {
 
     void print(std::ostream& =ExEnv::out0(), int verbose=1);
 
-    /// blocked AO dimension
+    /// blocked AO dimension (number of blocks = 1, the lone subdimension is blocked by shells)
     RefSCDimension AO_basisdim();
-    /// blocked SO dimension
+    /// blocked SO dimension (number of blocks = order of the point group, each subdimension has 1 block)
     RefSCDimension SO_basisdim();
 
-    // return the basis function rotation matrix R(g)
+    /// return the basis function rotation matrix R(g)
+    /// @param g index of the group operation
     RefSCMatrix r(int g);
 
     /// @return information about the transformation from AOs to SOs

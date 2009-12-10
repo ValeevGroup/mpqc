@@ -56,7 +56,7 @@ class MolecularHessian: virtual public SavableState {
         keywords below.
 
         <table border="1">
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>molecule</tt><td>Molecule<td>none<td>The Molecule object.
         </table>
     */
@@ -109,7 +109,7 @@ class ReadMolecularHessian: public MolecularHessian {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>filename</tt><td>string<td><em>basename</em>
         <tt>.hess</tt><td>The name of the file from which the hessian is
         read.
@@ -137,7 +137,7 @@ class GuessMolecularHessian: public MolecularHessian {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>coor</tt><td>MolecularCoor<td>none<td>This gives
         the MolecularCoor object that is used to generate the guess
         hessian.  It does not have to be the same MolecularCoor
@@ -166,7 +166,7 @@ class DiagMolecularHessian: public MolecularHessian {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>diag</tt><td>double<td>1.0<td>Specifies the diagonal
         elements of the hessian.
 

@@ -180,7 +180,7 @@ class Molecule: public SavableState
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
 
         <tr><td><tt>include_q</tt><td>boolean<td>false<td>Some of the
         atoms can be specified as <tt>Q</tt> and given a customizable

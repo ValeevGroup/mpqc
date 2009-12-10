@@ -98,7 +98,7 @@ class FinDispMolecularHessian: public MolecularHessian {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
 
         <tr><td><tt>energy</tt><td>MolecularEnergy<td>none<td>This gives an
         object which will be used to compute the gradients needed to form

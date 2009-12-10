@@ -105,7 +105,7 @@ class AtomInfo: public SavableState {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
 
         <tr><td><tt>mass:unit</tt><td>string<td><tt>amu</tt><td>The unit to
         be used for masses.  See the Units class for more information about

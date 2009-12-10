@@ -700,16 +700,42 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
   if (c1_)
     return aoev.copy();
 
+  // given aoev may be non-blocked or its dimensions may have different sub-blocking
+  // in that case copy into a blocked matrix of the desired dimensions
   RefSCMatrix aoevecs = dynamic_cast<BlockedSCMatrix*>(aoev.pointer());
-  if (aoevecs.null()) {
-    aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
+  const bool need_to_copy = aoevecs.null() || (aoevecs.nonnull() && !AO_basisdim()->equiv(aoev.rowdim()));
+  if (need_to_copy) {
+    aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), aoev.coldim());
     aoevecs->convert(aoev);
   }
 
   RefSCMatrix soev =  sotoao() * aoevecs;
 
+  // redimension
   RefSCMatrix soevecs(SO_basisdim(), SO_basisdim(), gbs_->so_matrixkit());
+  // this convert messes it all up!
+  // because Blocked ops are not implemented!
+  // copy manually
+  // TODO replace with convert when it's fixed to work with Blocked matrices properly
+#define SCMATRIX_CONVERT_BROKEN 1
+#if SCMATRIX_CONVERT_BROKEN
+  const int nrow = soevecs.nrow();
+  const int ncol = soevecs.ncol();
+  for(int r=0; r<nrow; ++r) {
+    for(int c=0; c<ncol; ++c) {
+      soevecs.set_element(r, c, soev.get_element(r, c));
+    }
+  }
+#else
   soevecs->convert(soev);
+#endif
+
+#if 0
+  aoev.print("PetiteList::evecs_to_SO_basis: input C_ao");
+  aoevecs.print("PetiteList::evecs_to_SO_basis: input C_ao (blocked)");
+  soev.print("PetiteList::evecs_to_SO_basis: output C_so");
+  soevecs.print("PetiteList::evecs_to_SO_basis: output C_so (blocked)");
+#endif
 
   return soevecs;
 }

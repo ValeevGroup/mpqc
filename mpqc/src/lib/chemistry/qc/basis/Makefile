@@ -52,7 +52,8 @@ INC = basis.h gaussbas.h guassshell.h files.h \
       sobasis.h sointegral.h \
       orthog.h gpetite.h distshpair.h intparams.h intdescr.h \
       uncontract.h split.h lselect.h operator.h fjt.h \
-      distsh.h inttraits.h operator.h union.h
+      distsh.h inttraits.h operator.h union.h \
+      obintfactory.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

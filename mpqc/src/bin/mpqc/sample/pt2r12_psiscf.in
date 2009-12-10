@@ -1,0 +1,79 @@
+% Emacs should use -*- KeyVal -*- mode
+h2o<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+he2<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+    He     [     0.00000000     0.00000000     0.00000000 ]
+    He     [     0.00000000     0.00000000     2.00000000 ]
+  }
+)
+
+molecule = $:h2o
+
+% basis set specification
+mbasis<GaussianBasisSet>: (
+  name = "cc-pVDZ"
+  puream = true
+  molecule = $:molecule
+)
+basis<SplitBasisSet>: (
+  basis = $:mbasis
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  integrals<IntegralLibint2>: ()
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<PT2R12>: (
+    value_accuracy = 1e-11
+    molecule = $:molecule
+    basis = $:basis
+    memory = 32000000
+    %debug = 4
+    reference<PsiCLHF>: (
+     %debug = 6
+     value_accuracy = 1e-11
+     molecule = $:molecule
+     basis = $:basis
+     memory = 32000000
+    )
+    rdm2<PsiRDMTwo>: (
+      wfn = $..:reference
+    )
+
+    stdapprox = "C"
+    corr_factor = "STG-3G"
+    corr_param = 1.5
+    integrals<IntegralLibint2>: ()
+    nfzc = 0
+    aux_basis<GaussianBasisSet>: (
+      name = "aug-cc-pVDZ"
+      puream = true
+      molecule = $:molecule
+    )
+    abs_method = CABS+
+  )
+  optimize = no
+  % optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

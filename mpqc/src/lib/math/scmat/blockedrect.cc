@@ -373,12 +373,12 @@ BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
     ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
          << "dimensions don't match\n";
-    rowdim().print();
-    coldim().print();
-    la->rowdim().print();
-    la->coldim().print();
-    lb->rowdim().print();
-    lb->coldim().print();
+    ExEnv::errn() << "this->rowdim: " << std::endl; rowdim().print();
+    ExEnv::errn() << "this->coldim: " << std::endl; coldim().print();
+    ExEnv::errn() << "   a->rowdim: " << std::endl; la->rowdim().print();
+    ExEnv::errn() << "   a->coldim: " << std::endl; la->coldim().print();
+    ExEnv::errn() << "   b->rowdim: " << std::endl; lb->rowdim().print();
+    ExEnv::errn() << "   b->coldim: " << std::endl; lb->coldim().print();
     abort();
   }
 

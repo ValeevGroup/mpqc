@@ -61,7 +61,7 @@ SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes):
   nblocks_ = nblocks;
   size_ = 0;
 
-  if (n_ == 0) nblocks_ = 0;
+  //if (n_ == 0) nblocks_ = 0;
 
   if (n_ != 0 && nblocks_ == 0) {
       nblocks_ = 1;

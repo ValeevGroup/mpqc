@@ -133,6 +133,7 @@ namespace sc {
                            const Ref<GaussianBasisSet>& obs);
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
+                            SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
                             const Ref<GaussianBasisSet>& ketbs,
                             const Ref<GaussianBasisSet>& obs);
@@ -421,13 +422,17 @@ namespace sc {
 
             if (c == 1) { // exchange
               RefSymmSCMatrix Pspin;
-              if (openshelldensity.nonnull())
+              SpinCase1 spincase;
+              if (openshelldensity.nonnull()) {
                 Pspin = (spin == Alpha) ? density + openshelldensity : density - openshelldensity;
+                spincase = spin;
+              }
               else {
                 Pspin = density.copy();
+                spincase = AnySpinCase1;
               }
               Pspin.scale(0.5);
-              result_[t][c] = detail::exchange_df(df_info, Pspin, brabasis, ketbasis, densitybasis);
+              result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis);
             }
 
             if (c == 2) { // fock

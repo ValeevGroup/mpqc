@@ -30,8 +30,33 @@
 #endif
 
 #include <chemistry/qc/psi/rdm.h>
+#include <chemistry/qc/psi/psici.h>
 
 using namespace sc;
+
+namespace {
+  Ref<OrbitalSpace> orbs_from_psiwfn(const Ref<PsiWavefunction>& wfn, SpinCase1 spin) {
+    Ref<PsiSCF> psiscfwfn_;
+    psiscfwfn_ << wfn;
+    if (psiscfwfn_.nonnull()) {
+      return psiscfwfn_->orbs_sb(spin);
+    }
+
+    Ref<PsiCI> psiciwfn_;
+    psiciwfn_ << wfn;
+    if (psiciwfn_.nonnull()) {
+      return psiciwfn_->occ(spin);
+    }
+
+    Ref<PsiCorrWavefunction> psicorrwfn_;
+    psicorrwfn_ << wfn;
+    if (psicorrwfn_.nonnull()) {
+      return psicorrwfn_->orbs_sb(spin);
+    }
+
+    throw std::logic_error("don't know how to compute OrbitalSpace from this PsiWavefunction");
+  }
+}
 
 ClassDesc
 PsiRDMTwo::class_desc_(typeid(PsiRDMTwo),
@@ -44,15 +69,15 @@ PsiRDMTwo::class_desc_(typeid(PsiRDMTwo),
                      );
 
 PsiRDMTwo::PsiRDMTwo(const Ref<KeyVal>& kv) : RDM<Two>(kv) {
-  psiwfn_ = require_dynamic_cast<PsiWavefunction*>(
+  wfn_ = require_dynamic_cast<PsiWavefunction*>(
         kv->describedclassvalue("wfn").pointer(),
         "PsiRDMTwo::PsiRDMTwo\n"
         );
 }
 
 PsiRDMTwo::PsiRDMTwo(StateIn& si) : RDM<Two>(si) {
-  psiwfn_ << SavableState::restore_state(si);
-  if (psiwfn_.null())
+  wfn_ << SavableState::restore_state(si);
+  if (wfn_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -61,57 +86,51 @@ PsiRDMTwo::~PsiRDMTwo() {
 
 void
 PsiRDMTwo::save_data_state(StateOut& so) {
-  SavableState::save_state(psiwfn_.pointer(), so);
+  SavableState::save_state(wfn_.pointer(), so);
 }
 
 Ref<PsiRDMTwo::cumulant_type> sc::PsiRDMTwo::cumulant() const
 {
-  return new PsiRDMCumulantTwo(const_cast<PsiRDMTwo*>(this));
+  return new RDMCumulant<Two>(const_cast<PsiRDMTwo*>(this));
 }
 
-void sc::PsiRDMTwo::release_block(SpinCase2 spin, size_t bra, double *blk) const
-{
-  throw "not yet implemented";
+Ref< RDM<One> > sc::PsiRDMTwo::rdm_m_1() const {
+  return new PsiRDMOne(wfn_);
 }
 
-const double *sc::PsiRDMTwo::obtain_block(SpinCase2 spin, size_t bra) const
-{
-  throw "not yet implemented";
-}
-
-void sc::PsiRDMTwo::compute()
-{
-  psiwfn_->compute();
-}
-
-size_t sc::PsiRDMTwo::ndim(SpinCase2 spincase) const
-{
-  const int nmo = psiwfn_->oso_dimension().n();
-  switch (spincase) {
-    case AlphaAlpha:
-    case BetaBeta:
-      return nmo * (nmo-1) / 2;
-    case AlphaBeta:
-      return nmo * nmo;
+Ref<OrbitalSpace>
+sc::PsiRDMTwo::orbs(SpinCase1 spin) const {
+  try {
+    return orbs_from_psiwfn(wfn_, spin);
   }
-  assert(false);  // unreachable
+  catch (...) {
+    throw ProgrammingError("PsiRDMTwo::orbs() not defined for this PsiWavefunction",
+                           __FILE__,
+                           __LINE__);
+  }
 }
 
 RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
 
   if (scmat_[spin].nonnull()) return scmat_[spin];
-  if (psiwfn_->spin_polarized() && spin == BetaBeta)
+  if (wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
+  Ref<PsiCI> psiciwfn_;
+  psiciwfn_ << wfn_;
+  if (psiciwfn_.nonnull()) {
+    return psiciwfn_->twopdm_occ(spin);
+  }
+
   Ref<PsiCorrWavefunction> psicorrwfn_;
-  psicorrwfn_ << psiwfn_;
+  psicorrwfn_ << wfn_;
   if (psicorrwfn_.nonnull()) {
     scmat_[spin] = psicorrwfn_->twopdm_dirac(spin);
     return scmat_[spin];
   }
 
   Ref<PsiSCF> psiscfwfn_;
-  psiscfwfn_ << psiwfn_;
+  psiscfwfn_ << wfn_;
   if (psiscfwfn_.nonnull()) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const SpinCase1 spin1 = case1(spin);
@@ -153,6 +172,7 @@ RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
 
 /////////////////////
 
+#if 0
 ClassDesc
 PsiRDMCumulantTwo::class_desc_(typeid(PsiRDMCumulantTwo),
 			       "PsiRDMCumulantTwo",
@@ -180,31 +200,16 @@ PsiRDMCumulantTwo::save_data_state(StateOut& so) {
   SavableState::save_state(density_.pointer(), so);
 }
 
-void sc::PsiRDMCumulantTwo::release_block(SpinCase2 spin, size_t bra, double *blk) const
-{
-  throw "not yet implemented";
-}
-
-const double *sc::PsiRDMCumulantTwo::obtain_block(SpinCase2 spin, size_t bra) const
-{
-  throw "not yet implemented";
-}
-
-void sc::PsiRDMCumulantTwo::compute()
-{
-  density_->compute();
-}
-
 RefSymmSCMatrix sc::PsiRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
   if (scmat_[spin].nonnull()) return scmat_[spin];
-  if (!density_->psiwfn()->spin_polarized() && spin == BetaBeta)
+  if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
-  const RefSymmSCMatrix opdm1 = density_->psiwfn()->mo_density(spin1);
-  const RefSymmSCMatrix opdm2 = density_->psiwfn()->mo_density(spin2);
+  const RefSymmSCMatrix opdm1 = density_->wfn()->mo_density(spin1);
+  const RefSymmSCMatrix opdm2 = density_->wfn()->mo_density(spin2);
   const RefSymmSCMatrix tpdm = density_->scmat(spin);
   const int n = opdm1.n();
   RefSymmSCMatrix lambda = tpdm.copy();
@@ -215,12 +220,12 @@ RefSymmSCMatrix sc::PsiRDMCumulantTwo::scmat(SpinCase2 spin) const {
     for(int b2=0; b2< b2fence; ++b2, ++b12) {
 
       int k12 = 0;
-      for(int k1=0; k1<n; ++k1) {
+      for(int k1=0; k1<n && k12<=b12; ++k1) {
         const double gamma_b1_k1 = opdm1.get_element(b1,k1);
         const double gamma_b2_k1 = (spin != AlphaBeta) ? opdm1.get_element(b2,k1) : 0.0;
 
         const int k2fence = (spin == AlphaBeta) ? n : k1;
-        for(int k2=0; k2< k2fence; ++k2, ++k12) {
+        for(int k2=0; k2<k2fence && k12<=b12; ++k2, ++k12) {
           double value = - (gamma_b1_k1 * opdm2.get_element(b2,k2));
           if (spin != AlphaBeta) value += opdm1.get_element(b1,k2) * gamma_b2_k1;
           lambda.accumulate_element(b12,k12,value);
@@ -231,6 +236,66 @@ RefSymmSCMatrix sc::PsiRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
   scmat_[spin] = lambda;
   return scmat_[spin];
+}
+#endif
+
+////////////////////
+
+ClassDesc
+PsiRDMOne::class_desc_(typeid(PsiRDMOne),
+                     "PsiRDMOne",
+                     1,               // version
+                     "public RDM<One>", // must match parent
+                     0,               // change to create<PsiRDMTwo> if this class is DefaultConstructible
+                     create<PsiRDMOne>, // change to 0 if this class is not KeyValConstructible
+                     create<PsiRDMOne>  // change to 0 if this class is not StateInConstructible
+                     );
+
+PsiRDMOne::PsiRDMOne(const Ref<KeyVal>& kv) : RDM<One>(kv) {
+  wfn_ = require_dynamic_cast<PsiWavefunction*>(
+        kv->describedclassvalue("wfn").pointer(),
+        "PsiRDMOne::PsiRDMOne\n"
+        );
+}
+
+PsiRDMOne::PsiRDMOne(StateIn& si) : RDM<One>(si) {
+  wfn_ << SavableState::restore_state(si);
+  if (wfn_.null())
+    throw ProgrammingError("failed constructor",__FILE__,__LINE__);
+}
+
+PsiRDMOne::PsiRDMOne(const Ref<PsiWavefunction>& wfn) : RDM<One>(wfn.pointer()), wfn_(wfn) {
+}
+
+PsiRDMOne::~PsiRDMOne() {
+}
+
+void
+PsiRDMOne::save_data_state(StateOut& so) {
+  SavableState::save_state(wfn_.pointer(), so);
+}
+
+Ref<OrbitalSpace>
+PsiRDMOne::orbs(SpinCase1 spin) const {
+  try {
+    return orbs_from_psiwfn(wfn_, spin);
+  }
+  catch (...) {
+    throw ProgrammingError("PsiRDMTwo::orbs() not defined for this PsiWavefunction",
+                           __FILE__,
+                           __LINE__);
+  }
+}
+
+RefSymmSCMatrix
+PsiRDMOne::scmat(SpinCase1 spin) const {
+  Ref<PsiCI> psiciwfn;
+  psiciwfn << wfn_;
+  if (psiciwfn.nonnull()) {
+    return psiciwfn->onepdm_occ(spin);
+  }
+
+  return wfn_->mo_density(spin);
 }
 
 /////////////////////////////////////////////////////////////////////////////

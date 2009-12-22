@@ -41,6 +41,9 @@ namespace sc {
   /// PsiCC is a Psi coupled cluster wave function
 
   class PsiCC : public PsiCorrWavefunction {
+
+      Ref<OrbitalSpace> occ_act_sb_[NSpinCases1];
+      Ref<OrbitalSpace> vir_act_sb_[NSpinCases1];
       RefSCMatrix T1_[NSpinCases1];
       RefSCMatrix T2_[NSpinCases2];
       RefSCMatrix Tau2_[NSpinCases2];
@@ -103,6 +106,11 @@ namespace sc {
       void dpd_start();
       /// stop Psi3 DPD library
       void dpd_stop();
+
+      /// return active occupied orbital space (symmetry-blocked)
+      const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin);
+      /// return active virtual orbital space (symmetry-blocked)
+      const Ref<OrbitalSpace>& vir_act_sb(SpinCase1 spin);
       
     public:
       PsiCC(const Ref<KeyVal>&);

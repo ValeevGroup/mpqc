@@ -31,6 +31,9 @@
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/obintfactory.h>
 #include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#if HAVE_PSIMPQCIFACE
+# include <chemistry/qc/psi/r12ref.h>
+#endif
 
 using namespace sc;
 
@@ -213,9 +216,13 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
     if (vbs.null())
       uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
     else {
-      uocc_sb_ = orthog_comp(occ_sb_, vbs, id, "VBS", OverlapOrthog::default_lindep_tol());
-      // canonicalize
-      uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
+      if (vbs->rank() > 0) {
+        uocc_sb_ = orthog_comp(occ_sb_, vbs, id, "VBS", OverlapOrthog::default_lindep_tol());
+        // canonicalize
+        uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
+      }
+      else // empty vbs
+        uocc_sb_ = vbs;
     }
   }
   {
@@ -256,6 +263,12 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
   idxreg->add(make_keyspace_pair(occ_act_));
   idxreg->add(make_keyspace_pair(uocc_act_sb_));
   idxreg->add(make_keyspace_pair(uocc_act_));
+
+#if 0
+  orbs_sb_->print_detail();
+  occ_sb_->print_detail();
+  uocc_sb_->print_detail();
+#endif
 }
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
@@ -461,19 +474,19 @@ static ClassDesc SD_R12RefWavefunction_cd(
   0, 0, create<SD_R12RefWavefunction>);
 
 SD_R12RefWavefunction::SD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
-                                                   const Ref<OneBodyWavefunction>& obwfn,
-                                                   bool spin_restricted,
-                                                   unsigned int nfzc,
-                                                   unsigned int nfzv,
-                                                   Ref<OrbitalSpace> vir_space) :
-                                                   R12RefWavefunction(world,
-                                                                      obwfn->basis(),
-                                                                      obwfn->integral()),
-                                                   obwfn_(obwfn),
-                                                   spin_restricted_(spin_restricted),
-                                                   nfzc_(nfzc),
-                                                   nfzv_(nfzv),
-                                                   vir_space_(vir_space) {
+                                             const Ref<OneBodyWavefunction>& obwfn,
+                                             bool spin_restricted,
+                                             unsigned int nfzc,
+                                             unsigned int nfzv,
+                                             Ref<OrbitalSpace> vir_space) :
+                                             R12RefWavefunction(world,
+                                                                obwfn->basis(),
+                                                                obwfn->integral()),
+                                             obwfn_(obwfn),
+                                             spin_restricted_(spin_restricted),
+                                             nfzc_(nfzc),
+                                             nfzv_(nfzv),
+                                             vir_space_(vir_space) {
   // bring spin_restricted in sync with obwfn
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
@@ -533,14 +546,52 @@ SD_R12RefWavefunction::init_spaces_restricted()
   const bool moorder = true;   // order orbitals in the order of increasing energies
   Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
   const Ref<GaussianBasisSet> bs = obwfn()->basis();
-  const RefSCMatrix evecs_so = obwfn()->eigenvectors();
-  const RefDiagSCMatrix evals = obwfn()->eigenvalues();
+  RefSCMatrix evecs_so = obwfn()->eigenvectors();
+  RefDiagSCMatrix evals = obwfn()->eigenvalues();
   const Ref<Integral>& integral =  obwfn()->integral();
   Ref<PetiteList> plist = integral->petite_list();
   RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
-  const int nmo = evecs_ao.coldim().n();
+  int nmo = evecs_ao.coldim().n();
+
+  using std::vector;
+  vector<double> aoccs(nmo);
+  vector<double> boccs(nmo);
+  for(int mo=0; mo<nmo; mo++) {
+    aoccs[mo] = obwfn()->alpha_occupation(mo);
+    boccs[mo] = obwfn()->beta_occupation(mo);
+  }
+
+  // omit unoccupied orbitals?
+  const bool omit_uocc = vir_space_.nonnull() && vir_space_->rank() == 0;
+  if (omit_uocc) {
+    Ref<OrbitalSpace> allspace = new OrbitalSpace("", "",
+                                                  evecs_ao,
+                                                  basis(),
+                                                  integral,
+                                                  evals,
+                                                  0, 0, OrbitalSpace::symmetry);
+    std::vector<bool> occmask(nmo);
+    for(unsigned int o=0; o<nmo; ++o)
+      occmask[o] = (aoccs[o] != 0.0 || boccs[o] != 0.0) ? true : false;
+    Ref<OrbitalSpace> occspace = new MaskedOrbitalSpace("", "", allspace, occmask);
+    evecs_ao = occspace->coefs();
+    evals = occspace->evals();
+    nmo = evals.n();
+
+    MOIndexMap o2f = (*allspace << *occspace);
+    std::vector<double> aoccs_o(nmo, 1.0);
+    std::vector<double> boccs_o(nmo, 1.0);
+    for(unsigned int o=0; o<nmo; ++o) {
+      const unsigned int oo = o2f[o];
+      aoccs_o[o] = aoccs[oo];
+      boccs_o[o] = boccs[oo];
+    }
+    aoccs = aoccs_o;
+    boccs = boccs_o;
+  }
 
   // compute active orbital mask
+  nmo = evals.n();
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   FZCMask fzcmask(nfzc(), evals);
@@ -550,11 +601,6 @@ SD_R12RefWavefunction::init_spaces_restricted()
   std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                  fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
 
-  using std::vector;
-  vector<double> aoccs(nmo);
-  for(int mo=0; mo<nmo; mo++) {
-    aoccs[mo] = obwfn()->alpha_occupation(mo);
-  }
   if (obwfn()->spin_polarized() == false) { // closed-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
@@ -565,20 +611,21 @@ SD_R12RefWavefunction::init_spaces_restricted()
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
                                                    vir_space(), fbrun);
-    vector<double> boccs(nmo);
-    for(int mo=0; mo<nmo; mo++) {
-      boccs[mo] = obwfn()->beta_occupation(mo);
-    }
     spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral, evecs_ao,
                                                   boccs, actmask, evals, moorder,
                                                   vir_space(), fbrun);
   }
 }
 
-
 void
 SD_R12RefWavefunction::init_spaces_unrestricted()
 {
+  // omit unoccupied orbitals?
+  const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
+  if (omit_uocc)
+    throw FeatureNotImplemented("omit_uocc is not implemented for spin-unrestricted references",
+                                __FILE__,__LINE__);
+
   const bool moorder = true;   // order orbitals in the order of increasing energies
   Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
   const Ref<GaussianBasisSet> bs = obwfn()->basis();
@@ -657,11 +704,11 @@ ORDM_R12RefWavefunction::ORDM_R12RefWavefunction(const Ref<WavefunctionWorld>& w
                          const RefSymmSCMatrix& beta_1rdm,
                          bool spin_restricted,
                          unsigned int nfzc,
-                         bool omit_virtuals) :
+                         bool omit_uocc) :
                          R12RefWavefunction(world, basis, integral),
                          spin_restricted_(spin_restricted),
                          nfzc_(nfzc),
-                         omit_virtuals_(omit_virtuals)
+                         omit_uocc_(omit_uocc)
 {
   rdm_[Alpha] = alpha_1rdm;
   rdm_[Beta] = beta_1rdm;
@@ -680,7 +727,7 @@ ORDM_R12RefWavefunction::ORDM_R12RefWavefunction(StateIn& si) : R12RefWavefuncti
   detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Beta], si, c);
   si.get(spin_restricted_);
   si.get(nfzc_);
-  si.get(omit_virtuals_);
+  si.get(omit_uocc_);
 }
 
 ORDM_R12RefWavefunction::~ORDM_R12RefWavefunction() {
@@ -693,7 +740,7 @@ ORDM_R12RefWavefunction::save_data_state(StateOut& so) {
   detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
   so.put(spin_restricted_);
   so.put(nfzc_);
-  so.put(omit_virtuals_);
+  so.put(omit_uocc_);
 }
 
 RefSymmSCMatrix
@@ -737,36 +784,19 @@ ORDM_R12RefWavefunction::init_spaces_restricted() {
                                                 S_so.kit(), OverlapOrthog::default_lindep_tol(),
                                                 debug);
 
-  // compute natural orbitals in AO basis (as well as inverse of the coefficient matrix)
+  // compute natural orbitals in AO basis (as well as inverse of the coefficient matrix
+  //                                       for transforming densities)
   RefDiagSCMatrix P_evals;
   RefSCMatrix coefs_no, coefs_no_inv;
   compute_natural_orbitals(P_ao, plist, orthog, P_evals, coefs_no, coefs_no_inv);
 
-  // compute active orbital mask
-  const int nmo = coefs_no_inv.rowdim().n();
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZCMask;
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZVMask;
-  FZCMask fzcmask(nfzc(), P_evals);
-  std::vector<bool> actmask(nmo, true);
-  if (omit_virtuals()) {
-    // count how many orbitals are unoccupied
-    unsigned int nfzv = 0;
-    for(int mo=0; mo<nmo; ++mo)
-      if (fabs(P_evals(mo)) < PopulatedOrbitalSpace::zero_occupation)
-        ++nfzv;
-    FZVMask fzvmask(nfzv, P_evals);
-    // add frozen core and frozen virtuals masks
-    std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                   fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
-  }
-  else // mask out only the frozen core
-    actmask = fzcmask.mask();
-
+  // compute occupation numbers:
   // diagonal elements of spin-specific densities in NO basis are the occupation numbers
   RefSymmSCMatrix Pa_no = rdm_[Alpha].kit()->symmmatrix(coefs_no_inv.rowdim());
   Pa_no.assign(0.0);
   Pa_no.accumulate_transform(coefs_no_inv, rdm_[Alpha]);
   using std::vector;
+  const int nmo = coefs_no_inv.rowdim().n();
   vector<double> aoccs(nmo);
   for(int mo=0; mo<nmo; mo++) {
     aoccs[mo] = Pa_no(mo, mo);
@@ -775,6 +805,71 @@ ORDM_R12RefWavefunction::init_spaces_restricted() {
   RefDiagSCMatrix Pa_diag = rdm_[Alpha].kit()->diagmatrix(coefs_no_inv.rowdim());
   Pa_diag.assign(&(aoccs[0]));
   //Pa_diag.print("Alpha occupation numbers");
+  vector<double> boccs;
+  RefDiagSCMatrix Pb_diag;
+  if (spin_polarized() == false) { // closed-shell
+    boccs = aoccs;
+  }
+  else {
+    RefSymmSCMatrix Pb_no = rdm_[Beta].kit()->symmmatrix(coefs_no_inv.rowdim());
+    Pb_no.assign(0.0);
+    Pb_no.accumulate_transform(coefs_no_inv, rdm_[Beta]);
+    boccs.resize(nmo);
+    for(int mo=0; mo<nmo; mo++) {
+      boccs[mo] = Pb_no(mo, mo);
+    }
+    Pb_no = 0;
+    Pb_diag = rdm_[Beta].kit()->diagmatrix(coefs_no_inv.rowdim());
+    Pb_diag.assign(&(boccs[0]));
+  }
+
+  // need to drop empty orbitals?
+  // this will change coefs_no and P_evals!
+  if (omit_uocc()) {
+    // count how many orbitals are unoccupied
+    unsigned int nuocc = 0;
+    for(int mo=0; mo<nmo; ++mo)
+      if (fabs(P_evals(mo)) < PopulatedOrbitalSpace::zero_occupation)
+        ++nuocc;
+    typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZVMask;
+    FZVMask uoccmask(nuocc, P_evals);
+
+    //
+    // mask out the unoccupied MOs:
+    // 1) compute new coefs_no and P_evals
+    Ref<OrbitalSpace> nos = new OrbitalSpace("", "",
+                                                 coefs_no,
+                                                 basis(),
+                                                 integral(),
+                                                 P_evals,
+                                                 0, 0, OrbitalSpace::symmetry);
+    Ref<OrbitalSpace> occnos = new MaskedOrbitalSpace("", "", nos, uoccmask.mask());
+    coefs_no = occnos->coefs();
+    P_evals = occnos->evals();
+    // 2) recompute aoccs,boccs and Pa_diag,Pb_diag
+    vector<unsigned int> occ_to_full = (*nos << *occnos);
+    const unsigned int nocc = occnos->rank();
+    vector<double> aoccs_o(nocc);
+    vector<double> boccs_o(nocc);
+    for(unsigned int o=0; o<nocc; ++o) {
+      unsigned int oo = occ_to_full[o];
+      aoccs_o[o] = aoccs[oo];
+      boccs_o[o] = boccs[oo];
+    }
+    aoccs = aoccs_o;
+    boccs = boccs_o;
+    Pa_diag = rdm_[Alpha].kit()->diagmatrix(coefs_no.coldim());
+    Pa_diag.assign(&(aoccs[0]));
+    if (spin_polarized()) {
+      Pb_diag = rdm_[Beta].kit()->diagmatrix(coefs_no.coldim());
+      Pb_diag.assign(&(boccs[0]));
+    }
+  }
+
+  // compute active orbital mask
+  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZCMask;
+  FZCMask fzcmask(nfzc(), P_evals);
+  std::vector<bool> actmask = fzcmask.mask();
 
   const bool no_order = false; // order NOs in decreasing occupation number
   if (spin_polarized() == false) { // closed-shell
@@ -785,16 +880,6 @@ ORDM_R12RefWavefunction::init_spaces_restricted() {
   else { // spin-restricted open-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, basis(), integral(), coefs_no,
                                                    aoccs, actmask, Pa_diag, no_order);
-    RefSymmSCMatrix Pb_no = rdm_[Beta].kit()->symmmatrix(coefs_no_inv.rowdim());
-    Pb_no.assign(0.0);
-    Pb_no.accumulate_transform(coefs_no_inv, rdm_[Beta]);
-    vector<double> boccs(nmo);
-    for(int mo=0; mo<nmo; mo++) {
-      boccs[mo] = Pb_no(mo, mo);
-    }
-    Pb_no = 0;
-    RefDiagSCMatrix Pb_diag = rdm_[Beta].kit()->diagmatrix(coefs_no_inv.rowdim());
-    Pb_diag.assign(&(boccs[0]));
     spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, basis(), integral(), coefs_no,
                                                   boccs, actmask, Pb_diag, no_order);
   }
@@ -842,7 +927,7 @@ ORDM_R12RefWavefunction::init_spaces_unrestricted() {
     typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZVMask;
     FZCMask fzcmask(nfzc(), P_evals);
     std::vector<bool> actmask(nmo, true);
-    if (omit_virtuals()) {
+    if (omit_uocc()) {
       // count how many orbitals are unoccupied
       unsigned int nfzv = 0;
       for(int mo=0; mo<nmo; ++mo)
@@ -876,3 +961,43 @@ ORDM_R12RefWavefunction::init_spaces_unrestricted() {
 #endif
   } // end of spincase1 loop
 }
+
+///////////////////////////////////////////////////////////////////
+
+Ref<R12RefWavefunction>
+R12RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
+                                const Ref<Wavefunction> & ref,
+                                bool spin_restricted,
+                                unsigned int nfzc,
+                                unsigned int nfzv,
+                                Ref<OrbitalSpace> vir_space)
+{
+#if HAVE_PSIMPQCIFACE
+  { // PsiSCF
+    Ref<PsiSCF> cast; cast << ref;
+    if (cast.nonnull())
+      return new PsiSCF_R12RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
+  }
+  { // PsiCI
+    Ref<PsiCI> cast; cast << ref;
+    if (cast.nonnull()) {
+      if (vir_space.nonnull() && vir_space->rank() != 0)
+        throw ProgrammingError("PsiCI_R12RefWavefunction can only be used with default virtual space",
+                               __FILE__, __LINE__);
+      const bool omit_uocc = vir_space.nonnull();
+      return new PsiCI_R12RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
+    }
+  }
+#endif
+  { // OneBodyWavefunction
+    Ref<OneBodyWavefunction> cast; cast << ref;
+    if (cast.nonnull())
+      return new SD_R12RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
+  }
+  throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",
+                              __FILE__, __LINE__);
+}
+
+
+
+

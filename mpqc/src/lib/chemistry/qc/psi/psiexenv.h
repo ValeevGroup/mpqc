@@ -38,10 +38,11 @@
 #include <libchkpt/chkpt.hpp>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
 
-/// PsiExEnv specifies a Psi calculation
+/// PsiExEnv specifies a Psi execution environment.
 
 class PsiExEnv: public DescribedClass {
 
@@ -111,6 +112,37 @@ class PsiExEnv: public DescribedClass {
     psi::Chkpt& chkpt();
 
     void print(std::ostream&o=ExEnv::out0()) const;
+};
+
+/// PsiChkpt know to read data from Psi checkpoint file and convert it to conform to the representations expected in MPQC
+class PsiChkpt : public RefCount {
+  public:
+    /// Assume environment described by exenv; integrals specifies the basis set and the factory with conventions compatible with Psi
+    PsiChkpt(const Ref<PsiExEnv>& exenv,
+             const Ref<Integral>& integral,
+             int debug);
+    ~PsiChkpt();
+
+    int debug() const { return debug_; }
+
+    const Ref<PsiExEnv>& exenv() const { return exenv_; }
+    const Ref<Integral>& integral() const { return integral_; }
+
+    /// read the orbital energies for spincase s and return as a diagonal matrix
+    RefDiagSCMatrix evals(SpinCase1 s,
+                          bool spin_restricted = true) const;
+    /// read the orbital coefficients for spincase s
+    RefSCMatrix coefs(SpinCase1 s,
+                      bool spin_restricted = true) const;
+    /// Returns a map from shells in Psi3 basis to std::pair<shell,contraction> in MPQC basis (note that Psi3 does not handle general contractions)
+    std::vector< std::pair<unsigned int,unsigned int> > shell_map() const;
+    /// Returns a map from AO in Psi3 basis to AO in MPQC basis
+    std::vector<unsigned int> ao_map() const;
+
+  private:
+    Ref<PsiExEnv> exenv_;
+    Ref<Integral> integral_;
+    int debug_;
 };
 
 }

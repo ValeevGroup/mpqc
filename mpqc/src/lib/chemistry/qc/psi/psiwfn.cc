@@ -81,16 +81,19 @@ namespace sc {
 
   namespace {
 
-    int triang_half_INDEX_ordered(int i, int j) {
-      return(i*(i+1)/2+j);
+    template <typename T>
+    T triang_half_INDEX_ordered(T i, T j) {
+      return i*(i+1)/2+j;
     }
 
-    int triang_half_INDEX(int i, int j) {
-      return((i>j) ? triang_half_INDEX_ordered(i,j) : triang_half_INDEX_ordered(j,i));
+    template <typename T>
+    T triang_half_INDEX(T i, T j) {
+      return (i>j) ? triang_half_INDEX_ordered(i,j) : triang_half_INDEX_ordered(j,i);
     }
 
-    int ordinary_INDEX(int i, int j, int coldim) {
-      return(i*coldim+j);
+    template <typename T>
+    T ordinary_INDEX(T i, T j, T coldim) {
+      return i*coldim+j;
     }
 
     /// tpdm_index and init_ioff: for indexing of density matrices.
@@ -130,7 +133,12 @@ namespace sc {
       }
     }
 
-    int lowerupper_index(int p, int q);
+    template <typename T>
+    T lowerupper_index(T p, T q) {
+      assert(p!=q);
+      T result = (p>q) ? p*(p-1)/2+q : q*(q-1)/2+p;
+      return result;
+    }
 
     void vector_to_matrix(RefSCMatrix &matrix,const RefSCVector &vector,const SpinCase2 &pairspin) {
       int dim1 = matrix.rowdim().n();
@@ -180,26 +188,6 @@ namespace sc {
             vector.set_element(lowerupper_index(i,j),matrix.get_element(i,j));
           }
         }
-      }
-    }
-
-    int lowertriang_index(int p,int q) {
-      if(q>=p){
-        throw ProgrammingError("lowertriang_index(p,q) -- q must be smaller than p.",__FILE__,__LINE__);
-      }
-      int index=p*(p+1)/2+q-p;
-      return(index);
-    }
-
-    int lowerupper_index(int p, int q) {
-      if(p>q) {
-        return(lowertriang_index(p,q));
-      }
-      else if(q>p) {
-        return(lowertriang_index(q,p));
-      }
-      else {
-        throw ProgrammingError("lowerupper_index(p,q) -- p and q are not allowed to be equal.",__FILE__,__LINE__);
       }
     }
 
@@ -376,6 +364,7 @@ namespace sc {
     return occ;
   }
 
+#if 0
   std::vector< std::pair<unsigned int, unsigned int> > PsiWavefunction::shell_map() {
     typedef std::vector< std::pair<unsigned int, unsigned int> > ShellMap;
     const Ref<GaussianBasisSet>& bs = basis();
@@ -432,6 +421,7 @@ namespace sc {
     psi::Chkpt::free(first_ao_from_shell_psi);
     return map;
   }
+#endif
 
   double
   PsiWavefunction::nuclear_repulsion_energy() const
@@ -493,6 +483,11 @@ namespace sc {
     if (evals_[spin].nonnull())
       return evals_[spin];
 
+    PsiChkpt chkpt(exenv(), integral(), debug());
+    const bool try_spin_restricted = (ref == rhf);
+    evals_[spin] = chkpt.evals(spin, try_spin_restricted);
+
+#if 0
     // grab orbital info
     int num_mo = exenv()->chkpt().rd_nmo();
     int* mopi = exenv()->chkpt().rd_orbspi();
@@ -524,7 +519,7 @@ namespace sc {
 
     psi::Chkpt::free(E);
     psi::Chkpt::free(mopi);
-
+#endif
     return evals_[spin];
   }
 
@@ -543,6 +538,11 @@ namespace sc {
     if (coefs_[spin].nonnull())
       return coefs_[spin];
 
+    PsiChkpt chkpt(exenv(), integral(), debug());
+    const bool try_spin_restricted = (ref == rhf);
+    coefs_[spin] = chkpt.coefs(spin, try_spin_restricted);
+
+#if 0
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
     int num_so = exenv()->chkpt().rd_nso();
@@ -688,8 +688,25 @@ namespace sc {
     Chkpt::free(sopi);
     Chkpt::free(C);
     Chkpt::free(ao2so);
+#endif
 
     return coefs_[spin];
+  }
+
+  const Ref<OrbitalSpace>&  PsiSCF::orbs_sb(SpinCase1 spin) {
+    if(orbs_sb_[spin].nonnull()) {
+      return orbs_sb_[spin];
+    }
+    if (this->reftype() == PsiSCF::rhf && spin==Beta) {
+      return this->orbs_sb(Alpha);
+    }
+
+    const std::string id = ParsedOrbitalSpaceKey::key(std::string("pp(sym)"),spin);
+    orbs_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"MOs (Psi3)"),
+                                      this->coefs(spin),basis(),integral(),
+                                      this->evals(spin),0,0,OrbitalSpace::symmetry);
+
+    return orbs_sb_[spin];
   }
 
   RefSymmSCMatrix
@@ -730,7 +747,8 @@ namespace sc {
       return mo_density(Alpha);
 
     if (spin == AnySpinCase1 && this->spin_polarized())
-      ProgrammingError("asked for any spin density but the density is spin-polarized");
+      ProgrammingError("asked for any spin density but the density is spin-polarized",
+                       __FILE__, __LINE__);
 
     if (mo_density_[spin].nonnull())
       return mo_density_[spin];
@@ -751,6 +769,7 @@ namespace sc {
   }
 
   const std::vector<unsigned int>& PsiSCF::occpi(SpinCase1 spin) {
+    const double energy = this->energy();  // make sure it's computed
     using psi::Chkpt;
     if (!occpi_[spin].empty())
       return occpi_[spin];
@@ -775,6 +794,7 @@ namespace sc {
   }
 
   const std::vector<unsigned int>& PsiSCF::mopi() {
+    const double energy = this->energy();  // make sure it's computed
     using psi::Chkpt;
     if (!mopi_.empty())
       return mopi_;
@@ -791,6 +811,7 @@ namespace sc {
   }
 
   const std::vector<unsigned int>& PsiSCF::uoccpi(SpinCase1 spin) {
+    const double energy = this->energy();  // make sure it's computed
     using psi::Chkpt;
     if (!uoccpi_[spin].empty())
       return uoccpi_[spin];
@@ -822,6 +843,11 @@ namespace sc {
         *v = 1.0;
       v += orbspi[h] - nocc;
     }
+  }
+
+  double
+  PsiSCF::occupation(int mo) {
+    return alpha_occupation(mo) + beta_occupation(mo);
   }
 
   double
@@ -926,6 +952,23 @@ namespace sc {
     PsiSCF(s) {
   }
 
+  void PsiCLHF::print(std::ostream& os) const {
+    os << indent << "PsiCLHF:\n" << incindent
+      << indent << "total_charge = " << charge_ << endl;
+
+    std::vector<unsigned int> occ = docc_;
+    if (docc_.empty())
+      occ = const_cast<PsiCLHF*>(this)->occpi(Alpha);
+
+    os << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      os << " " << occ[i];
+    os << " ]" << endl;
+
+    PsiWavefunction::print(os);
+    os << decindent << endl;
+  }
+
   void PsiCLHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "rhf");
@@ -994,6 +1037,35 @@ namespace sc {
     PsiSCF(s) {
   }
 
+  void PsiHSOSHF::print(std::ostream& os) const {
+    os << indent << "PsiCLHF:\n" << incindent;
+    os << indent << "total_charge = " << charge_ << endl;
+    os << indent << "multiplicity = " << multp_ << endl;
+
+    std::vector<unsigned int> docc = docc_;
+    std::vector<unsigned int> socc = socc_;
+    if (docc_.empty())
+      docc = const_cast<PsiHSOSHF*>(this)->occpi(Beta);
+    if (socc_.empty()) {
+      std::vector<unsigned int> docc_a = const_cast<PsiHSOSHF*>(this)->occpi(Alpha);
+      socc.resize(docc_a.size());
+      std::transform(docc_a.begin(), docc_a.end(), docc.begin(), socc.begin(),
+                     std::minus<unsigned int>());
+    }
+
+    os << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      os << " " << docc[i];
+    os << " ]" << endl;
+    os << indent << "socc = [";
+    for (int i=0; i < nirrep_; i++)
+      os << " " << socc[i];
+    os << " ]" << endl;
+
+    PsiWavefunction::print(os);
+    os << decindent << endl;
+  }
+
   void PsiHSOSHF::write_basic_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->write_keyword("psi:reference", "rohf");
@@ -1060,6 +1132,35 @@ namespace sc {
 
   PsiUHF::PsiUHF(StateIn&s) :
     PsiSCF(s) {
+  }
+
+  void PsiUHF::print(std::ostream& os) const {
+    os << indent << "PsiCLHF:\n" << incindent;
+    os << indent << "total_charge = " << charge_ << endl;
+    os << indent << "multiplicity = " << multp_ << endl;
+
+    std::vector<unsigned int> docc = docc_;
+    std::vector<unsigned int> socc = socc_;
+    if (docc.empty())
+      docc = const_cast<PsiUHF*>(this)->occpi(Beta);
+    if (socc.empty()) {
+      std::vector<unsigned int> docc_a = const_cast<PsiUHF*>(this)->occpi(Alpha);
+      socc.resize(docc_a.size());
+      std::transform(docc_a.begin(), docc_a.end(), docc.begin(), socc.begin(),
+                     std::minus<unsigned int>());
+    }
+
+    os << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      os << " " << docc[i];
+    os << " ]" << endl;
+    os << indent << "socc = [";
+    for (int i=0; i < nirrep_; i++)
+      os << " " << socc[i];
+    os << " ]" << endl;
+
+    PsiWavefunction::print(os);
+    os << decindent << endl;
   }
 
   void PsiUHF::write_basic_input(int convergence) {
@@ -1161,6 +1262,14 @@ namespace sc {
     s.put(static_cast<int>(nfzv_));
   }
 
+  void PsiCorrWavefunction::print(std::ostream& os) const {
+    os << indent << "PsiCorrWavefunction:" << endl;
+    os << incindent;
+    PsiWavefunction::print(os);
+    reference_->print(os);
+    os << decindent;
+  }
+
   void PsiCorrWavefunction::set_desired_value_accuracy(double acc) {
     Function::set_desired_value_accuracy(acc);
     reference()->set_desired_value_accuracy( acc /
@@ -1185,85 +1294,8 @@ namespace sc {
     return reference()->nelectron();
   }
 
-  const Ref<OrbitalSpace>&
-  PsiCorrWavefunction::occ_act_sb(SpinCase1 spin) {
-    if (occ_act_sb_[spin].nonnull())
-      return occ_act_sb_[spin];
-    if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
-      return occ_act_sb(Alpha);
-
-    const unsigned int nmo = reference_->nmo();
-    const std::vector<unsigned int>& mopi = reference_->mopi();
-    const std::vector<unsigned int>& occpi = reference_->occpi(spin);
-    const int nirreps = occpi.size();
-    std::vector<bool> occ_mask(nmo, false);
-    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep) {
-      for(int i=0; i<occpi[irrep]; ++i) {
-        occ_mask[i + irrep_offset] = true;
-      }
-      irrep_offset += mopi[irrep];
-    }
-
-    const std::string id(spin==Alpha ? "I" : "i");
-    Ref<OrbitalSpace> orbs_sb = new OrbitalSpace("", "", reference_->coefs(spin), basis(), integral(),
-                                                 reference_->evals(spin), 0, 0, OrbitalSpace::symmetry);
-    Ref<OrbitalSpace> occ_sb = new MaskedOrbitalSpace("", "", orbs_sb, occ_mask);
-    occ_act_sb_[spin] = new OrbitalSpace(id, prepend_spincase(spin,"active occupied MOs (Psi3)"),
-                                         occ_sb->coefs(), occ_sb->basis(), occ_sb->integral(),
-                                         occ_sb->evals(), nfzc_, 0, OrbitalSpace::symmetry);
-
-    return occ_act_sb_[spin];
-  }
-
-  const Ref<OrbitalSpace>&
-  PsiCorrWavefunction::vir_act_sb(SpinCase1 spin) {
-    if (vir_act_sb_[spin].nonnull())
-      return vir_act_sb_[spin];
-    if (reference_->reftype() == PsiSCF::rhf && spin==Beta)
-      return vir_act_sb(Alpha);
-
-    const unsigned int nmo = reference_->nmo();
-    const std::vector<unsigned int>& mopi = reference_->mopi();
-    const std::vector<unsigned int>& uoccpi = reference_->uoccpi(spin);
-    const int nirreps = uoccpi.size();
-    std::vector<bool> uocc_mask(nmo, false);
-    for(int irrep=0, irrep_offset=0; irrep<nirreps; ++irrep) {
-      const unsigned int nocc = mopi[irrep] - uoccpi[irrep];
-      for(int i=0; i<uoccpi[irrep]; ++i) {
-        uocc_mask[i + irrep_offset + nocc] = true;
-      }
-      irrep_offset += mopi[irrep];
-    }
-
-    const std::string id(spin==Alpha ? "A" : "a");
-    Ref<OrbitalSpace> orbs_sb = new OrbitalSpace("", "", reference_->coefs(spin), basis(), integral(),
-                                                 reference_->evals(spin), 0, 0, OrbitalSpace::symmetry);
-    Ref<OrbitalSpace> uocc_sb = new MaskedOrbitalSpace("", "", orbs_sb, uocc_mask);
-    vir_act_sb_[spin] = new OrbitalSpace(id, prepend_spincase(spin, "active virtual MOs (Psi3)"),
-                                         uocc_sb->coefs(), uocc_sb->basis(), uocc_sb->integral(),
-                                         uocc_sb->evals(), 0, nfzv_, OrbitalSpace::symmetry);
-
-    return vir_act_sb_[spin];
-  }
-
   const Ref<OrbitalSpace>&  PsiCorrWavefunction::orbs_sb(SpinCase1 spin) {
-    if(orbitals_sb_[spin].nonnull()) {
-      return(orbitals_sb_[spin]);
-    }
-    if (reference_->reftype() == PsiSCF::rhf && spin==Beta) {
-      return(orbitals_sb_[Alpha]);
-    }
-
-    const int nmo = reference_->nmo();
-    const int nocc = reference_->nocc(spin);
-
-    const std::string id(spin==Alpha ? "P" : "p");
-
-    orbitals_sb_[spin] = new OrbitalSpace(id,prepend_spincase(spin,"MOs (Psi3)"),
-                                                     reference_->coefs(spin),basis(),integral(),
-                                                     reference_->evals(spin),0,0,OrbitalSpace::symmetry);
-
-    return(orbitals_sb_[spin]);
+    return reference_->orbs_sb(spin);
   }
 
   unsigned int
@@ -1275,9 +1307,20 @@ namespace sc {
   PsiCorrWavefunction::frozen_docc() const {
     if (frozen_docc_.empty()) {
       frozen_docc_.resize(nirrep_);
-      int* frzcpi = exenv()->chkpt().rd_frzcpi();
-      std::copy(frzcpi,frzcpi+nirrep_,frozen_docc_.begin());
-      psi::Chkpt::free(frzcpi);
+
+      const std::vector<unsigned int> mopi = reference()->mopi();
+      RefDiagSCMatrix evals_a = reference()->evals(Alpha);
+      typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
+      FZCMask fzcmask(nfzc(), evals_a);
+      // count number of frozen_core orbitals in each irrep
+      typedef std::vector<bool>::const_iterator iter;
+      iter v = fzcmask.mask().begin();
+      for(int h=0; h<nirrep_; ++h) {
+        const unsigned int nmo = mopi[h];
+        const int n = std::count(v, v+nmo, false);
+        frozen_docc_[h] = n;
+        v += nmo;
+      }
     }
     return frozen_docc_;
   }
@@ -1286,9 +1329,20 @@ namespace sc {
   PsiCorrWavefunction::frozen_uocc() const {
     if (frozen_uocc_.empty()) {
       frozen_uocc_.resize(nirrep_);
-      int* frzvpi = exenv()->chkpt().rd_frzvpi();
-      std::copy(frzvpi,frzvpi+nirrep_,frozen_uocc_.begin());
-      psi::Chkpt::free(frzvpi);
+
+      const std::vector<unsigned int> mopi = reference()->mopi();
+      RefDiagSCMatrix evals_a = reference()->evals(Alpha);
+      typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
+      FZVMask fzvmask(nfzv(), evals_a);
+      // count number of frozen virtual orbitals in each irrep
+      typedef std::vector<bool>::const_iterator iter;
+      iter v = fzvmask.mask().begin();
+      for(int h=0; h<nirrep_; ++h) {
+        const unsigned int nmo = mopi[h];
+        const int n = std::count(v, v+nmo, false);
+        frozen_uocc_[h] = n;
+        v += nmo;
+      }
     }
     return frozen_uocc_;
   }
@@ -1362,39 +1416,251 @@ namespace sc {
     return(uocc_active);
   }
 
+  std::vector<unsigned int>
+  PsiCorrWavefunction::map_density_to_sb() {
+    // maps symm -> QT
+    std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
+                                                             docc_act(),
+                                                             socc(),
+                                                             uocc_act(),
+                                                             frozen_uocc());
+    return index_map_inverse( fmap );
+  }
+
   double
   PsiCorrWavefunction::reference_energy()
   {
     return exenv()->chkpt().rd_eref();
   }
 
-  extern "C" {
-    FILE *outfile;
+  namespace {
+    /// A modification of Psi3's iwl_rdone. For documentation see that of iwl_rdone.
+    int _rdopdm(int itap, char *label, double *ints, int ntri, int erase,
+               int printflg, FILE *outfile) {
+      int nmo;
+      double TOL = 1.0e-6;
+
+      psio_open(itap, PSIO_OPEN_OLD);
+      psio_read_entry(itap, label, (char *) ints, ntri * sizeof(double));
+      psio_close(itap, !erase);
+
+      if (printflg) {
+        nmo = round(sqrt((double) ntri));
+        for (int i = 0; i < nmo; i++) {
+          for (int j = 0; j < nmo; j++) {
+            if (fabs(ints[i * nmo + j]) >= TOL) {
+              fprintf(outfile, "%5i%5i%12.7f\n", i + 1, j + 1,
+                      ints[i * nmo + j]);
+            }
+          }
+        }
+      }
+      return (1);
+    }
+  } // end of anonymous namespace
+
+  RefSymmSCMatrix sc::detail::rdopdm(SpinCase1 spin,
+                                     const std::vector<unsigned int>& mopi,
+                                     const std::vector<unsigned int>& dmap,
+                                     Ref<SCMatrixKit> kit) {
+    FILE* outfile;
+    string opdm_label_str;
+    if(spin==Alpha) {
+      opdm_label_str = "MO-basis Alpha OPDM";
+      outfile = fopen("psiout_opdm_Alpha","w");
+    }
+    else { // spin==Beta
+      opdm_label_str = "MO-basis Beta OPDM";
+      outfile = fopen("psiout_opdm_Beta","w");
+    }
+    char *opdm_label=(char *)opdm_label_str.c_str();
+    const int nmo = dmap.size();
+    using psi::Chkpt;
+    double** c_opdm = Chkpt::matrix<double>(nmo, nmo);
+    _rdopdm(PSIF_MO_OPDM,opdm_label,&(c_opdm[0][0]),nmo*nmo,0,1,outfile);
+    fclose(outfile);
+
+    const int nirrep = mopi.size();
+    RefSCDimension modim = new SCDimension(nmo,
+                                           nirrep,
+                                           reinterpret_cast<int*>(const_cast<unsigned int*>(&(mopi[0])))
+                                          );
+    for (unsigned int h=0; h<nirrep; ++h)
+      modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
+
+    if (kit.null())
+      kit = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
+    RefSymmSCMatrix opdm = kit->symmmatrix(modim);
+
+    // map density to symmetry-blocked indices
+    for(unsigned int r=0; r<nmo; ++r) {
+      const unsigned int rr = dmap[r];
+      for(unsigned int c=0; c<nmo; ++c) {
+        const unsigned int cc = dmap[c];
+        opdm.set_element( rr, cc, c_opdm[r][c] );
+      }
+    }
+
+    Chkpt::free(c_opdm);
+
+    return opdm;
   }
 
-  /// A modification of Psi3's iwl_rdone. For documentation see that of iwl_rdone.
-  int rdopdm(int itap,char *label, double *ints, int ntri, int erase,
-             int printflg, FILE *outfile) {
-    int nmo;
-    double TOL=1.0e-6;
+  RefSymmSCMatrix sc::detail::rdtpdm(SpinCase2 pairspin,
+                                     const std::vector<unsigned int>& dmap,
+                                     Ref<SCMatrixKit> kit) {
+    const string pairspin_str = to_string(pairspin);
+    iwlbuf tpdm_buf;
+    const int nmo = dmap.size();
+    const int npair = nmo*nmo;
+    int npair_dirac;
+    if(pairspin==AlphaBeta) {
+      npair_dirac = nmo*nmo;
+    }
+    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
+      npair_dirac = nmo*(nmo-1)/2;
+    }
+    //double *tpdm_arr = (double *)malloc(sizeof(double)*nmo*nmo*nmo*nmo);
+    double *tpdm_arr;
+    double **tpdm_arr2;
+    if(pairspin==AlphaBeta) {
+      tpdm_arr2 = new double*[npair];
+      for(int i=0; i<npair; i++) {
+        tpdm_arr2[i] = new double [npair];
+        for(int j=0; j<npair; j++) {
+          tpdm_arr2[i][j] = 0.0;
+        }
+      }
+    }
+    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
+      tpdm_arr = new double [npair*(npair+1)/2];
+      for(int i=0; i<npair*(npair+1)/2; i++) {
+        tpdm_arr[i] = 0.0;
+      }
+    }
 
-    psio_open(itap, PSIO_OPEN_OLD);
-    psio_read_entry(itap, label, (char *) ints, ntri*sizeof(double));
-    psio_close(itap, !erase);
+    //int *ioff_nonsymm = (int *)malloc(nmo*sizeof(int));
+    int *ioff_nonsymm = new int [nmo];
+    for(int i=0; i<nmo; i++){
+      ioff_nonsymm[i] = i*nmo;
+    }
+    int *ioff_nonsymm_pair = new int [npair];
+    for(int i=0; i<npair; i++) {
+      ioff_nonsymm_pair[i] = i*npair;
+    }
+    const int ioff_dim = nmo*nmo;
+    int *ioff = new int[ioff_dim];
+    ioff[0] = 0;
+    for (int i = 1; i<ioff_dim; i++) {
+      ioff[i] = ioff[i-1] + i;
+    }
+    const string outputname = string("psiout_tpdm_")+pairspin_str;
+    int TPDM_FILE;
+    switch (pairspin) {
+      case AlphaBeta:  TPDM_FILE = PSIF_MO_AB_TPDM; break;
+      case AlphaAlpha: TPDM_FILE = PSIF_MO_AA_TPDM; break;
+      case BetaBeta:   TPDM_FILE = PSIF_MO_BB_TPDM; break;
+      default: assert(false);
+    }
+    //outfile = fopen("psiout_tpdm","w");
+    FILE* outfile = fopen(outputname.c_str(),"w");
+    iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
+    if(pairspin==AlphaBeta) {
+      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,1,outfile);
+    }
+    else {
+      iwl_buf_rd_all( &tpdm_buf,tpdm_arr ,ioff_nonsymm,ioff_nonsymm,1,ioff,             1,outfile);
+    }
+    iwl_buf_close(&tpdm_buf,1);
+    fclose(outfile);
+    //free(ioff_nonsymm);
+    delete [] ioff_nonsymm;
+    delete [] ioff_nonsymm_pair;
+    delete [] ioff;
 
-    if (printflg) {
-      nmo=round(sqrt((double)ntri));
+    const RefSCDimension tpdm_dim(new SCDimension(npair_dirac));
+    if (kit.null())
+      kit = SCMatrixKit::default_matrixkit();
+    RefSymmSCMatrix tpdm_mat = kit->symmmatrix(tpdm_dim);
+    tpdm_mat.assign(0.0);
+
+    if(pairspin==AlphaBeta) {
+#if 1
+      for(int i=0; i<nmo; i++) {
+        const int ii = dmap[i];
+        for(int j=0; j<nmo; j++) {
+          const int jj = dmap[j];
+          const int ind_ij = ordinary_INDEX(ii,jj,nmo);
+          for(int k=0; k<=i; k++) {
+            const int kk = dmap[k];
+            int lmax;
+            if(k==i) {
+              lmax = j+1;
+            }
+            else {
+              lmax = nmo;
+            }
+            for(int l=0; l<lmax; l++) {
+              const int ll = dmap[l];
+              //const int index = ordinary_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo),npair);
+              const int ind_kl = ordinary_INDEX(kk,ll,nmo);
+              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr2[ordinary_INDEX(i,k,nmo)][ordinary_INDEX(j,l,nmo)]);
+            }
+          }
+        }
+      }
+#else
       for(int i=0; i<nmo; i++) {
         for(int j=0; j<nmo; j++) {
-          if(fabs(ints[i*nmo+j])>=TOL){
-            fprintf(outfile,"%5i%5i%12.7f\n",i+1,j+1,ints[i*nmo+j]);
+          const int ind_ij = ordinary_INDEX(i,j,nmo);
+          for(int k=0; k<nmo; k++) {
+            for(int l=0; l<nmo; l++) {
+              const int index = ordinary_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo),npair);
+              //const int index = triang_half_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo));
+              const int ind_kl = ordinary_INDEX(k,l,nmo);
+              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr[index]);
+            }
+          }
+        }
+      }
+#endif
+    }
+    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
+      for(int i=0; i<nmo; i++) {
+        const int ii = dmap[i];
+        for(int j=0; j<i; j++) {
+          const int jj = dmap[j];
+          const int ind_ij = lowerupper_index(ii,jj);
+          const double pfac_ij = (ii > jj) ? 1.0 : -1.0;
+          for(int k=0; k<=i; k++) {
+            const int kk = dmap[k];
+            for(int l=0; l<k; l++) {
+              const int ll = dmap[l];
+              const int ind_kl = lowerupper_index(kk,ll);
+              const double pfac_kl = (kk > ll) ? 1.0 : -1.0;
+              const int index = triang_half_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo));
+              tpdm_mat->set_element(ind_ij,ind_kl,
+                                    pfac_ij * pfac_kl * tpdm_arr[index]);
+            }
           }
         }
       }
     }
-    return(1);
+
+    if(pairspin==AlphaBeta) {
+      for(int i=0; i<npair; i++) {
+        delete [] tpdm_arr2[i];
+      }
+      delete [] tpdm_arr2;
+    }
+    else {
+      delete [] tpdm_arr;
+    }
+
+    return tpdm_mat;
   }
 
+#if 0
   RefSymmSCMatrix PsiCorrWavefunction::onepdm(const SpinCase1 &spin) {
     string opdm_label_str;
     if(spin==Alpha) {
@@ -1452,10 +1718,9 @@ namespace sc {
 
     return(opdm_mat);
   }
+#endif
 
   RefSymmSCMatrix PsiCorrWavefunction::mo_density(SpinCase1 spin){
-    using psi::Chkpt;
-
     if ((spin == Beta || spin == AnySpinCase1) && !this->spin_polarized())
       return mo_density(Alpha);
 
@@ -1465,38 +1730,20 @@ namespace sc {
     if (mo_density_[spin].nonnull())
       return mo_density_[spin];
 
-    string opdm_label_str;
-    if(spin==Alpha) {
-      opdm_label_str = "MO-basis Alpha OPDM";
-      outfile = fopen("psiout_opdm_Alpha","w");
-    }
-    else { // spin==Beta
-      opdm_label_str = "MO-basis Beta OPDM";
-      outfile = fopen("psiout_opdm_Beta","w");
-    }
-    char *opdm_label=(char *)opdm_label_str.c_str();
-    const int nmo = reference()->nmo();
-    double** c_opdm = Chkpt::matrix<double>(nmo, nmo);
-    rdopdm(PSIF_MO_OPDM,opdm_label,&(c_opdm[0][0]),nmo*nmo,0,1,outfile);
-    fclose(outfile);
-
-    int* mopi = exenv()->chkpt().rd_orbspi();
-    RefSCDimension modim = new SCDimension(nmo,nirrep_,mopi);
-    for (unsigned int h=0; h<nirrep_; ++h)
-      modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
-    mo_density_[spin] = basis_matrixkit()->symmmatrix(modim);
-    mo_density_[spin].convert(c_opdm);
-
-    Chkpt::free(c_opdm);
+    const std::vector<unsigned int> dmap = map_density_to_sb();
+    mo_density_[spin] = detail::rdopdm(spin,
+                                       this->reference()->mopi(),
+                                       dmap,
+                                       this->basis_matrixkit());
 
     if(debug_>=DefaultPrintThresholds::mostN2) {
       mo_density_[spin].print(prepend_spincase(spin,"Psi opdm").c_str());
     }
 
-    Chkpt::free(mopi);
     return mo_density_[spin];
   }
 
+#if 0
   RefSymmSCMatrix PsiCorrWavefunction::twopdm(){
     iwlbuf tpdm_buf;
     const int nmo = reference()->nmo();
@@ -1725,139 +1972,13 @@ namespace sc {
     }
     return(tpdm);
   }
+#endif
 
   RefSymmSCMatrix PsiCorrWavefunction::twopdm_dirac(const SpinCase2 &pairspin) {
-    string pairspin_str = (pairspin==AlphaBeta) ? "AlphaBeta" : (pairspin==AlphaAlpha) ? "AlphaAlpha" : "BetaBeta";
-    iwlbuf tpdm_buf;
-    const int nmo = reference()->nmo();
-    const int npair = nmo*nmo;
-    int npair_dirac;
-    if(pairspin==AlphaBeta) {
-      npair_dirac = nmo*nmo;
-    }
-    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
-      npair_dirac = nmo*(nmo-1)/2;
-    }
-    //double *tpdm_arr = (double *)malloc(sizeof(double)*nmo*nmo*nmo*nmo);
-    double *tpdm_arr;
-    double **tpdm_arr2;
-    if(pairspin==AlphaBeta) {
-      tpdm_arr2 = new double*[npair];
-      for(int i=0; i<npair; i++) {
-        tpdm_arr2[i] = new double [npair];
-        for(int j=0; j<npair; j++) {
-          tpdm_arr2[i][j] = 0.0;
-        }
-      }
-    }
-    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
-      tpdm_arr = new double [npair*(npair+1)/2];
-      for(int i=0; i<npair*(npair+1)/2; i++) {
-        tpdm_arr[i] = 0.0;
-      }
-    }
-
-    //int *ioff_nonsymm = (int *)malloc(nmo*sizeof(int));
-    int *ioff_nonsymm = new int [nmo];
-    for(int i=0; i<nmo; i++){
-      ioff_nonsymm[i] = i*nmo;
-    }
-    int *ioff_nonsymm_pair = new int [npair];
-    for(int i=0; i<npair; i++) {
-      ioff_nonsymm_pair[i] = i*npair;
-    }
-    const int ioff_dim = nmo*nmo;
-    int *ioff = new int[ioff_dim];
-    ioff[0] = 0;
-    for (int i = 1; i<ioff_dim; i++) {
-      ioff[i] = ioff[i-1] + i;
-    }
-    string outputname = string("psiout_tpdm_")+pairspin_str;
-    const int TPDM_FILE = (pairspin==AlphaBeta) ? PSIF_MO_AB_TPDM : (pairspin==AlphaAlpha) ? PSIF_MO_AA_TPDM : PSIF_MO_BB_TPDM;
-    //outfile = fopen("psiout_tpdm","w");
-    outfile = fopen(outputname.c_str(),"w");
-    iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
-    if(pairspin==AlphaBeta) {
-      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,1,outfile);
-    }
-    else {
-      iwl_buf_rd_all( &tpdm_buf,tpdm_arr ,ioff_nonsymm,ioff_nonsymm,1,ioff,             1,outfile);
-    }
-    iwl_buf_close(&tpdm_buf,1);
-    fclose(outfile);
-    //free(ioff_nonsymm);
-    delete [] ioff_nonsymm;
-    delete [] ioff_nonsymm_pair;
-    delete [] ioff;
-
-    const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    const RefSCDimension tpdm_dim(new SCDimension(npair_dirac));
-    RefSymmSCMatrix tpdm_mat = localkit->symmmatrix(tpdm_dim);
-    tpdm_mat.assign(0.0);
-
-    if(pairspin==AlphaBeta) {
-#if 1
-      for(int i=0; i<nmo; i++) {
-        for(int j=0; j<nmo; j++) {
-          const int ind_ij = ordinary_INDEX(i,j,nmo);
-          for(int k=0; k<=i; k++) {
-            int lmax;
-            if(k==i) {
-              lmax = j+1;
-            }
-            else {
-              lmax = nmo;
-            }
-            for(int l=0; l<lmax; l++) {
-              //const int index = ordinary_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo),npair);
-              const int ind_kl = ordinary_INDEX(k,l,nmo);
-              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr2[ordinary_INDEX(i,k,nmo)][ordinary_INDEX(j,l,nmo)]);
-            }
-          }
-        }
-      }
-#else
-      for(int i=0; i<nmo; i++) {
-        for(int j=0; j<nmo; j++) {
-          const int ind_ij = ordinary_INDEX(i,j,nmo);
-          for(int k=0; k<nmo; k++) {
-            for(int l=0; l<nmo; l++) {
-              const int index = ordinary_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo),npair);
-              //const int index = triang_half_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo));
-              const int ind_kl = ordinary_INDEX(k,l,nmo);
-              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr[index]);
-            }
-          }
-        }
-      }
-#endif
-    }
-    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
-      for(int i=0; i<nmo; i++) {
-        for(int j=0; j<i; j++) {
-          const int ind_ij = lowerupper_index(i,j);
-          for(int k=0; k<=i; k++) {
-            for(int l=0; l<k; l++) {
-              const int index = triang_half_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo));
-              const int ind_kl = lowerupper_index(k,l);
-              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr[index]);
-            }
-          }
-        }
-      }
-    }
-
-    if(pairspin==AlphaBeta) {
-      for(int i=0; i<npair; i++) {
-        delete [] tpdm_arr2[i];
-      }
-      delete [] tpdm_arr2;
-    }
-    else {
-      delete [] tpdm_arr;
-    }
-
-    return(tpdm_mat);
+    // map orbitals to symmetry-blocked orbitals
+    const std::vector<unsigned int> dmap = map_density_to_sb();
+    RefSymmSCMatrix result = detail::rdtpdm(pairspin, dmap);
+    return result;
   }
 
   void PsiCorrWavefunction::print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL) {
@@ -1916,6 +2037,7 @@ namespace sc {
     }
   }
 
+#if 0
   //static ClassDesc PsiCorrWavefunction_PT2R12_cd(typeid(PsiCorrWavefunction_PT2R12),"PsiCorrWavefunction_PT2R12",
   //                                               1,"public PsiCorrWavefunction",
   //                                               0,create<PsiCorrWavefunction_PT2R12>,create<PsiCorrWavefunction_PT2R12>);
@@ -3871,7 +3993,7 @@ namespace sc {
     }
     ExEnv::out0() << "total contribution: " << setprecision(12) << energy << endl;
   }
-
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 

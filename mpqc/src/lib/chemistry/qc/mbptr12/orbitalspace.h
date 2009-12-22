@@ -661,14 +661,18 @@ namespace sc {
 
   /// registry of globally-known OrbitalSpace objects
   typedef Registry<std::string, Ref<OrbitalSpace> ,
-      detail::SingletonCreationPolicy> OrbitalSpaceRegistry;
+                   detail::SingletonCreationPolicy,
+                   std::equal_to<std::string>,
+                   RefObjectEqual<OrbitalSpace> > OrbitalSpaceRegistry;
   /// helper function to form a key/space pair from a OrbitalSpace
   std::pair<std::string, Ref<OrbitalSpace> > make_keyspace_pair(const Ref<
       OrbitalSpace>& space, SpinCase1 spin = AnySpinCase1);
 
   /// registry of globally-known OrbitalSpace objects that describe AO basis spaces
-  typedef Registry<Ref<GaussianBasisSet> , Ref<OrbitalSpace> ,
-      detail::SingletonCreationPolicy> AOSpaceRegistry;
+  typedef Registry<Ref<GaussianBasisSet>, Ref<OrbitalSpace>,
+                   detail::SingletonCreationPolicy,
+                   std::equal_to< Ref<GaussianBasisSet> >,
+                   RefObjectEqual<OrbitalSpace> > AOSpaceRegistry;
 
   ////////////////////////////////
 
@@ -788,6 +792,24 @@ namespace sc {
 
       OrbitalSpaceUnion(StateIn&);
       void save_data_state(StateOut&);
+  };
+
+  ////////////////////////////////
+
+  /** This is an empty OrbitalSpace.
+   */
+  class EmptyOrbitalSpace : public OrbitalSpace {
+    public:
+      EmptyOrbitalSpace(const std::string& id, const std::string& name,
+                        const Ref<GaussianBasisSet>& basis,
+                        const Ref<Integral>& integral,
+                        const IndexOrder& moorder = symmetry
+                        );
+
+      EmptyOrbitalSpace(StateIn&);
+      void save_data_state(StateOut&);
+    private:
+      static ClassDesc class_desc_;
   };
 
 }

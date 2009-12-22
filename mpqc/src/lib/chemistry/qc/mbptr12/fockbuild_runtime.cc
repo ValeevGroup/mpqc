@@ -199,35 +199,53 @@ FockBuildRuntime::get(const std::string& key) {
     const Ref<GaussianBasisSet>& bs1 = bra->basis();
     const Ref<GaussianBasisSet>& bs2 = ket->basis();
     const bool bs1_eq_bs2 = bs1->equiv(bs2);
+
+    const std::string hkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("H"));
+    const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
+    const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
+    const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
+    const bool have_H = registry_->key_exists(hkey);
+    const bool have_J = registry_->key_exists(jkey);
+    const bool have_K = registry_->key_exists(kkey);
+    const bool have_F = registry_->key_exists(fkey);
+    const bool need_H = (oper_key == "H" || oper_key == "F");
+    const bool need_J = (oper_key == "J" || oper_key == "F");
+    const bool need_K = (oper_key == "K" || oper_key == "F");
+    const bool need_F = (oper_key == "F");
+    const bool compute_F = false;   // tell FockBuilder to not compute F; compute it myself from components
+    const bool compute_H = need_H && !have_H;
+    const bool compute_J = need_J && !have_J;
+    const bool compute_K = need_K && !have_K;
+
     RefSCMatrix H;
-    { // core hamiltonian
-      const Ref<GaussianBasisSet>& obs = basis_;
-      if (bs1_eq_bs2) {
-        Ref<OneBodyFockMatrixBuilder<true> >
-            fmb = new OneBodyFockMatrixBuilder<true> (OneBodyFockMatrixBuilder<true>::NonRelativistic,
-                bs1, bs2, obs, integral());
+    if (need_H) { // compute core hamiltonian
+      if (compute_H) {
+        const Ref<GaussianBasisSet>& obs = basis_;
+        if (bs1_eq_bs2) {
+          Ref<OneBodyFockMatrixBuilder<true> >
+          fmb = new OneBodyFockMatrixBuilder<true> (OneBodyFockMatrixBuilder<true>::NonRelativistic,
+              bs1, bs2, obs, integral());
 
-        RefSymmSCMatrix Hsymm = fmb->result();
-        // convert to H
-        H = SymmToRect(Hsymm);
-      } else { // result is rectangular already
+          RefSymmSCMatrix Hsymm = fmb->result();
+          // convert to H
+          H = SymmToRect(Hsymm);
+        } else { // result is rectangular already
 
-        Ref<OneBodyFockMatrixBuilder<false> >
-            fmb =
-                new OneBodyFockMatrixBuilder<false> (OneBodyFockMatrixBuilder<false>::NonRelativistic,
-                    bs1, bs2, obs, integral());
-        H = fmb->result();
+          Ref<OneBodyFockMatrixBuilder<false> >
+          fmb =
+              new OneBodyFockMatrixBuilder<false> (OneBodyFockMatrixBuilder<false>::NonRelativistic,
+                  bs1, bs2, obs, integral());
+          H = fmb->result();
+        }
+        registry_->add(hkey, H);
       }
-      const std::string hkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("H"));
-      registry_->add(hkey, H);
+      else { // have_H == true
+        H = registry_->value(hkey);
+      }
     }
 
     { // J, K, and F
       const Ref<GaussianBasisSet>& obs = basis_;
-      bool compute_F = false;
-      bool compute_J = (oper_key == "J" || oper_key == "F");
-      bool compute_K = (oper_key == "K" || oper_key == "F");
-
       Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
       if (use_density_fitting())
         fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J, compute_K,
@@ -243,29 +261,36 @@ FockBuildRuntime::get(const std::string& key) {
         }
         {
           RefSCMatrix J;
-          if (compute_J) {
-            J = use_density_fitting() ? fmb_df->J() : SymmToRect(fmb->J());
-            const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
-            registry_->add(jkey, J);
-            if (debug()) {
-              J.print(jkey.c_str());
+          if (need_J) {
+            if (compute_J) {
+              J = use_density_fitting() ? fmb_df->J() : SymmToRect(fmb->J());
+              registry_->add(jkey, J);
+              if (debug()) {
+                J.print(jkey.c_str());
+              }
+            }
+            else { // have_J == true
+              J = registry_->value(jkey);
             }
           }
 
           RefSCMatrix K;
-          if (compute_K) {
-            K = use_density_fitting() ? fmb_df->K() : SymmToRect(fmb->K(spin));
-            const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-            registry_->add(kkey, K);
-            if (debug()) {
-              K.print(kkey.c_str());
+          if (need_K) {
+            if (compute_K) {
+              K = use_density_fitting() ? fmb_df->K() : SymmToRect(fmb->K(spin));
+              registry_->add(kkey, K);
+              if (debug()) {
+                K.print(kkey.c_str());
+              }
+            }
+            else { // have_K == true
+              K = registry_->value(kkey);
             }
           }
 
           RefSCMatrix F;
-          if (compute_J && compute_K) {
+          if (need_F && !have_F) {
             F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
-            const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
             registry_->add(fkey, F);
             if (debug()) {
               F.print(fkey.c_str());
@@ -284,28 +309,35 @@ FockBuildRuntime::get(const std::string& key) {
         }
         {
           RefSCMatrix J;
-
-          if (compute_J) {
-            J = use_density_fitting() ? fmb_df->J() : fmb->J();
-            const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
-            registry_->add(jkey, J);
-            if (debug()) {
-              J.print(jkey.c_str());
+          if (need_J) {
+            if (compute_J) {
+              J = use_density_fitting() ? fmb_df->J() : fmb->J();
+              registry_->add(jkey, J);
+              if (debug()) {
+                J.print(jkey.c_str());
+              }
+            }
+            else { // have_J == true
+              J = registry_->value(jkey);
             }
           }
 
           RefSCMatrix K;
-          if (compute_K) {
-            K = use_density_fitting() ? fmb_df->K() : fmb->K(spin);
-            const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-            registry_->add(kkey, K);
-            if (debug()) {
-              K.print(kkey.c_str());
+          if (need_K) {
+            if (compute_K) {
+              K = use_density_fitting() ? fmb_df->K() : fmb->K(spin);
+              registry_->add(kkey, K);
+              if (debug()) {
+                K.print(kkey.c_str());
+              }
+            }
+            else { // have_K == true
+              K = registry_->value(kkey);
             }
           }
 
           RefSCMatrix F;
-          if (compute_J && compute_K) {
+          if (need_F && !have_F) {
             F= K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
             const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
             registry_->add(fkey, F);
@@ -315,6 +347,7 @@ FockBuildRuntime::get(const std::string& key) {
           }
         }
       }
+
     }
 
 #if 0

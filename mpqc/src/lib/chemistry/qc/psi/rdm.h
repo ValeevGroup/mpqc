@@ -60,21 +60,19 @@ namespace sc {
       ~PsiRDMTwo();
       void save_data_state(StateOut& so);
 
-      Ref<PsiWavefunction> psiwfn() const { return psiwfn_; }
-      void compute();
-      size_t ndim(SpinCase2 spincase) const;
-      const double* obtain_block(SpinCase2 spin, size_t bra) const;
-      void release_block(SpinCase2, size_t bra, double*) const;
+      Ref<PsiWavefunction> wfn() const { return wfn_; }
       RefSymmSCMatrix scmat(SpinCase2 spincase) const;
       Ref<cumulant_type> cumulant() const;
+      Ref< RDM<One> > rdm_m_1() const;
+      Ref<OrbitalSpace> orbs(SpinCase1 spin) const;
 
     private:
-      Ref<PsiWavefunction> psiwfn_;
-      mutable RefSymmSCMatrix scmat_[NSpinCases2];
+      Ref<PsiWavefunction> wfn_;
 
       static ClassDesc class_desc_;
   };
 
+#if 0
   /// PsiRDMCumulantTwo is the cumulant of PsiRDMTwo
   class PsiRDMCumulantTwo : public RDMCumulant<Two> {
     public:
@@ -83,14 +81,41 @@ namespace sc {
       ~PsiRDMCumulantTwo();
       void save_data_state(StateOut& so);
 
-      void compute();
-      const double* obtain_block(SpinCase2 spin, size_t bra) const;
-      void release_block(SpinCase2, size_t bra, double*) const;
       RefSymmSCMatrix scmat(SpinCase2 spincase) const;
 
     private:
       Ref<PsiRDMTwo> density_;
-      mutable RefSymmSCMatrix scmat_[NSpinCases2];
+
+      static ClassDesc class_desc_;
+  };
+#endif
+
+  /// PsiRDMOne is a 1-RDM from a PsiWavefunction
+  class PsiRDMOne : public RDM<One> {
+    public:
+    /** A KeyVal constructor is used to generate a PsiRDMOne
+        object from the input. The full list of keywords
+        that are accepted is below.
+
+        <table border="1">
+
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>wfn</tt><td>PsiWavefunction<td>none<td>the PsiWavefunction object
+
+        </table>
+     */
+      PsiRDMOne(const Ref<KeyVal>& kv);
+      PsiRDMOne(StateIn& si);
+      PsiRDMOne(const Ref<PsiWavefunction>& wfn);
+      ~PsiRDMOne();
+      void save_data_state(StateOut& so);
+
+      Ref<OrbitalSpace> orbs(SpinCase1 spin) const;
+      RefSymmSCMatrix scmat(SpinCase1 spin) const;
+
+    private:
+      Ref<PsiWavefunction> wfn_;
 
       static ClassDesc class_desc_;
   };

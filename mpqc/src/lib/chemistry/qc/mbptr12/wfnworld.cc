@@ -47,7 +47,6 @@ WavefunctionWorld::WavefunctionWorld(
     Wavefunction* wfn) :
     wfn_(wfn)
 {
-  memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
   print_percent_ = 10.0;
 
@@ -95,6 +94,8 @@ WavefunctionWorld::WavefunctionWorld(
 
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));
+
+  memory_ = keyval->sizevalue("memory", KeyValValuesize(DEFAULT_SC_MEMORY));
 
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();

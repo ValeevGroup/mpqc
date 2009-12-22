@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/mbptr12/fockbuild_runtime.h>
+#include <chemistry/qc/basis/obintfactory.h>
 
 namespace sc {
 
@@ -55,6 +56,16 @@ namespace sc {
   */
   Ref<OrbitalSpace> orthog_comp(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                 const std::string& id, const std::string& name, double lindep_tol);
+
+  /// compute one-body integral matrix in the space of space_bra and space_ket (space_bra != space_ket)
+  template <IntegralOneBodyMethod IntMethod>
+  RefSCMatrix
+  compute_obints(const Ref<OrbitalSpace>& space_bra, const Ref<OrbitalSpace>& space_ket);
+
+  /// compute one-body integral matrix between in the basis of space
+  template <IntegralOneBodyMethod IntMethod>
+  RefSymmSCMatrix
+  compute_obints(const Ref<OrbitalSpace>& space);
 
   /// compute overlap between space1 and space2
   RefSCMatrix
@@ -80,6 +91,8 @@ namespace sc {
                          SpinCase1 spin);
 
 } // end of namespace sc
+
+#include <chemistry/qc/mbptr12/orbitalspace_utils.timpl.h>
 
 #endif // end of header guard
 

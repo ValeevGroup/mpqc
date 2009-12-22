@@ -196,6 +196,9 @@ namespace sc {
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::add(const Key& key,
                                           const Value& value)
   {
+    // check if key already exists
+    if (key_exists(key))
+      throw std::logic_error("key already exists");
     lock_->lock();
     map_[key] = value;
     lock_->unlock();

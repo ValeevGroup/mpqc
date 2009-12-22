@@ -386,6 +386,10 @@ R12IntEval::emp2_obs_singles()
 double
 R12IntEval::emp2_cabs_singles()
 {
+  if (!r12world()->sdref())
+    ExEnv::out0() << indent
+                  << "WARNING: CABS singles correction is not implemented for multiconfiguration references"
+                  << std::endl;
   compute();
   if (emp2_cabs_singles_ == 0.0)
     emp2_cabs_singles_ = compute_emp2_cabs_singles();
@@ -1352,8 +1356,8 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
     std::string name = "gamma-weighted space";
     gamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S),
                                      intspace->basis());
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gamma_p_p_[S]));
   }
-  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gamma_p_p_[S]));
   return gamma_p_p_[S];
 }
 
@@ -1370,8 +1374,8 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
     std::string name = "gammaFgamma-weighted space";
     gammaFgamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S) * F_i_e * this->ordm(S),
                                            intspace->basis());
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gammaFgamma_p_p_[S]));
   }
-  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gammaFgamma_p_p_[S]));
   return gammaFgamma_p_p_[S];
 }
 
@@ -1387,8 +1391,8 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
     std::string name = "Fgamma-weighted space";
     Fgamma_p_P_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * F_i_e * this->ordm(S),
                                       intspace->basis());
+    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Fgamma_p_P_[S]));
   }
-  OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Fgamma_p_P_[S]));
   return Fgamma_p_P_[S];
 }
 
@@ -1996,7 +2000,7 @@ R12IntEval::compute()
   const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
   const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
 			    absmethod == LinearR12::ABS_CABSPlus);
-  // is CABS space empty? if not sure set to false and allow some crazy runtime error to happen rather than create incorrect result
+  // is CABS space empty?
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;
 
@@ -2015,6 +2019,9 @@ R12IntEval::compute()
 
     if (obs_eq_vbs) {
       if(r12world()->r12tech()->ansatz()->projector()==LinearR12::Projector_1) {
+        if (!r12world()->sdref())
+          throw FeatureNotImplemented("Projector 1 cannot be used with multi-configuration references",
+                                      __FILE__, __LINE__);
         R12IntEval::contrib_to_VXB_c_ansatz1_();
       }
       else {
@@ -2062,6 +2069,9 @@ R12IntEval::compute()
       if (stdapprox() == LinearR12::StdApprox_C) {
         if(r12world()->r12tech()->ansatz()->projector()==LinearR12::Projector_1){
           compute_BC_ansatz1_();
+          if(!r12world()->sdref())
+            throw FeatureNotImplemented("Projector 1 cannot be used with multi-configuration references",
+                                        __FILE__,__LINE__);
         }
         else {
           if(r12world()->sdref()) { // single-determinant reference
@@ -2205,8 +2215,8 @@ R12IntEval::compute()
                                  tform_key);
   }
 
-  // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
-  if (!this->bc()) {
+  // compute OBS singles contribution to the MP2 energy if non-Brillouin single-determinant reference is used
+  if (r12world()->sdref() && !this->bc()) {
     const bool obs_singles = true;
     emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
   }

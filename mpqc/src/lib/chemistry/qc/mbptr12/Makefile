@@ -67,7 +67,7 @@ CXXSRCS = mbptr12.cc \
   r12_amps.cc compute_amps.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
   compute_energy_a.cc mp2r12_energy.cc bc_contrib.cc dkh.cc \
-  pt2r12.cc
+  pt2r12.cc rdm.cc
   
 INC = distarray4_memgrp.h \
 ansatz.h                        distarray4_mpiiofile.h \
@@ -93,7 +93,8 @@ r12_amps.h                      r12wfnworld.h \
 distarray4.h				moints_runtime.h \
 fockbuilder.h                   fockbuild_runtime.h \
 orbitalspace_runtime.h		transform_ijR.h \
-tbint_runtime.h                 fixedcoefficient.h
+tbint_runtime.h                 fixedcoefficient.h \
+pt2r12.h			rdm.h
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += distarray4_mpiiofile.cc

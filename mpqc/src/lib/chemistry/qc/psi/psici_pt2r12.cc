@@ -394,9 +394,9 @@ namespace sc {
 
     if(!reorder_.empty()) {
       if(keyval->exists("moorder")) {
-        const int nmo = reference_mpqc_->oso_dimension().n();
+        const int nmo = this->oso_dimension().n();
         if(keyval->count() != nmo)
-          throw InputError("Input error for PsiCI_PT2R12 -- moorder must have nmo elements.",__FILE__,__LINE__);
+          throw InputError("The length of moorder must match the number of MOs.",__FILE__,__LINE__);
         moorder_ = this->read_occ(keyval, "moorder", nmo);
       }
     }

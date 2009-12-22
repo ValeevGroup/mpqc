@@ -1049,6 +1049,7 @@ namespace sc {
 
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
+                            SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
                             const Ref<GaussianBasisSet>& ketbs,
                             const Ref<GaussianBasisSet>& obs) {
@@ -1083,39 +1084,46 @@ namespace sc {
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
 
-      // compute square root of P
-      RefDiagSCMatrix Pevals = P.eigvals();
-      RefSCMatrix Pevecs = P.eigvecs();
-      const double Peval_max = Pevals->maxabs();
-      const double Peval_threshold = Peval_max * 1e-8;
-      const int nao = obs_space->rank();
-      int Srank = 0;
-      for(int ao=0; ao<nao; ++ao)
-        if (Pevals(ao) > Peval_threshold)
-          ++Srank;
-      RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
-      RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
-      {  // compute S from Pevecs
-         // since both a blocked matrcies with 1 block, must operates on the blocks directly
-        RefSCMatrix Sblk = S.block(0);
-        RefSCMatrix Ublk = Pevecs.block(0);
-        int s = 0;
-        for (int ao = 0; ao < nao; ++ao) {
-          const double peval = Pevals(ao);
-          if (peval > Peval_threshold) {
-            Sblk.assign_subblock(Ublk.get_subblock(0, nao - 1, ao, ao)
-                * sqrt(peval), 0, nao - 1, s, s);
-            ++s;
+      // get square root of P
+      Ref<OrbitalSpace> Sspace;
+      const std::string skey = ParsedOrbitalSpaceKey::key(std::string("dd"),spin);
+      if (OrbitalSpaceRegistry::instance()->key_exists(skey) == false) {
+        RefDiagSCMatrix Pevals = P.eigvals();
+        RefSCMatrix Pevecs = P.eigvecs();
+        const double Peval_max = Pevals->maxabs();
+        const double Peval_threshold = Peval_max * 1e-8;
+        const int nao = obs_space->rank();
+        int Srank = 0;
+        for(int ao=0; ao<nao; ++ao)
+          if (Pevals(ao) > Peval_threshold)
+            ++Srank;
+        RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
+        RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
+        {  // compute S from Pevecs
+          // since both a blocked matrcies with 1 block, must operates on the blocks directly
+          RefSCMatrix Sblk = S.block(0);
+          RefSCMatrix Ublk = Pevecs.block(0);
+          int s = 0;
+          for (int ao = 0; ao < nao; ++ao) {
+            const double peval = Pevals(ao);
+            if (peval > Peval_threshold) {
+              Sblk.assign_subblock(Ublk.get_subblock(0, nao - 1, ao, ao)
+                                   * sqrt(peval), 0, nao - 1, s, s);
+              ++s;
+            }
           }
         }
-      }
 
-      // make an orbital space out of sqrt(P)
-      Ref<OrbitalSpace> Sspace = new OrbitalSpace("PP", "sqrt(P)",
-                                                  obs_space->coefs() * S,
-                                                  obs_space->basis(),
-                                                  obs_space->integral());
-      OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Sspace));
+        // make an orbital space out of sqrt(P)
+        Sspace = new OrbitalSpace(skey, prepend_spincase(spin,"sqrt(P)"),
+                                  obs_space->coefs() * S,
+                                  obs_space->basis(),
+                                  obs_space->integral());
+        OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Sspace));
+      }
+      else { // Sspace is in registry
+        Sspace = OrbitalSpaceRegistry::instance()->value(skey);
+      }
 
       // little optimization here ... since DensityFittingRuntime currently always fits (iq| to get to (ij|
       // and since rank of S will be smaller than rank of OBS when Hartree-Fock of CAS references are used
@@ -1135,7 +1143,7 @@ namespace sc {
       Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
 
       const int ndf = dfspace->rank();
-      const int nsdf = Srank * ndf;
+      const int nsdf = Sspace->rank() * ndf;
       const unsigned int nbra = braspace->rank();
       const unsigned int nket = ketspace->rank();
       const unsigned int nbraket = nbra * nket;

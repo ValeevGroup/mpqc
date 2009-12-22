@@ -194,15 +194,15 @@ namespace sc {
   namespace {
     /// return false if bs has a mixture of pure and cart functions of am >= 1
     bool consistent_puream(const Ref<GaussianBasisSet>& bs) {
-      bs->print();
       const int has_pure = bs->has_pure();
       const unsigned int nshell = bs->nshell();
       for (unsigned int s=0; s<nshell; ++s) {
         const GaussianShell& shell = bs->shell(s);
         const unsigned int ncon = shell.ncontraction();
         for (unsigned int c=0; c<ncon; ++c) {
-          if (shell.am(c) >= 1&& has_pure != shell.is_pure(c))
+          if (shell.am(c) >= 1&& has_pure != shell.is_pure(c)) {
             return false;
+          }
         }
       }
       return true;
@@ -211,8 +211,10 @@ namespace sc {
 
   void PsiInput::write_basis(const Ref<GaussianBasisSet>& basis) {
     if (!can_run_on_me()) return;
-    if (!consistent_puream(basis))
+    if (!consistent_puream(basis)) {
+      basis->print();
       throw FeatureNotImplemented("PsiInput::write_basis() -- Psi cannot handle yet basis sets that mix cartesian and harmonics functions",__FILE__,__LINE__);
+    }
 
     Ref<Molecule> molecule = basis->molecule();
     int natom = molecule->natom();

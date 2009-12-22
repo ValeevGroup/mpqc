@@ -37,48 +37,33 @@
 
 namespace sc {
   
-  std::vector<unsigned int> index_map_symmtompqcorder(const RefDiagSCMatrix &eigenvalues_symmorder);
-  
-  std::vector<unsigned int> index_map_symmtoqtorder(int nmo,
-                                                    const std::vector<unsigned int> &frozen_docc,
-                                                    const std::vector<unsigned int> &docc_act,
-                                                    const std::vector<unsigned int> &socc_act,
-                                                    const std::vector<unsigned int> &uocc_act,
-                                                    const std::vector<unsigned int> &frozen_uocc);
-  
-  std::vector<unsigned int> index_map_symmtorasorder(int nmo,
-                                                     const std::vector<unsigned int> &frozen_docc,
-                                                     const std::vector<unsigned int> &ras1,
-                                                     const std::vector<unsigned int> &ras2,
-                                                     const std::vector<unsigned int> &ras3,
-                                                     const std::vector<unsigned int> &frozen_uocc);
-  
-  /** This function takes a set of coefficients coeffsymm where
-   *  the MO's are ordered by symmetry and and returns a coefficient
-   *  matrix where the MO's are ordered in QT order.
-   *  \param coeffsymm -- coefficients in ordinary symmetry-blocked order
+  /** Returns map from symmetry-blocked orbitals to QT-ordered orbitals
    *  \param frozen_docc -- vector of number of frozen doubly occupied orbitals in each irrep
    *  \param docc_act -- vector of number of doubly occupied orbitals in each irrep
    *  \param socc_act -- vector of number of singly occupied orbitals in each irrep
    *  \param uocc_act -- vector of number of unoccupied orbitals in each irrep
    *  \param frozen_uocc -- vector of number of frozen unoccupied orbitals in each irrep */
-  RefSCMatrix coeffsymmtoqtorder(const RefSCMatrix &coeffsymm,
-                                 const std::vector<unsigned int> &frozen_docc,
-                                 const std::vector<unsigned int> &docc_act,
-                                 const std::vector<unsigned int> &socc_act,
-                                 const std::vector<unsigned int> &uocc_act,
-                                 const std::vector<unsigned int> &frozen_uocc);
-  /** This function takes a set of coefficients coeffsymm where
-   *  the MO's are ordered by symmetry and and returns a coefficient
-   *  matrix where the MO's are ordered in ras order. The meanings of the
-   *  function parameters are analogous to those of coeffsymmtoqtorder. */
-  RefSCMatrix coeffsymmtorasorder(const RefSCMatrix &coeffsymm,
-                                  const std::vector<unsigned int> &frozen_docc,
-                                  const std::vector<unsigned int> &ras1,
-                                  const std::vector<unsigned int> &ras2,
-                                  const std::vector<unsigned int> &ras3,
-                                  const std::vector<unsigned int> &frozen_uocc);
+  std::vector<unsigned int> index_map_symmtoqtorder(const std::vector<unsigned int> &frozen_docc,
+                                                    const std::vector<unsigned int> &docc_act,
+                                                    const std::vector<unsigned int> &socc_act,
+                                                    const std::vector<unsigned int> &uocc_act,
+                                                    const std::vector<unsigned int> &frozen_uocc);
   
+  /** Returns map from symmetry-blocked orbitals to RAS-ordered orbitals
+   *  \param frozen_docc -- vector of number of frozen doubly occupied orbitals in each irrep
+   *  \param docc_act -- vector of number of doubly occupied orbitals in each irrep
+   *  \param socc_act -- vector of number of singly occupied orbitals in each irrep
+   *  \param uocc_act -- vector of number of unoccupied orbitals in each irrep
+   *  \param frozen_uocc -- vector of number of frozen unoccupied orbitals in each irrep */
+  std::vector<unsigned int> index_map_symmtorasorder(const std::vector<unsigned int> &frozen_docc,
+                                                     const std::vector<unsigned int> &ras1,
+                                                     const std::vector<unsigned int> &ras2,
+                                                     const std::vector<unsigned int> &ras3,
+                                                     const std::vector<unsigned int> &frozen_uocc);
+  
+  /// inverts an (isomorphic) index map that maps [0,n) onto itself
+  std::vector<unsigned int> index_map_inverse(const std::vector<unsigned int>& map);
+
 }
 
 #endif /*PSIQTORDER_H_*/

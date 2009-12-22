@@ -33,47 +33,17 @@
 #include <math/scmat/local.h>
 #include <valarray>
 #include <numeric>
+#include <cassert>
 
 namespace sc {
   
-  std::vector<unsigned int> index_map_symmtompqcorder(const RefDiagSCMatrix &eigenvalues_symmorder) {
-    int nmo = eigenvalues_symmorder.dim().n();
-    std::vector<unsigned int> index_map(nmo);
-    
-    for(int i=0; i<nmo; i++) {
-      index_map[i] = i;
-    }
-    
-    for(int i=0; i<nmo; i++) {
-      for(int j=(i+1); j<nmo; j++) {
-        if(eigenvalues_symmorder.get_element(i) > eigenvalues_symmorder.get_element(j)) {
-          double tmp = eigenvalues_symmorder.get_element(i);
-          eigenvalues_symmorder.set_element(i,eigenvalues_symmorder.get_element(j));
-          eigenvalues_symmorder.set_element(j,tmp);
-          
-          unsigned int tmpui = index_map[i];
-          index_map[i] = index_map[j];
-          index_map[j] = tmpui;
-        }
-      }
-    }
-    
-    std::vector<unsigned int> index_map_inv(nmo);
-    for(int i=0; i<nmo; i++) {
-      index_map_inv[index_map[i]] = i;
-    }
-    
-    return(index_map_inv);
-  }
-  
-  std::vector<unsigned int> index_map_symmtoqtorder(int nmo,
-                                                    const std::vector<unsigned int> &frozen_docc,
+  std::vector<unsigned int> index_map_symmtoqtorder(const std::vector<unsigned int> &frozen_docc,
                                                     const std::vector<unsigned int> &docc_act,
                                                     const std::vector<unsigned int> &socc_act,
                                                     const std::vector<unsigned int> &uocc_act,
                                                     const std::vector<unsigned int> &frozen_uocc) {
     
-    int nirrep = frozen_docc.size();
+    const int nirrep = frozen_docc.size();
     std::vector<unsigned int> mos(nirrep);
     for(int i=0; i<nirrep; i++) {
       mos[i] = frozen_docc[i] + docc_act[i] + socc_act[i] + uocc_act[i] + frozen_uocc[i];
@@ -119,6 +89,7 @@ namespace sc {
     unsigned int socc_act_offset = std::accumulate(docc_act.begin(),docc_act.end(),docc_act_offset);
     unsigned int uocc_act_offset = std::accumulate(socc_act.begin(),socc_act.end(),socc_act_offset);
     unsigned int frozen_uocc_offset = std::accumulate(uocc_act.begin(),uocc_act.end(),uocc_act_offset);
+    const unsigned int nmo = std::accumulate(mos.begin(), mos.end(), 0);
     
     // generate index_map mapping symmetry ordered data to QT ordered data
     std::vector<unsigned int> index_map(nmo);
@@ -177,8 +148,7 @@ namespace sc {
     return(index_map);
   }
   
-  std::vector<unsigned int> index_map_symmtorasorder(int nmo,
-                                                     const std::vector<unsigned int> &frozen_docc,
+  std::vector<unsigned int> index_map_symmtorasorder(const std::vector<unsigned int> &frozen_docc,
                                                      const std::vector<unsigned int> &ras1,
                                                      const std::vector<unsigned int> &ras2,
                                                      const std::vector<unsigned int> &ras3,
@@ -195,7 +165,8 @@ namespace sc {
     unsigned int ras2_offset = std::accumulate(ras1.begin(),ras1.end(),ras1_offset);
     unsigned int ras3_offset = std::accumulate(ras2.begin(),ras2.end(),ras2_offset);
     unsigned int frozen_uocc_offset = std::accumulate(ras3.begin(),ras3.end(),ras3_offset);
-    
+    const unsigned int nmo = std::accumulate(mos.begin(), mos.end(), 0);
+
     // generate index_map mapping symmetry ordered data to ras ordered data
     std::vector<unsigned int> index_map(nmo);
     unsigned int ind = 0;
@@ -253,97 +224,21 @@ namespace sc {
     return(index_map);
   }
 
-  RefSCMatrix coeffsymmtoqtorder(const RefSCMatrix &coeffsymm,
-                                 const std::vector<unsigned int> &frozen_docc,
-                                 const std::vector<unsigned int> &docc_act,
-                                 const std::vector<unsigned int> &socc_act,
-                                 const std::vector<unsigned int> &uocc_act,
-                                 const std::vector<unsigned int> &frozen_uocc) {
-    
-    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    int nmo = coeffsymm.coldim().n();
-    RefSCDimension aodim = coeffsymm.rowdim();
-    // TODO should use blocked dimensions here, but there are too many changes to be made downstream at the moment
-#if 1
-    RefSCDimension qtordermodim = new SCDimension(nmo); 
-#else
-    int* nfunc_per_block = new int[1];
-    nfunc_per_block[0] = nmo;
-    RefSCDimension qtordermodim = new SCDimension(nmo, 1, nfunc_per_block, "MOs in QT order");
-    if (nmo)
-      qtordermodim->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
-#endif
-    RefSCMatrix coeffqtorder = localkit->matrix(aodim,qtordermodim);
-    RefSCMatrix coeffsymm_nb = localkit->matrix(aodim,qtordermodim);
-    
-    //coeffsymm_nb.assign(coeffsymm);
-    for(int i=0; i<nmo; i++) {
-      for(int j=0; j<aodim.n(); j++) {
-        coeffsymm_nb.set_element(i,j,coeffsymm.get_element(i,j));
-      }
-    }
-    
-    // generate index_map mapping symmetry ordered data to QT ordered data
-    std::vector<unsigned int> index_map = index_map_symmtoqtorder(nmo,
-                                                                  frozen_docc,
-                                                                  docc_act,
-                                                                  socc_act,
-                                                                  uocc_act,
-                                                                  frozen_uocc);
-    
-    // generate coeffqtorder from coeffsymm_nb by using  index_map
-    coeffqtorder.assign(0.0);
-    for(int i=0; i<nmo; i++) {
-      coeffqtorder.assign_column(coeffsymm_nb.get_column(i),index_map[i]);
-    }
-    
-    return(coeffqtorder);
+  std::vector<unsigned int> index_map_inverse(const std::vector<unsigned int>& map) {
+    typedef std::vector<unsigned int>::iterator iter;
+    const unsigned int min_index = * min_element(map.begin(), map.end());
+    assert(min_index == 0);
+    const unsigned int max_index = * max_element(map.begin(), map.end());
+
+    std::vector<unsigned int> imap(max_index+1, UINT_MAX);
+    const unsigned int n = map.size();
+    for(unsigned int i=0; i<n; ++i)
+      imap[map[i]] = i;
+
+    // make sure the map is isomorphic and can be inverted
+    assert( *max_element(imap.begin(), imap.end()) != UINT_MAX);
+
+    return imap;
   }
-  
-  RefSCMatrix coeffsymmtorasorder(const RefSCMatrix &coeffsymm,
-                                  const std::vector<unsigned int> &frozen_docc,
-                                  const std::vector<unsigned int> &ras1,
-                                  const std::vector<unsigned int> &ras2,
-                                  const std::vector<unsigned int> &ras3,
-                                  const std::vector<unsigned int> &frozen_uocc) {
-    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    int nmo = coeffsymm.coldim().n();
-    RefSCDimension aodim = coeffsymm.rowdim();
-    // TODO should use blocked dimensions here, but there are too many changes to be made downstream at the moment
-#if 1
-    RefSCDimension rasordermodim = new SCDimension(nmo); 
-#else
-    int* nfunc_per_block = new int[1];
-    nfunc_per_block[0] = nmo;
-    RefSCDimension rasordermodim = new SCDimension(nmo, 1, nfunc_per_block, "MOs in ras order");
-    if (nmo)
-      rasordermodim->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
-#endif
-    RefSCMatrix coeffrasorder = localkit->matrix(aodim,rasordermodim);
-    RefSCMatrix coeffsymm_nb = localkit->matrix(aodim,rasordermodim);
-    
-    //coeffsymm_nb.assign(coeffsymm);
-    for(int i=0; i<nmo; i++) {
-      for(int j=0; j<aodim.n(); j++) {
-        coeffsymm_nb.set_element(i,j,coeffsymm.get_element(i,j));
-      }
-    }
-    
-    // generate index_map mapping symmetry ordered data to ras ordered data
-    std::vector<unsigned int> index_map = index_map_symmtorasorder(nmo,
-                                                                  frozen_docc,
-                                                                  ras1,
-                                                                  ras2,
-                                                                  ras3,
-                                                                  frozen_uocc);
-   
-    // generate coeffrasorder from coeffsymm_nb by using  index_map
-    coeffrasorder.assign(0.0);
-    for(int i=0; i<nmo; i++) {
-      coeffrasorder.assign_column(coeffsymm_nb.get_column(i),index_map[i]);
-    }
-    
-    return(coeffrasorder);
-  }
-  
+
 }

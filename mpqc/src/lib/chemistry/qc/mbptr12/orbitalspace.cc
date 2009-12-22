@@ -473,10 +473,8 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
   for (unsigned int i = 0; i < nblocks; i++)
     nfunc_per_block[i] = block_sizes_[i];
   dim_ = new SCDimension(norbs, nblocks, nfunc_per_block, id.c_str());
-  if (norbs) {
-    for (unsigned int i = 0; i < nblocks; i++)
-      dim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
-  }
+  for (unsigned int i = 0; i < nblocks; i++)
+    dim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
   delete[] nfunc_per_block;
 
   // Map coefficients, eigenvalues, etc.
@@ -830,6 +828,49 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
 
 /////////////////////////////////////////////////////////////////////////////
 
+ClassDesc EmptyOrbitalSpace::class_desc_(
+          typeid(EmptyOrbitalSpace), "EmptyOrbitalSpace", 1,
+          "public OrbitalSpace", 0, 0, create<EmptyOrbitalSpace> );
+
+EmptyOrbitalSpace::EmptyOrbitalSpace(StateIn& si) :
+  OrbitalSpace(si) {}
+
+void
+EmptyOrbitalSpace::save_data_state(StateOut& so) {
+  OrbitalSpace::save_data_state(so);
+}
+
+EmptyOrbitalSpace::EmptyOrbitalSpace(const std::string& id,
+                                     const std::string& name,
+                                     const Ref<GaussianBasisSet>& bs,
+                                     const Ref<Integral>& ints,
+                                     const IndexOrder& moorder) :
+  OrbitalSpace() {
+
+  const unsigned int nblocks = (moorder == symmetry) ? bs->molecule()->point_group()->char_table().nirrep()
+                                                     : 1;
+  std::vector<BlockedOrbital> blocked_orbs;
+  std::vector<int> func_per_blk(nblocks, 0);
+  RefSCDimension emptydim = new SCDimension(0, nblocks, &(func_per_blk[0]), "");
+  for(int b=0; b<nblocks; ++b)  emptydim->blocks()->set_subdim(b, new SCDimension(0));
+  const int nao = bs->nbasis();
+  RefSCDimension aodim = new SCDimension(nao,1);
+  aodim->blocks()->set_subdim(0,new SCDimension(nao));
+  RefSCMatrix coefs = bs->so_matrixkit()->matrix(aodim, emptydim);
+  RefDiagSCMatrix evals = bs->so_matrixkit()->diagmatrix(emptydim);
+  std::vector<unsigned int> orbsym;
+
+  init(id, name,
+       bs,
+       ints,
+       coefs,
+       evals,
+       orbsym,
+       nblocks, blocked_orbs);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 MOIndexMap sc::operator<<(const OrbitalSpace& s2, const OrbitalSpace& s1) {
   typedef std::vector<int> OrbitalMap;
   const bool must_use_same_basis = true;
@@ -1174,8 +1215,7 @@ bool sc::operator==(const OrbitalSpace& space1, const OrbitalSpace& space2) {
   if (&space1 == &space2) return true;
   if (!space1.integral()->equiv(space2.integral()) || space1.rank()
       != space2.rank() || space1.nblocks() != space2.nblocks()
-      || space1.block_sizes() != space2.block_sizes() || space1.id()
-      != space2.id() || space1.name() != space2.name()
+      || space1.block_sizes() != space2.block_sizes()
       || !space1.basis()->equiv(space2.basis()) || (space1.coefs()
       - space2.coefs())->maxabs() > DBL_EPSILON)
     return false;

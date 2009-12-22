@@ -113,10 +113,12 @@ namespace sc {
         return exenv_->get_psi_input();
       }
 
+#if 0
       /// Returns a map from shells in Psi3 basis to std::pair<shell,contraction> in MPQC basis (note that Psi3 does not handle general contractions)
       std::vector< std::pair<unsigned int,unsigned int> > shell_map();
       /// Returns a map from AO in Psi3 basis to AO in MPQC basis
       std::vector<unsigned int> ao_map();
+#endif
 
       /// return Psi3 nuclear repulsion energy
       double nuclear_repulsion_energy() const;
@@ -126,6 +128,7 @@ namespace sc {
   /// PsiSCF is an abstract base for all Psi SCF wave functions
 
   class PsiSCF : public PsiWavefunction {
+      Ref<OrbitalSpace> orbs_sb_[NSpinCases1];
       RefDiagSCMatrix evals_[NSpinCases1];
       RefSCMatrix coefs_[NSpinCases1];
       RefSymmSCMatrix mo_density_[NSpinCases1];
@@ -169,8 +172,12 @@ namespace sc {
       const std::vector<unsigned int>& uoccpi(SpinCase1 S);
       /// Number of orbitals per irrep
       const std::vector<unsigned int>& mopi();
+      /// symmetry-blocked space
+      const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
       /// Number of electrons
       int nelectron();
+      /// Returns the total occupation for orbital mo
+      double occupation(int mo);
       /// Returns the occupation for alpha orbitals
       double alpha_occupation(int mo);
       /// Returns the occupation for beta orbitals
@@ -197,20 +204,18 @@ namespace sc {
       PsiCLHF(const Ref<KeyVal>&);
       PsiCLHF(StateIn&);
       ~PsiCLHF();
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
       int spin_polarized() {
         return 0;
       }
-      ;
       int gradient_implemented() const {
         return 1;
       }
-      ;
       PsiSCF::RefType reftype() const {
         return rhf;
       }
-      ;
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -223,20 +228,18 @@ namespace sc {
       PsiHSOSHF(const Ref<KeyVal>&);
       PsiHSOSHF(StateIn&);
       ~PsiHSOSHF();
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
       int spin_polarized() {
         return 1;
       }
-      ;
       int gradient_implemented() const {
         return 1;
       }
-      ;
       PsiSCF::RefType reftype() const {
         return hsoshf;
       }
-      ;
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -249,20 +252,18 @@ namespace sc {
       PsiUHF(const Ref<KeyVal>&);
       PsiUHF(StateIn&);
       ~PsiUHF();
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
       int spin_polarized() {
         return 1;
       }
-      ;
       int gradient_implemented() const {
         return 1;
       }
-      ;
       PsiSCF::RefType reftype() const {
         return uhf;
       }
-      ;
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -271,9 +272,6 @@ namespace sc {
   class PsiCorrWavefunction : public PsiWavefunction {
     protected:
       Ref<PsiSCF> reference_;
-      Ref<OrbitalSpace> occ_act_sb_[NSpinCases1];
-      Ref<OrbitalSpace> vir_act_sb_[NSpinCases1];
-      Ref<OrbitalSpace> orbitals_sb_[NSpinCases1];
       unsigned int nfzc_;
       unsigned int nfzv_;
       mutable std::vector<unsigned int> frozen_docc_;
@@ -283,11 +281,20 @@ namespace sc {
 
       double valacc_to_refacc() const { return 100.0; }
 
+      /// returns the index map that transforms indices in which densities are reported in Psi
+      /// to the symmetry-blocked indices. Single-reference correlated methods in Psi
+      /// report densities using QT-ordered indices, whereas multireference methods
+      /// use RAS ordering. The default implementation of this function assumes the former.
+      /// Overload as necessary.
+      virtual std::vector<unsigned int> map_density_to_sb();
+
     public:
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
       ~PsiCorrWavefunction();
       void save_data_state(StateOut&);
+
+      void print(std::ostream& os) const;
       int spin_polarized() {
         return reference_->spin_polarized();
       }
@@ -297,16 +304,22 @@ namespace sc {
       const Ref<PsiSCF>& reference() const { return reference_; }
       /// Number of electrons
       int nelectron();
+
+#if 0   // these should be implemented in PsiCC classes
       /// symmetry-blocked space of active occupied orbitals from Psi3
       const Ref<OrbitalSpace>& occ_act_sb(SpinCase1);
       /// symmetry-blocked space of active virtual orbitals from Psi3
       const Ref<OrbitalSpace>& vir_act_sb(SpinCase1);
+#endif
       /// total # of frozen doubly-occupied orbitals
       unsigned int nfzc() const;
       /// total # of frozen unoccupied orbitals
       unsigned int nfzv() const;
       /// symmetry-blocked space of MO's from Psi3
-      const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
+      /// the default implementation returns the orbitals from reference()
+      /// can be overridden if this wfn changes reference orbitals
+      virtual const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
+
       /// # of frozen doubly-occupied orbitals per irrep
       const std::vector<unsigned int>& frozen_docc() const;
       /// # of frozen unoccupied orbitals per irrep
@@ -315,11 +328,15 @@ namespace sc {
       const std::vector<unsigned int> docc_act();
       const std::vector<unsigned int> socc();
       const std::vector<unsigned int> uocc_act();
+      const std::vector<unsigned int> docc();
+      const std::vector<unsigned int> uocc();
 
       /// reference energy
       virtual double reference_energy();
 
+      /// return one-particel density matrix in symmetry-blocked orbitals \sa orbs_sb()
       RefSymmSCMatrix mo_density(SpinCase1 spin);
+#if 0
       /// return one-particle density matrix as a symmetric matrix indexed by (moindex1,moindex2).
       RefSymmSCMatrix onepdm(const SpinCase1 &spin);
       RefSymmSCMatrix onepdm();
@@ -329,6 +346,7 @@ namespace sc {
       /// this twopdm is stored in Dirac notation order.
       RefSymmSCMatrix twopdm_dirac();
       RefSymmSCMatrix twopdm_dirac_from_components();
+#endif
       RefSymmSCMatrix twopdm_dirac(const SpinCase2 &pairspin);
       void print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL);
       void print_onepdm_mat(FILE *output,const RefSymmSCMatrix &opdm,double TOL);
@@ -336,6 +354,7 @@ namespace sc {
       void print_twopdm_arr(FILE *output,double *tpdm,double TOL);
   };
 
+#if 0
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// PsiCorrWavefunction_PT2R12: a corrlated wave function with a perturbational explicitly correlated correction.
 
@@ -439,6 +458,23 @@ namespace sc {
 
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
   };
+#endif
 
+  namespace detail {
+    /// this function reads 1-rdm. Depending on the
+    /// calculation, on-disk Psi densities will be reported in different formats.
+    /// Hence the user must provide the index map (dmap).
+    /// The output dimension is symmetry blocked.
+    RefSymmSCMatrix rdopdm(SpinCase1 pairspin,
+                           const std::vector<unsigned int>& mopi,
+                           const std::vector<unsigned int>& dmap,
+                           Ref<SCMatrixKit> kit = 0);
+    /// this function reads 2-rdm in physicists format. Depending on the
+    /// calculation, on-disk Psi densities will be reported in different formats.
+    /// Hence the user must provide the index map (dmap).
+    RefSymmSCMatrix rdtpdm(SpinCase2 pairspin,
+                           const std::vector<unsigned int>& dmap,
+                           Ref<SCMatrixKit> kit = 0);
+  }
 }
 #endif

@@ -31,6 +31,7 @@
 
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 
@@ -177,19 +178,21 @@ namespace {
 
 ////////////////////
 
-extern Ref<R12RefWavefunction>
-make_PsiSD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
-                              const Ref<Wavefunction>& wfn,
-                              bool spin_restricted = true,
-                              unsigned int nfzc = 0,
-                              unsigned int nfzv = 0,
-                              Ref<OrbitalSpace> vir_space = 0);
-
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",0,create<PT2R12>,create<PT2R12>);
 
 PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 {
+  std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
+  if (nfzc_str == "auto")
+    nfzc_ = molecule()->n_core_electrons()/2;
+  else if (nfzc_str == "no" || nfzc_str == "false")
+    nfzc_ = 0;
+  else
+    nfzc_ = atoi(nfzc_str.c_str());
+
+  omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
+
   reference_ = require_dynamic_cast<Wavefunction*>(
         keyval->describedclassvalue("reference").pointer(),
         "PT2R12::PT2R12\n"
@@ -199,38 +202,37 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
         "PT2R12::PT2R12\n"
         );
   assert(reference_ == rdm2_->wfn());
+  rdm1_ = rdm2_->rdm_m_1();
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   //world->memory(memory);
   const bool spin_restricted = true;
-#if 0
-  RefSymmSCMatrix rdm1_a = reference_->alpha_ao_density();
-  RefSymmSCMatrix rdm1_b = reference_->spin_polarized() ? reference_->beta_ao_density() : rdm1_a;
-  Ref<R12RefWavefunction> ref = new ORDM_R12RefWavefunction(world, basis(),
-                                                            integral(),
-                                                            rdm1_a, rdm1_b,
-                                                            spin_restricted,
-                                                            nfzc_,
-                                                            omit_virtuals_);
-#endif
-  Ref<R12RefWavefunction> ref = make_PsiSD_R12RefWavefunction(world,
-                                                              reference_,
-                                                              spin_restricted,
-                                                              nfzc_,
-                                                              0);
+  // if omit_uocc is true, need to make an empty virtual space
+  Ref<OrbitalSpace> virspace = 0;
+  if (omit_uocc_) {
+    virspace = new EmptyOrbitalSpace("", "", basis(), integral(), OrbitalSpace::symmetry);
+  }
+  Ref<R12RefWavefunction> ref = R12RefWavefunctionFactory::make(world,
+                                                                reference_,
+                                                                spin_restricted,
+                                                                nfzc_,
+                                                                0,
+                                                                virspace);
   r12world_ = new R12WavefunctionWorld(keyval, ref);
   r12eval_ = new R12IntEval(r12world_);
 
-  tpdm_from_opdms_ = keyval->booleanvalue("tpdm_from_opdms",KeyValValueboolean(false));
   debug_ = keyval->intvalue("debug", KeyValValueint(0));
   r12eval_->debug(debug_);
 }
 
 PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   reference_ << SavableState::restore_state(s);
+  rdm2_ << SavableState::restore_state(s);
+  rdm1_ << SavableState::restore_state(s);
   r12world_ << SavableState::restore_state(s);
   r12eval_ << SavableState::restore_state(s);
-  s.get(tpdm_from_opdms_);
+  s.get(nfzc_);
+  s.get(omit_uocc_);
   s.get(debug_);
 }
 
@@ -239,9 +241,12 @@ PT2R12::~PT2R12() {}
 void PT2R12::save_data_state(StateOut &s) {
   Wavefunction::save_data_state(s);
   SavableState::save_state(reference_, s);
+  SavableState::save_state(rdm2_, s);
+  SavableState::save_state(rdm1_, s);
   SavableState::save_state(r12world_, s);
   SavableState::save_state(r12eval_, s);
-  s.put(tpdm_from_opdms_);
+  s.put(nfzc_);
+  s.put(omit_uocc_);
   s.put(debug_);
 }
 
@@ -594,12 +599,10 @@ RefSCMatrix PT2R12::moints(SpinCase2 pairspin) {
   return(moints_PQRS);
 }
 
-RefSCMatrix PT2R12::g(SpinCase2 pairspin) {
+RefSCMatrix PT2R12::g(SpinCase2 pairspin,
+                      const Ref<OrbitalSpace>& space1,
+                      const Ref<OrbitalSpace>& space2) {
   const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  const SpinCase1 spin1 = case1(pairspin);
-  const SpinCase1 spin2 = case2(pairspin);
-  const Ref<OrbitalSpace> space1 = r12eval_->orbs(spin1);
-  const Ref<OrbitalSpace> space2 = r12eval_->orbs(spin2);
   Ref<SpinMOPairIter> PQ_iter = new SpinMOPairIter(space1,space2,pairspin);
   const int nmo1 = space1->rank();
   const int nmo2 = space2->rank();
@@ -615,26 +618,40 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin) {
   RefSCMatrix G = localkit->matrix(pairdim,pairdim);
   G.assign(0.0);
 
+  // find equivalent spaces in the registry
+  Ref<OrbitalSpaceRegistry> oreg = OrbitalSpaceRegistry::instance();
+  if (!oreg->value_exists(space1) || !oreg->value_exists(space2))
+    throw ProgrammingError("PT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
+  const std::string key1 = oreg->key(space1);
+  Ref<OrbitalSpace> s1 = oreg->value(key1);
+  const std::string key2 = oreg->key(space2);
+  Ref<OrbitalSpace> s2 = oreg->value(key2);
+
   const bool antisymmetrize = (pairspin==AlphaBeta) ? false : true;
   std::vector<std::string> tforms;
   {
-    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(space1->id(),space2->id(),
-                                                                     space1->id(),space2->id(),
+    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(s1->id(),s2->id(),
+                                                                     s1->id(),s2->id(),
                                                                      std::string("ERI"),
                                                                      std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms.push_back(tform_key);
   }
 
-  r12eval_->compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(G,TwoBodyOper::eri,space1,space1,space2,space2,
+  r12eval_->compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(G,TwoBodyOper::eri,s1,s1,s2,s2,
       antisymmetrize,tforms);
 
   return(G);
 }
 
 RefSCMatrix PT2R12::f(SpinCase1 spin) {
-  const Ref<OrbitalSpace> bra_space = r12eval_->orbs(spin);
-  const Ref<OrbitalSpace> ket_space = r12eval_->orbs(spin);
-  RefSCMatrix fmat = r12eval_->fock(bra_space,ket_space,spin);
+  Ref<OrbitalSpace> space = rdm1_->orbs(spin);
+  Ref<OrbitalSpaceRegistry> oreg = OrbitalSpaceRegistry::instance();
+  if (!oreg->value_exists(space)) {
+    oreg->add(make_keyspace_pair(space));
+  }
+  const std::string key = oreg->key(space);
+  space = oreg->value(key);
+  RefSCMatrix fmat = r12eval_->fock(space,space,spin);
 
   return(fmat);
 }
@@ -741,584 +758,6 @@ RefSymmSCMatrix PT2R12::B_transformed_by_C(SpinCase2 pairspin) {
   return(BT);
 }
 
-#if 0
-namespace {
-
-RefSCVector dipolemoments(const Ref<DipoleData> &dipoledata) {
-  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  Ref<GaussianBasisSet> basis = this->basis();
-  Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
-  const int nmo = reference_->nmo();
-
-  // computing dipole integrals in MO basis
-  RefSCMatrix MX, MY, MZ;
-  RefSCMatrix MXX, MYY, MZZ, MXY, MXZ, MYZ;
-  compute_multipole_ints(space,space,MX,MY,MZ,MXX,MYY,MZZ,MXY,MXZ,MYZ);
-
-  // computing oneparticle density matrix in MO basis
-  RefSymmSCMatrix opdm = onepdm_transformed();
-  //opdm.print("oneparticle density matrix in MO basis");
-
-  RefSCDimension M_dim = opdm.dim();
-  RefSCMatrix MX_nb = localkit->matrix(M_dim,M_dim);
-  RefSCMatrix MY_nb = localkit->matrix(M_dim,M_dim);
-  RefSCMatrix MZ_nb = localkit->matrix(M_dim,M_dim);
-  for(int i=0; i<M_dim.n(); i++) {
-    for(int j=0; j<M_dim.n(); j++) {
-      MX_nb.set_element(i,j,MX.get_element(i,j));
-      MY_nb.set_element(i,j,MY.get_element(i,j));
-      MZ_nb.set_element(i,j,MZ.get_element(i,j));
-    }
-  }
-
-  RefSCMatrix opdm_x = MX_nb * opdm;
-  RefSCMatrix opdm_y = MY_nb * opdm;
-  RefSCMatrix opdm_z = MZ_nb * opdm;
-
-  RefSCVector dipoles = localkit->vector(RefSCDimension(new SCDimension(3)));
-  dipoles.assign(0.0);
-
-  double dx=0.0, dy=0.0, dz=0.0;
-  for(int p=0; p<nmo; p++) {
-    dx += opdm_x.get_element(p,p);
-    dy += opdm_y.get_element(p,p);
-    dz += opdm_z.get_element(p,p);
-  }
-
-  int natom = reference_->molecule()->natom();
-  double dx_nuc=0.0, dy_nuc=0.0, dz_nuc=0.0;
-  for(int i=0; i<natom; i++) {
-    dx_nuc += reference_->molecule()->r(i,0) * reference_->molecule()->Z(i);
-    dy_nuc += reference_->molecule()->r(i,1) * reference_->molecule()->Z(i);
-    dz_nuc += reference_->molecule()->r(i,2) * reference_->molecule()->Z(i);
-  }
-
-  dipoles[0] = dx + dx_nuc;
-  dipoles[1] = dy + dy_nuc;
-  dipoles[2] = dz + dz_nuc;
-
-  return(dipoles);
-}
-
-
-double energy_conventional() {
-  double twoparticle_energy[NSpinCases2];
-  double oneparticle_energy[NSpinCases1];
-  const int npurespincases2 = (r12eval_->spin_polarized()) ? 3 : 2;
-  const int npurespincases1 = (r12eval_->spin_polarized()) ? 2 : 1;
-  const int nmo = r12world()->ref()->orbs()->rank();
-  const RefSCDimension nmodim = new SCDimension(nmo);
-  const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-
-  for(int spincase1=0; spincase1<npurespincases1; spincase1++) {
-    const SpinCase1 spin = static_cast<SpinCase1>(spincase1);
-    const RefSymmSCMatrix opdm = onepdm_refmo(spin);
-    const RefSymmSCMatrix hcore = hcore_mo(spin);
-    oneparticle_energy[spin] = (hcore*opdm)->trace();
-  }
-
-  for(int spincase2=0; spincase2<npurespincases2; spincase2++) {
-    const SpinCase2 pairspin = static_cast<SpinCase2>(spincase2);
-    const SpinCase1 spin1 = case1(pairspin);
-    const SpinCase1 spin2 = case2(pairspin);
-
-    const RefSymmSCMatrix tpdm = twopdm_refmo(pairspin);
-#if 0
-    if(pairspin==AlphaBeta) {
-      ExEnv::out0() << "start test in PT2R12::energy_conventional() ..." << endl;
-      const double tol = 1.0e-6;
-      const RefSymmSCMatrix tpdm_vgl = twopdm_transformed_dirac();
-      for(int p=0; p<nmo; p++) {
-        for(int q=0; q<nmo; q++) {
-          const int ind_pq = ordinary_INDEX(p,q,nmo);
-          for(int r=0; r<nmo; r++) {
-            for(int s=0; s<nmo; s++) {
-              const int ind_rs = ordinary_INDEX(r,s,nmo);
-              const double val1 = 2.0 * tpdm->get_element(ind_pq,ind_rs);
-              const double val2 = tpdm_vgl->get_element(ind_pq,ind_rs);
-              if(fabs(val1-val2)>tol) {
-                ExEnv::out0() << p << "  " << q << "  " << r << "  " << s
-                              << "  " << setprecision(12) << val1
-                              << "  " << setprecision(12) << val2 << endl;
-              }
-            }
-          }
-        }
-      }
-      ExEnv::out0() << "Test in PT2R12::energy_conventional() finished." << endl;
-    }
-#endif
-    const RefSCMatrix G = g(pairspin);
-
-    twoparticle_energy[pairspin] = (G*tpdm).trace();
-  }
-
-  if(!r12eval_->spin_polarized()) {
-    twoparticle_energy[BetaBeta] = twoparticle_energy[AlphaAlpha];
-    oneparticle_energy[Beta] = oneparticle_energy[Alpha];
-  }
-
-//#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
-
-  double energy_hcore = 0.0;
-  for(int i=0; i<NSpinCases1; i++) {
-    const SpinCase1 spin = static_cast<SpinCase1>(i);
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
-    ExEnv::out0() << ((spin==Alpha) ? "Alpha" : "Beta") << " hcore energy: "
-                  << setprecision(12) << oneparticle_energy[i] << endl;
-#endif
-    energy_hcore += oneparticle_energy[i];
-  }
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
-  ExEnv::out0() << "hcore energy: " << setprecision(12) << energy_hcore << endl;
-#endif
-  double energy_twoelec = 0.0;
-  for(int i=0; i<NSpinCases2; i++) {
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
-    string pairspin_str = "";
-    if(i==0) {
-      pairspin_str = "AlphaBeta";
-    }
-    else if(i==1) {
-      pairspin_str = "AlphaAlpha";
-    }
-    else if(i==2) {
-      pairspin_str = "BetaBeta";
-    }
-    ExEnv::out0() << "pairspin " << pairspin_str << " energy: " << setprecision(12) << twoparticle_energy[i] << endl;
-#endif
-    energy_twoelec += twoparticle_energy[i];
-  }
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
-  ExEnv::out0() << "two-electron energy: " << setprecision(12) << energy_twoelec << endl;
-#endif
-  double energy = energy_hcore + energy_twoelec;
-  energy += reference_->nuclear_repulsion_energy();
-
-  return(energy);
-}
-
-RefSCMatrix phi_HF(SpinCase2 pairspin) {
-  RefSCMatrix fmat[NSpinCases1];
-  for(int i=0; i<NSpinCases1; i++) {
-    SpinCase1 spin = static_cast<SpinCase1>(i);
-    fmat[i] = f(spin);
-
-    //fmat[i].print(prepend_spincase(spin,"Fock matrix").c_str());
-  }
-  int nmo = reference()->nmo();
-  RefSCMatrix phi;
-  phi = C(pairspin).kit()->matrix(r12eval_->dim_gg(pairspin),r12eval_->dim_gg(pairspin));
-  phi.assign(0.0);
-
-  if(pairspin==AlphaBeta) {
-    SpinMOPairIter UV_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
-    SpinMOPairIter PQ_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
-      const int P = PQ_iter.i();
-      const int Q = PQ_iter.j();
-      const int PQ = PQ_iter.ij();
-      for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
-        const int U = UV_iter.i();
-        const int V = UV_iter.j();
-        const int UV = UV_iter.ij();
-        if(U==P) {
-          phi->accumulate_element(PQ,UV,-fmat[Beta].get_element(Q,V));
-        }
-        if(Q==V) {
-          phi->accumulate_element(PQ,UV,-fmat[Alpha].get_element(P,U));
-        }
-      }
-    }
-  }  // pairspin==AlphaBeta
-  else {  // pairspin!=AlphaBeta
-    SpinCase1 spin = (pairspin == AlphaAlpha) ? Alpha : Beta;
-    SpinCase1 otherspin = (spin==Alpha) ? Beta : Alpha;
-    SpinMOPairIter UV_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
-    SpinMOPairIter PQ_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
-
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
-      const int P = PQ_iter.i();
-      const int Q = PQ_iter.j();
-      const int PQ = PQ_iter.ij();
-      for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
-        const int U = UV_iter.i();
-        const int V = UV_iter.j();
-        const int UV = UV_iter.ij();
-
-        if(V==Q) {
-          phi->accumulate_element(PQ,UV,-1.0*fmat[spin].get_element(P,U));
-        }
-        if(U==Q) {
-          phi->accumulate_element(PQ,UV,fmat[spin].get_element(P,V));
-        }
-        if(V==P) {
-          phi->accumulate_element(PQ,UV,fmat[spin].get_element(Q,U));
-        }
-        if(U==P) {
-          phi->accumulate_element(PQ,UV,-1.0*fmat[spin].get_element(Q,V));
-        }
-
-      }
-    }
-  }  // pairspin!=AlphaBeta
-  return(phi);
-}
-
-RefSCMatrix phi_twoelec(SpinCase2 pairspin) {
-  double energ_PT2R12[NSpinCases2];
-  RefSCMatrix fmat[NSpinCases1];
-  RefSymmSCMatrix opdm[NSpinCases1];
-  const RefSymmSCMatrix tpdm = twopdm_refmo(pairspin);
-
-  for(int i=0; i<NSpinCases1; i++) {
-    SpinCase1 spin = static_cast<SpinCase1>(i);
-    fmat[i] = f(spin);
-    opdm[i] = onepdm_refmo(spin);
-  }
-  const int nmo = opdm[0].dim().n();
-
-  double J = 0.0;
-  for(int i=0; i<NSpinCases1; i++) {
-    for(int z=0; z<nmo; z++) {
-      for(int y=0; y<nmo; y++) {
-        J += fmat[i].get_element(z,y)*opdm[i].get_element(y,z);
-      }
-    }
-  }
-
-  RefSCMatrix phi;
-  phi = C(pairspin).kit()->matrix(r12eval_->dim_gg(pairspin),r12eval_->dim_gg(pairspin));
-  phi.assign(0.0);
-  phi.accumulate(tpdm*J);
-
-  // redefined the sign for phi to correspond directly to the Fock operator
-  phi.scale(-1.0);
-
-  if(debug_>=DefaultPrintThresholds::mostO4) {
-    phi->print(prepend_spincase(pairspin,"phi").c_str());
-  }
-
-  return(phi);
-}
-
-
-//#define DEBUG_PHI
-// In this function, the statements commented out with "#if 0" would be more
-// efficient, but are not tested yet.
-RefSCMatrix PT2R12::phi(SpinCase2 pairspin) {
-  RefSCMatrix fmat[NSpinCases1];
-  RefSymmSCMatrix opdm[NSpinCases1];
-  RefSymmSCMatrix tpdm[NSpinCases2];
-
-  for(int i=0; i<NSpinCases1; i++) {
-    SpinCase1 spin = static_cast<SpinCase1>(i);
-    fmat[i] = f(spin);
-    opdm[i] = rdm1(spin);
-  }
-  const int nmo = opdm[0].dim().n();
-
-  // R12 intermediates, transformed with geminal amplitude matrix
-  for(int i=0; i<NSpinCases2; i++) {
-    SpinCase2 S = static_cast<SpinCase2>(i);
-    tpdm[i] = rdm2(S);
-  }
-
-  // intermediates
-  RefSCMatrix I[NSpinCases1];
-  RefSCMatrix K[NSpinCases1];
-  double J = 0.0;
-  RefSCMatrix L[NSpinCases1];
-  RefSCMatrix M[NSpinCases1];
-  for(int i=0; i<NSpinCases1; i++) {
-#if 1
-    I[i] = fmat[i].clone();
-    I[i].assign(0.0);
-    for(int q=0; q<nmo; q++) {
-      for(int v=0; v<nmo; v++) {
-        for(int z=0; z<nmo; z++) {
-          for(int y=0; y<nmo; y++) {
-            I[i].accumulate_element(q,v,opdm[i].get_element(q,z)*fmat[i].get_element(z,y)*opdm[i].get_element(y,v));
-          }
-        }
-      }
-    }
-#endif
-#if 0
-    I[i] = opdm[i] * fmat[i] * opdm[i];
-#endif
-
-#if 1
-    for(int z=0; z<nmo; z++) {
-      for(int y=0; y<nmo; y++) {
-        J += fmat[i].get_element(z,y)*opdm[i].get_element(y,z);
-      }
-    }
-#endif
-#if 0
-    J += (fmat[i] * opdm[i]).trace();
-#endif
-
-#if 1
-    K[i] = fmat[i].clone();
-    K[i].assign(0.0);
-    for(int z=0; z<nmo; z++) {
-      for(int u=0; u<nmo; u++) {
-        for(int y=0; y<nmo; y++) {
-          K[i].accumulate_element(z,u,opdm[i].get_element(y,u)*fmat[i].get_element(z,y));
-        }
-      }
-    }
-#endif
-#if 0
-    K[i] = opdm[i] * fmat[i].t();
-#endif
-
-#if 1
-    L[i] = fmat[i].clone();
-    L[i].assign(0.0);
-    for(int p=0; p<nmo; p++) {
-      for(int y=0; y<nmo; y++) {
-        for(int z=0; z<nmo; z++) {
-          L[i].accumulate_element(p,y,opdm[i].get_element(p,z)*fmat[i].get_element(z,y));
-        }
-      }
-    }
-#endif
-#if 0
-    L[i] = opdm[i] *  fmat[i];
-#endif
-
-    M[i] = fmat[i].clone();
-    M[i].assign(0.0);
-    if(i==Alpha) {
-      for(int q=0; q<nmo; q++) {
-        for(int y=0; y<nmo; y++) {
-          for(int v=0; v<nmo; v++) {
-            for(int z=0; z<nmo; z++) {
-              int qy_alphabeta = q*nmo + y;
-              int vz_alphabeta = v*nmo + z;
-              M[i].accumulate_element(q,v,fmat[Beta].get_element(z,y)*tpdm[AlphaBeta].get_element(qy_alphabeta,vz_alphabeta));
-              if((q!=y) && (v!=z)) {
-                int qy_alphaalpha = lowerupper_index(q,y);
-                int vz_alphaalpha = lowerupper_index(v,z);
-                int sign = indexsizeorder_sign(q,y)*indexsizeorder_sign(v,z);
-                M[i].accumulate_element(q,v,sign*fmat[Alpha].get_element(z,y)*tpdm[AlphaAlpha].get_element(qy_alphaalpha,vz_alphaalpha));
-              }
-            }
-          }
-        }
-      }
-
-    }  // i==Alpha
-    else {  // i!=Alpha
-      for(int q=0; q<nmo; q++) {
-        for(int v=0; v<nmo; v++) {
-          for(int z=0; z<nmo; z++) {
-            for(int y=0; y<nmo; y++) {
-              int yq_alphabeta = y*nmo + q;
-              int zv_alphabeta = z*nmo + v;
-              M[i].accumulate_element(q,v,fmat[Alpha].get_element(z,y)*tpdm[AlphaBeta].get_element(yq_alphabeta,zv_alphabeta));
-              if((q!=y) && (v!=z)) {
-                int qy_betabeta = lowerupper_index(q,y);
-                int vz_betabeta = lowerupper_index(v,z);
-                int sign = indexsizeorder_sign(q,y)*indexsizeorder_sign(v,z);
-                M[i].accumulate_element(q,v,sign*fmat[Beta].get_element(z,y)*tpdm[BetaBeta].get_element(qy_betabeta,vz_betabeta));
-              }
-            }
-          }
-        }
-      }
-    }  // i!=Alpha
-
-    const SpinCase1 spin = static_cast<SpinCase1>(i);
-    L[i].print(prepend_spincase(spin,"K").c_str());
-    I[i].print(prepend_spincase(spin,"I").c_str());
-    M[i].print(prepend_spincase(spin,"M").c_str());
-
-  }
-
-  // computing phi
-  RefSCMatrix phi;
-  phi = C(pairspin).kit()->matrix(r12eval_->dim_gg(pairspin),r12eval_->dim_gg(pairspin));
-  phi.assign(0.0);
-#ifdef DEBUG_PHI
-  RefSCMatrix term1 = phi.clone();
-  RefSCMatrix term2 = phi.clone();
-  RefSCMatrix term3 = phi.clone();
-  RefSCMatrix term4 = phi.clone();
-  RefSCMatrix term5 = phi.clone();
-  term1->assign(0.0);
-  term2->assign(0.0);
-  term3->assign(0.0);
-  term4->assign(0.0);
-  term5->assign(0.0);
-#endif
-  if(pairspin==AlphaBeta) {
-    SpinMOPairIter UV_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
-    SpinMOPairIter PQ_iter(r12eval_->orbs(Alpha),r12eval_->orbs(Beta),pairspin);
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
-      int P = PQ_iter.i();
-      int Q = PQ_iter.j();
-      int PQ = PQ_iter.ij();
-      for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
-        int U = UV_iter.i();
-        int V = UV_iter.j();
-        int UV = UV_iter.ij();
-
-        phi.accumulate_element(PQ,UV,2.0*opdm[Alpha].get_element(P,U)*I[Beta].get_element(Q,V)
-                                    +2.0*opdm[Beta].get_element(Q,V)*I[Alpha].get_element(P,U));
-
-        phi.accumulate_element(PQ,UV,-2.0*opdm[Alpha].get_element(P,U)*opdm[Beta].get_element(Q,V)*J);
-
-        for(int Z=0; Z<PQ_iter.ni(); Z++) {
-          int ZV = Z*nmo + V;
-          int UZ = U*nmo + Z;
-          phi.accumulate_element(PQ,UV,-K[Alpha].get_element(Z,U)*tpdm[AlphaBeta].get_element(PQ,ZV)
-                                       -K[Beta].get_element(Z,V)*tpdm[AlphaBeta].get_element(PQ,UZ));
-        }
-
-        for(int Y=0; Y<PQ_iter.ni(); Y++) {
-          int YQ = Y*nmo + Q;
-          int PY = P*nmo + Y;
-          phi.accumulate_element(PQ,UV,-L[Alpha].get_element(P,Y)*tpdm[AlphaBeta].get_element(YQ,UV)
-                                       -L[Beta].get_element(Q,Y)*tpdm[AlphaBeta].get_element(PY,UV));
-        }
-
-        phi.accumulate_element(PQ,UV,opdm[Alpha].get_element(P,U)*M[Beta].get_element(Q,V)
-                                    +opdm[Beta].get_element(Q,V)*M[Alpha].get_element(P,U));
-
-      }
-    }
-  }  // pairspin==AlphaBeta
-  else {  // pairspin!=AlphaBeta
-    SpinCase1 spin;
-    SpinCase1 otherspin;
-    if(pairspin==AlphaAlpha) {
-      spin = Alpha;
-      otherspin = Beta;
-    }
-    else {
-      spin = Beta;
-      otherspin = Alpha;
-    }
-    SpinMOPairIter UV_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
-    SpinMOPairIter PQ_iter(r12eval_->orbs(spin),r12eval_->orbs(spin),pairspin);
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
-      int P = PQ_iter.i();
-      int Q = PQ_iter.j();
-      int PQ = PQ_iter.ij();
-      double sign_PQ = indexsizeorder_sign(P,Q);
-      int QP = lowerupper_index(Q,P);
-      double sign_QP = indexsizeorder_sign(Q,P);
-
-      for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
-        int U = UV_iter.i();
-        int V = UV_iter.j();
-        int UV = UV_iter.ij();
-
-        if((U!=V) && (P!=Q)) {
-          phi.accumulate_element(PQ,UV,2.0*opdm[spin].get_element(P,U)*I[spin].get_element(Q,V)
-                                      -2.0*opdm[spin].get_element(Q,U)*I[spin].get_element(P,V)
-                                      -2.0*opdm[spin].get_element(P,V)*I[spin].get_element(Q,U)
-                                      +2.0*opdm[spin].get_element(Q,V)*I[spin].get_element(P,U));
-#ifdef DEBUG_PHI
-          term1.accumulate_element(PQ,UV,2.0*opdm[spin].get_element(P,U)*I[spin].get_element(Q,V)
-                                      -2.0*opdm[spin].get_element(Q,U)*I[spin].get_element(P,V)
-                                      -2.0*opdm[spin].get_element(P,V)*I[spin].get_element(Q,U)
-                                      +2.0*opdm[spin].get_element(Q,V)*I[spin].get_element(P,U));
-#endif
-
-          phi.accumulate_element(PQ,UV,opdm[spin].get_element(P,V)*opdm[spin].get_element(Q,U)*J
-                                      -opdm[spin].get_element(Q,V)*opdm[spin].get_element(P,U)*J
-                                      -opdm[spin].get_element(P,U)*opdm[spin].get_element(Q,V)*J
-                                      +opdm[spin].get_element(Q,U)*opdm[spin].get_element(P,V)*J);
-#ifdef DEBUG_PHI
-          term2.accumulate_element(PQ,UV,opdm[spin].get_element(P,V)*opdm[spin].get_element(Q,U)*J
-                                        -opdm[spin].get_element(Q,V)*opdm[spin].get_element(P,U)*J
-                                        -opdm[spin].get_element(P,U)*opdm[spin].get_element(Q,V)*J
-                                        +opdm[spin].get_element(Q,U)*opdm[spin].get_element(P,V)*J);
-#endif
-
-          for(int Z=0; Z<UV_iter.ni(); Z++) {
-            if(V!=Z) {
-              int VZ = lowerupper_index(V,Z);
-              double sign_VZ = indexsizeorder_sign(V,Z);
-              phi.accumulate_element(PQ,UV,sign_VZ*K[spin].get_element(Z,U)*tpdm[pairspin].get_element(PQ,VZ));
-#ifdef DEBUG_PHI
-              term3.accumulate_element(PQ,UV,sign_VZ*K[spin].get_element(Z,U)*tpdm[pairspin].get_element(PQ,VZ));
-#endif
-            }
-            if(U!=Z) {
-              int UZ = lowerupper_index(U,Z);
-              double sign_UZ = indexsizeorder_sign(U,Z);
-              phi.accumulate_element(PQ,UV,-sign_UZ*K[spin].get_element(Z,V)*tpdm[pairspin].get_element(PQ,UZ));
-#ifdef DEBUG_PHI
-              term3.accumulate_element(PQ,UV,-sign_UZ*K[spin].get_element(Z,V)*tpdm[pairspin].get_element(PQ,UZ));
-#endif
-            }
-          }
-
-          for(int Y=0; Y<PQ_iter.ni(); Y++) {
-            double sign_UV = indexsizeorder_sign(U,V);
-            int VU = lowerupper_index(V,U);
-            double sign_VU = indexsizeorder_sign(V,U);
-            if(Q!=Y) {
-              int QY = lowerupper_index(Q,Y);
-              double sign_QY = indexsizeorder_sign(Q,Y);
-              phi.accumulate_element(PQ,UV,sign_QY*L[spin].get_element(P,Y)*tpdm[pairspin].get_element(QY,UV));
-#ifdef DEBUG_PHI
-              term4.accumulate_element(PQ,UV,sign_QY*L[spin].get_element(P,Y)*tpdm[pairspin].get_element(QY,UV));
-#endif
-            }
-            if(P!=Y) {
-              int PY = lowerupper_index(P,Y);
-              double sign_PY = indexsizeorder_sign(P,Y);
-              phi.accumulate_element(PQ,UV,-sign_PY*L[spin].get_element(Q,Y)*tpdm[pairspin].get_element(PY,UV));
-#ifdef DEBUG_PHI
-              term4.accumulate_element(PQ,UV,-sign_PY*L[spin].get_element(Q,Y)*tpdm[pairspin].get_element(PY,UV));
-#endif
-            }
-          }
-
-          phi.accumulate_element(PQ,UV,opdm[spin].get_element(P,U)*M[spin].get_element(Q,V)
-                                      -opdm[spin].get_element(Q,U)*M[spin].get_element(P,V)
-                                      -opdm[spin].get_element(P,V)*M[spin].get_element(Q,U)
-                                      +opdm[spin].get_element(Q,V)*M[spin].get_element(P,U));
-#ifdef DEBUG_PHI
-          term5.accumulate_element(PQ,UV,opdm[spin].get_element(P,U)*M[spin].get_element(Q,V)
-                                      -opdm[spin].get_element(Q,U)*M[spin].get_element(P,V)
-                                      -opdm[spin].get_element(P,V)*M[spin].get_element(Q,U)
-                                      +opdm[spin].get_element(Q,V)*M[spin].get_element(P,U));
-#endif
-
-        }
-      }
-    }
-#ifdef DEBUG_PHI
-    term1->print(prepend_spincase(pairspin,"term1 of phi").c_str());
-    term2->print(prepend_spincase(pairspin,"term2 of phi").c_str());
-    term3->print(prepend_spincase(pairspin,"term3 of phi").c_str());
-    term4->print(prepend_spincase(pairspin,"term4 of phi").c_str());
-    term5->print(prepend_spincase(pairspin,"term5 of phi").c_str());
-    RefSCMatrix term_sum = term1 + term2 + term3 + term4 + term5;
-    term_sum->print(prepend_spincase(pairspin,"term_sum of phi").c_str());
-#endif
-  }  // pairspin!=AlphaBeta
-
-  // redefined sign so that phi corresponds to the Fock matrix
-  phi.scale(-1.0);
-
-  if(debug_>=DefaultPrintThresholds::mostO4) {
-    phi->print(prepend_spincase(pairspin,"phi").c_str());
-  }
-
-  return(phi);
-}
-
-} // end of anonymous namespace
-#endif
-
 RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
   RefSCMatrix fmat[NSpinCases1];
   RefSymmSCMatrix opdm[NSpinCases1];
@@ -1418,6 +857,7 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
       K[s].print(prepend_spincase(spin,"K new").c_str());
       I[s].print(prepend_spincase(spin,"I new").c_str());
       M[s].print(prepend_spincase(spin,"M new").c_str());
+      fmat[s].print(prepend_spincase(spin,"Fock matrix").c_str());
     }
   }
 
@@ -1427,34 +867,30 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
   //                                     + \frac{1}{2} \gamma^{q_2}_p f^{q_3}_{q_2} \lambda^{u v}_{q_3 q}
   //                                     - \gamma^u_p f^{q_2}_{q_3} \lambda^{q_3 v}_{q_2 q})
   Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
-  RefSymmSCMatrix phi = local_kit->symmmatrix(r12eval_->dim_gg(spin12));
+  RefSymmSCMatrix phi = local_kit->symmmatrix(tpcm[spin12].dim());
   phi.assign(0.0);
   const SpinCase1 spin1 = case1(spin12);
   const SpinCase1 spin2 = case2(spin12);
-  Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
-  Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
-  Ref<OrbitalSpace> gspace1 = r12eval_->ggspace(spin1);
-  Ref<OrbitalSpace> gspace2 = r12eval_->ggspace(spin2);
-  MOIndexMap map1 = (*orbs1 << *gspace1);
-  MOIndexMap map2 = (*orbs2 << *gspace2);
-  SpinMOPairIter UV_iter(gspace1,gspace2,spin12);
-  SpinMOPairIter PQ_iter(gspace1,gspace2,spin12);
+  Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
+  Ref<OrbitalSpace> orbs2 = rdm2_->orbs(spin2);
+  SpinMOPairIter UV_iter(orbs1,orbs2,spin12);
+  SpinMOPairIter PQ_iter(orbs1,orbs2,spin12);
 
   if (spin12 == AlphaBeta) {
     for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
       const int P = PQ_iter.i();
       const int Q = PQ_iter.j();
       const int PQ = PQ_iter.ij();
-      const int pp = map1[P];
-      const int qq = map2[Q];
+      const int pp = P;
+      const int qq = Q;
       const int pq = pp * nmo + qq;
 
       for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
         const int U = UV_iter.i();
         const int V = UV_iter.j();
         const int UV = UV_iter.ij();
-        const int uu = map1[U];
-        const int vv = map2[V];
+        const int uu = U;
+        const int vv = V;
         const int uv = uu * nmo + vv;
 
         // first term is easy
@@ -1491,8 +927,8 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
       const int P = PQ_iter.i();
       const int Q = PQ_iter.j();
       const int PQ = PQ_iter.ij();
-      const int pp = map1[P];
-      const int qq = map2[Q];
+      const int pp = P;
+      const int qq = Q;
       assert(pp >= qq);
       const int pq = pp * (pp - 1) / 2 + qq;
 
@@ -1500,8 +936,8 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
         const int U = UV_iter.i();
         const int V = UV_iter.j();
         const int UV = UV_iter.ij();
-        const int uu = map1[U];
-        const int vv = map2[V];
+        const int uu = U;
+        const int vv = V;
         assert(uu >= vv);
         const int uv = uu * (uu - 1) / 2 + vv;
 
@@ -1587,7 +1023,7 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
   SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
 
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
-  RefSCMatrix Phi = phi(pairspin);
+  RefSymmSCMatrix Phi = phi_gg(pairspin);
   RefSCMatrix VT = V_transformed_by_C(pairspin);
   RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
   RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
@@ -1621,7 +1057,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   tpdm=0;
 
   RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
-  RefSymmSCMatrix Phi = phi_cumulant(pairspin);
+  RefSymmSCMatrix Phi = phi_gg(pairspin);
   RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
   HylleraasMatrix.accumulate(TXT_t_Phi);
   TXT=0;
@@ -1656,7 +1092,7 @@ namespace {
 
 RefSymmSCMatrix sc::PT2R12::rdm1(SpinCase1 spin)
 {
-  return r12world_->ref()->ordm_orbs_sb(spin);
+  return convert_to_local_kit(rdm1_->scmat(spin));
 }
 
 RefSymmSCMatrix sc::PT2R12::rdm2(SpinCase2 spin)
@@ -1671,20 +1107,71 @@ RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
   return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
 }
 
+RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
+{
+  RefSymmSCMatrix rdm = this->rdm1(spin);
+  Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
+  Ref<OrbitalSpace> gspace = r12eval_->ggspace(spin);
+  // if density is already in required spaces?
+  if (*orbs == *gspace)
+    return rdm;
+
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+  RefSymmSCMatrix result = local_kit->symmmatrix(gspace->dim());
+  result.assign(0.0);
+  // it's possible for gspace to be a superset of orbs
+  std::vector<int> omap = map(*orbs, *gspace);
+  const int nmo = orbs->rank();
+
+  for(int R=0; R<nmo; ++R)
+    for(int C=0; C<=R; ++C) {
+      const int rr = omap[R];
+      const int cc = omap[C];
+      if (rr == -1 || cc == -1) continue;
+      const double rdm_R_C = rdm.get_element(rr, cc);
+      result.set_element(R, C, rdm_R_C);
+    }
+
+  return result;
+}
+
 RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 {
-  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-  RefSymmSCMatrix result = local_kit->symmmatrix(r12eval_->dim_gg(spin));
   RefSymmSCMatrix rdm = this->rdm2(spin);
+  return this->_rdm2_to_gg(spin, rdm);
+}
 
+RefSymmSCMatrix sc::PT2R12::lambda2_gg(SpinCase2 spin)
+{
+  RefSymmSCMatrix lambda = this->lambda2(spin);
+  return this->_rdm2_to_gg(spin, lambda);
+}
+
+RefSymmSCMatrix sc::PT2R12::phi_gg(SpinCase2 spin)
+{
+  RefSymmSCMatrix phi = this->phi_cumulant(spin);
+  return this->_rdm2_to_gg(spin, phi);
+}
+
+RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
+                                        RefSymmSCMatrix rdm)
+{
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
-  Ref<OrbitalSpace> orbs1 = r12eval_->orbs(spin1);
-  Ref<OrbitalSpace> orbs2 = r12eval_->orbs(spin2);
+  Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
+  Ref<OrbitalSpace> orbs2 = rdm2_->orbs(spin2);
   Ref<OrbitalSpace> gspace1 = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gspace2 = r12eval_->ggspace(spin2);
-  MOIndexMap map1 = (*orbs1 << *gspace1);
-  MOIndexMap map2 = (*orbs2 << *gspace2);
+  // if density is already in required spaces?
+  if (*orbs1 == *gspace1 && *orbs2 == *gspace2)
+    return rdm;
+
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+  RefSymmSCMatrix result = local_kit->symmmatrix(r12eval_->dim_gg(spin));
+  result.assign(0.0);
+  // it's possible for gspace to be a superset of orbs
+  std::vector<int> map1 = map(*orbs1, *gspace1);
+  std::vector<int> map2 = map(*orbs2, *gspace2);
   SpinMOPairIter UV_iter(gspace1,gspace2,spin);
   SpinMOPairIter PQ_iter(gspace1,gspace2,spin);
   const int nmo = orbs1->rank();
@@ -1695,7 +1182,21 @@ RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
     const int PQ = PQ_iter.ij();
     const int pp = map1[P];
     const int qq = map2[Q];
-    const int pq = ( (spin == AlphaBeta) ? (pp * nmo + qq) : (pp * (pp-1)/2 + qq));
+    if (pp == -1 || qq == -1) continue;   // skip if these indices are not in the source rdm2
+    int pq;
+    double pfac_pq = 1.0;
+    switch(spin) {
+      case AlphaBeta: pq = pp * nmo + qq; break;
+      case AlphaAlpha:
+      case BetaBeta:
+        if (pp > qq) {
+          pq = (pp * (pp-1)/2 + qq);
+        }
+        else {
+          pq = (qq * (qq-1)/2 + pp);
+          pfac_pq = -1.0;
+        }
+    }
 
     for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
       const int U = UV_iter.i();
@@ -1703,10 +1204,23 @@ RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
       const int UV = UV_iter.ij();
       const int uu = map1[U];
       const int vv = map2[V];
-      const int uv = ( (spin == AlphaBeta) ? (uu * nmo + vv) : (uu * (uu-1)/2 + vv) );
+      if (uu == -1 || vv == -1) continue;   // skip if these indices are not in the source rdm2
+      int uv;
+      double pfac_uv = 1.0;
+      switch(spin) {
+        case AlphaBeta: uv = uu * nmo + vv; break;
+        case AlphaAlpha:
+        case BetaBeta:
+          if (uu > vv) {
+            uv = (uu * (uu-1)/2 + vv);
+          }
+          else {
+            uv = (vv * (vv-1)/2 + uu);
+            pfac_uv = -1.0;
+          }
+      }
 
-      // first term is easy
-      const double rdm_PQ_UV = rdm.get_element(pq, uv);
+      const double rdm_PQ_UV = pfac_pq * pfac_uv * rdm.get_element(pq, uv);
       result.set_element(PQ, UV, rdm_PQ_UV);
     }
   }
@@ -1724,12 +1238,15 @@ RefSymmSCMatrix sc::PT2R12::density()
   throw FeatureNotImplemented("PT2R12::density() not yet implemented");
 }
 
-void sc::PT2R12::print(std::ostream & os)
+void sc::PT2R12::print(std::ostream & os) const
 {
   os << indent << "PT2R12:" << endl;
   os << incindent;
+  os << indent << "nfzc = " << nfzc_ << std::endl;
+  os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
   reference_->print(os);
   r12world()->print(os);
+  Wavefunction::print(os);
   os << decindent;
 }
 
@@ -1758,9 +1275,28 @@ void sc::PT2R12::compute()
   }
 
   const double energy = reference_->energy() + energy_correction_r12;
-  ExEnv::out0() << indent << "PT2R12 energy correction: " << setprecision(20) << energy_correction_r12 << endl;
-  ExEnv::out0() << indent << "reference energy: " << setprecision(20) << reference_->energy() << endl;
-  ExEnv::out0() << indent << "total energy: " << setprecision(20) << energy << endl;
+
+  ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
+                                      reference_->energy()) << endl;
+#if 0
+  {
+  const double recomp_ref_energy = this->energy_recomputed_from_densities();
+  ExEnv::out0() << indent << scprintf("Reference energy (recomp) [au]:        %17.12lf",
+                                     reference_->energy()) << endl;
+  }
+#endif
+  ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
+                                      energy_pt2r12[AlphaBeta]) << endl;
+  ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
+                                      energy_pt2r12[AlphaAlpha]) << endl;
+  ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
+                                      energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
+  ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
+                                      3.0*energy_pt2r12[AlphaAlpha]) << endl;
+  ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
+                                      energy_correction_r12) << endl;
+  ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
+                                      energy) << endl;
 
   set_energy(energy);
 }
@@ -1777,29 +1313,109 @@ int sc::PT2R12::spin_polarized()
 
 double PT2R12::compute_energy(const RefSCMatrix &hmat,
                               SpinCase2 pairspin,
-                              bool print_pair_energies) {
+                              bool print_pair_energies,
+                              std::ostream& os) {
   SpinCase1 spin1 = case1(pairspin);
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
   SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
   double energy = 0.0;
-  if (print_pair_energies) ExEnv::out0() << indent
-    << prepend_spincase(pairspin, " [2]_R12 pair energies:") << endl;
+
+  if (print_pair_energies) {
+    os << indent << prepend_spincase(pairspin, "[2]_R12 pair energies:") << endl;
+    os << indent << scprintf("    i       j        e (ij)   ") << endl;
+    os << indent << scprintf("  -----   -----   ------------") << endl;
+  }
   for(gg_iter.start(); int(gg_iter); gg_iter.next()) {
     int i = gg_iter.i();
     int j = gg_iter.j();
     int ij = gg_iter.ij();
-    if (print_pair_energies)
-      ExEnv::out0() << setw(6) << i << setw(6) << j
-                    << setw(20) << setprecision(12) << hmat.get_element(ij,ij) << endl;
-    if((i>=nfzc_) && (j>=nfzc_)) {
-      energy+=hmat.get_element(ij,ij);
+    const double e_ij = hmat.get_element(ij,ij);
+    if (print_pair_energies) {
+      os << indent << scprintf("  %3d     %3d     %12.9lf",
+                               i+1,j+1,e_ij) << endl;
     }
+    energy+=hmat.get_element(ij,ij);
   }
+  if (print_pair_energies)
+    os << indent << endl;
   return energy;
 }
 
+double
+PT2R12::energy_recomputed_from_densities() {
+  double twoparticle_energy[NSpinCases2];
+  double oneparticle_energy[NSpinCases1];
+  const int npurespincases2 = spin_polarized() ? 3 : 2;
+  const int npurespincases1 = spin_polarized() ? 2 : 1;
+
+  for(int spincase1=0; spincase1<npurespincases1; spincase1++) {
+    const SpinCase1 spin = static_cast<SpinCase1>(spincase1);
+    const RefSymmSCMatrix H = compute_obints<&Integral::hcore>(rdm1_->orbs(spin));
+    RefSymmSCMatrix opdm = rdm1(spin);
+    RefSymmSCMatrix hh = opdm.clone();
+    hh->convert(H);
+    oneparticle_energy[spin] = (hh * opdm)->trace();
+  }
+
+  for(int spincase2=0; spincase2<npurespincases2; spincase2++) {
+    const SpinCase2 pairspin = static_cast<SpinCase2>(spincase2);
+    const SpinCase1 spin1 = case1(pairspin);
+    const SpinCase1 spin2 = case2(pairspin);
+    const Ref<OrbitalSpace>& space1 = rdm2_->orbs(spin1);
+    const Ref<OrbitalSpace>& space2 = rdm2_->orbs(spin2);
+
+    const RefSymmSCMatrix tpdm = rdm2(pairspin);
+    const RefSCMatrix G = g(pairspin, space1, space2);
+
+    twoparticle_energy[pairspin] = (G * tpdm).trace();
+  }
+
+  if(!spin_polarized()) {
+    twoparticle_energy[BetaBeta] = twoparticle_energy[AlphaAlpha];
+    oneparticle_energy[Beta] = oneparticle_energy[Alpha];
+  }
+
+//#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+
+  double energy_hcore = 0.0;
+  for(int i=0; i<NSpinCases1; i++) {
+    const SpinCase1 spin = static_cast<SpinCase1>(i);
+#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+    ExEnv::out0() << ((spin==Alpha) ? "Alpha" : "Beta") << " hcore energy: "
+                  << setprecision(12) << oneparticle_energy[i] << endl;
+#endif
+    energy_hcore += oneparticle_energy[i];
+  }
+#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+  ExEnv::out0() << "hcore energy: " << setprecision(12) << energy_hcore << endl;
+#endif
+  double energy_twoelec = 0.0;
+  for(int i=0; i<NSpinCases2; i++) {
+#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+    string pairspin_str = "";
+    if(i==0) {
+      pairspin_str = "AlphaBeta";
+    }
+    else if(i==1) {
+      pairspin_str = "AlphaAlpha";
+    }
+    else if(i==2) {
+      pairspin_str = "BetaBeta";
+    }
+    ExEnv::out0() << "pairspin " << pairspin_str << " energy: " << setprecision(12) << twoparticle_energy[i] << endl;
+#endif
+    energy_twoelec += twoparticle_energy[i];
+  }
+#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+  ExEnv::out0() << "two-electron energy: " << setprecision(12) << energy_twoelec << endl;
+#endif
+  double energy = energy_hcore + energy_twoelec;
+  energy += this->reference_->nuclear_repulsion_energy();
+
+  return(energy);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

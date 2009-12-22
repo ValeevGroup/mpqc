@@ -585,6 +585,82 @@ namespace sc {
       compare_tbint_tensors<ASymm,ASymm>(T2,T2_ref,no1,no2,nv1,nv2,zero);
   }
 
+  const Ref<OrbitalSpace>&
+  PsiCC::occ_act_sb(SpinCase1 spin) {
+    if (occ_act_sb_[spin].nonnull())
+      return occ_act_sb_[spin];
+    if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
+      return occ_act_sb(Alpha);
+
+    const unsigned int nmo = reference_->nmo();
+    const std::vector<unsigned int>& mopi = reference_->mopi();
+    const std::vector<unsigned int>& occpi = reference_->occpi(spin);
+    const int nirreps = occpi.size();
+    std::vector<bool> occ_mask(nmo, false);
+    for (int irrep = 0, irrep_offset = 0; irrep < nirreps; ++irrep) {
+      for (int i = 0; i < occpi[irrep]; ++i) {
+        occ_mask[i + irrep_offset] = true;
+      }
+      irrep_offset += mopi[irrep];
+    }
+
+    const std::string id(spin == Alpha ? "I" : "i");
+    Ref<OrbitalSpace> orbs_sb = new OrbitalSpace("", "",
+                                                 reference_->coefs(spin),
+                                                 basis(), integral(),
+                                                 reference_->evals(spin), 0, 0,
+                                                 OrbitalSpace::symmetry);
+    Ref<OrbitalSpace> occ_sb =
+        new MaskedOrbitalSpace("", "", orbs_sb, occ_mask);
+    occ_act_sb_[spin]
+        = new OrbitalSpace(id, prepend_spincase(spin,
+                                                "active occupied MOs (Psi3)"),
+                           occ_sb->coefs(), occ_sb->basis(),
+                           occ_sb->integral(), occ_sb->evals(), nfzc_, 0,
+                           OrbitalSpace::symmetry);
+
+    return occ_act_sb_[spin];
+  }
+
+  const Ref<OrbitalSpace>&
+  PsiCC::vir_act_sb(SpinCase1 spin) {
+    if (vir_act_sb_[spin].nonnull())
+      return vir_act_sb_[spin];
+    if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
+      return vir_act_sb(Alpha);
+
+    const unsigned int nmo = reference_->nmo();
+    const std::vector<unsigned int>& mopi = reference_->mopi();
+    const std::vector<unsigned int>& uoccpi = reference_->uoccpi(spin);
+    const int nirreps = uoccpi.size();
+    std::vector<bool> uocc_mask(nmo, false);
+    for (int irrep = 0, irrep_offset = 0; irrep < nirreps; ++irrep) {
+      const unsigned int nocc = mopi[irrep] - uoccpi[irrep];
+      for (int i = 0; i < uoccpi[irrep]; ++i) {
+        uocc_mask[i + irrep_offset + nocc] = true;
+      }
+      irrep_offset += mopi[irrep];
+    }
+
+    const std::string id(spin == Alpha ? "A" : "a");
+    Ref<OrbitalSpace> orbs_sb = new OrbitalSpace("", "",
+                                                 reference_->coefs(spin),
+                                                 basis(), integral(),
+                                                 reference_->evals(spin), 0, 0,
+                                                 OrbitalSpace::symmetry);
+    Ref<OrbitalSpace> uocc_sb = new MaskedOrbitalSpace("", "", orbs_sb,
+                                                       uocc_mask);
+    vir_act_sb_[spin]
+        = new OrbitalSpace(id, prepend_spincase(spin,
+                                                "active virtual MOs (Psi3)"),
+                           uocc_sb->coefs(), uocc_sb->basis(),
+                           uocc_sb->integral(), uocc_sb->evals(), 0, nfzv_,
+                           OrbitalSpace::symmetry);
+
+    return vir_act_sb_[spin];
+  }
+
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCCSD_cd(typeid(PsiCCSD), "PsiCCSD", 1, "public PsiCC", 0,

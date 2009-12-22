@@ -80,12 +80,13 @@ namespace sc {
 
     // validate input
     const size_t norbs = coefs.coldim().n();
-    assert(norbs != 0);
-    const unsigned int max_orbsym = *(std::max_element(orbsyms.begin(), orbsyms.end()));
-    const unsigned int min_orbsym = *(std::min_element(orbsyms.begin(), orbsyms.end()));
-    const unsigned int nirreps = basis->molecule()->point_group()->char_table().order();
-    if (min_orbsym >= nirreps || max_orbsym >= nirreps)
-      throw ProgrammingError("OrderedOrbitalSpace -- invalid orbital symmetry array",__FILE__,__LINE__);
+    if (orbsyms.empty() == false) {
+      const unsigned int max_orbsym = *(std::max_element(orbsyms.begin(), orbsyms.end()));
+      const unsigned int min_orbsym = *(std::min_element(orbsyms.begin(), orbsyms.end()));
+      const unsigned int nirreps = basis->molecule()->point_group()->char_table().order();
+      if (min_orbsym >= nirreps || max_orbsym >= nirreps)
+        throw ProgrammingError("OrderedOrbitalSpace -- invalid orbital symmetry array",__FILE__,__LINE__);
+    }
 
     // construct vector of MolecularOrbital objects
     std::vector<MolecularOrbital> orbs;

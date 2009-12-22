@@ -40,10 +40,13 @@
 #include <util/misc/formio.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <psifiles.h>
+#include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/shellrot.h>
 
 using namespace std;
-
-namespace sc {
+using namespace sc;
 
 static ClassDesc PsiExEnv_cd(
   typeid(PsiExEnv),"PsiExEnv",1,"public DescribedClass",
@@ -249,6 +252,259 @@ PsiExEnv::chkpt() {
   return *chkpt_;
 }
 
+extern "C" char* gprgid() { return "MPQC"; }
+
+//////////////////////////////////////////////////
+
+PsiChkpt::PsiChkpt(const Ref<PsiExEnv>& exenv,
+                   const Ref<Integral>& integral,
+                   int debug) :
+                   exenv_(exenv),
+                   integral_(integral),
+                   debug_(debug) {
 }
 
-extern "C" char* gprgid() { return "MPQC"; }
+PsiChkpt::~PsiChkpt() {
+}
+
+RefDiagSCMatrix
+PsiChkpt::evals(SpinCase1 spin,
+                bool spin_restricted) const {
+
+  // grab orbital info
+  const int num_mo = exenv()->chkpt().rd_nmo();
+  const int nirrep = exenv()->chkpt().rd_nirreps();
+  int* mopi = exenv()->chkpt().rd_orbspi();
+  // get the eigenvalues
+  double* E;
+  if (spin_restricted)
+    E = exenv()->chkpt().rd_evals();
+  else {
+    E = (spin == Alpha) ? exenv()->chkpt().rd_alpha_evals() : exenv()->chkpt().rd_beta_evals();
+    if (E == 0)
+      E = exenv()->chkpt().rd_evals();
+  }
+
+  // convert raw matrices to SCMatrices
+  RefSCDimension modim = new SCDimension(num_mo,nirrep,mopi);
+  for (unsigned int h=0; h<nirrep; ++h)
+    modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
+  RefDiagSCMatrix result = integral()->basis1()->so_matrixkit()->diagmatrix(modim);
+  result.assign(E);
+  if (debug() >= DefaultPrintThresholds::mostN)
+    result.print(prepend_spincase(spin,"Psi3 SCF eigenvalues").c_str());
+
+  psi::Chkpt::free(E);
+  psi::Chkpt::free(mopi);
+
+  return result;
+}
+
+RefSCMatrix
+PsiChkpt::coefs(SpinCase1 spin,
+                bool spin_restricted) const {
+
+  const Ref<GaussianBasisSet>& bs = integral()->basis1();
+  Ref<SCMatrixKit> sokit = bs->so_matrixkit();
+
+  psi::PSIO& psio = exenv()->psio();
+  // grab orbital info
+  const int num_so = exenv()->chkpt().rd_nso();
+  const int num_mo = exenv()->chkpt().rd_nmo();
+  const int nirrep = exenv()->chkpt().rd_nirreps();
+  int* mopi = exenv()->chkpt().rd_orbspi();
+  int* sopi = exenv()->chkpt().rd_sopi();
+  // get MO coefficients in SO basis
+  double** C;
+  if (spin_restricted)
+    C = exenv()->chkpt().rd_scf();
+  else {
+    C = (spin == Alpha) ? exenv()->chkpt().rd_alpha_scf() : exenv()->chkpt().rd_beta_scf();
+    if (C == 0)
+      C = exenv()->chkpt().rd_scf();
+  }
+
+  // get AO->SO matrix (MPQC AO equiv PSI3 BF)
+  double** ao2so = exenv()->chkpt().rd_usotbf();
+
+  // convert raw matrices to SCMatrices
+  RefSCDimension sodim_nb = new SCDimension(num_so,1);
+  sodim_nb->blocks()->set_subdim(0, new SCDimension(num_so));
+  RefSCDimension sodim = new SCDimension(num_so,nirrep,sopi);
+  for (unsigned int h=0; h<nirrep; ++h)
+    sodim->blocks()->set_subdim(h, new SCDimension(sopi[h]));
+  RefSCDimension modim = new SCDimension(num_mo,nirrep,mopi);
+  for (unsigned int h=0; h<nirrep; ++h)
+    modim->blocks()->set_subdim(h, new SCDimension(mopi[h]));
+  RefSCMatrix C_so = sokit->matrix(sodim, modim);
+  C_so.assign(C[0]);
+  if (debug() >= DefaultPrintThresholds::allN2)
+    C_so.print(prepend_spincase(spin,"Psi3 eigenvector in SO basis").c_str());
+  RefSCMatrix aotoso = sokit->matrix(sodim, sodim_nb);
+  aotoso.assign(ao2so[0]);
+  Ref<PetiteList> plist = integral()->petite_list();
+  if (debug() >= DefaultPrintThresholds::allN2) {
+    aotoso.print("Psi3 SO->AO matrix");
+    plist->sotoao().print("MPQC SO->AO matrix");
+    plist->aotoso().print("MPQC AO->SO matrix");
+  }
+  RefSCMatrix result = aotoso.t() * C_so;
+  if (debug() >= DefaultPrintThresholds::allN2)
+    result.print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (Psi-ordered)").c_str());
+
+  // shells in Psi3 do not have to follow same order as atoms, as they do in MPQC
+  // resort AOs from Psi to MPQC order using Psi3->MPQC shell map
+  {
+    std::vector<unsigned int> aomap = ao_map();
+    const int nao = aomap.size();
+    const char* name = "PsiSCF::evecs";
+    RefSCMatrix coefs_mpqc = result.clone();
+    BlockedSCMatrix* coefs_psi_blkd = require_dynamic_cast<BlockedSCMatrix*>(result.pointer(),name);
+    BlockedSCMatrix* coefs_mpqc_blkd = require_dynamic_cast<BlockedSCMatrix*>(coefs_mpqc.pointer(),name);
+    for (unsigned int h=0; h<nirrep; ++h) {
+      RefSCMatrix coefs_mpqc_blk = coefs_mpqc_blkd->block(h);
+      if (coefs_mpqc_blk.null()) continue;
+      RefSCMatrix coefs_psi_blk = coefs_psi_blkd->block(h);
+
+      for (unsigned int aopsi=0; aopsi<nao; ++aopsi) {
+        RefSCVector row = coefs_psi_blk.get_row(aopsi);
+        const unsigned int aompqc = aomap[aopsi];
+        coefs_mpqc_blk.assign_row(row, aompqc);
+      }
+    }
+    result = coefs_mpqc;
+  }
+  if (debug() >= DefaultPrintThresholds::allN2)
+    result.print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered)").c_str());
+
+  // Psi3 also uses the symmetry frame for the molecule, whereas MPQC may use a different frame
+  // rotate the Psi3 eigenvector from the symmetry frame to the MPQC frame
+  {
+    SymmetryOperation rr = bs->molecule()->point_group()->symm_frame();  rr.transpose();
+    const int nshell = bs->nshell();
+    const char* name = "PsiSCF::evecs";
+    BlockedSCMatrix* coefs_blkd = require_dynamic_cast<BlockedSCMatrix*>(result.pointer(),name);
+    double* tmpvec_orig = new double[bs->nbasis()];
+    double* tmpvec_tformed = new double[bs->nbasis()];
+    for(int s=0; s<nshell; ++s) {
+      const GaussianShell& shell = bs->shell(s);
+      const int ncontr = shell.ncontraction();
+      // transform each contraction separately
+      for(int c=0; c<ncontr; ++c) {
+        const int am = shell.am(c);
+        // am=0 functions are invariant to rotations
+        if (am == 0) continue;
+        ShellRotation sr = integral()->shell_rotation(am,rr,shell.is_pure(c));
+        const int nf = sr.dim();
+        const int foff = bs->shell_to_function(s) + shell.contraction_to_function(c);
+        // in each block
+        for (unsigned int h=0; h<nirrep; ++h) {
+          RefSCMatrix coefs_blk = coefs_blkd->block(h);
+          if (coefs_blk.null()) continue;
+          const int ncol = coefs_blk.coldim().n();
+          // transform each vector
+          for(int col=0; col<ncol; ++col) {
+            // initialize original vector
+            for(int f=0; f<nf; ++f)
+              tmpvec_orig[f] = coefs_blk.get_element(f+foff,col);
+            // transform
+            for(int f=0; f<nf; ++f) {
+              double tmp = 0.0;
+              for(int g=0; g<nf; ++g) {
+                tmp += sr(f,g) * tmpvec_orig[g];
+              }
+              tmpvec_tformed[f] = tmp;
+            }
+            // copy to the original location
+            for(int f=0; f<nf; ++f)
+              coefs_blk.set_element(f+foff,col,tmpvec_tformed[f]);
+          }
+        }
+      }
+    }
+    delete[] tmpvec_orig; delete[] tmpvec_tformed;
+  }
+
+  // lastly, change the dimensions to match those used by SCF classes (AO dimension much have subdimension blocked by shells)
+  {
+    RefSCMatrix coefs_redim = result.kit()->matrix(plist->AO_basisdim(), result.coldim());
+    RefSCMatrix coefs = result;
+    const int nrow = coefs.nrow();
+    const int ncol = coefs.ncol();
+    for(int r=0; r<nrow; ++r) {
+      for(int c=0; c<ncol; ++c) {
+        coefs_redim.set_element(r, c, coefs.get_element(r,c) );
+      }
+    }
+    result = coefs_redim;
+  }
+
+  if (debug() >= DefaultPrintThresholds::allN2)
+    result.print(prepend_spincase(spin,"Psi3 eigenvector in AO basis (MPQC-ordered, in MPQC frame)").c_str());
+
+  using psi::Chkpt;
+  Chkpt::free(mopi);
+  Chkpt::free(sopi);
+  Chkpt::free(C);
+  Chkpt::free(ao2so);
+
+  return result;
+}
+
+std::vector< std::pair<unsigned int, unsigned int> > PsiChkpt::shell_map() const {
+  typedef std::vector< std::pair<unsigned int, unsigned int> > ShellMap;
+  const Ref<GaussianBasisSet>& bs = integral()->basis1();
+  // # of MPQC contractions = # of Psi3 shells
+  const unsigned int ncontr = exenv()->chkpt().rd_nshell();
+  // # of MPQC shells
+  const unsigned int nshells = bs->nshell();
+  ShellMap map(ncontr);
+  int* snuc = exenv()->chkpt().rd_snuc();
+  // ordering of shells on an atom is the same in Psi3 and MPQC
+  // but shells si and sj from different atoms (i<j) may be ordered differently (si > sj)
+  int first_shell_on_curr_atom = 0;
+  int atom_curr = snuc[0] - 1;
+  int contr = 0;
+  for(unsigned int s=0; s<nshells; ++s) {
+    int atom = snuc[contr] - 1;
+    if (atom != atom_curr) {
+      atom_curr = atom;
+      first_shell_on_curr_atom = s;
+    }
+    const unsigned int shell_mpqc = bs->shell_on_center(atom,s-first_shell_on_curr_atom);
+    const unsigned int ncontr_in_shell = bs->shell(shell_mpqc).ncontraction();
+    for(unsigned int c=0; c<ncontr_in_shell; ++c, ++contr) {
+      map[contr] = make_pair(shell_mpqc,c);
+    }
+  }
+  psi::Chkpt::free(snuc);
+  return map;
+}
+
+std::vector<unsigned int> PsiChkpt::ao_map() const {
+  typedef std::pair<unsigned int, unsigned int> ShellContrPair;
+  typedef std::vector<ShellContrPair> ShellMap;
+  const Ref<GaussianBasisSet>& bs = integral()->basis1();
+  const unsigned int nao = bs->nbasis();
+  psi::Chkpt& chkpt = exenv()->chkpt();
+  ShellMap smap = shell_map();
+
+  std::vector<unsigned int> map(nao);
+  const unsigned int nshells_psi = chkpt.rd_nshell();
+  int* first_ao_from_shell_psi = chkpt.rd_puream() ? chkpt.rd_sloc_new() : chkpt.rd_sloc();
+  for(unsigned int spsi=0; spsi<nshells_psi; ++spsi) {
+    const ShellContrPair& shellcontr = smap[spsi];
+    unsigned int smpqc = shellcontr.first;
+    unsigned int cmpqc = shellcontr.second;
+    const GaussianShell& shell = bs->shell(smpqc);
+    unsigned int nbf = shell.nfunction(cmpqc);
+    int first_bf_psi = first_ao_from_shell_psi[spsi] - 1;
+    int first_bf_mpqc = bs->shell_to_function(smpqc) + shell.contraction_to_function(cmpqc);
+    for(unsigned int bf=0; bf<nbf; ++bf) {
+      map[first_bf_psi + bf] = first_bf_mpqc + bf;
+    }
+  }
+  psi::Chkpt::free(first_ao_from_shell_psi);
+  return map;
+}
+

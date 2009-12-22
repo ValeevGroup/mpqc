@@ -209,6 +209,14 @@ class Integral : public SavableState {
         momentum.  Pass nonzero to pure to do solid harmonics. */
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 
+    /// retrieves basis for center 1
+    const Ref<GaussianBasisSet>& basis1() const { return bs1_; }
+    /// retrieves basis for center 2
+    const Ref<GaussianBasisSet>& basis2() const { return bs2_; }
+    /// retrieves basis for center 3
+    const Ref<GaussianBasisSet>& basis3() const { return bs3_; }
+    /// retrieves basis for center 4
+    const Ref<GaussianBasisSet>& basis4() const { return bs4_; }
     /// Set the basis set for each center.
     virtual void set_basis(const Ref<GaussianBasisSet> &b1,
                            const Ref<GaussianBasisSet> &b2 = 0,

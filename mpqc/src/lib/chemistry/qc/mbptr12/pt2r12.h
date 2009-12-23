@@ -133,13 +133,6 @@ namespace sc {
        */
       RefSCMatrix f(SpinCase1 spin);
 
-#if 0
-      /*
-       * phi truncated in lambda: terms with three-particle lambda's or higher or terms with
-       * squares (or higher) of two-particle lambda's are neglected.
-       */
-      RefSCMatrix phi(SpinCase2 pairspin);
-#endif
       /*
        * phi truncated in lambda: terms with three-particle lambda's or higher or terms with
        * squares (or higher) of two-particle lambda's are neglected.

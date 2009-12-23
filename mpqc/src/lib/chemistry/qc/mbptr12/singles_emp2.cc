@@ -75,8 +75,8 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
     Ref<OrbitalSpace> occ_act = this->occ_act(spin);
-    Ref<OrbitalSpace> vir_act = r12world()->ref()->uocc_act_sb(spin);
-    RefSCMatrix Fia = fock(occ_act,vir_act,spin);
+    Ref<OrbitalSpace> vir_act = this->vir_act(spin);
+    RefSCMatrix Fia = this->fock(occ_act,vir_act,spin);
 
 #define DEBUG_EMP2_SINGLES 0
 #if DEBUG_EMP2_SINGLES
@@ -95,7 +95,7 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
 
     for(int i=0; i<ni; i++) {
       for(int a=0; a<na; a++) {
-        const double fia = Fia.get_element(i,a);
+        const double fia = Fia(i,a);
         result -= fia*fia/(-ievals(i)+aevals(a));
       }
     }
@@ -120,9 +120,6 @@ R12IntEval::compute_emp2_cabs_singles()
   std::string evalname("CABS singles MP2 energy evaluator");
   ExEnv::out0() << endl << indent << "Entered " << evalname << endl;
   ExEnv::out0() << incindent;
-
-  int me = msg->me();
-  int nproc = msg->n();
 
   double result = 0.0;
   for(int s=0; s<nspincases1(); s++) {

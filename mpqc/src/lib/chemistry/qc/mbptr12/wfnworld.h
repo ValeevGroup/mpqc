@@ -135,7 +135,7 @@ public:
   const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; };
   //convenient shortcut
   const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_runtime4() const { return moints_runtime_->runtime_4c(); };
-  /// Returns the MOIntsRuntime object
+  /// Returns the FockBuildRuntime object that can build Fock matrices
   const Ref<FockBuildRuntime>& fockbuild_runtime() const { return fockbuild_runtime_; };
 
   void print(std::ostream& o) const;

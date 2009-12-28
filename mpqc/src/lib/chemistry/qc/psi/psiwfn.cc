@@ -281,6 +281,23 @@ namespace sc {
       exenv()->get_psi_input()->print();
     exenv()->run_psi();
 
+    // operation of PsiWavefunction assumes that its number of orbitals
+    // exactly matches that of Wavefunction
+    {
+      const int num_mo_psi = exenv()->chkpt().rd_nmo();
+      const int num_mo_mpqc = this->oso_dimension().n();
+      if (num_mo_psi != num_mo_mpqc) {
+        std::ostringstream oss;
+        oss << "number of orbitals in Psi and MPQC do not match" << std::endl;
+        oss
+            << "this is likely due to the different linear dependency thresholds/algorithms"
+            << std::endl;
+        oss << "nmo (Psi)  = " << num_mo_psi << std::endl;
+        oss << "nmo (MPQC) = " << num_mo_mpqc << std::endl;
+        throw FeatureNotImplemented(oss.str().c_str(), __FILE__, __LINE__);
+      }
+    }
+
     // read output
     if (gradient_needed()) {
       Ref<PsiFile11> file11 = exenv()->get_psi_file11();
@@ -456,7 +473,7 @@ namespace sc {
   }
 
   unsigned int PsiSCF::nmo() {
-    int num_mo = exenv()->chkpt().rd_nmo();
+    const int num_mo = exenv()->chkpt().rd_nmo();
     return num_mo;
   }
 

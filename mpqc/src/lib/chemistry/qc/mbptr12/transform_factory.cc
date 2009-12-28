@@ -67,6 +67,9 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral) :
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
+  oreg_ = OrbitalSpaceRegistry::instance();
+  aoreg_ = AOSpaceRegistry::instance();
+
   // Default values
   memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
@@ -83,6 +86,8 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
 {
   integral_ << SavableState::restore_state(si);
   //tbintdescr_ << SavableState::restore_state(si);
+  oreg_ = OrbitalSpaceRegistry::restore_instance(si);
+  aoreg_ = AOSpaceRegistry::restore_instance(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
@@ -110,6 +115,8 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
 {
   SavableState::save_state(integral_.pointer(),so);
   //SavableState::save_state(tbintdescr_.pointer(),so);
+  OrbitalSpaceRegistry::save_instance(oreg_, so);
+  AOSpaceRegistry::save_instance(aoreg_, so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
@@ -121,6 +128,13 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
+}
+
+void
+MOIntsTransformFactory::obsolete() {
+  oreg_->clear();
+  aoreg_->clear();
+  space1_ = space2_ = space3_ = space4_ = 0;
 }
 
 void

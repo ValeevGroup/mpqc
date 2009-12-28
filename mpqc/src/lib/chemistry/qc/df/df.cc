@@ -111,9 +111,10 @@ DensityFitting::compute()
 {
   if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
     return;
+  const Ref<AOSpaceRegistry>& aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(space1_->id(),
                                                         space2_->id(),
-                                                        AOSpaceRegistry::instance()->value(fbasis_)->id());
+                                                        aoidxreg->value(fbasis_)->id());
   std::string tim_label("DensityFitting ");
   tim_label += name;
   Timer tim(tim_label);
@@ -121,7 +122,6 @@ DensityFitting::compute()
   const Ref<Integral>& integral = this->integral();
 
   // compute cC_ first
-  const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
   // TODO need non-Coulomb fitting kernels?
   const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(space1_->id(),
                                                                  aoidxreg->value(fbasis_)->id(),
@@ -171,7 +171,6 @@ DensityFitting::compute()
 
   // compute the kernel second
   {
-    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(aoidxreg->value(fbasis_)->id(),
                                                                      aoidxreg->value(fbasis_)->id(),
                                                                      "ERI", "");
@@ -313,9 +312,10 @@ TransformedDensityFitting::compute()
 {
   if (C_.nonnull()) // nothing to compute then
     return;
+  Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
                                                         this->space2()->id(),
-                                                        AOSpaceRegistry::instance()->value(this->fbasis())->id());
+                                                        aoidxreg->value(this->fbasis())->id());
   std::string tim_label("TransformedDensityFitting ");
   tim_label += name;
   Timer tim(tim_label);
@@ -431,9 +431,10 @@ PermutedDensityFitting::compute()
   if (C_.nonnull()) // nothing to compute then
     return;
 
+  Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
                                                         this->space2()->id(),
-                                                        AOSpaceRegistry::instance()->value(this->fbasis())->id());
+                                                        aoidxreg->value(this->fbasis())->id());
   std::string tim_label("PermutedDensityFitting ");
   tim_label += name;
   Timer tim(tim_label);

@@ -77,6 +77,15 @@ MOIntsRuntime::save_data_state(StateOut& so) {
   SavableState::save_state(runtime_4c_.pointer(),so);
 }
 
+void
+MOIntsRuntime::obsolete() {
+  runtime_2c_->obsolete();
+  runtime_3c_->obsolete();
+  runtime_4c_->obsolete();
+  if (runtime_df_.nonnull())
+    runtime_df_->obsolete();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

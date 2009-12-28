@@ -60,7 +60,7 @@ CXXSRCS = mbptr12.cc \
   compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
   compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \
   moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
-  orbitalspace_runtime.cc wfnworld.cc transform_ijR.cc \
+  wfnworld.cc transform_ijR.cc \
   transform_ixjy_df.cc  tbint_runtime.cc \
   r12int_eval.cc \
   coulomb.cc exchange.cc fock.cc \
@@ -92,7 +92,7 @@ print_scmat_norms.h             utils.impl.h \
 r12_amps.h                      r12wfnworld.h \
 distarray4.h				moints_runtime.h \
 fockbuilder.h                   fockbuild_runtime.h \
-orbitalspace_runtime.h		transform_ijR.h \
+transform_ijR.h \
 tbint_runtime.h                 fixedcoefficient.h \
 pt2r12.h			rdm.h
 

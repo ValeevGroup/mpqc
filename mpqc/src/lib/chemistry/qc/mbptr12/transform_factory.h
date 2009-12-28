@@ -96,6 +96,8 @@ private:
 
   Ref<TwoBodyIntDescr> tbintdescr_;
 
+  Ref<OrbitalSpaceRegistry> oreg_;
+  Ref<AOSpaceRegistry> aoreg_;
   Ref<OrbitalSpace> space1_;
   Ref<OrbitalSpace> space2_;
   Ref<OrbitalSpace> space3_;
@@ -133,6 +135,9 @@ public:
 
   void save_data_state(StateOut&);
 
+  /// obsolete this object
+  void obsolete();
+
   /// Sets the orbital spaces
   void set_spaces(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2 = 0,
                   const Ref<OrbitalSpace>& space3 = 0, const Ref<OrbitalSpace>& space4 = 0);
@@ -159,6 +164,10 @@ public:
   Ref<MessageGrp> msg() const { return msg_; }
   /// Returns the Integral factory
   const Ref<Integral>& integral() const { return integral_; }
+  /// returns the OrbitalSpaceRegistry
+  const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
+  /// returns the AOSpaceRegistry
+  const Ref<AOSpaceRegistry>& ao_registry() const { return aoreg_; }
   /// Returns the default TwoBodyIntDescr used to produce integrals
   Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.

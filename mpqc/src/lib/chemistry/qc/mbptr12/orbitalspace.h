@@ -661,7 +661,7 @@ namespace sc {
 
   /// registry of globally-known OrbitalSpace objects
   typedef Registry<std::string, Ref<OrbitalSpace> ,
-                   detail::SingletonCreationPolicy,
+                   detail::NonsingletonCreationPolicy,
                    std::equal_to<std::string>,
                    RefObjectEqual<OrbitalSpace> > OrbitalSpaceRegistry;
   /// helper function to form a key/space pair from a OrbitalSpace
@@ -670,7 +670,7 @@ namespace sc {
 
   /// registry of globally-known OrbitalSpace objects that describe AO basis spaces
   typedef Registry<Ref<GaussianBasisSet>, Ref<OrbitalSpace>,
-                   detail::SingletonCreationPolicy,
+                   detail::NonsingletonCreationPolicy,
                    std::equal_to< Ref<GaussianBasisSet> >,
                    RefObjectEqual<OrbitalSpace> > AOSpaceRegistry;
 

@@ -41,6 +41,7 @@
 #include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/scf/hsoshfcontrib.h>
 #include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
 
 namespace sc {
 
@@ -136,7 +137,8 @@ namespace sc {
                             SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
                             const Ref<GaussianBasisSet>& ketbs,
-                            const Ref<GaussianBasisSet>& obs);
+                            const Ref<GaussianBasisSet>& obs,
+                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry);
 
   } // end of namespace detail
 
@@ -393,7 +395,8 @@ namespace sc {
                            const Ref<GaussianBasisSet>& densitybasis,
                            const RefSymmSCMatrix& density,
                            const RefSymmSCMatrix& openshelldensity,
-                           const Ref<DensityFittingInfo>& df_info) :
+                           const Ref<DensityFittingInfo>& df_info,
+                           const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry) :
                           compute_J_(compute_J),
                           compute_K_(compute_K),
                           compute_F_(compute_F),
@@ -432,7 +435,8 @@ namespace sc {
                 spincase = AnySpinCase1;
               }
               Pspin.scale(0.5);
-              result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis);
+              result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
+                                                  psqrtregistry);
             }
 
             if (c == 2) { // fock

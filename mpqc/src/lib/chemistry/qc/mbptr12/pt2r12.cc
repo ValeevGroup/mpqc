@@ -250,6 +250,17 @@ void PT2R12::save_data_state(StateOut &s) {
   s.put(debug_);
 }
 
+void
+PT2R12::obsolete() {
+  reference_->obsolete();
+  r12eval_->obsolete();
+  rdm1_->obsolete();
+  rdm2_->obsolete();
+  r12world_->world()->obsolete();
+  r12world_->obsolete();
+  Wavefunction::obsolete();
+}
+
 RefSymmSCMatrix PT2R12::hcore_mo() {
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
   Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
@@ -619,7 +630,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
   G.assign(0.0);
 
   // find equivalent spaces in the registry
-  Ref<OrbitalSpaceRegistry> oreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
   if (!oreg->value_exists(space1) || !oreg->value_exists(space2))
     throw ProgrammingError("PT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
   const std::string key1 = oreg->key(space1);
@@ -645,7 +656,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
 
 RefSCMatrix PT2R12::f(SpinCase1 spin) {
   Ref<OrbitalSpace> space = rdm1_->orbs(spin);
-  Ref<OrbitalSpaceRegistry> oreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
   if (!oreg->value_exists(space)) {
     oreg->add(make_keyspace_pair(space));
   }

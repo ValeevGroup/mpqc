@@ -129,8 +129,8 @@ R12WavefunctionWorld::initialize()
 
   {
     // also create AO spaces
-    Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
-    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+    Ref<OrbitalSpaceRegistry> idxreg = world()->tfactory()->orbital_registry();
+    Ref<AOSpaceRegistry> aoidxreg = world()->tfactory()->ao_registry();
     Ref<Integral> localints = ref()->integral()->clone();
     if (!obs_eq_ribs()) { // RI-BS
       Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu'", "RIBS(AO)", basis_ri(), localints);
@@ -138,6 +138,16 @@ R12WavefunctionWorld::initialize()
       aoidxreg->add(mu->basis(),mu);
     }
   }
+}
+
+void
+R12WavefunctionWorld::obsolete() {
+  ref_->obsolete(); // this obsolete WavefunctionWorld
+  abs_space_ = 0;
+  ribs_space_ = 0;
+  cabs_space_[Alpha] = 0;
+  cabs_space_[Beta] = 0;
+  this->initialize();
 }
 
 const Ref<OrbitalSpace>&

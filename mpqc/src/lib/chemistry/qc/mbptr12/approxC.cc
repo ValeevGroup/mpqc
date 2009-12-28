@@ -118,7 +118,7 @@ R12IntEval::compute_BC_()
                                                : this->orbs(spin);
         // get AO space for RIBS
         const Ref<OrbitalSpace>& aoribs =
-          AOSpaceRegistry::instance()->value(ribs->basis());
+          this->ao_registry()->value(ribs->basis());
 
         Ref<OrbitalSpace> kribs = (!abs_eq_obs) ? K_P_P(spin) : K_p_p(spin);
         if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false) { // correct exchange
@@ -151,7 +151,7 @@ R12IntEval::compute_BC_()
                                     ribs->basis());
 #endif
 
-          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Kr[s]));
+          this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(Kr[s]));
         }
         else { // use pure exchange
           Kr[spin] = kribs;
@@ -160,7 +160,7 @@ R12IntEval::compute_BC_()
         Ref<OrbitalSpace> hJ_x_P = (!abs_eq_obs) ? hj_x_P(spin) : hj_x_p(spin);
         if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false) { // use nonrelativistic hamiltonian in h+J
           const Ref<OrbitalSpace>& x = xspace(spin);
-          const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(x->basis());
+          const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
           // compute dH = H(rel) - H(nonrel) in AO basis
           RefSCMatrix Hr = this->fock(aox, aoribs, spin, 0.0, 0.0, 1.0);
           const std::string nonrel_hkey =
@@ -190,11 +190,11 @@ R12IntEval::compute_BC_()
           hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
 #endif
 
-          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hJnr[s]));
+          this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(hJnr[s]));
         }
         else if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_fHf) { // use pauli hamitonian in h+J
           const Ref<OrbitalSpace>& x = xspace(spin);
-          const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(x->basis());
+          const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
           // compute dH = H(rel) - H(pauli) in AO basis
           RefSCMatrix Hr = this->fock(aox, aoribs, spin, 0.0, 0.0, 1.0);
           const int override_pauli = 1;
@@ -221,7 +221,7 @@ R12IntEval::compute_BC_()
           hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
 #endif
 
-          OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hJnr[s]));
+          this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(hJnr[s]));
         }
         else { // use pure h+J
           hJnr[spin] = hJ_x_P;

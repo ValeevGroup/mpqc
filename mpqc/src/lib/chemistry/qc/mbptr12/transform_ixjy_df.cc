@@ -73,8 +73,9 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
   assert(dfbasis12_->equiv(dfbasis34_));
 
   // make sure Registries know about the fitting bases
-  assert(AOSpaceRegistry::instance()->key_exists(dfbasis12_) &&
-         AOSpaceRegistry::instance()->key_exists(dfbasis34_));
+  Ref<AOSpaceRegistry> aoreg = this->factory()->ao_registry();
+  assert(aoreg->key_exists(dfbasis12_) &&
+         aoreg->key_exists(dfbasis34_));
 
   init_vars();
 }
@@ -288,9 +289,10 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   TwoBodyOperSet::type oset = intdescr()->operset();
   const bool coulomb_only = (oset == TwoBodyOperSet::ERI);
 
+  const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
+
   Ref<DistArray4> C12, cC12;
   {
-    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
     const std::string C12_key = ParsedDensityFittingKey::key(space1()->id(),
                                                              space2()->id(),
@@ -301,7 +303,6 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   Ref<DistArray4> C34, cC34;
   if (!equiv_12_34) {
-    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
     const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
     const std::string C34_key = ParsedDensityFittingKey::key(space3()->id(),
                                                              space4()->id(),
@@ -321,7 +322,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   // compute the 3-center operator matrices
   {
-    const Ref<AOSpaceRegistry>& aoidxreg = AOSpaceRegistry::instance();
+    const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
     const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
     const std::string cC12_key = ParsedTwoBodyThreeCenterIntKey::key(space1()->id(),
                                                                      dfspace12->id(),

@@ -161,8 +161,8 @@ WavefunctionWorld::initialize()
 
   {
     // also create AO spaces
-    Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
-    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+    Ref<OrbitalSpaceRegistry> idxreg = tfactory_->orbital_registry();
+    Ref<AOSpaceRegistry> aoidxreg = tfactory_->ao_registry();
     Ref<Integral> localints = integral()->clone();
     // OBS
     Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu", "OBS(AO)", wfn()->basis(), localints);
@@ -179,7 +179,9 @@ WavefunctionWorld::initialize()
     RefSymmSCMatrix Pa = bs->so_matrixkit()->symmmatrix(plist->AO_basisdim()); Pa.assign(0.0);
     RefSymmSCMatrix Pb = Pa;
     // use Integral used by reference wfn!
-    fockbuild_runtime_ = new FockBuildRuntime(wfn()->basis(), Pa, Pb, integral(),
+    fockbuild_runtime_ = new FockBuildRuntime(this->tfactory()->orbital_registry(),
+                                              this->tfactory()->ao_registry(),
+                                              wfn()->basis(), Pa, Pb, integral(),
                                               wfn()->electric_field(),
                                               msg(),
                                               thr());
@@ -189,10 +191,17 @@ WavefunctionWorld::initialize()
       Ref<Integral> integral = moints_runtime_->factory()->integral();
       // TODO how to generate unique labels
       Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", bs_df_, integral);
-      OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
-      AOSpaceRegistry::instance()->add(bs_df_, fbs_space);
+      idxreg->add(make_keyspace_pair(fbs_space));
+      aoidxreg->add(bs_df_, fbs_space);
     }
   }
+}
+
+void
+WavefunctionWorld::obsolete() {
+  tfactory_->obsolete();
+  moints_runtime_->obsolete();
+  fockbuild_runtime_->obsolete();
 }
 
 const std::string& WavefunctionWorld::ints_file() const

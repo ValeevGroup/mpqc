@@ -121,14 +121,16 @@ int main(int argc, char **argv) {
     RefSCMatrix C = twobody_matrix(integral->electron_repulsion());
     C.print("Coulomb operator");
 
-    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
-    Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", fbs, integral);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(bs_space));
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(fbs_space));
-    AOSpaceRegistry::instance()->add(bs, bs_space);
-    AOSpaceRegistry::instance()->add(fbs, fbs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransformFactory::StoreMethod::posix);
+    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
+    Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", fbs, integral);
+    Ref<OrbitalSpaceRegistry> oreg = factory->orbital_registry();
+    Ref<AOSpaceRegistry> aoreg = factory->ao_registry();
+    oreg->add(make_keyspace_pair(bs_space));
+    oreg->add(make_keyspace_pair(fbs_space));
+    aoreg->add(bs, bs_space);
+    aoreg->add(fbs, fbs_space);
     Ref<DensityFitting> df = new DensityFitting(factory, "1/r_{12}", bs_space, bs_space, fbs);
     df->compute();
 
@@ -193,11 +195,11 @@ int main(int argc, char **argv) {
     RefSCMatrix C = twobody_matrix(integral->electron_repulsion());
     C.print("Coulomb operator");
 
-    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(bs_space));
-    AOSpaceRegistry::instance()->add(bs, bs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransformFactory::StoreMethod::posix);
+    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
+    factory->orbital_registry()->add(make_keyspace_pair(bs_space));
+    factory->ao_registry())->add(bs, bs_space);
     Ref<TwoBodyMOIntsTransform> ixjy_tform =
       new TwoBodyMOIntsTransform_ixjy_df("test", factory,
                                          new TwoBodyIntDescrERI(integral),
@@ -295,11 +297,11 @@ int main(int argc, char **argv) {
 
     Ref<Integral> integral = Integral::get_default_integral();
 
-    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(bs_space));
-    AOSpaceRegistry::instance()->add(bs, bs_space);
     Ref<MOIntsTransformFactory> factory = new MOIntsTransformFactory(integral);
     factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
+    Ref<OrbitalSpace> bs_space = new AtomicOrbitalSpace("mu", "AO(OBS)", bs, integral);
+    factory->orbital_registry()->add(make_keyspace_pair(bs_space));
+    factory->ao_registry()->add(bs, bs_space);
     Ref<DensityFittingRuntime> dfruntime = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory));
     const DensityFittingInfo* df_info = new DensityFittingInfo(fbs, fbs, dfruntime);
     Ref<TwoBodyMOIntsTransform> ixjy_tform =

@@ -257,6 +257,8 @@ MBPT2_R12::obsolete()
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   cabs_singles_energy_ = 0.0;
+  r12world_->world()->obsolete();
+  r12world_->obsolete();
   MBPT2::obsolete();
 }
 

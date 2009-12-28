@@ -104,12 +104,12 @@ R12IntEval::compute_BApp_()
       Ref<OrbitalSpace> ribs = (maxnabs < 2) ? this->orbs(spin) : r12world()->ribs_space();
       // get AO space for RIBS
       const Ref<OrbitalSpace>& aoribs =
-        AOSpaceRegistry::instance()->value(ribs->basis());
+        this->ao_registry()->value(ribs->basis());
 
       Ref<OrbitalSpace> hJ_x_P = (maxnabs < 2) ? hj_x_p(spin) : hj_x_P(spin);
       if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false && !H0_dk_keep) { // use nonrelativistic hamiltonian in h+J
         const Ref<OrbitalSpace>& x = xspace(spin);
-        const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(x->basis());
+        const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
         // compute dH = H(rel) - H(nonrel) in AO basis
         RefSCMatrix Hr = this->fock(aox, aoribs, spin, 0.0, 0.0, 1.0);
         const std::string nonrel_hkey =
@@ -139,7 +139,7 @@ R12IntEval::compute_BApp_()
         hJnr[spin] = new OrbitalSpace(id, name, hJ_x_P, hJ_x_P->coefs(), hJ_x_P->basis());
 #endif
 
-        OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hJnr[s]));
+        this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(hJnr[s]));
       }
       else { // use pure h+J
         hJnr[spin] = hJ_x_P;

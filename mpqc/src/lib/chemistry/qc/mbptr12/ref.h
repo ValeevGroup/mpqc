@@ -51,6 +51,7 @@ namespace sc {
     static const double zero_occupation;
 
     /**
+     * @param oreg an OrbitalSpaceRegistry object that will know of the computed spaces
      * @param spin spin-case that will be used to compute labels of OrbitalSpace objects
      * @param bs basis set
      * @param integral Integral factory used to support coefficients
@@ -63,7 +64,8 @@ namespace sc {
      *            The default is 0, which means to use empty orbitals from coefs.
      * @param fbrun the FockBuildRuntime object used to compute Fock matrices. if vbs != 0, fbrun must be specified.
      */
-      PopulatedOrbitalSpace(SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
+      PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& oreg,
+                            SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                             const Ref<Integral>& integral,
                             const RefSCMatrix& coefs,
                             const std::vector<double>& occs,
@@ -89,6 +91,7 @@ namespace sc {
       const Ref<OrbitalSpace>& uocc_act() const { return uocc_act_; }
 
     protected:
+      Ref<OrbitalSpaceRegistry> oreg_;
       Ref<OrbitalSpace> orbs_sb_;
       Ref<OrbitalSpace> orbs_;
       Ref<OrbitalSpace> occ_sb_;
@@ -122,6 +125,10 @@ namespace sc {
     public:
     ~R12RefWavefunction();
     void save_data_state(StateOut&);
+
+    /// obsoletes this object
+    /// @sa R12WavefunctionWorld::obsolete()
+    virtual void obsolete();
 
     const Ref<WavefunctionWorld>& world() const { return world_; }
     const Ref<GaussianBasisSet>& basis() const { return basis_; }
@@ -169,7 +176,7 @@ namespace sc {
     private:
     /// initialized? when object is constructed = false. after init() is called = true
     bool initialized_;
-    Ref<WavefunctionWorld> world_;
+    Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
     bool omit_uocc_;
@@ -199,14 +206,17 @@ namespace sc {
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from obwfn!
       SD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
-                               const Ref<OneBodyWavefunction>& obwfn,
-                               bool spin_restricted = true,
-                               unsigned int nfzc = 0,
-                               unsigned int nfzv = 0,
-                               Ref<OrbitalSpace> vir_space = 0);
+                            const Ref<OneBodyWavefunction>& obwfn,
+                            bool spin_restricted = true,
+                            unsigned int nfzc = 0,
+                            unsigned int nfzv = 0,
+                            Ref<OrbitalSpace> vir_space = 0);
       SD_R12RefWavefunction(StateIn&);
       ~SD_R12RefWavefunction();
       void save_data_state(StateOut&);
+
+      void obsolete();
+
       const Ref<OneBodyWavefunction>& obwfn() const { return obwfn_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
 
@@ -257,6 +267,9 @@ namespace sc {
       ~ORDM_R12RefWavefunction();
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
+
+      void obsolete() { throw FeatureNotImplemented("cannot obsolete ORDM_R12RefWavefunction",
+                                                    __FILE__, __LINE__); }
 
       double energy() { return 0.0; }
       bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }

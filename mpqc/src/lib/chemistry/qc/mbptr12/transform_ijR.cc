@@ -219,9 +219,10 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   Timer tim(tim_label);
 
   // determine whether space1, space2, and space3 are AO spaces
-  const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( this->space1() );
-  const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( this->space2() );
-  const bool space3_is_ao = AOSpaceRegistry::instance()->value_exists( this->space3() );
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
+  const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
+  const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
+  const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
   assert(space3_is_ao);
 
   const int nproc = mem_->n();
@@ -423,13 +424,14 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransfo
                                           iqR_tform->space1(), space2, iqR_tform->space3()),
                                           iqR_tform_(iqR_tform)
 {
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   // determine whether space1, space2, and space3 are AO spaces
-  const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( this->space1() );
-  const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( this->space2() );
-  const bool space3_is_ao = AOSpaceRegistry::instance()->value_exists( this->space3() );
+  const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
+  const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
+  const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
   assert(!space2_is_ao);
   assert(space3_is_ao);
-  assert( AOSpaceRegistry::instance()->value_exists(iqR_tform->space2()) );
+  assert( aoidxreg->value_exists(iqR_tform->space2()) );
 }
 
 TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(StateIn& si) :

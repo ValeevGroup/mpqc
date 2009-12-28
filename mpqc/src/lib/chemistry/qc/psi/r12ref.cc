@@ -175,17 +175,19 @@ PsiSCF_R12RefWavefunction::init_spaces_restricted()
   std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                  fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
   if (scf()->spin_polarized() == false) { // closed-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral, evecs_ao,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
                                                    vir_space(), fbrun);
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral, evecs_ao,
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral, evecs_ao,
                                                   boccs, actmask, evals, moorder,
                                                   vir_space(), fbrun);
   }
@@ -233,6 +235,8 @@ PsiSCF_R12RefWavefunction::init_spaces_unrestricted()
     throw FeatureNotImplemented("semicanonical orbitals not yet implemented for PsiHSOSHF",__FILE__,__LINE__);
   }
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   { // alpha spin
@@ -243,7 +247,7 @@ PsiSCF_R12RefWavefunction::init_spaces_unrestricted()
     // add frozen core and frozen virtuals masks
     std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral,
                                                    alpha_evecs,
                                                    aocc, actmask, alpha_evals, moorder,
                                                    vir_space(), fbrun);
@@ -256,7 +260,7 @@ PsiSCF_R12RefWavefunction::init_spaces_unrestricted()
     // add frozen core and frozen virtuals masks
     std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral,
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral,
                                                   beta_evecs,
                                                   bocc, actmask, beta_evals, moorder,
                                                   vir_space(), fbrun);
@@ -375,8 +379,10 @@ PsiCI_R12RefWavefunction::init_spaces()
   std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                  fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
   // alpha and beta orbitals are the same
-  spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao,
+  spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                  occs, actmask, evals, moorder);
   spinspaces_[Beta] = spinspaces_[Alpha];
 }

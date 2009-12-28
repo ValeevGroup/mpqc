@@ -118,6 +118,11 @@ DensityFittingRuntime::save_data_state(StateOut& so)
   ResultRegistry::save_instance(results_,so);
 }
 
+void
+DensityFittingRuntime::obsolete() {
+  results_->clear();
+}
+
 bool
 DensityFittingRuntime::exists(const std::string& key) const
 {
@@ -158,7 +163,7 @@ DensityFittingRuntime::create_result(const std::string& key)
   const std::string& fspace_str = pkey.fspace();
 
   // get the spaces and construct the descriptor
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> idxreg = this->moints_runtime()->factory()->orbital_registry();
   Ref<OrbitalSpace> space1 = idxreg->value(space1_str);
   Ref<OrbitalSpace> space2 = idxreg->value(space2_str);
   Ref<OrbitalSpace> fspace = idxreg->value(fspace_str);
@@ -186,13 +191,15 @@ DensityFittingRuntime::create_result(const std::string& key)
     }
   }
 
+  Ref<AOSpaceRegistry> aoreg = this->moints_runtime()->factory()->ao_registry();
+
   // 2) look for AO-basis fittings
 #if USE_TRANSFORMED_DF
   {
-    Ref<OrbitalSpace> space1_ao = AOSpaceRegistry::instance()->value( space1->basis() );
-    Ref<OrbitalSpace> space2_ao = AOSpaceRegistry::instance()->value( space2->basis() );
-    const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( space1 );
-    const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( space2 );
+    Ref<OrbitalSpace> space1_ao = aoreg->value( space1->basis() );
+    Ref<OrbitalSpace> space2_ao = aoreg->value( space2->basis() );
+    const bool space1_is_ao = aoreg->value_exists( space1 );
+    const bool space2_is_ao = aoreg->value_exists( space2 );
 
     // look for (space1 AO(space2)| -> compute (space1 space| and return
     if (!space2_is_ao) {
@@ -259,10 +266,10 @@ DensityFittingRuntime::create_result(const std::string& key)
   // 3) construct from scratch
   {
 #if ALWAYS_MAKE_AO2_DF && USE_TRANSFORMED_DF
-    Ref<OrbitalSpace> space1_ao = AOSpaceRegistry::instance()->value( space1->basis() );
-    Ref<OrbitalSpace> space2_ao = AOSpaceRegistry::instance()->value( space2->basis() );
-    const bool space1_is_ao = AOSpaceRegistry::instance()->value_exists( space1 );
-    const bool space2_is_ao = AOSpaceRegistry::instance()->value_exists( space2 );
+    Ref<OrbitalSpace> space1_ao = aoreg->value( space1->basis() );
+    Ref<OrbitalSpace> space2_ao = aoreg->value( space2->basis() );
+    const bool space1_is_ao = aoreg->value_exists( space1 );
+    const bool space2_is_ao = aoreg->value_exists( space2 );
     // since 1 AO space case should have been handled above, either both spaces are AO (then just skip this) or neither
     // in the latter case leave alone the space with the lowest rank
     if (!space1_is_ao && !space2_is_ao) {

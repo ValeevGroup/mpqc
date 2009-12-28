@@ -47,7 +47,9 @@ namespace sc {
   /// Build Fock matrices using some combination of FockBuilder objects
   class FockBuildRuntime : virtual public SavableState {
     public:
-      FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
+      FockBuildRuntime(const Ref<OrbitalSpaceRegistry>& oreg,
+                       const Ref<AOSpaceRegistry>& aoreg,
+                       const Ref<GaussianBasisSet>& refbasis,
                        const RefSymmSCMatrix& aodensity_alpha,
                        const RefSymmSCMatrix& aodensity_beta,
                        const Ref<Integral>& integral,
@@ -56,6 +58,9 @@ namespace sc {
                        Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp());
       FockBuildRuntime(StateIn& si);
       void save_data_state(StateOut& so);
+
+      /// obsoletes this object
+      void obsolete();
 
       /** Returns true if the given matrix is available
         */
@@ -88,6 +93,8 @@ namespace sc {
       Ref<DensityFittingInfo> dfinfo_;
       bool use_density_fitting() { return dfinfo_.nonnull(); }
 
+      Ref<OrbitalSpaceRegistry> oreg_;
+      Ref<AOSpaceRegistry> aoreg_;
       Ref<Integral> integral_;
       Ref<MessageGrp> msg_;
       Ref<ThreadGrp> thr_;
@@ -104,6 +111,29 @@ namespace sc {
 
       /// throws if key is not parsable by ParsedOneBodyIntKey
       void validate_key(const std::string& key) const;
+
+    public:
+      /// this functor compares RefSymmSCMatrix objects. Such objects are same if every element in one
+      /// differs by less than DBL_EPSILON from the corresponding element in the other.
+      struct RefSymmSCMatrixEqual {
+        bool operator()(const RefSymmSCMatrix& mat1, const RefSymmSCMatrix& mat2) {
+          if (mat1.pointer() == mat2.pointer()) return true;
+          const int n = mat1.n();
+          if (n != mat2.n()) return false;
+          for(int r=0; r<n; ++r)
+            for(int c=0; c<=r; ++c)
+              if ( fabs(mat1(r,c) - mat2(r,c)) > DBL_EPSILON)
+                return false;
+          return true;
+        }
+      };
+      /// the way I compute exchange matrices is by computing square root of the density (P)
+      /// this Registry keeps track of P->sqrt(P) mapping
+      typedef Registry<RefSymmSCMatrix, Ref<OrbitalSpace>,
+                       detail::NonsingletonCreationPolicy,
+                       RefSymmSCMatrixEqual, RefObjectEqual<OrbitalSpace> > PSqrtRegistry;
+    private:
+      Ref<PSqrtRegistry> psqrtregistry_;
 
   };
 

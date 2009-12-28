@@ -108,6 +108,24 @@ namespace sc {
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  typename Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::iterator
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::find_by_key(const Key& key)
+  {
+    // if KeyEqual is std::equal_to<Key> then can use the fast find function
+    if (SameType<KeyEqual,std::equal_to<Key> >::result) {
+      iterator result = map_.find(key);
+      return result;
+    }
+    else {
+      KeyEqual keyeq;
+      for(iterator v=map_.begin(); v!= map_.end(); ++v)
+        if (keyeq(v->first,key))
+          return v;
+      return map_.end();
+    }
+  }
+
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   typename Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::const_iterator
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::find_by_value(const Value& value) const
   {
@@ -208,6 +226,17 @@ namespace sc {
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::add(const std::pair<Key,Value>& keyval_pair)
   {
     this->add(keyval_pair.first,keyval_pair.second);
+  }
+
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  void
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::remove(const Key& key)
+  {
+    lock_->lock();
+    iterator v = find_by_key(key);
+    if (v != map_.end())
+      map_.erase(v);
+    lock_->unlock();
   }
 
 } // end of namespace sc

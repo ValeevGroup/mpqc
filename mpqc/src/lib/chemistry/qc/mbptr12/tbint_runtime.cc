@@ -544,7 +544,8 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
   const std::string& params_str = pkey.params();
 
   // get the spaces and construct the descriptor
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> idxreg = this->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
   Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
   Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
@@ -561,8 +562,6 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
   Ref<TwoBodyIntEval> tform;
   const TwoBodyIntLayout layout(pkey.layout());
   if(layout == TwoBodyIntLayout::b1b2_k1k2) {
-    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
-
     // is this a partial transform?
     if (aoidxreg->value_exists(ket1) &&
         aoidxreg->value_exists(ket2))
@@ -633,7 +632,8 @@ TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
   const std::string& params_str = pkey.params();
 
   // get the spaces and construct the descriptor
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> idxreg = this->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
   Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
   Ref<OrbitalSpace> ket1 = idxreg->value(ket1_str);
@@ -642,8 +642,8 @@ TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
   // create the transform
   Ref<TwoBodyIntEval> result;
 #if USE_IQR_TFORM
-  const bool ket1_is_ao = AOSpaceRegistry::instance()->value_exists(ket1);
-  Ref<OrbitalSpace> ket1_ao = AOSpaceRegistry::instance()->value(ket1->basis());
+  const bool ket1_is_ao = aoidxreg->value_exists(ket1);
+  Ref<OrbitalSpace> ket1_ao = aoidxreg->value(ket1->basis());
 
   const std::string key_ao = ParsedTwoBodyIntKey::key(bra1->id(), bra2->id(),
                                                       ket1_ao->id(), oper_str, params_str);
@@ -660,7 +660,7 @@ TwoBodyMOIntsRuntime<3>::create_eval(const std::string& key)
 #if USE_IQR_TFORM && ALWAYS_CREATE_IQR_TFORM
     if (!ket1_is_ao) {
       // create partial transform, then try again
-      Ref<OrbitalSpace> ket1_ao = AOSpaceRegistry::instance()->value(ket1->basis());
+      Ref<OrbitalSpace> ket1_ao = aoidxreg->value(ket1->basis());
       const std::string key_ao = ParsedTwoBodyIntKey::key(bra1->id(), bra2->id(),
                                                           ket1_ao->id(), oper_str, params_str);
       factory()->set_spaces(bra1,ket1_ao,bra2,0);    // factory assumes chemists' convention
@@ -695,7 +695,7 @@ TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
   assert(oper_str == "ERI");
 
   // get the spaces and construct the descriptor
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> idxreg = this->factory()->orbital_registry();
   Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
   Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
   Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);

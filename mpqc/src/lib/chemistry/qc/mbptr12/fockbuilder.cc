@@ -910,7 +910,7 @@ namespace sc {
       //
       /////////////////////////////////////////////////////////////////////////////////
 
-      const Ref<AOSpaceRegistry> ao_registry = AOSpaceRegistry::instance();
+      const Ref<AOSpaceRegistry> ao_registry = df_info->runtime()->moints_runtime()->factory()->ao_registry();
       const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
       const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
@@ -1052,7 +1052,8 @@ namespace sc {
                             SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
                             const Ref<GaussianBasisSet>& ketbs,
-                            const Ref<GaussianBasisSet>& obs) {
+                            const Ref<GaussianBasisSet>& obs,
+                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry) {
 
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
@@ -1075,7 +1076,7 @@ namespace sc {
       //
       /////////////////////////////////////////////////////////////////////////////////
 
-      const Ref<AOSpaceRegistry> ao_registry = AOSpaceRegistry::instance();
+      const Ref<AOSpaceRegistry> ao_registry = df_info->runtime()->moints_runtime()->factory()->ao_registry();
       const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
       const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
@@ -1086,8 +1087,7 @@ namespace sc {
 
       // get square root of P
       Ref<OrbitalSpace> Sspace;
-      const std::string skey = ParsedOrbitalSpaceKey::key(std::string("dd"),spin);
-      if (OrbitalSpaceRegistry::instance()->key_exists(skey) == false) {
+      if (psqrtregistry->key_exists(P) == false) {
         RefDiagSCMatrix Pevals = P.eigvals();
         RefSCMatrix Pevecs = P.eigvecs();
         const double Peval_max = Pevals->maxabs();
@@ -1115,15 +1115,20 @@ namespace sc {
         }
 
         // make an orbital space out of sqrt(P)
+        const std::string skey = ParsedOrbitalSpaceKey::key(std::string("dd"),spin);
         Sspace = new OrbitalSpace(skey, prepend_spincase(spin,"sqrt(P)"),
                                   obs_space->coefs() * S,
                                   obs_space->basis(),
                                   obs_space->integral());
-        OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Sspace));
+        psqrtregistry->add(P, Sspace);
       }
       else { // Sspace is in registry
-        Sspace = OrbitalSpaceRegistry::instance()->value(skey);
+        Sspace = psqrtregistry->value(P);
       }
+
+      /// add sqrt(P) space to the OrbitalSpaceRegistry (it will be removed after the computation)
+      Ref<OrbitalSpaceRegistry> oreg = df_info->runtime()->moints_runtime()->factory()->orbital_registry();
+      oreg->add(Sspace->id(), Sspace);
 
       // little optimization here ... since DensityFittingRuntime currently always fits (iq| to get to (ij|
       // and since rank of S will be smaller than rank of OBS when Hartree-Fock of CAS references are used
@@ -1210,6 +1215,9 @@ namespace sc {
 
       result.assign(K);
       delete[] K;
+
+      /// remove sqrt(P) space from the OrbitalSpaceRegistry
+      oreg->remove(Sspace->id());
 
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;

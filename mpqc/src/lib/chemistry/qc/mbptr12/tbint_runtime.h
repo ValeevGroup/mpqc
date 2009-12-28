@@ -267,6 +267,9 @@ namespace sc {
       void save_data_state(StateOut& so);
       ~TwoBodyMOIntsRuntime();
 
+      /// obsoletes this object
+      void obsolete();
+
       /// return the params object that determines optional aspects of behavior of the runtime
       const Params* params() const { return const_cast<const Params*>(params_); } // cast because of serialization this can't be const
       /// set the params object
@@ -343,6 +346,12 @@ namespace sc {
   {
     // some compilers must be tricked ...
     const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
+  }
+
+  template <int NumCenters>
+  void
+  TwoBodyMOIntsRuntime<NumCenters>::obsolete() {
+    evals_->clear();
   }
 
   template <int NumCenters>

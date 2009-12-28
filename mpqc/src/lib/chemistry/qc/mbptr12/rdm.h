@@ -99,6 +99,12 @@ namespace sc {
         SavableState::save_state(wfn_.pointer(), so);
       }
 
+      void obsolete() {
+        wfn_->obsolete();
+        for(int s=0; s<__nspincases<R>::value; ++s)
+          scmat_[s] = 0;
+      }
+
       /// the corresponding Wavefunction
       Ref<Wavefunction> wfn() const { return wfn_; }
       void compute() {
@@ -167,6 +173,11 @@ namespace sc {
       }
       void save_data_state(StateOut& so) {
         SavableState::save_state(density_.pointer(), so);
+      }
+      void obsolete() {
+        density_->obsolete();
+        for(int s=0; s<__nspincases<R>::value; ++s)
+          scmat_[s] = 0;
       }
 
       /// the corresponding Wavefunction

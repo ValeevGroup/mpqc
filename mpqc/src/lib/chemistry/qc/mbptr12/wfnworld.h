@@ -97,6 +97,11 @@ public:
 
   void save_data_state(StateOut&);
 
+  /// obsoletes this object
+  /// every wavefunction that owns a WavefunctionWorld must call this method when it's obsolete() method is called
+  /// @sa Compute::obsolete()
+  void obsolete();
+
   /** Sets whether to use dynamic load balancing in parallel MO transformations. */
   void dynamic(bool dynamic) { dynamic_ = dynamic; };
   /// Sets how frequently updates of progress are printed out. Default is 10%

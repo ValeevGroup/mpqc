@@ -883,6 +883,14 @@ public:
                      const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
 
+  /// returns the OrbitalSpaceRegistry object
+  const Ref<OrbitalSpaceRegistry>& orbital_registry() const {
+    return this->r12world()->world()->tfactory()->orbital_registry();
+  }
+  /// returns the AOSpaceRegistry object
+  const Ref<AOSpaceRegistry>& ao_registry() const {
+    return this->r12world()->world()->tfactory()->ao_registry();
+  }
 
 };
 

@@ -128,7 +128,8 @@ static ClassDesc PopulatedOrbitalSpace_cd(
   0, 0, create<PopulatedOrbitalSpace>);
 
 
-PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
+PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& oreg,
+                                             SpinCase1 spin,
                                              const Ref<GaussianBasisSet>& bs,
                                              const Ref<Integral>& integral,
                                              const RefSCMatrix& coefs,
@@ -137,7 +138,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
                                              const RefDiagSCMatrix& energies,
                                              bool eorder_increasing,
                                              Ref<OrbitalSpace> vbs,
-                                             Ref<FockBuildRuntime> fbrun)
+                                             Ref<FockBuildRuntime> fbrun) :
+                                             oreg_(oreg)
 {
   const int nmo = occs.size();
   std::vector<bool> occ_mask(nmo, false);
@@ -252,7 +254,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
   }
 
   // register all spaces
-  Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  Ref<OrbitalSpaceRegistry> idxreg = oreg_;
   idxreg->add(make_keyspace_pair(orbs_sb_));
   idxreg->add(make_keyspace_pair(orbs_));
   idxreg->add(make_keyspace_pair(occ_sb_));
@@ -272,6 +274,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(SpinCase1 spin,
 }
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
+  oreg_ = OrbitalSpaceRegistry::restore_instance(si);
   orbs_sb_ << SavableState::restore_state(si);
   orbs_ << SavableState::restore_state(si);
   occ_sb_ << SavableState::restore_state(si);
@@ -289,6 +292,7 @@ PopulatedOrbitalSpace::~PopulatedOrbitalSpace() {
 
 void
 PopulatedOrbitalSpace::save_data_state(StateOut& so) {
+  OrbitalSpaceRegistry::save_instance(oreg_, so);
   SavableState::save_state(orbs_sb_.pointer(),so);
   SavableState::save_state(orbs_.pointer(),so);
   SavableState::save_state(occ_sb_.pointer(),so);
@@ -353,6 +357,13 @@ R12RefWavefunction::init() const
     R12RefWavefunction* this_nonconst = const_cast<R12RefWavefunction*>(this);
     this_nonconst->init_spaces();
   }
+}
+
+void
+R12RefWavefunction::obsolete() {
+  spinspaces_[Alpha] = 0;
+  spinspaces_[Beta] = 0;
+  initialized_ = false;
 }
 
 RefSymmSCMatrix
@@ -517,6 +528,12 @@ SD_R12RefWavefunction::save_data_state(StateOut& so) {
   so.put(nfzv_);
 }
 
+void
+SD_R12RefWavefunction::obsolete() {
+  vir_space_ = 0;
+  R12RefWavefunction::obsolete();
+}
+
 RefSymmSCMatrix
 SD_R12RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
@@ -601,17 +618,18 @@ SD_R12RefWavefunction::init_spaces_restricted()
   std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                  fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   if (obwfn()->spin_polarized() == false) { // closed-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, bs, integral, evecs_ao,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral, evecs_ao,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral, evecs_ao,
                                                    aoccs, actmask, evals, moorder,
                                                    vir_space(), fbrun);
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral, evecs_ao,
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral, evecs_ao,
                                                   boccs, actmask, evals, moorder,
                                                   vir_space(), fbrun);
   }
@@ -660,6 +678,7 @@ SD_R12RefWavefunction::init_spaces_unrestricted()
     beta_evals = hsosscf->beta_semicanonical_eigenvalues();
   }
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   { // alpha spin
@@ -670,7 +689,7 @@ SD_R12RefWavefunction::init_spaces_unrestricted()
     // add frozen core and frozen virtuals masks
     std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, bs, integral,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral,
                                                    plist->evecs_to_AO_basis(alpha_evecs),
                                                    aocc, actmask, alpha_evals, moorder,
                                                    vir_space(), fbrun);
@@ -683,7 +702,7 @@ SD_R12RefWavefunction::init_spaces_unrestricted()
     // add frozen core and frozen virtuals masks
     std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
                    fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, bs, integral,
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral,
                                                   plist->evecs_to_AO_basis(beta_evecs),
                                                   bocc, actmask, beta_evals, moorder,
                                                   vir_space(), fbrun);
@@ -746,7 +765,7 @@ ORDM_R12RefWavefunction::save_data_state(StateOut& so) {
 RefSymmSCMatrix
 ORDM_R12RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                     const Ref<GaussianBasisSet> &p_basis) {
-  const Ref<OrbitalSpace>& aox = AOSpaceRegistry::instance()->value(basis);
+  const Ref<OrbitalSpace>& aox = this->world()->tfactory()->ao_registry()->value(basis);
   const std::string nonrel_hkey =
     ParsedOneBodyIntKey::key(aox->id(), aox->id(),
                              std::string("H"));
@@ -871,16 +890,18 @@ ORDM_R12RefWavefunction::init_spaces_restricted() {
   FZCMask fzcmask(nfzc(), P_evals);
   std::vector<bool> actmask = fzcmask.mask();
 
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
   const bool no_order = false; // order NOs in decreasing occupation number
   if (spin_polarized() == false) { // closed-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(AnySpinCase1, basis(), integral(), coefs_no,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), coefs_no,
                                                    aoccs, actmask, Pa_diag, no_order);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(Alpha, basis(), integral(), coefs_no,
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, basis(), integral(), coefs_no,
                                                    aoccs, actmask, Pa_diag, no_order);
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(Beta, basis(), integral(), coefs_no,
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, basis(), integral(), coefs_no,
                                                   boccs, actmask, Pb_diag, no_order);
   }
 
@@ -947,9 +968,11 @@ ORDM_R12RefWavefunction::init_spaces_unrestricted() {
       occs[mo] = P_evals(mo);
     }
 
+    Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
     const bool no_order = false; // order NOs in decreasing occupation number
-    spinspaces_[spin] = new PopulatedOrbitalSpace(spin, basis(), integral(), coefs_no,
-                                                   occs, actmask, P_evals, no_order);
+    spinspaces_[spin] = new PopulatedOrbitalSpace(oreg, spin, basis(), integral(), coefs_no,
+                                                  occs, actmask, P_evals, no_order);
 
 #if 0
     // reconstruct densities to verify the logic

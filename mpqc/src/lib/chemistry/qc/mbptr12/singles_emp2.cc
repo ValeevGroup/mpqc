@@ -250,7 +250,7 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
                                           0, 0,
                                           OrbitalSpace::symmetry);
 
-  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = this->orbital_registry();
   idxreg->add(make_keyspace_pair(cabs_canonical[spin]));
 
 #if TEST_CABS_CANONICAL

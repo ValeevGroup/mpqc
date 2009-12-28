@@ -703,7 +703,7 @@ R12IntEval::hj_i_P(SpinCase1 spin)
     name = prepend_spincase(spin,name);
     hj_i_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs()*X_i_e,
                          intspace->basis());
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(hj_i_P_[s]));
+    this->orbital_registry()->add(make_keyspace_pair(hj_i_P_[s]));
   }
 #endif
   return hj_i_P_[s];
@@ -1231,7 +1231,7 @@ R12IntEval::K_P_P(SpinCase1 spin)
 
     // get AO basis matrix
     const Ref<OrbitalSpace>& ribs = intspace;
-    Ref<OrbitalSpace> ribs_ao = AOSpaceRegistry::instance()->value(ribs->basis());
+    Ref<OrbitalSpace> ribs_ao = this->ao_registry()->value(ribs->basis());
     Ref<OrbitalSpace> null;
     Ref<OrbitalSpace> K1;
     f_bra_ket(spin,false,false,true,
@@ -1250,7 +1250,7 @@ R12IntEval::K_P_P(SpinCase1 spin)
     K3.print("K in CABS+/CABS+ basis using new build");
 
     Ref<OrbitalSpace> orbs = orbs(spin);
-    Ref<OrbitalSpace> obs_ao = AOSpaceRegistry::instance()->value(orbs->basis());
+    Ref<OrbitalSpace> obs_ao = this->ao_registry()->value(orbs->basis());
     Ref<OrbitalSpace> K4;
     f_bra_ket(spin,false,false,true,
           null,
@@ -1337,7 +1337,7 @@ R12IntEval::h_P_P(SpinCase1 spin)
   h_P_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * h_i_e,
                                intspace->basis());
 
-  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
   idxreg->add(make_keyspace_pair(h_P_P_[s]));
 
   return h_P_P_[s];
@@ -1356,7 +1356,7 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
     std::string name = "gamma-weighted space";
     gamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S),
                                      intspace->basis());
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gamma_p_p_[S]));
+    this->orbital_registry()->add(make_keyspace_pair(gamma_p_p_[S]));
   }
   return gamma_p_p_[S];
 }
@@ -1374,7 +1374,7 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
     std::string name = "gammaFgamma-weighted space";
     gammaFgamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S) * F_i_e * this->ordm(S),
                                            intspace->basis());
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(gammaFgamma_p_p_[S]));
+    this->orbital_registry()->add(make_keyspace_pair(gammaFgamma_p_p_[S]));
   }
   return gammaFgamma_p_p_[S];
 }
@@ -1391,7 +1391,7 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
     std::string name = "Fgamma-weighted space";
     Fgamma_p_P_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * F_i_e * this->ordm(S),
                                       intspace->basis());
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(Fgamma_p_P_[S]));
+    this->orbital_registry()->add(make_keyspace_pair(Fgamma_p_P_[S]));
   }
   return Fgamma_p_P_[S];
 }
@@ -1736,7 +1736,7 @@ R12IntEval::J_i_p(SpinCase1 spin)
   J_i_p_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
                                 intspace->basis());
 
-  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
   idxreg->add(make_keyspace_pair(J_i_p_[s]));
 
   return J_i_p_[s];
@@ -1774,7 +1774,7 @@ R12IntEval::J_i_P(SpinCase1 spin)
   J_i_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
                                 intspace->basis());
 
-  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
   idxreg->add(make_keyspace_pair(J_i_P_[s]));
 
   return J_i_P_[s];
@@ -1812,7 +1812,7 @@ R12IntEval::J_P_P(SpinCase1 spin)
   J_P_P_[s] = new OrbitalSpace(id, name, extspace, intspace->coefs() * J_i_e,
                                 intspace->basis());
 
-  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
   idxreg->add(make_keyspace_pair(J_P_P_[s]));
 
   return J_P_P_[s];
@@ -1864,7 +1864,7 @@ R12IntEval::f_bra_ket(
     const Ref<OrbitalSpace>& intspace
     )
 {
-  const Ref<OrbitalSpaceRegistry>& idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
 
   const unsigned int s = static_cast<unsigned int> (spin);
   const bool not_yet_computed = (make_F && F.null()) || (make_hJ && hJ.null())

@@ -75,6 +75,9 @@ namespace sc {
       DensityFittingRuntime(StateIn& si);
       void save_data_state(StateOut& so);
 
+      /// obsoletes this object
+      void obsolete();
+
       /** Returns true if the given DensityFitting is available
         */
       bool exists(const std::string& key) const;

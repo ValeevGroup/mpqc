@@ -122,7 +122,7 @@ void R12IntEval::compute_B_DKH_() {
     Ref<OrbitalSpace> x = xspace(spin);
 
     t_x_P[s] = sc::detail::t_x_X(x, rispace);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_P[s]));
+    this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(t_x_P[s]));
   }
 
   // Loop over every 2-e spincase
@@ -299,17 +299,19 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     Ref<OrbitalSpace> ribs = r12world()->ribs_space();
     Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
 
+    Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+
     t_x_P[s] = sc::detail::t_x_X(x, ribs);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_x_P[s]));
+    oreg->add(make_keyspace_pair(t_x_P[s]));
 
     t_m_P[s] = sc::detail::t_x_X(m, ribs);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_m_P[s]));
+    oreg->add(make_keyspace_pair(t_m_P[s]));
 
     t_p_P[s] = sc::detail::t_x_X(obs, ribs);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_p_P[s]));
+    oreg->add(make_keyspace_pair(t_p_P[s]));
 
     t_A_P[s] = sc::detail::t_x_X(cabs, ribs);
-    OrbitalSpaceRegistry::instance()->add(make_keyspace_pair(t_A_P[s]));
+    oreg->add(make_keyspace_pair(t_A_P[s]));
   }
   if (t_x_P[Beta].null()) t_x_P[Beta] = t_x_P[Alpha];
   if (t_m_P[Beta].null()) t_m_P[Beta] = t_m_P[Alpha];

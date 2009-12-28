@@ -160,7 +160,7 @@ R12WavefunctionWorld::construct_orthog_ri_()
   if (ribs_space_.null()) {
     ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), orthog_method(), lindep_tol(), nlindep_ri_);
   }
-  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = this->world()->tfactory()->orbital_registry();
   idxreg->add(make_keyspace_pair(ribs_space_));
 }
 
@@ -193,7 +193,7 @@ R12WavefunctionWorld::abs_spans_obs_()
 void
 R12WavefunctionWorld::construct_ortho_comp_svd_()
 {
-  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = this->world()->tfactory()->orbital_registry();
 
   construct_orthog_aux_();
   construct_orthog_ri_();

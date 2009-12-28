@@ -51,6 +51,9 @@ namespace sc {
       MOIntsRuntime(StateIn&);
       void save_data_state(StateOut&);
 
+      /// obsoletes this object
+      void obsolete();
+
       /// factory for creating AO->MO transforms
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
       /// density fitting basis set. May be null.

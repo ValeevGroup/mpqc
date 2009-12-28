@@ -129,7 +129,7 @@ void CCR12_Info::compute_corr_space() {
   }
 
   // register this space so that I can use it with "smart" runtimes
-  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = r12world()->world()->moints_runtime()->factory()->orbital_registry();
   idxreg->add(make_keyspace_pair(corr_space_));
 
   //
@@ -395,7 +395,7 @@ CCR12_Info::compute_source_integrals_uhf() {
                                    corr_space_, fvmask.mask());
     corr_space_ = full_space_minus_fv;
   }
-  const Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+  const Ref<OrbitalSpaceRegistry> idxreg = r12world()->world()->moints_runtime()->factory()->orbital_registry();
   idxreg->add(make_keyspace_pair(corr_space_));
 
   const std::string pspace_a_id = ParsedOrbitalSpaceKey::key(std::string("p(corr)"),Alpha);

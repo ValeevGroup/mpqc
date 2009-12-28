@@ -132,8 +132,10 @@ namespace sc {
         /// registers this object
         void add(const Key& key,
                  const Value& obj);
-        /// useful version
+        /// a useful variation of Registry::add(const Key&, const Value&)
         void add(const std::pair<Key,Value>& keyval_pair);
+        /// removes the object corresponding to key
+        void remove(const Key& key);
 
         class not_found : public std::runtime_error {
           public:
@@ -153,10 +155,13 @@ namespace sc {
 
         typedef std::map<Key,Value> Map;
         typedef typename Map::const_iterator const_iterator;
+        typedef typename Map::iterator iterator;
         Map map_;
 
         // assumes that map is already locked
         const_iterator find_by_key(const Key& key) const;
+        // assumes that map is already locked
+        iterator find_by_key(const Key& key);
         // assumes that map is already locked
         const_iterator find_by_value(const Value& value) const;
 

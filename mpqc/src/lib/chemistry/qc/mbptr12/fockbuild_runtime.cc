@@ -44,17 +44,20 @@ static ClassDesc FockBuildRuntime_cd(typeid(FockBuildRuntime),
                                      "virtual public SavableState", 0, 0,
                                      create<FockBuildRuntime> );
 
-FockBuildRuntime::FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
+FockBuildRuntime::FockBuildRuntime(const Ref<OrbitalSpaceRegistry>& oreg,
+                                   const Ref<AOSpaceRegistry>& aoreg,
+                                   const Ref<GaussianBasisSet>& refbasis,
                                    const RefSymmSCMatrix& aodensity_alpha,
                                    const RefSymmSCMatrix& aodensity_beta,
                                    const Ref<Integral>& integral,
                                    const RefSCVector& efield,
                                    Ref<MessageGrp> msg,
                                    Ref<ThreadGrp> thr) :
-  P_(aodensity_alpha+aodensity_beta), Po_(0), basis_(refbasis), integral_(integral),
+  oreg_(oreg), aoreg_(aoreg), P_(aodensity_alpha+aodensity_beta), Po_(0),
+  basis_(refbasis), integral_(integral),
   efield_(efield), msg_(msg), thr_(thr),
-  registry_(FockMatrixRegistry::instance()) {
-
+  registry_(FockMatrixRegistry::instance()),
+  psqrtregistry_(PSqrtRegistry::instance()) {
   if (efield_) throw ProgrammingError("FockBuildRuntime -- nonzero electric fields not supported yet",
                                       __FILE__,__LINE__);
 
@@ -62,10 +65,11 @@ FockBuildRuntime::FockBuildRuntime(const Ref<GaussianBasisSet>& refbasis,
   spin_polarized_ = Po->maxabs() > DBL_EPSILON;
   if (spin_polarized_)
     Po_ = Po;
-
 }
 
 FockBuildRuntime::FockBuildRuntime(StateIn& si) {
+  oreg_ = OrbitalSpaceRegistry::restore_instance(si);
+  aoreg_ = AOSpaceRegistry::restore_instance(si);
   si.get(spin_polarized_);
   RefSCDimension pdim;
   pdim << SavableState::restore_state(si);
@@ -79,6 +83,7 @@ FockBuildRuntime::FockBuildRuntime(StateIn& si) {
   basis_ << SavableState::restore_state(si);
   integral_ << SavableState::restore_state(si);
   registry_ = FockMatrixRegistry::restore_instance(si);
+  psqrtregistry_ = PSqrtRegistry::restore_instance(si);
 
   efield_ = SCMatrixKit::default_matrixkit()->vector(new SCDimension(3));
   efield_.restore(si);
@@ -88,6 +93,8 @@ FockBuildRuntime::FockBuildRuntime(StateIn& si) {
 }
 
 void FockBuildRuntime::save_data_state(StateOut& so) {
+  OrbitalSpaceRegistry::save_instance(oreg_, so);
+  AOSpaceRegistry::save_instance(aoreg_, so);
   so.put(spin_polarized_);
   SavableState::save_state(P_.dim().pointer(), so);
   P_.save(so);
@@ -95,8 +102,9 @@ void FockBuildRuntime::save_data_state(StateOut& so) {
     Po_.save(so);
   SavableState::save_state(basis_.pointer(), so);
   SavableState::save_state(integral_.pointer(), so);
-  efield_.save(so);
   FockMatrixRegistry::save_instance(registry_, so);
+  PSqrtRegistry::save_instance(psqrtregistry_, so);
+  efield_.save(so);
 }
 
 void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
@@ -112,11 +120,18 @@ void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
   new_P = new_P || dPo->maxabs() > DBL_EPSILON;
   if (new_P) {
     registry_->clear();
+    psqrtregistry_->clear();
     P_ = P;
     spin_polarized_ = Po->maxabs() > DBL_EPSILON;
     if (spin_polarized_)
       Po_ = Po;
   }
+}
+
+void
+FockBuildRuntime::obsolete() {
+  registry_->clear();
+  psqrtregistry_->clear();
 }
 
 void FockBuildRuntime::validate_key(const std::string& key) const {
@@ -166,7 +181,7 @@ FockBuildRuntime::get(const std::string& key) {
     const std::string& bra_key = pkey.bra();
     const std::string& ket_key = pkey.ket();
     const std::string& oper_key = pkey.oper();
-    Ref<OrbitalSpaceRegistry> idxreg = OrbitalSpaceRegistry::instance();
+    Ref<OrbitalSpaceRegistry> idxreg = oreg_;
     Ref<OrbitalSpace> bra = idxreg->value(bra_key);
     Ref<OrbitalSpace> ket = idxreg->value(ket_key);
 
@@ -174,7 +189,7 @@ FockBuildRuntime::get(const std::string& key) {
     const SpinCase1 spin = pkey.spin();
 
     // is the AO matrix available?
-    Ref<AOSpaceRegistry> aoidxreg = AOSpaceRegistry::instance();
+    Ref<AOSpaceRegistry> aoidxreg = aoreg_;
     Ref<OrbitalSpace> aobra = aoidxreg->value(bra->basis());
     Ref<OrbitalSpace> aoket = aoidxreg->value(ket->basis());
     const std::string& aobra_key = idxreg->key(aobra);
@@ -249,7 +264,7 @@ FockBuildRuntime::get(const std::string& key) {
       Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
       if (use_density_fitting())
         fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J, compute_K,
-                                               bs1, bs2, obs, P_, Po_, dfinfo());
+                                               bs1, bs2, obs, P_, Po_, dfinfo(), psqrtregistry_);
 
       double nints;
       if (bs1_eq_bs2) {
@@ -365,7 +380,8 @@ FockBuildRuntime::get(const std::string& key) {
                                          bs1, bs2, obs,
                                          P_,
                                          Po_,
-                                         dfinfo());
+                                         dfinfo(),
+                                         psqrtregistry_);
       {
         RefSCMatrix J = fmb->J();
         const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));

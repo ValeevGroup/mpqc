@@ -77,6 +77,8 @@ namespace sc {
       /// PT2R12 is an R12 Wavefunction
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
 
+      void obsolete();
+
     private:
       size_t memory_r12_;
       Ref<Wavefunction> reference_;

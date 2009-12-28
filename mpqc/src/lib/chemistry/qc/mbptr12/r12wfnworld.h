@@ -108,9 +108,15 @@ public:
 
   void print(std::ostream& o) const;
 
+  /// Every wavefunction that owns a R12WavefunctionWorld should call this method
+  /// when it obsoletes itself.
+  /// @sa Compute::obsolete()
+  void obsolete();
+
 private:
 
-  Ref<R12RefWavefunction> ref_;          //!< describes the reference wavefunction
+  Ref<WavefunctionWorld> world_;  //!< the WavefunctionWorld
+  Ref<R12RefWavefunction> ref_;   //!< describes the reference wavefunction
   Ref<R12Technology> r12tech_;    //!< describes the R12 technology
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12
   Ref<GaussianBasisSet> bs_ri_;   //!< the RI basis used in R12

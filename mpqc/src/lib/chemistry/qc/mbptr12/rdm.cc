@@ -56,7 +56,7 @@ namespace {
       P_mo.set_element(mo, mo, (spin == Alpha) ? obwfn->alpha_occupation(mo)
                                                : obwfn->beta_occupation(mo) );
 
-#if 1
+#if 0
       P_mo.print(prepend_spincase(spin,"OneBodyWavefunction MO density").c_str());
 #endif
 
@@ -305,30 +305,37 @@ RefSymmSCMatrix sc::OBWfnRDMTwo::scmat(SpinCase2 spin) const {
   return scmat_[spin];
 }
 
+namespace {
+  Ref<OrbitalSpace> orbs_from_obwfn(const Ref<OneBodyWavefunction>& wfn,
+                                    SpinCase1 spin) {
+    const Ref<GaussianBasisSet> bs = wfn->basis();
+    RefSCMatrix evecs_so = (spin == Alpha) ? wfn->alpha_eigenvectors()
+                                           : wfn->beta_eigenvectors();
+    const RefDiagSCMatrix evals = (spin == Alpha) ? wfn->alpha_eigenvalues()
+                                                  : wfn->beta_eigenvalues();
+    const Ref<Integral>& integral = wfn->integral();
+    Ref<PetiteList> plist = integral->petite_list();
+    const RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
+    evecs_so = 0;
+
+    const std::string prefix(to_string(spin));
+    std::ostringstream oss;
+    oss << prefix << " symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("p(sym)"), spin);
+    Ref<OrbitalSpace> orbs = new OrbitalSpace(id, oss.str(), evecs_ao, bs, integral,
+                                              evals, 0, 0, OrbitalSpace::symmetry);
+
+    return orbs;
+  }
+}
+
 Ref<OrbitalSpace>
 sc::OBWfnRDMTwo::orbs(SpinCase1 spin) const {
   if (orbs_[spin].nonnull()) return orbs_[spin];
   if (wfn()->spin_polarized() && spin == Beta)
     return orbs(Alpha);
 
-  const Ref<GaussianBasisSet> bs = wfn()->basis();
-  RefSCMatrix evecs_so = wfn()->eigenvectors();
-  const RefDiagSCMatrix evals = wfn()->eigenvalues();
-  const Ref<Integral>& integral =  wfn()->integral();
-  Ref<PetiteList> plist = integral->petite_list();
-  const RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
-  evecs_so = 0;
-
-  const std::string prefix(to_string(spin));
-  using std::ostringstream;
-  {
-    ostringstream oss;
-    oss << prefix << " symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("p(sym)"),spin);
-    orbs_[spin] = new OrbitalSpace(id, oss.str(), evecs_ao, bs, integral,
-                                   evals, 0, 0, OrbitalSpace::symmetry);
-  }
-
+  orbs_[spin] = orbs_from_obwfn(wfn(), spin);
   return orbs_[spin];
 }
 
@@ -566,8 +573,13 @@ OBWfnRDMOne::save_data_state(StateOut& so) {
 }
 
 Ref<OrbitalSpace>
-OBWfnRDMOne::orbs(SpinCase1 spin) const {
-  throw "not implemented";
+sc::OBWfnRDMOne::orbs(SpinCase1 spin) const {
+  if (orbs_[spin].nonnull()) return orbs_[spin];
+  if (wfn()->spin_polarized() && spin == Beta)
+    return orbs(Alpha);
+
+  orbs_[spin] = orbs_from_obwfn(wfn(), spin);
+  return orbs_[spin];
 }
 
 /////////////////////////////////////////////////////////////////////////////

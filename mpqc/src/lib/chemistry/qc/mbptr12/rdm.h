@@ -362,6 +362,7 @@ namespace sc {
       ~OBWfnRDMOne();
       void save_data_state(StateOut& so);
 
+      Ref<OneBodyWavefunction> wfn() const { return wfn_; }
       Ref<OrbitalSpace> orbs(SpinCase1 s) const;
 
     private:

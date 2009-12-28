@@ -162,6 +162,7 @@ R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 
 bool
 R12WavefunctionWorld::sdref() const {
+  // only references based on OneBodyWavefunction are detected as single-determinant references!
   Ref<SD_R12RefWavefunction> sd; sd << ref();
   return sd.nonnull();
 }

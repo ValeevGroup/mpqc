@@ -139,7 +139,7 @@ PsiExEnv::PsiExEnv() :
 
   scratch_ = new string[nscratch_];
   for (int i=0; i<nscratch_; i++)
-    scratch_[i] = cwd_;
+    scratch_[i] = cwd_ + '/';
 
   fileprefix_ = SCFormIO::fileext_to_filename(".") + defaultfileprefix_;
   inputname_ = fileprefix_ + "." + defaultinputname_;

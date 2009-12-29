@@ -226,8 +226,6 @@ CCR12_Info::compute_source_integrals_rhf() {
     throw FeatureNotImplemented("Can only import integrals for CCSD, CCSD-R12, CCSDT, and CCSDTQ methods",
                                     __FILE__,__LINE__);
 
-  this->compute_corr_space();
-
   // compute Fock matrices in pitzer-order spaces because their occ-virtual blocks may be nonzero
   Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
   Ref<FockBuildRuntime> fb_rtime = r12world()->world()->fockbuild_runtime();

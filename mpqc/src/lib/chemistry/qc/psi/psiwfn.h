@@ -124,6 +124,97 @@ namespace sc {
       double nuclear_repulsion_energy() const;
   };
 
+  class PsiSCF;
+
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCorrWavefunction is a Psi correlated wave function
+
+  class PsiCorrWavefunction : public PsiWavefunction {
+    protected:
+      Ref<PsiSCF> reference_;
+      unsigned int nfzc_;
+      unsigned int nfzv_;
+      mutable std::vector<unsigned int> frozen_docc_;
+      mutable std::vector<unsigned int> frozen_uocc_;
+      void write_input(int conv);
+      RefSymmSCMatrix mo_density_[NSpinCases1];
+
+      double valacc_to_refacc() const { return 100.0; }
+
+      /// returns the index map that transforms indices in which densities are reported in Psi
+      /// to the symmetry-blocked indices. Single-reference correlated methods in Psi
+      /// report densities using QT-ordered indices, whereas multireference methods
+      /// use RAS ordering. The default implementation of this function assumes the former.
+      /// Overload as necessary.
+      virtual std::vector<unsigned int> map_density_to_sb();
+
+    public:
+      PsiCorrWavefunction(const Ref<KeyVal>&);
+      PsiCorrWavefunction(StateIn&);
+      ~PsiCorrWavefunction();
+      void save_data_state(StateOut&);
+
+      void print(std::ostream& os) const;
+      int spin_polarized();
+      /// sets the desired value accuracy
+      void set_desired_value_accuracy(double acc);
+
+      void compute(); // compute is overloaded because reference object needs to be marked computed
+
+      const Ref<PsiSCF>& reference() const;
+      /// Number of electrons
+      int nelectron();
+
+#if 0   // these should be implemented in PsiCC classes
+      /// symmetry-blocked space of active occupied orbitals from Psi3
+      const Ref<OrbitalSpace>& occ_act_sb(SpinCase1);
+      /// symmetry-blocked space of active virtual orbitals from Psi3
+      const Ref<OrbitalSpace>& vir_act_sb(SpinCase1);
+#endif
+      /// total # of frozen doubly-occupied orbitals
+      unsigned int nfzc() const;
+      /// total # of frozen unoccupied orbitals
+      unsigned int nfzv() const;
+      /// symmetry-blocked space of MO's from Psi3
+      /// the default implementation returns the orbitals from reference()
+      /// can be overridden if this wfn changes reference orbitals
+      virtual const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
+
+      /// # of frozen doubly-occupied orbitals per irrep
+      const std::vector<unsigned int>& frozen_docc() const;
+      /// # of frozen unoccupied orbitals per irrep
+      const std::vector<unsigned int>& frozen_uocc() const;
+      /// # of occupied active orbitals per irrep
+      const std::vector<unsigned int> docc_act();
+      const std::vector<unsigned int> socc();
+      const std::vector<unsigned int> uocc_act();
+      const std::vector<unsigned int> docc();
+      const std::vector<unsigned int> uocc();
+
+      /// reference energy
+      virtual double reference_energy();
+
+      /// return one-particel density matrix in symmetry-blocked orbitals \sa orbs_sb()
+      RefSymmSCMatrix mo_density(SpinCase1 spin);
+#if 0
+      /// return one-particle density matrix as a symmetric matrix indexed by (moindex1,moindex2).
+      RefSymmSCMatrix onepdm(const SpinCase1 &spin);
+      RefSymmSCMatrix onepdm();
+      /// this twopdm is stored in chemist's (Mulliken) notation order.
+      /// Access element (ij|km) by get_element(ordinary_INDEX(i,j), ordinary_INDEX(k,m))
+      RefSymmSCMatrix twopdm();
+      /// this twopdm is stored in Dirac notation order.
+      RefSymmSCMatrix twopdm_dirac();
+      RefSymmSCMatrix twopdm_dirac_from_components();
+#endif
+      RefSymmSCMatrix twopdm_dirac(const SpinCase2 &pairspin);
+      void print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL);
+      void print_onepdm_mat(FILE *output,const RefSymmSCMatrix &opdm,double TOL);
+      void print_twopdm_mat(FILE *output,const RefSymmSCMatrix &tpdm, double TOL);
+      void print_twopdm_arr(FILE *output,double *tpdm,double TOL);
+  };
+
+
   ///////////////////////////////////////////////////////////////////
   /// PsiSCF is an abstract base for all Psi SCF wave functions
 
@@ -138,6 +229,8 @@ namespace sc {
       std::vector<double> occupation_[NSpinCases1];
       void compute_occupations(SpinCase1 spin);
 
+      // PsiCorrWavefunction needs to be able to set value of PsiSCF
+      friend void PsiCorrWavefunction::compute();
     protected:
       std::vector<unsigned int> docc_;
       std::vector<unsigned int> socc_;
@@ -264,94 +357,6 @@ namespace sc {
       PsiSCF::RefType reftype() const {
         return uhf;
       }
-  };
-
-  ///////////////////////////////////////////////////////////////////
-  /// PsiCorrWavefunction is a Psi correlated wave function
-
-  class PsiCorrWavefunction : public PsiWavefunction {
-    protected:
-      Ref<PsiSCF> reference_;
-      unsigned int nfzc_;
-      unsigned int nfzv_;
-      mutable std::vector<unsigned int> frozen_docc_;
-      mutable std::vector<unsigned int> frozen_uocc_;
-      void write_input(int conv);
-      RefSymmSCMatrix mo_density_[NSpinCases1];
-
-      double valacc_to_refacc() const { return 100.0; }
-
-      /// returns the index map that transforms indices in which densities are reported in Psi
-      /// to the symmetry-blocked indices. Single-reference correlated methods in Psi
-      /// report densities using QT-ordered indices, whereas multireference methods
-      /// use RAS ordering. The default implementation of this function assumes the former.
-      /// Overload as necessary.
-      virtual std::vector<unsigned int> map_density_to_sb();
-
-    public:
-      PsiCorrWavefunction(const Ref<KeyVal>&);
-      PsiCorrWavefunction(StateIn&);
-      ~PsiCorrWavefunction();
-      void save_data_state(StateOut&);
-
-      void print(std::ostream& os) const;
-      int spin_polarized() {
-        return reference_->spin_polarized();
-      }
-      /// sets the desired value accuracy
-      void set_desired_value_accuracy(double acc);
-
-      const Ref<PsiSCF>& reference() const { return reference_; }
-      /// Number of electrons
-      int nelectron();
-
-#if 0   // these should be implemented in PsiCC classes
-      /// symmetry-blocked space of active occupied orbitals from Psi3
-      const Ref<OrbitalSpace>& occ_act_sb(SpinCase1);
-      /// symmetry-blocked space of active virtual orbitals from Psi3
-      const Ref<OrbitalSpace>& vir_act_sb(SpinCase1);
-#endif
-      /// total # of frozen doubly-occupied orbitals
-      unsigned int nfzc() const;
-      /// total # of frozen unoccupied orbitals
-      unsigned int nfzv() const;
-      /// symmetry-blocked space of MO's from Psi3
-      /// the default implementation returns the orbitals from reference()
-      /// can be overridden if this wfn changes reference orbitals
-      virtual const Ref<OrbitalSpace>&  orbs_sb(SpinCase1 spin);
-
-      /// # of frozen doubly-occupied orbitals per irrep
-      const std::vector<unsigned int>& frozen_docc() const;
-      /// # of frozen unoccupied orbitals per irrep
-      const std::vector<unsigned int>& frozen_uocc() const;
-      /// # of occupied active orbitals per irrep
-      const std::vector<unsigned int> docc_act();
-      const std::vector<unsigned int> socc();
-      const std::vector<unsigned int> uocc_act();
-      const std::vector<unsigned int> docc();
-      const std::vector<unsigned int> uocc();
-
-      /// reference energy
-      virtual double reference_energy();
-
-      /// return one-particel density matrix in symmetry-blocked orbitals \sa orbs_sb()
-      RefSymmSCMatrix mo_density(SpinCase1 spin);
-#if 0
-      /// return one-particle density matrix as a symmetric matrix indexed by (moindex1,moindex2).
-      RefSymmSCMatrix onepdm(const SpinCase1 &spin);
-      RefSymmSCMatrix onepdm();
-      /// this twopdm is stored in chemist's (Mulliken) notation order.
-      /// Access element (ij|km) by get_element(ordinary_INDEX(i,j), ordinary_INDEX(k,m))
-      RefSymmSCMatrix twopdm();
-      /// this twopdm is stored in Dirac notation order.
-      RefSymmSCMatrix twopdm_dirac();
-      RefSymmSCMatrix twopdm_dirac_from_components();
-#endif
-      RefSymmSCMatrix twopdm_dirac(const SpinCase2 &pairspin);
-      void print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL);
-      void print_onepdm_mat(FILE *output,const RefSymmSCMatrix &opdm,double TOL);
-      void print_twopdm_mat(FILE *output,const RefSymmSCMatrix &tpdm, double TOL);
-      void print_twopdm_arr(FILE *output,double *tpdm,double TOL);
   };
 
 #if 0

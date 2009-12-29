@@ -148,7 +148,7 @@ void PsiCCSD_PT2R12::import_occupations() {
 
 void PsiCCSD_PT2R12::compute() {
   // compute Psi3 CCSD wave function
-  PsiWavefunction::compute();
+  PsiCorrWavefunction::compute();
   // read Psi3 CCSD energy
   if (!mp2_only_) {
     psi::PSIO& psio = exenv()->psio();

@@ -1307,6 +1307,25 @@ namespace sc {
     input->write_keyword("psi:freeze_virt", static_cast<int>(nfzv_));
   }
 
+  void
+  PsiCorrWavefunction::compute() {
+    PsiWavefunction::compute();
+    const double escf = exenv()->chkpt().rd_escf();
+    reference_->set_energy(escf);
+    reference_->set_actual_value_accuracy(
+        reference_->desired_value_accuracy()
+        );
+  }
+
+  const Ref<PsiSCF>&
+  PsiCorrWavefunction::reference() const {
+    return reference_;
+  }
+
+  int PsiCorrWavefunction::spin_polarized() {
+    return reference_->spin_polarized();
+  }
+
   int PsiCorrWavefunction::nelectron() {
     return reference()->nelectron();
   }

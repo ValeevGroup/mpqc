@@ -192,6 +192,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
     nfzc_ = atoi(nfzc_str.c_str());
 
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
+  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
 
   reference_ = require_dynamic_cast<Wavefunction*>(
         keyval->describedclassvalue("reference").pointer(),
@@ -233,6 +234,7 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   r12eval_ << SavableState::restore_state(s);
   s.get(nfzc_);
   s.get(omit_uocc_);
+  s.get(cabs_singles_);
   s.get(debug_);
 }
 
@@ -247,6 +249,7 @@ void PT2R12::save_data_state(StateOut &s) {
   SavableState::save_state(r12eval_, s);
   s.put(nfzc_);
   s.put(omit_uocc_);
+  s.put(cabs_singles_);
   s.put(debug_);
 }
 
@@ -1368,6 +1371,26 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
   return energy;
 }
 
+double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
+{
+  throw "not implemented";
+
+  Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
+  Ref<OrbitalSpace> Aspace = this->r12world()->cabs_space(spin);
+
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+  if (!oreg->value_exists(pspace)) {
+    oreg->add(make_keyspace_pair(pspace));
+  }
+  const std::string key = oreg->key(pspace);
+  pspace = oreg->value(key);
+
+  RefSCMatrix F_pA = r12eval_->fock(pspace,Aspace,spin);
+  RefSCMatrix F_AA = r12eval_->fock(Aspace,Aspace,spin);
+  RefSCMatrix F_pp = this->f(spin);
+
+}
+
 double
 PT2R12::energy_recomputed_from_densities() {
   double twoparticle_energy[NSpinCases2];
@@ -1379,6 +1402,7 @@ PT2R12::energy_recomputed_from_densities() {
     const SpinCase1 spin = static_cast<SpinCase1>(spincase1);
     const RefSymmSCMatrix H = compute_obints<&Integral::hcore>(rdm1_->orbs(spin));
     RefSymmSCMatrix opdm = rdm1(spin);
+    // H and opdm might use different SCMatrixKits -> copy H into another matrix with the same kit as opdm
     RefSymmSCMatrix hh = opdm.clone();
     hh->convert(H);
     oneparticle_energy[spin] = (hh * opdm)->trace();

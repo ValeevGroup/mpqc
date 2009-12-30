@@ -60,6 +60,9 @@ namespace sc {
           reference will be omitted from consideration. This is useful if only geminal functions
           are used to treat electron correlation.
 
+          <tr><td><tt>cabs_singles</tt><td>boolean<td>false<td>if set to true, compute 2nd-order
+          CABS singes correction.
+
           </table>
        */
       PT2R12(const Ref<KeyVal> &keyval);
@@ -88,6 +91,7 @@ namespace sc {
       Ref<R12WavefunctionWorld> r12world_;
       unsigned int nfzc_;
       bool omit_uocc_;
+      bool cabs_singles_;
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object
@@ -119,6 +123,9 @@ namespace sc {
       /// This function computes the "old" General_PT2R12 correction, i.e. the one invoking projector 1.
       double energy_PT2R12_projector1(SpinCase2 pairspin);
       double energy_PT2R12_projector2(SpinCase2 pairspin);
+
+      /// compute CABS singles correction
+      double energy_cabs_singles(SpinCase1 spin);
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

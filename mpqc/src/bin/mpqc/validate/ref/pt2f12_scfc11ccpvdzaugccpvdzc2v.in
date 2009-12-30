@@ -1,0 +1,61 @@
+% Emacs should use -*- KeyVal -*- mode
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+     O     [     0.000000000000     0.000000000000     0.369372944000 ]
+     H     [     0.783975899000     0.000000000000    -0.184686472000 ]
+     H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
+  }
+)
+
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "cc-pVDZ"
+  puream = true
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  integrals<IntegralLibint2>: ()
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<PT2R12>: (
+    value_accuracy = 1e-11
+    molecule = $:molecule
+    basis = $:basis
+    memory = 32000000
+
+    nfzc = 1
+    omit_uocc = true
+
+    reference<CLHF>: (
+     value_accuracy = 1e-11
+     molecule = $:molecule
+     basis = $:basis
+     memory = 32000000
+    )
+    rdm2<OBWfnRDMTwo>: (
+      wfn = $..:reference
+    )
+
+    stdapprox = C
+    corr_factor = stg-3g
+    corr_param = 1.5
+    integrals<IntegralLibint2>: ()
+    aux_basis<GaussianBasisSet>: (
+      name = "aug-cc-pVDZ"
+      molecule = $:molecule
+    )
+    df_basis<GaussianBasisSet>: (
+      name = "cc-pVTZ-RI"
+      molecule = $:molecule
+    )
+    abs_method = cabs+
+  )
+  optimize = no
+)
+

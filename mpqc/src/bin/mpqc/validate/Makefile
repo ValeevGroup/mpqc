@@ -95,6 +95,17 @@ ifeq ($(RUN_MBPTF12),yes)
 endif
 MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
 
+PT2F12MASTER=
+PT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  PT2F12INPUTS= pt2f12_scfc00ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc01ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc10ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc11ccpvdzaugccpvdzc2v.in
+  PT2F12INPUTS := $(PT2F12INPUTS:%=$(INP)/%)
+endif
+PT2F12OUTPUTS = $(PT2F12INPUTS:%.$(INSUF)=%.out)
+
 PSICCSDPT2R12MASTER=psiccsdpt2r12.qci
 PSICCSDPT2R12INPUTS=
 ifeq ($(RUN_MBPTR12),yes)
@@ -112,6 +123,25 @@ ifeq ($(RUN_MBPTF12),yes)
   endif
 endif
 PSICCSDPT2F12OUTPUTS = $(PSICCSDPT2F12INPUTS:%.$(INSUF)=%.out)
+
+PSIPT2F12MASTER=
+PSIPT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSIPT2F12INPUTS= psipt2f12_scfc00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc01ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc10ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc11ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc01ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc10ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc11ccpvdzaugccpvdzc2v.in \
+      psipt2f12_mrcic00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_mrcic10ccpvdzaugccpvdzc2v.in
+    PSIPT2F12INPUTS := $(PSIPT2F12INPUTS:%=$(INP)/%)
+  endif
+endif
+PSIPT2F12OUTPUTS = $(PSIPT2F12INPUTS:%.$(INSUF)=%.out)
 
 H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OFRQMASTER))
@@ -294,11 +324,13 @@ CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12% $(INP)/p
 ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else
-LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc% $(INP)/psiccsdpt2f12%
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc% $(INP)/psiccsdpt2f12% \
+$(INP)/pt2f12% $(INP)/psipt2f12%	
 endif
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
 	    $(MP2R12INPUTS) $(MP2F12INPUTS) \
+	    $(PT2F12INPUTS) $(PSIPT2F12INPUTS) \
 	    $(PSICCSDPT2R12INPUTS) $(PSICCSDPT2F12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(DFTINPUTS) \
@@ -384,6 +416,7 @@ ifeq ($(MPQCRUN_INTEGRAL),libint2)
 endif
 CHECK2OUTPUTS := $(CHECK2INPUTS:%.$(INSUF)=%.out)
 #printcheck2:
+#	@echo $(ALLINPUTS)
 #	@ls -l $(CHECK2INPUTS)
 
 ##############################################################################
@@ -510,6 +543,12 @@ psiccsdpt2r12: stamp-psiccsdpt2r12
 .PHONY: psiccsdpt2f12
 psiccsdpt2f12: stamp-psiccsdpt2f12
 
+.PHONY: pt2f12
+pt2f12: stamp-pt2f12
+
+.PHONY: psipt2f12
+psipt2f12: stamp-psipt2f12
+
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
 
@@ -594,6 +633,14 @@ stamp-psiccsdpt2f12: $(INP) $(PSICCSDPT2F12MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(PSICCSDPT2F12MASTER)
 	touch stamp-psiccsdpt2f12
 
+stamp-pt2f12: $(INP) $(PT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(PT2F12MASTER)
+	touch stamp-pt2f12
+
+stamp-psipt2f12: $(INP) $(PSIPT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(PSIPT2F12MASTER)
+	touch stamp-psipt2f12
+	
 stamp-h2ofrq: $(INP) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(H2OFRQMASTER)
 	touch stamp-h2ofrq

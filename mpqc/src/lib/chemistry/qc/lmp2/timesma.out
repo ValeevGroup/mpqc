@@ -1,0 +1,97 @@
+entered time_contract_444
+  plain
+  bswap
+  swap2
+  swap3
+  fixed 1
+  fixed 2
+  fixed 3
+                      CPU  Wall
+total:              14.30 14.36
+  bswap:             1.19  1.19
+    blocklist:       0.01  0.01
+    contract:        1.17  1.18
+      C loop:        1.17  1.17
+        A loop:      1.17  1.17
+          dgemm:     1.07  1.07
+      bounds:        0.00  0.00
+      remap A:       0.00  0.00
+      repack1:       0.00  0.00
+      repack2:       0.00  0.00
+    reorder B:       0.00  0.01
+  fixed 1:           1.18  1.19
+    loops:           1.18  1.19
+      blocklist:     0.02  0.01
+      contract:      1.17  1.18
+        C loop:      1.16  1.17
+          A loop:    1.16  1.17
+            dgemm:   1.06  1.07
+        bounds:      0.00  0.00
+        remap A:     0.00  0.00
+        repack1:     0.00  0.00
+        repack2:     0.00  0.00
+  fixed 2:           3.02  3.04
+    loops:           3.02  3.04
+      blocklist:     0.01  0.01
+      contract:      3.01  3.03
+        C loop:      3.00  3.02
+          A loop:    3.00  3.02
+            dgemm:   2.91  2.92
+        bounds:      0.00  0.00
+        remap A:     0.00  0.00
+        repack1:     0.00  0.00
+        repack2:     0.00  0.00
+  fixed 3:           3.00  3.00
+    loops:           3.00  3.00
+      blocklist:     0.00  0.01
+      contract:      2.99  2.99
+        C loop:      2.98  2.98
+          A loop:    2.98  2.98
+            dgemm:   2.87  2.88
+        bounds:      0.00  0.00
+        remap A:     0.00  0.00
+        repack1:     0.00  0.00
+        repack2:     0.00  0.00
+  plain:             1.18  1.19
+    blocklist:       0.01  0.01
+    contract:        1.18  1.18
+      C loop:        1.17  1.18
+        A loop:      1.16  1.17
+          dgemm:     1.05  1.08
+      bounds:        0.00  0.00
+      remap A:       0.00  0.00
+      repack1:       0.00  0.00
+      repack2:       0.00  0.00
+  swap2:             3.23  3.25
+    blocklist:       0.01  0.01
+    contract:        3.22  3.24
+      C loop:        2.98  3.00
+        A loop:      2.97  2.99
+          dgemm:     2.86  2.90
+      bounds:        0.00  0.00
+      remap A:       0.00  0.00
+      repack1:       0.12  0.12
+      repack2:       0.12  0.12
+  swap3:             1.42  1.44
+    blocklist:       0.01  0.01
+    contract:        1.42  1.44
+      C loop:        1.17  1.19
+        A loop:      1.16  1.18
+          dgemm:     1.08  1.09
+      bounds:        0.00  0.00
+      remap A:       0.00  0.00
+      repack1:       0.12  0.12
+      repack2:       0.12  0.12
+    m    l    n    ncall %nflop t(msec)      %t   cum%t MFLOP/s
+    1   75  225    27216  19.75  2086.6    21.1    21.1 440.204
+    1  225  225     9072 19.753  2026.8    20.5    41.7 453.208
+    1   75   75    81648 19.753  1963.3    19.9    61.5 467.857
+    1  225   75    27216 19.753  1943.6    19.7    81.2 472.592
+    1   25   75    61236  4.938   452.0     4.6    85.8 508.065
+    1   25  225    20412  4.938   433.9     4.4    90.2 529.188
+    1   75   25    61236  4.938   432.9     4.4    94.6 530.486
+    1  225   25    20412  4.938   430.9     4.4    98.9 532.870
+    1   25   25    45927  1.235   104.8     1.1   100.0 547.866
+The total number of flops was 4650108750.000
+The total number of seconds was 9.875
+Computation rate was 470.906 MFLOP/s

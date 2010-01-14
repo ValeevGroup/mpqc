@@ -285,6 +285,12 @@ endif
 MBPTINPUTS := $(MBPTINPUTS:%=$(INP)/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
+LMP2INPUTS = lmp2_c12h26.lmp2.ccpvdz.in lmp2_c8h18.631gs.lmp2.in	\
+             lmp2_glycine.lmp2.631gs.in lmp2_glycine.lmp2.cd.631gs.in	\
+             lmp2_glycine.mp2.631gs.in
+LMP2INPUTS := $(LMP2INPUTS:%=$(INP)/%)
+LMP2OUTPUTS = $(LMP2INPUTS:%.$(INSUF)=%.out)
+
 METHODSINPUTS = \
 clhf.in        hsosks_b3lyp.in       tchf.in \
 clks_b3lyp.in  hsosks_b88.in         uhf.in \
@@ -336,15 +342,16 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
-            $(CKPTINPUTS) $(MBPTINPUTS) \
+            $(CKPTINPUTS) $(MBPTINPUTS) $(LMP2INPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
             $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) \
             $(CCAMP2R12INPUTS)
 
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
-CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
-                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS)
+CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS)		\
+                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS)	\
+                $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) $(LMP2INPUTS)
 
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
@@ -603,6 +610,9 @@ ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
 .PHONY: mbpt
 mbpt: $(MBPTINPUTS) $(MBPTINPUTS:%.in=%.qci)
 
+.PHONY: lmp2
+lmp2: $(LMP2INPUTS) $(LMP2INPUTS:%.in=%.qci)
+
 .PHONY: methods
 methods: $(METHODSINPUTS) $(METHODSINPUTS:%.in=%.qci)
 
@@ -716,7 +726,7 @@ stamp-ccamp2r12: $(INP) $(CCAMP2R12MASTER) $(INPUTGENDEPS)
 ##############################################################################
 
 .PHONY: checkrun
-checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3 checkdft
+checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3 checkdft checklmp2
 	@echo Check for complete outputs in the run directory:
 	for file in $(ALLOUTPUTS); \
 	  do \
@@ -778,6 +788,11 @@ checkmbpt:
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_auto}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_posix}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_multipass}.out
+
+.PHONY: checklmp2
+checklmp2:
+	@echo Consistency checks on LMP2 tests:
+	@$(CHECKOUT) $(RUN)/lmp2_glycine.{mp2,lmp2.cd}.631gs.out
 
 .PHONY: checkdft
 checkdft:

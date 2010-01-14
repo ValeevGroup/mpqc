@@ -72,6 +72,7 @@ sub parse_g94 {
     my $out = shift;
     my $scfenergy = "";
     my $mp2energy = "";
+    my $lmp2energy = "";
     my $ccsd_tenergy = "";
     my $t1norm = "";
     my $optconverged = 0;
@@ -87,6 +88,9 @@ sub parse_g94 {
         }
         elsif (/^\s*E2\s*=\s*$fltrx\s*EUMP2\s*=\s*$fltrx/) {
             $mp2energy = $2;
+        }
+        elsif (/^\s*E\[LMP2\]\s*=\s*$fltrx/) {
+            $lmp2energy = $1;
         }
         elsif (/^\s*CCSD\(T\)\s*=\s*$fltrx/) {
             $ccsd_tenergy = $1;
@@ -133,6 +137,7 @@ sub parse_g94 {
     }
     $self->{"scfenergy"} = $scfenergy;
     $self->{"mp2energy"} = $mp2energy;
+    $self->{"lmp2energy"} = $lmp2energy;
     $self->{"b3pw91energy"} = $b3pw91energy;
     $self->{"optconverged"} = $optconverged;
     if ($optconverged) {
@@ -148,6 +153,9 @@ sub parse_g94 {
     my $method = $qcinput->method();
     if ($method eq "MP2") {
         $self->{"energy"} = $mp2energy;
+    }
+    elsif ($method eq "LMP2") {
+        $self->{"energy"} = $lmp2energy;
     }
     elsif ($method eq "CCSD(T)") {
         $self->{"energy"} = $ccsd_tenergy;
@@ -193,6 +201,7 @@ sub parse_mpqc {
     my $opt2energy = "";
     my $zapt2energy = "";
     my $mp2energy = "";
+    my $lmp2energy = "";
     my $optconverged = 0;
     my $molecule;
     my $havefreq = 0;
@@ -245,6 +254,9 @@ sub parse_mpqc {
         }
         elsif ($wante && /MP2 energy .*:\s+$fltrx/) {
             $mp2energy = $1;
+        }
+        elsif ($wante && /E\[LMP2\]\s+=\s+$fltrx/) {
+            $lmp2energy = $1;
         }
         elsif (/CSCF: An SCF program written in C/) {
             $psioutput = 1;
@@ -476,6 +488,7 @@ sub parse_mpqc {
     $self->{"opt2energy"} = $opt2energy;
     $self->{"zapt2energy"} = $zapt2energy;
     $self->{"mp2energy"} = $mp2energy;
+    $self->{"lmp2energy"} = $lmp2energy;
     $self->{"optconverged"} = $optconverged;
     $self->{"molecularenergy"} = $molecularenergy;
     if ($optconverged) {
@@ -503,6 +516,9 @@ sub parse_mpqc {
     }
     elsif ($method eq "OPT2[2]") {
         $self->{"energy"} = $opt2energy;
+    }
+    elsif ($method eq "LMP2") {
+        $self->{"energy"} = $lmp2energy;
     }
     elsif ($method eq "CCSD") {
         $self->{"energy"} = $ccsd_energy;

@@ -3,7 +3,7 @@
 #
 # Copyright (C) 1996 Limit Point Systems, Inc.
 #
-# Author: Curtis Janssen <cljanss@ca.sandia.gov>
+# Author: Ida Nielsen <ibniels@ca.sandia.gov>
 # Maintainer: LPS
 #
 # This file is part of the SC Toolkit.
@@ -25,33 +25,41 @@
 # The U.S. Government is granted a limited license as per AL 91-7.
 #
 
-TOPDIR=../../../..
+TOPDIR=../../../../..
 ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-include $(TOPDIR)/lib/Makedirlist
 
-SUBDIRS = basis oint3 intv3 wfn scf dft mbpt lmp2
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
-SUBDIRS := $(SUBDIRS) cc
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
-SUBDIRS := $(SUBDIRS) cints
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
-SUBDIRS := $(SUBDIRS) libint2
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
-SUBDIRS := $(SUBDIRS) df mbptr12
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
-SUBDIRS := $(SUBDIRS) ccr12
-endif
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
-SUBDIRS := $(SUBDIRS) psi
+TARGET_TO_MAKE = libSClmp2
+BIN_OR_LIB = LIB
+
+TESTPROGS = testsma timesma avlmmaptest
+
+CXXSRCS = collective.cc dgemminfo.cc domain.cc extrap.cc lcorr.cc lmp2.cc \
+          pack2e.cc pop_local.cc sma.cc smautil.cc
+
+LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))
+
+default:: $(DEPENDINCLUDE)
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
+TESTSRC += testsma.cc
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+testsma: testsma.o $(SMAOBJ)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LIBS)
 
+TESTSRC += timesma.cc
+timesma: timesma.o $(SMAOBJ)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LIBS)
+
+TESTSRC += avlmmaptest.cc
+avlmmaptest: avlmmaptest.o
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LIBS)

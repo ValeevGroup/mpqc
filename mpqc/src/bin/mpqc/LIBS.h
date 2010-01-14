@@ -22,6 +22,7 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
 #  include <chemistry/qc/ccr12/LIBS.h>
 #endif
+#include <chemistry/qc/lmp2/LIBS.h>
 #include <chemistry/qc/mbpt/LIBS.h>
 #include <chemistry/qc/dft/LIBS.h>
 #include <chemistry/qc/scf/LIBS.h>

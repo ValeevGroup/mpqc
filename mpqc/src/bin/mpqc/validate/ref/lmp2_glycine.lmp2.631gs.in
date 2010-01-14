@@ -1,0 +1,46 @@
+basis<GaussianBasisSet>:(
+  name = "6-31G*"
+  molecule = $:molecule
+)
+molecule<Molecule>:(
+  symmetry = c1
+  angstroms = yes
+  { atoms geometry } = {
+      H [   -0.5446710000     2.3345790000     0.0000000000]
+      O [   -0.9560950000     1.4755620000     0.0000000000]
+      C [    0.0000000000     0.5512870000     0.0000000000]
+      O [    1.1565490000     0.8214930000     0.0000000000]
+      C [   -0.5734970000    -0.8512980000     0.0000000000]
+      H [   -1.2194950000    -0.9433860000     0.8663750000]
+      H [   -1.2194950000    -0.9433860000    -0.8663750000]
+      N [    0.4031360000    -1.9083610000     0.0000000000]
+      H [    0.9995300000    -1.8328260000     0.8010210000]
+      H [    0.9995300000    -1.8328260000    -0.8010210000]
+  }
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  do_energy = yes
+  mole<LMP2>: (
+    nfzc = auto
+    value_accuracy = 1e-6
+    basis = $:basis
+    molecule = $:molecule
+    reference<CLHF>: (
+      molecule = $:molecule
+      basis = $:basis
+      memory = 150000000
+      guess_wavefunction<CLHF>: (
+        maxiter = 100
+        molecule = $:molecule
+        basis<GaussianBasisSet>: (
+          molecule = $:molecule
+          name = "STO-3G"
+        )
+      )
+    )
+  )
+)
+
+

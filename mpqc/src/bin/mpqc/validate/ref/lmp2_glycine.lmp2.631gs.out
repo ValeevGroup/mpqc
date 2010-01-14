@@ -1,0 +1,575 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    x86_64-unknown-linux-gnu
+  User:       cljanss@nyx
+  Start Time: Tue Nov  4 20:36:36 2008
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /usr/local/mpqc/test/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /usr/local/mpqc/test/share/mpqc/3.0.0-alpha/basis/6-31gS.kv.
+      Reading file /usr/local/mpqc/test/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):            30
+      Maximum orthogonalization residual = 2.4041
+      Minimum orthogonalization residual = 0.211887
+      docc = [ 20 ]
+      nbasis = 30
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =  181.0285693569
+
+      integral intermediate storage = 243856 bytes
+      integral cache = 31748704 bytes
+      Beginning iterations.  Basis is STO-3G.
+                     94413 integrals
+      iter     1 energy = -278.1774824213 delta = 3.42466e-01
+                    105954 integrals
+      iter     2 energy = -279.0406184817 delta = 9.04026e-02
+                     94823 integrals
+      iter     3 energy = -279.1001433228 delta = 3.01965e-02
+                     87669 integrals
+      iter     4 energy = -279.1058599458 delta = 1.04607e-02
+                    114743 integrals
+      iter     5 energy = -279.1070245116 delta = 3.56373e-03
+                     94377 integrals
+      iter     6 energy = -279.1070867689 delta = 8.90483e-04
+                     89777 integrals
+      iter     7 energy = -279.1070994331 delta = 4.09928e-04
+                    119304 integrals
+      iter     8 energy = -279.1070973503 delta = 6.97222e-05
+                     97193 integrals
+      iter     9 energy = -279.1070973847 delta = 1.92314e-05
+                     90453 integrals
+      iter    10 energy = -279.1070973718 delta = 7.52268e-06
+                    121108 integrals
+      iter    11 energy = -279.1070973818 delta = 1.11659e-06
+                     97819 integrals
+      iter    12 energy = -279.1070973815 delta = 8.33895e-07
+
+      HOMO is    20   A =  -0.317830
+      LUMO is    21   A =   0.318114
+
+      total scf energy = -279.1070973815
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 40
+        Using symmetric orthogonalization.
+        n(basis):            85
+        Maximum orthogonalization residual = 6.90695
+        Minimum orthogonalization residual = 0.00382154
+        The number of electrons in the projected density = 39.8905
+
+  docc = [ 20 ]
+  nbasis = 85
+  LMP2: auto-freezing 5 core orbitals
+
+  Molecular formula C2H5NO2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = glycine.lmp2.631gs
+    restart_file  = glycine.lmp2.631gs.ckpt
+    restart       = yes
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  nuclear repulsion energy =  181.0285693569
+
+  integral intermediate storage = 829098 bytes
+  integral cache = 149112422 bytes
+  Beginning iterations.  Basis is 6-31G*.
+               5897428 integrals
+  iter     1 energy = -282.3110262906 delta = 9.95671e-02
+               6388827 integrals
+  iter     2 energy = -282.7869102656 delta = 2.16331e-02
+               6125768 integrals
+  iter     3 energy = -282.8199551760 delta = 5.36759e-03
+               5986481 integrals
+  iter     4 energy = -282.8296665134 delta = 2.68587e-03
+               6667129 integrals
+  iter     5 energy = -282.8308421632 delta = 1.02558e-03
+               6137936 integrals
+  iter     6 energy = -282.8310402457 delta = 4.53431e-04
+               6054277 integrals
+  iter     7 energy = -282.8310887469 delta = 2.52836e-04
+               6865772 integrals
+  iter     8 energy = -282.8310946303 delta = 7.59145e-05
+               6191989 integrals
+  iter     9 energy = -282.8310960158 delta = 4.26235e-05
+               6084292 integrals
+  iter    10 energy = -282.8310962000 delta = 2.04763e-05
+               7009709 integrals
+  iter    11 energy = -282.8310962029 delta = 2.87380e-06
+               6225746 integrals
+  iter    12 energy = -282.8310962040 delta = 1.67354e-06
+               5998899 integrals
+  iter    13 energy = -282.8310962041 delta = 3.48741e-07
+               7060042 integrals
+  iter    14 energy = -282.8310962041 delta = 1.69680e-07
+               6160193 integrals
+  iter    15 energy = -282.8310962041 delta = 6.35102e-08
+
+  HOMO is    20   A =  -0.405392
+  LUMO is    21   A =   0.189714
+
+  total scf energy = -282.8310962041
+
+  Beginning local correlation calculation
+  W_eigval_threshold = 1e-06
+  max_iter           = 100
+  nfunction          = 85
+  nshell             = 30
+  natom              = 10
+  nocc               = 20
+  nfzc               = 5
+  S_threshold        = 1e-06
+  integral_threshold = 1e-08
+  q1_threshold       = 1e-08
+  q2_threshold       = 1e-08
+  q3_threshold       = 1e-08
+  q4_threshold       = 1e-08
+  tolerance          = 1e-06
+  threshold_factor   = 10
+  extrap_T:
+    DIIS: n=8, start=6, ngroup=2, ngroupdiis=1, damping_factor=0, mixing_fraction=0
+  complete_domains       = no
+  single_virtual_block   = no
+  i_ge_j                 = yes
+  m_ge_n                 = yes
+  minimize_q2            = yes
+  always_use_dist_t      = no
+  occ_orbitals           = pipek-mezey
+  vir_orbitals           = projected_atomic
+  distance_threshold = 15 bohr
+  completeness_threshold = 0.02
+  molecule:          C2H5NO2
+
+ao_overlap dim:
+  n = 85
+    nblocks = 1
+    sizes = 85
+    subdimension 0:
+      n = 85
+        nblocks = 1
+        sizes = 85
+scf_vector dims:
+  n = 85
+    nblocks = 1
+    sizes = 85
+    subdimension 0:
+      n = 85
+        nblocks = 1
+        sizes = 85
+  n = 15
+    nblocks = 1
+    sizes = 15
+    subdimension 0:
+      n = 15
+        nblocks = 1
+        sizes = 15
+finished iterations
+rot_counter(old) = 403
+upd_counter(old) = 735
+         S_tmp   100 of   100 blocks       7225 of       7225 elements locally
+      uses       0.058 MB for data and       0.005 MB for the map locally
+             S   100 of   100 blocks       7225 of       7225 elements locally
+      uses       0.058 MB for data and       0.005 MB for the map locally
+    MO   Atoms (and pop) in domain
+   1 ( 1.023) 
+    MO   Atoms (and pop) in domain
+   3 ( 1.020) 
+    MO   Atoms (and pop) in domain
+   7 ( 0.998) 
+    MO   Atoms (and pop) in domain
+   4 ( 0.616)    5 ( 0.416) 
+    MO   Atoms (and pop) in domain
+   1 ( 0.724)    0 ( 0.277) 
+    MO   Atoms (and pop) in domain
+   3 ( 0.617)    2 ( 0.396) 
+    MO   Atoms (and pop) in domain
+   1 ( 0.713)    2 ( 0.308) 
+    MO   Atoms (and pop) in domain
+   7 ( 0.674)    9 ( 0.350) 
+    MO   Atoms (and pop) in domain
+   1 ( 0.938)    2 ( 0.059) 
+    MO   Atoms (and pop) in domain
+   2 ( 0.583)    4 ( 0.486) 
+    MO   Atoms (and pop) in domain
+   7 ( 0.605)    4 ( 0.431) 
+    MO   Atoms (and pop) in domain
+   4 ( 0.616)    6 ( 0.416) 
+    MO   Atoms (and pop) in domain
+   3 ( 0.737)    2 ( 0.267) 
+    MO   Atoms (and pop) in domain
+   3 ( 0.928)    2 ( 0.083) 
+    MO   Atoms (and pop) in domain
+   7 ( 0.674)    8 ( 0.350) 
+  Orbital Domains:
+    MO            Atoms in domain (in order of decreasing contrib. to the MO pop.)
+  ------         -----------------
+     5             1 
+     6             3 
+     7             7 
+     8             4    5 
+     9             1    0 
+    10             3    2 
+    11             1    2 
+    12             7    9 
+    13             1    2 
+    14             2    4 
+    15             7    4 
+    16             4    6 
+    17             3    2 
+    18             3    2 
+    19             7    8 
+
+  Total number of ij pairs:           120
+  Number of included ij pairs:        120
+  Number of local double substitution amplitudes:             183755
+  Number of canonical double substitution amplitudes:          845650
+  Pair Domains:
+    5, 5: 1
+    6, 5: 1 3
+    6, 6: 3
+    7, 5: 1 7
+    7, 6: 3 7
+    7, 7: 7
+    8, 5: 1 4 5
+    8, 6: 3 4 5
+    8, 7: 4 5 7
+    8, 8: 4 5
+    9, 5: 0 1
+    9, 6: 0 1 3
+    9, 7: 0 1 7
+    9, 8: 0 1 4 5
+    9, 9: 0 1
+    10, 5: 1 2 3
+    10, 6: 2 3
+    10, 7: 2 3 7
+    10, 8: 2 3 4 5
+    10, 9: 0 1 2 3
+    10, 10: 2 3
+    11, 5: 1 2
+    11, 6: 1 2 3
+    11, 7: 1 2 7
+    11, 8: 1 2 4 5
+    11, 9: 0 1 2
+    11, 10: 1 2 3
+    11, 11: 1 2
+    12, 5: 1 7 9
+    12, 6: 3 7 9
+    12, 7: 7 9
+    12, 8: 4 5 7 9
+    12, 9: 0 1 7 9
+    12, 10: 2 3 7 9
+    12, 11: 1 2 7 9
+    12, 12: 7 9
+    13, 5: 1 2
+    13, 6: 1 2 3
+    13, 7: 1 2 7
+    13, 8: 1 2 4 5
+    13, 9: 0 1 2
+    13, 10: 1 2 3
+    13, 11: 1 2
+    13, 12: 1 2 7 9
+    13, 13: 1 2
+    14, 5: 1 2 4
+    14, 6: 2 3 4
+    14, 7: 2 4 7
+    14, 8: 2 4 5
+    14, 9: 0 1 2 4
+    14, 10: 2 3 4
+    14, 11: 1 2 4
+    14, 12: 2 4 7 9
+    14, 13: 1 2 4
+    14, 14: 2 4
+    15, 5: 1 4 7
+    15, 6: 3 4 7
+    15, 7: 4 7
+    15, 8: 4 5 7
+    15, 9: 0 1 4 7
+    15, 10: 2 3 4 7
+    15, 11: 1 2 4 7
+    15, 12: 4 7 9
+    15, 13: 1 2 4 7
+    15, 14: 2 4 7
+    15, 15: 4 7
+    16, 5: 1 4 6
+    16, 6: 3 4 6
+    16, 7: 4 6 7
+    16, 8: 4 5 6
+    16, 9: 0 1 4 6
+    16, 10: 2 3 4 6
+    16, 11: 1 2 4 6
+    16, 12: 4 6 7 9
+    16, 13: 1 2 4 6
+    16, 14: 2 4 6
+    16, 15: 4 6 7
+    16, 16: 4 6
+    17, 5: 1 2 3
+    17, 6: 2 3
+    17, 7: 2 3 7
+    17, 8: 2 3 4 5
+    17, 9: 0 1 2 3
+    17, 10: 2 3
+    17, 11: 1 2 3
+    17, 12: 2 3 7 9
+    17, 13: 1 2 3
+    17, 14: 2 3 4
+    17, 15: 2 3 4 7
+    17, 16: 2 3 4 6
+    17, 17: 2 3
+    18, 5: 1 2 3
+    18, 6: 2 3
+    18, 7: 2 3 7
+    18, 8: 2 3 4 5
+    18, 9: 0 1 2 3
+    18, 10: 2 3
+    18, 11: 1 2 3
+    18, 12: 2 3 7 9
+    18, 13: 1 2 3
+    18, 14: 2 3 4
+    18, 15: 2 3 4 7
+    18, 16: 2 3 4 6
+    18, 17: 2 3
+    18, 18: 2 3
+    19, 5: 1 7 8
+    19, 6: 3 7 8
+    19, 7: 7 8
+    19, 8: 4 5 7 8
+    19, 9: 0 1 7 8
+    19, 10: 2 3 7 8
+    19, 11: 1 2 7 8
+    19, 12: 7 8 9
+    19, 13: 1 2 7 8
+    19, 14: 2 4 7 8
+    19, 15: 4 7 8
+    19, 16: 4 6 7 8
+    19, 17: 2 3 7 8
+    19, 18: 2 3 7 8
+    19, 19: 7 8
+  Lmax_maxval: 0.619135
+Dmax: Number of elements greater than 0.00001: 900
+Dmax: Fraction of elements greater than 0.00001 =     1.00000000
+PPmax: Number of elements greater than 0.00001: 900
+PPmax: Fraction of elements greater than 0.00001 =     1.00000000
+    q2_K_oo(1) 102970 of 202500 blocks     850644 of    1625625 elements locally
+      uses       6.805 MB for data and       4.943 MB for the map locally
+    q2_K_oo(2) 106256 of 202500 blocks     864775 of    1625625 elements locally
+      uses       6.918 MB for data and       5.100 MB for the map locally
+        q3_ovo 10960 of 67500 blocks     383592 of    1625625 elements locally
+      uses       3.069 MB for data and       0.526 MB for the map locally
+        K_2occ  1196 of 22500 blocks     183755 of    1625625 elements locally
+      uses       1.470 MB for data and       0.057 MB for the map locally
+             T  1196 of 22500 blocks     183755 of    1625625 elements locally
+      uses       1.470 MB for data and       0.057 MB for the map locally
+       T_local  1196 of 22500 blocks     183755 of    1625625 elements locally
+      uses       1.470 MB for data and       0.057 MB for the map locally
+  Number of unique W's for doubles: 65
+  Begin iterations for LMP2
+  iter        E_corr       delta(E_corr) rms(delta(T))        rms(R)
+     1    -0.7322999765    -0.7322999765  2.3269151070  0.0017736611
+     2    -0.7471666121    -0.0148666356  0.1577835776  0.0001664368
+     3    -0.7548935186    -0.0077269065  0.1605826886  0.0000345644
+     4    -0.7547780997     0.0001154189  0.0345189507  0.0000083096
+     5    -0.7550366231    -0.0002585234  0.0179832918  0.0000027039
+     6    -0.7550117084     0.0000249147  0.0059917557  0.0000009089
+     7    -0.7550167843    -0.0000050759  0.0000996691  0.0000000566
+     8    -0.7550167325     0.0000000518  0.0000178446  0.0000000449
+     9    -0.7550168159    -0.0000000834  0.0000077837  0.0000000436
+    10    -0.7550168126     0.0000000033  0.0000025323  0.0000000434
+    11    -0.7550168095     0.0000000031  0.0000001904  0.0000000434
+  Converged
+
+  E[Reference]    = -282.8310962041
+  E_corr[LMP2]    =   -0.7550168095
+  E[LMP2]         = -283.5861130136
+
+  Value of the MolecularEnergy: -283.5861130136
+
+  Function Parameters:
+    value_accuracy    = 1.000000e-06 (1.000000e-06) (computed)
+    gradient_accuracy = 0.000000e+00 (1.000000e-06)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecule:
+    Molecular formula: C2H5NO2
+    molecule<Molecule>: (
+      symmetry = c1
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1     H [   -0.5446710000     2.3345790000     0.0000000000]
+         2     O [   -0.9560950000     1.4755620000     0.0000000000]
+         3     C [    0.0000000000     0.5512870000     0.0000000000]
+         4     O [    1.1565490000     0.8214930000     0.0000000000]
+         5     C [   -0.5734970000    -0.8512980000     0.0000000000]
+         6     H [   -1.2194950000    -0.9433860000     0.8663750000]
+         7     H [   -1.2194950000    -0.9433860000    -0.8663750000]
+         8     N [    0.4031360000    -1.9083610000     0.0000000000]
+         9     H [    0.9995300000    -1.8328260000     0.8010210000]
+        10     H [    0.9995300000    -1.8328260000    -0.8010210000]
+      }
+    )
+    Atomic Masses:
+        1.00783   15.99491   12.00000   15.99491   12.00000
+        1.00783    1.00783   14.00307    1.00783    1.00783
+
+  Electronic basis:
+    GaussianBasisSet:
+      nbasis = 85
+      nshell = 30
+      nprim  = 75
+      name = "6-31G*"
+                                               CPU  Wall
+mpqc:                                        42.92 38.55
+  calc:                                      42.28 38.05
+    LMP2:                                    32.87 32.87
+      Compute K_2occ:                        12.13 12.13
+        3rd q.t.:                             0.46  0.46
+        4th q.t.:                             0.13  0.13
+        Allocate K_2occ:                      0.03  0.03
+        Allocate q3_ovo:                      0.25  0.25
+        Half transf. for K_2occ:             11.21 11.22
+          1st q.t.:                           2.58  2.59
+          2nd q.t.:                           0.94  0.94
+          Allocate q1:                        0.71  0.68
+          Allocate q2_K_oo:                   0.55  0.54
+          Allocate v:                         0.06  0.07
+          Compute v:                          6.28  6.30
+        Redistribute q2:                      0.00  0.00
+      Compute W:                              0.27  0.27
+      Create Fock matrices :                  0.03  0.03
+        accum:                                0.00  0.00
+          bcast:                              0.00  0.00
+          bounds:                             0.00  0.00
+          sum0:                               0.00  0.00
+        parallel_union:                       0.00  0.00
+      Create P:                               0.03  0.03
+      Create paired_occ:                      0.00  0.00
+      Domain map:                             0.02  0.02
+        create domain for each MO:            0.02  0.01
+        create pair domains:                  0.00  0.00
+        overlap matrix:                       0.00  0.00
+        overlap_times_scf:                    0.01  0.01
+          accum:                              0.00  0.00
+            bcast:                            0.00  0.00
+            bounds:                           0.00  0.00
+            sum0:                             0.00  0.00
+        various inits:                        0.00  0.00
+      LMP2:                                  20.27 20.28
+        K_2occ update:                        0.02  0.01
+        LMP2 residual:                       11.83 11.83
+          SFT:                                2.91  2.92
+            init:                             0.00  0.00
+            tmp in first loop:                2.91  2.92
+          SFTS_ij:                            8.92  8.92
+            R update in second loop:          0.12  0.13
+            init:                             0.02  0.02
+              accum:                          0.00  0.00
+                bcast:                        0.00  0.00
+                bounds:                       0.00  0.00
+                sum0:                         0.00  0.00
+            tmp1 in second loop:              0.74  0.74
+            tmp1 in second loop - alloc:      0.19  0.18
+            tmp1 in second loop - assign:     0.70  0.70
+            tmp2 in second loop - B:          1.95  2.02
+            tmp2 in second loop - alloc:      0.05  0.06
+            tmp2 in second loop - assign:     2.04  2.10
+            tmp3 in second loop - alloc:      0.02  0.02
+            tmp3 in second loop - assign:     3.07  2.94
+        compute deltas:                       7.89  7.89
+          occ pairs loop:                     7.89  7.89
+            0: setup:                         0.02  0.01
+            1: PAO->PC:                       3.32  3.28
+            2: denom:                         0.88  0.87
+            3: PC->PAO:                       3.58  3.63
+            4: assign:                        0.07  0.07
+        ecorr:                                0.21  0.21
+        extrap:                               0.28  0.28
+      Localization:                           0.02  0.02
+        pop_local_mo:                         0.02  0.02
+          Iterations:                         0.01  0.01
+            compute_delta:                    0.00  0.00
+            do_rotation 1:                    0.00  0.00
+            do_rotation 2:                    0.01  0.00
+          Localization setup:                 0.01  0.01
+            scf_vector:                       0.01  0.01
+            scf_vector_dat:                   0.00  0.00
+            shalf convert:                    0.00  0.00
+            shalf product:                    0.00  0.00
+      Overlap:                                0.00  0.00
+      Transform overlap :                     0.02  0.02
+        accum:                                0.00  0.00
+          bcast:                              0.00  0.00
+          bounds:                             0.00  0.00
+          sum0:                               0.00  0.00
+        parallel_union:                       0.00  0.00
+      compute_L_and_D_screening_quantities:   0.01  0.01
+        0: L_blocks:                          0.00  0.00
+        1: Lshellmax:                         0.00  0.00
+        2: L_map:                             0.00  0.00
+        3: Lmax:                              0.01  0.00
+        4: Dmax:                              0.00  0.00
+      compute_PPmax_screening_matrix:         0.00  0.00
+      compute_P_screening_quantities:         0.00  0.00
+      compute_Schwarz_screening_quantities:   0.00  0.00
+      create_virb_united_pair_domains:        0.00  0.00
+    vector:                                   9.41  5.17
+      density:                                0.03  0.02
+      evals:                                  0.16  0.16
+      extrap:                                 0.09  0.09
+      fock:                                   9.01  4.77
+        accum:                                0.00  0.00
+        ao_gmat:                              8.98  4.73
+          start thread:                       8.84  4.60
+          stop thread:                        0.14  0.13
+        init pmax:                            0.00  0.00
+        local data:                           0.02  0.02
+        setup:                                0.00  0.00
+        sum:                                  0.00  0.00
+        symm:                                 0.01  0.01
+  input:                                      0.64  0.50
+    vector:                                   0.50  0.36
+      density:                                0.00  0.00
+      evals:                                  0.01  0.01
+      extrap:                                 0.01  0.01
+      fock:                                   0.45  0.31
+        accum:                                0.00  0.00
+        ao_gmat:                              0.44  0.31
+          start thread:                       0.44  0.30
+          stop thread:                        0.00  0.00
+        init pmax:                            0.00  0.00
+        local data:                           0.00  0.00
+        setup:                                0.00  0.00
+        sum:                                  0.00  0.00
+        symm:                                 0.00  0.00
+
+  End Time: Tue Nov  4 20:37:15 2008
+

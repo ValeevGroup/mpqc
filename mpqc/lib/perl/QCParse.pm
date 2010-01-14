@@ -669,6 +669,7 @@ package MPQCInputWriter;
 	"MP2-F12/A''"     => "MBPT2_R12",
 	"MP2-F12/B"       => "MBPT2_R12",
 	"MP2-F12/C"       => "MBPT2_R12",
+	"LMP2"            => "LMP2",
 	"MP2"             => "MBPT2",
 	"OPT1[2]"         => "MBPT2",
 	"OPT2[2]"         => "MBPT2",

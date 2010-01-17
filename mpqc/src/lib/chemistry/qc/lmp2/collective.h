@@ -51,6 +51,8 @@ void custom_alltoallv(void *sendbuf,
 /// This is often faster than that provided by MPI_Allreduce.
 void allsum(double *data, long n);
 
+}
+
 #endif
 
 

@@ -31,6 +31,7 @@
 #endif
 
 #include <memory>
+#include <algorithm>
 #include <scconfig.h>
 #include <util/misc/scint.h>
 #include <util/misc/regtime.h>

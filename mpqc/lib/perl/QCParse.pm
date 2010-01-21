@@ -439,6 +439,18 @@ sub auxbasis {
 	$_;
 }
 
+sub dfbasis {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("dfbasis");
+    s/^\s+//;
+    s/\s+$//;
+    if ( $_ eq "" ) {
+        $self->error("No density-fitting basis given (using default).\n");
+        $_ = "STO-3G";
+    }
+    $_;
+}
+
 sub puream {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("puream");
@@ -562,6 +574,15 @@ sub frequencies {
 	$bval;
 }
 
+sub r12corrfactor {
+	my $self = shift;
+    my $val = $self->{"parser"}->value("orthog_method");
+    if ($val eq "") {
+    	
+    }
+    $bval;
+}
+
 sub axyz_lines {
 	my $self = shift;
 	$self->molecule()->string();
@@ -657,10 +678,30 @@ package MPQCInputWriter;
 	"PSI-UHF"         => "PsiUHF",
 	"PSI-CCSD"        => "PsiCCSD",
 	"PSI-CCSD_T"      => "PsiCCSD_T",
+    "PSI-UCCSD"       => "PsiCCSD",
+    "PSI-UCCSD_T"     => "PsiCCSD_T",
 	"PSI-CCSD-R12"    => "PsiCCSD_PT2R12",
 	"PSI-CCSD_T-R12"  => "PsiCCSD_PT2R12T",
 	"PSI-CCSD-F12"    => "PsiCCSD_PT2R12",
 	"PSI-CCSD_T-F12"  => "PsiCCSD_PT2R12T",
+    "PSI-UCCSD-R12"   => "PsiCCSD_PT2R12",
+    "PSI-UCCSD_T-R12" => "PsiCCSD_PT2R12T",
+    "PSI-UCCSD-F12"   => "PsiCCSD_PT2R12",
+    "PSI-UCCSD_T-F12" => "PsiCCSD_PT2R12T",
+	"RHF[2]_R12"      => "PT2R12",
+    "ROHF[2]_R12"     => "PT2R12",
+    "UHF[2]_R12"      => "PT2R12",
+    "PSI-RHF[2]_R12"  => "PT2R12",
+    "PSI-ROHF[2]_R12" => "PT2R12",
+    "PSI-UHF[2]_R12"  => "PT2R12",
+    "PSI-CI[2]_R12"   => "PT2R12",
+    "RHF[2]_F12"      => "PT2R12",
+    "ROHF[2]_F12"     => "PT2R12",
+    "UHF[2]_F12"      => "PT2R12",
+    "PSI-RHF[2]_F12"  => "PT2R12",
+    "PSI-ROHF[2]_F12" => "PT2R12",
+    "PSI-UHF[2]_F12"  => "PT2R12",
+    "PSI-CI[2]_F12"   => "PT2R12",
 	"MP2-R12/A'"      => "MBPT2_R12",
 	"MP2-R12/A''"     => "MBPT2_R12",
 	"MP2-R12/B"       => "MBPT2_R12",
@@ -762,10 +803,28 @@ package MPQCInputWriter;
 	"MP2-F12/A''"  => "A''",
 	"MP2-F12/B"    => "B",
 	"MP2-F12/C"    => "C",
-	"PSI-CCSD-R12"  => "C",
-	"PSI-CCSD_T-R12" => "C",
-	"PSI-CCSD-F12"  => "C",
-	"PSI-CCSD_T-F12" => "C"
+	"PSI-CCSD-R12"    => "C",
+	"PSI-CCSD_T-R12"  => "C",
+	"PSI-CCSD-F12"    => "C",
+	"PSI-CCSD_T-F12"  => "C",
+    "PSI-UCCSD-R12"   => "C",
+    "PSI-UCCSD_T-R12" => "C",
+    "PSI-UCCSD-F12"   => "C",
+    "PSI-UCCSD_T-F12" => "C",
+    "RHF[2]_R12"      => "C",
+    "ROHF[2]_R12"     => "C",
+    "UHF[2]_R12"      => "C",
+    "PSI-RHF[2]_R12"  => "C",
+    "PSI-ROHF[2]_R12" => "C",
+    "PSI-UHF[2]_R12"  => "C",
+    "PSI-CI[2]_R12"   => "C",
+    "RHF[2]_F12"      => "C",
+    "ROHF[2]_F12"     => "C",
+    "UHF[2]_F12"      => "C",
+    "PSI-RHF[2]_F12"  => "C",
+    "PSI-ROHF[2]_F12" => "C",
+    "PSI-UHF[2]_F12"  => "C",
+    "PSI-CI[2]_F12"   => "C"
 );
 %r12corrfactormap = (
 	"MP2-R12/A'"   => "R12",
@@ -776,9 +835,9 @@ package MPQCInputWriter;
 	"MP2-F12/A''"  => "STG-3G",
 	"MP2-F12/B"    => "STG-3G",
 	"MP2-F12/C"    => "STG-3G",
-	"PSI-CCSD-R12"  => "R12",
+	"PSI-CCSD-R12"   => "R12",
 	"PSI-CCSD_T-R12" => "R12",
-	"PSI-CCSD-F12"  => "STG-3G",
+	"PSI-CCSD-F12"   => "STG-3G",
 	"PSI-CCSD_T-F12" => "STG-3G"
 );
 %mbpt2map = (

@@ -370,6 +370,8 @@ CHECK0FILTER := $(CHECK0FILTER:%=%.in) \
                 $(CHECK0FILTER:%= %optfrq.in)
 CHECK0FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
 CHECK0FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
+CHECK0FILTER += $(INP)/lmp2_c8h18.631gs.lmp2.in
+CHECK0FILTER += $(INP)/lmp2_c12h26.lmp2.ccpvdz.in
 CHECK0INPUTS := $(filter-out $(CHECK0FILTER),$(CHECK0INPUTS))
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))
@@ -401,6 +403,8 @@ CHECK1FILTER := $(CHECK1FILTER:%=%.in) \
                 $(CHECK1FILTER:%= %optfrq.in)
 CHECK1FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
 CHECK1FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
+CHECK1FILTER += $(INP)/lmp2_c8h18.631gs.lmp2.in
+CHECK1FILTER += $(INP)/lmp2_c12h26.lmp2.ccpvdz.in
 CHECK1INPUTS := $(filter-out $(CHECK1FILTER),$(CHECK1INPUTS))
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK1INPUTS := $(filter $(CINTSFILTER),$(CHECK1INPUTS))

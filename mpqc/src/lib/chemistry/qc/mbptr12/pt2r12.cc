@@ -1287,20 +1287,21 @@ void sc::PT2R12::compute()
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
     double scale = 1.0;
     if (pairspin == BetaBeta && !spin_polarized) continue;
-    if (pairspin == AlphaAlpha && !spin_polarized)
-      scale = 2.0;
     switch (r12world()->r12tech()->ansatz()->projector()) {
       case LinearR12::Projector_1:
-        energy_pt2r12[i] = scale * energy_PT2R12_projector1(pairspin);
+        energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
         break;
       case LinearR12::Projector_2:
-        energy_pt2r12[i] = scale * energy_PT2R12_projector2(pairspin);
+        energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
         break;
       default:
         abort();
     }
-    energy_correction_r12 +=  energy_pt2r12[i];
   }
+  if (!spin_polarized)
+    energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+  for(int i=0; i<NSpinCases2; i++)
+    energy_correction_r12 +=  energy_pt2r12[i];
 
   const double energy = reference_->energy() + energy_correction_r12;
 
@@ -1317,10 +1318,16 @@ void sc::PT2R12::compute()
                                       energy_pt2r12[AlphaBeta]) << endl;
   ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
                                       energy_pt2r12[AlphaAlpha]) << endl;
-  ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
-                                      energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
-  ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
-                                      3.0*energy_pt2r12[AlphaAlpha]) << endl;
+  if (spin_polarized) {
+    ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
+                                        energy_pt2r12[BetaBeta]) << endl;
+  }
+  else {
+    ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
+                                        energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
+    ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
+                                        3.0*energy_pt2r12[AlphaAlpha]) << endl;
+  }
   ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",

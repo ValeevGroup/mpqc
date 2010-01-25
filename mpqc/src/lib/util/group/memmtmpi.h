@@ -113,7 +113,16 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     MTMPIMemoryGrp(const Ref<MessageGrp>& msg, const Ref<ThreadGrp> &th,
                    MPI_Comm comm = MPI_COMM_WORLD);
     /** Construct a MTMPIMemoryGrp given a KeyVal input object. A
-        fully thread safe MPI is needed (MPI_THREAD_MULTIPLE). */
+        fully thread safe MPI is needed (MPI_THREAD_MULTIPLE). The recognized
+        keywords are:
+
+        <table border="1">
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
+        <tr><td><tt>num_threads</tt><td>integer<td>1<td>The number of threads to use for communication.
+        <tr><td><tt>num_buffer</tt><td>integer<td>0<td>The number of buffers to prepost for communication.
+        <tr><td><tt>use_timer</tt><td>boolean<td>false<td>Collect timing information.
+        </table>
+    */
     MTMPIMemoryGrp(const Ref<KeyVal> &);
     ~MTMPIMemoryGrp();
 

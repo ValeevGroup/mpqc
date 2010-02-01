@@ -40,8 +40,8 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
   Ref<R12IntEval> thisref(this);
   Timer timer("General reference VXB intermediate evaluator");
 
-  if(r12world()->r12tech()->ansatz()->projector() != LinearR12::Projector_2) {
-    throw InputError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- this routine works only in combination with LinearR12::Projector_2.",__FILE__,__LINE__);
+  if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_2) {
+    throw InputError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
   }
 
   for(int s=0; s<nspincases2(); s++) {
@@ -80,12 +80,9 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     // for now it's always true since can only use pq products to generate geminals
     const bool gg12_in_GG12 = true;
 
-    Ref<TwoParticleContraction> tpcontract;
-    const ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    tpcontract = new CABS_OBS_Contraction(orbs1->rank());
-
-    const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-                    absmethod == LinearR12::ABS_CABSPlus);
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
+                    absmethod == R12Technology::ABS_CABSPlus);
 
     Ref<OrbitalSpace> rispace1 = r12world()->ribs_space();
     Ref<OrbitalSpace> rispace2 = r12world()->ribs_space();

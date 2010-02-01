@@ -73,7 +73,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   int naocc_a, naocc_b;
   int navir_a, navir_b;
   int nall_a, nall_b;
-  Ref<R12RefWavefunction> refinfo = r12world()->ref();
+  Ref<RefWavefunction> refinfo = r12world()->ref();
   if (!spin_polarized()) {
     const int nocc_act = refinfo->occ_act()->rank();
     const int nvir_act = refinfo->uocc_act()->rank();
@@ -103,12 +103,12 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
 
   Ref<R12Technology> r12tech = r12world()->r12tech();
   switch(r12tech->ansatz()->orbital_product_gg()) {
-    case LinearR12::OrbProdgg_ij:
+    case R12Technology::OrbProdgg_ij:
       dim_gg_[AlphaAlpha] = dim_oo_[AlphaAlpha];
       dim_gg_[AlphaBeta] = dim_oo_[AlphaBeta];
       dim_gg_[BetaBeta] = dim_oo_[BetaBeta];
       break;
-    case LinearR12::OrbProdgg_pq:
+    case R12Technology::OrbProdgg_pq:
       {
         const unsigned int norbs_a = this->orbs(Alpha)->rank();
         const unsigned int norbs_b = this->orbs(Beta)->rank();
@@ -121,12 +121,12 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
         throw ProgrammingError("R12IntEval::R12IntEval -- invalid orbital_product_gg for the R12 ansatz",__FILE__,__LINE__);
   }
   switch(r12tech->ansatz()->orbital_product_GG()) {
-  case LinearR12::OrbProdGG_ij:
+  case R12Technology::OrbProdGG_ij:
       dim_GG_[AlphaAlpha] = dim_oo_[AlphaAlpha];
       dim_GG_[AlphaBeta] = dim_oo_[AlphaBeta];
       dim_GG_[BetaBeta] = dim_oo_[BetaBeta];
       break;
-  case LinearR12::OrbProdGG_pq:
+  case R12Technology::OrbProdGG_pq:
       {
         const unsigned int norbs_a = this->orbs(Alpha)->rank();
         const unsigned int norbs_b = this->orbs(Beta)->rank();
@@ -153,7 +153,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_B)
+      if (stdapprox() == R12Technology::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (coupling() == true) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
@@ -209,7 +209,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox() == LinearR12::StdApprox_B)
+      if (stdapprox() == R12Technology::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (coupling() == true) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
@@ -338,7 +338,7 @@ R12IntEval::B(SpinCase2 S) {
 
 RefSymmSCMatrix
 R12IntEval::BB(SpinCase2 S) {
-  if (stdapprox() != LinearR12::StdApprox_B)
+  if (stdapprox() != R12Technology::StdApprox_B)
     throw ProgrammingError("R12IntEval::BB() -- called but standard approximation is not B",__FILE__,__LINE__);
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
@@ -426,7 +426,7 @@ R12IntEval::init_intermeds_()
     V_[s].assign(0.0);
     X_[s].assign(0.0);
     B_[s].assign(0.0);
-    if (stdapprox() == LinearR12::StdApprox_B)
+    if (stdapprox() == R12Technology::StdApprox_B)
       BB_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
     if (coupling() == true) {
@@ -1997,9 +1997,9 @@ R12IntEval::compute()
   // compare these basis sets here
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
-  const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-			    absmethod == LinearR12::ABS_CABSPlus);
+  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+  const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
+			    absmethod == R12Technology::ABS_CABSPlus);
   // is CABS space empty?
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;
@@ -2018,7 +2018,7 @@ R12IntEval::compute()
     }
 
     if (obs_eq_vbs) {
-      if(r12world()->r12tech()->ansatz()->projector()==LinearR12::Projector_1) {
+      if(r12world()->r12tech()->ansatz()->projector()==R12Technology::Projector_1) {
         if (!r12world()->sdref())
           throw FeatureNotImplemented("Projector 1 cannot be used with multi-configuration references",
                                       __FILE__, __LINE__);
@@ -2039,26 +2039,26 @@ R12IntEval::compute()
 
     // In stdapprox A', A'', and B add single-commutator contributions due to the relativistic terms
     // in stdapprox C these are computed via RI
-    if (this->dk() > 0 && stdapprox() != LinearR12::StdApprox_C) {
+    if (this->dk() > 0 && stdapprox() != R12Technology::StdApprox_C) {
       contrib_to_B_DKH_a_();
     }
 
     // Contribution from X to B in approximation A'' is more complicated than in other methods
     // because exchange is completely skipped
-    if (stdapprox() == LinearR12::StdApprox_App) {
+    if (stdapprox() == R12Technology::StdApprox_App) {
       compute_BApp_();
     }
     // whereas other methods that include X (A' and B) can use the simple fX form
     else {
-      if (stdapprox() == LinearR12::StdApprox_Ap ||
-          stdapprox() == LinearR12::StdApprox_B) {
+      if (stdapprox() == R12Technology::StdApprox_Ap ||
+          stdapprox() == R12Technology::StdApprox_B) {
         compute_B_fX_();
       }
     }
 
     // This is app B contribution to B -- only valid for projector 2
-    if ((stdapprox() == LinearR12::StdApprox_B) && ansatz()->projector() ==
-         LinearR12::Projector_2 && !r12world()->r12tech()->omit_B()) {
+    if ((stdapprox() == R12Technology::StdApprox_B) && ansatz()->projector() ==
+         R12Technology::Projector_2 && !r12world()->r12tech()->omit_B()) {
       compute_BB_();
       if (debug_ >= DefaultPrintThresholds::O4)
         for (int s=0; s<nspincases2(); s++)
@@ -2066,8 +2066,8 @@ R12IntEval::compute()
     }
 
     if (!r12world()->r12tech()->omit_B()) {
-      if (stdapprox() == LinearR12::StdApprox_C) {
-        if(r12world()->r12tech()->ansatz()->projector()==LinearR12::Projector_1){
+      if (stdapprox() == R12Technology::StdApprox_C) {
+        if(r12world()->r12tech()->ansatz()->projector()==R12Technology::Projector_1){
           compute_BC_ansatz1_();
           if(!r12world()->sdref())
             throw FeatureNotImplemented("Projector 1 cannot be used with multi-configuration references",
@@ -2085,7 +2085,7 @@ R12IntEval::compute()
           for(int s=0; s<nspincases2(); s++)
             B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(app. C) intermediate").c_str());
       }
-      if (stdapprox() == LinearR12::StdApprox_Cp) {
+      if (stdapprox() == R12Technology::StdApprox_Cp) {
         compute_BCp_();
         if (debug_ >= DefaultPrintThresholds::O4)
           for(int s=0; s<nspincases2(); s++)
@@ -2097,10 +2097,10 @@ R12IntEval::compute()
     const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty && !r12world()->r12tech()->omit_B();
     if (nonzero_ebc_terms) {
       // EBC contribution to B only appears in commutator-based projector 2 case
-      if (ansatz()->projector() == LinearR12::Projector_2 &&
-          (stdapprox() == LinearR12::StdApprox_Ap ||
-           stdapprox() == LinearR12::StdApprox_App ||
-           stdapprox() == LinearR12::StdApprox_B)
+      if (ansatz()->projector() == R12Technology::Projector_2 &&
+          (stdapprox() == R12Technology::StdApprox_Ap ||
+           stdapprox() == R12Technology::StdApprox_App ||
+           stdapprox() == R12Technology::StdApprox_B)
           ) {
         AF12_contrib_to_B_();
       }
@@ -2124,7 +2124,7 @@ R12IntEval::compute()
         const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
         const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
 
-        const Ref<R12RefWavefunction> refinfo = r12world()->ref();
+        const Ref<RefWavefunction> refinfo = r12world()->ref();
 
         compute_A_direct_(A_[s],
                           GG1space, vir1_act,
@@ -2152,8 +2152,8 @@ R12IntEval::compute()
 #if INCLUDE_GBC_CODE
     // GBC contribution to B only appears in non-StdApproxC projector 2 case
     const bool nonzero_gbc_terms = !gbc() && !cabs_empty &&
-                                   ansatz()->projector() == LinearR12::Projector_2 &&
-                                   stdapprox() != LinearR12::StdApprox_C &&
+                                   ansatz()->projector() == R12Technology::Projector_2 &&
+                                   stdapprox() != R12Technology::StdApprox_C &&
                                    !r12world()->r12tech()->omit_B();
     if (nonzero_gbc_terms) {
       // These functions assume that virtuals are expanded in the same basis
@@ -2293,7 +2293,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(V_[s],to_all_tasks);
     globally_sum_scmatrix_(X_[s],to_all_tasks);
     globally_sum_scmatrix_(B_[s],to_all_tasks);
-    if (stdapprox() == LinearR12::StdApprox_B)
+    if (stdapprox() == R12Technology::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
     if (coupling() == true) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
@@ -2354,9 +2354,9 @@ R12IntEval::xspace(SpinCase1 S) const
 const Ref<OrbitalSpace>&
 R12IntEval::GGspace(SpinCase1 S) const {
   switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-  case LinearR12::OrbProdGG_ij:
+  case R12Technology::OrbProdGG_ij:
   return(occ_act(S));
-  case LinearR12::OrbProdGG_pq:
+  case R12Technology::OrbProdGG_pq:
   return(orbs(S));
   default:
   throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2365,9 +2365,9 @@ R12IntEval::GGspace(SpinCase1 S) const {
 
 const Ref<OrbitalSpace>& R12IntEval::ggspace(SpinCase1 S) const {
   switch(r12world()->r12tech()->ansatz()->orbital_product_gg()) {
-  case LinearR12::OrbProdgg_ij:
+  case R12Technology::OrbProdgg_ij:
   return(occ_act(S));
-  case LinearR12::OrbProdgg_pq:
+  case R12Technology::OrbProdgg_pq:
   return(orbs(S));
   default:
   throw ProgrammingError("R12IntEval::ggspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2387,7 +2387,7 @@ R12IntEval::ordm(SpinCase1 S) const {
 
 bool
 R12IntEval::bc() const {
-  Ref<SD_R12RefWavefunction> sdptr; sdptr << r12world()->ref();
+  Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->ref();
   if (sdptr.nonnull()) {
     if (sdptr->spin_restricted() && sdptr->spin_polarized())
       return false; // ROHF
@@ -2401,9 +2401,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::hj_x_P(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(hj_i_P(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(hj_p_P(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2414,9 +2414,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::hj_x_p(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(hj_i_p(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(hj_p_p(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2427,9 +2427,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::hj_x_m(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
         return(hj_i_m(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
         return(hj_p_m(S));
     default:
         throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2440,9 +2440,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::hj_x_a(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
         return(hj_i_a(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
         return(hj_p_a(S));
     default:
         throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2453,9 +2453,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::hj_x_A(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(hj_i_A(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(hj_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2466,9 +2466,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::K_x_P(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(K_i_P(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(K_p_P(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2479,9 +2479,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::K_x_p(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(K_i_p(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(K_p_p(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2492,9 +2492,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::K_x_m(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(K_i_m(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(K_p_m(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2505,9 +2505,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::K_x_a(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(K_i_a(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(K_p_a(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2518,9 +2518,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::K_x_A(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(K_i_A(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(K_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2531,9 +2531,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::F_x_A(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
 	return(F_i_A(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
 	return(F_p_A(S));
     default:
 	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2544,9 +2544,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::F_x_p(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
     return(F_i_p(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
     return(F_p_p(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2557,9 +2557,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::F_x_m(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
     return(F_i_m(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
     return(F_p_m(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2570,9 +2570,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::F_x_a(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
     return(F_i_a(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
     return(F_p_a(S));
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2583,9 +2583,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::F_x_P(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
     return(F_i_P(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
     abort();
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
@@ -2596,9 +2596,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::J_x_p(SpinCase1 S)
 {
     switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
-    case LinearR12::OrbProdGG_ij:
+    case R12Technology::OrbProdGG_ij:
     return(J_i_p(S));
-    case LinearR12::OrbProdGG_pq:
+    case R12Technology::OrbProdGG_pq:
       abort();
     default:
     throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);

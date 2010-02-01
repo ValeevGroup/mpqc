@@ -56,9 +56,9 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   set_naocc(r12world_->ref()->occ_act_sb(Alpha)->rank(),
             r12world_->ref()->occ_act_sb(Beta )->rank());
 
-//assert(r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-  assert(r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
-  set_fixed(r12world_->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fixed);
+//assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+  assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
+  set_fixed(r12world_->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fixed);
   set_navir(r12world_->ref()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
             r12world_->ref()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
   set_mosym(r12world_->ref()->orbs(Alpha)->orbsym(),
@@ -143,7 +143,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     static_size += d_gt2->get_filesize() * sizeof(double) * (ndiis + 1) * 2;
     mem_->sync();
     // needs to be initialized here (with fixed amplitudes or full-opt MP2-R12 amplitudes)...
-    if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+    if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
       d_glambda2 = new Tensor("glambda2", mem_);
       offset_gt2(d_glambda2, false);
       static_size += d_glambda2->get_filesize() * sizeof(double);
@@ -240,7 +240,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
         mem_->sync();
       }
 
-      if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+      if (do_lambda || r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
         // gl2 * F^dagger (\tilde{l} in our papers)
         // filled at run-time
         d_ly = new Tensor("ly", mem_);
@@ -269,7 +269,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   if (perturbative_ == "(T)R12[DT]") {
-    if (r12world_->r12tech()->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq) {
+    if (r12world_->r12tech()->ansatz()->orbital_product_GG() != R12Technology::OrbProdGG_pq) {
       throw std::runtime_error("(T)R12[DT] requires GG space to be pq.");
     }
     // generalized V intermediate.
@@ -289,7 +289,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   // Making initial guess for t2.
   if (!need_gt2()) {
     guess_t2(d_t2);
-  } else if (r12world_->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+  } else if (r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
     // assuming d_gt2 is already filled in.
     guess_t2_r12(d_t2, d_gt2);
   } else {

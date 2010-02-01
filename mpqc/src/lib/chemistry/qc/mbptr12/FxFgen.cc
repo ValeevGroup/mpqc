@@ -125,8 +125,8 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
 
-  using LinearR12::TwoParticleContraction;
-  using LinearR12::Direct_Contraction;
+  using mbptr12::TwoParticleContraction;
+  using mbptr12::Direct_Contraction;
 
   // If only x1_2 or 1_x2 is computed (this happens only is p1 not equiv p2), need to double its weight.
   const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);

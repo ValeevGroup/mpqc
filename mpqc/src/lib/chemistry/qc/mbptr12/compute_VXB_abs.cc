@@ -46,8 +46,8 @@ R12IntEval::contrib_to_VXB_abs_()
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // commutators only appear in A', A'', and B
-  const bool compute_B = (stdapprox() == LinearR12::StdApprox_Ap ||
-      stdapprox() == LinearR12::StdApprox_App || stdapprox() == LinearR12::StdApprox_B);
+  const bool compute_B = (stdapprox() == R12Technology::StdApprox_Ap ||
+      stdapprox() == R12Technology::StdApprox_App || stdapprox() == R12Technology::StdApprox_B);
 
   if (!obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- can't use this builder if OBS != VBS",__FILE__,__LINE__);
@@ -94,9 +94,9 @@ R12IntEval::contrib_to_VXB_abs_()
       const ABSMethod absmethod = r12world()->abs_method();
       // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
       // it involves this term +O1O2-V1V2
-      if ((absmethod == LinearR12::ABS_ABS ||
-       absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
-      ansatz()->projector() == LinearR12::Projector_2)
+      if ((absmethod == R12Technology::ABS_ABS ||
+       absmethod == R12Technology::ABS_ABSPlus) && !obs_eq_ribs &&
+      ansatz()->projector() == R12Technology::Projector_2)
           tpcontract = new ABS_OBS_Contraction(orbs1->rank(),
                                                occ1->rank(),
                                                occ2->rank());
@@ -200,10 +200,10 @@ R12IntEval::contrib_to_VXB_abs_()
 #define DEBUG_SKIP_CABS_TERMS 0
 #if !DEBUG_SKIP_CABS_TERMS
       // These terms only contribute if Projector=2
-      if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
+      if (!obs_eq_ribs && ansatz()->projector() == R12Technology::Projector_2) {
 
-      const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-                    absmethod == LinearR12::ABS_CABSPlus);
+      const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
+                    absmethod == R12Technology::ABS_CABSPlus);
       Ref<OrbitalSpace> rispace1, rispace2;
       if (cabs_method) {
         rispace1 = r12world()->ribs_space(spin1);

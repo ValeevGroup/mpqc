@@ -90,9 +90,9 @@ void CCSDPR12::compute(){
   ccr12_info_->offset_gt2(gr2, false);
 
   // only fixed amplitude ansatz is supported at the moment
-  const bool fullopt = ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
-//assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+  const bool fullopt = ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fullopt;
+//assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
 
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSDPR12_T1* ccsdpr12_t1 = new CCSDPR12_T1(info());
@@ -231,8 +231,8 @@ void CCSDPR12::compute(){
 
   if (do_lambda) {
     // so far, we asssume SP ansatz
-    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt);
-    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_scaledfixed);
+    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
     // if optimzed, guess_glambda2 has not yet been called.
     if (false) ccr12_info_->guess_glambda2(); // glambda2 = gt2^dagger
 

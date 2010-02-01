@@ -2091,7 +2091,7 @@ namespace sc {
 
     Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
     world->memory(memory_);
-    Ref<R12RefWavefunction> refinfo = new SD_R12RefWavefunction(world, reference_mpqc_, false,
+    Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, reference_mpqc_, false,
                                                                 nfzc_, nfzv_);
     r12world_ = new R12WavefunctionWorld(keyval, refinfo);
     if(r12world()->r12tech()->corrfactor()->geminaldescriptor()->type()!=string("invalid")) {

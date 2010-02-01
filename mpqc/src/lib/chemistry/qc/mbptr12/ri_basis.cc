@@ -58,8 +58,8 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
   if (bs_aux_->equiv(obs)) {
     bs_ri_ = obs;
     if (!ri_basis_not_needed &&
-        (r12tech()->abs_method() == LinearR12::ABS_CABS ||
-	     r12tech()->abs_method() == LinearR12::ABS_CABSPlus
+        (r12tech()->abs_method() == R12Technology::ABS_CABS ||
+	     r12tech()->abs_method() == R12Technology::ABS_CABSPlus
 	    )
 	   )
       throw std::runtime_error("R12WavefunctionWorld::construct_ri_basis_ -- ABS methods CABS and CABS+ can only be used when ABS != OBS");
@@ -70,16 +70,16 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
     }
     else {
     switch(r12tech()->abs_method()) {
-      case LinearR12::ABS_ABS:
+      case R12Technology::ABS_ABS:
 	construct_ri_basis_ks_(safe);
 	break;
-      case LinearR12::ABS_ABSPlus:
+      case R12Technology::ABS_ABSPlus:
 	construct_ri_basis_ksplus_(safe);
 	break;
-      case LinearR12::ABS_CABS:
+      case R12Technology::ABS_CABS:
 	construct_ri_basis_ev_(safe);
 	break;
-      case LinearR12::ABS_CABSPlus:
+      case R12Technology::ABS_CABSPlus:
 	construct_ri_basis_evplus_(safe);
 	break;
       default:

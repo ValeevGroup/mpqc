@@ -85,7 +85,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     RefSCDimension aodim2 = vec2.rowdim();
     Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-    Ref<R12RefWavefunction> reference = r12world()->ref();
+    Ref<RefWavefunction> reference = r12world()->ref();
     // Form the DK correction in the current basis using the momentum
     // basis of the reference wavefunction.  The momentum basis in the
     // reference should be a superset of hcore_basis
@@ -108,8 +108,8 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
 
     // include only the Pauli-Hamiltonian in the R12 treatment of the Fock operator
     bool use_pauli =
-        (override_pauli == -1) ? (r12world()->r12tech()->H0_dk_approx_pauli()
-            == LinearR12::H0_dk_approx_pauli_true) : override_pauli;
+        (override_pauli == -1) ? (r12world()->r12tech()->H0_dk_approx()
+            == R12Technology::H0_dk_approx_pauli_true) : override_pauli;
     if (dk == 0) {
       use_pauli = false;
     }

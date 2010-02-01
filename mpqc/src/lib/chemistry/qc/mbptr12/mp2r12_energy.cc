@@ -67,7 +67,7 @@ static ClassDesc R12EnergyIntermediates_cd(typeid(R12EnergyIntermediates),"R12En
                                            create<R12EnergyIntermediates>);
 
 R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
-                                               const LinearR12::StandardApproximation stdapp) {
+                                               const R12Technology::StandardApproximation stdapp) {
   stdapprox_=stdapp;
   r12eval_=r12eval;
   V_computed_=false;
@@ -77,7 +77,7 @@ R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
 }
 
 R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
-  int stdapprox; si.get(stdapprox); stdapprox_=(LinearR12::StandardApproximation)stdapprox;
+  int stdapprox; si.get(stdapprox); stdapprox_=(R12Technology::StandardApproximation)stdapprox;
   r12eval_ << SavableState::restore_state(si);
   int V_computed; si.get(V_computed); V_computed_=(bool)V_computed;
   int X_computed; si.get(X_computed); X_computed_=(bool)X_computed;
@@ -114,7 +114,7 @@ void R12EnergyIntermediates::set_r12eval(Ref<R12IntEval> &r12eval) {
   r12eval_=r12eval;
 }
 
-LinearR12::StandardApproximation R12EnergyIntermediates::stdapprox() const {
+R12Technology::StandardApproximation R12EnergyIntermediates::stdapprox() const {
   return(stdapprox_);
 }
 
@@ -190,7 +190,7 @@ static ClassDesc MP2R12Energy_cd(
   typeid(MP2R12Energy),"MP2R12Energy",2,"virtual public SavableState",
   0, 0, 0);
 
-//MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug)
+//MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, R12Technology::StandardApproximation stdapp, int debug)
 //{
 //  r12eval_ = r12eval;
 //  stdapprox_ = stdapp;
@@ -243,7 +243,7 @@ void MP2R12Energy::obsolete()
 
 Ref<R12IntEval> MP2R12Energy::r12eval() const { return r12eval_; };
 const Ref<R12EnergyIntermediates>& MP2R12Energy::r12intermediates() const { return(r12intermediates_); };
-LinearR12::StandardApproximation MP2R12Energy::stdapprox() const { return(r12intermediates_->stdapprox()); };
+R12Technology::StandardApproximation MP2R12Energy::stdapprox() const { return(r12intermediates_->stdapprox()); };
 void MP2R12Energy::set_debug(int debug) { debug_ = debug; };
 int MP2R12Energy::get_debug() const { return debug_; };
 
@@ -285,7 +285,7 @@ void
 MP2R12Energy_SpinOrbital::init_()
 {
   const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
-  if(r12world->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+  if(r12world->r12tech()->ansatz()->orbital_product_gg()==R12Technology::OrbProdgg_pq) {
     throw InputError("MP2R12Energy_SpinOrbital::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
   }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
@@ -352,11 +352,11 @@ void MP2R12Energy_SpinOrbital::print_pair_energies(bool spinadapted, std::ostrea
 
   std::string SA_str;
   switch (stdapprox()) {
-    case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
-    case LinearR12::StdApprox_App: SA_str = "A''";  break;
-    case LinearR12::StdApprox_B:   SA_str = "B";   break;
-    case LinearR12::StdApprox_C:   SA_str = "C";   break;
-    case LinearR12::StdApprox_Cp:  SA_str = "C'";   break;
+    case R12Technology::StdApprox_Ap:  SA_str = "A'";  break;
+    case R12Technology::StdApprox_App: SA_str = "A''";  break;
+    case R12Technology::StdApprox_B:   SA_str = "B";   break;
+    case R12Technology::StdApprox_C:   SA_str = "C";   break;
+    case R12Technology::StdApprox_Cp:  SA_str = "C'";   break;
     default:
       throw InputError("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid",
                        __FILE__,__LINE__);
@@ -826,7 +826,7 @@ void
 MP2R12Energy_SpinOrbital_new::init_()
 {
   const Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
-  if(r12world->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq) {
+  if(r12world->r12tech()->ansatz()->orbital_product_gg()==R12Technology::OrbProdgg_pq) {
     throw InputError("MP2R12Energy_SpinOrbital_new::init_ -- pq Ansatz not allowed for MP2-R12.",__FILE__,__LINE__);
   }
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
@@ -899,7 +899,7 @@ bool MP2R12Energy_SpinOrbital_new::diag() const {
 }
 
 bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
-  const bool result = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  const bool result = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt;
   return result;
 }
 
@@ -910,11 +910,11 @@ void MP2R12Energy_SpinOrbital_new::print_pair_energies(bool spinadapted, std::os
 
   std::string SA_str;
   switch (stdapprox()) {
-    case LinearR12::StdApprox_Ap:  SA_str = "A'";  break;
-    case LinearR12::StdApprox_App: SA_str = "A''";  break;
-    case LinearR12::StdApprox_B:   SA_str = "B";   break;
-    case LinearR12::StdApprox_C:   SA_str = "C";   break;
-    case LinearR12::StdApprox_Cp:  SA_str = "C'";   break;
+    case R12Technology::StdApprox_Ap:  SA_str = "A'";  break;
+    case R12Technology::StdApprox_App: SA_str = "A''";  break;
+    case R12Technology::StdApprox_B:   SA_str = "B";   break;
+    case R12Technology::StdApprox_C:   SA_str = "C";   break;
+    case R12Technology::StdApprox_Cp:  SA_str = "C'";   break;
     default:
       throw InputError("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid",
                        __FILE__,__LINE__);

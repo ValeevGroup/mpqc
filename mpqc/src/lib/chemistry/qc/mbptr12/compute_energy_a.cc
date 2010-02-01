@@ -99,14 +99,14 @@ MBPT2_R12::compute_energy_()
   //
 
   // can use projector 3 only for app C
-  if (r12tech->ansatz()->projector() != LinearR12::Projector_3) {
+  if (r12tech->ansatz()->projector() != R12Technology::Projector_3) {
 
     // MP2-F12/A'
-    if (r12tech->stdapprox() == LinearR12::StdApprox_Ap ||
-        r12tech->stdapprox() == LinearR12::StdApprox_B) {
+    if (r12tech->stdapprox() == R12Technology::StdApprox_Ap ||
+        r12tech->stdapprox() == R12Technology::StdApprox_B) {
       Timer tim2("mp2-f12/a' pair energies");
       if (r12ap_energy_.null()){
-        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_Ap);
+        r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_Ap);
         r12ap_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
       r12ap_energy_->print_pair_energies(r12world->spinadapted());
@@ -115,10 +115,10 @@ MBPT2_R12::compute_energy_()
     }
 
     // MP2-F12/B
-    if (r12tech->stdapprox() == LinearR12::StdApprox_B) {
+    if (r12tech->stdapprox() == R12Technology::StdApprox_B) {
       Timer tim2("mp2-f12/b pair energies");
       if (r12b_energy_.null()){
-        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_B);
+        r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_B);
         r12b_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
       r12b_energy_->print_pair_energies(r12world->spinadapted());
@@ -127,10 +127,10 @@ MBPT2_R12::compute_energy_()
     }
 
     // MP2-F12/A''
-    if (r12tech->stdapprox() == LinearR12::StdApprox_App) {
+    if (r12tech->stdapprox() == R12Technology::StdApprox_App) {
       Timer tim2("mp2-f12/a'' pair energies");
       if (r12app_energy_.null()){
-        r12intermediates=new R12EnergyIntermediates(r12eval_,LinearR12::StdApprox_App);
+        r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_App);
         r12app_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
       }
       r12app_energy_->print_pair_energies(r12world->spinadapted());
@@ -141,8 +141,8 @@ MBPT2_R12::compute_energy_()
   } // end of != ansatz_3
 
   // MP2-F12/C
-  if (r12tech->stdapprox() == LinearR12::StdApprox_C ||
-      r12tech->stdapprox() == LinearR12::StdApprox_Cp) {
+  if (r12tech->stdapprox() == R12Technology::StdApprox_C ||
+      r12tech->stdapprox() == R12Technology::StdApprox_Cp) {
     Timer tim2("mp2-f12/c pair energies");
     if (r12c_energy_.null()){
       r12intermediates=new R12EnergyIntermediates(r12eval_,r12tech->stdapprox());
@@ -170,11 +170,11 @@ MBPT2_R12::compute_energy_()
   if (twopdm_grid_.nonnull()) {
     Ref<MP2R12Energy> wfn_to_plot;
     switch(r12tech->stdapprox()) {
-      case LinearR12::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
-      case LinearR12::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
-      case LinearR12::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;
-      case LinearR12::StdApprox_C:    wfn_to_plot = r12c_energy_;   break;
-      case LinearR12::StdApprox_Cp:   wfn_to_plot = r12c_energy_;   break;
+      case R12Technology::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;
+      case R12Technology::StdApprox_App:  wfn_to_plot = r12app_energy_; break;
+      case R12Technology::StdApprox_B:    wfn_to_plot = r12b_energy_;   break;
+      case R12Technology::StdApprox_C:    wfn_to_plot = r12c_energy_;   break;
+      case R12Technology::StdApprox_Cp:   wfn_to_plot = r12c_energy_;   break;
     }
     for(unsigned int sc2=0; sc2<NSpinCases2; sc2++) {
       wfn_to_plot->compute_pair_function(plot_pair_function_[0],plot_pair_function_[1],

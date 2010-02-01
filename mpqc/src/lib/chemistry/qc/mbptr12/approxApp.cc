@@ -87,7 +87,7 @@ R12IntEval::compute_BApp_()
   Ref<OrbitalSpace> hJnr[NSpinCases1];
   if (this->dk() > 0) {
 
-    const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
+    const R12Technology::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx();
     const bool H0_dk_keep = r12world()->r12tech()->H0_dk_keep();
 
     const int nspins1 = this->nspincases1();
@@ -107,7 +107,7 @@ R12IntEval::compute_BApp_()
         this->ao_registry()->value(ribs->basis());
 
       Ref<OrbitalSpace> hJ_x_P = (maxnabs < 2) ? hj_x_p(spin) : hj_x_P(spin);
-      if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false && !H0_dk_keep) { // use nonrelativistic hamiltonian in h+J
+      if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_false && !H0_dk_keep) { // use nonrelativistic hamiltonian in h+J
         const Ref<OrbitalSpace>& x = xspace(spin);
         const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
         // compute dH = H(rel) - H(nonrel) in AO basis

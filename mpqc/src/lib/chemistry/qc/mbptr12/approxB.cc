@@ -94,9 +94,9 @@ R12IntEval::compute_BB_()
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
 
 #if INCLUDE_Q
-    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
-                             absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    const bool include_Kp = (absmethod == R12Technology::ABS_CABS ||
+                             absmethod == R12Technology::ABS_CABSPlus) || abs_eq_obs;
 
     std::string Qlabel = prepend_spincase(spincase2,"Q intermediate");
     Timer tim_Q(Qlabel);
@@ -171,9 +171,9 @@ R12IntEval::compute_BB_()
     // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs && !omit_P()) {
 
-      const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-      if (absmethod != LinearR12::ABS_CABS &&
-          absmethod != LinearR12::ABS_CABSPlus) {
+      const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+      if (absmethod != R12Technology::ABS_CABS &&
+          absmethod != R12Technology::ABS_CABSPlus) {
             throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
       }
 

@@ -349,7 +349,7 @@ class R12IntEval : virtual public SavableState {
            const Ref<OrbitalSpace>& space2_ket,
            const Ref<OrbitalSpace>& space1_intk,
            const Ref<OrbitalSpace>& space2_intk,
-           const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+           const Ref<mbptr12::TwoParticleContraction>& tpcontract,
            bool antisymmetrize,
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
@@ -434,7 +434,7 @@ class R12IntEval : virtual public SavableState {
                                             const Ref<OrbitalSpace>& space1_intk,
                                             const Ref<OrbitalSpace>& space2_intk,
                                             const Ref<OrbitalSpace>& space3_intk,
-                                            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+                                            const Ref<mbptr12::TwoParticleContraction>& tpcontract,
                                             const std::vector<std::string>& tformkeys_bra,
                                             const std::vector<std::string>& tformkeys_ket);
 
@@ -570,13 +570,13 @@ public:
 
 #if 1
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12world()->r12tech()->corrfactor(); }
-  LinearR12::ABSMethod abs_method() const { return r12world()->r12tech()->abs_method(); }
-  const Ref<LinearR12Ansatz>& ansatz() const { return r12world()->r12tech()->ansatz(); }
+  R12Technology::ABSMethod abs_method() const { return r12world()->r12tech()->abs_method(); }
+  const Ref<R12Technology::R12Ansatz>& ansatz() const { return r12world()->r12tech()->ansatz(); }
   bool spin_polarized() const { return r12world()->ref()->spin_polarized(); }
   bool gbc() const { return r12world()->r12tech()->gbc(); }
   bool ebc() const { return r12world()->r12tech()->ebc(); }
   bool coupling() const { return r12world()->r12tech()->coupling(); }
-  LinearR12::StandardApproximation stdapprox() const { return r12world()->r12tech()->stdapprox(); }
+  R12Technology::StandardApproximation stdapprox() const { return r12world()->r12tech()->stdapprox(); }
   bool omit_P() const { return r12world()->r12tech()->omit_P(); }
   const Ref<MOIntsTransformFactory>& tfactory() const { return r12world()->world()->tfactory(); };
   const Ref<MOIntsRuntime>& moints_runtime() const { return r12world()->world()->moints_runtime(); };

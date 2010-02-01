@@ -60,7 +60,7 @@ namespace sc {
                                             const Ref<OrbitalSpace>& space1_intk,
                                             const Ref<OrbitalSpace>& space2_intk,
                                             const Ref<OrbitalSpace>& space3_intk,
-                                            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+                                            const Ref<mbptr12::TwoParticleContraction>& tpcontract,
                                             const std::vector<std::string>& tformkeys_bra,
                                             const std::vector<std::string>& tformkeys_ket) {
 

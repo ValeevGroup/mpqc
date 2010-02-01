@@ -48,23 +48,23 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // commutators only appear in A', A'', and B
-  const bool compute_B = (stdapprox() == LinearR12::StdApprox_Ap ||
-      stdapprox() == LinearR12::StdApprox_App || stdapprox() == LinearR12::StdApprox_B);
+  const bool compute_B = (stdapprox() == R12Technology::StdApprox_Ap ||
+      stdapprox() == R12Technology::StdApprox_App || stdapprox() == R12Technology::StdApprox_B);
 
   if (obs_eq_vbs)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if OBS == VBS",__FILE__,__LINE__);
 
-  const ABSMethod absmethod = r12world()->r12tech()->abs_method();
+  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
   // Can only use CABS/CABS+
-  if (absmethod == LinearR12::ABS_ABS ||
-      absmethod == LinearR12::ABS_ABSPlus)
+  if (absmethod == R12Technology::ABS_ABS ||
+      absmethod == R12Technology::ABS_ABSPlus)
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if absmethod != CABS/CABS+",__FILE__,__LINE__);
 
   Timer tim("mp2-f12a intermeds (tensor contract)");
 
   // Test new tensor compute function
   for(int s=0; s<nspincases2(); s++) {
-      using namespace sc::LinearR12;
+      using namespace sc::mbptr12;
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
@@ -235,7 +235,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       // (im|jA) contribution
       // only needed if ansatz == 2
-      if (ansatz()->projector() == LinearR12::Projector_2) {
+      if (ansatz()->projector() == R12Technology::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
 	  Ref<OrbitalSpace> cs1 = occ1;
 	  Ref<OrbitalSpace> cs2 = cabs2;
@@ -329,7 +329,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       // (im|jA) contribution
       // only needed if ansatz == 2
-      if (ansatz()->projector() == LinearR12::Projector_2) {
+      if (ansatz()->projector() == R12Technology::Projector_2) {
 	  const double asymm_contr_pfac = part1_equiv_part2 ? -2.0 : -1.0;
 	  Ref<OrbitalSpace> cs1 = occ1;
 	  Ref<OrbitalSpace> cs2 = cabs2;

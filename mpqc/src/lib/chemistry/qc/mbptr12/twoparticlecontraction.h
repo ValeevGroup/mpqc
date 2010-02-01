@@ -38,7 +38,7 @@
 
 namespace sc {
   
-  namespace LinearR12 {
+  namespace mbptr12 {
     
     /** TwoParticleContraction contracts nrow-by-ncol bra- or ket-blocks of two 2-particle tensors
         i.e. each ij element of the first tensor is multiplied with the ij element of the ij element

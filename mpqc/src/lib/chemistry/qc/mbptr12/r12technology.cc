@@ -41,17 +41,160 @@
 #endif
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 #include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
+#include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/linearr12.timpl.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
 using namespace std;
 using namespace sc;
-using namespace sc::LinearR12;
 
-/*--------------------------------
-  MBPT2_R12
- --------------------------------*/
+static ClassDesc R12Ansatz_cd(
+  typeid(R12Technology::R12Ansatz),"R12Ansatz",3,"virtual public SavableState",
+  create<R12Technology::R12Ansatz>, create<R12Technology::R12Ansatz>, create<R12Technology::R12Ansatz>);
+
+R12Technology::R12Ansatz::R12Ansatz()
+  : projector_(R12Technology::Projector_2),
+    diag_(false),
+    amplitudes_(R12Technology::GeminalAmplitudeAnsatz_fullopt),
+    wof_(false),
+    orbital_product_GG_(R12Technology::OrbProdGG_ij),
+    orbital_product_gg_(R12Technology::OrbProdgg_ij) {}
+
+R12Technology::R12Ansatz::R12Ansatz(const Ref<KeyVal>& keyval)
+{
+  projector_ = (R12Technology::Projector)keyval->intvalue("projector",KeyValValueint(2));
+  const bool default_wof = (projector_ == R12Technology::Projector_0);
+  wof_ = keyval->booleanvalue("wof",KeyValValueboolean((int)default_wof));
+
+  diag_ = keyval->booleanvalue("diag",KeyValValueboolean((int)false));
+
+  // amplitudes should be fixed by default if the diagonal ansatz is used
+  const std::string default_amplitudes_str = diag_ ? std::string("fixed") : std::string("optimized");
+  const std::string amplitudes_str = keyval->stringvalue("amplitudes",
+                                                         KeyValValuestring(default_amplitudes_str));
+  if (amplitudes_str == std::string("fixed"))
+    amplitudes_ = R12Technology::GeminalAmplitudeAnsatz_fixed;
+  else if (amplitudes_str == std::string("optimized"))
+    amplitudes_ = R12Technology::GeminalAmplitudeAnsatz_fullopt;
+  else if (amplitudes_str == std::string("scaledfixed"))
+    amplitudes_ = R12Technology::GeminalAmplitudeAnsatz_scaledfixed;
+  else
+    throw InputError("Invalid value for keyword \"amplitudes\"",__FILE__,__LINE__);
+  if ( (diag_==false) && (amplitudes_!=R12Technology::GeminalAmplitudeAnsatz_fullopt) ){
+    throw InputError("R12Ansatz::R12Ansatz -- amplitudes can only be fixed if diag is true",__FILE__,__LINE__);
+  }
+
+  std::string op = keyval->stringvalue("orbital_product_GG",KeyValValuestring("ij"));
+  if (op == "ij")
+    orbital_product_GG_ = R12Technology::OrbProdGG_ij;
+  else if (op == "pq")
+    orbital_product_GG_ = R12Technology::OrbProdGG_pq;
+  else
+    throw InputError("R12Ansatz::R12Ansatz -- invalid value for orbital_product_GG",__FILE__,__LINE__);
+
+  op = keyval->stringvalue("orbital_product_gg",KeyValValuestring("ij"));
+  if (op == "ij")
+    orbital_product_gg_ = R12Technology::OrbProdgg_ij;
+  else if (op == "pq")
+    orbital_product_gg_ = R12Technology::OrbProdgg_pq;
+  else
+    throw InputError("R12Ansatz::R12Ansatz -- invalid value for orbital_product_gg",__FILE__,__LINE__);
+}
+
+R12Technology::R12Ansatz::R12Ansatz(StateIn& s) :
+  SavableState(s)
+{
+  int p; s.get(p); projector_ = (R12Technology::Projector)p;
+  int d; s.get(d); diag_ = (bool)d;
+  int a; s.get(a); amplitudes_ = (R12Technology::GeminalAmplitudeAnsatz)a;
+  if (s.version(::class_desc<R12Ansatz>()) >= 3) {
+    int w; s.get(w); wof_ = (bool)w;
+  }
+  if (s.version(::class_desc<R12Ansatz>()) >= 2) {
+    int o; s.get(o); orbital_product_GG_ = (R12Technology::OrbitalProduct_GG)o;
+    s.get(o); orbital_product_gg_ = (R12Technology::OrbitalProduct_gg)o;
+  }
+}
+
+R12Technology::R12Ansatz::~R12Ansatz() {}
+
+void
+R12Technology::R12Ansatz::save_data_state(StateOut& s)
+{
+  s.put((int)projector_);
+  s.put((int)diag_);
+  s.put((int)amplitudes_);
+  s.put((int)wof_);
+  s.put((int)orbital_product_GG_);
+  s.put((int)orbital_product_gg_);
+}
+
+void
+R12Technology::R12Ansatz::print(std::ostream& o) const
+{
+  o << indent << "R12Ansatz:" << std::endl;
+  o << incindent;
+
+  o << indent << "Geminal orbital Product Space: ";
+  switch(orbital_product_GG_) {
+    case R12Technology::OrbProdGG_ij: o << "ij"; break;
+    case R12Technology::OrbProdGG_pq: o << "pq"; break;
+  }
+  o << std::endl;
+
+  o << indent << "Space of orbital products from which geminal substitutions are allowed: ";
+  switch(orbital_product_gg_) {
+    case R12Technology::OrbProdgg_ij: o << "ij"; break;
+    case R12Technology::OrbProdgg_pq: o << "pq"; break;
+  }
+  o << std::endl;
+
+  o << indent << "Projector: ";
+  switch(projector_) {
+    case R12Technology::Projector_0: o << "0  , i.e. 1"; break;
+    case R12Technology::Projector_1: o << "1  , i.e. (1-P1)(1-P2)"; break;
+    case R12Technology::Projector_2: o << "2  , i.e. (1-O1)(1-O2)-V1V2"; break;
+    case R12Technology::Projector_3: o << "3  , i.e. 1-P1P2"; break;
+  }
+  o << std::endl;
+
+  std::string amplitudes_str;
+  switch (amplitudes_) {
+    case R12Technology::GeminalAmplitudeAnsatz_fullopt:
+      amplitudes_str = std::string("optimized"); break;
+    case R12Technology::GeminalAmplitudeAnsatz_fixed:
+      amplitudes_str = std::string("fixed"); break;
+    case R12Technology::GeminalAmplitudeAnsatz_scaledfixed:
+      amplitudes_str = std::string("scaled fixed"); break;
+  }
+  o << indent << "Ansatz: " << (diag_ ? "diagonal" : "orbital-invariant")
+              << " with " << amplitudes_str << " amplitudes" << std::endl;
+  o << indent << "WOF: " << (wof_ ? "true" : "false") << std::endl;
+  o << decindent;
+}
+
+R12Technology::Projector
+R12Technology::R12Ansatz::projector() const { return projector_; }
+
+bool
+R12Technology::R12Ansatz::diag() const { return diag_; }
+
+R12Technology::GeminalAmplitudeAnsatz
+R12Technology::R12Ansatz::amplitudes() const { return amplitudes_; }
+
+bool
+R12Technology::R12Ansatz::wof() const { return wof_; }
+
+R12Technology::OrbitalProduct_GG
+R12Technology::R12Ansatz::orbital_product_GG() const { return orbital_product_GG_; }
+
+R12Technology::OrbitalProduct_gg
+R12Technology::R12Ansatz::orbital_product_gg() const {
+  return(orbital_product_gg_);
+}
+
+/////////////////////////////////////
 
 static ClassDesc R12Technology_cd(
   typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
@@ -66,22 +209,22 @@ R12Technology::R12Technology(StateIn& s)
   int ebc; s.get(ebc); ebc_ = (bool)ebc;
   int coupling; s.get(coupling); coupling_ = (bool)coupling;
   int omit_P; s.get(omit_P); omit_P_ = (bool)omit_P;
-  int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
-  int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+  int absmethod; s.get(absmethod); abs_method_ = (ABSMethod)absmethod;
+  int stdapprox; s.get(stdapprox); stdapprox_ = (StandardApproximation) stdapprox;
   ansatz_ << SavableState::restore_state(s);
   s.get(maxnabs_);
 
   int safety_check; s.get(safety_check);
   safety_check_ = static_cast<bool>(safety_check);
   int posdef_B; s.get(posdef_B);
-  posdef_B_ = static_cast<LinearR12::PositiveDefiniteB>(posdef_B);
+  posdef_B_ = static_cast<PositiveDefiniteB>(posdef_B);
 
   if (s.version(::class_desc<R12Technology>()) >= 9) {
     int omit_B; s.get(omit_B); omit_B_ = (bool)omit_B;
   }
   if (s.version(::class_desc<R12Technology>()) >= 10) {
     {
-      int i; s.get(i); H0_dk_approx_pauli_ = static_cast<LinearR12::H0_dk_approx_pauli>(i);
+      int i; s.get(i); H0_dk_approx_pauli_ = static_cast<H0_dk_approx_pauli>(i);
     }
     {
       int i; s.get(i); H0_dk_keep_ = static_cast<bool>(i);
@@ -110,27 +253,27 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	    sa_string == "ap" ||
 	    sa_string == "A'" ||
 	    sa_string == "a'" ) {
-    stdapprox_ = LinearR12::StdApprox_Ap;
+    stdapprox_ = StdApprox_Ap;
   }
   else if ( sa_string == "App" ||
 	    sa_string == "app" ||
 	    sa_string == "A''" ||
 	    sa_string == "a''" ) {
-    stdapprox_ = LinearR12::StdApprox_App;
+    stdapprox_ = StdApprox_App;
   }
   else if ( sa_string == "B" ||
 	    sa_string == "b" ) {
-    stdapprox_ = LinearR12::StdApprox_B;
+    stdapprox_ = StdApprox_B;
   }
   else if ( sa_string == "C" ||
 	    sa_string == "c" ) {
-    stdapprox_ = LinearR12::StdApprox_C;
+    stdapprox_ = StdApprox_C;
   }
   else if ( sa_string == "Cp" ||
             sa_string == "cp" ||
             sa_string == "C'" ||
             sa_string == "c'") {
-    stdapprox_ = LinearR12::StdApprox_Cp;
+    stdapprox_ = StdApprox_Cp;
   }
   else {
     throw std::runtime_error("R12Technology::R12Technology() -- unrecognized value for stdapprox");
@@ -138,7 +281,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 
   // if no explicit correlation then set stdapprox to A'
   if (sa_string == "none" || sa_string == "NONE") {
-      stdapprox_ = LinearR12::StdApprox_Ap;
+      stdapprox_ = StdApprox_Ap;
   }
 
   //
@@ -192,9 +335,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         params.push_back(vtmp);
       }
       // If stdapprox_ == A', A'', or B, need commutators
-      if (stdapprox_ == LinearR12::StdApprox_Ap ||
-          stdapprox_ == LinearR12::StdApprox_App ||
-          stdapprox_ == LinearR12::StdApprox_B)
+      if (stdapprox_ == StdApprox_Ap ||
+          stdapprox_ == StdApprox_App ||
+          stdapprox_ == StdApprox_B)
         corrfactor_ = new LinearR12::G12CorrelationFactor(params);
       else
         corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
@@ -285,7 +428,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
     CorrParams params;
     int num_f12 = keyval->count("corr_param");
-    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+    Ref<LinearR12::GeminalDescriptorFactory> gdesc_factory=new LinearR12::GeminalDescriptorFactory;
     if (num_f12 != 0) {
         // Do I have contracted functions? Can't handle these (yet?)
         bool contracted = (keyval->count("corr_param",0) != 0);
@@ -303,7 +446,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         double exponent = keyval->doublevalue("corr_param");
 	stg_exponents.push_back(exponent);
     }
-    Ref<GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
+    Ref<LinearR12::GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
     // convert STGs into combinations of Gaussians
     for(int f=0; f<num_f12; f++) {
 	using namespace sc::mbptr12;
@@ -330,16 +473,16 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	// fit r12^k exp(-gamma*r_{12})
 	const int k = 0;
 	const double gamma = stg_exponents[f];
-	Ref<G12CorrelationFactor> cf;
-	cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
+	Ref<LinearR12::G12CorrelationFactor> cf;
+	cf << LinearR12::stg_to_g12<LinearR12::G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
 	params.push_back(cf->function(0));
 	delete w;
     }
 
     // If stdapprox_ == A', A'', or B, need commutators
-    if (stdapprox_ == LinearR12::StdApprox_Ap ||
-        stdapprox_ == LinearR12::StdApprox_App ||
-        stdapprox_ == LinearR12::StdApprox_B)
+    if (stdapprox_ == StdApprox_Ap ||
+        stdapprox_ == StdApprox_App ||
+        stdapprox_ == StdApprox_B)
       corrfactor_ = new LinearR12::G12CorrelationFactor(params,gdesc);
     else
       corrfactor_ = new LinearR12::G12NCCorrelationFactor(params,gdesc);
@@ -369,44 +512,44 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
        abs_method_str == "ks" ||
        abs_method_str == "ABS" ||
        abs_method_str == "abs" ) {
-    abs_method_ = LinearR12::ABS_ABS;
+    abs_method_ = ABS_ABS;
   }
   else if ( abs_method_str == "KS+" ||
 	    abs_method_str == "ks+" ||
             abs_method_str == "ABS+" ||
 	    abs_method_str == "abs+" ) {
-    abs_method_ = LinearR12::ABS_ABSPlus;
+    abs_method_ = ABS_ABSPlus;
   }
   else if ( abs_method_str == "EV" ||
 	    abs_method_str == "ev" ||
             abs_method_str == "CABS" ||
 	    abs_method_str == "cabs" ) {
-    abs_method_ = LinearR12::ABS_CABS;
+    abs_method_ = ABS_CABS;
   }
   else if ( abs_method_str == "EV+" ||
 	    abs_method_str == "ev+" ||
             abs_method_str == "CABS+" ||
 	    abs_method_str == "cabs+" ) {
-    abs_method_ = LinearR12::ABS_CABSPlus;
+    abs_method_ = ABS_CABSPlus;
   }
   else {
     throw std::runtime_error("R12Technology::R12Technology -- unrecognized value for abs_method");
   }
 
-  ansatz_ = require_dynamic_cast<LinearR12Ansatz*>(
+  ansatz_ = require_dynamic_cast<R12Ansatz*>(
     keyval->describedclassvalue("ansatz").pointer(),
     "R12Technology::R12Technology\n"
     );
-  // Default constructor for LinearR12Ansatz specifies the default
+  // Default constructor for R12Ansatz specifies the default
   if (ansatz_.null())
-    ansatz_ = new LinearR12Ansatz;
-  if (ansatz()->projector() == LinearR12::Projector_1 && stdapprox() != LinearR12::StdApprox_C)
+    ansatz_ = new R12Ansatz;
+  if (ansatz()->projector() == Projector_1 && stdapprox() != StdApprox_C)
     throw InputError("R12Technology::R12Technology -- projector 1 has not been implemented yet for a standard approximation other than C",__FILE__,__LINE__);
-  if (ansatz()->projector() == LinearR12::Projector_3)
+  if (ansatz()->projector() == Projector_3)
     throw InputError("R12Technology::R12Technology -- projector 3 is obsolete",__FILE__,__LINE__);
 
   // Default is to include all integrals, unless using A'' method
-  int default_maxnabs = (stdapprox_ == LinearR12::StdApprox_App) ? 1 : 2;
+  int default_maxnabs = (stdapprox_ == StdApprox_App) ? 1 : 2;
   // there are no ABS indices if OBS and ABS are the same
   if (abs_eq_obs_) default_maxnabs = 0;
   maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(default_maxnabs)));
@@ -415,13 +558,13 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 
   std::string posdef_B = keyval->stringvalue("posdef_B",KeyValValuestring("weak"));
   if (posdef_B == "no" || posdef_B == "NO" || posdef_B == "false" || posdef_B == "FALSE") {
-      posdef_B_ = LinearR12::PositiveDefiniteB_no;
+      posdef_B_ = PositiveDefiniteB_no;
   }
   else if (posdef_B == "yes" || posdef_B == "YES" || posdef_B == "true" || posdef_B == "TRUE") {
-      posdef_B_ = LinearR12::PositiveDefiniteB_yes;
+      posdef_B_ = PositiveDefiniteB_yes;
   }
   else if (posdef_B == "weak" || posdef_B == "WEAK") {
-      posdef_B_ = LinearR12::PositiveDefiniteB_weak;
+      posdef_B_ = PositiveDefiniteB_weak;
   }
   else {
       throw InputError("R12Technology::R12Technology -- invalid value for keyword posdef_B",__FILE__,__LINE__);
@@ -432,28 +575,28 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       H0_dk_approx_pauli == "YES" ||
       H0_dk_approx_pauli == "true" ||
       H0_dk_approx_pauli == "TRUE") {
-    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_true;
+    H0_dk_approx_pauli_ = H0_dk_approx_pauli_true;
   }
   else if (H0_dk_approx_pauli == "no" ||
       H0_dk_approx_pauli == "NO" ||
       H0_dk_approx_pauli == "false" ||
       H0_dk_approx_pauli == "FALSE") {
-    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_false;
+    H0_dk_approx_pauli_ = H0_dk_approx_pauli_false;
   }
   else if (H0_dk_approx_pauli == "fHf" ||
       H0_dk_approx_pauli == "fhf" ||
       H0_dk_approx_pauli == "FHF") {
-    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_fHf;
+    H0_dk_approx_pauli_ = H0_dk_approx_pauli_fHf;
   }
   else if (H0_dk_approx_pauli == "fHf_Q" ||
       H0_dk_approx_pauli == "fhf_q" ||
       H0_dk_approx_pauli == "FHF_Q") {
-    H0_dk_approx_pauli_ = LinearR12::H0_dk_approx_pauli_fHf_Q;
+    H0_dk_approx_pauli_ = H0_dk_approx_pauli_fHf_Q;
   }
   else
     throw InputError("R12Technology::R12Technology -- invalid value for keyword H0_dk_approx_pauli",__FILE__,__LINE__);
 
-  if (H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_false) {
+  if (H0_dk_approx_pauli_ == H0_dk_approx_pauli_false) {
     H0_dk_keep_ = keyval->booleanvalue("H0_dk_keep",KeyValValueboolean((int)false));
   }
 
@@ -466,7 +609,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // stdapprox must be C if corrfactor == geng12
   {
     Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
-    if (gg12ptr.nonnull() && stdapprox_ != LinearR12::StdApprox_C) {
+    if (gg12ptr.nonnull() && stdapprox_ != StdApprox_C) {
       throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
     }
   }
@@ -475,21 +618,21 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // Make sure that the ABS method is available for the requested MP2-R12 energy
   const bool must_use_cabs = (!gbc_ ||
 			      !ebc_ || !coupling_ ||
-			      (stdapprox_ == LinearR12::StdApprox_B && !abs_eq_obs_) ||
-			      (stdapprox_ == LinearR12::StdApprox_C && !abs_eq_obs_) ||
-			      (stdapprox_ == LinearR12::StdApprox_Cp && !abs_eq_obs_) ||
-			      (stdapprox_ == LinearR12::StdApprox_App && !abs_eq_obs_) ||
+			      (stdapprox_ == StdApprox_B && !abs_eq_obs_) ||
+			      (stdapprox_ == StdApprox_C && !abs_eq_obs_) ||
+			      (stdapprox_ == StdApprox_Cp && !abs_eq_obs_) ||
+			      (stdapprox_ == StdApprox_App && !abs_eq_obs_) ||
                               !vbs_eq_obs_);
   if (must_use_cabs &&
-      (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
+      (abs_method_ == ABS_ABS || abs_method_ == ABS_ABSPlus))
     throw std::runtime_error("R12Technology::R12Technology() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
 
   //
   // Relativistic features are only implemented for certain approximations
   //
-  if ((H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_fHf ||
-       H0_dk_approx_pauli_ == LinearR12::H0_dk_approx_pauli_fHf_Q) &&
-       stdapprox_ != LinearR12::StdApprox_C) {
+  if ((H0_dk_approx_pauli_ == H0_dk_approx_pauli_fHf ||
+       H0_dk_approx_pauli_ == H0_dk_approx_pauli_fHf_Q) &&
+       stdapprox_ != StdApprox_C) {
     throw InputError("R12Technology::R12Technology -- the given value of keyword H0_dk_approx_pauli is only valid when stdapprox=C",__FILE__,__LINE__);
   }
 
@@ -536,55 +679,55 @@ R12Technology::print(ostream&o) const
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: Valeev" << endl;
   switch (posdef_B()) {
-    case LinearR12::PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;
-    case LinearR12::PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;
-    case LinearR12::PositiveDefiniteB_weak:   o << indent << "Enforce positive definiteness of B, but not ~B(ij)" << endl;  break;
+    case PositiveDefiniteB_no:     o << indent << "Do not enforce positive definiteness of B" << endl;  break;
+    case PositiveDefiniteB_yes:    o << indent << "Enforce positive definiteness of B" << endl;  break;
+    case PositiveDefiniteB_weak:   o << indent << "Enforce positive definiteness of B, but not ~B(ij)" << endl;  break;
   }
-  if (stdapprox_ == LinearR12::StdApprox_B && omit_P_) {
+  if (stdapprox_ == StdApprox_B && omit_P_) {
     o << indent << "Intermediate P is omitted" << endl;
   }
   switch(abs_method_) {
-  case LinearR12::ABS_ABS :
+  case ABS_ABS :
     o << indent << "ABS method variant: ABS  (Klopper and Samson)" << endl;
     break;
-  case LinearR12::ABS_ABSPlus :
+  case ABS_ABSPlus :
     o << indent << "ABS method variant: ABS+ (Klopper and Samson using the union of OBS and ABS for RI)" << endl;
     break;
-  case LinearR12::ABS_CABS :
+  case ABS_CABS :
     o << indent << "ABS method variant: CABS  (Valeev)" << endl;
     break;
-  case LinearR12::ABS_CABSPlus :
+  case ABS_CABSPlus :
     o << indent << "ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)" << endl;
     break;
   }
   switch (stdapprox_) {
-    case LinearR12::StdApprox_Ap :
+    case StdApprox_Ap :
       o << indent << "Standard Approximation: A'" << endl;
     break;
-    case LinearR12::StdApprox_App :
+    case StdApprox_App :
       o << indent << "Standard Approximation: A''" << endl;
     break;
-    case LinearR12::StdApprox_B :
+    case StdApprox_B :
       o << indent << "Standard Approximation: B" << endl;
     break;
-    case LinearR12::StdApprox_C :
+    case StdApprox_C :
       o << indent << "Standard Approximation: C" << endl;
     break;
-    case LinearR12::StdApprox_Cp :
+    case StdApprox_Cp :
       o << indent << "Standard Approximation: C'" << endl;
     break;
   }
   ansatz()->print(o);
 
   o << indent << "H0_dk_approx_pauli: ";
-  switch(H0_dk_approx_pauli()) {
-    case LinearR12::H0_dk_approx_pauli_true:    o << "true" << endl;  break;
-    case LinearR12::H0_dk_approx_pauli_false:   o << "false" << endl; break;
-    case LinearR12::H0_dk_approx_pauli_fHf:     o << "fHf" << endl;   break;
-    case LinearR12::H0_dk_approx_pauli_fHf_Q:   o << "fHf_Q" << endl; break;
+  switch(H0_dk_approx()) {
+    case H0_dk_approx_pauli_true:    o << "true" << endl;  break;
+    case H0_dk_approx_pauli_false:   o << "false" << endl; break;
+    case H0_dk_approx_pauli_fHf:     o << "fHf" << endl;   break;
+    case H0_dk_approx_pauli_fHf_Q:   o << "fHf_Q" << endl; break;
   }
-  if (H0_dk_approx_pauli() == LinearR12::H0_dk_approx_pauli_false &&
-      stdapprox() == LinearR12::StdApprox_App) {
+  if (H0_dk_approx() == H0_dk_approx_pauli_false &&
+      stdapprox() == StdApprox_App) {
     o << indent << "H0_dk_keep: " << (this->H0_dk_keep() ? "true" : "false") << endl;
   }
 
@@ -621,8 +764,8 @@ R12Technology::omit_P() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-LinearR12::H0_dk_approx_pauli
-R12Technology::H0_dk_approx_pauli() const
+R12Technology::H0_dk_approx_pauli
+R12Technology::H0_dk_approx() const
 {
   return H0_dk_approx_pauli_;
 }
@@ -669,7 +812,7 @@ R12Technology::coupling() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-LinearR12::ABSMethod
+R12Technology::ABSMethod
 R12Technology::abs_method() const
 {
   return abs_method_;
@@ -677,7 +820,7 @@ R12Technology::abs_method() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-LinearR12::StandardApproximation
+R12Technology::StandardApproximation
 R12Technology::stdapprox() const
 {
   return stdapprox_;
@@ -685,7 +828,7 @@ R12Technology::stdapprox() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-const Ref<LinearR12Ansatz>&
+const Ref<R12Technology::R12Ansatz>&
 R12Technology::ansatz() const
 {
   return ansatz_;
@@ -701,7 +844,7 @@ R12Technology::safety_check() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-const LinearR12::PositiveDefiniteB&
+R12Technology::PositiveDefiniteB
 R12Technology::posdef_B() const
 {
   return posdef_B_;

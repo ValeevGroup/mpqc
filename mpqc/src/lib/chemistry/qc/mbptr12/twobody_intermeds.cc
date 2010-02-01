@@ -44,13 +44,13 @@ R12IntEval::V(SpinCase2 spincase2,
               const Ref<OrbitalSpace>& p1,
               const Ref<OrbitalSpace>& p2)
 {
-  const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
   // it involves this term +O1O2-V1V2
-  if ((absmethod == LinearR12::ABS_ABS ||
-       absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs &&
-      ansatz()->projector() == LinearR12::Projector_2)
+  if ((absmethod == R12Technology::ABS_ABS ||
+       absmethod == R12Technology::ABS_ABSPlus) && !obs_eq_ribs &&
+      ansatz()->projector() == R12Technology::Projector_2)
     return this->V_abs(spincase2, p1, p2);
   else
     return this->V_cabs(spincase2, p1, p2);
@@ -61,7 +61,7 @@ R12IntEval::V_abs(SpinCase2 spincase2,
                   const Ref<OrbitalSpace>& p1,
                   const Ref<OrbitalSpace>& p2)
 {
-  using namespace sc::LinearR12;
+  using namespace sc::mbptr12;
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
@@ -185,11 +185,11 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   }
 
   // These terms only contribute if Projector=2
-  if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
+  if (!obs_eq_ribs && ansatz()->projector() == R12Technology::Projector_2) {
 
-    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-			      absmethod == LinearR12::ABS_CABSPlus);
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
+			      absmethod == R12Technology::ABS_CABSPlus);
     const Ref<OrbitalSpace>& occ1 = occ(spin1);
     const Ref<OrbitalSpace>& occ2 = occ(spin2);
     Ref<OrbitalSpace> rispace1, rispace2;
@@ -428,7 +428,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   }
 
   // These terms only contribute if Projector=2
-  if (!obs_eq_ribs && ansatz()->projector() == LinearR12::Projector_2) {
+  if (!obs_eq_ribs && ansatz()->projector() == R12Technology::Projector_2) {
 
     const Ref<OrbitalSpace>& occ1 = occ(spin1);
     const Ref<OrbitalSpace>& occ2 = occ(spin2);
@@ -541,9 +541,9 @@ R12IntEval::P(SpinCase2 spincase2)
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);
   const Ref<OrbitalSpace>& occ2 = occ(spin2);
-  const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  if (absmethod == LinearR12::ABS_ABS ||
-      absmethod == LinearR12::ABS_ABSPlus)
+  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+  if (absmethod == R12Technology::ABS_ABS ||
+      absmethod == R12Technology::ABS_ABSPlus)
     throw InputError("R12IntEval::P() -- cannot use if abs_method = abs/abs+. Try cabs or cabs+.");
   const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
   const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);

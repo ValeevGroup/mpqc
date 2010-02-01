@@ -50,7 +50,7 @@ namespace sc {
    */
   class R12EnergyIntermediates : virtual public SavableState {
     private:
-      LinearR12::StandardApproximation stdapprox_;
+      R12Technology::StandardApproximation stdapprox_;
       Ref<R12IntEval> r12eval_;
       bool V_computed_;
       RefSCMatrix V_[NSpinCases2];
@@ -63,13 +63,13 @@ namespace sc {
     public:
       typedef enum { V=0, X=1, B=2, A=3 } IntermediateType;
       R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
-                             const LinearR12::StandardApproximation stdapp);
+                             const R12Technology::StandardApproximation stdapp);
       R12EnergyIntermediates(StateIn &si);
       void save_data_state(StateOut &so);
       ~R12EnergyIntermediates(){}
       Ref<R12IntEval> r12eval() const;
       void set_r12eval(Ref<R12IntEval> &r12eval);
-      LinearR12::StandardApproximation stdapprox() const;
+      R12Technology::StandardApproximation stdapprox() const;
       bool V_computed() const;
       bool X_computed() const;
       bool B_computed() const;
@@ -111,7 +111,7 @@ class MP2R12Energy : virtual public SavableState {
 
     Ref<R12IntEval> r12eval() const;
     const Ref<R12EnergyIntermediates>& r12intermediates() const;
-    LinearR12::StandardApproximation stdapprox() const;
+    R12Technology::StandardApproximation stdapprox() const;
     void set_debug(int debug);
     int get_debug() const;
 

@@ -213,7 +213,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   if (omit_uocc_) {
     virspace = new EmptyOrbitalSpace("", "", basis(), integral(), OrbitalSpace::symmetry);
   }
-  Ref<R12RefWavefunction> ref = R12RefWavefunctionFactory::make(world,
+  Ref<RefWavefunction> ref = RefWavefunctionFactory::make(world,
                                                                 reference_,
                                                                 spin_restricted,
                                                                 nfzc_,
@@ -1288,10 +1288,10 @@ void sc::PT2R12::compute()
     double scale = 1.0;
     if (pairspin == BetaBeta && !spin_polarized) continue;
     switch (r12world()->r12tech()->ansatz()->projector()) {
-      case LinearR12::Projector_1:
+      case R12Technology::Projector_1:
         energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
         break;
-      case LinearR12::Projector_2:
+      case R12Technology::Projector_2:
         energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
         break;
       default:

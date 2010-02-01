@@ -70,8 +70,6 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
   if (evaluated_)
     return;
 
-  using LinearR12::TwoParticleContraction;
-  using LinearR12::Direct_Contraction;
   Ref<R12IntEval> thisref(this);
 
   const bool vbs_eq_obs = r12world()->basis()->equiv(r12world()->basis_vir());

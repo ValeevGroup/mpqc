@@ -105,25 +105,25 @@ namespace sc {
   };
 
   /**
-     R12RefWavefunction represents the reference wave function used in the R12 calculation.
+     RefWavefunction represents the reference wave function used in correlated calculations.
 
-     Since R12 methods can use a variety of wavefunctions as references, this class is
-     an Adapter. However since Wavefunction does not have proper constructors, it's not implemented
+     Single-determinantal and multi-determinantal Wavefunction can be used as a reference.
+     However since Wavefunction does not have proper constructors, it's not implemented
      as a proper Adapter to Wavefunction and thus implements many member functions of Wavefunction.
      The main content is a set of OrbitalSpace objects.
   */
-  class R12RefWavefunction : virtual public SavableState {
+  class RefWavefunction : virtual public SavableState {
     protected:
-      R12RefWavefunction(StateIn&);
+      RefWavefunction(StateIn&);
       /// @param world WavefunctionWorld to which this object belongs
       /// @param basis The basis set supporting the reference wave function
       /// @param integral The integral factory used to compute the reference wavefunction
-      R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+      RefWavefunction(const Ref<WavefunctionWorld>& world,
                          const Ref<GaussianBasisSet>& basis,
                          const Ref<Integral>& integral);
 
     public:
-    ~R12RefWavefunction();
+    ~RefWavefunction();
     void save_data_state(StateOut&);
 
     /// obsoletes this object
@@ -174,8 +174,6 @@ namespace sc {
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
 
     private:
-    /// initialized? when object is constructed = false. after init() is called = true
-    bool initialized_;
     Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
@@ -190,8 +188,8 @@ namespace sc {
     virtual void init_spaces() = 0;
   };
 
-  /// R12RefWavefunction specialization for a single-determinant wave function
-  class SD_R12RefWavefunction : public R12RefWavefunction {
+  /// RefWavefunction specialization for a single-determinant wave function
+  class SD_RefWavefunction : public RefWavefunction {
     public:
       /// construct from a OneBodyWavefunction object
       /// @param world The WavefunctionWorld in which this objects lives.
@@ -205,14 +203,14 @@ namespace sc {
       ///        means use unoccupied orbitals from obwfn.
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from obwfn!
-      SD_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+      SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                             const Ref<OneBodyWavefunction>& obwfn,
                             bool spin_restricted = true,
                             unsigned int nfzc = 0,
                             unsigned int nfzv = 0,
                             Ref<OrbitalSpace> vir_space = 0);
-      SD_R12RefWavefunction(StateIn&);
-      ~SD_R12RefWavefunction();
+      SD_RefWavefunction(StateIn&);
+      ~SD_RefWavefunction();
       void save_data_state(StateOut&);
 
       void obsolete();
@@ -241,10 +239,10 @@ namespace sc {
       void init_spaces_unrestricted();
   };
 
-  /// R12RefWavefunction specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
-  class ORDM_R12RefWavefunction : public R12RefWavefunction {
+  /// RefWavefunction specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
+  class ORDM_RefWavefunction : public RefWavefunction {
     public:
-      /// ORDM_R12RefWavefunction is specified by the basis and AO-basis 1-RDM for each spin case
+      /// ORDM_RefWavefunction is specified by the basis and AO-basis 1-RDM for each spin case
       /// @param world The WavefunctionWorld in which this objects lives.
       /// @param basis The basis set
       /// @param alpha_1rdm The alpha-spin density matrix in AO basis
@@ -255,7 +253,7 @@ namespace sc {
       /// @param nfzc The number of lowest-occupancy occupied orbitals to be kept inactive
       /// @param omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
       ///                      not the same as "freezing" the unoccupieds.
-      ORDM_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+      ORDM_RefWavefunction(const Ref<WavefunctionWorld>& world,
                   const Ref<GaussianBasisSet>& basis,
                   const Ref<Integral>& integral,
                   const RefSymmSCMatrix& alpha_1rdm,
@@ -263,8 +261,8 @@ namespace sc {
                   bool spin_restricted = true,
                   unsigned int nfzc = 0,
                   bool omit_uocc = false);
-      ORDM_R12RefWavefunction(StateIn&);
-      ~ORDM_R12RefWavefunction();
+      ORDM_RefWavefunction(StateIn&);
+      ~ORDM_RefWavefunction();
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
 
@@ -274,7 +272,7 @@ namespace sc {
       double energy() { return 0.0; }
       bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }
       bool spin_restricted() const { return spin_restricted_; }
-      /// reimplements R12RefWavefunction::dk(). Currently only nonrelativistic references are supported.
+      /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }
       Ref<GaussianBasisSet> momentum_basis() const { return this->basis(); }
       RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
@@ -292,9 +290,9 @@ namespace sc {
       void init_spaces_unrestricted();
   };
 
-  /// This factory produces the R12RefWavefunction that corresponds to the type of ref object
-  struct R12RefWavefunctionFactory {
-      static Ref<R12RefWavefunction>
+  /// This factory produces the RefWavefunction that corresponds to the type of ref object
+  struct RefWavefunctionFactory {
+      static Ref<RefWavefunction>
         make(const Ref<WavefunctionWorld>& world,
              const Ref<Wavefunction>& ref,
              bool spin_restricted = true,

@@ -81,10 +81,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
                        const Ref<OrbitalSpace>& ket2,
                        bool F2_only)
 {
-    using LinearR12::TwoParticleContraction;
-    using LinearR12::ABS_OBS_Contraction;
-    using LinearR12::CABS_OBS_Contraction;
-    using LinearR12::Direct_Contraction;
+    using namespace sc::mbptr12;
 
     // equations depend on whether VBS == OBS ..
     const bool vbs_eq_obs = r12world()->obs_eq_vbs();
@@ -112,9 +109,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // check if RI needs to be done in ABS
     const bool do_ri_in_abs = !abs_eq_obs && (maxnabs - nabs > 0);
     // and check if the ABS method is available for this combination of basis sets
-    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    if ((absmethod == LinearR12::ABS_ABS ||
-	 absmethod == LinearR12::ABS_ABSPlus) && do_ri_in_abs && !vbs_eq_obs)
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    if ((absmethod == R12Technology::ABS_ABS ||
+	 absmethod == R12Technology::ABS_ABSPlus) && do_ri_in_abs && !vbs_eq_obs)
 	throw  FeatureNotImplemented("R12IntEval::compute_X_() -- cabs and cabs+ methods must be used ",__FILE__,__LINE__);
 
     ////////////////////////////////
@@ -226,8 +223,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	    // ABS and CABS method differ by the TwoParticleContraction
 	    Ref<TwoParticleContraction> contract_pp;
-	    if ((absmethod == LinearR12::ABS_ABS ||
-		 absmethod == LinearR12::ABS_ABSPlus) && do_ri_in_abs)
+	    if ((absmethod == R12Technology::ABS_ABS ||
+		 absmethod == R12Technology::ABS_ABSPlus) && do_ri_in_abs)
 		contract_pp = new ABS_OBS_Contraction(nobs,
 						      occ1->rank(),
 						      occ2->rank());
@@ -361,7 +358,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 	} // VBS != OBS
 
 	// These are only needed in ansatz 2
-	if (ansatz()->projector() == LinearR12::Projector_2 && do_ri_in_abs) {
+	if (ansatz()->projector() == R12Technology::Projector_2 && do_ri_in_abs) {
 	    Ref<OrbitalSpace> ribs2 = r12world()->cabs_space(spin2);
 
 	    // (i m |j a') tforms

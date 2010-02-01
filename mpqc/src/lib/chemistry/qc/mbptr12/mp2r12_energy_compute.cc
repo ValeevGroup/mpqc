@@ -102,13 +102,13 @@ MP2R12Energy_SpinOrbital::compute()
   // check positive definiteness of B? -- cannot yet do for diagonal ansatz
   const bool check_posdef_B = (r12world->r12tech()->safety_check() && !diag);
   // make B positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_B = ((r12world->r12tech()->posdef_B() != LinearR12::PositiveDefiniteB_no) && !diag && same_B_for_all_pairs);
+  const bool posdef_B = ((r12world->r12tech()->posdef_B() != R12Technology::PositiveDefiniteB_no) && !diag && same_B_for_all_pairs);
   // make ~B(ij) positive definite? -- cannot yet do for diagonal ansatz
-  const bool posdef_Bij = ((r12world->r12tech()->posdef_B() == LinearR12::PositiveDefiniteB_yes) && !diag && !same_B_for_all_pairs);
+  const bool posdef_Bij = ((r12world->r12tech()->posdef_B() == R12Technology::PositiveDefiniteB_yes) && !diag && !same_B_for_all_pairs);
   if (r12world->r12tech()->safety_check()) {
     if (diag)
       ExEnv::out0() << indent << "WARNING: cannot yet check positive definitess of the B matrix when using the diagonal ansatz." << endl;
-    if ( (r12world->r12tech()->posdef_B() != LinearR12::PositiveDefiniteB_no) && diag)
+    if ( (r12world->r12tech()->posdef_B() != R12Technology::PositiveDefiniteB_no) && diag)
       ExEnv::out0() << indent << "WARNING: cannot yet ensure positive definite B matrix when using the diagonal ansatz." << endl;
   }
 
@@ -175,7 +175,7 @@ MP2R12Energy_SpinOrbital::compute()
         B = r12intermediates_->get_B(spincase2);
       }
       else {
-        if (stdapprox() == LinearR12::StdApprox_B) {
+        if (stdapprox() == R12Technology::StdApprox_B) {
           // in standard approximation B, add up [K1+K2,F12] term
           B = r12eval()->B(spincase2).clone();
           B.assign(r12eval()->B(spincase2));
@@ -838,7 +838,7 @@ void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(const RefSymmSCMatri
   util->times(B_ij, C_[spincase2], Binv_C);
   RefSCVector C_Binv_C = util->dot_product(C_[spincase2], Binv_C);
 
-  const bool scaled_amplitudes = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_scaledfixed;
+  const bool scaled_amplitudes = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_scaledfixed;
   if (scaled_amplitudes) {
     // scale all amplitudes of this spincase by a factor determined by
     // minimization of the total Hylleraas functional for this spin
@@ -925,7 +925,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag(){
       B = r12intermediates_->get_B(spincase2);
     }
     else {
-      if(stdapprox()==LinearR12::StdApprox_B){
+      if(stdapprox()==R12Technology::StdApprox_B){
         B = r12eval()->B(spincase2).clone();
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));
@@ -1027,7 +1027,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
       B = r12intermediates_->get_B(spincase2);
     }
     else {
-      if(stdapprox()==LinearR12::StdApprox_B){
+      if(stdapprox()==R12Technology::StdApprox_B){
         B = r12eval()->B(spincase2).clone();
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));
@@ -1124,7 +1124,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
       B = r12intermediates_->get_B(spincase2);
     }
     else {
-      if(stdapprox()==LinearR12::StdApprox_B){
+      if(stdapprox()==R12Technology::StdApprox_B){
         B = r12eval()->B(spincase2).clone();
         B.assign(r12eval()->B(spincase2));
         B.accumulate(r12eval()->BB(spincase2));

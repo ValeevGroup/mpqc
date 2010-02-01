@@ -1,5 +1,5 @@
 //
-// r12ref.cc
+// ref.cc
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <chemistry/qc/psi/r12ref.h>
+#include <chemistry/qc/psi/ref.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/spin.h>
 
@@ -38,16 +38,16 @@ using namespace sc;
 ///////////////////////////////////////////////////////////////////
 
 static ClassDesc PsiSCF_R12RefWavefunction_cd(
-  typeid(PsiSCF_R12RefWavefunction),"PsiSCF_R12RefWavefunction",1,"public R12RefWavefunction",
-  0, 0, create<PsiSCF_R12RefWavefunction>);
+  typeid(PsiSCF_RefWavefunction),"PsiSCF_R12RefWavefunction",1,"public R12RefWavefunction",
+  0, 0, create<PsiSCF_RefWavefunction>);
 
-PsiSCF_R12RefWavefunction::PsiSCF_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                                    const Ref<PsiSCF>& scf,
                                                    bool spin_restricted,
                                                    unsigned int nfzc,
                                                    unsigned int nfzv,
                                                    Ref<OrbitalSpace> vir_space) :
-                                                   R12RefWavefunction(world,
+                                                   RefWavefunction(world,
                                                                       scf->basis(),
                                                                       scf->integral()),
                                                    scf_(scf),
@@ -66,7 +66,7 @@ PsiSCF_R12RefWavefunction::PsiSCF_R12RefWavefunction(const Ref<WavefunctionWorld
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
-PsiSCF_R12RefWavefunction::PsiSCF_R12RefWavefunction(StateIn& si) : R12RefWavefunction(si) {
+PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(StateIn& si) : RefWavefunction(si) {
   scf_ << SavableState::restore_state(si);
   vir_space_ << SavableState::restore_state(si);
   si.get(spin_restricted_);
@@ -74,11 +74,11 @@ PsiSCF_R12RefWavefunction::PsiSCF_R12RefWavefunction(StateIn& si) : R12RefWavefu
   si.get(nfzv_);
 }
 
-PsiSCF_R12RefWavefunction::~PsiSCF_R12RefWavefunction() {
+PsiSCF_RefWavefunction::~PsiSCF_RefWavefunction() {
 }
 
 void
-PsiSCF_R12RefWavefunction::save_data_state(StateOut& so) {
+PsiSCF_RefWavefunction::save_data_state(StateOut& so) {
   SavableState::save_state(scf_.pointer(), so);
   SavableState::save_state(vir_space_.pointer(), so);
   so.put(spin_restricted_);
@@ -93,7 +93,7 @@ namespace {
 }
 
 RefSymmSCMatrix
-PsiSCF_R12RefWavefunction::ordm(SpinCase1 s) const {
+PsiSCF_RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
   if (spin_restricted()) s = Alpha;
   RefSymmSCMatrix result = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
@@ -101,13 +101,13 @@ PsiSCF_R12RefWavefunction::ordm(SpinCase1 s) const {
 }
 
 RefSymmSCMatrix
-PsiSCF_R12RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+PsiSCF_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                   const Ref<GaussianBasisSet> &p_basis) {
   return scf()->core_hamiltonian_for_basis(basis, 0);
 }
 
 void
-PsiSCF_R12RefWavefunction::init_spaces()
+PsiSCF_RefWavefunction::init_spaces()
 {
   if (spin_restricted())
     init_spaces_restricted();
@@ -116,7 +116,7 @@ PsiSCF_R12RefWavefunction::init_spaces()
 }
 
 void
-PsiSCF_R12RefWavefunction::init_spaces_restricted()
+PsiSCF_RefWavefunction::init_spaces_restricted()
 {
   const bool moorder = true;   // order orbitals in the order of increasing energies
   Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
@@ -195,7 +195,7 @@ PsiSCF_R12RefWavefunction::init_spaces_restricted()
 
 
 void
-PsiSCF_R12RefWavefunction::init_spaces_unrestricted()
+PsiSCF_RefWavefunction::init_spaces_unrestricted()
 {
   // omit unoccupied orbitals?
   const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
@@ -270,22 +270,22 @@ PsiSCF_R12RefWavefunction::init_spaces_unrestricted()
 ///////////////////////////////////////////////////////////////////
 
 ClassDesc
-PsiCI_R12RefWavefunction_cd(typeid(PsiCI_R12RefWavefunction),
+PsiCI_R12RefWavefunction_cd(typeid(PsiCI_RefWavefunction),
                      "PsiCI_R12RefWavefunction",
                      1,               // version
                      "public R12RefWavefunction", // must match parent
-                     0,               // change to create<PsiCI_R12RefWavefunction> if this class is DefaultConstructible
+                     0,               // change to create<PsiCI_RefWavefunction> if this class is DefaultConstructible
                      0,               // change to 0 if this class is not KeyValConstructible
-                     create<PsiCI_R12RefWavefunction>  // change to 0 if this class is not StateInConstructible
+                     create<PsiCI_RefWavefunction>  // change to 0 if this class is not StateInConstructible
                      );
 
-PsiCI_R12RefWavefunction::PsiCI_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+PsiCI_RefWavefunction::PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                                    const Ref<PsiCI>& wfn,
                                                    bool spin_restricted,
                                                    unsigned int nfzc,
                                                    unsigned int nfzv,
                                                    bool omit_uocc) :
-                                                   R12RefWavefunction(world,
+                                                   RefWavefunction(world,
                                                                       wfn->basis(),
                                                                       wfn->integral()),
                                                    wfn_(wfn),
@@ -302,21 +302,21 @@ PsiCI_R12RefWavefunction::PsiCI_R12RefWavefunction(const Ref<WavefunctionWorld>&
   world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
 }
 
-PsiCI_R12RefWavefunction::PsiCI_R12RefWavefunction(StateIn& si) : R12RefWavefunction(si) {
+PsiCI_RefWavefunction::PsiCI_RefWavefunction(StateIn& si) : RefWavefunction(si) {
   throw "not implemented";
 }
 
-PsiCI_R12RefWavefunction::~PsiCI_R12RefWavefunction() {
-  throw "not implemented";
-}
-
-void
-PsiCI_R12RefWavefunction::save_data_state(StateOut& so) {
+PsiCI_RefWavefunction::~PsiCI_RefWavefunction() {
   throw "not implemented";
 }
 
 void
-PsiCI_R12RefWavefunction::init_spaces()
+PsiCI_RefWavefunction::save_data_state(StateOut& so) {
+  throw "not implemented";
+}
+
+void
+PsiCI_RefWavefunction::init_spaces()
 {
   const bool moorder = true;   // order orbitals in the order of increasing energies
   const Ref<GaussianBasisSet> bs = wfn()->basis();
@@ -388,14 +388,14 @@ PsiCI_R12RefWavefunction::init_spaces()
 }
 
 RefSymmSCMatrix
-PsiCI_R12RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+PsiCI_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                      const Ref<GaussianBasisSet> &p_basis)
 {
   return wfn()->core_hamiltonian_for_basis(basis, p_basis);
 }
 
 RefSymmSCMatrix
-PsiCI_R12RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
+PsiCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
 {
   RefSymmSCMatrix opdm_full = wfn()->mo_density(spin);
   RefSymmSCMatrix result;
@@ -417,7 +417,7 @@ PsiCI_R12RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
 }
 
 RefSymmSCMatrix
-PsiCI_R12RefWavefunction::ordm(SpinCase1 spin) const
+PsiCI_RefWavefunction::ordm(SpinCase1 spin) const
 {
   RefSymmSCMatrix P = this->ordm_orbs_sb(spin);
   RefSCMatrix C_ao = this->orbs_sb(spin)->coefs();

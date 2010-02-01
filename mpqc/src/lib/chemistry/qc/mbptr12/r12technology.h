@@ -32,7 +32,6 @@
 #pragma interface
 #endif
 
-#include <chemistry/qc/mbptr12/ansatz.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 
 namespace sc {
@@ -41,23 +40,151 @@ namespace sc {
 
 /** R12Technology describes technical features of the R12 approach. */
 class R12Technology: virtual public SavableState {
+  public:
 
+  /**
+    Projector of R12 methods:
+    0: Q_{12} = 1
+    1: Q_{12} = (1 - P_1)(1 - P_2)
+    2: Q_{12} = (1 - V_1 V_2)(1 - O_1)(1 - O_2)
+    3: Q_{12} = 1 - P_1 P_2
+  */
+  enum Projector {Projector_0 = 0,
+    Projector_1 = 1,
+    Projector_2 = 2,
+    Projector_3 = 3};
+  enum StandardApproximation {
+    //StdApprox_A = 0, // is now obsolete
+    StdApprox_Ap = 1,
+    StdApprox_App = 2,
+    StdApprox_B = 3,
+    StdApprox_C = 4,
+    StdApprox_Cp = 5
+    };
+  enum ABSMethod {ABS_ABS = 0,
+    ABS_ABSPlus = 1,
+    ABS_CABS = 2,
+    ABS_CABSPlus = 3};
+
+  /// geminal generating space
+  enum OrbitalProduct_GG {
+    OrbProdGG_ij = 0,
+    OrbProdGG_pq = 1,
+  };
+
+  /// space of orbital products from which geminal substitutions are allowed
+  enum OrbitalProduct_gg {
+    OrbProdgg_ij = 0,
+    OrbProdgg_pq = 1,
+  };
+
+  enum PositiveDefiniteB {
+    PositiveDefiniteB_no = 0,
+    PositiveDefiniteB_yes = 1,
+    PositiveDefiniteB_weak = 2
+  };
+
+  enum GeminalAmplitudeAnsatz {
+    GeminalAmplitudeAnsatz_fullopt = 0,
+    GeminalAmplitudeAnsatz_fixed = 1,
+    GeminalAmplitudeAnsatz_scaledfixed = 2
+  };
+
+  enum H0_dk_approx_pauli {
+    H0_dk_approx_pauli_true = 0,
+    H0_dk_approx_pauli_fHf = 1,
+    H0_dk_approx_pauli_fHf_Q = 2,
+    H0_dk_approx_pauli_false = 3
+  };
+
+  /**
+   * R12Ansatz specifies the manner in which the R12 geminals are constructed.
+   */
+  class R12Ansatz : virtual public SavableState {
+    public:
+    /** The KeyVal constructor.
+    <dl>
+
+    <dt><tt>orbital_product_GG</tt><dd> This specifies how the geminal space is generated.
+    Geminal functions are products of the correlation factor and 2 orbitals.
+    This keyword specifies which orbital products are allowed.
+    Valid choices are:
+      <dl>
+        <dt><tt>ij</tt><dd> Biproducts of occupied orbitals. This is the default.
+        <dt><tt>pq</tt><dd> Biproducts of any Hartree-Fock orbitals. This has not been implemented yet.
+      </dl>
+
+    <dt><tt>orbital_product_gg</tt><dd> Space of orbital products from which geminal substitutions are allowed.
+    Specified in the same way as orbital_product_GG.
+
+    <dt><tt>projector</tt><dd> This specifies the form of the orthogonal projector.
+    Valid values are:
+      <dl>
+        <dt><tt>0</tt><dd> 1. Should be used ONLY for testing. This implies the Weak Orthogonality Functional (WOF). Not implemented yet.
+        <dt><tt>1</tt><dd> (1-P1)(1-P2). Not implemented yet.
+        <dt><tt>2</tt><dd> (1-O1)(1-O2)(1-V1V2). This is the default.
+        <dt><tt>3</tt><dd> 1-P1P2. Should be used ONLY for testing.
+      </dl>
+
+    <dt><tt>wof</tt><dd> Setting this to <tt>true</tt> will cause the Weak Orthogonality Functional to be used. The default is <tt>false</tt>,
+    unless <tt>projector=0</tt>.
+
+    <dt><tt>diag</tt><dd> Setting this to <tt>true</tt> will only keep the diagonal terms,
+    which is equivalent to the "old" (pre-1992) form of R12 theory. The default is <tt>false</tt>,
+    which corresponds to the orbital invariant ansatz of Klopper.
+
+    <dt><tt>amplitudes</tt><dd> This keyword specifies how the geminal amplitudes are determined.
+    Permitted values are <tt>optimized</tt> (for fully optimized amplitudes) and <tt>fixed</tt>
+    (fixed using first-order cusp-conditions, a la Ten-no). The default is <tt>fixed</tt>
+    if the diagonal ansatz is used with an appropriate correlation factor (either Slater-type geminal
+    or linear), otherwise <tt>optimized</tt>.
+
+    </dl>
+    */
+    R12Ansatz(const Ref<KeyVal>&);
+    /// The StateIn constructor
+    R12Ansatz(StateIn&);
+    /// The default constructor creates orbital-invariant ansatz with projector 2
+    R12Ansatz();
+    ~R12Ansatz();
+
+    void save_data_state(StateOut&);
+    void print(std::ostream& o =ExEnv::out0()) const;
+
+    R12Technology::Projector projector() const;
+    bool diag() const;
+    R12Technology::GeminalAmplitudeAnsatz amplitudes() const;
+    bool wof() const;
+    R12Technology::OrbitalProduct_GG orbital_product_GG() const;
+    R12Technology::OrbitalProduct_gg orbital_product_gg() const;
+
+    private:
+    R12Technology::Projector projector_;
+    bool diag_;
+    R12Technology::GeminalAmplitudeAnsatz amplitudes_;
+    bool scaled_;     //<
+    bool wof_;
+    R12Technology::OrbitalProduct_GG orbital_product_GG_;
+    R12Technology::OrbitalProduct_gg orbital_product_gg_;
+  };
+
+  private:
     bool abs_eq_obs_;
     bool vbs_eq_obs_;
 
     Ref<LinearR12::CorrelationFactor> corrfactor_;
-    LinearR12::StandardApproximation stdapprox_;
-    Ref<LinearR12Ansatz> ansatz_;
-    LinearR12::ABSMethod abs_method_;
+    StandardApproximation stdapprox_;
+    Ref<R12Ansatz> ansatz_;
+    ABSMethod abs_method_;
     unsigned int maxnabs_;
     bool gbc_;
     bool ebc_;
     bool coupling_;
     bool omit_P_;
-    LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli_;
+    H0_dk_approx_pauli H0_dk_approx_pauli_;
     bool H0_dk_keep_;
     bool safety_check_;
-    LinearR12::PositiveDefiniteB posdef_B_;
+    PositiveDefiniteB posdef_B_;
 
     // for debugging purposes only
     bool omit_B_;
@@ -127,7 +254,7 @@ class R12Technology: virtual public SavableState {
 
         </dl>
 
-        <dt><tt>ansatz</tt><dd> This object specifies the ansatz (see LinearR12Ansatz).
+        <dt><tt>ansatz</tt><dd> This object specifies the ansatz (see R12Ansatz).
 
         <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
         Condition (GBC) is assumed to hold. The default is "true". This keyword is
@@ -227,15 +354,15 @@ class R12Technology: virtual public SavableState {
     bool gbc() const;
     bool ebc() const;
     bool coupling() const;
-    LinearR12::ABSMethod abs_method() const;
-    LinearR12::StandardApproximation stdapprox() const;
-    const Ref<LinearR12Ansatz>& ansatz() const;
+    ABSMethod abs_method() const;
+    StandardApproximation stdapprox() const;
+    const Ref<R12Ansatz>& ansatz() const;
     bool spinadapted() const;
     bool omit_P() const;
-    LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli() const;
+    H0_dk_approx_pauli H0_dk_approx() const;
     bool H0_dk_keep() const;
     bool safety_check() const;
-    const LinearR12::PositiveDefiniteB& posdef_B() const;
+    PositiveDefiniteB posdef_B() const;
 
     //
     // these are for debugging only

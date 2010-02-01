@@ -146,9 +146,9 @@ R12IntEval::init_intermeds_g12_()
             B_[s].print(prepend_spincase(spincase2,"B(diag;symm)").c_str());
 	  RefSCMatrix Banti = B_[s].clone(); Banti.assign(0.0);
 	  // the handling of the second term differs between standard approximations {A,A',B} and {C,C'}
-	  if (stdapprox() == LinearR12::StdApprox_Ap ||
-	      stdapprox() == LinearR12::StdApprox_App ||
-	      stdapprox() == LinearR12::StdApprox_B) {
+	  if (stdapprox() == R12Technology::StdApprox_Ap ||
+	      stdapprox() == R12Technology::StdApprox_App ||
+	      stdapprox() == R12Technology::StdApprox_B) {
 	      // 1) in standard approximations A and B the commutators are explicitly evaluated:
 	      //    the second term is exactly what is computed in G12Libint2 under the name t1f12 and t2f12 when g12!=g12'
 	       compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(

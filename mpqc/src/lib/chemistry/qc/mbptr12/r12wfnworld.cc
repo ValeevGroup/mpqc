@@ -59,7 +59,7 @@ static ClassDesc R12WavefunctionWorld_cd(
 
 R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<KeyVal>& keyval,
-    const Ref<R12RefWavefunction>& ref) :
+    const Ref<RefWavefunction>& ref) :
     ref_(ref)
 {
   // by default use spin-adapted algorithms for closed-shell
@@ -115,8 +115,8 @@ R12WavefunctionWorld::initialize()
   {
     // 1) if stdapprox is A' or A'' most transforms will never be reused
     // 2) otherwise use persistent transforms
-    if (r12tech()->stdapprox() == LinearR12::StdApprox_Ap ||
-        r12tech()->stdapprox() == LinearR12::StdApprox_App)
+    if (r12tech()->stdapprox() == R12Technology::StdApprox_Ap ||
+        r12tech()->stdapprox() == R12Technology::StdApprox_App)
       world()->tfactory()->hints().data_persistent(false);
     else
       world()->tfactory()->hints().data_persistent(true);
@@ -153,8 +153,8 @@ R12WavefunctionWorld::obsolete() {
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 {
-    if (r12tech()->abs_method() == LinearR12::ABS_CABS ||
-        r12tech()->abs_method() == LinearR12::ABS_CABSPlus)
+    if (r12tech()->abs_method() == R12Technology::ABS_CABS ||
+        r12tech()->abs_method() == R12Technology::ABS_CABSPlus)
 	  return cabs_space_[S];
     else
 	  throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
@@ -163,7 +163,7 @@ R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 bool
 R12WavefunctionWorld::sdref() const {
   // only references based on OneBodyWavefunction are detected as single-determinant references!
-  Ref<SD_R12RefWavefunction> sd; sd << ref();
+  Ref<SD_RefWavefunction> sd; sd << ref();
   return sd.nonnull();
 }
 

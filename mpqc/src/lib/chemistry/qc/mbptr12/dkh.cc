@@ -91,8 +91,8 @@ void R12IntEval::compute_B_DKH_() {
     return;
 
   // verify that this contribution should be included
-  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
-  if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
+  const R12Technology::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx();
+  if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_false)
     return;
 
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
@@ -131,7 +131,7 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<R12RefWavefunction> ref = r12world()->ref();
+    Ref<RefWavefunction> ref = r12world()->ref();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
@@ -267,8 +267,8 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
 
   // verify that this contribution should be included
-  const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
-  if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false)
+  const R12Technology::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx();
+  if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_false)
     return;
 
   // Check if the requested calculation is implemented
@@ -320,11 +320,11 @@ void R12IntEval::contrib_to_B_DKH_a_() {
 
   // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {
-    using namespace sc::LinearR12;
+    using namespace sc::mbptr12;
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<R12RefWavefunction> ref = r12world()->ref();
+    Ref<RefWavefunction> ref = r12world()->ref();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);

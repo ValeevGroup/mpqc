@@ -40,61 +40,6 @@
 namespace sc {
   namespace LinearR12 {
 
-    /**
-      Projector of linear R12 methods:
-      0: Q_{12} = 1
-      1: Q_{12} = (1 - P_1)(1 - P_2)
-      2: Q_{12} = (1 - V_1 V_2)(1 - O_1)(1 - O_2)
-      3: Q_{12} = 1 - P_1 P_2
-    */
-    enum Projector {Projector_0 = 0,
-      Projector_1 = 1,
-      Projector_2 = 2,
-      Projector_3 = 3};
-    enum StandardApproximation {
-      //StdApprox_A = 0,
-      StdApprox_Ap = 1,
-      StdApprox_App = 2,
-      StdApprox_B = 3,
-      StdApprox_C = 4,
-      StdApprox_Cp = 5
-      };
-    enum ABSMethod {ABS_ABS = 0,
-      ABS_ABSPlus = 1,
-      ABS_CABS = 2,
-      ABS_CABSPlus = 3};
-
-    /// geminal generating space
-    enum OrbitalProduct_GG {
-      OrbProdGG_ij = 0,
-      OrbProdGG_pq = 1,
-    };
-    
-    /// space of orbital products from which geminal substitutions are allowed
-    enum OrbitalProduct_gg {
-      OrbProdgg_ij = 0,
-      OrbProdgg_pq = 1,
-    };
-    
-    enum PositiveDefiniteB {
-      PositiveDefiniteB_no = 0,
-      PositiveDefiniteB_yes = 1,
-      PositiveDefiniteB_weak = 2
-    };
-
-    enum GeminalAmplitudeAnsatz {
-      GeminalAmplitudeAnsatz_fullopt = 0,
-      GeminalAmplitudeAnsatz_fixed = 1,
-      GeminalAmplitudeAnsatz_scaledfixed = 2
-    };
-
-    enum H0_dk_approx_pauli {
-      H0_dk_approx_pauli_true = 0,
-      H0_dk_approx_pauli_fHf = 1,
-      H0_dk_approx_pauli_fHf_Q = 2,
-      H0_dk_approx_pauli_false = 3
-    };
-
     class GeminalDescriptor : public RefCount {
       private:
         std::string type_;

@@ -273,7 +273,7 @@ void CCR12_Info::guess_t2(Ref<Tensor>& d_t2_){
 
 // read appropriate blocks from d_v2, d_gt2 and form the mp1-r12 wavefunction
 void CCR12_Info::guess_t2_r12(Ref<Tensor>& d_t2_, Ref<Tensor>& d_gt2_){
-//if (r12world()->r12tech()->ansatz()->amplitudes() != LinearR12::GeminalAmplitudeAnsatz_fullopt) {
+//if (r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
   // d_t2 += v / Denominator (MP2 amplitude)
   guess_t2(d_t2_);
 

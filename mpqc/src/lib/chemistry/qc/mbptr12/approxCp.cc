@@ -81,7 +81,7 @@ void R12IntEval::compute_BCp_() {
   const unsigned int nf12 = corrfactor()->nfunctions();
 
   // some combinations are not implemented yet or are not sane
-  if (ansatz()->projector() == LinearR12::Projector_3)
+  if (ansatz()->projector() == R12Technology::Projector_3)
     throw FeatureNotImplemented(
                                 "B(C') cannot be evaluated yet when using ansatz 3",
                                 __FILE__, __LINE__);
@@ -153,9 +153,9 @@ void R12IntEval::compute_BCp_() {
     // compute P
     // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
 
-    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    if (!abs_eq_obs && absmethod != LinearR12::ABS_CABS && absmethod
-        != LinearR12::ABS_CABSPlus) {
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    if (!abs_eq_obs && absmethod != R12Technology::ABS_CABS && absmethod
+        != R12Technology::ABS_CABSPlus) {
       throw FeatureNotImplemented(
                                   "R12IntEval::compute_BCp_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",
                                   __FILE__, __LINE__);

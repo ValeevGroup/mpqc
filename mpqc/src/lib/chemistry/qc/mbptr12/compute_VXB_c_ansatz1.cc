@@ -45,17 +45,17 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
 
   Timer timer("mp2-f12c_ansatz1 intermeds (tensor contract)");
 
-  //if((r12world()->ansatz()->orbital_product_gg() != LinearR12::OrbProdgg_pq) ||
-  //    (r12world()->ansatz()->orbital_product_GG() != LinearR12::OrbProdGG_pq)) {
+  //if((r12world()->ansatz()->orbital_product_gg() != R12Technology::OrbProdgg_pq) ||
+  //    (r12world()->ansatz()->orbital_product_GG() != R12Technology::OrbProdGG_pq)) {
   //  throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1() -- gg space and GG space must be both spanned by a pq orbital product Ansatz.",__FILE__,__LINE__);
   //}
 
-  if(r12world()->r12tech()->ansatz()->projector() != LinearR12::Projector_1) {
+  if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_1) {
     throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1() -- this routine only works with an Ansatz 1 projector.",__FILE__,__LINE__);
   }
 
   for(int s=0; s<nspincases2(); s++) {
-    using namespace sc::LinearR12;
+    using namespace sc::mbptr12;
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
@@ -93,11 +93,11 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
     const bool gg12_in_GG12 = true;
 
     Ref<TwoParticleContraction> tpcontract;
-    const ABSMethod absmethod = r12world()->r12tech()->abs_method();
+    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
-    const bool cabs_method = (absmethod ==  LinearR12::ABS_CABS ||
-                    absmethod == LinearR12::ABS_CABSPlus);
+    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
+                    absmethod == R12Technology::ABS_CABSPlus);
 
     Ref<OrbitalSpace> rispace1, rispace2;
     if (cabs_method) {

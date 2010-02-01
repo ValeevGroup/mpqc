@@ -1,5 +1,5 @@
 //
-// r12ref.h
+// ref.h
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,8 +29,8 @@
 #pragma interface
 #endif
 
-#ifndef _mpqc_src_lib_chemistry_qc_psi_r12ref_h
-#define _mpqc_src_lib_chemistry_qc_psi_r12ref_h
+#ifndef _mpqc_src_lib_chemistry_qc_psi_ref_h
+#define _mpqc_src_lib_chemistry_qc_psi_ref_h
 
 #include <chemistry/qc/mbptr12/ref.h>
 #include <chemistry/qc/psi/psiwfn.h>
@@ -38,8 +38,8 @@
 
 namespace sc {
 
-  /// R12RefWavefunction specialization initialized with a PsiSCF wave function
-  class PsiSCF_R12RefWavefunction : public R12RefWavefunction {
+  /// RefWavefunction specialization initialized with a PsiSCF wave function
+  class PsiSCF_RefWavefunction : public RefWavefunction {
     public:
       /// construct from a PsiSCF object
       /// @param world The WavefunctionWorld in which this objects lives.
@@ -53,14 +53,14 @@ namespace sc {
       ///        means use unoccupied orbitals from obwfn.
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from obwfn!
-      PsiSCF_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+      PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                const Ref<PsiSCF>& scf,
                                bool spin_restricted = true,
                                unsigned int nfzc = 0,
                                unsigned int nfzv = 0,
                                Ref<OrbitalSpace> vir_space = 0);
-      PsiSCF_R12RefWavefunction(StateIn&);
-      ~PsiSCF_R12RefWavefunction();
+      PsiSCF_RefWavefunction(StateIn&);
+      ~PsiSCF_RefWavefunction();
       void save_data_state(StateOut&);
       const Ref<PsiSCF>& scf() const { return scf_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
@@ -86,8 +86,8 @@ namespace sc {
       void init_spaces_unrestricted();
   };
 
-  /// R12RefWavefunction specialization for a general restricted-active-space multiconfiguration wave function
-  class PsiCI_R12RefWavefunction : public R12RefWavefunction {
+  /// RefWavefunction specialization for a general restricted-active-space multiconfiguration wave function
+  class PsiCI_RefWavefunction : public RefWavefunction {
     public:
       /// construct from a PsiCI object
       /// @param world The WavefunctionWorld in which this objects lives.
@@ -101,14 +101,14 @@ namespace sc {
       ///                  not the same as "freezing" the unoccupieds.
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from wfn!
-      PsiCI_R12RefWavefunction(const Ref<WavefunctionWorld>& world,
+      PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                const Ref<PsiCI>& wfn,
                                bool spin_restricted = true,
                                unsigned int nfzc = 0,
                                unsigned int nfzv = 0,
                                bool omit_uocc = false);
-      PsiCI_R12RefWavefunction(StateIn&);
-      ~PsiCI_R12RefWavefunction();
+      PsiCI_RefWavefunction(StateIn&);
+      ~PsiCI_RefWavefunction();
       void save_data_state(StateOut&);
       const Ref<PsiCI>& wfn() const { return wfn_; }
 

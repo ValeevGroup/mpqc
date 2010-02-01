@@ -41,7 +41,6 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/ansatz.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/ref.h>
@@ -70,13 +69,13 @@ public:
         </dl>
     */
   R12WavefunctionWorld(const Ref<KeyVal>& keyval,
-                       const Ref<R12RefWavefunction>& ref);
+                       const Ref<RefWavefunction>& ref);
   ~R12WavefunctionWorld();
 
   void save_data_state(StateOut&);
 
-  /// Return the R12RefWavefunction object
-  const Ref<R12RefWavefunction>& ref() const { return ref_; }
+  /// Return the RefWavefunction object
+  const Ref<RefWavefunction>& ref() const { return ref_; }
   const Ref<WavefunctionWorld>& world() const { return ref()->world(); }
   Wavefunction* wfn() const { return world()->wfn(); }
   Ref<R12Technology> r12tech() const { return r12tech_; }
@@ -116,7 +115,7 @@ public:
 private:
 
   Ref<WavefunctionWorld> world_;  //!< the WavefunctionWorld
-  Ref<R12RefWavefunction> ref_;   //!< describes the reference wavefunction
+  Ref<RefWavefunction> ref_;   //!< describes the reference wavefunction
   Ref<R12Technology> r12tech_;    //!< describes the R12 technology
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12
   Ref<GaussianBasisSet> bs_ri_;   //!< the RI basis used in R12

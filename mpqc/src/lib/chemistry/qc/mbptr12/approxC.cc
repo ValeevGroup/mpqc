@@ -91,7 +91,7 @@ R12IntEval::compute_BC_()
     const unsigned int nf12 = corrfactor()->nfunctions();
 
     // some combinations are not implemented yet or are not sane
-    if (!vbs_eq_obs && ansatz()->projector() == LinearR12::Projector_3)
+    if (!vbs_eq_obs && ansatz()->projector() == R12Technology::Projector_3)
 	throw FeatureNotImplemented("B(C) cannot be evaluated yet when using ansatz 3 and VBS!=OBS",__FILE__,__LINE__);
 
     Timer tim_B_app_C("B(app. C) intermediate");
@@ -108,7 +108,7 @@ R12IntEval::compute_BC_()
     Ref<OrbitalSpace> hJnr[NSpinCases1];
     if (this->dk() > 0) {
 
-      const LinearR12::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx_pauli();
+      const R12Technology::H0_dk_approx_pauli H0_dk_approx_pauli = r12world()->r12tech()->H0_dk_approx();
 
       const int nspins1 = this->nspincases1();
       for (int s = 0; s < nspins1; ++s) {
@@ -121,7 +121,7 @@ R12IntEval::compute_BC_()
           this->ao_registry()->value(ribs->basis());
 
         Ref<OrbitalSpace> kribs = (!abs_eq_obs) ? K_P_P(spin) : K_p_p(spin);
-        if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false) { // correct exchange
+        if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_false) { // correct exchange
           // compute dH = H(rel) - H(nonrel) in AO basis
           RefSCMatrix Hr = this->fock(aoribs, aoribs, spin, 0.0, 0.0, 1.0);
           const std::string nonrel_hkey =
@@ -158,7 +158,7 @@ R12IntEval::compute_BC_()
         }
 
         Ref<OrbitalSpace> hJ_x_P = (!abs_eq_obs) ? hj_x_P(spin) : hj_x_p(spin);
-        if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_false) { // use nonrelativistic hamiltonian in h+J
+        if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_false) { // use nonrelativistic hamiltonian in h+J
           const Ref<OrbitalSpace>& x = xspace(spin);
           const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
           // compute dH = H(rel) - H(nonrel) in AO basis
@@ -192,7 +192,7 @@ R12IntEval::compute_BC_()
 
           this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(hJnr[s]));
         }
-        else if (H0_dk_approx_pauli == LinearR12::H0_dk_approx_pauli_fHf) { // use pauli hamitonian in h+J
+        else if (H0_dk_approx_pauli == R12Technology::H0_dk_approx_pauli_fHf) { // use pauli hamitonian in h+J
           const Ref<OrbitalSpace>& x = xspace(spin);
           const Ref<OrbitalSpace>& aox = this->ao_registry()->value(x->basis());
           // compute dH = H(rel) - H(pauli) in AO basis
@@ -301,10 +301,10 @@ R12IntEval::compute_BC_()
 	    // compute P
 	    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
 
-	    const LinearR12::ABSMethod absmethod = r12world()->r12tech()->abs_method();
+	    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
 	    if (!abs_eq_obs &&
-		absmethod != LinearR12::ABS_CABS &&
-		absmethod != LinearR12::ABS_CABSPlus) {
+		absmethod != R12Technology::ABS_CABS &&
+		absmethod != R12Technology::ABS_CABSPlus) {
 		throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
 	    }
 
@@ -357,7 +357,7 @@ R12IntEval::compute_BC_()
 #endif // INCLUDE_P_PKP
 
 	    // in this special case PFP and pFp terms can be combined
-	    if (ansatz()->projector() == LinearR12::Projector_2 && abs_eq_obs && vbs_eq_obs) {
+	    if (ansatz()->projector() == R12Technology::Projector_2 && abs_eq_obs && vbs_eq_obs) {
 #if INCLUDE_P_PFP && INCLUDE_P_pFp
 	      {
 	        const Ref<OrbitalSpace> forbs1 = F_p_p(spin1);
@@ -376,7 +376,7 @@ R12IntEval::compute_BC_()
 	    }
 	    else {
 
-	    if (ansatz()->projector() == LinearR12::Projector_2) {
+	    if (ansatz()->projector() == R12Technology::Projector_2) {
 #if INCLUDE_P_PFP
 		{
 		    Ref<OrbitalSpace> fribs1,fribs2;
@@ -404,10 +404,10 @@ R12IntEval::compute_BC_()
 	    {
 #if INCLUDE_P_pFp
 		// the form of the pFp term depends on the projector
-		Ref<OrbitalSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
-		Ref<OrbitalSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
+		Ref<OrbitalSpace> z1 = (ansatz()->projector() == R12Technology::Projector_2 ? vir1 : orbs1);
+		Ref<OrbitalSpace> z2 = (ansatz()->projector() == R12Technology::Projector_2 ? vir2 : orbs2);
 
-		if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
+		if (!empty_vir_space || ansatz()->projector() == R12Technology::Projector_3) {
 		    // and on whether VBS==OBS
 		    if (vbs_eq_obs) {
 			Ref<OrbitalSpace> forbs1, forbs2;
@@ -487,7 +487,7 @@ R12IntEval::compute_BC_()
 		Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
 		Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
 
-		if (ansatz()->projector() == LinearR12::Projector_2) {
+		if (ansatz()->projector() == R12Technology::Projector_2) {
 #if INCLUDE_P_mFP
                     // R_klmA F_mP R_PAij + R_klPA F_Pm R_mAij
 		    {
@@ -514,11 +514,11 @@ R12IntEval::compute_BC_()
 		{
 #if INCLUDE_P_pFA
 		    // the form of the pFp term depends on the projector
-		    Ref<OrbitalSpace> z1 = (ansatz()->projector() == LinearR12::Projector_2 ? vir1 : orbs1);
-		    Ref<OrbitalSpace> z2 = (ansatz()->projector() == LinearR12::Projector_2 ? vir2 : orbs2);
+		    Ref<OrbitalSpace> z1 = (ansatz()->projector() == R12Technology::Projector_2 ? vir1 : orbs1);
+		    Ref<OrbitalSpace> z2 = (ansatz()->projector() == R12Technology::Projector_2 ? vir2 : orbs2);
 
 		    // R_klpz F_pA R_Azij
-		    if (!empty_vir_space || ansatz()->projector() == LinearR12::Projector_3) {
+		    if (!empty_vir_space || ansatz()->projector() == R12Technology::Projector_3) {
 			// and on whether VBS==OBS
 			if (vbs_eq_obs) {
 			    Ref<OrbitalSpace> forbs1 = F_p_A(spin1);
@@ -576,7 +576,7 @@ R12IntEval::compute_BC_()
 
 		P.scale(-1.0);
 
-		if (ansatz()->projector() == LinearR12::Projector_2) {
+		if (ansatz()->projector() == R12Technology::Projector_2) {
 #if INCLUDE_P_mFm
 		    {
 			Ref<OrbitalSpace> focc1 = F_m_m(spin1);

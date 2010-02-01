@@ -36,7 +36,7 @@
 #include <chemistry/qc/mbptr12/blas.h>
 
 using namespace sc;
-using namespace LinearR12;
+using namespace sc::mbptr12;
 
 ////////
 // Two ParticleContraction

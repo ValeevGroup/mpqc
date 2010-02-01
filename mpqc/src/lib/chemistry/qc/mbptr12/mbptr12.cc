@@ -69,8 +69,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12b_energy_ << SavableState::restore_state(s);
   r12c_energy_ << SavableState::restore_state(s);
 
-  if((r12world()->r12tech()->ansatz()->orbital_product_GG()==LinearR12::OrbProdGG_pq) ||
-     (r12world()->r12tech()->ansatz()->orbital_product_gg()==LinearR12::OrbProdgg_pq)) {
+  if((r12world()->r12tech()->ansatz()->orbital_product_GG()==R12Technology::OrbProdGG_pq) ||
+     (r12world()->r12tech()->ansatz()->orbital_product_gg()==R12Technology::OrbProdgg_pq)) {
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
   }
 
@@ -88,6 +88,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
 MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   MBPT2(keyval)
 {
+  this->set_desired_value_accuracy(desired_value_accuracy());
+
   // Verify that this is a closed-shell or high-spin open-shell system
   CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
   HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
@@ -110,7 +112,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
-  Ref<R12RefWavefunction> refinfo = new SD_R12RefWavefunction(world, ref(), false,
+  Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), false,
                                                               nfzcore(), nfzvirt(),
                                                               vbs);
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
@@ -119,7 +121,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
 
   const bool diag = r12tech->ansatz()->diag();
-  const bool optimized_amplitudes = r12tech->ansatz()->amplitudes() == LinearR12::GeminalAmplitudeAnsatz_fullopt;
+  const bool optimized_amplitudes = r12tech->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fullopt;
 
   new_energy_ = diag ? true : false;
   new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
@@ -152,8 +154,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   cabs_singles_energy_ = 0.0;
-
-  this->set_desired_value_accuracy(desired_value_accuracy());
 }
 
 MBPT2_R12::~MBPT2_R12()

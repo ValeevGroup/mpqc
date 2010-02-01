@@ -33,7 +33,7 @@
 
 using namespace std;
 using namespace sc;
-using namespace sc::LinearR12;
+
 
 /**
    R12IntEval::contrib_to_VXB_a_() computes V, X, and B intermediates in standard approximation A using tensor contract functions

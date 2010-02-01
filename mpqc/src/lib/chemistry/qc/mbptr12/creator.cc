@@ -32,7 +32,6 @@
 #include <chemistry/qc/mbptr12/creator.h>
 
 using namespace sc;
-using sc::LinearR12::CorrelationFactor;
 
 DistArray4Creator::DistArray4Creator(const Ref<TwoBodyFourCenterMOIntsRuntime>& moints_rtime,
                                      const std::vector<std::string>& tform_keys) :
@@ -52,7 +51,7 @@ DistArray4Creator::ObjT DistArray4Creator::operator()() {
 ////
 
 TwoBodyIntDescrCreator::TwoBodyIntDescrCreator(
-                                               const Ref<CorrelationFactor>& corrfactor,
+                                               const Ref<R12Technology::R12Technology::CorrelationFactor>& corrfactor,
                                                const Ref<Integral>& integral,
                                                bool CorrFunctionInBra,
                                                bool CorrFunctionInKet) :
@@ -102,7 +101,7 @@ R12TwoBodyIntKeyCreator::R12TwoBodyIntKeyCreator(const Ref<TwoBodyFourCenterMOIn
                                                  const Ref<OrbitalSpace>& ket1,
                                                  const Ref<OrbitalSpace>& bra2,
                                                  const Ref<OrbitalSpace>& ket2,
-                                                 const Ref<CorrelationFactor>& corrfactor,
+                                                 const Ref<R12Technology::CorrelationFactor>& corrfactor,
                                                  bool CorrFunctionInBra,
                                                  bool CorrFunctionInKet,
                                                  std::string layout) :

@@ -41,8 +41,7 @@
 #endif
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 #include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/linearr12.timpl.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
@@ -196,6 +195,829 @@ R12Technology::R12Ansatz::orbital_product_gg() const {
 
 /////////////////////////////////////
 
+namespace sc {
+
+  template<>
+  bool R12Technology::CorrParamCompare<IntParamsG12>::equiv(
+                                                            const PrimitiveGeminal& A,
+                                                            const PrimitiveGeminal& B) {
+    return (std::fabs(A.first - B.first) < epsilon && std::fabs(A.second
+        - B.second) < epsilon);
+  }
+
+  template<>
+  bool sc::R12Technology::CorrParamCompare<IntParamsGenG12>::equiv(
+                                                                   const PrimitiveGeminal& A,
+                                                                   const PrimitiveGeminal& B) {
+    return (std::fabs(A.first.first - B.first.first) < epsilon
+        && std::fabs(A.first.second - B.first.second) < epsilon
+        && std::fabs(A.second - B.second) < epsilon);
+  }
+}
+
+Ref<R12Technology::CorrelationFactor> ang_to_geng12(double alpha) {
+
+  const double halfalpha = alpha/2.0;
+
+  // feed to the constructor of CorrFactor
+  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+  ContractedGeminal geminal_ang;
+
+  // add ang
+  geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
+
+  std::vector<ContractedGeminal> geminals;
+  geminals.push_back(geminal_ang);
+
+  Ref<R12Technology::CorrelationFactor> cf = new R12Technology::GenG12CorrelationFactor(geminals);
+  return cf;
+}
+
+/*********************
+ * GeminalDescriptor *
+ *********************/
+R12Technology::GeminalDescriptor::GeminalDescriptor(){
+  type_ = "invalid";
+}
+
+R12Technology::GeminalDescriptor::GeminalDescriptor(const std::string& type, const std::vector<std::string> &params){
+  type_ = type;
+  params_ = params;
+  //compute_offsets();
+}
+
+R12Technology::GeminalDescriptor::GeminalDescriptor(const GeminalDescriptor& source){
+  type_ = source.type_;
+  params_ = source.params_;
+  //compute_offsets();
+}
+
+//void GeminalDescriptor::compute_offsets() {
+//  if(type_!=std::string("invalid") && type_!=std::string("r12") && type_!=std::string("R12")){
+//    int nfunction=atoi(params_[0].c_str());
+//    offsets_=std::vector<int>(nfunction+1);
+//    int cumul_ind=nfunction+1;
+//    int nprimitve;
+//    for(int i=0; i<nfunction; i++){
+//      offsets_[i]=cumul_ind;
+//      nprimitve=atoi(params_[i+1].c_str());
+//      cumul_ind+=2*nprimitve;
+//    }
+//    offsets_[nfunction]=cumul_ind;
+//  }
+//}
+
+std::string R12Technology::GeminalDescriptor::type() const {
+  return(type_);
+}
+
+std::vector<std::string> R12Technology::GeminalDescriptor::params() const {
+  return(params_);
+}
+
+void R12Technology::GeminalDescriptor::print(std::ostream &o) {
+  o << "GeminalDescriptor :" << std::endl;
+  o << "type_ = " << type_ << std::endl;
+  o << "params_ :" << std::endl;
+  for(int i=0; i<params_.size(); i++){
+    o << params_[i] << std::endl;
+  }
+}
+
+bool R12Technology::invalid(const Ref<GeminalDescriptor>& gdesc){
+  std::string type=gdesc->type();
+  return((type==std::string("invalid")) ? true : false);
+}
+
+bool R12Technology::R12(const Ref<GeminalDescriptor>& gdesc){
+  std::string type=gdesc->type();
+  return(((type==std::string("R12")) || (type==std::string("r12"))) ? true : false);
+}
+
+bool R12Technology::STG(const Ref<GeminalDescriptor>& gdesc){
+  std::string type=gdesc->type();
+  return(((type==std::string("STG")) || (type==std::string("stg"))) ? true : false);
+}
+
+bool R12Technology::G12(const Ref<GeminalDescriptor>& gdesc){
+  std::string type=gdesc->type();
+  if((type==std::string("G12")) || (type==std::string("g12"))){
+    return(true);
+  }
+  else {
+    return(false);
+  }
+}
+
+double R12Technology::single_slater_exponent(const Ref<GeminalDescriptor>& gdesc) {
+  //gdesc->print();
+  std::string type=gdesc->type();
+  std::vector<std::string> params=gdesc->params();
+  if(type!=std::string("STG")){
+    throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): Geminal is not not of Slater function type.",__FILE__,__LINE__);
+  }
+  int nfunctions=atoi(params[0].c_str());
+  if(nfunctions!=1){
+    throw ProgrammingError("GeminalDescriptor::single_slater_exponent(): There are more than one Slater type functions.",__FILE__,__LINE__);
+  }
+  int nprimitives=atoi(params[1].c_str());
+  double exponent=atof(params[3].c_str());
+
+  return(exponent);
+}
+
+/****************************
+ * GeminalDescriptorFactory *
+ ****************************/
+R12Technology::GeminalDescriptorFactory::GeminalDescriptorFactory()
+  : invalid_id_("invalid"),
+    r12_id_("R12"),
+    stg_id_("STG"),
+    g12_id_("G12") {}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::null_geminal(){
+  std::vector<std::string> void_vector;
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(invalid_id_),void_vector)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::r12_geminal(){
+  std::vector<std::string> void_vector;
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(r12_id_),void_vector)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::slater_geminal(double gamma){
+  std::vector<std::string> param_vec(3);
+  int nfunction=1;
+  int nprimitive=1;
+  std::stringstream inout;
+  inout << nfunction;
+  inout >> param_vec[0];
+  inout << nprimitive;
+  inout >> param_vec[1];
+  inout << std::setprecision(16) << gamma;
+  inout >> param_vec[2];
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),param_vec)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
+  int nfunction=gamma.size();
+  std::vector<std::string> params(1+3*nfunction);
+  std::stringstream inout;
+  inout << nfunction;
+  inout >> params[0];
+  int one=1;
+  std::string one_str;
+  std::ostringstream out;
+  out << one;
+  one_str=out.str();
+  out.str("");
+  double oned=1.0;
+  std::string oned_str;
+  out << std::setprecision(16) << oned;
+  oned_str=out.str();
+  out.str("");
+
+  for(int i=0; i<nfunction; i++){
+    params[i+1]=one_str;
+    params[nfunction+1+2*i]=oned_str;
+    out << std::setprecision(16) << gamma[i];
+    params[nfunction+2+2*i]=out.str();
+    out.str("");
+  }
+
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),params)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::gaussian_geminal(double gamma){
+  std::vector<std::string> param_vec(3);
+  int nfunction=1;
+  int nprimitive=1;
+  std::stringstream inout;
+  inout << nfunction;
+  inout >> param_vec[0];
+  inout << nprimitive;
+  inout >> param_vec[1];
+  inout << std::setprecision(16) << gamma;
+  inout >> param_vec[2];
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::contracted_gaussian_geminal(const std::vector<double> &coeff,
+                                                                             const std::vector<double> &gamma){
+  int nfunction=1;
+  unsigned int ngeminal=coeff.size();
+  std::vector<std::string> param_vec(2*ngeminal+2);
+  std::stringstream inout;
+  inout << nfunction;
+  inout >> param_vec[0];
+  inout << ngeminal;
+  inout >> param_vec[1];
+  for(int i=0; i<ngeminal; i++){
+    inout << std::setprecision(16) << coeff[i];
+    inout >> param_vec[2*i+2];
+    inout << std::setprecision(16) << gamma[i];
+    inout >> param_vec[2*i+3];
+  }
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::gaussian_geminal(const G12CorrelationFactor::CorrelationParameters &corrparams){
+  unsigned int nfunction=corrparams.size();
+  std::vector<int> offsets(nfunction+1);
+  int numofparams=nfunction+1;
+  int nprimitive;
+  for(int i=0; i<nfunction; i++){
+    offsets[i]=numofparams;
+    nprimitive=corrparams[i].size();
+    numofparams+=2*nprimitive;
+  }
+  offsets[nfunction]=numofparams;
+
+  std::vector<std::string> params(numofparams);
+  std::stringstream inout;
+  inout << nfunction;
+  inout >> params[0];
+  for(int i=0; i<nfunction; i++){
+    nprimitive=corrparams[i].size();
+    inout << nprimitive;
+    inout >> params[i+1];
+    for(int j=0; j<nprimitive; j++){
+      double coefficient=corrparams[i][j].second;
+      double exponent=corrparams[i][j].first;
+      inout << std::setprecision(16) << coefficient;
+      inout >> params[offsets[i]+2*j];
+      inout << std::setprecision(16) << exponent;
+      inout >> params[offsets[i]+2*j+1];
+    }
+  }
+  return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),params)));
+}
+
+R12Technology::CorrelationFactor::CorrelationFactor(const std::string& label, const Ref<GeminalDescriptor> &geminaldescriptor) :
+  label_(label),
+  geminaldescriptor_(geminaldescriptor)
+{
+}
+
+R12Technology::CorrelationFactor::~CorrelationFactor()
+{
+}
+
+R12Technology::CorrelationFactor::CorrelationFactor()
+{
+  label_=std::string("invalid");
+  Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+  geminaldescriptor_=gdesc_factory->null_geminal();
+}
+
+unsigned int
+R12Technology::CorrelationFactor::nfunctions() const
+{
+  return 1;
+}
+
+unsigned int
+R12Technology::CorrelationFactor::nprimitives(unsigned int c) const
+{
+  return 1;
+}
+
+const std::string&
+R12Technology::CorrelationFactor::label() const
+{
+  return label_;
+}
+
+void
+R12Technology::CorrelationFactor::print(std::ostream& os) const
+{
+  using std::endl;
+  os << indent << "CorrelationFactor:" << endl;
+  os << incindent;
+  const int nfunc = nfunctions();
+  for(int f=0; f<nfunc; f++) {
+    os << indent << "Function " << f << ":" << endl << incindent;
+    os << indent << "Functional form: " << label() << endl;
+    print_params(os,f);
+    //geminaldescriptor_->print(os);
+    os << decindent;
+  }
+  os << decindent;
+}
+
+Ref<R12Technology::GeminalDescriptor> R12Technology::CorrelationFactor::geminaldescriptor() {
+  return(geminaldescriptor_);
+}
+
+void
+R12Technology::CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
+{
+}
+
+double
+R12Technology::CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
+{
+  return value(c,r12);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_eri() const
+{
+  return TwoBodyOper::eri;
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_f12() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_t1f12() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_t2f12() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_t2f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_f12eri() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_f12eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_f12f12() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_f12f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_f12t1f12() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_f12t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+TwoBodyOper::type
+R12Technology::CorrelationFactor::tbint_type_f12f12_anti() const
+{
+  throw ProgrammingError("CorrelationFactor::tbint_type_f12f12_anti() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  throw ProgrammingError("CorrelationFactor::tbintdescr(f) -- should not be called for this CorrelationFactor",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const
+{
+  throw ProgrammingError("CorrelationFactor::tbintdescr(f,g) -- should not be called for this CorrelationFactor",__FILE__,__LINE__);
+}
+
+////
+
+R12Technology::NullCorrelationFactor::NullCorrelationFactor() :
+  CorrelationFactor()
+{
+}
+
+double
+R12Technology::NullCorrelationFactor::value(unsigned int c, double r12) const
+{
+  return 0.0;
+}
+
+bool
+R12Technology::NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<NullCorrelationFactor> cf_null; cf_null << cf;
+  return cf_null.nonnull();
+}
+
+////
+
+R12Technology::R12CorrelationFactor::R12CorrelationFactor()
+{
+  label_=std::string("R12");
+  Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+  geminaldescriptor_=gdesc_factory->r12_geminal();
+}
+
+TwoBodyOper::type
+R12Technology::R12CorrelationFactor::tbint_type_f12() const
+{
+  return (TwoBodyOper::r12);
+}
+
+TwoBodyOper::type
+R12Technology::R12CorrelationFactor::tbint_type_t1f12() const
+{
+  return (TwoBodyOper::r12t1);
+}
+
+TwoBodyOper::type
+R12Technology::R12CorrelationFactor::tbint_type_t2f12() const
+{
+  return (TwoBodyOper::r12t2);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::R12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  return new TwoBodyIntDescrR12(IF);
+}
+
+double
+R12Technology::R12CorrelationFactor::value(unsigned int c, double r12) const
+{
+  return r12;
+}
+
+bool
+R12Technology::R12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<R12CorrelationFactor> cf_cast; cf_cast << cf;
+  return cf_cast.nonnull();
+}
+
+////
+
+R12Technology::G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
+  label_=std::string("G12");
+  if (geminaldescriptor.nonnull())
+    geminaldescriptor_=geminaldescriptor;
+  else {
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+    geminaldescriptor_=gdesc_factory->gaussian_geminal(params);
+  }
+  params_=params;
+}
+
+unsigned int
+R12Technology::G12CorrelationFactor::nfunctions() const
+{
+  return params_.size();
+}
+
+const R12Technology::G12CorrelationFactor::ContractedGeminal&
+R12Technology::G12CorrelationFactor::function(unsigned int c) const
+{
+  return params_.at(c);
+}
+
+unsigned int
+R12Technology::G12CorrelationFactor::nprimitives(unsigned int c) const
+{
+  return params_.at(c).size();
+}
+
+const R12Technology::G12CorrelationFactor::PrimitiveGeminal&
+R12Technology::G12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
+{
+  return params_.at(c).at(p);
+}
+
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_f12() const
+{
+  return (TwoBodyOper::r12_0_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_t1f12() const
+{
+  return (TwoBodyOper::t1g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_t2f12() const
+{
+  return (TwoBodyOper::t2g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_f12eri() const
+{
+  return (TwoBodyOper::r12_m1_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_f12f12() const
+{
+  return (TwoBodyOper::r12_0_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12CorrelationFactor::tbint_type_f12t1f12() const
+{
+  return (TwoBodyOper::g12t1g12);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(f));
+  return new TwoBodyIntDescrG12(IF,params);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF,
+                                            unsigned int fbra,
+                                            unsigned int fket) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(fbra),function(fket));
+  return new TwoBodyIntDescrG12(IF,params);
+}
+
+double
+R12Technology::G12CorrelationFactor::value(unsigned int c, double r12) const
+{
+  double val = 0.0;
+  const unsigned int nprims = nprimitives(c);
+  for(unsigned int p=0; p<nprims; p++) {
+    const PrimitiveGeminal& prim = primitive(c,p);
+    const double expon = prim.first;
+    const double coef = prim.second;
+    val += coef*exp(-expon*r12*r12);
+  }
+  return val;
+}
+
+void
+R12Technology::G12CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
+{
+  using std::endl;
+
+  os << indent << "[ Exponent Coefficient] = [ ";
+  const int nprim = nprimitives(f);
+  for(int p=0; p<nprim; p++) {
+    const PrimitiveGeminal& prim = primitive(f,p);
+    os << "[" << prim.first << " " << prim.second << "] ";
+  }
+  os << " ]" << endl;
+}
+
+bool
+R12Technology::G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<G12CorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return R12Technology::CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
+}
+
+////
+
+R12Technology::G12NCCorrelationFactor::G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
+  label_=std::string("G12");
+  if (geminaldescriptor.nonnull()){
+  geminaldescriptor_=geminaldescriptor;
+  }
+  else {
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
+    geminaldescriptor_=gdesc_factory->gaussian_geminal(params);
+  }
+  params_=params;
+}
+
+unsigned int
+R12Technology::G12NCCorrelationFactor::nfunctions() const
+{
+  return params_.size();
+}
+
+const R12Technology::G12NCCorrelationFactor::ContractedGeminal&
+R12Technology::G12NCCorrelationFactor::function(unsigned int c) const
+{
+  return params_.at(c);
+}
+
+unsigned int
+R12Technology::G12NCCorrelationFactor::nprimitives(unsigned int c) const
+{
+  return params_.at(c).size();
+}
+
+const R12Technology::G12NCCorrelationFactor::PrimitiveGeminal&
+R12Technology::G12NCCorrelationFactor::primitive(unsigned int c, unsigned int p) const
+{
+  return params_.at(c).at(p);
+}
+
+TwoBodyOper::type
+R12Technology::G12NCCorrelationFactor::tbint_type_f12() const
+{
+  return (TwoBodyOper::r12_0_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12NCCorrelationFactor::tbint_type_f12eri() const
+{
+  return (TwoBodyOper::r12_m1_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12NCCorrelationFactor::tbint_type_f12f12() const
+{
+  return (TwoBodyOper::r12_0_g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12NCCorrelationFactor::tbint_type_f12t1f12() const
+{
+  return (TwoBodyOper::g12t1g12);
+}
+
+TwoBodyOper::type
+R12Technology::G12NCCorrelationFactor::tbint_type_f12f12_anti() const
+{
+  return (TwoBodyOper::anti_g12g12);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::G12NCCorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(f));
+  return new TwoBodyIntDescrG12NC(IF,params);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::G12NCCorrelationFactor::tbintdescr(const Ref<Integral>& IF,
+                          unsigned int fbra,
+                          unsigned int fket) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(fbra),function(fket));
+  return new TwoBodyIntDescrG12NC(IF,params);
+}
+
+double
+R12Technology::G12NCCorrelationFactor::value(unsigned int c, double r12) const
+{
+  double val = 0.0;
+  const unsigned int nprims = nprimitives(c);
+  for(unsigned int p=0; p<nprims; p++) {
+    const PrimitiveGeminal& prim = primitive(c,p);
+    const double expon = prim.first;
+    const double coef = prim.second;
+    val += coef*exp(-expon*r12*r12);
+  }
+  return val;
+}
+
+void
+R12Technology::G12NCCorrelationFactor::print_params(std::ostream& os, unsigned int f) const
+{
+  using std::endl;
+
+  os << indent << "[ Exponent Coefficient] = [ ";
+  const int nprim = nprimitives(f);
+  for(int p=0; p<nprim; p++) {
+    const PrimitiveGeminal& prim = primitive(f,p);
+    os << "[" << prim.first << " " << prim.second << "] ";
+  }
+  os << " ]" << endl;
+}
+
+bool
+R12Technology::G12NCCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<G12NCCorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return R12Technology::CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
+}
+
+R12Technology::G12NCCorrelationFactor::ContractedGeminal
+R12Technology::G12NCCorrelationFactor::product(const ContractedGeminal& A,
+                                       const ContractedGeminal& B)
+{
+  return IntParamsG12::product(A,B);
+}
+
+////
+
+R12Technology::GenG12CorrelationFactor::GenG12CorrelationFactor(const CorrelationParameters& params) :
+  CorrelationFactor(), params_(params)
+{
+  if (params_.size() != 1)
+    throw ProgrammingError("GenG12CorrelationFactor::GenG12CorrelationFactor() -- only 1 general Geminal correlation factor can now be handled",__FILE__,__LINE__);
+}
+
+unsigned int
+R12Technology::GenG12CorrelationFactor::nfunctions() const
+{
+  return params_.size();
+}
+
+
+const R12Technology::GenG12CorrelationFactor::ContractedGeminal&
+R12Technology::GenG12CorrelationFactor::function(unsigned int c) const
+{
+  return params_.at(c);
+}
+
+unsigned int
+R12Technology::GenG12CorrelationFactor::nprimitives(unsigned int c) const
+{
+  return params_.at(c).size();
+}
+
+const R12Technology::GenG12CorrelationFactor::PrimitiveGeminal&
+R12Technology::GenG12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
+{
+  return params_.at(c).at(p);
+}
+
+TwoBodyOper::type
+R12Technology::GenG12CorrelationFactor::tbint_type_f12() const
+{
+  return (TwoBodyOper::r12_0_gg12);
+}
+
+TwoBodyOper::type
+R12Technology::GenG12CorrelationFactor::tbint_type_f12eri() const
+{
+  return (TwoBodyOper::r12_m1_gg12);
+}
+
+TwoBodyOper::type
+R12Technology::GenG12CorrelationFactor::tbint_type_f12f12() const
+{
+  return (TwoBodyOper::r12_0_gg12);
+}
+
+TwoBodyOper::type
+R12Technology::GenG12CorrelationFactor::tbint_type_f12t1f12() const
+{
+  return (TwoBodyOper::gg12t1gg12);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::GenG12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  Ref<IntParamsGenG12> params = new IntParamsGenG12(function(f));
+  return new TwoBodyIntDescrGenG12(IF,params);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::GenG12CorrelationFactor::tbintdescr(const Ref<Integral>& IF,
+                           unsigned int fbra,
+                           unsigned int fket) const
+{
+  Ref<IntParamsGenG12> params = new IntParamsGenG12(function(fbra),function(fket));
+  return new TwoBodyIntDescrGenG12(IF,params);
+}
+
+double
+R12Technology::GenG12CorrelationFactor::value(unsigned int c, double r12) const
+{
+  throw ProgrammingError("GenG12CorrelationFactor::value(c,r12) -- not defined for general Geminal correlation factors",__FILE__,__LINE__);
+}
+
+double
+R12Technology::GenG12CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
+{
+  double val = 0.0;
+  const unsigned int nprims = nprimitives(c);
+  for(unsigned int p=0; p<nprims; p++) {
+    const PrimitiveGeminal& prim = primitive(c,p);
+    const double alpha = prim.first.first;
+    const double gamma = prim.first.second;
+    const double coef = prim.second;
+    val += coef*exp( - alpha*(r1*r1 + r2*r2) - gamma*r12*r12 );
+  }
+  return val;
+}
+
+void
+R12Technology::GenG12CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
+{
+  using std::endl;
+
+  os << indent << "[ [Alpha Gamma] Coefficient] = [ ";
+  const int nprim = nprimitives(f);
+  for(int p=0; p<nprim; p++) {
+    const PrimitiveGeminal& prim = primitive(f,p);
+    os << "[ [" << prim.first.first << " " << prim.first.second << "] " << prim.second << "] ";
+  }
+  os << " ]" << endl;
+}
+
+bool
+R12Technology::GenG12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
+{
+  Ref<GenG12CorrelationFactor> cf_cast; cf_cast << cf;
+  if (cf_cast.null()) return false;
+  return R12Technology::CorrParamCompare<IntParamsGenG12>::equiv(params_,(*cf_cast).params_);
+}
+
+///////////////////////////////////
 static ClassDesc R12Technology_cd(
   typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
   0, 0, create<R12Technology>);
@@ -289,14 +1111,14 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   //
   if (corrfactor == "r12" ||
       corrfactor == "R12") {
-    corrfactor_ = new LinearR12::R12CorrelationFactor();
+    corrfactor_ = new R12CorrelationFactor();
   }
   //
   // g12 correlation factor?
   //
   else if (corrfactor == "g12" || corrfactor == "G12") {
     if (keyval->exists("corr_param")) {
-      typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
+      typedef G12CorrelationFactor::CorrelationParameters CorrParams;
       CorrParams params;
       const int num_f12 = keyval->count("corr_param");
       if (num_f12 != 0) {
@@ -306,7 +1128,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
           // Primitive functions only
           for(int f=0; f<num_f12; f++) {
             double exponent = keyval->doublevalue("corr_param", f);
-            LinearR12::G12CorrelationFactor::ContractedGeminal vtmp;
+            G12CorrelationFactor::ContractedGeminal vtmp;
             vtmp.push_back(std::make_pair(exponent,1.0));
             params.push_back(vtmp);
           }
@@ -317,7 +1139,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
             const int nprims = keyval->count("corr_param", f);
             if (nprims == 0)
               throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
-            LinearR12::G12CorrelationFactor::ContractedGeminal vtmp;
+            G12CorrelationFactor::ContractedGeminal vtmp;
             for(int p=0; p<nprims; p++) {
               if (keyval->count("corr_param", f, p) != 2)
                 throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
@@ -338,9 +1160,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       if (stdapprox_ == StdApprox_Ap ||
           stdapprox_ == StdApprox_App ||
           stdapprox_ == StdApprox_B)
-        corrfactor_ = new LinearR12::G12CorrelationFactor(params);
+        corrfactor_ = new G12CorrelationFactor(params);
       else
-        corrfactor_ = new LinearR12::G12NCCorrelationFactor(params);
+        corrfactor_ = new G12NCCorrelationFactor(params);
     }
     else
       throw ProgrammingError("R12Technology::R12Technology() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
@@ -350,7 +1172,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   //
   else if (corrfactor == "geng12" || corrfactor == "GENG12") {
     if (keyval->exists("corr_param")) {
-      typedef LinearR12::GenG12CorrelationFactor::CorrelationParameters CorrParams;
+      typedef GenG12CorrelationFactor::CorrelationParameters CorrParams;
       CorrParams params;
       const int num_f12 = keyval->count("corr_param");
       if (num_f12 != 0) {
@@ -360,7 +1182,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
           // Primitive functions only
           for(int f=0; f<num_f12; f++) {
             double exponent = keyval->doublevalue("corr_param", f);
-            LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;
+            GenG12CorrelationFactor::ContractedGeminal vtmp;
             vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
             params.push_back(vtmp);
           }
@@ -371,7 +1193,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
             const int nprims = keyval->count("corr_param", f);
             if (nprims == 0)
               throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
-            LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;
+            GenG12CorrelationFactor::ContractedGeminal vtmp;
             for(int p=0; p<nprims; p++) {
               if (keyval->count("corr_param", f, p) != 3)
                 throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
@@ -386,10 +1208,10 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       }
       else {
         double exponent = keyval->doublevalue("corr_param");
-        LinearR12::GenG12CorrelationFactor::ContractedGeminal vtmp;  vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
+        GenG12CorrelationFactor::ContractedGeminal vtmp;  vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
         params.push_back(vtmp);
       }
-      corrfactor_ = new LinearR12::GenG12CorrelationFactor(params);
+      corrfactor_ = new GenG12CorrelationFactor(params);
     }
     else
       throw ProgrammingError("R12Technology::R12Technology() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
@@ -425,10 +1247,10 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	throw InputError("keyword corr_param must be given when corrfactor=stg",__FILE__,__LINE__);
 
     std::vector<double> stg_exponents;
-    typedef LinearR12::G12CorrelationFactor::CorrelationParameters CorrParams;
+    typedef G12CorrelationFactor::CorrelationParameters CorrParams;
     CorrParams params;
     int num_f12 = keyval->count("corr_param");
-    Ref<LinearR12::GeminalDescriptorFactory> gdesc_factory=new LinearR12::GeminalDescriptorFactory;
+    Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
     if (num_f12 != 0) {
         // Do I have contracted functions? Can't handle these (yet?)
         bool contracted = (keyval->count("corr_param",0) != 0);
@@ -446,7 +1268,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         double exponent = keyval->doublevalue("corr_param");
 	stg_exponents.push_back(exponent);
     }
-    Ref<LinearR12::GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
+    Ref<GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
     // convert STGs into combinations of Gaussians
     for(int f=0; f<num_f12; f++) {
 	using namespace sc::mbptr12;
@@ -473,8 +1295,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	// fit r12^k exp(-gamma*r_{12})
 	const int k = 0;
 	const double gamma = stg_exponents[f];
-	Ref<LinearR12::G12CorrelationFactor> cf;
-	cf << LinearR12::stg_to_g12<LinearR12::G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
+	Ref<G12CorrelationFactor> cf;
+	cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
 	params.push_back(cf->function(0));
 	delete w;
     }
@@ -483,15 +1305,15 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     if (stdapprox_ == StdApprox_Ap ||
         stdapprox_ == StdApprox_App ||
         stdapprox_ == StdApprox_B)
-      corrfactor_ = new LinearR12::G12CorrelationFactor(params,gdesc);
+      corrfactor_ = new G12CorrelationFactor(params,gdesc);
     else
-      corrfactor_ = new LinearR12::G12NCCorrelationFactor(params,gdesc);
+      corrfactor_ = new G12NCCorrelationFactor(params,gdesc);
   }
   //
   // no explicit correlation
   //
   else if (corrfactor == "none" || corrfactor == "NONE") {
-    corrfactor_ = new LinearR12::NullCorrelationFactor();
+    corrfactor_ = new NullCorrelationFactor();
   }
   else
     throw FeatureNotImplemented("R12Technology::R12Technology -- this correlation factor is not implemented",__FILE__,__LINE__);
@@ -608,7 +1430,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 
   // stdapprox must be C if corrfactor == geng12
   {
-    Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
+    Ref<GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
     if (gg12ptr.nonnull() && stdapprox_ != StdApprox_C) {
       throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
     }
@@ -738,7 +1560,7 @@ R12Technology::print(ostream&o) const
 
 ////////////////////////////////////////////////////////////////////////////
 
-const Ref<LinearR12::CorrelationFactor>&
+const Ref<R12Technology::CorrelationFactor>&
 R12Technology::corrfactor() const
 {
   return corrfactor_;
@@ -747,7 +1569,7 @@ R12Technology::corrfactor() const
 ////////////////////////////////////////////////////////////////////////////
 
 void
-R12Technology::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
+R12Technology::corrfactor(const Ref<CorrelationFactor>& cf)
 {
   if (!corrfactor_->equiv(cf)) {
       corrfactor_ = cf;
@@ -864,7 +1686,7 @@ void
 R12Technology::check_integral_factory(const Ref<Integral>& ints)
 {
   // any factory can support pure MP2 calculations! Thus only test for nontrivial corr factors
-  Ref<LinearR12::NullCorrelationFactor> nullcf; nullcf << corrfactor();
+  Ref<NullCorrelationFactor> nullcf; nullcf << corrfactor();
   if (nullcf.null()) {
     // Only IntegralCints or IntegralLibint2 can be used at the moment
     bool allowed_integral_factory = false;

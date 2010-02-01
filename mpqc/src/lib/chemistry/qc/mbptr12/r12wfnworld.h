@@ -40,7 +40,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/ref.h>

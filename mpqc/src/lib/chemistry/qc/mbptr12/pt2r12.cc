@@ -678,7 +678,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   if(S==AlphaBeta) {
     SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha), r12eval_->GGspace(Beta), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha), r12eval_->GGspace(Beta), S );
-    Ref<LinearR12::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
+    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -696,7 +696,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
     SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
     SpinMOPairIter OW_iter(r12eval_->GGspace(spin), r12eval_->GGspace(spin), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(spin), r12eval_->GGspace(spin), S );
-    Ref<LinearR12::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
+    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {

@@ -31,7 +31,7 @@
 
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
@@ -322,7 +322,7 @@ class R12IntEval : virtual public SavableState {
      space1_ket and space2_ket         -- space of the first and second ket index of the second tensor - external indices.
      space1_intk and space2_intk       -- space of the first and second bra index of the second tensor - internal indices.
      tpcontract                        -- provides information on how the two tensors are to be contracted - see
-                                          document of class LinearR12::TwoParticleContraction and the classes derived
+                                          document of class R12Technology::TwoParticleContraction and the classes derived
                                           from it.
      antisymmetrize                    -- antisymmetrize the final contracted product.
      tforms_bra and tforms_ket         -- TwoBodyMOIntsTransform vectors (dimension: number of correlation factors) that
@@ -411,7 +411,7 @@ class R12IntEval : virtual public SavableState {
    *  space1_intk, space2_intk,
    *  space3_intk                       -- space of the first bra and first and second ket index of the second tensor - internal indices.
    *  tpcontract                        -- provides information on how the two tensors are to be contracted - see
-   *                                       document of class LinearR12::TwoParticleContraction and the classes derived
+   *                                       document of class R12Technology::TwoParticleContraction and the classes derived
    *                                       from it.
    *  tforms_bra and tforms_ket         -- TwoBodyMOIntsTransform vectors (dimension: number of correlation factors) that
    *                                       describe the transformation of the bra and ket tensor respectively from the AO
@@ -569,7 +569,7 @@ public:
   int dk() const { return r12world()->ref()->dk(); }
 
 #if 1
-  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12world()->r12tech()->corrfactor(); }
+  const Ref<R12Technology::CorrelationFactor>& corrfactor() const { return r12world()->r12tech()->corrfactor(); }
   R12Technology::ABSMethod abs_method() const { return r12world()->r12tech()->abs_method(); }
   const Ref<R12Technology::R12Ansatz>& ansatz() const { return r12world()->r12tech()->ansatz(); }
   bool spin_polarized() const { return r12world()->ref()->spin_polarized(); }

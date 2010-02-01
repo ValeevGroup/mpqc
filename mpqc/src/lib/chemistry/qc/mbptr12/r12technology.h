@@ -32,7 +32,9 @@
 #pragma interface
 #endif
 
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <util/state/state.h>
+#include <chemistry/qc/basis/intdescr.h>
+#include <chemistry/qc/mbptr12/gaussianfit.h>
 
 namespace sc {
 
@@ -166,13 +168,456 @@ class R12Technology: virtual public SavableState {
     bool wof_;
     R12Technology::OrbitalProduct_GG orbital_product_GG_;
     R12Technology::OrbitalProduct_gg orbital_product_gg_;
+  }; // end of R12Ansatz declaration
+
+
+  class GeminalDescriptor : public RefCount {
+    private:
+      std::string type_;
+      /** first index: number of functions
+       *  then vector of number of primitves of dimension nfunctions
+       *  then vector of contraction coefficents and exponents for each primitive
+       *  then vector of other parameters.
+       */
+      std::vector<std::string> params_;
+    public:
+      GeminalDescriptor();
+      ~GeminalDescriptor(){}
+      GeminalDescriptor(const std::string& type, const std::vector<std::string> &params);
+      GeminalDescriptor(const GeminalDescriptor& source);
+      std::string type() const;
+      std::vector<std::string> params() const;
+      void print(std::ostream &o=ExEnv::out0());
   };
+
+  static bool invalid(const Ref<GeminalDescriptor>& gdesc);
+  static bool R12(const Ref<GeminalDescriptor>& gdesc);
+  static bool STG(const Ref<GeminalDescriptor>& gdesc);
+  static bool G12(const Ref<GeminalDescriptor>& gdesc);
+  /// Returns a single Slater type geminal exponent. Throws if geminal is not of Slater type and if there is more than one Slater type function.
+  static double single_slater_exponent(const Ref<GeminalDescriptor>& gdesc);
+
+
+  /** CorrelationFactor is a set of one or more two-particle functions
+      of the interparticle distance. Each function may be a primitive function
+      or a contraction of several functions.
+  */
+  class CorrelationFactor : public RefCount {
+    public:
+      /// Definitions of primitive and contracted Geminals
+      //typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+      //typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+      /// Vector of contracted 2 particle functions
+      //typedef std::vector<ContractedGeminal> CorrelationParameters;
+
+      CorrelationFactor(const std::string& label, const Ref<GeminalDescriptor> &geminaldescriptor);
+      CorrelationFactor();
+      virtual ~CorrelationFactor();
+
+  // return true if this is equivalent to cf
+  virtual bool equiv(const Ref<CorrelationFactor>& cf) const =0;
+
+      /// Returns label
+      const std::string& label() const;
+      /// Returns the number of contracted two-particle functions in the set
+      virtual unsigned int nfunctions() const;
+      /// Returns the number of primitive functions in contraction c
+      virtual unsigned int nprimitives(unsigned int c) const;
+
+      /// Computes value of function c when electrons are at distance r12
+      virtual double value(unsigned int c, double r12) const =0;
+      /// Computes value of function c when electrons are at (r1, r2, r12). By default, will call value(c,r12).
+      virtual double value(unsigned int c, double r12, double r1, double r2) const;
+
+      /** Returns TwoBodyIntDescr needed to compute matrix elements where correlation
+          function f appears in either bra or ket only.
+      */
+      virtual Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+      /** Returns TwoBodyIntDescr needed to compute matrix elements where correlation
+          functions fbra and fket appear in bra or ket, respectively.
+      */
+      virtual Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
+      /// Returns the maximum number of two-body integral types produced by the appropriate integral evaluator
+      virtual unsigned int max_num_tbint_types() const =0;
+
+      //
+      // These functions are used to map the logical type of integrals ([T1,F12], etc.) to concrete types as produced by TwoBodyInt
+      //
+
+      /// Returns TwoBodyOper::type corresponding to electron repulsion integrals
+      virtual TwoBodyOper::type tbint_type_eri() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over correlation operator
+      virtual TwoBodyOper::type tbint_type_f12() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over [T1,f12]
+      virtual TwoBodyOper::type tbint_type_t1f12() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over [T2,f12]
+      virtual TwoBodyOper::type tbint_type_t2f12() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over f12/r12
+      virtual TwoBodyOper::type tbint_type_f12eri() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over f12^2
+      virtual TwoBodyOper::type tbint_type_f12f12() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over [f12,[T1,f12]]
+      virtual TwoBodyOper::type tbint_type_f12t1f12() const;
+      /// Returns TwoBodyOper::type corresponding to integrals over f12*f12' antisymmetrized
+      /// wrt exponents, i.e. f12*f12' (exp(f12')-exp(f12))/(exp(f12')+exp(f12))
+      virtual TwoBodyOper::type tbint_type_f12f12_anti() const;
+
+      /// print the correlation factor
+      void print(std::ostream& os = ExEnv::out0()) const;
+      Ref<GeminalDescriptor> geminaldescriptor();
+
+    protected:
+      std::string label_;
+      Ref<GeminalDescriptor> geminaldescriptor_;
+
+      /// Print out parameters of function f. Base implementation prints nothing.
+      virtual void print_params(std::ostream& os, unsigned int f) const;
+
+  };
+
+  /** NullCorrelationFactor stands for no correlation factor */
+  class NullCorrelationFactor : public CorrelationFactor {
+    public:
+    NullCorrelationFactor();
+
+    /// Implementation of CorrelationFactor::equiv()
+    bool equiv(const Ref<CorrelationFactor>& cf) const;
+    /// Implementation of CorrelationFactor::max_num_tbint_types()
+    unsigned int max_num_tbint_types() const { return 1; }
+    /// Implementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12) const;
+  };
+
+  /** R12CorrelationFactor stands for no correlation factor */
+  class R12CorrelationFactor : public CorrelationFactor {
+    public:
+    R12CorrelationFactor();
+
+    /// Implementation of CorrelationFactor::equiv()
+    bool equiv(const Ref<CorrelationFactor>& cf) const;
+    /// Implementation of CorrelationFactor::max_num_tbint_types()
+    unsigned int max_num_tbint_types() const { return 4; }
+    /// Reimplementation of CorrelationFactor::tbint_type_f12()
+    TwoBodyOper::type tbint_type_f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_t1f12()
+    TwoBodyOper::type tbint_type_t1f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_t2f12()
+    TwoBodyOper::type tbint_type_t2f12() const;
+    /// Overload of CorrelationFactor::tbintdescr(f)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    /// Implementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12) const;
+  };
+
+  /// Compares CorrelationParamaters corresponding to IntParam
+  template <class IntParam>
+  struct CorrParamCompare {
+  typedef typename IntParam::PrimitiveGeminal PrimitiveGeminal;
+  typedef typename IntParam::ContractedGeminal ContractedGeminal;
+  typedef std::vector<ContractedGeminal> ContractedGeminals;
+
+  // 2 parameters are equivalent if their values differ by less than epsilon
+  static double epsilon;
+  static bool equiv(const ContractedGeminals& A, const ContractedGeminals& B);
+
+  private:
+  static bool equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B);
+  };
+  /** G12CorrelationFactor stands for Gaussian geminals correlation factor,
+  usable with methods that require commutator integrals */
+  class G12CorrelationFactor : public CorrelationFactor {
+    public:
+    /// Definitions of primitive and contracted Geminals
+    typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+    /// Vector of contracted 2 particle functions
+    typedef std::vector<ContractedGeminal> CorrelationParameters;
+
+    G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor = 0);
+
+    /// Implementation of CorrelationFactor::equiv()
+    bool equiv(const Ref<CorrelationFactor>& cf) const;
+    /// Reimplementation of CorrelationFactor::nfunctions()
+    unsigned int nfunctions() const;
+    /// Returns contracted function c
+    const ContractedGeminal& function(unsigned int c) const;
+    /// Reimplementation of CorrelationFactor::nprimitives()
+    unsigned int nprimitives(unsigned int c) const;
+    /// Returns std::pair<primitive_parameter,coefficient> in primitive p of contraction c
+    const PrimitiveGeminal& primitive(unsigned int c, unsigned int p) const;
+    /// Implementation of CorrelationFactor::max_num_tbint_types()
+    unsigned int max_num_tbint_types() const { return 6; }
+    /// Reimplementation of CorrelationFactor::tbint_type_f12()
+    TwoBodyOper::type tbint_type_f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
+    TwoBodyOper::type tbint_type_f12eri() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_t1f12()
+    TwoBodyOper::type tbint_type_t1f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_t2f12()
+    TwoBodyOper::type tbint_type_t2f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
+    TwoBodyOper::type tbint_type_f12f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
+    TwoBodyOper::type tbint_type_f12t1f12() const;
+    /// Overload of CorrelationFactor::tbintdescr(f)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
+    /// Implementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12) const;
+
+  private:
+    CorrelationParameters params_;
+
+    /// Reimplementation of CorrelationFactor::print_params()
+  void print_params(std::ostream& os, unsigned int f) const;
+
+  };
+
+  /** G12NCCorrelationFactor stands for Gaussian geminals correlation factor,
+  usable with methods that do not require commutator integrals */
+  class G12NCCorrelationFactor : public CorrelationFactor {
+    public:
+    /// Definitions of primitive and contracted Geminals
+    typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+    /// Vector of contracted 2 particle functions
+    typedef std::vector<ContractedGeminal> CorrelationParameters;
+
+    G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor = 0);
+
+    /// Implementation of CorrelationFactor::equiv()
+    bool equiv(const Ref<CorrelationFactor>& cf) const;
+    /// Reimplementation of CorrelationFactor::nfunctions()
+    unsigned int nfunctions() const;
+    /// Returns contracted function c
+    const ContractedGeminal& function(unsigned int c) const;
+    /// Reimplementation of CorrelationFactor::nprimitives()
+    unsigned int nprimitives(unsigned int c) const;
+    /// Returns std::pair<primitive_parameter,coefficient> in primitive p of contraction c
+    const PrimitiveGeminal& primitive(unsigned int c, unsigned int p) const;
+    /// Implementation of CorrelationFactor::max_num_tbint_types()
+    unsigned int max_num_tbint_types() const { return 6; }
+    /// Reimplementation of CorrelationFactor::tbint_type_f12()
+    TwoBodyOper::type tbint_type_f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
+    TwoBodyOper::type tbint_type_f12eri() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
+    TwoBodyOper::type tbint_type_f12f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
+    TwoBodyOper::type tbint_type_f12t1f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12f12_anti()
+    TwoBodyOper::type tbint_type_f12f12_anti() const;
+    /// Overload of CorrelationFactor::tbintdescr(f)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
+    /// Implementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12) const;
+
+    static ContractedGeminal product(const ContractedGeminal& A,
+                                     const ContractedGeminal& B);
+
+  private:
+    CorrelationParameters params_;
+
+    /// Reimplementation of CorrelationFactor::print_params()
+    void print_params(std::ostream& os, unsigned int f) const;
+
+  };
+
+  /** GenG12CorrelationFactor stands for no correlation factor */
+  class GenG12CorrelationFactor : public CorrelationFactor {
+    public:
+    /// Definitions of primitive and contracted Geminals
+    typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+    /// Vector of contracted 2 particle functions
+    typedef std::vector<ContractedGeminal> CorrelationParameters;
+
+    GenG12CorrelationFactor(const CorrelationParameters& params);
+
+    /// Implementation of CorrelationFactor::equiv()
+    bool equiv(const Ref<CorrelationFactor>& cf) const;
+    /// Reimplementation of CorrelationFactor::nfunctions()
+    unsigned int nfunctions() const;
+    /// Returns contracted function c
+    const ContractedGeminal& function(unsigned int c) const;
+    /// Reimplementation of CorrelationFactor::nprimitives()
+    unsigned int nprimitives(unsigned int c) const;
+    /// Returns std::pair<primitive_parameter,coefficient> in primitive p of contraction c
+    const PrimitiveGeminal& primitive(unsigned int c, unsigned int p) const;
+    /// Implementation of CorrelationFactor::max_num_tbint_types()
+    unsigned int max_num_tbint_types() const { return 4; }
+    /// Reimplementation of CorrelationFactor::tbint_type_f12()
+    TwoBodyOper::type tbint_type_f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
+    TwoBodyOper::type tbint_type_f12eri() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
+    TwoBodyOper::type tbint_type_f12f12() const;
+    /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
+    TwoBodyOper::type tbint_type_f12t1f12() const;
+    /// Overload of CorrelationFactor::tbintdescr(f)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
+    /// Implementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12) const;
+    /// Reimplementation of CorrelationFactor::value()
+    double value(unsigned int c, double r12, double r1, double r2) const;
+
+  private:
+    CorrelationParameters params_;
+
+    /// Reimplementation of CorrelationFactor::print_params()
+    void print_params(std::ostream& os, unsigned int f) const;
+
+  };
+
+  class GeminalDescriptorFactory : public RefCount {
+    private:
+      const char* invalid_id_;  // = "invalid"
+      const char* r12_id_;  // = "R12"
+      const char* stg_id_;  // = "STG"
+      const char* g12_id_;  // = "G12"
+    public:
+      GeminalDescriptorFactory();
+      Ref<GeminalDescriptor> null_geminal();
+      Ref<GeminalDescriptor> r12_geminal();
+      Ref<GeminalDescriptor> slater_geminal(double gamma);
+      Ref<GeminalDescriptor> slater_geminal(const std::vector<double> &gamma);
+      Ref<GeminalDescriptor> gaussian_geminal(double gamma);
+      Ref<GeminalDescriptor> contracted_gaussian_geminal(const std::vector<double> &coeff,
+                                                         const std::vector<double> &gamma);
+      Ref<GeminalDescriptor> gaussian_geminal(const G12CorrelationFactor::CorrelationParameters &corrparams);
+  };
+
+  template<class CF>
+  static Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B) {
+    const unsigned int nf_A = A->nfunctions();
+    const unsigned int nf_B = B->nfunctions();
+    typedef typename CF::CorrelationParameters CorrParams;
+    CorrParams corrparams;
+    for(int f=0; f<nf_A; ++f) {
+      for(int g=0; g<nf_B; ++g) {
+        corrparams.push_back( CF::product(A->function(f),B->function(g)) );
+      }
+    }
+    return new CF(corrparams);
+  }
+
+  template <class CorrFactor, class Fitter>
+  static Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k) {
+
+  using sc::mbptr12::Slater1D;
+  typedef typename Fitter::Gaussians Gaussians;
+  Slater1D stg(gamma,k);
+  Gaussians gtgs = fitter(stg);
+
+  // feed to the constructor of CorrFactor
+  typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+  typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+  ContractedGeminal geminal;
+  typedef typename Gaussians::const_iterator citer;
+  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
+      geminal.push_back(*g);
+  }
+  std::vector<ContractedGeminal> geminals(1,geminal);
+
+  Ref<CorrelationFactor> cf = new CorrFactor(geminals);
+  return cf;
+  }
+
+  template <class Fitter>
+  Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
+
+  const double halfalpha = alpha/2.0;
+
+  using sc::mbptr12::Slater1D;
+  typedef typename Fitter::Gaussians Gaussians;
+  Slater1D stg(gamma,k);
+  Gaussians gtgs = fitter(stg);
+
+  // feed to the constructor of CorrFactor
+  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+  ContractedGeminal geminal;
+  typedef typename Gaussians::const_iterator citer;
+  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
+      const double alpha_i = halfalpha;
+      const double gamma_i = (*g).first - halfalpha;
+      const double C_i = (*g).second;
+      // see basis/intparams.h
+      PrimitiveGeminal i = std::make_pair(std::make_pair(alpha_i,gamma_i),C_i);
+      geminal.push_back(i);
+  }
+  std::vector<ContractedGeminal> geminals(1,geminal);
+
+  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+  return cf;
+  }
+
+  template <class Fitter>
+  Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
+
+  const double halfalpha = alpha/2.0;
+
+  using sc::mbptr12::Slater1D;
+  typedef typename Fitter::Gaussians Gaussians;
+  Slater1D stg(gamma,k);
+  Gaussians gtgs = fitter(stg);
+
+  // feed to the constructor of CorrFactor
+  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+  ContractedGeminal geminal_stg;
+  ContractedGeminal geminal_ang;
+
+  // add STG
+  typedef typename Gaussians::const_iterator citer;
+  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
+      const double gamma_i = (*g).first;
+      const double C_i = (*g).second;
+      // see basis/intparams.h
+      PrimitiveGeminal i = std::make_pair(std::make_pair(0.0,gamma_i),C_i);
+      geminal_stg.push_back(i);
+  }
+  // add ang
+  geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
+
+  std::vector<ContractedGeminal> geminals;
+  geminals.push_back(geminal_stg);
+  geminals.push_back(geminal_ang);
+
+  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+  return cf;
+  }
+
+#if 0
+  /// fits r_{12}^k * exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
+  template <class CorrFactor, class Fitter>
+  Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k=0);
+
+  /// produces geng12 for \f$e^{-\alpha (r_1 \cdot r_2) }\f$
+  Ref<CorrelationFactor> ang_to_geng12(double alpha);
+
+  /// fits \f$r_{12}^k * e^{-\gamma r_{12}} e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
+  template <class Fitter>
+  Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
+
+  /// fits separately \f$r_{12}^k e^{-\gamma r_{12}}\f$ and \f$e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
+  template <class Fitter>
+  Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
+
+  /// direct product of 2 correlation factors A and B
+  template <class CF> Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B);
+#endif
 
   private:
     bool abs_eq_obs_;
     bool vbs_eq_obs_;
 
-    Ref<LinearR12::CorrelationFactor> corrfactor_;
+    Ref<CorrelationFactor> corrfactor_;
     StandardApproximation stdapprox_;
     Ref<R12Ansatz> ansatz_;
     ABSMethod abs_method_;
@@ -347,9 +792,9 @@ class R12Technology: virtual public SavableState {
 
     void save_data_state(StateOut&);
 
-    const Ref<LinearR12::CorrelationFactor>& corrfactor() const;
+    const Ref<CorrelationFactor>& corrfactor() const;
     /// this changes the correlation factor
-    void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
+    void corrfactor(const Ref<CorrelationFactor>&);
     unsigned int maxnabs() const;
     bool gbc() const;
     bool ebc() const;
@@ -375,6 +820,28 @@ class R12Technology: virtual public SavableState {
 
     void print(std::ostream&o=ExEnv::out0()) const;
 };
+
+template <class IntParam> double R12Technology::CorrParamCompare<IntParam>::epsilon(1e-6);
+
+template <class IntParam>
+bool
+R12Technology::CorrParamCompare<IntParam>::equiv(const ContractedGeminals& A, const ContractedGeminals& B)
+{
+unsigned int nf = A.size();
+if (nf != B.size()) return false;
+
+for(unsigned int f=0; f<nf; ++f) {
+    const ContractedGeminal& Af = A[f];
+    const ContractedGeminal& Bf = B[f];
+    unsigned int np = Af.size();
+    if (np != Bf.size()) return false;
+    for(unsigned int p=0; p<np; ++p) {
+    if (!equiv(Af[p],Bf[p])) return false;
+    }
+}
+
+return true;
+}
 
 }
 

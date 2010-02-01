@@ -57,12 +57,11 @@
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 #include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/linearr12.timpl.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 
 using namespace std;
 using namespace sc;
-using namespace sc::LinearR12;
+
 
 // Force linkages:
 #ifndef __PIC__
@@ -187,7 +186,7 @@ int main(int argc, char**argv)
   GTGFit::Gaussians stg_fit = gtgfit(stg);
 
   ExEnv::out0() << indent << "Fitting STG(1.0) with Gaussians" << std::endl;
-  Ref<CorrelationFactor> cf = sc::LinearR12::stg_to_g12<G12NCCorrelationFactor,GTGFit>(gtgfit,1.0);
+  Ref<CorrelationFactor> cf = sc::R12Technology::stg_to_g12<G12NCCorrelationFactor,GTGFit>(gtgfit,1.0);
   cf->print(ExEnv::out0());
 
   tim->exit("test2");
@@ -209,7 +208,7 @@ int main(int argc, char**argv)
       GTGFit gtgfit(6, w, 0.0, 10.0, 101);
       
       ExEnv::out0() << indent << "Fitting AngSTG(-0.2,1.0) with Gaussians" << std::endl;
-      Ref<CorrelationFactor> cf = sc::LinearR12::angstg_to_geng12<GTGFit>(gtgfit,-0.2,1.0);
+      Ref<CorrelationFactor> cf = sc::R12Technology::angstg_to_geng12<GTGFit>(gtgfit,-0.2,1.0);
       cf->print(ExEnv::out0());
   }
   tim->exit("test3");

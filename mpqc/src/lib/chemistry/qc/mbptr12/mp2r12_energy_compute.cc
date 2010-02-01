@@ -122,7 +122,7 @@ MP2R12Energy_SpinOrbital::compute()
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12world->r12tech()->corrfactor();
+    Ref<R12Technology::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12world->r12tech()->corrfactor();
     // if no explicit correlation -- just get MP2 energies
     if (nullcorrptr.nonnull()) {
       ef12_[spin].assign(0.0);

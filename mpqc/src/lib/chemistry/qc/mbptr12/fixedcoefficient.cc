@@ -34,7 +34,7 @@
 namespace sc {
   
   CuspConsistentGeminalCoefficient::CuspConsistentGeminalCoefficient(SpinCase2 pairspin,
-                                                                     const Ref<LinearR12::GeminalDescriptor> &geminal)
+                                                                     const Ref<R12Technology::GeminalDescriptor> &geminal)
     : pairspin_(pairspin),
       geminal_(geminal) {
     //ExEnv::out0() << "geminal type: " << geminal_->type() << endl;
@@ -55,7 +55,7 @@ namespace sc {
     // cusp conditions are the same, but different correlation factors need different coefficients
     double Cp_ij_ij, Cm_ij_ij;
     if (geminal_->type() == "STG") {
-      double gamma = single_slater_exponent(geminal_);
+      double gamma = R12Technology::single_slater_exponent(geminal_);
       Cp_ij_ij=-1.0/(2.0*gamma);  // singlet
       Cm_ij_ij=-1.0/(4.0*gamma);  // triplet
     }

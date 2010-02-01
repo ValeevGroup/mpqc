@@ -586,8 +586,7 @@ MP2R12Energy_SpinOrbital::compute_pair_function(unsigned int i, unsigned int j, 
     break;
   }
 
-  using LinearR12::CorrelationFactor;
-  const Ref<CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
+  const Ref<R12Technology::CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
   const unsigned int nf12 = corrfactor->nfunctions();
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
@@ -1144,8 +1143,7 @@ MP2R12Energy_SpinOrbital_new::compute_pair_function(unsigned int i, unsigned int
     break;
   }
 
-  using LinearR12::CorrelationFactor;
-  const Ref<CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
+  const Ref<R12Technology::CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
   const unsigned int nf12 = corrfactor->nfunctions();
   // No same-spin pairs if number of orbitals == 1
   if (spincase2 != AlphaBeta && occ1_act->rank() == 1)

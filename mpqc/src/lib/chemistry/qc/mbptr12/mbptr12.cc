@@ -45,7 +45,7 @@
 
 using namespace std;
 using namespace sc;
-using namespace sc::LinearR12;
+
 
 /*--------------------------------
   MBPT2_R12
@@ -281,7 +281,7 @@ MBPT2_R12::value_implemented() const
 ////////////////////////////////////////////////////////////////////////////
 
 void
-MBPT2_R12::corrfactor(const Ref<LinearR12::CorrelationFactor>& cf)
+MBPT2_R12::corrfactor(const Ref<R12Technology::CorrelationFactor>& cf)
 {
     if (!r12world()->r12tech()->corrfactor()->equiv(cf)) {
       r12world()->r12tech()->corrfactor(cf);

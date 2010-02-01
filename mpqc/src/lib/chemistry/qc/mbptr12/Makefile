@@ -49,7 +49,7 @@ CXXSRCS = mbptr12.cc \
   compute_iRjS.cc \
   ref.cc utils.cc \
   r12wfnworld.cc \
-  twobodygrid.cc svd.cc linearr12.cc intermeds_g12.cc \
+  twobodygrid.cc svd.cc intermeds_g12.cc \
   twoparticlecontraction.cc spin.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxCp.cc approxApp.cc \
@@ -76,8 +76,8 @@ contract_tbint_tensor.h  contract_tbint_tensors_to_obtensor.h \
 ref.h \
 creator.h                       spin.h \
 gaussianfit.h gaussianfit.timpl.h transform_123inds.h \
-transform_12inds.h linearr12.h transform_13inds.h \
-linearr12.timpl.h               transform_factory.h \
+transform_12inds.h transform_13inds.h \
+transform_factory.h \
 linkage.h                       transform_ijxy.h \
 mbptr12.h                       transform_ikjy.h \
 orbitalspace.h                  orbitalspace_utils.h \

@@ -38,7 +38,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/transform.h>
 
 namespace sc {

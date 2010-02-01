@@ -280,7 +280,7 @@ CCR12_Info::compute_source_integrals_rhf() {
       pppA_acc_[AlphaBeta]->activate();
     }
 
-    Ref<LinearR12::CorrelationFactor> corrfactor = r12world()->r12tech()->corrfactor();
+    Ref<R12Technology::CorrelationFactor> corrfactor = r12world()->r12tech()->corrfactor();
     // only 1 correlation factor can be handled
     assert(corrfactor->nfunctions() == 1);
     Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12world()->integral(),0);

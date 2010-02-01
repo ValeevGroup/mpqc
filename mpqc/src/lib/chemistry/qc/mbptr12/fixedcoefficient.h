@@ -31,7 +31,7 @@
 #include <math/scmat/matrix.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
 namespace sc {
@@ -43,9 +43,9 @@ namespace sc {
 class CuspConsistentGeminalCoefficient : virtual public RefCount {
   private:
     SpinCase2 pairspin_;
-    Ref<LinearR12::GeminalDescriptor> geminal_;
+    Ref<R12Technology::GeminalDescriptor> geminal_;
   public:
-    CuspConsistentGeminalCoefficient(SpinCase2 pairspin, const Ref<LinearR12::GeminalDescriptor> &geminal);
+    CuspConsistentGeminalCoefficient(SpinCase2 pairspin, const Ref<R12Technology::GeminalDescriptor> &geminal);
     ~CuspConsistentGeminalCoefficient(){}
     /**
      * OW: Indices of geminal generating space

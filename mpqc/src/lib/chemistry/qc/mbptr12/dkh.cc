@@ -117,7 +117,7 @@ void R12IntEval::compute_B_DKH_() {
   Ref<OrbitalSpace> t_x_P[NSpinCases1];
   Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12world()->ref()->orbs() : r12world()->ribs_space();
   for(int s=0; s<NSpinCases1; ++s) {
-    using namespace sc::LinearR12;
+    
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     Ref<OrbitalSpace> x = xspace(spin);
 
@@ -127,7 +127,7 @@ void R12IntEval::compute_B_DKH_() {
 
   // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {
-    using namespace sc::LinearR12;
+    
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
@@ -213,8 +213,8 @@ void R12IntEval::compute_B_DKH_() {
     std::vector<std::string> tforms_g12dkh;
     if (corrfactor()->nfunctions() > 1)
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with one correlation factor",__FILE__,__LINE__);
-    Ref<G12CorrelationFactor> g12corrfact;   g12corrfact << corrfactor();
-    Ref<G12NCCorrelationFactor> g12nccorrfact; g12nccorrfact << corrfactor();
+    Ref<R12Technology::G12CorrelationFactor> g12corrfact;   g12corrfact << corrfactor();
+    Ref<R12Technology::G12NCCorrelationFactor> g12nccorrfact; g12nccorrfact << corrfactor();
     if (g12nccorrfact.null() && g12corrfact.null())
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with Gaussian (or Gaussian-expanded) correlation factors",__FILE__,__LINE__);
     Ref<IntParamsG12> params = g12corrfact.nonnull() ? new IntParamsG12(g12corrfact->function(0),
@@ -291,7 +291,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   Ref<OrbitalSpace> t_m_P[NSpinCases1];
   Ref<OrbitalSpace> t_A_P[NSpinCases1];
   for(int s=0; s<nspincases1(); ++s) {
-    using namespace sc::LinearR12;
+    
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     Ref<OrbitalSpace> x = xspace(spin);
     Ref<OrbitalSpace> m = occ(spin);

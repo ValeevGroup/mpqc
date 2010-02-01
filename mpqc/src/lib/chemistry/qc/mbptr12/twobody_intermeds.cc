@@ -107,10 +107,10 @@ R12IntEval::V_abs(SpinCase2 spincase2,
   V.assign(0.0);
 
   // The diagonal contribution
-  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
-  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
-  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+  Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     RefSCMatrix I = compute_I_(xspace1,xspace2,p1,p2);
     if (!antisymmetrize)
@@ -311,7 +311,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
                    const Ref<OrbitalSpace>& p1,
                    const Ref<OrbitalSpace>& p2)
 {
-  using namespace sc::LinearR12;
+  
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
@@ -357,10 +357,10 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   V.assign(0.0);
 
   // The diagonal contribution
-  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
-  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
-  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+  Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     RefSCMatrix I = compute_I_(xspace1,xspace2,p1,p2);
     if (!antisymmetrize)
@@ -526,7 +526,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
 RefSymmSCMatrix
 R12IntEval::P(SpinCase2 spincase2)
 {
-  using namespace sc::LinearR12;
+  
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
@@ -572,10 +572,10 @@ R12IntEval::P(SpinCase2 spincase2)
   // 1) the diagonal contribution = RGR, i.e. f(r12) * f(r12) / r12
   // 2) RG = f(r12) / r12
   //
-  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
-  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
-  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+  Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
 
   //
   // Diagonal contribution: P_{xy}^{wz} = (RGR)_{xy}^{wz}

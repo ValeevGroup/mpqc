@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 
 namespace sc {
 
@@ -412,7 +412,7 @@ namespace sc {
                                       RefSCMatrix& C,
                                       const Ref<OrbitalSpace>& i1,
                                       const Ref<OrbitalSpace>& i2,
-                                      const Ref<LinearR12::CorrelationFactor>& corrfactor);
+                                      const Ref<R12Technology::CorrelationFactor>& corrfactor);
 }
 
 #endif // include guard

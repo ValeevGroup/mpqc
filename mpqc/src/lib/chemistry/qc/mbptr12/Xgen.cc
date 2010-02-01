@@ -166,10 +166,10 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     // F12^2 contribution depends on the type of correlation factor
     //
     enum {r12corrfactor, g12corrfactor, gg12corrfactor} corrfac;
-    Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
-    Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
-    Ref<LinearR12::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << corrfactor();
-    Ref<LinearR12::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << corrfactor();
+    Ref<R12Technology::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
+    Ref<R12Technology::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
+    Ref<R12Technology::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << corrfactor();
+    Ref<R12Technology::GenG12CorrelationFactor> gg12corrptr; gg12corrptr << corrfactor();
     if (r12corrptr.nonnull()) corrfac = r12corrfactor;
     if (g12corrptr.nonnull()) corrfac = g12corrfactor;
     if (g12nccorrptr.nonnull()) corrfac = g12corrfactor;

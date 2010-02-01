@@ -1343,7 +1343,7 @@ namespace sc {
                                     RefSCMatrix& C,
                                     const Ref<OrbitalSpace>& i1,
                                     const Ref<OrbitalSpace>& i2,
-                                    const Ref<LinearR12::CorrelationFactor>& corrfactor) {
+                                    const Ref<R12Technology::CorrelationFactor>& corrfactor) {
     RefSCDimension xydim = C.coldim();
     RefSCDimension f12dim = C.rowdim();
     const unsigned int nxy = xydim.n();
@@ -1359,12 +1359,12 @@ namespace sc {
 
     double Cp_ij_ij;  // singlet
     double Cm_ij_ij;  // triplet
-    if (STG(corrfactor->geminaldescriptor())) {
-      const double gamma=single_slater_exponent(corrfactor->geminaldescriptor());
+    if (R12Technology::STG(corrfactor->geminaldescriptor())) {
+      const double gamma = R12Technology::single_slater_exponent(corrfactor->geminaldescriptor());
       Cp_ij_ij=-1.0/(2.0*gamma);
       Cm_ij_ij=-1.0/(4.0*gamma);
     }
-    else if (R12(corrfactor->geminaldescriptor())) {
+    else if (R12Technology::R12(corrfactor->geminaldescriptor())) {
       Cp_ij_ij=1.0/2.0;
       Cm_ij_ij=1.0/4.0;
     }

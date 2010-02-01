@@ -179,7 +179,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   // WARNING Can use DistArray4_MemoryGrp only for MP2 computations
   bool mp2_only = false;
   {
-    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor();
+    Ref<R12Technology::NullCorrelationFactor> nullptr; nullptr << corrfactor();
     if (nullptr.nonnull())
       mp2_only = true;
   }
@@ -435,14 +435,14 @@ R12IntEval::init_intermeds_()
   }
 
   // nothing to do if no explicit correlation
-  Ref<LinearR12::NullCorrelationFactor> no12ptr; no12ptr << corrfactor();
+  Ref<R12Technology::NullCorrelationFactor> no12ptr; no12ptr << corrfactor();
   if (no12ptr.nonnull())
     return;
 
-  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
-  Ref<LinearR12::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<LinearR12::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
-  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
+  Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
+  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
+  Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     init_intermeds_r12_();
   }
@@ -2004,7 +2004,7 @@ R12IntEval::compute()
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;
 
-  Ref<LinearR12::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
+  Ref<R12Technology::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
   // if explicit correlation -- compute linear F12 theory intermediates
   if (nocorrptr.null()) {
 

@@ -41,13 +41,11 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
-//#include <chemistry/qc/mbptr12/vxb_eval.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
-#include <chemistry/qc/mbptr12/ansatz.h>
 
 namespace sc {
 
@@ -127,7 +125,7 @@ class MBPT2_R12: public MBPT2 {
     const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
     const Ref<R12IntEval>& r12eval() const { return r12eval_; }
     /// this changes the correlation factor
-    void corrfactor(const Ref<LinearR12::CorrelationFactor>&);
+    void corrfactor(const Ref<R12Technology::CorrelationFactor>&);
 
     // total MBPT(2)-R12 energy (does not include CABS singles)
     double corr_energy();

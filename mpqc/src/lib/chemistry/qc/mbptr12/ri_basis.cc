@@ -37,7 +37,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
@@ -51,7 +51,7 @@ void
 R12WavefunctionWorld::construct_ri_basis_(bool safe)
 {
   // RI basis is only needed if corrfactor != none
-  Ref<LinearR12::NullCorrelationFactor> null_cf; null_cf << r12tech()->corrfactor();
+  Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech()->corrfactor();
   const bool ri_basis_not_needed = null_cf.nonnull();
 
   Ref<GaussianBasisSet> obs = ref()->basis();

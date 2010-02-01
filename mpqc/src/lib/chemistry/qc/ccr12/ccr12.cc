@@ -36,7 +36,7 @@
 
 using namespace std;
 using namespace sc;
-using namespace sc::LinearR12;
+
 
 /*--------------------------------
   CCR12

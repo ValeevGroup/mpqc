@@ -61,7 +61,7 @@ R12IntEval::contrib_to_VXB_a_()
 
   // Test new tensor compute function
   for(int s=0; s<nspincases2(); s++) {
-      using namespace sc::LinearR12;
+      
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);

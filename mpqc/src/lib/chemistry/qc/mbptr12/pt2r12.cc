@@ -1392,11 +1392,119 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   const std::string key = oreg->key(pspace);
   pspace = oreg->value(key);
 
+  // get the fock matrices
   RefSCMatrix F_pA = r12eval_->fock(pspace,Aspace,spin);
   RefSCMatrix F_AA = r12eval_->fock(Aspace,Aspace,spin);
   RefSCMatrix F_pp = this->f(spin);
+  RefSCMatrix F_pp_otherspin = this->f(other(spin));
 
-}
+  // RDMs
+  RefSymmSCMatrix gamma1 = this->rdm1(spin);
+  RefSymmSCMatrix gamma1_otherspin = this->rdm1(other(spin));
+  RefSymmSCMatrix gamma2_ss = this->rdm2( case12(spin,spin) );
+  RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );
+
+
+
+  // define H0 and necessary vectors
+  const int no = pspace->rank();
+  const int nX = Aspace->rank();
+  const int noX = no * nX;
+  RefSCDimension dim = new SCDimension(noX);
+  RefSymmSCMatrix H0 = gamma2_ss->kit()->symmmatrix(dim);
+  H0.assign(0.0);
+
+  RefSCVector rhs_vector = gamma2_ss->kit()->vector(dim);
+  rhs_vector.assign(0.0);
+//  RefSCVector C_vector = gamma2_ss->kit()->vector(dim); this the linear equation solver overwrites the right-hand vector, there is no need at this moment to create this vector explicitly
+//  C_vector.assign(0.0);
+
+
+
+  // compute the Right-Hand vector
+  for(int x=0; x<no; ++x)
+  {
+    for(int B=0; B<nX; ++B)
+    {
+      double rhs_vector_xB = 0.0;
+      for (int j = 0; j < no; ++j)
+      {
+        rhs_vector_xB += -1.0 *  gamma1(x, j) * F_pA(j, B);
+      }
+      rhs_vector.set_element(x * nX + B, rhs_vector_xB);
+    }
+  }
+
+
+  //compute trace(f * gamma1) = f^p_q  gamma^q_p; this is an element needed to compute H0
+  const double F_Gamma1_product = (F_pp * gamma1).trace() + (F_pp_otherspin * gamma1_otherspin).trace();
+
+
+  // compute H0; x1/x2 etc denote difference spins;
+  for(int x=0; x<no; ++x)
+  {
+    for(int y=0; y<no; ++y)
+    {
+      const double gamma_xy = gamma1(x,y);
+      for(int A=0; A<nX; ++A)
+      {
+        const int xA = x*nX + A;
+        for(int B=0; B<nX; ++B)
+        {
+          const int yB = y*nX + B;
+          double h0_xA_yB = 0.0;
+          h0_xA_yB += gamma_xy * F_AA(A,B);
+//          H0(xA, yB) = H0(xA, yB) + gamma_xy * F_AA(A,B);   H0(xA, yB)  does not support the += operator;
+          if(A == B)                          // corresponds to a Kronecker delta
+          {
+            h0_xA_yB += gamma_xy * F_Gamma1_product;
+            for (int p = 0; p < no; ++p)
+            {
+              for (int q = 0; q < no; ++q)
+              {
+                const int x1p2 = x * no + p;
+                const int y1q2 = y * no + q;
+                const int max_xp = max(x, p);
+                const int min_xp = min(x, p);
+                const int max_yq = max(y, q);
+                const int min_yq = max(y, q);
+                const int upp_ind_same_spin = (max_xp -1)* (max_xp -2) /2 + min_xp;
+                const int low_ind_same_spin = (max_yq -1)* (max_yq -2) /2 + min_yq;
+                h0_xA_yB += F_pp(q, p) * gamma2_os(x1p2, y1q2); // contribution from different spin terms
+                h0_xA_yB += F_pp_otherspin(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin); //  contribution from same spin terms
+              }
+            }
+          }
+          H0(xA, yB) = h0_xA_yB;
+        }
+      }
+    }
+  }
+  H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients
+
+  double E_cabs_singles_one_spin = 0.0;
+
+  for (int i = 0; i < no; ++i)
+  {
+    for (int j = 0; j < no; ++j)
+    {
+      const double gamma_ij = gamma1(i,j);
+      for (int A = 0; A < nX; ++A)
+      {
+        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * rhs_vector.get_element(j * nX + A);
+      }
+    }
+  }
+  if(spin == 0) cout << "Spin Alpha Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
+  else if(spin == 1) cout << "Spin Beta Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
+
+  return E_cabs_singles_one_spin;
+
+}// end of energy_cabs_singles function
+
+
+
+
 
 double
 PT2R12::energy_recomputed_from_densities() {

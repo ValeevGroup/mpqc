@@ -43,7 +43,13 @@ namespace sc {
   SpinCase2 case12(SpinCase1 S1, SpinCase1 S2) {
     if (S1 == Alpha && S2 == Alpha) return AlphaAlpha;
     if (S1 == Alpha && S2 == Beta) return AlphaBeta;
+    if (S1 == Beta && S2 == Alpha) return AlphaBeta;
     if (S1 == Beta && S2 == Beta) return BetaBeta;
+    assert(false);
+  }
+  SpinCase1 other(SpinCase1 S) {
+    if (S == Alpha) return Beta;
+    if (S == Beta) return Alpha;
     assert(false);
   }
   std::string to_string(SpinCase1 S) {

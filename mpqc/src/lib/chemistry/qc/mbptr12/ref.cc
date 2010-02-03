@@ -363,6 +363,8 @@ RefWavefunction::init() const
 {
   if (spinspaces_[Alpha].null()) {
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
+    // make sure it's computed first
+    const double e = this_nonconst->energy();
     this_nonconst->init_spaces();
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));

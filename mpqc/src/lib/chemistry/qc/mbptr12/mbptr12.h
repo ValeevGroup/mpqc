@@ -41,7 +41,6 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
-#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
@@ -51,7 +50,6 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
-class R12Technology;
 class R12IntEval;
 class R12WavefunctionWorld;
 class MP2R12Energy;

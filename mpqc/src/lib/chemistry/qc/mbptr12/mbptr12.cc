@@ -58,8 +58,10 @@ static ClassDesc MBPT2_R12_cd(
 MBPT2_R12::MBPT2_R12(StateIn& s):
   MBPT2(s)
 {
+#if 0
   if (s.version(::class_desc<MBPT2_R12>()) < 9)
     throw InputError("Cannot use MBPT2_R12 class prior to version 9",__FILE__,__LINE__);
+#endif
 
   r12eval_ << SavableState::restore_state(s);
   r12world_ << SavableState::restore_state(s);
@@ -88,8 +90,6 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
 MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   MBPT2(keyval)
 {
-  this->set_desired_value_accuracy(desired_value_accuracy());
-
   // Verify that this is a closed-shell or high-spin open-shell system
   CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
   HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
@@ -154,6 +154,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12c_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   cabs_singles_energy_ = 0.0;
+
+  this->set_desired_value_accuracy(desired_value_accuracy());
 }
 
 MBPT2_R12::~MBPT2_R12()
@@ -207,7 +209,9 @@ void
 MBPT2_R12::set_desired_value_accuracy(double acc)
 {
   Function::set_desired_value_accuracy(acc);
-  ref()->set_desired_value_accuracy(acc / ref_to_mp2r12_acc());
+  // reference should be computed to higher accuracy
+  const double ref_acc = acc / ref_to_mp2r12_acc();
+  ref()->set_desired_value_accuracy(ref_acc);
 }
 
 //////////////////////////////////////////////////////////////////////////////

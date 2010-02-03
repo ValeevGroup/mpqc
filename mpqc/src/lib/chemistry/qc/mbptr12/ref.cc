@@ -351,16 +351,31 @@ RefWavefunction::save_data_state(StateOut& so)
 }
 
 void
+RefWavefunction::set_desired_value_accuracy(double eps) {
+  if (eps < this->desired_value_accuracy()) {
+    this->reset();
+    this->_set_desired_value_accuracy(eps);
+  }
+}
+
+void
 RefWavefunction::init() const
 {
   if (spinspaces_[Alpha].null()) {
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
     this_nonconst->init_spaces();
+    // make sure that FockBuildRuntime uses same densities as the reference wavefunction
+    world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
   }
 }
 
 void
 RefWavefunction::obsolete() {
+  reset();
+}
+
+void
+RefWavefunction::reset() {
   spinspaces_[Alpha] = 0;
   spinspaces_[Beta] = 0;
 }
@@ -500,8 +515,6 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
   // bring spin_restricted in sync with obwfn
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
-  // make sure that FockBuildRuntime uses same densities as the reference wavefunction
-  world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
 
   if (nfzv > 0 && vir_space.nonnull())
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
@@ -529,7 +542,6 @@ SD_RefWavefunction::save_data_state(StateOut& so) {
 
 void
 SD_RefWavefunction::obsolete() {
-  vir_space_ = 0;
   RefWavefunction::obsolete();
 }
 
@@ -735,8 +747,6 @@ ORDM_RefWavefunction::ORDM_RefWavefunction(const Ref<WavefunctionWorld>& world,
     throw ProgrammingError("identical 1-rdms given for alpha and beta spins but spin_restricted = true",__FILE__,__LINE__);
   if (nfzc_ >= basis->nbasis())
     throw ProgrammingError("nfzc > basis set size",__FILE__,__LINE__);
-
-  world->fockbuild_runtime()->set_densities(rdm_[Alpha], rdm_[Beta]);
 }
 
 ORDM_RefWavefunction::ORDM_RefWavefunction(StateIn& si) : RefWavefunction(si) {

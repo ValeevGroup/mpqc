@@ -197,7 +197,6 @@ class R12Technology: virtual public SavableState {
   /// Returns a single Slater type geminal exponent. Throws if geminal is not of Slater type and if there is more than one Slater type function.
   static double single_slater_exponent(const Ref<GeminalDescriptor>& gdesc);
 
-
   /** CorrelationFactor is a set of one or more two-particle functions
       of the interparticle distance. Each function may be a primitive function
       or a contraction of several functions.
@@ -214,8 +213,8 @@ class R12Technology: virtual public SavableState {
       CorrelationFactor();
       virtual ~CorrelationFactor();
 
-  // return true if this is equivalent to cf
-  virtual bool equiv(const Ref<CorrelationFactor>& cf) const =0;
+      // return true if this is equivalent to cf
+      virtual bool equiv(const Ref<CorrelationFactor>& cf) const =0;
 
       /// Returns label
       const std::string& label() const;
@@ -310,19 +309,22 @@ class R12Technology: virtual public SavableState {
   };
 
   /// Compares CorrelationParamaters corresponding to IntParam
-  template <class IntParam>
+  template<class IntParam>
   struct CorrParamCompare {
-  typedef typename IntParam::PrimitiveGeminal PrimitiveGeminal;
-  typedef typename IntParam::ContractedGeminal ContractedGeminal;
-  typedef std::vector<ContractedGeminal> ContractedGeminals;
+      typedef typename IntParam::PrimitiveGeminal PrimitiveGeminal;
+      typedef typename IntParam::ContractedGeminal ContractedGeminal;
+      typedef std::vector<ContractedGeminal> ContractedGeminals;
 
-  // 2 parameters are equivalent if their values differ by less than epsilon
-  static double epsilon;
-  static bool equiv(const ContractedGeminals& A, const ContractedGeminals& B);
+      // 2 parameters are equivalent if their values differ by less than epsilon
+      static double epsilon;
+      static bool equiv(const ContractedGeminals& A,
+                        const ContractedGeminals& B);
 
-  private:
-  static bool equiv(const PrimitiveGeminal& A, const PrimitiveGeminal& B);
+    private:
+      static bool equiv(const PrimitiveGeminal& A,
+                        const PrimitiveGeminal& B);
   };
+
   /** G12CorrelationFactor stands for Gaussian geminals correlation factor,
   usable with methods that require commutator integrals */
   class G12CorrelationFactor : public CorrelationFactor {
@@ -493,105 +495,112 @@ class R12Technology: virtual public SavableState {
   };
 
   template<class CF>
-  static Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B) {
-    const unsigned int nf_A = A->nfunctions();
-    const unsigned int nf_B = B->nfunctions();
-    typedef typename CF::CorrelationParameters CorrParams;
-    CorrParams corrparams;
-    for(int f=0; f<nf_A; ++f) {
-      for(int g=0; g<nf_B; ++g) {
-        corrparams.push_back( CF::product(A->function(f),B->function(g)) );
+      static Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B) {
+        const unsigned int nf_A = A->nfunctions();
+        const unsigned int nf_B = B->nfunctions();
+        typedef typename CF::CorrelationParameters CorrParams;
+        CorrParams corrparams;
+        for (int f = 0; f < nf_A; ++f) {
+          for (int g = 0; g < nf_B; ++g) {
+            corrparams.push_back(CF::product(A->function(f), B->function(g)));
+          }
+        }
+        return new CF(corrparams);
       }
-    }
-    return new CF(corrparams);
-  }
 
-  template <class CorrFactor, class Fitter>
-  static Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k) {
+  template<class CorrFactor, class Fitter>
+      static Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter,
+                                               double gamma, int k) {
 
-  using sc::mbptr12::Slater1D;
-  typedef typename Fitter::Gaussians Gaussians;
-  Slater1D stg(gamma,k);
-  Gaussians gtgs = fitter(stg);
+        using sc::mbptr12::Slater1D;
+        typedef typename Fitter::Gaussians Gaussians;
+        Slater1D stg(gamma, k);
+        Gaussians gtgs = fitter(stg);
 
-  // feed to the constructor of CorrFactor
-  typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
-  typedef IntParamsG12::ContractedGeminal ContractedGeminal;
-  ContractedGeminal geminal;
-  typedef typename Gaussians::const_iterator citer;
-  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
-      geminal.push_back(*g);
-  }
-  std::vector<ContractedGeminal> geminals(1,geminal);
+        // feed to the constructor of CorrFactor
+        typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+        typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+        ContractedGeminal geminal;
+        typedef typename Gaussians::const_iterator citer;
+        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
+          geminal.push_back(*g);
+        }
+        std::vector<ContractedGeminal> geminals(1, geminal);
 
-  Ref<CorrelationFactor> cf = new CorrFactor(geminals);
-  return cf;
-  }
+        Ref<CorrelationFactor> cf = new CorrFactor(geminals);
+        return cf;
+      }
 
-  template <class Fitter>
-  Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
+  template<class Fitter>
+      static Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter,
+                                                     double alpha, double gamma, int k) {
 
-  const double halfalpha = alpha/2.0;
+        const double halfalpha = alpha / 2.0;
 
-  using sc::mbptr12::Slater1D;
-  typedef typename Fitter::Gaussians Gaussians;
-  Slater1D stg(gamma,k);
-  Gaussians gtgs = fitter(stg);
+        using sc::mbptr12::Slater1D;
+        typedef typename Fitter::Gaussians Gaussians;
+        Slater1D stg(gamma, k);
+        Gaussians gtgs = fitter(stg);
 
-  // feed to the constructor of CorrFactor
-  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-  ContractedGeminal geminal;
-  typedef typename Gaussians::const_iterator citer;
-  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
-      const double alpha_i = halfalpha;
-      const double gamma_i = (*g).first - halfalpha;
-      const double C_i = (*g).second;
-      // see basis/intparams.h
-      PrimitiveGeminal i = std::make_pair(std::make_pair(alpha_i,gamma_i),C_i);
-      geminal.push_back(i);
-  }
-  std::vector<ContractedGeminal> geminals(1,geminal);
+        // feed to the constructor of CorrFactor
+        typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+        typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+        ContractedGeminal geminal;
+        typedef typename Gaussians::const_iterator citer;
+        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
+          const double alpha_i = halfalpha;
+          const double gamma_i = (*g).first - halfalpha;
+          const double C_i = (*g).second;
+          // see basis/intparams.h
+          PrimitiveGeminal i = std::make_pair(std::make_pair(alpha_i, gamma_i),
+                                              C_i);
+          geminal.push_back(i);
+        }
+        std::vector<ContractedGeminal> geminals(1, geminal);
 
-  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
-  return cf;
-  }
+        Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+        return cf;
+      }
 
-  template <class Fitter>
-  Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k) {
+  template<class Fitter>
+      static Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter,
+                                                         double alpha, double gamma,
+                                                         int k) {
 
-  const double halfalpha = alpha/2.0;
+        const double halfalpha = alpha / 2.0;
 
-  using sc::mbptr12::Slater1D;
-  typedef typename Fitter::Gaussians Gaussians;
-  Slater1D stg(gamma,k);
-  Gaussians gtgs = fitter(stg);
+        using sc::mbptr12::Slater1D;
+        typedef typename Fitter::Gaussians Gaussians;
+        Slater1D stg(gamma, k);
+        Gaussians gtgs = fitter(stg);
 
-  // feed to the constructor of CorrFactor
-  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-  ContractedGeminal geminal_stg;
-  ContractedGeminal geminal_ang;
+        // feed to the constructor of CorrFactor
+        typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
+        typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
+        ContractedGeminal geminal_stg;
+        ContractedGeminal geminal_ang;
 
-  // add STG
-  typedef typename Gaussians::const_iterator citer;
-  for(citer g=gtgs.begin(); g!=gtgs.end(); ++g) {
-      const double gamma_i = (*g).first;
-      const double C_i = (*g).second;
-      // see basis/intparams.h
-      PrimitiveGeminal i = std::make_pair(std::make_pair(0.0,gamma_i),C_i);
-      geminal_stg.push_back(i);
-  }
-  // add ang
-  geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
+        // add STG
+        typedef typename Gaussians::const_iterator citer;
+        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
+          const double gamma_i = (*g).first;
+          const double C_i = (*g).second;
+          // see basis/intparams.h
+          PrimitiveGeminal i =
+              std::make_pair(std::make_pair(0.0, gamma_i), C_i);
+          geminal_stg.push_back(i);
+        }
+        // add ang
+        geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,
+                                                            -halfalpha), 1.0));
 
-  std::vector<ContractedGeminal> geminals;
-  geminals.push_back(geminal_stg);
-  geminals.push_back(geminal_ang);
+        std::vector<ContractedGeminal> geminals;
+        geminals.push_back(geminal_stg);
+        geminals.push_back(geminal_ang);
 
-  Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
-  return cf;
-  }
+        Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
+        return cf;
+      }
 
 #if 0
   /// fits r_{12}^k * exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
@@ -823,25 +832,28 @@ class R12Technology: virtual public SavableState {
 
 template <class IntParam> double R12Technology::CorrParamCompare<IntParam>::epsilon(1e-6);
 
-template <class IntParam>
-bool
-R12Technology::CorrParamCompare<IntParam>::equiv(const ContractedGeminals& A, const ContractedGeminals& B)
-{
-unsigned int nf = A.size();
-if (nf != B.size()) return false;
+template<class IntParam>
+  bool R12Technology::CorrParamCompare<IntParam>::equiv(
+                                                        const ContractedGeminals& A,
+                                                        const ContractedGeminals& B) {
+    unsigned int nf = A.size();
+    if (nf != B.size())
+      return false;
 
-for(unsigned int f=0; f<nf; ++f) {
-    const ContractedGeminal& Af = A[f];
-    const ContractedGeminal& Bf = B[f];
-    unsigned int np = Af.size();
-    if (np != Bf.size()) return false;
-    for(unsigned int p=0; p<np; ++p) {
-    if (!equiv(Af[p],Bf[p])) return false;
+    for (unsigned int f = 0; f < nf; ++f) {
+      const ContractedGeminal& Af = A[f];
+      const ContractedGeminal& Bf = B[f];
+      unsigned int np = Af.size();
+      if (np != Bf.size())
+        return false;
+      for (unsigned int p = 0; p < np; ++p) {
+        if (!equiv(Af[p], Bf[p]))
+          return false;
+      }
     }
-}
 
-return true;
-}
+    return true;
+  }
 
 }
 

@@ -58,9 +58,11 @@ PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& wor
   // bring spin_restricted in sync with scf_
   if (scf_->spin_polarized() == false) spin_restricted_ = true;
   Ref<PsiUHF> uhf; uhf << scf_; if (uhf.nonnull()) spin_restricted_ = false;
+#if 0
   // make sure that FockBuildRuntime uses same densities as the reference wavefunction
   scf_->compute();
   world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+#endif
 
   if (nfzv > 0 && vir_space.nonnull())
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
@@ -297,9 +299,11 @@ PsiCI_RefWavefunction::PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world
   if (wfn_->spin_polarized() == false) spin_restricted_ = true;
   // if omit_uocc is true, nfzv should be 0
   if (omit_uocc) nfzv = 0;
+#if 0
   // make sure that FockBuildRuntime uses same densities as the reference wavefunction
   const double eref = wfn_->energy();
   world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+#endif
 }
 
 PsiCI_RefWavefunction::PsiCI_RefWavefunction(StateIn& si) : RefWavefunction(si) {

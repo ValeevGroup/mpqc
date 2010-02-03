@@ -64,8 +64,14 @@ namespace sc {
       void save_data_state(StateOut&);
       const Ref<PsiSCF>& scf() const { return scf_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
+      const Ref<GaussianBasisSet>& uocc_basis() const {
+        if (vir_space_.nonnull()) return vir_space_->basis();
+        else return this->basis();
+      }
 
       double energy() { return scf()->energy(); }
+      double actual_value_accuracy () const { return scf()->actual_value_accuracy(); }
+      double desired_value_accuracy() const { return scf()->desired_value_accuracy(); }
       bool spin_polarized() const { return scf_->spin_polarized(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
@@ -84,6 +90,7 @@ namespace sc {
       void init_spaces();
       void init_spaces_restricted();
       void init_spaces_unrestricted();
+      void _set_desired_value_accuracy(double eps) { scf_->set_desired_value_accuracy(eps); }
   };
 
   /// RefWavefunction specialization for a general restricted-active-space multiconfiguration wave function
@@ -113,6 +120,8 @@ namespace sc {
       const Ref<PsiCI>& wfn() const { return wfn_; }
 
       double energy() { return wfn()->energy(); }
+      double actual_value_accuracy () const { return wfn()->actual_value_accuracy(); }
+      double desired_value_accuracy() const { return wfn()->desired_value_accuracy(); }
       bool spin_polarized() const { return wfn_->spin_polarized(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
@@ -131,6 +140,7 @@ namespace sc {
       unsigned int nfzv_;
       bool omit_uocc_;
       void init_spaces();
+      void _set_desired_value_accuracy(double eps) { wfn_->set_desired_value_accuracy(eps); }
   };
 
 } // end of namespace sc

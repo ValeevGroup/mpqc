@@ -119,8 +119,8 @@ namespace sc {
       /// @param basis The basis set supporting the reference wave function
       /// @param integral The integral factory used to compute the reference wavefunction
       RefWavefunction(const Ref<WavefunctionWorld>& world,
-                         const Ref<GaussianBasisSet>& basis,
-                         const Ref<Integral>& integral);
+                      const Ref<GaussianBasisSet>& basis,
+                      const Ref<Integral>& integral);
 
     public:
     ~RefWavefunction();
@@ -133,9 +133,17 @@ namespace sc {
     const Ref<WavefunctionWorld>& world() const { return world_; }
     const Ref<GaussianBasisSet>& basis() const { return basis_; }
     const Ref<Integral>& integral() const { return integral_; }
+    /// returns the basis supporting unoccupied orbitals. The defauls is same as returned by basis().
+    virtual const Ref<GaussianBasisSet>& uocc_basis() const { return basis(); }
 
     /// @sa MolecularEnergy::energy()
     virtual double energy() =0;
+    /// Set the accuracy to which the value is to be computed. @sa Function::set_desired_value_accuracy()
+    void set_desired_value_accuracy(double);
+    /// Return the accuracy with which the value has been computed. @sa Function::actual_value_accuracy()
+    virtual double actual_value_accuracy () const =0;
+    /// @sa Return the accuracy with which the value is to be computed. Function::desired_value_accuracy()
+    virtual double desired_value_accuracy() const =0;
     /// @sa Wavefunction::spin_polarized()
     virtual bool spin_polarized() const =0;
     /// @sa Wavefunction::dk()
@@ -179,9 +187,14 @@ namespace sc {
     Ref<Integral> integral_;
     bool omit_uocc_;
 
+    /// used to implement set_desired_value_accuracy()
+    virtual void _set_desired_value_accuracy(double eps) =0;
+
     protected:
     /// initializes the object
     void init() const;
+    /// calling this will cause the object to be re-initialized next time it is used
+    virtual void reset();
     mutable Ref<PopulatedOrbitalSpace> spinspaces_[NSpinCases1];
 
     /// initialize OrbitalSpace objects
@@ -217,8 +230,14 @@ namespace sc {
 
       const Ref<OneBodyWavefunction>& obwfn() const { return obwfn_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
+      const Ref<GaussianBasisSet>& uocc_basis() const {
+        if (vir_space_.nonnull()) return vir_space_->basis();
+        else return this->basis();
+      }
 
       double energy() { return obwfn()->energy(); }
+      double actual_value_accuracy () const { return obwfn()->actual_value_accuracy(); }
+      double desired_value_accuracy() const { return obwfn()->desired_value_accuracy(); }
       bool spin_polarized() const { return obwfn_->spin_polarized(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return obwfn()->dk(); }
@@ -237,6 +256,7 @@ namespace sc {
       void init_spaces();
       void init_spaces_restricted();
       void init_spaces_unrestricted();
+      void _set_desired_value_accuracy(double eps) { obwfn_->set_desired_value_accuracy(eps); }
   };
 
   /// RefWavefunction specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
@@ -270,6 +290,8 @@ namespace sc {
                                                     __FILE__, __LINE__); }
 
       double energy() { return 0.0; }
+      double actual_value_accuracy () const { return DBL_EPSILON; }
+      double desired_value_accuracy() const { return DBL_EPSILON; }
       bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }
       bool spin_restricted() const { return spin_restricted_; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
@@ -288,6 +310,9 @@ namespace sc {
       void init_spaces();
       void init_spaces_restricted();
       void init_spaces_unrestricted();
+      void _set_desired_value_accuracy(double eps) {
+        // do nothing
+      }
   };
 
   /// This factory produces the RefWavefunction that corresponds to the type of ref object

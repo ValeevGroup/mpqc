@@ -73,7 +73,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   if (bs_aux_.pointer() == NULL)
       bs_aux_ = ref->basis();
 
-  r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc(Alpha)->basis(),bs_aux_);
+  r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
 
@@ -122,10 +122,9 @@ R12WavefunctionWorld::initialize()
       world()->tfactory()->hints().data_persistent(true);
   }
 
+  obs_eq_vbs_ = basis()->equiv(basis_vir());
   construct_ri_basis_(r12tech()->safety_check());
-
   obs_eq_ribs_ = basis()->equiv(basis_ri());
-  obs_eq_vbs_ = basis()->equiv( ref()->uocc()->basis() );
 
   {
     // also create AO spaces
@@ -142,7 +141,7 @@ R12WavefunctionWorld::initialize()
 
 void
 R12WavefunctionWorld::obsolete() {
-  ref_->obsolete(); // this obsolete WavefunctionWorld
+  ref_->obsolete(); // this obsoletes WavefunctionWorld
   abs_space_ = 0;
   ribs_space_ = 0;
   cabs_space_[Alpha] = 0;
@@ -153,11 +152,20 @@ R12WavefunctionWorld::obsolete() {
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 {
-    if (r12tech()->abs_method() == R12Technology::ABS_CABS ||
-        r12tech()->abs_method() == R12Technology::ABS_CABSPlus)
-	  return cabs_space_[S];
-    else
-	  throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
+  if (r12tech()->abs_method() == R12Technology::ABS_CABS ||
+      r12tech()->abs_method() == R12Technology::ABS_CABSPlus) {
+    if (ref_acc_for_cabs_space_ > ref()->desired_value_accuracy()) { // recompute if accuracy of reference has increased
+      cabs_space_[Alpha] = 0;
+      cabs_space_[Beta] = 0;
+    }
+    if (cabs_space_[S].null()) { // compute if needed
+      R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
+      this_nonconst_ptr->construct_cabs_();
+    }
+    return cabs_space_[S];
+  }
+  else
+    throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
 }
 
 bool

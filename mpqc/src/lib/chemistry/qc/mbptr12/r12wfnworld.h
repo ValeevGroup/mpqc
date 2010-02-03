@@ -40,7 +40,6 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/ref.h>
@@ -84,7 +83,7 @@ public:
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   const Ref<GaussianBasisSet>& basis_ri() const { return bs_ri_; }
   /// Returns the virtuals basis set (VBS) object
-  const Ref<GaussianBasisSet>& basis_vir() const { return ref()->uocc()->basis(); }
+  const Ref<GaussianBasisSet>& basis_vir() const { return ref()->uocc_basis(); }
   /// Returns true if VBS is equivalent to OBS
   bool obs_eq_vbs() const { return obs_eq_vbs_; }
   /// Returns true if RIBS is equivalent to OBS
@@ -128,14 +127,12 @@ private:
 
   Ref<OrbitalSpace> abs_space_;  // ABS space
   Ref<OrbitalSpace> ribs_space_; // RIBS basis
-  Ref<OrbitalSpace> cabs_space_[NSpinCases1]; // CABS basis
+  mutable Ref<OrbitalSpace> cabs_space_[NSpinCases1]; // CABS spaces
+  double ref_acc_for_cabs_space_; // CABS space depends on reference. this keeps track of the accuracy of reference used to compute cabs_space_
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
-  void construct_ri_basis_ks_(bool safe);
-  void construct_ri_basis_ksplus_(bool safe);
-  void construct_ri_basis_ev_(bool safe);
-  void construct_ri_basis_evplus_(bool safe);
+  void construct_cabs_();
   // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
@@ -144,6 +141,8 @@ private:
   void construct_orthog_aux_();
   // Construct orthog_ri_
   void construct_orthog_ri_();
+
+  ///
   void initialize();
 };
 

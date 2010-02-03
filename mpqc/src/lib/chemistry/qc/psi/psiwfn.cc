@@ -1766,6 +1766,9 @@ namespace sc {
     if (mo_density_[spin].nonnull())
       return mo_density_[spin];
 
+    // ensure that this has been computed
+    { const double energy = this->value(); }
+
     const std::vector<unsigned int> dmap = map_density_to_sb();
     mo_density_[spin] = detail::rdopdm(spin,
                                        this->reference()->mopi(),

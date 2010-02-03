@@ -793,6 +793,9 @@ namespace sc {
     if (onepdm_occ_[spin].nonnull())
       return onepdm_occ_[spin];
 
+    // ensure that this has been computed
+    { const double energy = this->value(); }
+
     // 1-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
     // map_density_to_sb() reports mapping from full RAS to full SB orders
     // here lets map RAS (excluding RAS3 and frozen virtuals) to occ()

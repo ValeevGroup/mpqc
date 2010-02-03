@@ -86,7 +86,6 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
             bs_ri_ = bs_aux_ + obs;
             if (!vbs_eq_abs && !obs_eq_vbs_)
               bs_ri_ = bs_ri_ + basis_vir();
-            construct_orthog_ri_();
           }
           break;
 
@@ -94,6 +93,7 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
           throw std::logic_error("R12WavefunctionWorld::construct_ri_basis_ -- invalid abs_method");
 
       }
+      construct_orthog_ri_();
     }
   }
 }

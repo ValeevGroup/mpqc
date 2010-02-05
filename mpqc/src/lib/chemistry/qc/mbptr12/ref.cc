@@ -314,7 +314,7 @@ static ClassDesc R12RefWavefunction_cd(
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                        const Ref<GaussianBasisSet>& basis,
                                        const Ref<Integral>& integral) :
-  world_(world), basis_(basis), integral_(integral) {
+  world_(world), basis_(basis), integral_(integral), omit_uocc_(true) {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
 }
 
@@ -330,6 +330,7 @@ RefWavefunction::RefWavefunction(StateIn& si) :
     throw InputError("default Integral is incompatible with the Integral used to produce this object",
                      __FILE__,__LINE__);
   integral_->set_basis(basis_);
+  si.get(omit_uocc_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
     spinspaces_[spin] << SavableState::restore_state(si);
@@ -345,6 +346,7 @@ RefWavefunction::save_data_state(StateOut& so)
   SavableState::save_state(world_.pointer(),so);
   SavableState::save_state(basis_.pointer(),so);
   so.put(static_cast<int>(integral_->cartesian_ordering()));
+  so.put(omit_uocc_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
     SavableState::save_state(spinspaces_[spin].pointer(),so);

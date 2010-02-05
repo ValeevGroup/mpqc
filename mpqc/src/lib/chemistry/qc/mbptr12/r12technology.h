@@ -658,7 +658,8 @@ class R12Technology: virtual public SavableState {
         <dl>
 
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
-        Allowed values are "r12", "g12", "geng12", and "none". The default is "r12".
+        Allowed values are "r12", "g12", "stg-Xg" (where X is an integer greater than 0),
+        "geng12", and "none". The default is "stg-6g".
 
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
         of the correlation factor. <tt>corr_param</tt> can be a single floating-point value
@@ -679,7 +680,7 @@ class R12Technology: virtual public SavableState {
         and is not used. There is no default.
 
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
-        of the values below.  The default is A'. WARNING: standard approximation A is now obsolete.
+        of the values below.  The default is C.
 
         <dl>
 
@@ -731,11 +732,11 @@ class R12Technology: virtual public SavableState {
         <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
         Valid values are 1 or 2. The default is 2 except for R12/A'' method.
 
-        <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
-        by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
-	Valid values are "ABS" (Klopper and Samson), "ABS+", "CABS", and "CABS+", where the "+" labels
-	a method where the union of OBS and ABS is used to construct the RI basis. The default is "ABS".
-        The default in 2.3.0 and later will be "CABS+".
+        <dt><tt>abs_method</tt><dd> This string specifies the method by which the RI is applied to
+        the many-electron integrals of the R12 theory. The valid choices are "CABS+", "CABS", "ABS+", and "ABS"
+        (see Valeev, Chem. Phys. Lett. 395, 190 (2004);
+        ABS and ABS+ are only implemented for certain legacy methods).
+        The default is "CABS+".
 
 	<dt><tt>safety_check</tt><dd> Set to true if you want to perform safety checks, e.g., for completeness
         of the RI basis, linear independence of the geminal basis, positive definiteness of B matrix, etc.

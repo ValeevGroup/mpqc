@@ -276,12 +276,13 @@ std::vector<std::string> R12Technology::GeminalDescriptor::params() const {
 }
 
 void R12Technology::GeminalDescriptor::print(std::ostream &o) {
-  o << "GeminalDescriptor :" << std::endl;
-  o << "type_ = " << type_ << std::endl;
-  o << "params_ :" << std::endl;
-  for(int i=0; i<params_.size(); i++){
-    o << params_[i] << std::endl;
+  o << indent << "GeminalDescriptor :" << std::endl;
+  o << incindent << indent << "type = " << type_ << std::endl;
+  o << indent << "params = [";
+  for(int i=0; i<params_.size(); i++) {
+    o << " " << params_[i];
   }
+  o << "]" << std::endl << decindent;
 }
 
 bool R12Technology::invalid(const Ref<GeminalDescriptor>& gdesc){
@@ -335,17 +336,20 @@ R12Technology::GeminalDescriptorFactory::GeminalDescriptorFactory()
     stg_id_("STG"),
     g12_id_("G12") {}
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::null_geminal(){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::null_geminal(){
   std::vector<std::string> void_vector;
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(invalid_id_),void_vector)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::r12_geminal(){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::r12_geminal(){
   std::vector<std::string> void_vector;
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(r12_id_),void_vector)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::slater_geminal(double gamma){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::slater_geminal(double gamma){
   std::vector<std::string> param_vec(3);
   int nfunction=1;
   int nprimitive=1;
@@ -359,36 +363,27 @@ Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::s
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),param_vec)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
-  int nfunction=gamma.size();
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::slater_geminal(const std::vector<double> &gamma) {
+  const int nfunction=gamma.size();
   std::vector<std::string> params(1+3*nfunction);
   std::stringstream inout;
   inout << nfunction;
   inout >> params[0];
-  int one=1;
-  std::string one_str;
-  std::ostringstream out;
-  out << one;
-  one_str=out.str();
-  out.str("");
-  double oned=1.0;
-  std::string oned_str;
-  out << std::setprecision(16) << oned;
-  oned_str=out.str();
-  out.str("");
 
   for(int i=0; i<nfunction; i++){
-    params[i+1]=one_str;
-    params[nfunction+1+2*i]=oned_str;
-    out << std::setprecision(16) << gamma[i];
-    params[nfunction+2+2*i]=out.str();
-    out.str("");
+    params[i+1] = "1";
+    params[nfunction+1+2*i] = "1.0";
+    std::ostringstream oss;
+    oss << std::setprecision(16) << gamma[i];
+    params[nfunction+2+2*i] = oss.str();
   }
 
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(stg_id_),params)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::gaussian_geminal(double gamma){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::gaussian_geminal(double gamma){
   std::vector<std::string> param_vec(3);
   int nfunction=1;
   int nprimitive=1;
@@ -402,8 +397,9 @@ Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::g
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::contracted_gaussian_geminal(const std::vector<double> &coeff,
-                                                                             const std::vector<double> &gamma){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::contracted_gaussian_geminal(const std::vector<double> &coeff,
+                                                                     const std::vector<double> &gamma) {
   int nfunction=1;
   unsigned int ngeminal=coeff.size();
   std::vector<std::string> param_vec(2*ngeminal+2);
@@ -421,7 +417,8 @@ Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::c
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),param_vec)));
 }
 
-Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::gaussian_geminal(const G12CorrelationFactor::CorrelationParameters &corrparams){
+Ref<R12Technology::GeminalDescriptor>
+R12Technology::GeminalDescriptorFactory::gaussian_geminal(const G12CorrelationFactor::CorrelationParameters &corrparams) {
   unsigned int nfunction=corrparams.size();
   std::vector<int> offsets(nfunction+1);
   int numofparams=nfunction+1;
@@ -453,7 +450,8 @@ Ref<R12Technology::GeminalDescriptor> R12Technology::GeminalDescriptorFactory::g
   return(Ref<GeminalDescriptor>(new GeminalDescriptor(std::string(g12_id_),params)));
 }
 
-R12Technology::CorrelationFactor::CorrelationFactor(const std::string& label, const Ref<GeminalDescriptor> &geminaldescriptor) :
+R12Technology::CorrelationFactor::CorrelationFactor(const std::string& label,
+                                                    const Ref<GeminalDescriptor> &geminaldescriptor) :
   label_(label),
   geminaldescriptor_(geminaldescriptor)
 {
@@ -492,17 +490,29 @@ void
 R12Technology::CorrelationFactor::print(std::ostream& os) const
 {
   using std::endl;
-  os << indent << "CorrelationFactor:" << endl;
-  os << incindent;
-  const int nfunc = nfunctions();
-  for(int f=0; f<nfunc; f++) {
-    os << indent << "Function " << f << ":" << endl << incindent;
-    os << indent << "Functional form: " << label() << endl;
-    print_params(os,f);
-    //geminaldescriptor_->print(os);
+  os << indent << "CorrelationFactor:";
+  if (invalid(geminaldescriptor_)) {
+    os << " none" << endl;
+  }
+  else if (R12(geminaldescriptor_)) {
+    os << " R12" << endl;
+  }
+  else if (STG(geminaldescriptor_)) {
+    os << " STG-" << this->nprimitives(0) << "G[" << geminaldescriptor_->params()[3] << "]"<< endl << incindent;
+    print_params(os,0);
     os << decindent;
   }
-  os << decindent;
+  else {
+    os << endl << incindent;
+    const int nfunc = nfunctions();
+    for(int f=0; f<nfunc; f++) {
+      os << indent << "Function " << f << ":" << endl << incindent;
+      os << indent << "Functional form: " << label() << endl;
+      print_params(os,f);
+      os << decindent;
+    }
+    os << decindent;
+  }
 }
 
 Ref<R12Technology::GeminalDescriptor> R12Technology::CorrelationFactor::geminaldescriptor() {
@@ -1062,10 +1072,10 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   vbs_eq_obs_ = vbs->equiv(obs);
 
   // Default is to use the R12 factor
-  std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
+  std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("stg-6g"));
 
   // Default method is MBPT2-R12/A'
-  std::string sa_string = keyval->stringvalue("stdapprox",KeyValValuestring("A'"));
+  std::string sa_string = keyval->stringvalue("stdapprox",KeyValValuestring("C"));
   if ( sa_string == "A" ||
        sa_string == "a" ) {
     throw FeatureNotImplemented("stdapprox=A is obsolete",__FILE__,__LINE__);
@@ -1252,9 +1262,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
     if (num_f12 != 0) {
         // Do I have contracted functions? Can't handle these (yet?)
-        bool contracted = (keyval->count("corr_param",0) != 0);
+        const bool contracted = (keyval->count("corr_param",0) != 0);
         if (contracted)
-	    throw FeatureNotImplemented("Cannot accept contracted STG correlation factors yet",__FILE__,__LINE__);
+          throw FeatureNotImplemented("Cannot accept contracted STG correlation factors yet",__FILE__,__LINE__);
 
 	  // Primitive functions only
 	  for(int f=0; f<num_f12; f++) {
@@ -1263,41 +1273,42 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
 	  }
     }
     else { // single exponent
-	num_f12 = 1;
-        double exponent = keyval->doublevalue("corr_param");
-	stg_exponents.push_back(exponent);
+      num_f12 = 1;
+      const double exponent = keyval->doublevalue("corr_param");
+      stg_exponents.push_back(exponent);
     }
-    Ref<GeminalDescriptor> gdesc=gdesc_factory->slater_geminal(stg_exponents);
+
+    Ref<GeminalDescriptor> gdesc = gdesc_factory->slater_geminal(stg_exponents);
     // convert STGs into combinations of Gaussians
     for(int f=0; f<num_f12; f++) {
-	using namespace sc::mbptr12;
-	PowerGaussian1D* w;
-	// Default is to use TewKlopper fit
-	const std::string gtg_fit_weight = keyval->stringvalue("gtg_fit_weight",KeyValValuestring(std::string("tewklopper")));
-	if (gtg_fit_weight == std::string("TewKlopper") ||
+      using namespace sc::mbptr12;
+      PowerGaussian1D* w;
+      // Default is to use TewKlopper fit
+      const std::string gtg_fit_weight = keyval->stringvalue("gtg_fit_weight",KeyValValuestring(std::string("tewklopper")));
+      if (gtg_fit_weight == std::string("TewKlopper") ||
 	    gtg_fit_weight == std::string("TEWKLOPPER") ||
 	    gtg_fit_weight == std::string("tewklopper") ) {
-	  // fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
-	  w = new PowerGaussian1D(2.0,2,2);
-	}
-	else if (gtg_fit_weight == std::string("Cusp") ||
+        // fit using Tew&Klopper's recipe: weight is r^2 exp(-2*r^2), which has maximum near r=0.75 and decays sharply near r=0 and r=1.5
+        w = new PowerGaussian1D(2.0,2,2);
+      }
+      else if (gtg_fit_weight == std::string("Cusp") ||
 	    gtg_fit_weight == std::string("CUSP") ||
         gtg_fit_weight == std::string("cusp")) {
-	  // fit using weight exp(-0.005*r^6), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
-	  w = new PowerGaussian1D(0.005,6,0);
-	}
-	else {
-	  throw InputError("Invalid value for keyword gtg_fit_weight",__FILE__,__LINE__);
-	}
-	typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
-	GTGFit gtgfit(ng12, *w, 0.0, 10.0, 1001);
-	// fit r12^k exp(-gamma*r_{12})
-	const int k = 0;
-	const double gamma = stg_exponents[f];
-	Ref<G12CorrelationFactor> cf;
-	cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
-	params.push_back(cf->function(0));
-	delete w;
+        // fit using weight exp(-0.005*r^6), which is flat to r=1, then falls slowly till r=2, then quickly decays to r=3
+        w = new PowerGaussian1D(0.005,6,0);
+      }
+      else {
+        throw InputError("Invalid value for keyword gtg_fit_weight",__FILE__,__LINE__);
+      }
+      typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+      GTGFit gtgfit(ng12, *w, 0.0, 10.0, 1001);
+      // fit r12^k exp(-gamma*r_{12})
+      const int k = 0;
+      const double gamma = stg_exponents[f];
+      Ref<G12CorrelationFactor> cf;
+      cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
+      params.push_back(cf->function(0));
+      delete w;
     }
 
     // If stdapprox_ == A', A'', or B, need commutators
@@ -1327,8 +1338,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
 
-  // For now the default is to use the old ABS method, of Klopper and Samson
-  std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("ABS"));
+  std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("CABS+"));
   if ( abs_method_str == "KS" ||
        abs_method_str == "ks" ||
        abs_method_str == "ABS" ||

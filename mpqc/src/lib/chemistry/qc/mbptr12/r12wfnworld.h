@@ -113,7 +113,6 @@ public:
 
 private:
 
-  Ref<WavefunctionWorld> world_;  //!< the WavefunctionWorld
   Ref<RefWavefunction> ref_;   //!< describes the reference wavefunction
   Ref<R12Technology> r12tech_;    //!< describes the R12 technology
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12

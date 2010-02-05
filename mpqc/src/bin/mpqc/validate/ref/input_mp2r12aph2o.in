@@ -7,7 +7,7 @@ molecule:
 optimize: no
 checkpoint: no
 
-method: MP2-R12/A'
+method: MP2-R12(app=A' f12=r12)
 
 basis: cc-pVDZ
 auxbasis: aug-cc-pVTZ

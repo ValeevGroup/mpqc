@@ -31,12 +31,15 @@ int yydebug =1;
   std::vector<int> *nniv;
   }
 
-%token T_EBC T_GBC T_CABS T_CABSP T_ABS T_ABSP T_NOT
-%token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_EQUALS
+%token T_NOT
+%token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_DFBASIS T_EQUALS
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
-%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_XC T_SYMMETRY T_MEMORY
-%token T_BOHR T_ANGSTROM T_GRID T_FREQUENCIES
+%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY
+%token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_LINDEP T_MAXITER
+%token T_SCF
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
+%token T_XC T_GRID
+%token T_RI T_F12 T_APP T_ANSATZ
 %token T_OO_INPUT_KEYWORD
 %token <str> T_STRING
 %token <i> T_BOOL
@@ -68,6 +71,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_basis($3); }
             |   T_AUXBASIS T_COLON string
                                                 { set_auxbasis($3); }
+            |   T_DFBASIS T_COLON string
+                                                { set_dfbasis($3); }
             |   T_OPTIMIZE T_COLON bool optimize_options_list
                                                 { set_optimize($3); }
             |   T_GRADIENT T_COLON bool
@@ -78,8 +83,12 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_restart($3); }
             |   T_CHECKPOINT T_COLON bool
                                                 { set_checkpoint($3); }
-            |   T_SYMMETRY T_COLON string
-                                                { set_symmetry($3); }
+            |   T_ACCURACY T_COLON string
+                                                { set_accuracy($3); }
+            |   T_LINDEP T_COLON string
+                                                { set_lindep($3); }
+            |   T_GRADIENT T_COLON bool
+                                                { set_gradient($3); }
             |   T_DOCC T_COLON nonnegative_int_vector
                                                 { set_docc($3); }
             |   T_SOCC T_COLON nonnegative_int_vector
@@ -92,6 +101,9 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_frozen_docc($3); }
             |   T_FROZEN_UOCC T_COLON nonnegative_int_vector
                                                 { set_frozen_uocc($3); }
+            |   T_SCF T_COLON scf_options_list
+            |   T_DEBUG T_COLON string
+                                                { set_debug($3); }
             ;
 
 nonnegative_int_vector:
@@ -172,16 +184,26 @@ method_options:
             ;
 
 method_option:
-                T_XC T_EQUALS string        { set_method_xc($3); }
-            |   T_GRID T_EQUALS string      { set_method_grid($3); }
-            |   T_EBC                       { set_method_ebc("true"); }
-            |   T_GBC                       { set_method_gbc("true"); }
-            |   T_NOT T_EBC                 { set_method_ebc("false"); }
-            |   T_NOT T_GBC                 { set_method_gbc("false"); }
-            |   T_CABS                      { set_method_absmethod("cabs"); }
-            |   T_ABS                       { set_method_absmethod("abs"); }
-            |   T_CABSP                     { set_method_absmethod("cabs+"); }
-            |   T_ABSP                      { set_method_absmethod("abs+"); }
+                T_XC T_EQUALS string        { set_dftmethod_xc($3); }
+            |   T_GRID T_EQUALS string      { set_dftmethod_grid($3); }
+            |   T_F12 T_EQUALS string       { set_r12method_f12($3); }
+            |   T_APP T_EQUALS string       { set_r12method_app($3); }
+            |   T_RI T_EQUALS string        { set_r12method_ri($3); }
+            |   T_ANSATZ T_EQUALS string    { set_r12method_ansatz($3); }
+            ;
+
+scf_options_list:
+                T_BEG_OPT scf_options T_END_OPT
+            |
+            ;
+
+scf_options:
+                scf_options scf_option
+            |
+            ;
+
+scf_option:
+                T_MAXITER T_EQUALS string   { set_scf_maxiter($3); }
             ;
 
 string:         T_STRING                        { $$ = $1; }

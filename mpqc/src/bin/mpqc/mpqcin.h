@@ -42,29 +42,48 @@ class MPQCIn {
     MPQCInDatum<int> molecule_bohr_;
     MPQCInDatum<char *> basis_;
     MPQCInDatum<char *> auxbasis_;
+    MPQCInDatum<char *> dfbasis_;
     MPQCInDatum<char *> method_;
-    MPQCInDatum<char *> method_xc_;
-    MPQCInDatum<char *> method_grid_;
+    MPQCInDatum<char *> accuracy_;
+    MPQCInDatum<char *> lindep_;
+    // options for SCF
+    MPQCInDatum<char *> scf_maxiter_;
+    // options for DFT methods
+    MPQCInDatum<char *> dftmethod_xc_;
+    MPQCInDatum<char *> dftmethod_grid_;
+    // options for R12 methods
+    MPQCInDatum<char *> r12method_f12_;
+    MPQCInDatum<char *> r12method_app_;
+    MPQCInDatum<char *> r12method_ri_;
+    MPQCInDatum<char *> r12method_ansatz_;
     MPQCInDatum<char *> symmetry_;
     MPQCInDatum<char *> memory_;
+    MPQCInDatum<char *> debug_;
     MPQCInDatum<std::vector<int> *> alpha_;
     MPQCInDatum<std::vector<int> *> beta_;
     MPQCInDatum<std::vector<int> *> docc_;
     MPQCInDatum<std::vector<int> *> socc_;
     MPQCInDatum<std::vector<int> *> frozen_docc_;
     MPQCInDatum<std::vector<int> *> frozen_uocc_;
-    MPQCInDatum<const char *> method_ebc_;
-    MPQCInDatum<const char *> method_gbc_;
-    MPQCInDatum<const char *> method_absmethod_;
 
     int nirrep_;
 
+    enum IntegralsFactoryType {
+        IntV3,
+        Cints,
+        Libint2,
+        Invalid
+    };
+    static std::string to_string(IntegralsFactoryType ifactory);
+    static const char* guess_basis(IntegralsFactoryType ifactory);
     void write_energy_object(std::ostream&, const char *keyword,
                              const char *method,
                              const char *basis, int coor,
-                             bool &need_cints);
+                             IntegralsFactoryType& ifactory);
     void write_basis_object(std::ostream&, const char *keyword,
-                            const char *basis);
+                            const char *basis,
+                            bool split = false,
+                            bool uncontract = false);
     void write_vector(std::ostream &ostrs,
                       const char *keyvalname,
                       const char *name,
@@ -93,14 +112,15 @@ class MPQCIn {
     void set_method(char *);
     void set_basis(char *);
     void set_auxbasis(char *);
+    void set_dfbasis(char *);
     void set_multiplicity(char *);
     void set_memory(char *);
+    void set_accuracy(char *);
+    void set_lindep(char *);
     void set_optimize(int);
     void set_opt_type(int);
     void set_atom_charge(char *);
     void set_molecule_unit(char *);
-    void set_method_xc(char *);
-    void set_method_grid(char *);
     void set_symmetry(char *);
     void set_redund_coor(int);
     void set_gradient(int);
@@ -108,6 +128,7 @@ class MPQCIn {
     void set_restart(int);
     void set_checkpoint(int);
     void set_molecule_bohr(int);
+    void set_debug(char *);
     void set_docc(std::vector<int> *);
     void set_socc(std::vector<int> *);
     void set_alpha(std::vector<int> *);
@@ -115,9 +136,15 @@ class MPQCIn {
     void set_frozen_docc(std::vector<int> *);
     void set_frozen_uocc(std::vector<int> *);
     std::vector<int> *make_nnivec(std::vector<int> *, char *);
-    void set_method_absmethod(const char *);
-    void set_method_ebc(const char *);
-    void set_method_gbc(const char *);
+
+    void set_scf_maxiter(char *);
+
+    void set_dftmethod_xc(char *);
+    void set_dftmethod_grid(char *);
+    void set_r12method_f12(char *);
+    void set_r12method_app(char *);
+    void set_r12method_ri(char *);
+    void set_r12method_ansatz(char *);
 
     static int checking() { return checking_; }
 };

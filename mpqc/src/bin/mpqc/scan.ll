@@ -41,12 +41,6 @@ string  [A-Za-z0-9_\.*+-/']*
 qstring \"[^"\n]+\"
 %%
 "!"             { return T_NOT; }
-"ebc"           { return T_EBC; }
-"gbc"           { return T_GBC; }
-"cabs"          { return T_CABS; }
-"cabs+"         { return T_CABSP; }
-"abs"           { return T_ABS; }
-"abs+"          { return T_ABSP; }
 "memory"        { return T_MEMORY; }
 "molecule"      { return T_MOLECULE; }
 "multiplicity"  { return T_MULTIPLICITY; }
@@ -57,14 +51,17 @@ qstring \"[^"\n]+\"
 "no"            { yylval.i = 0; return T_BOOL; }
 "charge"        { return T_CHARGE; }
 "method"        { return T_METHOD; }
+"scf"           { return T_SCF; }
 "basis"         { return T_BASIS; }
 "auxbasis"      { return T_AUXBASIS; }
+"dfbasis"       { return T_DFBASIS; }
 "cartesian"     { return T_CARTESIAN; }
 "internal"      { return T_INTERNAL; }
 "redundant"     { return T_REDUNDANT; }
 "restart"       { return T_RESTART; }
 "checkpoint"    { return T_CHECKPOINT; }
-"xc"            { return T_XC; }
+"accuracy"      { return T_ACCURACY; }
+"lindep"        { return T_LINDEP; }
 "symmetry"      { return T_SYMMETRY; }
 "bohr"          { return T_BOHR; }
 "angstrom"      { return T_ANGSTROM; }
@@ -74,7 +71,14 @@ qstring \"[^"\n]+\"
 "beta"          { return T_BETA; }
 "frozen_docc"   { return T_FROZEN_DOCC; }
 "frozen_uocc"   { return T_FROZEN_UOCC; }
+"maxiter"       { return T_MAXITER; }
+"debug"         { return T_DEBUG; }
+"xc"            { return T_XC; }
 "grid"          { return T_GRID; }
+"f12"           { return T_F12; }
+"app"           { return T_APP; }
+"ansatz"        { return T_ANSATZ; }
+"ri"            { return T_RI; }
 "="             { return T_EQUALS; }
 ":"             { return T_COLON; }
 "("             { return T_BEG_OPT; }

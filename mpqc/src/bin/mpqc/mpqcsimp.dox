@@ -58,6 +58,11 @@ The accepted keywords are:
 <dt><tt>frequencies</tt><dd> If <tt>yes</tt>, then the frequencies will be
   obtained.  The default is <tt>no</tt>.
 
+<dt><tt>accuracy</tt><dd> Specifies an estimate of the accuracy with which the wave function should be
+  computed. The value should be given as a real number, which specifies the target accuracy for
+  the energy. The default is 1e-6 (same as the default for <tt>value_accuracy</tt> keyword of
+  Function class). The accuracy is not guaranteed to be achieved and thus the user is advised caution.
+
 <dt><tt>charge</tt><dd> Specificies the charge on the molecule.  The
   default is <tt>0</tt>.
 
@@ -74,24 +79,30 @@ The accepted keywords are:
         <tt>multiplicity</tt> > 1
      <dt><tt>RKS</tt><dd> Restricted Kohn-Sham.
      <dt><tt>UKS</tt><dd> Unrestricted Kohn-Sham.
-     <dt><tt>MP2</tt><dd> Second order Moeller-Plesset perturbation theory.
-                Only available for <tt>multiplicity</tt> = 1.
-     <dt><tt>MP2-R12/A</tt><dd> The A version of MP2-R12.
-                Only available for <tt>multiplicity</tt> = 1.
-                An auxiliary basis may be specified.
-                No gradient, optimization, or frequencies are possible.
-     <dt><tt>MP2-R12/A'</tt><dd> The A' version of MP2-R12.
-                Only available for <tt>multiplicity</tt> = 1.
-                An auxiliary basis may be specified.
-                No gradient, optimization, or frequencies are possible.
-     <dt><tt>ZAPT2</tt><dd>  Z-averaged perturbation theory.
+     <dt><tt>MP2</tt><dd> Second-order M&oslash;ller-Plesset perturbation theory. Unrestricted MP2 is used
+     if <tt>multiplicity</tt> > 1
+     <dt><tt>UMP2</tt><dd> Unrestricted MP2. No gradient, optimization, of frequencies are possible.
+     <dt><tt>RMP2</tt><dd> Restricted MP2. No gradient, optimization, of frequencies are possible.
+     <dt><tt>ZAPT2</tt><dd>  Z-averaged second-order perturbation theory.
                 Only available for <tt>multiplicity</tt> > 1.  No gradient,
                 optimization, or frequencies are possible.
+     <dt><tt>MP2-R12</tt><dd> The explicitly-correlated MP2 method
+                (<tt>RMP2-R12</tt> and <tt>UMP2-R12</tt>, the R12 equivalents of <tt>RMP2</tt> and
+                <tt>UMP2</tt>, are also allowed).
+                An auxiliary basis should be specified for this method (see <tt>auxbasis</tt> keyword).
+                No gradient, optimization, or frequencies are possible.
+     <dt><tt>CCSD(2)_R12</tt><dd> The explicitly-correlated CCSD method
+                (<tt>RCCSD(2)_R12</tt> and <tt>UCCSD(2)_R12</tt> are also allowed).
+                An auxiliary basis should be specified for this method (see <tt>auxbasis</tt> keyword).
+                No gradient, optimization, or frequencies are possible.
+     <dt><tt>CCSD(T)_R12</tt><dd> The explicitly-correlated CCSD method
+                (<tt>RCCSD(T)_R12</tt> and <tt>UCCSD(T)_R12</tt> are also allowed)
+                An auxiliary basis should be specified for this method (see <tt>auxbasis</tt> keyword).
+                No gradient, optimization, or frequencies are possible.
    </dl>
 
    The following options are valid with the <tt>KS</tt>, <tt>RKS</tt>, and
    <tt>UKS</tt> methods:
-
    <dl>
      <dt><tt>grid</tt><dd> Specifies the grid to be used for numerical
         integrations.  The following values can be given:
@@ -108,42 +119,74 @@ The accepted keywords are:
         class documentation for the possible values.
    </dl>
 
-   The following options are valid with the <tt>MP2-R12/A</tt> and
-   <tt>MP2-R12/A'</tt> methods.  These options are mutually exclusive:
-
+   The following options are valid with R12 methods:
    <dl>
-     <dt><tt>abs</tt><dd>Use the standard Auxiliary Basis Set method.
-     <dt><tt>abs+</tt><dd>Use the standard Auxiliary Basis Set method,
-                          but use the union of the orbital and the
-                          given auxiliary basis as the actual auxiliary
-                          basis set used.
-     <dt><tt>cabs</tt><dd>Use the Complementary Auxiliary Basis Set method.
-     <dt><tt>cabs+</tt><dd>Use the Complementary Auxiliary Basis Set method,
-                          but use the union of the orbital and the
-                          given auxiliary basis as the actual auxiliary
-                          basis set used.
-   </dl>
+     <dt><tt>f12</tt><dd> Specifies the correlation factor used to construct the geminals.
+     The default value is <tt>stg-6g[1.3]</tt> (geminal exponent of 1.5 is a compromise value
+     that seems to work well with most orbital basis sets; if the specialized R12-optimized basis sets of
+     Peterson are used, the respecive recommended values will be used automatically).
+     The following values can be given:
+     <dl>
+       <dt><tt>stg-Ng[Y]</tt><dd>Use a Slater-type geminal, \f$ \exp(- Y r_{12})\f$,
+       where Y is the orbital exponent (typical values between 0.5 and 2.0),
+       expanded in terms of N Gaussian-type geminals (N must be greater or equal to 1). The use
+       of this correlation factor requires that the Libint2 library was used to configure
+       and compile MPQC.
+       <dt><tt>r12</tt><dd>Use the linear correlation factor, which was used in the original
+       R12 theory. The linear factor is less effective than the Slater-type geminal and should only be
+       used by experts. The use of this correlation factor requires that the Libint1 library
+       was used to configure and compile MPQC.
+       <dt><tt>none</tt><dd>R12-dependent terms will not be used. This is only useful for comparing
+       with the standard methods or accessing certain features (e.g. DF-MP2) not available
+       with the conventional implementations.
+     </dl>
+     
+     <dt><tt>app</tt><dd> Specifies the R12 approximation. The default is <tt>app=C</tt> and should be fine for most non-expert uses.
+     The following values can be given:
+     <dl>
+       <dt><tt>A'</tt><dd>Use approximation A'.
+       <dt><tt>A''</tt><dd> Use approximation A'' (unpublished method by Valeev).
+       <dt><tt>B</tt><dd> Use approximation B.
+       <dt><tt>C</tt><dd>Use approximation C. This is the default.
+     </dl>
 
-   The following options are valid with the
-   <tt>MP2-R12/A'</tt> method:
+     <dt><tt>ansatz</tt><dd> Specifies the R12 ansatz used to generate the geminal functions.
+     The following values can be given:
+     <dl>
+       <dt><tt>diag</tt><dd> Use the diagonal orbital-invariant ansatz with coefficients
+       fixed by the first-order cusp-conditions (due to Ten-no). This is the default and recommended for
+       most non-experts.
+       <dt><tt>ijij</tt><dd> Same meaning as <tt>diag</tt>.
+       <dt><tt>ijkl</tt><dd> Use the original orbital-invariant ansatz of Klopper.
+       <dt><tt>ijpq</tt><dd> Use pq ansatz.
+     </dl>
 
-   <dl>
-     <dt><tt>ebc</tt><dd>Assume the Extended Brillion Condition to hold.
-                         This is the default.
-     <dt><tt>gbc</tt><dd>Assume the Generalized Brillion Condition to hold.
-                         This is the default.
-     <dt><tt>!ebc</tt><dd>Do not assume the Extended Brillion Condition
-                          to hold.
-     <dt><tt>!gbc</tt><dd>Do not assume the Generalized Brillion Condition
-                          to hold.
+     <dt><tt>ri</tt><dd> Specifies the manner in which the resolution-of-the-identity is used.
+     The default is <tt>ri=cabs+</tt> and should be used by all non-experts.
+     The following values can be given:
+     <dl>
+       <dt><tt>abs</tt><dd>Use the Auxiliary Basis Set method of Klopper and Samson.
+       <dt><tt>abs+</tt><dd>Same as <tt>abs</tt> but use the union of the orbital and the
+                            given auxiliary basis as the actual auxiliary
+                            basis set used. 
+       <dt><tt>cabs</tt><dd>Use the Complementary Auxiliary Basis Set method of Valeev.
+       <dt><tt>cabs+</tt><dd>Same as <tt>cabs</tt>
+                            but use the union of the orbital and the
+                            given auxiliary basis as the actual auxiliary
+                            basis set used. This is the default.
+     </dl>
    </dl>
 
 <dt><tt>basis</tt><dd> Specifies the basis set.  There is no default.  See
   the table in the GaussianBasisSet class documentation for the
   available basis sets.
 
-<dt><tt>auxbasis</tt><dd> Specifies the auxiliary basis set for MP2-R12
+<dt><tt>auxbasis</tt><dd> Specifies the auxiliary basis set for R12
   methods.  There is no default.  See the table in the GaussianBasisSet
+  class documentation for the available basis sets.
+
+<dt><tt>dfbasis</tt><dd> Specifies the density-fitting basis set.
+  There is no default.  See the table in the GaussianBasisSet
   class documentation for the available basis sets.
 
 <dt><tt>restart</tt><dd> Set to <tt>yes</tt> to restart an optimization.
@@ -179,18 +222,36 @@ The accepted keywords are:
 <dt><tt>frozen_docc</tt><dd> Gives the number of frozen core orbitals.  Can
   be either a single integer or a parenthesized list giving the frozen core
   orbitals in each irreducible representation.  In the latter case the
-  symmetry must be given and not be <tt>auto</tt>.
+  symmetry must be given and not be <tt>auto</tt>. The default is to automatically
+  determine the frozen core orbitals.
 
 <dt><tt>frozen_uocc</tt><dd> Gives the number of frozen virtual orbitals.
   Can be either a single integer or a parenthesized list giving the frozen
   virtual orbitals in each irreducible representation.  In the latter case
   the symmetry must be given and not be <tt>auto</tt>.
 
+<dt><tt>scf</tt><dd> Specifies the parameters of the self-consistent field procedure used in
+all HF and DFT methods. The following options can be used
+
+  <dl>
+     <dt><tt>maxiter</tt><dd> The maximum number of iterations. The default is 40 (same as
+     the default for <tt>maxiter</tt> keyword of SCF class).
+  </dl>
+
+<dt><tt>lindep</tt><dd> Specifies the tolerance used to detect linearly dependent basis functions.
+  All eigevectors of the overlap matrix with eigenvalues smaller than the maximum eigenvalue
+  times this tolerance are eliminated using the symmetric orthogonalization. The default is <tt>1e-8</tt>
+  (same as the default for <tt>lindep_tol</tt> keyword of Wavefunction class).
+
 <dt><tt>memory</tt><dd> Gives a hint for the amount of memory in bytes that
   can be used.  This is typically a lower bound, more memory will be used
   in practice and the exact amount cannot be precisely controlled.  The
   format is a fixed or floating point number optionally followed (without
   spaces) by one of the following suffixes: KB, MB, GB, KIB, MIB, or GIB.
+
+<dt><tt>debug</tt><dd> Specifies the amount of information printed out (this should help troubleshooting).
+  Nonnegative integer values are accepted. The higher the value the more output will be produced. The default
+  is <tt>0</tt>.
 
 </dl>
 

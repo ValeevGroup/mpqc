@@ -123,14 +123,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   const bool diag = r12tech->ansatz()->diag();
   const bool optimized_amplitudes = r12tech->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fullopt;
 
-  new_energy_ = diag ? true : false;
-  new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean((int)false));
+  const bool default_new_energy = diag ? true : false;
+  new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean(default_new_energy));
   if((new_energy_==true) && (diag==false)) {
     ExEnv::out0() << indent << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
                   << indent << "because the old version performs many security checks." << endl;
   }
-  if((new_energy_==false) and (optimized_amplitudes==false)) {
-    throw InputError("MBPT2_R12::MBPT2_R12 -- incomplete optimization of amplitudes is not implemented in the old version. Set new_energy to true in your input.",__FILE__,__LINE__);
+  if (optimized_amplitudes==false) { // fixed amplitudes can only be used with the new energy object
+    new_energy_ = true;
   }
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
@@ -210,7 +210,7 @@ MBPT2_R12::set_desired_value_accuracy(double acc)
 {
   Function::set_desired_value_accuracy(acc);
   // reference should be computed to higher accuracy
-  const double ref_acc = acc / ref_to_mp2r12_acc();
+  const double ref_acc = acc * ref_to_mp2r12_acc();
   ref()->set_desired_value_accuracy(ref_acc);
 }
 

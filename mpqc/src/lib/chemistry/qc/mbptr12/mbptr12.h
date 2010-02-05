@@ -54,7 +54,7 @@ class R12IntEval;
 class R12WavefunctionWorld;
 class MP2R12Energy;
 
-/** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
+/** The MBPT2_R12 class implements several R12 second-order Moeller-Plesset perturbation theory
 methods. */
 class MBPT2_R12: public MBPT2 {
 
@@ -105,11 +105,6 @@ class MBPT2_R12: public MBPT2 {
 
     <dt><tt>plot_pair_function</tt><dd> If <tt>twopdm_grid</tt> is given, this array of 2 MO indices
     specifies which pair function to plot.
-
-    <dt><tt>new_energy</tt><dd> Use new version that has got improved diagonal Ansaetze preserving
-    spin as well as a fixed coefficient version. For the non diagonal ansaetze the old version is to be
-    preferred since it has many more security checks, such as checks of positive definiteness of B etc.
-    The default value of this variable is false.
 
     <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
     CABS singles and include it into the MBPT(2)-R12 energy. The default is false.

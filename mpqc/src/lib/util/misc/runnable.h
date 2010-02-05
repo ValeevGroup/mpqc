@@ -39,7 +39,7 @@ namespace sc {
         run member. */
     class Runnable: virtual public DescribedClass {
       public:
-        /// Executates an action as specified the derived class.
+        /// Executes an action as specified in the derived class.
         virtual void run() = 0;
     };
 

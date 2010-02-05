@@ -183,7 +183,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
   const RefSCVector& emp2f12(SpinCase2 S) const;
   /// Returns the vector of F12 corrections to second-order pair energies of spin case S
   const RefSCVector& ef12(SpinCase2 S) const;
-  /// Returns total MP2-F12 correlation energy
+  /// Returns total MP2-R12 correlation energy
   double energy();
 
   /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
@@ -273,7 +273,7 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
   const RefSCVector& emp2f12(SpinCase2 S) const;
   /// Returns the vector of F12 corrections to second-order pair energies of spin case S
   const RefSCVector& ef12(SpinCase2 S) const;
-  /// Returns total MP2-F12 correlation energy
+  /// Returns total MP2-R12 correlation energy
   double energy();
 
   double emp2f12tot(SpinCase2 S) const;

@@ -40,17 +40,17 @@ namespace sc {
   
   class R12IntEval;
   
-/** F12Amplitudes gives the amplitudes of some linear-F12-ansatz-related terms in wave function. The first-order wave function
-    terms which result from linear F12 terms are:
+/** R12Amplitudes gives the amplitudes of some R12-ansatz-related terms in wave function. The first-order wave function
+    terms which result from F12 terms are:
     F<sub>ij</sub><sup>(1)</sup> = C<sub>kl</sub><sup>ij</sup> ( f<sub>12</sub> |kl> - 0.5 f<sub>ab</sub><sup>kl</sup> |ab> - 0.5 f<sub>mn</sub><sup>kl</sup> |mn> - f<sub>am</sub><sup>kl</sup> |am> - r<sub>a'm</sub><sup>kl</sup> |a'm> )
     where f12 is the correlation factor, C are optimal first-order coefficients, and
     f are antisymmetrized integrals over f12 operator. Indices a, b are virtual MOs; m,n are occupied MOs;
     i, j, k, l are active occupied MOs, a' is an RI basis index. */
 
-class F12Amplitudes : public RefCount {
+class R12Amplitudes : public RefCount {
   public:
-  F12Amplitudes(const Ref<R12IntEval>& r12eval);
-  ~F12Amplitudes();
+  R12Amplitudes(const Ref<R12IntEval>& r12eval);
+  ~R12Amplitudes();
   
   const RefSCMatrix& T2(SpinCase2 S);
   const RefSCMatrix& Fvv(SpinCase2 S);

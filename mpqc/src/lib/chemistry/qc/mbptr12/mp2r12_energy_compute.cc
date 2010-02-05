@@ -368,7 +368,7 @@ MP2R12Energy_SpinOrbital::compute()
 	  throw ProgrammingError("MP2R12Energy::compute() -- safe evaluation of the MP2-R12 energy using inversion is not implemented yet");
         util->invert(B_ij);
         if (debug_ >= DefaultPrintThresholds::mostO4)
-          util->print("Inverse MP2-F12/A B matrix",B_ij);
+          util->print("Inverse MP2-R12/A B matrix",B_ij);
         RefSCMatrix C = C_[spin].clone();
         util->times(B_ij,V,C);
         C_[spin].assign(C);  C = 0;
@@ -528,7 +528,7 @@ MP2R12Energy_SpinOrbital::compute()
             // The r12 amplitudes B^-1 * V
             util->invert(B_ij);
             if (debug_ >= DefaultPrintThresholds::allO4) {
-	      osringstream oss; oss << "Inverse MP2-F12 matrix B(" << ij << ")";
+	      osringstream oss; oss << "Inverse MP2-R12 matrix B(" << ij << ")";
               util->print(oss.str(),B_ij);
 	    }
             RefSCVector Cij = -1.0*(B_ij * V_ij);

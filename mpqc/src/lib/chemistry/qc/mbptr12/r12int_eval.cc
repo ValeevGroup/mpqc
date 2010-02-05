@@ -187,7 +187,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
     throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
 #endif
 
-  Amps_ = new F12Amplitudes(this);
+  Amps_ = new R12Amplitudes(this);
 
   this->dereference();   // to match reference() above
 }
@@ -370,7 +370,7 @@ R12IntEval::F12(SpinCase2 S) {
   return amps()->Fvv(S);
 }
 
-Ref<F12Amplitudes>
+Ref<R12Amplitudes>
 R12IntEval::amps()
 {
   return Amps_;

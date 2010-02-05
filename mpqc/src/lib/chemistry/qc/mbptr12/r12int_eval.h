@@ -44,7 +44,7 @@ namespace sc {
 
   class TwoBodyMOIntsTransform;
   class DistArray4;
-  class F12Amplitudes;
+  class R12Amplitudes;
 
   /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.
       This class is used by all Wavefunction classes that implement linear R12 methods.
@@ -82,7 +82,7 @@ class R12IntEval : virtual public SavableState {
   /// space of orbital products from which geminal substitutions are allowed
   RefSCDimension dim_gg_[NSpinCases2];
 
-  Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
+  Ref<R12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
   double emp2_obs_singles_;
   double emp2_cabs_singles_;
@@ -615,7 +615,7 @@ public:
   bool bc() const;
 
   /// Returns amplitudes of pair correlation functions
-  Ref<F12Amplitudes> amps();
+  Ref<R12Amplitudes> amps();
 
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);

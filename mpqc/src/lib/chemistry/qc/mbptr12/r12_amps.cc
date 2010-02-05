@@ -38,17 +38,17 @@
 using namespace std;
 using namespace sc;
 
-F12Amplitudes::F12Amplitudes(const Ref<R12IntEval>& r12eval) :
+R12Amplitudes::R12Amplitudes(const Ref<R12IntEval>& r12eval) :
   r12eval_(r12eval)
 {
 }
 
-F12Amplitudes::~F12Amplitudes()
+R12Amplitudes::~R12Amplitudes()
 {
 }
 
 const RefSCMatrix&
-F12Amplitudes::T2(SpinCase2 S)
+R12Amplitudes::T2(SpinCase2 S)
 {
   if (T2_[S].null())
     compute_(S);
@@ -56,7 +56,7 @@ F12Amplitudes::T2(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Fvv(SpinCase2 S)
+R12Amplitudes::Fvv(SpinCase2 S)
 {
   if (Fvv_[S].null())
     compute_(S);
@@ -64,7 +64,7 @@ F12Amplitudes::Fvv(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Foo(SpinCase2 S)
+R12Amplitudes::Foo(SpinCase2 S)
 {
   if (Foo_[S].null())
     compute_(S);
@@ -72,7 +72,7 @@ F12Amplitudes::Foo(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Fov(SpinCase2 S)
+R12Amplitudes::Fov(SpinCase2 S)
 {
   if (Fov_[S].null())
     compute_(S);
@@ -80,7 +80,7 @@ F12Amplitudes::Fov(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Fox(SpinCase2 S)
+R12Amplitudes::Fox(SpinCase2 S)
 {
   if (Fox_[S].null())
     compute_(S);
@@ -88,7 +88,7 @@ F12Amplitudes::Fox(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Fvo(SpinCase2 S)
+R12Amplitudes::Fvo(SpinCase2 S)
 {
   if (Fvo_[S].null())
     compute_(S);
@@ -96,7 +96,7 @@ F12Amplitudes::Fvo(SpinCase2 S)
 }
 
 const RefSCMatrix&
-F12Amplitudes::Fxo(SpinCase2 S)
+R12Amplitudes::Fxo(SpinCase2 S)
 {
   if (Fxo_[S].null())
     compute_(S);
@@ -104,7 +104,7 @@ F12Amplitudes::Fxo(SpinCase2 S)
 }
 
 void
-F12Amplitudes::compute_(SpinCase2 spincase2)
+R12Amplitudes::compute_(SpinCase2 spincase2)
 {
   Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
   Ref<RefWavefunction> ref = r12world->ref();

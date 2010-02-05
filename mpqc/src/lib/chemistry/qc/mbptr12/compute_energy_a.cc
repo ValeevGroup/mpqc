@@ -49,7 +49,7 @@ namespace {
 void
 MBPT2_R12::compute_energy_()
 {
-  Timer tim("mp2-f12 energy");
+  Timer tim("mp2-r12 energy");
 
   //int DebugWait = 1;
   //while (DebugWait) {}
@@ -101,10 +101,10 @@ MBPT2_R12::compute_energy_()
   // can use projector 3 only for app C
   if (r12tech->ansatz()->projector() != R12Technology::Projector_3) {
 
-    // MP2-F12/A'
+    // MP2-R12/A'
     if (r12tech->stdapprox() == R12Technology::StdApprox_Ap ||
         r12tech->stdapprox() == R12Technology::StdApprox_B) {
-      Timer tim2("mp2-f12/a' pair energies");
+      Timer tim2("mp2-r12/a' pair energies");
       if (r12ap_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_Ap);
         r12ap_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
@@ -114,9 +114,9 @@ MBPT2_R12::compute_energy_()
       ef12 = er12(r12ap_energy_);
     }
 
-    // MP2-F12/B
+    // MP2-R12/B
     if (r12tech->stdapprox() == R12Technology::StdApprox_B) {
-      Timer tim2("mp2-f12/b pair energies");
+      Timer tim2("mp2-r12/b pair energies");
       if (r12b_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_B);
         r12b_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
@@ -126,9 +126,9 @@ MBPT2_R12::compute_energy_()
       ef12 = er12(r12b_energy_);
     }
 
-    // MP2-F12/A''
+    // MP2-R12/A''
     if (r12tech->stdapprox() == R12Technology::StdApprox_App) {
-      Timer tim2("mp2-f12/a'' pair energies");
+      Timer tim2("mp2-r12/a'' pair energies");
       if (r12app_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_App);
         r12app_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);
@@ -140,10 +140,10 @@ MBPT2_R12::compute_energy_()
 
   } // end of != ansatz_3
 
-  // MP2-F12/C
+  // MP2-R12/C
   if (r12tech->stdapprox() == R12Technology::StdApprox_C ||
       r12tech->stdapprox() == R12Technology::StdApprox_Cp) {
-    Timer tim2("mp2-f12/c pair energies");
+    Timer tim2("mp2-r12/c pair energies");
     if (r12c_energy_.null()){
       r12intermediates=new R12EnergyIntermediates(r12eval_,r12tech->stdapprox());
       r12c_energy_ = construct_MP2R12Energy(r12intermediates,debug_,new_energy_);

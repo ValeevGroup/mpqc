@@ -94,13 +94,13 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         bool antisymmetrize,
                         const std::vector<std::string>& transform_keys)
 {
-  Timer tim("F12 amplitudes");
+  Timer tim("F12 integrals");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|F12|"
       << space2->id() << " " << space4->id() << ">";
   const std::string label = oss.str();
   ExEnv::out0() << endl << indent
-                << "Entered F12 amplitude (" << label << ") evaluator" << endl
+                << "Entered F12 integrals (" << label << ") evaluator" << endl
                 << incindent;
 
   compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
@@ -111,7 +111,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
     transform_keys
   );
 
-  ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;
+  ExEnv::out0() << decindent << indent << "Exited F12 integrals (" << label << ") evaluator" << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////

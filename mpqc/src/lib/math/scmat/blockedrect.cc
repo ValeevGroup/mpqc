@@ -417,6 +417,11 @@ BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
     ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
          << "dimensions don't match\n";
+    rowdim()->print();
+    coldim()->print();
+    la->rowdim()->print();
+    la->coldim()->print();
+    lb->dim()->print();
     abort();
   }
 

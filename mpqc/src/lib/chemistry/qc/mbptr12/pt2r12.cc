@@ -183,6 +183,7 @@ static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
 
 PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 {
+  ///* comment out the following to test cabs singles correction
   std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
   if (nfzc_str == "auto")
     nfzc_ = molecule()->n_core_electrons()/2;
@@ -224,6 +225,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 
   debug_ = keyval->intvalue("debug", KeyValValueint(0));
   r12eval_->debug(debug_);
+
+
 }
 
 PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
@@ -1282,6 +1285,7 @@ void sc::PT2R12::compute()
 {
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
+  double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
   const bool spin_polarized = r12world()->ref()->spin_polarized();
   for(int i=0; i<NSpinCases2; i++) {
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -1298,6 +1302,21 @@ void sc::PT2R12::compute()
         abort();
     }
   }
+
+
+  //double alpha_correction, beta_correction, cabs_correction;
+  SpinCase1 alpha = Alpha, beta = Beta;
+  //
+
+  ExEnv::out0() << indent << scprintf("define alpha and beta variables") << endl;
+
+
+  alpha_correction = this->energy_cabs_singles(alpha);
+  //beta_correction =  this->energy_cabs_singles(beta);
+  //cabs_singles_correction = alpha_correction + beta_correction;
+
+
+
   if (!spin_polarized)
     energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
   for(int i=0; i<NSpinCases2; i++)
@@ -1332,7 +1351,10 @@ void sc::PT2R12::compute()
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
                                       energy) << endl;
-
+  /*
+  ExEnv::out0() << indent << scprintf("CABS singles energy correction:             %17.12lf",
+                                      cabs_singles_correction) << endl;
+  */
   set_energy(energy);
 }
 
@@ -1380,7 +1402,7 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
-  throw "not implemented";
+   std::cout << "haha" << endl;
 
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
   Ref<OrbitalSpace> Aspace = this->r12world()->cabs_space(spin);
@@ -1399,8 +1421,10 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   RefSCMatrix F_pp_otherspin = this->f(other(spin));
 
   // RDMs
-  RefSymmSCMatrix gamma1 = this->rdm1(spin);
-  RefSymmSCMatrix gamma1_otherspin = this->rdm1(other(spin));
+  //RefSymmSCMatrix gamma1 = this->rdm1(spin);
+  //RefSymmSCMatrix gamma1_otherspin = this->rdm1(other(spin));
+  RefSymmSCMatrix gamma1 = rdm1_->scmat(spin);
+  RefSymmSCMatrix gamma1_otherspin = rdm1_->scmat(other(spin));
   RefSymmSCMatrix gamma2_ss = this->rdm2( case12(spin,spin) );
   RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );
 
@@ -1454,7 +1478,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
           const int yB = y*nX + B;
           double h0_xA_yB = 0.0;
           h0_xA_yB += gamma_xy * F_AA(A,B);
-//          H0(xA, yB) = H0(xA, yB) + gamma_xy * F_AA(A,B);   H0(xA, yB)  does not support the += operator;
           if(A == B)                          // corresponds to a Kronecker delta
           {
             h0_xA_yB += gamma_xy * F_Gamma1_product;
@@ -1464,14 +1487,18 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
               {
                 const int x1p2 = x * no + p;
                 const int y1q2 = y * no + q;
-                const int max_xp = max(x, p);
-                const int min_xp = min(x, p);
-                const int max_yq = max(y, q);
-                const int min_yq = max(y, q);
-                const int upp_ind_same_spin = (max_xp -1)* (max_xp -2) /2 + min_xp;
-                const int low_ind_same_spin = (max_yq -1)* (max_yq -2) /2 + min_yq;
                 h0_xA_yB += F_pp(q, p) * gamma2_os(x1p2, y1q2); // contribution from different spin terms
-                h0_xA_yB += F_pp_otherspin(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin); //  contribution from same spin terms
+                if((x != p) && (y != q))
+                {
+                  const int max_xp = max(x, p);
+                  const int min_xp = min(x, p);
+                  const int max_yq = max(y, q);
+                  const int min_yq = max(y, q);
+                  const int upp_ind_same_spin = (max_xp -1)* (max_xp -2) /2 + min_xp;
+                  const int low_ind_same_spin = (max_yq -1)* (max_yq -2) /2 + min_yq;
+                  h0_xA_yB += ((x > p)? 1.0 : -1.0) * ((y > q)? 1.0 : -1.0) * F_pp_otherspin(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
+                  //  contribution from same spin terms; the "?:" takes care of antisymmetry; for gamma^xp_..., only x<p portion stored
+                }
               }
             }
           }

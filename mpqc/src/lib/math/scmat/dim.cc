@@ -30,6 +30,8 @@
 #endif
 
 #include <math.h>
+#include <numeric>
+#include <assert.h>
 
 #include <util/keyval/keyval.h>
 #include <math/scmat/dim.h>
@@ -61,7 +63,11 @@ SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes):
   nblocks_ = nblocks;
   size_ = 0;
 
-  //if (n_ == 0) nblocks_ = 0;
+  // validate input
+  if (blocksizes) {
+    const int nn = std::accumulate(blocksizes, blocksizes+nblocks, 0);
+    assert(n == nn);
+  }
 
   if (n_ != 0 && nblocks_ == 0) {
       nblocks_ = 1;

@@ -466,17 +466,21 @@ namespace sc {
 #endif
 
   namespace detail {
-    /// this function reads 1-rdm. Depending on the
-    /// calculation, on-disk Psi densities will be reported in different formats.
-    /// Hence the user must provide the index map (dmap).
-    /// The output dimension is symmetry blocked.
-    RefSymmSCMatrix rdopdm(SpinCase1 pairspin,
+    /// returns 1-RDM in symmetry-blocked form.
+    /// Depending on the type of a calculation, on-disk Psi densities will be reported in different formats.
+    /// Hence the user must provide a map from the on-disk order (e.g. RAS)
+    /// to the target symmetry-blocked order (can be a subset of the full symmetry-blocked order)
+    /// @param spin the spincase
+    /// @param mopi the number of orbitals in each block of the target dimension. The output matrix will have blocked dimensions.
+    /// @param dmap maps on-disk indices (calculation-specific) to the target indices
+    /// @param kit optional SCMatrixKit that will be used to create the target 1-RDM matrix. If omitted, the default BlockedSCMatrixKit will be used
+    RefSymmSCMatrix rdopdm(SpinCase1 spin,
                            const std::vector<unsigned int>& mopi,
                            const std::vector<unsigned int>& dmap,
                            Ref<SCMatrixKit> kit = 0);
     /// this function reads 2-rdm in physicists format. Depending on the
     /// calculation, on-disk Psi densities will be reported in different formats.
-    /// Hence the user must provide the index map (dmap).
+    /// Hence the user must provide the index map (dmap). @sa sc::detail::rdopdm
     RefSymmSCMatrix rdtpdm(SpinCase2 pairspin,
                            const std::vector<unsigned int>& dmap,
                            Ref<SCMatrixKit> kit = 0);

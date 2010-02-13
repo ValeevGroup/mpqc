@@ -1517,7 +1517,8 @@ namespace sc {
     fclose(outfile);
 
     const int nirrep = mopi.size();
-    RefSCDimension modim = new SCDimension(nmo,
+    const unsigned int nmo_target = std::accumulate(mopi.begin(), mopi.end(), 0);
+    RefSCDimension modim = new SCDimension(nmo_target,
                                            nirrep,
                                            reinterpret_cast<int*>(const_cast<unsigned int*>(&(mopi[0])))
                                           );

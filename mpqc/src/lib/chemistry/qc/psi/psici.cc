@@ -809,8 +809,12 @@ namespace sc {
                                                                empty);
       dmap = index_map_inverse( fmap );
     }
+    std::vector<unsigned int> occpi(nirrep_);
+    for(int i=0; i<nirrep_; i++) {
+      occpi[i] = frozen_docc_[i] + ras1_[i] + ras2_[i];
+    }
     onepdm_occ_[spin] = detail::rdopdm(spin,
-                                       this->reference()->mopi(),
+                                       occpi,
                                        dmap,
                                        this->basis_matrixkit());
 

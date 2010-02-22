@@ -37,11 +37,6 @@ namespace sc {
                                                                      const Ref<R12Technology::GeminalDescriptor> &geminal)
     : pairspin_(pairspin),
       geminal_(geminal) {
-    //ExEnv::out0() << "geminal type: " << geminal_->type() << endl;
-    //geminal_->print();
-    if(geminal_->type()!="STG" && geminal_->type()!="R12") {
-      throw InputError("CuspConsistentGeminalCoefficient::CuspConsistentGeminalCoefficient -- only works with Slater type geminals.",__FILE__,__LINE__);
-    }
   }
   
   double CuspConsistentGeminalCoefficient::C(unsigned int O, unsigned int W,

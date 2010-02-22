@@ -85,6 +85,11 @@ public:
     If MPI-I/O is used then it is user's responsibility to ensure
     that the file resides on a file system that supports MPI-I/O.
 
+    <dt><tt>df_basis</tt><dd> This optional GaussianBasisSet object specifies the density-fitting basis.
+    There is no default (no density fitting will be performed).
+
+    <dt><tt>memory</tt><dd> This keyword specifies the amount of memory to be used. The default is 32000000 bytes.
+
     <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
     is used by MO integrals transforms. The default is false.
 

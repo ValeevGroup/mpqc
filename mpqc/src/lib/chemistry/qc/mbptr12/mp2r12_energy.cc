@@ -805,7 +805,7 @@ RefSCMatrix MP2R12Energy::T2(SpinCase2 S)
  * MP2R12Energy_SpinOrbital
   -------------------------*/
 static ClassDesc MP2R12Energy_SpinOrbital_cd(
-                           typeid(MP2R12Energy_SpinOrbital),"MP2R12Energy_SpinOrbital",1,"virtual public MP2R12Energy",
+                           typeid(MP2R12Energy_SpinOrbital),"MP2R12Energy_SpinOrbital",1,"public MP2R12Energy",
                            0, 0, create<MP2R12Energy_SpinOrbital>);
 
 MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates,
@@ -831,7 +831,7 @@ void MP2R12Energy_SpinOrbital::save_data_state(StateOut &so){
  **************************************/
 
 static ClassDesc MP2R12Energy_SpinOrbital_new_cd(
-                           typeid(MP2R12Energy_SpinOrbital_new),"MP2R12Energy_SpinOrbital_new",1,"virtual public MP2R12Energy",
+                           typeid(MP2R12Energy_SpinOrbital_new),"MP2R12Energy_SpinOrbital_new",1,"public MP2R12Energy",
                            0, 0, create<MP2R12Energy_SpinOrbital_new>);
 
 MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
@@ -859,6 +859,31 @@ bool MP2R12Energy_SpinOrbital_new::diag() const {
 bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
   const bool result = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt;
   return result;
+}
+
+/*-------------------------
+ * MP2R12Energy_Diag
+  -------------------------*/
+static ClassDesc MP2R12Energy_Diag_cd(
+                           typeid(MP2R12Energy_Diag),"MP2R12Energy_Diag",1,"public MP2R12Energy",
+                           0, 0, create<MP2R12Energy_Diag>);
+
+MP2R12Energy_Diag::MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates,
+                                                   int debug) :
+  MP2R12Energy(r12intermediates,debug) {
+}
+
+MP2R12Energy_Diag::MP2R12Energy_Diag(StateIn &si) :
+  MP2R12Energy(si)
+{
+}
+
+MP2R12Energy_Diag::~MP2R12Energy_Diag()
+{
+}
+
+void MP2R12Energy_Diag::save_data_state(StateOut &so){
+  MP2R12Energy::save_data_state(so);
 }
 
 Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,

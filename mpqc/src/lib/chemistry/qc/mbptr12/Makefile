@@ -65,7 +65,7 @@ CXXSRCS = mbptr12.cc \
   r12int_eval.cc \
   coulomb.cc exchange.cc fock.cc \
   r12_amps.cc compute_amps.cc \
-  mp2r12_energy_compute.cc mp2_pair_energies.cc \
+  mp2r12_energy_compute.cc mp2r12_energy_diag.cc mp2_pair_energies.cc \
   compute_energy_a.cc mp2r12_energy.cc bc_contrib.cc dkh.cc \
   pt2r12.cc rdm.cc
   

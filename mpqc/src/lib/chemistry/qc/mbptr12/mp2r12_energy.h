@@ -226,6 +226,23 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
     void save_data_state(StateOut&);
 };
 
+/**
+ * The class MP2R12Energy_Diag is an implementation of MP2R12Energy that supports
+ * Ten-no's diagonal orbital-invariant ansatz for closed and open-shells.
+ * This class will supercede MP2R12Energy_SpinOrbital_new.
+ */
+class MP2R12Energy_Diag : public MP2R12Energy
+{
+    void compute_ef12();
+
+  public:
+    MP2R12Energy_Diag(StateIn&);
+    MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
+    ~MP2R12Energy_Diag();
+
+    void save_data_state(StateOut&);
+};
+
 Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
                                          int debug,
                                          bool use_new_version);

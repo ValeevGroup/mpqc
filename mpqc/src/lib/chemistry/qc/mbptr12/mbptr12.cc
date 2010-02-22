@@ -90,13 +90,6 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
 MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   MBPT2(keyval)
 {
-  // Verify that this is a closed-shell or high-spin open-shell system
-  CLSCF* clscfref = dynamic_cast<CLSCF*>(ref().pointer());
-  HSOSSCF* roscfref = dynamic_cast<HSOSSCF*>(ref().pointer());
-  if (roscfref != 0) {
-    ExEnv::out0() << indent << "WARNING: ROHF-based MBPT2-R12 method not completely tested yet" << endl;
-  }
-
   // MP2-R12 calculations can use virtual orbitals expanded in a separate basis set
   Ref<GaussianBasisSet> bs_vir = require_dynamic_cast<GaussianBasisSet*>(
       keyval->describedclassvalue("vir_basis").pointer(),

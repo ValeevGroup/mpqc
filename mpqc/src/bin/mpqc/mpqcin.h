@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <iostream>
+#include <string.h>
 
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
@@ -27,6 +28,46 @@ class MPQCInDatum {
 };
 
 class MPQCIn {
+
+  public:
+    struct Basis {
+        Basis() : name(0), uc(0), split(0), puream(0) {}
+        Basis(const char* n, bool u, bool s, bool p) : name(0), uc(u), split(s), puream(p) {
+          if (n) name = strdup(n);
+          if (uc.val()) split = false;  // uncontraction implies splitting
+        }
+        Basis(const Basis& other) : name(0), uc(0), split(0), puream(0) {
+          if (other.name.set()) name = strdup(other.name.val());
+          if (other.uc.set()) uc = other.uc;
+          if (other.split.set()) split = other.split;
+          if (other.puream.set()) puream = other.puream;
+        }
+        ~Basis() { if (name.val()) free(name.val()); }
+
+        void set_name(char* c) { name = c; }
+        void set_uc(bool b) { uc = b; }
+        void set_split(bool b) { split = b; }
+        void set_puream(bool b) { puream = b; }
+        void write(std::ostream &ostrs,
+                   const char *keyword) const;
+
+        bool operator==(const Basis& other) {
+          return strcmp(name.val(), other.name.val()) == 0 &&
+                 uc.val() == other.uc.val() &&
+                 split.val() == other.split.val() &&
+                 puream.val() == other.puream.val();
+        }
+        bool operator!=(const Basis& other) {
+          return ! (*this == other);
+        }
+
+        MPQCInDatum<char *> name; // name
+        MPQCInDatum<int> uc;      // force uncontracted?
+        MPQCInDatum<int> split;   // force split?
+        MPQCInDatum<int> puream;  // force puream?
+    };
+
+  private:
     MPQCInFlexLexer *lexer_;
     Ref<Molecule> mol_;
     MPQCInDatum<int> gradient_;
@@ -40,9 +81,9 @@ class MPQCIn {
     MPQCInDatum<int> charge_;
     MPQCInDatum<int> atom_charge_;
     MPQCInDatum<int> molecule_bohr_;
-    MPQCInDatum<char *> basis_;
-    MPQCInDatum<char *> auxbasis_;
-    MPQCInDatum<char *> dfbasis_;
+    Basis basis_;
+    Basis auxbasis_;
+    Basis dfbasis_;
     MPQCInDatum<char *> method_;
     MPQCInDatum<char *> accuracy_;
     MPQCInDatum<char *> lindep_;
@@ -58,6 +99,7 @@ class MPQCIn {
     MPQCInDatum<char *> r12method_ansatz_;
     MPQCInDatum<char *> symmetry_;
     MPQCInDatum<char *> memory_;
+    MPQCInDatum<char *> tmpdir_;
     MPQCInDatum<char *> debug_;
     MPQCInDatum<std::vector<int> *> alpha_;
     MPQCInDatum<std::vector<int> *> beta_;
@@ -75,15 +117,17 @@ class MPQCIn {
         Invalid
     };
     static std::string to_string(IntegralsFactoryType ifactory);
-    static const char* guess_basis(IntegralsFactoryType ifactory);
+    static Basis guess_basis(IntegralsFactoryType ifactory);
+    static bool psi_method(const char*);
+    static bool r12_method(const char*);
+
+    /// infer defaults for missing parameters
+    void infer_defaults();
+
     void write_energy_object(std::ostream&, const char *keyword,
                              const char *method,
-                             const char *basis, int coor,
+                             Basis const* basis, int coor,
                              IntegralsFactoryType& ifactory);
-    void write_basis_object(std::ostream&, const char *keyword,
-                            const char *basis,
-                            bool split = false,
-                            bool uncontract = false);
     void write_vector(std::ostream &ostrs,
                       const char *keyvalname,
                       const char *name,
@@ -110,11 +154,9 @@ class MPQCIn {
     void add_atom(char *, char *, char *, char *);
     void set_charge(char *);
     void set_method(char *);
-    void set_basis(char *);
-    void set_auxbasis(char *);
-    void set_dfbasis(char *);
     void set_multiplicity(char *);
     void set_memory(char *);
+    void set_tmpdir(char *);
     void set_accuracy(char *);
     void set_lindep(char *);
     void set_optimize(int);

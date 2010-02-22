@@ -23,9 +23,6 @@ MPQCIn::MPQCIn():
   nirrep_(0),
   mult_(1),
   charge_(0),
-  basis_(0),
-  auxbasis_(0),
-  dfbasis_(0),
   method_(0),
   optimize_(0),
   gradient_(0),
@@ -39,6 +36,7 @@ MPQCIn::MPQCIn():
   atom_charge_(0),
   symmetry_(0),
   memory_(0),
+  tmpdir_(0),
   molecule_bohr_(0),
   alpha_(0),
   beta_(0),  
@@ -61,8 +59,6 @@ MPQCIn::MPQCIn():
 MPQCIn::~MPQCIn()
 {
   delete lexer_;
-  if (basis_.val()) free(basis_.val());
-  if (auxbasis_.val()) free(auxbasis_.val());
   if (method_.val()) free(method_.val());
   if (symmetry_.val()) free(symmetry_.val());
   if (memory_.val()) free(memory_.val());
@@ -207,24 +203,6 @@ MPQCIn::set_molecule_bohr(int i)
 }
 
 void
-MPQCIn::set_basis(char *b)
-{
-  basis_ = b;
-}
-
-void
-MPQCIn::set_auxbasis(char *b)
-{
-  auxbasis_ = b;
-}
-
-void
-MPQCIn::set_dfbasis(char *b)
-{
-  dfbasis_ = b;
-}
-
-void
 MPQCIn::set_symmetry(char *s)
 {
   symmetry_ = s;
@@ -284,6 +262,12 @@ void
 MPQCIn::set_accuracy(char* c)
 {
   accuracy_ = c;
+}
+
+void
+MPQCIn::set_tmpdir(char* c)
+{
+  tmpdir_ = c;
 }
 
 void
@@ -443,7 +427,11 @@ MPQCIn::parse_string(const char *s)
   mol_->print_parsedkeyval(ostrs, 0, 0, 0);
   ostrs << decindent;
   ostrs << indent << ")" << endl;
-  write_basis_object(ostrs, "basis", basis_.val());
+
+  infer_defaults();
+
+  basis_.write(ostrs, "basis");
+
   ostrs << indent << "mpqc: (" << endl;
   ostrs << incindent;
   ostrs << indent << "do_gradient = " << gradient_.val() << endl;
@@ -490,6 +478,83 @@ MPQCIn::parse_string(const char *s)
   int n = 1 + strlen(ostrs.str().c_str());
   char *in_char_array = strcpy(new char[n],ostrs.str().c_str());
   return in_char_array;
+}
+
+namespace {
+
+  int pVXXF12_to_X(const char *name) {
+    int X = 0;
+    if (strncmp("cc-pV", name, 5) == 0 &&
+        strncmp("Z-F12", name+6, 5) == 0) {
+      switch (name[5]) {
+        case 'D': X = 2; break;
+        case 'T': X = 3; break;
+        case 'Q': X = 4; break;
+        default: throw InputError("unknown basis set", __FILE__, __LINE__);
+      }
+    }
+
+    return X;
+  }
+
+  std::string X_to_XZ(int X) {
+    if (X < 2 && X > 9) throw ProgrammingError("X in cc-pVXZ out of range",__FILE__,__LINE__);
+    const char* letters = "DTQ56789";
+    const char letter = letters[X-2];
+    std::ostringstream oss;
+    oss << letter << 'Z';
+    return oss.str();
+  }
+
+  char* X_to_pVXZF12CABS(int X) {
+    std::ostringstream oss;
+    oss << "cc-pV" << X_to_XZ(X) << "-F12-CABS";
+    return strdup(oss.str().c_str());
+  }
+
+  char* X_to_pVXZRI(int X) {
+    std::ostringstream oss;
+    oss << "cc-pV" << X_to_XZ(X) << "-RI";
+    return strdup(oss.str().c_str());
+  }
+
+  char* X_pVXZF12_STG(int X) {
+    switch (X) {
+      case 2: return strdup("0.9");
+      case 3: return strdup("1.0");
+      case 4: return strdup("1.1");
+      default:
+        throw ProgrammingError("invalid basis",__FILE__,__LINE__);
+    }
+  }
+}
+
+void
+MPQCIn::infer_defaults() {
+
+  // Psi can only use all harmonics or all cartesians -> set to all harmonics by default
+  const bool force_puream = psi_method(method_.val()) ? true : false;
+  basis_.set_puream(force_puream);
+
+  // R12 caculations using cc-pVXZ-F12 basis sets should use the corresponding RI and DF basis sets
+  // as well as geminal exponent
+  if (r12_method(method_.val())) {
+    const int X = pVXXF12_to_X(basis_.name.val());
+    if (X) {
+      if (!auxbasis_.name.set()) {
+        auxbasis_.name = X_to_pVXZF12CABS(X);
+      }
+      if (!dfbasis_.name.set()) {
+        dfbasis_.name = X_to_pVXZRI(X+1);
+      }
+      if (!r12method_f12_.set()) {
+        std::ostringstream oss;
+        oss << "stg-6g[" << X_pVXZF12_STG(X) << "]";
+        set_r12method_f12( strdup(oss.str().c_str()) );
+      }
+    }
+  }
+
 }
 
 void
@@ -614,7 +679,7 @@ void
 MPQCIn::write_energy_object(ostream &ostrs,
                             const char *keyword,
                             const char *method,
-                            const char *basis,
+                            Basis const* basis,
                             int coor, IntegralsFactoryType& ifactory)
 {
   int nelectron = int(mol_->nuclear_charge()+1e-6) - charge_.val();
@@ -635,6 +700,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
   int dft = 0;
   int uscf = 0;
   bool scf = false;
+  bool psi = false;
+  bool psi_ccr12 = false;
   ostringstream o_extra;
   SCFormIO::init_ostream(o_extra);
   o_extra << incindent;
@@ -691,10 +758,13 @@ MPQCIn::write_energy_object(ostream &ostrs,
             r12descr = R12TechDescr::default_instance();
             r12descr->corrfactor = "none";
             if (!strcmp(method, "RMP2")) {
-              reference_method = "HSOSHF";
+              reference_method = "RHF";
             }
             else {
               reference_method = "UHF";
+            }
+            if (optimize_.val() || gradient_.val() || frequencies_.val()) {
+              error("cannot do a gradient or optimization with open-shell MP2");
             }
           }
         }
@@ -709,30 +779,108 @@ MPQCIn::write_energy_object(ostream &ostrs,
               error("cannot do a gradient or optimization with ZAPT2");
             }
         }
+      // Local Perturbation Theory
+      else if (!strcmp(method, "LMP2")) {
+        guess_method = 0;
+        if (mult_.val() != 1) // only closed-shell allowed
+          throw InputError("LMP2 calculations are only allowed on closed-shell molecules",
+                           __FILE__, __LINE__);
+        reference_method = "RHF";
+        method_object = "LMP2";
+        if (optimize_.val() || gradient_.val() || frequencies_.val()) {
+          error("cannot do a gradient or optimization with LMP2");
+        }
+      }
       // MP2-R12
-      else if (strncmp(method, "MP2-R12", 7) == 0 ||
-               strncmp(method, "MP2-F12", 7) == 0) {
+      else if (strncmp(method,   "MP2-R12", 7) == 0 ||
+               strncmp(method,   "MP2-F12", 7) == 0 ||
+               strncmp(method+1, "MP2-R12", 7) == 0 || // R/U
+               strncmp(method+1, "MP2-F12", 7) == 0) { // R/U
         guess_method = 0;
         ask_auxbasis = true;
         ask_dfbasis = true;
         method_object = "MBPT2_R12";
-        reference_method = "HF";
+        if (method[0] == 'U')
+          reference_method = "UHF";
+        else if (method[0] == 'M' || method[0] == 'R')
+          reference_method = "RHF";
+        else
+          error2("invalid method: ", method);  // XMP2-R12, X!=U && X!=R
         r12descr = R12TechDescr::default_instance();
+      }
+      // CCSD(2)_R12 / CCSD(T)_R12
+      else if (strncmp(method,   "CCSD(2)_R12", 11) == 0 ||
+               strncmp(method,   "CCSD(2)_F12", 11) == 0 ||
+               strncmp(method+1, "CCSD(2)_R12", 11) == 0 || // R/U
+               strncmp(method+1, "CCSD(2)_F12", 11) == 0 || // R/U
+               strncmp(method,   "CCSD(T)_R12", 11) == 0 ||
+               strncmp(method,   "CCSD(T)_F12", 11) == 0 ||
+               strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
+               strncmp(method+1, "CCSD(T)_F12", 11) == 0) { // R/U
+        guess_method = 0;
+        ask_auxbasis = true;
+        ask_dfbasis = true;
+        psi = true;
+        if (method[0] == 'U')
+          reference_method = "PsiUHF";
+        else if (method[0] == 'C' || method[0] == 'R')
+          reference_method = "PsiRHF";
+        else
+          error2("invalid method: ", method);
+
+        if (method[5] == '2' || method[6] == '2') // (2)
+          method_object = "PsiCCSD_PT2R12";
+        else  // (T)
+          method_object = "PsiCCSD_PT2R12T";
+
+        r12descr = R12TechDescr::default_instance();
+        psi_ccr12 = true;
+
+      }
+      else if (!strcmp(method, "PsiHF")) {
+        if (mult_.val() == 1) method_object = "PsiCLHF";
+        else { uscf = 1; method_object = "PsiUHF"; }
+        scf = true;
+        psi = true;
+        guess_method = 0;
+      }
+      else if (!strcmp(method, "PsiRHF")) {
+        if (mult_.val() == 1) method_object = "PsiCLHF";
+        else method_object = "PsiHSOSHF";
+        scf = true;
+        psi = true;
+        guess_method = 0;
+      }
+      else if (!strcmp(method, "PsiUHF")) {
+        method_object = "PsiUHF";
+        uscf = 1;
+        scf = true;
+        psi = true;
+        guess_method = 0;
       }
       else error2("invalid method: ", method);
     }
   else error("no method given");
+
+  // is this calculation possible?
+  if (r12descr != 0 &&
+      (optimize_.val() || gradient_.val() || frequencies_.val())
+     ) {  // no gradients for R12 methods
+      error("cannot do a gradient or optimization with R12 methods");
+    }
+
+
   ostrs << indent << keyword << "<" << method_object << ">: (" << endl;
   ostrs << incindent;
   ostrs << o_extra.str();
 
   if (ask_auxbasis
-      && auxbasis_.val() != 0
-      && strcmp(auxbasis_.val(),basis_.val()) != 0)
-    write_basis_object(ostrs, "aux_basis", auxbasis_.val());
+      && auxbasis_.name.val() != 0
+      && auxbasis_ != basis_)
+    auxbasis_.write(ostrs, "aux_basis");
   if (ask_dfbasis
-      && dfbasis_.val() != 0)
-    write_basis_object(ostrs, "df_basis", dfbasis_.val());
+      && dfbasis_.name.val() != 0)
+    dfbasis_.write(ostrs, "df_basis");
 
   if (r12descr) {
     if (r12method_f12_.set()) r12descr->corrfactor = r12method_f12_.val();
@@ -782,60 +930,89 @@ MPQCIn::write_energy_object(ostream &ostrs,
         }
     }
   if (coor) ostrs << indent << "coor = $:mpqc:coor" << endl;
-  if (basis) {
-      write_basis_object(ostrs, "basis", basis);
+
+  // basis
+  if (basis) { // if basis is given explicitly, use it
+    if (psi) { // Psi only allows all puream or all cartesians. Default to all puream
+      Basis puream_basis(*basis);
+      puream_basis.write(ostrs, "basis");
     }
-  else {
-      ostrs << indent << "basis = $:basis" << endl;
+    else
+      basis->write(ostrs, "basis");
     }
+  else { // if basis is not given, refer to the top keyword
+    ostrs << indent << "basis = $:basis" << endl;
+  }
+
+  // dft
   if (dft) {
-      if (dftmethod_xc_.set()) {
-          ostrs << indent << "functional<StdDenFunctional>: ( name = \""
-                << dftmethod_xc_.val()
-                << "\" )" << endl;
-        }
-      else error("no exchange-correlation functional given");
-      if (dftmethod_grid_.set()) {
-          ostrs << indent << "integrator<RadialAngularIntegrator>: ( grid = \""
-                << dftmethod_grid_.val()
-                << "\" )" << endl;
-        }
+    if (dftmethod_xc_.set()) {
+      ostrs << indent << "functional<StdDenFunctional>: ( name = \""
+          << dftmethod_xc_.val()
+          << "\" )" << endl;
     }
-  if (dft || (!(basis
-                && !strcmp(guess_basis(ifactory),basis))
-              && strcmp(guess_basis(ifactory),basis_.val())
-              && guess_method)) {
+    else error("no exchange-correlation functional given");
+    if (dftmethod_grid_.set()) {
+      ostrs << indent << "integrator<RadialAngularIntegrator>: ( grid = \""
+            << dftmethod_grid_.val()
+            << "\" )" << endl;
+    }
+  }
+
+  // guess basis
+  {
+    Basis gbasis(guess_basis(ifactory));
+    bool gbasis_eq_basis;
+    if (basis)
+      gbasis_eq_basis = (gbasis == *basis);
+    else
+      gbasis_eq_basis = (gbasis == basis_);
+    if (dft || (guess_method && !gbasis_eq_basis) ) {
       if (frequencies_.val()) {
           ostrs << indent << "keep_guess_wavefunction = 1" << endl;;
         }
       write_energy_object(ostrs, "guess_wavefunction",
-                          guess_method, guess_basis(ifactory), 0, ifactory);
+                          guess_method, &gbasis, 0, ifactory);
     }
+  }
+
+  // reference wfn
   if (reference_method) {
-      ostrs << indent << "nfzc = auto" << endl;;
-      write_energy_object(ostrs, "reference",
-                          reference_method, 0, 0, ifactory);
-    }
+    ostrs << indent << "nfzc = auto" << endl;;
+    write_energy_object(ostrs, "reference",
+                        reference_method, 0, 0, ifactory);
+  }
+
+  // Psi wfn? need psi environment
+  if (psi && tmpdir_.set()) {
+    ostrs << indent << "psienv<PsiExEnv>: ( scratch = [\""
+          << tmpdir_.val()
+          << "\"] )" << endl;
+  }
+
+  // a Psi-based CC(2)_R12 object currently needs an MP2-R12 object
+  if (psi_ccr12) {
+    write_energy_object(ostrs, "mbpt2r12",
+                        "MP2-R12", 0, 0, ifactory);
+  }
+
   ostrs << decindent;
   ostrs << indent << ")" << endl;
 }
 
 void
-MPQCIn::write_basis_object(ostream &ostrs,
-                           const char *keyword,
-                           const char *basis,
-                           bool split,
-                           bool uncontract)
+MPQCIn::Basis::write(ostream &ostrs,
+                     const char *keyword) const
 {
   // validate input
-  if (!basis) error("no basis given");
-  if (uncontract) split = false;  // uncontraction implies splitting
+  if (!name.val()) throw InputError("no basis given", __FILE__, __LINE__);
 
-  if (!split && !uncontract) {
+  if (!split.val() && !uc.val()) {
     ostrs << indent << keyword << "<GaussianBasisSet>: (" << endl;
     ostrs << incindent;
     ostrs << indent << "molecule = $:molecule" << endl;
-    ostrs << indent << "name = \"" << basis << "\"" << endl;
+    ostrs << indent << "name = \"" << name.val() << "\"" << endl;
+    if (puream.val()) ostrs << indent << "puream = true" << endl;
     ostrs << decindent;
     ostrs << indent << ")" << endl;
   }
@@ -843,10 +1020,13 @@ MPQCIn::write_basis_object(ostream &ostrs,
     std::ostringstream oss;
     oss << "m" << keyword;
     const char* mkeyword = oss.str().c_str();
-    this->write_basis_object(ostrs, mkeyword, basis, false, false);
-    if (uncontract)
+    Basis mother(*this);
+    mother.set_uc(false);
+    mother.set_split(false);
+    mother.write(ostrs, mkeyword);
+    if (uc.val())
       ostrs << indent << keyword << "<UncontractedBasisSet>: (" << endl;
-    if (split)
+    if (split.val())
       ostrs << indent << keyword << "<SplitBasisSet>: (" << endl;
     ostrs << incindent;
     ostrs << indent << "basis = $..:" << mkeyword << endl;
@@ -871,10 +1051,27 @@ MPQCIn::to_string(IntegralsFactoryType ifactory) {
   return result;
 }
 
-const char*
+MPQCIn::Basis
 MPQCIn::guess_basis(IntegralsFactoryType ifactory) {
-  if (ifactory == IntV3)
-    return "STO-3G";
-  else
-    return "DZ (Dunning)";
+  // split STO-3G basis if factory is not IntV3
+  return Basis("STO-3G", false, (ifactory != IntV3), false);
+}
+
+bool
+MPQCIn::psi_method(const char* method) {
+  return (strncmp(method,   "Psi",         3) == 0 ||
+          strncmp(method,   "CCSD(2)_R12", 11) == 0 ||
+          strncmp(method,   "CCSD(2)_F12", 11) == 0 ||
+          strncmp(method+1, "CCSD(2)_R12", 11) == 0 || // R/U
+          strncmp(method+1, "CCSD(2)_F12", 11) == 0 || // R/U
+          strncmp(method,   "CCSD(T)_R12", 11) == 0 ||
+          strncmp(method,   "CCSD(T)_F12", 11) == 0 ||
+          strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
+          strncmp(method+1, "CCSD(T)_F12", 11) == 0 );
+}
+
+bool
+MPQCIn::r12_method(const char* method) {
+  return (strstr(method, "R12") != 0 ||
+          strstr(method, "F12") != 0);
 }

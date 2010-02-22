@@ -34,9 +34,9 @@ int yydebug =1;
 %token T_NOT
 %token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_DFBASIS T_EQUALS
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
-%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY
+%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY T_TMPDIR
 %token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_LINDEP T_MAXITER
-%token T_SCF
+%token T_SCF T_UC
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
 %token T_XC T_GRID
 %token T_RI T_F12 T_APP T_ANSATZ
@@ -67,12 +67,12 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_charge($3); }
             |   T_METHOD T_COLON string method_options_list
                                                 { set_method($3); }
-            |   T_BASIS T_COLON string
-                                                { set_basis($3); }
-            |   T_AUXBASIS T_COLON string
-                                                { set_auxbasis($3); }
-            |   T_DFBASIS T_COLON string
-                                                { set_dfbasis($3); }
+            |   T_BASIS T_COLON string basis_options_list
+                                                { basis_.set_name($3); }
+            |   T_AUXBASIS T_COLON string abasis_options_list
+                                                { auxbasis_.set_name($3); }
+            |   T_DFBASIS T_COLON string dbasis_options_list
+                                                { dfbasis_.set_name($3); }
             |   T_OPTIMIZE T_COLON bool optimize_options_list
                                                 { set_optimize($3); }
             |   T_GRADIENT T_COLON bool
@@ -83,12 +83,12 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_restart($3); }
             |   T_CHECKPOINT T_COLON bool
                                                 { set_checkpoint($3); }
+            |   T_TMPDIR T_COLON string
+                                                { set_tmpdir($3); }
             |   T_ACCURACY T_COLON string
                                                 { set_accuracy($3); }
             |   T_LINDEP T_COLON string
                                                 { set_lindep($3); }
-            |   T_GRADIENT T_COLON bool
-                                                { set_gradient($3); }
             |   T_DOCC T_COLON nonnegative_int_vector
                                                 { set_docc($3); }
             |   T_SOCC T_COLON nonnegative_int_vector
@@ -190,6 +190,48 @@ method_option:
             |   T_APP T_EQUALS string       { set_r12method_app($3); }
             |   T_RI T_EQUALS string        { set_r12method_ri($3); }
             |   T_ANSATZ T_EQUALS string    { set_r12method_ansatz($3); }
+            ;
+
+basis_options_list:
+                T_BEG_OPT basis_options T_END_OPT
+            |
+            ;
+
+basis_options:
+                basis_options basis_option
+            |
+            ;
+
+basis_option:
+                T_UC              { basis_.set_uc(true); }
+            ;
+
+abasis_options_list:
+                T_BEG_OPT abasis_options T_END_OPT
+            |
+            ;
+
+abasis_options:
+                abasis_options abasis_option
+            |
+            ;
+
+abasis_option:
+                T_UC              { auxbasis_.set_uc(true); }
+            ;
+
+dbasis_options_list:
+                T_BEG_OPT dbasis_options T_END_OPT
+            |
+            ;
+
+dbasis_options:
+                dbasis_options dbasis_option
+            |
+            ;
+
+dbasis_option:
+                T_UC              { dfbasis_.set_uc(true); }
             ;
 
 scf_options_list:

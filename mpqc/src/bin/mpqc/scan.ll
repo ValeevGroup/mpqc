@@ -60,6 +60,7 @@ qstring \"[^"\n]+\"
 "redundant"     { return T_REDUNDANT; }
 "restart"       { return T_RESTART; }
 "checkpoint"    { return T_CHECKPOINT; }
+"tmpdir"        { return T_TMPDIR; }
 "accuracy"      { return T_ACCURACY; }
 "lindep"        { return T_LINDEP; }
 "symmetry"      { return T_SYMMETRY; }
@@ -79,6 +80,7 @@ qstring \"[^"\n]+\"
 "app"           { return T_APP; }
 "ansatz"        { return T_ANSATZ; }
 "ri"            { return T_RI; }
+"uc"            { return T_UC; }
 "="             { return T_EQUALS; }
 ":"             { return T_COLON; }
 "("             { return T_BEG_OPT; }

@@ -20,8 +20,21 @@ molecule: (angstrom)
 <br>
 
 Comments begin with a <tt>%</tt> and continue to the end of the line.
-Basis set names containing special characters, such as a space
-or parentheses, must be quoted inside a pair of double quotes.
+Keyword values, such as method names, method options, or
+basis set names containing special characters, such as a space,
+parentheses, or square braket, must be quoted inside a pair of double quotes:
+<pre>
+\% DZP CCSD(T)_R12 energy of H2
+optimize: no
+method: "CCSD(T)_R12" (f12="stg-3g[1.0]")
+basis: "DZP (Dunning)"
+auxbasis: cc-pV6Z (uc)
+molecule:
+    H    0.000   0.000   0.700
+    H    0.000   0.000  -0.700
+</pre>
+<br>
+
 The accepted keywords are:
 
 <dl>
@@ -41,6 +54,9 @@ The accepted keywords are:
 
 <dt><tt>multiplicity</tt><dd> Gives the multiplicity of the molecule.  The
   default is <tt>1</tt>.
+
+<dt><tt>charge</tt><dd> Specificies the charge on the molecule.  The
+  default is <tt>0</tt>.
 
 <dt><tt>optimize</tt><dd> If <tt>yes</tt>, then an optimization will be
   performed.  The default is <tt>no</tt>.  The following options can be
@@ -63,9 +79,6 @@ The accepted keywords are:
   the energy. The default is 1e-6 (same as the default for <tt>value_accuracy</tt> keyword of
   Function class). The accuracy is not guaranteed to be achieved and thus the user is advised caution.
 
-<dt><tt>charge</tt><dd> Specificies the charge on the molecule.  The
-  default is <tt>0</tt>.
-
 <dt><tt>method</tt><dd> Specifices the method.  There is no default and the
   possible values are:
 
@@ -86,6 +99,8 @@ The accepted keywords are:
      <dt><tt>ZAPT2</tt><dd>  Z-averaged second-order perturbation theory.
                 Only available for <tt>multiplicity</tt> > 1.  No gradient,
                 optimization, or frequencies are possible.
+     <dt><tt>MP2</tt><dd> Second-order M&oslash;ller-Plesset perturbation theory. Unrestricted MP2 is used
+     if <tt>multiplicity</tt> > 1
      <dt><tt>MP2-R12</tt><dd> The explicitly-correlated MP2 method
                 (<tt>RMP2-R12</tt> and <tt>UMP2-R12</tt>, the R12 equivalents of <tt>RMP2</tt> and
                 <tt>UMP2</tt>, are also allowed).
@@ -179,21 +194,21 @@ The accepted keywords are:
 
 <dt><tt>basis</tt><dd> Specifies the basis set.  There is no default.  See
   the table in the GaussianBasisSet class documentation for the
-  available basis sets.
+  available basis sets. The following options can be
+  given:
+  <dl>
+     <dt><tt>uc</tt><dd> Uncontract the basis.
+  </dl>
 
 <dt><tt>auxbasis</tt><dd> Specifies the auxiliary basis set for R12
   methods.  There is no default.  See the table in the GaussianBasisSet
-  class documentation for the available basis sets.
+  class documentation for the available basis sets. Refer to the documentation for
+  keyword <tt>basis</tt> for the list of options that can be given.
 
 <dt><tt>dfbasis</tt><dd> Specifies the density-fitting basis set.
   There is no default.  See the table in the GaussianBasisSet
-  class documentation for the available basis sets.
-
-<dt><tt>restart</tt><dd> Set to <tt>yes</tt> to restart an optimization.
-  The default is <tt>no</tt>.
-
-<dt><tt>checkpoint</tt><dd> Set to <tt>no</tt> to not save checkpoint files
-  during an optimization.  The default is <tt>yes</tt>.
+  class documentation for the available basis sets. Refer to the documentation for
+  keyword <tt>basis</tt> for the list of options that can be given.
 
 <dt><tt>symmetry</tt><dd> Specifices the Schoenflies symbol of the point
   group of the molecule.  The default is <tt>auto</tt>, which will cause to
@@ -242,6 +257,15 @@ all HF and DFT methods. The following options can be used
   All eigevectors of the overlap matrix with eigenvalues smaller than the maximum eigenvalue
   times this tolerance are eliminated using the symmetric orthogonalization. The default is <tt>1e-8</tt>
   (same as the default for <tt>lindep_tol</tt> keyword of Wavefunction class).
+
+<dt><tt>restart</tt><dd> Set to <tt>yes</tt> to restart an optimization.
+  The default is <tt>no</tt>.
+
+<dt><tt>checkpoint</tt><dd> Set to <tt>no</tt> to not save checkpoint files
+  during an optimization.  The default is <tt>yes</tt>.
+
+<dt><tt>tmpdir</tt><dd> Gives the directory to which large temporary files will be
+written. The default is to write such files into the current working directory, i.e. <tt>./</tt>.
 
 <dt><tt>memory</tt><dd> Gives a hint for the amount of memory in bytes that
   can be used.  This is typically a lower bound, more memory will be used

@@ -44,9 +44,8 @@
 
 namespace sc {
   /**
-   * The class R12EnergyIntermediates stores all intermediates
-   * for F12 calculations and administrates their computation
-   * and / or provision.
+   * The class R12EnergyIntermediates is the front-end to
+   * R12 intermediates.
    */
   class R12EnergyIntermediates : virtual public SavableState {
     private:
@@ -90,14 +89,30 @@ namespace sc {
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
 class MP2R12Energy : virtual public SavableState {
+  private:
+    /** Computes values of all 2-body products from
+        space1 and space2 if electron 1 is at r1 and
+        electron 2 is at r2. equiv specifies whether electrons
+        are equivalent (same spin) or not */
+    RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
+                                      const SCVector3& r1, const SCVector3& r2) const;
+
+    // computes f12 contributions to the mp2 pair energies
+    virtual void compute_ef12() =0;
+
   protected:
     Ref<R12EnergyIntermediates> r12intermediates_;
     Ref<R12IntEval> r12eval_;
     int debug_;
     bool evaluated_;
 
+    RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
+    // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
+    RefSCMatrix C_[NSpinCases2];
+
     // Initialize SCVectors and SCMatrices
-    virtual void init_() = 0;
+    void init();
+
   public:
 
     MP2R12Energy(StateIn&);
@@ -115,28 +130,28 @@ class MP2R12Energy : virtual public SavableState {
     void set_debug(int debug);
     int get_debug() const;
 
-    virtual void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0()) = 0;
     /// total correlation energy (including OBS singles for non-Brillouin references)
-    virtual double energy() = 0;
-    virtual const RefSCVector& ef12(SpinCase2 S) const {};
-
-    virtual double emp2f12tot(SpinCase2 S) const = 0;
-    virtual double ef12tot(SpinCase2 S) const = 0;
+    double energy();
+    const RefSCVector& ef12(SpinCase2 S);
+    const RefSCVector& emp2f12(SpinCase2 S);
+    double emp2f12tot(SpinCase2 S);
+    double ef12tot(SpinCase2 S);
+    void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
     /** Computes values of pair function ij on tbgrid */
-    virtual void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
-                               const Ref<TwoBodyGrid>& tbgrid) {};
+    void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
+                               const Ref<TwoBodyGrid>& tbgrid);
 #endif
 
     /// Computes the first-order R12 wave function and MP2-R12 energy
-    virtual void compute() = 0;
+    void compute();
     /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
       */
-    virtual RefSCMatrix C(SpinCase2 S) = 0;
+    RefSCMatrix C(SpinCase2 S);
     /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
      */
-    virtual RefSCMatrix T2(SpinCase2 S) = 0;
+    RefSCMatrix T2(SpinCase2 S);
 };
 
 /**
@@ -146,52 +161,14 @@ class MP2R12Energy : virtual public SavableState {
  */
 class MP2R12Energy_SpinOrbital : public MP2R12Energy
 {
-  private:
-    RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
-    // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
-    RefSCMatrix C_[NSpinCases2];
+    void compute_ef12();
 
-    double emp2f12tot(SpinCase2 S) const;
-    double ef12tot(SpinCase2 S) const;
-
-    // Initialize SCVectors and SCMatrices
-    void init_();
-
-    /** Computes values of all 2-body products from
-        space1 and space2 if electron 1 is at r1 and
-        electron 2 is at r2. equiv specifies whether electrons
-        are equivalent (same spin) or not */
-    RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
-                                      const SCVector3& r1, const SCVector3& r2) const;
   public:
     MP2R12Energy_SpinOrbital(StateIn&);
     MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
     ~MP2R12Energy_SpinOrbital();
 
     void save_data_state(StateOut&);
-    void compute();
-
-    // Print pair energies nicely to so
-    void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
-
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  /** Computes values of pair function ij on tbgrid */
-  void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
-                             const Ref<TwoBodyGrid>& tbgrid);
-#endif
-  /// Returns the vector of second-order pair energies of spin case S
-  const RefSCVector& emp2f12(SpinCase2 S) const;
-  /// Returns the vector of F12 corrections to second-order pair energies of spin case S
-  const RefSCVector& ef12(SpinCase2 S) const;
-  /// Returns total MP2-R12 correlation energy
-  double energy();
-
-  /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
-  */
-  RefSCMatrix C(SpinCase2 S);
-  /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
-  */
-  RefSCMatrix T2(SpinCase2 S);
 };
 
 /**
@@ -206,19 +183,7 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
 class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 {
   private:
-    RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
-    // The coefficients are stored xy by ij, where xy is the geminal-multiplied pair
-    RefSCMatrix C_[NSpinCases2];
-
-    // Initialize SCVectors and SCMatrices
-    void init_();
-
-    /** Computes values of all 2-body products from
-        space1 and space2 if electron 1 is at r1 and
-        electron 2 is at r2. equiv specifies whether electrons
-        are equivalent (same spin) or not */
-    RefSCVector compute_2body_values_(bool equiv, const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
-                                      const SCVector3& r1, const SCVector3& r2) const;
+    void compute_ef12();
 
     RefSymmSCMatrix compute_B_non_pairspecific(const RefSymmSCMatrix &B,
                                                const RefSymmSCMatrix &X,
@@ -259,32 +224,6 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
     ~MP2R12Energy_SpinOrbital_new();
 
     void save_data_state(StateOut&);
-    void compute();
-
-    // Print pair energies nicely to so
-    void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
-
-#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  /** Computes values of pair function ij on tbgrid */
-  void compute_pair_function(unsigned int i, unsigned int j, SpinCase2 spincase2,
-                             const Ref<TwoBodyGrid>& tbgrid);
-#endif
-  /// Returns the vector of second-order pair energies of spin case S
-  const RefSCVector& emp2f12(SpinCase2 S) const;
-  /// Returns the vector of F12 corrections to second-order pair energies of spin case S
-  const RefSCVector& ef12(SpinCase2 S) const;
-  /// Returns total MP2-R12 correlation energy
-  double energy();
-
-  double emp2f12tot(SpinCase2 S) const;
-  double ef12tot(SpinCase2 S) const;
-
-  /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
-  */
-  RefSCMatrix C(SpinCase2 S);
-  /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
-  */
-  RefSCMatrix T2(SpinCase2 S);
 };
 
 Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,

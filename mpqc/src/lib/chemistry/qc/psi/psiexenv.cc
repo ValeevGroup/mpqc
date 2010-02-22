@@ -75,42 +75,26 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
     psiprefix_ = string(defaultpsiprefix_);
   add_to_path(psiprefix_);
 
-  char *cwdchar = keyval->pcharvalue("cwd");
-  if (cwdchar)
-    cwd_ = string(cwdchar);
-  else
-    cwd_ = string(defaultcwd_);
-  char *fileprefixchar = keyval->pcharvalue("fileprefix");
-  if (fileprefixchar)
-    fileprefix_ = string(fileprefixchar);
-  else
-    fileprefix_ = prefix + defaultfileprefix_;
+  cwd_ = keyval->stringvalue("cwd", KeyValValuestring(defaultcwd_));
+  fileprefix_ = keyval->stringvalue("fileprefix", KeyValValuestring(prefix + defaultfileprefix_));
 
   inputname_ = fileprefix_ + "." + defaultinputname_;
   outputname_ = fileprefix_ + "." + defaultoutputname_;
 
-  char *stdout_char = keyval->pcharvalue("stdout");
-  if (stdout_char)
-    stdout_ = string(stdout_char);
-  else
-    stdout_ = fileprefix_ + "." + defaultstdout_;
-  delete[] stdout_char;
-  char *stderr_char = keyval->pcharvalue("stderr");
-  if (stderr_char)
-    stderr_ = string(stderr_char);
-  else
-    stderr_ = fileprefix_ + "." + defaultstderr_;
-  delete[] stderr_char;
+  stdout_ = keyval->stringvalue("stdout", KeyValValuestring(fileprefix_ + "." + defaultstdout_));
+  stderr_ = keyval->stringvalue("stderr", KeyValValuestring(fileprefix_ + "." + defaultstderr_));
 
-  nscratch_ = keyval->intvalue("nscratch");
-  if (nscratch_ != keyval->count("scratch")) {
-    ExEnv::err0() << indent
-		  << "PsiExEnv: number of scratch directories != nscratch\n";
-    abort();
+  if (keyval->exists("scratch")) {
+    nscratch_ = keyval->count("scratch");
+    scratch_ = new string[nscratch_];
+    for (int i=0; i<nscratch_; i++)
+      scratch_[i] = keyval->stringvalue("scratch", i);
   }
-  scratch_ = new string[nscratch_];
-  for (int i=0; i<nscratch_; i++)
-    scratch_[i] = string(keyval->pcharvalue("scratch",i));
+  else {
+    nscratch_ = 1;
+    scratch_ = new string[nscratch_];
+    scratch_[0] = cwd_ + "/";
+  }
 
   char *s = new char[cwd_.size() + inputname_.size() + 2];
   sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
@@ -163,7 +147,7 @@ PsiExEnv::PsiExEnv() :
 PsiExEnv::~PsiExEnv()
 {
   delete[] scratch_;
-  delete chkpt_;
+  if (chkpt_) delete chkpt_;
 }
 
 void PsiExEnv::config_psio()

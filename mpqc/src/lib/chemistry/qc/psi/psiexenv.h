@@ -43,7 +43,6 @@
 namespace sc {
 
 /// PsiExEnv specifies a Psi execution environment.
-
 class PsiExEnv: public DescribedClass {
 
     // Static Psi info
@@ -83,8 +82,33 @@ class PsiExEnv: public DescribedClass {
     int me_;
 
   public:
-    PsiExEnv();
+    /** A KeyVal constructor is used to generate a PsiExEnv
+         object from the input. The full list of keywords
+         that are accepted is below.
+
+         <table border="1">
+
+         <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+         <tr><td><tt>cwd</tt><td>string<td>.<td>the current working directory (small Psi files will be written here)
+
+         <tr><td><tt>fileprefix</tt><td>string<td>filename.psi<td>the name prefix used for scratch files produced by Psi
+
+         <tr><td><tt>stdout</tt><td>string<td>fileprefix.stdout<td>the file to which Psi standard output will be written
+
+         <tr><td><tt>stderr</tt><td>string<td>fileprefix.stderr<td>the file to which Psi standard error will be written
+
+         <tr><td><tt>scratch</tt><td>array of strings<td>[ cwd/ ]<td> the location to which large scratch files will be written
+
+         </table>
+
+         In addition, the location of Psi executables can be overridden by setting environmental variable <tt>PSIBIN</tt>
+         to the desired value. By default, Psi executables in the location specified with the <tt>--with-psi</tt> configure
+         script option will be used.
+      */
     PsiExEnv(const Ref<KeyVal>&);
+    /// The default constructor is identical to the KeyVal constructor with all parameters set to their default values.
+    PsiExEnv();
     ~PsiExEnv();
 
     /// Returns the PsiInput object which PsiExEnv uses

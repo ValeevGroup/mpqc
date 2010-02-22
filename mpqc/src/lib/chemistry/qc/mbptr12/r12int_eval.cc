@@ -2389,7 +2389,7 @@ bool
 R12IntEval::bc() const {
   Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->ref();
   if (sdptr.nonnull()) {
-    if (sdptr->spin_restricted() && sdptr->spin_polarized())
+    if (!sdptr->obwfn()->spin_unrestricted() && sdptr->spin_polarized())
       return false; // ROHF
     else
       return true; // RHF, UHF

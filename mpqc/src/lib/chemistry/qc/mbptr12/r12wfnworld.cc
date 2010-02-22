@@ -64,7 +64,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
 {
   // by default use spin-adapted algorithms for closed-shell
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(true));
-  if (!ref->spin_polarized()) spinadapted_ = false;
+  if (ref->spin_polarized()) spinadapted_ = false;
 
   bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
       keyval->describedclassvalue("aux_basis").pointer(),

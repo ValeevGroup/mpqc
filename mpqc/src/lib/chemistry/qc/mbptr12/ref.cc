@@ -684,7 +684,7 @@ SD_RefWavefunction::init_spaces_unrestricted()
   }
   // use semicanonical orbitals for ROHF
   else {
-    Ref<HSOSSCF> hsosscf = dynamic_cast<HSOSSCF*>(ref().pointer());
+    Ref<HSOSSCF> hsosscf = dynamic_cast<HSOSSCF*>(obwfn().pointer());
     if (hsosscf.null())
       throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
     alpha_evecs = hsosscf->alpha_semicanonical_eigenvectors();

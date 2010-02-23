@@ -484,10 +484,11 @@ MPQCIn::parse_string(const char *s)
   ostrs << indent << ")" << endl; // end of mpqc section
 
   if (Status::need_psi_exenv) {
-    Status::need_psi_exenv = true;
-    ostrs << indent << "psienv<PsiExEnv>: ( scratch = [\""
-        << tmpdir_.val()
-        << "\"] )" << endl;
+    if (tmpdir_.set()) {
+      ostrs << indent << "psienv<PsiExEnv>: ( scratch = [\""
+          << tmpdir_.val()
+          << "\"] )" << endl;
+    }
   }
 
   ostrs << ends;
@@ -713,13 +714,13 @@ MPQCIn::write_energy_object(ostream &ostrs,
   const char *reference_method = 0;
   const char *guess_method = method;
   bool ask_auxbasis = false;
-  bool ask_dfbasis = false;
   R12TechDescr* r12descr = 0;
   int dft = 0;
   int uscf = 0;
   bool scf = false;
   bool psi = false;
   bool psi_ccr12 = false;
+  bool need_wfnworld = false;
   ostringstream o_extra;
   SCFormIO::init_ostream(o_extra);
   o_extra << incindent;
@@ -775,6 +776,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
             method_object = "MBPT2_R12";
             r12descr = R12TechDescr::default_instance();
             r12descr->corrfactor = "none";
+            need_wfnworld = true;
             if (!strcmp(method, "RMP2")) {
               reference_method = "RHF";
             }
@@ -816,7 +818,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
                strncmp(method+1, "MP2-F12", 7) == 0) { // R/U
         guess_method = 0;
         ask_auxbasis = true;
-        ask_dfbasis = true;
+        need_wfnworld = true;
         method_object = "MBPT2_R12";
         if (method[0] == 'U')
           reference_method = "UHF";
@@ -836,8 +838,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
                strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
                strncmp(method+1, "CCSD(T)_F12", 11) == 0) { // R/U
         guess_method = 0;
-        ask_auxbasis = true;
-        ask_dfbasis = true;
         psi = true;
         if (method[0] == 'U')
           reference_method = "PsiUHF";
@@ -851,7 +851,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else  // (T)
           method_object = "PsiCCSD_PT2R12T";
 
-        r12descr = R12TechDescr::default_instance();
+        //r12descr = R12TechDescr::default_instance();
         psi_ccr12 = true;
 
       }
@@ -898,9 +898,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
       && auxbasis_.name.val() != 0
       && auxbasis_ != basis_)
     auxbasis_.write(ostrs, "aux_basis");
-  if (ask_dfbasis
-      && dfbasis_.name.val() != 0)
-    dfbasis_.write(ostrs, "df_basis");
 
   if (r12descr) {
     if (r12method_f12_.set()) r12descr->corrfactor = r12method_f12_.val();
@@ -911,6 +908,13 @@ MPQCIn::write_energy_object(ostream &ostrs,
     switch (r12descr->corrfactor_type()) {
       case R12TechDescr::R12CorrFactor:  ifactory = Cints; break;
       case R12TechDescr::GTGCorrFactor:  ifactory = Libint2; break;
+    }
+
+    if (need_wfnworld) {
+      if (tmpdir_.set())
+        ostrs << indent << "ints_file = " << tmpdir_.val() << endl;
+      if (dfbasis_.name.val() != 0)
+        dfbasis_.write(ostrs, "df_basis");
     }
   }
 
@@ -1004,7 +1008,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
   }
 
   // Psi wfn? need psi environment
-  if (psi && tmpdir_.set()) {
+  if (psi) {
     Status::need_psi_exenv = true;
     ostrs << indent << "psienv = $:psienv" << endl;
   }

@@ -55,13 +55,18 @@ void MP2R12Energy_Diag::compute_ef12() {
   if (diag == false)
     throw ProgrammingError("only diagonal ansatz supported",__FILE__,__LINE__);
 
-  // WARNING only RHF and UHF are considered
-  const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
+  // obtain some preliminaries
+  Ref<TwoBodyFourCenterMOIntsRuntime> moints4_rtime = r12world->world()->moints_runtime4();
+  Ref<TwoBodyIntDescr> descr_f12 = r12world->r12tech()->corrfactor()->tbintdescr(r12world->integral(),0);
+  Ref<TwoBodyIntDescr> descr_f12f12 = r12world->r12tech()->corrfactor()->tbintdescr(r12world->integral(),0,0);
+  const std::string descr_f12_key = moints4_rtime->descr_key(descr_f12);
+  const std::string descr_f12f12_key = moints4_rtime->descr_key(descr_f12f12);
 
   //
   // Evaluate pair energies:
   // distribute workload among nodes by pair index
   //
+  const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for (int spin = 0; spin < num_unique_spincases2; spin++) {
 
     const SpinCase2 spincase = static_cast<SpinCase2> (spin);
@@ -85,7 +90,24 @@ void MP2R12Energy_Diag::compute_ef12() {
 
     // compute intermediates V, X, B
     //
-    // V =
+    // V = (f12/r12) -
+    const std::string iiii_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(), occ2_act->id(),
+                                                                    occ1_act->id(), occ2_act->id(),
+                                                                    descr_f12_key,
+                                                                    TwoBodyIntLayout::b1b2_k1k2);
+    Ref<TwoBodyMOIntsTransform> iiii_tform = moints4_rtime->get(iiii_key);
+    iiii_tform->compute();
+    Ref<DistArray4> iiii_ints = iiii_tform->ints_acc();
+    iiii_ints->activate();
+#if 0
+    for(int p=0; p<n; ++p) {
+      for(int q=0; q<n; ++q) {
+        const double* rs_blk = iiii_ints->retrieve_pair_block(p, q, r12world->r12tech()->corrfactor()->tbint_type_f12eri());
+
+        iiii_ints->release_pair_block(p, q, TwoBodyOper::eri);
+      }
+    }
+#endif
 
     // for each ij pair compute its contribution to the Hylleraas functional for second-order R12 energy
 

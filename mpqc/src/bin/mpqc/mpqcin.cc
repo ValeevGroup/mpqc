@@ -860,21 +860,23 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else { uscf = 1; method_object = "PsiUHF"; }
         scf = true;
         psi = true;
-        guess_method = 0;
+        guess_method = "HF";
       }
       else if (!strcmp(method, "PsiRHF")) {
+        guess_method = "RHF";
         if (mult_.val() == 1) method_object = "PsiCLHF";
         else method_object = "PsiHSOSHF";
         scf = true;
         psi = true;
-        guess_method = 0;
+        guess_method = "RHF";
       }
       else if (!strcmp(method, "PsiUHF")) {
+        guess_method = "UHF";
         method_object = "PsiUHF";
         uscf = 1;
         scf = true;
         psi = true;
-        guess_method = 0;
+        guess_method = "UHF";
       }
       else error2("invalid method: ", method);
     }

@@ -92,7 +92,7 @@ class MBPT2_R12: public MBPT2 {
 
   public:
     MBPT2_R12(StateIn&);
-    /** The KeyVal constructor uses keywords of MBPT2 and R12WavefunctionWorld and the following keywords
+    /** The KeyVal constructor uses keywords of MBPT2, WavefunctionWorld, and R12WavefunctionWorld, and the following keywords
         <dl>
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted

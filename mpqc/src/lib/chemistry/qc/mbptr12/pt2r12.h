@@ -43,9 +43,9 @@ namespace sc {
   /// PT2R12: a universal second-order R12 correction
   class PT2R12 : public Wavefunction {
     public:
-      /** A KeyVal constructor is used to generate a RDM<R>
-          object from the input. The full list of keywords
-          that are accepted is below.
+      /** A KeyVal constructor is used to generate a PT2R12
+          object from the input. This constructor uses keywords of WavefunctionWorld,
+          plus following list of keywords.
 
           <table border="1">
 

@@ -401,6 +401,15 @@ MPQCIn::check_string(const char *s)
   return 1;
 }
 
+namespace {
+
+  struct Status {
+      static bool need_psi_exenv;
+  };
+  bool Status::need_psi_exenv = false;
+
+}
+
 char *
 MPQCIn::parse_string(const char *s)
 {
@@ -472,7 +481,15 @@ MPQCIn::parse_string(const char *s)
     }
 
   ostrs << decindent;
-  ostrs << indent << ")" << endl;
+  ostrs << indent << ")" << endl; // end of mpqc section
+
+  if (Status::need_psi_exenv) {
+    Status::need_psi_exenv = true;
+    ostrs << indent << "psienv<PsiExEnv>: ( scratch = [\""
+        << tmpdir_.val()
+        << "\"] )" << endl;
+  }
+
   ostrs << ends;
 
   int n = 1 + strlen(ostrs.str().c_str());
@@ -527,6 +544,7 @@ namespace {
         throw ProgrammingError("invalid basis",__FILE__,__LINE__);
     }
   }
+
 }
 
 void
@@ -985,9 +1003,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
 
   // Psi wfn? need psi environment
   if (psi && tmpdir_.set()) {
-    ostrs << indent << "psienv<PsiExEnv>: ( scratch = [\""
-          << tmpdir_.val()
-          << "\"] )" << endl;
+    Status::need_psi_exenv = true;
+    ostrs << indent << "psienv = $:psienv" << endl;
   }
 
   // a Psi-based CC(2)_R12 object currently needs an MP2-R12 object

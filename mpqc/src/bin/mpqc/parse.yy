@@ -59,10 +59,10 @@ assignments:    assignments assignment
 
 assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                  molecule                       { end_molecule(); }
+            |   T_SYMMETRY T_COLON string
+                                                { set_symmetry($3); }
             |   T_MULTIPLICITY T_COLON string
                                                 { set_multiplicity($3); }
-            |   T_MEMORY T_COLON string
-                                                { set_memory($3); }
             |   T_CHARGE T_COLON string
                                                 { set_charge($3); }
             |   T_METHOD T_COLON string method_options_list
@@ -83,6 +83,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_restart($3); }
             |   T_CHECKPOINT T_COLON bool
                                                 { set_checkpoint($3); }
+            |   T_MEMORY T_COLON string
+                                                { set_memory($3); }
             |   T_TMPDIR T_COLON string
                                                 { set_tmpdir($3); }
             |   T_ACCURACY T_COLON string

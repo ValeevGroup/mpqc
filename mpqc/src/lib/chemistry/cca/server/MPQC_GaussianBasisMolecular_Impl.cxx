@@ -41,7 +41,7 @@ using namespace sc;
 
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasisMolecular._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::GaussianBasisMolecular_impl::GaussianBasisMolecular_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::GaussianBasisMolecular::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 

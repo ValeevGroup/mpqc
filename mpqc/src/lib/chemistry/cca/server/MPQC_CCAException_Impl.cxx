@@ -35,7 +35,7 @@
 #include <iomanip>
 // DO-NOT-DELETE splicer.end(MPQC.CCAException._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::CCAException_impl::CCAException_impl() : StubBase(reinterpret_cast< 
   void*>(::MPQC::CCAException::_wrapObj(reinterpret_cast< void*>(this))),false) 
   , _wrapped(true){ 
@@ -85,7 +85,7 @@ MPQC::CCAException_impl::setCCAExceptionType_impl (
  */
 void
 MPQC::CCAException_impl::packObj_impl (
-  /* in */::sidl::io::Serializer ser ) 
+  /* in */::sidl::io::Serializer& ser ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CCAException.packObj)
   // Insert-Code-Here {MPQC.CCAException.packObj} (packObj method)
@@ -104,7 +104,7 @@ MPQC::CCAException_impl::packObj_impl (
  */
 void
 MPQC::CCAException_impl::unpackObj_impl (
-  /* in */::sidl::io::Deserializer des ) 
+  /* in */::sidl::io::Deserializer& des ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CCAException.unpackObj)
   // Insert-Code-Here {MPQC.CCAException.unpackObj} (unpackObj method)

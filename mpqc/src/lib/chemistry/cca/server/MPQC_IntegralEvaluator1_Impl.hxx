@@ -43,13 +43,13 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._hincludes)
 #include "integral_evaluator.h"
 #include "reorder_engine.h"
 using namespace sc;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace MpqcCca;
-// DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._includes)
+// DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._hincludes)
 
 namespace MPQC { 
 
@@ -60,6 +60,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._inherits)
   // Insert-Code-Here {MPQC.IntegralEvaluator1._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -86,8 +87,19 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    IntegralEvaluator1_impl( struct MPQC_IntegralEvaluator1__object * s ) : 
-      StubBase(s,true), _wrapped(false) { _ctor(); }
+      IntegralEvaluator1_impl( struct MPQC_IntegralEvaluator1__object * ior ) : 
+        StubBase(ior,true), 
+      ::Chemistry::QC::GaussianBasis::IntegralEvaluatorInterface((ior==NULL) ? 
+        NULL : &((
+        *ior).d_chemistry_qc_gaussianbasis_integralevaluatorinterface)),
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator1Interface((ior==NULL) ? 
+      NULL : &((
+      *ior).d_chemistry_qc_gaussianbasis_integralevaluator1interface)) , 
+      _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -112,7 +124,7 @@ namespace MPQC {
     void
     add_evaluator_impl (
       /* in */void* eval,
-      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc
     )
     ;
 
@@ -121,7 +133,7 @@ namespace MPQC {
      */
     void
     set_basis_impl (
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1
     )
     ;
 
@@ -143,7 +155,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_array_impl (
-      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc
     )
     ;
 
@@ -191,8 +203,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1._hmisc)
 // Insert-Code-Here {MPQC.IntegralEvaluator1._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._misc)
+// DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._hmisc)
 
 #endif

@@ -36,7 +36,7 @@
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator1._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::IntegralEvaluator1_impl::IntegralEvaluator1_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::IntegralEvaluator1::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 
@@ -75,7 +75,7 @@ void MPQC::IntegralEvaluator1_impl::_load() {
 void
 MPQC::IntegralEvaluator1_impl::add_evaluator_impl (
   /* in */void* eval,
-  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.add_evaluator)
 
@@ -90,7 +90,7 @@ MPQC::IntegralEvaluator1_impl::add_evaluator_impl (
  */
 void
 MPQC::IntegralEvaluator1_impl::set_basis_impl (
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1 ) 
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.set_basis)
 
@@ -142,7 +142,7 @@ MPQC::IntegralEvaluator1_impl::get_descriptor_impl ()
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator1_impl::get_array_impl (
-  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator1.get_array)
 

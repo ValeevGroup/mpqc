@@ -49,7 +49,7 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel._hincludes)
 
 #include <Chemistry_MoleculeViewerInterface.hxx>
 #include <Chemistry_QC_ModelFactoryInterface.hxx>
@@ -59,7 +59,7 @@
 #include <gov_cca_ports_ParameterPortFactory.hxx>
 #include <gov_cca_ports_ParameterPort.hxx>
 
-// DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._includes)
+// DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._hincludes)
 
 namespace MPQC { 
 
@@ -70,6 +70,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel._inherits)
   ,public CcaChemGeneric::CoordinateModel
   // DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -113,8 +114,17 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    CoordinateModel_impl( struct MPQC_CoordinateModel__object * s ) : StubBase(
-      s,true), _wrapped(false) { _ctor(); }
+      CoordinateModel_impl( struct MPQC_CoordinateModel__object * ior ) : 
+        StubBase(ior,true), 
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+      ::ChemistryOpt::CoordinateModelInterface((ior==NULL) ? NULL : &((
+        *ior).d_chemistryopt_coordinatemodelinterface)),
+    ::gov::cca::Component((ior==NULL) ? NULL : &((*ior).d_gov_cca_component)) , 
+      _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -157,7 +167,7 @@ namespace MPQC {
      */
     void
     set_model_impl (
-      /* in */::Chemistry::QC::ModelInterface model
+      /* in */::Chemistry::QC::ModelInterface& model
     )
     ;
 
@@ -196,7 +206,7 @@ namespace MPQC {
      */
     double
     get_energy_impl (
-      /* in array<double> */::sidl::array<double> x
+      /* in array<double> */::sidl::array<double>& x
     )
     ;
 
@@ -214,7 +224,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_gradient_impl (
-      /* in array<double> */::sidl::array<double> x
+      /* in array<double> */::sidl::array<double>& x
     )
     ;
 
@@ -232,7 +242,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_hessian_impl (
-      /* in array<double> */::sidl::array<double> x
+      /* in array<double> */::sidl::array<double>& x
     )
     ;
 
@@ -252,9 +262,9 @@ namespace MPQC {
      */
     void
     get_energy_and_gradient_impl (
-      /* in array<double> */::sidl::array<double> x,
+      /* in array<double> */::sidl::array<double>& x,
       /* out */double& f,
-      /* in array<double> */::sidl::array<double> g
+      /* in array<double> */::sidl::array<double>& g
     )
     ;
 
@@ -272,8 +282,8 @@ namespace MPQC {
      */
     void
     guess_hessian_solve_impl (
-      /* in array<double> */::sidl::array<double> effective_grad,
-      /* in array<double> */::sidl::array<double> effective_step,
+      /* in array<double> */::sidl::array<double>& effective_grad,
+      /* in array<double> */::sidl::array<double>& effective_step,
       /* in */void* first_geom
     )
     ;
@@ -319,19 +329,19 @@ namespace MPQC {
      */
     void
     setServices_impl (
-      /* in */::gov::cca::Services services
+      /* in */::gov::cca::Services& services
     )
     // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
   };  // end class CoordinateModel_impl
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel._hmisc)
 // Insert-Code-Here {MPQC.CoordinateModel._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._misc)
+// DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._hmisc)
 
 #endif

@@ -40,9 +40,9 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._hincludes)
 // Put additional includes or other arbitrary code here...
-// DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._includes)
+// DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._hincludes)
 
 namespace MPQC { 
 
@@ -66,6 +66,7 @@ namespace MPQC {
    */
 
   // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -85,9 +86,14 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    ComponentClassDescription_impl( struct 
-      MPQC_ComponentClassDescription__object * s ) : StubBase(s,true), _wrapped(
-      false) { _ctor(); }
+      ComponentClassDescription_impl( struct 
+        MPQC_ComponentClassDescription__object * ior ) : StubBase(ior,true), 
+    ::gov::cca::ComponentClassDescription((ior==NULL) ? NULL : &((
+      *ior).d_gov_cca_componentclassdescription)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -128,15 +134,15 @@ namespace MPQC {
      */
     ::std::string
     getComponentClassName_impl() // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
   };  // end class ComponentClassDescription_impl
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._hmisc)
 // Put miscellaneous things here...
-// DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._misc)
+// DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._hmisc)
 
 #endif

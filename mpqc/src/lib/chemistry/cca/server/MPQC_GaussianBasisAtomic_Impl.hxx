@@ -40,7 +40,7 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.GaussianBasisAtomic._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.GaussianBasisAtomic._hincludes)
 
 #include <chemistry/qc/basis/basis.h>
 #include <MPQC_GaussianBasisShell.hxx>
@@ -49,7 +49,7 @@ using namespace Chemistry::QC::GaussianBasis;
 using namespace sc;
 using namespace MPQC;
 
-// DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._includes)
+// DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._hincludes)
 
 namespace MPQC { 
 
@@ -60,6 +60,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasisAtomic._inherits)
   // Insert-Code-Here {MPQC.GaussianBasisAtomic._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -86,8 +87,14 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    GaussianBasisAtomic_impl( struct MPQC_GaussianBasisAtomic__object * s ) : 
-      StubBase(s,true), _wrapped(false) { _ctor(); }
+      GaussianBasisAtomic_impl( struct MPQC_GaussianBasisAtomic__object * ior ) 
+        : StubBase(ior,true), 
+    ::Chemistry::QC::GaussianBasis::AtomicInterface((ior==NULL) ? NULL : &((
+      *ior).d_chemistry_qc_gaussianbasis_atomicinterface)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -173,8 +180,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.GaussianBasisAtomic._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.GaussianBasisAtomic._hmisc)
 // Insert-Code-Here {MPQC.GaussianBasisAtomic._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._misc)
+// DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._hmisc)
 
 #endif

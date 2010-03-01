@@ -43,10 +43,10 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.CCAException._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.CCAException._hincludes)
 #include <vector>
 #include <string>
-// DO-NOT-DELETE splicer.end(MPQC.CCAException._includes)
+// DO-NOT-DELETE splicer.end(MPQC.CCAException._hincludes)
 
 namespace MPQC { 
 
@@ -57,6 +57,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.CCAException._inherits)
   // Insert-Code-Here {MPQC.CCAException._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.CCAException._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -77,8 +78,18 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    CCAException_impl( struct MPQC_CCAException__object * s ) : StubBase(s,
-      true), _wrapped(false) { _ctor(); }
+      CCAException_impl( struct MPQC_CCAException__object * ior ) : StubBase(
+        ior,true), 
+      ::sidl::io::Serializable((ior==NULL) ? NULL : &((
+        *ior).d_sidl_io_serializable)),
+      ::sidl::BaseException((ior==NULL) ? NULL : &((
+        *ior).d_sidl_baseexception)),
+    ::gov::cca::CCAException((ior==NULL) ? NULL : &((
+      *ior).d_gov_cca_ccaexception)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -111,7 +122,7 @@ namespace MPQC {
      */
     void
     packObj_impl (
-      /* in */::sidl::io::Serializer ser
+      /* in */::sidl::io::Serializer& ser
     )
     ;
 
@@ -120,7 +131,7 @@ namespace MPQC {
      */
     void
     unpackObj_impl (
-      /* in */::sidl::io::Deserializer des
+      /* in */::sidl::io::Deserializer& des
     )
     ;
 
@@ -179,8 +190,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.CCAException._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.CCAException._hmisc)
 // Insert-Code-Here {MPQC.CCAException._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.CCAException._misc)
+// DO-NOT-DELETE splicer.end(MPQC.CCAException._hmisc)
 
 #endif

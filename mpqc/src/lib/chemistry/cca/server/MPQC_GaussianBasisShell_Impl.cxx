@@ -28,7 +28,7 @@
 // Insert-Code-Here {MPQC.GaussianBasisShell._includes} (additional includes or code)
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasisShell._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::GaussianBasisShell_impl::GaussianBasisShell_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::GaussianBasisShell::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 

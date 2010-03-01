@@ -67,12 +67,12 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._hincludes)
 #include <sstream>
 #include <vector>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/cints/cints.h>
-// DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._includes)
+// DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._hincludes)
 
 namespace MPQC { 
 
@@ -84,6 +84,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._inherits)
   // Insert-Code-Here {MPQC.CintsEvaluatorFactory._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -132,8 +133,18 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    CintsEvaluatorFactory_impl( struct MPQC_CintsEvaluatorFactory__object * s ) 
-      : StubBase(s,true), _wrapped(false) { _ctor(); }
+      CintsEvaluatorFactory_impl( struct MPQC_CintsEvaluatorFactory__object * 
+        ior ) : StubBase(ior,true), 
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+      ::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface((
+        ior==NULL) ? NULL : &((
+        *ior).d_chemistry_qc_gaussianbasis_integralevaluatorfactoryinterface)),
+    ::gov::cca::Component((ior==NULL) ? NULL : &((*ior).d_gov_cca_component)) , 
+      _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -167,7 +178,7 @@ namespace MPQC {
      */
     bool
     is_supported_impl (
-      /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc
+      /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc
     )
     ;
 
@@ -190,8 +201,8 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator1Interface
     get_evaluator1_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1
     )
     ;
 
@@ -203,9 +214,9 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface
     get_evaluator2_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2
     )
     ;
 
@@ -217,10 +228,10 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3Interface
     get_evaluator3_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs3
     )
     ;
 
@@ -232,11 +243,11 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4Interface
     get_evaluator4_impl (
-      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3,
-      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs4
+      /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs3,
+      /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs4
     )
     ;
 
@@ -267,19 +278,19 @@ namespace MPQC {
      */
     void
     setServices_impl (
-      /* in */::gov::cca::Services services
+      /* in */::gov::cca::Services& services
     )
     // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
   };  // end class CintsEvaluatorFactory_impl
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.CintsEvaluatorFactory._hmisc)
 // Insert-Code-Here {MPQC.CintsEvaluatorFactory._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._misc)
+// DO-NOT-DELETE splicer.end(MPQC.CintsEvaluatorFactory._hmisc)
 
 #endif

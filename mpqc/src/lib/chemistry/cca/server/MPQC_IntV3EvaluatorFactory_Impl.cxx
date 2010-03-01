@@ -86,7 +86,7 @@ using namespace ChemistryDescrCXX;
 
 // DO-NOT-DELETE splicer.end(MPQC.IntV3EvaluatorFactory._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::IntV3EvaluatorFactory_impl::IntV3EvaluatorFactory_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::IntV3EvaluatorFactory::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 
@@ -252,7 +252,7 @@ MPQC::IntV3EvaluatorFactory_impl::get_descriptor_impl ()
  */
 bool
 MPQC::IntV3EvaluatorFactory_impl::is_supported_impl (
-  /* in */::Chemistry::QC::GaussianBasis::DescrInterface desc ) 
+  /* in */::Chemistry::QC::GaussianBasis::DescrInterface& desc ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.is_supported)
 
@@ -292,8 +292,8 @@ MPQC::IntV3EvaluatorFactory_impl::set_storage_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator1Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator1_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1 ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator1)
 
@@ -340,9 +340,9 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator1_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator2Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2 ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator2)
 
@@ -478,10 +478,10 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator2_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator3Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator3_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3 ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs3 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator3)
 
@@ -541,11 +541,11 @@ MPQC::IntV3EvaluatorFactory_impl::get_evaluator3_impl (
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator4Interface
 MPQC::IntV3EvaluatorFactory_impl::get_evaluator4_impl (
-  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface desc,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs1,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs2,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs3,
-  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface bs4 ) 
+  /* in */::Chemistry::QC::GaussianBasis::CompositeDescrInterface& desc,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs1,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs2,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs3,
+  /* in */::Chemistry::QC::GaussianBasis::MolecularInterface& bs4 ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.get_evaluator4)
 
@@ -644,10 +644,10 @@ MPQC::IntV3EvaluatorFactory_impl::finalize_impl ()
  */
 void
 MPQC::IntV3EvaluatorFactory_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntV3EvaluatorFactory.setServices)
 

@@ -42,7 +42,7 @@
 using namespace std;
 // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::SimpleDriver_impl::SimpleDriver_impl() : StubBase(reinterpret_cast< 
   void*>(::MPQC::SimpleDriver::_wrapObj(reinterpret_cast< void*>(this))),false) 
   , _wrapped(true){ 
@@ -99,10 +99,10 @@ void MPQC::SimpleDriver_impl::_load() {
  */
 void
 MPQC::SimpleDriver_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver.setServices)
 
@@ -198,10 +198,12 @@ MPQC::SimpleDriver_impl::go_impl ()
 
   std::cout << "SIMPLE DRIVER: getting model\n";
   model_ = factory_.get_model();
+  std::cerr << "simple driver got a model\n";
   if (model_._is_nil()) {
       std::cout << "error getting model\n";
       abort();
   }
+  std::cerr << "got model\n";
 
   std::cout << "SIMPLE DRIVER: getting molecule\n";
   molecule_ = model_.get_molecule();

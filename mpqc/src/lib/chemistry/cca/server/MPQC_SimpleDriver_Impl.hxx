@@ -46,7 +46,7 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._hincludes)
 #include "Chemistry_QC_ModelFactoryInterface.hxx"
 #include "Chemistry_QC_ModelInterface.hxx"
 #include "Chemistry_MoleculeInterface.hxx"
@@ -54,7 +54,7 @@
 #include "parameters/parametersStar.h"
 #include "gov_cca_ports_ParameterPortFactory.hxx"
 #include "gov_cca_ports_ParameterPort.hxx"
-// DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._includes)
+// DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._hincludes)
 
 namespace MPQC { 
 
@@ -65,6 +65,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._inherits)
   // Insert-Code-Here {MPQC.SimpleDriver._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -94,8 +95,16 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    SimpleDriver_impl( struct MPQC_SimpleDriver__object * s ) : StubBase(s,
-      true), _wrapped(false) { _ctor(); }
+      SimpleDriver_impl( struct MPQC_SimpleDriver__object * ior ) : StubBase(
+        ior,true), 
+      ::gov::cca::Component((ior==NULL) ? NULL : &((*ior).d_gov_cca_component)),
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+    ::gov::cca::ports::GoPort((ior==NULL) ? NULL : &((
+      *ior).d_gov_cca_ports_goport)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -134,11 +143,11 @@ namespace MPQC {
      */
     void
     setServices_impl (
-      /* in */::gov::cca::Services services
+      /* in */::gov::cca::Services& services
     )
     // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
 
@@ -155,8 +164,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.SimpleDriver._hmisc)
 // Insert-Code-Here {MPQC.SimpleDriver._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._misc)
+// DO-NOT-DELETE splicer.end(MPQC.SimpleDriver._hmisc)
 
 #endif

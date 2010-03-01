@@ -46,9 +46,9 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._hincludes)
 // Put additional includes or other arbitrary code here...
-// DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
+// DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._hincludes)
 
 namespace MPQC { 
 
@@ -71,6 +71,7 @@ namespace MPQC {
    */
 
   // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -89,8 +90,17 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    ComponentFactory_impl( struct MPQC_ComponentFactory__object * s ) : 
-      StubBase(s,true), _wrapped(false) { _ctor(); }
+      ComponentFactory_impl( struct MPQC_ComponentFactory__object * ior ) : 
+        StubBase(ior,true), 
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+      ::gov::cca::ports::ComponentRepository((ior==NULL) ? NULL : &((
+        *ior).d_gov_cca_ports_componentrepository)),
+    ::ccaffeine::ports::ComponentFactory((ior==NULL) ? NULL : &((
+      *ior).d_ccaffeine_ports_componentfactory)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -132,8 +142,8 @@ namespace MPQC {
      */
     ::sidl::array< ::gov::cca::ComponentClassDescription>
     getAvailableComponentClasses_impl() // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
     /**
@@ -156,7 +166,7 @@ namespace MPQC {
     void
     destroyComponentInstance_impl (
       /* in */const ::std::string& className,
-      /* in */::gov::cca::Component c
+      /* in */::gov::cca::Component& c
     )
     ;
 
@@ -164,8 +174,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._hmisc)
 // Put miscellaneous things here...
-// DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._misc)
+// DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._hmisc)
 
 #endif

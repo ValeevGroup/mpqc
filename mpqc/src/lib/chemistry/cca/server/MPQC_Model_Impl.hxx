@@ -40,12 +40,12 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.Model._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.Model._hincludes)
 
 #include <chemistry/qc/wfn/wfn.h>
 #include <ChemistryCXX_Molecule.hxx>
 
-// DO-NOT-DELETE splicer.end(MPQC.Model._includes)
+// DO-NOT-DELETE splicer.end(MPQC.Model._hincludes)
 
 namespace MPQC { 
 
@@ -56,6 +56,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.Model._inherits)
   // Insert-Code-Here {MPQC.Model._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.Model._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -79,8 +80,15 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    Model_impl( struct MPQC_Model__object * s ) : StubBase(s,true), _wrapped(
-      false) { _ctor(); }
+      Model_impl( struct MPQC_Model__object * ior ) : StubBase(ior,true), 
+      ::Chemistry::ModelInterface((ior==NULL) ? NULL : &((
+        *ior).d_chemistry_modelinterface)),
+    ::Chemistry::QC::ModelInterface((ior==NULL) ? NULL : &((
+      *ior).d_chemistry_qc_modelinterface)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -270,7 +278,7 @@ namespace MPQC {
      */
     void
     set_molecule_impl (
-      /* in */::Chemistry::MoleculeInterface molecule
+      /* in */::Chemistry::MoleculeInterface& molecule
     )
     ;
 
@@ -288,7 +296,7 @@ namespace MPQC {
      */
     void
     set_metadata_impl (
-      /* in */::gov::cca::TypeMap typemap
+      /* in */::gov::cca::TypeMap& typemap
     )
     ;
 
@@ -303,8 +311,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.Model._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.Model._hmisc)
 // Insert-Code-Here {MPQC.Model._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.Model._misc)
+// DO-NOT-DELETE splicer.end(MPQC.Model._hmisc)
 
 #endif

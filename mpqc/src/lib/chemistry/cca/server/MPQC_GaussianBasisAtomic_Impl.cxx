@@ -31,7 +31,7 @@
 // Insert-Code-Here {MPQC.GaussianBasisAtomic._includes} (additional includes or code)
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasisAtomic._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::GaussianBasisAtomic_impl::GaussianBasisAtomic_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::GaussianBasisAtomic::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 

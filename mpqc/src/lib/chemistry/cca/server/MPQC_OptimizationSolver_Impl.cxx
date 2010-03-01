@@ -38,7 +38,7 @@
 using namespace sc;
 // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::OptimizationSolver_impl::OptimizationSolver_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::OptimizationSolver::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 
@@ -236,10 +236,10 @@ MPQC::OptimizationSolver_impl::solve_impl ()
  */
 void
 MPQC::OptimizationSolver_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver.setServices)
     

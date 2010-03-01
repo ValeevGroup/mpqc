@@ -31,7 +31,7 @@
 // Put additional includes or other arbitrary code here...
 // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::ComponentClassDescription_impl::ComponentClassDescription_impl() : 
   StubBase(reinterpret_cast< void*>(::MPQC::ComponentClassDescription::_wrapObj(
   reinterpret_cast< void*>(this))),false) , _wrapped(true){ 
@@ -90,8 +90,8 @@ MPQC::ComponentClassDescription_impl::initialize_impl (
 ::std::string
 MPQC::ComponentClassDescription_impl::getComponentClassName_impl () 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription.getComponentClassName)

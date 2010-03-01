@@ -54,7 +54,7 @@ using namespace sc;
 
 // DO-NOT-DELETE splicer.end(MPQC.ModelFactory._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::ModelFactory_impl::ModelFactory_impl() : StubBase(reinterpret_cast< 
   void*>(::MPQC::ModelFactory::_wrapObj(reinterpret_cast< void*>(this))),false) 
   , _wrapped(true){ 
@@ -66,6 +66,9 @@ MPQC::ModelFactory_impl::ModelFactory_impl() : StubBase(reinterpret_cast<
 // user defined constructor
 void MPQC::ModelFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._ctor)
+
+  theory_ = "";
+  basis_ = "";
 
   // ccaffeine has main, could use stovepipe to get command-line vars,
   // but for now use environmental variables and fake argc/argv
@@ -197,7 +200,7 @@ MPQC::ModelFactory_impl::set_basis_impl (
  */
 void
 MPQC::ModelFactory_impl::set_molecule_impl (
-  /* in */::Chemistry::MoleculeInterface molecule ) 
+  /* in */::Chemistry::MoleculeInterface& molecule ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory.set_molecule)
 
@@ -214,7 +217,7 @@ MPQC::ModelFactory_impl::set_molecule_impl (
  */
 void
 MPQC::ModelFactory_impl::set_integral_factory_impl (
-  /* in */::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface 
+  /* in */::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface& 
     intfact ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory.set_integral_factory)
@@ -252,7 +255,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
    !!MOLECULE NOT ALLOWED IN KEYVAL INPUT FILE!!
   */
 
-  if( !molecule_ ) { 
+  if( molecule_._is_nil() ) { 
     molecule_filename_ = 
       std::string( tm.getString("molecule_filename", 
 				"failed molecule_filename fetch") );
@@ -372,10 +375,14 @@ MPQC::ModelFactory_impl::get_model_impl ()
 
   std::cout << "  model input:" << std::endl << input.str() << std::endl;
   
+  std::cerr << "creating" << std::endl;
   MPQC::Model model = MPQC::Model::_create();  
+  std::cerr << "initing" << std::endl;
   model.initialize_parsedkeyval("model",input.str());
 
+  std::cerr << "creating type map" << std::endl;
   cqos_tm_ = services_.createTypeMap();
+  std::cerr << "putting strings" << std::endl;
   cqos_tm_.putString("theory",theory_);
   cqos_tm_.putString("basis",basis_);
   cqos_tm_.putInt("MemGrpSize",grp_->n());
@@ -383,6 +390,7 @@ MPQC::ModelFactory_impl::get_model_impl ()
     cqos_tm_.putInt("Threads",thread_->nthread());
   model.set_metadata(cqos_tm_);
   
+  std::cerr << "returning" << std::endl;
   return model;
 
   // DO-NOT-DELETE splicer.end(MPQC.ModelFactory.get_model)
@@ -435,10 +443,10 @@ MPQC::ModelFactory_impl::finalize_impl ()
  */
 void
 MPQC::ModelFactory_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory.setServices)
 
@@ -447,19 +455,26 @@ MPQC::ModelFactory_impl::setServices_impl (
 
   try {
       services_.addProvidesPort( *this, "ModelFactoryInterface", 
-        "Chemistry.QC.ModelFactoryInterface", 0);
+        "Chemistry.QC.ModelFactoryInterface", 
+        services_.createTypeMap() );
       services_.registerUsesPort("ppf",
-        "gov.cca.ports.ParameterPortFactory", 0);
+        "gov.cca.ports.ParameterPortFactory",
+        services_.createTypeMap() );
       services_.registerUsesPort("BasisName", 
-        "Util.StringProvider", 0);
+        "Util.StringProvider",
+        services_.createTypeMap() );
       services_.registerUsesPort("TheoryName", 
-        "Util.StringProvider", 0);
+        "Util.StringProvider", 
+        services_.createTypeMap() );
       services_.registerUsesPort("MoleculeFile", 
-        "Util.StringProvider", 0);
+        "Util.StringProvider",
+        services_.createTypeMap() );
       services_.registerUsesPort("MoleculeFactoryInterface", 
-        "Chemistry.MoleculeFactoryInterface", 0);
+        "Chemistry.MoleculeFactoryInterface",
+        services_.createTypeMap() );
       services_.registerUsesPort("IntegralEvaluatorFactoryInterface",
-        "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface", 0);
+        "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactoryInterface",
+        services_.createTypeMap() );
   }
   catch (gov::cca::CCAException e) {
       std::cout << "Error using services: "

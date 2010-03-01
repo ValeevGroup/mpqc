@@ -55,7 +55,7 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._hincludes)
 
 #include <string>
 #include "ChemistryCXX_MoleculeFactory.hxx"
@@ -69,7 +69,7 @@
 #include <gov_cca_ports_ParameterPortFactory.hxx>
 #include <gov_cca_ports_ParameterPort.hxx>
 
-// DO-NOT-DELETE splicer.end(MPQC.ModelFactory._includes)
+// DO-NOT-DELETE splicer.end(MPQC.ModelFactory._hincludes)
 
 namespace MPQC { 
 
@@ -80,6 +80,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._inherits)
   // Insert-Code-Here {MPQC.ModelFactory._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.ModelFactory._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -122,8 +123,17 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    ModelFactory_impl( struct MPQC_ModelFactory__object * s ) : StubBase(s,
-      true), _wrapped(false) { _ctor(); }
+      ModelFactory_impl( struct MPQC_ModelFactory__object * ior ) : StubBase(
+        ior,true), 
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+      ::Chemistry::QC::ModelFactoryInterface((ior==NULL) ? NULL : &((
+        *ior).d_chemistry_qc_modelfactoryinterface)),
+    ::gov::cca::Component((ior==NULL) ? NULL : &((*ior).d_gov_cca_component)) , 
+      _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -194,7 +204,7 @@ namespace MPQC {
      */
     void
     set_molecule_impl (
-      /* in */::Chemistry::MoleculeInterface molecule
+      /* in */::Chemistry::MoleculeInterface& molecule
     )
     ;
 
@@ -207,7 +217,8 @@ namespace MPQC {
      */
     void
     set_integral_factory_impl (
-      /* in */::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface 
+      /* in 
+        */::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactoryInterface& 
         intfact
     )
     ;
@@ -246,19 +257,19 @@ namespace MPQC {
      */
     void
     setServices_impl (
-      /* in */::gov::cca::Services services
+      /* in */::gov::cca::Services& services
     )
     // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
   };  // end class ModelFactory_impl
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.ModelFactory._hmisc)
 // Insert-Code-Here {MPQC.ModelFactory._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.ModelFactory._misc)
+// DO-NOT-DELETE splicer.end(MPQC.ModelFactory._hmisc)
 
 #endif

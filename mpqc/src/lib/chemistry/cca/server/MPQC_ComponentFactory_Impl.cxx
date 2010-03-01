@@ -46,7 +46,7 @@
 #endif
 // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::ComponentFactory_impl::ComponentFactory_impl() : StubBase(
   reinterpret_cast< void*>(::MPQC::ComponentFactory::_wrapObj(reinterpret_cast< 
   void*>(this))),false) , _wrapped(true){ 
@@ -111,8 +111,8 @@ MPQC::ComponentFactory_impl::addDescription_impl (
 ::sidl::array< ::gov::cca::ComponentClassDescription>
 MPQC::ComponentFactory_impl::getAvailableComponentClasses_impl () 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.getAvailableComponentClasses)
@@ -185,7 +185,7 @@ MPQC::ComponentFactory_impl::createComponentInstance_impl (
 void
 MPQC::ComponentFactory_impl::destroyComponentInstance_impl (
   /* in */const ::std::string& className,
-  /* in */::gov::cca::Component c ) 
+  /* in */::gov::cca::Component& c ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.destroyComponentInstance)
   // insert implementation here

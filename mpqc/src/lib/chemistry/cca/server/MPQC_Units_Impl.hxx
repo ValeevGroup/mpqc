@@ -34,9 +34,9 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.Units._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.Units._hincludes)
 #include <util/misc/units.h>
-// DO-NOT-DELETE splicer.end(MPQC.Units._includes)
+// DO-NOT-DELETE splicer.end(MPQC.Units._hincludes)
 
 namespace MPQC { 
 
@@ -47,6 +47,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.Units._inherits)
   // Insert-Code-Here {MPQC.Units._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.Units._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -67,8 +68,13 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    Units_impl( struct MPQC_Units__object * s ) : StubBase(s,true), _wrapped(
-      false) { _ctor(); }
+      Units_impl( struct MPQC_Units__object * ior ) : StubBase(ior,true), 
+    ::Physics::UnitsInterface((ior==NULL) ? NULL : &((
+      *ior).d_physics_unitsinterface)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -128,8 +134,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.Units._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.Units._hmisc)
 // Insert-Code-Here {MPQC.Units._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.Units._misc)
+// DO-NOT-DELETE splicer.end(MPQC.Units._hmisc)
 
 #endif

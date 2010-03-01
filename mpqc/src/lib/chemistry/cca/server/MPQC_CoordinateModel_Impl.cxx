@@ -58,7 +58,7 @@ array_to_matrix(sidl::array<double>, const sc::RefSymmSCMatrix &v);
 
 // DO-NOT-DELETE splicer.end(MPQC.CoordinateModel._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::CoordinateModel_impl::CoordinateModel_impl() : StubBase(reinterpret_cast< 
   void*>(::MPQC::CoordinateModel::_wrapObj(reinterpret_cast< void*>(this))),
   false) , _wrapped(true){ 
@@ -255,7 +255,7 @@ MPQC::CoordinateModel_impl::finalize_impl ()
  */
 void
 MPQC::CoordinateModel_impl::set_model_impl (
-  /* in */::Chemistry::QC::ModelInterface model ) 
+  /* in */::Chemistry::QC::ModelInterface& model ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.set_model)
 
@@ -336,7 +336,7 @@ MPQC::CoordinateModel_impl::get_coor_impl ()
  */
 double
 MPQC::CoordinateModel_impl::get_energy_impl (
-  /* in array<double> */::sidl::array<double> x ) 
+  /* in array<double> */::sidl::array<double>& x ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.get_energy)
 
@@ -380,7 +380,7 @@ MPQC::CoordinateModel_impl::get_energy_impl (
  */
 ::sidl::array<double>
 MPQC::CoordinateModel_impl::get_gradient_impl (
-  /* in array<double> */::sidl::array<double> x ) 
+  /* in array<double> */::sidl::array<double>& x ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.get_gradient)
 
@@ -440,7 +440,7 @@ MPQC::CoordinateModel_impl::get_gradient_impl (
  */
 ::sidl::array<double>
 MPQC::CoordinateModel_impl::get_hessian_impl (
-  /* in array<double> */::sidl::array<double> x ) 
+  /* in array<double> */::sidl::array<double>& x ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.get_hessian)
 
@@ -506,9 +506,9 @@ MPQC::CoordinateModel_impl::get_hessian_impl (
  */
 void
 MPQC::CoordinateModel_impl::get_energy_and_gradient_impl (
-  /* in array<double> */::sidl::array<double> x,
+  /* in array<double> */::sidl::array<double>& x,
   /* out */double& f,
-  /* in array<double> */::sidl::array<double> g ) 
+  /* in array<double> */::sidl::array<double>& g ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.get_energy_and_gradient)
 
@@ -566,8 +566,8 @@ MPQC::CoordinateModel_impl::get_energy_and_gradient_impl (
  */
 void
 MPQC::CoordinateModel_impl::guess_hessian_solve_impl (
-  /* in array<double> */::sidl::array<double> effective_grad,
-  /* in array<double> */::sidl::array<double> effective_step,
+  /* in array<double> */::sidl::array<double>& effective_grad,
+  /* in array<double> */::sidl::array<double>& effective_step,
   /* in */void* first_geom ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.guess_hessian_solve)
@@ -661,10 +661,10 @@ MPQC::CoordinateModel_impl::monitor_impl ()
  */
 void
 MPQC::CoordinateModel_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.CoordinateModel.setServices)
 

@@ -40,7 +40,7 @@
 
 // DO-NOT-DELETE splicer.end(MPQC.MoleculeViewer._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::MoleculeViewer_impl::MoleculeViewer_impl() : StubBase(reinterpret_cast< 
   void*>(::MPQC::MoleculeViewer::_wrapObj(reinterpret_cast< void*>(this))),
   false) , _wrapped(true){ 
@@ -91,7 +91,7 @@ void MPQC::MoleculeViewer_impl::_load() {
  */
 void
 MPQC::MoleculeViewer_impl::set_molecule_impl (
-  /* in */::Chemistry::MoleculeInterface molecule ) 
+  /* in */::Chemistry::MoleculeInterface& molecule ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.MoleculeViewer.set_molecule)
 
@@ -229,10 +229,10 @@ MPQC::MoleculeViewer_impl::finalize_impl ()
  */
 void
 MPQC::MoleculeViewer_impl::setServices_impl (
-  /* in */::gov::cca::Services services ) 
+  /* in */::gov::cca::Services& services ) 
 // throws:
-//     ::gov::cca::CCAException
-//     ::sidl::RuntimeException
+//    ::gov::cca::CCAException
+//    ::sidl::RuntimeException
 {
   // DO-NOT-DELETE splicer.begin(MPQC.MoleculeViewer.setServices)
 

@@ -53,7 +53,7 @@ array_to_matrix(sidl::array<double>, const sc::RefSymmSCMatrix &v);
 
 // DO-NOT-DELETE splicer.end(MPQC.Model._includes)
 
-// speical constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
+// special constructor, used for data wrapping(required).  Do not put code here unless you really know what you're doing!
 MPQC::Model_impl::Model_impl() : StubBase(reinterpret_cast< void*>(
   ::MPQC::Model::_wrapObj(reinterpret_cast< void*>(this))),false) , _wrapped(
   true){ 
@@ -425,7 +425,7 @@ MPQC::Model_impl::finalize_impl ()
  */
 void
 MPQC::Model_impl::set_molecule_impl (
-  /* in */::Chemistry::MoleculeInterface molecule ) 
+  /* in */::Chemistry::MoleculeInterface& molecule ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_molecule)
   
@@ -493,7 +493,7 @@ MPQC::Model_impl::get_molecule_impl ()
  */
 void
 MPQC::Model_impl::set_metadata_impl (
-  /* in */::gov::cca::TypeMap typemap ) 
+  /* in */::gov::cca::TypeMap& typemap ) 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Model.set_metadata)
 

@@ -49,14 +49,14 @@
 #endif
 
 
-// DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._includes)
+// DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._hincludes)
 #include <chemistry/cca/molecule/energy.h>
 #include <math/optimize/qnewton.h>
 #include <Chemistry_MoleculeInterface.hxx>
 #include <Chemistry_QC_ModelInterface.hxx>
 #include <ChemistryOpt_CoordinateModelInterface.hxx>
 #include <ChemistryOpt_OptimizationModelInterface.hxx>
-// DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._includes)
+// DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._hincludes)
 
 namespace MPQC { 
 
@@ -67,6 +67,7 @@ namespace MPQC {
   // DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._inherits)
   // Insert-Code-Here {MPQC.OptimizationSolver._inherits} (optional inheritance here)
   // DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._inherits)
+
   {
 
   // All data marked protected will be accessable by 
@@ -92,8 +93,18 @@ namespace MPQC {
     // sidl constructor (required)
     // Note: alternate Skel constructor doesn't call addref()
     // (fixes bug #275)
-    OptimizationSolver_impl( struct MPQC_OptimizationSolver__object * s ) : 
-      StubBase(s,true), _wrapped(false) { _ctor(); }
+      OptimizationSolver_impl( struct MPQC_OptimizationSolver__object * ior ) : 
+        StubBase(ior,true), 
+      ::ChemistryOpt::SolverInterface((ior==NULL) ? NULL : &((
+        *ior).d_chemistryopt_solverinterface)),
+      ::gov::cca::Component((ior==NULL) ? NULL : &((*ior).d_gov_cca_component)),
+      ::gov::cca::Port((ior==NULL) ? NULL : &((*ior).d_gov_cca_port)),
+    ::gov::cca::ports::GoPort((ior==NULL) ? NULL : &((
+      *ior).d_gov_cca_ports_goport)) , _wrapped(false) {
+      ior->d_data = this;
+      _ctor();
+    }
+
 
     // user defined construction
     void _ctor();
@@ -163,11 +174,11 @@ namespace MPQC {
      */
     void
     setServices_impl (
-      /* in */::gov::cca::Services services
+      /* in */::gov::cca::Services& services
     )
     // throws:
-    //     ::gov::cca::CCAException
-    //     ::sidl::RuntimeException
+    //    ::gov::cca::CCAException
+    //    ::sidl::RuntimeException
     ;
 
 
@@ -184,8 +195,8 @@ namespace MPQC {
 
 } // end namespace MPQC
 
-// DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._misc)
+// DO-NOT-DELETE splicer.begin(MPQC.OptimizationSolver._hmisc)
 // Insert-Code-Here {MPQC.OptimizationSolver._misc} (miscellaneous things)
-// DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._misc)
+// DO-NOT-DELETE splicer.end(MPQC.OptimizationSolver._hmisc)
 
 #endif

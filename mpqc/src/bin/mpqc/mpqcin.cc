@@ -770,7 +770,20 @@ MPQCIn::write_energy_object(ostream &ostrs,
           guess_method = 0;
           if (mult_.val() == 1) { // closed-shell
             reference_method = "RHF";
-            method_object = "MBPT2";
+            // MBPT2 can do regular MP2 only
+            // if density fitting is requested use MP2-R12
+            if (dfbasis_.name.set() == false) {
+              method_object = "MBPT2";
+            }
+            else {
+              method_object = "MBPT2_R12";
+              r12descr = R12TechDescr::default_instance();
+              r12descr->corrfactor = "none";
+              need_wfnworld = true;
+              if (optimize_.val() || gradient_.val() || frequencies_.val()) {
+                error("cannot do a gradient or optimization with density-fitting version of MP2");
+              }
+            }
           }
           else { // open-shell will use MP2-R12 code
             method_object = "MBPT2_R12";
@@ -851,7 +864,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else  // (T)
           method_object = "PsiCCSD_PT2R12T";
 
-        //r12descr = R12TechDescr::default_instance();
+        r12descr = R12TechDescr::default_instance();
         psi_ccr12 = true;
 
       }

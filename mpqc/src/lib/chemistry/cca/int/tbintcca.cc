@@ -58,7 +58,8 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     CompositeDescrInterface cdesc ):
   TwoBodyInt(integral,bs1,bs2,bs3,bs4),
   bs1_(bs1), bs2_(bs2), bs3_(bs3), bs4_(bs4),
-  eval_factory_(fac), cdesc_(cdesc)
+  eval_factory_(fac), cdesc_(cdesc),
+  descr_(TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI))
 {
   ndesc_ = cdesc_.get_n_descr();
   for( int i=0; i<ndesc_; ++i ) {
@@ -67,7 +68,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
   }
 
   tbtype_to_buf_ = new double*[ndesc_];
-  tbtype_list_ = new tbint_type[ndesc_];
+  tbtype_list_ = new TwoBodyOper::type[ndesc_];
 
   DescrInterface desc = Eri4Descr::_create();
   dtype_to_tbtype_[desc.get_type()] = sc::TwoBodyOper::eri;
@@ -123,7 +124,7 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 }
 
 const double*
-TwoBodyIntCCA::buffer(tbint_type te_type) const
+TwoBodyIntCCA::buffer(TwoBodyOper::type te_type) const
 {
   return tbtype_to_buf_[ te_type ];
 }
@@ -206,7 +207,7 @@ TwoBodyIntCCA::num_tbint_types() const
 }
 
 unsigned int
-TwoBodyIntCCA::inttype(tbint_type t) const
+TwoBodyIntCCA::inttype(TwoBodyOper::type t) const
 {
   for( int i=0; i<ndesc_; ++i )
     if( t == tbtype_list_[i] )

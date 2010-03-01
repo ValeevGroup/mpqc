@@ -62,13 +62,16 @@ namespace sc {
     int ndesc_;
     double tol_;
     double loginv_;
-    std::map< std::string, tbint_type > dtype_to_tbtype_;
+    std::map< std::string, TwoBodyOper::type > dtype_to_tbtype_;
     double** tbtype_to_buf_;
-    tbint_type* tbtype_list_;
+    TwoBodyOper::type* tbtype_list_;
     sidl::array<double> sidl_buffer_;
     std::vector< int > segments_;
     sidl::array<double> bounds_;
     unsigned int num_tbint_types_;
+
+  protected:
+    Ref<TwoBodyOperSetDescr> descr_;
 
   public:
     TwoBodyIntCCA( Integral* integral,
@@ -81,15 +84,17 @@ namespace sc {
     ~TwoBodyIntCCA();
 
     void compute_shell(int,int,int,int);
-    const double* buffer(tbint_type te_type) const;
+    const double* buffer(TwoBodyOper::type te_type) const;
     const double* buffer_not_const();
     int log2_shell_bound(int,int,int,int);
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
-    unsigned int num_tbint_types() const;
-    unsigned int inttype(tbint_type t) const;
-    TwoBodyOper::type inttype(unsigned int t) const;
     void remove_redundant(int,int,int,int);
+    unsigned int num_tbint_types() const;
+    unsigned int inttype(TwoBodyOper::type t) const;
+    TwoBodyOper::type inttype(unsigned int t) const;
+    TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
+    const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 };
 
 

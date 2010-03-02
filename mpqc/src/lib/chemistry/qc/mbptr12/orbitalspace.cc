@@ -636,12 +636,13 @@ MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
 /////////////////////////////////////////////////////////////////////////////
 namespace {
   RefSCMatrix make_unit_matrix(const Ref<GaussianBasisSet>& basis,
-                               const Ref<Integral>& integral) {
+                               const Ref<Integral>& ints) {
     const int nao = basis->nbasis();
     RefSCDimension obs_ao_dim = new SCDimension(nao,1);
     obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-    integral->set_basis(basis);
-    Ref<PetiteList> pl = integral->petite_list();
+    Ref<Integral> localints = ints->clone();
+    localints->set_basis(basis);
+    Ref<PetiteList> pl = localints->petite_list();
     RefSCMatrix obs_ao_coefs = basis->so_matrixkit()->matrix(pl->AO_basisdim(),obs_ao_dim);
     obs_ao_coefs.assign(0.0);
     for(int ao=0; ao<nao; ++ao)

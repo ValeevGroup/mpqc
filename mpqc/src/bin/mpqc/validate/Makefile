@@ -66,7 +66,12 @@ RUN_MBPTF12=yes
 endif
 endif
 
-# PSI tests are only run when MPQC-PSI inetrface was configured
+# CC-R12 tests are only run when the CC-R12 code has been configured
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
+RUN_CCR12=yes
+endif
+
+# PSI tests are only run when MPQC-PSI interface was configured
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
 RUN_PSI=yes
 endif
@@ -105,6 +110,19 @@ ifeq ($(RUN_MBPTF12),yes)
   PT2F12INPUTS := $(PT2F12INPUTS:%=$(INP)/%)
 endif
 PT2F12OUTPUTS = $(PT2F12INPUTS:%.$(INSUF)=%.out)
+
+CCSDR12MASTER=ccsdr12.qci
+CCSDR12INPUTS=
+ifeq ($(RUN_CCR12),yes)
+ ifeq ($(RUN_MBPTF12),yes)
+  CCSDR12INPUTS= ccsdpt_ptr12_h2o.in \
+    ccsdpt_ptr12_ne.in \
+    ccsdptpr12_df_ne.in \
+    ccsdptpr12_ne.in
+  CCSDR12INPUTS := $(CCSDR12INPUTS:%=$(INP)/%)
+ endif
+endif
+CCSDR12OUTPUTS = $(CCSDR12INPUTS:%.$(INSUF)=%.out)
 
 PSICCSDPT2R12MASTER=psiccsdpt2r12.qci
 PSICCSDPT2R12INPUTS=
@@ -331,11 +349,11 @@ ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc% $(INP)/psiccsdpt2f12% \
-$(INP)/pt2f12% $(INP)/psipt2f12%	
+$(INP)/pt2f12% $(INP)/psipt2f12% $(INP)/ccsdpt%
 endif
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
-	    $(MP2R12INPUTS) $(MP2F12INPUTS) \
+	    $(MP2R12INPUTS) $(MP2F12INPUTS) $(CCSDR12INPUTS) \
 	    $(PT2F12INPUTS) $(PSIPT2F12INPUTS) \
 	    $(PSICCSDPT2R12INPUTS) $(PSICCSDPT2F12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \

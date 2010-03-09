@@ -177,7 +177,7 @@ void CCSDTQ::compute(){
   delete ccsdtq_t1;
   delete ccsdtq_e;
 
-  set_energy(energy);
+  set_energy(energy + this->ref()->energy());
   mem_->sync();
 }
 

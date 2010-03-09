@@ -157,7 +157,7 @@ void CCSDT::compute(){
   delete ccsdt_t1;
   delete ccsdt_e;
 
-  set_energy(energy);
+  set_energy(energy + this->ref()->energy());
   mem_->sync();
 }
 

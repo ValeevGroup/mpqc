@@ -333,7 +333,7 @@ void CCSD::compute(){
 
   } // end of do_lambda
 
-  set_energy(energy);
+  set_energy(energy + this->ref()->energy());
   mem_->sync();
 }
 

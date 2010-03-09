@@ -291,7 +291,7 @@ void CCSD_R12::compute(){
   } // end of do_lambda
 #endif
 
-  set_energy(energy);
+  set_energy(energy + this->ref()->energy());
   mem_->sync();
 }
 

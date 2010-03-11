@@ -586,7 +586,7 @@ namespace sc {
     }
 
 
-    if((h0_blocksize_ > 0) && ((!rasscf_) || (ras3_max_>0))) { /// use "h0_blocksize" keyword only if it is >0 and only for CI calculations, not CASSCF.
+    if(h0_blocksize_ > 0) { /// use "h0_blocksize" keyword only if it is >0
       input->write_keyword("detci:h0_blocksize",h0_blocksize_);
     }
 

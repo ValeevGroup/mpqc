@@ -442,31 +442,19 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
   basis_ = basis;
   integral_ = integral;
 
-  // compute block info
   const unsigned int norbs = indexmap.size();
-  block_offsets_.resize(nblocks);  std::fill(block_offsets_.begin(), block_offsets_.end(), 0);
+  // compute block sizes
   block_sizes_.resize(nblocks);  std::fill(block_sizes_.begin(), block_sizes_.end(), 0);
-  size_t current_block = (norbs > 0) ? indexmap[0].attr() : 0;
-  size_t current_size = 0;
-  for(size_t o=0; o<norbs; ++o) {
-    const size_t next_block = indexmap[o].attr();
-    if (next_block == current_block)
-      ++current_size;
-    else {
-      assert(next_block > current_block);  // blocks must be in increasing order!!!
-      while (next_block - current_block > 0) { // update current_block and current_size safely: blocks may be empty!
-        block_sizes_[current_block] = current_size;
-        ++current_block;
-        block_offsets_[current_block] = o;
-        current_size = 0;
-      }
-      ++current_size;
+  for(int b=0; b<nblocks; ++b) {
+    for(size_t o=0; o<norbs; ++o) {
+      if (indexmap[o].attr() == b)
+        ++block_sizes_[b];
     }
   }
-  block_sizes_[current_block] = current_size; // complete the last touched block
-  // and update offsets of all blocks following the last block
-  for(size_t block = current_block+1; block<nblocks; ++block)
-    block_offsets_[block] = norbs;
+  // compute block offsets
+  block_offsets_.resize(nblocks);  std::fill(block_offsets_.begin(), block_offsets_.end(), 0);
+  for(int b=1; b<nblocks; ++b)
+    block_offsets_[b] = block_offsets_[b-1] + block_sizes_[b-1];
 
   // build new blocked dimension
   int* nfunc_per_block = new int[nblocks];
@@ -636,13 +624,12 @@ MaskedOrbitalSpace::MaskedOrbitalSpace(const std::string& id,
 /////////////////////////////////////////////////////////////////////////////
 namespace {
   RefSCMatrix make_unit_matrix(const Ref<GaussianBasisSet>& basis,
-                               const Ref<Integral>& ints) {
+                               const Ref<Integral>& integral) {
     const int nao = basis->nbasis();
     RefSCDimension obs_ao_dim = new SCDimension(nao,1);
     obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-    Ref<Integral> localints = ints->clone();
-    localints->set_basis(basis);
-    Ref<PetiteList> pl = localints->petite_list();
+    integral->set_basis(basis);
+    Ref<PetiteList> pl = integral->petite_list();
     RefSCMatrix obs_ao_coefs = basis->so_matrixkit()->matrix(pl->AO_basisdim(),obs_ao_dim);
     obs_ao_coefs.assign(0.0);
     for(int ao=0; ao<nao; ++ao)
@@ -711,7 +698,7 @@ NonblockedOrbitalSpace::NonblockedOrbitalSpace(const std::string& id,
 
 /////////////////////////////////////////////////////////////////////////////
 
-static ClassDesc OrbitalSpaceUnion_cd(typeid(OrbitalSpaceUnion), "OrbitalSpaceUnion", 1,
+static ClassDesc OrbitalSpaceUnion_cd(typeid(OrbitalSpaceUnion), "OrbitalSpace  ", 1,
                                            "public OrbitalSpace", 0, 0, create<OrbitalSpaceUnion> );
 
 OrbitalSpaceUnion::OrbitalSpaceUnion(StateIn& si) :
@@ -733,6 +720,10 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   if (merge_blocks && s1.nblocks() != s2.nblocks())
     throw std::logic_error("OrbitalSpaceUnion::OrbitalSpaceUnion : merge_blocks is true but different number of blocks");
   const unsigned int nblocks = merge_blocks ? s1.nblocks() : s1.nblocks() + s2.nblocks();
+
+  // if trying to add a space to itself and blocks to be merged, throw
+  if (merge_blocks && &s1 == &s2)
+    assert(false);
 
   // compute the basis set
   // try 3 cases:
@@ -813,8 +804,34 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
       block_offset += block_size;
     }
   }
-  else { // if merging blocks, get rid of duplicate orbitals
-    assert(false);
+  else {
+    // if merging blocks, get rid of duplicate orbitals?
+    // Since merging may produce linear dependencies this doesn't solve all problems
+    // hence the user should check the result for linear dependencies, etc.
+
+    // include orbitals from space1, block-by-block
+    size_t block_offset = 0;
+    for (unsigned int b = 0; b < block_sizes1.size(); ++b) {
+      const size_t block_size1 = block_sizes1[b];
+      const size_t block_size2 = block_sizes2[b];
+      for (size_t o = 0; o < block_size1; ++o) {
+        const size_t oo = o + block_offset;
+        blocked_orbs.push_back(BlockedOrbital(oo, b));
+      }
+      block_offset += block_size1 + block_size2;
+    }
+    // include orbitals from space2, block-by-block
+    block_offset = 0;
+    for (unsigned int b = 0; b < block_sizes2.size(); ++b) {
+      const size_t block_size1 = block_sizes1[b];
+      const size_t block_size2 = block_sizes2[b];
+      block_offset += block_size1;
+      for (size_t o = 0; o < block_size2; ++o) {
+        const size_t oo = o + block_offset;
+        blocked_orbs.push_back(BlockedOrbital(oo, b));
+      }
+      block_offset += block_size2;
+    }
   }
 
   init(id, name,

@@ -250,8 +250,6 @@ namespace sc {
       /// imports occupations from obwfn. Will throw if docc_ and socc_ had been initialized
       /// and do not match obwfn.
       void import_occupations(const Ref<OneBodyWavefunction>& obwfn);
-      // use spin datatypes defined in spin.h
-      typedef sc::SpinCase1 SpinCase1;
       enum RefType {rhf, hsoshf, uhf};
       /// Returns the PsiSCF::RefType of this particular Psi SCF wave function
       virtual PsiSCF::RefType reftype() const =0;

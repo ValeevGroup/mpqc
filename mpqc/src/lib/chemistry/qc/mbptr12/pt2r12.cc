@@ -194,6 +194,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
+  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(false));
 
   reference_ = require_dynamic_cast<Wavefunction*>(
         keyval->describedclassvalue("reference").pointer(),
@@ -1285,8 +1286,8 @@ void sc::PT2R12::compute()
 {
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
-  double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
   const bool spin_polarized = r12world()->ref()->spin_polarized();
+
   for(int i=0; i<NSpinCases2; i++) {
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
     double scale = 1.0;
@@ -1304,24 +1305,33 @@ void sc::PT2R12::compute()
   }
 
 
-  //double alpha_correction, beta_correction, cabs_correction;
-  SpinCase1 alpha = Alpha, beta = Beta;
-  //
 
-  ExEnv::out0() << indent << scprintf("define alpha and beta variables") << endl;
+  //calculate basis set incompleteness error (bsie)
+#define CALC_BSIE 0
+#if CALC_BSIE
+    ExEnv::out0() << indent << "calculate BSIE" << endl;
+    double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
+    alpha_correction = this->energy_cabs_singles(Alpha);
+    if (spin_polarized)
+      beta_correction =  this->energy_cabs_singles(Beta);
+    else
+      beta_correction = alpha_correction;
+    cabs_singles_correction = alpha_correction + beta_correction;
 
-
-  alpha_correction = this->energy_cabs_singles(alpha);
-  //beta_correction =  this->energy_cabs_singles(beta);
-  //cabs_singles_correction = alpha_correction + beta_correction;
+    ExEnv::out0() << indent << scprintf("CABS singles energy correction:             %17.12lf",
+                                      cabs_singles_correction) << endl;
+    ExEnv::out0() << indent << scprintf("Reference energy + CABS singles correction:             %17.12lf",
+                                      reference_->energy() + cabs_singles_correction) << endl;
+#else
+    ExEnv::out0() << indent << "do not calculate BSIE" << endl;
+#endif
 
 
 
   if (!spin_polarized)
-    energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+       energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
   for(int i=0; i<NSpinCases2; i++)
-    energy_correction_r12 +=  energy_pt2r12[i];
-
+       energy_correction_r12 +=  energy_pt2r12[i];
   const double energy = reference_->energy() + energy_correction_r12;
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
@@ -1351,10 +1361,6 @@ void sc::PT2R12::compute()
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
                                       energy) << endl;
-  /*
-  ExEnv::out0() << indent << scprintf("CABS singles energy correction:             %17.12lf",
-                                      cabs_singles_correction) << endl;
-  */
   set_energy(energy);
 }
 
@@ -1402,10 +1408,9 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
-   std::cout << "haha" << endl;
-
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
-  Ref<OrbitalSpace> Aspace = this->r12world()->cabs_space(spin);
+  Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
+
 
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
   if (!oreg->value_exists(pspace)) {
@@ -1413,6 +1418,12 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   }
   const std::string key = oreg->key(pspace);
   pspace = oreg->value(key);
+
+
+
+
+  Ref<OrbitalSpace> Aspace = cabsspace;
+
 
   // get the fock matrices
   RefSCMatrix F_pA = r12eval_->fock(pspace,Aspace,spin);
@@ -1439,9 +1450,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   H0.assign(0.0);
 
   RefSCVector rhs_vector = gamma2_ss->kit()->vector(dim);
-  rhs_vector.assign(0.0);
-//  RefSCVector C_vector = gamma2_ss->kit()->vector(dim); this the linear equation solver overwrites the right-hand vector, there is no need at this moment to create this vector explicitly
-//  C_vector.assign(0.0);
+  rhs_vector->assign(0.0);
 
 
 
@@ -1455,7 +1464,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       {
         rhs_vector_xB += -1.0 *  gamma1(x, j) * F_pA(j, B);
       }
-      rhs_vector.set_element(x * nX + B, rhs_vector_xB);
+      rhs_vector->set_element(x * nX + B, rhs_vector_xB);
     }
   }
 
@@ -1493,7 +1502,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
                   const int max_xp = max(x, p);
                   const int min_xp = min(x, p);
                   const int max_yq = max(y, q);
-                  const int min_yq = max(y, q);
+                  const int min_yq = min(y, q);
                   const int upp_ind_same_spin = (max_xp -1)* (max_xp -2) /2 + min_xp;
                   const int low_ind_same_spin = (max_yq -1)* (max_yq -2) /2 + min_yq;
                   h0_xA_yB += ((x > p)? 1.0 : -1.0) * ((y > q)? 1.0 : -1.0) * F_pp_otherspin(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
@@ -1507,7 +1516,11 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       }
     }
   }
-  H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients
+
+
+  H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
+  ExEnv::out0()  << "  the element of C vector with the maximum absolute value: " << rhs_vector->maxabs() << endl;
+
 
   double E_cabs_singles_one_spin = 0.0;
 
@@ -1518,12 +1531,12 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       const double gamma_ij = gamma1(i,j);
       for (int A = 0; A < nX; ++A)
       {
-        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * rhs_vector.get_element(j * nX + A);
+        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * rhs_vector->get_element(j * nX + A);
       }
     }
   }
-  if(spin == 0) cout << "Spin Alpha Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
-  else if(spin == 1) cout << "Spin Beta Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
+  if(spin == 0) ExEnv::out0()  << "  Spin Alpha Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
+  else if(spin == 1) ExEnv::out0()  << "  Spin Beta Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
 
   return E_cabs_singles_one_spin;
 

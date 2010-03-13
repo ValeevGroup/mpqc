@@ -92,6 +92,7 @@ namespace sc {
       unsigned int nfzc_;
       bool omit_uocc_;
       bool cabs_singles_;
+      bool cabs_singles_coupling_;
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object

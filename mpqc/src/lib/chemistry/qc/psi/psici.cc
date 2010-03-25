@@ -450,6 +450,7 @@ namespace sc {
       const int naverage_states = keyval->count("detcas_detci_average_states");
       detcas_detci_average_states_ = this->read_occ(keyval,"detcas_detci_average_states",naverage_states);
     }
+    detcas_maxiter_ = keyval->intvalue("detcas_maxiter",KeyValValueint(200));
 
     reorder_ = keyval->stringvalue("reorder", KeyValValuestring("after"));
 
@@ -607,7 +608,7 @@ namespace sc {
       input->write_keyword("detcas:energy_convergence",detcas_energy_convergence_);
       input->write_keyword("detci:convergence",detcas_detci_convergence_);
       input->write_keyword("detcas:convergence",detcas_convergence_);
-      input->write_keyword("default:ncasiter",200);
+      input->write_keyword("default:ncasiter",detcas_maxiter_);
       if(detcas_diis_==false) {
         input->write_keyword("detcas:diis_start",1000000);
       }

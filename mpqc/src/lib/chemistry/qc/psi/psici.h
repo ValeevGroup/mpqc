@@ -99,6 +99,7 @@ namespace sc {
       bool detcas_diis_;   /// use DIIS for detcas calculations
       int detcas_detci_maxiter_;    /// maxiter for detci in detcas calculations
       int detci_maxiter_;     /// maxiter for detci (not in detcas calculations)
+      int detcas_maxiter_;    /// max number of iterations in cas
       std::vector<unsigned int> detcas_detci_average_states_;   /// vector of states over which averaging is performed in a detci of a detcas calculation
 
       // do orbital optimization first?

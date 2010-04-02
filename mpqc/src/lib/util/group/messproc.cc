@@ -59,6 +59,20 @@ Ref<MessageGrp> ProcMessageGrp::clone(void)
   return pmg;
 }
 
+Ref<MessageGrp> ProcMessageGrp::split(int grpkey, int rankkey)
+{
+  Ref<MessageGrp> pmg;
+  if (grpkey >= 0) pmg = new ProcMessageGrp;
+  return pmg;
+}
+
+Ref<MessageGrp> ProcMessageGrp::subset(const std::set<int> &s)
+{
+  Ref<MessageGrp> pmg;
+  if (s.find(0) != s.end()) pmg = new ProcMessageGrp;
+  return pmg;
+}
+
 void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, const void* buf,
                             int bytes)
 {

@@ -31,7 +31,9 @@
 #include <util/group/message.h>
 #include <util/group/thread.h>
 
+#ifndef MPICH_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
+#endif
 #include <mpi.h>
 
 namespace sc {
@@ -79,6 +81,8 @@ class MPIMessageGrp: public MessageGrp {
 
     /// Clones (dups) an MPIMessageGrp from MPI_COMM_WORLD 
     Ref<MessageGrp> clone(void);
+    Ref<MessageGrp> split(int grpkey=0, int rankkey=0);
+    Ref<MessageGrp> subset(const std::set<int> &);
     
     void raw_send(int target, const void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte,

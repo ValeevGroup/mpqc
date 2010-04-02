@@ -33,6 +33,7 @@
 #define _util_group_message_h
 
 #include <map>
+#include <set>
 
 #include <math.h>
 #include <util/class/class.h>
@@ -174,6 +175,11 @@ class MessageGrp: public DescribedClass {
 
     MessageGrp();
     MessageGrp(const Ref<KeyVal>&);
+
+    /** Destroy this MessageGrp. This must be called by all nodes
+        participating in this MessageGrp, because it can be a
+        collective operation. Note, however, that it cannot be assumed
+        to always be collective. */
     virtual ~MessageGrp();
     
     /// Returns the number of processors.
@@ -184,6 +190,24 @@ class MessageGrp: public DescribedClass {
     /** Returns a copy of this MessageGrp specialization that provides
         an independent communication context. */
     virtual Ref<MessageGrp> clone(void)=0;
+
+    /** Returns MessageGrp objects that are a subset of this
+        MessageGrp. This call is collective--all nodes in this
+        MessageGrp must call it. If the commkey is less than zero,
+        then a nil pointer will be returned. Otherwise, all nodes
+        calling with the same commkey will be put into the same return
+        MessageGrp. The rankkey argument is used to order the nodes in
+        the new MessageGrp. Nodes with the same rankkey are ordered by
+        rank. With the default arguments, split behaves the same as
+        clone. */
+    virtual Ref<MessageGrp> split(int grpkey=0, int rankkey=0) = 0;
+
+    /** Returns MessageGrp objects that are a subset of this
+        MessageGrp. This call is collective--all nodes in this
+        MessageGrp must call it. The ordering of the ranks matches
+        the ordering of the original ranks.
+    */
+    virtual Ref<MessageGrp> subset(const std::set<int> &) = 0;
     
     /** The default message group contains the primary message group to
         be used by an application. */
@@ -576,6 +600,8 @@ class ProcMessageGrp: public MessageGrp {
     ~ProcMessageGrp();
 
     Ref<MessageGrp> clone(void);
+    Ref<MessageGrp> split(int grpkey=0, int rankkey=0);
+    Ref<MessageGrp> subset(const std::set<int> &);
     
     void raw_send(int target, const void* data, int nbyte);
     void raw_sendt(int target, int type, const void* data, int nbyte,

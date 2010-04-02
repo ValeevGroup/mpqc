@@ -25,11 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <algorithm>
+
 #include <stdio.h> // for sprintf
 #include <unistd.h> // for fchdir etc.
 #include <fcntl.h> // for open on AIX
 
+#ifndef MPICH_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
+#endif
 #include <mpi.h>
 extern int MPI_Initialized(int *); // missing in mpi.h
 
@@ -240,6 +244,7 @@ MPIMessageGrp::~MPIMessageGrp()
   grplock->lock();
   nmpi_grps--;
   if (!nmpi_grps) MPI_Finalize();
+  else MPI_Comm_free(&commgrp);
   grplock->unlock();
   
 }
@@ -247,6 +252,38 @@ MPIMessageGrp::~MPIMessageGrp()
 Ref<MessageGrp> MPIMessageGrp::clone(void)
 {
   Ref<MessageGrp> mgrp = new MPIMessageGrp;
+  return mgrp;
+}
+
+Ref<MessageGrp> MPIMessageGrp::split(int grpkey, int rankkey)
+{
+  Ref<MessageGrp> mgrp;
+  MPI_Comm newcomm;
+  int color = grpkey;
+  if (color < 0) color = MPI_UNDEFINED;
+  MPI_Comm_split(commgrp, color, rankkey, &newcomm);
+  if (grpkey >=0 ) mgrp = new MPIMessageGrp(newcomm);
+  return mgrp;
+}
+
+Ref<MessageGrp> MPIMessageGrp::subset(const std::set<int> &s)
+{
+  std::vector<int> v(s.size());
+  std::copy(s.begin(), s.end(), v.begin());
+
+  Ref<MessageGrp> mgrp;
+
+  MPI_Group grp, grp2;
+  MPI_Comm_group(commgrp, &grp);
+  MPI_Group_incl(grp, v.size(), &v.front(), &grp2);
+
+  MPI_Comm newcomm;
+  MPI_Comm_create(commgrp, grp2, &newcomm);
+  if (s.find(me()) != s.end()) mgrp = new MPIMessageGrp(newcomm);
+
+  MPI_Group_free(&grp);
+  MPI_Group_free(&grp2);
+
   return mgrp;
 }
 

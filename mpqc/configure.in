@@ -1484,16 +1484,17 @@ if test -n "$F77" -a "$F77" != no ; then
   echo "      end" >> ffunc.f
   $F77 -c ffunc.f 1>/dev/null 2>/dev/null
   echo "extern \"C\" void FF(); int main(int argc, char** argv){ FF(); return 0; }" > flink.cc
-  if $CXX -o flink -DFF=ffunc flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  echo using command: $CXX -o flink -DFF=... flink.cc ffunc.o $LDFLAGS $LIBS >&AS_MESSAGE_LOG_FD
+  if $CXX -o flink -DFF=ffunc flink.cc ffunc.o $LDFLAGS $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
     AC_MSG_RESULT([same as C])
     F77_SYMBOLS=symbol
-  elif $CXX -o flink -DFF=ffunc_ flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=ffunc_ flink.cc ffunc.o $LDFLAGS $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
     AC_MSG_RESULT([lowercase with underscore])
     F77_SYMBOLS=symbol_
-  elif $CXX -o flink -DFF=FFUNC flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=FFUNC flink.cc ffunc.o $LDFLAGS $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
     AC_MSG_RESULT([uppercase])
     F77_SYMBOLS=SYMBOL
-  elif $CXX -o flink -DFF=FFUNC_ flink.cc ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
+  elif $CXX -o flink -DFF=FFUNC_ flink.cc ffunc.o $LDFLAGS $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
     AC_MSG_RESULT([uppercase with underscore])
     F77_SYMBOLS=SYMBOL_
   else
@@ -2218,32 +2219,30 @@ chmod +x src/bin/mpqc/validate/makeccain.pl
 
 dnl --------- Print out a configuration summary. ---------
 
-echo -e "\nConfiguration Summary:"
-dnl echo -e "Variable\t\tValue"
-echo -e "---------------------------------------------------------------"
-echo -e "Install prefix\t$prefix"
-echo -e "C compiler\t$CC"
-echo -e "C++ compiler\t$CXX"
-echo -e "F77 compiler\t$F77"
-echo -e "DEFAULT_PARALL.\t${DEFAULT_PARALLEL:-<not set>}"
-echo -e "HAVE_PTHREAD\t${HAVE_PTHREAD:-no}"
-echo -en "HAVE_MPI\t${HAVE_MPI:-no}"
+echo
+echo "Configuration Summary:"
+echo "---------------------------------------------------------------"
+echo "Install prefix   $prefix"
+echo "C compiler       $CC"
+echo "C++ compiler     $CXX"
+echo "F77 compiler     $F77"
+echo "DEFAULT_PARALLEL ${DEFAULT_PARALLEL:-<not set>}"
+echo "HAVE_PTHREAD     ${HAVE_PTHREAD:-no}"
+echo "HAVE_MPI         ${HAVE_MPI:-no}"
 if test "$HAVE_MPI" = yes; then
   if test "$ALWAYS_USE_MPI" = yes; then
-    echo -en "\t(MPI_Init always called)"
+     echo "                 (MPI_Init always called)"
   fi
 fi
-echo
-echo -e "HAVE_ARMCI\t${HAVE_ARMCI:-no}"
-echo -e "HAVE_LIBINT\t${HAVE_LIBINT:-no}"
-echo -e "HAVE_LIBR12\t${HAVE_LIBR12:-no}"
-echo -e "HAVE_LIBDERIV\t${HAVE_LIBDERIV:-no}"
-echo -e "HAVE_LIBINT2\t${HAVE_LIBINT2:-no}"
-echo -e "Psi interface\t${HAVE_PSIMPQCIFACE:-no}"
-echo -en "components\t${components:-<not set>}"
+echo "HAVE_ARMCI       ${HAVE_ARMCI:-no}"
+echo "HAVE_LIBINT      ${HAVE_LIBINT:-no}"
+echo "HAVE_LIBR12      ${HAVE_LIBR12:-no}"
+echo "HAVE_LIBDERIV    ${HAVE_LIBDERIV:-no}"
+echo "HAVE_LIBINT2     ${HAVE_LIBINT2:-no}"
+echo "Psi interface    ${HAVE_PSIMPQCIFACE:-no}"
+echo "components       ${components:-<not set>}"
 if test "$components" = yes; then
-  echo -ne "\t(CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"
+   echo "                 (CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"
 fi
-echo
-echo -e "---------------------------------------------------------------"
+echo "---------------------------------------------------------------"
 

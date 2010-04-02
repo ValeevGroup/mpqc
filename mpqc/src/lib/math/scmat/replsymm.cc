@@ -547,69 +547,99 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   int me = messagegrp()->me();
   int nproc = messagegrp()->n();
 
-  // if there are fewer vectors than processors, do serial diagonalization
-  if (n < nproc || nproc==1) {
+  // if there is one processor or only a few vectors, do serial diagonalization
+  if (nproc==1 || n <= 2) {
       double *eigvals = la->matrix;
       double **eigvecs = lb->rows;
       cmat_diag(rows, eigvals, eigvecs, n, 1, 1.0e-15);
     }
   else {
-      int nvec = n/nproc + (me<(n%nproc)?1:0);
-      int mvec = n/nproc + ((n%nproc) ? 1 : 0);
+      Ref<MessageGrp> diagmsggrp;
 
-      int *ivec = new int[nvec];
-      for (i=0; i<nvec; i++)
-          ivec[i] = i*nproc + me;
+      bool dosplit = n<nproc;
 
-      double *eigvals = new double[n];
-      double **eigvecs = cmat_new_rect_matrix(mvec, n);
-      double **rect = cmat_new_rect_matrix(mvec, n);
+      if (dosplit) {
+//           diagmsggrp = messagegrp()->split((me<n)?0:-1);
+          std::set<int> diagset;
+          for (int i=0; i<n; i++) diagset.insert(i);
+          diagmsggrp = messagegrp()->subset(diagset);
+      }
+      else {
+          diagmsggrp = messagegrp();
+      }
 
-      lb->assign(0.0);
+      if (diagmsggrp.nonnull()) {
+          int ndiagproc = diagmsggrp->n();
+          int nvec = n/ndiagproc + (me<(n%ndiagproc)?1:0);
+          int mvec = n/ndiagproc + ((n%ndiagproc) ? 1 : 0);
 
-      for (i=0; i < nvec; i++) {
-          int c = ivec[i];
-          int j;
-          for (j=0; j <= c; j++)
-              rect[i][j] = rows[c][j];
-          for (; j < n; j++)
-              rect[i][j] = rows[j][c];
-        }
+          int *ivec = new int[nvec];
+          for (i=0; i<nvec; i++)
+              ivec[i] = i*ndiagproc + me;
 
-      dist_diagonalize(n, nvec, rect[0], eigvals, eigvecs[0], messagegrp());
+          double *eigvals = new double[n];
+          double **eigvecs = cmat_new_rect_matrix(mvec, n);
+          double **rect = cmat_new_rect_matrix(mvec, n);
 
-      la->assign(eigvals);
-      delete[] eigvals;
+          lb->assign(0.0);
 
-      int *tivec = new int [mvec];
-      for (i=0; i < nproc; i++) {
-          int tnvec;
+          for (i=0; i < nvec; i++) {
+              int c = ivec[i];
+              int j;
+              for (j=0; j <= c; j++)
+                  rect[i][j] = rows[c][j];
+              for (; j < n; j++)
+                  rect[i][j] = rows[j][c];
+          }
 
-          if (i==me) {
-              messagegrp()->bcast(nvec, me);
-              messagegrp()->bcast(eigvecs[0], n*nvec, me);
-              messagegrp()->bcast(ivec, nvec, me);
-              tnvec = nvec;
-              memcpy(tivec, ivec, sizeof(int)*nvec);
-              memcpy(rect[0], eigvecs[0], sizeof(double)*n*nvec);
-            }
-          else {
-              messagegrp()->bcast(tnvec, i);
-              messagegrp()->bcast(rect[0], n*tnvec, i);
-              messagegrp()->bcast(tivec, tnvec, i);
-            }
+          dist_diagonalize(n, nvec, rect[0], eigvals, eigvecs[0], diagmsggrp);
 
-          for (int j=0; j < tnvec; j++) {
-              int c = tivec[j];
-              for (int k=0; k < n; k++)
-                  lb->rows[k][c] = rect[j][k];
-            }
-        }
+          la->assign(eigvals);
+          delete[] eigvals;
 
-      delete[] ivec;
-      delete[] tivec;
-      cmat_delete_matrix(eigvecs);
-      cmat_delete_matrix(rect);
+          int *tivec = new int [mvec];
+          for (i=0; i < ndiagproc; i++) {
+              int tnvec;
+
+              if (i==me) {
+                  diagmsggrp->bcast(nvec, me);
+                  diagmsggrp->bcast(eigvecs[0], n*nvec, me);
+                  diagmsggrp->bcast(ivec, nvec, me);
+                  tnvec = nvec;
+                  memcpy(tivec, ivec, sizeof(int)*nvec);
+                  memcpy(rect[0], eigvecs[0], sizeof(double)*n*nvec);
+              }
+              else {
+                  diagmsggrp->bcast(tnvec, i);
+                  diagmsggrp->bcast(rect[0], n*tnvec, i);
+                  diagmsggrp->bcast(tivec, tnvec, i);
+              }
+
+              for (int j=0; j < tnvec; j++) {
+                  int c = tivec[j];
+                  for (int k=0; k < n; k++)
+                      lb->rows[k][c] = rect[j][k];
+              }
+          }
+
+          delete[] ivec;
+          delete[] tivec;
+          cmat_delete_matrix(eigvecs);
+          cmat_delete_matrix(rect);
+      }
+      if (dosplit) {
+          // now the diagonalization is complete on the first ndiagproc nodes
+          // broadcast the results to the remaining nodes.
+          std::set<int> bcastset;
+          bcastset.insert(0);
+          for (int i=n; i<nproc; i++) bcastset.insert(i);
+          Ref<MessageGrp> bcastgrp = messagegrp()->subset(bcastset);
+//           Ref<MessageGrp> bcastgrp = messagegrp()->split((me==0||me>=n)?0:-1);
+          if (bcastgrp.nonnull()) {
+              bcastgrp->bcast(la->matrix,n);
+              bcastgrp->bcast(lb->matrix,n*n);
+          }
+      }
     }
 }
 

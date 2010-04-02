@@ -181,7 +181,7 @@ if (!GetOptions("small!" => \$small,
 
 if ("$launch" eq '@' . 'LAUNCH@') {
     if ("$messagegrp" eq "mpi") {
-        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% %MPQC% [-o %OUTPUT%] %INPUT%";
+        $launch = "mpirun [-machinefile %NODEFILE%] -n %NPROC% %MPQCRUNPROC% [-o %OUTPUT%] %INPUT%";
     }
     else {
         $launch = "%MPQC% [-o %OUTPUT%] %INPUT%";
@@ -541,7 +541,9 @@ sub jobrunner {
         $cmd =~ s/%NPROC%/$nprocperjob/;
         $cmd =~ s/%INPUT%/$in/;
 
-	my $mpqcrunproc = "$scdatadir/mpqcrunproc $mpqc";
+        my $mpqcencoded = &isoencode("$mpqc");
+
+	my $mpqcrunproc = "$scdatadir/mpqcrunproc $mpqcencoded";
         if (exists($ENV{MESSAGEGRP})) {
            $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{MESSAGEGRP}");
         }

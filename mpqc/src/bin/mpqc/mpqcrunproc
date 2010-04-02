@@ -23,6 +23,8 @@ function isodecode() {
                   -e 's/%25/%/g'
 }
 
+mpqcdecoded=`isodecode $mpqc`
+
 if [ "$messagegrp" != none ]; then
   export MESSAGEGRP=`isodecode $messagegrp`
 fi
@@ -40,5 +42,5 @@ if [ "$integral" != none ]; then
 fi
 
 
-$mpqc $*
+$mpqcdecoded $*
 

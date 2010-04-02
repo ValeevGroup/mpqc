@@ -287,10 +287,10 @@ pop_local_mo(const Ref<OneBodyWavefunction> &wfn, int nfzc, const sc::RefSymmSCM
     }
 #endif // imbn
 
-  std::cout << "ao_overlap dim:" << std::endl;
+  ExEnv::out0() << "ao_overlap dim:" << std::endl;
   ao_overlap.dim().print();
 
-  std::cout << "scf_vector dims:" << std::endl;
+  ExEnv::out0() << "scf_vector dims:" << std::endl;
   scf_vector.rowdim().print();
   scf_vector.coldim().print();
 
@@ -340,8 +340,8 @@ pop_local_mo(const Ref<OneBodyWavefunction> &wfn, int nfzc, const sc::RefSymmSCM
   tim.exit("Iterations");
   ExEnv::out0() << "finished iterations" << std::endl; // imbn debug print
 
-  std::cout << "rot_counter(old) = " << rot_counter << std::endl;
-  std::cout << "upd_counter(old) = " << upd_counter << std::endl;
+  //std::cout << "rot_counter(old) = " << rot_counter << std::endl;
+  //std::cout << "upd_counter(old) = " << upd_counter << std::endl;
   msg->sync(); // imbn test
 
   scf_vector_t->assign(scf_vector_dat);

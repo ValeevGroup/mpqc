@@ -51,6 +51,7 @@ namespace sc {
   template <typename Attributes>
   class DecoratedOrbital {
     public:
+      DecoratedOrbital() {}
       DecoratedOrbital(size_t index, const Attributes& attr) : index_(index), attr_(attr) {}
 
       size_t index() const { return index_; }

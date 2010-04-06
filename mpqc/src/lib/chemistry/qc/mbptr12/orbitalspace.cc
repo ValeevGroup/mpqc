@@ -809,14 +809,17 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
     // Since merging may produce linear dependencies this doesn't solve all problems
     // hence the user should check the result for linear dependencies, etc.
 
+    blocked_orbs.resize(norbs);
     // include orbitals from space1, block-by-block
     size_t block_offset = 0;
+    int current = 0;
     for (unsigned int b = 0; b < block_sizes1.size(); ++b) {
       const size_t block_size1 = block_sizes1[b];
       const size_t block_size2 = block_sizes2[b];
       for (size_t o = 0; o < block_size1; ++o) {
         const size_t oo = o + block_offset;
-        blocked_orbs.push_back(BlockedOrbital(oo, b));
+        blocked_orbs[oo] = BlockedOrbital(current, b);
+        ++current;
       }
       block_offset += block_size1 + block_size2;
     }
@@ -828,7 +831,8 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
       block_offset += block_size1;
       for (size_t o = 0; o < block_size2; ++o) {
         const size_t oo = o + block_offset;
-        blocked_orbs.push_back(BlockedOrbital(oo, b));
+        blocked_orbs[oo] = BlockedOrbital(current, b);
+        ++current;
       }
       block_offset += block_size2;
     }

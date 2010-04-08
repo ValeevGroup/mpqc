@@ -1339,7 +1339,7 @@ Molecule::read_pdb(const char *filename)
           char name[5];
           strncpy(name,&line[12],4); name[4] = '\0';
           char resSeq[5];
-          strncpy(resSeq,&line[23],4); resSeq[5] = '\0';
+          strncpy(resSeq,&line[23],4); resSeq[4] = '\0';
 
           if (element[0]==' '&&element[1]==' ') {
               // no element was given so get the element from the atom name

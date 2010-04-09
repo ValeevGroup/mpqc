@@ -239,6 +239,7 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   s.get(nfzc_);
   s.get(omit_uocc_);
   s.get(cabs_singles_);
+  s.get(cabs_singles_coupling_);
   s.get(debug_);
 }
 
@@ -253,7 +254,7 @@ void PT2R12::save_data_state(StateOut &s) {
   SavableState::save_state(r12eval_, s);
   s.put(nfzc_);
   s.put(omit_uocc_);
-  s.put(cabs_singles_);
+  s.put(cabs_singles_coupling_);
   s.put(debug_);
 }
 
@@ -624,13 +625,6 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
   Ref<SpinMOPairIter> PQ_iter = new SpinMOPairIter(space1,space2,pairspin);
   const int nmo1 = space1->rank();
   const int nmo2 = space2->rank();
-  int nmo;
-  if(nmo1==nmo2) {
-    nmo = nmo1;
-  }
-  else {
-    throw ProgrammingError("PT2R12::g(SpinCase2) -- nmo dimension of the spaces does not fit.",__FILE__,__LINE__);
-  }
   const int pairrank = PQ_iter->nij();
   const RefSCDimension pairdim = new SCDimension(pairrank);
   RefSCMatrix G = localkit->matrix(pairdim,pairdim);
@@ -657,6 +651,95 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
 
   r12eval_->compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(G,TwoBodyOper::eri,s1,s1,s2,s2,
       antisymmetrize,tforms);
+
+  return(G);
+}
+
+RefSCMatrix PT2R12::g(SpinCase2 pairspin,
+                      const Ref<OrbitalSpace>& bra1,
+                      const Ref<OrbitalSpace>& bra2,
+                      const Ref<OrbitalSpace>& ket1,
+                      const Ref<OrbitalSpace>& ket2) {
+  const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  Ref<SpinMOPairIter> braiter12 = new SpinMOPairIter(bra1,bra2,pairspin);
+  Ref<SpinMOPairIter> ketiter12 = new SpinMOPairIter(ket1,ket2,pairspin);
+  RefSCMatrix G = localkit->matrix(new SCDimension(braiter12->nij()),
+                                   new SCDimension(ketiter12->nij()));
+  G.assign(0.0);
+
+  const int nket1 = ket1->rank();
+
+  // find equivalent spaces in the registry
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+  if (!oreg->value_exists(bra1) || !oreg->value_exists(bra2) || !oreg->value_exists(ket1) || !oreg->value_exists(ket2))
+    throw ProgrammingError("PT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
+
+  // compute (bra1 ket1 | bra2 ket2)
+  const std::string tform_b1k1_b2k2_key = ParsedTwoBodyFourCenterIntKey::key(bra1->id(),bra2->id(),
+                                                                             ket1->id(),ket2->id(),
+                                                                             std::string("ERI"),
+                                                                             std::string(TwoBodyIntLayout::b1b2_k1k2));
+  Ref<TwoBodyMOIntsTransform> tform_b1k1_b2k2 = this->r12world()->world()->moints_runtime4()->get( tform_b1k1_b2k2_key );
+  Ref<DistArray4> da4_b1k1_b2k2 = tform_b1k1_b2k2->ints_acc();
+
+  Ref<DistArray4> da4_b2k1_b1k2;
+  const bool antisymmetrize = (pairspin != AlphaBeta);
+  const bool bra1_eq_bra2 = (*bra1 == *bra2);
+  const bool ket1_eq_ket2 = (*ket1 == *ket2);
+  const bool need_b2k1_b1k2 = !bra1_eq_bra2 && !ket1_eq_ket2 && antisymmetrize;
+  if (need_b2k1_b1k2) {
+    // compute (bra2 ket1 | bra1 ket2)
+    const std::string tform_b2k1_b1k2_key = ParsedTwoBodyFourCenterIntKey::key(bra2->id(),bra1->id(),
+                                                                               ket1->id(),ket2->id(),
+                                                                               std::string("ERI"),
+                                                                               std::string(TwoBodyIntLayout::b1b2_k1k2));
+    Ref<TwoBodyMOIntsTransform> tform_b2k1_b1k2 = this->r12world()->world()->moints_runtime4()->get( tform_b2k1_b1k2_key );
+    da4_b2k1_b1k2 = tform_b2k1_b1k2->ints_acc();
+  }
+
+  for(braiter12->start(); braiter12; braiter12->next()) {
+
+    const int b1 = braiter12->i();
+    const int b2 = braiter12->j();
+    const int b12 = braiter12->ij();
+
+    const double* blk_b1b2 = da4_b1k1_b2k2->retrieve_pair_block(b1, b2, 0);
+
+    const double* blk_b2b1 = 0;
+    if (antisymmetrize && !ket1_eq_ket2 && bra1_eq_bra2)
+      blk_b2b1 = da4_b1k1_b2k2->retrieve_pair_block(b2, b1, 0);
+    if (antisymmetrize && need_b2k1_b1k2)
+      blk_b2b1 = da4_b2k1_b1k2->retrieve_pair_block(b2, b1, 0);
+
+    for(ketiter12->start(); ketiter12; ketiter12->next()) {
+
+      const int k1 = ketiter12->i();
+      const int k2 = ketiter12->j();
+      const int k12 = ketiter12->ij();
+
+      if (!antisymmetrize)
+        G.set_element( b12, k12, blk_b1b2[k12] );
+      else {
+
+        if (blk_b2b1) {
+          G.set_element( b12, k12, blk_b1b2[k12] - blk_b2b1[k12] );
+        }
+        else {
+          const int k21 = k2 * nket1 + k1;
+          G.set_element( b12, k12, blk_b1b2[k12] - blk_b1b2[k21] );
+        }
+      }
+    }
+
+    da4_b1k1_b2k2->release_pair_block(b1, b2, 0);
+    if (blk_b2b1) {
+      if (need_b2k1_b1k2)
+        da4_b2k1_b1k2->release_pair_block(b2, b1, 0);
+      else
+        da4_b1k1_b2k2->release_pair_block(b2, b1, 0);
+    }
+
+  }
 
   return(G);
 }
@@ -1287,44 +1370,44 @@ void sc::PT2R12::compute()
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
   const bool spin_polarized = r12world()->ref()->spin_polarized();
-
-  for(int i=0; i<NSpinCases2; i++) {
-    SpinCase2 pairspin = static_cast<SpinCase2>(i);
-    double scale = 1.0;
-    if (pairspin == BetaBeta && !spin_polarized) continue;
-    switch (r12world()->r12tech()->ansatz()->projector()) {
-      case R12Technology::Projector_1:
-        energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
-        break;
-      case R12Technology::Projector_2:
-        energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
-        break;
-      default:
-        abort();
+  //const unsigned int SKIP_PT2R12 = 1;
+  //if (!SKIP_PT2R12)
+  //{
+    for(int i=0; i<NSpinCases2; i++)
+    {
+      SpinCase2 pairspin = static_cast<SpinCase2>(i);
+      double scale = 1.0;
+      if (pairspin == BetaBeta && !spin_polarized) continue;
+      switch (r12world()->r12tech()->ansatz()->projector())
+      {
+        case R12Technology::Projector_1:
+          energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
+          break;
+        case R12Technology::Projector_2:
+          energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
+          break;
+        default:
+          abort();
+      }
     }
-  }
+  //}
 
 
-
-  //calculate basis set incompleteness error (bsie)
-#define CALC_BSIE 0
-#if CALC_BSIE
-    ExEnv::out0() << indent << "calculate BSIE" << endl;
-    double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
+  //calculate basis set incompleteness error (BSIE)
+  double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
+  if(cabs_singles_)
+  {
     alpha_correction = this->energy_cabs_singles(Alpha);
     if (spin_polarized)
       beta_correction =  this->energy_cabs_singles(Beta);
     else
       beta_correction = alpha_correction;
     cabs_singles_correction = alpha_correction + beta_correction;
-
-    ExEnv::out0() << indent << scprintf("CABS singles energy correction:             %17.12lf",
-                                      cabs_singles_correction) << endl;
-    ExEnv::out0() << indent << scprintf("Reference energy + CABS singles correction:             %17.12lf",
-                                      reference_->energy() + cabs_singles_correction) << endl;
-#else
-    ExEnv::out0() << indent << "do not calculate BSIE" << endl;
-#endif
+  }
+  ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
+                                    cabs_singles_correction) << endl;
+  ExEnv::out0() << indent << scprintf("CASSCF+CABS singles correction:        %17.12lf",
+                                    reference_->energy() + cabs_singles_correction) << endl;
 
 
 
@@ -1336,13 +1419,13 @@ void sc::PT2R12::compute()
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                       reference_->energy()) << endl;
-#if 0
+  #if 0
   {
   const double recomp_ref_energy = this->energy_recomputed_from_densities();
   ExEnv::out0() << indent << scprintf("Reference energy (recomp) [au]:        %17.12lf",
                                      reference_->energy()) << endl;
   }
-#endif
+  #endif
   ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
                                       energy_pt2r12[AlphaBeta]) << endl;
   ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
@@ -1408,12 +1491,17 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
+  const unsigned int ZERO_COUPLING_TERMS = 1;
+  const unsigned int DEBUGG = 0;
+
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
+  Ref<OrbitalSpace> obs_v_space = this->r12world()->ref()->uocc_act_sb(spin);
 
 
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
-  if (!oreg->value_exists(pspace)) {
+  if (!oreg->value_exists(pspace))
+  {
     oreg->add(make_keyspace_pair(pspace));
   }
   const std::string key = oreg->key(pspace);
@@ -1421,8 +1509,33 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 
 
+  // for convenience of testing, whether use it or not, we define the combined virtual space: OBS virtuals + CABS
+  Ref<OrbitalSpace> orbital_and_cabs_virtual_space;
+  orbital_and_cabs_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals",
+                                           *obs_v_space,
+                                           *cabsspace, true);
+  if (!oreg->value_exists(orbital_and_cabs_virtual_space))
+  {
+    oreg->add(make_keyspace_pair(orbital_and_cabs_virtual_space));
+  }
+  const std::string AAkey = oreg->key(orbital_and_cabs_virtual_space);
+  orbital_and_cabs_virtual_space = oreg->value(AAkey);
 
-  Ref<OrbitalSpace> Aspace = cabsspace;
+
+  Ref<OrbitalSpace> Aspace;
+  if (cabs_singles_coupling_)
+    Aspace = orbital_and_cabs_virtual_space;
+  else
+    Aspace = cabsspace;
+
+
+
+
+  const unsigned int num_blocks = obs_v_space->nblocks();// since the two spaces have the same blocksizes, we only need to define one
+  const std::vector<unsigned int>& v_block_sizes = obs_v_space->block_sizes();
+  const std::vector<unsigned int>& cabs_block_sizes = cabsspace->block_sizes();
+  const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes(); // for debugging purposes
+  const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes(); // for debugging purposes
 
 
   // get the fock matrices
@@ -1439,18 +1552,104 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   RefSymmSCMatrix gamma2_ss = this->rdm2( case12(spin,spin) );
   RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );
 
-
-
   // define H0 and necessary vectors
   const int no = pspace->rank();
   const int nX = Aspace->rank();
+  const int n_p = pspace->rank();
+  const int n_obs_virtual = obs_v_space->rank();
+  const int n_cabs = cabsspace->rank();
   const int noX = no * nX;
-  RefSCDimension dim = new SCDimension(noX);
-  RefSymmSCMatrix H0 = gamma2_ss->kit()->symmmatrix(dim);
+  RefSCDimension dim_oX = new SCDimension(noX);
+  RefSCDimension dim_o  = new SCDimension(no);
+  RefSCDimension dim_X  = new SCDimension(nX);
+  RefSymmSCMatrix H0 = gamma2_ss->kit()->symmmatrix(dim_oX);
   H0.assign(0.0);
-
-  RefSCVector rhs_vector = gamma2_ss->kit()->vector(dim);
+  RefSymmSCMatrix Ixy = gamma2_ss->kit()->symmmatrix(dim_o);
+  Ixy.assign(0.0);
+  RefSCVector rhs_vector = gamma2_ss->kit()->vector(dim_oX);
   rhs_vector->assign(0.0);
+
+
+  //obs_v_space->print_detail(ExEnv::out0());
+  //Aspace->print_detail(ExEnv::out0());
+  //F_pp.print("Fock pp matrix");
+  //F_AA.print("Fock AA matrix");
+
+
+  ExEnv::out0()  << "  print out cabs_singles_coupling_, ZERO_COUPLING_TERMS:" << cabs_singles_coupling_  << ", "
+                                                                               << ZERO_COUPLING_TERMS << endl;
+
+  ExEnv::out0()  << "  primary, virtual and cabs space dimensions: " << n_p << ", " << n_obs_virtual << ", " << n_cabs << endl;
+
+  ExEnv::out0()  << "  dimension of the blocks of pspace, vspace, cabsspace: " << endl << "  ";
+  {
+    for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
+    {
+      ExEnv::out0() << scprintf("%5d", p_block_sizes[block_counter]);
+    }
+    ExEnv::out0() << endl << "  ";
+  }
+
+  {
+    for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
+    {
+      ExEnv::out0()  << scprintf("%5d", v_block_sizes[block_counter]);
+    }
+    ExEnv::out0() << endl << "  ";
+  }
+  {
+    for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
+    {
+      ExEnv::out0()  << scprintf("%5d", cabs_block_sizes[block_counter]);
+    }
+    ExEnv::out0() << endl;
+  }
+
+  if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
+   {
+    ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
+    unsigned int offset1 = 0;
+    for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
+    {
+      for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind) // in each symmetry block, the OBS virtual indices are put before CABS indices
+      {
+        const unsigned int F_pA_v_ind =  offset1 + v_ind;
+        for (int row_ind = 0; row_ind < no; ++row_ind)
+        {
+          F_pA.set_element(row_ind, F_pA_v_ind, 0.0);
+        }
+      }
+      offset1 += A_block_sizes[block_counter1];
+    }
+   }
+
+
+
+
+  if (ZERO_COUPLING_TERMS && cabs_singles_coupling_) // for test purposes, zero the  elements of F_AA which couples the OBS virtual to CABS
+  {
+    unsigned int offset1 = 0;
+    for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
+    {
+      for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind)
+      {
+        const unsigned int row_ind =  offset1 + v_ind;
+        unsigned int offset2 = 0;
+        for (int block_counter2 = 0; block_counter2 < num_blocks; ++block_counter2)
+        {
+          for (int cabs_ind = 0; cabs_ind < cabs_block_sizes[block_counter2]; ++cabs_ind)
+          {
+            const unsigned int col_ind =  offset2 + v_block_sizes[block_counter2] + cabs_ind ;
+            F_AA.set_element(row_ind, col_ind, 0.0);
+            F_AA.set_element(col_ind, row_ind, 0.0);
+          }
+          offset2 += A_block_sizes[block_counter2];
+        }
+      }
+      offset1 += A_block_sizes[block_counter1];
+    }
+  }
+
 
 
 
@@ -1473,43 +1672,60 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   const double F_Gamma1_product = (F_pp * gamma1).trace() + (F_pp_otherspin * gamma1_otherspin).trace();
 
 
-  // compute H0; x1/x2 etc denote difference spins;
+  // compute H0; x1/x2 etc denote difference spins; H0 corresponds to the B matrix from the notes
+
+  // first, calculate the intermediate I(x,y) = f^q_p * \gamma^{xp}_{yq};
   for(int x=0; x<no; ++x)
   {
     for(int y=0; y<no; ++y)
     {
-      const double gamma_xy = gamma1(x,y);
-      for(int A=0; A<nX; ++A)
-      {
-        const int xA = x*nX + A;
-        for(int B=0; B<nX; ++B)
-        {
-          const int yB = y*nX + B;
-          double h0_xA_yB = 0.0;
-          h0_xA_yB += gamma_xy * F_AA(A,B);
-          if(A == B)                          // corresponds to a Kronecker delta
+      double Ixy_xy = 0.0;
           {
-            h0_xA_yB += gamma_xy * F_Gamma1_product;
             for (int p = 0; p < no; ++p)
             {
               for (int q = 0; q < no; ++q)
-              {
-                const int x1p2 = x * no + p;
-                const int y1q2 = y * no + q;
-                h0_xA_yB += F_pp(q, p) * gamma2_os(x1p2, y1q2); // contribution from different spin terms
-                if((x != p) && (y != q))
+              {                    // firstly contribution from different spin terms; we differentiate alpha and beta spins because for 2-particle gamma of different
+                                  // spins, for both upper and lower indices, the alpha-spin index is always before the beta-spin one
+                const int x1p2 = (spin == Alpha)? (x * no + p):(p * no + x);
+                const int y1q2 = (spin == Alpha)? (y * no + q):(q * no + y);
+                Ixy_xy += F_pp_otherspin(q, p) * gamma2_os(x1p2, y1q2);
+                if((x != p) && (y != q))  // contribution from gamma2_ss
                 {
                   const int max_xp = max(x, p);
                   const int min_xp = min(x, p);
                   const int max_yq = max(y, q);
                   const int min_yq = min(y, q);
-                  const int upp_ind_same_spin = (max_xp -1)* (max_xp -2) /2 + min_xp;
-                  const int low_ind_same_spin = (max_yq -1)* (max_yq -2) /2 + min_yq;
-                  h0_xA_yB += ((x > p)? 1.0 : -1.0) * ((y > q)? 1.0 : -1.0) * F_pp_otherspin(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
+                  const int upp_ind_same_spin = (max_xp -1)* max_xp/2 + min_xp;
+                  const int low_ind_same_spin = (max_yq -1)* max_yq/2 + min_yq;
+                  Ixy_xy += ((x > p)? 1.0 : -1.0) * ((y > q)? 1.0 : -1.0) * F_pp(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
                   //  contribution from same spin terms; the "?:" takes care of antisymmetry; for gamma^xp_..., only x<p portion stored
                 }
               }
             }
+          }
+      Ixy(x,y) = Ixy_xy;
+    }
+  }
+
+
+
+  for(int x=0; x<no; ++x)
+  {
+    for(int y=0; y<no; ++y)
+    {
+      const double gamma_xy = gamma1(x,y);
+      const double Ixy_xy = Ixy(x, y);
+      for(int A=0; A<nX; ++A)
+      {
+        const int xA = x*nX + A;              // calculate the row index
+        for(int B=0; B<nX; ++B)
+        {
+          const int yB = y*nX + B;            //calculate the column index
+          double h0_xA_yB = 0.0;
+          h0_xA_yB += gamma_xy * F_AA(A,B);
+          if(A == B)                          // corresponds to a Kronecker delta
+          {
+            h0_xA_yB += -1.0 *gamma_xy * F_Gamma1_product + Ixy_xy;
           }
           H0(xA, yB) = h0_xA_yB;
         }
@@ -1518,8 +1734,96 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   }
 
 
+
   H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
-  ExEnv::out0()  << "  the element of C vector with the maximum absolute value: " << rhs_vector->maxabs() << endl;
+  ExEnv::out0()  << "  the element of C vector with the maximum absolute value: " << scprintf("%10.3lf", rhs_vector.maxabs()) << endl;
+  {                         // calc the norm of C vector: C^i_alpha' * C^j_alpha' * gamma^i_j
+    double cnorm = 0;
+    for (int indo1 = 0; indo1 < no; ++indo1)
+    {
+      for (int indo2 = 0; indo2 < no; ++indo2)
+      {
+        for (int indx = 0; indx < nX; ++indx)
+        {
+          cnorm += rhs_vector.get_element(indo1 * nX + indx) * rhs_vector.get_element(indo2 * nX + indx) * gamma1(indo1, indo2);
+        }
+      }
+    }
+    cnorm = sqrt(cnorm);
+    ExEnv::out0()  << "  the norm of C vector:                                    " << scprintf("%10.3lf", cnorm) << endl;
+  }
+
+
+  if (DEBUGG)
+  {
+    ExEnv::out0()  << "  the orbital occupation number:" << endl;
+    RefDiagSCMatrix eigenmatrix_gamma1 = gamma1.eigvals();
+    for (int indd = 0; indd < no; ++indd)
+    {
+      ExEnv::out0() << scprintf("  %7d: ", indd) << scprintf("  %11.5lf: ", eigenmatrix_gamma1.get_element(indd)) << endl;
+    }
+    ExEnv::out0() << endl << endl;
+  }
+
+  if (DEBUGG)
+  {
+    ExEnv::out0()  << "  the occupied (inactive and active) orbital energy from diagonalization of Fock operator:" << endl;
+    RefSymmSCMatrix F_pp_copy = gamma2_ss->kit()->symmmatrix(dim_o); //
+    F_pp_copy.assign(0.0);
+    for (int ind1 = 0; ind1 < no; ++ind1)
+    {
+      for (int ind2 = 0; ind2 < no; ++ind2)
+      {
+        F_pp_copy.set_element(ind1, ind2, F_pp.get_element(ind1, ind2));
+      }
+    }
+    RefDiagSCMatrix eigenmatrix_F_pp = F_pp_copy.eigvals();
+    for (int indd = 0; indd < no; ++indd)
+        {
+          ExEnv::out0() << scprintf("  %7d: ", indd) << scprintf("  %11.5lf: ", eigenmatrix_F_pp.get_element(indd)) << endl;
+        }
+    ExEnv::out0() << endl << endl;
+  }
+
+
+
+  if (DEBUGG)
+  {
+    ExEnv::out0()  << "  CABS orbital energy from diagonalization of Fock operator:" << endl;
+    RefSymmSCMatrix F_AA_copy = gamma2_ss->kit()->symmmatrix(dim_X);
+    F_AA_copy.assign(0.0);
+    for (int ind1 = 0; ind1 < nX; ++ind1)
+    {
+      for (int ind2 = 0; ind2 < nX; ++ind2)
+      {
+        F_AA_copy.set_element(ind1, ind2, F_AA.get_element(ind1, ind2));
+      }
+    }
+    RefDiagSCMatrix eigenmatrix_F_AA = F_AA_copy.eigvals();
+    for (int indd = 0; indd < nX; ++indd)
+        {
+          ExEnv::out0() << scprintf("  %7d: ", indd) << scprintf("  %11.5lf: ", eigenmatrix_F_AA.get_element(indd));
+          if(indd % 5 == 0) ExEnv::out0() << endl;
+        }
+    ExEnv::out0() << endl << endl;
+  }
+
+
+  if (DEBUGG)
+  {
+    ExEnv::out0()  << "  eigenvalues of the B matrix:" << endl;
+    RefDiagSCMatrix eigenmatrix = H0.eigvals();
+    for (int indd = 0; indd < noX; ++indd)
+    {
+      ExEnv::out0() << scprintf("  %7d: ", indd) << scprintf("  %11.5lf: ", eigenmatrix.get_element(indd));
+      if(indd % 5 == 0)
+      {
+        ExEnv::out0() << endl;
+      }
+    }
+    ExEnv::out0() << endl;
+  }
+
 
 
   double E_cabs_singles_one_spin = 0.0;
@@ -1535,12 +1839,10 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       }
     }
   }
-  if(spin == 0) ExEnv::out0()  << "  Spin Alpha Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
-  else if(spin == 1) ExEnv::out0()  << "  Spin Beta Cabs-singles correction contribution: " << E_cabs_singles_one_spin << endl;
 
   return E_cabs_singles_one_spin;
 
-}// end of energy_cabs_singles function
+}
 
 
 

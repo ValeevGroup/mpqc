@@ -138,6 +138,12 @@ namespace sc {
       RefSCMatrix g(SpinCase2 pairspin,
                     const Ref<OrbitalSpace>& space1,
                     const Ref<OrbitalSpace>& space2);
+      /// This returns <bra1 bra2 || ket1 ket2>
+      RefSCMatrix g(SpinCase2 pairspin,
+                    const Ref<OrbitalSpace>& bra1,
+                    const Ref<OrbitalSpace>& bra2,
+                    const Ref<OrbitalSpace>& ket1,
+                    const Ref<OrbitalSpace>& ket2);
       /**
        * Fock matrix in the same space as given by rdm1()
        */

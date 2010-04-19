@@ -419,6 +419,11 @@ SCF::initial_vector()
     // First check that the same basis is used...if not, then project the
     // guess vector into the present basis.
     if (guess_wfn_.nonnull()) {
+
+      // compute guess wfn with lower accuracy than this wfn
+      if (guess_wfn_->desired_value_accuracy_set_to_default())
+        guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
+
       if (basis()->equiv(guess_wfn_->basis())
           &&orthog_method() == guess_wfn_->orthog_method()
           &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {

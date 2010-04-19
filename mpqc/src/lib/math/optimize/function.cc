@@ -76,26 +76,36 @@ Function::Function(const Ref<KeyVal>&kv, double funcacc,
                    double gradacc, double hessacc):
   value_(this),
   gradient_(this),
-  hessian_(this)
+  hessian_(this),
+  desired_value_accuracy_set_to_default_(false),
+  desired_gradient_accuracy_set_to_default_(false),
+  desired_hessian_accuracy_set_to_default_(false)
 {
   matrixkit_ << kv->describedclassvalue("matrixkit");
 
   if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  KeyValValuedouble funcaccval(funcacc);
-  value_.set_desired_accuracy(kv->doublevalue("value_accuracy",funcaccval));
+  value_.set_desired_accuracy(kv->doublevalue("value_accuracy"));
+  if (kv->error() != KeyVal::OK) {
+    value_.set_desired_accuracy(funcacc);
+    desired_value_accuracy_set_to_default_ = true;
+  }
   if (value_.desired_accuracy() < DBL_EPSILON)
     value_.set_desired_accuracy(DBL_EPSILON);
 
-  KeyValValuedouble gradaccval(gradacc);
-  gradient_.set_desired_accuracy(kv->doublevalue("gradient_accuracy",
-                                                 gradaccval));
+  gradient_.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
+  if (kv->error() != KeyVal::OK) {
+    gradient_.set_desired_accuracy(gradacc);
+    desired_gradient_accuracy_set_to_default_ = true;
+  }
   if (gradient_.desired_accuracy() < DBL_EPSILON)
     gradient_.set_desired_accuracy(DBL_EPSILON);
 
-  KeyValValuedouble hessaccval(hessacc);
-  hessian_.set_desired_accuracy(kv->doublevalue("hessian_accuracy",
-                                                hessaccval));
+  hessian_.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
+  if (kv->error() != KeyVal::OK) {
+    hessian_.set_desired_accuracy(hessacc);
+    desired_hessian_accuracy_set_to_default_ = true;
+  }
   if (hessian_.desired_accuracy() < DBL_EPSILON)
     hessian_.set_desired_accuracy(DBL_EPSILON);
 
@@ -340,6 +350,21 @@ double
 Function::actual_hessian_accuracy() const
 {
   return hessian_.actual_accuracy();
+}
+
+bool
+Function::desired_value_accuracy_set_to_default() const {
+  return desired_value_accuracy_set_to_default_;
+}
+
+bool
+Function::desired_gradient_accuracy_set_to_default() const {
+  return desired_gradient_accuracy_set_to_default_;
+}
+
+bool
+Function::desired_hessian_accuracy_set_to_default() const {
+  return desired_hessian_accuracy_set_to_default_;
 }
 
 void

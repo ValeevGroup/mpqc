@@ -951,6 +951,8 @@ namespace sc {
       // try guess wavefunction
       guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
       if (guess_wfn_.nonnull()) {
+        if (guess_wfn_->desired_value_accuracy_set_to_default())
+          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
         // get energy to make sure that it's computed.
         const double energy = guess_wfn_->value();
         import_occupations(guess_wfn_);
@@ -1035,6 +1037,10 @@ namespace sc {
       // try guess wavefunction
       guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
       if (guess_wfn_.nonnull()) {
+        if (guess_wfn_->desired_value_accuracy_set_to_default())
+          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
+        // get energy to make sure that it's computed.
+        const double energy = guess_wfn_->value();
         import_occupations(guess_wfn_);
       }
     }
@@ -1132,6 +1138,10 @@ namespace sc {
       // try guess wavefunction
       guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
       if (guess_wfn_.nonnull()) {
+        if (guess_wfn_->desired_value_accuracy_set_to_default())
+          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
+        // get energy to make sure that it's computed.
+        const double energy = guess_wfn_->value();
         import_occupations(guess_wfn_);
       }
     }
@@ -1289,8 +1299,9 @@ namespace sc {
 
   void PsiCorrWavefunction::set_desired_value_accuracy(double acc) {
     Function::set_desired_value_accuracy(acc);
-    reference()->set_desired_value_accuracy( acc /
-                                             valacc_to_refacc() );
+    if (reference()->desired_value_accuracy_set_to_default())
+      reference()->set_desired_value_accuracy( acc /
+                                               valacc_to_refacc() );
   }
 
   void PsiCorrWavefunction::write_input(int convergence) {

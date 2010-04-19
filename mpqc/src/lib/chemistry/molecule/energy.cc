@@ -68,26 +68,6 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
 MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   Function(keyval,1.0e-6,1.0e-6,1.0e-4)
 {
-  // The following code is a solaris workshop 5.0 hack, since it doesn't
-  // seem to pass the right arguments in the Function CTOR.  This code can
-  // be deleted with other C++ compilers.
-  KeyValValuedouble funcaccval(1.0e-6);
-  value_.set_desired_accuracy(keyval->doublevalue("value_accuracy",
-                                                  funcaccval));
-  if (value_.desired_accuracy() < DBL_EPSILON)
-    value_.set_desired_accuracy(DBL_EPSILON);
-  KeyValValuedouble gradaccval(1.0e-6);
-  gradient_.set_desired_accuracy(keyval->doublevalue("gradient_accuracy",
-                                                     gradaccval));
-  if (gradient_.desired_accuracy() < DBL_EPSILON)
-    gradient_.set_desired_accuracy(DBL_EPSILON);
-  KeyValValuedouble hessaccval(1.0e-4);
-  hessian_.set_desired_accuracy(keyval->doublevalue("hessian_accuracy",
-                                                    hessaccval));
-  if (hessian_.desired_accuracy() < DBL_EPSILON)
-    hessian_.set_desired_accuracy(DBL_EPSILON);
-  // end of solaris workshop 5.0 hack
-
   print_molecule_when_changed_
       = keyval->booleanvalue("print_molecule_when_changed");
   if (keyval->error() != KeyVal::OK) print_molecule_when_changed_ = 1;

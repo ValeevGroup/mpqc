@@ -202,9 +202,11 @@ void
 MBPT2_R12::set_desired_value_accuracy(double acc)
 {
   Function::set_desired_value_accuracy(acc);
-  // reference should be computed to higher accuracy
-  const double ref_acc = acc * ref_to_mp2r12_acc();
-  ref()->set_desired_value_accuracy(ref_acc);
+  if (ref()->desired_value_accuracy_set_to_default()) {
+    // reference should be computed to higher accuracy
+    const double ref_acc = acc * ref_to_mp2r12_acc();
+    ref()->set_desired_value_accuracy(ref_acc);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

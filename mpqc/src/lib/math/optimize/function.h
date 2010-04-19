@@ -54,6 +54,9 @@ class Function: virtual public SavableState, public Compute {
     AccResultdouble value_;             ///< The value of the function at x_.
     AccResultRefSCVector gradient_;     ///< The gradient at x_
     AccResultRefSymmSCMatrix hessian_;  ///< The hessian at x_.
+    bool desired_value_accuracy_set_to_default_;
+    bool desired_gradient_accuracy_set_to_default_;
+    bool desired_hessian_accuracy_set_to_default_;
 
     bool throw_if_tolerance_exceeded_;
 
@@ -166,6 +169,14 @@ class Function: virtual public SavableState, public Compute {
     virtual double actual_hessian_accuracy() const;
     virtual double desired_hessian_accuracy() const;
     AccResultRefSymmSCMatrix& hessian_result() { return hessian_; }
+    //@}
+
+    /** @name Members that check whether the desired accuracies were set to the default values.
+      */
+    //@{
+    virtual bool desired_value_accuracy_set_to_default() const;
+    virtual bool desired_gradient_accuracy_set_to_default() const;
+    virtual bool desired_hessian_accuracy_set_to_default() const;
     //@}
 
     // hessian by gradients at finite displacements

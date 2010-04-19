@@ -128,6 +128,10 @@ class SCF: public OneBodyWavefunction {
     // Returns a new'ed allocation vector if it is in the input,
     // otherwise null.
     int *read_occ(const Ref<KeyVal> &, const char *name, int nirrep);
+
+    /// how much lower is the desired accuracy of the guess?
+    static double guess_acc_ratio() { return 1e4; }
+
   public:
     SCF(StateIn&);
     /** The KeyVal constructor.

@@ -237,6 +237,8 @@ namespace sc {
       int multp_;
       int charge_;
       static const int maxiter = 200;
+      /// how much lower is the desired accuracy of the guess?
+      static double guess_acc_ratio() { return 1e4; }
 
       /// guess wave function is only used to get the occupations
       Ref<OneBodyWavefunction> guess_wfn_;

@@ -298,20 +298,20 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
                                                              space2()->id(),
                                                              dfspace12->id());
     C12 = runtime()->get(C12_key);
-    C12->activate();
   }
 
-  Ref<DistArray4> C34, cC34;
-  if (!equiv_12_34) {
-    const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
-    const std::string C34_key = ParsedDensityFittingKey::key(space3()->id(),
-                                                             space4()->id(),
-                                                             dfspace34->id());
-    C34 = runtime()->get(C34_key);
-    C34->activate();
-  }
-  else {
-    C34 = C12;
+  Ref<DistArray4> C34, cC34;  // C34 only needed for robust density-fitting of non-Coulomb (non-kernel) operators
+  if (!coulomb_only) {
+    if (!equiv_12_34) {
+      const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
+      const std::string C34_key = ParsedDensityFittingKey::key(space3()->id(),
+                                                               space4()->id(),
+                                                               dfspace34->id());
+      C34 = runtime()->get(C34_key);
+    }
+    else {
+      C34 = C12;
+    }
   }
 
   Ref<IntParams> params = intdescr()->params();
@@ -323,29 +323,32 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   // compute the 3-center operator matrices
   {
     const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
-    const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
-    const std::string cC12_key = ParsedTwoBodyThreeCenterIntKey::key(space1()->id(),
-                                                                     dfspace12->id(),
-                                                                     space2()->id(),
-                                                                     descr_key);
-    Ref<TwoBodyThreeCenterMOIntsTransform> cC12_tform = runtime()->moints_runtime()->runtime_3c()->get(cC12_key);
-    cC12_tform->compute();
-    cC12 = cC12_tform->ints_acc();
-    cC12->activate();
 
-    if (!equiv_12_34) {
-      const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
-      const std::string cC34_key = ParsedTwoBodyThreeCenterIntKey::key(space3()->id(),
-                                                                       dfspace34->id(),
-                                                                       space4()->id(),
-                                                                       descr_key);
-      Ref<TwoBodyThreeCenterMOIntsTransform> cC34_tform = runtime()->moints_runtime()->runtime_3c()->get(cC34_key);
-      cC34_tform->compute();
-      cC34 = cC34_tform->ints_acc();
-      cC34->activate();
+    const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
+    const std::string cC34_key =
+        ParsedTwoBodyThreeCenterIntKey::key(space3()->id(), dfspace34->id(),
+                                            space4()->id(), descr_key);
+    Ref<TwoBodyThreeCenterMOIntsTransform> cC34_tform =
+        runtime()->moints_runtime()->runtime_3c()->get(cC34_key);
+    cC34_tform->compute();
+    cC34 = cC34_tform->ints_acc();
+
+    if (!coulomb_only) { // cC12 only needed for robust density-fitting of non-Coulomb (non-kernel) operators
+      if (!equiv_12_34) {
+        const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
+        const std::string cC12_key =
+            ParsedTwoBodyThreeCenterIntKey::key(space1()->id(),
+                                                dfspace12->id(),
+                                                space2()->id(), descr_key);
+        Ref<TwoBodyThreeCenterMOIntsTransform> cC12_tform =
+            runtime()->moints_runtime()->runtime_3c()->get(cC12_key);
+        cC12_tform->compute();
+        cC12 = cC12_tform->ints_acc();
+      }
+      else
+        cC12 = cC34;
     }
-    else
-      cC34 = cC12;
+
   }
 
   double** kernel = 0;
@@ -411,6 +414,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     // cloning C12 assumes that the fitting bases for 12 and 34 are same
     assert(dfbasis12()->nbasis() == dfbasis34()->nbasis());
     L12 = C12->clone(L12_dims);
+    C12->activate();
     L12->activate();
     {
       // split the work between tasks who can write the integrals
@@ -446,7 +450,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       delete[] L12_buf;
     }
     if (L12->data_persistent()) L12->deactivate();
-    L12->activate();
+    if (C12->data_persistent()) C12->deactivate();
   }
 
   // split the work between tasks who can write the integrals
@@ -466,6 +470,14 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   double* xy_buf = new double[rank2 * rank4];
 
   ints_acc_->activate();
+
+  C12->activate();
+  cC34->activate();
+  if (!coulomb_only) {
+    L12->activate();
+    C34->activate();
+    cC12->activate();
+  }
 
   int task_count = 0;
   for(unsigned int te_type = 0; te_type<this->num_te_types(); ++te_type) {
@@ -520,6 +532,13 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   }
 
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+  if (C12->data_persistent())   C12->deactivate();
+  if (cC34->data_persistent()) cC34->deactivate();
+  if (!coulomb_only) {
+    if (L12->data_persistent()) L12->deactivate();
+    if (cC12->data_persistent()) cC12->deactivate();
+    if (C34->data_persistent())   C34->deactivate();
+  }
 
   delete[] xy_buf;
   if (kernel != 0)

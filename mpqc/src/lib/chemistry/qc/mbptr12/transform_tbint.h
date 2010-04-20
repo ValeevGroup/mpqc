@@ -252,7 +252,7 @@ class TwoBodyThreeCenterMOIntsTransform: virtual public SavableState {
     /// factory who created this
     const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
     /// MemoryGrp object
-    const Ref<MemoryGrp>& mem() const { mem_; }
+    const Ref<MemoryGrp>& mem() const { return mem_; }
     /// Returns the integral set descriptor
     const Ref<TwoBodyThreeCenterIntDescr>& intdescr() const { return tbintdescr_; }
     /** Returns the integrals accumulator object. */

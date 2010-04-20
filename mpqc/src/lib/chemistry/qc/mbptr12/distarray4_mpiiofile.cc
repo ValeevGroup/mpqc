@@ -155,26 +155,31 @@ DistArray4_MPIIOFile::set_clonelist(const Ref<ListOfClones>& cl) {
 void
 DistArray4_MPIIOFile::activate()
 {
-  DistArray4::activate();
-  int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDWR, MPI_INFO_NULL, &datafile_);
-  check_error_code_(errcod);
-  if (classdebug() > 0)
-    ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
+  if (!this->active()) {
+    DistArray4::activate();
+    int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDWR, MPI_INFO_NULL, &datafile_);
+    check_error_code_(errcod);
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
+  }
 }
 
 void
 DistArray4_MPIIOFile::deactivate()
 {
-  int errcod = MPI_File_close(&datafile_);
-  check_error_code_(errcod);
-  DistArray4::deactivate();
-  if (classdebug() > 0)
-    ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
+  if (this->active()) {
+    int errcod = MPI_File_close(&datafile_);
+    check_error_code_(errcod);
+    DistArray4::deactivate();
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "closed file=" << filename_ << " datafile=" << datafile_ << endl;
+  }
 }
 
 void
 DistArray4_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) const
 {
+  assert(this->active());  //make sure we are active
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
@@ -229,6 +234,7 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,
                                                 const double *ints)
 {
+  assert(this->active());  //make sure we are active
   // store blocks local to this node ONLY
   assert(is_local(i,j));
 
@@ -254,6 +260,7 @@ const double*
 DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type,
                                               double* buf) const
 {
+  assert(this->active());  //make sure we are active
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // Always first check if it's already in memory
@@ -312,6 +319,7 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_t
                                                  int xstart, int xfence, int ystart, int yfence,
                                                  double* buf) const
 {
+  assert(this->active());  //make sure we are active
   static ScratchBuffer<char> scratch;
   Ref<ThreadLock> scratch_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 

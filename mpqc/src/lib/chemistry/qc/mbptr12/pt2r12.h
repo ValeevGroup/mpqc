@@ -125,8 +125,10 @@ namespace sc {
       double energy_PT2R12_projector1(SpinCase2 pairspin);
       double energy_PT2R12_projector2(SpinCase2 pairspin);
 
-      /// compute CABS singles correction
+      /// compute CABS singles correction using Fock operator as H0
       double energy_cabs_singles(SpinCase1 spin);
+      /// compute CABS singles correction using two-body operators in H0
+      double energy_cabs_singles_twobody_H0();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

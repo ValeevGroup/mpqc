@@ -486,9 +486,8 @@ void
 do_gpetite_test(const Ref<GaussianBasisSet> &b1,
                 const Ref<GaussianBasisSet> &b2)
 {
-  canonical_aabc c4(b1,b1,b1,b2);
   Ref<GenericPetiteList4<canonical_aabc> > p4
-      = new GenericPetiteList4<canonical_aabc>(b1,b1,b1,b2,c4);
+      = new GenericPetiteList4<canonical_aabc>(b1,b1,b1,b2);
   cout << "tesing GenericPetiteList4<canonical_aabc>" << endl;
   for (int i=0; i<b1->nshell(); i++) {
       for (int j=0; j<=i; j++) {
@@ -498,7 +497,7 @@ do_gpetite_test(const Ref<GaussianBasisSet> &b1,
                        << " " << j
                        << " " << k
                        << " " << l
-                       << " in p4: " << p4->in_p4(i,j,k,l)
+                       << " in p4: " << p4->in(i,j,k,l)
                        << endl;
                 }
             }
@@ -536,12 +535,17 @@ main(int, char *argv[])
       Ref<GaussianBasisSet> b1, b2;
       b1 << keyval->describedclassvalue("concat1");
       b2 << keyval->describedclassvalue("concat2");
-      Ref<GaussianBasisSet> b12 = b1->operator+(b2);
-      Ref<GaussianBasisSet> b121 = b12->operator+(b1);
+      Ref<GaussianBasisSet> b12 = b1  + b2;
+      Ref<GaussianBasisSet> b121 = b12 + b1;
+      SCFormIO::setverbose(ExEnv::out0(), 1);
       b1->print();
       b2->print();
       b12->print();
       b121->print();
+
+      Ref<UnionBasisSet> b12sum_kv;  b12u_kv << keyval->describedclassvalue("concat12");
+      b12u_kv->print();
+      SCFormIO::setverbose(ExEnv::out0(), 0);
     }
 
   for (i=0; i<keyval->count("test"); i++) {

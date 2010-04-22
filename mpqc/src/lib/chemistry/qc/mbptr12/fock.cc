@@ -90,14 +90,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     // basis of the reference wavefunction.  The momentum basis in the
     // reference should be a superset of hcore_basis
     Ref<GaussianBasisSet> p_basis = reference->momentum_basis();
-    Ref<GaussianBasisSet> hcore_basis;
-    Ref<GaussianBasisSetSum> bs1_plus_bs2;
-    if (bs1_eq_bs2) {
-      hcore_basis = bs1;
-    } else {
-      bs1_plus_bs2 = new GaussianBasisSetSum(bs1, bs2);
-      hcore_basis = bs1_plus_bs2->bs12();
-    }
+    Ref<GaussianBasisSet> hcore_basis = (bs1_eq_bs2) ? bs1 : bs1 + bs2;
 
     const int dk = reference->dk();
     if (dk > 0) {
@@ -145,25 +138,25 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
       //     end loop
       //   end loop
       const int nbf = hcore_basis->nbasis();
-      const int nfblock = bs1_plus_bs2->nfblock();
-      for (int rb = 0; rb < nfblock; ++rb) {
-        const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
-        if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
-          continue;
-        const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
 
-        const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
-        const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
+      GaussianBasisSetMap bs1_to_hbs(bs1, hcore_basis);
+      GaussianBasisSetMap bs2_to_hbs(bs2, hcore_basis);
+      const int nfblock1 = bs1_to_hbs.nfblock();
+      const int nfblock2 = bs2_to_hbs.nfblock();
+      for (int rb = 0; rb < nfblock1; ++rb) {
+        const int rf_start1 = bs1_to_hbs.fblock_to_function(rb);
+        const int rf_end1 = rf_start1 + bs1_to_hbs.fblock_size(rb) - 1;
 
-        for (int cb = 0; cb < nfblock; ++cb) {
-          const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
-          if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
-            continue;
-          const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
+        const int rf_start12 = bs1_to_hbs.map_function(rf_start1);
+        const int rf_end12 = bs1_to_hbs.map_function(rf_end1);
 
-          const int cf_start2 =
-              bs1_plus_bs2->function12_to_function(cf_start12);
-          const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
+        for (int cb = 0; cb < nfblock2; ++cb) {
+          const int cf_start2 = bs2_to_hbs.fblock_to_function(cb);
+          const int cf_end2 = cf_start2 + bs2_to_hbs.fblock_size(cb) - 1;
+
+          const int cf_start12 =
+              bs2_to_hbs.map_function(cf_start2);
+          const int cf_end12 = bs2_to_hbs.map_function(cf_end2);
 
           // assign row-/col-subblock to h
           h.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2,
@@ -265,15 +258,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
 
   Ref<SCF> ref = r12world()->ref()->ref();
 
-  Ref<GaussianBasisSet> hcore_basis;
-  Ref<GaussianBasisSetSum> bs1_plus_bs2;
-  if (bs1_eq_bs2) {
-      hcore_basis = bs1;
-    }
-  else {
-    bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
-    hcore_basis = bs1_plus_bs2->bs12();
-  }
+  Ref<GaussianBasisSet> hcore_basis = (bs1_eq_bs2) ? bs1 : bs1 + bs2;
 
   // Form the DK correction in the current basis using the momentum
   // basis of the reference wavefunction.  The momentum basis in the

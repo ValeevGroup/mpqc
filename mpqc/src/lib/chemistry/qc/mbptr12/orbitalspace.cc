@@ -731,17 +731,17 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   // s2.basis() is contained in s1
   // neither, get s1.basis() + s2.basis()
   Ref<GaussianBasisSet> bs = 0;
-  try { BasisFunctionMap tmp = *(s1.basis()) << *(s2.basis()); bs = s1.basis(); }
+  try { std::vector<unsigned int> tmp = *(s1.basis()) << *(s2.basis()); bs = s1.basis(); }
   catch (...) { }
   if (bs == 0) {
-    try { BasisFunctionMap tmp = *(s2.basis()) << *(s1.basis()); bs = s2.basis(); }
+    try { std::vector<unsigned int> tmp = *(s2.basis()) << *(s1.basis()); bs = s2.basis(); }
     catch (...) { }
   }
   if (bs == 0) {
     bs = s1.basis() + s2.basis();
   }
-  const BasisFunctionMap map1 = (*bs) << (*s1.basis());
-  const BasisFunctionMap map2 = (*bs) << (*s2.basis());
+  const std::vector<unsigned int> map1 = (*bs) << (*s1.basis());
+  const std::vector<unsigned int> map2 = (*bs) << (*s2.basis());
 
   const unsigned int nao1 = s1.basis()->nbasis();
   const unsigned int norbs1 = s1.rank();

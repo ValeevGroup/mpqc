@@ -509,15 +509,7 @@ namespace sc {
         const Ref<GaussianBasisSet>& bs2 = ketbasis;
         const bool bs1_eq_bs2 = bra_eq_ket;
 
-        Ref<GaussianBasisSet> hcore_basis;
-        Ref<GaussianBasisSetSum> bs1_plus_bs2;
-        if (bs1_eq_bs2) {
-            hcore_basis = bs1;
-          }
-        else {
-          bs1_plus_bs2 = new GaussianBasisSetSum(bs1,bs2);
-          hcore_basis = bs1_plus_bs2->bs12();
-        }
+        Ref<GaussianBasisSet> hcore_basis = (bs1_eq_bs2) ? bs1 : bs1+bs2;
 
         Ref<GaussianBasisSet> p_basis = pbasis;
         if (type == DK1 || type == DK2) {
@@ -570,28 +562,28 @@ namespace sc {
           //       copy block to h
           //     end loop
           //   end loop
-          const int nbf = hcore_basis->nbasis();
-          const int nfblock = bs1_plus_bs2->nfblock();
-          for(int rb=0; rb<nfblock; ++rb) {
-            const int rf_start12 = bs1_plus_bs2->fblock_to_function(rb);
-            if (bs1_plus_bs2->function_to_basis(rf_start12) != 1)
-            continue;
-            const int rf_end12 = rf_start12 + bs1_plus_bs2->fblock_size(rb) - 1;
+          GaussianBasisSetMap bs1_to_hbs(bs1, hcore_basis);
+          GaussianBasisSetMap bs2_to_hbs(bs2, hcore_basis);
+          const int nfblock1 = bs1_to_hbs.nfblock();
+          const int nfblock2 = bs2_to_hbs.nfblock();
+          for (int rb = 0; rb < nfblock1; ++rb) {
+            const int rf_start1 = bs1_to_hbs.fblock_to_function(rb);
+            const int rf_end1 = rf_start1 + bs1_to_hbs.fblock_size(rb) - 1;
 
-            const int rf_start1 = bs1_plus_bs2->function12_to_function(rf_start12);
-            const int rf_end1 = bs1_plus_bs2->function12_to_function(rf_end12);
+            const int rf_start12 = bs1_to_hbs.map_function(rf_start1);
+            const int rf_end12 = bs1_to_hbs.map_function(rf_end1);
 
-            for(int cb=0; cb<nfblock; ++cb) {
-              const int cf_start12 = bs1_plus_bs2->fblock_to_function(cb);
-              if (bs1_plus_bs2->function_to_basis(cf_start12) != 2)
-              continue;
-              const int cf_end12 = cf_start12 + bs1_plus_bs2->fblock_size(cb) - 1;
+            for (int cb = 0; cb < nfblock2; ++cb) {
+              const int cf_start2 = bs2_to_hbs.fblock_to_function(cb);
+              const int cf_end2 = cf_start2 + bs2_to_hbs.fblock_size(cb) - 1;
 
-              const int cf_start2 = bs1_plus_bs2->function12_to_function(cf_start12);
-              const int cf_end2 = bs1_plus_bs2->function12_to_function(cf_end12);
+              const int cf_start12 =
+                  bs2_to_hbs.map_function(cf_start2);
+              const int cf_end12 = bs2_to_hbs.map_function(cf_end2);
 
               // assign row-/col-subblock to h
-              result_rect.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2, rf_start12, cf_start12);
+              result_rect.assign_subblock(hrect_ao, rf_start1, rf_end1, cf_start2, cf_end2,
+                                                    rf_start12, cf_start12);
             }
           }
 

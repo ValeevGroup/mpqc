@@ -126,7 +126,12 @@ concat1<GaussianBasisSet>: (
 
 concat2<GaussianBasisSet>: (
    molecule = $:molecule
-   name = "cc-pV6Z"
+   name = "cc-pVDZ"
+)
+
+concat12<UnionBasisSet>: (
+   basis1 = $:concat1
+   basis2 = $:concat2
 )
 
 test : [

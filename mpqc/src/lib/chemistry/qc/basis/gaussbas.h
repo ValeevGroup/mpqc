@@ -145,7 +145,7 @@ J. Chem. Phys. 121 (2004) 3463.
 class GaussianBasisSet: virtual public SavableState
 {
   private:
-    friend class GaussianBasisSetSum;
+    friend class UnionBasisSet;
 
     // nonnull if keyword "name" was provided
     std::string name_;
@@ -221,7 +221,7 @@ class GaussianBasisSet: virtual public SavableState
               const Ref<SCMatrixKit> &matrixkit,
               const Ref<SCMatrixKit> &so_matrixkit,
               GaussianShell **shell,
-              const std::vector<int> shell_to_center);
+              const std::vector<int>& shell_to_center);
 
   public:
     /** This holds scratch data needed to compute basis function values. */
@@ -404,7 +404,7 @@ class GaussianBasisSet: virtual public SavableState
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
 
-    /** Uses GaussianBasisSetSum to construct the sum of this and B.  */
+    /** Uses UnionBasisSet to construct the sum of this and B.  */
     Ref<GaussianBasisSet> operator+(const Ref<GaussianBasisSet>& B);
 
     void save_data_state(StateOut&);
@@ -432,9 +432,10 @@ class GaussianBasisSet: virtual public SavableState
     /// Return the number of shells on the given center.
     int nshell_on_center(int icenter) const;
     /** Return an overall shell number, given a center and the shell number
-        on that center. */
+        on that center. \sa shell_to_center() */
     int shell_on_center(int icenter, int shell) const;
-    /// Return the center on which the given shell is located.
+    /// Return the center on which the given shell is located. This is a non-decreasing function, i.e.
+    /// if s1 > s2 then shell_to_center(s1) >= shell_to_center(s2)
     int shell_to_center(int ishell) const { return shell_to_center_[ishell]; }
     /// Return the overall index of the first primitive from the given shell
     int shell_to_primitive(int ishell) const {return shell_to_primitive_[ishell]; }
@@ -491,6 +492,9 @@ class GaussianBasisSet: virtual public SavableState
     /// Return a reference to GaussianShell number j on center i.
     GaussianShell& shell(int i,int j) { return operator()(i,j); }
 
+    /// Return the absolute index of shell S located at center C in this basis. If the shell is not found, returns -1
+    int find(int C, const GaussianShell& S) const;
+
     /** The location of center icenter.  The xyz argument is 0 for x, 1 for
         y, and 2 for z. */
     double r(int icenter,int xyz) const;
@@ -545,85 +549,57 @@ int
 ishell_on_center(int icenter, const Ref<GaussianBasisSet>& bs,
 	             const GaussianShell& A);
 
-/** GaussianBasisSetSum constructs a sum of 2 basis sets formed by GaussianBasisSet::operator+()
-    as well as various maps from the constituent basis sets to the sum.
-    The "sum" basis  on atom i includes the basis
-    functions of A centered on i followed by the basis functions of B
-    centered on i.  The Molecule object for the two
-    basis sets must be identical.
-    */
-class GaussianBasisSetSum : virtual public SavableState {
-  public:
-    GaussianBasisSetSum(const Ref<GaussianBasisSet>& bs1,
-                        const Ref<GaussianBasisSet>& bs2);
-    GaussianBasisSetSum(StateIn&);
-    virtual ~GaussianBasisSetSum();
-
-    void save_data_state(StateOut&);
-
-    /// return bs1
-    const Ref<GaussianBasisSet>& bs1() const;
-    /// return bs2
-    const Ref<GaussianBasisSet>& bs2() const;
-    /// return bs1 + bs2
-    const Ref<GaussianBasisSet>& bs12() const;
-
-
-    /// return 1 (shell of the composite basis came from bs1_) or 2
-    int shell_to_basis(int s) const;
-    /// return 1 (function of the composite basis came from bs1_) or 2
-    int function_to_basis(int f) const;
-    /// maps the shell in bs12 to its location in bs1/bs2
-    int shell12_to_shell(int s12) const;
-    /// maps the function in bs12 to its location in bs1/bs2
-    int function12_to_function(int f12) const;
-    /** it is useful to block the basis functions of the composite basis
-        according to which basis, bs1 or bs2, they belonged originally.
-        These blocks will be termed fblocks.
-        This returns the number of such blocks. */
-    int nfblock() const;
-    /// the first basis function in fblock b. Whether the fblock refers to bs1 or bs2 can be deduced via function_to_basis().
-    int fblock_to_function(int b) const;
-    /// the number of basis function in fblock b
-    int fblock_size(int b) const;
-
-  private:
-    Ref<GaussianBasisSet> bs1_;
-    Ref<GaussianBasisSet> bs2_;
-    Ref<GaussianBasisSet> bs12_;
-
-    /////////
-    // maps
-    /////////
-    /// return 1 (shell of the composite basis came from bs1_) or 2
-    std::vector<int> shell_to_basis_;
-    /// return 1 (function of the composite basis came from bs1_) or 2
-    std::vector<int> function_to_basis_;
-    /// maps the shell in bs12 to its location in bs1/bs2
-    std::vector<int> shell12_to_shell_;
-    /// maps the function in bs12 to its location in bs1/bs2
-    std::vector<int> function12_to_function_;
-    /// return the first bf in fblock
-    std::vector<int> fblock_to_function_;
-    /// return the size of fblock
-    std::vector<int> fblock_size_;
-
-    /// sets bs12_ = A + B
-    void sum(const Ref<GaussianBasisSet>& A,
-             const Ref<GaussianBasisSet>& B);
-
-};
-
 /// Nonmember operator+ is more convenient to use than the member operator+
 Ref<GaussianBasisSet>
 operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
 
-typedef std::vector<unsigned int> BasisFunctionMap;
 /** computes a map from basis functions in A to the equivalent basis functions in B. A must be contained in B,
     else will throw */
-BasisFunctionMap operator<<(const GaussianBasisSet& B, const GaussianBasisSet& A);
+std::vector<unsigned int> operator<<(const GaussianBasisSet& B, const GaussianBasisSet& A);
 /// same as operator<<, except A does not have to be contained in B, map[a] = -1 if function a is not in B
 std::vector<int> map(const GaussianBasisSet& B, const GaussianBasisSet& A);
+
+/// A heavy-duty map from one GaussianBasisSet to another GaussianBasisSet. Can only be constructed
+/// if the original basis set is a subset of the target basis set.
+class GaussianBasisSetMap : public RefCount {
+  public:
+    /// will throw if Source is not contained in Target
+    GaussianBasisSetMap(const Ref<GaussianBasisSet>& Source, const Ref<GaussianBasisSet>& Target);
+    ~GaussianBasisSetMap();
+
+    const Ref<GaussianBasisSet>& source() const { return source_; }
+    const Ref<GaussianBasisSet>& target() const { return target_; }
+
+    /// maps shell s in Source to its location in Target
+    int map_shell(int s) const;
+    /// maps function f in Source to its location in Target
+    int map_function(int f) const;
+    /** it is useful to organize sets of basis functions that are adjacent in Source
+        and in Target. These sets will be termed fblocks. Thus each fblock is has size of at least 1 and there
+        is at least 1 fblock. This returns the number of fblocks. */
+    int nfblock() const;
+    /// returns the Source index of the first basis function in fblock b
+    int fblock_to_function(int b) const;
+    /// the number of basis functions in fblock b
+    int fblock_size(int b) const;
+
+  private:
+    Ref<GaussianBasisSet> source_;
+    Ref<GaussianBasisSet> target_;
+
+    /////////
+    // maps
+    /////////
+    /// maps shells in Source to their location in Target
+    std::vector<int> smap_;
+    /// maps functions in Source to their location in Target
+    std::vector<int> fmap_;
+    /// return the first bf in fblock (using Source indexing)
+    std::vector<int> fblock_to_function_;
+    /// return the size of fblock
+    std::vector<int> fblock_size_;
+
+};
 
 }
 

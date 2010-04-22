@@ -43,6 +43,7 @@
 #include <chemistry/qc/basis/sointegral.h>
 #include <chemistry/qc/basis/extent.h>
 #include <chemistry/qc/basis/orthog.h>
+#include <chemistry/qc/basis/union.h>
 
 using namespace std;
 using namespace sc;
@@ -543,7 +544,7 @@ main(int, char *argv[])
       b12->print();
       b121->print();
 
-      Ref<UnionBasisSet> b12sum_kv;  b12u_kv << keyval->describedclassvalue("concat12");
+      Ref<UnionBasisSet> b12u_kv;  b12u_kv << keyval->describedclassvalue("concat12");
       b12u_kv->print();
       SCFormIO::setverbose(ExEnv::out0(), 0);
     }

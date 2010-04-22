@@ -46,7 +46,7 @@ UnionBasisSet::class_desc_(typeid(UnionBasisSet),"UnionBasisSet",2,"public Gauss
 
 UnionBasisSet::UnionBasisSet(const Ref<KeyVal>& keyval) :
   basis1_(require_dynamic_cast<GaussianBasisSet*>(keyval->describedclassvalue("basis1"),"UnionBasisSet:basis1")),
-  basis2_(require_dynamic_cast<GaussianBasisSet*>(keyval->describedclassvalue("basis1"),"UnionBasisSet:basis1"))
+  basis2_(require_dynamic_cast<GaussianBasisSet*>(keyval->describedclassvalue("basis2"),"UnionBasisSet:basis1"))
 {
   sum(basis1_,basis2_);
 }

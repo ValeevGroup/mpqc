@@ -33,6 +33,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
+#include <errno.h>
 #include <scconfig.h>
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
@@ -202,10 +203,26 @@ void PsiExEnv::run_psi_module(const char *module)
   if (me_ != 0) return;
 
   std::ostringstream oss;
-  oss << "cd " << cwd_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
+  oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
       << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;
   const int errcod = system(oss.str().c_str());
   if (errcod) {
+      // errcod == -1 means fork() failed. check errno
+      if (errcod == -1) {
+        std::string errmsg;
+        switch(errno) {
+          case EAGAIN:
+            errmsg = "limit on the number of processors reached";
+            break;
+          case ENOMEM:
+            errmsg = "insufficient memory";
+            break;
+          default:
+            errmsg = "unknown error";
+        }
+        throw SystemException((std::string("fork() failed: ")+errmsg).c_str(),
+                              __FILE__,__LINE__);
+      }
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
       // DO NOT throw if cleaning -- nothing to be gained, and has potential to obscure pending exception

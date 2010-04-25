@@ -33,6 +33,7 @@
 #endif
 
 #include <cassert>
+#include <stdexcept>
 #include <algorithm>
 #include <functional>
 #include <util/class/scexception.h>
@@ -75,8 +76,13 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t host_offset,
      )
     throw ProgrammingError("MemoryGrpRegion::MemoryGrpRegion -- only sizeof(double)-aligned regions are supported",__FILE__,__LINE__);
 
-  // host must be initialized already
-  assert(reserve_.start() + reserve_.size() <= host_->localsize());
+  // host must be initialized already and have enough memory
+  if (reserve_.start() + reserve_.size() > host->localsize()) {
+    std::ostringstream oss;
+    oss << "MemoryGrpRegion: not enough memory, got free region at " << reserve_.start()
+        << ", need " << reserve_.size() << " bytes, localsize = " << host->localsize() << std::endl;
+    throw std::runtime_error(oss.str().c_str());
+  }
   // add region to the map
   map_.insert(host_,reserve_);
 
@@ -95,8 +101,13 @@ MemoryGrpRegion::MemoryGrpRegion(const Ref<MemoryGrp>& host, size_t max_size) :
      )
     throw ProgrammingError("MemoryGrpRegion::MemoryGrpRegion -- only sizeof(double)-aligned regions are supported",__FILE__,__LINE__);
 
-  // host must be initialized already
-  assert(reserve_.start() + reserve_.size() <= host->localsize());
+  // host must be initialized already and have enough memory
+  if (reserve_.start() + reserve_.size() > host->localsize()) {
+    std::ostringstream oss;
+    oss << "MemoryGrpRegion: not enough memory, got free region at " << reserve_.start()
+        << ", need " << reserve_.size() << " bytes, localsize = " << host->localsize() << std::endl;
+    throw std::runtime_error(oss.str().c_str());
+  }
   // add region to the map
   map_.insert(host_,reserve_);
 

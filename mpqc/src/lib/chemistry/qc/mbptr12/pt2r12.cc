@@ -669,6 +669,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
       G.assign(0.0);
 
       const int nket1 = ket1->rank();
+      const int nket2 = ket2->rank();
 
       const bool antisymmetrize = (pairspin != AlphaBeta);
       const bool bra1_eq_bra2 = (*bra1 == *bra2);
@@ -733,14 +734,13 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
             G.set_element( b12, k12, blk_b1b2[k12] );
           else
           {
-            if (blk_b2b1)
-            {  // this branch is for the case when we need b2b1 block
-              G.set_element( b12, k12, blk_b1b2[k12] - blk_b2b1[k12] );
+            const int k12_rect = k1 * nket2 + k2;
+            if (blk_b2b1) {  // this branch is for the case when we need b2b1 block
+              G.set_element( b12, k12, blk_b1b2[k12_rect] - blk_b2b1[k12_rect] );
             }
-            else
-            {          // the other case: ket1 and ket2 are in the same space; we can antisymmetrize G by subtracting k21 from k12
-              const int k21 = k2 * nket1 + k1;
-              G.set_element( b12, k12, blk_b1b2[k12] - blk_b1b2[k21] );
+            else {          // the other case: ket1 and ket2 are in the same space; we can antisymmetrize G by subtracting k21 from k12
+              const int k21_rect = k2 * nket1 + k1;
+              G.set_element( b12, k12, blk_b1b2[k12_rect] - blk_b1b2[k21_rect] );
             }
           }
         }

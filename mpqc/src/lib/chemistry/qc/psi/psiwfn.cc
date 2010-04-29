@@ -339,6 +339,7 @@ namespace sc {
     psiinput->write_defaults(exenv_, dertype);
     psiinput->write_keyword("psi:memory", memory_str_);
     psiinput->write_keyword("psi:convergence", conv);
+    psiinput->write_keyword("psi:lindep_cutoff", this->lindep_tol());
     psiinput->write_keyword("cints:cutoff", conv+5);
     psiinput->begin_section("input");
     psiinput->write_keyword("no_reorient", "true");

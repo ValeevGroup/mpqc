@@ -173,8 +173,10 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
 
   print_nao_ = keyval->booleanvalue("print_nao");
   print_npa_ = keyval->booleanvalue("print_npa");
-  KeyValValuedouble lindep_tol_def(1.e-8);
+
+  KeyValValuedouble lindep_tol_def(OverlapOrthog::default_lindep_tol());
   lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
+
   if (keyval->exists("symm_orthog")) {
       ExEnv::out0() << indent
                    << "WARNING: using obsolete \"symm_orthog\" keyword"
@@ -189,7 +191,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   else {
     std::string orthog_name = keyval->stringvalue("orthog_method");
     if (orthog_name.empty()) {
-      orthog_method_ = OverlapOrthog::Symmetric;
+      orthog_method_ = OverlapOrthog::default_orthog_method();
     }
     else if (orthog_name == "canonical") {
       orthog_method_ = OverlapOrthog::Canonical;

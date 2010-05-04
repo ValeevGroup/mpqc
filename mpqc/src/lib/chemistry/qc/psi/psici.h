@@ -52,6 +52,8 @@ namespace sc {
         <dt><tt>detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI. The default is the value specified with keyword
         root. \sa keyword "detcas_detci_num_roots"
 
+        <dt><tt>relax_core</tt><dd> Specifies whether to relax core orbitals in RASSCF. Default is false.
+
        */
       PsiCI(const Ref<KeyVal> &keyval);
       PsiCI(StateIn &s);
@@ -104,6 +106,7 @@ namespace sc {
 
       // do orbital optimization first?
       bool rasscf_;
+      bool relax_core_;
       std::string wfn_type_;  /// wfn keyword is set to this. can be detci or detcas
 
       Ref<OrbitalSpace> orbs_sb_[NSpinCases1];

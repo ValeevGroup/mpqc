@@ -136,8 +136,11 @@ namespace sc {
       unsigned int nfzv_;
       mutable std::vector<unsigned int> frozen_docc_;
       mutable std::vector<unsigned int> frozen_uocc_;
-      void write_input(int conv);
       RefSymmSCMatrix mo_density_[NSpinCases1];
+
+      void write_input(int conv);
+      // set fz2restr to use RESTRICTED instead of FROZEN keywords
+      void write_input_frozen2restricted(int conv, bool fz2restr);
 
       double valacc_to_refacc() const { return 100.0; }
 
@@ -149,6 +152,36 @@ namespace sc {
       virtual std::vector<unsigned int> map_density_to_sb();
 
     public:
+      /** A KeyVal constructor is used to generate a PsiCorrWavefunction
+          object from the input. The full list of keywords
+          that are accepted is below.
+
+          <table border="1">
+
+          <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+          <tr><td><tt>reference</tt><td>PsiSCF<td>none<td>specifies the reference wavefunction.
+
+          <tr><td><tt>frozen_docc</tt><td>vector<int><td>none<td>specifies the number of doubly-occupied
+          orbitals in each irreducible representation that will be kept "frozen" in correlated calculations;
+          the number of elements in frozen_docc must equal the order of the computational point group.
+
+          <tr><td><tt>frozen_uocc</tt><td>vector<int><td>none<td>specifies the number of non-occupied
+          orbitals in each irreducible representation that will be kept "frozen" in correlated calculations;
+          the number of elements in frozen_uocc must equal the order of the computational point group.
+
+          <tr><td><tt>nfzc</tt><td>int<td>0<td>specifies the total number of doubly-occupied
+          orbitals that will be kept "frozen" in correlated calculations;
+          this keyword is ignored if <tt>frozen_docc</tt> is given. The orbitals to be kept frozen will
+          be those of the lowest energy in reference object.
+
+          <tr><td><tt>nfzv</tt><td>int<td>0<td>specifies the total number of non-occupied
+          orbitals that will be kept "frozen" in correlated calculations;
+          this keyword is ignored if <tt>frozen_uocc</tt> is given. The orbitals to be kept frozen will
+          be those of the highest energy in reference object.
+
+          </table>
+       */
       PsiCorrWavefunction(const Ref<KeyVal>&);
       PsiCorrWavefunction(StateIn&);
       ~PsiCorrWavefunction();

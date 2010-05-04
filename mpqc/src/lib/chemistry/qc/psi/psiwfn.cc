@@ -1226,27 +1226,6 @@ namespace sc {
   PsiCorrWavefunction::PsiCorrWavefunction(const Ref<KeyVal>&keyval) :
     PsiWavefunction(keyval) {
 
-    std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
-    if (nfzc_str == "auto")
-      nfzc_ = molecule()->n_core_electrons()/2;
-    else if (nfzc_str == "no" || nfzc_str == "false")
-      nfzc_ = 0;
-    else
-      nfzc_ = atoi(nfzc_str.c_str());
-    std::string nfzv_str = keyval->stringvalue("nfzv",KeyValValuestring("0"));
-    if (nfzv_str == "no" || nfzv_str == "false")
-      nfzv_ = 0;
-    else
-      nfzv_ = atoi(nfzv_str.c_str());
-
-    reference_ << keyval->describedclassvalue("reference");
-    if (reference_.null()) {
-      ExEnv::err0()
-          << "PsiCorrWavefunction::PsiCorrWavefunction: no reference wavefunction"
-          << endl;
-      abort();
-    }
-
     if(keyval->exists("frozen_docc")) {
       int len = keyval->count("frozen_docc");
       if(len != nirrep()){
@@ -1257,6 +1236,16 @@ namespace sc {
       for(int i=0; i<len; i++){
         frozen_docc_[i] = keyval->intvalue("frozen_docc",i);
       }
+      nfzc_ = std::accumulate(frozen_docc_.begin(), frozen_docc_.end(), 0u);
+    }
+    else { // frozen_docc is not given -- need nfzc, will compute frozen_docc later
+      std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
+      if (nfzc_str == "auto")
+        nfzc_ = molecule()->n_core_electrons()/2;
+      else if (nfzc_str == "no" || nfzc_str == "false")
+        nfzc_ = 0;
+      else
+        nfzc_ = atoi(nfzc_str.c_str());
     }
 
     if(keyval->exists("frozen_uocc")) {
@@ -1269,7 +1258,27 @@ namespace sc {
       for(int i=0; i<len; i++){
         frozen_uocc_[i] = keyval->intvalue("frozen_uocc",i);
       }
+      nfzv_ = std::accumulate(frozen_uocc_.begin(), frozen_uocc_.end(), 0u);
     }
+    else { // frozen_uocc is not given -- need nfzv, will compute frozen_uocc later
+      std::string nfzv_str = keyval->stringvalue("nfzv",KeyValValuestring("0"));
+      if (nfzv_str == "no" || nfzv_str == "false")
+        nfzv_ = 0;
+      else
+        nfzv_ = atoi(nfzv_str.c_str());
+    }
+    if (nfzv_ != 0)
+      throw FeatureNotImplemented("Implementation of frozen virtuals in Psi is not reliable, set nfzv = 0",
+                                  __FILE__,__LINE__);
+
+    reference_ << keyval->describedclassvalue("reference");
+    if (reference_.null()) {
+      ExEnv::err0()
+          << "PsiCorrWavefunction::PsiCorrWavefunction: no reference wavefunction"
+          << endl;
+      abort();
+    }
+
   }
 
   PsiCorrWavefunction::~PsiCorrWavefunction() {
@@ -1279,6 +1288,8 @@ namespace sc {
     PsiWavefunction(s) {
 
     reference_ << SavableState::restore_state(s);
+    s.get(frozen_docc_);
+    s.get(frozen_uocc_);
     int nfzc; s.get(nfzc); nfzc_ = static_cast<unsigned int>(nfzc);
     int nfzv; s.get(nfzv); nfzv_ = static_cast<unsigned int>(nfzv);
   }
@@ -1286,6 +1297,8 @@ namespace sc {
   void PsiCorrWavefunction::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
+    s.put(frozen_docc_);
+    s.put(frozen_uocc_);
     s.put(static_cast<int>(nfzc_));
     s.put(static_cast<int>(nfzv_));
   }
@@ -1295,6 +1308,19 @@ namespace sc {
     os << incindent;
     PsiWavefunction::print(os);
     reference_->print(os);
+
+    const std::vector<unsigned int>& fzdocc = this->frozen_docc();
+    const std::vector<unsigned int>& fzuocc = this->frozen_uocc();
+    const int nirrep = fzdocc.size();
+    os << indent << "frozen_docc = [" << fzdocc[0];
+    for (int i=1; i < nirrep_; i++)
+      os << " " << fzdocc[i];
+    os << " ]" << endl;
+    os << indent << "frozen_uocc = [" << fzuocc[0];
+    for (int i=1; i < nirrep_; i++)
+      os << " " << fzuocc[i];
+    os << " ]" << endl;
+
     os << decindent;
   }
 
@@ -1306,6 +1332,11 @@ namespace sc {
   }
 
   void PsiCorrWavefunction::write_input(int convergence) {
+    this->write_input_frozen2restricted(convergence, false);
+  }
+
+  void PsiCorrWavefunction::write_input_frozen2restricted(int convergence,
+                                                          bool frozen2restricted) {
     if (gradient_needed())
       reference_->do_gradient(1);
     else
@@ -1315,8 +1346,14 @@ namespace sc {
     PsiWavefunction::write_basic_input(convergence);
     reference_->write_basic_input(convergence);
     input->write_keyword("psi:tolerance", convergence + 5);
-    input->write_keyword("psi:freeze_core", static_cast<int>(nfzc_));
-    input->write_keyword("psi:freeze_virt", static_cast<int>(nfzv_));
+    if (frozen2restricted) {
+      input->write_keyword_array("psi:restricted_docc", frozen_docc_);
+      //input->write_keyword_array("psi:restricted_uocc", frozen_uocc_);
+    }
+    else {
+      input->write_keyword_array("psi:frozen_docc", frozen_docc_);
+      input->write_keyword_array("psi:frozen_uocc", frozen_uocc_);
+    }
   }
 
   void

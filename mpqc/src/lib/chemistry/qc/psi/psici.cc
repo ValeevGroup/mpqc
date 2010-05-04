@@ -372,6 +372,7 @@ namespace sc {
     : PsiCorrWavefunction(keyval) {
 
     rasscf_ = keyval->booleanvalue("rasscf",KeyValValueboolean(false));
+    relax_core_ = keyval->booleanvalue("relax_core",KeyValValueboolean(false));
     wfn_type_ = rasscf_ ? "detcas" : "detci";
 
     opdm_print_ = keyval->booleanvalue("opdm_print", KeyValValueboolean(false));
@@ -502,7 +503,8 @@ namespace sc {
     s.get(detcas_detci_maxiter_);
     s.get(detci_maxiter_);
     s.get(detcas_detci_average_states_);
-    int rasscf; s.get(rasscf); rasscf_ = (bool)rasscf;
+    s.get(rasscf_);
+    s.get(relax_core_);
     s.get(wfn_type_);
     s.get(ras1_);
     s.get(ras2_);
@@ -538,7 +540,8 @@ namespace sc {
     s.put(detcas_detci_maxiter_);
     s.put(detci_maxiter_);
     s.put(detcas_detci_average_states_);
-    s.put((int)rasscf_);
+    s.put(rasscf_);
+    s.put(relax_core_);
     s.put(wfn_type_);
     s.put(ras1_);
     s.put(ras2_);
@@ -560,7 +563,12 @@ namespace sc {
     Ref<PsiInput> input = get_psi_input();
     input->open();
 
-    PsiCorrWavefunction::write_input(convergence);
+    if((!rasscf_) || (ras3_max_>0) || !relax_core_) {  // running ci without orbital optimization of core orbitals
+      PsiCorrWavefunction::write_input(convergence);
+    }
+    else { // cas with restricted orbitals
+      PsiCorrWavefunction::write_input_frozen2restricted(convergence, true);
+    }
 
     input->write_keyword("psi:wfn",wfn_type_.c_str());
 
@@ -688,6 +696,7 @@ namespace sc {
     detail::print_blocks("ras3",ras3_,os);
     os << indent << "ras3_max = " << ras3_max_ << std::endl;
     os << indent << "rasscf = " << (rasscf_ ? "true" : "false") << std::endl;
+    os << indent << "relax_core = " << (relax_core_ ? "true" : "false") << std::endl;
     PsiCorrWavefunction::print(os);
     os << decindent;
   }

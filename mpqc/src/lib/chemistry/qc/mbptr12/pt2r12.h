@@ -165,6 +165,9 @@ namespace sc {
       /// recomputes the energy from densities obtained from reference()
       double energy_recomputed_from_densities();
 
+      /// computes the Brillouin condition matrix = <a_p^q H>
+      void brillouin_matrix();
+
       /// computes the energy using the Hylleraas matrix
       /// @param hmat Hylleraas matrix
       /// @param pairspin SpinCase2

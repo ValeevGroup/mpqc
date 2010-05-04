@@ -1406,7 +1406,6 @@ void sc::PT2R12::compute()
     }
   }
 
-
   //calculate basis set incompleteness error (BSIE) with two choices of H0
   double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
   double cabs_singles_correction_twobody_H0 = 0.0;
@@ -1973,8 +1972,8 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
       }
     }
     ExEnv::out0() << indent << "done test the hermicity of matrix Ixy" << endl;
+    brillouin_matrix();
   }
-#endif
 
   // explicitly symmetrize Ixy to counteract numerical inaccuracy
   for (int row = 0; row < 2 * no; ++row)
@@ -1987,7 +1986,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
       Ixy(col, row) = Ixy(row, col);
     }
   }
-
 
 
 
@@ -2146,6 +2144,171 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   return E_cabs_singles;
 }
 
+void PT2R12::brillouin_matrix() {
+  RefSCMatrix fmat[NSpinCases1];
+  RefSymmSCMatrix opdm[NSpinCases1];
+  RefSymmSCMatrix tpcm[NSpinCases2];
+  RefSCMatrix g[NSpinCases2];
+  Ref<OrbitalSpace> pspace[NSpinCases1];  // all orbitals in OBS
+  Ref<OrbitalSpace> mspace[NSpinCases1];  // all occupied orbitals (core + active)
+  std::vector<unsigned int> m2p[NSpinCases1];
+
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+
+  for(int s=0; s<NSpinCases1; s++) {
+    SpinCase1 spin = static_cast<SpinCase1>(s);
+
+    Ref<OrbitalSpace> ospace = rdm1_->orbs(spin);
+    if (spin == Alpha) oreg->add(make_keyspace_pair(ospace)); // for some reason this space has not been added
+
+    pspace[s] = this->r12world()->ref()->orbs_sb(spin);
+    if (!oreg->value_exists(pspace[s])) {
+      oreg->add(make_keyspace_pair(pspace[s]));
+    }
+    {
+      const std::string key = oreg->key(pspace[s]);
+      pspace[s] = oreg->value(key);
+    }
+
+    mspace[s] = this->r12world()->ref()->occ_sb(spin);
+    if (!oreg->value_exists(mspace[s])) {
+      oreg->add(make_keyspace_pair(mspace[s]));
+    }
+    {
+      const std::string key = oreg->key(mspace[s]);
+      mspace[s] = oreg->value(key);
+    }
+
+    m2p[s] = (*pspace[s] << *mspace[s]);
+
+    fmat[s] = r12eval_->fock(pspace[s], pspace[s], spin);
+    opdm[s] = rdm1(spin);
+  }
+  const int nmo = pspace[Alpha]->rank();
+  const int nocc = mspace[Alpha]->rank();
+  assert(mspace[Alpha]->rank() == mspace[Beta]->rank());
+  assert(pspace[Alpha]->rank() == pspace[Beta]->rank());
+
+  for(int i=0; i<NSpinCases2; i++) {
+    SpinCase2 S = static_cast<SpinCase2>(i);
+    const SpinCase1 spin1 = case1(S);
+    const SpinCase1 spin2 = case2(S);
+    const Ref<OrbitalSpace>& space1 = rdm2_->orbs(spin1);
+    const Ref<OrbitalSpace>& space2 = rdm2_->orbs(spin2);
+
+    tpcm[i] = lambda2(S);
+    g[i] = this->g(S, pspace[spin1], pspace[spin2], space1, space2);
+  }
+
+  // precompute intermediates
+  RefSCMatrix K[NSpinCases1];   // K = < a_p^q F_N > = \eta f \gamma = f \gamma - \gamma f \gamma
+  for(int i=0; i<NSpinCases1; i++) {
+    K[i] = fmat[i].kit()->matrix(fmat[i].rowdim(), fmat[i].coldim());   // K is a non-symmetric non-block-diagonal matrix
+    K[i].assign(0.0);
+    for(int y=0; y<nmo; y++) {
+      for(int x=0; x<nocc; x++) {
+        const int xx = m2p[i][x];
+        for(int z=0; z<nocc; z++) {
+          const int zz = m2p[i][z];
+          K[i].accumulate_element(y,xx,fmat[i].get_element(y, zz) * opdm[i].get_element(z, x));
+        }
+      }
+    }
+#if 1
+    for(int y=0; y<nocc; y++) {
+      const int yy = m2p[i][y];
+      for(int x=0; x<nocc; x++) {
+        const int xx = m2p[i][x];
+        for(int z1=0; z1<nocc; z1++) {
+          const int zz1 = m2p[i][z1];
+          for(int z2=0; z2<nocc; z2++) {
+            const int zz2 = m2p[i][z2];
+            K[i].accumulate_element(yy, xx, -opdm[i].get_element(y, z1) *
+                                             fmat[i].get_element(zz1, zz2) *
+                                             opdm[i].get_element(z2, x));
+          }
+        }
+      }
+    }
+#endif
+  }
+
+  RefSCMatrix M[NSpinCases1];   // M = < a_p^q W_N >
+  M[Alpha] = K[Alpha].clone(); M[Alpha].assign(0.0);
+  M[Beta] = K[Beta].clone(); M[Beta].assign(0.0);
+  for(int P=0; P<nocc; ++P) {
+    for(int Q=0; Q<nmo; ++Q) {
+      for(int R=0; R<nocc; ++R) {
+        const int RR = m2p[Alpha][R];
+
+        int PR_aa, sign_PR=+1;
+        if (P > R) {
+          PR_aa = P*(P-1)/2 + R;
+        }
+        else {
+          PR_aa = R*(R-1)/2 + P;
+          sign_PR = -1;
+        }
+        const int PR_ab = P * nocc + R;
+        const int RP_ab = R * nocc + P;
+
+        int QR_aa, sign_QR=+1;
+        if (Q > RR) {
+          QR_aa = Q*(Q-1)/2 + RR;
+        }
+        else {
+          QR_aa = RR*(RR-1)/2 + Q;
+          sign_QR = -1;
+        }
+        const int QR_ab = Q * nmo + RR;
+        const int RQ_ab = RR * nmo + Q;
+
+        for (int U = 0; U < nocc; ++U) {
+          for (int V = 0; V < nocc; ++V) {
+            int UV_aa, sign_UV = +1;
+            if (U > V) {
+              UV_aa = U * (U - 1) / 2 + V;
+            } else {
+              UV_aa = V * (V - 1) / 2 + U;
+              sign_UV = -1;
+            }
+            const int UV_ab = U * nocc + V;
+            const int VU_ab = V * nocc + U;
+
+            double M_QP_a = 0.0;
+            double M_QP_b = 0.0;
+            if (P != R && Q != RR && U != V) {
+              M_QP_a += 0.5 * sign_PR * sign_QR
+                  * g[AlphaAlpha].get_element(QR_aa, UV_aa)
+                  * tpcm[AlphaAlpha].get_element(UV_aa, PR_aa);
+              M_QP_b += 0.5 * sign_PR * sign_QR
+                  * g[BetaBeta].get_element(QR_aa, UV_aa)
+                  * tpcm[BetaBeta].get_element(UV_aa, PR_aa);
+            }
+            M_QP_a += 0.5 * g[AlphaBeta].get_element(QR_ab, UV_ab)
+                * tpcm[AlphaBeta].get_element(UV_ab, PR_ab);
+            M_QP_a += 0.5 * g[AlphaBeta].get_element(QR_ab, VU_ab)
+                * tpcm[AlphaBeta].get_element(VU_ab, PR_ab);
+            M_QP_b += 0.5 * g[AlphaBeta].get_element(RQ_ab, VU_ab)
+                * tpcm[AlphaBeta].get_element(VU_ab, RP_ab);
+            M_QP_b += 0.5 * g[AlphaBeta].get_element(RQ_ab, UV_ab)
+                * tpcm[AlphaBeta].get_element(UV_ab, RP_ab);
+            M[Alpha].accumulate_element(Q, m2p[Alpha][P], M_QP_a);
+            M[Beta].accumulate_element(Q, m2p[Beta][P], M_QP_b);
+          }
+        }
+      }
+    }
+  }
+
+  for(int s=0; s<NSpinCases1; ++s) {
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+    K[s].print(prepend_spincase(spin,"K = eta . f . gamma").c_str());
+    M[s].print(prepend_spincase(spin,"M = g . lambda").c_str());
+    (K[s] + M[s]).print(prepend_spincase(spin,"BC = K + M").c_str());
+    fmat[s].print(prepend_spincase(spin,"f").c_str());
+  }
+}
 
 
 

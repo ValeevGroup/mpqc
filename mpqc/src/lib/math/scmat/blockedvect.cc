@@ -178,18 +178,18 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   if (nbrow==nbcol) {
     for (int i=0; i < nbrow; i++)
-      if (vecs_[i].nonnull())
+      if (vecs_[i].nonnull() && la->mats_[i].nonnull())
         vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
   }
   else {
     if (nbcol == 1) {
       for (int i=0; i < nbrow; i++)
-        if (vecs_[i].nonnull())
+        if (vecs_[i].nonnull() && la->mats_[i].nonnull())
           vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[0]);
     }
     else { // nbrow == 1
       for (int i=0; i < nbcol; i++)
-        if (vecs_[i].nonnull())
+        if (vecs_[i].nonnull() && la->mats_[i].nonnull())
           vecs_[0]->accumulate_product(la->mats_[i], lb->vecs_[i]);
     }
   }
@@ -212,7 +212,7 @@ BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i].nonnull() && la->mats_[i].nonnull())
       vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
 

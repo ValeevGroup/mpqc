@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#if 0
 #ifdef __GNUG__
 #pragma implementation
 #endif
@@ -40,6 +41,7 @@
 
 using namespace std;
 using namespace sc;
+#endif
 
 #define USE_INVERT 0
 #define USE_INVERT_B 0
@@ -679,24 +681,6 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
         const double fx = -(evals_xspace1[x] + evals_xspace2[y])
             * X.get_element(xyf, xyg);
         B_ij.accumulate_element(xyf, xyg, fx);
-        /**
-         * If spincase2==AlphaBeta, and x!=y, (X^{(ij)})^{ij}_{ij} and (X^{(ij)})^{ji}_{ij}
-         * have to be computed. (X^{(ij)})^{ij}_{ji} and (X^{(ij)})^{ji}_{ji} shall not be
-         * invoked explicitly, since for the AlphaBeta case the loop over over ij is not
-         * restricted and they are computed in the loop step where i and j are swapped.
-         *
-         * For the samespin pair cases the summation is restricted to i>j and (X^{(ij)})^{ij}_{ij}
-         * has to be computed.
-         */
-        if ((spincase2 == AlphaBeta) && (x != y)) {
-          const int yx = y * nx2 + x;
-          const int yxg = g_off + yx;
-          if (xyf > yxg) {
-            const double fx = -(evals_xspace1[x] + evals_xspace2[y])
-                * X.get_element(xyf, yxg);
-            B_ij.accumulate_element(xyf, yxg, fx);
-          }
-        }
 
         // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
         if (coupling == true) {
@@ -714,6 +698,47 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
 
           B_ij.accumulate_element(xyf, xyg, fy);
         } // coupling == true
+
+        /**
+         * If spincase2==AlphaBeta, and x!=y, (X^{(ij)})^{ij}_{ij} and (X^{(ij)})^{ji}_{ij}
+         * have to be computed. (X^{(ij)})^{ij}_{ji} and (X^{(ij)})^{ji}_{ji} shall not be
+         * invoked explicitly, since for the AlphaBeta case the loop over over ij is not
+         * restricted and they are computed in the loop step where i and j are swapped.
+         *
+         * For the samespin pair cases the summation is restricted to i>j and (X^{(ij)})^{ij}_{ij}
+         * has to be computed.
+         */
+        if ((spincase2 == AlphaBeta) && (x != y)) {
+
+          const int yx = y * nx2 + x;
+          const int yxg = g_off + yx;
+          if (xyf > yxg) {
+
+            const double fx = -(evals_xspace1[x] + evals_xspace2[y])
+                * X.get_element(xyf, yxg);
+            B_ij.accumulate_element(xyf, yxg, fx);
+
+            // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
+            if (coupling == true) {
+              double fy = 0.0;
+              SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+              for (cd_iter.start(); cd_iter; cd_iter.next()) {
+                const int cd = cd_iter.ij();
+                const int c = cd_iter.i();
+                const int d = cd_iter.j();
+
+                fy -= A.get_element(xyf, cd) * A.get_element(yxg, cd)
+                    / (evals_act_vir1[c] + evals_act_vir2[d] - evals_act_occ1[x]
+                        - evals_act_occ2[y]);
+              } // loop over cd_iter
+
+              B_ij.accumulate_element(xyf, yxg, fy);
+            } // coupling == true
+
+          }
+
+        }
+
 
       } // loop over geminal index g
     } // loop over geminal index f

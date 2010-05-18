@@ -1,5 +1,5 @@
 //
-// ref.cc
+// psiref.cc
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <chemistry/qc/psi/ref.h>
+#include <chemistry/qc/psi/psiref.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/spin.h>
 

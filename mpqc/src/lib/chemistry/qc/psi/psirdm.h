@@ -1,5 +1,5 @@
 //
-// rdm.h
+// psirdm.h
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,8 +29,8 @@
 #pragma interface
 #endif
 
-#ifndef _mpqc_src_lib_chemistry_qc_psi_rdm_h
-#define _mpqc_src_lib_chemistry_qc_psi_rdm_h
+#ifndef _mpqc_src_lib_chemistry_qc_psi_psirdm_h
+#define _mpqc_src_lib_chemistry_qc_psi_psirdm_h
 
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/mbptr12/rdm.h>

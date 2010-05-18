@@ -30,12 +30,15 @@
 
 #include <util/class/class.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/mp2r12_energy.h>
+#include <chemistry/qc/mbptr12/pt2r12.h>
 
 #include <chemistry/qc/mbpt/linkage.h>
 
 namespace sc {
 
 static ForceLink<MBPT2_R12> mbptr12_force_link_a_;
+static ForceLink<PT2R12> mbptr12_force_link_b_;
 
 }
 

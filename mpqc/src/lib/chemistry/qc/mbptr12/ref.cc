@@ -32,7 +32,7 @@
 #include <chemistry/qc/basis/obintfactory.h>
 #include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 #if HAVE_PSIMPQCIFACE
-# include <chemistry/qc/psi/ref.h>
+# include <chemistry/qc/psi/psiref.h>
 #endif
 
 using namespace sc;

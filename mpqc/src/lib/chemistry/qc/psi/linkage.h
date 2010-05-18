@@ -33,7 +33,7 @@
 #include <chemistry/qc/psi/psicc.h>
 #include <chemistry/qc/psi/psici.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
-#include <chemistry/qc/psi/rdm.h>
+#include <chemistry/qc/psi/psirdm.h>
 #include <math/optimize/qnewton.h>
 
 namespace sc {

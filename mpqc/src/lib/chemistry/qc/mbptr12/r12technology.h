@@ -723,9 +723,9 @@ class R12Technology: virtual public SavableState {
         The effect of setting this keyword to false is small --
         hence it is not recommended to use this keyword.
 
-        <dt><tt>coupling</tt><dd> This boolean specifies whether the doubles-geminal block of the zeroth-order
-        operator is included. The default is "false". This keyword
-        is not valid if stdapprox=A'.
+        <dt><tt>coupling</tt><dd> This boolean specifies whether the doubles-geminal block of the Fock
+        operator is included in zeroth-order Hamiltonian. The default is "false". This keyword
+        is only valid for MP2-R12 method.
         The effect of setting this keyword to true is small --
         hence it is not recommended to use this keyword.
 

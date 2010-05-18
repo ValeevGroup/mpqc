@@ -1,5 +1,5 @@
 //
-// ref.h
+// psiref.h
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,8 +29,8 @@
 #pragma interface
 #endif
 
-#ifndef _mpqc_src_lib_chemistry_qc_psi_ref_h
-#define _mpqc_src_lib_chemistry_qc_psi_ref_h
+#ifndef _mpqc_src_lib_chemistry_qc_psi_psiref_h
+#define _mpqc_src_lib_chemistry_qc_psi_psiref_h
 
 #include <chemistry/qc/mbptr12/ref.h>
 #include <chemistry/qc/psi/psiwfn.h>

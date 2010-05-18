@@ -1,5 +1,5 @@
 //
-// rdm.cc
+// psirdm.cc
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <chemistry/qc/psi/rdm.h>
+#include <chemistry/qc/psi/psirdm.h>
 #include <chemistry/qc/psi/psici.h>
 
 using namespace sc;

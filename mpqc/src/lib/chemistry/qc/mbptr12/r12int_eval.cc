@@ -63,7 +63,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEval
  -----------------*/
 static ClassDesc R12IntEval_cd(
-  typeid(R12IntEval),"R12IntEval",4,"virtual public SavableState",
+  typeid(R12IntEval),"R12IntEval",5,"virtual public SavableState",
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
@@ -155,9 +155,6 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == R12Technology::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (coupling() == true) {
-        A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-      }
       emp2pair_[s] = local_matrix_kit->vector(dim_gg_[s]);
       const SpinCase2 pairspin = static_cast<SpinCase2>(s);
       cuspconsistentgeminalcoefficient_[s] =
@@ -169,7 +166,6 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
       X_[BetaBeta] = X_[AlphaAlpha];
       B_[BetaBeta] = B_[AlphaAlpha];
       BB_[BetaBeta] = BB_[AlphaAlpha];
-      A_[BetaBeta] = A_[AlphaAlpha];
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
       cuspconsistentgeminalcoefficient_[BetaBeta] = cuspconsistentgeminalcoefficient_[AlphaAlpha];
     }
@@ -202,16 +198,24 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     dim_vv_[s] << SavableState::restore_state(si);
     dim_f12_[s] << SavableState::restore_state(si);
     if (si.version(::class_desc<R12IntEval>()) >= 2) {
-	dim_GG_[s] << SavableState::restore_state(si);
-	dim_gg_[s] << SavableState::restore_state(si);
+      dim_GG_[s] << SavableState::restore_state(si);
+      dim_gg_[s] << SavableState::restore_state(si);
     }
+    bool have_A;
+    if (si.version(::class_desc<R12IntEval>()) >= 5) {
+      si.get(have_A);
+    }
+    else {
+      have_A = coupling() || ebc();
+    }
+
     if (!(spin_polarized() && s == BetaBeta)) {
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (stdapprox() == R12Technology::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (coupling() == true) {
+      if (have_A) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
@@ -259,12 +263,14 @@ R12IntEval::save_data_state(StateOut& so)
     SavableState::save_state(dim_f12_[s].pointer(),so);
     SavableState::save_state(dim_GG_[s].pointer(),so);
     SavableState::save_state(dim_gg_[s].pointer(),so);
+    const bool have_A = A_[AlphaBeta].nonnull();
+    so.put(have_A);
     if (!(spin_polarized() && s == BetaBeta)) {
       V_[s].save(so);
       X_[s].save(so);
       B_[s].save(so);
       BB_[s].save(so);
-      A_[s].save(so);
+      if (have_A) A_[s].save(so);
       emp2pair_[s].save(so);
     }
   }
@@ -350,7 +356,8 @@ R12IntEval::BB(SpinCase2 S) {
 
 const RefSCMatrix&
 R12IntEval::A(SpinCase2 S) {
-  compute();
+  if (A_[AlphaBeta].null())
+    compute_A();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
                    GGspace(Alpha),
@@ -426,12 +433,9 @@ R12IntEval::init_intermeds_()
     V_[s].assign(0.0);
     X_[s].assign(0.0);
     B_[s].assign(0.0);
-    if (stdapprox() == R12Technology::StdApprox_B)
-      BB_[s].assign(0.0);
+    if (BB_[s].nonnull()) BB_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
-    if (coupling() == true) {
-      A_[s].assign(0.0);
-    }
+    if (A_[s].nonnull()) A_[s].assign(0.0);
   }
 
   // nothing to do if no explicit correlation
@@ -2093,46 +2097,10 @@ R12IntEval::compute()
       }
     }
 
-#if INCLUDE_EBC_CODE
-    const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty && !r12world()->r12tech()->omit_B();
-    if (nonzero_ebc_terms) {
-      // EBC contribution to B only appears in commutator-based projector 2 case
-      if (ansatz()->projector() == R12Technology::Projector_2 &&
-          (stdapprox() == R12Technology::StdApprox_Ap ||
-           stdapprox() == R12Technology::StdApprox_App ||
-           stdapprox() == R12Technology::StdApprox_B)
-          ) {
-        AF12_contrib_to_B_();
-      }
-    }
-#endif
-
 #if INCLUDE_COUPLING_CODE
     const bool nonzero_coupling_terms = coupling() && !cabs_empty && !vir_empty;
     if (nonzero_coupling_terms) {
-
-      // compute A, T2, and F12
-      for(int s=0; s<nspincases2(); s++) {
-        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-        const SpinCase1 spin1 = case1(spincase2);
-        const SpinCase1 spin2 = case2(spincase2);
-
-        Ref<OrbitalSpace> vir1_act = vir_act(spin1);
-        Ref<OrbitalSpace> vir2_act = vir_act(spin2);
-        Ref<OrbitalSpace> fvir1_act = F_a_A(spin1);
-        Ref<OrbitalSpace> fvir2_act = F_a_A(spin2);
-        const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
-        const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
-
-        const Ref<RefWavefunction> refinfo = r12world()->ref();
-
-        compute_A_direct_(A_[s],
-                          GG1space, vir1_act,
-                          GG2space, vir2_act,
-                          fvir1_act, fvir2_act,
-                          spincase2!=AlphaBeta);
-      }
-
+      compute_A();
       if (debug_ >= DefaultPrintThresholds::O2N2) {
         for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
@@ -2146,6 +2114,20 @@ R12IntEval::compute()
       }
 
       AT2_contrib_to_V_();
+    }
+#endif
+
+#if INCLUDE_EBC_CODE
+    const bool nonzero_ebc_terms = !ebc() && !cabs_empty && !vir_empty && !r12world()->r12tech()->omit_B();
+    if (nonzero_ebc_terms) {
+      // EBC contribution to B only appears in commutator-based projector 2 case
+      if (ansatz()->projector() == R12Technology::Projector_2 &&
+          (stdapprox() == R12Technology::StdApprox_Ap ||
+           stdapprox() == R12Technology::StdApprox_App ||
+           stdapprox() == R12Technology::StdApprox_B)
+          ) {
+        AF12_contrib_to_B_();
+      }
     }
 #endif
 
@@ -2293,11 +2275,8 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(V_[s],to_all_tasks);
     globally_sum_scmatrix_(X_[s],to_all_tasks);
     globally_sum_scmatrix_(B_[s],to_all_tasks);
-    if (stdapprox() == R12Technology::StdApprox_B)
-      globally_sum_scmatrix_(BB_[s],to_all_tasks);
-    if (coupling() == true) {
-      globally_sum_scmatrix_(A_[s],to_all_tasks);
-    }
+    if (BB_[s].nonnull()) globally_sum_scmatrix_(BB_[s],to_all_tasks);
+    if (A_[s].nonnull()) globally_sum_scmatrix_(A_[s],to_all_tasks);
   }
 
   const int nspincases_for_emp2pairs = (spin_polarized() ? 3 : 2);

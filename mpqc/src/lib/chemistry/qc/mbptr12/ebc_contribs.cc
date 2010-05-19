@@ -39,6 +39,7 @@
 #include <util/state/state_text.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/blas.h>
@@ -62,6 +63,32 @@ using namespace sc;
 #define TEST_A 0
 // if set to 1 then use f+k rather than f to compute A
 #define A_DIRECT_EXCLUDE_K 0
+
+void R12IntEval::compute_A() {
+  Ref<SCMatrixKit> local_matrix_kit = new LocalSCMatrixKit;
+  for (int s = 0; s < nspincases2(); s++) {
+    const SpinCase2 spincase2 = static_cast<SpinCase2> (s);
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+
+    Ref<OrbitalSpace> vir1_act = vir_act(spin1);
+    Ref<OrbitalSpace> vir2_act = vir_act(spin2);
+    Ref<OrbitalSpace> fvir1_act = F_a_A(spin1);
+    Ref<OrbitalSpace> fvir2_act = F_a_A(spin2);
+    const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
+    const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
+
+    const Ref<RefWavefunction> refinfo = r12world()->ref();
+
+    A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+    A_[s].assign(0.0);
+
+    compute_A_direct_(A_[s], GG1space, vir1_act, GG2space, vir2_act, fvir1_act,
+                      fvir2_act, spincase2 != AlphaBeta);
+  }
+  if (!spin_polarized()) A_[BetaBeta] = A_[AlphaAlpha];
+}
+
 
 void
 R12IntEval::compute_A_direct_(RefSCMatrix& A,

@@ -241,6 +241,8 @@ class R12IntEval : virtual public SavableState {
                                   const Ref<OrbitalSpace>& space4,
                                   const std::string& tform_key);
 
+  void compute_A(); //< computes A ("coupling") matrix for all spincases
+
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
       AlphaBeta amplitudes are computed.

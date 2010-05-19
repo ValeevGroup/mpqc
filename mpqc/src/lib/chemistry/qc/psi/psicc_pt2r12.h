@@ -47,8 +47,6 @@ namespace sc {
 
       Ref<MBPT2_R12> mbptr12_;
     protected:
-      /// compute PT2R12 energy with hylleraas functional
-      bool new_approach_;
       /// set to true to test the code against MP2-R12. Will also test the T2 Psi3->MPQC transform
       static const bool mp2_only_ = false;
       /// set to true to use Ts instead of Lambdas

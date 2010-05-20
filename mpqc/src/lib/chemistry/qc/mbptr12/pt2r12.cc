@@ -180,6 +180,36 @@ namespace {
     return (max_ij -1)* max_ij/2 + min_ij;
   }
 
+  template <typename MMatrix> // print out the elements from the two matrices which differ by more than thres
+  void compare_element_diff(MMatrix & M1, MMatrix & M2, bool symmetry, unsigned int rowdim, unsigned int coldim, double thres)
+  {
+    for (int row = 0; row < rowdim; ++row)
+    {
+      if(!symmetry)
+      {
+        for (int col = 0; col < coldim; ++col)
+        {
+          if(fabs(M1(row, col) - M2(row, col)) > thres)
+          {
+            ExEnv::out0() << indent << "row, col, M1, M2, diff: " << row << ", " << col << ", " << M1(row, col) << ", " << M2(row, col) << std::endl
+                          << indent << "                        " << M1(row, col) - M2(row, col) << std::endl;
+          }
+        }
+      }
+      else
+      {
+        for (int col = 0; col < row; ++col)
+        {
+          if(fabs(M1(row, col) - M2(row, col)) > thres)
+          {
+            ExEnv::out0() << indent << "row, col, M1, M2, diff: " << row << ", " << col << ", " << M1(row, col) << ", " << M2(row, col) << std::endl
+                          << indent << "                        " << M1(row, col) - M2(row, col) << std::endl;
+          }
+        }
+      }
+    }
+  }
+
 }
 
 ////////////////////
@@ -1388,6 +1418,9 @@ void sc::PT2R12::compute()
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
   const bool spin_polarized = r12world()->ref()->spin_polarized();
+
+
+
   for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
   {
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -1405,6 +1438,7 @@ void sc::PT2R12::compute()
         abort();
     }
   }
+
 
   //calculate basis set incompleteness error (BSIE) with two choices of H0
   double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
@@ -1509,7 +1543,7 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
-  const unsigned int DEBUGG = 0;
+  # define  printout true
 
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
   Ref<OrbitalSpace> vspace = this->r12world()->ref()->uocc_act_sb(spin);
@@ -1572,18 +1606,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   Ixy.assign(0.0);
   RefSCVector rhs_vector = gamma2_ss->kit()->vector(dim_oX);
   rhs_vector->assign(0.0);                                   // right hand vector
-
-
-  ExEnv::out0()  << indent << "print out cabs_singles_coupling_:" << cabs_singles_coupling_  << endl;
-  ExEnv::out0()  << indent << "primary, virtual and cabs space dimensions: " << no << ", " << nv << ", " << n_cabs << endl;
-  ExEnv::out0()  << indent << "block dimensions of pspace, vspace, cabsspace: " << endl << "  ";
-  { for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
-            ExEnv::out0() << scprintf("%5d", p_block_sizes[block_counter]); ExEnv::out0() << endl << "  ";
-    for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
-            ExEnv::out0()  << scprintf("%5d", v_block_sizes[block_counter]);ExEnv::out0() << endl << "  ";
-    for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
-            ExEnv::out0()  << scprintf("%5d", cabs_block_sizes[block_counter]); ExEnv::out0() << endl;}
-
 
 
 
@@ -1677,8 +1699,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
   H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
 
-
-#if (DEBUGG)
+#if printout
     RefDiagSCMatrix eigenmatrix_gamma1 = gamma1.eigvals();
     eigenmatrix_gamma1.print("Orbital Occupation Number");
 
@@ -1695,7 +1716,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     eigenmatrix_F_pp.print("pspace Fock matrix eigenvalue");
 #endif
 
-#if (DEBUGG)
+#if printout
     RefSymmSCMatrix F_AA_copy = gamma2_ss->kit()->symmmatrix(dim_X);
     F_AA_copy.assign(0.0);
     for (int ind1 = 0; ind1 < nX; ++ind1)
@@ -1709,18 +1730,14 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     eigenmatrix_F_AA.print("Aspace Fock matrix eigenvalue");
 #endif
 
-#if (DEBUGG)
+#if false
     RefDiagSCMatrix eigenmatrix = H0.eigvals();
-    eigenmatrix.print("(one-body H0) B eigenvalue");
-    for (int indd = 0; indd < noX; ++indd)
+    int BeigDimen = int(eigenmatrix.dim());
+    for (int i = 0; i < BeigDimen; ++i)
     {
-      ExEnv::out0() << scprintf("  %7d: ", indd) << scprintf("  %11.5lf: ", eigenmatrix.get_element(indd));
-      if(indd % 5 == 0)
-      {
-        ExEnv::out0() << endl;
-      }
+      if(eigenmatrix.get_element(i) < 0) ExEnv::out0() << indent << "negative eigenvalue!" << std::endl;
     }
-    ExEnv::out0() << endl;
+    eigenmatrix.print("(one-body H0) B eigenvalue");
 #endif
 
 
@@ -1744,7 +1761,9 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()
-{ const unsigned int DEBUGG = 0;
+{
+  # define DEBUGG false
+  bool keep_2A2p_term = true; // to test the importance of two-e integrals with 2 cabs integrals, switch this off
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
@@ -1800,7 +1819,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSCDimension dim_oX = new SCDimension(2 * noX);
   RefSCDimension dim_o  = new SCDimension(2 * no);
   RefSCDimension dim_X  = new SCDimension(2 * nX);
-  RefSCMatrix B = gamma2_aa->kit()->matrix(dim_oX, dim_oX);
+  RefSymmSCMatrix B = gamma2_aa->kit()->symmmatrix(dim_oX);
   B.assign(0.0);
   RefSCMatrix Ixy = gamma2_aa->kit()->matrix(dim_o, dim_o);//using a vector does save some space, but not so much
   Ixy.assign(0.0);
@@ -1857,10 +1876,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
   }
 
-#if DEBUGG
-  F_pp_alpha.print("Fock alpha");
-  gamma1_alpha.print("DM alpha");
-#endif
+
   // compute H0; x1/x2 etc denote difference spins; H0 corresponds to the B matrix from the notes
 
   {                                         // calculate Ixy: the first two term
@@ -1957,23 +1973,14 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
  #if 1
-  Ixy.print("Ixy matrix");
-  {
+  { Ixy.print("Ixy matrix");
     ExEnv::out0() << indent << "test the hermicity of matrix Ixy" << endl;
-    for (int row = 0; row <  no; ++row)
-    {
-      for (int col = 0; col < row; ++col)
-      {
-        if(fabs( Ixy(row, col)-Ixy(col, row) ) > 1E-6)
-        {
-          ExEnv::out0() << indent << "row, col, (row, col), (col, row), diff:  " << row << ", " << col << ", " << Ixy(row, col) << ", "
-                                                                     << Ixy(col, row) << ", " << fabs( Ixy(row, col)-Ixy(col, row) ) << endl;
-        }
-      }
-    }
+    RefSCMatrix Ixy_trans = Ixy.t();
+    compare_element_diff(Ixy, Ixy_trans, true, no, no, 1E-5);
     ExEnv::out0() << indent << "done test the hermicity of matrix Ixy" << endl;
     brillouin_matrix();
   }
+#endif
 
   // explicitly symmetrize Ixy to counteract numerical inaccuracy
   for (int row = 0; row < 2 * no; ++row)
@@ -2019,13 +2026,16 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
               Baa += -1.0 * I_x1y1_alpha;                                // -\delta^A1_B1 * I^x1_y1
               Bbb += -1.0 * I_x1y1_beta;
             }
-            for (i2 = 0; i2 < no; ++i2)
+            if (keep_2A2p_term)
             {
-              for (j2 = 0; j2 < no; ++j2)                           // v^A1i2_B1j2 *(gamma^x1j2_y1i2 - gamma^x1_y1 gamma^j2_i2)
+              for (i2 = 0; i2 < no; ++i2)
               {
-                const double v_A1i2B1j2 = g_ApAp_ab(A1 * no + i2, B1 * no + j2);
-                Baa +=  v_A1i2B1j2 * ( gamma2_ab(x1 * no + j2, y1*no + i2)- gamma1_alpha(x1, y1) * gamma1_beta(j2, i2) );
-                Bbb +=  v_A1i2B1j2 * ( gamma2_ab(j2 * no + x1, i2*no + y1)- gamma1_alpha(j2, i2) * gamma1_beta(x1, y1) );
+                for (j2 = 0; j2 < no; ++j2)                           // v^A1i2_B1j2 *(gamma^x1j2_y1i2 - gamma^x1_y1 gamma^j2_i2)
+                {
+                  const double v_A1i2B1j2 = g_ApAp_ab(A1 * no + i2, B1 * no + j2);
+                  Baa +=  v_A1i2B1j2 * ( gamma2_ab(x1 * no + j2, y1*no + i2)- gamma1_alpha(x1, y1) * gamma1_beta(j2, i2) );
+                  Bbb +=  v_A1i2B1j2 * ( gamma2_ab(j2 * no + x1, i2*no + y1)- gamma1_alpha(j2, i2) * gamma1_beta(x1, y1) );
+                }
               }
             }
             B(Baa_row_ind, Baa_col_ind) = Baa;
@@ -2037,83 +2047,86 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
   // calculate alpha-alpha and beta-beta portion of B: the last term
+  if(keep_2A2p_term)
   {
-    RefSCMatrix   g_ApAp_aa   = this->g(case12(spin, spin), Aspace, pspace, Aspace, pspace);
-    // RefSCMatrix & g_ApAp_bb   = g_ApAp_aa;
-    unsigned int x1, y1, B1, A1, i1, j1;
-    for(x1 = 0; x1<no; ++x1)
     {
-      for(y1=0; y1<no; ++y1)
+      RefSCMatrix   g_ApAp_aa   = this->g(case12(spin, spin), Aspace, pspace, Aspace, pspace);
+      // RefSCMatrix & g_ApAp_bb   = g_ApAp_aa;
+      unsigned int x1, y1, B1, A1, i1, j1;
+      for(x1 = 0; x1<no; ++x1)
       {
-        const double gamma1_x1y1_alpha = gamma1_alpha(x1,y1);
-        const double gamma1_x1y1_beta = gamma1_beta(x1, y1);
-        for(B1 = 0; B1 < nX; ++B1)
+        for(y1=0; y1<no; ++y1)
         {
-          const int Baa_row_ind = x1*nX + B1;                            // the row index of  alpha-alpha portion of B matrix
-          const int Bbb_row_ind = noX + Baa_row_ind;                     // the row index of  beta-beta portiono of B matrix
-          for(A1 = 0; A1 < nX; ++A1)
+          const double gamma1_x1y1_alpha = gamma1_alpha(x1,y1);
+          const double gamma1_x1y1_beta = gamma1_beta(x1, y1);
+          for(B1 = 0; B1 < nX; ++B1)
           {
-            double Baa = 0.0;
-            double Bbb = 0.0;
-            const int Baa_col_ind = y1*nX + A1;                          // the column index of alpha-alpha portion of B
-            const int Bbb_col_ind = noX + Baa_col_ind;                   // corresponding beta-beta
-            for (i1 = 0; i1 < no; ++i1)
+            const int Baa_row_ind = x1*nX + B1;                            // the row index of  alpha-alpha portion of B matrix
+            const int Bbb_row_ind = noX + Baa_row_ind;                     // the row index of  beta-beta portiono of B matrix
+            for(A1 = 0; A1 < nX; ++A1)
             {
-              for (j1 = 0; j1 < no; ++j1)                          //v^A1i1_B1j1 *(gamma^x1j1_y1i1 - gamma^x1_y1 * gamma^j1_i1)
+              double Baa = 0.0;
+              double Bbb = 0.0;
+              const int Baa_col_ind = y1*nX + A1;                          // the column index of alpha-alpha portion of B
+              const int Bbb_col_ind = noX + Baa_col_ind;                   // corresponding beta-beta
+              for (i1 = 0; i1 < no; ++i1)
               {
-                const int gamma_x1j1y1i1_upp_ind = antisym_pairindex(x1, j1);
-                const int gamma_x1j1y1i1_low_ind = antisym_pairindex(y1, i1);
-                const int g_A1i1B1j1_upp_ind = A1 * no + i1;
-                const int g_A1i1B1j1_low_ind = B1 * no + j1;
-                const double v_A1i1B1j1 = g_ApAp_aa(g_A1i1B1j1_upp_ind, g_A1i1B1j1_low_ind);
-                Baa += -1.0 * v_A1i1B1j1 * gamma1_alpha(x1, y1) * gamma1_alpha(j1, i1);
-                Bbb += -1.0 * v_A1i1B1j1 * gamma1_beta(x1, y1) * gamma1_beta(j1, i1) ;
-                if(x1 != j1 && y1 != i1)
+                for (j1 = 0; j1 < no; ++j1)                          //v^A1i1_B1j1 *(gamma^x1j1_y1i1 - gamma^x1_y1 * gamma^j1_i1)
                 {
-                  Baa += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_aa(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
-                  Bbb += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_bb(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
+                  const int gamma_x1j1y1i1_upp_ind = antisym_pairindex(x1, j1);
+                  const int gamma_x1j1y1i1_low_ind = antisym_pairindex(y1, i1);
+                  const int g_A1i1B1j1_upp_ind = A1 * no + i1;
+                  const int g_A1i1B1j1_low_ind = B1 * no + j1;
+                  const double v_A1i1B1j1 = g_ApAp_aa(g_A1i1B1j1_upp_ind, g_A1i1B1j1_low_ind);
+                  Baa += -1.0 * v_A1i1B1j1 * gamma1_alpha(x1, y1) * gamma1_alpha(j1, i1);
+                  Bbb += -1.0 * v_A1i1B1j1 * gamma1_beta(x1, y1) * gamma1_beta(j1, i1) ;
+                  if(x1 != j1 && y1 != i1)
+                  {
+                    Baa += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_aa(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
+                    Bbb += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_bb(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
+                  }
                 }
               }
+              B(Baa_row_ind, Baa_col_ind) = B(Baa_row_ind, Baa_col_ind) + Baa;
+              B(Bbb_row_ind, Bbb_col_ind) = B(Bbb_row_ind, Bbb_col_ind) + Bbb;
             }
-            B(Baa_row_ind, Baa_col_ind) = B(Baa_row_ind, Baa_col_ind) + Baa;
-            B(Bbb_row_ind, Bbb_col_ind) = B(Bbb_row_ind, Bbb_col_ind) + Bbb;
           }
         }
       }
     }
-  }
 
 
-  // construct the portion of B which couples alpha and beta
-  {
-    RefSCMatrix   g_pAAp_ab   = this->g(case12(spin, other(spin)), pspace, Aspace, Aspace, pspace);
-   // RefSCMatrix & g_AppA_ab   = g_pAAp_ab; // pay attention to the indices
-    unsigned int x1, B1, y2, A2, i1, j2;
-    for (x1 = 0; x1 < no; ++x1)
+    // construct the portion of B which couples alpha and beta
     {
-      for (B1 = 0; B1 < nX; ++B1)
+      RefSCMatrix   g_pAAp_ab   = this->g(case12(spin, other(spin)), pspace, Aspace, Aspace, pspace);
+     // RefSCMatrix & g_AppA_ab   = g_pAAp_ab; // pay attention to the indices
+      unsigned int x1, B1, y2, A2, i1, j2;
+      for (x1 = 0; x1 < no; ++x1)
       {
-        const unsigned int Bab_row_ind = x1 * nX + B1;         // alpha-beta row index
-        const unsigned int Bba_row_ind = x1 * nX + B1 + noX;   // beta-alpha row index
-        for (y2 = 0; y2 < no; ++y2)
+        for (B1 = 0; B1 < nX; ++B1)
         {
-          for (A2 = 0; A2 < nX; ++A2)
+          const unsigned int Bab_row_ind = x1 * nX + B1;         // alpha-beta row index
+          const unsigned int Bba_row_ind = x1 * nX + B1 + noX;   // beta-alpha row index
+          for (y2 = 0; y2 < no; ++y2)
           {
-            const unsigned int Bab_col_ind = y2 * nX + A2 + noX;     // alpha-beta column index
-            const unsigned int Bba_col_ind = y2 * nX + A2;    // beta-alpha column index
-            double Bab = 0.0;                                 // initialize
-            double Bba = 0.0;
-            for (i1 = 0; i1 < no; ++i1)
+            for (A2 = 0; A2 < nX; ++A2)
             {
-              for (j2 = 0; j2 < no; ++j2)  // v^i1A2_B1j2 * gamma^x1j2_i1y2
+              const unsigned int Bab_col_ind = y2 * nX + A2 + noX;     // alpha-beta column index
+              const unsigned int Bba_col_ind = y2 * nX + A2;    // beta-alpha column index
+              double Bab = 0.0;                                 // initialize
+              double Bba = 0.0;
+              for (i1 = 0; i1 < no; ++i1)
               {
-                const double vv = g_pAAp_ab(i1 * nX + A2, B1 * no + j2);
-                Bab += vv * gamma2_ab(x1 * no + j2, i1 * no + y2);
-                Bba += vv * gamma2_ab(j2 * no + x1, y2 * no + i1);
+                for (j2 = 0; j2 < no; ++j2)  // v^i1A2_B1j2 * gamma^x1j2_i1y2
+                {
+                  const double vv = g_pAAp_ab(i1 * nX + A2, B1 * no + j2);
+                  Bab += vv * gamma2_ab(x1 * no + j2, i1 * no + y2);
+                  Bba += vv * gamma2_ab(j2 * no + x1, y2 * no + i1);
+                }
               }
+              B(Bab_row_ind, Bab_col_ind) = Bab;
+              B(Bba_row_ind, Bba_col_ind) = Bba;
             }
-            B(Bab_row_ind, Bab_col_ind) = Bab;
-            B(Bba_row_ind, Bba_col_ind) = Bba;
           }
         }
       }
@@ -2123,7 +2136,12 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   B.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
 
 #if (DEBUGG)
-    RefDiagSCMatrix eigenmatrix = H0.eigvals();
+    RefDiagSCMatrix eigenmatrix = B.eigvals();
+    int BeigDimen = int(eigenmatrix.dim());
+    for (int i = 0; i < BeigDimen; ++i)
+    {
+      if(eigenmatrix.get_element(i) < 0) ExEnv::out0() << indent << "negative eigenvalue!" << std::endl;
+    }
     eigenmatrix.print("(two-body H0) B eigenvalues");
 #endif
 
@@ -2141,6 +2159,44 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
       }
     }
   }
+
+  bool include_two_body_term_E = false;
+  if(include_two_body_term_E)
+  {
+    RefSCMatrix   g_Appp_aa   = this->g(case12(spin, spin), pspace, pspace, Aspace, pspace);
+    RefSCMatrix & g_Appp_bb   = g_Appp_aa;
+    RefSCMatrix   g_Appp_ab   = this->g(case12(spin, other(spin)), pspace, pspace, Aspace, pspace);
+    for (int i1 = 0; i1 < no; ++i1)
+    {
+      for (int j1 = 0; j1 < no; ++j1)
+      {
+        for (int k1 = 0; k1 < no; ++k1)
+        {
+          for (int l1 = 0; l1 < no; ++l1)
+          {
+            for (int A1 = 0; A1 < nX; ++A1)
+            {
+              if(k1 != l1 && i1 != j1)
+              {
+                E_cabs_singles += 0.5 * indexsizeorder_sign(k1, l1) * rhs_vector->get_element(j1 * nX + A1) * g_Appp_aa( antisym_pairindex(k1,l1), A1 * no + i1)
+                                      * (indexsizeorder_sign(k1, l1) * indexsizeorder_sign(j1, i1) * gamma2_aa( antisym_pairindex(k1,l1), antisym_pairindex(j1,i1))
+                                          - gamma1_alpha(k1, j1) * gamma1_alpha(l1, i1) + gamma1_alpha(k1, i1) * gamma1_alpha(l1, j1) );
+                E_cabs_singles += 0.5 * indexsizeorder_sign(k1, l1) * rhs_vector->get_element(noX + j1 * nX + A1) * g_Appp_bb( antisym_pairindex(k1,l1), A1 * no + i1)
+                                      * (indexsizeorder_sign(k1, l1) * indexsizeorder_sign(j1, i1) * gamma2_bb(antisym_pairindex(k1,l1), antisym_pairindex(j1,i1))
+                                          - gamma1_beta(k1, j1) * gamma1_beta(l1, i1) + gamma1_beta(k1, i1) * gamma1_beta(l1, j1) );
+              }
+              const unsigned int i2 = i1, l2 = l1;
+              E_cabs_singles += rhs_vector->get_element(j1 * nX + A1) * g_Appp_ab(k1 * no + l2, A1 * no + i2)
+                                                    * ( gamma2_ab(k1 * no + l2, j1 * no + i2) - gamma1_alpha(k1, j1) * gamma1_beta(l2, i2) );
+              E_cabs_singles += rhs_vector->get_element(noX + j1 * nX + A1) * g_Appp_ab(k1 * no + l2, A1 * no + i2)
+                                                    * ( gamma2_ab(l2 * no + k1, i2 * no + j1) - gamma1_beta(k1, j1) * gamma1_alpha(l2, i2) );
+            }
+          }
+        }
+      }
+    }
+  }
+
   return E_cabs_singles;
 }
 

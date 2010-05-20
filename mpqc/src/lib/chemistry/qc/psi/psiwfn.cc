@@ -1278,7 +1278,6 @@ namespace sc {
           << endl;
       abort();
     }
-
   }
 
   PsiCorrWavefunction::~PsiCorrWavefunction() {
@@ -1347,17 +1346,19 @@ namespace sc {
     reference_->write_basic_input(convergence);
     input->write_keyword("psi:tolerance", convergence + 5);
     if (frozen2restricted) {
-      input->write_keyword_array("psi:restricted_docc", frozen_docc_);
-      //input->write_keyword_array("psi:restricted_uocc", frozen_uocc_);
+      input->write_keyword_array("psi:restricted_docc", this->frozen_docc());
+      //input->write_keyword_array("psi:restricted_uocc", this->frozen_uocc());
     }
     else {
-      input->write_keyword_array("psi:frozen_docc", frozen_docc_);
-      input->write_keyword_array("psi:frozen_uocc", frozen_uocc_);
+      input->write_keyword_array("psi:frozen_docc", this->frozen_docc());
+      input->write_keyword_array("psi:frozen_uocc", this->frozen_uocc());
     }
   }
 
   void
   PsiCorrWavefunction::compute() {
+    // compute reference NOW so that orbital info is available for making the correlated wfn input
+    reference_->compute();
     PsiWavefunction::compute();
     const double escf = exenv()->chkpt().rd_escf();
     reference_->set_energy(escf);

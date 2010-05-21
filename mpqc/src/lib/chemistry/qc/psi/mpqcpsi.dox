@@ -124,7 +124,7 @@ This keyword is queried only if neither <tt>docc</tt> nor <tt>socc</tt>
 are given.
 <dt><tt>memory</tt><dd> The number of bytes of memory Psi modules
 associated with this PsiWavefunction are allowed to use. Default is
-2000000 (2 million bytes, approximately 2 MB).
+32000000 (32 million bytes, approximately 32 MB).
 </dl>
 Note that keywords <tt>docc</tt>, <tt>socc</tt>, <tt>frozen_docc</tt>, <tt>frozen_uocc</tt>,
 <tt>total_charge</tt>, and <tt>multiplicity</tt> are used by appropriate specializations

@@ -77,7 +77,7 @@ namespace sc {
        is no default.
 
        <dt><tt>memory</tt><dd> This integer specifies the amount of memory
-       (in bytes) for Psi to use. The default is 2000000.
+       (in bytes) for Psi to use. The default is 32000000.
 
        <dt><tt>debug</tt><dd> This integer can be used to produce output
        for debugging.  The default is 0.

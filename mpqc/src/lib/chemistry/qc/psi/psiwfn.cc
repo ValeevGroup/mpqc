@@ -221,8 +221,8 @@ namespace sc {
     nirrep_ = molecule()->point_group()->char_table().order();
 
     size_t bytes = keyval->sizevalue("memory");
-    if (bytes <= 2000000)
-      bytes = 2000000;
+    if (bytes <= 32000000)
+      bytes = 32000000;
     {
       std::ostringstream oss;
       oss << "(" << bytes << " B)";

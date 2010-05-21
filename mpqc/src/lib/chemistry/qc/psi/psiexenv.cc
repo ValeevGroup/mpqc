@@ -202,6 +202,9 @@ void PsiExEnv::run_psi_module(const char *module)
   // can only run on node 0
   if (me_ != 0) return;
 
+  // delete chkpt file in case it gets overwritten
+  if (chkpt_) { delete chkpt_;  chkpt_ = 0; }
+
   std::ostringstream oss;
   oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
       << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;

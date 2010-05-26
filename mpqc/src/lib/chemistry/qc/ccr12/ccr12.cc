@@ -88,9 +88,9 @@ void CCR12::common_init(string theory){
   // cctresh
   ccthresh_=keyval_->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
   // get the memory sizes
-  memorysize_ = keyval_->longvalue("memory",   KeyValValueint(200000000));
+  memorysize_ = keyval_->longvalue("memory",   KeyValValuelong(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
-  worksize_ = keyval_->longvalue("workmemory",   KeyValValueint(50000000));
+  worksize_ = keyval_->longvalue("workmemory",   KeyValValuelong(50000000));
 #ifdef DISK_BASED_SMITH
   worksize_ = memorysize_; 
 #endif

@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@qtp.ufl.edu>
+// Author: Toru Shiozaki <shiozaki@theochem.uni-stuttgart.de>
 // Maintainer: TS
 //
 // This file is part of the SC Toolkit.

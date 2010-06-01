@@ -239,12 +239,16 @@ class Integral : public SavableState {
         responsible for freeing the object. */
     virtual RedundantCartesianSubIter*
                                  new_redundant_cartesian_sub_iter(int) =0;
-    /** Return a SphericalTransformIter object.  The caller is
+    /** Return a SphericalTransformIter object.  This factory must have been
+        initialized with a basis set whose maximum angular momentum is greater than
+        or equal to l. The caller is
         responsible for freeing the object. */
     virtual SphericalTransformIter *
                   new_spherical_transform_iter(int l,
                                                int inv=0, int subl=-1) =0;
-    /** Return a SphericalTransform object.  The pointer is only valid
+    /** Return a SphericalTransform object.  This factory must have been
+        initialized with a basis set whose maximum angular momentum is greater than
+        or equal to l. The pointer is only valid
         while this Integral object is valid. */
     virtual const SphericalTransform *
                   spherical_transform(int l,

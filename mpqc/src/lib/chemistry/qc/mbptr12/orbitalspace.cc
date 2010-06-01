@@ -628,8 +628,7 @@ namespace {
     const int nao = basis->nbasis();
     RefSCDimension obs_ao_dim = new SCDimension(nao,1);
     obs_ao_dim->blocks()->set_subdim(0,new SCDimension(nao));
-    integral->set_basis(basis);
-    Ref<PetiteList> pl = integral->petite_list();
+    Ref<PetiteList> pl = integral->petite_list(basis);
     RefSCMatrix obs_ao_coefs = basis->so_matrixkit()->matrix(pl->AO_basisdim(),obs_ao_dim);
     obs_ao_coefs.assign(0.0);
     for(int ao=0; ao<nao; ++ao)

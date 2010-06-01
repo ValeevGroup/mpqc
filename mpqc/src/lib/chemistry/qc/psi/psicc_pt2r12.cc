@@ -131,6 +131,7 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
   else
     input->write_keyword("psi:wfn", "ccsd");
   input->write_keyword("ccenergy:convergence", convergence);
+  input->write_keyword("ccenergy:maxiter", maxiter_);
   input->close();
 }
 
@@ -758,6 +759,7 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
   else
     input->write_keyword("psi:wfn", "ccsd_t");
   input->write_keyword("ccenergy:convergence", convergence);
+  input->write_keyword("ccenergy:maxiter", maxiter_);
   input->close();
 }
 

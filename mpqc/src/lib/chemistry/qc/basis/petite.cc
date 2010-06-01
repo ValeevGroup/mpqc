@@ -158,8 +158,9 @@ sc::delete_shell_map(int **shell_map, const Ref<GaussianBasisSet> &basis)
 PetiteList::PetiteList(const Ref<GaussianBasisSet> &gbs,
                        const Ref<Integral>& ints) :
   gbs_(gbs),
-  ints_(ints)
+  ints_(ints->clone())
 {
+  ints_->set_basis(gbs_);
   init();
 }
 

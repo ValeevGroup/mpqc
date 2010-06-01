@@ -456,6 +456,7 @@ namespace sc {
     PsiWavefunction(keyval) {
     docc_ = read_occ(keyval, "docc", nirrep_);
     socc_ = read_occ(keyval, "socc", nirrep_);
+    maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
   }
 
   PsiSCF::~PsiSCF() {
@@ -463,10 +464,12 @@ namespace sc {
 
   PsiSCF::PsiSCF(StateIn&s) :
     PsiWavefunction(s) {
+    s.get(maxiter_);
   }
 
   void PsiSCF::save_data_state(StateOut&s) {
     PsiWavefunction::save_data_state(s);
+    s.put(maxiter_);
   }
 
   int PsiSCF::nelectron() {
@@ -1000,7 +1003,7 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("scf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter_);
     input->write_keyword("scf:convergence",convergence);
   }
 
@@ -1103,7 +1106,8 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("scf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter_);
+    input->write_keyword("scf:convergence",convergence);
   }
 
   void PsiHSOSHF::write_input(int convergence) {
@@ -1204,7 +1208,8 @@ namespace sc {
       input->write_keyword("psi:reset_occupations", true);
       input->write_keyword("psi:hcore_guess", "new");
     }
-    input->write_keyword("scf:maxiter", maxiter);
+    input->write_keyword("scf:maxiter", maxiter_);
+    input->write_keyword("scf:convergence",convergence);
   }
 
   void PsiUHF::write_input(int convergence) {

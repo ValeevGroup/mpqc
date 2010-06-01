@@ -111,6 +111,9 @@ namespace sc {
       const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin);
       /// return active virtual orbital space (symmetry-blocked)
       const Ref<OrbitalSpace>& vir_act_sb(SpinCase1 spin);
+
+      int maxiter_;   //< max number of CC iterations
+      static const int default_maxiter = 50;
       
     public:
       PsiCC(const Ref<KeyVal>&);

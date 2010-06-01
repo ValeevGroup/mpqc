@@ -76,6 +76,7 @@ namespace sc {
 
   PsiCC::PsiCC(const Ref<KeyVal>&keyval) :
     PsiCorrWavefunction(keyval) {
+    maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
   }
 
   PsiCC::~PsiCC() {
@@ -83,10 +84,12 @@ namespace sc {
 
   PsiCC::PsiCC(StateIn&s) :
     PsiCorrWavefunction(s) {
+    s.get(maxiter_);
   }
 
   void PsiCC::save_data_state(StateOut&s) {
     PsiCorrWavefunction::save_data_state(s);
+    s.put(maxiter_);
   }
 
   void PsiCC::dpd_start() {
@@ -695,6 +698,7 @@ namespace sc {
     PsiCorrWavefunction::write_input(convergence);
     input->write_keyword("psi:wfn", "ccsd");
     input->write_keyword("ccenergy:convergence", convergence);
+    input->write_keyword("ccenergy:maxiter", maxiter_);
     input->close();
   }
 
@@ -731,6 +735,8 @@ namespace sc {
     input->open();
     PsiCorrWavefunction::write_input(convergence);
     input->write_keyword("psi:wfn", "ccsd_t");
+    input->write_keyword("ccenergy:convergence", convergence);
+    input->write_keyword("ccenergy:maxiter", maxiter_);
     input->close();
   }
 

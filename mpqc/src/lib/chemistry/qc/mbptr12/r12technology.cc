@@ -1377,7 +1377,7 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       abs_lindep_tol_ = keyval->doublevalue("abs_lindep_tol", KeyValValuedouble(OverlapOrthog::default_lindep_tol()));
     }
     else {
-      abs_nlindep_ = keyval->doublevalue("abs_nlindep", KeyValValueint(-1));
+      abs_nlindep_ = keyval->intvalue("abs_nlindep", KeyValValueint(-1));
     }
   }
 

@@ -126,6 +126,7 @@ R12WavefunctionWorld::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
+  nlindep_aux_ = -1;
   if (! this->basis()->equiv(bs_aux_) &&
       (orthog_method() == OverlapOrthog::Symmetric ||
        orthog_method() == OverlapOrthog::Canonical) &&
@@ -151,6 +152,7 @@ R12WavefunctionWorld::construct_orthog_ri_()
     construct_orthog_aux_();
   if (ribs_space_.null()) {
 
+    nlindep_ri_ = -1;
     if (! this->basis()->equiv(bs_ri_) &&
         (orthog_method() == OverlapOrthog::Symmetric ||
          orthog_method() == OverlapOrthog::Canonical) &&

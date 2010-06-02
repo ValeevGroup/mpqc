@@ -63,6 +63,12 @@ namespace sc {
    */
   class DensityFitting: virtual public SavableState {
     public:
+      enum SolveMethod {
+        SolveMethod_Inverse = 0,
+        SolveMethod_Cholesky = 1,
+        SolveMethod_DSPSVX = 2
+      };
+
       typedef TwoBodyMOIntsRuntimeUnion23 MOIntsRuntime;
 
       ~DensityFitting();
@@ -98,6 +104,7 @@ namespace sc {
       Ref<OrbitalSpace> space1_;
       Ref<OrbitalSpace> space2_;
       std::string kernel_key_;
+      SolveMethod solvemethod_;
 
       bool evaluated_;
 

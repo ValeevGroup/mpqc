@@ -66,6 +66,7 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
   // only Coulomb fitting is supported at the moment
   if (kernel_key_ != std::string("1/r_{12}"))
     throw FeatureNotImplemented("Non-Coulomb fitting kernels are not supported",__FILE__,__LINE__);
+  solvemethod_ = SolveMethod_DSPSVX;
 
   // fitting dimension
   RefSCDimension fdim = new SCDimension(fbasis_->nbasis(), "");
@@ -85,6 +86,8 @@ DensityFitting::DensityFitting(StateIn& si) :
 
   int count;
   detail::FromStateIn<RefSymmSCMatrix>::get(kernel_,si,count);
+
+  int solvemethod; si.get(solvemethod); solvemethod_ = static_cast<SolveMethod>(solvemethod);
 }
 
 void
@@ -99,6 +102,8 @@ DensityFitting::save_data_state(StateOut& so) {
 
   int count;
   detail::ToStateOut<RefSymmSCMatrix>::put(kernel_,so,count);
+
+  so.put((int)solvemethod_);
 }
 
 RefSCDimension
@@ -209,29 +214,47 @@ DensityFitting::compute()
       // scratch for holding solution vectors
       std::vector<double> C_jR(n2 * n3);
 
-#if USE_KERNEL_INVERSE
+      std::vector<double> kernel_i; // only needed for inverse method
+      std::vector<double> kernel_packed;  // only needed for factorized methods
+      std::vector<double> kernel_factorized;
+      std::vector<int> ipiv;
 
-      RefSymmSCMatrix kernel_i_mat = kernel_.clone(); kernel_i_mat.assign(kernel_);
-      exp::lapack_invert_symmnondef(kernel_i_mat, 1e10);
+      // factorize or invert kernel
+      switch (solvemethod_) {
+        case SolveMethod_Inverse:
+        {
+          RefSymmSCMatrix kernel_i_mat = kernel_.clone();
+          kernel_i_mat.assign(kernel_);
+          exp::lapack_invert_symmnondef(kernel_i_mat, 1e10);
 
-      // convert kernel_i to dense rectangular form
-      std::vector<double> kernel_i(n3 * n3);
-      int rc = 0;
-      for(int r=0; r<n3; ++r) {
-        for(int c=0; c<n3; ++c, ++rc) {
-          kernel_i[rc] = kernel_i_mat.get_element(r,c);
+          // convert kernel_i to dense rectangular form
+          kernel_i.resize(n3 * n3);
+          int rc = 0;
+          for (int r = 0; r < n3; ++r) {
+            for (int c = 0; c < n3; ++c, ++rc) {
+              kernel_i[rc] = kernel_i_mat.get_element(r, c);
+            }
+          }
+          kernel_i_mat = 0;
         }
+        break;
+
+        case SolveMethod_DSPSVX:
+        {
+          // convert kernel_ to a packed upper-triangle form
+          kernel_packed.resize(n3 * (n3 + 1) / 2);
+          kernel_->convert(&(kernel_packed[0]));
+          // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
+          kernel_factorized.resize(n3 * (n3 + 1) / 2);
+          ipiv.resize(n3);
+          sc::exp::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]),
+                                         &(ipiv[0]), 1e10);
+        }
+        break;
+
+        default:
+          throw ProgrammingError("unknown solve method", __FILE__, __LINE__, class_desc());
       }
-      kernel_i_mat = 0;
-#else
-      // convert kernel_ to a packed upper-triangle form
-      std::vector<double> kernel_packed(n3 * (n3 + 1) / 2);
-      kernel_->convert(&(kernel_packed[0]));
-      // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
-      std::vector<double> kernel_factorized(n3 * (n3 + 1) / 2);
-      std::vector<int> ipiv(n3);
-      sc::exp::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]), &(ipiv[0]), 1e10);
-#endif
 
       for (int i = 0; i < n1; ++i) {
 
@@ -242,15 +265,26 @@ DensityFitting::compute()
         const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyOper::eri);
 
         // solve the linear system
-#if USE_KERNEL_INVERSE
-        C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, &(kernel_i[0]), n3,
-                0.0, &(C_jR[0]), n3);
-#else
-        //sc::exp::lapack_linsolv_symmnondef(&(kernel_packed[0]), n3, &(C_jR[0]), cC_jR, n2);
-        sc::exp::lapack_linsolv_dpf_symmnondef(&(kernel_packed[0]), n3,
-                                               &(kernel_factorized[0]),
-                                               &(ipiv[0]), &(C_jR[0]), cC_jR, n2);
-#endif
+        switch (solvemethod_) {
+          case SolveMethod_Inverse:
+          {
+            C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, &(kernel_i[0]), n3,
+                    0.0, &(C_jR[0]), n3);
+          }
+          break;
+
+          case SolveMethod_DSPSVX:
+          {
+            //sc::exp::lapack_linsolv_symmnondef(&(kernel_packed[0]), n3, &(C_jR[0]), cC_jR, n2);
+            sc::exp::lapack_linsolv_dpf_symmnondef(&(kernel_packed[0]), n3,
+                                                   &(kernel_factorized[0]),
+                                                   &(ipiv[0]), &(C_jR[0]), cC_jR, n2);
+          }
+          break;
+
+          default:
+            throw ProgrammingError("unknown solve method", __FILE__, __LINE__, class_desc());
+        }
 
         // write
         C_->store_pair_block(0, i, 0, &(C_jR[0]));

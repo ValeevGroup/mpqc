@@ -50,6 +50,11 @@ namespace sc {
     Ref<PetiteList> plist = integral->petite_list();
     RefSymmSCMatrix overlap = compute_onebody_matrix<&Integral::overlap>(plist);
 
+    // if nlindep is non-negative AND orthog_method is symmetric/canonical
+    // tell OverlapOrthog to make the number of linear dependencies be exactly nlindep
+    if (nlindep >= 0 && (orthog_method == OverlapOrthog::Symmetric || orthog_method == OverlapOrthog::Canonical))
+      lindep_tol = -nlindep;
+
     //
     // Compute orthogonalizer for bs
     //

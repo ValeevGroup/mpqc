@@ -126,7 +126,13 @@ R12WavefunctionWorld::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
-  abs_space_ = orthogonalize("p'","RIBS", bs_aux_, integral(), orthog_method(), lindep_tol(), nlindep_aux_);
+  if (! this->basis()->equiv(bs_aux_) &&
+      (orthog_method() == OverlapOrthog::Symmetric ||
+       orthog_method() == OverlapOrthog::Canonical) &&
+      this->r12tech()->abs_nlindep() >= 0) {  // if R12Technology has abs_nlindep, use it only with symmetric/canonical orthogonalization
+    nlindep_aux_ = this->r12tech()->abs_nlindep();
+  }
+  abs_space_ = orthogonalize("p'","RIBS", bs_aux_, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_aux_);
   if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
   }
@@ -144,7 +150,15 @@ R12WavefunctionWorld::construct_orthog_ri_()
   if (bs_aux_ == bs_ri_)
     construct_orthog_aux_();
   if (ribs_space_.null()) {
-    ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), orthog_method(), lindep_tol(), nlindep_ri_);
+
+    if (! this->basis()->equiv(bs_ri_) &&
+        (orthog_method() == OverlapOrthog::Symmetric ||
+         orthog_method() == OverlapOrthog::Canonical) &&
+        this->r12tech()->abs_nlindep() >= 0) {  // if R12Technology has abs_nlindep, use it only with symmetric/canonical orthogonalization
+      nlindep_ri_ = this->r12tech()->abs_nlindep();
+    }
+
+    ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_ri_);
   }
   const Ref<OrbitalSpaceRegistry> idxreg = this->world()->tfactory()->orbital_registry();
   idxreg->add(make_keyspace_pair(ribs_space_));
@@ -164,7 +178,7 @@ R12WavefunctionWorld::abs_spans_obs_()
     nlindep_ri = nlindep_ri_;
   }
   else {
-    Ref<OrbitalSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), orthog_method(), lindep_tol(), nlindep_ri);
+    Ref<OrbitalSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_ri);
   }
 
   const int obs_rank = ref()->orbs(Alpha)->rank();

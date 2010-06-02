@@ -32,6 +32,7 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/orthog.h>
 #  include <chemistry/qc/intv3/intv3.h>
 #if HAVE_INTEGRALCINTS
 #  include <chemistry/qc/cints/cints.h>
@@ -1043,6 +1044,8 @@ R12Technology::R12Technology(StateIn& s)
   int absmethod; s.get(absmethod); abs_method_ = (ABSMethod)absmethod;
   int stdapprox; s.get(stdapprox); stdapprox_ = (StandardApproximation) stdapprox;
   ansatz_ << SavableState::restore_state(s);
+  s.get(abs_nlindep_);
+  s.get(abs_lindep_tol_);
   s.get(maxnabs_);
 
   int safety_check; s.get(safety_check);
@@ -1367,6 +1370,17 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     throw std::runtime_error("R12Technology::R12Technology -- unrecognized value for abs_method");
   }
 
+  if (!abs_eq_obs_) {  // how to get rid of linear dependencies in OBS
+    abs_nlindep_ = -1;
+    abs_lindep_tol_ = OverlapOrthog::default_lindep_tol();
+    if (keyval->exists("abs_lindep_tol")) {
+      abs_lindep_tol_ = keyval->doublevalue("abs_lindep_tol", KeyValValuedouble(OverlapOrthog::default_lindep_tol()));
+    }
+    else {
+      abs_nlindep_ = keyval->doublevalue("abs_nlindep", KeyValValueint(-1));
+    }
+  }
+
   ansatz_ = require_dynamic_cast<R12Ansatz*>(
     keyval->describedclassvalue("ansatz").pointer(),
     "R12Technology::R12Technology\n"
@@ -1488,6 +1502,9 @@ R12Technology::save_data_state(StateOut& s)
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
   SavableState::save_state(ansatz_.pointer(),s);
+  s.put(abs_nlindep_);
+  s.put(abs_lindep_tol_);
+  s.put(maxnabs_);
   s.put((int)safety_check_);
   s.put((int)posdef_B_);
   s.put((int)omit_B_);
@@ -1615,6 +1632,22 @@ unsigned int
 R12Technology::maxnabs() const
 {
   return maxnabs_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+int
+R12Technology::abs_nlindep() const
+{
+  return abs_nlindep_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+double
+R12Technology::abs_lindep_tol() const
+{
+  return abs_lindep_tol_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

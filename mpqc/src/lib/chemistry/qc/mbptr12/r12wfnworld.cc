@@ -122,6 +122,7 @@ R12WavefunctionWorld::initialize()
       world()->tfactory()->hints().data_persistent(true);
   }
 
+  nlindep_ri_ = nlindep_aux_ = -1;
   obs_eq_vbs_ = basis()->equiv(basis_vir());
   construct_ri_basis_(r12tech()->safety_check());
   obs_eq_ribs_ = basis()->equiv(basis_ri());

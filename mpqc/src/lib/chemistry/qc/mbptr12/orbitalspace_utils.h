@@ -39,8 +39,13 @@
 
 namespace sc {
 
-  /** Compute span of bs and create corresponding mospace referred to by name. Number
-      linear dependencies is returned in nlindep */
+  /** Compute span of bs and create corresponding mospace referred to by name.
+      Setting nlindep on input to a non-negative value
+      will cause the number of linear dependencies to be exactly its input value,
+      if possible (lindep_tol is then ignored).
+      This is not implemented for Gram-Schmidt orthogonalization and thus in that case nlindep
+      is ignored on input. On output nlindep contains the number of linear dependencies.
+      */
    Ref<OrbitalSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
                                    const Ref<Integral>& integral, OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                                    int& nlindep);

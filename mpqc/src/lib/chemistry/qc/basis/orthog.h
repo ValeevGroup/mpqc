@@ -84,6 +84,13 @@ class OverlapOrthog: virtual public SavableState {
     Ref<SCMatrixKit> result_kit_; // this kit is used for the result matrices
 
   public:
+    /** @param lindep_tolerance If non-negative, this specifies the degree of linear dependence
+               tolerated in the result. The precise definition is method-dependent. For symmetric/canonical
+               methods this specifies the condition number of the truncated metric. If negative and
+               method is symmetric/canonical,
+               std::floor(-lindep_tolerance) specifies the number of linearly-dependent basis functions
+               to be removed.
+    */
     OverlapOrthog(OrthogMethod method,
                   const RefSymmSCMatrix &overlap,
                   const Ref<SCMatrixKit> &result_kit,

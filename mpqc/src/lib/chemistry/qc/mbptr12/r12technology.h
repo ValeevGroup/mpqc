@@ -630,6 +630,8 @@ class R12Technology: virtual public SavableState {
     StandardApproximation stdapprox_;
     Ref<R12Ansatz> ansatz_;
     ABSMethod abs_method_;
+    double abs_lindep_tol_;
+    int abs_nlindep_;
     unsigned int maxnabs_;
     bool gbc_;
     bool ebc_;
@@ -738,6 +740,21 @@ class R12Technology: virtual public SavableState {
         ABS and ABS+ are only implemented for certain legacy methods).
         The default is "CABS+".
 
+        <dt><tt>abs_lindep_tol</tt><dd> The tolerance used to detect linearly
+        dependent basis functions (only makes sense if a separate ABS basis is used).
+        The precise meaning depends on the
+        orthogonalization method used by the Wavefunction object that uses this object.
+        The default value is 1e-8.
+
+        <dt><tt>abs_nlindep</tt><dd> The number of linearly
+        dependent basis functions to be eliminated from the RI basis. This keyword is useful to keep the number
+        of linearly dependent basis functions constant in a series of calculations, e.g.
+        when performing a scan of the potential energy surface for the purpose of computing
+        precise anharmonic force fields. This keyword is only valid when
+        the Wavefunction object uses symmetric or canonical orthogonalization.
+        The default is to use keyword <tt>abs_lindep_tol</tt> instead of
+        this keyword.
+
 	<dt><tt>safety_check</tt><dd> Set to true if you want to perform safety checks, e.g., for completeness
         of the RI basis, linear independence of the geminal basis, positive definiteness of B matrix, etc.
 	The default is true (to perform the checks).
@@ -810,6 +827,8 @@ class R12Technology: virtual public SavableState {
     bool ebc() const;
     bool coupling() const;
     ABSMethod abs_method() const;
+    int abs_nlindep() const;
+    double abs_lindep_tol() const;
     StandardApproximation stdapprox() const;
     const Ref<R12Ansatz>& ansatz() const;
     bool spinadapted() const;

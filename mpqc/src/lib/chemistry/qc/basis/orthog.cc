@@ -29,13 +29,14 @@
 #pragma implementation
 #endif
 
-#include <stdlib.h>
-#include <math.h>
-
+#include <cstdlib>
+#include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
 #include <util/state/stateio.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blocked.h>
@@ -158,6 +159,26 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
   RefDiagSCMatrix m(M.dim(), M.kit());
   M.diagonalize(m,U);
   M = 0;
+
+  // if given the number of linear dependencies to eliminate
+  // compute the needed tolerance
+  if (lindep_tol_ < 0.0) {
+    const int target_nlindep = static_cast<int>(std::floor(-lindep_tol_));
+    const int n = m.n();
+    std::vector<double> mvec(n);
+    for(int i=0; i<n; ++i) mvec[i] = m(i);
+    std::sort(mvec.begin(), mvec.end());
+    // zero linear dependencies is easy
+    if (target_nlindep == 0)
+      lindep_tol_ =  mvec[0] / (2.0 * mvec[n-1] );
+    else {
+      // exactly degenerate metric eigenvalues at cutoff are trouble!
+      if (mvec[target_nlindep-1] == mvec[target_nlindep])
+        throw AlgorithmException("degenerate metric eigenvalues during orthogonalization -- cannot ensure that nlindep is obeyed",
+                                 __FILE__, __LINE__, this->class_desc());
+      lindep_tol_ = (mvec[target_nlindep-1] + mvec[target_nlindep]) / (2.0 * mvec[n-1]);
+    }
+  }
 
   Ref<SCElementMaxAbs> maxabsop = new SCElementMaxAbs;
   m.element_op(maxabsop.pointer());

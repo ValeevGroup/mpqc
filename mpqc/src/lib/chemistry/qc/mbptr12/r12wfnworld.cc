@@ -182,6 +182,8 @@ R12WavefunctionWorld::print(std::ostream& o) const {
   o << indent << "R12WavefunctionWorld:" << endl;
   o << incindent;
 
+  this->world()->print(o);
+
   if (!bs_aux_->equiv(basis())) {
       o << indent << "Auxiliary Basis Set (ABS):" << endl;
       o << incindent; bs_aux_->print(o); o << decindent << endl;

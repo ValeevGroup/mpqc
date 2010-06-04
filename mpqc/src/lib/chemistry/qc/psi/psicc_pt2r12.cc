@@ -715,7 +715,7 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << indent << "PsiCCSD_PT2R12:" << std::endl;
   o << incindent;
   PsiWavefunction::print(o);
-  mbptr12_->r12eval()->r12world()->r12tech()->print(o);
+  mbptr12_->r12eval()->r12world()->print(o);
   o << decindent;
 }
 

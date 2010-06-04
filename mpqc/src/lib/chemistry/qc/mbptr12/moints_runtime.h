@@ -46,7 +46,7 @@ namespace sc {
 
       /// give density fitting basis to enable density fitting, when possible
       MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory,
-                    const Ref<GaussianBasisSet>& dfbasis = 0);
+                    const Ref<DensityFittingParams>& dfparams = 0);
       ~MOIntsRuntime();
       MOIntsRuntime(StateIn&);
       void save_data_state(StateOut&);
@@ -57,7 +57,7 @@ namespace sc {
       /// factory for creating AO->MO transforms
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
       /// density fitting basis set. May be null.
-      const Ref<GaussianBasisSet>& dfbasis() const { return dfbasis_; }
+      const Ref<DensityFittingParams>& dfparams() const { return dfparams_; }
       /// runtime for density fitting matrices. Returns null if density fitting basis was not given.
       const Ref<DensityFittingRuntime>& runtime_df() const { return runtime_df_; }
       /// runtime for 2-center integrals
@@ -71,7 +71,7 @@ namespace sc {
       static ClassDesc class_desc_;
 
       Ref<MOIntsTransformFactory> factory_;
-      Ref<GaussianBasisSet> dfbasis_;
+      Ref<DensityFittingParams> dfparams_;
       Ref<DensityFittingRuntime> runtime_df_;
       Ref<TwoBodyTwoCenterMOIntsRuntime> runtime_2c_;
       Ref<TwoBodyThreeCenterMOIntsRuntime> runtime_3c_;

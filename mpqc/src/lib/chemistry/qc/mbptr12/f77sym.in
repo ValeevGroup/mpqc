@@ -7,10 +7,15 @@
 #define F77_DSPSVX
 #define F77_DSYEVD
 #define F77_DSPTRF
+#define F77_DPPTRF
 #define F77_DSPTRI
+#define F77_DPPTRI
 #define F77_DLANSP
 #define F77_DSPCON
+#define F77_DPPCON
 #define F77_DLAMCH
 #define F77_DLACPY
 #define F77_DSPTRS
+#define F77_DPPTRS
 #define F77_DSPRFS
+#define F77_DPPRFS

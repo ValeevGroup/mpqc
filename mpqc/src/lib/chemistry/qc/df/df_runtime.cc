@@ -100,7 +100,7 @@ DensityFittingRuntime::class_desc_(typeid(this_type),
                                    create<this_type> );
 
 DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r) :
-  moints_runtime_(r),
+  moints_runtime_(r), solver_(DensityFitting::SolveMethod_RefinedBunchKaufman),
   results_(ResultRegistry::instance())
 {
 }
@@ -108,6 +108,7 @@ DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r) :
 DensityFittingRuntime::DensityFittingRuntime(StateIn& si)
 {
   moints_runtime_ << SavableState::restore_state(si);
+  { int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s); }
   results_ = ResultRegistry::restore_instance(si);
 }
 
@@ -115,6 +116,7 @@ void
 DensityFittingRuntime::save_data_state(StateOut& so)
 {
   SavableState::save_state(moints_runtime_.pointer(),so);
+  so.put((int)solver_);
   ResultRegistry::save_instance(results_,so);
 }
 
@@ -181,7 +183,7 @@ DensityFittingRuntime::create_result(const std::string& key)
   {
     const std::string bkey = ParsedResultKey::key(space2->id(), space1->id(), fspace->id());
     if (this->exists(bkey)) {
-      Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}",
+      Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                           space1, space2, fspace->basis(),
                                                           this->get(bkey));
       df->compute();
@@ -205,7 +207,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     if (!space2_is_ao) {
       const std::string bkey = ParsedResultKey::key(space1->id(), space2_ao->id(), fspace->id());
       if (this->exists(bkey)) {
-        Ref<DensityFitting> df = new TransformedDensityFitting(moints_runtime_, "1/r_{12}",
+        Ref<DensityFitting> df = new TransformedDensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                                space1, space2, fspace->basis(),
                                                                this->get(bkey));
         df->compute();
@@ -219,7 +221,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     if (!space1_is_ao) {
       const std::string bkey = ParsedResultKey::key(space2->id(), space1_ao->id(), fspace->id());
       if (this->exists(bkey)) {
-        Ref<DensityFitting> df = new TransformedDensityFitting(moints_runtime_, "1/r_{12}",
+        Ref<DensityFitting> df = new TransformedDensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                                space2, space1, fspace->basis(),
                                                                this->get(bkey));
         const std::string tkey = ParsedResultKey::key(space2->id(), space1->id(), fspace->id());
@@ -234,7 +236,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     if (!space1_is_ao) {
       const std::string bkey = ParsedResultKey::key(space1_ao->id(), space2->id(), fspace->id());
       if (this->exists(bkey)) {
-        Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}",
+        Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                             space2, space1_ao, fspace->basis(),
                                                             this->get(bkey));
         const std::string tkey = ParsedResultKey::key(space2->id(), space1_ao->id(), fspace->id());
@@ -249,7 +251,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     if (!space2_is_ao) {
       const std::string bkey = ParsedResultKey::key(space2_ao->id(), space1->id(), fspace->id());
       if (this->exists(bkey)) {
-        Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}",
+        Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                             space1, space2_ao, fspace->basis(),
                                                             this->get(bkey));
         const std::string tkey = ParsedResultKey::key(space1->id(), space2_ao->id(), fspace->id());
@@ -283,7 +285,7 @@ DensityFittingRuntime::create_result(const std::string& key)
         aospace = space2_ao;
       }
       const std::string bkey = ParsedResultKey::key(mospace->id(), aospace->id(), fspace->id());
-      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}",
+      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                   mospace, aospace, fspace->basis());
       df->compute();
       results_->add(bkey, df->C());
@@ -291,7 +293,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     }
 #endif
     {
-      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}",
+      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                   space1, space2, fspace->basis());
       df->compute();
       ResultRef result = df->C();
@@ -301,6 +303,77 @@ DensityFittingRuntime::create_result(const std::string& key)
   }
 
   assert(false);  // unreachable
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc
+DensityFittingParams::class_desc_(typeid(DensityFittingParams),
+                     "DensityFittingParams",
+                     1,               // version
+                     "virtual public SavableState", // must match parent
+                     0, 0, create<DensityFittingParams>
+                     );
+
+DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
+                                           const std::string& kernel,
+                                           const std::string& solver) :
+                                           basis_(basis),
+                                           kernel_(kernel)
+{
+  if (solver == "cholesky_inv")
+    solver_ = DensityFitting::SolveMethod_InverseCholesky;
+  else if (solver == "cholesky")
+    solver_ = DensityFitting::SolveMethod_Cholesky;
+  else if (solver == "cholesky_refine")
+    solver_ = DensityFitting::SolveMethod_RefinedCholesky;
+  else if (solver == "bunchkaufman_inv")
+    solver_ = DensityFitting::SolveMethod_InverseBunchKaufman;
+  else if (solver == "bunchkaufman")
+      solver_ = DensityFitting::SolveMethod_BunchKaufman;
+  else if (solver == "bunchkaufman_refine")
+      solver_ = DensityFitting::SolveMethod_RefinedBunchKaufman;
+  else
+    throw ProgrammingError("invalid solver", __FILE__, __LINE__, class_desc());
+}
+
+DensityFittingParams::DensityFittingParams(StateIn& si) : SavableState(si) {
+  basis_ << SavableState::restore_state(si);
+  si.get(kernel_);
+  int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s);
+}
+
+DensityFittingParams::~DensityFittingParams() {
+}
+
+void
+DensityFittingParams::save_data_state(StateOut& so) {
+  SavableState::save_state(basis_.pointer(), so);
+  so.put(kernel_);
+  so.put((int)solver_);
+}
+
+void
+DensityFittingParams::print(std::ostream& o) const {
+  o << indent << "Density-Fitting Parameters:" << std::endl;
+  o << incindent;
+    o << indent << "basis set:" << std::endl;
+    o << incindent;
+      basis_->print(o);
+    o << decindent;
+    o << indent << "kernel = " << kernel_ << std::endl;
+    o << indent << "solver = ";
+    switch(solver_) {
+      case DensityFitting::SolveMethod_InverseBunchKaufman:  o << "Bunch-Kaufman (inverse)"; break;
+      case DensityFitting::SolveMethod_BunchKaufman:         o << "Bunch-Kaufman"; break;
+      case DensityFitting::SolveMethod_RefinedBunchKaufman:  o << "Bunch-Kaufman (refine)"; break;
+      case DensityFitting::SolveMethod_InverseCholesky:      o << "Cholesky (inverse)"; break;
+      case DensityFitting::SolveMethod_Cholesky:             o << "Cholesky"; break;
+      case DensityFitting::SolveMethod_RefinedCholesky:      o << "Cholesky (refine)"; break;
+      default: assert(false); // unreachable
+    }
+    o << std::endl;
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

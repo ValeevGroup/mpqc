@@ -913,7 +913,7 @@ namespace sc {
       const Ref<AOSpaceRegistry> ao_registry = df_info->runtime()->moints_runtime()->factory()->ao_registry();
       const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
-      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
+      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->params()->basis());
       const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
 
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
@@ -1079,7 +1079,7 @@ namespace sc {
       const Ref<AOSpaceRegistry> ao_registry = df_info->runtime()->moints_runtime()->factory()->ao_registry();
       const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
-      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->basis1());
+      const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->params()->basis());
       const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
 
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();

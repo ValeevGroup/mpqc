@@ -43,17 +43,18 @@ MOIntsRuntime::class_desc_(typeid(this_type),
                            create<this_type> );
 
 MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory,
-                             const Ref<GaussianBasisSet>& dfbasis) :
-  factory_(factory), dfbasis_(dfbasis),
+                             const Ref<DensityFittingParams>& dfparams) :
+  factory_(factory), dfparams_(dfparams),
   runtime_2c_(new TwoBodyTwoCenterMOIntsRuntime(factory_)),
   runtime_3c_(new TwoBodyThreeCenterMOIntsRuntime(factory_)),
   runtime_4c_(new TwoBodyFourCenterMOIntsRuntime(factory_))
 {
-  if (dfbasis_.nonnull()) {
+  if (dfparams_.nonnull()) {
     runtime_df_ = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory_,runtime_2c_,runtime_3c_));
-    typedef TwoBodyFourCenterMOIntsRuntime::Params DFParams;
-    const DFParams* params = new DFParams(dfbasis_, dfbasis_, runtime_df_);
-    runtime_4c_->params(params);
+    runtime_df_->set_solver(dfparams->solver());
+    typedef TwoBodyFourCenterMOIntsRuntime::Params DFInfo;
+    const DFInfo* dfinfo = new DFInfo(dfparams_, runtime_df_);
+    runtime_4c_->params(dfinfo);
   }
 }
 
@@ -62,7 +63,7 @@ MOIntsRuntime::~MOIntsRuntime() {
 
 MOIntsRuntime::MOIntsRuntime(StateIn& si) {
   factory_ << SavableState::restore_state(si);
-  dfbasis_ << SavableState::restore_state(si);
+  dfparams_ << SavableState::restore_state(si);
   runtime_2c_ << SavableState::restore_state(si);
   runtime_3c_ << SavableState::restore_state(si);
   runtime_4c_ << SavableState::restore_state(si);
@@ -71,7 +72,7 @@ MOIntsRuntime::MOIntsRuntime(StateIn& si) {
 void
 MOIntsRuntime::save_data_state(StateOut& so) {
   SavableState::save_state(factory_.pointer(),so);
-  SavableState::save_state(dfbasis_.pointer(),so);
+  SavableState::save_state(dfparams_.pointer(),so);
   SavableState::save_state(runtime_2c_.pointer(),so);
   SavableState::save_state(runtime_3c_.pointer(),so);
   SavableState::save_state(runtime_4c_.pointer(),so);

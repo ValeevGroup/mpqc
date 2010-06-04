@@ -66,7 +66,7 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
                                                                const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                                                                const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4) :
   TwoBodyMOIntsTransform(name,df_info->runtime()->moints_runtime()->factory(),tbintdescr,space1,space2,space3,space4),
-  runtime_(df_info->runtime()), dfbasis12_(df_info->basis1()), dfbasis34_(df_info->basis2())
+  runtime_(df_info->runtime()), dfbasis12_(df_info->params()->basis()), dfbasis34_(df_info->params()->basis())
 {
   // assuming for now that all densities will be fit in the same basis
   // TODO generalize to different fitting basis sets

@@ -71,7 +71,7 @@ namespace sc {
                                    int ncolB);
 
     /** invert symmetric non-definite matrix using DSPTRF LAPACK routine
-        that implements using the Bunch-Kaufman diagonal pivoting method.
+        that implements the Bunch-Kaufman diagonal pivoting method.
 
       \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
       exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
@@ -80,9 +80,9 @@ namespace sc {
     void lapack_invert_symmnondef(RefSymmSCMatrix& A, double condition_number_threshold = 0.0);
 
     /** Compute factorization of a symmetric non-definite matrix using DSPTRF LAPACK routine
-        that implements using the Bunch-Kaufman diagonal pivoting method.
+        that implements the Bunch-Kaufman diagonal pivoting method.
         The resulting factorization (AF and ipiv) can be used to solve a linear system A X = B
-        using lapack_linsolv_symmnondef();
+        using lapack_linsolv_dpf_symmnondef();
 
       \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
       exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
@@ -96,13 +96,70 @@ namespace sc {
     void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF,
                                int* ipiv, double condition_number_threshold = 0.0);
 
+    /** invert symmetric positive-definite matrix using DPPTRF LAPACK routine
+        that implements the Cholesky method.
+
+      \param condition_number_threshold when the estimate of the condition number (see lapack function DPPCON)
+      exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
+      Negative threshold will prompt the estimate of the condition number of A to be printed out to ExEnv::out0().
+      */
+    void lapack_invert_symmposdef(RefSymmSCMatrix& A, double condition_number_threshold = 0.0);
+
+    /**
+     * Solves a symmetric indefinite system of linear equations AX=B,
+     * where A is held in packed storage, using the factorization computed by lapack_dpf_symmnondef
+     * @param A
+     * @param nA
+     * @param AF
+     * @param ipiv
+     * @param Xt
+     * @param Bt
+     * @param ncolB
+     * @param refine set to false to avoid the iterative refinement of the solution that was obtained by substitution (using LAPACK dsptrs function)
+     */
     void lapack_linsolv_dpf_symmnondef(const double* A,
                                        int nA,
                                        const double* AF,
                                        const int* ipiv,
                                        double* Xt,
                                        const double* Bt,
-                                       int ncolB);
+                                       int ncolB,
+                                       bool refine = true);
+
+    /** Compute factorization of a symmetric positive-definite matrix using DPPTRF LAPACK routine
+        that implements the Cholesky method.
+        The resulting factorization (AF and ipiv) can be used to solve a linear system A X = B
+        using lapack_linsolv_cholesky_symmposdef();
+
+      \param condition_number_threshold when the estimate of the condition number (see lapack function DSPCON)
+      exceeds this threshold print a warning to ExEnv::err0(). No warning will be produced if the threshold is 0.0.
+      Negative threshold will prompt the estimate of the condition number of A to be printed out to ExEnv::out0().
+
+      \param AF array of size A.dim().n() * (A.dim().n() + 1)/2. On output contains the desired factorization.
+
+      */
+    void lapack_cholesky_symmposdef(const RefSymmSCMatrix& A, double* AF,
+                                    double condition_number_threshold = 0.0);
+
+    /**
+     * Solves a symmetric indefinite system of linear equations AX=B,
+     * where A is held in packed storage, using the factorization computed by lapack_cholesky_symmnondef
+     * @param A
+     * @param nA
+     * @param AF
+     * @param Xt
+     * @param Bt
+     * @param ncolB
+     * @param refine set to false to avoid the iterative refinement of the solution that was obtained by substitution (using LAPACK dsptrs function)
+     */
+    void lapack_linsolv_cholesky_symmposdef(const double* A,
+                                            int nA,
+                                            const double* AF,
+                                            double* Xt,
+                                            const double* Bt,
+                                            int ncolB,
+                                            bool refine = true);
+
   }
 }
 

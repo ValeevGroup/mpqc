@@ -88,6 +88,24 @@ public:
     <dt><tt>df_basis</tt><dd> This optional GaussianBasisSet object specifies the density-fitting basis.
     There is no default (no density fitting will be performed).
 
+    <dt><tt>df_kernel</tt><dd> If df_basis is specified, this keyword will be queried to determine the kernel
+    for density-fitting. The only supported value is <tt>coulomb</tt>.
+
+    <dt><tt>df_solver</tt><dd> If df_basis is specified, this keyword will be queried to determine the method by which
+    density-fitting will be performed. Valid values are:
+    <dl>
+
+      <dt><tt>cholesky_inv</tt><dd> Use Cholesky inverse. Only valid if <tt>df_kernel=coulomb</tt>.
+      <dt><tt>cholesky</tt><dd> Use Cholesky linear solver. Only valid if <tt>df_kernel=coulomb</tt>.
+      <dt><tt>cholesky_refine</tt><dd> Use Cholesky linear solver + iterative refinement. Only valid if <tt>df_kernel=coulomb</tt>.
+
+      <dt><tt>bunchkaufman_inv</tt><dd> Use Bunch-Kaufman inverse. Valid for any value of <tt>df_kernel</tt>.
+      <dt><tt>bunchkaufman</tt><dd> Use Bunch-Kaufman linear solver. Valid for any value of <tt>df_kernel</tt>.
+      <dt><tt>bunchkaufman_refine</tt><dd> Use Bunch-Kaufman linear solver + iterative refinement. Valid for any value of <tt>df_kernel</tt>.
+      This is the default.
+
+    </dl>
+
     <dt><tt>memory</tt><dd> This keyword specifies the amount of memory to be used. The default is 32000000 bytes.
 
     <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
@@ -155,6 +173,8 @@ private:
   /// whose World is it?
   Wavefunction* wfn_;
   Ref<GaussianBasisSet> bs_df_;   //!< the density-fitting basis
+  std::string df_kernel_;         //!< the density-fitting kernel
+  std::string df_solver_;         //!< the density-fitting solver
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;

@@ -78,6 +78,11 @@ namespace sc {
       /// obsoletes this object
       void obsolete();
 
+      /// which density fitting solver will be used to compute?
+      DensityFitting::SolveMethod solver() const { return solver_; }
+      /// change default solver to this
+      void set_solver(DensityFitting::SolveMethod s) { solver_ = s; }
+
       /** Returns true if the given DensityFitting is available
         */
       bool exists(const std::string& key) const;
@@ -95,6 +100,7 @@ namespace sc {
 
     private:
       Ref<MOIntsRuntime> moints_runtime_;
+      DensityFitting::SolveMethod solver_;
 
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
@@ -106,38 +112,64 @@ namespace sc {
 
   };
 
+  /// DensityFittingParams defines parameters needed to compute density fitting objects
+  class DensityFittingParams : virtual public SavableState {
+    public:
+    /**
+     * Encapsulates parameters used by all density fitting objects
+     * @param basis
+     * @param kernel
+     * @param solver
+     * @return
+     */
+      DensityFittingParams(const Ref<GaussianBasisSet>& basis,
+                           const std::string& kernel,
+                           const std::string& solver);
+      DensityFittingParams(StateIn&);
+      ~DensityFittingParams();
+      void save_data_state(StateOut&);
+
+      const Ref<GaussianBasisSet>& basis() const { return basis_; }
+      const std::string& kernel() const { return kernel_; }
+      DensityFitting::SolveMethod solver() const { return solver_; }
+
+      void print(std::ostream& o) const;
+
+    private:
+      static ClassDesc class_desc_;
+
+      Ref<GaussianBasisSet> basis_;
+      std::string kernel_;
+      DensityFitting::SolveMethod solver_;
+
+  };
+
   /// this class encapsulates objects needed to perform density fitting of a 4-center integral
   struct DensityFittingInfo : virtual public SavableState {
     public:
       typedef DensityFittingInfo this_type;
 
-      DensityFittingInfo(const Ref<GaussianBasisSet>& b1,
-                         const Ref<GaussianBasisSet>& b2,
+      DensityFittingInfo(const Ref<DensityFittingParams>& p,
                          const Ref<DensityFittingRuntime>& r) :
-                           basis1_(b1), basis2_(b2), runtime_(r) {}
+                           params_(p), runtime_(r) {}
       DensityFittingInfo(StateIn& si) {
-        basis1_ << SavableState::restore_state(si);
-        basis2_ << SavableState::restore_state(si);
+        params_ << SavableState::restore_state(si);
         runtime_ << SavableState::restore_state(si);
       }
       void save_data_state(StateOut& so) {
-        SavableState::save_state(basis1_.pointer(),so);
-        SavableState::save_state(basis2_.pointer(),so);
+        SavableState::save_state(params_.pointer(),so);
         SavableState::save_state(runtime_.pointer(),so);
       }
 
-      const Ref<GaussianBasisSet>& basis1() const { return basis1_; }
-      const Ref<GaussianBasisSet>& basis2() const { return basis2_; }
+      const Ref<DensityFittingParams>& params() const { return params_; }
       const Ref<DensityFittingRuntime>& runtime() const { return runtime_; }
 
     private:
-      Ref<GaussianBasisSet> basis1_;
-      Ref<GaussianBasisSet> basis2_;
+      Ref<DensityFittingParams> params_;
       Ref<DensityFittingRuntime> runtime_;
 
       static ClassDesc class_desc_;
   };
-
 
 
 } // end of namespace sc

@@ -54,6 +54,7 @@ DensityFitting::~DensityFitting() {}
 
 DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                const std::string& kernel_key,
+                               SolveMethod solver,
                                const Ref<OrbitalSpace>& space1,
                                const Ref<OrbitalSpace>& space2,
                                const Ref<GaussianBasisSet>& fitting_basis) :
@@ -61,12 +62,12 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                  space1_(space1),
                                  space2_(space2),
                                  fbasis_(fitting_basis),
-                                 kernel_key_(kernel_key)
+                                 kernel_key_(kernel_key),
+                                 solver_(solver)
                                  {
   // only Coulomb fitting is supported at the moment
   if (kernel_key_ != std::string("1/r_{12}"))
     throw FeatureNotImplemented("Non-Coulomb fitting kernels are not supported",__FILE__,__LINE__);
-  solvemethod_ = SolveMethod_DSPSVX;
 
   // fitting dimension
   RefSCDimension fdim = new SCDimension(fbasis_->nbasis(), "");
@@ -81,13 +82,12 @@ DensityFitting::DensityFitting(StateIn& si) :
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   si.get(kernel_key_);
+  int solvemethod; si.get(solvemethod); solver_ = static_cast<SolveMethod>(solvemethod);
   cC_ << SavableState::restore_state(si);
   C_ << SavableState::restore_state(si);
 
   int count;
   detail::FromStateIn<RefSymmSCMatrix>::get(kernel_,si,count);
-
-  int solvemethod; si.get(solvemethod); solvemethod_ = static_cast<SolveMethod>(solvemethod);
 }
 
 void
@@ -97,13 +97,12 @@ DensityFitting::save_data_state(StateOut& so) {
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   so.put(kernel_key_);
+  so.put((int)solver_);
   SavableState::save_state(cC_.pointer(),so);
   SavableState::save_state(C_.pointer(),so);
 
   int count;
   detail::ToStateOut<RefSymmSCMatrix>::put(kernel_,so,count);
-
-  so.put((int)solvemethod_);
 }
 
 RefSCDimension
@@ -220,12 +219,16 @@ DensityFitting::compute()
       std::vector<int> ipiv;
 
       // factorize or invert kernel
-      switch (solvemethod_) {
-        case SolveMethod_Inverse:
+      switch (solver_) {
+        case SolveMethod_InverseBunchKaufman:
+        case SolveMethod_InverseCholesky:
         {
           RefSymmSCMatrix kernel_i_mat = kernel_.clone();
           kernel_i_mat.assign(kernel_);
-          exp::lapack_invert_symmnondef(kernel_i_mat, 1e10);
+          if (solver_ == SolveMethod_InverseBunchKaufman)
+            exp::lapack_invert_symmnondef(kernel_i_mat, 1e10);
+          if (solver_ == SolveMethod_InverseCholesky)
+            exp::lapack_invert_symmposdef(kernel_i_mat, 1e10);
 
           // convert kernel_i to dense rectangular form
           kernel_i.resize(n3 * n3);
@@ -239,7 +242,22 @@ DensityFitting::compute()
         }
         break;
 
-        case SolveMethod_DSPSVX:
+        case SolveMethod_Cholesky:
+        case SolveMethod_RefinedCholesky:
+        {
+          // convert kernel_ to a packed upper-triangle form
+          kernel_packed.resize(n3 * (n3 + 1) / 2);
+          kernel_->convert(&(kernel_packed[0]));
+          // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
+          kernel_factorized.resize(n3 * (n3 + 1) / 2);
+          sc::exp::lapack_cholesky_symmposdef(kernel_,
+                                              &(kernel_factorized[0]),
+                                              1e10);
+        }
+        break;
+
+        case SolveMethod_BunchKaufman:
+        case SolveMethod_RefinedBunchKaufman:
         {
           // convert kernel_ to a packed upper-triangle form
           kernel_packed.resize(n3 * (n3 + 1) / 2);
@@ -264,21 +282,37 @@ DensityFitting::compute()
 
         const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyOper::eri);
 
+        bool refine_solution = true;
         // solve the linear system
-        switch (solvemethod_) {
-          case SolveMethod_Inverse:
+        switch (solver_) {
+          case SolveMethod_InverseCholesky:
+          case SolveMethod_InverseBunchKaufman:
           {
             C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, &(kernel_i[0]), n3,
                     0.0, &(C_jR[0]), n3);
           }
           break;
 
-          case SolveMethod_DSPSVX:
+          case SolveMethod_Cholesky:
+            refine_solution = false;
+          case SolveMethod_RefinedCholesky:
+          {
+            sc::exp::lapack_linsolv_cholesky_symmposdef(&(kernel_packed[0]), n3,
+                                                        &(kernel_factorized[0]),
+                                                        &(C_jR[0]), cC_jR, n2,
+                                                        refine_solution);
+          }
+          break;
+
+          case SolveMethod_BunchKaufman:
+            refine_solution = false;
+          case SolveMethod_RefinedBunchKaufman:
           {
             //sc::exp::lapack_linsolv_symmnondef(&(kernel_packed[0]), n3, &(C_jR[0]), cC_jR, n2);
             sc::exp::lapack_linsolv_dpf_symmnondef(&(kernel_packed[0]), n3,
                                                    &(kernel_factorized[0]),
-                                                   &(ipiv[0]), &(C_jR[0]), cC_jR, n2);
+                                                   &(ipiv[0]), &(C_jR[0]), cC_jR, n2,
+                                                   refine_solution);
           }
           break;
 
@@ -317,11 +351,12 @@ TransformedDensityFitting::~TransformedDensityFitting() {}
 
 TransformedDensityFitting::TransformedDensityFitting(const Ref<MOIntsRuntime>& rtime,
                                                      const std::string& kernel_key,
+                                                     DensityFitting::SolveMethod solver,
                                                      const Ref<OrbitalSpace>& space1,
                                                      const Ref<OrbitalSpace>& space2,
                                                      const Ref<GaussianBasisSet>& fitting_basis,
                                                      const Ref<DistArray4>& mo1_ao2_df) :
-                       DensityFitting(rtime, kernel_key, space1, space2, fitting_basis),
+                       DensityFitting(rtime, kernel_key, solver, space1, space2, fitting_basis),
                        mo1_ao2_df_(mo1_ao2_df)
 {
   // make sure that mo1_ao2_df is a valid input
@@ -428,11 +463,12 @@ PermutedDensityFitting::~PermutedDensityFitting() {}
 
 PermutedDensityFitting::PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
                                                const std::string& kernel_key,
+                                               DensityFitting::SolveMethod solver,
                                                const Ref<OrbitalSpace>& space1,
                                                const Ref<OrbitalSpace>& space2,
                                                const Ref<GaussianBasisSet>& fitting_basis,
                                                const Ref<DistArray4>& df21) :
-                 DensityFitting(rtime, kernel_key, space1, space2, fitting_basis),
+                 DensityFitting(rtime, kernel_key, solver, space1, space2, fitting_basis),
                  df21_(df21)
 {
   // make sure that mo1_ao2_df is a valid input
@@ -444,6 +480,7 @@ PermutedDensityFitting::PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
 
 PermutedDensityFitting::PermutedDensityFitting(const Ref<DensityFitting>& df21) :
                        DensityFitting(df21->runtime(), df21->kernel_key(),
+                                      df21->solver(),
                                       df21->space2(), df21->space1(),   // swapped!
                                       df21->fbasis()),
                        df21_(df21->C())

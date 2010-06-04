@@ -64,16 +64,30 @@ namespace sc {
   class DensityFitting: virtual public SavableState {
     public:
       enum SolveMethod {
-        SolveMethod_Inverse = 0,
+        SolveMethod_InverseCholesky = 0,
         SolveMethod_Cholesky = 1,
-        SolveMethod_DSPSVX = 2
+        SolveMethod_RefinedCholesky = 2,
+        SolveMethod_InverseBunchKaufman = 3,
+        SolveMethod_BunchKaufman = 4,
+        SolveMethod_RefinedBunchKaufman = 5
       };
 
       typedef TwoBodyMOIntsRuntimeUnion23 MOIntsRuntime;
 
       ~DensityFitting();
+      /**
+       * Determines density fitting of product (space1 space2) in terms of fitting basis.
+       * @param rtime
+       * @param kernel_key
+       * @param solver_key
+       * @param space1
+       * @param space2
+       * @param fitting_basis
+       * @return
+       */
       DensityFitting(const Ref<MOIntsRuntime>& rtime,
                      const std::string& kernel_key,
+                     SolveMethod solver,
                      const Ref<OrbitalSpace>& space1,
                      const Ref<OrbitalSpace>& space2,
                      const Ref<GaussianBasisSet>& fitting_basis);
@@ -88,6 +102,7 @@ namespace sc {
       const Ref<OrbitalSpace>& space2() const { return space2_; }
       const Ref<GaussianBasisSet>& fbasis() const { return fbasis_; }
       const std::string& kernel_key() const { return kernel_key_; }
+      SolveMethod solver() const { return solver_; }
       /// returns the fitting coeffcients
       const Ref<DistArray4>& C() const {
         return C_;
@@ -104,7 +119,7 @@ namespace sc {
       Ref<OrbitalSpace> space1_;
       Ref<OrbitalSpace> space2_;
       std::string kernel_key_;
-      SolveMethod solvemethod_;
+      SolveMethod solver_;
 
       bool evaluated_;
 
@@ -140,6 +155,7 @@ namespace sc {
       /// compute density fitting for |mo1 mo2) from |mo1 ao2)
       TransformedDensityFitting(const Ref<MOIntsRuntime>& rtime,
                                 const std::string& kernel_key,
+                                SolveMethod solver,
                                 const Ref<OrbitalSpace>& space1,
                                 const Ref<OrbitalSpace>& space2,
                                 const Ref<GaussianBasisSet>& fitting_basis,
@@ -167,6 +183,7 @@ namespace sc {
       /// compute density fitting for |mo1 mo2) from |mo1 ao2)
       PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
                              const std::string& kernel_key,
+                             SolveMethod solver,
                              const Ref<OrbitalSpace>& space1,
                              const Ref<OrbitalSpace>& space2,
                              const Ref<GaussianBasisSet>& fitting_basis,

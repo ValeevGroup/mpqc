@@ -32,6 +32,8 @@
 // includes go here
 #include <chemistry/qc/mbptr12/wfnworld.h>
 #include <chemistry/qc/basis/petite.h>
+#include <util/class/scexception.h>
+#include <chemistry/qc/df/df_runtime.h>
 
 using namespace sc;
 
@@ -54,6 +56,31 @@ WavefunctionWorld::WavefunctionWorld(
       keyval->describedclassvalue("df_basis").pointer(),
       "R12Technology::R12Technology\n"
       );
+  if (bs_df_.nonnull()) {
+    df_kernel_ = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
+    if (df_kernel_ != "coulomb")
+      throw InputError("invalid value",
+                             __FILE__,
+                             __LINE__,
+                             "df_kernel",
+                             df_kernel_.c_str(),
+                             class_desc());
+
+    df_solver_ = keyval->stringvalue("df_solver", KeyValValuestring("bunchkaufman_refine"));
+    if (df_solver_ != "bunchkaufman" &&
+        df_solver_ != "bunchkaufman_inv" &&
+        df_solver_ != "bunchkaufman_refine" &&
+        df_solver_ != "cholesky" &&
+        df_solver_ != "cholesky_inv" &&
+        df_solver_ != "cholesky_refine"
+       )
+      throw InputError("invalid value",
+                       __FILE__,
+                       __LINE__,
+                       "df_solver",
+                       df_solver_.c_str(),
+                       class_desc());
+  }
 
   // Determine how to store MO integrals
   std::string ints_str = keyval->stringvalue("store_ints",KeyValValuestring("posix"));
@@ -170,7 +197,11 @@ WavefunctionWorld::initialize()
     aoidxreg->add(mu->basis(),mu);
 
     // create MO integrals runtime
-    moints_runtime_ = new MOIntsRuntime(tfactory_, bs_df_);
+    Ref<DensityFittingParams> dfparams;
+    if (bs_df_.nonnull()) {
+      dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
+    }
+    moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);
 
     // to boot Fock build runtime we need densities
     // make zero densities to start with
@@ -224,8 +255,8 @@ WavefunctionWorld::print(std::ostream& o) const {
   o << incindent;
 
   if (bs_df_.nonnull()) {
-      o << indent << "Density-Fitting Basis Set (DFBS):" << std::endl;
-      o << incindent; bs_df_->print(o); o << decindent << std::endl;
+    Ref<DensityFittingParams> dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
+    dfparams->print(o);
   }
 
   std::string ints_str;

@@ -573,9 +573,10 @@ namespace sc {
   bool in(const OrbitalSpace& s1, const OrbitalSpace& s2);
 
   /**
-   Parses keys of OrbitalSpace. Although OrbitalSpace object with arbitrary keys can be created,
+   Parses keys of OrbitalSpace. Although OrbitalSpace objects with arbitrary keys can be created,
    other components of MPQC assume certain rules for the keys. The simplest rule is that a key for
-   a spin-polarized OrbitalSpace (i.e., that has spin-alpha and spin-beta variants) must encode the spin information.
+   a spin-polarized OrbitalSpace (i.e., that has spin-alpha and spin-beta variants)
+   must encode the spin information.
    This class can encode and decode this information.
 
    Another rule is how transformed OrbitalSpace objects are labeled. \sa ParsedTranformedOrbitalSpaceKey
@@ -604,7 +605,7 @@ namespace sc {
   };
 
   /**
-   Parses keys of a "transformed" OrbitalSpace. Although OrbitalSpace object with arbitrary keys can be created,
+   Parses keys of a "transformed" OrbitalSpace. Although OrbitalSpace objects with arbitrary keys can be created,
    other components of MPQC assume certain rules for the keys. "Transformed" OrbitalSpace
    represents space U obtained by transformation of space V as
    U_i^j = C_i^k V_k^j, where V is the coefficient matrix of the original space, C is the transformation

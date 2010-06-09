@@ -264,8 +264,12 @@ all HF and DFT methods. The following options can be used
 <dt><tt>checkpoint</tt><dd> Set to <tt>no</tt> to not save checkpoint files
   during an optimization.  The default is <tt>yes</tt>.
 
+<dt><tt>tmpstore</tt><dd> Specifies how the large temporary data will be held.
+The default is <tt>disk</tt>, i.e. to write such files to disk. Setting this keyword to
+<tt>mem</tt> will force the algorithm to hold such data in memory.
+
 <dt><tt>tmpdir</tt><dd> Gives the directory to which large temporary files will be
-written. The default is to write such files into the current working directory, i.e. <tt>./</tt>.
+written. The default is to write such files into the current working directory, i.e. <tt>./</tt> .
 
 <dt><tt>memory</tt><dd> Gives a hint for the amount of memory in bytes that
   can be used.  This is typically a lower bound, more memory will be used

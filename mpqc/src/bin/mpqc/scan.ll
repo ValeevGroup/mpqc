@@ -60,6 +60,7 @@ qstring \"[^"\n]+\"
 "redundant"     { return T_REDUNDANT; }
 "restart"       { return T_RESTART; }
 "checkpoint"    { return T_CHECKPOINT; }
+"tmpstore"      { return T_TMPSTORE; }
 "tmpdir"        { return T_TMPDIR; }
 "accuracy"      { return T_ACCURACY; }
 "lindep"        { return T_LINDEP; }

@@ -99,6 +99,7 @@ class MPQCIn {
     MPQCInDatum<char *> r12method_ansatz_;
     MPQCInDatum<char *> symmetry_;
     MPQCInDatum<char *> memory_;
+    MPQCInDatum<char *> tmpstore_;
     MPQCInDatum<char *> tmpdir_;
     MPQCInDatum<char *> debug_;
     MPQCInDatum<std::vector<int> *> alpha_;
@@ -156,6 +157,7 @@ class MPQCIn {
     void set_method(char *);
     void set_multiplicity(char *);
     void set_memory(char *);
+    void set_tmpstore(char *);
     void set_tmpdir(char *);
     void set_accuracy(char *);
     void set_lindep(char *);

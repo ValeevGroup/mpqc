@@ -61,30 +61,31 @@
      T_SYMMETRY = 277,
      T_MEMORY = 278,
      T_TMPDIR = 279,
-     T_DEBUG = 280,
-     T_ACCURACY = 281,
-     T_BOHR = 282,
-     T_ANGSTROM = 283,
-     T_FREQUENCIES = 284,
-     T_LINDEP = 285,
-     T_MAXITER = 286,
-     T_SCF = 287,
-     T_UC = 288,
-     T_DOCC = 289,
-     T_SOCC = 290,
-     T_FROZEN_DOCC = 291,
-     T_FROZEN_UOCC = 292,
-     T_ALPHA = 293,
-     T_BETA = 294,
-     T_XC = 295,
-     T_GRID = 296,
-     T_RI = 297,
-     T_F12 = 298,
-     T_APP = 299,
-     T_ANSATZ = 300,
-     T_OO_INPUT_KEYWORD = 301,
-     T_STRING = 302,
-     T_BOOL = 303
+     T_TMPSTORE = 280,
+     T_DEBUG = 281,
+     T_ACCURACY = 282,
+     T_BOHR = 283,
+     T_ANGSTROM = 284,
+     T_FREQUENCIES = 285,
+     T_LINDEP = 286,
+     T_MAXITER = 287,
+     T_SCF = 288,
+     T_UC = 289,
+     T_DOCC = 290,
+     T_SOCC = 291,
+     T_FROZEN_DOCC = 292,
+     T_FROZEN_UOCC = 293,
+     T_ALPHA = 294,
+     T_BETA = 295,
+     T_XC = 296,
+     T_GRID = 297,
+     T_RI = 298,
+     T_F12 = 299,
+     T_APP = 300,
+     T_ANSATZ = 301,
+     T_OO_INPUT_KEYWORD = 302,
+     T_STRING = 303,
+     T_BOOL = 304
    };
 #endif
 /* Tokens.  */
@@ -110,30 +111,31 @@
 #define T_SYMMETRY 277
 #define T_MEMORY 278
 #define T_TMPDIR 279
-#define T_DEBUG 280
-#define T_ACCURACY 281
-#define T_BOHR 282
-#define T_ANGSTROM 283
-#define T_FREQUENCIES 284
-#define T_LINDEP 285
-#define T_MAXITER 286
-#define T_SCF 287
-#define T_UC 288
-#define T_DOCC 289
-#define T_SOCC 290
-#define T_FROZEN_DOCC 291
-#define T_FROZEN_UOCC 292
-#define T_ALPHA 293
-#define T_BETA 294
-#define T_XC 295
-#define T_GRID 296
-#define T_RI 297
-#define T_F12 298
-#define T_APP 299
-#define T_ANSATZ 300
-#define T_OO_INPUT_KEYWORD 301
-#define T_STRING 302
-#define T_BOOL 303
+#define T_TMPSTORE 280
+#define T_DEBUG 281
+#define T_ACCURACY 282
+#define T_BOHR 283
+#define T_ANGSTROM 284
+#define T_FREQUENCIES 285
+#define T_LINDEP 286
+#define T_MAXITER 287
+#define T_SCF 288
+#define T_UC 289
+#define T_DOCC 290
+#define T_SOCC 291
+#define T_FROZEN_DOCC 292
+#define T_FROZEN_UOCC 293
+#define T_ALPHA 294
+#define T_BETA 295
+#define T_XC 296
+#define T_GRID 297
+#define T_RI 298
+#define T_F12 299
+#define T_APP 300
+#define T_ANSATZ 301
+#define T_OO_INPUT_KEYWORD 302
+#define T_STRING 303
+#define T_BOOL 304
 
 
 
@@ -147,7 +149,7 @@ typedef union YYSTYPE
   std::vector<int> *nniv;
   }
 /* Line 1529 of yacc.c.  */
-#line 151 "parse.tmp.hh"
+#line 153 "parse.tmp.hh"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

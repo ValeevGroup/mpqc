@@ -34,7 +34,7 @@ int yydebug =1;
 %token T_NOT
 %token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_DFBASIS T_EQUALS
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
-%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY T_TMPDIR
+%token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY T_TMPDIR T_TMPSTORE
 %token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_LINDEP T_MAXITER
 %token T_SCF T_UC
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
@@ -85,6 +85,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_checkpoint($3); }
             |   T_MEMORY T_COLON string
                                                 { set_memory($3); }
+            |   T_TMPSTORE T_COLON string
+                                                { set_tmpstore($3); }
             |   T_TMPDIR T_COLON string
                                                 { set_tmpdir($3); }
             |   T_ACCURACY T_COLON string

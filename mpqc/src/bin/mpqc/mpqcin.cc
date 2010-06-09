@@ -36,6 +36,7 @@ MPQCIn::MPQCIn():
   atom_charge_(0),
   symmetry_(0),
   memory_(0),
+  tmpstore_(0),
   tmpdir_(0),
   molecule_bohr_(0),
   alpha_(0),
@@ -262,6 +263,15 @@ void
 MPQCIn::set_accuracy(char* c)
 {
   accuracy_ = c;
+}
+
+void
+MPQCIn::set_tmpstore(char* c)
+{
+  if (strcmp(c,"mem") &&
+      strcmp(c,"disk"))
+    yerror2("bad tmpstore", c);
+  tmpstore_ = c;
 }
 
 void
@@ -924,6 +934,9 @@ MPQCIn::write_energy_object(ostream &ostrs,
     }
 
     if (need_wfnworld) {
+      if (tmpstore_.set()) {
+        ostrs << indent << "store_ints = " << (!strcmp(tmpstore_.val(),"mem") ? "mem" : "posix") << endl;
+      }
       if (tmpdir_.set())
         ostrs << indent << "ints_file = " << tmpdir_.val() << endl;
       if (dfbasis_.name.val() != 0)

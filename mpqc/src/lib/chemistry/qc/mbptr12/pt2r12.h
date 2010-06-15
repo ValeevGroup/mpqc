@@ -93,6 +93,8 @@ namespace sc {
       bool omit_uocc_;
       bool cabs_singles_;
       bool cabs_singles_coupling_;
+      bool rotate_core_; // if set to false, when doing casscf cabs_singles correction, don't excite electrons from core orbitals; this may be used when using frozen core orbitals which
+                         // are not optimized (does not satisfy Brillouin condition)
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object

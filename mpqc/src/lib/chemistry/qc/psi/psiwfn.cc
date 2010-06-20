@@ -457,6 +457,7 @@ namespace sc {
     docc_ = read_occ(keyval, "docc", nirrep_);
     socc_ = read_occ(keyval, "socc", nirrep_);
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
+    diisdamp_ = keyval->doublevalue("diisdamp",KeyValValuefloat(0.00));
   }
 
   PsiSCF::~PsiSCF() {
@@ -1004,6 +1005,7 @@ namespace sc {
       input->write_keyword("psi:hcore_guess", "new");
     }
     input->write_keyword("scf:maxiter", maxiter_);
+    if(diisdamp_ > 0) input->write_keyword("scf:diisdamp", diisdamp_);
     input->write_keyword("scf:convergence",convergence);
   }
 

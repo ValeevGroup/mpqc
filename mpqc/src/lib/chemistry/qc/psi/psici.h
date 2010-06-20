@@ -99,6 +99,7 @@ namespace sc {
       int detcas_convergence_;
       int detcas_detci_convergence_;  /// convergence of the detci wave function in each step of detcas calculation
       bool detcas_diis_;   /// use DIIS for detcas calculations
+      int detcas_diis_start_; /// after X cyles, diis starts
       int detcas_detci_maxiter_;    /// maxiter for detci in detcas calculations
       int detci_maxiter_;     /// maxiter for detci (not in detcas calculations)
       int detcas_maxiter_;    /// max number of iterations in cas

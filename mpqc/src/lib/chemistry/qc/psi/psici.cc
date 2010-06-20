@@ -441,6 +441,7 @@ namespace sc {
     detcas_detci_convergence_ = keyval->intvalue("detcas_detci_convergence",KeyValValueint(detcas_convergence_+2));
     if(keyval->exists("detcas_diis")) {
       detcas_diis_ = keyval->booleanvalue("detcas_diis");
+      detcas_diis_start_ = keyval->intvalue("detcas_diis_start");
     }
     else {
       detcas_diis_ = false;
@@ -620,6 +621,7 @@ namespace sc {
       if(detcas_diis_==false) {
         input->write_keyword("detcas:diis_start",1000000);
       }
+      else input->write_keyword("detcas:diis_start", detcas_diis_start_);
       input->write_keyword("detci:maxiter",detcas_detci_maxiter_);
       if(!detcas_detci_average_states_.empty()) {
         input->write_keyword_array("detci:average_states",detcas_detci_average_states_);

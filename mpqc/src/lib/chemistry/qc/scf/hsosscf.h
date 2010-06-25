@@ -80,9 +80,9 @@ class HSOSSCF: public SCF {
         <dt><tt>multiplicity</tt><dd> This integer gives the multiplicity,
         \f$m\f$, of the molecule.  The number of singly occupied orbitals
         is then \f$n_\mathrm{socc} = m - 1\f$.  If neither nsocc nor
-        multiplicity is given, then if, in consideration of total_charge,
-        the number of electrons is even, the default \f$n_\mathrm{socc}\f$
-        is 2.  Otherwise, it is 1.
+        multiplicity is given, then the maximum value of multiplicity
+        will be sought that minimizes the total sum of orbital energies from guess_wavefunction
+        (multiplicity = 1 will not be considered in the search). \sa HundsFEMOSeeker
 
         <dt><tt>ndocc</tt><dd> This integer gives the total number of
         doubly occupied orbitals \f$n_\mathrm{docc}\f$.  The default

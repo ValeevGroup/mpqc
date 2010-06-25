@@ -145,7 +145,7 @@ class SCF: public OneBodyWavefunction {
         often, in term of SCF iterations, \f$\Delta D\f$ will be reset to
         \f$D\f$.  The default is 10.
 
-        <dt><tt>reset_occuptions</tt><dd> Reassign the occupations after
+        <dt><tt>reset_occupations</tt><dd> Reassign the occupations after
         each iteration based on the eigenvalues.  This only has an effect
         for molecules with higher than \f$C_1\f$ symmetry.  The default is
         false.

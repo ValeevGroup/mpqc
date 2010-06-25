@@ -67,6 +67,39 @@ class UnrestrictedSCF: public SCF {
     void initial_vector();
 
   public:
+    /** The KeyVal constructor.
+        <dl>
+
+        <dt><tt>total_charge</tt><dd> This floating point number
+        gives the total charge,
+        \f$c\f$, of the molecule.  The default is 0.
+
+        <dt><tt>multiplicity</tt><dd> This integer gives the multiplicity,
+        \f$m\f$, of the molecule.  The number of alpha-spin orbitals
+        minus the number of beta-spin orbitals is then \f$m - 1\f$.  If
+        <tt>multiplicity</tt> is not specified, then the maximum value of multiplicity
+        will be sought that minimizes the total sum of orbital energies from guess_wavefunction
+        (multiplicity = 1 will be considered in the search). \sa HundsFEMOSeeker
+
+        <dt><tt>alpha</tt><dd> This vector of integers gives the total
+        number of occupied alpha spinorbitals of each irreducible
+        representation.  By default, the orbital occupations will be guessed from orbital
+        eigenvalues.  If <tt>alpha</tt> is given, then <tt>beta</tt> must be given and they
+        override <tt>multiplicity</tt> and <tt>total_charge</tt>.
+
+        <dt><tt>beta</tt><dd> This vector of integers gives the total
+        number of occupied beta spinorbitals of each irreducible
+        representation.  By default, the orbital occupations will be guessed from orbital
+        eigenvalues.  If <tt>beta</tt> is given, then <tt>alpha</tt> must be given and they
+        override <tt>multiplicity</tt> and <tt>total_charge</tt>.
+
+        <dt><tt>maxiter</tt><dd> This has the same meaning as in the parent
+        class, SCF; however, the default value is 100.
+
+        <dt><tt>level_shift</tt><dd> This has the same meaning as in the
+        parent class, SCF; however, the default value is 0.25.
+
+        </dl> */
     UnrestrictedSCF(StateIn&);
     UnrestrictedSCF(const Ref<KeyVal>&);
     ~UnrestrictedSCF();

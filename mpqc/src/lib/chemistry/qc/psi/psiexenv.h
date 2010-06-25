@@ -112,14 +112,20 @@ class PsiExEnv: public DescribedClass {
     ~PsiExEnv();
 
     /// Returns the PsiInput object which PsiExEnv uses
-    Ref<PsiInput> get_psi_input() const { return psiinput_;};
+    Ref<PsiInput> psi_input() const { return psiinput_; }
     /// Returns the PsiFile11 object which PsiExEnv uses
-    Ref<PsiFile11> get_psi_file11() const { return psifile11_;};
+    Ref<PsiFile11> psi_file11() const { return psifile11_; }
+    /// Creates the PsiInput object which PsiExEnv uses
+    Ref<PsiInput> get_psi_input();
+    /// Creates the PsiFile11 object which PsiExEnv uses
+    Ref<PsiFile11> get_psi_file11();
 
-    /// Executes Psi input+driver
+    /// Executes Psi input+driver. \sa PsiExEnv::run_psi_module()
     void run_psi();
-    /// Executes a Psi module. Throws if psi fails.
+    /// Executes a Psi module using a system call. Throws if psi fails.
     void run_psi_module(const char *);
+    /// cleans Psi scratch files using the same approach as psiclean. This is safer than system("psiclean").
+    void run_psiclean();
 
     /// Returns current working directory
     const std::string& get_cwd() const { return cwd_;};

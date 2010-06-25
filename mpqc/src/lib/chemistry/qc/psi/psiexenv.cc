@@ -132,16 +132,6 @@ PsiExEnv::PsiExEnv() :
   stdout_ = fileprefix_ + "." + defaultstdout_;
   stderr_ = fileprefix_ + "." + defaultstderr_;
 
-  char *s = new char[cwd_.size() + inputname_.size() + 2];
-  sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
-  psiinput_ = new PsiInput(s);
-  delete[] s;
-
-  s = new char[cwd_.size() + fileprefix_.size() + file11name_.size() + 3];
-  sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
-  psifile11_ = new PsiFile11(s);
-  delete[] s;
-
   config_psio();
 }
 
@@ -190,6 +180,28 @@ void PsiExEnv::add_to_path(const string& dir)
   }
 }
 
+Ref<PsiInput>
+PsiExEnv::get_psi_input() {
+  if (psiinput_.null()) {
+    char *s = new char[cwd_.size() + inputname_.size() + 2];
+    sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
+    psiinput_ = new PsiInput(s);
+    delete[] s;
+  }
+  return psiinput_;
+}
+
+Ref<PsiFile11>
+PsiExEnv::get_psi_file11() {
+  if (psifile11_.null()) {
+    char* s = new char[cwd_.size() + fileprefix_.size() + file11name_.size() + 3];
+    sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
+    psifile11_ = new PsiFile11(s);
+    delete[] s;
+  }
+  return psifile11_;
+}
+
 void PsiExEnv::run_psi()
 {
   std::ostringstream oss;
@@ -201,6 +213,11 @@ void PsiExEnv::run_psi_module(const char *module)
 {
   // can only run on node 0
   if (me_ != 0) return;
+
+  // can't run unless input file has been created
+  if (psiinput_.null()) throw ProgrammingError("input file has not been created",
+                                               __FILE__, __LINE__,
+                                               class_desc());
 
   // delete chkpt file in case it gets overwritten
   if (chkpt_) { delete chkpt_;  chkpt_ = 0; }
@@ -223,17 +240,26 @@ void PsiExEnv::run_psi_module(const char *module)
           default:
             errmsg = "unknown error";
         }
+        perror("system(psi3)");
         throw SystemException((std::string("fork() failed: ")+errmsg).c_str(),
                               __FILE__,__LINE__);
       }
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
-      // DO NOT throw if cleaning -- nothing to be gained, and has potential to obscure pending exception
-      if (strcmp(module,"psiclean")) {
-        run_psi_module("psiclean");
-        throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
-      }
+      if (strcmp(module,"psiclean"))
+        run_psiclean();
+      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
   }
+}
+
+void PsiExEnv::run_psiclean()
+{
+  // can only run on node 0
+  if (me_ != 0) return;
+
+  // can't run unless input file has been created
+  if (psiinput_.nonnull())
+    psio_.purge();
 }
 
 void PsiExEnv::print(std::ostream&o) const

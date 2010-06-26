@@ -231,6 +231,9 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(false));
+  rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
+  cabs_keep2A2pterm_ = keyval->booleanvalue("cabs_keep2A2pterm", KeyValValueboolean(true));
+
 
   reference_ = require_dynamic_cast<Wavefunction*>(
         keyval->describedclassvalue("reference").pointer(),
@@ -1421,6 +1424,9 @@ void sc::PT2R12::compute()
 
 
 
+
+
+
   for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
   {
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -1545,6 +1551,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
   # define  printout true
 
+  Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
   Ref<OrbitalSpace> vspace = this->r12world()->ref()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
@@ -1608,6 +1615,23 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   rhs_vector->assign(0.0);                                   // right hand vector
 
 
+  if(!rotate_core_) // if forbit rotating core orbitals
+  {
+    ExEnv::out0()  << indent << "forbid exciting core orbitals" << std::endl << std::endl;
+    std::vector<int> map_1_to_2 = map(*activespace, *pspace);
+    for (int row_ind = 0; row_ind < no; ++row_ind)
+    {
+      if(map_1_to_2[row_ind] < 0)  // row_ind is a core-orbital index
+      {
+//        ExEnv::out0()  << "row_ind, DM: " << row_ind << ", " << gamma1(row_ind, row_ind) << std::endl;
+        for (int A1 = 0; A1 < nX; ++A1)
+        {
+          F_pA.set_element(row_ind, A1, 0.0);
+        }
+      }
+    }
+    ExEnv::out0()  << indent << "end eliminating exciting core orbitals" << std::endl << std::endl;
+  }
 
   if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
    {ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
@@ -1730,7 +1754,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     eigenmatrix_F_AA.print("Aspace Fock matrix eigenvalue");
 #endif
 
-#if false
+#if true
     RefDiagSCMatrix eigenmatrix = H0.eigvals();
     int BeigDimen = int(eigenmatrix.dim());
     for (int i = 0; i < BeigDimen; ++i)
@@ -1762,10 +1786,11 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()
 {
-  # define DEBUGG false
-  bool keep_2A2p_term = true; // to test the importance of two-e integrals with 2 cabs integrals, switch this off
+  # define DEBUGG true
+  //bool keep_2A2p_term_ = true; // to test the importance of two-e integrals with 2 cabs integrals, switch this off
 
   const SpinCase1 spin = Alpha;
+  Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
   Ref<OrbitalSpace> vspace = this->r12world()->ref()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
@@ -1858,6 +1883,23 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
    }
 
+  std::vector<int> map_1_to_2 = map(*activespace, *pspace);
+  if(!rotate_core_) // if forbit rotating core orbitals
+  {
+    ExEnv::out0()  << indent << "forbid exciting core orbitals" << std::endl << std::endl;
+    for (int row_ind = 0; row_ind < no; ++row_ind)
+    {
+      if(map_1_to_2[row_ind] < 0)  // row_ind is a core-orbital index
+      {
+        for (int A1 = 0; A1 < nX; ++A1)
+        {
+          F_pA_alpha.set_element(row_ind, A1, 0.0);
+          F_pA_beta.set_element(row_ind, A1, 0.0);
+        }
+      }
+    }
+    ExEnv::out0()  << indent << "end eliminating exciting core orbitals" << std::endl << std::endl;
+  }
 
   // compute the Right-Hand vector
   for(int x1 = 0; x1<no; ++x1)
@@ -1958,19 +2000,22 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
-  // this is a trick to deal with unrelaxed orbitals, for which Brillouin condition is not satisfied, and thus we can not assume <| a^core_active H > = 0
-  // in this case, our formulas still hold for (x, y) == (active, core); since Ixy should be symmetric, we can calculate Ixy(active, core) for Ixy(core, active)
+  // When dealing with unrelaxed core orbitals, Brillouin condition may not be satisfied, and thus we can not assume <| a^core_active H > = 0
+  // in this case, our formulas still hold for (x, y) == (active, core);
+  // since Ixy should be symmetric, we can calculate Ixy(active, core) for Ixy(core, active)
+  // this works whether core orbital are relaxed or not
   for (int row = 0; row < no; ++row)
   {
     for (int col = 0; col < no; ++col) // only the lower (or upper) triangle, otherwise wrong
     {
-      if(fabs(gamma1_alpha(row, row) - 1.0) < 1E-7 && fabs(1.0 - gamma1_alpha(col, col)) > 1E-7 ) // this means that row <--> core, col<-->active
+      if(map_1_to_2[row] < 0 && map_1_to_2[col] > 0) // this means that row <--> core, col<-->active
       {
         Ixy(row, col) = Ixy(col, row);
         Ixy(no + row, no + col) = Ixy(no + col, no + row); // the corresponding beta-beta part
       }
     }
   }
+
 
  #if 1
   { Ixy.print("Ixy matrix");
@@ -1997,6 +2042,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 
 
 // calculate alpha-alpha and beta-beta portion of B: the first three terms
+//  f^A1_B1 \gamma^x1_y1 - \delta^A1_B1 * I^x1_y1 + v^A1i2_B1j2 *(gamma^x1j2_y1i2 - \gamma^x1_y1 \gamma^j2_i2)
   {
     RefSCMatrix   g_ApAp_ab   = this->g(case12(spin, other(spin)), Aspace, pspace, Aspace, pspace);
     //  RefSCMatrix & g_pApA_ab   = g_ApAp_ab; // two-electron integrals are the same, as long as the indices are dealt with properly
@@ -2026,7 +2072,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
               Baa += -1.0 * I_x1y1_alpha;                                // -\delta^A1_B1 * I^x1_y1
               Bbb += -1.0 * I_x1y1_beta;
             }
-            if (keep_2A2p_term)
+            if (cabs_keep2A2pterm_)
             {
               for (i2 = 0; i2 < no; ++i2)
               {
@@ -2046,8 +2092,8 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
   }
 
-  // calculate alpha-alpha and beta-beta portion of B: the last term
-  if(keep_2A2p_term)
+  // calculate alpha-alpha and beta-beta portion of B: the last term v^A1i1_B1j1 *(gamma^x1j1_y1i1 - gamma^x1_y1 gamma^j1_i1)
+  if(cabs_keep2A2pterm_)
   {
     {
       RefSCMatrix   g_ApAp_aa   = this->g(case12(spin, spin), Aspace, pspace, Aspace, pspace);
@@ -2096,7 +2142,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
 
 
-    // construct the portion of B which couples alpha and beta
+    // construct the portion of B which couples alpha and beta  v^i1A2_B1j2 gamma^x1j2_i1y2
     {
       RefSCMatrix   g_pAAp_ab   = this->g(case12(spin, other(spin)), pspace, Aspace, Aspace, pspace);
      // RefSCMatrix & g_AppA_ab   = g_pAAp_ab; // pay attention to the indices
@@ -2160,45 +2206,10 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
   }
 
-  bool include_two_body_term_E = false;
-  if(include_two_body_term_E)
-  {
-    RefSCMatrix   g_Appp_aa   = this->g(case12(spin, spin), pspace, pspace, Aspace, pspace);
-    RefSCMatrix & g_Appp_bb   = g_Appp_aa;
-    RefSCMatrix   g_Appp_ab   = this->g(case12(spin, other(spin)), pspace, pspace, Aspace, pspace);
-    for (int i1 = 0; i1 < no; ++i1)
-    {
-      for (int j1 = 0; j1 < no; ++j1)
-      {
-        for (int k1 = 0; k1 < no; ++k1)
-        {
-          for (int l1 = 0; l1 < no; ++l1)
-          {
-            for (int A1 = 0; A1 < nX; ++A1)
-            {
-              if(k1 != l1 && i1 != j1)
-              {
-                E_cabs_singles += 0.5 * indexsizeorder_sign(k1, l1) * rhs_vector->get_element(j1 * nX + A1) * g_Appp_aa( antisym_pairindex(k1,l1), A1 * no + i1)
-                                      * (indexsizeorder_sign(k1, l1) * indexsizeorder_sign(j1, i1) * gamma2_aa( antisym_pairindex(k1,l1), antisym_pairindex(j1,i1))
-                                          - gamma1_alpha(k1, j1) * gamma1_alpha(l1, i1) + gamma1_alpha(k1, i1) * gamma1_alpha(l1, j1) );
-                E_cabs_singles += 0.5 * indexsizeorder_sign(k1, l1) * rhs_vector->get_element(noX + j1 * nX + A1) * g_Appp_bb( antisym_pairindex(k1,l1), A1 * no + i1)
-                                      * (indexsizeorder_sign(k1, l1) * indexsizeorder_sign(j1, i1) * gamma2_bb(antisym_pairindex(k1,l1), antisym_pairindex(j1,i1))
-                                          - gamma1_beta(k1, j1) * gamma1_beta(l1, i1) + gamma1_beta(k1, i1) * gamma1_beta(l1, j1) );
-              }
-              const unsigned int i2 = i1, l2 = l1;
-              E_cabs_singles += rhs_vector->get_element(j1 * nX + A1) * g_Appp_ab(k1 * no + l2, A1 * no + i2)
-                                                    * ( gamma2_ab(k1 * no + l2, j1 * no + i2) - gamma1_alpha(k1, j1) * gamma1_beta(l2, i2) );
-              E_cabs_singles += rhs_vector->get_element(noX + j1 * nX + A1) * g_Appp_ab(k1 * no + l2, A1 * no + i2)
-                                                    * ( gamma2_ab(l2 * no + k1, i2 * no + j1) - gamma1_beta(k1, j1) * gamma1_alpha(l2, i2) );
-            }
-          }
-        }
-      }
-    }
-  }
 
   return E_cabs_singles;
 }
+
 
 void PT2R12::brillouin_matrix() {
   RefSCMatrix fmat[NSpinCases1];

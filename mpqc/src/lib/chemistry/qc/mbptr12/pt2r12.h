@@ -95,6 +95,7 @@ namespace sc {
       bool cabs_singles_coupling_;
       bool rotate_core_; // if set to false, when doing casscf cabs_singles correction, don't excite electrons from core orbitals; this may be used when using frozen core orbitals which
                          // are not optimized (does not satisfy Brillouin condition)
+      bool cabs_keep2A2pterm_; // keep the two-particle H with 2 CABS indices
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object

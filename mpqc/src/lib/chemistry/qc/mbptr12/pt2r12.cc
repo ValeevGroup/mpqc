@@ -228,6 +228,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   else
     nfzc_ = atoi(nfzc_str.c_str());
 
+  pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(false));
@@ -1426,7 +1427,8 @@ void sc::PT2R12::compute()
 
 
 
-
+if (pt2_correction_)
+{
   for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
   {
     SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -1444,7 +1446,7 @@ void sc::PT2R12::compute()
         abort();
     }
   }
-
+}
 
   //calculate basis set incompleteness error (BSIE) with two choices of H0
   double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;

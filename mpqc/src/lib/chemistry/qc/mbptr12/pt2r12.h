@@ -91,6 +91,7 @@ namespace sc {
       Ref<R12WavefunctionWorld> r12world_;
       unsigned int nfzc_;
       bool omit_uocc_;
+      bool pt2_correction_;
       bool cabs_singles_;
       bool cabs_singles_coupling_;
       bool rotate_core_; // if set to false, when doing casscf cabs_singles correction, don't excite electrons from core orbitals; this may be used when using frozen core orbitals which

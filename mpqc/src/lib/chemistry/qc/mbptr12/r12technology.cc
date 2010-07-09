@@ -1548,6 +1548,12 @@ R12Technology::print(ostream&o) const
     o << indent << "ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)" << endl;
     break;
   }
+  if (!this->abs_eq_obs_) {
+    if (this->abs_nlindep() != -1)
+      o << indent << "# of linearly depenendent vectors to be removed from ABS = " << this->abs_nlindep() << endl;
+    else
+      o << indent << "ABS linear depenendence tolerance = " << this->abs_lindep_tol() << endl;
+  }
   switch (stdapprox_) {
     case StdApprox_Ap :
       o << indent << "Standard Approximation: A'" << endl;

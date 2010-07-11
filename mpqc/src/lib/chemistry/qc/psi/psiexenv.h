@@ -123,9 +123,10 @@ class PsiExEnv: public DescribedClass {
     /// Executes Psi input+driver. \sa PsiExEnv::run_psi_module()
     void run_psi();
     /// Executes a Psi module using a system call. Throws if psi fails.
-    void run_psi_module(const char *);
-    /// cleans Psi scratch files using the same approach as psiclean. This is safer than system("psiclean").
-    void run_psiclean();
+    void run_psi_module(const char * module, const std::vector<std::string>& args = std::vector<std::string>());
+    /// cleans Psi scratch files using the same approach as psiclean.
+    /// \param fullclean if set to true, clean out all files including the checkpoint file
+    void run_psiclean(bool fullclean = true);
 
     /// Returns current working directory
     const std::string& get_cwd() const { return cwd_;};

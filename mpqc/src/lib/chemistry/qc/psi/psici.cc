@@ -664,10 +664,10 @@ namespace sc {
       energy_rasscf = exenv()->chkpt().rd_etot();
       ExEnv::out0() << indent << "rasscf energy for the impatient: " << setprecision(12) << energy_rasscf << endl;
       // if ras3_max > 0 (i.e. user wants MRCI on top of RASSCF):
-      // rebuild the input file
+      // clean, but keep the input file
       // then run "cints", "transqt2", "detci"
       if (ras3_max_ > 0) {
-        exenv()->run_psi_module("psiclean");
+        exenv()->run_psiclean(false);
         // use wfn=detci now
         const std::string wfn_type_orig = wfn_type_; wfn_type_ = std::string("detci");
         PsiWavefunction::compute();

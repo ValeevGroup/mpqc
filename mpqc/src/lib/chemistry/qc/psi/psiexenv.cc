@@ -29,11 +29,15 @@
 #pragma implementation
 #endif
 
+#include <sys/wait.h>
+#include <spawn.h>
+
 #include <string>
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
 #include <errno.h>
+
 #include <scconfig.h>
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
@@ -45,6 +49,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/shellrot.h>
+
+extern char **environ;
 
 using namespace std;
 using namespace sc;
@@ -205,12 +211,11 @@ PsiExEnv::get_psi_file11() {
 
 void PsiExEnv::run_psi()
 {
-  std::ostringstream oss;
-  oss << "psi3 --messy";
-  run_psi_module(oss.str().c_str());
+  run_psi_module("psi3",
+                 std::vector<std::string>(1,std::string("--messy")));
 }
 
-void PsiExEnv::run_psi_module(const char *module)
+void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>& args)
 {
   // can only run on node 0
   if (me_ != 0) return;
@@ -223,44 +228,88 @@ void PsiExEnv::run_psi_module(const char *module)
   // delete chkpt file in case it gets overwritten
   if (chkpt_) { delete chkpt_;  chkpt_ = 0; }
 
-  std::ostringstream oss;
-  oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
-      << " -p " << fileprefix_ << " 1>> " << stdout_ << " 2>> " << stderr_;
-  const int errcod = system(oss.str().c_str());
-  if (errcod) {
+#define USE_POSIX_SWAP 1
+#if USE_POSIX_SWAP
+  {
+    std::vector<std::string> allargs(7 + args.size());
+    allargs[0] = psiprefix_ + "/" + module;
+    allargs[1] = "-f";
+    allargs[2] = inputname_;
+    allargs[3] = "-o";
+    allargs[4] = outputname_;
+    allargs[5] = "-p";
+    allargs[6] = fileprefix_;
+    for(int i=0; i<args.size(); ++i)
+      allargs[7+i] = args[i];
+    const size_t n = allargs.size();
+    char** spawnedArgs = new char*[n+1]; spawnedArgs[n] = NULL;
+    for(int i=0; i<n; ++i)
+      spawnedArgs[i] = strdup(allargs[i].c_str());
+    char *spawnedEnv[] = {NULL};
+    pid_t pid;
+    const int errcod = posix_spawn(&pid, spawnedArgs[0], NULL, NULL,
+                                   spawnedArgs, environ);
+    if (errcod == 0) {
+      int status;
+      while (waitpid(-1, &status, 0) == -1) {
+        if (errno != EINTR){
+          throw SyscallFailed("run_psi_module",
+                              __FILE__,__LINE__,
+                              "waitpid()", 0, class_desc());
+        }
+      }
+      // check the status of the completed call
+      if (WIFEXITED(status)) { // module called exit()
+        const int retval = WEXITSTATUS(status);
+        if (retval != 0) {
+          std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " returned nonzero, check psi output";
+          throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+        }
+      }
+      else { // module finished abnornmally
+        std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " completed abnormally";
+        throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+      }
+    }
+    else { // posix_spawn failed. How?
+      std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- posix_spawn failed";
+      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+    }
+  }
+#else
+  {
+    std::ostringstream oss;
+    oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_
+        << " -p " << fileprefix_;
+    for(int i=0; i<args.size(); ++i)
+      oss << " " << args[i];
+    oss << " 1>> " << stdout_ << " 2>> " << stderr_;
+    errcod = system(oss.str().c_str());
+    if (errcod) {
       // errcod == -1 means fork() failed. check errno
       if (errcod == -1) {
-        std::string errmsg;
-        switch(errno) {
-          case EAGAIN:
-            errmsg = "limit on the number of processors reached";
-            break;
-          case ENOMEM:
-            errmsg = "insufficient memory";
-            break;
-          default:
-            errmsg = "unknown error";
-        }
-        perror("system(psi3)");
-        throw SystemException((std::string("fork() failed: ")+errmsg).c_str(),
-                              __FILE__,__LINE__);
+        throw SyscallFailed("run_psi_module",
+                            __FILE__,__LINE__,
+                            "system()", class_desc());
       }
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already
       if (strcmp(module,"psiclean"))
         run_psiclean();
       throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+    }
   }
+#endif
 }
 
-void PsiExEnv::run_psiclean()
+void PsiExEnv::run_psiclean(bool fullclean)
 {
   // can only run on node 0
   if (me_ != 0) return;
 
   // can't run unless input file has been created
   if (psiinput_.nonnull())
-    psio_.purge(true);
+    psio_.purge(fullclean);
 }
 
 void PsiExEnv::print(std::ostream&o) const

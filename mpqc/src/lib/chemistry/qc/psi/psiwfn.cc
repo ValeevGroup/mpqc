@@ -236,7 +236,8 @@ namespace sc {
   PsiWavefunction::~PsiWavefunction() {
     // this can throw! call a non-throwing version
     // exenv_->run_psi_module("psiclean");
-    exenv_->run_psiclean();
+    // no point in cleaning in every wave function -- let PsiExEnv's destructor do the job once
+    // exenv_->run_psiclean();
   }
 
   PsiWavefunction::PsiWavefunction(StateIn&s) :

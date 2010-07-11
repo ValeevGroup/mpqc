@@ -137,6 +137,7 @@ PsiExEnv::PsiExEnv() :
 
 PsiExEnv::~PsiExEnv()
 {
+  run_psiclean();
   delete[] scratch_;
   if (chkpt_) delete chkpt_;
 }
@@ -259,7 +260,7 @@ void PsiExEnv::run_psiclean()
 
   // can't run unless input file has been created
   if (psiinput_.nonnull())
-    psio_.purge();
+    psio_.purge(true);
 }
 
 void PsiExEnv::print(std::ostream&o) const

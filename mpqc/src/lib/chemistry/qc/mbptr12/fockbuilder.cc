@@ -975,6 +975,7 @@ namespace sc {
       }
 
       // intermediate cleanup
+      if (C->data_persistent()) C->deactivate();
       C = 0;
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(braspace->id(),
@@ -1023,6 +1024,7 @@ namespace sc {
         msg->sum(J, nbraket);
       }
 
+      if (cC->data_persistent()) cC->deactivate();  cC = 0;
       ExEnv::out0() << indent << "End of computation of Coulomb(DF) matrix" << endl;
 
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
@@ -1131,13 +1133,17 @@ namespace sc {
       oreg->add(Sspace->id(), Sspace);
 
       // little optimization here ... since DensityFittingRuntime currently always fits (iq| to get to (ij|
-      // and since rank of S will be smaller than rank of OBS when Hartree-Fock of CAS references are used
+      // and since rank of S will be smaller than rank of OBS when Hartree-Fock or CAS references are used
       // compute density fitting of (S bra| and permute to get (bra S|
       const std::string C_key = ParsedDensityFittingKey::key(Sspace->id(),
                                                              braspace->id(),
                                                              dfspace->id());
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
-      C = permute23(C,1000000000);
+      {
+        Ref<DistArray4> Ctmp = permute23(C, 1000000000);
+        if (C->data_persistent()) C->deactivate();
+        C = Ctmp;
+      }
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(ketspace->id(),
                                                                      dfspace->id(),
@@ -1200,6 +1206,8 @@ namespace sc {
         msg->sum(K, nbraket);
       }
 
+      if (cC->data_persistent()) cC->deactivate();
+      if (C->data_persistent()) C->deactivate();
       ExEnv::out0() << indent << "End of computation of exchange(DF) matrix" << endl;
 
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();

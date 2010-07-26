@@ -169,6 +169,7 @@ DensityFitting::compute()
     // print out the result
     //cC.print("DensityFitting: cC");
 
+    if (cC_->data_persistent()) cC_->deactivate();
     runtime()->factory()->mem()->sync();
   }
 #endif

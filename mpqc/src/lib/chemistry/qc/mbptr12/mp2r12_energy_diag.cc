@@ -25,7 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#if 0
 #ifdef __GNUG__
 #pragma implementation
 #endif
@@ -37,7 +36,6 @@
 
 using namespace std;
 using namespace sc;
-#endif
 
 /**********************************
  * class MP2R12Energy_Diag *

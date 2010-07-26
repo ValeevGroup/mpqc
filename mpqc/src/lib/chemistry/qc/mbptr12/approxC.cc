@@ -248,6 +248,11 @@ R12IntEval::compute_BC_()
 	Ref<OrbitalSpace> vir2 = vir(spin2);
 	bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
 
+	// make sure that I have electrons for both spins
+	if (xspace1->rank() == 0 || xspace2->rank() == 0)
+	  continue;
+
+
 #if INCLUDE_Q
 	// if can only use 1 RI index, h+J can be resolved by the OBS
 	Ref<OrbitalSpace> hj_x1, hj_x2;

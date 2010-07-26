@@ -77,7 +77,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   }
 
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
-  int unv; s.get(unv); new_energy_ = (bool)unv;
+  int unv; s.get(unv); jinmei_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
   s.get(cabs_singles_);
   s.get(cabs_singles_energy_);
@@ -114,17 +114,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
 
   const bool diag = r12tech->ansatz()->diag();
-  const bool optimized_amplitudes = r12tech->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fullopt;
-
-  const bool default_new_energy = diag ? true : false;
-  new_energy_ = keyval->booleanvalue("new_energy",KeyValValueboolean(default_new_energy));
-  if((new_energy_==true) && (diag==false)) {
-    ExEnv::out0() << indent << "Warning: The non diagonal ansatz is safer to be computed with the old version" << endl
-                  << indent << "because the old version performs many security checks." << endl;
-  }
-  if (optimized_amplitudes==false) { // fixed amplitudes can only be used with the new energy object
-    new_energy_ = true;
-  }
+  jinmei_energy_ = keyval->booleanvalue("jinmei_energy",KeyValValueboolean(true));
+  // only diag ansatz is possible now
+  assert(diag == true);
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
@@ -173,7 +165,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12c_energy_.pointer(),s);
 
   s.put((int)spinadapted_);
-  s.put((int)new_energy_);
+  s.put((int)jinmei_energy_);
   s.put(mp2_corr_energy_);
   s.put(cabs_singles_);
   s.put(cabs_singles_energy_);
@@ -190,7 +182,7 @@ MBPT2_R12::print(ostream&o) const
   o << incindent;
 
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
-  o << indent << "Use new MP2R12Energy: " << (new_energy_ ? "true" : "false") << endl;
+  o << indent << "Use new MP2R12Energy: " << (jinmei_energy_ ? "true" : "false") << endl;
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << endl;
   if (cabs_singles_) {
     o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)

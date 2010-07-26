@@ -234,7 +234,31 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 class MP2R12Energy_Diag : public MP2R12Energy
 {
     void compute_ef12();
-
+    void activate_ints(const std::string&, const std::string&,
+                       const std::string&, const std::string&,
+                       const std::string&, Ref<TwoBodyFourCenterMOIntsRuntime>&,
+                       Ref<DistArray4>&);
+    // Label Y^ij_ij, Y^ij_ji, Y^ji_ij, Y^ji_ji
+    enum idx_b1b2k1k2{ij_ij, ij_ji, ji_ij, ji_ji};
+    void compute_Y(const int b1b2_k1k2, const double prefactor,
+                   const unsigned int oper_idx,
+                   Ref<DistArray4>& i1i2i1i2_ints, double* array_i1i2i1i2);
+    void compute_YxF(const int b1b2_k1k2, const double prefactor,
+                     const unsigned int oper1_idx, const unsigned int oper2_idx,
+                     Ref<DistArray4>& i1i2x1x2_ints, Ref<DistArray4>& i2i1x1x2_ints,
+                     double* array_ijij);
+    void compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
+                    const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
+                    const unsigned int oper1_idx, const unsigned int oper2_idx,
+                    std::vector<Ref<DistArray4> >& Y_ints,
+                    std::vector<Ref<DistArray4> >& F_ints,
+                    double* VX_array);
+    void accumulate_P_YxF(std::vector<std::string>& P_output,
+                          std::vector<int>& b1b2_k1k2, std::vector<double>& P_prefactor,
+                          const unsigned int oper1_idx, const unsigned int oper2_idx,
+                          std::vector<Ref<DistArray4> >& Y_ints,
+                          std::vector<Ref<DistArray4> >& F_ints,
+                          double* P);
   public:
     MP2R12Energy_Diag(StateIn&);
     MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);

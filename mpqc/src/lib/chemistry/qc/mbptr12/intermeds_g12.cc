@@ -68,6 +68,10 @@ R12IntEval::init_intermeds_g12_()
       const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
       const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
       
+      if (gg1space->rank() == 0 || gg2space->rank() == 0 ||
+          GG1space->rank() == 0 || GG2space->rank() == 0)
+        continue;
+
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1 == occ2);
       const bool x1_eq_x2 = (xspace1 == xspace2);

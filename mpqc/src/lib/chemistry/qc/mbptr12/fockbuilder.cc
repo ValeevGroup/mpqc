@@ -1099,6 +1099,26 @@ namespace sc {
         for(int ao=0; ao<nao; ++ao)
           if (Pevals(ao) > Peval_threshold)
             ++Srank;
+
+        // handle the case of zero electrons
+        if (Srank == 0) {
+          Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
+          localints->set_basis(brabs);
+          Ref<PetiteList> brapl = localints->petite_list();
+          localints->set_basis(ketbs);
+          Ref<PetiteList> ketpl = localints->petite_list();
+          RefSCDimension bradim = brapl->AO_basisdim();
+          RefSCDimension ketdim = ketpl->AO_basisdim();
+          RefSCMatrix result(bradim,
+                             ketdim,
+                             brabs->so_matrixkit());
+          result.assign(0.0);
+          ExEnv::out0() << decindent;
+          ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;
+          tim.exit();
+          return result;
+        }
+
         RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
         RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
         {  // compute S from Pevecs

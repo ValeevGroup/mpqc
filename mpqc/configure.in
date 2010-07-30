@@ -1266,6 +1266,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
+AC_CHECK_FUNCS(posix_spawn)
 
 dnl --------- Check for an isnan and make sure it can be used
 dnl           with iostream (it can't on OS X)

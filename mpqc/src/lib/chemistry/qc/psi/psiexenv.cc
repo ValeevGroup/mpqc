@@ -228,8 +228,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
   // delete chkpt file in case it gets overwritten
   if (chkpt_) { delete chkpt_;  chkpt_ = 0; }
 
-#define USE_POSIX_SWAP 1
-#if USE_POSIX_SWAP
+#if HAVE_POSIX_SPAWN
   {
     std::vector<std::string> allargs(7 + args.size());
     allargs[0] = psiprefix_ + "/" + module;
@@ -277,6 +276,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
     }
   }
 #else
+  // no posix_spawn? must use system them
   {
     std::ostringstream oss;
     oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_

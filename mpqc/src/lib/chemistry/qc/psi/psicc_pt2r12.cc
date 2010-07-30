@@ -312,7 +312,6 @@ void PsiCCSD_PT2R12::compute() {
   //
   RefSCMatrix T1[NSpinCases1];
   RefSCMatrix T2[NSpinCases2];
-  RefSCMatrix Tau2[NSpinCases2];
 
   // Form transforms and transform T1
   RefSCMatrix MPQC2PSI_tform_oa[NSpinCases1];
@@ -429,9 +428,6 @@ void PsiCCSD_PT2R12::compute() {
     T2[spincase2] = transform_T2(MPQC2PSI_occ1_act, MPQC2PSI_occ2_act,
                                  MPQC2PSI_vir1_act, MPQC2PSI_vir2_act, T2_psi,
                                  localkit);
-    Tau2[spincase2] = transform_T2(MPQC2PSI_occ1_act, MPQC2PSI_occ2_act,
-                                   MPQC2PSI_vir1_act, MPQC2PSI_vir2_act,
-                                   Tau2_psi, localkit);
     if (test_t2_phases_) {
       compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
                  occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
@@ -440,7 +436,6 @@ void PsiCCSD_PT2R12::compute() {
       T1[spin1].print(prepend_spincase(spin1,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals):").c_str());
       T1[spin2].print(prepend_spincase(spin2,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals):").c_str());
       T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes from Psi3 (in MPQC orbitals):").c_str());
-      Tau2[spincase2].print(prepend_spincase(spincase2,"CCSD Tau2 amplitudes from Psi3 (in MPQC orbitals):").c_str());
     }
   }
   else
@@ -475,27 +470,6 @@ void PsiCCSD_PT2R12::compute() {
       T2[spincase2].scale(0.5);
     }
 
-    // Tau = T2 + T1*T1 has same 1st through 3rd order contributions as T2
-    if (mp2_only_ || completeness_order_for_intermediates_ < 4) {
-      Tau2[spincase2] = T2[spincase2].clone();
-      Tau2[spincase2].assign(T2[spincase2]);
-    }
-    else {
-      RefSCMatrix Tau2_psi = this->Tau2(spincase2);
-      Tau2[spincase2] = transform_T2(MPQC2PSI_tform_oa[spin1], MPQC2PSI_tform_oa[spin2],
-                                     MPQC2PSI_tform_va[spin1], MPQC2PSI_tform_va[spin2], Tau2_psi,
-                                     localkit);
-      // see comment above for T2
-      if (spincase2 != AlphaBeta) {
-        RefSCMatrix Tau2_tmp = Tau2[spincase2].clone();
-        Tau2_tmp.assign(Tau2[spincase2]);
-        Tau2[spincase2] = 0;
-        Tau2[spincase2] = localkit->matrix(r12eval->dim_oo(spincase2),r12eval->dim_vv(spincase2));
-        antisymmetrize<false>(Tau2[spincase2],Tau2_tmp,occ1_act,occ2_act,vir1_act,vir2_act);
-        Tau2[spincase2].scale(0.5);
-      }
-    }
-
     if (test_t2_phases_) {
       const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
       const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
@@ -506,7 +480,6 @@ void PsiCCSD_PT2R12::compute() {
     }
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
       T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):").c_str());
-      Tau2[spincase2].print(prepend_spincase(spincase2,"CCSD Tau2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):").c_str());
     }
   }
 
@@ -533,9 +506,9 @@ void PsiCCSD_PT2R12::compute() {
     // if not testing MP2, compute other terms in <R|Hb|0>
     if (!mp2_only_) {
 
-      // the leading term in <R|(HT)|0> is Tau2.Vab
+      // the leading term in <R|(HT)|0> is T2.Vab
       // if not assuming EBC then also include coupling matrix term
-      RefSCMatrix VT2 = r12tech->ebc() ? Vab[s] * Tau2[s].t() : (Vab[s] + A[s]) * Tau2[s].t();
+      RefSCMatrix VT2 = r12tech->ebc() ? Vab[s] * T2[s].t() : (Vab[s] + A[s]) * T2[s].t();
       // E = Vbar B^-1 Vbar, where Vbar = V + VT
       RefSCMatrix HT = VT2;  VT2 = 0;
 

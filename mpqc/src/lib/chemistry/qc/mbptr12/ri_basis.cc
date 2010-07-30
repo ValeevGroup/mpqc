@@ -197,7 +197,7 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
 {
   const Ref<OrbitalSpaceRegistry> idxreg = this->world()->tfactory()->orbital_registry();
 
-  const double tol = lindep_tol();
+  const double tol = r12tech()->abs_lindep_tol();
   if (!ref()->spin_polarized()) {
     Ref<OrbitalSpace> tmp = orthog_comp(ref()->occ_sb(Alpha), ribs_space_, "p'-m", "CABS", tol);
     tmp = orthog_comp(ref()->uocc_sb(Alpha), tmp, "a'", "CABS", tol);

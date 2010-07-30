@@ -741,7 +741,7 @@ class R12Technology: virtual public SavableState {
         The default is "CABS+".
 
         <dt><tt>abs_lindep_tol</tt><dd> The tolerance used to detect linearly
-        dependent basis functions (only makes sense if a separate ABS basis is used).
+        dependent basis functions in the RI basis (only makes sense if a separate ABS basis is used).
         The precise meaning depends on the
         orthogonalization method used by the Wavefunction object that uses this object.
         The default value is 1e-8.

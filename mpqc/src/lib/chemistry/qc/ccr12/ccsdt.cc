@@ -112,6 +112,10 @@ void CCSDT::compute(){
     ccsdt_t2->compute_amp(r2);
     ccsdt_t3->compute_amp(r3);
 
+    energy=ccr12_info_->get_e(e0) + ccr12_info_->t1()->ddot(r1)
+                                  + ccr12_info_->enengy_lagrangian_r2(r2)
+                                  + ccr12_info_->enengy_lagrangian_r3(r3);
+
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
@@ -133,8 +137,6 @@ void CCSDT::compute(){
     const double rnorm =std::sqrt(r1norm * r1norm
                                 + r2norm * r2norm
                                 + r3norm * r3norm);
-
-    energy=ccr12_info_->get_e(e0);
 
     iter_end=timer_->get_wall_time();
     print_iteration(iter, energy, rnorm, iter_start, iter_end);

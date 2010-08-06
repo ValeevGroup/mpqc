@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/tensor.h>
+#include <chemistry/qc/mbptr12/blas.h>
 
 using namespace sc;
 
@@ -358,4 +359,40 @@ void CCR12_Info::guess_glambda2(Ref<Tensor>& d_glambda2_){
    }
   }
 }
+
+
+double CCR12_Info::enengy_lagrangian_r2(const Ref<Tensor>& r2) const { 
+  double result = 0.0;
+  const int unit = 1;
+  for (long h3b=0L;h3b<noab();++h3b) { 
+   for (long h4b=h3b;h4b<noab();++h4b) { 
+    for (long p1b=noab();p1b<noab()+nvab();++p1b) { 
+     for (long p2b=p1b;p2b<noab()+nvab();++p2b) { 
+      if (get_spin(p1b)+get_spin(p2b)==get_spin(h3b)+get_spin(h4b)) { 
+       if ((get_sym(p1b)^(get_sym(p2b)^(get_sym(h3b)^get_sym(h4b))))==irrep_t()) { 
+        long p1b_0,p2b_0,h3b_0,h4b_0; 
+        restricted_4(p1b,p2b,h3b,h4b,p1b_0,p2b_0,h3b_0,h4b_0); 
+        if (!t2()->is_this_local(h4b_0+noab()*(h3b_0+noab()*(p2b_0-noab()+nvab()*(p1b_0-noab()))))) continue; 
+        const int dim=get_range(h3b)*get_range(h4b)*get_range(p1b)*get_range(p2b); 
+        if (dim > 0L) { 
+         double* k_a0=mem()->malloc_local_double(dim); 
+         double* k_a1=mem()->malloc_local_double(dim); 
+         t2()->get_block(h4b_0+noab()*(h3b_0+noab()*(p2b_0-noab()+nvab()*(p1b_0-noab()))),k_a0); 
+         r2->get_block(h4b_0+noab()*(h3b_0+noab()*(p2b_0-noab()+nvab()*(p1b_0-noab()))),k_a1); 
+         double factor=1.0; 
+         if (h3b==h4b) factor=factor/2.0; 
+         if (p1b==p2b) factor=factor/2.0; 
+         result += factor * ddot_(&dim,k_a0,&unit,k_a1,&unit);
+         mem()->free_local_double(k_a1); 
+         mem()->free_local_double(k_a0); 
+        } 
+       } 
+      } 
+     } 
+    } 
+   } 
+  } 
+  mem()->sync(); 
+  return result;
+} 
 

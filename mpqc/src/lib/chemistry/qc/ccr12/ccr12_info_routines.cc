@@ -37,7 +37,7 @@ using namespace std;
 void CCR12_Info::smith_dgemm(const long i,const long j,const long k,
                              const double a,const double* da,const long l,
                              const double* db,const long m,const double b,
-                             double* dc,const long n){
+                             double* dc,const long n) const {
   const char chart='t';
   const char charn='n';
   const double one=1.0;
@@ -52,7 +52,7 @@ void CCR12_Info::smith_dgemm(const long i,const long j,const long k,
 
 
 void CCR12_Info::restricted_2(const long inp1,const long inp2, 
-                              long& out1,long& out2){
+                              long& out1,long& out2) const {
   
   if( restricted() && get_spin(inp1)+get_spin(inp2)==4L ) {
     out1=get_alpha(inp1);
@@ -64,7 +64,7 @@ void CCR12_Info::restricted_2(const long inp1,const long inp2,
 } 
 
 void CCR12_Info::restricted_4(const long inp1,const long inp2,const long inp3,const long inp4, 
-                              long& out1,long& out2,long& out3,long& out4){
+                              long& out1,long& out2,long& out3,long& out4) const {
   
   if( restricted() && get_spin(inp1)+get_spin(inp2)+get_spin(inp3)+get_spin(inp4)==8L ) {
     out1=get_alpha(inp1);
@@ -83,7 +83,7 @@ void CCR12_Info::restricted_4(const long inp1,const long inp2,const long inp3,co
 void CCR12_Info::restricted_6(const long inp1,const long inp2,const long inp3,
                               const long inp4,const long inp5,const long inp6, 
                               long& out1,long& out2,long& out3,
-                              long& out4,long& out5,long& out6){
+                              long& out4,long& out5,long& out6) const {
   
   if( restricted() && get_spin(inp1)+get_spin(inp2)+get_spin(inp3)
                      +get_spin(inp4)+get_spin(inp5)+get_spin(inp6)==12L ) {
@@ -107,7 +107,7 @@ void CCR12_Info::restricted_6(const long inp1,const long inp2,const long inp3,
 void CCR12_Info::restricted_8(const long inp1,const long inp2,const long inp3,const long inp4,
                               const long inp5,const long inp6,const long inp7,const long inp8, 
                               long& out1,long& out2,long& out3,long& out4,
-                              long& out5,long& out6,long& out7,long& out8){
+                              long& out5,long& out6,long& out7,long& out8) const {
   
   if( restricted() && get_spin(inp1)+get_spin(inp2)+get_spin(inp3)+get_spin(inp4)
                      +get_spin(inp5)+get_spin(inp6)+get_spin(inp7)+get_spin(inp8)==16L ) {
@@ -134,7 +134,7 @@ void CCR12_Info::restricted_8(const long inp1,const long inp2,const long inp3,co
 
 void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
                                const long a,const long b,
-                               const int i,const int j,const double factor)
+                               const int i,const int j,const double factor) const
 { 
   // prototype
   if (i==0) {
@@ -161,7 +161,7 @@ void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
 void CCR12_Info::sort_indices4(const double* unsorted,double* sorted,
                                const long a,const long b,const long c,const long d,
                                const int i,const int j,const int k,const int l,
-                               const double factor)
+                               const double factor) const
 {
   // prototype
   int id[4];
@@ -190,7 +190,7 @@ void CCR12_Info::sort_indices6(const double* unsorted,double* sorted,
                                const long d,const long e,const long f,
                                const int i,const int j,const int k,
                                const int l,const int m,const int n,
-                               const double factor)
+                               const double factor) const
 {
   // prototype
   int id[6];
@@ -225,7 +225,7 @@ void CCR12_Info::sort_indices8(const double* unsorted,double* sorted,
                                const long e,const long f,const long g,const long h,
                                const int i,const int j,const int k,const int l,
                                const int m,const int n,const int o,const int p,
-                               const double factor)
+                               const double factor) const
 {
   // prototype
   int id[8];
@@ -266,7 +266,7 @@ void CCR12_Info::sort_indices_acc6(const double* unsorted,double* sorted,
                                    const long d,const long e,const long f,
                                    const int i,const int j,const int k,
                                    const int l,const int m,const int n,
-                                   const double factor)
+                                   const double factor) const
 {
   // prototype
   int id[6];
@@ -301,7 +301,7 @@ void CCR12_Info::sort_indices_acc8(const double* unsorted,double* sorted,
                                    const long e,const long f,const long g,const long h,
                                    const int i,const int j,const int k,const int l,
                                    const int m,const int n,const int o,const int p,
-                                   const double factor)
+                                   const double factor) const
 {
   // prototype
   int id[8];

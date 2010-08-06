@@ -270,27 +270,27 @@ class CCR12_Info : virtual public RefCount {
 
 
     /// Functions used in amplitude evaluators
-    void restricted_2(const long, const long, long&, long& );
-    void restricted_4(const long, const long, const long, const long, long&, long&, long&, long&);
+    void restricted_2(const long, const long, long&, long& ) const;
+    void restricted_4(const long, const long, const long, const long, long&, long&, long&, long&) const;
     void restricted_6(const long, const long, const long, const long, const long, const long,
-                      long&, long&, long&, long&, long&, long&);
+                      long&, long&, long&, long&, long&, long&) const;
     void restricted_8(const long, const long, const long, const long, const long, const long, const long, const long,
-                      long&, long&, long&, long&, long&, long&, long&, long&);
-    void sort_indices0(const double* a,double* b,const double facter) {*b=facter*(*a);};
+                      long&, long&, long&, long&, long&, long&, long&, long&) const;
+    void sort_indices0(const double* a,double* b,const double facter) const {*b=facter*(*a);};
     void sort_indices2(const double*, double*, const long, const long,
-                       const int, const int, const double);
+                       const int, const int, const double) const;
     void sort_indices4(const double*, double*, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const double);
+                       const int, const int, const int, const int, const double) const;
     void sort_indices6(const double*, double*, const long, const long, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const int, const int, const double);
+                       const int, const int, const int, const int, const int, const int, const double) const;
     void sort_indices8(const double*, double*, const long, const long, const long, const long, const long, const long, const long, const long,
-                       const int, const int, const int, const int, const int, const int, const int, const int, const double);
+                       const int, const int, const int, const int, const int, const int, const int, const int, const double) const;
     void sort_indices_acc6(const double*, double*, const long, const long, const long, const long, const long, const long,
-                           const int, const int, const int, const int, const int, const int, const double);
+                           const int, const int, const int, const int, const int, const int, const double) const;
     void sort_indices_acc8(const double*, double*, const long, const long, const long, const long, const long, const long, const long, const long,
-                           const int, const int, const int, const int, const int, const int, const int, const int, const double);
+                           const int, const int, const int, const int, const int, const int, const int, const int, const double) const;
     void smith_dgemm(const long,const long,const long,const double,const double*,const long,
-                     const double*,const long,const double,double*,const long);
+                     const double*,const long,const double,double*,const long) const;
 
 
     /// Constatnts used in specific (i.e. derived) CC-R12 object
@@ -325,6 +325,8 @@ class CCR12_Info : virtual public RefCount {
 /*  void jacobi_gl2(Ref<Tensor>&,Ref<Tensor>&);
     void jacobi_l3(Ref<Tensor>&,Ref<Tensor>&);
     void jacobi_l4(Ref<Tensor>&,Ref<Tensor>&); */
+
+    double enengy_lagrangian_r2(const Ref<Tensor>&) const;
 
 
     //// DIIS utilities // could not locate in tensor.h..

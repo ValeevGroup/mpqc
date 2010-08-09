@@ -130,7 +130,14 @@ void CCSDPR12::compute(){
     ccsdpr12_t2->compute_amp(r2);
     if (fullopt) ccsdpr12_c->compute_amp(gr2);
 
-    energy = ccr12_info_->get_e(e0);
+    energy = ccr12_info_->get_e(e0) + ccr12_info_->t1()->ddot(r1)
+                                    + ccr12_info_->enengy_lagrangian_r2(r2);
+    if (fullopt) {
+      e0->zero();
+      Ref<Tensor> gt2tmp = ccr12_info_->gt2();
+      ccr12_info_->prod_iiii(gr2, gt2tmp, e0);
+      energy += ccr12_info_->get_e(e0);
+    }
 
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();

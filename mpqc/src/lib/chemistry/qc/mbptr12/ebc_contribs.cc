@@ -100,6 +100,10 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
                               const Ref<OrbitalSpace>& fspace4,
                               bool antisymmetrize)
 {
+  // make sure that I have electrons for both spins
+  if (space1->rank() == 0 || space3->rank() == 0)
+    return;
+
   // are particles 1 and 2 equivalent?
   const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
 

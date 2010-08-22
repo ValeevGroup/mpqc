@@ -185,11 +185,14 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
   private:
     void compute_ef12();
 
+    /// \param include_coupling_in_B if true, include A^t . D2^{-1} . A term into B
+    ///        (this is only appropriate when optimizing amplitudes)
     RefSymmSCMatrix compute_B_non_pairspecific(const RefSymmSCMatrix &B,
                                                const RefSymmSCMatrix &X,
                                                const RefSCMatrix &V,
                                                const RefSCMatrix &A,
-                                               const SpinCase2 &spincase2);
+                                               const SpinCase2 &spincase2,
+                                               bool include_coupling_in_B = true);
     RefSymmSCMatrix compute_B_pairspecific(const SpinMOPairIter &ij_iter,
                                            const RefSymmSCMatrix &B,
                                            const RefSymmSCMatrix &X,

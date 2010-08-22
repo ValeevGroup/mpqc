@@ -383,10 +383,71 @@ R12IntEval::amps()
   return Amps_;
 }
 
+const RefSCVector&
+R12IntEval::compute_emp2(SpinCase2 spincase2)
+{
+  const int s = static_cast<int>(spincase2);
+  // for single-determinant references:
+  // 1) compute MP2 energies
+  // 2) optional singles MP2 contribution for non-Brillouin references
+  if (r12world()->sdref()) {
+    const bool obs_eq_vbs = r12world()->obs_eq_vbs();
+    const bool obs_eq_ribs = r12world()->obs_eq_ribs();
+    Ref<R12Technology::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
+
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+    if (dim_oo(spincase2).n() == 0)
+      return emp2pair_[s];
+    Ref<OrbitalSpace> occ1_act = occ_act(spin1);
+    Ref<OrbitalSpace> occ2_act = occ_act(spin2);
+    Ref<OrbitalSpace> vir1_act = vir_act(spin1);
+    Ref<OrbitalSpace> vir2_act = vir_act(spin2);
+
+    std::string tform_key;
+    // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
+    if (obs_eq_vbs && nocorrptr.null()) {
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
+                                               this->orbs(spin1), occ2_act,
+                                               this->orbs(spin2), corrfactor(),
+                                               true);
+      tform_key = tformkey_creator();
+    } else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
+                                               vir1_act, occ2_act, vir2_act,
+                                               corrfactor(), true);
+      tform_key = tformkey_creator();
+    } else { // pure MP2 -- manually construct transform
+      const std::string
+          descr_key =
+              moints_runtime4()->descr_key(
+                                           new TwoBodyIntDescrERI(
+                                                                  r12world()->integral()));
+      const std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2);
+      tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),
+                                                     occ2_act->id(),
+                                                     vir1_act->id(),
+                                                     vir2_act->id(), descr_key,
+                                                     layout_key);
+    }
+
+    compute_mp2_pair_energies_(emp2pair_[s], spincase2, occ1_act, vir1_act,
+                               occ2_act, vir2_act, tform_key);
+
+    globally_sum_scvector_(emp2pair_[s], true);
+
+  } // single-determinant references -> compute MP2 energies
+  return emp2pair_[s];
+}
+
 double
 R12IntEval::emp2_obs_singles()
 {
-  compute();
+  // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
+  if (!this->bc()) {
+    const bool obs_singles = true;
+    emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
+  }
   return emp2_obs_singles_;
 }
 
@@ -397,7 +458,6 @@ R12IntEval::emp2_cabs_singles()
     ExEnv::out0() << indent
                   << "WARNING: CABS singles correction is not implemented for multiconfiguration references"
                   << std::endl;
-  compute();
   if (emp2_cabs_singles_ == 0.0)
     emp2_cabs_singles_ = compute_emp2_cabs_singles();
   return emp2_cabs_singles_;
@@ -406,11 +466,10 @@ R12IntEval::emp2_cabs_singles()
 const RefSCVector&
 R12IntEval::emp2(SpinCase2 S)
 {
-  compute();
   if (!spin_polarized() && S == BetaBeta)
-    return emp2pair_[AlphaAlpha];
+    return compute_emp2(AlphaAlpha);
   else
-    return emp2pair_[S];
+    return compute_emp2(S);
 }
 
 void
@@ -2009,7 +2068,7 @@ R12IntEval::compute()
   const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;
 
   Ref<R12Technology::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
-  // if explicit correlation -- compute linear F12 theory intermediates
+  // if explicit correlation -- compute F12 theory intermediates
   if (nocorrptr.null()) {
 
     if (debug_ >= DefaultPrintThresholds::O4) {
@@ -2149,68 +2208,6 @@ R12IntEval::compute()
 
   } // nontrivial correlation factor
 
-  // for single-determinant references:
-  // 1) compute MP2 energies
-  // 2) optional singles MP2 contribution for non-Brillouin references
-  if (r12world()->sdref()) {
-    const int nspincases_for_emp2pairs = (spin_polarized() ? 3 : 2);
-    for (int s = 0; s < nspincases_for_emp2pairs; s++) {
-      const SpinCase2 spincase2 = static_cast<SpinCase2> (s);
-      const SpinCase1 spin1 = case1(spincase2);
-      const SpinCase1 spin2 = case2(spincase2);
-      if (dim_oo(spincase2).n() == 0)
-        continue;
-      Ref<OrbitalSpace> occ1_act = occ_act(spin1);
-      Ref<OrbitalSpace> occ2_act = occ_act(spin2);
-      Ref<OrbitalSpace> vir1_act = vir_act(spin1);
-      Ref<OrbitalSpace> vir2_act = vir_act(spin2);
-
-      std::string tform_key;
-      // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
-      if (obs_eq_vbs && nocorrptr.null()) {
-        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
-                                                 this->orbs(spin1), occ2_act,
-                                                 this->orbs(spin2),
-                                                 corrfactor(), true);
-        tform_key = tformkey_creator();
-      } else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
-        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
-                                                 vir1_act, occ2_act, vir2_act,
-                                                 corrfactor(), true);
-        tform_key = tformkey_creator();
-      } else { // pure MP2 -- manually construct transform
-        const std::string
-            descr_key =
-                moints_runtime4()->descr_key(
-                                             new TwoBodyIntDescrERI(
-                                                                    r12world()->integral()));
-        const std::string layout_key = std::string(TwoBodyIntLayout::b1b2_k1k2);
-        tform_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(),
-                                                       occ2_act->id(),
-                                                       vir1_act->id(),
-                                                       vir2_act->id(),
-                                                       descr_key, layout_key);
-      }
-
-      compute_mp2_pair_energies_(emp2pair_[s], spincase2, occ1_act, vir1_act,
-                                 occ2_act, vir2_act, tform_key);
-    }
-
-    // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
-    if (!this->bc()) {
-      const bool obs_singles = true;
-      emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
-    }
-
-#define TEST_CABS_SINGLES 0
-#if TEST_CABS_SINGLES
-    {
-      const double value = compute_emp2_cabs_singles();
-      ExEnv::out0() << "CABS singles energy = " << value << endl;
-    }
-#endif
-  } // single-determinant references -> compute MP2 energies
-
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);
 
@@ -2277,11 +2274,6 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (BB_[s].nonnull()) globally_sum_scmatrix_(BB_[s],to_all_tasks);
     if (A_[s].nonnull()) globally_sum_scmatrix_(A_[s],to_all_tasks);
-  }
-
-  const int nspincases_for_emp2pairs = (spin_polarized() ? 3 : 2);
-  for(int s=0; s<nspincases_for_emp2pairs; s++) {
-    globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }
 
   if (debug_ >= DefaultPrintThresholds::diagnostics) {

@@ -86,8 +86,7 @@ MBPT2_R12::compute_energy_()
     r12eval_ = new R12IntEval(r12world_);
     r12eval_->debug(debug_);
   }
-  // This will actually compute the intermediates
-  r12eval_->compute();
+  // intermediates will be computed when needed
 
   Ref<R12EnergyIntermediates> r12intermediates;
 

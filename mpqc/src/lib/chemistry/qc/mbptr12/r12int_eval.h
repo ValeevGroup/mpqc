@@ -521,6 +521,8 @@ class R12IntEval : virtual public SavableState {
   /** Compute the mass-velocity contributions to B that appear when DKH-based R12 calculations are requested */
   void compute_B_DKH_();
 
+  /// computes MP2 energy for single-determinant reference
+  const RefSCVector& compute_emp2(SpinCase2 s);
   /** Compute OBS singles contribution to the MP2 energy.
       If obs_singles is set to true, use OBS virtuals, else use correlating virtuals (these
       virtuals differ if VBS != OBS).

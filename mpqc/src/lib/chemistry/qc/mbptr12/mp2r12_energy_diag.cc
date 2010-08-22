@@ -457,6 +457,7 @@ void MP2R12Energy_Diag::compute_ef12() {
     VX_output.push_back("diag-pq-ma' contribution");
 
     // V^ij_ij -= g^ij_a'm f^a'm_ij
+    // TODO: for RHF can simply scale previous contribution by 2 and "symmetrize" at the end V^ij_ij = 0.5 * (V^ij_ij + V^ji_ji)
     Ref<DistArray4> i1i2a1i2_ints;
     activate_ints(occ1_act->id(), occ2_act->id(),
                   cabs1->id(), occ2->id(),

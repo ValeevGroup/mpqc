@@ -114,9 +114,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
 
   const bool diag = r12tech->ansatz()->diag();
-  jinmei_energy_ = keyval->booleanvalue("jinmei_energy",KeyValValueboolean(true));
+  // use jinmei's code for diagonal ansatz
+  jinmei_energy_ = keyval->booleanvalue("jinmei_energy",KeyValValueboolean(diag));
   // only diag ansatz is possible now
-  assert(diag == true);
+  if (jinmei_energy_) assert(diag == true);
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),

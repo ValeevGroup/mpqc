@@ -606,7 +606,8 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
                                                                          const RefSymmSCMatrix &X,
                                                                          const RefSCMatrix &V,
                                                                          const RefSCMatrix &A,
-                                                                         const SpinCase2 &spincase2) {
+                                                                         const SpinCase2 &spincase2,
+                                                                         bool include_coupling_in_B) {
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
   const Ref<OrbitalSpace> &xspace1 = r12eval()->xspace(spin1);
@@ -683,7 +684,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
         B_ij.accumulate_element(xyf, xyg, fx);
 
         // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
-        if (coupling == true) {
+        if (coupling == true && include_coupling_in_B) {
           double fy = 0.0;
           SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
           for (cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -719,7 +720,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
             B_ij.accumulate_element(xyf, yxg, fx);
 
             // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
-            if (coupling == true) {
+            if (coupling == true && include_coupling_in_B) {
               double fy = 0.0;
               SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
               for (cd_iter.start(); cd_iter; cd_iter.next()) {
@@ -877,9 +878,9 @@ void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(
                                                             const Ref<
                                                                 MP2R12EnergyUtil_Diag> &util) {
   RefSCVector C_V = util->dot_product(C_[spincase2], V);
-  RefSCMatrix Binv_C = C_[spincase2].clone();
-  util->times(B_ij, C_[spincase2], Binv_C);
-  RefSCVector C_Binv_C = util->dot_product(C_[spincase2], Binv_C);
+  RefSCMatrix B_C = C_[spincase2].clone();
+  util->times(B_ij, C_[spincase2], B_C);
+  RefSCVector C_B_C = util->dot_product(C_[spincase2], B_C);
 
   const bool scaled_amplitudes =
       r12eval_->r12world()->r12tech()->ansatz()->amplitudes()
@@ -890,13 +891,13 @@ void MP2R12Energy_SpinOrbital_new::determine_ef12_hylleraas(
     RefSCVector mask = C_V.clone();
     mask.assign(1.0);
     const double C_V_trace = C_V.dot(mask);
-    const double C_Binv_C_trace = C_Binv_C.dot(mask);
-    const double lambda_opt = -C_V_trace / C_Binv_C_trace;
+    const double C_B_C_trace = C_B_C.dot(mask);
+    const double lambda_opt = -C_V_trace / C_B_C_trace;
     C_V.scale(lambda_opt);
-    C_Binv_C.scale(lambda_opt * lambda_opt);
+    C_B_C.scale(lambda_opt * lambda_opt);
   }
 
-  ef12_[spincase2]->assign(2.0 * C_V + C_Binv_C);
+  ef12_[spincase2]->assign(2.0 * C_V + C_B_C);
 }
 
 void MP2R12Energy_SpinOrbital_new::determine_C_pairspecific(
@@ -1054,6 +1055,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
           << std::endl;
       V = r12intermediates_->get_V(spincase2);
     } else {
+      /// note that this V includes A.T2 contribution from coupling A, if "coupling = true" is set
       V = r12eval()->V(spincase2);
     }
 
@@ -1095,7 +1097,10 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_fullopt() {
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 
-    RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B, X, V, A, spincase2);
+    // B needs to include coupling contribution; V includes the coupling contribution already
+    const bool include_coupling_in_B = true;
+    RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B, X, V, A, spincase2,
+                                                      include_coupling_in_B);
 
     //B_ij.print("B_ij:");
     //V.print("V");
@@ -1195,7 +1200,11 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_diag_nonfullopt() {
                                                                      dim_xy,
                                                                      dim_xc,
                                                                      nocc2_act);
-    RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B, X, V, A, spincase2);
+
+    // B does not need to include coupling contribution; V includes the coupling contribution already
+    const bool include_coupling_in_B = false;
+    RefSymmSCMatrix B_ij = compute_B_non_pairspecific(B, X, V, A, spincase2,
+                                                      include_coupling_in_B);
     determine_C_fixed_non_pairspecific(spincase2);
 
 #define USE_HYLLERAAS_FUNCTIONAL 1

@@ -67,7 +67,7 @@ static ClassDesc R12IntEval_cd(
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
-  r12world_(r12w), evaluated_(false), debug_(0), emp2_obs_singles_(0.0), emp2_cabs_singles_(0.0)
+  r12world_(r12w), evaluated_(false), debug_(0), emp2_obs_singles_(1.0), emp2_cabs_singles_(1.0)
 {
   this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
@@ -286,8 +286,8 @@ R12IntEval::obsolete()
 {
   evaluated_ = false;
 
-  emp2_obs_singles_ = 0.0;
-  emp2_cabs_singles_ = 0.0;
+  emp2_obs_singles_ = 1.0;
+  emp2_cabs_singles_ = 1.0;
 
   init_intermeds_();
 }
@@ -446,7 +446,8 @@ R12IntEval::emp2_obs_singles()
   // compute OBS singles contribution to the MP2 energy if non-Brillouin reference is used
   if (!this->bc()) {
     const bool obs_singles = true;
-    emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
+    if (emp2_obs_singles_ == 1.0)
+      emp2_obs_singles_ = compute_emp2_obs_singles(obs_singles);
   }
   return emp2_obs_singles_;
 }
@@ -458,7 +459,7 @@ R12IntEval::emp2_cabs_singles()
     ExEnv::out0() << indent
                   << "WARNING: CABS singles correction is not implemented for multiconfiguration references"
                   << std::endl;
-  if (emp2_cabs_singles_ == 0.0)
+  if (emp2_cabs_singles_ == 1.0)
     emp2_cabs_singles_ = compute_emp2_cabs_singles();
   return emp2_cabs_singles_;
 }

@@ -626,12 +626,18 @@ namespace {
       R12TechDescr(const std::string& app,  // approximation
                    const std::string& an,   // ansatz
                    const std::string& cf,   // correlation factor
-                   const std::string& r     // RI approach
+                   const std::string& r,    // RI approach
+                   bool c = false,          // include coupling in H0?
+                   bool e = false           // assume EBC?
                   ) :
                     approx(app),
                     ansatz(an),
                     corrfactor(cf),
-                    ri(r) { }
+                    ri(r),
+                    coupling(c),
+                    ebc(e)
+      {
+      }
       static R12TechDescr* default_instance() {
         return new R12TechDescr("C", "diag", "stg-6g[1.3]", "cabs+");
       }
@@ -648,6 +654,8 @@ namespace {
         validate();
         os << indent << "stdapprox = " << approx << endl;
         os << indent << "abs_method = " << ri << endl;
+        os << indent << "coupling = " << (coupling ? "true" : "false") << endl;
+        os << indent << "ebc = " << (ebc ? "true" : "false") << endl;
         os << indent << "ansatz<R12Ansatz>: (" << endl << incindent;
         if (ansatz == "diag" || ansatz == "ijij") {
           os << indent << "diag = true" << endl;
@@ -701,6 +709,8 @@ namespace {
       std::string ansatz;
       std::string corrfactor;
       std::string ri;
+      bool coupling;
+      bool ebc;
   };
 }
 
@@ -850,6 +860,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else
           error2("invalid method: ", method);  // XMP2-R12, X!=U && X!=R
         r12descr = R12TechDescr::default_instance();
+        r12descr->coupling = true;  // include coupling in MP2-R12 by default
+        r12descr->ebc = false;      // do not assume EBC in MP2-R12 by default
       }
       // CCSD(2)_R12 / CCSD(T)_R12
       else if (strncmp(method,   "CCSD(2)_R12", 11) == 0 ||
@@ -875,6 +887,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
           method_object = "PsiCCSD_PT2R12T";
 
         r12descr = R12TechDescr::default_instance();
+        r12descr->coupling = false;  // inclusion of coupling in CC-R12 not implemented
+        r12descr->ebc = false;       // do not assume EBC in CC-R12 by default
         psi_ccr12 = true;
 
       }

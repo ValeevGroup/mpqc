@@ -358,10 +358,15 @@ const RefSCMatrix&
 R12IntEval::A(SpinCase2 S) {
   if (A_[AlphaBeta].null())
     compute_A();
-  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
-                   GGspace(Alpha),
-                   vir_act(Alpha));
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta)) {
+    if (A_[AlphaAlpha].null()) {
+      Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+      A_[AlphaAlpha] = local_matrix_kit->matrix(dim_f12_[AlphaAlpha],dim_vv_[AlphaAlpha]);
+      antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
+                     GGspace(Alpha),
+                     vir_act(Alpha));
+    }
+  }
   return A_[S];
 }
 

@@ -250,6 +250,9 @@ class MP2R12Energy_Diag : public MP2R12Energy
                      const unsigned int oper1_idx, const unsigned int oper2_idx,
                      Ref<DistArray4>& i1i2x1x2_ints, Ref<DistArray4>& i2i1x1x2_ints,
                      double* array_ijij);
+    void compute_FxT(const int b1b2_k1k2, const unsigned int f12_idx,
+                     Ref<DistArray4>& F_ints, const double* Tiiaa,
+                     double* V_coupling);
     void compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
                     const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
                     const unsigned int oper1_idx, const unsigned int oper2_idx,

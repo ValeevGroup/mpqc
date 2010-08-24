@@ -954,10 +954,10 @@ HSOSSCF::semicanonical()
   const RefSCDimension avirdim = new SCDimension(navir,nirrep,avirpi,"A");
   const RefSCDimension bvirdim = new SCDimension(nbvir,nirrep,bvirpi,"a");
   for(int h=0; h<nirrep; ++h) {
-    if (naocc) aoccdim->blocks()->set_subdim(h,new SCDimension(aoccpi[h]));
-    if (nbocc) boccdim->blocks()->set_subdim(h,new SCDimension(boccpi[h]));
-    if (navir) avirdim->blocks()->set_subdim(h,new SCDimension(avirpi[h]));
-    if (nbvir) bvirdim->blocks()->set_subdim(h,new SCDimension(bvirpi[h]));
+    aoccdim->blocks()->set_subdim(h,new SCDimension(aoccpi[h]));
+    boccdim->blocks()->set_subdim(h,new SCDimension(boccpi[h]));
+    avirdim->blocks()->set_subdim(h,new SCDimension(avirpi[h]));
+    bvirdim->blocks()->set_subdim(h,new SCDimension(bvirpi[h]));
   }
 
   // get occupied and virtual eigenvectors

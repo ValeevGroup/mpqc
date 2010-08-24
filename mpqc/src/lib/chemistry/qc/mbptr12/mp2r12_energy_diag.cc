@@ -1833,60 +1833,64 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       // Print the antisymmetrized Vij_ij, Xij_ij and Bij_ij
       // for alpha_alpha and beta_beta case
-      if (spin1 == spin2){
+      if (debug_ >= DefaultPrintThresholds::N2) {
+        if (spin1 == spin2) {
 
-          ExEnv::out0() << indent << spinletters << " antisymmetrized V"<< endl;
-          for(int i1=0; i1<nocc1_act; ++i1) {
-              for(int i2=i1+1; i2<nocc2_act; ++i2) {
-                  int i1i2 = i1 * nocc2_act + i2;
-                  ExEnv::out0() << indent << Vij_ij[i1i2] - Vij_ji[i1i2] << "  ";
-              }
-              ExEnv::out0() << endl;
+          ExEnv::out0() << indent << spinletters << " antisymmetrized V" << endl;
+          for (int i1 = 0; i1 < nocc1_act; ++i1) {
+            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+              int i1i2 = i1 * nocc2_act + i2;
+              ExEnv::out0() << indent << Vij_ij[i1i2] - Vij_ji[i1i2] << "  ";
+            }
+            ExEnv::out0() << endl;
           }
           ExEnv::out0() << endl;
 
           if (this->r12eval()->coupling() == true) {
-              ExEnv::out0() << indent << spinletters << " antisymmetrized V coupling"<< endl;
-              for(int i1=0; i1<nocc1_act; ++i1) {
-                  for(int i2=i1+1; i2<nocc2_act; ++i2) {
-                      int i1i2 = i1 * nocc2_act + i2;
-                      ExEnv::out0() << indent << Vij_ij_coupling[i1i2]-Vij_ji_coupling[i1i2]
-                                                +Vji_ji_coupling[i1i2]-Vji_ij_coupling[i1i2] << "  ";
-                  }
-                  ExEnv::out0() << endl;
+            ExEnv::out0() << indent << spinletters
+                << " antisymmetrized V coupling" << endl;
+            for (int i1 = 0; i1 < nocc1_act; ++i1) {
+              for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+                int i1i2 = i1 * nocc2_act + i2;
+                ExEnv::out0() << indent << Vij_ij_coupling[i1i2]
+                                                           - Vij_ji_coupling[i1i2] + Vji_ji_coupling[i1i2]
+                                                                                                     - Vji_ij_coupling[i1i2] << "  ";
               }
               ExEnv::out0() << endl;
+            }
+            ExEnv::out0() << endl;
           }
 
-          ExEnv::out0() << indent << spinletters << " antisymmetrized X"<< endl;
-          for(int i1=0; i1<nocc1_act; ++i1) {
-              for(int i2=i1+1; i2<nocc2_act; ++i2) {
-                  int i1i2 = i1 * nocc2_act + i2;
-                  ExEnv::out0() << indent << Xij_ij[i1i2] - Xij_ji[i1i2] << "  ";
-              }
-              ExEnv::out0() << endl;
+          ExEnv::out0() << indent << spinletters << " antisymmetrized X" << endl;
+          for (int i1 = 0; i1 < nocc1_act; ++i1) {
+            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+              int i1i2 = i1 * nocc2_act + i2;
+              ExEnv::out0() << indent << Xij_ij[i1i2] - Xij_ji[i1i2] << "  ";
+            }
+            ExEnv::out0() << endl;
           }
           ExEnv::out0() << endl;
 
-          ExEnv::out0() << indent << spinletters << " antisymmetrized Q"<< endl;
-          for(int i1=0; i1<nocc1_act; ++i1) {
-              for(int i2=i1+1; i2<nocc2_act; ++i2) {
-                  int i1i2 = i1 * nocc2_act + i2;
-                  ExEnv::out0() << indent << Qij_ij[i1i2] - Qij_ji[i1i2] << "  ";
-              }
-              ExEnv::out0() << endl;
+          ExEnv::out0() << indent << spinletters << " antisymmetrized Q" << endl;
+          for (int i1 = 0; i1 < nocc1_act; ++i1) {
+            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+              int i1i2 = i1 * nocc2_act + i2;
+              ExEnv::out0() << indent << Qij_ij[i1i2] - Qij_ji[i1i2] << "  ";
+            }
+            ExEnv::out0() << endl;
           }
           ExEnv::out0() << endl;
 
-          ExEnv::out0() << indent << spinletters << " antisymmetrized B"<< endl;
-          for(int i1=0; i1<nocc1_act; ++i1) {
-              for(int i2=i1+1; i2<nocc2_act; ++i2) {
-                  int i1i2 = i1 * nocc2_act + i2;
-                  ExEnv::out0() << indent << Bij_ij[i1i2] - Bij_ji[i1i2] << "  ";
-              }
-              ExEnv::out0() << endl;
+          ExEnv::out0() << indent << spinletters << " antisymmetrized B" << endl;
+          for (int i1 = 0; i1 < nocc1_act; ++i1) {
+            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+              int i1i2 = i1 * nocc2_act + i2;
+              ExEnv::out0() << indent << Bij_ij[i1i2] - Bij_ji[i1i2] << "  ";
+            }
+            ExEnv::out0() << endl;
           }
           ExEnv::out0() << endl;
+        }
       }
 
       //
@@ -1925,8 +1929,9 @@ void MP2R12Energy_Diag::compute_ef12() {
                 Hij_pair_energy += 2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]
                                                + Vji_ji_coupling[ij] - Vji_ij_coupling[ij]);
             }
-            ExEnv::out0() << indent << i1 << "  " << i2 << "  "
-                                    << scprintf("%12.10f", Hij_pair_energy) << endl;
+
+            const int i21 = i2 * (i2-1)/2 + i1;
+            ef12_[spin].set_element(i21, Hij_pair_energy);
 
             f12_energy += Hij_pair_energy;
           }
@@ -1943,7 +1948,7 @@ void MP2R12Energy_Diag::compute_ef12() {
         }
 
       }  else if (num_unique_spincases2 == 2) {
-          // Alpha_beta case for close shell
+          // Alpha_beta case for closed shell
           for(int i1=0; i1<nocc1_act; ++i1) {
             for(int i2=0; i2<nocc2_act; ++i2) {
               double Hij_pair_energy;
@@ -1962,8 +1967,10 @@ void MP2R12Energy_Diag::compute_ef12() {
                  Hij_pair_energy += Vcoupling_contribution;
                  //ExEnv::out0() << indent << "V coupling contribution: "<< scprintf("%12.10f", Vcoupling_contribution) << endl;
               }
-              ExEnv::out0() << indent << i1 << "  " << i2 << "  "
-                                      << scprintf("%12.10f", Hij_pair_energy) << endl;
+
+              const int i12 = i1 * nocc2_act + i2;
+              ef12_[spin].set_element(i12, Hij_pair_energy);
+
               f12_energy_ab += Hij_pair_energy;
             }
           }
@@ -1987,8 +1994,10 @@ void MP2R12Energy_Diag::compute_ef12() {
                                            + 0.5*(C_0-C_1) * (Vij_ji_coupling[ij] + Vji_ij_coupling[ij])
                                           );
               }
-              ExEnv::out0() << indent << i1 << "  " << i2 << "  "
-                                      << scprintf("%12.10f", Hij_pair_energy) << endl;
+
+              const int i12 = i1 * nocc2_act + i2;
+              ef12_[spin].set_element(i12, Hij_pair_energy);
+
               f12_energy_ab += Hij_pair_energy;
             }
           }

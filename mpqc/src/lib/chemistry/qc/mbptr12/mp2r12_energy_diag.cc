@@ -107,14 +107,16 @@ void MP2R12Energy_Diag::compute_Y(const int b1b2_k1k2, const double prefactor,
       const double* blk = i1i2i1i2_ints->retrieve_pair_block(*blk_i1, *blk_i2, oper_idx);
 
       array_i1i2i1i2[*array_idx] += prefactor * blk[*blk_idx];
-      ExEnv::out0() << indent << scprintf("%12.10f", array_i1i2i1i2[*array_idx]) << " ";
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << indent << scprintf("%12.10f", array_i1i2i1i2[*array_idx]) << " ";
 
       ++idx_ij;
       idx_ji += nocc1_act;
 
       i1i2i1i2_ints->release_pair_block(*blk_i1, *blk_i2, oper_idx);
     }
-    ExEnv::out0() << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl;
   }
 }
 
@@ -185,14 +187,16 @@ void MP2R12Energy_Diag::compute_YxF(const int b1b2_k1k2, const double prefactor,
       const double i1i2i1i2 = prefactor * F77_DDOT(&norbs12, blk1, &one, blk2, &one);
 
       array_i1i2i1i2[array_idx] += i1i2i1i2 ;
-      ExEnv::out0() << indent << scprintf("%12.10f",array_i1i2i1i2[array_idx]) << "  ";
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << indent << scprintf("%12.10f",array_i1i2i1i2[array_idx]) << " ";
 
       i1i2x1x2_ints->release_pair_block(*blk1_i1, *blk1_i2, oper1_idx);
       j1j2x1x2_ints->release_pair_block(*blk2_i1, *blk2_i2, oper2_idx);
 
       ++array_idx;
     }
-    ExEnv::out0() << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl;
   }
 }
 
@@ -245,11 +249,11 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
 
 
   for( ; i<nocc1_act; ++i) {
-      iter_Tij_start = i * nvir12_act * nocc2_act;
-      iter_Tji_start = i * nvir12_act;
-      const double* iter_T = Ti1i2ab + *iter_T_start;
-    for(j=0; j<nocc2_act; ++j, ++idx_ij, iter_T += *offset_T) {
+    iter_Tij_start = i * nvir12_act * nocc2_act;
+    iter_Tji_start = i * nvir12_act;
+    const double* iter_T = Ti1i2ab + *iter_T_start;
 
+    for(j=0; j<nocc2_act; ++j, ++idx_ij, iter_T += *offset_T) {
       const int one = 1;
       const double* F_blk = iiPFa_ints->retrieve_pair_block(*F_blk_i1, *F_blk_i2, f12_idx);
 
@@ -257,12 +261,13 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
       const double i1i2i1i2 = F77_DDOT(&nvir12_act, F_blk, &one, iter_T, &one);
 
       V_coupling_array[idx_ij] = i1i2i1i2 ;
-      // Print out
-      //ExEnv::out0() << indent << scprintf("%12.10f",V_coupling_array[idx_ij]) << "  ";
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << indent << scprintf("%12.10f",V_coupling_array[idx_ij]) << "  ";
 
       iiPFa_ints->release_pair_block(*F_blk_i1, *F_blk_i2, f12_idx);
     }
-    //ExEnv::out0() << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl;
   }
 }
 
@@ -273,20 +278,23 @@ void MP2R12Energy_Diag::compute_VX(const int b1b2_k1k2, std::vector<std::string>
                                    std::vector<Ref<DistArray4> >& F_ints,
                                    double* VX_array)
 {
-  ExEnv::out0() << indent << "(diag) contribution" << endl;
+  if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << indent << "(diag) contribution" << endl;
+
   compute_Y(b1b2_k1k2, 1.0,
             oper12_idx,
             Y12_ints, VX_array);
 
   const int nterms = Y_ints.size();
   for (int i=0; i != nterms; ++i) {
-    ExEnv::out0() << indent << VX_output[i] << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << indent << VX_output[i] << endl;
+
     compute_YxF(b1b2_k1k2, -1.0,
                 oper1_idx, oper2_idx,
                 Y_ints[i], F_ints[i],
                 VX_array);
   }
-  ExEnv::out0() << endl;
 }
 
 void MP2R12Energy_Diag::accumulate_P_YxF(std::vector<std::string>& P_output,
@@ -304,7 +312,8 @@ void MP2R12Energy_Diag::accumulate_P_YxF(std::vector<std::string>& P_output,
   std::vector<double>::iterator prefactor = P_prefactor.begin();
 
   for (int i=0; i!=nterms; ++i, ++output, ++prefactor) {
-    ExEnv::out0() << indent << *output << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << *output << endl;
 
     // P += f^ij_xy F^x_z f^zy_ij
     //    = ()^ij_ij
@@ -312,7 +321,9 @@ void MP2R12Energy_Diag::accumulate_P_YxF(std::vector<std::string>& P_output,
                 oper1_idx, oper2_idx,
                 Y_ints[i], F_ints[i],
                 P);
-    ExEnv::out0() << endl;
+
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl;
 
     // P += f^ji_xy F^x_z f^zy_ji
     //    = ()^ji_ji
@@ -321,7 +332,6 @@ void MP2R12Energy_Diag::accumulate_P_YxF(std::vector<std::string>& P_output,
                 oper1_idx, oper2_idx,
                 Y_ints[i], F_ints[i],
                 P);
-    ExEnv::out0() << endl;
   }
 }
 
@@ -355,11 +365,8 @@ void MP2R12Energy_Diag::compute_ef12() {
   // distribute workload among nodes by pair index
   //
   const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
-  ExEnv::out0() << indent << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
-
-  double f12_energy_aa = 0;   // f12 correlation energy for alpha alpha part
-  double f12_energy_bb = 0;
-  double f12_energy_ab = 0;   // alpha beta part
+  if (debug_ >= DefaultPrintThresholds::N2)
+    ExEnv::out0() <<endl << indent << "num_unique_spincases2 = " << num_unique_spincases2 << endl;
 
   // Find the largest dimension (nxn) of the matrixes: nocc1_act*nocc2_act
   // n is the larger number between the #n of alpha and beta electron
@@ -407,7 +414,9 @@ void MP2R12Energy_Diag::compute_ef12() {
       nvir_act_alpha = vir_act_alpha->rank();
       nvir_act_beta = vir_act_beta->rank();
     }
-   //ExEnv::out0() << indent << "#n of spin1(active) = " << nalpha << "  #n of spin2(active) = " << nbeta << endl;
+  if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << indent << "#n of spin1(active) = " << nalpha
+                            << ";  #n of spin2(active) = " << nbeta << endl;
 
   // Obtain the larger number between alpha an beta electron: N
   // The dimension of all the intermediate matrixes is: NxN
@@ -415,14 +424,16 @@ void MP2R12Energy_Diag::compute_ef12() {
     dim_matrix = nalpha * nalpha;
   else
     dim_matrix = nbeta * nbeta;
-  //ExEnv::out0() << indent << "The dimension of the V X and B matrix is " << dim_matrix << endl;
+  if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << indent << "The dimension of V X and B matrix: " << dim_matrix << endl;
 
   // Compute the dimension of T^ij_ab
   if (nvir_act_alpha >= nvir_act_beta)
     dim_Tijab = dim_matrix * nvir_act_alpha * nvir_act_alpha;
   else
     dim_Tijab = dim_matrix * nvir_act_beta * nvir_act_beta;
-  //ExEnv::out0() << indent << "The dimension of the T^ij_ab matrix is " << dim_Tijab << endl;
+  if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << indent << "The dimension of T^ij_ab matrix: " << dim_Tijab << endl;
 
   if (dim_matrix == 0)
     ExEnv::out0() << indent << "error: no electron" << endl;
@@ -461,11 +472,11 @@ void MP2R12Energy_Diag::compute_ef12() {
       continue;
     const SpinCase1 spin1 = case1(spincase);
     const SpinCase1 spin2 = case2(spincase);
+
     // Determine the spincase
     std::string spinletters = to_string(spincase);
-
-    ExEnv::out0() << indent << "spin1 = " << spin1 << "  spin2 = " << spin2
-                            << "  "<< spinletters<< endl;
+    if (debug_ >= DefaultPrintThresholds::N2)
+      ExEnv::out0() << endl << indent << spinletters<< endl;
 
     const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
     const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
@@ -532,10 +543,11 @@ void MP2R12Energy_Diag::compute_ef12() {
     // Alpha_beta V^ij_ij and V^ij_ji are antisymmetrized
     // Alpha_alpha or beta_beta antisymmetrized V = V^ij_ij - V^ij_ji
     // Note: '^' indicates bra, '_' indicates ket
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << spinletters << " V^ij_ij: " << endl;
 
     // this is necessary because how I wrote the compute_Y function
     std::fill(Vij_ij, Vij_ij + nocc12, 0.0);
-    ExEnv::out0() << indent << spinletters << " V^ij_ij: " << endl;
 
     // V^ij_ij = (f12/r12)^ij_ij -
     Ref<DistArray4> i1i2i1i2_ints;
@@ -603,7 +615,9 @@ void MP2R12Energy_Diag::compute_ef12() {
 
     //
     // Vij_ji = V^ij_ji = g^ij_ab f^ab_ji
-    ExEnv::out0() << indent << spinletters << " V^ij_ji : " << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << spinletters << " V^ij_ji : " << endl;
+
     std::fill(Vij_ji, Vij_ji + nocc12, 0.0);
 
     // V^ij_ji = (f12/r12)^ij_ji
@@ -656,6 +670,39 @@ void MP2R12Energy_Diag::compute_ef12() {
                f12_ij_ints, f12_ji_ints,
                Vij_ji);
 
+    if (debug_ >= DefaultPrintThresholds::N2 && spin1 == spin2) {
+      // Alpha-alpha or beta-beta case
+      ExEnv::out0() << endl << indent << spinletters << " antisymmetrized V^ij_ij" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f",Vij_ij[i1i2] - Vij_ji[i1i2]) << "  ";
+        }
+        ExEnv::out0() << endl;
+      }
+    }
+
+    if (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2) {
+      // Alpha-beta case
+      ExEnv::out0() << endl << indent << spinletters << "  V^ij_ij" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = 0; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f", Vij_ij[i1i2]) << "  ";
+        }
+        ExEnv::out0() << endl;
+      }
+
+      ExEnv::out0() << endl << indent << spinletters << "  V^ij_ji" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = 0; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f", Vij_ji[i1i2]) << "  ";
+        }
+       ExEnv::out0() << endl;
+      }
+    }
+
     // Compute V coupling
     // Alpha-alpha or beta-beta:
     // sum(i<j,ab,a') C1* (R^ij_aa' f^a'_b T^ab_ij + R^ji_aa' f^a'_b T^ab_ji
@@ -675,24 +722,28 @@ void MP2R12Energy_Diag::compute_ef12() {
       const RefDiagSCMatrix evals_a1 = vir1_act->evals();
       const RefDiagSCMatrix evals_a2 = vir2_act->evals();
 
-#if 0
-      ExEnv::out0() << indent << "evals_i1: " << endl;
-      for(int i1=0; i1<nocc1_act; ++i1) {
-        ExEnv::out0() << indent << evals_i1(i1) << endl;
+      if (debug_ >= DefaultPrintThresholds::mostN2) {
+        ExEnv::out0() << endl << indent << "evals_i1: " << endl;
+        for(int i1=0; i1<nocc1_act; ++i1) {
+          ExEnv::out0() << indent << evals_i1(i1) << endl;
+        }
+
+        ExEnv::out0() << endl << indent << "evals_i2: " << endl;
+        for(int i2=0; i2<nocc2_act; ++i2) {
+          ExEnv::out0() << indent << evals_i2(i2) << endl;
+        }
+
+        ExEnv::out0() << endl << indent << "evals_a1: " << endl;
+        for(int a1=0; a1<nvir1_act; ++a1) {
+          ExEnv::out0() << indent << evals_a1(a1) << endl;
+        }
+
+        ExEnv::out0() << endl << indent << "evals_a2: " << endl;
+        for(int a2=0; a2<nvir2_act; ++a2) {
+          ExEnv::out0() << indent << evals_a2(a2) << endl;
+        }
       }
-      ExEnv::out0() << indent << "evals_i2: " << endl;
-      for(int i2=0; i2<nocc2_act; ++i2) {
-        ExEnv::out0() << indent << evals_i2(i2) << endl;
-      }
-      ExEnv::out0() << indent << "evals_a1: " << endl;
-      for(int a1=0; a1<nvir1_act; ++a1) {
-        ExEnv::out0() << indent << evals_a1(a1) << endl;
-      }
-      ExEnv::out0() << indent << "evals_a2: " << endl;
-      for(int a2=0; a2<nvir2_act; ++a2) {
-        ExEnv::out0() << indent << evals_a2(a2) << endl;
-      }
-#endif
+
       // Compute T^ij_ab (not antisymmetrized)
       // g^ij_ab
       Ref<DistArray4> i1i2a1a2_ints;
@@ -711,7 +762,6 @@ void MP2R12Energy_Diag::compute_ef12() {
 
           for (int a1=0; a1<nvir1_act; ++a1){
             for (int a2=0; a2<nvir2_act; ++a2, ++iter_Tij_ab, ++gij_ab){
-             // const double denom = 1.0/(evals_i1(i1)+evals_i2(i2)-evals_a1(a1)-evals_a2(a2));
               *iter_Tij_ab = (*gij_ab) /(evals_i1(i1)+evals_i2(i2)-evals_a1(a1)-evals_a2(a2));
             }
           }
@@ -724,7 +774,8 @@ void MP2R12Energy_Diag::compute_ef12() {
       // Tji_ab matrix <=> Tij_ab matrix
 
       // Vij_ij_coupling: R^ij_aa' f^a'_b T^ab_ij
-      //ExEnv::out0() << indent << spinletters << " Vij_ij_coupling: R^ij_aa' f^a'_b T^ab_ij" << endl;
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << endl << indent << spinletters << " Vij_ij_coupling: R^ij_aa' f^a'_b T^ab_ij" << endl;
       Ref<DistArray4> i1i2a1AF2_ints;
       activate_ints(occ1_act->id(), occ2_act->id(),
                     vir1_act->id(), fvir2_act->id(),
@@ -742,7 +793,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
           // If details of each matrix is needed, eliminate '//' in the following
           // and those in the compute_FxT function
-          //ExEnv::out0() << indent << spinletters << " Vij_ij_coupling(a':alpha): R^ij_a'b f^a'_a T^ab_ij" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vij_ij_coupling(a':alpha): R^ij_a'b f^a'_a T^ab_ij" << endl;
           Ref<DistArray4> i1i2AF1a2_ints;
           activate_ints(occ1_act->id(), occ2_act->id(),
                         fvir1_act->id(), vir2_act->id(),
@@ -755,7 +807,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
           // Vij_ji_coupling: R^ji_a'b f^a'_a T^ab_ij
           // a':alpha
-          //ExEnv::out0() << indent << spinletters << " Vji_ij_coupling: R^ji_a'b f^a'_a T^ab_ij" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vji_ij_coupling: R^ji_a'b f^a'_a T^ab_ij" << endl;
           Ref<DistArray4> i2i1AF1a2_ints;
           activate_ints(occ2_act->id(), occ1_act->id(),
                         fvir1_act->id(), vir2_act->id(),
@@ -768,7 +821,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
           // Vji_ij_coupling: R^ji_aa' f^a'_b T^ab_ij
           // a':beta
-          //ExEnv::out0() << indent << spinletters << " Vji_ij_coupling(a':beta): R^ji_aa' f^a'_b T^ab_ij" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vji_ij_coupling(a':beta): R^ji_aa' f^a'_b T^ab_ij" << endl;
           Ref<DistArray4> i2i1a1AF2_ints;
           activate_ints(occ2_act->id(), occ1_act->id(),
                         vir1_act->id(), fvir2_act->id(),
@@ -781,48 +835,63 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       } else {
           // + R^ji_aa' f^a'_b T^ab_ji
-          //ExEnv::out0() << indent << spinletters << " Vji_ji_coupling: R^ji_aa' f^a'_b T^ab_ji" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vji_ji_coupling: R^ji_aa' f^a'_b T^ab_ji" << endl;
           compute_FxT(ji_ji, f12_idx,
                       i1i2a1AF2_ints, Tij_ab,
                       Vji_ji_coupling);
           // - R^ij_aa' f^a'_b T^ab_ji
-          //ExEnv::out0() << indent << spinletters << " Vij_ji_coupling: R^ij_aa' f^a'_b T^ab_ji" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vij_ji_coupling: R^ij_aa' f^a'_b T^ab_ji" << endl;
           compute_FxT(ij_ji, f12_idx,
                       i1i2a1AF2_ints, Tij_ab,
                       Vij_ji_coupling);
           // - R^ji_aa' f^a'_b T^ab_ij
-          //ExEnv::out0() << indent << spinletters << " Vji_ij_coupling: R^ji_aa' f^a'_b T^ab_ij" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << indent << spinletters << " Vji_ij_coupling: R^ji_aa' f^a'_b T^ab_ij" << endl;
           compute_FxT(ji_ij, f12_idx,
                       i1i2a1AF2_ints, Tij_ab,
                       Vji_ij_coupling);
           i1i2a1AF2_ints->deactivate();
       }
 
-      if (spin1 != spin2) {
-          ExEnv::out0() << indent << spinletters << " Vij_ij_coupling:" << endl;
+      if (debug_ >= DefaultPrintThresholds::N2) {
+        if (spin1 == spin2) {
+            ExEnv::out0() << endl << indent << spinletters << " antisymmetrized V coupling" << endl;
+
+          for (int i1 = 0; i1 < nocc1_act; ++i1) {
+            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+              int i1i2 = i1 * nocc2_act + i2;
+              ExEnv::out0() << indent << scprintf("%12.10f",  Vij_ij_coupling[i1i2] - Vij_ji_coupling[i1i2]
+                                                            + Vji_ji_coupling[i1i2] - Vji_ij_coupling[i1i2])
+                                      << "  ";
+            }
+            ExEnv::out0() << endl;
+          }
+        } else {
+          ExEnv::out0() << endl << indent << spinletters << " Vij_ij_coupling:" << endl;
           const double* iter_ijij = Vij_ij_coupling;
           const double* iter_jiji = Vji_ji_coupling;
           for(int i1=0; i1<nocc1_act; ++i1) {
               for(int i2=0; i2<nocc2_act; ++i2,++iter_ijij,++iter_jiji) {
-                  ExEnv::out0() << indent << *iter_ijij + *iter_jiji << " " ;
+                  ExEnv::out0() << indent << scprintf("%12.10f", *iter_ijij + *iter_jiji) << " " ;
               }
-              ExEnv::out0() << indent << endl;
+              ExEnv::out0() << endl;
           }
-          ExEnv::out0() << indent << endl;
 
-          ExEnv::out0() << indent << spinletters << " Vij_ji_coupling:" << endl;
+          ExEnv::out0() << endl << indent << spinletters << " Vij_ji_coupling:" << endl;
           const double* iter_ijji = Vij_ji_coupling;
           const double* iter_jiij = Vji_ij_coupling;
           for(int i1=0; i1<nocc1_act; ++i1) {
               for(int i2=0; i2<nocc2_act; ++i2,++iter_ijji,++iter_jiij) {
-                  ExEnv::out0() << indent << *iter_ijji + *iter_jiij << " " ;
+                  ExEnv::out0() << indent << scprintf("%12.10f", *iter_ijji + *iter_jiij) << " " ;
               }
-              ExEnv::out0() << indent << endl;
+              ExEnv::out0() << endl;
           }
-      }
+        }
+      } // end of debug
 
-      ExEnv::out0() << indent << endl;
-    }
+    } // end of V coupling computation
 
     //
     // Compute X intermediate matrix: X^ij_ij and X^ij_ji
@@ -831,8 +900,9 @@ void MP2R12Energy_Diag::compute_ef12() {
     // Alpha_alpha or beta_beta antisymmetrized X = X^ij_ij - X^ij_ji
 
     // Xij_ij = X^ij_ij = f^ij_ab f^ab_ij
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << endl << indent << spinletters << " X^ij_ij : " << endl;
     std::fill(Xij_ij, Xij_ij + nocc12, 0.0);
-    ExEnv::out0() << indent << spinletters << " X^ij_ij : " << endl;
 
     // X^ij_ij += (f12f12)^ij_ij
     Ref<DistArray4> i1i2i1i2_f12f12_ints;
@@ -849,8 +919,9 @@ void MP2R12Energy_Diag::compute_ef12() {
 
     //
     // Xij_ji = X^ij_ji = f^ij_ab f^ab_ji
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << endl << indent << spinletters << " X^ij_ji : " << endl;
     std::fill(Xij_ji, Xij_ji + nocc12, 0.0);
-    ExEnv::out0() << indent << spinletters << " X^ij_ji : " << endl;
 
     // X^ij_ji = (f12f12)^ij_ji
     Ref<DistArray4> i1i2i2i1_f12f12_ints;
@@ -869,6 +940,38 @@ void MP2R12Energy_Diag::compute_ef12() {
                f12_ij_ints, f12_ji_ints,
                Xij_ji);
 
+    if (debug_ >= DefaultPrintThresholds::N2 && spin1 == spin2) {
+      ExEnv::out0() << endl << indent << spinletters << " antisymmetrized X" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f", Xij_ij[i1i2] - Xij_ji[i1i2]) << "  ";
+        }
+        ExEnv::out0() << endl;
+      }
+    }
+
+    if (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2) {
+      // Alpha-beta case
+      ExEnv::out0() << endl << indent << spinletters << "  X^ij_ij" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = 0; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f", Xij_ij[i1i2]) << "  ";
+        }
+        ExEnv::out0() << endl;
+      }
+
+      ExEnv::out0() << endl << indent << spinletters << "  X^ij_ji" << endl;
+      for (int i1 = 0; i1 < nocc1_act; ++i1) {
+        for (int i2 = 0; i2 < nocc2_act; ++i2) {
+          int i1i2 = i1 * nocc2_act + i2;
+          ExEnv::out0() << indent << scprintf("%12.10f", Xij_ji[i1i2]) << "  ";
+        }
+       ExEnv::out0() << endl;
+      }
+    }
+
     //
     // Compute B intermediate matrix
     //
@@ -882,14 +985,13 @@ void MP2R12Energy_Diag::compute_ef12() {
     //   B^i(alpha)j(beta)_^i(alpha)j(beta)
     // = R^i(alpha)j(beta)_a(alpha)b(beta) * f^a(alpha)_a(alpha) * R^a(alpha)b(beta)_i(alpha)j(beta)
     std::fill(Bij_ij, Bij_ij + nocc12, 0.0);
-    ExEnv::out0() << indent << spinletters << " B^ij_ij: " << endl;
 
     // B^ij_ij += (f12t1f12)^ij_ij
-    ExEnv::out0() << indent << spinletters << " B(diag) contribution" << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+    ExEnv::out0() << endl << indent << spinletters << " B(diag) contribution" << endl;
     compute_Y(ij_ij, 1.0,
               f12t1f12_idx,
               i1i2i1i2_f12f12_ints, Bij_ij);
-    ExEnv::out0() << endl;
 
     // P part of B intermediate
     std::fill(Pij_ij, Pij_ij + nocc12, 0.0);
@@ -934,7 +1036,6 @@ void MP2R12Energy_Diag::compute_ef12() {
                     Kribs1->id(), ribs2->id(),
                     descr_f12_key, moints4_rtime,
                     b_i2i1PK1P2_ints);
-      //ExEnv::out0() << indent << "activate: b_i2i1P1P2_ints, b_i2i1PK1P2_ints" << endl;
     } else {
       //spin1 == spin2 or close shell
       b_i2i1P1P2_ints = b_i1i2P1P2_ints;
@@ -1185,11 +1286,12 @@ void MP2R12Energy_Diag::compute_ef12() {
     //
     //                    =   (f12f12)^ij _i_hJ j - (f12f12)^ji _i_hJ j
     //                      - (f12f12)^ij _j_hJ i + (f12f12)^ji _j_hJ i
-
-    ExEnv::out0() << indent << spinletters << " Q^ij_ij : " << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << spinletters << " Q^ij_ij : " << endl;
     std::fill(Qij_ij, Qij_ij + nocc12, 0.0);
 
-    ExEnv::out0() << indent << "Q += (f12f12)^ij_Pj (f+k)^P_i " << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << indent << "Q += (f12f12)^ij_Pj (f+k)^P_i " << endl;
     Ref<DistArray4> q_i1i2hi1i2_ints;
     activate_ints(occ1_act->id(), occ2_act->id(),
                   r12eval_->hj_i_P(spin1)->id(), occ2_act->id(),
@@ -1199,7 +1301,8 @@ void MP2R12Energy_Diag::compute_ef12() {
               f12f12_idx,
               q_i1i2hi1i2_ints, Qij_ij);
 
-    ExEnv::out0() << indent << "Q += (f12f12)^ji_Pi (f+k)^P_j " << endl;
+    if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << indent << "Q += (f12f12)^ji_Pi (f+k)^P_j " << endl;
     Ref<DistArray4> q_i2i1hi2i1_ints;
     if(num_unique_spincases2 == 3 && spin1 != spin2) {
       activate_ints(occ2_act->id(), occ1_act->id(),
@@ -1213,34 +1316,36 @@ void MP2R12Energy_Diag::compute_ef12() {
     compute_Y(ji_ji, 1.0,
               f12f12_idx,
               q_i2i1hi2i1_ints, Qij_ij);
-    ExEnv::out0() << endl;
 
-      // B^ij_ij = B^ij_ij - P + Q
-      ExEnv::out0() << indent << spinletters << " Bij_ij : " << endl;
-#if 1
-      for(int i1=0; i1<nocc1_act; ++i1) {
-        for(int i2=0; i2<nocc2_act; ++i2) {
+    // B^ij_ij = B^ij_ij - P + Q
+    if (debug_ >= DefaultPrintThresholds::mostN2
+        || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
+      ExEnv::out0() << endl << indent << spinletters << " Bij_ij : " << endl;
 
-          const int i1i2 = i1 * nocc2_act + i2;
-          Bij_ij[i1i2] += - Pij_ij[i1i2] + Qij_ij[i1i2];
+    for(int i1=0; i1<nocc1_act; ++i1) {
+      for(int i2=0; i2<nocc2_act; ++i2) {
+
+        const int i1i2 = i1 * nocc2_act + i2;
+        Bij_ij[i1i2] += - Pij_ij[i1i2] + Qij_ij[i1i2];
+        if (debug_ >= DefaultPrintThresholds::mostN2
+            || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
           ExEnv::out0() << indent << scprintf("%12.10f",Bij_ij[i1i2])<< "  ";
-        }
-        ExEnv::out0() << endl;
       }
-      ExEnv::out0() << endl;
-#endif
+      if (debug_ >= DefaultPrintThresholds::mostN2
+          || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
+        ExEnv::out0() << endl;
+    }
 
       //
       // B^ij_ji
       std::fill(Bij_ji, Bij_ji + nocc12, 0.0);
-      ExEnv::out0() << indent << spinletters << " B^ij_ji : " << endl;
 
       // B^ij_ji += (f12t1f12)^ij_ji
-      ExEnv::out0() << indent << spinletters << " B(diag) contribution" << endl;
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << endl << indent << spinletters << " B(diag) contribution" << endl;
       compute_Y(ij_ji, 1.0,
                 f12t1f12_idx,
                 i1i2i2i1_f12f12_ints, Bij_ji);
-      ExEnv::out0() << endl;
 
       // P part of B intermediate
       std::fill(Pij_ji, Pij_ji + nocc12, 0.0);
@@ -1297,7 +1402,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       // Qij_ji += (f12f12)^ij_Pi (f+k)^P_j + (f12f12)^ij_jP (f+k)^P_i
       //         = (f12f12)^ij _j_hJ i + (f12f12)^ji _i_hJ j
-      ExEnv::out0() << indent << spinletters << " Q^ij_ji : " << endl;
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << endl << indent << spinletters << " Q^ij_ji : " << endl;
       std::fill(Qij_ji, Qij_ji + nocc12, 0.0);
 
       Ref<DistArray4> q_i1i2hi2i1_ints;
@@ -1313,6 +1419,9 @@ void MP2R12Energy_Diag::compute_ef12() {
                 f12f12_idx,
                 q_i1i2hi2i1_ints, Qij_ji);
 
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+        ExEnv::out0() << endl;
+
       Ref<DistArray4> q_i2i1hi1i2_ints;
       if(num_unique_spincases2 == 3 && spin1 != spin2) {
         activate_ints(occ2_act->id(), occ1_act->id(),
@@ -1325,22 +1434,25 @@ void MP2R12Energy_Diag::compute_ef12() {
       compute_Y(ji_ij, 1.0,
                 f12f12_idx,
                 q_i2i1hi1i2_ints, Qij_ji);
-      ExEnv::out0() << endl;
 
       // B^ij_ji = B^ij_ji - P^ij_ji + Q^ij_ji
-      ExEnv::out0() << indent << spinletters << " Bij_ji : " << endl;
-#if 1
+      if (debug_ >= DefaultPrintThresholds::mostN2
+          || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
+        ExEnv::out0() <<  endl << indent << spinletters << " Bij_ji : " << endl;
+
       for(int i1=0; i1<nocc1_act; ++i1) {
         for(int i2=0; i2<nocc2_act; ++i2) {
 
-          const int i1i2 = i1 * nocc2_act + i2;
-          Bij_ji[i1i2] += - Pij_ji[i1i2] + Qij_ji[i1i2];
-          ExEnv::out0() << indent << scprintf("%12.10f",Bij_ji[i1i2])<< "  ";
+            const int i1i2 = i1 * nocc2_act + i2;
+            Bij_ji[i1i2] += - Pij_ji[i1i2] + Qij_ji[i1i2];
+            if (debug_ >= DefaultPrintThresholds::mostN2
+                || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
+              ExEnv::out0() << indent << scprintf("%12.10f",Bij_ji[i1i2])<< "  ";
         }
-        ExEnv::out0() << endl;
+        if (debug_ >= DefaultPrintThresholds::mostN2
+            || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
+          ExEnv::out0() << endl;
       }
-      ExEnv::out0() << endl;
-#endif
 
       //
       //  B^i(beta)j(alpha)_^i(beta)j(alpha)
@@ -1354,12 +1466,12 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       if (num_unique_spincases2 == 3 && spin1 != spin2) {
 
-          ExEnv::out0() << indent << spinletters << " B^ij_ij (beta alpha case): " << endl;
           Bij_ij_beta = new double[nocc12];
           std::fill(Bij_ij_beta, Bij_ij_beta + nocc12, 0.0);
 
           // B^ij_ij += (f12t1f12)^ij_ij
-          ExEnv::out0() << indent << spinletters << " B(diag) contribution (beta alpha case)" << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2)
+            ExEnv::out0() << endl << indent << spinletters << " B(diag) contribution (beta alpha case)" << endl;
 
           Ref<DistArray4> b_i2i1i2i1_ints;
           activate_ints(occ2_act->id(), occ1_act->id(),
@@ -1369,7 +1481,6 @@ void MP2R12Energy_Diag::compute_ef12() {
           compute_Y(ij_ij, 1.0,
                     f12t1f12_idx,
                     b_i2i1i2i1_ints, Bij_ij_beta);
-          ExEnv::out0() << endl;
 
           // P part of B intermediate
           double* Pij_ij_beta = new double[nocc12];
@@ -1600,9 +1711,11 @@ void MP2R12Energy_Diag::compute_ef12() {
           // spin1 != spin2: Q += (f12f12)^ij_Pj (f+k)^P_i + (f12f12)^ji_Pi (f+k)^P_j ;
           //
           // Qij_ij (alpha beta case) = Qji_ji (beta alpha case)
-          ExEnv::out0() << indent << spinletters
-                                  << " Q^ij_ij (beta alpha case) = Qji_ji (alpha beta case) "
-                                  << endl << endl;
+          if (debug_ >= DefaultPrintThresholds::mostN2) {
+            ExEnv::out0() << endl << indent << spinletters
+                                    << " Q^ij_ij (beta alpha case) = Qji_ji (alpha beta case) "
+                                    << endl;
+          }
 
 #if 0
           // The following codes is for testing
@@ -1633,32 +1746,34 @@ void MP2R12Energy_Diag::compute_ef12() {
 #endif
 
             // B^ij_ij = B^ij_ij - P + Q
-            ExEnv::out0() << indent << spinletters << " Bij_ij (beta alpha case): " << endl;
-      #if 1
-            for(int i1=0; i1<nocc2_act; ++i1) {
-              for(int i2=0; i2<nocc1_act; ++i2) {
+          if (debug_ >= DefaultPrintThresholds::N2)
+            ExEnv::out0() << endl << indent << spinletters << " Bij_ij (beta alpha case): " << endl;
 
-                const int i1i2 = i1 * nocc1_act + i2;
-                const int i2i1 = i2 * nocc2_act + i1;
-                Bij_ij_beta[i1i2] += - Pij_ij_beta[i1i2] + Qij_ij[i2i1];
+          for(int i1=0; i1<nocc2_act; ++i1) {
+            for(int i2=0; i2<nocc1_act; ++i2) {
+
+              const int i1i2 = i1 * nocc1_act + i2;
+              const int i2i1 = i2 * nocc2_act + i1;
+              Bij_ij_beta[i1i2] += - Pij_ij_beta[i1i2] + Qij_ij[i2i1];
+              if (debug_ >= DefaultPrintThresholds::N2)
                 ExEnv::out0() << indent << scprintf("%12.10f",Bij_ij_beta[i1i2])<< "  ";
-              }
-              ExEnv::out0() << endl;
             }
-            ExEnv::out0() << endl;
-      #endif
+            if (debug_ >= DefaultPrintThresholds::N2)
+              ExEnv::out0() << endl;
+          }
+
             delete[] Pij_ij_beta;
             Pij_ij_beta = NULL;
 
             //
             // B^ij_ji
             // B^i(beta)j(alpha)_j(alpha)i(beta)
-            ExEnv::out0() << indent << spinletters << " B^ij_ji (beta alpha case): " << endl;
             Bij_ji_beta = new double[nocc12];
             std::fill(Bij_ji_beta, Bij_ji_beta + nocc12, 0.0);
 
             // B^ij_ji += (f12t1f12)^ij_ji
-            ExEnv::out0() << indent << spinletters << " B(diag) contribution (beta alpha case):" << endl;
+            if (debug_ >= DefaultPrintThresholds::mostN2)
+              ExEnv::out0() << endl << indent << spinletters << " B(diag) contribution (beta alpha case):" << endl;
             Ref<DistArray4> b_i2i1i1i2_ints;
             activate_ints(occ2_act->id(), occ1_act->id(),
                           occ1_act->id(), occ2_act->id(),
@@ -1667,7 +1782,6 @@ void MP2R12Energy_Diag::compute_ef12() {
             compute_Y(ij_ji, 1.0,
                       f12t1f12_idx,
                       b_i2i1i1i2_ints, Bij_ji_beta);
-            ExEnv::out0() << endl;
 
             // P part of B intermediate
             double* Pij_ji_beta = new double[nocc12];
@@ -1726,9 +1840,11 @@ void MP2R12Energy_Diag::compute_ef12() {
             // Qij_ji += (f12f12)^ij_Pi (f+k)^P_j + (f12f12)^ij_jP (f+k)^P_i
             //         = (f12f12)^ij _j_hJ i + (f12f12)^ji _i_hJ j
             // Qij_ji (beta alpha case) = Qji_ij (alpha beta case)
-            ExEnv::out0() << indent << spinletters
-                                    << " Q^ij_ji (beta alpha case) = Qji_ij (alpha beta case) "
-                                    << endl << endl;
+            if (debug_ >= DefaultPrintThresholds::mostN2) {
+              ExEnv::out0() << endl << indent << spinletters
+                                      << " Q^ij_ji (beta alpha case) = Qji_ij (alpha beta case) "
+                                      << endl;
+            }
 
 #if 0
             // test
@@ -1758,22 +1874,25 @@ void MP2R12Energy_Diag::compute_ef12() {
 #endif
 
             // B^ij_ji = B^ij_ji - P^ij_ji + Q^ij_ji
-            ExEnv::out0() << indent << spinletters << " Bij_ji (beta alpha case): " << endl;
-      #if 1
+            if (debug_ >= DefaultPrintThresholds::N2)
+              ExEnv::out0() << endl << indent << spinletters << " Bij_ji (beta alpha case): " << endl;
+
             for(int i1=0; i1<nocc2_act; ++i1) {
               for(int i2=0; i2<nocc1_act; ++i2) {
 
                 const int i1i2 = i1 * nocc1_act + i2;
                 const int i2i1 = i2 * nocc2_act + i1;
                 Bij_ji_beta[i1i2] += - Pij_ji_beta[i1i2] + Qij_ji[i2i1];
-                ExEnv::out0() << indent << scprintf("%12.10f",Bij_ji_beta[i1i2])<< "  ";
+                if (debug_ >= DefaultPrintThresholds::N2)
+                  ExEnv::out0() << indent << scprintf("%12.10f",Bij_ji_beta[i1i2])<< "  ";
               }
-              ExEnv::out0() << endl;
+              if (debug_ >= DefaultPrintThresholds::N2)
+                ExEnv::out0() << endl;
             }
-            ExEnv::out0() << endl;
-      #endif
+
             delete[] Pij_ji_beta;
             Pij_ji_beta = NULL;
+
             // Deactive ints for B_beta
             b_i2i1i2i1_ints->deactivate();
             b_i2i1i1i2_ints->deactivate();
@@ -1833,45 +1952,9 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       // Print the antisymmetrized Vij_ij, Xij_ij and Bij_ij
       // for alpha_alpha and beta_beta case
-      if (debug_ >= DefaultPrintThresholds::N2) {
-        if (spin1 == spin2) {
-
-          ExEnv::out0() << indent << spinletters << " antisymmetrized V" << endl;
-          for (int i1 = 0; i1 < nocc1_act; ++i1) {
-            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
-              int i1i2 = i1 * nocc2_act + i2;
-              ExEnv::out0() << indent << Vij_ij[i1i2] - Vij_ji[i1i2] << "  ";
-            }
-            ExEnv::out0() << endl;
-          }
-          ExEnv::out0() << endl;
-
-          if (this->r12eval()->coupling() == true) {
-            ExEnv::out0() << indent << spinletters
-                << " antisymmetrized V coupling" << endl;
-            for (int i1 = 0; i1 < nocc1_act; ++i1) {
-              for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
-                int i1i2 = i1 * nocc2_act + i2;
-                ExEnv::out0() << indent << Vij_ij_coupling[i1i2]
-                                                           - Vij_ji_coupling[i1i2] + Vji_ji_coupling[i1i2]
-                                                                                                     - Vji_ij_coupling[i1i2] << "  ";
-              }
-              ExEnv::out0() << endl;
-            }
-            ExEnv::out0() << endl;
-          }
-
-          ExEnv::out0() << indent << spinletters << " antisymmetrized X" << endl;
-          for (int i1 = 0; i1 < nocc1_act; ++i1) {
-            for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
-              int i1i2 = i1 * nocc2_act + i2;
-              ExEnv::out0() << indent << Xij_ij[i1i2] - Xij_ji[i1i2] << "  ";
-            }
-            ExEnv::out0() << endl;
-          }
-          ExEnv::out0() << endl;
-
-          ExEnv::out0() << indent << spinletters << " antisymmetrized Q" << endl;
+      if (debug_ >= DefaultPrintThresholds::mostN2 && spin1 == spin2) {
+          // Alpha-alpha or beta-beta case
+          ExEnv::out0() << endl << indent << spinletters << " antisymmetrized Q" << endl;
           for (int i1 = 0; i1 < nocc1_act; ++i1) {
             for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
               int i1i2 = i1 * nocc2_act + i2;
@@ -1879,9 +1962,10 @@ void MP2R12Energy_Diag::compute_ef12() {
             }
             ExEnv::out0() << endl;
           }
-          ExEnv::out0() << endl;
+        }
 
-          ExEnv::out0() << indent << spinletters << " antisymmetrized B" << endl;
+        if (debug_ >= DefaultPrintThresholds::N2 && spin1 == spin2) {
+          ExEnv::out0() << endl << indent << spinletters << " antisymmetrized B" << endl;
           for (int i1 = 0; i1 < nocc1_act; ++i1) {
             for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
               int i1i2 = i1 * nocc2_act + i2;
@@ -1889,9 +1973,7 @@ void MP2R12Energy_Diag::compute_ef12() {
             }
             ExEnv::out0() << endl;
           }
-          ExEnv::out0() << endl;
         }
-      }
 
       //
       // compute coefficients
@@ -1910,8 +1992,6 @@ void MP2R12Energy_Diag::compute_ef12() {
       }
 
       // Compute the f12 correction pair energy
-      ExEnv::out0() << indent << "i " << " j  " << spinletters
-                              << " Hij" << endl;
       if (spin1 == spin2) {
           // Alpha_alpha or beta_beta case
         double f12_energy = 0;
@@ -1930,23 +2010,13 @@ void MP2R12Energy_Diag::compute_ef12() {
                                                + Vji_ji_coupling[ij] - Vji_ij_coupling[ij]);
             }
 
+            // Get indices for the lower triangle matrix
+            // index = nrow*(nrow-1) + ncolumn
+            // nrow > ncolumn (diagonal elements are excluded)
             const int i21 = i2 * (i2-1)/2 + i1;
             ef12_[spin].set_element(i21, Hij_pair_energy);
-
-            f12_energy += Hij_pair_energy;
           }
         }
-
-        if (spin1 == 0 && spin2 == 0) {
-          f12_energy_aa = f12_energy;
-          ExEnv::out0() << indent << "alpha-alpha f12 correction energy is "
-                                  << scprintf("%12.10f", f12_energy_aa) << endl;
-        } else {
-          f12_energy_bb = f12_energy;
-          ExEnv::out0() << indent << "beta-beta f12 correction energy is "
-                                  << scprintf("%12.10f", f12_energy_bb) << endl;
-        }
-
       }  else if (num_unique_spincases2 == 2) {
           // Alpha_beta case for closed shell
           for(int i1=0; i1<nocc1_act; ++i1) {
@@ -1965,17 +2035,12 @@ void MP2R12Energy_Diag::compute_ef12() {
                                                              );
 
                  Hij_pair_energy += Vcoupling_contribution;
-                 //ExEnv::out0() << indent << "V coupling contribution: "<< scprintf("%12.10f", Vcoupling_contribution) << endl;
               }
 
               const int i12 = i1 * nocc2_act + i2;
               ef12_[spin].set_element(i12, Hij_pair_energy);
-
-              f12_energy_ab += Hij_pair_energy;
             }
           }
-          ExEnv::out0() << indent << "unique spincases: "<< num_unique_spincases2 << "  alpha beta f12 correction energy is "
-              << scprintf("%12.10f", f12_energy_ab) << endl;
       } else {
           // Alpha_beta case for open shell
           for(int i1=0; i1<nocc1_act; ++i1) {
@@ -1997,12 +2062,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               const int i12 = i1 * nocc2_act + i2;
               ef12_[spin].set_element(i12, Hij_pair_energy);
-
-              f12_energy_ab += Hij_pair_energy;
             }
           }
-          ExEnv::out0() << indent << "unique spincases: "<< num_unique_spincases2 << "  alpha beta f12 correction energy is "
-                                  << scprintf("%12.10f", f12_energy_ab) << endl;
           // deallocate memory for B_beta (it will be used once)
           delete[] Bij_ij_beta;
           delete[] Bij_ji_beta;
@@ -2032,12 +2093,7 @@ void MP2R12Energy_Diag::compute_ef12() {
     C_[BetaBeta] = C_[AlphaAlpha];
     emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
     ef12_[BetaBeta] = ef12_[AlphaAlpha];
-    f12_energy_bb = f12_energy_aa;
   }
-
-  double f12_energy = f12_energy_aa + f12_energy_bb + f12_energy_ab;
-  ExEnv::out0() << indent << "f12 correction energy is "
-                          << scprintf("%12.10f", f12_energy) << endl;
 
   evaluated_ = true;
 

@@ -284,13 +284,13 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
     for(int i=0; i<args.size(); ++i)
       oss << " " << args[i];
     oss << " 1>> " << stdout_ << " 2>> " << stderr_;
-    errcod = system(oss.str().c_str());
+    const int errcod = system(oss.str().c_str());
     if (errcod) {
       // errcod == -1 means fork() failed. check errno
       if (errcod == -1) {
         throw SyscallFailed("run_psi_module",
                             __FILE__,__LINE__,
-                            "system()", class_desc());
+                            "system()", 0, class_desc());
       }
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- module " << module << " failed";
       // clean up if wasn't a cleanup attempt already

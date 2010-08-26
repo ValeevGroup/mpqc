@@ -30,6 +30,7 @@
 #endif
 
 #include <math.h>
+#include <algorithm>
 
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
@@ -117,7 +118,14 @@ UHF::two_body_energy(double &ec, double &ex)
     Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
-    signed char * pmax = init_pmax(apmat);
+    Ref<GaussianBasisSet> bs = basis();
+    const int ntri = i_offset(bs->nbasis());
+
+    // use total density to compute bounds
+    std::vector<double> pmat(ntri);
+    std::transform(apmat, apmat+ntri, bpmat, pmat.begin(),
+                   plus<double>());
+    signed char * pmax = init_pmax(&(pmat[0]));
   
     LocalUHFEnergyContribution lclc(apmat, bpmat);
     Ref<PetiteList> pl = integral()->petite_list();
@@ -169,7 +177,14 @@ UHF::ao_fock(double accuracy)
     RefSymmSCMatrix gotmp = get_local_data(gmatb_, gmato, SCF::Accum);
     RefSymmSCMatrix potmp = get_local_data(diff_densb_, pmato, SCF::Read);
 
-    signed char * pmax = init_pmax(pmat);
+    Ref<GaussianBasisSet> bs = basis();
+    const int ntri = i_offset(bs->nbasis());
+
+    // use total density to compute bounds
+    std::vector<double> pmat_total(ntri);
+    std::transform(pmat, pmat+ntri, pmato, pmat_total.begin(),
+                   plus<double>());
+    signed char * pmax = init_pmax(&(pmat_total[0]));
   
 //      LocalUHFContribution lclc(gmat, pmat, gmato, pmato);
 //      LocalGBuild<LocalUHFContribution>
@@ -187,9 +202,6 @@ UHF::ao_fock(double accuracy)
     double **gmatos = new double*[nthread];
     gmatos[0] = gmato;
     
-    Ref<GaussianBasisSet> bs = basis();
-    int ntri = i_offset(bs->nbasis());
-
     double gmat_accuracy = accuracy;
     if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
 

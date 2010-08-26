@@ -1047,9 +1047,9 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
       }
     }
 
-    double S2real = (double)(tnalpha_-tnbeta_)/2.;
+    double S2real = (double)(abs(tnalpha_-tnbeta_))/2.;
     S2real = S2real*(S2real+1);
-    double S2 = S2real + tnbeta_ - s2;
+    double S2 = S2real + min(tnalpha_,tnbeta_) - s2;
 
     ExEnv::out0() << endl
          << indent << scprintf("<S^2>exact = %f", S2real) << endl

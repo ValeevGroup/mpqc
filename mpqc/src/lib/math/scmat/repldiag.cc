@@ -270,9 +270,6 @@ ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
 
   lwidth = prec+5+(int) max;
 
-  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
-  os.setf(ios::right,ios::adjustfield);
-
   if (title)
     os << endl << indent << title << endl;
   else
@@ -284,7 +281,8 @@ ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   }
 
   for (i=0; i<n(); i++)
-    os << indent << setw(5) << i+1 << setw(lwidth) << matrix[i] << endl;
+    os << indent
+       << scprintf("%5d %*.*f\n",i+1,lwidth,prec,matrix[i]);
   os << endl;
 
   os.flush();

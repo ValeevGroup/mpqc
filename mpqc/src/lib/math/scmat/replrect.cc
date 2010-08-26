@@ -1093,9 +1093,6 @@ ReplSCMatrix::vprint(const char *title, ostream& os, int prec) const
   lwidth = prec + 5 + (int) max;
   width = 75/(lwidth+SCFormIO::getindent(os));
 
-  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
-  os.setf(ios::right,ios::adjustfield);
-
   if (title)
     os << endl << indent << title << endl;
   else
@@ -1114,14 +1111,14 @@ ReplSCMatrix::vprint(const char *title, ostream& os, int prec) const
     // print column indices
     os << indent;
     for (i=ii; i <= nn; i++)
-      os << setw(lwidth) << i;
+      os << scprintf("%*d",lwidth,i);
     os << endl;
 
     // print the rows
     for (i=0; i < nrow() ; i++) {
-      os << setw(5) << i+1;
+      os << indent << scprintf("%5d",i+1);
       for (j=ii-1; j < nn; j++)
-        os << setw(lwidth) << rows[i][j];
+        os << scprintf("%*.*f",lwidth,prec,rows[i][j]);
       os << endl;
     }
     os << endl;

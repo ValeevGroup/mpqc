@@ -38,31 +38,10 @@ mpqc: (
     basis = $:basis
     coor = $..:coor
     memory = 32000000
+
     reference<PsiCLHF>: (
-    molecule = $:molecule
-    basis = $:basis
-    memory = 32000000
-    )
-    mbpt2r12<MBPT2_R12>: (
-    molecule = $:molecule
-    basis = $:basis
-    memory = 32000000
-    stdapprox = "C"
-    corr_factor = "STG-3G"
-    corr_param = 1.5
-    integrals<IntegralLibint2>: ()
-    nfzc = 0
-    aux_basis<GaussianBasisSet>: (
-      name = "aug-cc-pVDZ"
-      puream = true
-      molecule = $:molecule
-    )
-    abs_method = CABS
-    reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
-      total_charge = 0
-      multiplicity = 1
       memory = 32000000
       guess_wavefunction<CLHF>: (
         molecule = $:molecule
@@ -75,7 +54,18 @@ mpqc: (
         memory = 32000000
       )
     )
+
+    stdapprox = "C"
+    corr_factor = "STG-3G"
+    corr_param = 1.5
+    integrals<IntegralLibint2>: ()
+    nfzc = 0
+    aux_basis<GaussianBasisSet>: (
+      name = "aug-cc-pVDZ"
+      puream = true
+      molecule = $:molecule
     )
+    abs_method = CABS
   )
   optimize = no
   % optimizer object for the molecular geometry

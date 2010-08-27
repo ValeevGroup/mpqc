@@ -73,10 +73,6 @@ namespace sc {
       bool X_computed() const;
       bool B_computed() const;
       bool A_computed() const;
-      void V_computed(const bool computed);
-      void X_computed(const bool computed);
-      void B_computed(const bool computed);
-      void A_computed(const bool computed);
       const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
       void assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V);
       const RefSymmSCMatrix& get_X(const SpinCase2 &spincase2) const;

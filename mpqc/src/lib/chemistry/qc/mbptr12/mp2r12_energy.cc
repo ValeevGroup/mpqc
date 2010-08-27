@@ -134,28 +134,13 @@ bool R12EnergyIntermediates::A_computed() const {
   return(A_computed_);
 }
 
-void R12EnergyIntermediates::V_computed(const bool computed) {
-  V_computed_=computed;
-}
-
-void R12EnergyIntermediates::X_computed(const bool computed) {
-  X_computed_=computed;
-}
-
-void R12EnergyIntermediates::B_computed(const bool computed) {
-  B_computed_=computed;
-}
-
-void R12EnergyIntermediates::A_computed(const bool computed) {
-  A_computed_=computed;
-}
-
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
   return(V_[spincase2]);
 }
 
 void R12EnergyIntermediates::assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V) {
   V_[spincase2]=V;
+  V_computed_ = true;
 }
 
 const RefSymmSCMatrix& R12EnergyIntermediates::get_X(const SpinCase2 &spincase2) const {
@@ -164,6 +149,7 @@ const RefSymmSCMatrix& R12EnergyIntermediates::get_X(const SpinCase2 &spincase2)
 
 void R12EnergyIntermediates::assign_X(const SpinCase2 &spincase2, const RefSymmSCMatrix& X) {
   X_[spincase2]=X;
+  X_computed_ = true;
 }
 
 const RefSymmSCMatrix& R12EnergyIntermediates::get_B(const SpinCase2 &spincase2) const {
@@ -172,6 +158,7 @@ const RefSymmSCMatrix& R12EnergyIntermediates::get_B(const SpinCase2 &spincase2)
 
 void R12EnergyIntermediates::assign_B(const SpinCase2 &spincase2, const RefSymmSCMatrix& B) {
   B_[spincase2]=B;
+  B_computed_ = true;
 }
 
 const RefSCMatrix& R12EnergyIntermediates::get_A(const SpinCase2 &spincase2) const {
@@ -180,6 +167,7 @@ const RefSCMatrix& R12EnergyIntermediates::get_A(const SpinCase2 &spincase2) con
 
 void R12EnergyIntermediates::assign_A(const SpinCase2 &spincase2, const RefSCMatrix& A) {
   A_[spincase2]=A;
+  A_computed_ = true;
 }
 
 
@@ -894,7 +882,7 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12int
     mp2r12energy = new MP2R12Energy_Diag(r12intermediates,debug);
   }
   else {
-    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,debug);
+    mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);
   }
   return(mp2r12energy);
 }

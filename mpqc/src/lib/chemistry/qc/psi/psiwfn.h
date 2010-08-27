@@ -279,6 +279,20 @@ namespace sc {
       Ref<OneBodyWavefunction> guess_wfn_;
 
     public:
+      /**
+        The KeyVal constructor uses all keywords of PsiWavefunction class and the following additional keywords:
+
+        <dl>
+
+        <dt><tt>guess_wavefunction</tt><dd> This specifies the initial
+        guess for the solution to the SCF equations.  This can be either a
+        OneBodyWavefunction object or the name of file that contains the
+        saved state of a OneBodyWavefunction object.  By default the
+        one-electron hamiltonian will be diagonalized to obtain the initial
+        guess.
+
+        </dl>
+       */
       PsiSCF(const Ref<KeyVal>&);
       PsiSCF(StateIn&);
       ~PsiSCF();

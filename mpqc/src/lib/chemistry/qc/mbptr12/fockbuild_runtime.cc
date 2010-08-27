@@ -155,6 +155,14 @@ namespace {
     return tkey;
   }
 
+  std::string
+  alternatespin_key(const std::string& key, SpinCase1 new_spin) {
+    ParsedOneBodyIntKey pkey(key);
+    std::string askey = ParsedOneBodyIntKey::key(pkey.ket(), pkey.bra(),
+                                                pkey.oper(), new_spin);
+    return askey;
+  }
+
   RefSCMatrix
   SymmToRect(const RefSymmSCMatrix& symm) {
     RefSCMatrix rect = symm.kit()->matrix(symm.dim(),symm.dim());
@@ -177,16 +185,21 @@ FockBuildRuntime::get(const std::string& key) {
       return registry_->value(tkey).t();
     }
 
+    // parse the key
     ParsedOneBodyIntKey pkey(key);
     const std::string& bra_key = pkey.bra();
     const std::string& ket_key = pkey.ket();
     const std::string& oper_key = pkey.oper();
+    const SpinCase1 spin = pkey.spin();
+
+    // if spin-nonpolarized and spin != AnySpinCase1, ask for AnySpinCase1
+    if (spin_polarized_ != true && spin != AnySpinCase1)
+      return get( alternatespin_key(key, AnySpinCase1) );
+
+
     Ref<OrbitalSpaceRegistry> idxreg = oreg_;
     Ref<OrbitalSpace> bra = idxreg->value(bra_key);
     Ref<OrbitalSpace> ket = idxreg->value(ket_key);
-
-    // determine spin
-    const SpinCase1 spin = pkey.spin();
 
     // is the AO matrix available?
     Ref<AOSpaceRegistry> aoidxreg = aoreg_;
@@ -293,18 +306,21 @@ FockBuildRuntime::get(const std::string& key) {
           if (need_K) {
             if (compute_K) {
               // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
-              RefSCMatrix KK[NSpinCases1];
               const int nunique_spins = spin_polarized_ ? 2 : 1;
+              // refer to spin indirectly to properly handle AnySpinCase1
+              std::vector<SpinCase1> spins(nunique_spins);
+              if (spin_polarized_) { spins[0] = Alpha; spins[1] = Beta; }
+              else { spins[0] = AnySpinCase1; }
               for (int s=0; s<nunique_spins; ++s) {
-                const SpinCase1 spin = static_cast<SpinCase1>(s);
-                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin) : SymmToRect(fmb->K(spin));
+                const SpinCase1 spin1 = spins[s];
+                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin1);
+                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin1) : SymmToRect(fmb->K(spin1));
                 registry_->add(kkey, KK);
                 if (debug()) {
                   KK.print(kkey.c_str());
                 }
+                if (spin == spin1) K = KK;
               }
-              K = KK[spin];
             }
             else { // have_K == true
               K = registry_->value(kkey);
@@ -349,18 +365,21 @@ FockBuildRuntime::get(const std::string& key) {
           if (need_K) {
             if (compute_K) {
               // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
-              RefSCMatrix KK[NSpinCases1];
               const int nunique_spins = spin_polarized_ ? 2 : 1;
+              // refer to spin indirectly to properly handle AnySpinCase1
+              std::vector<SpinCase1> spins(nunique_spins);
+              if (spin_polarized_) { spins[0] = Alpha; spins[1] = Beta; }
+              else { spins[0] = AnySpinCase1; }
               for (int s=0; s<nunique_spins; ++s) {
-                const SpinCase1 spin = static_cast<SpinCase1>(s);
-                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin) : fmb->K(spin);
+                const SpinCase1 spin1 = spins[s];
+                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin1);
+                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin1) : fmb->K(spin1);
                 registry_->add(kkey, KK);
                 if (debug()) {
                   KK.print(kkey.c_str());
                 }
+                if (spin == spin1) K = KK;
               }
-              K = KK[spin];
             }
             else { // have_K == true
               K = registry_->value(kkey);

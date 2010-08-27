@@ -59,32 +59,27 @@ namespace {
 
 //////////////////////////////////////////////////////////////////////////
 
-static ClassDesc PsiCCSD_PT2R12_cd(typeid(PsiCCSD_PT2R12), "PsiCCSD_PT2R12", 1,
+static ClassDesc PsiCCSD_PT2R12_cd(typeid(PsiCCSD_PT2R12), "PsiCCSD_PT2R12", 2,
                                    "public PsiCC", 0, create<PsiCCSD_PT2R12>,
                                    create<PsiCCSD_PT2R12>);
 
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
-  PsiCC(keyval), eccsd_(NAN) {
+  PsiCC(keyval), eccsd_(NAN), cabs_singles_energy_(0.0) {
   if (!replace_Lambda_with_T_)
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
 
-  if (mp2_only_)
-    PsiCC::do_test_t2_phases();
+  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  Ref<RefWavefunction> refinfo = RefWavefunctionFactory::make(world, this->reference(), false,
+                                                              this->nfzc(), this->nfzv());
+  r12world_ = new R12WavefunctionWorld(keyval, refinfo);
+  Ref<R12Technology> r12tech = r12world_->r12tech();
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+  const bool openshell = this->reference()->spin_polarized();
+  spinadapted_ = keyval->booleanvalue("spinadapted", KeyValValueboolean(openshell ? 0 : 1));
 
-  mbptr12_ = require_dynamic_cast<MBPT2_R12*>(keyval->describedclassvalue("mbpt2r12").pointer(), "PsiCCSD_PT2R12::PsiCCSD_PT2R12\n");
-  // test that Psi3 is compatible to the integral factory used by mbptr12_ object
-  if (mbptr12_->integral()->cartesian_ordering() != PsiWavefunction::cartesian_ordering()) {
-    throw InputError("PsiCCSD_PT2R12 -- ordering of functions in shells differs between the provided mbpt2r12 and Psi3. Use different Integral factory to construct mbpt2r12.",__FILE__,__LINE__);
-  }
+  r12eval_ = 0;
+  mp2r12_energy_ = 0;
 
-  // currently I don't use keyval input inheritance to couple this class and MBPT2_R12. Thus must check consistency
-  if (nfzc() != mbptr12_->nfzcore())
-    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- nfzc here differs from that in mbpt2r12");
-  if (nfzv() != mbptr12_->nfzvirt())
-    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- nfzc here differs from that in mbpt2r12");
-
-  const Ref<R12WavefunctionWorld> r12world = mbptr12_->r12world();
-  const Ref<R12Technology> r12tech = r12world->r12tech();
   // cannot do gbc = false yet
   if (!r12tech->gbc())
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
@@ -96,11 +91,30 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
+  // need to manually break up a cycle of smart pointers
+  R12WavefunctionWorld* r12world_ptr = r12world_.pointer();
+  r12world_.clear();
+  r12world_ptr->dereference();
+  r12world_ptr->~R12WavefunctionWorld();
 }
 
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
   PsiCC(s) {
-  mbptr12_ << SavableState::restore_state(s);
+  if (this->class_version() < 2)
+    throw ProgrammingError("cannot use archives older than version 2", __FILE__, __LINE__, class_desc());
+
+  r12eval_ << SavableState::restore_state(s);
+  r12world_ << SavableState::restore_state(s);
+  mp2r12_energy_ << SavableState::restore_state(s);
+
+  if((r12world()->r12tech()->ansatz()->orbital_product_GG()==R12Technology::OrbProdGG_pq) ||
+     (r12world()->r12tech()->ansatz()->orbital_product_gg()==R12Technology::OrbProdgg_pq)) {
+    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
+  }
+
+  int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
+  s.get(cabs_singles_);
+  s.get(cabs_singles_energy_);
   s.get(eccsd_);
 }
 
@@ -110,40 +124,31 @@ int PsiCCSD_PT2R12::gradient_implemented() const {
 
 void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
   PsiCC::save_data_state(s);
-  SavableState::save_state(mbptr12_.pointer(), s);
+  SavableState::save_state(r12eval_.pointer(),s);
+  SavableState::save_state(r12world_.pointer(),s);
+  SavableState::save_state(mp2r12_energy_.pointer(),s);
+
+  s.put((int)spinadapted_);
+  s.put(cabs_singles_);
+  s.put(cabs_singles_energy_);
   s.put(eccsd_);
 }
 
-void
-PsiCCSD_PT2R12::set_desired_value_accuracy(double acc) {
-  PsiCorrWavefunction::set_desired_value_accuracy(acc);
-  mbptr12_->set_desired_value_accuracy(acc);
-}
-
 void PsiCCSD_PT2R12::write_input(int convergence) {
-  import_occupations();
   Ref<PsiInput> input = get_psi_input();
   input->open();
   PsiCorrWavefunction::write_input(convergence);
-  // if testing T2 transform, obtain MP1 amplitudes
-  if (test_t2_phases_)
-    input->write_keyword("psi:wfn", "mp2");
-  else
-    input->write_keyword("psi:wfn", "ccsd");
+  input->write_keyword("psi:wfn", "ccsd");
   input->write_keyword("ccenergy:convergence", convergence);
   input->write_keyword("ccenergy:maxiter", maxiter_);
   input->close();
-}
-
-void PsiCCSD_PT2R12::import_occupations() {
-  reference()->import_occupations(mbptr12_->ref());
 }
 
 void PsiCCSD_PT2R12::compute() {
   // compute Psi3 CCSD wave function
   PsiCorrWavefunction::compute();
   // read Psi3 CCSD energy
-  if (!mp2_only_) {
+  {
     psi::PSIO& psio = exenv()->psio();
     psio.open(CC_INFO, PSIO_OPEN_OLD);
     psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
@@ -151,30 +156,13 @@ void PsiCCSD_PT2R12::compute() {
     psio.close(CC_INFO, 1);
   }
 
-  // compare reference energies from Psi3 and MPQC -- warn, if do not agree
-  {
-    const double nucrep_energy_mpqc = mbptr12_->molecule()->nuclear_repulsion_energy();
-    const double nucrep_energy_psi3 = nuclear_repulsion_energy();
-    const double enuc_diff = std::fabs(nucrep_energy_mpqc - nucrep_energy_psi3);
-    const double enuc_tol = 1e-15;
-    if (enuc_diff > enuc_tol)
-      ExEnv::out0() << "WARNING: PsiCCSD_PT2R12::compute -- MPQC and Psi3 nuclear repulsion energies differ by "
-                    << enuc_diff << " but expected less than " << enuc_tol << std::endl;
-    const double reference_energy_mpqc = mbptr12_->ref_energy();
-    const double reference_energy_psi3 = reference_energy();
-    const double eref_diff = std::fabs(reference_energy_mpqc - reference_energy_psi3);
-    const double eref_tol = desired_value_accuracy()*100.0;
-    if (eref_diff > eref_tol)
-      ExEnv::out0() << "WARNING: PsiCCSD_PT2R12::compute -- MPQC and Psi3 reference energies differ by "
-                    << eref_diff << " but expected less than " << eref_tol << std::endl;
+  // to compute intermediates make sure r12eval_ is ready
+  if (r12eval_.null()) {
+    r12world()->world()->memory(this->memory_);
+    r12eval_ = new R12IntEval(r12world());
+    r12eval_->debug(debug_);
   }
 
-  const Ref<R12WavefunctionWorld> r12world = mbptr12_->r12world();
-  const Ref<R12Technology> r12tech = r12world->r12tech();
-
-  // Compute intermediates
-  const double mp2r12_energy = mbptr12_->value();
-  Ref<R12IntEval> r12eval = mbptr12_->r12eval();
   RefSCMatrix Vpq[NSpinCases2];
   RefSCMatrix Vab[NSpinCases2];
   RefSCMatrix Via[NSpinCases2];
@@ -183,40 +171,38 @@ void PsiCCSD_PT2R12::compute() {
   RefSymmSCMatrix B[NSpinCases2];
   RefSymmSCMatrix X[NSpinCases2];
   RefSCMatrix A[NSpinCases2];
-  RefSCMatrix T2_MP1[NSpinCases2];
 
-  const int nspincases2 = r12eval->nspincases2();
+  Ref<R12Technology> r12tech = r12world_->r12tech();
+
+  const int nspincases2 = r12eval()->nspincases2();
   for (int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    if (r12eval->dim_oo(spincase2).n() == 0)
+    if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    Ref<R12WavefunctionWorld> r12world = r12eval->r12world();
-    const Ref<OrbitalSpace>& p1 = r12eval->orbs(spin1);
-    const Ref<OrbitalSpace>& p2 = r12eval->orbs(spin2);
+    const Ref<OrbitalSpace>& p1 = r12eval()->orbs(spin1);
+    const Ref<OrbitalSpace>& p2 = r12eval()->orbs(spin2);
     const unsigned int np1 = p1->rank();
     const unsigned int np2 = p2->rank();
 
-    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
+    const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(spin1);
+    const Ref<OrbitalSpace>& vir2_act = r12eval()->vir_act(spin2);
 
-    Vpq[s] = r12eval->V(spincase2, p1, p2);
-    Vij[s] = r12eval->V(spincase2);
-    X[s] = r12eval->X(spincase2);
-    B[s] = r12eval->B(spincase2);
-    if (test_t2_phases_)
-      T2_MP1[s] = r12eval->T2(spincase2);
+    Vpq[s] = r12eval()->V(spincase2, p1, p2);
+    Vij[s] = r12eval()->V(spincase2);
+    X[s] = r12eval()->X(spincase2);
+    B[s] = r12eval()->B(spincase2);
 
-    const Ref<OrbitalSpace>& v1 = r12eval->vir_act(spin1);
-    const Ref<OrbitalSpace>& v2 = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& v1 = r12eval()->vir_act(spin1);
+    const Ref<OrbitalSpace>& v2 = r12eval()->vir_act(spin2);
     const unsigned int nv1 = v1->rank();
     const unsigned int nv2 = v2->rank();
-    const Ref<OrbitalSpace>& o1 = r12eval->occ_act(spin1);
-    const Ref<OrbitalSpace>& o2 = r12eval->occ_act(spin2);
+    const Ref<OrbitalSpace>& o1 = r12eval()->occ_act(spin1);
+    const Ref<OrbitalSpace>& o2 = r12eval()->occ_act(spin2);
     const unsigned int no1 = o1->rank();
     const unsigned int no2 = o2->rank();
     const RefSCDimension v1v2dim = (spincase2 != AlphaBeta) ? pairdim<AntiSymm>(nv1,nv2) : pairdim<ASymm>(nv1,nv2);
@@ -236,7 +222,7 @@ void PsiCCSD_PT2R12::compute() {
       else
         xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vab[s],v1_to_p1,v2_to_p2,np1,np2);
       if (r12tech->ebc() == false) {
-        A[s] = r12eval->A(spincase2);
+        A[s] = r12eval()->A(spincase2);
       }
     }
 
@@ -260,7 +246,7 @@ void PsiCCSD_PT2R12::compute() {
     else
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
     // Vai[AlphaBeta] is also needed if spin-polarized reference is used
-    if (spincase2 == AlphaBeta && r12world->ref()->spin_polarized()) {
+    if (spincase2 == AlphaBeta && r12world()->ref()->spin_polarized()) {
       const RefSCDimension v1o2dim = pairdim<ASymm>(nv1,no2);
       Vai[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1o2dim);
       xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vai[s],v1_to_p1,o2_to_p2,np1,np2);
@@ -288,19 +274,17 @@ void PsiCCSD_PT2R12::compute() {
       Via[s].print("Via matrix");
       if (Vai[s].nonnull())
         Vai[s].print("Vai matrix");
-      if (test_t2_phases_)
-        T2_MP1[s].print("MP1 T2 amplitudes");
     }
     if (debug() >= DefaultPrintThresholds::mostO4) {
       Vij[s].print("Vij matrix");
     }
 #if TEST_V
-    RefSCMatrix Vab_test = r12eval->V(spincase2,vir1_act,vir2_act);
+    RefSCMatrix Vab_test = r12eval()->V(spincase2,vir1_act,vir2_act);
     Vab_test.print("Vab matrix (test)");
     (Vab[s] - Vab_test).print("Vab - Vab (test): should be 0");
 #endif
 #if TEST_V
-    RefSCMatrix Via_test = r12eval->V(spincase2,occ1_act,vir2_act);
+    RefSCMatrix Via_test = r12eval()->V(spincase2,occ1_act,vir2_act);
     Via_test.print("Via matrix (test)");
     (Via[s] - Via_test).print("Via - Via (test): should be 0");
 #endif
@@ -308,7 +292,7 @@ void PsiCCSD_PT2R12::compute() {
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
   //
-  // Convert CC amplitudes to MPQC orbitals
+  // Obtain CC amplitudes from Psi and copy into local matrices
   //
   RefSCMatrix T1[NSpinCases1];
   RefSCMatrix T2[NSpinCases2];
@@ -316,170 +300,36 @@ void PsiCCSD_PT2R12::compute() {
   // Form transforms and transform T1
   RefSCMatrix MPQC2PSI_tform_oa[NSpinCases1];
   RefSCMatrix MPQC2PSI_tform_va[NSpinCases1];
-  const int nspincases1 = r12eval->nspincases1();
+  const int nspincases1 = r12eval()->nspincases1();
   for(int s=0; s<nspincases1; ++s) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
-    // print out MPQC orbitals to compare to Psi orbitals below;
-    const Ref<OrbitalSpace>& orbs_sb_mpqc = r12eval->r12world()->ref()->orbs_sb(spin);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
-      orbs_sb_mpqc->coefs().print(prepend_spincase(spin,"MPQC eigenvector").c_str());
-      orbs_sb_mpqc->evals().print(prepend_spincase(spin,"MPQC eigenvalues").c_str());
-    }
-    const Ref<OrbitalSpace>& occ_act = r12eval->occ_act(spin);
-    const Ref<OrbitalSpace>& vir_act = r12eval->vir_act(spin);
-
-    // Psi stores amplitudes in Pitzer (symmetry-blocked) order. Construct such spaces for active occupied and virtual spaces
-    Ref<OrbitalSpace> occ_act_sb_psi = occ_act_sb(spin);
-    Ref<OrbitalSpace> vir_act_sb_psi = vir_act_sb(spin);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
-      occ_act->coefs().print(prepend_spincase(spin,"Active occupied MPQC eigenvector").c_str());
-      occ_act_sb_psi->coefs().print(prepend_spincase(spin,"Active occupied Psi3 eigenvector").c_str());
-      occ_act_sb_psi->evals().print(prepend_spincase(spin,"Active occupied Psi3 eigenvalues").c_str());
-      vir_act->coefs().print(prepend_spincase(spin,"Active virtual MPQC eigenvector").c_str());
-      vir_act_sb_psi->coefs().print(prepend_spincase(spin,"Active virtual Psi3 eigenvector").c_str());
-      vir_act_sb_psi->evals().print(prepend_spincase(spin,"Active virtual Psi3 eigenvalues").c_str());
-    }
-
-    MPQC2PSI_tform_oa[spin] = transform(*occ_act_sb_psi, *occ_act,
-                                        localkit);
-    MPQC2PSI_tform_va[spin] = transform(*vir_act_sb_psi, *vir_act,
-                                        localkit);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
-      MPQC2PSI_tform_oa[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active occupied orbitals").c_str());
-      MPQC2PSI_tform_va[spin].print(prepend_spincase(spin,"MPQC->Psi3 transform for active virtual orbitals").c_str());
-    }
     RefSCMatrix T1_psi = this->T1(spin);
-    T1[spin] = transform_T1(MPQC2PSI_tform_oa[spin], MPQC2PSI_tform_va[spin], T1_psi,
-                            localkit);
+    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+    T1[s] = localkit->matrix(T1_psi.rowdim(), T1_psi.coldim());
+    T1[s]->convert(T1_psi);
     if (debug() >= DefaultPrintThresholds::mostN2) {
-      T1[spin].print(prepend_spincase(spin,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):").c_str());
+      T1[spin].print(prepend_spincase(spin,"CCSD T1 amplitudes:").c_str());
     }
   }
   if (nspincases1 == 1) {
-    MPQC2PSI_tform_oa[Beta] = MPQC2PSI_tform_oa[Alpha];
-    MPQC2PSI_tform_va[Beta] = MPQC2PSI_tform_va[Alpha];
     T1[Beta] = T1[Alpha];
   }
-
-#define TRY_USING_SPARSEMAP 0
-#if TRY_USING_SPARSEMAP
-  // map MPQC (energy-ordered) orbitals to Psi (symmetry-ordered) orbitals
-  SparseMOIndexMap MPQC2PSI_occ1_act;
-  SparseMOIndexMap MPQC2PSI_vir1_act;
-  bool use_sparsemap = true;
-  {
-    bool can_map_occ_act = true;
-    bool can_map_vir_act = true;
-    try {
-      SparseMOIndexMap tmpmap_o(sparsemap(*occ1_act_sb_psi,*occ1_act,1e-9));
-      std::swap(MPQC2PSI_occ1_act,tmpmap_o);
-    }
-    catch (CannotConstructMap& e) {
-      can_map_occ_act = false;
-    }
-    try {
-      SparseMOIndexMap tmpmap_v(sparsemap(*vir1_act_sb_psi,*vir1_act,1e-9));
-      std::swap(MPQC2PSI_vir1_act,tmpmap_v);
-    }
-    catch (CannotConstructMap& e) {
-      can_map_vir_act = false;
-    }
-
-    use_sparsemap = use_sparsemap && can_map_occ_act && can_map_vir_act;
-    if (use_sparsemap_only_) {
-      if (!can_map_occ_act)
-        throw ProgrammingError("PsiCCSD_PT2R12::compute() -- cannot map MPQC occ act. orbitals to Psi occ act. orbitals",__FILE__,__LINE__);
-      if (!can_map_vir_act)
-        throw ProgrammingError("PsiCCSD_PT2R12::compute() -- cannot map MPQC vir act. orbitals to Psi vir act. orbitals",__FILE__,__LINE__);
-    }
-  }
-  {
-    bool can_map_occ_act = true;
-    bool can_map_vir_act = true;
-    try {
-      SparseMOIndexMap tmpmap_o(sparsemap(*occ2_act_sb_psi,*occ2_act,1e-9));
-      std::swap(MPQC2PSI_occ2_act,tmpmap_o);
-    }
-    catch (CannotConstructMap& e) {
-      can_map_occ_act = false;
-    }
-    try {
-      SparseMOIndexMap tmpmap_v(sparsemap(*vir2_act_sb_psi,*vir2_act,1e-9));
-      std::swap(MPQC2PSI_vir2_act,tmpmap_v);
-    }
-    catch (CannotConstructMap& e) {
-      can_map_vir_act = false;
-    }
-
-    use_sparsemap = use_sparsemap && can_map_occ_act && can_map_vir_act;
-    if (use_sparsemap_only_) {
-      if (!can_map_occ_act)
-      throw ProgrammingError("PsiCCSD_PT2R12::compute() -- cannot map MPQC occ act. orbitals to Psi occ act. orbitals",__FILE__,__LINE__);
-      if (!can_map_vir_act)
-      throw ProgrammingError("PsiCCSD_PT2R12::compute() -- cannot map MPQC vir act. orbitals to Psi vir act. orbitals",__FILE__,__LINE__);
-    }
-  }
-
-  if (use_sparsemap) {
-    T1[spin1] = transform_T1(MPQC2PSI_occ1_act, MPQC2PSI_vir1_act, T1_psi_1,
-                             localkit);
-    T1[spin2] = transform_T1(MPQC2PSI_occ2_act, MPQC2PSI_vir2_act, T1_psi_2,
-                             localkit);
-    T2[spincase2] = transform_T2(MPQC2PSI_occ1_act, MPQC2PSI_occ2_act,
-                                 MPQC2PSI_vir1_act, MPQC2PSI_vir2_act, T2_psi,
-                                 localkit);
-    if (test_t2_phases_) {
-      compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
-                 occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
-    }
-    if (debug() >= DefaultPrintThresholds::mostO2N2) {
-      T1[spin1].print(prepend_spincase(spin1,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals):").c_str());
-      T1[spin2].print(prepend_spincase(spin2,"CCSD T1 amplitudes from Psi3 (in MPQC orbitals):").c_str());
-      T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes from Psi3 (in MPQC orbitals):").c_str());
-    }
-  }
-  else
-#endif
 
   for(int s=0; s<nspincases2; ++s) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
 
-    if (r12eval->dim_oo(spincase2).n() == 0)
+    if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
-
-    // grab CC amplitudes
     RefSCMatrix T2_psi = this->T2(spincase2);
-    T2[spincase2] = transform_T2(MPQC2PSI_tform_oa[spin1], MPQC2PSI_tform_oa[spin2],
-                                 MPQC2PSI_tform_va[spin1], MPQC2PSI_tform_va[spin2], T2_psi,
-                                 localkit);
-    // same-spin T2 from Psi had unrestricted indices to make the tranform easier
-    // convert to i<j, a<b by antisymmetrizing and scaling by 0.5
-    if (spincase2 != AlphaBeta) {
-      RefSCMatrix T2_tmp = T2[spincase2].clone();
-      T2_tmp.assign(T2[spincase2]);
-      T2[spincase2] = 0;
-      T2[spincase2] = localkit->matrix(r12eval->dim_oo(spincase2),r12eval->dim_vv(spincase2));
-      antisymmetrize<false>(T2[spincase2],T2_tmp,occ1_act,occ2_act,vir1_act,vir2_act);
-      T2[spincase2].scale(0.5);
-    }
+    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+    T2[s] = localkit->matrix(T2_psi.rowdim(), T2_psi.coldim());
+    T2[s]->convert(T2_psi);
 
-    if (test_t2_phases_) {
-      const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
-      const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
-      const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
-      const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
-      compare_T2(T2[spincase2], T2_MP1[spincase2], spincase2, occ1_act->rank(),
-                 occ2_act->rank(), vir1_act->rank(), vir2_act->rank());
-    }
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
-      T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes from Psi3 (in MPQC orbitals, obtained by transform):").c_str());
+      T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());
     }
   }
 
@@ -489,13 +339,13 @@ void PsiCCSD_PT2R12::compute() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    if (r12eval->dim_oo(spincase2).n() == 0)
+    if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    const Ref<OrbitalSpace>& occ1_act = r12eval->occ_act(spin1);
-    const Ref<OrbitalSpace>& occ2_act = r12eval->occ_act(spin2);
-    const Ref<OrbitalSpace>& vir1_act = r12eval->vir_act(spin1);
-    const Ref<OrbitalSpace>& vir2_act = r12eval->vir_act(spin2);
+    const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
+    const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(spin1);
+    const Ref<OrbitalSpace>& vir2_act = r12eval()->vir_act(spin2);
     const bool p1_equiv_p2 = (occ1_act == occ2_act) && (vir1_act == vir2_act);
 
 
@@ -503,8 +353,7 @@ void PsiCCSD_PT2R12::compute() {
     H1_R0[s] = Vij[s].clone();
     H1_R0[s].assign(Vij[s]);
 
-    // if not testing MP2, compute other terms in <R|Hb|0>
-    if (!mp2_only_) {
+    {
 
       // the leading term in <R|(HT)|0> is T2.Vab
       // if not assuming EBC then also include coupling matrix term
@@ -514,7 +363,7 @@ void PsiCCSD_PT2R12::compute() {
 
       // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
       if ( completeness_order_for_intermediates_ >= 3 ||
-          (completeness_order_for_intermediates_ >= 2 && !r12eval->bc()) ) {
+          (completeness_order_for_intermediates_ >= 2 && !r12eval()->bc()) ) {
 
         // Via . T1
         RefSCMatrix VT1_2 = contract_Via_T1ja(true,Via[s],T1[spin2],occ1_act,vir2_act,occ2_act);
@@ -523,8 +372,8 @@ void PsiCCSD_PT2R12::compute() {
         if (p1_equiv_p2) {
           // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
           VT1_2.scale(2.0);
-          const Ref<OrbitalSpace>& xspace1 = r12eval->xspace(spin1);
-          const Ref<OrbitalSpace>& xspace2 = r12eval->xspace(spin2);
+          const Ref<OrbitalSpace>& xspace1 = r12eval()->xspace(spin1);
+          const Ref<OrbitalSpace>& xspace2 = r12eval()->xspace(spin2);
           if (spincase2 == AlphaBeta)
             symmetrize12<false,ASymm,ASymm>(VT1, VT1_2, xspace1, xspace2, occ1_act, occ2_act);
           else
@@ -539,61 +388,14 @@ void PsiCCSD_PT2R12::compute() {
         // If needed, antisymmetrize VT1
         if (spincase2 != AlphaBeta) {
           RefSCMatrix VT1Anti = HT.clone();
-          const Ref<OrbitalSpace>& xspace1 = r12eval->xspace(spin1);
-          const Ref<OrbitalSpace>& xspace2 = r12eval->xspace(spin2);
+          const Ref<OrbitalSpace>& xspace1 = r12eval()->xspace(spin1);
+          const Ref<OrbitalSpace>& xspace2 = r12eval()->xspace(spin2);
           symmetrize<false,AntiSymm,ASymm,AntiSymm,AntiSymm>(VT1Anti,VT1,xspace1,xspace2,occ1_act,occ2_act);
           VT1 = VT1Anti;
         }
         if (debug() >= DefaultPrintThresholds::mostO2N2) {
           VT1.print("Via.T1 + T1.Vai");
         }
-
-        // test against V evaluator
-#if TEST_ViaT1
-        if (spincase2 == AlphaBeta) {
-          RefSCMatrix VIj, ViJ;
-          RefSCMatrix vir2_act_coefs = vir2_act->coefs();
-          RefSCMatrix to_t1;
-          {
-            RefSCDimension rowdim = vir2_act->dim();
-            RefSCDimension coldim = occ2_act->dim();
-            to_t1 = vir2_act_coefs.kit()->matrix(rowdim, coldim);
-            double* tmp = new double[rowdim.n() * coldim.n()];
-            T1[spin2].t().convert(tmp);
-            to_t1.assign(tmp);
-            delete[] tmp;
-          }
-          RefSCMatrix Tocc2_act_coefs = vir2_act_coefs * to_t1;
-          Ref<OrbitalSpace> Tocc2_act = new OrbitalSpace("i(t1)", "active occupied orbitals (weighted by T1)",
-              occ2_act, Tocc2_act_coefs, occ2_act->basis());
-          ViJ = r12eval->V(spincase2, occ1_act, Tocc2_act);
-          if (p1_equiv_p2) {
-            // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
-            ViJ.scale(2.0);
-            symmetrize<false>(ViJ, ViJ, r12eval->xspace(spin1), occ1_act);
-          }
-          else {
-            RefSCMatrix vir1_act_coefs = vir1_act->coefs();
-            RefSCMatrix to_t1;
-            {
-              RefSCDimension rowdim = vir1_act->dim();
-              RefSCDimension coldim = occ1_act->dim();
-              to_t1 = vir1_act_coefs.kit()->matrix(rowdim, coldim);
-              double* tmp = new double[rowdim.n() * coldim.n()];
-              T1[spin1].t().convert(tmp);
-              to_t1.assign(tmp);
-              delete[] tmp;
-            }
-            RefSCMatrix Tocc1_act_coefs = vir1_act_coefs * to_t1;
-            Ref<OrbitalSpace> Tocc1_act = new OrbitalSpace("I(t1)", "active occupied orbitals (weighted by T1)",
-                occ1_act, Tocc1_act_coefs, occ1_act->basis());
-            VIj = r12eval->V(spincase2, Tocc1_act, occ2_act);
-          }
-          (VIj+ViJ).print("Via.T1 computed with R12WavefunctionWorld::V()");
-          VT1.print("Via.T1 + T1.Vai");
-          //(VT1 - ViJ - VIj).print("Via.T1 - Via.T1 (test): should be zero");
-        }
-#endif
 
         HT.accumulate(VT1);
 
@@ -611,24 +413,23 @@ void PsiCCSD_PT2R12::compute() {
   }
   // Make H1_R0[AlphaAlpha] if this is a closed-shell case (it isn't computed then)
   if (nspincases2 == 1) {
-    H1_R0[AlphaAlpha] = r12eval->V(AlphaAlpha).clone();
-    antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval->xspace(Alpha),
-                   r12eval->occ_act(Alpha));
+    H1_R0[AlphaAlpha] = r12eval()->V(AlphaAlpha).clone();
+    antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval()->xspace(Alpha),
+                   r12eval()->occ_act(Alpha));
   }
 
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C . H1_R0
   // H0_RR is the usual B of the standard MP-R12 theory
   // if using screening approximations and replacing lambdas with Ts H1_0R = transpose(H1_R0)
-  const bool diag = r12eval->r12world()->r12tech()->ansatz()->diag();
-  Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval,r12eval->r12world()->r12tech()->stdapprox());
+  const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
+  Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval(),r12eval()->r12world()->r12tech()->stdapprox());
   // E2 = - Vbar . B^{-1} . Vbar, where Vbar = V + VT
   for(int i=0; i<NSpinCases2; i++) {
     SpinCase2 spincase2i=static_cast<SpinCase2>(i);
-    if (r12eval->dim_oo(spincase2i).n() == 0)
+    if (r12eval()->dim_oo(spincase2i).n() == 0)
       continue;
     r12intermediates->assign_V(spincase2i,H1_R0[spincase2i]);
   }
-  r12intermediates->V_computed(true);
 
   const bool new_energy=(diag==true) ? true : false;
   Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,debug(),new_energy);
@@ -638,7 +439,7 @@ void PsiCCSD_PT2R12::compute() {
   r12energy->compute();
   for (int s=0; s<num_unique_spincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-    if (r12eval->dim_oo(spincase2).n() == 0)
+    if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
     E2[s]=r12energy->ef12tot(spincase2);
@@ -664,14 +465,8 @@ void PsiCCSD_PT2R12::compute() {
                   << std::endl;
   }
   // e2 will include cabs singles energy, if mbpt2-r12 includes it
-  e2 += mbptr12_->cabs_singles_energy();
+  e2 += cabs_singles_energy();
 
-  ExEnv::out0() << indent << "E2(MP2)       = "<< scprintf("%20.15lf",mbptr12_->r12_corr_energy())
-                << std::endl;
-  ExEnv::out0() << indent << "EMP2          = "<< scprintf("%20.15lf",mbptr12_->corr_energy() - mbptr12_->r12_corr_energy())
-                << std::endl;
-  ExEnv::out0() << indent << "EMP2R12       = "<< scprintf("%20.15lf",mbptr12_->corr_energy())
-                << std::endl;
   ExEnv::out0() << indent << "E2            = "<< scprintf("%20.15lf",e2)
                 << std::endl;
   ExEnv::out0() << indent << "ECCSD         = "<< scprintf("%20.15lf",eccsd_)
@@ -684,11 +479,24 @@ void PsiCCSD_PT2R12::compute() {
   set_energy(reference_energy() + e2 + eccsd_);
 }
 
+double
+PsiCCSD_PT2R12::cabs_singles_energy()
+{
+  return cabs_singles_energy_;
+}
+
 void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << indent << "PsiCCSD_PT2R12:" << std::endl;
   o << incindent;
-  PsiWavefunction::print(o);
-  mbptr12_->r12eval()->r12world()->print(o);
+  o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << std::endl;
+  o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << std::endl;
+  if (cabs_singles_) {
+    o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)
+                                          << std::endl;
+  }
+
+  r12world()->print(o);
+  PsiCC::print(o);
   o << decindent;
 }
 
@@ -722,15 +530,10 @@ void PsiCCSD_PT2R12T::save_data_state(StateOut&s) {
 }
 
 void PsiCCSD_PT2R12T::write_input(int convergence) {
-  import_occupations();
   Ref<PsiInput> input = get_psi_input();
   input->open();
   PsiCorrWavefunction::write_input(convergence);
-  // if testing T2 transform, obtain MP1 amplitudes
-  if (test_t2_phases_)
-    input->write_keyword("psi:wfn", "mp2");
-  else
-    input->write_keyword("psi:wfn", "ccsd_t");
+  input->write_keyword("psi:wfn", "ccsd_t");
   input->write_keyword("ccenergy:convergence", convergence);
   input->write_keyword("ccenergy:maxiter", maxiter_);
   input->close();
@@ -739,7 +542,7 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
 void PsiCCSD_PT2R12T::compute() {
   PsiCCSD_PT2R12::compute();
   const double e_ccsd_pt2r12 = value() - reference_energy();
-  if (!mp2_only_) e_t_ = exenv()->chkpt().rd_e_t();
+  e_t_ = exenv()->chkpt().rd_e_t();
   const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
   ExEnv::out0() << indent << "E(T)          = " << scprintf("%20.15lf",e_t_) << std::endl;
   ExEnv::out0() << indent << "ECCSD_PT2R12T = " << scprintf("%20.15lf",e_ccsd_pt2r12t)

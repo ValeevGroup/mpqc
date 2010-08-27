@@ -54,12 +54,6 @@ namespace sc {
       // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
       static const bool use_sparsemap_only_ = false;
 
-      /// set to true to test whether T2 transform from Psi3 to MPQC orbitals works correctly (causes Psi3 to do MP1 instead of CCSD)
-      static bool test_t2_phases_;
-      static void do_test_t2_phases() {
-        test_t2_phases_ = true;
-      }
-      
       /// read in T1-like quantity of spincase spin using DPD label L
       RefSCMatrix T1(SpinCase1 spin, const std::string& L);
       /// read in T2-like quantity of spincase spin using DPD label L

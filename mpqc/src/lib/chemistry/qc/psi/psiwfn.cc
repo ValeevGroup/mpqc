@@ -301,6 +301,17 @@ namespace sc {
       }
     }
 
+    // compare nuclear repulsion energies from Psi3 and MPQC -- warn, if do not agree
+    {
+      const double nucrep_energy_mpqc = this->molecule()->nuclear_repulsion_energy();
+      const double nucrep_energy_psi3 = this->nuclear_repulsion_energy();
+      const double enuc_diff = std::fabs(nucrep_energy_mpqc - nucrep_energy_psi3);
+      const double enuc_tol = 1e-15;
+      if (enuc_diff > enuc_tol)
+        ExEnv::out0() << "WARNING: PsiWavefunction::compute -- MPQC and Psi3 nuclear repulsion energies differ by "
+                      << enuc_diff << " but expected less than " << enuc_tol << std::endl;
+    }
+
     // read output
     if (gradient_needed()) {
       Ref<PsiFile11> file11 = exenv()->get_psi_file11();
@@ -461,6 +472,15 @@ namespace sc {
     socc_ = read_occ(keyval, "socc", nirrep_);
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
     diisdamp_ = keyval->doublevalue("diisdamp",KeyValValuefloat(0.00));
+
+    guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
+    if (guess_wfn_.nonnull()) {
+      if (guess_wfn_->desired_value_accuracy_set_to_default())
+        guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
+      // get energy to make sure that it's computed.
+      const double energy = guess_wfn_->value();
+    }
+
   }
 
   PsiSCF::~PsiSCF() {
@@ -957,14 +977,8 @@ namespace sc {
       }
 
       // try guess wavefunction
-      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
-      if (guess_wfn_.nonnull()) {
-        if (guess_wfn_->desired_value_accuracy_set_to_default())
-          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
-        // get energy to make sure that it's computed.
-        const double energy = guess_wfn_->value();
+      if (guess_wfn_.nonnull())
         import_occupations(guess_wfn_);
-      }
     }
     else {
       const int nelectron = accumulate(docc_.begin(), docc_.end(), 0) * 2;
@@ -1043,15 +1057,10 @@ namespace sc {
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiHSOSHF::PsiHSOSHF -- inconsistent total_charge and multiplicty");
       }
+
       // try guess wavefunction
-      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
-      if (guess_wfn_.nonnull()) {
-        if (guess_wfn_->desired_value_accuracy_set_to_default())
-          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
-        // get energy to make sure that it's computed.
-        const double energy = guess_wfn_->value();
+      if (guess_wfn_.nonnull())
         import_occupations(guess_wfn_);
-      }
     }
     else {
       const int nsocc = accumulate(socc_.begin(), socc_.end(), 0);
@@ -1145,15 +1154,10 @@ namespace sc {
       if ((nuclear_charge + charge_)%2 != (multp_ - 1)%2) {
         throw InputError("PsiUHF::PsiUHF -- inconsistent total_charge and multiplicity");
       }
+
       // try guess wavefunction
-      guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
-      if (guess_wfn_.nonnull()) {
-        if (guess_wfn_->desired_value_accuracy_set_to_default())
-          guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
-        // get energy to make sure that it's computed.
-        const double energy = guess_wfn_->value();
+      if (guess_wfn_.nonnull())
         import_occupations(guess_wfn_);
-      }
     }
     else {
       const int nsocc = accumulate(socc_.begin(), socc_.end(), 0);

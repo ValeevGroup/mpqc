@@ -44,6 +44,9 @@
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/registry.timpl.h>
 #include <chemistry/qc/mbptr12/ref.h>
+#if HAVE_PSIMPQCIFACE
+# include <chemistry/qc/psi/psiref.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -172,8 +175,17 @@ R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 bool
 R12WavefunctionWorld::sdref() const {
   // only references based on OneBodyWavefunction are detected as single-determinant references!
-  Ref<SD_RefWavefunction> sd; sd << ref();
-  return sd.nonnull();
+  {
+    Ref<SD_RefWavefunction> sd; sd << ref();
+    if (sd.nonnull()) return true;
+  }
+#if HAVE_PSIMPQCIFACE
+  {
+    Ref<PsiSCF_RefWavefunction> sd; sd << ref();
+    if (sd.nonnull()) return true;
+  }
+#endif
+  return false;
 }
 
 void

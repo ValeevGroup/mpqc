@@ -72,8 +72,6 @@ namespace sc {
                             "public PsiCorrWavefunction", 0, create<PsiCC>,
                             create<PsiCC>);
 
-  bool PsiCC::test_t2_phases_ = false;
-
   PsiCC::PsiCC(const Ref<KeyVal>&keyval) :
     PsiCorrWavefunction(keyval) {
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
@@ -245,9 +243,8 @@ namespace sc {
     //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
     RefSCMatrix T = matrixkit()->matrix(rowdim, coldim);
     T.assign(0.0);
-    // if testing T2 transform, T1 amplitudes are not produced
-    // also test that T1 is not empty
-    if (!test_t2_phases_ && rowdim.n() && coldim.n()) {
+    // test that T1 is not empty
+    if (rowdim.n() && coldim.n()) {
       // read in the i by a matrix in DPD format
       unsigned int nia_dpd = 0;
       for (unsigned int h=0; h<nirrep_; ++h)

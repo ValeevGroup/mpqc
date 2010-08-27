@@ -45,10 +45,14 @@ namespace sc {
   class PsiCCSD_PT2R12 : public PsiCC {
       double eccsd_;
 
-      Ref<MBPT2_R12> mbptr12_;
+      Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
+      Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
+      Ref<MP2R12Energy> mp2r12_energy_;
+      bool spinadapted_;
+      bool cabs_singles_;
+      double cabs_singles_energy_;
+
     protected:
-      /// set to true to test the code against MP2-R12. Will also test the T2 Psi3->MPQC transform
-      static const bool mp2_only_ = false;
       /// set to true to use Ts instead of Lambdas
       static const bool replace_Lambda_with_T_ = true;
       /** default was to include up to 3rd-order terms in the energy.
@@ -62,9 +66,19 @@ namespace sc {
               - 1;
 
       void write_input(int conv);
-      /// compute MPQC reference and pass occupations from that to Psi
-      void import_occupations();
     public:
+      /** The KeyVal constructor uses keywords of PsiCC, WavefunctionWorld, and R12WavefunctionWorld, and the following keywords
+          <dl>
+
+    <dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
+    or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
+    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
+    is not used.
+
+      <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
+      CABS singles and include it into the CC-R12 energy. The default is false.
+
+      </dl> */
       PsiCCSD_PT2R12(const Ref<KeyVal>&);
       PsiCCSD_PT2R12(StateIn&);
       ~PsiCCSD_PT2R12();
@@ -72,8 +86,10 @@ namespace sc {
       int gradient_implemented() const;
       void compute();
 
-      /// reimplementation of PsiCorrWavefunction::set_desired_value_accuracy
-      void set_desired_value_accuracy(double acc);
+      const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
+      const Ref<R12IntEval>& r12eval() const { return r12eval_; }
+      // CABS singles contribution to the total energy
+      double cabs_singles_energy();
 
       /// CCSD energy
       double eccsd();
@@ -87,6 +103,8 @@ namespace sc {
       double e_t_;
       void write_input(int conv);
     public:
+      /** The KeyVal constructor uses keywords of PsiCCSD_PT2R12.
+      */
       PsiCCSD_PT2R12T(const Ref<KeyVal>&);
       PsiCCSD_PT2R12T(StateIn&);
       ~PsiCCSD_PT2R12T();

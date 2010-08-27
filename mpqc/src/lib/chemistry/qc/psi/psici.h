@@ -47,12 +47,15 @@ namespace sc {
         <dt><tt>valence_obwfn</tt><dd> Specifies the OneBodyWavefunction object used to determine the valence orbitals.
         Recommended to use the minimal-basis HF wavefunction.
 
-        <dt><tt>root</tt><dd> Specifies which CI vector to pick in DETCI. The default is 1, i.e. the lowest root.
+        <dt><tt>root</tt><dd> Specifies which state to solve for. The default is 1, i.e. the ground state. Value of <tt>root</tt>
+        cannot be greater than <tt>nroot</tt>
 
         <dt><tt>detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI. The default is the value specified with keyword
         root. \sa keyword "detcas_detci_num_roots"
 
         <dt><tt>relax_core</tt><dd> Specifies whether to relax core orbitals in RASSCF. Default is false.
+
+        <dt><tt>state_averaged</tt><dd> Specifies whether to use state averaging in RASSCF.
 
        */
       PsiCI(const Ref<KeyVal> &keyval);

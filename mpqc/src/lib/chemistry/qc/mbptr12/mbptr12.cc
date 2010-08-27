@@ -76,7 +76,6 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
   }
 
-  int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int unv; s.get(unv); jinmei_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
   s.get(cabs_singles_);
@@ -106,8 +105,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), false,
-                                                              nfzcore(), nfzvirt(),
-                                                              vbs);
+                                                        nfzcore(), nfzvirt(),
+                                                        vbs);
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
@@ -165,7 +164,6 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(r12c_energy_.pointer(),s);
 
-  s.put((int)spinadapted_);
   s.put((int)jinmei_energy_);
   s.put(mp2_corr_energy_);
   s.put(cabs_singles_);
@@ -182,8 +180,6 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
 
-  o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
-  o << indent << "Use new MP2R12Energy: " << (jinmei_energy_ ? "true" : "false") << endl;
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << endl;
   if (cabs_singles_) {
     o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)

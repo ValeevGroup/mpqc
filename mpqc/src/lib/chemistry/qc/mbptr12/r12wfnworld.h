@@ -62,8 +62,10 @@ public:
   R12WavefunctionWorld(StateIn&);
     /** KeyVal constructor uses keywords of R12Technology and the following keywords:
 
-	<dt><tt>spinadapted</tt><dd> This boolean keyword specifies whether spin-adapted algorithms
-	should be used, if possible.
+    <dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
+    or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
+    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
+    is not used.
 
         </dl>
     */

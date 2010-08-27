@@ -58,7 +58,6 @@ class MP2R12Energy;
 methods. */
 class MBPT2_R12: public MBPT2 {
 
-    bool spinadapted_;
     bool jinmei_energy_;
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
@@ -94,11 +93,6 @@ class MBPT2_R12: public MBPT2 {
     MBPT2_R12(StateIn&);
     /** The KeyVal constructor uses keywords of MBPT2, WavefunctionWorld, and R12WavefunctionWorld, and the following keywords
         <dl>
-
-	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
-	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
-    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
-    is not used.
 
     <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
     plot pair function given by <tt>plot_pair_function</tt>.

@@ -463,14 +463,15 @@ namespace sc {
         if (ntypes_ == 1)
           return F(0);
         else {
-          return (spin == Alpha) ? F(0) + F(1) : F(0) - F(1);
+          return (spin == Alpha) ? F(0) : F(1);
         }
       }
       ResultType K(SpinCase1 spin) const {
         if (ntypes_ == 1)
           return K(0);
         else {
-          return (spin == Alpha) ? K(0) + K(1) : K(0) - K(1);
+          // DF-based computed alpha and beta exchange matrices
+          return (spin == Alpha) ? K(0) : K(1);
         }
       }
 

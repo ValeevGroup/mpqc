@@ -292,11 +292,19 @@ FockBuildRuntime::get(const std::string& key) {
           RefSCMatrix K;
           if (need_K) {
             if (compute_K) {
-              K = use_density_fitting() ? fmb_df->K() : SymmToRect(fmb->K(spin));
-              registry_->add(kkey, K);
-              if (debug()) {
-                K.print(kkey.c_str());
+              // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
+              RefSCMatrix KK[NSpinCases1];
+              const int nunique_spins = spin_polarized_ ? 2 : 1;
+              for (int s=0; s<nunique_spins; ++s) {
+                const SpinCase1 spin = static_cast<SpinCase1>(s);
+                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
+                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin) : SymmToRect(fmb->K(spin));
+                registry_->add(kkey, KK);
+                if (debug()) {
+                  KK.print(kkey.c_str());
+                }
               }
+              K = KK[spin];
             }
             else { // have_K == true
               K = registry_->value(kkey);
@@ -340,11 +348,19 @@ FockBuildRuntime::get(const std::string& key) {
           RefSCMatrix K;
           if (need_K) {
             if (compute_K) {
-              K = use_density_fitting() ? fmb_df->K() : fmb->K(spin);
-              registry_->add(kkey, K);
-              if (debug()) {
-                K.print(kkey.c_str());
+              // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
+              RefSCMatrix KK[NSpinCases1];
+              const int nunique_spins = spin_polarized_ ? 2 : 1;
+              for (int s=0; s<nunique_spins; ++s) {
+                const SpinCase1 spin = static_cast<SpinCase1>(s);
+                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
+                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin) : fmb->K(spin);
+                registry_->add(kkey, KK);
+                if (debug()) {
+                  KK.print(kkey.c_str());
+                }
               }
+              K = KK[spin];
             }
             else { // have_K == true
               K = registry_->value(kkey);

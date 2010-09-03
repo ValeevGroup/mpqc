@@ -572,7 +572,13 @@ namespace sc {
     Ref<PsiInput> input = get_psi_input();
     input->open();
 
-    if((!rasscf_) || (ras3_max_>0) || !relax_core_) {  // running ci without orbital optimization of core orbitals
+    // are we running detcas? logic is impossibly complicated at the moment -- it sucks
+    // 1) if rasscf = false -> no orbital optimization, no need to run detcas
+    // 2) ras3_max > 0 -> probably doing MRCI from RAS orbitals, will not optimize the orbitals
+    // 3) if this is extra CI step using RAS orbitals -> will not run detcas either
+    const bool do_ci_only = (rasscf_==false) || (ras3_max_>0) || (run_detci_only_==true);
+
+    if(do_ci_only) {  // running ci without orbital optimization of core orbitals
       PsiCorrWavefunction::write_input(convergence);
     }
     else { // cas with restricted orbitals
@@ -580,7 +586,6 @@ namespace sc {
     }
 
     input->write_keyword("psi:wfn",wfn_type_.c_str());
-
     input->write_keyword("psi:jobtype","sp");
 
     /// one- and two-particle density matrices have to be evaluated in any case
@@ -594,7 +599,7 @@ namespace sc {
       input->write_keyword("detci:tpdm_print","true");
     }
 
-    if((!rasscf_) || (ras3_max_>0)) {  // in detci calculations
+    if(do_ci_only) {  // in detci calculations
       input->write_keyword("detci:root",root_);
       input->write_keyword("detci:num_roots",detci_num_roots_);
       if (detci_ref_sym_ != -1) input->write_keyword("detci:ref_sym",detci_ref_sym_);
@@ -623,7 +628,7 @@ namespace sc {
 
     input->write_keyword("detci:ex_lvl",ex_lvl_);
 
-    if((repl_otf_==true) && ((!rasscf_) || (ras3_max_>0))) {  /// don't use "repl_otf" keyword for CASSCF calculations.
+    if((repl_otf_==true) && do_ci_only) {  /// don't use "repl_otf" keyword for CASSCF calculations.
       input->write_keyword("detci:repl_otf","true");
     }
 
@@ -656,7 +661,7 @@ namespace sc {
     }
 
     // if doing rasscf but wfn_type_ == "detci" means we are using rasscf orbitals in checkpoint, hence don't run input or cscf
-    if (run_detci_only_) {
+    if (do_ci_only) {
       input->write_keyword("psi:exec","(\"cints\" \"transqt2\" \"detci\")");
     }
 

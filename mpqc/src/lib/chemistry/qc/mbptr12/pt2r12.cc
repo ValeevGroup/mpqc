@@ -283,7 +283,13 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   s.get(debug_);
 }
 
-PT2R12::~PT2R12() {}
+PT2R12::~PT2R12() {
+  // need to manually break up a cycle of smart pointers
+  R12WavefunctionWorld* r12world_ptr = r12world_.pointer();
+  r12world_.clear();
+  r12world_ptr->dereference();
+  r12world_ptr->~R12WavefunctionWorld();
+}
 
 void PT2R12::save_data_state(StateOut &s) {
   Wavefunction::save_data_state(s);
@@ -1482,8 +1488,9 @@ if (pt2_correction_)
   #if 0
   {
   const double recomp_ref_energy = this->energy_recomputed_from_densities();
-  ExEnv::out0() << indent << scprintf("Reference energy (recomp) [au]:        %17.12lf",
-                                     reference_->energy()) << endl;
+  ExEnv::out0() << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
+                                      (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
+                                      recomp_ref_energy) << endl;
   }
   #endif
   ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",

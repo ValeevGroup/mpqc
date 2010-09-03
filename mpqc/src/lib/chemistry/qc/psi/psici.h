@@ -44,18 +44,25 @@ namespace sc {
        * KeyVal constructor uses the following keywords
         <dl>
 
+        <dt><tt>rasscf</tt><dd> Set to true if need to optimize the orbitals using RASSCF (the default is false). This keyword requires expertise to set correctly
+        at least RAS parameters (see below) and potentially many other parameters.
+
+        <dt><tt>state_average</tt><dd> This boolean whether to use state averaging in RASSCF. This keyword is only used if <tt>rasscf=true</tt>
+          and <tt>detcas_detci_num_roots</tt> is set to a value greater than 1.
+
         <dt><tt>valence_obwfn</tt><dd> Specifies the OneBodyWavefunction object used to determine the valence orbitals.
         Recommended to use the minimal-basis HF wavefunction.
 
         <dt><tt>root</tt><dd> Specifies which state to solve for. The default is 1, i.e. the ground state. Value of <tt>root</tt>
-        cannot be greater than <tt>nroot</tt>
+        cannot be greater than <tt>detci_num_roots</tt> or <tt>detcas_detci_num_roots</tt>.
 
         <dt><tt>detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI. The default is the value specified with keyword
         root. \sa keyword "detcas_detci_num_roots"
 
-        <dt><tt>relax_core</tt><dd> Specifies whether to relax core orbitals in RASSCF. Default is false.
+        <dt><tt>detcas_detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI when doing CAS.
+        The default is the value specified with keyword root. \sa keyword "detci_num_roots"
 
-        <dt><tt>state_averaged</tt><dd> Specifies whether to use state averaging in RASSCF.
+        <dt><tt>relax_core</tt><dd> Specifies whether to relax core orbitals in RASSCF. Default is false.
 
        */
       PsiCI(const Ref<KeyVal> &keyval);
@@ -92,6 +99,7 @@ namespace sc {
       int root_;          /// compute a specific root of the wave function
       int detci_num_roots_;           /// number of roots for detci calculations
       int detcas_detci_num_roots_;    /// number of roots for detci in detcas calculations
+      int detci_ref_sym_;             /// the symmetry (irrep) of the target root
       int h0_blocksize_;  /// block size for the H0 guess
       int ex_lvl_;        /// CI excitation level
       bool repl_otf_;     /// do CI string replacements on the fly. saves memory, but is slower.
@@ -106,11 +114,11 @@ namespace sc {
       int detcas_detci_maxiter_;    /// maxiter for detci in detcas calculations
       int detci_maxiter_;     /// maxiter for detci (not in detcas calculations)
       int detcas_maxiter_;    /// max number of iterations in cas
-      std::vector<unsigned int> detcas_detci_average_states_;   /// vector of states over which averaging is performed in a detci of a detcas calculation
 
       // do orbital optimization first?
       bool rasscf_;
       bool relax_core_;
+      bool state_average_;
       std::string wfn_type_;  /// wfn keyword is set to this. can be detci or detcas
 
       Ref<OrbitalSpace> orbs_sb_[NSpinCases1];
@@ -150,6 +158,9 @@ namespace sc {
       /// orbital reordering
       std::string reorder_;
       std::vector<unsigned int> moorder_;
+
+      // crap!
+      bool run_detci_only_;
 
       void write_input(int convergence);
 

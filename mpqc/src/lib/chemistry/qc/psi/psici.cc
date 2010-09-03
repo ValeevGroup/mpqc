@@ -373,6 +373,8 @@ namespace sc {
 
     rasscf_ = keyval->booleanvalue("rasscf",KeyValValueboolean(false));
     relax_core_ = keyval->booleanvalue("relax_core",KeyValValueboolean(false));
+    state_average_ = false;
+    if (rasscf_) state_average_ = keyval->booleanvalue("state_average",KeyValValueboolean(false));
     wfn_type_ = rasscf_ ? "detcas" : "detci";
 
     opdm_print_ = keyval->booleanvalue("opdm_print", KeyValValueboolean(false));
@@ -387,6 +389,10 @@ namespace sc {
     if(detcas_detci_num_roots_<root_) {
       throw InputError("PsiCI::PsiCI(const Ref<KeyVal> &) -- detcas_detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
     }
+    // the default = -1 is to leave it out
+    detci_ref_sym_ = keyval->intvalue("detci_ref_sym", KeyValValueint(-1));
+    if (keyval->exists("detci_ref_sym") && (detci_ref_sym_ < 0 || detci_ref_sym_ >= this->molecule()->point_group()->char_table().nirrep()))
+      throw InputError("PsiCI::PsiCI(const Ref<KeyVal> &) -- detci_ref_sym must be between 0 and number of irreps - 1",__FILE__,__LINE__);
 
     h0_blocksize_ = keyval->intvalue("h0_blocksize", KeyValValueint(40));
     ex_lvl_ = keyval->intvalue("ex_lvl", KeyValValueint(2));
@@ -414,9 +420,10 @@ namespace sc {
                      std::plus<unsigned int>());
     }
 
-    /// if ras2 is not given in input, it is uocc_act
+    /// if ras2 is not given in input, it is empty
     if(ras2_.empty()) {
-      ras2_ = uocc_act;
+      ras2_.resize(nirrep);
+      std::fill(ras2_.begin(), ras2_.end(), 0);
     }
 
     // if ras3 empty, ras3_[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - frozen_uocc[i];
@@ -448,10 +455,6 @@ namespace sc {
     }
     detcas_detci_maxiter_ = keyval->intvalue("detcas_detci_maxiter",KeyValValueint(5));
     detci_maxiter_ = keyval->intvalue("detci_maxiter",KeyValValueint(100));
-    if(keyval->exists("detcas_detci_average_states")) {
-      const int naverage_states = keyval->count("detcas_detci_average_states");
-      detcas_detci_average_states_ = this->read_occ(keyval,"detcas_detci_average_states",naverage_states);
-    }
     detcas_maxiter_ = keyval->intvalue("detcas_maxiter",KeyValValueint(200));
 
     reorder_ = keyval->stringvalue("reorder", KeyValValuestring("after"));
@@ -482,6 +485,7 @@ namespace sc {
       }
     }
 
+    run_detci_only_ = false;
   }
 
   PsiCI::PsiCI(StateIn &s)
@@ -503,14 +507,16 @@ namespace sc {
     int detcas_diis; s.get(detcas_diis); detcas_diis_ = (bool)detcas_diis;
     s.get(detcas_detci_maxiter_);
     s.get(detci_maxiter_);
-    s.get(detcas_detci_average_states_);
     s.get(rasscf_);
     s.get(relax_core_);
+    s.get(state_average_);
     s.get(wfn_type_);
     s.get(ras1_);
     s.get(ras2_);
     s.get(ras3_);
     s.get(ras3_max_);
+    s.get(run_detci_only_);
+    s.get(detci_ref_sym_);
 
     s.get(scf_levelshift_);
     s.get(scf_stop_levelshift_);
@@ -540,14 +546,16 @@ namespace sc {
     s.put((int)detcas_diis_);
     s.put(detcas_detci_maxiter_);
     s.put(detci_maxiter_);
-    s.put(detcas_detci_average_states_);
     s.put(rasscf_);
     s.put(relax_core_);
+    s.put(state_average_);
     s.put(wfn_type_);
     s.put(ras1_);
     s.put(ras2_);
     s.put(ras3_);
     s.put(ras3_max_);
+    s.put(run_detci_only_);
+    s.put(detci_ref_sym_);
 
     s.put(scf_levelshift_);
     s.put(scf_stop_levelshift_);
@@ -589,10 +597,23 @@ namespace sc {
     if((!rasscf_) || (ras3_max_>0)) {  // in detci calculations
       input->write_keyword("detci:root",root_);
       input->write_keyword("detci:num_roots",detci_num_roots_);
+      if (detci_ref_sym_ != -1) input->write_keyword("detci:ref_sym",detci_ref_sym_);
     }
     else {  // in detcas calculations
       input->write_keyword("detci:root",root_);
       input->write_keyword("detci:num_roots",detcas_detci_num_roots_);
+      if (detcas_detci_num_roots_ > 1 && state_average_ == true) {
+        std::vector<unsigned int> average_states(detcas_detci_num_roots_);
+        std::vector<double> average_weights(detcas_detci_num_roots_);
+        const double weight = 1.0/detcas_detci_num_roots_;
+        for(int s=0; s<detcas_detci_num_roots_; ++s) {
+          average_states[s] = s+1;
+          average_weights[s] = weight;
+        }
+
+        input->write_keyword_array("detci:average_states", average_states);
+        input->write_keyword_array("detci:average_weights", average_weights);
+      }
     }
 
 
@@ -611,7 +632,7 @@ namespace sc {
     input->write_keyword("detci:export_vector","true");
 
     // RAS stuff
-    if(rasscf_ && (ras3_max_==0)) {
+    if(rasscf_ && (ras3_max_==0) && wfn_type_ == std::string("casscf")) {
       if (!ras2_.empty()) input->write_keyword_array("psi:active",ras2_);
       input->write_keyword("detci:energy_convergence",detcas_detci_energy_convergence_);
       input->write_keyword("detcas:energy_convergence",detcas_energy_convergence_);
@@ -623,9 +644,6 @@ namespace sc {
       }
       else input->write_keyword("detcas:diis_start", detcas_diis_start_);
       input->write_keyword("detci:maxiter",detcas_detci_maxiter_);
-      if(!detcas_detci_average_states_.empty()) {
-        input->write_keyword_array("detci:average_states",detcas_detci_average_states_);
-      }
     }
     else {
       if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
@@ -638,7 +656,7 @@ namespace sc {
     }
 
     // if doing rasscf but wfn_type_ == "detci" means we are using rasscf orbitals in checkpoint, hence don't run input or cscf
-    if (rasscf_ && wfn_type_ == std::string("detci")) {
+    if (run_detci_only_) {
       input->write_keyword("psi:exec","(\"cints\" \"transqt2\" \"detci\")");
     }
 
@@ -656,21 +674,59 @@ namespace sc {
   void PsiCI::compute() {
     double energy_rasscf = 0.0;
     if (rasscf_) {
+
+      // to compute RASSCF wavefunction temporarily customize the object so that the standard ::write_input works appropriately
       const int ras3_max_orig = ras3_max_;  ras3_max_ = 0;
       const std::string wfn_type_orig = wfn_type_;  wfn_type_ = "casscf";
+      // ras1 orbitals in CAS should be treated same way as frozen orbitals
+      const std::vector<unsigned int> frozen_docc_orig(frozen_docc_);
+      const std::vector<unsigned int> ras1_orig(ras1_);
+      {
+        std::transform(frozen_docc_orig.begin(), frozen_docc_orig.end(), ras1_orig.begin(), frozen_docc_.begin(),
+                       std::plus<unsigned int>());
+        std::fill(ras1_.begin(), ras1_.end(), 0);
+      }
+
+      // compute RASSCF
       PsiWavefunction::compute();
-      ras3_max_ = ras3_max_orig;
-      wfn_type_ = wfn_type_orig;
       energy_rasscf = exenv()->chkpt().rd_etot();
       ExEnv::out0() << indent << "rasscf energy for the impatient: " << setprecision(12) << energy_rasscf << endl;
-      // if ras3_max > 0 (i.e. user wants MRCI on top of RASSCF):
-      // clean, but keep the input file
+
+      // unwind the changes made previously
+      ras3_max_ = ras3_max_orig;
+      wfn_type_ = wfn_type_orig;
+      frozen_docc_ = frozen_docc_orig;
+      ras1_ = ras1_orig;
+
+      // if ras3_max > 0 (i.e. user wants MRCI on top of RASSCF)
+      //    OR
+      //    this is state-averaged RASSCF
+      // run detci again as follows:
+      //
+      // clean, but keep the checkpoint file
       // then run "cints", "transqt2", "detci"
-      if (ras3_max_ > 0) {
+      //
+      // the difference between the 2 cases is wfn type:
+      // detci in the former
+      // casscf in the latter (because the densities must be expressed in active space only... ugh!)
+      if (ras3_max_ > 0 ||
+          (ras3_max_ == 0 && state_average_ == true)
+         ) {
+        // unset state_average to avoid producing densities averaged over several roots
+        const bool state_average_orig = state_average_; state_average_ = false;
+        const std::string wfn_type_orig = wfn_type_;
+        if (ras3_max_ > 0) // need wfn = detci
+          wfn_type_ = std::string("detci");
+        else // this is rasscf -> wfn = casscf
+          wfn_type_ = std::string("casscf");
+        run_detci_only_ = true;
+
+        // false -> keep the checkpoint file!
         exenv()->run_psiclean(false);
-        // use wfn=detci now
-        const std::string wfn_type_orig = wfn_type_; wfn_type_ = std::string("detci");
         PsiWavefunction::compute();
+
+        run_detci_only_ = false;
+        state_average_ = state_average_orig;
         wfn_type_ = wfn_type_orig;
       }
     }

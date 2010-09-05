@@ -1457,20 +1457,27 @@ if (pt2_correction_)
   //calculate basis set incompleteness error (BSIE) with two choices of H0
   double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
   double cabs_singles_correction_twobody_H0 = 0.0;
+  const bool keep_result_for_cabs_singles_with_Fock_Hamiltonian = false; // if false, only do [2]_S with Dyall Hamiltonian
   if(cabs_singles_)
   {
-    alpha_correction = this->energy_cabs_singles(Alpha);
-    if (spin_polarized)
-      beta_correction =  this->energy_cabs_singles(Beta);
-    else
-      beta_correction = alpha_correction;
-    cabs_singles_correction = alpha_correction + beta_correction;
+    if(keep_result_for_cabs_singles_with_Fock_Hamiltonian)
+    {
+      alpha_correction = this->energy_cabs_singles(Alpha);
+      if (spin_polarized)
+        beta_correction =  this->energy_cabs_singles(Beta);
+      else
+        beta_correction = alpha_correction;
+      cabs_singles_correction = alpha_correction + beta_correction;
+    }
     cabs_singles_correction_twobody_H0 = this->energy_cabs_singles_twobody_H0();
   }
-  ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
-                                    cabs_singles_correction) << endl;
-  ExEnv::out0() << indent << scprintf("CASSCF+CABS singles correction:        %17.12lf",
-                                    reference_->energy() + cabs_singles_correction) << endl;
+  if(keep_result_for_cabs_singles_with_Fock_Hamiltonian)
+  {
+    ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
+                                      cabs_singles_correction) << endl;
+    ExEnv::out0() << indent << scprintf("CASSCF+CABS singles correction:        %17.12lf",
+                                      reference_->energy() + cabs_singles_correction) << endl;
+  }
   ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
                                     cabs_singles_correction_twobody_H0) << endl;
   ExEnv::out0() << indent << scprintf("CASSCF+CABS (twobody H0):              %17.12lf",
@@ -1481,7 +1488,7 @@ if (pt2_correction_)
        energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
   for(int i=0; i<NSpinCases2; i++)
        energy_correction_r12 +=  energy_pt2r12[i];
-  const double energy = reference_->energy() + energy_correction_r12;
+  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_correction_twobody_H0;
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                       reference_->energy()) << endl;
@@ -1558,7 +1565,7 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
-  # define  printout true
+  # define  printout false
 
   Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
@@ -1763,7 +1770,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     eigenmatrix_F_AA.print("Aspace Fock matrix eigenvalue");
 #endif
 
-#if true
+#if false
     RefDiagSCMatrix eigenmatrix = H0.eigvals();
     int BeigDimen = int(eigenmatrix.dim());
     for (int i = 0; i < BeigDimen; ++i)
@@ -1795,8 +1802,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()
 {
-  # define DEBUGG true
-  //bool keep_2A2p_term_ = true; // to test the importance of two-e integrals with 2 cabs integrals, switch this off
+  # define DEBUGG false
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
@@ -2026,7 +2032,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
- #if 1
+ #if 0
   { Ixy.print("Ixy matrix");
     ExEnv::out0() << indent << "test the hermicity of matrix Ixy" << endl;
     RefSCMatrix Ixy_trans = Ixy.t();

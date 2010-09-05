@@ -93,10 +93,13 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;
       bool cabs_singles_;
-      bool cabs_singles_coupling_;
-      bool rotate_core_; // if set to false, when doing casscf cabs_singles correction, don't excite electrons from core orbitals; this may be used when using frozen core orbitals which
-                         // are not optimized (does not satisfy Brillouin condition)
-      bool cabs_keep2A2pterm_; // keep the two-particle H with 2 CABS indices
+      bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
+                                   // as explained in the paper.
+      bool rotate_core_; // if set to false, when doing casscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
+                         // first-order Hamiltonian. (this may be used when using frozen core orbitals which
+                         // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'
+      bool cabs_keep2A2pterm_; // keep the two-particle H with 2 CABS indices. This would lead to an algorithm scaling as n^6, instead of n^4. The
+                               // default should be 'false'.
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object

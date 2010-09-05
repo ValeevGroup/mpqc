@@ -231,9 +231,9 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(false));
+  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  cabs_keep2A2pterm_ = keyval->booleanvalue("cabs_keep2A2pterm", KeyValValueboolean(true));
+  cabs_keep2A2pterm_ = keyval->booleanvalue("cabs_keep2A2pterm", KeyValValueboolean(false));
 
 
   reference_ = require_dynamic_cast<Wavefunction*>(

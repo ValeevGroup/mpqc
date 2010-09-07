@@ -2032,16 +2032,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
- #if 0
-  { Ixy.print("Ixy matrix");
-    ExEnv::out0() << indent << "test the hermicity of matrix Ixy" << endl;
-    RefSCMatrix Ixy_trans = Ixy.t();
-    compare_element_diff(Ixy, Ixy_trans, true, no, no, 1E-5);
-    ExEnv::out0() << indent << "done test the hermicity of matrix Ixy" << endl;
-    brillouin_matrix();
-  }
-#endif
-
   // explicitly symmetrize Ixy to counteract numerical inaccuracy
   for (int row = 0; row < 2 * no; ++row)
   {
@@ -2087,18 +2077,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
               Baa += -1.0 * I_x1y1_alpha;                                // -\delta^A1_B1 * I^x1_y1
               Bbb += -1.0 * I_x1y1_beta;
             }
-            if (cabs_keep2A2pterm_)
-            {
-              for (i2 = 0; i2 < no; ++i2)
-              {
-                for (j2 = 0; j2 < no; ++j2)                           // v^A1i2_B1j2 *(gamma^x1j2_y1i2 - gamma^x1_y1 gamma^j2_i2)
-                {
-                  const double v_A1i2B1j2 = g_ApAp_ab(A1 * no + i2, B1 * no + j2);
-                  Baa +=  v_A1i2B1j2 * ( gamma2_ab(x1 * no + j2, y1*no + i2)- gamma1_alpha(x1, y1) * gamma1_beta(j2, i2) );
-                  Bbb +=  v_A1i2B1j2 * ( gamma2_ab(j2 * no + x1, i2*no + y1)- gamma1_alpha(j2, i2) * gamma1_beta(x1, y1) );
-                }
-              }
-            }
             B(Baa_row_ind, Baa_col_ind) = Baa;
             B(Bbb_row_ind, Bbb_col_ind) = Bbb;
           }
@@ -2107,92 +2085,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
   }
 
-  // calculate alpha-alpha and beta-beta portion of B: the last term v^A1i1_B1j1 *(gamma^x1j1_y1i1 - gamma^x1_y1 gamma^j1_i1)
-  if(cabs_keep2A2pterm_)
-  {
-    {
-      RefSCMatrix   g_ApAp_aa   = this->g(case12(spin, spin), Aspace, pspace, Aspace, pspace);
-      // RefSCMatrix & g_ApAp_bb   = g_ApAp_aa;
-      unsigned int x1, y1, B1, A1, i1, j1;
-      for(x1 = 0; x1<no; ++x1)
-      {
-        for(y1=0; y1<no; ++y1)
-        {
-          const double gamma1_x1y1_alpha = gamma1_alpha(x1,y1);
-          const double gamma1_x1y1_beta = gamma1_beta(x1, y1);
-          for(B1 = 0; B1 < nX; ++B1)
-          {
-            const int Baa_row_ind = x1*nX + B1;                            // the row index of  alpha-alpha portion of B matrix
-            const int Bbb_row_ind = noX + Baa_row_ind;                     // the row index of  beta-beta portiono of B matrix
-            for(A1 = 0; A1 < nX; ++A1)
-            {
-              double Baa = 0.0;
-              double Bbb = 0.0;
-              const int Baa_col_ind = y1*nX + A1;                          // the column index of alpha-alpha portion of B
-              const int Bbb_col_ind = noX + Baa_col_ind;                   // corresponding beta-beta
-              for (i1 = 0; i1 < no; ++i1)
-              {
-                for (j1 = 0; j1 < no; ++j1)                          //v^A1i1_B1j1 *(gamma^x1j1_y1i1 - gamma^x1_y1 * gamma^j1_i1)
-                {
-                  const int gamma_x1j1y1i1_upp_ind = antisym_pairindex(x1, j1);
-                  const int gamma_x1j1y1i1_low_ind = antisym_pairindex(y1, i1);
-                  const int g_A1i1B1j1_upp_ind = A1 * no + i1;
-                  const int g_A1i1B1j1_low_ind = B1 * no + j1;
-                  const double v_A1i1B1j1 = g_ApAp_aa(g_A1i1B1j1_upp_ind, g_A1i1B1j1_low_ind);
-                  Baa += -1.0 * v_A1i1B1j1 * gamma1_alpha(x1, y1) * gamma1_alpha(j1, i1);
-                  Bbb += -1.0 * v_A1i1B1j1 * gamma1_beta(x1, y1) * gamma1_beta(j1, i1) ;
-                  if(x1 != j1 && y1 != i1)
-                  {
-                    Baa += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_aa(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
-                    Bbb += indexsizeorder_sign(x1, j1) * indexsizeorder_sign(y1, i1) * v_A1i1B1j1 * gamma2_bb(gamma_x1j1y1i1_upp_ind, gamma_x1j1y1i1_low_ind);
-                  }
-                }
-              }
-              B(Baa_row_ind, Baa_col_ind) = B(Baa_row_ind, Baa_col_ind) + Baa;
-              B(Bbb_row_ind, Bbb_col_ind) = B(Bbb_row_ind, Bbb_col_ind) + Bbb;
-            }
-          }
-        }
-      }
-    }
-
-
-    // construct the portion of B which couples alpha and beta  v^i1A2_B1j2 gamma^x1j2_i1y2
-    {
-      RefSCMatrix   g_pAAp_ab   = this->g(case12(spin, other(spin)), pspace, Aspace, Aspace, pspace);
-     // RefSCMatrix & g_AppA_ab   = g_pAAp_ab; // pay attention to the indices
-      unsigned int x1, B1, y2, A2, i1, j2;
-      for (x1 = 0; x1 < no; ++x1)
-      {
-        for (B1 = 0; B1 < nX; ++B1)
-        {
-          const unsigned int Bab_row_ind = x1 * nX + B1;         // alpha-beta row index
-          const unsigned int Bba_row_ind = x1 * nX + B1 + noX;   // beta-alpha row index
-          for (y2 = 0; y2 < no; ++y2)
-          {
-            for (A2 = 0; A2 < nX; ++A2)
-            {
-              const unsigned int Bab_col_ind = y2 * nX + A2 + noX;     // alpha-beta column index
-              const unsigned int Bba_col_ind = y2 * nX + A2;    // beta-alpha column index
-              double Bab = 0.0;                                 // initialize
-              double Bba = 0.0;
-              for (i1 = 0; i1 < no; ++i1)
-              {
-                for (j2 = 0; j2 < no; ++j2)  // v^i1A2_B1j2 * gamma^x1j2_i1y2
-                {
-                  const double vv = g_pAAp_ab(i1 * nX + A2, B1 * no + j2);
-                  Bab += vv * gamma2_ab(x1 * no + j2, i1 * no + y2);
-                  Bba += vv * gamma2_ab(j2 * no + x1, y2 * no + i1);
-                }
-              }
-              B(Bab_row_ind, Bab_col_ind) = Bab;
-              B(Bba_row_ind, Bba_col_ind) = Bba;
-            }
-          }
-        }
-      }
-    }
-  }
 
   B.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
 

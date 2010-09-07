@@ -62,7 +62,8 @@ namespace sc {
 
           <tr><td><tt>cabs_singles</tt><td>boolean<td>false<td>if set to true, compute 2nd-order
           CABS singes correction.
-
+          <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
+              this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.
           </table>
        */
       PT2R12(const Ref<KeyVal> &keyval);
@@ -99,7 +100,7 @@ namespace sc {
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
                          // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'
       bool cabs_keep2A2pterm_; // keep the two-particle H with 2 CABS indices. This would lead to an algorithm scaling as n^6, instead of n^4. The
-                               // default should be 'false'.
+                               // default should be 'false'. This keyword is deprecated, and only 'false' is implemented
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object

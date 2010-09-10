@@ -493,7 +493,7 @@ try_main(int argc, char *argv[])
     if (keyval->exists("override")) {
       si.set_override(new PrefixKeyVal(keyval,"override"));
     }
-    char *suf = strrchr(restartfile.c_str(),'.');
+    const char *suf = strrchr(restartfile.c_str(),'.');
     if (!strcmp(suf,".wfn")) {
       mole << SavableState::key_restore_state(si,"mole");
       ExEnv::out0() << endl

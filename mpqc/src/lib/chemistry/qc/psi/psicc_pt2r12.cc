@@ -297,9 +297,7 @@ void PsiCCSD_PT2R12::compute() {
   RefSCMatrix T1[NSpinCases1];
   RefSCMatrix T2[NSpinCases2];
 
-  // Form transforms and transform T1
-  RefSCMatrix MPQC2PSI_tform_oa[NSpinCases1];
-  RefSCMatrix MPQC2PSI_tform_va[NSpinCases1];
+  // get T1
   const int nspincases1 = r12eval()->nspincases1();
   for(int s=0; s<nspincases1; ++s) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
@@ -315,6 +313,7 @@ void PsiCCSD_PT2R12::compute() {
     T1[Beta] = T1[Alpha];
   }
 
+  // get T2
   for(int s=0; s<nspincases2; ++s) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);

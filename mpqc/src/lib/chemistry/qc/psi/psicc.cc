@@ -270,6 +270,16 @@ namespace sc {
     return T;
   }
 
+  namespace {
+
+    template <typename T>
+    T packed_2index_anti(T i1, T i2) {
+      T max_i = std::max(i1, i2);
+      T min_i = std::min(i1, i2);
+      return max_i * (max_i - 1)/2 + min_i;
+    }
+  }
+
   RefSCMatrix PsiCC::T2(SpinCase2 spin12, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
     const SpinCase1 spin1 = case1(spin12);
@@ -330,8 +340,8 @@ namespace sc {
       nijab_dpd += nij*nab;
     }
 
-    const unsigned int nij = nocc1_act*nocc2_act;
-    const unsigned int nab = nuocc1_act*nuocc2_act;
+    const unsigned int nij = (spin12 == AlphaBeta) ? nocc1_act*nocc2_act : nocc1_act*(nocc1_act-1)/2;
+    const unsigned int nab = (spin12 == AlphaBeta) ? nuocc1_act*nuocc2_act : nuocc1_act*(nuocc1_act-1)/2;
     RefSCDimension rowdim = new SCDimension(nij);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nab);
@@ -362,7 +372,8 @@ namespace sc {
           for (int j=0; j<actoccpi2[gh]; ++j) {
             const unsigned int jj = j + actoccioff2[gh];
 
-            const unsigned int ij = ii * nocc2_act + jj;
+            const unsigned int ij = (spin12 == AlphaBeta) ? ii * nocc2_act + jj
+                                                          : packed_2index_anti(ii, jj);
 
             for (unsigned int f=0; f<nirrep_; ++f) {
               unsigned int fh = f^h;
@@ -371,7 +382,8 @@ namespace sc {
 
                 for (int b=0; b<actuoccpi2[fh]; ++b, ++ijab) {
                   const unsigned int bb = b + actuoccioff2[fh];
-                  const unsigned int ab = aa*nuocc2_act + bb;
+                  const unsigned int ab = (spin12 == AlphaBeta) ? aa*nuocc2_act + bb
+                                                                : packed_2index_anti(aa, bb);
 
                   T.set_element(ij, ab, T2[ijab]);
                 }

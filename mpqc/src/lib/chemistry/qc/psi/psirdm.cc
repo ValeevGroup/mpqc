@@ -42,7 +42,7 @@ namespace {
       return psiscfwfn_->orbs_sb(spin);
     }
 
-    Ref<PsiCI> psiciwfn_;
+    Ref<PsiRASCI> psiciwfn_;
     psiciwfn_ << wfn;
     if (psiciwfn_.nonnull()) {
       return psiciwfn_->occ(spin);
@@ -116,7 +116,7 @@ RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
   if (wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
-  Ref<PsiCI> psiciwfn_;
+  Ref<PsiRASCI> psiciwfn_;
   psiciwfn_ << wfn_;
   if (psiciwfn_.nonnull()) {
     return psiciwfn_->twopdm_occ(spin);
@@ -289,7 +289,7 @@ PsiRDMOne::orbs(SpinCase1 spin) const {
 
 RefSymmSCMatrix
 PsiRDMOne::scmat(SpinCase1 spin) const {
-  Ref<PsiCI> psiciwfn;
+  Ref<PsiRASCI> psiciwfn;
   psiciwfn << wfn_;
   if (psiciwfn.nonnull()) {
     return psiciwfn->onepdm_occ(spin);

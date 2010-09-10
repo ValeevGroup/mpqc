@@ -364,47 +364,52 @@ namespace sc {
 
   } // end of namespace detail
 
-  static ClassDesc PsiCI_cd(typeid(PsiCI), "PsiCI", 1,
-                                   "public PsiCorrWavefunction",  0, create<PsiCI>,
-                                   create<PsiCI>);
+  static ClassDesc PsiRASCI_cd(typeid(PsiRASCI), "PsiRASCI", 1,
+                                   "public PsiCorrWavefunction",  0, create<PsiRASCI>,
+                                   create<PsiRASCI>);
 
-  PsiCI::PsiCI(const Ref<KeyVal> &keyval)
+  PsiRASCI::PsiRASCI(const Ref<KeyVal> &keyval)
     : PsiCorrWavefunction(keyval) {
-
-    rasscf_ = keyval->booleanvalue("rasscf",KeyValValueboolean(false));
-    relax_core_ = keyval->booleanvalue("relax_core",KeyValValueboolean(false));
-    state_average_ = false;
-    if (rasscf_) state_average_ = keyval->booleanvalue("state_average",KeyValValueboolean(false));
-    wfn_type_ = rasscf_ ? "detcas" : "detci";
 
     opdm_print_ = keyval->booleanvalue("opdm_print", KeyValValueboolean(false));
     tpdm_print_ = keyval->booleanvalue("tpdm_print", KeyValValueboolean(false));
 
     root_ = keyval->intvalue("root", KeyValValueint(1));
-    detci_num_roots_ = keyval->intvalue("detci_num_roots", KeyValValueint(root_));
-    if(detci_num_roots_<root_) {
-      throw InputError("PsiCI::PsiCI(const Ref<KeyVal> &) -- detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
-    }
-    detcas_detci_num_roots_ = keyval->intvalue("detcas_detci_num_roots", KeyValValueint(root_));
-    if(detcas_detci_num_roots_<root_) {
-      throw InputError("PsiCI::PsiCI(const Ref<KeyVal> &) -- detcas_detci_num_roots should not be smaller than root.",__FILE__,__LINE__);
+    multiplicity_ = keyval->intvalue("multiplicity", KeyValValueint( this->reference()->multiplicity() ));
+    nroots_ = keyval->intvalue("nroots", KeyValValueint(root_));
+    if(nroots_<root_) {
+      throw InputError("PsiRASCI::PsiRASCI(const Ref<KeyVal> &) -- nroots should not be smaller than root.",__FILE__,__LINE__);
     }
     // the default = -1 is to leave it out
-    detci_ref_sym_ = keyval->intvalue("detci_ref_sym", KeyValValueint(-1));
-    if (keyval->exists("detci_ref_sym") && (detci_ref_sym_ < 0 || detci_ref_sym_ >= this->molecule()->point_group()->char_table().nirrep()))
-      throw InputError("PsiCI::PsiCI(const Ref<KeyVal> &) -- detci_ref_sym must be between 0 and number of irreps - 1",__FILE__,__LINE__);
+    target_sym_ = keyval->intvalue("target_sym", KeyValValueint(-1));
+    if (keyval->exists("target_sym") && (target_sym_ < 0 || target_sym_ >= this->molecule()->point_group()->char_table().nirrep()))
+      throw InputError("PsiRASCI::PsiRASCI(const Ref<KeyVal> &) -- target_sym must be between 0 and number of irreps - 1",__FILE__,__LINE__);
 
     h0_blocksize_ = keyval->intvalue("h0_blocksize", KeyValValueint(40));
-    ex_lvl_ = keyval->intvalue("ex_lvl", KeyValValueint(2));
     repl_otf_ = keyval->booleanvalue("repl_otf", KeyValValueboolean(false));
+    ex_lvl_ = keyval->intvalue("ex_lvl", KeyValValueint(this->nelectron()));
+
+    /// construction of valence_obwfn_
+    valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
+    if (valence_obwfn_.nonnull()) {
+      double valence_obwfn_energy = valence_obwfn_->energy();
+      moorder_ = detail::ref_to_valence_moorder(this->reference(),
+                                                this->valence_obwfn_);
+    }
+    else {
+      if(keyval->exists("moorder")) {
+        const int nmo = this->reference()->nmo();
+        if(keyval->count() != nmo)
+          throw InputError("Input error for PsiRASCI -- moorder must have nmo elements.",__FILE__,__LINE__);
+        moorder_ = this->read_occ(keyval, "moorder", nmo);
+      }
+    }
 
     ras1_ = read_occ(keyval,"ras1",nirrep_);
     ras2_ = read_occ(keyval,"ras2",nirrep_);
     ras3_ = read_occ(keyval,"ras3",nirrep_);
     ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(ex_lvl_));
 
-    // Psi has not done a correlated calculation, these will fail
-    //assert(false);
     vector<unsigned int> docc_act = this->docc_act();
     vector<unsigned int> socc = this->socc();
     vector<unsigned int> uocc_act = this->uocc_act();
@@ -413,20 +418,24 @@ namespace sc {
     vector<unsigned int> frozen_uocc = this->frozen_uocc();
     const unsigned int nirrep = reference()->nirrep();
 
-    /// if ras1 is not given in input, it is docc_act + socc
+    /// if ras1 is not specified, it is empty
     if(ras1_.empty()) {
       ras1_.resize(nirrep);
-      std::transform(docc_act.begin(), docc_act.end(), socc.begin(), ras1_.begin(),
-                     std::plus<unsigned int>());
+      std::fill(ras1_.begin(), ras1_.end(), 0);
     }
 
-    /// if ras2 is not given in input, it is empty
+    /// if ras2 is not specified, look for valence_obwfn ...
     if(ras2_.empty()) {
-      ras2_.resize(nirrep);
-      std::fill(ras2_.begin(), ras2_.end(), 0);
+      if (valence_obwfn_.nonnull()) { // if given, compute the valence space
+        ras2_.resize(nirrep);
+        assert(false);
+      }
+      else
+        InputError("valence_obwfn keyword is not given, thus ras2 vector must be specified",
+                   __FILE__, __LINE__, "ras2");
     }
 
-    // if ras3 empty, ras3_[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - frozen_uocc[i];
+    // if ras3 is not specified, ras3_[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - frozen_uocc[i];
     if(ras3_.empty()) {
       ras3_.resize(nirrep);
       std::transform(mos.begin(), mos.end(), frozen_docc.begin(), ras3_.begin(),
@@ -439,156 +448,92 @@ namespace sc {
                      std::minus<unsigned int>());
     }
 
-    int energ_acc = -log10(desired_value_accuracy());
-    detci_energy_convergence_ = keyval->intvalue("detci_energy_convergence",KeyValValueint(energ_acc));
-    detci_convergence_ = keyval->intvalue("detci_convergence",KeyValValueint(9));
-    detcas_energy_convergence_ = keyval->intvalue("detcas_energy_convergence",KeyValValueint(detci_energy_convergence_-2));
-    detcas_convergence_ = keyval->intvalue("detcas_convergence",KeyValValueint(detci_convergence_-3));
-    detcas_detci_energy_convergence_ = keyval->intvalue("detcas_detci_energy_convergence",KeyValValueint(detcas_energy_convergence_+2));
-    detcas_detci_convergence_ = keyval->intvalue("detcas_detci_convergence",KeyValValueint(detcas_convergence_+2));
-    if(keyval->exists("detcas_diis")) {
-      detcas_diis_ = keyval->booleanvalue("detcas_diis");
-      detcas_diis_start_ = keyval->intvalue("detcas_diis_start");
-    }
-    else {
-      detcas_diis_ = false;
-    }
-    detcas_detci_maxiter_ = keyval->intvalue("detcas_detci_maxiter",KeyValValueint(5));
-    detci_maxiter_ = keyval->intvalue("detci_maxiter",KeyValValueint(100));
-    detcas_maxiter_ = keyval->intvalue("detcas_maxiter",KeyValValueint(200));
-
-    reorder_ = keyval->stringvalue("reorder", KeyValValuestring("after"));
+    const int energ_acc = -log10(desired_value_accuracy());
+    energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(energ_acc));
+    convergence_ = keyval->intvalue("convergence",KeyValValueint(energy_convergence_-2));
+    maxiter_ = keyval->intvalue("maxiter",KeyValValueint(100));
 
     scf_levelshift_ = keyval->doublevalue("scf_levelshift",KeyValValuedouble(0.1));
     scf_stop_levelshift_ = keyval->intvalue("scf_stop_levelshift",KeyValValueint(100));
 
-    /// construction of valence_obwfn_
-    valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
-    if (valence_obwfn_.nonnull()) {
-      if(reorder_!="after")
-        throw InputError("PsiCI::PsiCI -- if valence_obwfn is specified, only reorder=after makes sense",__FILE__,__LINE__);
-
-      if(!keyval->exists("moorder")) {
-        double valence_obwfn_energy = valence_obwfn_->energy();
-        moorder_ = detail::ref_to_valence_moorder(this->reference(),
-                                                  this->valence_obwfn_);
-      }
-
-    }
-
-    if(!reorder_.empty()) {
-      if(keyval->exists("moorder")) {
-        const int nmo = this->reference()->nmo();
-        if(keyval->count() != nmo)
-          throw InputError("Input error for PsiCI -- moorder must have nmo elements.",__FILE__,__LINE__);
-        moorder_ = this->read_occ(keyval, "moorder", nmo);
-      }
-    }
-
-    run_detci_only_ = false;
   }
 
-  PsiCI::PsiCI(StateIn &s)
+  PsiRASCI::PsiRASCI(StateIn &s)
     : PsiCorrWavefunction(s) {
-    int opdm_print; s.get(opdm_print); opdm_print_ = (bool)opdm_print;
-    int tpdm_print; s.get(tpdm_print); tpdm_print_ = (bool)tpdm_print;
+    s.get(opdm_print_);
+    s.get(tpdm_print_);
     s.get(root_);
-    s.get(detci_num_roots_);
-    s.get(detcas_detci_num_roots_);
+    s.get(multiplicity_);
+    s.get(nroots_);
     s.get(h0_blocksize_);
     s.get(ex_lvl_);
-    int repl_otf; s.get(repl_otf); repl_otf_ = (bool)repl_otf;
-    s.get(detci_energy_convergence_);
-    s.get(detcas_energy_convergence_);
-    s.get(detcas_detci_energy_convergence_);
-    s.get(detci_convergence_);
-    s.get(detcas_convergence_);
-    s.get(detcas_detci_convergence_);
-    int detcas_diis; s.get(detcas_diis); detcas_diis_ = (bool)detcas_diis;
-    s.get(detcas_detci_maxiter_);
-    s.get(detci_maxiter_);
-    s.get(rasscf_);
-    s.get(relax_core_);
-    s.get(state_average_);
-    s.get(wfn_type_);
+    s.get(repl_otf_);
+    s.get(energy_convergence_);
+    s.get(convergence_);
+    s.get(maxiter_);
     s.get(ras1_);
     s.get(ras2_);
     s.get(ras3_);
     s.get(ras3_max_);
-    s.get(run_detci_only_);
-    s.get(detci_ref_sym_);
+    s.get(target_sym_);
 
     s.get(scf_levelshift_);
     s.get(scf_stop_levelshift_);
 
     valence_obwfn_ << SavableState::restore_state(s);
 
-    s.get(reorder_);
     s.get(moorder_);
   }
 
-  void PsiCI::save_data_state(StateOut &s) {
+  void PsiRASCI::save_data_state(StateOut &s) {
     PsiCorrWavefunction::save_state(s);
-    s.put((int)opdm_print_);
-    s.put((int)tpdm_print_);
+    s.put(opdm_print_);
+    s.put(tpdm_print_);
     s.put(root_);
-    s.put(detci_num_roots_);
-    s.put(detcas_detci_num_roots_);
+    s.put(multiplicity_);
+    s.put(nroots_);
     s.put(h0_blocksize_);
     s.put(ex_lvl_);
-    s.put((int)repl_otf_);
-    s.put(detci_energy_convergence_);
-    s.put(detcas_energy_convergence_);
-    s.put(detcas_detci_energy_convergence_);
-    s.put(detci_convergence_);
-    s.put(detcas_convergence_);
-    s.put(detcas_detci_convergence_);
-    s.put((int)detcas_diis_);
-    s.put(detcas_detci_maxiter_);
-    s.put(detci_maxiter_);
-    s.put(rasscf_);
-    s.put(relax_core_);
-    s.put(state_average_);
-    s.put(wfn_type_);
+    s.put(repl_otf_);
+    s.put(energy_convergence_);
+    s.put(convergence_);
+    s.put(maxiter_);
     s.put(ras1_);
     s.put(ras2_);
     s.put(ras3_);
     s.put(ras3_max_);
-    s.put(run_detci_only_);
-    s.put(detci_ref_sym_);
+    s.put(target_sym_);
 
     s.put(scf_levelshift_);
     s.put(scf_stop_levelshift_);
 
     SavableState::save_state(valence_obwfn_.pointer(), s);
 
-    s.put(reorder_);
     s.put(moorder_);
   }
 
-  PsiCI::~PsiCI() {}
+  PsiRASCI::~PsiRASCI() {}
 
-  void PsiCI::write_input(int convergence) {
+  void PsiRASCI::write_input(int convergence) {
     Ref<PsiInput> input = get_psi_input();
     input->open();
 
-    // are we running detcas? logic is impossibly complicated at the moment -- it sucks
-    // 1) if rasscf = false -> no orbital optimization, no need to run detcas
-    // 2) ras3_max > 0 -> probably doing MRCI from RAS orbitals, will not optimize the orbitals
-    // 3) if this is extra CI step using RAS orbitals -> will not run detcas either
-    const bool do_ci_only = (rasscf_==false) || (ras3_max_>0) || (run_detci_only_==true);
+    PsiCorrWavefunction::write_input(convergence);
+    input->write_keyword("psi:wfn", "detci");
+    // no need to run cscf -- the orbitals have already been determined
+    input->write_keyword("psi:exec", "( \"cints\" \"transqt2\" \"detci\")");
 
-    if(do_ci_only) {  // running ci without orbital optimization of core orbitals
-      PsiCorrWavefunction::write_input(convergence);
-    }
-    else { // cas with restricted orbitals
-      PsiCorrWavefunction::write_input_frozen2restricted(convergence, true);
-    }
+    const bool rasscf = false;
+    write_rasci_input(convergence, rasscf);
 
-    input->write_keyword("psi:wfn",wfn_type_.c_str());
+    input->close();
+  }
+
+  void PsiRASCI::write_rasci_input(int convergence, bool rasscf) {
+
+    Ref<PsiInput> input = get_psi_input();
+
     input->write_keyword("psi:jobtype","sp");
-
-    /// one- and two-particle density matrices have to be evaluated in any case
     input->write_keyword("detci:opdm","true");
     input->write_keyword("detci:tpdm","true");
 
@@ -599,28 +544,11 @@ namespace sc {
       input->write_keyword("detci:tpdm_print","true");
     }
 
-    if(do_ci_only) {  // in detci calculations
-      input->write_keyword("detci:root",root_);
-      input->write_keyword("detci:num_roots",detci_num_roots_);
-      if (detci_ref_sym_ != -1) input->write_keyword("detci:ref_sym",detci_ref_sym_);
-    }
-    else {  // in detcas calculations
-      input->write_keyword("detci:root",root_);
-      input->write_keyword("detci:num_roots",detcas_detci_num_roots_);
-      if (detcas_detci_num_roots_ > 1 && state_average_ == true) {
-        std::vector<unsigned int> average_states(detcas_detci_num_roots_);
-        std::vector<double> average_weights(detcas_detci_num_roots_);
-        const double weight = 1.0/detcas_detci_num_roots_;
-        for(int s=0; s<detcas_detci_num_roots_; ++s) {
-          average_states[s] = s+1;
-          average_weights[s] = weight;
-        }
-
-        input->write_keyword_array("detci:average_states", average_states);
-        input->write_keyword_array("detci:average_weights", average_weights);
-      }
-    }
-
+    input->write_keyword("detci:root",root_);
+    input->write_keyword("detci:s",(multiplicity_ - 1)/2);
+    input->write_keyword("detci:num_roots",nroots_);
+    if (target_sym_ != -1)
+      input->write_keyword("detci:ref_sym",target_sym_);
 
     if(h0_blocksize_ > 0) { /// use "h0_blocksize" keyword only if it is >0
       input->write_keyword("detci:h0_blocksize",h0_blocksize_);
@@ -628,144 +556,64 @@ namespace sc {
 
     input->write_keyword("detci:ex_lvl",ex_lvl_);
 
-    if((repl_otf_==true) && do_ci_only) {  /// don't use "repl_otf" keyword for CASSCF calculations.
+    if((repl_otf_==true) && !rasscf) {  /// don't use "repl_otf" keyword for CASSCF calculations.
       input->write_keyword("detci:repl_otf","true");
     }
 
-    input->write_keyword("detci:guess_vector","h0_block");
+    input->write_keyword("detci:guess_vector", "h0_block");
+    input->write_keyword("detci:export_vector", "true");
+    input->write_keyword("detci:energy_convergence", energy_convergence_);
+    input->write_keyword("detci:convergence", convergence_);
+    input->write_keyword("detci:maxiter", maxiter_);
 
-    input->write_keyword("detci:export_vector","true");
-
-    // RAS stuff
-    if(rasscf_ && (ras3_max_==0) && wfn_type_ == std::string("casscf")) {
-      if (!ras2_.empty()) input->write_keyword_array("psi:active",ras2_);
-      input->write_keyword("detci:energy_convergence",detcas_detci_energy_convergence_);
-      input->write_keyword("detcas:energy_convergence",detcas_energy_convergence_);
-      input->write_keyword("detci:convergence",detcas_detci_convergence_);
-      input->write_keyword("detcas:convergence",detcas_convergence_);
-      input->write_keyword("default:ncasiter",detcas_maxiter_);
-      if(detcas_diis_==false) {
-        input->write_keyword("detcas:diis_start",1000000);
-      }
-      else input->write_keyword("detcas:diis_start", detcas_diis_start_);
-      input->write_keyword("detci:maxiter",detcas_detci_maxiter_);
-    }
-    else {
+    if (!rasscf) {
       if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
       if (!ras2_.empty()) input->write_keyword_array("psi:ras2",ras2_);
       if (!ras3_.empty()) input->write_keyword_array("psi:ras3",ras3_);
       input->write_keyword("psi:ras3_max",ras3_max_);
-      input->write_keyword("detci:energy_convergence",detci_energy_convergence_);
-      input->write_keyword("detci:convergence",detci_convergence_);
-      input->write_keyword("detci:maxiter",detci_maxiter_);
     }
-
-    // if doing rasscf but wfn_type_ == "detci" means we are using rasscf orbitals in checkpoint, hence don't run input or cscf
-    if (do_ci_only) {
-      input->write_keyword("psi:exec","(\"cints\" \"transqt2\" \"detci\")");
+    else {
+      input->write_keyword_array("psi:active", ras2_);
     }
 
     input->write_keyword("scf:levelshift",scf_levelshift_);
     input->write_keyword("scf:stop_levelshift",scf_stop_levelshift_);
 
     if(!moorder_.empty()) {
-      input->write_keyword("scf:reorder",reorder_.c_str());
-      input->write_keyword_array("scf:moorder",moorder_);
+      input->write_keyword("scf:reorder", "after");
+      input->write_keyword_array("scf:moorder", moorder_);
     }
-
-    input->close();
   }
 
-  void PsiCI::compute() {
+  void PsiRASCI::compute() {
+
     double energy_rasscf = 0.0;
-    if (rasscf_) {
-
-      // to compute RASSCF wavefunction temporarily customize the object so that the standard ::write_input works appropriately
-      const int ras3_max_orig = ras3_max_;  ras3_max_ = 0;
-      const std::string wfn_type_orig = wfn_type_;  wfn_type_ = "casscf";
-      // ras1 orbitals in CAS should be treated same way as frozen orbitals
-      const std::vector<unsigned int> frozen_docc_orig(frozen_docc_);
-      const std::vector<unsigned int> ras1_orig(ras1_);
-      {
-        std::transform(frozen_docc_orig.begin(), frozen_docc_orig.end(), ras1_orig.begin(), frozen_docc_.begin(),
-                       std::plus<unsigned int>());
-        std::fill(ras1_.begin(), ras1_.end(), 0);
-      }
-
-      // compute RASSCF
-      PsiWavefunction::compute();
-      energy_rasscf = exenv()->chkpt().rd_etot();
-      ExEnv::out0() << indent << "rasscf energy for the impatient: " << setprecision(12) << energy_rasscf << endl;
-
-      // unwind the changes made previously
-      ras3_max_ = ras3_max_orig;
-      wfn_type_ = wfn_type_orig;
-      frozen_docc_ = frozen_docc_orig;
-      ras1_ = ras1_orig;
-
-      // if ras3_max > 0 (i.e. user wants MRCI on top of RASSCF)
-      //    OR
-      //    this is state-averaged RASSCF
-      // run detci again as follows:
-      //
-      // clean, but keep the checkpoint file
-      // then run "cints", "transqt2", "detci"
-      //
-      // the difference between the 2 cases is wfn type:
-      // detci in the former
-      // casscf in the latter (because the densities must be expressed in active space only... ugh!)
-      if (ras3_max_ > 0 ||
-          (ras3_max_ == 0 && state_average_ == true)
-         ) {
-        // unset state_average to avoid producing densities averaged over several roots
-        const bool state_average_orig = state_average_; state_average_ = false;
-        const std::string wfn_type_orig = wfn_type_;
-        if (ras3_max_ > 0) // need wfn = detci
-          wfn_type_ = std::string("detci");
-        else // this is rasscf -> wfn = casscf
-          wfn_type_ = std::string("casscf");
-        run_detci_only_ = true;
-
-        // false -> keep the checkpoint file!
-        exenv()->run_psiclean(false);
-        PsiWavefunction::compute();
-
-        run_detci_only_ = false;
-        state_average_ = state_average_orig;
-        wfn_type_ = wfn_type_orig;
-      }
-    }
-    else {
-      PsiWavefunction::compute();
-    }
+    PsiWavefunction::compute();
 
     const double energy_scf = reference_energy();
     const double energy_ci = exenv()->chkpt().rd_etot();
 
     ExEnv::out0() << indent << "SCF energy: " << setprecision(12) << energy_scf << endl;
-    ExEnv::out0() << indent << "RASSCF energy: " << setprecision(12) << energy_rasscf << endl;
     ExEnv::out0() << indent << "correlation (CI-SCF) energy: " << setprecision(12) << (energy_ci-energy_scf) << endl;
     ExEnv::out0() << indent << "total CI energy: " << setprecision(12) << energy_ci << endl;
 
     set_energy(energy_ci);
   }
 
-  void PsiCI::print(std::ostream& os) const {
-    os << indent << "PsiCI:" << endl;
+  void PsiRASCI::print(std::ostream& os) const {
+    os << indent << "PsiRASCI:" << endl;
     os << incindent;
     detail::print_blocks("frzocc",this->frozen_docc(),os);
     detail::print_blocks("ras1",ras1_,os);
     detail::print_blocks("ras2",ras2_,os);
     detail::print_blocks("ras3",ras3_,os);
     os << indent << "ras3_max = " << ras3_max_ << std::endl;
-    os << indent << "rasscf = " << (rasscf_ ? "true" : "false") << std::endl;
-    os << indent << "relax_core = " << (relax_core_ ? "true" : "false") << std::endl;
     PsiCorrWavefunction::print(os);
     os << decindent;
   }
 
   std::vector<unsigned int>
-  PsiCI::map_density_to_sb() {
+  PsiRASCI::map_density_to_sb() {
     // maps symm -> RAS
     std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
                                                              ras1(),
@@ -775,7 +623,7 @@ namespace sc {
     return index_map_inverse( fmap );
   }
 
-  const Ref<OrbitalSpace>&  PsiCI::orbs_sb(SpinCase1 spin) {
+  const Ref<OrbitalSpace>&  PsiRASCI::orbs_sb(SpinCase1 spin) {
     if(orbs_sb_[spin].nonnull()) {
       return orbs_sb_[spin];
     }
@@ -793,7 +641,7 @@ namespace sc {
     return orbs_sb_[spin];
   }
 
-  const Ref<OrbitalSpace>& PsiCI::occ(SpinCase1 spin) {
+  const Ref<OrbitalSpace>& PsiRASCI::occ(SpinCase1 spin) {
     const Ref<OrbitalSpace>& orbs = this->orbs_sb(spin);
     if (ras3_max() > 0)
       return orbs;
@@ -814,7 +662,7 @@ namespace sc {
         std::fill(mo, mo+nocc, true);
         mo += mopi[h];
       }
-      std::string label = prepend_spincase(spin, "PsiCI occupied MOs");
+      std::string label = prepend_spincase(spin, "PsiRASCI occupied MOs");
       std::string id = ParsedOrbitalSpaceKey::key(std::string("x(sym)"),spin);
       occ_[spin] =
           new MaskedOrbitalSpace(id, label, orbs, occ_mask);
@@ -823,7 +671,7 @@ namespace sc {
     }
   }
 
-  RefSymmSCMatrix PsiCI::mo_density(SpinCase1 spin) {
+  RefSymmSCMatrix PsiRASCI::mo_density(SpinCase1 spin) {
     if (ras3_max_ > 0)
       return PsiCorrWavefunction::mo_density(spin);
     else {
@@ -853,7 +701,7 @@ namespace sc {
     assert(false); // unreachable
   }
 
-  RefSymmSCMatrix PsiCI::onepdm_occ(SpinCase1 spin) {
+  RefSymmSCMatrix PsiRASCI::onepdm_occ(SpinCase1 spin) {
 
     if (ras3_max_ > 0) return this->mo_density(spin);
 
@@ -898,7 +746,7 @@ namespace sc {
     return onepdm_occ_[spin];
   }
 
-  RefSymmSCMatrix PsiCI::twopdm_occ(SpinCase2 spin) {
+  RefSymmSCMatrix PsiRASCI::twopdm_occ(SpinCase2 spin) {
 
     if (ras3_max_ > 0) return this->twopdm_dirac(spin);
 
@@ -932,7 +780,7 @@ namespace sc {
 
 #if 0
   RefSymmSCMatrix
-  PsiCI::rdm1(const SpinCase1 &spin) const {
+  PsiRASCI::rdm1(const SpinCase1 &spin) const {
     string opdm_label_str;
     FILE *outfile;
     if(spin==Alpha) {
@@ -964,7 +812,7 @@ namespace sc {
 #endif
 
 #if 0
-  void PsiCI::print_all_blocks(ostream &o) {
+  void PsiRASCI::print_all_blocks(ostream &o) {
     vector<unsigned int> mos = mo_blocks();
     detail::print_blocks("mos",mos,o);
     vector<unsigned int> frzc = frzcpi();
@@ -983,6 +831,133 @@ namespace sc {
     detail::print_blocks("frzv",frzv,o);
   }
 #endif
+
+//////////////////////////////////////////////////////////
+
+  ClassDesc
+  PsiRASSCF::class_desc_(typeid(PsiRASSCF),
+                         "PsiRASSCF",
+                         1,               // version
+                         "public PsiRASCI", // must match parent
+                         0,               // change to create<PsiRASSCF> if this class is DefaultConstructible
+                         create<PsiRASSCF>, // change to 0 if this class is not KeyValConstructible
+                         create<PsiRASSCF>  // change to 0 if this class is not StateInConstructible
+  );
+
+  PsiRASSCF::PsiRASSCF(const Ref<KeyVal>& keyval) : PsiRASCI(keyval) {
+
+    relax_core_ = keyval->booleanvalue("relax_core",KeyValValueboolean(false));
+    state_average_ = keyval->booleanvalue("state_average",KeyValValueboolean(false));
+
+    const int energ_acc = -log10(desired_value_accuracy());
+    rasscf_energy_convergence_ = keyval->intvalue("rasscf_energy_convergence",KeyValValueint(energ_acc));
+    rasscf_convergence_ = keyval->intvalue("rasscf_convergence",KeyValValueint(rasscf_energy_convergence_-2));
+    diis_start_ = keyval->intvalue("diis_start",KeyValValueint(0));
+    rasscf_maxiter_ = keyval->intvalue("rasscf_maxiter",KeyValValueint(200));
+
+    // reset some defaults for the RASCI class
+    energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
+    convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
+
+  }
+
+  PsiRASSCF::PsiRASSCF(StateIn& s) : PsiRASCI(s) {
+    s.get(diis_start_);
+    s.get(rasscf_maxiter_);
+    s.get(relax_core_);
+    s.get(state_average_);
+}
+
+  PsiRASSCF::~PsiRASSCF() {
+    // this may be necessary if this is a templated class
+    const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
+  }
+
+  void
+  PsiRASSCF::save_data_state(StateOut& s) {
+    s.put(diis_start_);
+    s.put(rasscf_maxiter_);
+    s.put(relax_core_);
+    s.put(state_average_);
+  }
+
+  void
+  PsiRASSCF::compute() {
+
+    run_detci_only_ = false;
+
+    PsiWavefunction::compute();
+    const double energy_rasscf = exenv()->chkpt().rd_etot();
+    ExEnv::out0() << indent << "RASSCF energy: " << setprecision(12) << energy_rasscf << endl;
+
+    // if this is state-averaged RASSCF
+    // run detci again as follows:
+    // 1) clean, but keep the checkpoint file
+    // 2) then run "cints", "transqt2", "detci"
+    if (state_average_ == true) {
+      // unset state_average to avoid producing densities averaged over several roots
+      const bool state_average_orig = state_average_; state_average_ = false;
+      run_detci_only_ = true;
+
+      // false -> keep the checkpoint file!
+      exenv()->run_psiclean(false);
+      PsiWavefunction::compute();
+
+      state_average_ = state_average_orig;
+      run_detci_only_ = false;
+    }
+
+  }
+
+  void
+  PsiRASSCF::write_input(int convergence) {
+
+    Ref<PsiInput> input = get_psi_input();
+    input->open();
+
+    PsiCorrWavefunction::write_input_frozen2restricted(convergence, relax_core_);
+    input->write_keyword("psi:wfn", "casscf");
+    if (run_detci_only_)
+      input->write_keyword("psi:exec", "( \"cints\" \"transqt2\" \"detci\")");
+
+    if (nroots_ > 1 && state_average_ == true) {
+      std::vector<unsigned int> average_states(nroots_);
+      std::vector<double> average_weights(nroots_);
+      const double weight = 1.0/nroots_;
+      for(int s=0; s<nroots_; ++s) {
+        average_states[s] = s+1;
+        average_weights[s] = weight;
+      }
+
+      input->write_keyword_array("detci:average_states", average_states);
+      input->write_keyword_array("detci:average_weights", average_weights);
+    }
+
+    input->write_keyword("detcas:convergence",rasscf_convergence_);
+    input->write_keyword("default:ncasiter",rasscf_maxiter_);
+    if(diis_start_ < 0) {
+      input->write_keyword("detcas:diis_start",1000000);
+    }
+    else
+      input->write_keyword("detcas:diis_start", diis_start_);
+    input->write_keyword("detci:maxiter",rasscf_maxiter_);
+
+    const bool rasscf = true;
+    write_rasci_input(convergence, rasscf);
+
+    input->close();
+
+  }
+
+  void PsiRASSCF::print(std::ostream& os) const {
+
+    os << indent << "PsiRASSCF:" << endl;
+    os << incindent;
+    os << indent << "relax_core = " << (relax_core_ ? "true" : "false") << std::endl;
+    PsiRASCI::print(os);
+    os << decindent;
+
+  }
 
 } // end of namespace sc
 

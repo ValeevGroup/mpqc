@@ -36,38 +36,42 @@
 
 namespace sc {
 
-  /** PsiCI is a general (RAS) CI PsiWavefunction.
+  /** PsiRASCI is a general (RAS) CI PsiWavefunction.
    */
-  class PsiCI : public PsiCorrWavefunction {
+  class PsiRASCI : public PsiCorrWavefunction {
     public:
-      /**
-       * KeyVal constructor uses the following keywords
-        <dl>
+    /** A KeyVal constructor is used to generate a PsiRASCI
+        object from the input. It recognizes all keywords of
+        PsiCorrWavefunction class and the following keywords:
 
-        <dt><tt>rasscf</tt><dd> Set to true if need to optimize the orbitals using RASSCF (the default is false). This keyword requires expertise to set correctly
-        at least RAS parameters (see below) and potentially many other parameters.
+        <table border="1">
 
-        <dt><tt>state_average</tt><dd> This boolean whether to use state averaging in RASSCF. This keyword is only used if <tt>rasscf=true</tt>
-          and <tt>detcas_detci_num_roots</tt> is set to a value greater than 1.
+        <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-        <dt><tt>valence_obwfn</tt><dd> Specifies the OneBodyWavefunction object used to determine the valence orbitals.
-        Recommended to use the minimal-basis HF wavefunction.
+        <dt><tt>prerequisite</tt><dd> Specifies an object of class PsiWavefunction that must be "computed" prior to computing this object.
+        The default is null object, which means clean compute, i.e. start running Psi by invoking "input" module which will overwrite the
+        checkpoint file.
 
         <dt><tt>root</tt><dd> Specifies which state to solve for. The default is 1, i.e. the ground state. Value of <tt>root</tt>
-        cannot be greater than <tt>detci_num_roots</tt> or <tt>detcas_detci_num_roots</tt>.
+        cannot be greater than <tt>nroots</tt>.
 
-        <dt><tt>detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI. The default is the value specified with keyword
-        root. \sa keyword "detcas_detci_num_roots"
+        <dt><tt>nroots</tt><dd> Specifies the number of CI vectors to seek. The default is the value specified with keyword
+        root (see keyword <tt>nroots</tt>).
 
-        <dt><tt>detcas_detci_num_roots</tt><dd> Specifies the number of CI vectors to seek in DETCI when doing CAS.
-        The default is the value specified with keyword root. \sa keyword "detci_num_roots"
+        <dt><tt>multiplicity</tt><dd> Specifies the multiplicity of the state to solve for. The default is the same as the multiplicity of
+        the object specified with the <tt>reference</tt> keyword. \sa PsiCorrWavefunction
 
-        <dt><tt>relax_core</tt><dd> Specifies whether to relax core orbitals in RASSCF. Default is false.
+        <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
+        an object that will provide the orbital ordering for the initial guess. It is recommended to use
+        an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
+        For example, for a valence CASSCF this means that SCF with an STO-3G basis will suffice. For states
+        with Rydberg character one may want to choose an appropriate ANO basis set.
 
-       */
-      PsiCI(const Ref<KeyVal> &keyval);
-      PsiCI(StateIn &s);
-      ~PsiCI();
+        </table>
+     */
+      PsiRASCI(const Ref<KeyVal> &keyval);
+      PsiRASCI(StateIn &s);
+      ~PsiRASCI();
       void save_data_state(StateOut &s);
       void compute();
       void print(std::ostream&) const;
@@ -83,9 +87,9 @@ namespace sc {
 
       RefSymmSCMatrix mo_density(SpinCase1 spin); // mo_density is overloaded because detci
                                                   // reports density in active orbitals only
-      /// if rasscf = true then return MCSCF orbitals
+      /// if this is PsiRASSCF this will return RASSCF orbitals
       const Ref<OrbitalSpace>& orbs_sb(SpinCase1 spin);
-      /// returns occupied OrbitalSpace. For CAS methods this is a subset
+      /// returns occupied OrbitalSpace. If ras3_max=0 this is a subset
       /// of the space reported by orbs_sp(). This space is symmetry-blocked.
       const Ref<OrbitalSpace>& occ(SpinCase1 spin);
       /// 1-pdm in the space reported by occ()
@@ -93,36 +97,26 @@ namespace sc {
       /// 2-pdm in the space reported by occ()
       RefSymmSCMatrix twopdm_occ(SpinCase2 spin);
 
-    private:
+    protected:
+
       bool opdm_print_;   /// print the one-particle density matrix
       bool tpdm_print_;   /// print the two-particle density matrix
       int root_;          /// compute a specific root of the wave function
-      int detci_num_roots_;           /// number of roots for detci calculations
-      int detcas_detci_num_roots_;    /// number of roots for detci in detcas calculations
-      int detci_ref_sym_;             /// the symmetry (irrep) of the target root
+      int multiplicity_;  /// the spin multiplicity of the target state
+      int nroots_;        /// number of roots for detci calculations
+      int target_sym_;    /// the symmetry (irrep) of the target root
       int h0_blocksize_;  /// block size for the H0 guess
       int ex_lvl_;        /// CI excitation level
       bool repl_otf_;     /// do CI string replacements on the fly. saves memory, but is slower.
-      int detci_energy_convergence_;
-      int detcas_energy_convergence_;
-      int detcas_detci_energy_convergence_; /// energy convergence of the detci energy in each step of detcas calculation
-      int detci_convergence_;
-      int detcas_convergence_;
-      int detcas_detci_convergence_;  /// convergence of the detci wave function in each step of detcas calculation
-      bool detcas_diis_;   /// use DIIS for detcas calculations
-      int detcas_diis_start_; /// after X cyles, diis starts
-      int detcas_detci_maxiter_;    /// maxiter for detci in detcas calculations
-      int detci_maxiter_;     /// maxiter for detci (not in detcas calculations)
-      int detcas_maxiter_;    /// max number of iterations in cas
 
-      // do orbital optimization first?
-      bool rasscf_;
-      bool relax_core_;
-      bool state_average_;
-      std::string wfn_type_;  /// wfn keyword is set to this. can be detci or detcas
+      // this data may need to be modified by RASSCF
+      int energy_convergence_;
+      int convergence_;
+      int maxiter_;       /// maxiter for detci
 
       Ref<OrbitalSpace> orbs_sb_[NSpinCases1];
       Ref<OrbitalSpace> occ_[NSpinCases1];
+
       RefSymmSCMatrix onepdm_occ_[NSpinCases1];
       RefSymmSCMatrix twopdm_occ_[NSpinCases1];
 
@@ -156,16 +150,63 @@ namespace sc {
       Ref<OneBodyWavefunction> valence_obwfn_;
 
       /// orbital reordering
-      std::string reorder_;
       std::vector<unsigned int> moorder_;
 
-      // crap!
-      bool run_detci_only_;
-
       void write_input(int convergence);
+      void write_rasci_input(int convergence, bool rasscf);
 
       std::vector<unsigned int> map_density_to_sb();
   };
+
+  /// PsiRASSCF is a type of a PsiRASCI wavefunction that implements orbital optimization.
+  class PsiRASSCF : public PsiRASCI {
+    public:
+      /** A KeyVal constructor is used to generate a PsiRASSCF
+          object from the input. It recognizes all keywords of
+          PsiRASCI class and the following keywords:
+
+          <table border="1">
+
+          <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+
+          <tr><td><tt>state_average</tt><td>boolean<td>false<td>whether to do state-averaging. The default is to
+          compute optimal orbitals for the average of all states (see keyword <tt>num_states</tt>).
+
+          <tr><td><tt>relax_core</tt><td>boolean<td>false<td>whether to keep the occupied orbitals that are not part of
+          RAS I or II spaces fixed in RASSCF or to relax them.
+
+          <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
+          an object that will provide the orbital ordering for the initial guess. It is recommended to use
+          an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
+          For example, for a valence CASSCF this means that SCF with an STO-3G basis will suffice. For states
+          with Rydberg character one may want to choose an appropriate ANO basis set.
+
+          </table>
+       */
+      PsiRASSCF(const Ref<KeyVal>& kv);
+      PsiRASSCF(StateIn&);
+      ~PsiRASSCF();
+      void save_data_state(StateOut&);
+      void compute();
+      void print(std::ostream&) const;
+
+    private:
+      static ClassDesc class_desc_;
+
+      int rasscf_energy_convergence_;
+      int rasscf_convergence_;
+      int rasscf_maxiter_;    /// max number of iterations in rasscf
+      int diis_start_; /// after X cycles, diis starts
+
+      bool state_average_;   //< state average?
+      bool relax_core_;
+
+      bool run_detci_only_;  // hack to allow running state-averaged RASSCF
+
+      void write_input(int convergence);
+
+  };
+
 
 }
 

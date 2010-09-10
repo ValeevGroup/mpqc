@@ -120,8 +120,10 @@ class PsiExEnv: public DescribedClass {
     /// Creates the PsiFile11 object which PsiExEnv uses
     Ref<PsiFile11> get_psi_file11();
 
-    /// Executes Psi input+driver. \sa PsiExEnv::run_psi_module()
-    void run_psi();
+    /// Executes Psi input+driver.
+    /// \param skip_input whether to skip running "input" module. The default is false.
+    /// \sa PsiExEnv::run_psi_module()
+    void run_psi(bool skip_input = false);
     /// Executes a Psi module using a system call. Throws if psi fails.
     void run_psi_module(const char * module, const std::vector<std::string>& args = std::vector<std::string>());
     /// cleans Psi scratch files using the same approach as psiclean.

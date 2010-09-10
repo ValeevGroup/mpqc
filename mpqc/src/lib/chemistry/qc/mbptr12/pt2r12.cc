@@ -1492,7 +1492,7 @@ if (pt2_correction_)
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                       reference_->energy()) << endl;
-  #if 0
+  #if 1
   {
   const double recomp_ref_energy = this->energy_recomputed_from_densities();
   ExEnv::out0() << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",

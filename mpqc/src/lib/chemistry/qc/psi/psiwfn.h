@@ -56,6 +56,7 @@ namespace sc {
       }
 
     protected:
+      Ref<PsiWavefunction> prerequisite_;
       int nirrep_;
       size_t memory_;
       char *memory_str_;
@@ -72,6 +73,12 @@ namespace sc {
       /** The KeyVal constructor.
 
        <dl>
+
+       <dt><tt>prerequisite</tt><dd> Specifies a PsiWavefunction object whose compute()
+       function will be called before calling compute() function of this object.
+       This may be necessary to create a necessary "state" for computing this object (e.g.
+       produce a set of orbitals, etc.). If this object exists, then the state of Psi will
+       be maximally preserved, e.g. "input" will not be run, etc. The default is a null object.
 
        <dt><tt>psienv</tt><dd> Specifies a PsiExEnv object.  There
        is no default.
@@ -334,6 +341,8 @@ namespace sc {
       unsigned int nmo();
       /// number of occupied MOs of spin
       unsigned int nocc(SpinCase1 spin);
+      /// spin multiplicity
+      unsigned int multiplicity() const { return multp_; }
   };
 
   ///////////////////////////////////////////////////////////////////

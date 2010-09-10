@@ -1014,14 +1014,14 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
     if (cast.nonnull())
       return new PsiSCF_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
-  { // PsiCI
-    Ref<PsiCI> cast; cast << ref;
+  { // PsiRASCI
+    Ref<PsiRASCI> cast; cast << ref;
     if (cast.nonnull()) {
       if (vir_space.nonnull() && vir_space->rank() != 0)
-        throw ProgrammingError("PsiCI_R12RefWavefunction can only be used with default virtual space",
+        throw ProgrammingError("PsiRASCI_R12RefWavefunction can only be used with default virtual space",
                                __FILE__, __LINE__);
       const bool omit_uocc = vir_space.nonnull();
-      return new PsiCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
+      return new PsiRASCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
     }
   }
 #endif

@@ -267,17 +267,17 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
 ///////////////////////////////////////////////////////////////////
 
 ClassDesc
-PsiCI_R12RefWavefunction_cd(typeid(PsiCI_RefWavefunction),
-                     "PsiCI_R12RefWavefunction",
+PsiRASCI_R12RefWavefunction_cd(typeid(PsiRASCI_RefWavefunction),
+                     "PsiRASCI_R12RefWavefunction",
                      1,               // version
                      "public R12RefWavefunction", // must match parent
-                     0,               // change to create<PsiCI_RefWavefunction> if this class is DefaultConstructible
+                     0,               // change to create<PsiRASCI_RefWavefunction> if this class is DefaultConstructible
                      0,               // change to 0 if this class is not KeyValConstructible
-                     create<PsiCI_RefWavefunction>  // change to 0 if this class is not StateInConstructible
+                     create<PsiRASCI_RefWavefunction>  // change to 0 if this class is not StateInConstructible
                      );
 
-PsiCI_RefWavefunction::PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
-                                                   const Ref<PsiCI>& wfn,
+PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
+                                                   const Ref<PsiRASCI>& wfn,
                                                    bool spin_restricted,
                                                    unsigned int nfzc,
                                                    unsigned int nfzv,
@@ -301,21 +301,21 @@ PsiCI_RefWavefunction::PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world
 #endif
 }
 
-PsiCI_RefWavefunction::PsiCI_RefWavefunction(StateIn& si) : RefWavefunction(si) {
+PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(StateIn& si) : RefWavefunction(si) {
   throw "not implemented";
 }
 
-PsiCI_RefWavefunction::~PsiCI_RefWavefunction() {
-  throw "not implemented";
-}
-
-void
-PsiCI_RefWavefunction::save_data_state(StateOut& so) {
+PsiRASCI_RefWavefunction::~PsiRASCI_RefWavefunction() {
   throw "not implemented";
 }
 
 void
-PsiCI_RefWavefunction::init_spaces()
+PsiRASCI_RefWavefunction::save_data_state(StateOut& so) {
+  throw "not implemented";
+}
+
+void
+PsiRASCI_RefWavefunction::init_spaces()
 {
   const bool moorder = true;   // order orbitals in the order of increasing energies
   const Ref<GaussianBasisSet> bs = wfn()->basis();
@@ -387,14 +387,14 @@ PsiCI_RefWavefunction::init_spaces()
 }
 
 RefSymmSCMatrix
-PsiCI_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+PsiRASCI_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                      const Ref<GaussianBasisSet> &p_basis)
 {
   return wfn()->core_hamiltonian_for_basis(basis, p_basis);
 }
 
 RefSymmSCMatrix
-PsiCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
+PsiRASCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
 {
   RefSymmSCMatrix opdm_full = wfn()->mo_density(spin);
   RefSymmSCMatrix result;
@@ -416,7 +416,7 @@ PsiCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
 }
 
 RefSymmSCMatrix
-PsiCI_RefWavefunction::ordm(SpinCase1 spin) const
+PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
 {
   RefSymmSCMatrix P = this->ordm_orbs_sb(spin);
   RefSCMatrix C_ao = this->orbs_sb(spin)->coefs();

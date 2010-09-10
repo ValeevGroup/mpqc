@@ -213,6 +213,9 @@ namespace sc {
 
   PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval) :
     Wavefunction(keyval) {
+
+    prerequisite_ << keyval->describedclassvalue("prerequisite");
+
     exenv_ << keyval->describedclassvalue("psienv");
     if (exenv_.null()) {
       exenv_ = new PsiExEnv;
@@ -234,10 +237,6 @@ namespace sc {
   }
 
   PsiWavefunction::~PsiWavefunction() {
-    // this can throw! call a non-throwing version
-    // exenv_->run_psi_module("psiclean");
-    // no point in cleaning in every wave function -- let PsiExEnv's destructor do the job once
-    // exenv_->run_psiclean();
   }
 
   PsiWavefunction::PsiWavefunction(StateIn&s) :
@@ -270,6 +269,13 @@ namespace sc {
           << endl;
       abort();
     }
+
+    const bool have_prerequisite = prerequisite_.nonnull();
+    if (have_prerequisite) {
+      prerequisite_->compute();
+      this->exenv()->run_psiclean(false);  // do partial cleanup
+    }
+
     double energy_acc = desired_value_accuracy();
     double grad_acc = desired_gradient_accuracy();
     if (energy_acc > 1.0e-6)
@@ -282,7 +288,9 @@ namespace sc {
     write_input((int)-log10(energy_acc));
     if (debug_ > 1)
       exenv()->get_psi_input()->print();
-    exenv()->run_psi();
+    const bool keep_initial_psi_state = have_prerequisite;
+    const bool skip_input = keep_initial_psi_state;
+    exenv()->run_psi(skip_input);
 
     // operation of PsiWavefunction assumes that its number of orbitals
     // exactly matches that of Wavefunction

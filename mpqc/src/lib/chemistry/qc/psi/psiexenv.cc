@@ -209,10 +209,11 @@ PsiExEnv::get_psi_file11() {
   return psifile11_;
 }
 
-void PsiExEnv::run_psi()
+void PsiExEnv::run_psi(bool skip_input)
 {
-  run_psi_module("psi3",
-                 std::vector<std::string>(1,std::string("--messy")));
+  std::vector<std::string> cmdline_args(1,std::string("--messy"));
+  if (skip_input) cmdline_args.push_back(std::string("--noinput"));
+  run_psi_module("psi3", cmdline_args);
 }
 
 void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>& args)

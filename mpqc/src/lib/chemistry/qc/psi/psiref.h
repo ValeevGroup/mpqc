@@ -94,11 +94,11 @@ namespace sc {
   };
 
   /// RefWavefunction specialization for a general restricted-active-space multiconfiguration wave function
-  class PsiCI_RefWavefunction : public RefWavefunction {
+  class PsiRASCI_RefWavefunction : public RefWavefunction {
     public:
-      /// construct from a PsiCI object
+      /// construct from a PsiRASCI object
       /// @param world The WavefunctionWorld in which this objects lives.
-      /// @param wfn The PsiCI object that specifies the general CI wavefunction
+      /// @param wfn The PsiRASCI object that specifies the general CI wavefunction
       /// @param spin_restricted If false and wfn is an open-shell wavefunction (wfn->spin_polarized() == true),
       ///        will use semicanonical orbitals. The value of this parameter will be ignored for closed-shell
       ///        wfn.
@@ -108,16 +108,16 @@ namespace sc {
       ///                  not the same as "freezing" the unoccupieds.
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from wfn!
-      PsiCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
-                               const Ref<PsiCI>& wfn,
+      PsiRASCI_RefWavefunction(const Ref<WavefunctionWorld>& world,
+                               const Ref<PsiRASCI>& wfn,
                                bool spin_restricted = true,
                                unsigned int nfzc = 0,
                                unsigned int nfzv = 0,
                                bool omit_uocc = false);
-      PsiCI_RefWavefunction(StateIn&);
-      ~PsiCI_RefWavefunction();
+      PsiRASCI_RefWavefunction(StateIn&);
+      ~PsiRASCI_RefWavefunction();
       void save_data_state(StateOut&);
-      const Ref<PsiCI>& wfn() const { return wfn_; }
+      const Ref<PsiRASCI>& wfn() const { return wfn_; }
 
       double energy() { return wfn()->energy(); }
       double actual_value_accuracy () const { return wfn()->actual_value_accuracy(); }
@@ -134,7 +134,7 @@ namespace sc {
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
       RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
     private:
-      Ref<PsiCI> wfn_;
+      Ref<PsiRASCI> wfn_;
       bool spin_restricted_;
       unsigned int nfzc_;
       unsigned int nfzv_;

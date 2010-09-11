@@ -48,7 +48,8 @@ mpqc: (
     nfzc = 0
     omit_uocc = false
 
-    reference<PsiCI>: (
+    reference<PsiRASCI>: (
+      prerequisite = $rasscf
       molecule = $:molecule
       basis = $:basis
       psienv = $:psienv
@@ -61,29 +62,40 @@ mpqc: (
         psienv = $:psienv
       )
 
-      value_accuracy = 1e-11
+      value_accuracy = 1e-9
       nfzc = 1
       ex_lvl = 10
       ras1 = [0 0 0 0]
       ras2 = [3 0 1 1]
       ras3_max = 2
-      rasscf = true
-      detcas_detci_maxiter = 12
-      reorder = after
       root = 1
-      num_roots = 2
-      h0_blocksize = 1000
-      detci_energy_convergence = 7
-      detci_convergence = 4
-      detcas_energy_convergence = 7
-      detcas_convergence = 4
-      detcas_detci_energy_convergence = 9
-      detcas_detci_convergence = 4
+      nroots = 2
 
-      valence_obwfn<CLHF>: (
+      rasscf<PsiRASSCF>: (
+        prerequisite = $rasscf
         molecule = $:molecule
-        basis = $:vbasis
-        docc = [3 0 1 1]
+        basis = $:basis
+        psienv = $:psienv
+        memory = 32000000
+
+        reference<PsiCLHF>: (
+          molecule = $:molecule
+          basis = $:basis
+          docc = [3 0 1 1]
+          psienv = $:psienv
+        )
+
+        value_accuracy = 1e-9
+        nfzc = 1
+        ex_lvl = 10
+        ras1 = [0 0 0 0]
+        ras2 = [3 0 1 1]
+        nroots = 2
+        valence_obwfn<CLHF>: (
+          molecule = $:molecule
+          basis = $:vbasis
+          docc = [3 0 1 1]
+        )
       )
     )
 

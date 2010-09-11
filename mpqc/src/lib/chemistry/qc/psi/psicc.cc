@@ -371,7 +371,7 @@ namespace sc {
 
           for (int j=0; j<actoccpi2[gh]; ++j) {
             const unsigned int jj = j + actoccioff2[gh];
-
+            if (spin12 != AlphaBeta && ii == jj) continue;
             const unsigned int ij = (spin12 == AlphaBeta) ? ii * nocc2_act + jj
                                                           : packed_2index_anti(ii, jj);
 
@@ -382,6 +382,7 @@ namespace sc {
 
                 for (int b=0; b<actuoccpi2[fh]; ++b, ++ijab) {
                   const unsigned int bb = b + actuoccioff2[fh];
+                  if (spin12 != AlphaBeta && aa == bb) continue;
                   const unsigned int ab = (spin12 == AlphaBeta) ? aa*nuocc2_act + bb
                                                                 : packed_2index_anti(aa, bb);
 

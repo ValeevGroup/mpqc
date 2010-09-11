@@ -858,6 +858,7 @@ namespace sc {
     // reset some defaults for the RASCI class
     energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
+    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(0));
 
   }
 

@@ -212,7 +212,10 @@ PsiExEnv::get_psi_file11() {
 void PsiExEnv::run_psi(bool skip_input)
 {
   std::vector<std::string> cmdline_args(1,std::string("--messy"));
-  if (skip_input) cmdline_args.push_back(std::string("--noinput"));
+  if (skip_input) {
+    cmdline_args.push_back(std::string("--noinput"));
+    cmdline_args.push_back(std::string("--keepoutput"));
+  }
   run_psi_module("psi3", cmdline_args);
 }
 

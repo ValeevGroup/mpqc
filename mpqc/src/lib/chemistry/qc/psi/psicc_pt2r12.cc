@@ -77,6 +77,9 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   const bool openshell = this->reference()->spin_polarized();
   spinadapted_ = keyval->booleanvalue("spinadapted", KeyValValueboolean(openshell ? 0 : 1));
 
+  pccsd_alpha_ = keyval->doublevalue("pccsd_alpha", KeyValValuedouble(1.0));
+  pccsd_beta_ = keyval->doublevalue("pccsd_beta", KeyValValuedouble(1.0));
+
   r12eval_ = 0;
   mp2r12_energy_ = 0;
 
@@ -139,12 +142,19 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
   input->open();
   PsiCorrWavefunction::write_input(convergence);
   input->write_keyword("psi:wfn", "ccsd");
-  input->write_keyword("ccenergy:convergence", convergence);
-  input->write_keyword("ccenergy:maxiter", maxiter_);
+  write_basic_input(convergence);
   input->close();
 }
 
-void PsiCCSD_PT2R12::compute() {
+void PsiCCSD_PT2R12::write_basic_input(int convergence) {
+  Ref<PsiInput> input = get_psi_input();
+  input->write_keyword("ccenergy:convergence", convergence);
+  input->write_keyword("ccenergy:maxiter", maxiter_);
+  input->write_keyword("ccenergy:pccsd_alpha", pccsd_alpha_);
+  input->write_keyword("ccenergy:pccsd_beta", pccsd_beta_);
+}
+
+ void PsiCCSD_PT2R12::compute() {
   // compute Psi3 CCSD wave function
   PsiCorrWavefunction::compute();
   // read Psi3 CCSD energy
@@ -489,6 +499,9 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << incindent;
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << std::endl;
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << std::endl;
+  if (pccsd_alpha_ != 1.0 || pccsd_beta_ != 1.0) {
+    o << indent << "pCCSD(alpha,beta)     : (" << pccsd_alpha_ << "," << pccsd_beta_ << ")" << std::endl;
+  }
   if (cabs_singles_) {
     o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)
                                           << std::endl;
@@ -533,8 +546,7 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
   input->open();
   PsiCorrWavefunction::write_input(convergence);
   input->write_keyword("psi:wfn", "ccsd_t");
-  input->write_keyword("ccenergy:convergence", convergence);
-  input->write_keyword("ccenergy:maxiter", maxiter_);
+  PsiCCSD_PT2R12::write_basic_input(convergence);
   input->close();
 }
 

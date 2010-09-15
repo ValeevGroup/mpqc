@@ -131,6 +131,8 @@ namespace sc {
   /// PsiCCSD is a concrete implementation of Psi CCSD wave function
 
   class PsiCCSD : public PsiCC {
+      double pccsd_alpha_;
+      double pccsd_beta_;
     protected:
       void write_input(int conv);
     public:

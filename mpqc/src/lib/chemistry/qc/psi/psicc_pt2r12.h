@@ -38,8 +38,6 @@
 
 namespace sc {
 
-  class MBPT2_R12;
-
   ///////////////////////////////////////////////////////////////////
   /// PsiCCSD_PT2R12 is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12}}\f$ method
   class PsiCCSD_PT2R12 : public PsiCC {
@@ -51,6 +49,8 @@ namespace sc {
       bool spinadapted_;
       bool cabs_singles_;
       double cabs_singles_energy_;
+      double pccsd_alpha_;
+      double pccsd_beta_;
 
     protected:
       /// set to true to use Ts instead of Lambdas
@@ -66,6 +66,8 @@ namespace sc {
               - 1;
 
       void write_input(int conv);
+      void write_basic_input(int conv);
+
     public:
       /** The KeyVal constructor uses keywords of PsiCC, WavefunctionWorld, and R12WavefunctionWorld, and the following keywords
           <dl>
@@ -77,6 +79,10 @@ namespace sc {
 
       <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
       CABS singles and include it into the CC-R12 energy. The default is false.
+
+      <dt><tt>pccsd_alpha</tt><dd> The default is 1.0 .
+
+      <dt><tt>pccsd_beta</tt><dd> The default is 1.0 .
 
       </dl> */
       PsiCCSD_PT2R12(const Ref<KeyVal>&);

@@ -879,7 +879,7 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12int
                                              bool use_jinmei_version) {
   Ref<MP2R12Energy> mp2r12energy;
   if(use_jinmei_version){
-    mp2r12energy = new MP2R12Energy_Diag(r12intermediates,debug);
+    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,debug);
   }
   else {
     mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);

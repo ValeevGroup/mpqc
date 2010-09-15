@@ -141,7 +141,7 @@ class Wavefunction: public MolecularEnergy {
         <dt><tt>basis</tt><dd> Specifies a GaussianBasisSet object.  There
         is no default.
 
-        <dt><tt>integral</tt><dd> Specifies an Integral object that
+        <dt><tt>integrals</tt><dd> Specifies an Integral object that
         computes the two electron integrals.  The default is a IntegralV3
         object.
 

@@ -55,11 +55,11 @@ INC = basis.h gaussbas.h guassshell.h files.h \
       distsh.h inttraits.h operator.h union.h \
       obintfactory.h
 
-TESTSRC = btest.cc
+TESTSRC = btest.cc tbint_batch_test.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
-TESTFILES = btest.kv
+TESTFILES = btest.kv tbint_batch_test.in
 
-TESTPROGS = btest
+TESTPROGS = btest tbint_batch_test
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
@@ -77,6 +77,13 @@ f77sym.h: f77sym.in
 btest: $(TESTOBJ) libSCintv3.$(LIBSUF) libSCoint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS) $(LTLINKBINOPTS)
+
+tbint_batch_test:: tbint_batch_test.$(OBJSUF) libSCscf.$(LIBSUF) libSCwfn.$(LIBSUF) libSCintv3.$(LIBSUF) libSCoint3.$(LIBSUF) \
+                  $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o tbint_batch_test $^ $(SYSLIBS) $(LTLINKBINOPTS)
+
+tbint_batch_test.$(OBJSUF): tbint_batch_test.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

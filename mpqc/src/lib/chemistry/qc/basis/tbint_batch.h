@@ -37,20 +37,42 @@
 
 namespace sc {
 
+  template <unsigned int NumCenters> class ShellRange;
+
   /** This is an abstract base type for classes that
       compute integrals involving two electrons and 2 functions per electron.
    */
-  template <int NumCenters>
+  template <unsigned int NumCenters>
     class TwoBodyIntBatch : public RefCount {
     public:
       virtual ~TwoBodyIntBatch();
 
       /// prepare to iterate using seed s
-      template <typename Seed> void init(ShellRange<NumCenters> i, Seed s = Seed());
+      template <typename Seed> void init(const ShellRange<NumCenters>& i, Seed s = Seed());
       /// compute next batch, return true if have another
       bool next();
-      /// returns the size of the current batch
-      size_t size() const;
+
+      template <typename T>
+      struct tuple {
+          T data[NumCenters];
+          T operator[](size_t i) const { return data[i]; }
+          T& operator[](size_t i) { return data[i]; }
+      };
+
+      /// returns the shell indices of the current batch
+      const std::vector< tuple<unsigned int> >& current_batch() const;
+
+      /** The computed shell integrals will be put in the buffer returned
+          by this member.  Some TwoBodyInt specializations have more than
+          one buffer:  The type arguments selects which buffer is returned.
+          If the requested type is not supported, then 0 is returned. */
+      virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
+
+      /** If redundant is true, then keep redundant integrals in the buffer.
+          The default is true. */
+      virtual int redundant() const { return redundant_; }
+      /// \sa redundant().
+      virtual void redundant(int i) { redundant_ = i; }
 
       /// Return the basis set on center c
       const Ref<GaussianBasisSet>& basis(unsigned int c = 0) const;
@@ -61,18 +83,6 @@ namespace sc {
       virtual TwoBodyOperSet::type type() const =0;
       /// return the operator set descriptor
       virtual const Ref<TwoBodyOperSetDescr>& descr() const =0;
-
-      /** The computed shell integrals will be put in the buffer returned
-          by this member.  Some TwoBodyInt specializations have more than
-      one buffer:  The type arguments selects which buffer is returned.
-      If the requested type is not supported, then 0 is returned. */
-      virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
-
-      /** If redundant is true, then keep redundant integrals in the buffer.
-          The default is true. */
-      virtual int redundant() const { return redundant_; }
-      /// \sa redundant().
-      virtual void redundant(int i) { redundant_ = i; }
 
       /// This storage is used to cache computed integrals.
       virtual void set_integral_storage(size_t storage);
@@ -101,8 +111,7 @@ namespace sc {
       int redundant_;
 
       TwoBodyIntBatch(Integral *integral,
-                      const Ref<GaussianBasisSet>&bs[NumCenters],
-                      const Ref<Bounds<NumCenters> >& bounds);
+                      const tuple<Ref<GaussianBasisSet> >& bs);
 
   };
 

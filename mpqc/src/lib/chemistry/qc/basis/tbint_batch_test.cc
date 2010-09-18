@@ -389,6 +389,10 @@ double MP2::compute_mp2_energy() {
             for (p[3]= p_i[3]; p[3] < p_i[3] + p_l[3]; p[3]++, index++) {
               int so = p[3]*nmo;
               int idx = 0;
+              // at this point, user has information and access to:
+              // p, q, r, s indices as p[]
+              // integral value at pqrs[idx] note lack of permutational symmetry, etc.
+              // offsets po, etc., for locating position in mo coefficient matrix cvec.
               for (int i = 0; i < nmo; i++) {
                 for (int j = 0; j < nmo; j++) {
                   for (int k = 0; k < nmo; k++) {

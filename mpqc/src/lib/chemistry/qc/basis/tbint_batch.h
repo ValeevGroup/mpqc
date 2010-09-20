@@ -68,12 +68,6 @@ namespace sc {
           If the requested type is not supported, then 0 is returned. */
       virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
 
-      /** If redundant is true, then keep redundant integrals in the buffer.
-          The default is true. */
-      virtual int redundant() const { return redundant_; }
-      /// \sa redundant().
-      virtual void redundant(int i) { redundant_ = i; }
-
       /// Return the basis set on center c
       const Ref<GaussianBasisSet>& basis(unsigned int c = 0) const;
 
@@ -108,7 +102,6 @@ namespace sc {
       Ref<GaussianBasisSet> bs_[NumCenters];
 
       double *buffer_;
-      int redundant_;
 
       TwoBodyIntBatch(Integral *integral,
                       const tuple<Ref<GaussianBasisSet> >& bs);

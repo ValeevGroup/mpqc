@@ -218,7 +218,7 @@ namespace sc {
 
     exenv_ << keyval->describedclassvalue("psienv");
     if (exenv_.null()) {
-      exenv_ = new PsiExEnv;
+      exenv_ = PsiExEnv::get_default_instance();
     }
 
     nirrep_ = molecule()->point_group()->char_table().order();

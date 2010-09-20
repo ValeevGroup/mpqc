@@ -45,6 +45,11 @@ namespace sc {
 /// PsiExEnv specifies a Psi execution environment.
 class PsiExEnv: public DescribedClass {
 
+    /// The default constructor is identical to the KeyVal constructor with all parameters set to their default values.
+    PsiExEnv();
+
+    static Ref<PsiExEnv> default_instance_;
+
     // Static Psi info
     static std::string defaultinputname_;
     static std::string defaultoutputname_;
@@ -107,9 +112,9 @@ class PsiExEnv: public DescribedClass {
          script option will be used.
       */
     PsiExEnv(const Ref<KeyVal>&);
-    /// The default constructor is identical to the KeyVal constructor with all parameters set to their default values.
-    PsiExEnv();
     ~PsiExEnv();
+
+    static const Ref<PsiExEnv>& get_default_instance();
 
     /// Returns the PsiInput object which PsiExEnv uses
     Ref<PsiInput> psi_input() const { return psiinput_; }

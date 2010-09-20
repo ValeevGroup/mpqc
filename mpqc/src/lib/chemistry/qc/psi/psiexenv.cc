@@ -57,7 +57,16 @@ using namespace sc;
 
 static ClassDesc PsiExEnv_cd(
   typeid(PsiExEnv),"PsiExEnv",1,"public DescribedClass",
-  create<PsiExEnv>, create<PsiExEnv>, 0);
+  0, create<PsiExEnv>, 0);
+
+Ref<PsiExEnv> PsiExEnv::default_instance_ = 0;
+
+const Ref<PsiExEnv>&
+PsiExEnv::get_default_instance() {
+  if (default_instance_.null())
+    default_instance_ = new PsiExEnv;
+  return default_instance_;
+}
 
 string PsiExEnv::defaultinputname_("input.dat");
 string PsiExEnv::defaultoutputname_("output.dat");

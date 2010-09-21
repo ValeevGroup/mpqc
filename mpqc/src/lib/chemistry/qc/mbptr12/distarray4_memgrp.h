@@ -77,13 +77,15 @@ class DistArray4_MemoryGrp: public DistArray4 {
 
     Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim());
 
-    // Implementation of DistArray4_MemoryGrp
+    // Implementation of DistArray4_MemoryGrp::deactivate)_
     void deactivate();
-    /// implementation of DistArray4::data_persistent()
+    // Implementation of DistArray4::data_persistent()
     bool data_persistent() const { return false; }
-    /// Stores an ij pair block of integrals (assumes the block resides locally)
+
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
-    /// Retrieves an ij pair block of integrals
+    void store_pair_subblock(int i, int j, tbint_type oper_type,
+                             int xstart, int xfence, int ystart, int yfence,
+                             const double* ints);
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type,
                                       double* buf = 0) const;
     void retrieve_pair_subblock(int i, int j, tbint_type oper_type,

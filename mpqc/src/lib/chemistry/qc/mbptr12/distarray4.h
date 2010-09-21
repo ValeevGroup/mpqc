@@ -136,7 +136,10 @@ class DistArray4: virtual public SavableState {
     /// if this returns false, call to deactivate may destroy data
     virtual bool data_persistent() const =0;
     /** Retrieves an ij block of integrals. Note that it comes stored according to storage().
-        Optional buf specifies the buffer in which to write the data (if not provided, will allocate dynamically).
+        No locking is performed.
+
+        \param buf specifies the buffer in which to write the data (if not provided, will allocate dynamically).
+        this buffer will be used by subsequent retrieve_pair_block() requests until release_pair_block() is called.
       */
     virtual const double * retrieve_pair_block(int i, int j, tbint_type oper_type,
                                                double* buf = 0) const =0;
@@ -147,8 +150,14 @@ class DistArray4: virtual public SavableState {
                                         double* buf) const =0;
     /// Releases the buffer that holds ij block of integrals. If it was allocated by DistArray4, it will be freed.
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
-    /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().
+    /// Stores an ij pair block of integrals. It is assumed to be stored according to storage(). It must also be "local", i.e. is_local(i,j) must be true.
+    /// No locking is performed.
     virtual void store_pair_block(int i, int j, tbint_type oper_type, const double* ints) =0;
+    /// Stores an rectangular subblock of ij block of integrals. Most efficient if the block is contiguous, i.e. yfence - ystart = ny().
+    /// \sa store_pair_block()
+    virtual void store_pair_subblock(int i, int j, tbint_type oper_type,
+                                     int xstart, int xfence, int ystart, int yfence,
+                                     const double* ints) =0;
 
     int ij_index(int i, int j) const { return i*nj_ + j; };
 
@@ -162,6 +171,8 @@ class DistArray4: virtual public SavableState {
         If task i has access to the integrals, then twa_map[i] is its index among
         the tasks with access, -1 otherwise. */
     int tasks_with_access(std::vector<int>& twa_map) const;
+
+    const Ref<MessageGrp>& msg() const { return msg_; }
 
   private:
     /// Set to nonzero to debug this and derived classes
@@ -197,6 +208,19 @@ class DistArray4: virtual public SavableState {
 */
 Ref<DistArray4> permute23(const Ref<DistArray4>& src,
                           size_t available_memory);
+
+/// contracts ijxy ("bra") with klxy ("ket") to produce ijkl ("braket")
+void contract34(const Ref<DistArray4>& braket,
+                double scale,
+                const Ref<DistArray4>& bra,
+                unsigned int intsetidx_bra,
+                const Ref<DistArray4>& ket,
+                unsigned int intsetidx_ket,
+                int debug = 0);
+
+/// copies contents of src into dst
+RefSCMatrix& operator<<(RefSCMatrix& dst,
+                        const Ref<DistArray4>& src);
 
 namespace detail {
 

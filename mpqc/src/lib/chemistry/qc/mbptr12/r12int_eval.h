@@ -356,6 +356,31 @@ class R12IntEval : virtual public SavableState {
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
 
+  /** overload of the above when the result should be stored as a DistArray4
+
+      \param antisymmetrize indicates whether the target tensor is antisymmetric w.r.t permutation of
+      particles or now.
+   */
+  template <bool CorrFactorInBra,
+            bool CorrFactorInKet>
+  void
+  contract_tbint_tensor(
+           std::vector< Ref<DistArray4> >& results,
+           TwoBodyOper::type tbint_type_bra,
+           TwoBodyOper::type tbint_type_ket,
+           double scale,
+           const Ref<OrbitalSpace>& space1_bra,
+           const Ref<OrbitalSpace>& space2_bra,
+           const Ref<OrbitalSpace>& space1_intb,
+           const Ref<OrbitalSpace>& space2_intb,
+           const Ref<OrbitalSpace>& space1_ket,
+           const Ref<OrbitalSpace>& space2_ket,
+           const Ref<OrbitalSpace>& space1_intk,
+           const Ref<OrbitalSpace>& space2_intk,
+           bool antisymmetrize,
+           const std::vector<std::string>& tformkeys_bra,
+           const std::vector<std::string>& tformkeys_ket);
+
   /** overload of the above when no pre- and post-processing is needed.
       this version is also much more efficient since it does contraction
       as a DGEMM (hence it tiles loads).
@@ -381,6 +406,7 @@ class R12IntEval : virtual public SavableState {
            bool antisymmetrize,
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
+
 
   // for now make it public
   public:
@@ -640,6 +666,10 @@ public:
   RefSCMatrix V(SpinCase2 spincase2,
                 const Ref<OrbitalSpace>& p,
                 const Ref<OrbitalSpace>& q);
+  /** Compute \f$ V_{pq}^{xy} = \frac{1}{2} \bar{g}_{pq}^{\alpha\beta} \bar{R}_{\alpha\beta}^{xy}\f$. \sa R12IntEval::V() */
+  Ref<DistArray4> V_distarray4(SpinCase2 spincase2,
+                               const Ref<OrbitalSpace>& p,
+                               const Ref<OrbitalSpace>& q);
   /// Compute \f$ P_{uv}^{xy} = \frac{1}{4} \bar{R}^{\alpha\beta}_{uv} \bar{g}_{\alpha\beta}^{\gamma\delta} \bar{R}_{\gamma\delta}^{xy}\f$ P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
   /** Returns the cusp consistent coefficient \f$C_{ij}^{kl}\f$. */

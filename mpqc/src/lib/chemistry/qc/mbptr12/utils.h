@@ -29,13 +29,14 @@
 #pragma interface
 #endif
 
+#ifndef _chemistry_qc_mbptr12_utils_h
+#define _chemistry_qc_mbptr12_utils_h
+
 #include <vector>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
-
-#ifndef _chemistry_qc_mbptr12_utils_h
-#define _chemistry_qc_mbptr12_utils_h
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 namespace sc {
 
@@ -138,6 +139,13 @@ namespace sc {
                     const Ref<OrbitalSpace>& ket1,
                     const Ref<OrbitalSpace>& ket2);
 
+  /** antisymmetrizes the 4-index array in-place:
+      <ij|xy> =  ( (ij|xy) + (ji|yx) - (ij|yx) - (ji|xy) ) / 2
+
+      \param A input tensor. on output contains the antisymmetrized tensor. Valid A will obey these conditions: A->ni() == A->nj(), A->nx() == A->ny()
+    */
+  void antisymmetrize(const Ref<DistArray4>& A);
+
   /** Converts RefDiagSCMatrix to std::vector<double>
   */
   std::vector<double> convert(const RefDiagSCMatrix& A);
@@ -151,6 +159,28 @@ namespace sc {
 
   /// Returns the lower triangle of the matrix B (which should be symmetric)
   RefSymmSCMatrix to_lower_triangle(const RefSCMatrix& B);
+
+  namespace detail {
+    // replace with standard tuple when we switch C++0x
+    template <typename T0, typename T1, typename T2>
+    struct triple {
+      public:
+        triple() {}
+        triple(const T0& i0,
+               const T1& i1,
+               const T2& i2) : i0_(i0), i1_(i1), i2_(i2) {}
+        triple(const triple& other) : i0_(other.i0_), i1_(other.i1_), i2_(other.i2_) {}
+        triple& operator=(const triple& other) {
+          i0_ = other.i0_;
+          i1_ = other.i1_;
+          i2_ = other.i2_;
+        }
+        T0 i0_;
+        T1 i1_;
+        T2 i2_;
+    };
+
+  };
 
 }
 

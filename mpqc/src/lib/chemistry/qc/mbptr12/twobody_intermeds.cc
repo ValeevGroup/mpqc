@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
+#include <chemistry/qc/mbptr12/print_scmat_norms.h>
 
 using namespace std;
 using namespace sc;
@@ -412,9 +413,11 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   else
     tforms.push_back(tforms_f12[0]);
 
+  RefSCMatrix Vobs = V.clone();
+  Vobs.assign(0.0);
   contract_tbint_tensor<true,false>
     (
-     V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+     Vobs, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
      -1.0,
      xspace1, xspace2,
      orbs1, orbs2,
@@ -422,9 +425,29 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
      orbs1, orbs2,
      spincase2!=AlphaBeta, tforms_f12, tforms
      );
+  V.accumulate(Vobs);
 
   if (debug_ >= DefaultPrintThresholds::O4) {
     V.print(prepend_spincase(spincase2,"Vpqxy: diag+OBS contribution").c_str());
+  }
+
+  if (debug_ >= DefaultPrintThresholds::O4) {
+    std::vector< Ref<DistArray4> > vobs_da4;
+    contract_tbint_tensor<true,false>
+      (
+       vobs_da4, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+       -1.0,
+       xspace1, xspace2,
+       orbs1, orbs2,
+       p1, p2,
+       orbs1, orbs2,
+       spincase2!=AlphaBeta, tforms_f12, tforms
+       );
+
+    RefSCMatrix Vobs_da4 = Vobs.clone();
+    Vobs_da4.assign(0.0);
+    Vobs_da4 << vobs_da4[0];
+    print_scmat_norms(Vobs_da4-Vobs, prepend_spincase(spincase2,"Vpqxy: OBS contribution distarray4-incore (should be 0)").c_str());
   }
 
   // These terms only contribute if Projector=2
@@ -462,9 +485,10 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
     else
       tforms_imjP.push_back(tforms_f12_xmyP[0]);
 
+    RefSCMatrix Vcabs1 = V.clone(); Vcabs1.assign(0.0);
     contract_tbint_tensor<true,false>
       (
-       V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+       Vcabs1, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
        perm_factor,
        xspace1, xspace2,
        occ1, rispace2,
@@ -472,6 +496,26 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
        occ1, rispace2,
        antisymmetrize, tforms_f12_xmyP, tforms_imjP
        );
+    V.accumulate(Vcabs1);
+
+    if (debug_ >= DefaultPrintThresholds::O4) {
+      std::vector< Ref<DistArray4> > vcabs1_da4;
+      contract_tbint_tensor<true,false>
+      (
+       vcabs1_da4, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+       perm_factor,
+       xspace1, xspace2,
+       occ1, rispace2,
+       p1, p2,
+       occ1, rispace2,
+       antisymmetrize, tforms_f12_xmyP, tforms_imjP
+       );
+
+      RefSCMatrix Vcabs1_da4 = Vcabs1.clone();
+      Vcabs1_da4.assign(0.0);
+      Vcabs1_da4 << vcabs1_da4[0];
+      print_scmat_norms(Vcabs1_da4 - Vcabs1, prepend_spincase(spincase2,"Vpqxy: CABS1 contribution distarray4-incore (should be 0)").c_str());
+    }
 
     // If particles 1 and 2 are not equivalent, also need another set of terms
     if (!part1_equiv_part2) {
@@ -499,9 +543,10 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
       else
     tforms_iPjm.push_back(tforms_f12_xPym[0]);
 
+      RefSCMatrix Vcabs2 = V.clone(); Vcabs2.assign(0.0);
       contract_tbint_tensor<true,false>
     (
-     V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+     Vcabs2, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
      -1.0,
      xspace1, xspace2,
      rispace1, occ2,
@@ -509,6 +554,27 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
      rispace1, occ2,
      antisymmetrize, tforms_f12_xPym, tforms_iPjm
      );
+      V.accumulate(Vcabs2);
+
+      if (debug_ >= DefaultPrintThresholds::O4) {
+        std::vector< Ref<DistArray4> > vcabs2_da4;
+        contract_tbint_tensor<true,false>
+        (
+         vcabs2_da4, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+         -1.0,
+         xspace1, xspace2,
+         rispace1, occ2,
+         p1, p2,
+         rispace1, occ2,
+         antisymmetrize, tforms_f12_xPym, tforms_iPjm
+         );
+
+        RefSCMatrix Vcabs2_da4 = Vcabs2.clone();
+        Vcabs2_da4.assign(0.0);
+        Vcabs2_da4 << vcabs2_da4[0];
+        print_scmat_norms(Vcabs2_da4 - Vcabs2, prepend_spincase(spincase2,"Vpqxy: CABS2 contribution distarray4-incore (should be 0)").c_str());
+      }
+
     } // if part1_equiv_part2
   } // ABS != OBS
 

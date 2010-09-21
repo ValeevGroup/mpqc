@@ -263,6 +263,58 @@ DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
   }
 }
 
+void
+DistArray4_Node0File::store_pair_subblock(int i, int j, tbint_type oper_type,
+                                          int xstart, int xfence, int ystart, int yfence,
+                                          const double *buf)
+{
+  assert(this->active());  //make sure we are active
+  // Can write blocks?
+  if (!is_avail(i,j))
+    throw ProgrammingError("DistArray4_Node0File::store_pair_block -- can only be called on node 0",
+                           __FILE__,__LINE__);
+
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  const int ij = ij_index(i,j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+
+  const size_t batchsize = (contiguous ? xysize : ysize) * sizeof(double);
+  const off_t stridesize = (off_t)ny() * sizeof(double);
+  off_t offset = pb->offset_ +
+          (off_t)oper_type*blksize() +
+          (off_t)(xstart*ny() + ystart)*sizeof(double);
+  ssize_t wrote_this_much = 0;
+  while (wrote_this_much < bufsize) {
+    // first, seek
+    if (classdebug() > 0)
+      ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type
+                    << " offset=" << offset << " batchsize=" << batchsize << endl;
+    const off_t result_offset = lseek(datafile_,offset,SEEK_SET);
+    if (offset == static_cast<off_t>(-1) || result_offset != offset)
+      throw FileOperationFailed("DistArray4_Node0File::store_pair_block() -- lseek failed",
+                                __FILE__, __LINE__,
+                                filename_, FileOperationFailed::Other);
+
+    // then, write
+    const ssize_t amount = write(datafile_, buf, batchsize);
+    wrote_this_much += amount;
+    if (amount != batchsize) {
+      const char* errormsg = strerror(errno);
+      ExEnv::out0() << "DistArray4_Node0File::store_pair_block(): " << errormsg << std::endl;
+      throw FileOperationFailed("DistArray4_Node0File::store_pair_block() -- write failed",
+                                __FILE__, __LINE__,
+                                filename_, FileOperationFailed::Write);
+    }
+    offset += stridesize;
+    buf += batchsize/sizeof(double);
+  }
+}
+
 const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type,
                                                    double* buf) const {

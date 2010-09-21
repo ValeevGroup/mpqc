@@ -256,6 +256,50 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
   check_error_code_(errcod);
 }
 
+void DistArray4_MPIIOFile_Ind::store_pair_subblock(int i, int j, tbint_type oper_type,
+                                                   int xstart, int xfence, int ystart, int yfence,
+                                                   const double *buf)
+{
+  assert(this->active());  //make sure we are active
+  // store blocks local to this node ONLY
+  assert(is_local(i,j));
+
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  const int nproc = ntasks();
+  const int ij = ij_index(i,j);
+  const PairBlkInfo* pb = &pairblk_[ij];
+  const int local_ij_index = ij / nproc;
+
+  const size_t batchsize = contiguous ? xysize : ysize;
+  const MPI_Offset stridesize = (MPI_Offset)ny() * sizeof(double);
+  MPI_Offset offset = pairblk_[ij].offset_ + (MPI_Offset) oper_type * blksize() +
+                                             (MPI_Offset) (xstart*ny() + ystart)*sizeof(double);
+  size_t wrote_this_many = 0;
+
+  while (wrote_this_many < xysize) {
+    // first, seek, then write
+    if (classdebug() > 0)
+      ExEnv::outn() << indent << "storing block: me=" << me() << " file=" << filename_ << " i,j=" << i << "," << j
+                    << " oper_type=" << oper_type << " batchsize=" << batchsize << endl;
+    int errcod = MPI_File_seek(datafile_,
+                               offset,
+                               MPI_SEEK_SET);
+    check_error_code_(errcod);
+    MPI_Status status;
+    errcod = MPI_File_write(datafile_, (void *) buf, batchsize, MPI_DOUBLE,
+                            &status);
+    check_error_code_(errcod);
+    wrote_this_many += batchsize;
+    offset += stridesize;
+    buf += batchsize;
+  }
+}
+
 const double*
 DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type,
                                               double* buf) const

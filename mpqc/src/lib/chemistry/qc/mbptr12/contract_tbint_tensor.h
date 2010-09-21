@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <cmath>
 #include <util/misc/regtime.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
@@ -534,28 +535,6 @@ namespace sc {
     tim_gen_tensor_contract.exit();
   }
 
-  namespace detail {
-    // replace with standard tuple when we switch C++0x
-    template <typename T0, typename T1, typename T2>
-    struct triple {
-      public:
-        triple() {}
-        triple(const T0& i0,
-               const T1& i1,
-               const T2& i2) : i0_(i0), i1_(i1), i2_(i2) {}
-        triple(const triple& other) : i0_(other.i0_), i1_(other.i1_), i2_(other.i2_) {}
-        triple& operator=(const triple& other) {
-          i0_ = other.i0_;
-          i1_ = other.i1_;
-          i2_ = other.i2_;
-        }
-        T0 i0_;
-        T1 i1_;
-        T2 i2_;
-    };
-
-  };
-
   template<bool CorrFactorInBra, bool CorrFactorInKet>
   void R12IntEval::contract_tbint_tensor(
                                          RefSCMatrix& T,
@@ -700,17 +679,6 @@ namespace sc {
       assert(tspace2_intk == space2_intk);
     }
 
-    const unsigned int bratform_block_ncols = space2_intb->rank();
-    const unsigned int kettform_block_ncols = space2_intk->rank();
-    const RefDiagSCMatrix evals1_bra = space1_bra->evals();
-    const RefDiagSCMatrix evals2_bra = space2_bra->evals();
-    const RefDiagSCMatrix evals1_ket = space1_ket->evals();
-    const RefDiagSCMatrix evals2_ket = space2_ket->evals();
-    const RefDiagSCMatrix evals1_intb = space1_intb->evals();
-    const RefDiagSCMatrix evals2_intb = space2_intb->evals();
-    const RefDiagSCMatrix evals1_intk = space1_intk->evals();
-    const RefDiagSCMatrix evals2_intk = space2_intk->evals();
-
     // Using spinorbital iterators means I don't take into account perm symmetry
     // More efficient algorithm will require generic code
     const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
@@ -746,11 +714,17 @@ namespace sc {
     const unsigned int blksize_int_sq = space1_intb->rank() * space2_intb->rank();
     const unsigned int blksize_int_tri = space1_intb->rank() * (space1_intb->rank() - 1) / 2;
     const unsigned int blksize_int = alphabeta ? blksize_int_sq : blksize_int_tri;
+    //
     // maximum tile size is determined by the available memory
-    const size_t memory_available = tfactory()->memory();
-    const size_t max_tile_size = memory_available / (2 * blksize_int * sizeof(double));
+    const size_t memory_available = ConsumableResources::get_default_instance()->memory();
+    // may need scratch to hold a block of integrals to antisymmetrize
+    const size_t memory_scratch = alphabeta ? 0 : blksize_int_sq * sizeof(double);
+    if (memory_scratch >= memory_available) {
+      throw AlgorithmException("not enough memory for a scratch buffer, increase memory", __FILE__, __LINE__, class_desc());
+    }
+    const size_t max_tile_size = (memory_available - memory_scratch) / (2 * blksize_int * sizeof(double));
     if (max_tile_size == 0) {
-      throw AlgorithmException("not enough memory for even single tile", __FILE__, __LINE__);
+      throw AlgorithmException("not enough memory for a single tile, increase memory", __FILE__, __LINE__, class_desc());
     }
     // try tiling nij_bra and nij_ket into nproc tiles
     const int nproc = r12world()->world()->msg()->n();
@@ -1005,6 +979,276 @@ namespace sc {
     ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"
         << std::endl;
     tim_gen_tensor_contract.exit();
+  }
+
+  template<bool CorrFactorInBra, bool CorrFactorInKet>
+  void
+  R12IntEval::contract_tbint_tensor(std::vector< Ref<DistArray4> >& results,
+                                    TwoBodyOper::type tbint_type_bra,
+                                    TwoBodyOper::type tbint_type_ket,
+                                    double scale,
+                                    const Ref<OrbitalSpace>& space1_bra,
+                                    const Ref<OrbitalSpace>& space2_bra,
+                                    const Ref<OrbitalSpace>& space1_intb,
+                                    const Ref<OrbitalSpace>& space2_intb,
+                                    const Ref<OrbitalSpace>& space1_ket,
+                                    const Ref<OrbitalSpace>& space2_ket,
+                                    const Ref<OrbitalSpace>& space1_intk,
+                                    const Ref<OrbitalSpace>& space2_intk,
+                                    bool antisymmetrize,
+                                    const std::vector<std::string>& tformkeys_bra,
+                                    const std::vector<std::string>& tformkeys_ket) {
+
+    // are external spaces of particles 1 and 2 equivalent?
+    const bool part1_strong_equiv_part2 = (space1_bra == space2_bra
+        && space1_ket == space2_ket);
+    // can external spaces of particles 1 and 2 be equivalent?
+    const bool part1_weak_equiv_part2 = (space1_bra->rank()
+        == space2_bra->rank() && space1_ket->rank() == space2_ket->rank());
+    // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
+    bool correct_semantics = (antisymmetrize && (part1_weak_equiv_part2
+        || part1_strong_equiv_part2)) || !antisymmetrize;
+    // also
+    correct_semantics
+        = (correct_semantics && (space1_intb->rank() == space1_intk->rank())
+            && (space2_intb->rank() == space2_intk->rank()));
+    if (!correct_semantics)
+      throw ProgrammingError(
+                             "R12IntEval::contract_tbint_tensor_() -- incorrect call semantics",
+                             __FILE__, __LINE__);
+
+    //
+    // How is permutational symmetry implemented?
+    //
+    // 1) if need to antisymmetrize && internal spaces for p1 and p2 are same, then
+    // can antisymmetrize each integral explicitly and compute antisymmetric tensor:
+    // \f$
+    //   T_{ij}^{kl} = \sum_{p<q} (A_{ij}^{pq} - A_{ij}^{qp}) (B^{kl}_{pq} - B^{kl}_{qp})
+    // \f$
+    // 2) if need to antisymmetrize but internal spaces for p1 and p2 do not match,
+    // then compute as AlphaBeta and antisymmetrize at the end. Temporary storage
+    // will be allocated.
+    //
+
+    // are internal spaces of particles 1 and 2 equivalent?
+    const bool part1_intequiv_part2 = (space1_intb == space2_intb
+        && space1_intk == space2_intk);
+    // If antisymmetrize == true and particles 1 and 2 are equivalent, then the target is computed as:
+    // T_{ij}^{kl} = \sum_{p<q} (A_{ij}^{pq} - A_{ij}^{qp}) (B^{kl}_{pq} - B^{kl}_{qp})
+    // i.e. each block of A and B is antisymmetrized first (for each i<j, k<l).
+    // In all other cases, even when antisymmetric target T tensor is requested,
+    // compute alpha-beta T and then antisymmetrize the result, i.e.
+    // V_{ij}^{kl} = \sum_{pq} A_{ij}^{pq} B^{kl}_{pq}
+    // for all i,j,k,l, then
+    // T_{ij}^{kl} = V_{ij}{kl} - V_{ij}^{lk}
+    // for i<j, k<l
+    // this flag determines whether to contract as alpha-beta. If not, each source integral will be antisymmetrized
+    // first
+    const bool alphabeta = !(antisymmetrize && part1_strong_equiv_part2
+        && part1_intequiv_part2);
+
+    //
+    // NOTE! Even if computing in AlphaBeta, internal sums can be over AlphaAlpha!!!
+    // Logic should not become much more complicated. Only need time to implement.
+    //
+
+    const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions()
+                                                   : 1);
+    const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions()
+                                                   : 1);
+
+    //
+    // get transforms
+    //
+    typedef std::vector<Ref<TwoBodyMOIntsTransform> > tformvec;
+
+    // bra transforms
+    const size_t num_tforms_bra = tformkeys_bra.size();
+    tformvec transforms_bra(num_tforms_bra);
+    for (unsigned int t = 0; t < num_tforms_bra; ++t) {
+      transforms_bra[t] = moints_runtime4()->get(tformkeys_bra[t]);
+    }
+
+    // ket transforms
+    const size_t num_tforms_ket = tformkeys_ket.size();
+    tformvec transforms_ket(num_tforms_ket);
+    for (unsigned int t = 0; t < num_tforms_ket; ++t) {
+      transforms_ket[t] = moints_runtime4()->get(tformkeys_ket[t]);
+    }
+
+    // create result DistArray4 objects, if needed
+    if (results.empty()) {
+      std::vector<std::string> tformkeys_result;
+      { // create result objects by cloning transforms_bra[0]
+        transforms_bra[0]->compute();
+        for (unsigned int tb = 0; tb < num_tforms_bra; ++tb) {
+          const std::string key_bra = tformkeys_bra[tb];
+          const ParsedTwoBodyFourCenterIntKey pkey_bra(key_bra);
+          const std::string parb = pkey_bra.params();
+          std::string params_bra;
+          if (!parb.empty()) { // remove [ and ]
+            const std::string::size_type lbpos = parb.find_first_of('[');
+            const std::string::size_type rbpos = parb.find_last_of(']');
+            assert(lbpos < rbpos);
+            params_bra = parb.substr(lbpos + 1, (rbpos - lbpos - 1));
+          }
+
+          for (unsigned int tk = 0; tk < num_tforms_ket; ++tk) {
+            const std::string key_ket = tformkeys_ket[tk];
+            const ParsedTwoBodyFourCenterIntKey pkey_ket(key_ket);
+            const std::string park = pkey_ket.params();
+            std::string params_ket;
+            if (!park.empty()) { // remove [ and ]
+              const std::string::size_type lbpos = park.find_first_of('[');
+              const std::string::size_type rbpos = park.find_last_of(']');
+              assert(lbpos < rbpos);
+              params_ket = park.substr(lbpos + 1, (rbpos - lbpos - 1));
+            }
+
+            std::string params_result;
+            if (CorrFactorInBra && CorrFactorInKet)
+              params_result = '[' + params_bra + ',' + params_ket + ']';
+            else {
+              if (CorrFactorInBra && !CorrFactorInKet)
+                params_result = '[' + params_bra + ']';
+              if (!CorrFactorInBra && CorrFactorInKet)
+                params_result = '[' + params_ket + ']';
+            }
+
+            const std::string descr_key = pkey_bra.oper() + "@" + pkey_ket.oper() + params_result;
+
+            const std::string key_result =
+                ParsedTwoBodyFourCenterIntKey::key(space1_bra->id(),
+                                                   space2_bra->id(),
+                                                   space1_ket->id(),
+                                                   space2_ket->id(), descr_key,
+                                                   TwoBodyIntLayout::b1b2_k1k2);
+
+            tformkeys_result.push_back(key_result);
+
+            DistArray4Dimensions dims(1, space1_bra->rank(),
+                                      space2_bra->rank(), space1_ket->rank(),
+                                      space2_ket->rank());
+            Ref<DistArray4> result = transforms_bra[0]->ints_acc()->clone(dims);
+            results.push_back(result);
+          }
+        }
+      }
+    } else { // results were given -- make sure they have expected shape
+      const size_t nresults = results.size();
+      assert(nresults == num_tforms_bra*num_tforms_ket);
+      for(int r=0; r<nresults; ++r) {
+        assert(results[r]->num_te_types() == 1);
+        assert(results[r]->ni() == space1_bra->rank());
+        assert(results[r]->nj() == space2_bra->rank());
+        assert(results[r]->nx() == space1_ket->rank());
+        assert(results[r]->ny() == space2_ket->rank());
+        assert(results[r]->storage() == DistArray4Storage_XY);
+      }
+    }
+
+    //
+    // Generate contract label
+    //
+    Timer tim_gen_tensor_contract("Generic tensor contract");
+    std::string label;
+    {
+      std::ostringstream oss_bra;
+      oss_bra << "<" << space1_bra->id() << " " << space2_bra->id()
+          << (antisymmetrize ? "||" : "|") << space1_intb->id() << " "
+          << space2_intb->id() << ">";
+      const std::string label_bra = oss_bra.str();
+      std::ostringstream oss_ket;
+      oss_ket << "<" << space1_ket->id() << " " << space2_ket->id()
+          << (antisymmetrize ? "||" : "|") << space1_intk->id() << " "
+          << space2_intk->id() << ">";
+      const std::string label_ket = oss_ket.str();
+      std::ostringstream oss;
+      oss << "<" << space1_bra->id() << " " << space2_bra->id()
+          << (antisymmetrize ? "||" : "|") << space1_ket->id() << " "
+          << space2_ket->id() << "> = " << label_bra << " . " << label_ket
+          << "^T";
+      label = oss.str();
+    }
+    ExEnv::out0() << std::endl << indent << "Entered generic contraction (" << label
+        << ")" << std::endl;
+    ExEnv::out0() << incindent;
+
+    //
+    // make sure that these are the needed transforms
+    //
+    {
+      Ref<OrbitalSpace> tspace1_bra = transforms_bra[0]->space1();
+      Ref<OrbitalSpace> tspace2_bra = transforms_bra[0]->space3();
+      Ref<OrbitalSpace> tspace1_intb = transforms_bra[0]->space2();
+      Ref<OrbitalSpace> tspace2_intb = transforms_bra[0]->space4();
+      Ref<OrbitalSpace> tspace1_ket = transforms_ket[0]->space1();
+      Ref<OrbitalSpace> tspace2_ket = transforms_ket[0]->space3();
+      Ref<OrbitalSpace> tspace1_intk = transforms_ket[0]->space2();
+      Ref<OrbitalSpace> tspace2_intk = transforms_ket[0]->space4();
+      assert(tspace1_bra == space1_bra);
+      assert(tspace2_bra == space2_bra);
+      assert(tspace1_ket == space1_ket);
+      assert(tspace2_ket == space2_ket);
+      assert(tspace1_intb == space1_intb);
+      assert(tspace2_intb == space2_intb);
+      assert(tspace1_intk == space1_intk);
+      assert(tspace2_intk == space2_intk);
+    }
+
+    //
+    // Contraction loops
+    //
+
+    unsigned int fbraoffset = 0;
+    unsigned int fbraket = 0;
+    for (unsigned int fbra = 0; fbra < nbrasets; ++fbra) {
+      Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbra];
+      const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
+      const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
+
+      tformb->compute();
+      Ref<DistArray4> accumb = tformb->ints_acc();
+
+      unsigned int fketoffset = 0;
+      for (unsigned int fket = 0; fket < nketsets; ++fket, ++fbraket) {
+          Ref<TwoBodyMOIntsTransform> tformk = transforms_ket[fket];
+          const Ref<TwoBodyIntDescr>& intdescrk = tformk->intdescr();
+          const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
+
+          tformk->compute();
+          Ref<DistArray4> accumk = tformk->ints_acc();
+
+
+          if (debug_ >= DefaultPrintThresholds::diagnostics) {
+            ExEnv::out0() << indent << "Using transforms " << tformb->name()
+            << " and " << tformk->name() << std::endl;
+          }
+
+          sc::contract34(results[fbraket],
+                         scale,
+                         accumb,
+                         intsetidx_bra,
+                         accumk,
+                         intsetidx_ket,
+                         debug_);
+
+          if (antisymmetrize) {
+            sc::antisymmetrize(results[fbraket]);
+          }
+
+          //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << std::endl;
+          //ExEnv::out0() << indent << "Accumb == Accumk : " << (accumb==accumk) << std::endl;
+      } // ket blocks
+
+    } // bra blocks
+
+    ExEnv::out0() << decindent;
+    ExEnv::out0() << indent << "Exited generic contraction (" << label << ")"
+        << std::endl;
+    tim_gen_tensor_contract.exit();
+
   }
 
 }

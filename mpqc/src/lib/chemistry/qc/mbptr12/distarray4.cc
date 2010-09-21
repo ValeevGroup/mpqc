@@ -35,8 +35,15 @@
 #include <sstream>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/consumableresources.h>
+#include <util/misc/regtime.h>
+#include <util/class/scexception.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/distarray4.h>
+#include <chemistry/qc/mbptr12/pairiter.h>
+#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/blas.h>
+#include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
 using namespace sc;
@@ -386,6 +393,309 @@ namespace sc {
     delete[] xy_buf;
 
     return result;
+  }
+
+  void contract34(const Ref<DistArray4>& braket,
+                  double scale,
+                  const Ref<DistArray4>& bra,
+                  unsigned int intsetidx_bra,
+                  const Ref<DistArray4>& ket,
+                  unsigned int intsetidx_ket,
+                  int debug) {
+
+    bra->activate();
+    ket->activate();
+    braket->activate();
+
+    const unsigned int nb1 = bra->ni();
+    const unsigned int nb2 = bra->nj();
+    const unsigned int nk1 = ket->ni();
+    const unsigned int nk2 = ket->nj();
+    const unsigned int n1 =  bra->nx();
+    const unsigned int n2 =  bra->ny();
+    assert(n1 == ket->nx());
+    assert(n2 == ket->ny());
+    assert(braket->ni() == nb1);
+    assert(braket->nj() == nb2);
+    assert(braket->nx() == nk1);
+    assert(braket->ny() == nk2);
+
+    // Using spinorbital iterators means I don't take into account perm symmetry
+    // More efficient algorithm will require generic code
+    SpinMOPairIter iterbra(nb1, nb2, false);
+    SpinMOPairIter iterket(nk1, nk2, false);
+    SpinMOPairIter iterint( n1,  n2, false);
+    // size of one block of <space1_bra space2_bra|
+    const unsigned int nbra = iterbra.nij();
+    // size of one block of <space1_ket space2_ket|
+    const unsigned int nket = iterket.nij();
+
+    //
+    // data will be accessed in tiles
+    // determine tiling here
+    //
+    // total number of (bra1 bra2| index combinations
+    const size_t nij_bra = nbra;
+    // total number of (ket1 ket2| index combinations
+    const size_t nij_ket = nket;
+    // size of each integral block |int1 int2)
+    const unsigned int blksize_int_sq = n1 * n2;
+    const unsigned int blksize_int = blksize_int_sq;
+    //
+    // maximum tile size is determined by the available memory
+    const size_t memory_available = ConsumableResources::get_default_instance()->memory();
+    const size_t max_tile_size = memory_available / (2 * blksize_int * sizeof(double));
+    if (max_tile_size == 0) {
+      throw AlgorithmException("not enough memory for a single tile, increase memory", __FILE__, __LINE__);
+    }
+    // try tiling nij_bra and nij_ket into nproc tiles
+    const int nproc = bra->msg()->n();
+    size_t try_tile_size_bra = (nij_bra + nproc - 1) / nproc;
+    size_t try_tile_size_ket = (nij_ket + nproc - 1) / nproc;
+    try_tile_size_bra = std::min(try_tile_size_bra, max_tile_size);
+    try_tile_size_ket = std::min(try_tile_size_ket, max_tile_size);
+    const size_t ntiles_bra = (nij_bra + try_tile_size_bra - 1) / try_tile_size_bra;
+    const size_t ntiles_ket = (nij_ket + try_tile_size_ket - 1) / try_tile_size_ket;
+    const size_t tile_size_bra = (nij_bra + ntiles_bra - 1) / ntiles_bra;
+    const size_t tile_size_ket = (nij_ket + ntiles_ket - 1) / ntiles_ket;
+
+    // scratch buffers to hold tiles and the result of the contraction
+    double* T_bra = new double[tile_size_bra * blksize_int];
+    double* T_ket = new double[tile_size_ket * blksize_int];
+    double* T_result = new double[tile_size_bra * tile_size_ket];
+
+    // split work over tasks which have access to integrals
+    // WARNING: assuming same accessibility for both bra and ket transforms
+    std::vector<int> proc_with_ints;
+    const int nproc_with_ints = bra->tasks_with_access(proc_with_ints);
+    const int me = bra->msg()->me();
+
+    if (bra->has_access(me)) {
+
+      size_t task_count = 0;
+
+      // these will keep track of each tile's sets of i and j values
+      typedef detail::triple<unsigned int, unsigned int, unsigned int> uint3;
+      std::vector<uint3> bra_ij;
+      iterbra.start();
+      // loop over bra tiles for this set
+      size_t tbra_offset = 0;
+      for (size_t tbra = 0; tbra < ntiles_bra; ++tbra, tbra_offset += tile_size_bra) {
+        double* bra_tile = 0;   // zero indicates it needs to be loaded
+
+        // these will keep track of each tile's sets of i and j values
+        std::vector<uint3> ket_ij;
+        iterket.start();
+        // loop over ket tiles for this set
+        size_t tket_offset = 0;
+        for (size_t tket = 0; tket < ntiles_ket; ++tket, tket_offset += tile_size_ket, ++task_count) {
+          double* ket_tile = 0;   // zero indicates it needs to be loaded
+
+          // distribute tasks by round-robin
+          const int task_proc = task_count % nproc_with_ints;
+          if (task_proc != proc_with_ints[me])
+            continue;
+
+          // has the bra tile been loaded?
+          if (bra_tile == 0) {
+            bra_tile = T_bra;
+            for (size_t i=0; iterbra && i<tile_size_bra; ++i, iterbra.next()) {
+              const uint3 ijt(iterbra.i(), iterbra.j(), iterbra.ij());
+              bra_ij.push_back(ijt);
+
+              double* blk_ptr = bra_tile + i*blksize_int;
+              // where to read the integrals? if not antisymmetrizing read directly to T_bra, else read to scratch
+              // buffer, then antisymmetrize to T_bra
+              double* blk_ptr_read = blk_ptr;
+              Timer tim_intsretrieve("MO ints retrieve");
+              const double* blk_cptr = bra->retrieve_pair_block(ijt.i0_,
+                                                                   ijt.i1_,
+                                                                   intsetidx_bra,
+                                                                   blk_ptr_read);
+              tim_intsretrieve.exit();
+
+              if (debug >= DefaultPrintThresholds::allO2N2) {
+                ExEnv::outn() << indent << "task " << me
+                    << ": obtained ij blocks" << std::endl;
+                ExEnv::outn() << indent
+                              << "i = " << ijt.i0_
+                              << " j = " << ijt.i1_ << std::endl;
+
+                RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(n1),
+                                                                                 new SCDimension(n2));
+                blk_scmat.assign(blk_cptr);
+                blk_scmat.print("ij block");
+              }
+
+            }
+          }
+
+          // has the ket tile been loaded?
+          if (ket_tile == 0) {
+            ket_tile = T_ket;
+            for (size_t i=0; iterket && i<tile_size_ket; ++i, iterket.next()) {
+              const uint3 ijt(iterket.i(), iterket.j(), iterket.ij());
+              ket_ij.push_back(ijt);
+
+              double* blk_ptr = ket_tile + i*blksize_int;
+              // where to read the integrals? if not antisymmetrizing read directly to T_ket, else read to scratch
+              // buffer, then antisymmetrize to T_ket
+              double* blk_ptr_read = blk_ptr;
+              Timer tim_intsretrieve("MO ints retrieve");
+              const double* blk_cptr = ket->retrieve_pair_block(ijt.i0_,
+                                                                   ijt.i1_,
+                                                                   intsetidx_ket,
+                                                                   blk_ptr_read);
+              tim_intsretrieve.exit();
+
+              if (debug >= DefaultPrintThresholds::allO2N2) {
+                ExEnv::outn() << indent << "task " << me
+                    << ": obtained kl blocks" << std::endl;
+                ExEnv::outn() << indent
+                              << "k = " << ijt.i0_
+                              << " l = " << ijt.i1_ << std::endl;
+
+                RefSCMatrix blk_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(n1),
+                                                                                 new SCDimension(n2));
+                blk_scmat.assign(blk_cptr);
+                blk_scmat.print("kl block");
+              }
+
+            }
+          }
+
+          // contract bra and ket blocks
+          const size_t nbra_ij = bra_ij.size();
+          const size_t nket_ij = ket_ij.size();
+          C_DGEMM('n', 't',
+                  nbra_ij, nket_ij, blksize_int,
+                  scale, bra_tile, blksize_int,
+                  ket_tile, blksize_int,
+                  0.0, T_result, tile_size_ket);
+          if (debug >= DefaultPrintThresholds::allO2N2) {
+            ExEnv::outn() << indent << "task " << me
+                << ": nbra_ij = " << nbra_ij << " nket_ij = " << nket_ij << std::endl;
+            ExEnv::outn() << indent << "task " << me
+                << ": tile_size_bra = " << tile_size_bra << " tile_size_ket = " << tile_size_ket << std::endl;
+            ExEnv::outn() << indent << "task " << me
+                << ": T_result[0] = " << T_result[0] << std::endl;
+
+
+            RefSCMatrix tmp_scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(tile_size_bra),
+                                                                             new SCDimension(tile_size_ket));
+            tmp_scmat.assign(T_result);
+            tmp_scmat.print("ijkl");
+          }
+
+          // copy the result
+          for(size_t ij=0; ij<nbra_ij; ++ij) {
+            for(size_t kl=0; kl<nket_ij; ++kl) {
+
+              const int i = bra_ij[ij].i0_;
+              const int j = bra_ij[ij].i1_;
+              const int k = ket_ij[kl].i0_;
+              const int l = ket_ij[kl].i1_;
+
+              //const double T_ijkl = T_result[ij * tile_size_ket + kl];
+              braket->store_pair_subblock(i, j, 0,
+                                          k, k+1, l, l+1,
+                                          &(T_result[ij * tile_size_ket + kl]));
+            }
+          }
+
+          if (ket_tile != 0) {
+            for(size_t kl=0; kl<nket_ij; ++kl) {
+              ket->release_pair_block(ket_ij[kl].i0_,
+                                         ket_ij[kl].i1_,
+                                         intsetidx_ket);
+            }
+            ket_tile = 0;
+            ket_ij.resize(0);
+          }
+
+        } // ket tile loop
+
+        if (bra_tile != 0) {
+          const size_t nbra_ij = bra_ij.size();
+          for(size_t ij=0; ij<nbra_ij; ++ij) {
+            bra->release_pair_block(bra_ij[ij].i0_,
+                                       bra_ij[ij].i1_,
+                                       intsetidx_bra);
+          }
+          bra_tile = 0;
+          bra_ij.resize(0);
+        }
+
+      } // bra tile loop
+    } // loop over tasks with access
+
+    if (bra->data_persistent()) bra->deactivate();
+    if (bra != ket && ket->data_persistent()) ket->deactivate();
+    if (braket->data_persistent()) braket->deactivate();
+
+  }
+
+  RefSCMatrix&
+  operator<<(RefSCMatrix& dst,
+             const Ref<DistArray4>& src) {
+
+    assert(src->num_te_types() == 1);
+
+    // is dst bra packed?
+    bool bra_packed = false;
+    const size_t nbra_sq = src->ni() * src->nj();
+    const size_t nbra_tri = src->ni() * (src->ni() - 1) / 2;
+    if (src->ni() != src->nj()) // no
+      assert(dst.nrow() == nbra_sq);
+    else { // maybe
+      if (dst.nrow() == nbra_tri)
+        bra_packed = true;
+      else
+        assert(dst.nrow() == nbra_sq);
+    }
+
+    // is dst ket packed?
+    bool ket_packed = false;
+    const size_t nket_sq = src->nx() * src->ny();
+    const size_t nket_tri = src->nx() * (src->nx() - 1) / 2;
+    if (src->nx() != src->ny()) // no
+      assert(dst.ncol() == nket_sq);
+    else { // maybe
+      if (dst.ncol() == nket_tri)
+        ket_packed = true;
+      else
+        assert(dst.ncol() == nket_sq);
+    }
+
+    RefSCVector row = dst.kit()->vector(dst.coldim());
+
+    src->activate();
+    SpinMOPairIter bra_iter(src->ni(), src->nj(), bra_packed);
+    for(bra_iter.start(); bra_iter; bra_iter.next()) {
+      const unsigned int b1 = bra_iter.i();
+      const unsigned int b2 = bra_iter.j();
+      const unsigned int b12 = bra_iter.ij();
+      const double* b12_blk = src->retrieve_pair_block(b1, b2, 0);
+
+      if (!ket_packed) {
+        row.assign(b12_blk);
+      }
+      else {
+        SpinMOPairIter ket_iter(src->nx(), src->ny(), ket_packed);
+        for(ket_iter.start(); ket_iter; ket_iter.next()) {
+          const unsigned int k1 = ket_iter.i();
+          const unsigned int k2 = ket_iter.j();
+          const unsigned int k12 = ket_iter.ij();
+          row[k12] = b12_blk[k1 * src->ny() + k2];
+        }
+      }
+      dst.assign_row(row, b12);
+
+      src->release_pair_block(b1, b2, 0);
+
+    }
+
+    if (src->data_persistent()) src->deactivate();
   }
 
 } // end of namespace sc

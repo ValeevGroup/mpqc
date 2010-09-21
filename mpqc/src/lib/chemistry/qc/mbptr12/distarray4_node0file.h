@@ -94,9 +94,11 @@ class DistArray4_Node0File: public DistArray4 {
     void deactivate();
     /// implementation of DistArray4::data_persistent()
     bool data_persistent() const { return true; }
-    /// Stores an ij pair block of integrals to the file
+
     void store_pair_block(int i, int j, tbint_type oper_type, const double* ints);
-    /// Retrieves an ij pair block of integrals from the file
+    void store_pair_subblock(int i, int j, tbint_type oper_type,
+                             int xstart, int xfence, int ystart, int yfence,
+                             const double* ints);
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type, double* buf = 0) const;
     void retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                 int xstart, int xfence, int ystart, int yfence,

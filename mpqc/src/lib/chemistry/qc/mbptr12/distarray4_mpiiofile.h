@@ -165,9 +165,10 @@ class DistArray4_MPIIOFile_Ind: public DistArray4_MPIIOFile {
 
     Ref<DistArray4> clone(const DistArray4Dimensions& dim = DistArray4Dimensions::default_dim());
 
-    /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, tbint_type oper_type, const double *ints);
-    /// Retrieves an ij pair block of integrals from the file
+    void store_pair_subblock(int i, int j, tbint_type oper_type,
+                             int xstart, int xfence, int ystart, int yfence,
+                             const double* ints);
     const double* retrieve_pair_block(int i, int j, tbint_type oper_type,
                                       double* buf = 0) const;
     void retrieve_pair_subblock(int i, int j, tbint_type oper_type,

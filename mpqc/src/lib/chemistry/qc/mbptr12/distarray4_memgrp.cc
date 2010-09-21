@@ -123,17 +123,56 @@ void DistArray4_MemoryGrp::init() {
 void
 DistArray4_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
 {
-  // store blocks local to this node ONLY
-  assert(is_local(i,j));
+  assert(this->active());  //make sure we are active
+  assert(is_local(i,j));   // store blocks local to this node ONLY
 
   const int ij = ij_index(i,j);
-  // sanity check: make sure that the given pointer matches computed pointer at the expected location in MemoryGrp
+  // sanity check: check if the given pointer already points to the correct location in MemoryGrp
   const int local_ij_index = ij / ntasks();
-  const double* ints_expected =
+  const double* ints_destination =
     const_cast<const double *>(reinterpret_cast<double*>((size_t)mem_->localdata() + blksize_memgrp_*(num_te_types()*local_ij_index + oper_type)));
-  assert(ints_expected == ints);
+  const bool ints_already_there = (ints_destination == ints);
+
+  // copy integrals to MemoryGrp if needed
+  if (!ints_already_there) {
+    const distsize_t dest_ptr = mem_->localoffset() + (distsize_t)blksize_memgrp_*(num_te_types()*local_ij_index + oper_type);
+    void* dest = mem_->obtain_writeonly(dest_ptr, blksize_memgrp_);
+    memcpy(dest, static_cast<const void*>(ints), this->blksize());
+    mem_->release_writeonly(dest, dest_ptr, blksize_memgrp_);
+    ints = static_cast<const double*>(dest);   // ints now points to the location in MemoryGrp
+  }
 
   pairblk_[ij].ints_[oper_type] = ints;
+}
+
+void
+DistArray4_MemoryGrp::store_pair_subblock(int i, int j, tbint_type oper_type,
+                                          int xstart, int xfence, int ystart, int yfence,
+                                          const double *buf)
+{
+  assert(this->active());  //make sure we are active
+  assert(is_local(i,j));   // store blocks local to this node ONLY
+
+  const bool contiguous = (ystart == 0) && (yfence == ny());
+  const int xsize = xfence - xstart;
+  const int ysize = yfence - ystart;
+  const int xysize = xsize * ysize;
+  const int bufsize = xysize * sizeof(double);
+
+  const int ij = ij_index(i,j);
+  const int local_ij_index = ij / ntasks();
+  const double* srcbuf = buf;
+  double* destbuf = static_cast<double*>(mem_->localdata()) + blksize_memgrp_*(num_te_types()*local_ij_index + oper_type)/sizeof(double) + (xstart * ny() + ystart);
+
+  // copy integrals to MemoryGrp
+  if (contiguous) { // write all at once
+    std::copy(srcbuf, srcbuf + xysize, destbuf);
+  }
+  else {
+    for(int x=0; x<xsize; ++x, destbuf+=ny(), srcbuf+=ysize) {
+      std::copy(srcbuf, srcbuf + ysize, destbuf);
+    }
+  }
 }
 
 void

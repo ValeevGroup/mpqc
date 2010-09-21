@@ -30,6 +30,7 @@
 #endif
 
 #include <util/class/scexception.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/local.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/mbptr12/utils.h>
@@ -89,6 +90,65 @@ sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
   }
 }
 
+void
+sc::antisymmetrize(const Ref<DistArray4>& A)
+{
+  assert(A->ni() == A->nj());
+  assert(A->nx() == A->ny());
+
+  A->activate();
+
+  const unsigned int nbra = A->ni();
+  const unsigned int nket = A->nx();
+  const unsigned int ntypes = A->num_te_types();
+
+  // enough memory? need 3 ket blocks, but 2 may already be cached
+  const size_t mem_avail = ConsumableResources::get_default_instance()->memory();
+  const size_t mem_needed = nket * nket * sizeof(double);
+  double* tmp_blk;
+  if (mem_avail < mem_needed)
+    throw MemAllocFailed("sc::antisymmetrize", __FILE__, __LINE__, mem_needed);
+  else
+    tmp_blk = new double[nket * nket];
+
+  for (int t = 0; t < ntypes; ++t) {
+    for (unsigned int b1 = 0; b1 < nbra; ++b1) {
+      for (unsigned int b2 = 0; b2 <= b1; ++b2) {
+
+        const double* b12_blk = A->retrieve_pair_block(b1, b2, t);
+        const double* b21_blk = A->retrieve_pair_block(b2, b1, t);
+
+        size_t k12 = 0;
+        for (unsigned int k1 = 0; k1 < nket; ++k1) {
+          size_t k21 = k1;
+          for (unsigned int k2 = 0; k2 < nket; ++k2, ++k12, k21 += nket) {
+            tmp_blk[k12] = 0.5 * (b12_blk[k12] + b21_blk[k21] - b21_blk[k12]
+                - b12_blk[k21]);
+          }
+        }
+
+        A->release_pair_block(b1, b2, t);
+        A->release_pair_block(b2, b1, t);
+
+        A->store_pair_block(b1, b2, t, tmp_blk);
+        if (b1 != b2) {
+          size_t k12 = 0;
+          for (unsigned int k1 = 0; k1 < nket; ++k1) {
+            size_t k21 = k1;
+            for (unsigned int k2 = 0; k2 < nket; ++k2, ++k12, k21 += nket) {
+              const double tmp = tmp_blk[k12];
+              tmp_blk[k12] = tmp_blk[k21];
+              tmp_blk[k21] = tmp;
+            }
+          }
+          A->store_pair_block(b2, b1, t, tmp_blk);
+        }
+      }
+    }
+  }
+
+  if (A->data_persistent()) A->deactivate();
+}
 
 std::vector<double>
 sc::convert(const RefDiagSCMatrix& A)

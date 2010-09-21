@@ -175,6 +175,9 @@ namespace sc {
           <tr><td><tt>relax_core</tt><td>boolean<td>false<td>whether to keep the occupied orbitals that are not part of
           RAS I or II spaces fixed in RASSCF or to relax them.
 
+          <tr><td><tt>rasscf_target_sym</tt><td>integer<td>-1<td>the irrep of the target RAS states (the default value
+            <tt>-1</tt> means same symmetry as the reference Hartree-Fock state).
+
           <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
           an object that will provide the orbital ordering for the initial guess. It is recommended to use
           an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
@@ -195,7 +198,8 @@ namespace sc {
 
       int rasscf_energy_convergence_;
       int rasscf_convergence_;
-      int rasscf_maxiter_;    /// max number of iterations in rasscf
+      int rasscf_maxiter_;    //< max number of iterations in rasscf
+      int rasscf_target_sym_; //< target symmetry
       int diis_start_; /// after X cycles, diis starts
 
       bool state_average_;   //< state average?

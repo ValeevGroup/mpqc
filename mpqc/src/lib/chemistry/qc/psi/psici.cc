@@ -547,7 +547,7 @@ namespace sc {
     input->write_keyword("detci:root",root_);
     input->write_keyword("detci:s",(multiplicity_ - 1)/2);
     input->write_keyword("detci:num_roots",nroots_);
-    if (target_sym_ != -1)
+    if (target_sym_ != -1 && !rasscf)
       input->write_keyword("detci:ref_sym",target_sym_);
 
     if(h0_blocksize_ > 0) { /// use "h0_blocksize" keyword only if it is >0
@@ -855,6 +855,11 @@ namespace sc {
     diis_start_ = keyval->intvalue("diis_start",KeyValValueint(0));
     rasscf_maxiter_ = keyval->intvalue("rasscf_maxiter",KeyValValueint(200));
 
+    // the default = -1 is to leave it out
+    rasscf_target_sym_ = keyval->intvalue("rasscf_target_sym", KeyValValueint(-1));
+    if (keyval->exists("rasscf_target_sym") && (rasscf_target_sym_ < 0 || rasscf_target_sym_ >= this->molecule()->point_group()->char_table().nirrep()))
+      throw InputError("PsiRASSCF::PsiRASSCF(const Ref<KeyVal> &) -- rasscf_target_sym must be between 0 and number of irreps - 1",__FILE__,__LINE__);
+
     // reset some defaults for the RASCI class
     energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
@@ -942,6 +947,9 @@ namespace sc {
     else
       input->write_keyword("detcas:diis_start", diis_start_);
     input->write_keyword("detci:maxiter",rasscf_maxiter_);
+
+    if (rasscf_target_sym_ != -1)
+      input->write_keyword("detci:ref_sym",rasscf_target_sym_);
 
     const bool rasscf = true;
     write_rasci_input(convergence, rasscf);

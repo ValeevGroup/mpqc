@@ -72,7 +72,6 @@ mpqc: (
       nroots = 2
 
       rasscf<PsiRASSCF>: (
-        prerequisite = $rasscf
         molecule = $:molecule
         basis = $:basis
         psienv = $:psienv

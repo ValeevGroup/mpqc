@@ -52,6 +52,8 @@
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/hsoshf.h>
 
+#include <chemistry/qc/basis/tbint_batch.h>
+
 using namespace std;
 using namespace sc;
 
@@ -283,7 +285,8 @@ double MP2::compute_mp2_energy() {
   }
 
   RefSCMatrix vec = ref_mp2_wfn_->eigenvectors();
-  Int_Batch batch(1024, integral()->electron_repulsion());
+  //Int_Batch batch(1024, integral()->electron_repulsion());
+  TwoBodyIntBatch<4> batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
   int nao = vec.nrow();
   int nmo = vec.ncol();
   int nocc = ref_mp2_wfn_->nelectron() / 2;
@@ -301,6 +304,8 @@ double MP2::compute_mp2_energy() {
 
   Ref<TwoBodyInt> twoint_ = integral()->electron_repulsion();
   const double *buffer = twoint_->buffer();
+
+  TwoBodyIntBatch<4>* tmp = 0;
 
   Ref<GaussianBasisSet> basis = this->basis();
 

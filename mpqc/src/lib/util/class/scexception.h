@@ -477,7 +477,7 @@ public:
         @param class_desc the ClassDesc for the object causing the
         exception.
         @param exception_type the classname of the SCException
-        specialization. The default is "LimitedExceeded".
+        specialization. The default is "LimitExceeded".
 
         It is suggested that the special macros __FILE__ and __LINE__ be
         given as the \p file and \p line arguments, respectively.

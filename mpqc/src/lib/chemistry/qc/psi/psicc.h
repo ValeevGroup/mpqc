@@ -34,6 +34,7 @@
 
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/mbptr12/distarray4.h>
 
 namespace sc {
   
@@ -46,6 +47,7 @@ namespace sc {
       Ref<OrbitalSpace> vir_act_sb_[NSpinCases1];
       RefSCMatrix T1_[NSpinCases1];
       RefSCMatrix T2_[NSpinCases2];
+      Ref<DistArray4> T2_da4_[NSpinCases2];
       RefSCMatrix Tau2_[NSpinCases2];
       RefSCMatrix Lambda1_[NSpinCases1];
       RefSCMatrix Lambda2_[NSpinCases2];
@@ -58,7 +60,10 @@ namespace sc {
       RefSCMatrix T1(SpinCase1 spin, const std::string& L);
       /// read in T2-like quantity of spincase spin using DPD label L
       RefSCMatrix T2(SpinCase2 spin, const std::string& L);
+      /// read in T2-like quantity of spincase spin using DPD label L
+      Ref<DistArray4> T2_distarray4(SpinCase2 spin, const std::string& L);
 
+#if 0
       /// transform T1 to the new basis using sparse maps
       RefSCMatrix
           transform_T1(
@@ -91,6 +96,7 @@ namespace sc {
                        const RefSCMatrix& vir2_act_tform,
                        const RefSCMatrix& T2,
                        const Ref<SCMatrixKit>& kit = SCMatrixKit::default_matrixkit()) const;
+#endif
       /// compare T2 and T2_ref (check that elements < zero are in the same place and elements > soft_zero have the same sign)
       void compare_T2(const RefSCMatrix& T2, const RefSCMatrix& T2_ref, SpinCase2 spin12,
                       unsigned int no1, unsigned int no2, unsigned int nv1,
@@ -119,6 +125,8 @@ namespace sc {
       virtual const RefSCMatrix& T1(SpinCase1 spin1);
       /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
       virtual const RefSCMatrix& T2(SpinCase2 spin2);
+      /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
+      virtual Ref<DistArray4> T2_distarray4(SpinCase2 spin2);
       /// return Tau2 amplitudes. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
       virtual const RefSCMatrix& Tau2(SpinCase2 spin2);
       /// return Lambda amplitudes of rank 1

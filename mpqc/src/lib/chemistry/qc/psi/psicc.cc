@@ -37,6 +37,7 @@
 #include <chemistry/qc/mbptr12/orbitalspace.h>
 #include <chemistry/qc/mbptr12/pairiter.impl.h>
 #include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/mbptr12/distarray4_node0file.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
 
@@ -147,7 +148,7 @@ namespace sc {
     return T1_[spin1];
   }
 
-  const RefSCMatrix&PsiCC::T2(SpinCase2 spin2) {
+  const RefSCMatrix& PsiCC::T2(SpinCase2 spin2) {
     if (T2_[spin2].nonnull())
       return T2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
@@ -178,6 +179,37 @@ namespace sc {
       T2_[spin2].print(prepend_spincase(spin2,"T2 amplitudes").c_str());
 
     return T2_[spin2];
+  }
+
+  Ref<DistArray4> PsiCC::T2_distarray4(SpinCase2 spin2) {
+    if (T2_da4_[spin2].nonnull())
+      return T2_da4_[spin2];
+    PsiSCF::RefType reftype = reference_->reftype();
+
+    // If requesting AA or BB T2s, create their forms with unrestricted indices and read those
+    if (spin2 != AlphaBeta) {
+      dpd_start();
+
+      if (spin2 == AlphaAlpha) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 2, 7, 0, "tIJAB");
+        dpd_buf4_copy(&D, CC_TAMPS, "tIJAB (IJ,AB)");
+        dpd_buf4_close(&D);
+      }
+      if (spin2 == BetaBeta) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 12, 17, 0, "tijab");
+        dpd_buf4_copy(&D, CC_TAMPS, "tijab (ij,ab)");
+        dpd_buf4_close(&D);
+      }
+      dpd_stop();
+    }
+
+    // Grab T matrices
+    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
+    T2_da4_[spin2] = T2_distarray4(spin2, kwd);
+
+    return T2_da4_[spin2];
   }
 
   const RefSCMatrix&PsiCC::Tau2(SpinCase2 spin2) {
@@ -325,23 +357,23 @@ namespace sc {
     }
 
     // DPD of orbital product spaces
-    std::vector<int> ijpi(nirrep_);
-    std::vector<int> abpi(nirrep_);
-    unsigned int nijab_dpd = 0;
+    std::vector<size_t> ijpi(nirrep_);
+    std::vector<size_t> abpi(nirrep_);
+    size_t nijab_dpd = 0;
     for (unsigned int h=0; h<nirrep_; ++h) {
-      unsigned int nij = 0;
-      unsigned int nab = 0;
+      size_t nij = 0;
+      size_t nab = 0;
       for (unsigned int g=0; g<nirrep_; ++g) {
-        nij += actoccpi1[g] * actoccpi2[h^g];
-        nab += actuoccpi1[g] * actuoccpi2[h^g];
+        nij += (size_t)actoccpi1[g] * actoccpi2[h^g];
+        nab += (size_t)actuoccpi1[g] * actuoccpi2[h^g];
       }
       ijpi[h] = nij;
       abpi[h] = nab;
       nijab_dpd += nij*nab;
     }
 
-    const unsigned int nij = (spin12 == AlphaBeta) ? nocc1_act*nocc2_act : nocc1_act*(nocc1_act-1)/2;
-    const unsigned int nab = (spin12 == AlphaBeta) ? nuocc1_act*nuocc2_act : nuocc1_act*(nuocc1_act-1)/2;
+    const size_t nij = (spin12 == AlphaBeta) ? nocc1_act*nocc2_act : nocc1_act*(nocc1_act-1)/2;
+    const size_t nab = (spin12 == AlphaBeta) ? nuocc1_act*nuocc2_act : nuocc1_act*(nuocc1_act-1)/2;
     RefSCDimension rowdim = new SCDimension(nij);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nab);
@@ -359,32 +391,32 @@ namespace sc {
     psio.close(CC_TAMPS, 1);
 
     // convert to the full form
-    unsigned int ijab = 0;
-    unsigned int ij_offset = 0;
-    unsigned int ab_offset = 0;
+    size_t ijab = 0;
+    size_t ij_offset = 0;
+    size_t ab_offset = 0;
     for (unsigned int h=0; h<nirrep_; ij_offset+=ijpi[h], ab_offset+=abpi[h],
                                       ++h) {
       for (unsigned int g=0; g<nirrep_; ++g) {
         unsigned int gh = g^h;
         for (int i=0; i<actoccpi1[g]; ++i) {
-          const unsigned int ii = i + actoccioff1[g];
+          const size_t ii = i + actoccioff1[g];
 
           for (int j=0; j<actoccpi2[gh]; ++j) {
-            const unsigned int jj = j + actoccioff2[gh];
+            const size_t jj = j + actoccioff2[gh];
             if (spin12 != AlphaBeta && ii == jj) continue;
-            const unsigned int ij = (spin12 == AlphaBeta) ? ii * nocc2_act + jj
+            const size_t ij = (spin12 == AlphaBeta) ? ii * nocc2_act + jj
                                                           : packed_2index_anti(ii, jj);
 
             for (unsigned int f=0; f<nirrep_; ++f) {
               unsigned int fh = f^h;
               for (int a=0; a<actuoccpi1[f]; ++a) {
-                const unsigned int aa = a + actuoccioff1[f];
+                const size_t aa = a + actuoccioff1[f];
 
                 for (int b=0; b<actuoccpi2[fh]; ++b, ++ijab) {
-                  const unsigned int bb = b + actuoccioff2[fh];
+                  const size_t bb = b + actuoccioff2[fh];
                   if (spin12 != AlphaBeta && aa == bb) continue;
-                  const unsigned int ab = (spin12 == AlphaBeta) ? aa*nuocc2_act + bb
-                                                                : packed_2index_anti(aa, bb);
+                  const size_t ab = (spin12 == AlphaBeta) ? aa*nuocc2_act + bb
+                                                          : packed_2index_anti(aa, bb);
 
                   T.set_element(ij, ab, T2[ijab]);
                 }
@@ -395,6 +427,145 @@ namespace sc {
       }
     }
     delete[] T2;
+    }
+
+    return T;
+  }
+
+  Ref<DistArray4> PsiCC::T2_distarray4(SpinCase2 spin12,
+                                       const std::string& dpdlabel) {
+    psi::PSIO& psio = exenv()->psio();
+    const SpinCase1 spin1 = case1(spin12);
+    const SpinCase1 spin2 = case2(spin12);
+
+    typedef std::vector<unsigned int> uvec;
+    // grab orbital info
+    const uvec& occpi1 = reference()->occpi(spin1);
+    const uvec& occpi2 = reference()->occpi(spin2);
+    const uvec& uoccpi1 = reference()->uoccpi(spin1);
+    const uvec& uoccpi2 = reference()->uoccpi(spin2);
+    uvec actoccpi1(nirrep_);
+    uvec actuoccpi1(nirrep_);
+    uvec actoccioff1(nirrep_);
+    uvec actuoccioff1(nirrep_);
+    uvec actoccpi2(nirrep_);
+    uvec actuoccpi2(nirrep_);
+    uvec actoccioff2(nirrep_);
+    uvec actuoccioff2(nirrep_);
+    unsigned int nocc1_act = 0;
+    unsigned int nuocc1_act = 0;
+    unsigned int nocc2_act = 0;
+    unsigned int nuocc2_act = 0;
+    for (unsigned int irrep = 0; irrep < nirrep_; ++irrep) {
+      actoccpi1[irrep] = occpi1[irrep] - frozen_docc_[irrep];
+      actuoccpi1[irrep] = uoccpi1[irrep] - frozen_uocc_[irrep];
+      nocc1_act += actoccpi1[irrep];
+      nuocc1_act += actuoccpi1[irrep];
+      actoccpi2[irrep] = occpi2[irrep] - frozen_docc_[irrep];
+      actuoccpi2[irrep] = uoccpi2[irrep] - frozen_uocc_[irrep];
+      nocc2_act += actoccpi2[irrep];
+      nuocc2_act += actuoccpi2[irrep];
+    }
+    actoccioff1[0] = 0;
+    actuoccioff1[0] = 0;
+    actoccioff2[0] = 0;
+    actuoccioff2[0] = 0;
+    for (unsigned int irrep = 1; irrep < nirrep_; ++irrep) {
+      actoccioff1[irrep] = actoccioff1[irrep - 1] + actoccpi1[irrep - 1];
+      actuoccioff1[irrep] = actuoccioff1[irrep - 1] + actuoccpi1[irrep - 1];
+      actoccioff2[irrep] = actoccioff2[irrep - 1] + actoccpi2[irrep - 1];
+      actuoccioff2[irrep] = actuoccioff2[irrep - 1] + actuoccpi2[irrep - 1];
+    }
+
+    // DPD of orbital product spaces
+    std::vector<size_t> ijpi(nirrep_);
+    std::vector<size_t> abpi(nirrep_);
+    size_t nijab_dpd = 0;
+    for (unsigned int h = 0; h < nirrep_; ++h) {
+      size_t nij = 0;
+      size_t nab = 0;
+      for (unsigned int g = 0; g < nirrep_; ++g) {
+        nij += (size_t)actoccpi1[g] * actoccpi2[h ^ g];
+        nab += (size_t)actuoccpi1[g] * actuoccpi2[h ^ g];
+      }
+      ijpi[h] = nij;
+      abpi[h] = nab;
+      nijab_dpd += nij * nab;
+    }
+    const size_t max_nab = *std::max_element(abpi.begin(), abpi.end());
+
+    const size_t nij = nocc1_act * nocc2_act;
+    const size_t nab = nuocc1_act * nuocc2_act;
+    RefSCDimension rowdim = new SCDimension(nij);
+    RefSCDimension coldim = new SCDimension(nab);
+    Ref<DistArray4> T;
+    {
+      char* psio_filename;
+      psio.get_volpath(CC_TAMPS, 0, &psio_filename);
+      char* da4_filename = new char[strlen(psio_filename) + 12];
+      sprintf(da4_filename, "%s.distarray4", psio_filename);
+      T = new DistArray4_Node0File(da4_filename, 0, nocc1_act, nocc2_act,
+                                   nuocc1_act, nuocc2_act);
+      delete[] da4_filename;
+      free(psio_filename);
+    }
+
+    // If not empty...
+    if (nijab_dpd) {
+
+      // read in T2 one ij at a time
+      psio.open(CC_TAMPS, PSIO_OPEN_OLD);
+
+      double* t2_ij = new double[max_nab];
+      double* T_ij = new double[nab];
+
+      // convert to the full form
+      size_t ij_offset = 0;
+      size_t ab_offset = 0;
+      psio_address t2_ij_address = PSIO_ZERO;
+      for (unsigned int h = 0; h < nirrep_; ij_offset += ijpi[h], ab_offset
+          += abpi[h], ++h) {
+        for (unsigned int g = 0; g < nirrep_; ++g) {
+          unsigned int gh = g ^ h;
+          for (int i = 0; i < actoccpi1[g]; ++i) {
+            const size_t ii = i + actoccioff1[g];
+
+            for (int j = 0; j < actoccpi2[gh]; ++j) {
+              const size_t jj = j + actoccioff2[gh];
+
+              std::fill(T_ij, T_ij+nab, 0.0);
+
+              const size_t nab_h = abpi[h];
+              psio.read(CC_TAMPS, const_cast<char*> (dpdlabel.c_str()),
+                        reinterpret_cast<char*> (t2_ij), nab_h * sizeof(double),
+                        t2_ij_address, &t2_ij_address);
+
+              size_t ab_h = 0;
+              for (unsigned int f = 0; f < nirrep_; ++f) {
+                unsigned int fh = f ^ h;
+                for (int a = 0; a < actuoccpi1[f]; ++a) {
+                  const size_t aa = a + actuoccioff1[f];
+
+                  for (int b = 0; b < actuoccpi2[fh]; ++b, ++ab_h) {
+                    const size_t bb = b + actuoccioff2[fh];
+
+                    const size_t ab = aa * nuocc2_act + bb;
+                    T_ij[ab] = t2_ij[ab_h];
+                  }
+                }
+              }
+
+              T->store_pair_block(ii, jj, 0, T_ij);
+            }
+          }
+        }
+      }
+
+      delete[] t2_ij;
+      delete[] T_ij;
+
+      psio.close(CC_TAMPS, 1);
+
     }
 
     return T;
@@ -416,6 +587,7 @@ namespace sc {
     return Lambda2_[spin];
   }
 
+#if 0
   RefSCMatrix PsiCC::transform_T1(const SparseMOIndexMap& occ_act_map,
                                   const SparseMOIndexMap& vir_act_map,
                                   const RefSCMatrix& T1,
@@ -581,6 +753,7 @@ namespace sc {
     T2_IJ_AB.assign(t2);
     return T2_IJ_AB;
   }
+#endif
 
   namespace {
     bool gtzero(double a) {

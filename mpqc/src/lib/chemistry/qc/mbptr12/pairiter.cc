@@ -39,12 +39,15 @@ using namespace sc;
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
-MOPairIter::MOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j)
+MOPairIter::MOPairIter(unsigned int n_i, unsigned int n_j) : ni_(n_i), nj_(n_j)
 {
-  i_eq_j_ = (space_i == space_j);
-  ni_ = space_i->rank();
-  nj_ = space_j->rank();
-  
+  i_ = -1;
+  j_ = -1;
+}
+
+MOPairIter::MOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j) :
+    ni_(space_i->rank()), nj_(space_j->rank())
+{
   i_ = -1;
   j_ = -1;
 }
@@ -96,6 +99,24 @@ SpinMOPairIter::SpinMOPairIter(const Ref<OrbitalSpace>& space1,
 {
   i_eq_j_ = (S!=AlphaBeta && (space1 == space2));
   if (i_eq_j_) {
+    nij_ = (ni_ * (ni_-1))/2;
+    ij_ = 0;
+    i_ = 1;
+    j_ = 0;
+  }
+  else {
+    nij_ = ni_ * nj_;
+    ij_ = 0;
+    i_ = 0;
+    j_ = 0;
+  }
+}
+
+SpinMOPairIter::SpinMOPairIter(unsigned int n_i, unsigned int n_j, bool i_eq_j) :
+  MOPairIter(n_i, n_j), IJ_(0), i_eq_j_(i_eq_j)
+{
+  if (i_eq_j_) {
+    assert(n_i == n_j);
     nij_ = (ni_ * (ni_-1))/2;
     ij_ = 0;
     i_ = 1;

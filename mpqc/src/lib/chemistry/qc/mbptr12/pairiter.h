@@ -58,6 +58,8 @@ class MOPairIter : public RefCount {
     }
 
   public:
+    /// Initialize an iterator for the MO space dimensions
+    MOPairIter(unsigned int n_i, unsigned int n_j);
     /// Initialize an iterator for the given MO spaces.
     MOPairIter(const Ref<OrbitalSpace>& space_i, const Ref<OrbitalSpace>& space_j);
     virtual ~MOPairIter();
@@ -281,6 +283,7 @@ public:
 class SpinMOPairIter : public MOPairIter
 {
   public:
+    SpinMOPairIter(unsigned int n_i, unsigned int n_j, bool i_eq_j);
   /// spincase S
   SpinMOPairIter(const Ref<OrbitalSpace>& space1, const Ref<OrbitalSpace>& space2,
                  const SpinCase2& S);
@@ -294,6 +297,7 @@ class SpinMOPairIter : public MOPairIter
   operator int() const;
   
   private:
+  bool i_eq_j_;
   int IJ_;
 };
 

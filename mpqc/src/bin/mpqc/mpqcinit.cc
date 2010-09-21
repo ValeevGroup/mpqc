@@ -25,6 +25,7 @@
 #include <util/class/scexception.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/basis/integral.h>
+#include <util/misc/consumableresources.h>
 
 namespace sc {
 
@@ -36,6 +37,7 @@ finalize()
   ThreadGrp::set_default_threadgrp(0);
   SCMatrixKit::set_default_matrixkit(0);
   Integral::set_default_integral(0);
+  ConsumableResources::set_default_instance(0);
   RegionTimer::set_default_regiontimer(0);
   SCFormIO::set_default_basename(0);
 }
@@ -51,6 +53,8 @@ MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
               "which memory group to use", 0);
   opt_.enroll("integral", GetLongOpt::MandatoryValue,
               "which integral evaluator to use", 0);
+  opt_.enroll("resources", GetLongOpt::MandatoryValue,
+              "the available consumable resources (memory, disk)", 0);
 }
 
 MPQCInit::~MPQCInit()
@@ -216,6 +220,25 @@ MPQCInit::init_integrals(const Ref<KeyVal> &keyval)
 }
 
 void
+MPQCInit::init_resources(const Ref<KeyVal> &keyval)
+{
+  // get the resources object. first try commandline and environment
+  Ref<ConsumableResources> inst = ConsumableResources::initial_instance(argc_, argv_);
+
+  // if we still don't have one reading from the input
+  if (inst.null()) {
+    inst << keyval->describedclassvalue("resources");
+  }
+
+  if (inst.nonnull()) {
+    ConsumableResources::set_default_instance(inst);
+  }
+  else {
+    ConsumableResources::get_default_instance();
+  }
+}
+
+void
 MPQCInit::init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval)
 {
   grp->sync(); // make sure nodes are sync'ed before starting timings
@@ -266,6 +289,7 @@ MPQCInit::init(const std::string &input_filename,
   init_memorygrp(keyval);
   //init_cca();
   init_integrals(keyval);
+  init_resources(keyval);
   init_timer(grp,keyval);
   init_basename(input_filename, output_filename);
 

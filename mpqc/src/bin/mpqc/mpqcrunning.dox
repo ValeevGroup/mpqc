@@ -51,6 +51,10 @@ name.  If the input file name is not given, it will default to
                 MolecularEnergy specializations require specific choices
                 of Integral specializations and may not work with IntegralV3.
 
+  <dt><tt>-resources</tt><dd>A ParsedKeyVal specification of a ConsumableResources
+                object. By default a ConsumableResources object constructed with its default
+                constructor will be used.
+
   <dt><tt>-l</tt><dd>Sets a limit on the number of basis functions.  The
                 default is zero, which means an unlimited number of basis
                 functions.
@@ -121,6 +125,10 @@ apply on all platforms are:
                 object. The default is IntegralV3. Note that some
                 MolecularEnergy specializations require specific choices
                 of Integral specializations and may not work with IntegralV3.
+
+  <dt><tt>SC_RESOURCES</tt><dd>A ParsedKeyVal specification of a ConsumableResources
+                object. By default a ConsumableResources object constructed with its default
+                constructor will be used.
 
 </dl>
 

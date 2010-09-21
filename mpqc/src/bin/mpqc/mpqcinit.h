@@ -43,6 +43,8 @@ namespace sc {
     void init_io(const sc::Ref<sc::MessageGrp> &grp);
     /// Initialize the default integral factory.
     void init_integrals(const Ref<KeyVal> &keyval);
+    /// Initialize the default ConsumableResources object.
+    void init_resources(const Ref<KeyVal> &keyval);
     /// Initialize the default region timer.
     void init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval);
     /// Initialize the name used to construct data file names.

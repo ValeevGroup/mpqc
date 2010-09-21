@@ -42,14 +42,14 @@ BIN_OR_LIB = LIB
 CSRC =
 
 CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc \
-         runnable.cc
+         runnable.cc consumableresources.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
           autovectest.cc
 
 TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
 
-INC = timer.h compute.h ieee.h bug.h exenv.h
+INC = timer.h compute.h ieee.h bug.h exenv.h runnable.h consumableresources.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 

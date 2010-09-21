@@ -68,6 +68,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/misc/runnable.h>
+#include <util/misc/consumableresources.h>
 #ifdef HAVE_CHEMISTRY_CCA
   #include "cca.h"
 #endif
@@ -446,6 +447,11 @@ try_main(int argc, char *argv[])
   ExEnv::out0() << endl << indent
        << "Using " << integral->class_name()
        << " by default for molecular integrals evaluation" << endl << endl;
+
+  init.init_resources(keyval);
+  Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
+  ExEnv::out0() << endl << indent
+       << "Default ConsumableResources = " << resources->print() << endl << endl;
 
   // check for a molecular energy and optimizer
   std::string basename = SCFormIO::default_basename();
@@ -861,6 +867,7 @@ try_main(int argc, char *argv[])
   opt = 0;
   mole = 0;
   integral = 0;
+  resources = 0;
   debugger = 0;
   thread = 0;
   keyval = 0;

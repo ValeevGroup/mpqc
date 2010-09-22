@@ -112,7 +112,7 @@ namespace sc {
         public:
           ResourceCounter(const T& max_value = T()) : max_value_(max_value), value_(max_value) {}
           ResourceCounter(const T& max_value, const T& value) : max_value_(max_value), value_(value) {}
-          ResourceCounter(const ResourceCounter& other) : max_value_(other.max_value), value_(other.value) {}
+          ResourceCounter(const ResourceCounter& other) : max_value_(other.max_value_), value_(other.value_) {}
           ResourceCounter& operator=(const ResourceCounter& other) { max_value_ = other.max_value_; value_ = other.value_; return *this; }
           operator T() const { return value_; }
           ResourceCounter& operator+=(const T& val) { value_ = std::max(max_value_, value_ + val); return *this; }

@@ -173,12 +173,14 @@ namespace sc {
 
     /// Constructs a [start, fence) ShellRange
     TensorShellRange(const ShellSet& start, const ShellSet& fence) :
-      start_(start), fence_(fence) {
+      start_(start), fence_(fence), have_next_(false) {
     }
 
     void start() {
       next_ = start_;
-      next();
+      // if range is nonempty -- find next
+      if (is_nonempty())
+        next();
     }
     bool have_next() {
       return have_next_;
@@ -201,6 +203,13 @@ namespace sc {
         --d;
         ++s[d];
       }
+      return true;
+    }
+    // return true if range is nonempty
+    bool is_nonempty() {
+      for(unsigned int d = 0; d < NumCenters; ++d)
+        if (fence_[d] <= start_[d])
+          return false;
       return true;
     }
 

@@ -286,7 +286,7 @@ double MP2::compute_mp2_energy() {
 
   RefSCMatrix vec = ref_mp2_wfn_->eigenvectors();
   //Int_Batch batch(1024, integral()->electron_repulsion());
-  TwoBodyIntBatch<4> batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
+  Ref< TwoBodyIntBatch<4> > batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
   int nao = vec.nrow();
   int nmo = vec.ncol();
   int nocc = ref_mp2_wfn_->nelectron() / 2;

@@ -33,7 +33,7 @@
 #include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 
 using namespace sc;
 using namespace sc::mbptr12;

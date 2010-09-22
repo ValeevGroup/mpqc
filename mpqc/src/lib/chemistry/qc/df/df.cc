@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbptr12/distarray4_memgrp.h>
 #include <chemistry/qc/mbptr12/transform_ijR.h>
 #include <chemistry/qc/mbptr12/svd.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/fockbuilder.h>
 
 #define USE_KERNEL_INVERSE 0

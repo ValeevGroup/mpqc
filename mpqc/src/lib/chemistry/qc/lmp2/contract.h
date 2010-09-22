@@ -29,17 +29,9 @@
 
 #include <stdexcept>
 
-#include <chemistry/qc/lmp2/f77sym.h>
+#include <math/scmat/blas.h>
 
 #define USE_BOUNDS_IN_CONTRACT_UNION 1
-
-extern "C" {
- void F77_DGEMM(const char* transA, const char* transB,
-                int* M, int* N, int* K,
-                double* alpha, double* A, int* Astride,
-                double* B, int* Bstride,
-                double* beta, double* C, int* Cstride);
-}
 
 namespace sc {
 

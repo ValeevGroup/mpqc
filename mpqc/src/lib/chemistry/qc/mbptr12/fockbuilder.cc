@@ -32,7 +32,7 @@
 #include <cfloat>
 #include<chemistry/qc/basis/symmint.h>
 #include<chemistry/qc/basis/orthog.h>
-#include<chemistry/qc/mbptr12/blas.h>
+#include<math/scmat/blas.h>
 #include<chemistry/qc/mbptr12/fockbuilder.h>
 
 using namespace std;

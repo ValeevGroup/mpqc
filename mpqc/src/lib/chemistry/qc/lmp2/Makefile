@@ -51,14 +51,6 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
-domain.$(OBJSUF) domain.d smautil.d : f77sym.h
-
-f77sym.h: f77sym.h.in
-	$(MKF77SYM) $< $@
-
-distclean::
-	/bin/rm -f f77sym.h
-
 TESTSRC += testsma.cc
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 testsma: testsma.o $(SMAOBJ)

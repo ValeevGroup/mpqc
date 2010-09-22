@@ -40,7 +40,7 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/basis/distshpair.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/transform_123inds.h>
 #include <chemistry/qc/mbptr12/print.h>
 

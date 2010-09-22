@@ -34,7 +34,7 @@
 #include <stdexcept>
 #include <util/misc/formio.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/lapack.h>
+#include <math/scmat/lapack.h>
 #include <chemistry/qc/mbptr12/svd.h>
 
 using namespace std;

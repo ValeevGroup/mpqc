@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_triples.h> 
 #include <chemistry/qc/ccr12/tensor.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <iostream>
 
 using namespace sc;

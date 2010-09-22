@@ -28,11 +28,11 @@
 #include <sstream>
 #include <algorithm>
 #include <cassert>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/mtensor.h>
-#include <chemistry/qc/mbptr12/lapack.h>
+#include <math/scmat/lapack.h>
 
 using namespace sc;
 using namespace std;

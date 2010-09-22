@@ -38,7 +38,7 @@
 #endif
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;

@@ -41,7 +41,7 @@
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 
 namespace sc {
 
@@ -1077,6 +1077,8 @@ namespace sc {
     }
 
     // create result DistArray4 objects, if needed
+    bool accumulate = false;   // need to accumulate result to a given DistArray4?
+    std::vector< Ref<DistArray4> > results_clone;
     if (results.empty()) {
       std::vector<std::string> tformkeys_result;
       { // create result objects by cloning transforms_bra[0]
@@ -1134,7 +1136,9 @@ namespace sc {
           }
         }
       }
-    } else { // results were given -- make sure they have expected shape
+    } else { // results were given -- must clone them, and accumulate after contraction (can' currently do accumulation in place)
+      accumulate = true;
+      // make sure they have expected shape
       const size_t nresults = results.size();
       assert(nresults == num_tforms_bra*num_tforms_ket);
       for(int r=0; r<nresults; ++r) {
@@ -1145,7 +1149,12 @@ namespace sc {
         assert(results[r]->ny() == space2_ket->rank());
         assert(results[r]->storage() == DistArray4Storage_XY);
       }
+
+      for(int r=0; r<nresults; ++r) {
+        results_clone.push_back( results[r]->clone() );
+      }
     }
+    std::vector< Ref<DistArray4> >& results_ref = accumulate ? results_clone : results;
 
     //
     // Generate contract label
@@ -1225,7 +1234,7 @@ namespace sc {
             << " and " << tformk->name() << std::endl;
           }
 
-          sc::contract34(results[fbraket],
+          sc::contract34(results_ref[fbraket],
                          scale,
                          accumb,
                          intsetidx_bra,
@@ -1234,8 +1243,11 @@ namespace sc {
                          debug_);
 
           if (antisymmetrize) {
-            sc::antisymmetrize(results[fbraket]);
+            sc::antisymmetrize(results_ref[fbraket]);
           }
+
+          if (accumulate)
+            sc::axpy(results_ref[fbraket], 1.0, results[fbraket]);
 
           //ExEnv::out0() << indent << "Accumb = " << accumb.pointer() << std::endl;
           //ExEnv::out0() << indent << "Accumk = " << accumk.pointer() << std::endl;

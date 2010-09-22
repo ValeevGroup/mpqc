@@ -1,19 +1,23 @@
 extern "C" {
-#include <chemistry/qc/mbptr12/f77sym.h>
+#include <math/scmat/f77sym.h>
 
 extern void F77_DGEMM(const char*, const char*, const int*,
-const int*, const int*, const double*, const double*, const int*,
-const double*, const int*, const double*, double*, const int*);
+                      const int*, const int*, const double*, const double*, const int*,
+                      const double*, const int*, const double*, double*, const int*);
 
 extern void F77_DGEMV(const char* trans, const int* m, const int* n, const double* alpha,
                       const double* A, const int* lda, const double* X, const int* incX,
                       const double* beta, double* Y, const int* incY);
 
 extern void F77_DAXPY(const int* n, const double* da, const double* dx,
-const int* incx, double* dy, const int* incy);
+                      const int* incx, double* dy, const int* incy);
 
 extern double F77_DDOT(const int* n, const double* dx, const int* incx,
-const double* dy, const int* incy);
+                       const double* dy, const int* incy);
+
+extern void F77_DCOPY(const int *n, const double *dx, const int *incx, double *dy, const int *incy);
+extern double F77_DNRM2(const int *n, const double *dx, const int *incx);
+extern void F77_DSCAL(const int *n, const double *da, double *dx, const int *incx);
 
 }
 

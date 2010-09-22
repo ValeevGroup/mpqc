@@ -33,7 +33,7 @@
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/pairiter.impl.h>

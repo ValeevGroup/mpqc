@@ -41,7 +41,7 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/transform_13inds.h>
 #include <chemistry/qc/mbptr12/print.h>
 #include <chemistry/qc/mbptr12/distarray4.h>

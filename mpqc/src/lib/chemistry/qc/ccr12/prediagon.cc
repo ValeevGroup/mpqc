@@ -28,7 +28,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cassert>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/mtensor.h>

@@ -31,7 +31,7 @@
 
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <math.h>
 
 using namespace std;

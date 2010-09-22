@@ -47,7 +47,7 @@ CXXSRC = dim.cc \
          blocked.cc \
          blockedvect.cc blockedrect.cc blockeddiag.cc blockedsymm.cc \
          matrix3.cc    vector3.cc    vector3_i.cc \
-         util.cc       stateutil.cc
+         util.cc       stateutil.cc  blas.cc
 
 TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 

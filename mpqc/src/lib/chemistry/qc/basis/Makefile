@@ -69,11 +69,6 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 default:: $(DEPENDINCLUDE)
 
-aotoso.$(OBJSUF) aotoso.d: f77sym.h
-
-f77sym.h: f77sym.in
-	$(MKF77SYM) $< $@
-
 btest: $(TESTOBJ) libSCintv3.$(LIBSUF) libSCoint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS) $(LTLINKBINOPTS)
@@ -89,9 +84,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 clean::
 	rm -f btest btest.$(OBJSUF)ut
-
-distclean::
-	/bin/rm -f f77sym.h
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

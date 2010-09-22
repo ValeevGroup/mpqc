@@ -7,7 +7,7 @@
 
 #include <math/scmat/disthql.h>
 
-#include <math/scmat/f77sym.h>
+#include <math/scmat/blas.h>
 
 using namespace std;
 using namespace sc;
@@ -16,11 +16,6 @@ extern "C" {
   void F77_PDSTEQR(int *n, double *d, double *e,
                 double *z, int *ldz, int *nz, double *work,
                 int *info);
-  void F77_DCOPY(int *n, double *dx, int *incx, double *dy, int *incy);
-  double F77_DNRM2(int *n, double *dx, int *incx);
-  double F77_DDOT(int *n, double *dx, int *incx, double *dy, int *incy);
-  void F77_DSCAL(int *n, double *da, double *dx, int *incx);
-  void F77_DAXPY(int *n, double *da, double *dx, int *incx, double *dy, int *incy);
 }
 
 namespace sc {

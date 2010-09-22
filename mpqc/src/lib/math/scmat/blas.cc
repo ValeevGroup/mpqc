@@ -32,7 +32,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <util/misc/formio.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 
 using namespace std;
 using namespace sc;

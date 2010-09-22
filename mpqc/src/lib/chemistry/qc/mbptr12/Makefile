@@ -56,7 +56,7 @@ CXXSRCS = mbptr12.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc \
   compute_VXB_a_vbsneqobs.cc \
   gaussianfit.cc r12technology.cc twobody_intermeds.cc \
-  singles_emp2.cc blas.cc fixedcoefficient.cc \
+  singles_emp2.cc fixedcoefficient.cc \
   compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
   compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \
   moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
@@ -119,15 +119,6 @@ mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS)
 
 mbptr12test.$(OBJSUF): mbptr12test.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
-
-
-transform_123inds.$(OBJSUF) transform_123inds.d: f77sym.h
-
-f77sym.h: f77sym.in
-	$(MKF77SYM) $< $@
-
-distclean::
-	/bin/rm -f f77sym.h
 
 #mbptr12test.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

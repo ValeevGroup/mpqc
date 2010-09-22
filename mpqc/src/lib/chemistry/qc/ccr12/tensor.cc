@@ -38,7 +38,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <util/misc/exenv.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 

@@ -42,7 +42,7 @@
 #include <chemistry/qc/mbptr12/distarray4.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 
 using namespace std;
@@ -348,7 +348,7 @@ namespace sc {
     // determine how many workers we have
     std::vector<int> worker_id;
     const int nworkers = src->tasks_with_access(worker_id);
-    const int me = MessageGrp::get_default_messagegrp()->me();
+    const int me = src->msg()->me();
 
     // sort!
     int task_id = 0;
@@ -393,6 +393,72 @@ namespace sc {
     delete[] xy_buf;
 
     return result;
+  }
+
+  void axpy(const Ref<DistArray4>& X,
+            double a,
+            const Ref<DistArray4>& Y,
+            double scale) {
+
+    assert( X->num_te_types() == Y->num_te_types() );
+    assert( X->ni() == Y->ni() );
+    assert( X->nj() == Y->nj() );
+    assert( X->nx() == Y->nx() );
+    assert( X->ny() == Y->ny() );
+    const int nt = Y->num_te_types();
+    const int ni = Y->ni();
+    const int nj = Y->nj();
+    const int nx = Y->nx();
+    const int ny = Y->ny();
+    const int nxy = nx * ny;
+    const size_t bufsize = nxy * sizeof(double);
+
+    X->activate();
+    Y->activate();
+
+    // maximum tile size is determined by the available memory
+    const size_t memory_available = ConsumableResources::get_default_instance()->memory();
+    if (memory_available > bufsize) {
+      throw AlgorithmException("not enough memory, increase memory", __FILE__, __LINE__);
+    }
+    double* y_buf = new double[nxy];
+    ConsumableResources::get_default_instance()->consume_memory(bufsize);
+
+    // determine how many workers we have
+    std::vector<int> worker_id;
+    const int nworkers = Y->tasks_with_access(worker_id);
+    const int me = Y->msg()->me();
+
+    size_t task_id = 0;
+    for(int i=0; i<ni; ++i) {
+      for(int j=0; j<nj; ++j) {
+        for(int t=0; t<nt; ++t, ++task_id) {
+
+          // round-robin task allocation
+          if(task_id%nworkers != worker_id[me])
+            continue;
+
+          const double* x_buf = X->retrieve_pair_block(i, j, t);
+          Y->retrieve_pair_block(i, j, t, y_buf);
+
+          const int one = 1;
+          F77_DAXPY(&nxy, &a, x_buf, &one, y_buf, &one);
+          if (scale != 1.0) F77_DSCAL(&nxy, &scale, y_buf, &one);
+
+          Y->store_pair_block(i, j, t, y_buf);
+
+          X->release_pair_block(i, j, t);
+          Y->release_pair_block(i, j, t);
+        }
+
+      }
+    }
+
+    delete[] y_buf;
+    ConsumableResources::get_default_instance()->release_memory(bufsize);
+
+    if (X->data_persistent()) X->deactivate();
+    if (Y->data_persistent()) Y->deactivate();
   }
 
   void contract34(const Ref<DistArray4>& braket,
@@ -640,6 +706,7 @@ namespace sc {
              const Ref<DistArray4>& src) {
 
     assert(src->num_te_types() == 1);
+    assert(src->has_access(src->msg()->me()));
 
     // is dst bra packed?
     bool bra_packed = false;

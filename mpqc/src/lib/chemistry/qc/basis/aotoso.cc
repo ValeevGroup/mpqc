@@ -27,24 +27,16 @@
 
 #include <float.h>
 
+#include <math/scmat/lapack.h>
 #include <util/misc/formio.h>
 
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/basis/f77sym.h>
 
 using namespace std;
 using namespace sc;
-
-extern "C" {
-  void
-  F77_DGESVD(const char * JOBU, const char *JOBVT,
-             int *M, int *N, double *A, int *LDA,
-             double *S, double *U, int *LDU, double *VT, int *LDVT,
-             double *WORK, int *LWORK, int *INFO );
-}
 
 ////////////////////////////////////////////////////////////////////////////
 

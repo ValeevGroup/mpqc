@@ -209,6 +209,13 @@ class DistArray4: virtual public SavableState {
 Ref<DistArray4> permute23(const Ref<DistArray4>& src,
                           size_t available_memory);
 
+/// axpy followed by scaling: Y += a*X; Y *= scale.
+void
+axpy(const Ref<DistArray4>& X,
+     double a,
+     const Ref<DistArray4>& Y,
+     double scale = 1.0);
+
 /// contracts ijxy ("bra") with klxy ("ket") to produce ijkl ("braket")
 void contract34(const Ref<DistArray4>& braket,
                 double scale,

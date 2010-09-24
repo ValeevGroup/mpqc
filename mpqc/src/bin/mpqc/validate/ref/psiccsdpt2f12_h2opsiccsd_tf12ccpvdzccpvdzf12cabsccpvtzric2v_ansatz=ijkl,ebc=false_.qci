@@ -1,0 +1,72 @@
+test_molecule_multiplicity:
+1   1
+test_auxbasis:
+cc-pVDZ-F12-CABS
+r12theory:
+(ansatz=ijkl,ebc=false)
+state:
+1
+dfbasis:
+cc-pVTZ-RI
+test_molecule_symmetry:
+c2v  c1
+auxbasis:
+cc-pVDZ-F12-CABS
+docc:
+auto
+test_basis:
+cc-pVDZ
+default_package:
+MPQC.IntV3EvaluatorFactory
+socc:
+auto
+fzv:
+
+test_molecule:
+h2o  h2o
+label:
+ccsd(t)_r12 test series
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+fixed:
+
+test_r12theory:
+default (ansatz=ijkl) (ansatz=ijkl,ebc=false) (ansatz=diag,ebc=false)
+h2o:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+test_dfbasis:
+none cc-pVTZ-RI
+followed:
+
+fzc:
+
+basis:
+cc-pVDZ
+method:
+psi-ccsd_t-f12
+test_calc:
+energy
+restart:
+no
+test_fzc:
+0 1
+grid:
+default
+frequencies:
+no
+checkpoint:
+no
+symmetry:
+c2v
+test_method:
+psi-ccsd_t-f12
+puream:
+yes
+optimize:
+no

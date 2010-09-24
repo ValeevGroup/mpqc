@@ -119,6 +119,7 @@ sub process_file {
     my $test_vars = {};
     init_var($test_vars, $parse, "basis", "STO-3G");
     init_var($test_vars, $parse, "auxbasis", "");
+    init_var($test_vars, $parse, "dfbasis", "");
     init_var($test_vars, $parse, "grid", "default");
     init_var($test_vars, $parse, "symmetry", "C1");
     init_var($test_vars, $parse, "method", "SCF");
@@ -134,6 +135,9 @@ sub process_file {
     init_var($test_vars, $parse, "lindep_tol", "default");
     init_var($test_vars, $parse, "default_package",
              "MPQC.IntV3EvaluatorFactory");
+    # r12 theory params
+    init_var($test_vars, $parse, "r12theory", "default");
+
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
@@ -163,6 +167,7 @@ sub process_file {
     do {
         my $basis = $test_vars->{"basis"}->[$index->{"basis"}];
         my $auxbasis = $test_vars->{"auxbasis"}->[$index->{"auxbasis"}];
+        my $dfbasis = $test_vars->{"dfbasis"}->[$index->{"dfbasis"}];
         my $grid = $test_vars->{"grid"}->[$index->{"grid"}];
         my $fzc = $test_vars->{"fzc"}->[$index->{"fzc"}];
         my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
@@ -178,6 +183,7 @@ sub process_file {
         my $followed = $molecule_fixed[$index->{"followed"}];
         my $orthog_method = $test_vars->{"orthog_method"}->[$index->{"orthog_method"}];
         my $lindep_tol = $test_vars->{"lindep_tol"}->[$index->{"lindep_tol"}];
+        my $r12theory = $test_vars->{"r12theory"}->[$index->{"r12theory"}];
         my $default_package = $test_vars->{"default_package"}->[$index->{"default_package"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
@@ -270,6 +276,13 @@ sub process_file {
         $parse->set_value("docc", $docc);
         $parse->set_value("socc", $socc);
         $parse->set_value("state", $mult);
+
+	{
+	  $dfbasis = "" if ($dfbasis eq "none");
+	  $parse->set_value("dfbasis", $dfbasis);
+	  $dfbasis = tofilename($dfbasis);
+	}
+
         if ($gradient ne "default") {
             if ($method =~ /v[12](lb)?$/) {
                 # these methods don't support gradients
@@ -299,6 +312,10 @@ sub process_file {
             my $ldtolindex = $index->{"lindep_tol"};
             $fextra = "t$ldtolindex$fextra";
         }
+	$parse->set_value("r12theory", $r12theory);
+        if ($r12theory ne "default") {
+            $fextra =  "$r12theory$fextra";
+        }
         $parse->set_value("molecule", $parse->value($molecule));
         $parse->set_value("fixed", $parse->value($fixed));
         $parse->set_value("followed", $parse->value($followed));
@@ -325,7 +342,7 @@ sub process_file {
         }
 
         my $spinok = 1;
-        if (($method =~ /MP2/i) && $mult > 1) {
+        if (($method eq "MP2" || $method eq "LMP2" || $method =~ /MP2V/) && $mult > 1) {
             $spinok = 0;
         }
 
@@ -334,6 +351,7 @@ sub process_file {
         $basis = tofilename($basis);
         $auxbasis = tofilename($auxbasis);
         $symmetry = tofilename($symmetry);
+        $fextra = tofilename($fextra);
         if ($do_cca eq "yes"){
              $intpack = tofilename($default_package);
         }
@@ -342,7 +360,7 @@ sub process_file {
              $intpack = "";
         }
         if ($grid eq "default") {$grid = "";}
-        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra$intbuf";
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$dfbasis$symmetry$fcalc$fextra$intbuf";
         my $writer;
 
         if ($package eq "g94") {
@@ -432,5 +450,7 @@ sub tofilename {
     $raw =~ s/\+/p/g;
     $raw =~ s/\'/prime/g;
     $raw =~ s./.slash.g;
+    $raw =~ s/\(/_/g;
+    $raw =~ s/\)/_/g;
     $raw;
 }

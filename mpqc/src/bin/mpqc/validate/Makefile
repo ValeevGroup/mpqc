@@ -346,9 +346,12 @@ INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12% $(INP)/psiccsdpt2r12%
 # use libint2 configuration to determine which MP2-F12 set to run
 ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
-LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
+$(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else
-LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% $(INP)/mp2f12_mp2f12slashc% $(INP)/psiccsdpt2f12% \
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
+$(INP)/mp2f12_h2omp2f12slashc% $(INP)/mp2f12_ch2mp2f12slashc% \
+$(INP)/mp2f12_mp2f12slashc%  $(INP)/psiccsdpt2f12% \
 $(INP)/pt2f12% $(INP)/psipt2f12% $(INP)/ccsdpt%
 endif
 

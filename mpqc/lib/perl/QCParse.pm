@@ -445,8 +445,8 @@ sub dfbasis {
     s/^\s+//;
     s/\s+$//;
     if ( $_ eq "" ) {
-        $self->error("No density-fitting basis given (using default).\n");
-        $_ = "STO-3G";
+        $self->error("No density-fitting basis given (using none).\n");
+        $_ = "";
     }
     $_;
 }
@@ -574,13 +574,13 @@ sub frequencies {
 	$bval;
 }
 
-sub r12corrfactor {
-	my $self = shift;
-    my $val = $self->{"parser"}->value("orthog_method");
+sub r12theory {
+    my $self = shift;
+    my $val = $self->{"parser"}->value("r12theory");
     if ($val eq "") {
-    	
+      	$self->error("Bad value for r12theory: $val");
     }
-    $bval;
+    $val;
 }
 
 sub axyz_lines {
@@ -678,30 +678,32 @@ package MPQCInputWriter;
 	"PSI-UHF"         => "PsiUHF",
 	"PSI-CCSD"        => "PsiCCSD",
 	"PSI-CCSD_T"      => "PsiCCSD_T",
-    "PSI-UCCSD"       => "PsiCCSD",
-    "PSI-UCCSD_T"     => "PsiCCSD_T",
+        "PSI-UCCSD"       => "PsiCCSD",
+        "PSI-UCCSD_T"     => "PsiCCSD_T",
 	"PSI-CCSD-R12"    => "PsiCCSD_PT2R12",
 	"PSI-CCSD_T-R12"  => "PsiCCSD_PT2R12T",
 	"PSI-CCSD-F12"    => "PsiCCSD_PT2R12",
 	"PSI-CCSD_T-F12"  => "PsiCCSD_PT2R12T",
-    "PSI-UCCSD-R12"   => "PsiCCSD_PT2R12",
-    "PSI-UCCSD_T-R12" => "PsiCCSD_PT2R12T",
-    "PSI-UCCSD-F12"   => "PsiCCSD_PT2R12",
-    "PSI-UCCSD_T-F12" => "PsiCCSD_PT2R12T",
+        "PSI-UCCSD-R12"   => "PsiCCSD_PT2R12",
+        "PSI-UCCSD_T-R12" => "PsiCCSD_PT2R12T",
+        "PSI-UCCSD-F12"   => "PsiCCSD_PT2R12",
+        "PSI-UCCSD_T-F12" => "PsiCCSD_PT2R12T",
 	"RHF[2]_R12"      => "PT2R12",
-    "ROHF[2]_R12"     => "PT2R12",
-    "UHF[2]_R12"      => "PT2R12",
-    "PSI-RHF[2]_R12"  => "PT2R12",
-    "PSI-ROHF[2]_R12" => "PT2R12",
-    "PSI-UHF[2]_R12"  => "PT2R12",
-    "PSI-CI[2]_R12"   => "PT2R12",
-    "RHF[2]_F12"      => "PT2R12",
-    "ROHF[2]_F12"     => "PT2R12",
-    "UHF[2]_F12"      => "PT2R12",
-    "PSI-RHF[2]_F12"  => "PT2R12",
-    "PSI-ROHF[2]_F12" => "PT2R12",
-    "PSI-UHF[2]_F12"  => "PT2R12",
-    "PSI-CI[2]_F12"   => "PT2R12",
+        "ROHF[2]_R12"     => "PT2R12",
+        "UHF[2]_R12"      => "PT2R12",
+        "PSI-RHF[2]_R12"  => "PT2R12",
+        "PSI-ROHF[2]_R12" => "PT2R12",
+        "PSI-UHF[2]_R12"  => "PT2R12",
+        "PSI-RASSCF[2]_R12" => "PT2R12",
+        "PSI-MRCI[2]_R12"   => "PT2R12",
+        "RHF[2]_F12"      => "PT2R12",
+        "ROHF[2]_F12"     => "PT2R12",
+        "UHF[2]_F12"      => "PT2R12",
+        "PSI-RHF[2]_F12"  => "PT2R12",
+        "PSI-ROHF[2]_F12" => "PT2R12",
+        "PSI-UHF[2]_F12"  => "PT2R12",
+        "PSI-RASSCF[2]_F12" => "PT2R12",
+        "PSI-MRCI[2]_F12"   => "PT2R12",
 	"MP2-R12/A'"      => "MBPT2_R12",
 	"MP2-R12/A''"     => "MBPT2_R12",
 	"MP2-R12/B"       => "MBPT2_R12",
@@ -817,14 +819,16 @@ package MPQCInputWriter;
     "PSI-RHF[2]_R12"  => "C",
     "PSI-ROHF[2]_R12" => "C",
     "PSI-UHF[2]_R12"  => "C",
-    "PSI-CI[2]_R12"   => "C",
+    "PSI-RASSCF[2]_R12" => "C",
+    "PSI-MRCI[2]_R12"   => "C",
     "RHF[2]_F12"      => "C",
     "ROHF[2]_F12"     => "C",
     "UHF[2]_F12"      => "C",
     "PSI-RHF[2]_F12"  => "C",
     "PSI-ROHF[2]_F12" => "C",
     "PSI-UHF[2]_F12"  => "C",
-    "PSI-CI[2]_F12"   => "C"
+    "PSI-RASSCF[2]_F12" => "C",
+    "PSI-MRCI[2]_F12"   => "C"
 );
 %r12corrfactormap = (
 	"MP2-R12/A'"   => "R12",
@@ -838,7 +842,27 @@ package MPQCInputWriter;
 	"PSI-CCSD-R12"   => "R12",
 	"PSI-CCSD_T-R12" => "R12",
 	"PSI-CCSD-F12"   => "STG-3G",
-	"PSI-CCSD_T-F12" => "STG-3G"
+	"PSI-CCSD_T-F12" => "STG-3G",
+    "PSI-UCCSD-R12"   => "R12",
+    "PSI-UCCSD_T-R12" => "R12",
+    "PSI-UCCSD-F12"   => "STG-3G",
+    "PSI-UCCSD_T-F12" => "STG-3G",
+    "RHF[2]_R12"      => "R12",
+    "ROHF[2]_R12"     => "R12",
+    "UHF[2]_R12"      => "R12",
+    "PSI-RHF[2]_R12"  => "R12",
+    "PSI-ROHF[2]_R12" => "R12",
+    "PSI-UHF[2]_R12"  => "R12",
+    "PSI-RASSCF[2]_R12" => "R12",
+    "PSI-MRCI[2]_R12"   => "R12",
+    "RHF[2]_F12"      => "STG-3G",
+    "ROHF[2]_F12"     => "STG-3G",
+    "UHF[2]_F12"      => "STG-3G",
+    "PSI-RHF[2]_F12"  => "STG-3G",
+    "PSI-ROHF[2]_F12" => "STG-3G",
+    "PSI-UHF[2]_F12"  => "STG-3G",
+    "PSI-RASSCF[2]_F12" => "STG-3G",
+    "PSI-MRCI[2]_F12"   => "STG-3G"
 );
 %mbpt2map = (
 	"MP2"         => "mp",
@@ -1102,11 +1126,12 @@ sub input_string() {
 		my $stdapprox  = $r12stdapproxmap{$inputmethod};
 		my $corrfactor = $r12corrfactormap{$inputmethod};
 		my $auxbasis   = $qcinput->auxbasis();
+		my $dfbasis   = $qcinput->dfbasis();
 		my $fzc        = $qcinput->fzc();
-		my $rimethod   = "CABS";
+		my $r12theory  = $qcinput->r12theory();
 		$mole =
-		  append_r12technology( $qcinput, $mole, $auxbasis, $rimethod, $stdapprox,
-			$corrfactor, $fzc, $do_cca );
+		  append_r12technology( $qcinput, $mole, $auxbasis, $dfbasis, $stdapprox,
+			$corrfactor, $r12theory, $fzc, $do_cca );
 
 		my $refmethod = "";
 		if ( $qcinput->mult() == 1 ) {
@@ -1123,6 +1148,17 @@ sub input_string() {
 	}
 	elsif ( $method eq "PsiCCSD_PT2R12" ||
 	        $method eq "PsiCCSD_PT2R12T") {
+	    
+        my $stdapprox  = $r12stdapproxmap{$inputmethod};
+        my $corrfactor = $r12corrfactormap{$inputmethod};
+        my $auxbasis   = $qcinput->auxbasis();
+	my $dfbasis   = $qcinput->dfbasis();
+        my $fzc        = $qcinput->fzc();
+	my $r12theory  = $qcinput->r12theory();
+        $mole =
+          append_r12technology( $qcinput, $mole, $auxbasis, $dfbasis, $stdapprox,
+            $corrfactor, $r12theory, $fzc, $do_cca );
+
         my $psirefmethod = "";
         if ( $qcinput->mult() == 1 ) {
             $psirefmethod = "PsiCLHF";
@@ -1130,38 +1166,11 @@ sub input_string() {
         else {
             $psirefmethod = "PsiHSOSHF";
         }
-        $mole = "$mole\n    reference<$psirefmethod>: (";
-        $mole = "$mole\n    molecule = \$:molecule";
-        $mole = "$mole\n    basis = \$:basis";
-        $mole = "$mole\n    memory = $memory";
-        $mole = "$mole\n    )";
-	    
-        my $stdapprox  = $r12stdapproxmap{$inputmethod};
-        my $corrfactor = $r12corrfactormap{$inputmethod};
-        my $auxbasis   = $qcinput->auxbasis();
-        my $fzc        = $qcinput->fzc();
-        my $rimethod   = "CABS";
-        $mole = "$mole\n    mbpt2r12<MBPT2_R12>: (";
-        $mole = "$mole\n    molecule = \$:molecule";
-        $mole = "$mole\n    basis = \$:basis";
-        $mole = "$mole\n    memory = $memory";
-        $mole =
-          append_r12technology( $qcinput, $mole, $auxbasis, $rimethod, $stdapprox,
-            $corrfactor, $fzc, $do_cca );
-
-        my $refmethod = "";
-        if ( $qcinput->mult() == 1 ) {
-            $refmethod = "CLHF";
-        }
-        else {
-            $refmethod = "HSOSHF";
-        }
         $mole = append_reference(
-            $mole,   $refmethod,     $charge,     $mult,
+            $mole,   $psirefmethod,  $charge,     $mult,
             $memory, $orthog_method, $lindep_tol, $docc,
-            $socc,   "DZ (Dunning)"
+            $socc,   ""
         );
-        $mole = "$mole\n    )";
     }	
 	elsif ( $method eq "MBPT2" ) {
 		my $fzc            = $qcinput->fzc();
@@ -1389,7 +1398,7 @@ sub append_reference {
 	}
 	if ( $docc ne "" ) { $mole = "$mole\n      $docc"; }
 	if ( $socc ne "" ) { $mole = "$mole\n      $socc"; }
-	if ( !( $basis =~ /^STO/ || $basis =~ /^MI/ || $basis =~ /^\d-\d1G$/ ) ) {
+	if ( !( $basis =~ /^STO/ || $basis =~ /^MI/ || $basis =~ /^\d-\d1G$/ ) && $guessbasis ne "") {
 		$mole = "$mole\n      guess_wavefunction<$refmethod>: (";
 		$mole = "$mole\n        molecule = \$:molecule";
 		$mole = "$mole\n        total_charge = $charge";
@@ -1411,12 +1420,15 @@ sub append_r12technology {
 	my $qcinput       = shift;
     my $mole          = shift;
     my $auxbasis      = shift;
-    my $rimethod      = shift;
+    my $dfbasis       = shift;
     my $stdapprox     = shift;
     my $corrfactor    = shift;
+    my $r12theory     = shift;
     my $fzc           = shift;
     my $do_cca        = shift;
     
+        my ($diag, $ri, $range, $coupling, $ebc) = parse_r12theory($r12theory);
+
 	$mole = sprintf "%s\n    stdapprox = \"%s\"\n    corr_factor = \"%s\"",
 	  $mole, $stdapprox, $corrfactor;
 	if ( $do_cca ne "yes" ) {
@@ -1426,26 +1438,88 @@ sub append_r12technology {
 		}
 		else {
 			$mole =
-			  "$mole\n    corr_param = 1.5\n    integrals<IntegralLibint2>: ()";
+			  "$mole\n    corr_param = $range\n    integrals<IntegralLibint2>: ()";
 			$use_r12ints = "libint2";
 		}
 	}
 	$mole = "$mole\n    nfzc = $fzc";
+	$mole = "$mole\n    ansatz<R12Ansatz>: (diag=$diag)";
+	$mole = "$mole\n    ebc=$ebc";
+	$mole = "$mole\n    coupling=$coupling";
 
 	# don't write an auxbasis if the auxbasis is the same as the basis set.
 	# this will speed up the calculation
 	if ( "$auxbasis" ne "" && $auxbasis ne $qcinput->basis()) {
-		$mole = "$mole\n    aux_basis<GaussianBasisSet>: (";
-		$mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
-        if ($qcinput->puream()) {
-            $mole = "$mole\n      puream = true";
-        }
-		$mole = "$mole\n      molecule = \$:molecule";
-		$mole = "$mole\n    )";
-		$mole = "$mole\n    abs_method = $rimethod";
+	  $mole = "$mole\n    aux_basis<GaussianBasisSet>: (";
+	  $mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
+	  if ($qcinput->puream()) {
+	    $mole = "$mole\n      puream = true";
+	  }
+	  $mole = "$mole\n      molecule = \$:molecule";
+	  $mole = "$mole\n    )";
+	  $mole = "$mole\n    abs_method = $ri";
+	}
+
+	if ( "$dfbasis" ne "" && "$dfbasis" ne "none" ) {
+	  $mole = "$mole\n    df_basis<GaussianBasisSet>: (";
+	  $mole = sprintf "%s\n      name = \"%s\"", $mole, $dfbasis;
+	  if ($qcinput->puream()) {
+	    $mole = "$mole\n      puream = true";
+	  }
+	  $mole = "$mole\n      molecule = \$:molecule";
+	  $mole = "$mole\n    )";
 	}
 	
 	return $mole;
 }
+
+sub parse_r12theory {
+  $_       = shift;
+
+  my @result = ("true", "cabs+", "1.5", "false", "true");
+
+  return @result if $_ eq "default";
+  return @result if $_ eq "";
+
+  s/\(//;
+  s/\)//;
+  s/\,/ /;
+  my @tokens = split;
+  foreach my $token (@tokens) {
+    # ansatz=...
+    if ($token =~ /ansatz/) {
+      my $diag = "false";
+      $diag = "true" if $token =~ "diag";
+      $result[0] = $diag;
+    }
+    # ri=...
+    if ($token =~ /ri/) {
+      $token =~ s/ri//;
+      $token =~ s/=//;
+      $result[1] = $token;
+    }
+    # range=...
+    if ($token =~ /range/) {
+      $token =~ s/range//;
+      $token =~ s/=//;
+      $result[2] = $token;
+    }
+    # coupling=...
+    if ($token =~ /coupling/) {
+      $token =~ s/coupling//;
+      $token =~ s/=//;
+      $result[3] = $token;
+    }
+    # ebc=...
+    if ($token =~ /ebc/) {
+      $token =~ s/ebc//;
+      $token =~ s/=//;
+      $result[4] = $token;
+    }
+  }
+
+   return @result;
+}
+
 1;
 

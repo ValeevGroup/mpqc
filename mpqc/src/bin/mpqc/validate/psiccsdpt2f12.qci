@@ -1,18 +1,22 @@
 
 test_basis: cc-pVDZ
-test_auxbasis: aug-cc-pVDZ
+test_auxbasis: cc-pVDZ-F12-CABS
+test_dfbasis: none cc-pVTZ-RI
 test_method: psi-ccsd_t-f12
-test_symmetry: c2v
 test_calc: energy
 test_fzc: 0 1
 puream: yes
+test_r12theory: default (ansatz=ijkl) (ansatz=ijkl,ebc=false) (ansatz=diag,ebc=false)
+test_molecule:              h2o  h2o
+test_molecule_symmetry:     c2v  c1
+test_molecule_multiplicity:   1   1
 
 restart: no
 checkpoint: no
 
-label: water mp2-r12 test series
+label: ccsd(t)_r12 test series
 
-molecule:
+h2o:
   O  0.000000000 0  0.369372944
   H  0.783975899 0 -0.184686472
   H -0.783975899 0 -0.184686472

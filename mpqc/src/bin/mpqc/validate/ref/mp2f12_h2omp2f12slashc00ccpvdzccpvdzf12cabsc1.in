@@ -1,0 +1,83 @@
+% Emacs should use -*- KeyVal -*- mode
+% this file was automatically generated
+% label: mp2-r12 test series
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+     O     [     0.000000000000     0.000000000000     0.369372944000 ]
+     H     [     0.783975899000     0.000000000000    -0.184686472000 ]
+     H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "cc-pVDZ"
+  puream = true
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  integrals<IntegralLibint2>: ()
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+  )
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<MBPT2_R12>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 32000000
+    stdapprox = "C"
+    corr_factor = "STG-3G"
+    corr_param = 1.5
+    integrals<IntegralLibint2>: ()
+    nfzc = 0
+    ansatz<R12Ansatz>: (diag=true)
+    ebc=true
+    coupling=false
+    aux_basis<GaussianBasisSet>: (
+      name = "cc-pVDZ-F12-CABS"
+      puream = true
+      molecule = $:molecule
+    )
+    abs_method = cabs+
+    reference<CLHF>: (
+      molecule = $:molecule
+      basis = $:basis
+      total_charge = 0
+      multiplicity = 1
+      memory = 32000000
+      guess_wavefunction<CLHF>: (
+        molecule = $:molecule
+        total_charge = 0
+        multiplicity = 1
+        basis<GaussianBasisSet>: (
+          molecule = $:molecule
+          name = "DZ (Dunning)"
+        )
+        memory = 32000000
+      )
+    )
+  )
+  optimize = no
+  % optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

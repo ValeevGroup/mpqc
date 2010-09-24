@@ -1,17 +1,26 @@
 
 test_basis: cc-pVDZ
-test_auxbasis: aug-cc-pVDZ
+test_auxbasis: cc-pVDZ-F12-CABS
+test_dfbasis: none cc-pVTZ-RI
 test_method: mp2-f12/a' mp2-f12/a'' mp2-f12/b mp2-f12/c
-test_symmetry: c2v
 test_calc: energy
 test_fzc: 0 1
+test_r12theory: default (ansatz=diag,coupling=true) (ansatz=ijkl,coupling=false) (ansatz=ijkl,coupling=true)
+test_molecule:              h2o  h2o  ch2  ch2
+test_molecule_symmetry:     c2v  c1   c2v  c1
+test_molecule_multiplicity:   1   1   3    3
 
 restart: no
 checkpoint: no
 
-label: water mp2-r12 test series
+label: mp2-r12 test series
 
-molecule:
+h2o:
   O  0.000000000 0  0.369372944
   H  0.783975899 0 -0.184686472
   H -0.783975899 0 -0.184686472
+
+ch2:
+  C   0.000   0.000  -0.100
+  H   0.000   0.857   0.596
+  H   0.000  -0.857   0.596

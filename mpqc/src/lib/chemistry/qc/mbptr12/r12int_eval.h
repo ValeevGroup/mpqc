@@ -284,7 +284,7 @@ class R12IntEval : virtual public SavableState {
 
    */
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
-    void compute_tbint_tensor(RefSCMatrix& T,
+  DEPRECATED void compute_tbint_tensor(RefSCMatrix& T,
                               TwoBodyOper::type tbint_type,
                               const Ref<OrbitalSpace>& space1,
                               const Ref<OrbitalSpace>& space2,
@@ -356,6 +356,32 @@ class R12IntEval : virtual public SavableState {
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
 
+  /** overload of the above when no pre- and post-processing is needed.
+      this version is also much more efficient since it does contraction
+      as a DGEMM (hence it tiles loads).
+
+      \param antisymmetrize indicates whether the target tensor is antisymmetric w.r.t permutation of
+      particles or now.
+   */
+  template <bool CorrFactorInBra,
+            bool CorrFactorInKet>
+    void DEPRECATED contract_tbint_tensor(
+           RefSCMatrix& T,
+           TwoBodyOper::type tbint_type_bra,
+           TwoBodyOper::type tbint_type_ket,
+           double scale,
+           const Ref<OrbitalSpace>& space1_bra,
+           const Ref<OrbitalSpace>& space2_bra,
+           const Ref<OrbitalSpace>& space1_intb,
+           const Ref<OrbitalSpace>& space2_intb,
+           const Ref<OrbitalSpace>& space1_ket,
+           const Ref<OrbitalSpace>& space2_ket,
+           const Ref<OrbitalSpace>& space1_intk,
+           const Ref<OrbitalSpace>& space2_intk,
+           bool antisymmetrize,
+           const std::vector<std::string>& tformkeys_bra,
+           const std::vector<std::string>& tformkeys_ket);
+
   /** overload of the above when the result should be stored as a DistArray4
 
       \param antisymmetrize indicates whether the target tensor is antisymmetric w.r.t permutation of
@@ -380,33 +406,6 @@ class R12IntEval : virtual public SavableState {
            bool antisymmetrize,
            const std::vector<std::string>& tformkeys_bra,
            const std::vector<std::string>& tformkeys_ket);
-
-  /** overload of the above when no pre- and post-processing is needed.
-      this version is also much more efficient since it does contraction
-      as a DGEMM (hence it tiles loads).
-
-      \param antisymmetrize indicates whether the target tensor is antisymmetric w.r.t permutation of
-      particles or now.
-   */
-  template <bool CorrFactorInBra,
-            bool CorrFactorInKet>
-    void contract_tbint_tensor(
-           RefSCMatrix& T,
-           TwoBodyOper::type tbint_type_bra,
-           TwoBodyOper::type tbint_type_ket,
-           double scale,
-           const Ref<OrbitalSpace>& space1_bra,
-           const Ref<OrbitalSpace>& space2_bra,
-           const Ref<OrbitalSpace>& space1_intb,
-           const Ref<OrbitalSpace>& space2_intb,
-           const Ref<OrbitalSpace>& space1_ket,
-           const Ref<OrbitalSpace>& space2_ket,
-           const Ref<OrbitalSpace>& space1_intk,
-           const Ref<OrbitalSpace>& space2_intk,
-           bool antisymmetrize,
-           const std::vector<std::string>& tformkeys_bra,
-           const std::vector<std::string>& tformkeys_ket);
-
 
   // for now make it public
   public:

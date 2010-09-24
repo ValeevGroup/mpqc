@@ -32,9 +32,11 @@
 #ifndef _mpqc_src_lib_util_misc_consumableresources_h
 #define _mpqc_src_lib_util_misc_consumableresources_h
 
+#include <map>
 #include <util/keyval/keyval.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
+#include <util/class/scexception.h>
 
 namespace sc {
 
@@ -51,7 +53,7 @@ namespace sc {
 
           <tr><td><tt>memory</tt><td>integer<td>256000000<td>number of bytes; user is allowed to use KB/MB/GB abbreviations
 
-          <tr><td><tt>disk</tt><td>[string integer] pair<td>["/tmp/" 0]<td>specifies location of scratch files and available storage in bytes ("0" means unlimited)
+          <tr><td><tt>disk</tt><td>[string integer] pair<td>["./" 0]<td>specifies location of scratch files and available storage in bytes ("0" means unlimited)
 
           </table>
        */
@@ -97,8 +99,38 @@ namespace sc {
       /// Returns the default ConsumableResources object
       static const Ref<ConsumableResources>& get_default_instance();
 
+      /// prints definition to a string
+      std::string sprint() const;
       /// prints definition
-      std::string print() const;
+      void print(std::ostream& o = ExEnv::out0()) const;
+      /// prints definition+status
+      void print_status(std::ostream& o = ExEnv::out0()) const;
+
+      /// allocate array of T size elements long using operator new[] (keeps track of memory)
+      template <typename T> T* alloc(std::size_t size) {
+        T* array = new T[size];
+        size *= sizeof(T);
+        consume_memory(size);
+        void* array_ptr = static_cast<void*>(array);
+        managed_arrays_[array_ptr] = size;
+        return array;
+      }
+      /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
+      /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
+      template <typename T> void dealloc(T* array) {
+        void* array_ptr = static_cast<void*>(array);
+        // make sure it's managed by me
+        std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+        if (pos != managed_arrays_.end()) {
+          const size_t size = pos->second;
+          delete[] array;
+          release_memory(size);
+          managed_arrays_.erase(pos);
+        }
+        else
+          throw ProgrammingError("ConsumableResources::deallocate() -- non-managed array given",
+                                 __FILE__, __LINE__, class_desc());
+      }
 
     private:
       static ClassDesc class_desc_;
@@ -139,6 +171,10 @@ namespace sc {
       typedef ResourceCounter<size_t> rsize;
       rsize memory_;
       std::pair<std::string, rsize> disk_;
+
+      /// this keeps track of arrays of data explicitly managed by ConsumableResources
+      /// value is the size of array in bytes
+      std::map<void*, std::size_t> managed_arrays_;
 
       static Ref<ConsumableResources> default_instance_;
 

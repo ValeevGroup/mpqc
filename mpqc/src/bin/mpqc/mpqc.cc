@@ -446,12 +446,12 @@ try_main(int argc, char *argv[])
   Ref<Integral> integral = Integral::get_default_integral();
   ExEnv::out0() << endl << indent
        << "Using " << integral->class_name()
-       << " by default for molecular integrals evaluation" << endl << endl;
+       << " by default for molecular integrals evaluation" << endl;
 
   init.init_resources(keyval);
   Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
-  ExEnv::out0() << endl << indent
-       << "Default ConsumableResources = " << resources->print() << endl << endl;
+  ExEnv::out0() << indent
+       << "Given resources: " << resources->sprint() << endl << endl;
 
   // check for a molecular energy and optimizer
   std::string basename = SCFormIO::default_basename();

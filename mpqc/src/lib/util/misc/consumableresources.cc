@@ -38,7 +38,7 @@
 using namespace sc;
 
 size_t ConsumableResources::defaults::memory = 256000000;
-std::pair<std::string,size_t> ConsumableResources::defaults::disk = make_pair(std::string("/tmp/"), size_t(0));
+std::pair<std::string,size_t> ConsumableResources::defaults::disk = make_pair(std::string("./"), size_t(0));
 
 ClassDesc
 ConsumableResources::class_desc_(typeid(ConsumableResources),
@@ -79,6 +79,15 @@ ConsumableResources::ConsumableResources(StateIn& si) : SavableState(si) {
 
 ConsumableResources::~ConsumableResources() {
   const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
+
+  if (!managed_arrays_.empty()) {
+    std::size_t total_unfreed_memory = 0;
+    for(std::map<void*, std::size_t>::const_iterator v=managed_arrays_.begin();
+        v != managed_arrays_.end();
+        ++v)
+      total_unfreed_memory != v->second;
+    ExEnv::err0() << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
+  }
 }
 
 void
@@ -175,10 +184,27 @@ ConsumableResources::get_default_instance()
 }
 
 std::string
-ConsumableResources::print() const {
+ConsumableResources::sprint() const {
   std::ostringstream o;
-  o << "ConsumableResources:( memory = " << memory_.max_value() << " disk = [" << disk_.first << " " << disk_.second.max_value() <<"] )" << std::ends;
+  o << indent << "ConsumableResources: ( memory = " << memory_.max_value();
+  o << indent << " disk = [" << disk_.first << " " << disk_.second.max_value() <<"] )";
   return o.str();
+}
+
+void
+ConsumableResources::print(std::ostream& o) const {
+  o << indent << "ConsumableResources: (" << std::endl << incindent;
+  o << indent << "memory = " << memory_.max_value() << std::endl;
+  o << indent << "disk = [" << disk_.first << " " << disk_.second.max_value() <<"]" << std::endl << decindent;
+  o << indent << ")" << std::endl;
+}
+
+void
+ConsumableResources::print_status(std::ostream& o) const {
+  o << indent << "ConsumableResources: (" << std::endl << incindent;
+  o << indent << "memory = " << memory_.max_value() << " (avail: " << memory_.value() << ")"<< std::endl;
+  o << indent << "disk = [ " << disk_.first << " " << disk_.second.max_value() << " (avail: " << disk_.second.value() << ") ]" << std::endl << decindent;
+  o << indent << ")" << std::endl;
 }
 
 size_t ConsumableResources::max_memory() const { return memory_.max_value(); }

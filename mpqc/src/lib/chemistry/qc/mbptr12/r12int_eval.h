@@ -46,8 +46,8 @@ namespace sc {
   class DistArray4;
   class R12Amplitudes;
 
-  /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.
-      This class is used by all Wavefunction classes that implement linear R12 methods.
+  /** R12IntEval is the top-level class which computes intermediates occuring in R12 theories.
+      This class is used by all Wavefunction classes that implement R12 methods.
   */
 
 class R12IntEval : virtual public SavableState {
@@ -666,7 +666,7 @@ public:
                 const Ref<OrbitalSpace>& p,
                 const Ref<OrbitalSpace>& q);
   /** Compute \f$ V_{pq}^{xy} = \frac{1}{2} \bar{g}_{pq}^{\alpha\beta} \bar{R}_{\alpha\beta}^{xy}\f$. \sa R12IntEval::V() */
-  Ref<DistArray4> V_distarray4(SpinCase2 spincase2,
+  std::vector<Ref<DistArray4> > V_distarray4(SpinCase2 spincase2,
                                const Ref<OrbitalSpace>& p,
                                const Ref<OrbitalSpace>& q);
   /// Compute \f$ P_{uv}^{xy} = \frac{1}{4} \bar{R}^{\alpha\beta}_{uv} \bar{g}_{\alpha\beta}^{\gamma\delta} \bar{R}_{\gamma\delta}^{xy}\f$ P = RgR
@@ -927,7 +927,10 @@ public:
 
 };
 
-}
+std::vector< Ref<DistArray4> >
+A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval);
+
+} // end of namespace sc
 
 #endif
 

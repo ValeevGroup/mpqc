@@ -523,22 +523,21 @@ namespace sc {
 
   const RefDiagSCMatrix&PsiSCF::evals(SpinCase1 spin) {
     PsiSCF::RefType ref = reftype();
-    if (ref == rhf && spin == Beta)
-      return evals(Alpha);
 
-    if (spin == AnySpinCase1) {
-      if (ref != uhf)
-        return evals(Alpha);
-      else
-        ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
-    }
+    SpinCase1 spin_to_seek = spin;
+    if (ref == rhf && (spin == AnySpinCase1 || spin == Beta))  // for closed-shell all orbitals are the same
+      spin_to_seek = Alpha;
+    if (ref == hsoshf && spin == AnySpinCase1)  // for restricted open-shell and AnySpinCase1 will assume spin-restricted case but write to Alpha
+      spin_to_seek = Alpha;
+    if (ref == uhf && spin == AnySpinCase1) // doesn't make sense to ask for any-spin for UHF
+      ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
 
-    if (evals_[spin].nonnull())
-      return evals_[spin];
+    if (evals_[spin_to_seek].nonnull())
+      return evals_[spin_to_seek];
 
     PsiChkpt chkpt(exenv(), integral(), debug());
-    const bool try_spin_restricted = (ref == rhf);
-    evals_[spin] = chkpt.evals(spin, try_spin_restricted);
+    const bool seek_spin_restricted = (spin == AnySpinCase1 || ref == rhf);   // assume spin restricted if RHF or asked for AnySpinCase1
+    evals_[spin_to_seek] = chkpt.evals(spin_to_seek, seek_spin_restricted);
 
 #if 0
     // grab orbital info
@@ -573,28 +572,26 @@ namespace sc {
     psi::Chkpt::free(E);
     psi::Chkpt::free(mopi);
 #endif
-    return evals_[spin];
+    return evals_[spin_to_seek];
   }
 
   const RefSCMatrix&PsiSCF::coefs(SpinCase1 spin) {
     PsiSCF::RefType ref = reftype();
-    if (ref == rhf && spin == Beta)
-      return coefs(Alpha);
 
-    if (spin == AnySpinCase1) {
-      if (ref != uhf)
-        return coefs(Alpha);
-      else
-        ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
-    }
+    SpinCase1 spin_to_seek = spin;
+    if (ref == rhf && (spin == AnySpinCase1 || spin == Beta))  // for closed-shell all orbitals are the same
+      spin_to_seek = Alpha;
+    if (ref == hsoshf && spin == AnySpinCase1)  // for restricted open-shell and AnySpinCase1 will assume spin-restricted case but write to Alpha
+      spin_to_seek = Alpha;
+    if (ref == uhf && spin == AnySpinCase1) // doesn't make sense to ask for any-spin for UHF
+      ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
 
-    if (coefs_[spin].nonnull())
-      return coefs_[spin];
+    if (coefs_[spin_to_seek].nonnull())
+      return coefs_[spin_to_seek];
 
     PsiChkpt chkpt(exenv(), integral(), debug());
-    const bool try_spin_restricted = (ref == rhf);
-    coefs_[spin] = chkpt.coefs(spin, try_spin_restricted);
-
+    const bool seek_spin_restricted = (spin == AnySpinCase1 || ref == rhf);
+    coefs_[spin_to_seek] = chkpt.coefs(spin_to_seek, seek_spin_restricted);
 #if 0
     psi::PSIO& psio = exenv()->psio();
     // grab orbital info
@@ -743,7 +740,7 @@ namespace sc {
     Chkpt::free(ao2so);
 #endif
 
-    return coefs_[spin];
+    return coefs_[spin_to_seek];
   }
 
   const Ref<OrbitalSpace>&  PsiSCF::orbs_sb(SpinCase1 spin) {
@@ -1087,7 +1084,7 @@ namespace sc {
   }
 
   void PsiHSOSHF::print(std::ostream& os) const {
-    os << indent << "PsiCLHF:\n" << incindent;
+    os << indent << "PsiHSOSHF:\n" << incindent;
     os << indent << "total_charge = " << charge_ << endl;
     os << indent << "multiplicity = " << multp_ << endl;
 
@@ -1184,7 +1181,7 @@ namespace sc {
   }
 
   void PsiUHF::print(std::ostream& os) const {
-    os << indent << "PsiCLHF:\n" << incindent;
+    os << indent << "PsiUHF:\n" << incindent;
     os << indent << "total_charge = " << charge_ << endl;
     os << indent << "multiplicity = " << multp_ << endl;
 

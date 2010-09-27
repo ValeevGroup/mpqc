@@ -504,7 +504,7 @@ namespace sc {
       psio.get_volpath(CC_TAMPS, 0, &psio_filename);
       char* da4_filename = new char[strlen(psio_filename) + 12];
       sprintf(da4_filename, "%s.distarray4", psio_filename);
-      T = new DistArray4_Node0File(da4_filename, 0, nocc1_act, nocc2_act,
+      T = new DistArray4_Node0File(da4_filename, 1, nocc1_act, nocc2_act,
                                    nuocc1_act, nuocc2_act);
       delete[] da4_filename;
       free(psio_filename);
@@ -518,6 +518,8 @@ namespace sc {
 
       double* t2_ij = new double[max_nab];
       double* T_ij = new double[nab];
+
+      T->activate();
 
       // convert to the full form
       size_t ij_offset = 0;
@@ -560,6 +562,8 @@ namespace sc {
           }
         }
       }
+
+      if (T->data_persistent()) T->deactivate();
 
       delete[] t2_ij;
       delete[] T_ij;

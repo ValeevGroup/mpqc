@@ -39,6 +39,7 @@
 #include <util/state/stateout.h>
 #include <util/group/memory.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/mbptr12/orbitalspace.h>
 
 namespace sc {
 
@@ -203,11 +204,16 @@ class DistArray4: virtual public SavableState {
 
 };
 
+
+/// extracts te_type from A
+Ref<DistArray4>
+extract(const Ref<DistArray4>& A,
+        unsigned int te_type,
+        double scale = 1.0);
+
 /** creates an array in which indices 2 and 3 are permuted
- * \param available_memory specifies how much memory is available, in bytes.
 */
-Ref<DistArray4> permute23(const Ref<DistArray4>& src,
-                          size_t available_memory);
+Ref<DistArray4> permute23(const Ref<DistArray4>& src);
 
 /// axpy followed by scaling: Y += a*X; Y *= scale.
 void
@@ -215,6 +221,33 @@ axpy(const Ref<DistArray4>& X,
      double a,
      const Ref<DistArray4>& Y,
      double scale = 1.0);
+
+/** antisymmetrizes the 4-index array in-place:
+    <ij|xy> =  ( (ij|xy) + (ji|yx) - (ij|yx) - (ji|xy) ) / 2
+
+    \param A input tensor. on output contains the antisymmetrized tensor. Valid A will obey these conditions: A->ni() == A->nj(), A->nx() == A->ny()
+  */
+void antisymmetrize(const Ref<DistArray4>& A);
+
+/** symmetrizes the 4-index array in-place:
+    <ij|xy> =  ( (ij|xy) + (ji|yx) ) / 2
+
+    \param A input tensor. on output contains the symmetrized tensor. Valid A will obey these conditions: A->ni() == A->nj(), A->nx() == A->ny()
+  */
+void symmetrize(const Ref<DistArray4>& A);
+
+/// map src to dest (uses MOIndexMap). if dest is a null ptr will clone src
+void
+map(const Ref<DistArray4>& src,
+    const Ref<OrbitalSpace>& isrc,
+    const Ref<OrbitalSpace>& jsrc,
+    const Ref<OrbitalSpace>& xsrc,
+    const Ref<OrbitalSpace>& ysrc,
+    Ref<DistArray4>& dest,
+    const Ref<OrbitalSpace>& idest,
+    const Ref<OrbitalSpace>& jdest,
+    const Ref<OrbitalSpace>& xdest,
+    const Ref<OrbitalSpace>& ydest);
 
 /// contracts ijxy ("bra") with klxy ("ket") to produce ijkl ("braket")
 void contract34(const Ref<DistArray4>& braket,
@@ -224,6 +257,12 @@ void contract34(const Ref<DistArray4>& braket,
                 const Ref<DistArray4>& ket,
                 unsigned int intsetidx_ket,
                 int debug = 0);
+
+/// contracts ijxy with T_xz to produce ijzy
+void contract3(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijzy);
+
+/// contracts ijxy with T_yz to produce ijxz
+void contract4(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijxz);
 
 /// copies contents of src into dst
 RefSCMatrix& operator<<(RefSCMatrix& dst,

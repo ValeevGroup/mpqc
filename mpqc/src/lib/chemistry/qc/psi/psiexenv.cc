@@ -31,6 +31,7 @@
 
 #include <sys/wait.h>
 #include <spawn.h>
+#include <fcntl.h>
 
 #include <string>
 #include <sstream>
@@ -257,9 +258,13 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
     char** spawnedArgs = new char*[n+1]; spawnedArgs[n] = NULL;
     for(int i=0; i<n; ++i)
       spawnedArgs[i] = strdup(allargs[i].c_str());
-    char *spawnedEnv[] = {NULL};
+    /* redirect new standard output (fd 1) and error (fd 2) */
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_init(&file_actions);
+    posix_spawn_file_actions_addopen(&file_actions, 1, stdout_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    posix_spawn_file_actions_addopen(&file_actions, 2, stderr_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     pid_t pid;
-    const int errcod = posix_spawn(&pid, spawnedArgs[0], NULL, NULL,
+    const int errcod = posix_spawn(&pid, spawnedArgs[0], &file_actions, NULL,
                                    spawnedArgs, environ);
     if (errcod == 0) {
       int status;
@@ -287,6 +292,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
       std::ostringstream oss; oss << "PsiExEnv::run_psi_module -- posix_spawn failed";
       throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
     }
+    posix_spawn_file_actions_destroy(&file_actions);
   }
 #else
   // no posix_spawn? must use system them
@@ -374,9 +380,9 @@ PsiChkpt::evals(SpinCase1 spin,
     E = exenv()->chkpt().rd_evals();
   else {
     E = (spin == Alpha) ? exenv()->chkpt().rd_alpha_evals() : exenv()->chkpt().rd_beta_evals();
-    if (E == 0)
-      E = exenv()->chkpt().rd_evals();
+    if (E == 0) E = exenv()->chkpt().rd_evals();  // try spin-restricted orbitals
   }
+  if (E == 0) throw ProgrammingError("PsiChkpt::evals() -- did not find orbitals in Psi checkpoint file", __FILE__, __LINE__);
 
   // convert raw matrices to SCMatrices
   RefSCDimension modim = new SCDimension(num_mo,nirrep,mopi);
@@ -413,9 +419,9 @@ PsiChkpt::coefs(SpinCase1 spin,
     C = exenv()->chkpt().rd_scf();
   else {
     C = (spin == Alpha) ? exenv()->chkpt().rd_alpha_scf() : exenv()->chkpt().rd_beta_scf();
-    if (C == 0)
-      C = exenv()->chkpt().rd_scf();
+    if (C == 0) C = exenv()->chkpt().rd_scf(); // try spin-restricted orbitals
   }
+  if (C == 0) throw ProgrammingError("PsiChkpt::coefs() -- did not find orbitals in Psi checkpoint file", __FILE__, __LINE__);
 
   // get AO->SO matrix (MPQC AO equiv PSI3 BF)
   double** ao2so = exenv()->chkpt().rd_usotbf();
@@ -518,7 +524,7 @@ PsiChkpt::coefs(SpinCase1 spin,
     delete[] tmpvec_orig; delete[] tmpvec_tformed;
   }
 
-  // lastly, change the dimensions to match those used by SCF classes (AO dimension much have subdimension blocked by shells)
+  // lastly, change the dimensions to match those used by SCF classes (AO dimension must be blocked by shells)
   {
     RefSCMatrix coefs_redim = result.kit()->matrix(plist->AO_basisdim(), result.coldim());
     RefSCMatrix coefs = result;

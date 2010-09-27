@@ -320,8 +320,7 @@ namespace sc {
    *    end x tile loop
    *  end i, t loop
    */
-  Ref<DistArray4> permute23(const Ref<DistArray4>& src,
-                            size_t available_memory) {
+  Ref<DistArray4> permute23(const Ref<DistArray4>& src) {
 
     const int nt = src->num_te_types();
     const int ni = src->ni();
@@ -335,6 +334,7 @@ namespace sc {
 
     // determine the size and number of x tiles
     const size_t jy_blksize = njy * sizeof(double);
+    const size_t available_memory = ConsumableResources::get_default_instance()->memory();
     int tilesize = (available_memory + jy_blksize - 1) / jy_blksize;
     if (tilesize > nx)  tilesize = nx;
     const int ntiles = (nx + tilesize - 1) / tilesize;
@@ -417,12 +417,7 @@ namespace sc {
     Y->activate();
 
     // maximum tile size is determined by the available memory
-    const size_t memory_available = ConsumableResources::get_default_instance()->memory();
-    if (memory_available > bufsize) {
-      throw AlgorithmException("not enough memory, increase memory", __FILE__, __LINE__);
-    }
-    double* y_buf = new double[nxy];
-    ConsumableResources::get_default_instance()->consume_memory(bufsize);
+    double* y_buf = allocate<double>(nxy);
 
     // determine how many workers we have
     std::vector<int> worker_id;
@@ -454,11 +449,91 @@ namespace sc {
       }
     }
 
-    delete[] y_buf;
-    ConsumableResources::get_default_instance()->release_memory(bufsize);
+    deallocate(y_buf);
 
     if (X->data_persistent()) X->deactivate();
     if (Y->data_persistent()) Y->deactivate();
+  }
+
+  void map(const Ref<DistArray4>& src,
+           const Ref<OrbitalSpace>& isrc,
+           const Ref<OrbitalSpace>& jsrc,
+           const Ref<OrbitalSpace>& xsrc,
+           const Ref<OrbitalSpace>& ysrc,
+           Ref<DistArray4>& dest,
+           const Ref<OrbitalSpace>& idest,
+           const Ref<OrbitalSpace>& jdest,
+           const Ref<OrbitalSpace>& xdest,
+           const Ref<OrbitalSpace>& ydest) {
+
+    if (dest.null()) { // allocate dest, if needed, by cloning src
+      DistArray4Dimensions dest_dims(src->num_te_types(), idest->rank(), jdest->rank(), xdest->rank(), ydest->rank());
+      dest = src->clone(dest_dims);
+    }
+
+    assert( src->num_te_types() == dest->num_te_types() );
+    assert( src->ni() == isrc->rank() );
+    assert( src->nj() == jsrc->rank() );
+    assert( src->nx() == xsrc->rank() );
+    assert( src->ny() == ysrc->rank() );
+    assert( dest->ni() == idest->rank() );
+    assert( dest->nj() == jdest->rank() );
+    assert( dest->nx() == xdest->rank() );
+    assert( dest->ny() == ydest->rank() );
+
+    MOIndexMap imap(*isrc << *idest);
+    MOIndexMap jmap(*jsrc << *jdest);
+    MOIndexMap xmap(*xsrc << *xdest);
+    MOIndexMap ymap(*ysrc << *ydest);
+
+    src->activate();
+    dest->activate();
+
+    double* dest_buf = allocate<double>(dest->nx() * dest->ny());
+
+    // determine how many workers we have
+    std::vector<int> worker_id;
+    const int nworkers = dest->tasks_with_access(worker_id);
+    const int me = dest->msg()->me();
+
+    const unsigned int nx = xdest->rank();
+    const unsigned int ny = ydest->rank();
+    const unsigned int nX = xsrc->rank();
+    const unsigned int nY = ysrc->rank();
+    size_t task_id = 0;
+    for(int i=0; i<idest->rank(); ++i) {
+      for(int j=0; j<jdest->rank(); ++j) {
+        for(int t=0; t<dest->num_te_types(); ++t, ++task_id) {
+
+          // round-robin task allocation
+          if(task_id%nworkers != worker_id[me])
+            continue;
+
+          const unsigned int I = imap[i];
+          const unsigned int J = jmap[j];
+          const double* src_buf = src->retrieve_pair_block(I, J, t);
+
+          size_t xy = 0;
+          for(unsigned int x=0; x<nx; ++x) {
+            const unsigned int X = xmap[x];
+            for(unsigned int y=0; y<ny; ++y, ++xy) {
+              const unsigned int Y = ymap[y];
+              const size_t XY = X * nY + Y;
+
+              dest_buf[xy] = src_buf[XY];
+            }
+          }
+          dest->store_pair_block(i, j, t, dest_buf);
+          src->release_pair_block(I, J, t);
+
+        }
+      }
+    }
+
+    deallocate(dest_buf);
+
+    if (src->data_persistent()) src->deactivate();
+    if (dest->data_persistent()) dest->deactivate();
   }
 
   void contract34(const Ref<DistArray4>& braket,
@@ -699,6 +774,200 @@ namespace sc {
     if (bra != ket && ket->data_persistent()) ket->deactivate();
     if (braket->data_persistent()) braket->deactivate();
 
+  }
+
+  namespace {
+
+    enum Index34 {
+      Index3, Index4
+    };
+
+    /// computes (ij|xy) . T_x^z  or same for index 4
+    /// note that the result is not symmetric with respect to permutation of particles 1 and 2
+    template <Index34 ContrIndex>
+    void
+    _contract_3_or_4(const Ref<DistArray4>& src, const RefSCMatrix& tform, Ref<DistArray4>& dest)
+    {
+      if (dest.null()) {
+        DistArray4Dimensions dest_dims(src->num_te_types(), src->ni(), src->nj(),
+                                       ((ContrIndex == Index3) ? tform.ncol() : src->nx()),
+                                       ((ContrIndex == Index4) ? tform.ncol() : src->ny())
+                                       );
+        dest = src->clone(dest_dims);
+      }
+
+      assert(src->num_te_types() == dest->num_te_types());
+      assert(src->ni() == dest->ni());
+      assert(src->nj() == dest->nj());
+      assert(src->nx() == ((ContrIndex == Index3) ? tform.nrow() : dest->nx()));
+      assert(src->ny() == ((ContrIndex == Index4) ? tform.nrow() : dest->ny()));
+      assert(dest->nx() == ((ContrIndex == Index3) ? tform.ncol() : src->nx()));
+      assert(dest->ny() == ((ContrIndex == Index4) ? tform.ncol() : src->ny()));
+
+      // copy T to an array
+      double* tform_buf = allocate<double>(tform.nrow() * tform.ncol());
+      tform.convert(tform_buf);
+
+      // allocate space for the result
+      double* dest_buf = allocate<double>(dest->nx() * dest->ny());
+
+      // determine how many workers we have
+      std::vector<int> worker_id;
+      const int nworkers = dest->tasks_with_access(worker_id);
+      const int me = dest->msg()->me();
+
+      src->activate();
+      dest->activate();
+
+      const unsigned int ni = src->ni();
+      const unsigned int nj = src->nj();
+      const unsigned int nx = src->nx();
+      const unsigned int ny = src->ny();
+      const unsigned int nX = dest->nx();
+      const unsigned int nY = dest->ny();
+      size_t task_id = 0;
+      for(int i=0; i<ni; ++i) {
+        for(int j=0; j<nj; ++j) {
+          for(int t=0; t<dest->num_te_types(); ++t, ++task_id) {
+
+            // round-robin task allocation
+            if(task_id%nworkers != worker_id[me])
+              continue;
+
+            const double* src_buf = src->retrieve_pair_block(i, j, t);
+
+            if (ContrIndex == Index4)
+              // src_buf * tform_buf = dest_buf
+              C_DGEMM('n','n', nx, nY, ny, 1.0, src_buf, ny, tform_buf, nY, 0.0, dest_buf, nY);
+            else  // ContrIndex == Index3
+              // tform_buf^t * src_buf  = dest_buf
+              C_DGEMM('t','n', nX, nY, nx, 1.0, tform_buf, nX, src_buf, ny, 0.0, dest_buf, nY);
+
+            dest->store_pair_block(i, j, t, dest_buf);
+            src->release_pair_block(i, j, t);
+          }
+        }
+      }
+
+      if (src->data_persistent()) src->deactivate();
+      if (dest->data_persistent()) dest->deactivate();
+
+      deallocate(dest_buf);
+      deallocate(tform_buf);
+    }
+
+    template <bool Antisymmetrize>
+    void
+    _symmetrize(const Ref<DistArray4>& A)
+    {
+      assert(A->ni() == A->nj());
+      assert(A->nx() == A->ny());
+
+      A->activate();
+
+      const unsigned int nbra = A->ni();
+      const unsigned int nket = A->nx();
+      const unsigned int ntypes = A->num_te_types();
+      double* tmp_blk = allocate<double>(nket * nket);
+
+      for (int t = 0; t < ntypes; ++t) {
+        for (unsigned int b1 = 0; b1 < nbra; ++b1) {
+          for (unsigned int b2 = 0; b2 <= b1; ++b2) {
+
+            const double* b12_blk = A->retrieve_pair_block(b1, b2, t);
+            const double* b21_blk = A->retrieve_pair_block(b2, b1, t);
+
+            size_t k12 = 0;
+            for (unsigned int k1 = 0; k1 < nket; ++k1) {
+              size_t k21 = k1;
+              for (unsigned int k2 = 0; k2 < nket; ++k2, ++k12, k21 += nket) {
+
+                if (Antisymmetrize)
+                  tmp_blk[k12] = 0.5 * (b12_blk[k12] + b21_blk[k21] - b21_blk[k12] - b12_blk[k21]);
+                else
+                  tmp_blk[k12] = 0.5 * (b12_blk[k12] + b21_blk[k21]);
+
+              }
+            }
+
+            A->release_pair_block(b1, b2, t);
+            A->release_pair_block(b2, b1, t);
+
+            A->store_pair_block(b1, b2, t, tmp_blk);
+            if (b1 != b2) {
+              for (unsigned int k1 = 0; k1 < nket; ++k1) {
+                for (unsigned int k2 = 0; k2 <= k1; ++k2) {
+                  const size_t k12 = k1 * nket + k2;
+                  const size_t k21 = k2 * nket + k1;
+                  const double tmp = tmp_blk[k12];
+                  tmp_blk[k12] = tmp_blk[k21];
+                  tmp_blk[k21] = tmp;
+                }
+              }
+              A->store_pair_block(b2, b1, t, tmp_blk);
+            }
+          }
+        }
+      }
+
+      deallocate(tmp_blk);
+      if (A->data_persistent()) A->deactivate();
+    }
+
+  } // end of sc::anonymous namespace
+
+  void contract3(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijzy){
+    _contract_3_or_4<Index3>(ijxy, T, ijzy);
+  }
+  void contract4(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijxz){
+    _contract_3_or_4<Index4>(ijxy, T, ijxz);
+  }
+
+  void antisymmetrize(const Ref<DistArray4>& A) {
+    _symmetrize<true>(A);
+  }
+  void symmetrize(const Ref<DistArray4>& A) {
+    _symmetrize<false>(A);
+  }
+
+  Ref<DistArray4> extract(const Ref<DistArray4>& A,
+                          unsigned int te_type,
+                          double scale) {
+    assert(te_type < A->num_te_types());
+
+    DistArray4Dimensions dims(1, A->ni(), A->nj(), A->nx(), A->ny());
+    Ref<DistArray4> result = A->clone(dims);
+
+    A->activate();
+    result->activate();
+
+    // determine how many workers we have
+    std::vector<int> worker_id;
+    const int nworkers = A->tasks_with_access(worker_id);
+    const int me = A->msg()->me();
+
+    const int nxy = A->nx() * A->ny();
+
+    for (unsigned int i = 0, task_id = 0; i < A->ni(); ++i) {
+      for (unsigned int j = 0; j < A->nj(); ++j, ++task_id) {
+
+        // round-robin task allocation
+        if(task_id%nworkers != worker_id[me])
+          continue;
+
+        const double* ij_blk = A->retrieve_pair_block(i, j, te_type);
+        if (scale != 1.0) {
+          const int one = 1;
+          F77_DSCAL(&nxy, &scale, const_cast<double*>(ij_blk), &one);
+        }
+        result->store_pair_block(i, j, 0, ij_blk);
+        A->release_pair_block(i, j, te_type);
+      }
+    }
+
+    if (A->data_persistent()) A->deactivate();
+    if (result->data_persistent()) result->deactivate();
+    return result;
   }
 
   RefSCMatrix&

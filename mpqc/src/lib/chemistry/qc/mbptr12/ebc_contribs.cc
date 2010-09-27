@@ -107,14 +107,6 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   // are particles 1 and 2 equivalent?
   const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
 
-  const unsigned int nf12 = corrfactor()->nfunctions();
-  // create transforms, if needed
-  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4_f
-  TwoBodyIntDescrCreator descr_creator(corrfactor(),
-                                       r12world()->integral(),
-                                       true,false);
-  fill_container(descr_creator,descrs);
-
   Timer tim_A_direct("A intermediate (direct)");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|A|"

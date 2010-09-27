@@ -218,18 +218,15 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   RefDiagSCMatrix alpha_evals, beta_evals;
   // alpha and beta orbitals are available for UHF
   Ref<PsiUHF> uhf = dynamic_cast<PsiUHF*>(scf().pointer());
-  if (uhf.nonnull()) {
+  Ref<PsiHSOSHF> hsoshf = dynamic_cast<PsiHSOSHF*>(scf().pointer());
+  if (uhf.nonnull() || hsoshf.nonnull()) {
     alpha_evecs = scf()->coefs(Alpha);
     beta_evecs = scf()->coefs(Beta);
     alpha_evals = scf()->evals(Alpha);
     beta_evals = scf()->evals(Beta);
   }
-  // use semicanonical orbitals for ROHF
   else {
-    Ref<PsiHSOSHF> hsoshf = dynamic_cast<PsiHSOSHF*>(ref().pointer());
-    if (hsoshf.null())
-      throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
-    throw FeatureNotImplemented("semicanonical orbitals not yet implemented for PsiHSOSHF",__FILE__,__LINE__);
+    throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
   }
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();

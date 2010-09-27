@@ -45,16 +45,9 @@ using namespace sc;
 using namespace sc::fastpairiter;
 
 namespace {
-  /// convert <xy|pq> to <xy|ab> using sparse maps a->p and b->q
-  template <sc::fastpairiter::PairSymm PSymm_pq, sc::fastpairiter::PairSymm PSymm_ab>
-  void xypq_to_xyab(const RefSCMatrix& xypq,
-                    RefSCMatrix& xyab,
-                    const MOIndexMap& a_to_p,
-                    const MOIndexMap& b_to_q,
-                    const int np,
-                    const int nq);
-  RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
-                                const Ref<OrbitalSpace>& i, const Ref<OrbitalSpace>& a, const Ref<OrbitalSpace>& j);
+  void _print(SpinCase2 spin,
+              const Ref<DistArray4>& mat,
+              const char* label);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -173,14 +166,13 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     r12eval_->debug(debug_);
   }
 
-  RefSCMatrix Vpq[NSpinCases2];
-  RefSCMatrix Vab[NSpinCases2];
-  RefSCMatrix Via[NSpinCases2];
-  RefSCMatrix Vai[NSpinCases2];
+  Ref<DistArray4> Vab[NSpinCases2];
+  Ref<DistArray4> Via[NSpinCases2];
+  Ref<DistArray4> Vai[NSpinCases2];
   RefSCMatrix Vij[NSpinCases2];
   RefSymmSCMatrix B[NSpinCases2];
   RefSymmSCMatrix X[NSpinCases2];
-  RefSCMatrix A[NSpinCases2];
+  Ref<DistArray4> A[NSpinCases2];
 
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
@@ -194,46 +186,26 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
 
     const Ref<OrbitalSpace>& p1 = r12eval()->orbs(spin1);
     const Ref<OrbitalSpace>& p2 = r12eval()->orbs(spin2);
-    const unsigned int np1 = p1->rank();
-    const unsigned int np2 = p2->rank();
+    const Ref<OrbitalSpace>& x1 = r12eval()->xspace(spin1);
+    const Ref<OrbitalSpace>& x2 = r12eval()->xspace(spin2);
+    const Ref<OrbitalSpace>& v1 = r12eval()->vir_act(spin1);
+    const Ref<OrbitalSpace>& v2 = r12eval()->vir_act(spin2);
+    const Ref<OrbitalSpace>& o1 = r12eval()->occ_act(spin1);
+    const Ref<OrbitalSpace>& o2 = r12eval()->occ_act(spin2);
 
-    const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
-    const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
-    const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(spin1);
-    const Ref<OrbitalSpace>& vir2_act = r12eval()->vir_act(spin2);
-
-    Vpq[s] = r12eval()->V(spincase2, p1, p2);
+    std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
+    assert(Vpq_vec.size() == 1);
+    Ref<DistArray4> Vpq = Vpq_vec[0];
     Vij[s] = r12eval()->V(spincase2);
     X[s] = r12eval()->X(spincase2);
     B[s] = r12eval()->B(spincase2);
 
-    const Ref<OrbitalSpace>& v1 = r12eval()->vir_act(spin1);
-    const Ref<OrbitalSpace>& v2 = r12eval()->vir_act(spin2);
-    const unsigned int nv1 = v1->rank();
-    const unsigned int nv2 = v2->rank();
-    const Ref<OrbitalSpace>& o1 = r12eval()->occ_act(spin1);
-    const Ref<OrbitalSpace>& o2 = r12eval()->occ_act(spin2);
-    const unsigned int no1 = o1->rank();
-    const unsigned int no2 = o2->rank();
-    const RefSCDimension v1v2dim = (spincase2 != AlphaBeta) ? pairdim<AntiSymm>(nv1,nv2) : pairdim<ASymm>(nv1,nv2);
-    const RefSCDimension o1v2dim = pairdim<ASymm>(no1,nv2);
-
     // extract Vab and Via from Vpq
-    typedef MOIndexMap OrbMap;
-    OrbMap v1_to_p1(*p1<<*v1);
-    OrbMap v2_to_p2(*p2<<*v2);
-    OrbMap o1_to_p1(*p1<<*o1);
-    OrbMap o2_to_p2(*p2<<*o2);
-    Vab[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1v2dim);
-    Via[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), o1v2dim);
-    {
-      if (spincase2 != AlphaBeta)
-        xypq_to_xyab<AntiSymm,AntiSymm>(Vpq[s],Vab[s],v1_to_p1,v2_to_p2,np1,np2);
-      else
-        xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vab[s],v1_to_p1,v2_to_p2,np1,np2);
-      if (r12tech->ebc() == false) {
-        A[s] = r12eval()->A(spincase2);
-      }
+    map(Vpq, x1, x2, p1, p2, Vab[s], x1, x2, v1, v2);
+    map(Vpq, x1, x2, p1, p2, Via[s], x1, x2, o1, v2);
+    if (r12tech->ebc() == false) {
+      std::vector< Ref<DistArray4> > Avec = A_distarray4(spincase2, r12eval_);
+      A[s] = Avec[0];
     }
 
 #if 0
@@ -251,17 +223,9 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     }
 #endif
 
-    if (spincase2 != AlphaBeta)
-      xypq_to_xyab<AntiSymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
-    else
-      xypq_to_xyab<ASymm,ASymm>(Vpq[s],Via[s],o1_to_p1,v2_to_p2,np1,np2);
     // Vai[AlphaBeta] is also needed if spin-polarized reference is used
-    if (spincase2 == AlphaBeta && r12world()->ref()->spin_polarized()) {
-      const RefSCDimension v1o2dim = pairdim<ASymm>(nv1,no2);
-      Vai[s] = Vpq[s].kit()->matrix(Vpq[s].rowdim(), v1o2dim);
-      xypq_to_xyab<ASymm,ASymm>(Vpq[s],Vai[s],v1_to_p1,o2_to_p2,np1,np2);
-      Vai[s].print("Vai");
-    }
+    if (spincase2 == AlphaBeta && r12world()->ref()->spin_polarized())
+      map(Vpq, x1, x2, p1, p2, Vai[s], x1, x2, v1, o2);
 
 #if 0
     for (unsigned int xy=0; xy<nxy; ++xy) {
@@ -279,14 +243,15 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
 #endif
 
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
-      Vpq[s].print("Vpq matrix");
-      Vab[s].print("Vab matrix");
-      Via[s].print("Via matrix");
+      _print(spincase2, Vpq, prepend_spincase(spincase2,"Vpq matrix").c_str());
+      _print(spincase2, Vab[s], prepend_spincase(spincase2,"Vab matrix").c_str());
+      _print(spincase2, Via[s], prepend_spincase(spincase2,"Via matrix").c_str());
       if (Vai[s].nonnull())
-        Vai[s].print("Vai matrix");
+        _print(spincase2, Vai[s], prepend_spincase(spincase2,"Vai matrix").c_str());
+      _print(spincase2, A[s], prepend_spincase(spincase2,"A matrix").c_str());
     }
     if (debug() >= DefaultPrintThresholds::mostO4) {
-      Vij[s].print("Vij matrix");
+      Vij[s].print(prepend_spincase(spincase2,"Vij matrix").c_str());
     }
 #if TEST_V
     RefSCMatrix Vab_test = r12eval()->V(spincase2,vir1_act,vir2_act);
@@ -305,7 +270,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   // Obtain CC amplitudes from Psi and copy into local matrices
   //
   RefSCMatrix T1[NSpinCases1];
-  RefSCMatrix T2[NSpinCases2];
+  Ref<DistArray4> T2[NSpinCases2];
 
   // get T1
   const int nspincases1 = r12eval()->nspincases1();
@@ -332,13 +297,10 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    RefSCMatrix T2_psi = this->T2(spincase2);
-    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    T2[s] = localkit->matrix(T2_psi.rowdim(), T2_psi.coldim());
-    T2[s]->convert(T2_psi);
+    T2[s] = this->T2_distarray4(spincase2);
 
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
-      T2[spincase2].print(prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());
+      _print(spincase2, T2[spincase2], prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());
     }
   }
 
@@ -351,6 +313,8 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
+    const Ref<OrbitalSpace>& x1 = r12eval()->xspace(spin1);
+    const Ref<OrbitalSpace>& x2 = r12eval()->xspace(spin2);
     const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
     const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
     const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(spin1);
@@ -362,61 +326,55 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     H1_R0[s] = Vij[s].clone();
     H1_R0[s].assign(Vij[s]);
 
+    // the rest of terms (Vbar) are bugger than o^4, hence will be computed in DistArray4
     {
+      DistArray4Dimensions dims(1, x1->rank(), x2->rank(), occ1_act->rank(), occ2_act->rank());
+      Ref<DistArray4> HT = Vab[s]->clone(dims);
 
       // the leading term in <R|(HT)|0> is T2.Vab
       // if not assuming EBC then also include coupling matrix term
-      RefSCMatrix VT2 = r12tech->ebc() ? Vab[s] * T2[s].t() : (Vab[s] + A[s]) * T2[s].t();
-      // E = Vbar B^-1 Vbar, where Vbar = V + VT
-      RefSCMatrix HT = VT2;  VT2 = 0;
+      if (r12tech->ebc() == false) { // Vab += A
+        axpy(A[s], 1.0, Vab[s]);
+      }
+      contract34( HT, 1.0,
+                  Vab[s], 0,
+                  T2[s], 0 );
+
+      if (debug() >= DefaultPrintThresholds::allO4)
+        _print(spincase2, HT, prepend_spincase(spincase2,"<R|(H*T2)|0>").c_str());
 
       // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
       if ( completeness_order_for_intermediates_ >= 3 ||
           (completeness_order_for_intermediates_ >= 2 && !r12eval()->bc()) ) {
 
         // Via . T1
-        RefSCMatrix VT1_2 = contract_Via_T1ja(true,Via[s],T1[spin2],occ1_act,vir2_act,occ2_act);
-        RefSCMatrix VT1 = VT1_2.clone(); VT1.assign(VT1_2);
-        //VT1_2.print("VT1_2");
+        Ref<DistArray4> VT1 = HT->clone();
+        contract4(Via[s],T1[spin2].t(),VT1);
         if (p1_equiv_p2) {
-          // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j
-          VT1_2.scale(2.0);
-          const Ref<OrbitalSpace>& xspace1 = r12eval()->xspace(spin1);
-          const Ref<OrbitalSpace>& xspace2 = r12eval()->xspace(spin2);
-          if (spincase2 == AlphaBeta)
-            symmetrize12<false,ASymm,ASymm>(VT1, VT1_2, xspace1, xspace2, occ1_act, occ2_act);
-          else
-            symmetrize12<false,AntiSymm,ASymm>(VT1, VT1_2, xspace1, xspace2, occ1_act, occ2_act);
+          // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j)
+          symmetrize(VT1);
+          if (debug() >= DefaultPrintThresholds::allO4)
+            _print(spincase2, VT1, prepend_spincase(spincase2,"<R|(H*T1)|0>").c_str());
+          axpy(VT1, 2.0, HT);
         }
         else {
+          axpy(VT1, 1.0, HT);
           // Vai^t . T1
-          RefSCMatrix VT1_1 = contract_Via_T1ja(false,Vai[s],T1[spin1],occ2_act,vir1_act,occ1_act);
-          //VT1_1.print("VT1_1");
-          VT1.accumulate(VT1_1);
+          contract3(Vai[s],T1[spin2].t(),VT1);
+          axpy(VT1, 1.0, HT);
         }
-        // If needed, antisymmetrize VT1
-        if (spincase2 != AlphaBeta) {
-          RefSCMatrix VT1Anti = HT.clone();
-          const Ref<OrbitalSpace>& xspace1 = r12eval()->xspace(spin1);
-          const Ref<OrbitalSpace>& xspace2 = r12eval()->xspace(spin2);
-          symmetrize<false,AntiSymm,ASymm,AntiSymm,AntiSymm>(VT1Anti,VT1,xspace1,xspace2,occ1_act,occ2_act);
-          VT1 = VT1Anti;
-        }
-        if (debug() >= DefaultPrintThresholds::mostO2N2) {
-          VT1.print("Via.T1 + T1.Vai");
-        }
-
-        HT.accumulate(VT1);
 
       }
 
-      if (debug() >= DefaultPrintThresholds::mostO2N2) {
-        (HT).print(prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
-      }
-      H1_R0[s].accumulate(HT);
+      if (debug() >= DefaultPrintThresholds::mostO4)
+        _print(spincase2, HT, prepend_spincase(spincase2,"<R|(H*T)|0>").c_str());
+
+      RefSCMatrix HT_scmat = H1_R0[s].clone();
+      HT_scmat << HT;
+      H1_R0[s].accumulate(HT_scmat);
     }
 
-    if (debug() >= DefaultPrintThresholds::O2N2) {
+    if (debug() >= DefaultPrintThresholds::O4) {
       H1_R0[s].print(prepend_spincase(spincase2,"<R|Hb|0>").c_str());
     }
   }
@@ -573,78 +531,16 @@ void PsiCCSD_PT2R12T::print(std::ostream&o) const {
 ////////////////////////
 
 namespace {
-  template <sc::fastpairiter::PairSymm PSymm_pq, sc::fastpairiter::PairSymm PSymm_ab>
-  void xypq_to_xyab(const RefSCMatrix& xypq,
-                    RefSCMatrix& xyab,
-                    const MOIndexMap& a_to_p,
-                    const MOIndexMap& b_to_q,
-                    const int np,
-                    const int nq)
-  {
-    const int nxy = xypq.rowdim().n();
-    if (nxy != xyab.rowdim().n())
-      throw ProgrammingError("xypq_to_xyab() -- row dimensions do not match",__FILE__,__LINE__);
-    const int na = a_to_p.size();
-    const int nb = b_to_q.size();
-
-    typedef sc::fastpairiter::MOPairIter<PSymm_pq> PQIter;
-    typedef sc::fastpairiter::MOPairIter<PSymm_ab> ABIter;
-    PQIter pqiter(np,nq);
-    ABIter abiter(na,nb);
-
-    for (int xy=0; xy<nxy; ++xy) {
-      for(abiter.start(); int(abiter); abiter.next()) {
-        const int a = abiter.i();
-        const int b = abiter.j();
-        const int ab = abiter.ij();
-        const int p = a_to_p[a];
-        const int q = b_to_q[b];
-        const int pq = pqiter.ij(p,q);
-        const double elem = xypq.get_element(xy, pq);
-        xyab.set_element(xy, ab, elem);
-      }
+  void _print(SpinCase2 spin,
+             const Ref<DistArray4>& mat,
+             const char* label) {
+    if (mat->msg()->me() == 0) {
+      const size_t nij = (spin != AlphaBeta && mat->ni() == mat->nj()) ? mat->ni() * (mat->ni()-1) / 2 : mat->ni() * mat->nj();
+      const size_t nxy = (spin != AlphaBeta && mat->nx() == mat->ny()) ? mat->nx() * (mat->nx()-1) / 2 : mat->nx() * mat->ny();
+      RefSCMatrix scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(nij), new SCDimension(nxy));
+      scmat << mat;
+      scmat.print(label);
     }
-  }
-
-  /// if part2 == false, VT1_ji = T1_ja . V_ai
-  /// if part2 == true, VT1_ij = V_ia . (T_ja)^t
-  /// note that the result is not symmetric with respect to permutation of particles 1 and 2
-  RefSCMatrix contract_Via_T1ja(bool part2, const RefSCMatrix& V, const RefSCMatrix& T1,
-                                const Ref<OrbitalSpace>& i, const Ref<OrbitalSpace>& a, const Ref<OrbitalSpace>& j)
-  {
-    const unsigned int ni = i->rank();
-    const unsigned int nj = j->rank();
-    const unsigned int na = a->rank();
-    // allocate space for the result
-    const unsigned int nij = ni*nj;
-    RefSCMatrix R(V.rowdim(), new SCDimension(nij), V.kit());
-
-    // Convert T1 to a raw matrix
-    double* T1_raw = new double[j->rank() * a->rank()];
-    T1.convert(T1_raw);
-
-    const unsigned int nxy = V.rowdim().n();
-    const unsigned int nia = V.coldim().n();
-    double* raw_ia_blk = new double[V.coldim().n()];
-    double* raw_ij_blk = new double[nij];
-    RefSCVector Rrow(R.coldim(), R.kit());
-
-    for(unsigned int xy=0; xy<nxy; ++xy) {
-      RefSCVector row = V.get_row(xy);
-      row.convert(raw_ia_blk);
-      if (part2) {
-        // V_ia . (T1_ja)^t : raw_ia_blk * T1_raw^t = raw_ij_blk
-        C_DGEMM('n','t',ni,nj,na,1.0,raw_ia_blk,na,T1_raw,na,0.0,raw_ij_blk,nj);
-      }
-      else {
-        // T1_ja . Vai : T1_raw * raw_ia_blk = raw_ij_blk
-        C_DGEMM('n','n',nj,ni,na,1.0,T1_raw,na,raw_ia_blk,ni,0.0,raw_ij_blk,ni);
-      }
-      Rrow.assign(raw_ij_blk);
-      R.assign_row(Rrow,xy);
-    }
-
-    return R;
   }
 
 } // anonymous namespace

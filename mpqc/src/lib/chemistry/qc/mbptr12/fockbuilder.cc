@@ -1160,7 +1160,7 @@ namespace sc {
                                                              dfspace->id());
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
       {
-        Ref<DistArray4> Ctmp = permute23(C, 1000000000);
+        Ref<DistArray4> Ctmp = permute23(C);
         if (C->data_persistent()) C->deactivate();
         C = Ctmp;
       }

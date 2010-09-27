@@ -107,7 +107,7 @@ namespace sc {
       void print_status(std::ostream& o = ExEnv::out0()) const;
 
       /// allocate array of T size elements long using operator new[] (keeps track of memory)
-      template <typename T> T* alloc(std::size_t size) {
+      template <typename T> T* allocate(std::size_t size) {
         T* array = new T[size];
         size *= sizeof(T);
         consume_memory(size);
@@ -117,7 +117,7 @@ namespace sc {
       }
       /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
       /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
-      template <typename T> void dealloc(T* array) {
+      template <typename T> void deallocate(T* array) {
         void* array_ptr = static_cast<void*>(array);
         // make sure it's managed by me
         std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
@@ -147,9 +147,9 @@ namespace sc {
           ResourceCounter(const ResourceCounter& other) : max_value_(other.max_value_), value_(other.value_) {}
           ResourceCounter& operator=(const ResourceCounter& other) { max_value_ = other.max_value_; value_ = other.value_; return *this; }
           operator T() const { return value_; }
-          ResourceCounter& operator+=(const T& val) { value_ = std::max(max_value_, value_ + val); return *this; }
+          ResourceCounter& operator+=(const T& val) { value_ = std::min(max_value_, value_ + val); return *this; }
           // nonthrowing
-          ResourceCounter& operator-=(const T& val) { value_ = std::min(T(0), value_ - val); return *this; }
+          ResourceCounter& operator-=(const T& val) { value_ = std::max(T(0), value_ - val); return *this; }
 
           const T& max_value() const { return max_value_; }
           const T& value() const { return value_; }
@@ -180,6 +180,16 @@ namespace sc {
 
   };
 
+  //@{
+  // allocate and deallocate array of data using new[]/delete[] and using default ConsumableResources object
+  template <typename T> T* allocate(std::size_t size) {
+    return ConsumableResources::get_default_instance()->allocate<T>(size);
+  }
+  template <typename T> void deallocate(T*& array) {
+    ConsumableResources::get_default_instance()->deallocate(array);
+    array = 0;
+  }
+  //@}
 
 } // end of namespace sc
 

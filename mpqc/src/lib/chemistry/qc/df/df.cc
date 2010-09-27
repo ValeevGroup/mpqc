@@ -513,7 +513,7 @@ PermutedDensityFitting::compute()
 
   Ref<DistArray4> C21 = df21_;
   C21->activate();
-  C_ = permute23(C21, 1000000000);
+  C_ = permute23(C21);
   if (C_->data_persistent()) C_->deactivate();
   if (C21->data_persistent()) C21->deactivate();
 

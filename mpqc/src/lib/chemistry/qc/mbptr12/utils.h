@@ -139,13 +139,6 @@ namespace sc {
                     const Ref<OrbitalSpace>& ket1,
                     const Ref<OrbitalSpace>& ket2);
 
-  /** antisymmetrizes the 4-index array in-place:
-      <ij|xy> =  ( (ij|xy) + (ji|yx) - (ij|yx) - (ji|xy) ) / 2
-
-      \param A input tensor. on output contains the antisymmetrized tensor. Valid A will obey these conditions: A->ni() == A->nj(), A->nx() == A->ny()
-    */
-  void antisymmetrize(const Ref<DistArray4>& A);
-
   /** Converts RefDiagSCMatrix to std::vector<double>
   */
   std::vector<double> convert(const RefDiagSCMatrix& A);

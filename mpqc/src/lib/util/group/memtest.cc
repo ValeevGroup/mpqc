@@ -131,6 +131,9 @@ main(int argc, char**argv)
   do_memgrp_tests(msg, mem);
   do_memgrpregion_tests(msg, mem);
   
+  MemoryGrp::set_default_memorygrp(0);
+  MessageGrp::set_default_messagegrp(0);
+
   return 0;
 }
 

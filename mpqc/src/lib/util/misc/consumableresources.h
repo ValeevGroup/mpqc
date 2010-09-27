@@ -108,7 +108,9 @@ namespace sc {
 
       /// allocate array of T size elements long using operator new[] (keeps track of memory)
       template <typename T> T* allocate(std::size_t size) {
-        T* array = new T[size];
+        if (size == 0)  return 0;
+
+        T* array = (size > 1) ? new T[size] : new T;
         size *= sizeof(T);
         consume_memory(size);
         void* array_ptr = static_cast<void*>(array);
@@ -117,19 +119,23 @@ namespace sc {
       }
       /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
       /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
-      template <typename T> void deallocate(T* array) {
-        void* array_ptr = static_cast<void*>(array);
-        // make sure it's managed by me
-        std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
-        if (pos != managed_arrays_.end()) {
-          const size_t size = pos->second;
-          delete[] array;
-          release_memory(size);
-          managed_arrays_.erase(pos);
+      template <typename T> void deallocate(T*& array) {
+        if (array != 0) {
+          void* array_ptr = static_cast<void*>(array);
+          // make sure it's managed by me
+          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          if (pos != managed_arrays_.end()) {
+            const size_t size = pos->second;
+            if (size > 1) delete[] array;
+            else delete array;
+            release_memory(size);
+            managed_arrays_.erase(pos);
+          }
+          else
+            throw ProgrammingError("ConsumableResources::deallocate() -- non-managed array given",
+                                   __FILE__, __LINE__, class_desc());
+          array = 0;
         }
-        else
-          throw ProgrammingError("ConsumableResources::deallocate() -- non-managed array given",
-                                 __FILE__, __LINE__, class_desc());
       }
 
     private:
@@ -181,13 +187,12 @@ namespace sc {
   };
 
   //@{
-  // allocate and deallocate array of data using new[]/delete[] and using default ConsumableResources object
+  // allocate and deallocate array of data using new or new[] (delete or delete[]) and using default ConsumableResources object
   template <typename T> T* allocate(std::size_t size) {
     return ConsumableResources::get_default_instance()->allocate<T>(size);
   }
   template <typename T> void deallocate(T*& array) {
     ConsumableResources::get_default_instance()->deallocate(array);
-    array = 0;
   }
   //@}
 

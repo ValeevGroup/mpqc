@@ -200,6 +200,7 @@ main(int argc, char**argv)
 
   grp->sync();
   grp = 0;
+  MessageGrp::set_default_messagegrp(0);
   return 0;
 }
 

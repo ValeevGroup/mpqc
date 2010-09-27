@@ -342,8 +342,8 @@ namespace sc {
                                             // to make the tiles more even
 
     // allocate memory for the work buffers
-    double* xjy_buf = new double[tilesize * njy];
-    double* xy_buf = new double[tilesize * ny];
+    double* xjy_buf = allocate<double>(tilesize * njy);
+    double* xy_buf = allocate<double>(tilesize * ny);
 
     // determine how many workers we have
     std::vector<int> worker_id;
@@ -389,8 +389,8 @@ namespace sc {
       }
     }
 
-    delete[] xjy_buf;
-    delete[] xy_buf;
+    deallocate(xjy_buf);
+    deallocate(xy_buf);
 
     return result;
   }
@@ -601,9 +601,9 @@ namespace sc {
     const size_t tile_size_ket = (nij_ket + ntiles_ket - 1) / ntiles_ket;
 
     // scratch buffers to hold tiles and the result of the contraction
-    double* T_bra = new double[tile_size_bra * blksize_int];
-    double* T_ket = new double[tile_size_ket * blksize_int];
-    double* T_result = new double[tile_size_bra * tile_size_ket];
+    double* T_bra = allocate<double>(tile_size_bra * blksize_int);
+    double* T_ket = allocate<double>(tile_size_ket * blksize_int);
+    double* T_result = allocate<double>(tile_size_bra * tile_size_ket);
 
     // split work over tasks which have access to integrals
     // WARNING: assuming same accessibility for both bra and ket transforms
@@ -769,6 +769,10 @@ namespace sc {
 
       } // bra tile loop
     } // loop over tasks with access
+
+    deallocate(T_bra);
+    deallocate(T_ket);
+    deallocate(T_result);
 
     if (bra->data_persistent()) bra->deactivate();
     if (bra != ket && ket->data_persistent()) ket->deactivate();

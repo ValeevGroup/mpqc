@@ -137,7 +137,7 @@ RDMAMemoryGrp::localdata()
 RDMAMemoryGrp::~RDMAMemoryGrp()
 {
   deactivate();
-  delete[] data_;
+  //delete[] data_;
 }
 
 void *

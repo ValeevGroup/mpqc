@@ -82,6 +82,9 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
 {
   ARMCI_AllFence();
 
+  const size_t current_localsize = offsets_[me()+1] - offsets_[me()];
+  ConsumableResources::get_default_instance()->release_memory(current_localsize);
+
   // this will initialize the offsets_ array
   RDMAMemoryGrp::set_localsize(localsize);
 
@@ -99,6 +102,7 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
   int r;
   r = ARMCI_Malloc(all_data_, localsize);
   data_ = reinterpret_cast<char*>(all_data_[me()]);
+  ConsumableResources::get_default_instance()->consume_memory(localsize);
 
   if (debug_) {
     for (int i=0; i<n(); i++) {

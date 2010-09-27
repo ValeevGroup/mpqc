@@ -32,6 +32,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/consumableresources.h>
 #include <util/group/memproc.h>
 
 using namespace sc;
@@ -55,20 +56,20 @@ ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
 
 ProcMemoryGrp::~ProcMemoryGrp()
 {
-  delete[] data_;
+  deallocate(data_);
 }
 
 void
 ProcMemoryGrp::set_localsize(size_t localsize)
 {
   delete[] offsets_;
-  delete[] data_;
+  deallocate(data_);
   offsets_ = new distsize_t[2];
   offsets_[0] = 0;
   offsets_[1] = localsize;
   n_ = 1;
   me_ = 0;
-  data_ = new char[localsize];
+  data_ = allocate<char>(localsize);
 }
 
 void *

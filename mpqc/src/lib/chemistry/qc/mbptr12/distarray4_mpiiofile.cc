@@ -32,6 +32,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <stdlib.h>
+#include <util/misc/consumableresources.h>
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -189,7 +190,7 @@ DistArray4_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) con
   }
   if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
     if (pb->manage_[oper_type]) { // deallocate only if I am in charge
-      delete[] pb->ints_[oper_type];
+      deallocate(pb->ints_[oper_type]);
       pb->manage_[oper_type] = false;
     }
     pb->ints_[oper_type] = NULL;
@@ -316,7 +317,7 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
     check_error_code_(errcod);
     double *buffer;
     if (buf == 0) {
-      buffer = new double[nxy()];
+      buffer = allocate<double>(nxy());
       pb->manage_[oper_type] = true;
     }
     else {

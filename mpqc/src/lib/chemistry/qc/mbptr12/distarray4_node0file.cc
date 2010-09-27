@@ -30,6 +30,7 @@
 #endif
 
 #include <stdexcept>
+#include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -348,7 +349,7 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
       pb->manage_[oper_type] = false;
     }
     else {
-      pb->ints_[oper_type] = new double[nxy()];
+      pb->ints_[oper_type] = allocate<double>(nxy());
       pb->manage_[oper_type] = true;
     }
     ssize_t read_this_much = read(datafile_, pb->ints_[oper_type], blksize());
@@ -486,7 +487,7 @@ DistArray4_Node0File::release_pair_block(int i, int j, tbint_type oper_type) con
       if (classdebug() > 0)
         ExEnv::out0() << indent << "releasing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << endl;
       if (pb->manage_[oper_type]) // deallocate if managed by me
-        delete[] pb->ints_[oper_type];
+        deallocate(pb->ints_[oper_type]);
       pb->ints_[oper_type] = NULL;
       pb->manage_[oper_type] = false;
     }

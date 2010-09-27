@@ -33,6 +33,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/group/pool.h>
 #include <util/group/memamsg.h>
 #include <util/group/memiter.h>
@@ -180,8 +181,8 @@ ActiveMsgMemoryGrp::set_localsize(size_t localsize)
     }
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
-  delete[] data_;
-  data_ = new char[localsize];
+  deallocate(data_);
+  data_ = allocate<char>(localsize);
   activate();
   if (debug_) {
       ExEnv::out0() << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
@@ -201,7 +202,7 @@ ActiveMsgMemoryGrp::localdata()
 ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 {
   deactivate();
-  delete[] data_;
+  deallocate(data_);
 }
 
 void *
@@ -281,9 +282,12 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
           PRINTF(("%d: summing %d doubles from 0x%x to 0x%x\n",
                   me(), chunkdsize, tmp, chunkdata));
           obtain_local_lock(i.offset(), i.offset()+i.size());
+          std::copy(tmp, tmp+chunkdsize, chunkdata);
+#if 0
           for (int j=0; j<chunkdsize; j++) {
               *chunkdata++ += *tmp++;
             }
+#endif
           release_local_lock(i.offset(), i.offset()+i.size());
         }
       else {
@@ -329,7 +333,10 @@ ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
           PRINTF(("  i.offset() = %d i.data() = 0x%x i.size() = %d\n",
                   i.offset(), i.data(), i.size()));
           PRINTF(("  &data_[i.offset()] = 0x%x\n", &data_[i.offset()]));
-          memcpy(&data_[i.offset()], i.data(), i.size());
+          const double* src_start = static_cast<const double*> (i.data());
+          const double* src_fence = src_start + i.size();
+          std::copy(src_start, src_fence, &data_[i.offset()]);
+          //memcpy(&data_[i.offset()], i.data(), i.size());
         }
       else {
           PRINTF(("ActiveMsgMemoryGrp::release_write: node = %d, "
@@ -355,7 +362,10 @@ ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
       if (i.node() == me()) {
         PRINTF(("%d: ActiveMsgMemoryGrp::release_readwrite: local copy: "
                 "offset = %d size = %d\n", me(), i.offset(), i.size()));
-          memcpy(&data_[i.offset()], i.data(), i.size());
+        const double* src_start = static_cast<const double*> (i.data());
+        const double* src_fence = src_start + i.size();
+        std::copy(src_start, src_fence, &data_[i.offset()]);
+          //memcpy(&data_[i.offset()], i.data(), i.size());
           release_local_lock(i.offset(), i.offset()+i.size());
         }
       else {

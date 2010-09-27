@@ -33,6 +33,7 @@
 #include <sstream>
 #include <cassert>
 
+#include <util/misc/consumableresources.h>
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
@@ -200,7 +201,7 @@ TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static, int rank
 {
   // Check is have enough for even static objects
   size_t mem_dyn = 0;
-  const size_t max_memory = factory_->memory();
+  const size_t max_memory = ConsumableResources::get_default_instance()->memory();
   if (max_memory <= mem_static)
     return 0;
   else

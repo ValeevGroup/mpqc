@@ -76,6 +76,8 @@ class PsiExEnv: public DescribedClass {
     Ref<PsiInput> psiinput_;
     Ref<PsiFile11> psifile11_;
 
+    bool keep_output_;
+
     void config_psio();
     psi::PSIO psio_;
     psi::Chkpt* chkpt_;
@@ -150,6 +152,9 @@ class PsiExEnv: public DescribedClass {
     psi::Chkpt& chkpt();
 
     void print(std::ostream&o=ExEnv::out0()) const;
+
+    /// this will cause psi driver to keep the output next time it's run. Must be called every time to prevent the output file from truncation
+    void keep_output();
 };
 
 /// PsiChkpt know to read data from Psi checkpoint file and convert it to conform to the representations expected in MPQC

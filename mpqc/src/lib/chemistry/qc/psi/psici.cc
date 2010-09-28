@@ -907,6 +907,7 @@ namespace sc {
 
       // false -> keep the checkpoint file!
       exenv()->run_psiclean(false);
+      exenv()->keep_output();
       PsiWavefunction::compute();
 
       state_average_ = state_average_orig;

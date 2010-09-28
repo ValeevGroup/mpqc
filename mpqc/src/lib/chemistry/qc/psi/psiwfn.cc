@@ -274,6 +274,7 @@ namespace sc {
     if (have_prerequisite) {
       prerequisite_->compute();
       this->exenv()->run_psiclean(false);  // do partial cleanup
+      exenv()->keep_output();
     }
 
     double energy_acc = desired_value_accuracy();

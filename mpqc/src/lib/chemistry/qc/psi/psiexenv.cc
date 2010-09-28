@@ -80,7 +80,8 @@ string PsiExEnv::defaultstdout_("stdout");
 string PsiExEnv::defaultstderr_("stderr");
 
 PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
-	psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me())
+	psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me()),
+	keep_output_(false)
 {
   const std::string prefix(SCFormIO::fileext_to_filename("."));
 
@@ -128,7 +129,7 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
 
 PsiExEnv::PsiExEnv() :
     psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me()),
-    cwd_(defaultcwd_), nscratch_(1)
+    cwd_(defaultcwd_), nscratch_(1), keep_output_(false)
 {
   // Find Psi
   char *psibin = getenv("PSIBIN");
@@ -222,9 +223,13 @@ PsiExEnv::get_psi_file11() {
 void PsiExEnv::run_psi(bool skip_input)
 {
   std::vector<std::string> cmdline_args(1,std::string("--messy"));
-  if (skip_input) {
+  if (skip_input)
     cmdline_args.push_back(std::string("--noinput"));
+
+  if(keep_output_) {
     cmdline_args.push_back(std::string("--keepoutput"));
+    keep_output_ = false;
+
   }
   run_psi_module("psi3", cmdline_args);
 }
@@ -349,6 +354,11 @@ PsiExEnv::chkpt() {
   if (chkpt_ == 0)
     chkpt_ = new psi::Chkpt(&psio_,PSIO_OPEN_OLD);
   return *chkpt_;
+}
+
+void
+PsiExEnv::keep_output() {
+  keep_output_ = true;
 }
 
 extern "C" char* gprgid() { return "MPQC"; }

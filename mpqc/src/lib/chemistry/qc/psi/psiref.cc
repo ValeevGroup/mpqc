@@ -92,7 +92,7 @@ namespace {
 RefSymmSCMatrix
 PsiSCF_RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
-  if (spin_restricted()) s = Alpha;
+  if (!scf_->spin_polarized()) s = Alpha;
   RefSymmSCMatrix result = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
   return result;
 }

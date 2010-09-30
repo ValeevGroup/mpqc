@@ -104,7 +104,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
-  Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), false,
+  const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
+  Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
                                                         nfzcore(), nfzvirt(),
                                                         vbs);
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);

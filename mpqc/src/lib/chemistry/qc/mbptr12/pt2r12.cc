@@ -252,18 +252,18 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   //world->memory(memory);
-  const bool spin_restricted = true;
+  const bool spin_restricted = true;  // always use spin-restricted spaces
   // if omit_uocc is true, need to make an empty virtual space
   Ref<OrbitalSpace> virspace = 0;
   if (omit_uocc_) {
     virspace = new EmptyOrbitalSpace("", "", basis(), integral(), OrbitalSpace::symmetry);
   }
   Ref<RefWavefunction> ref = RefWavefunctionFactory::make(world,
-                                                                reference_,
-                                                                spin_restricted,
-                                                                nfzc_,
-                                                                0,
-                                                                virspace);
+                                                          reference_,
+                                                          spin_restricted,
+                                                          nfzc_,
+                                                          0,
+                                                          virspace);
   r12world_ = new R12WavefunctionWorld(keyval, ref);
   r12eval_ = new R12IntEval(r12world_);
 

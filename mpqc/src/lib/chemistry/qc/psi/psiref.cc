@@ -55,7 +55,7 @@ PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& wor
                                                    nfzc_(nfzc),
                                                    nfzv_(nfzv),
                                                    vir_space_(vir_space) {
-  // bring spin_restricted in sync with scf_
+  // spin_restricted is a recommendation only -> make sure it is realizable
   if (scf_->spin_polarized() == false) spin_restricted_ = true;
   Ref<PsiUHF> uhf; uhf << scf_; if (uhf.nonnull()) spin_restricted_ = false;
 
@@ -219,14 +219,20 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   // alpha and beta orbitals are available for UHF
   Ref<PsiUHF> uhf = dynamic_cast<PsiUHF*>(scf().pointer());
   Ref<PsiHSOSHF> hsoshf = dynamic_cast<PsiHSOSHF*>(scf().pointer());
-  if (uhf.nonnull() || hsoshf.nonnull()) {
+  if (uhf.nonnull()) {
     alpha_evecs = scf()->coefs(Alpha);
     beta_evecs = scf()->coefs(Beta);
     alpha_evals = scf()->evals(Alpha);
     beta_evals = scf()->evals(Beta);
   }
   else {
-    throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
+    if (hsoshf.null()) // only know what to do with HSOSSCF
+      throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
+
+    alpha_evecs = hsoshf->coefs_semicanonical(Alpha);
+    beta_evecs = hsoshf->coefs_semicanonical(Beta);
+    alpha_evals = hsoshf->evals_semicanonical(Alpha);
+    beta_evals = hsoshf->evals_semicanonical(Beta);
   }
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();

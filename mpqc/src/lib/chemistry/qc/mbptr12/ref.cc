@@ -516,7 +516,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                              nfzc_(nfzc),
                                              nfzv_(nfzv),
                                              vir_space_(vir_space) {
-  // bring spin_restricted in sync with obwfn
+  // spin_restricted is a recommendation only -> make sure it is realizable
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
 

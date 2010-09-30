@@ -56,6 +56,7 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
 #include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <chemistry/qc/mbptr12/fockbuilder.h>
 
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -793,6 +794,16 @@ namespace sc {
   }
 
   RefSymmSCMatrix
+  PsiSCF::ao_density(SpinCase1 spin) {
+    Ref<PetiteList> plist = integral()->petite_list();
+    RefSCMatrix C_ao = coefs(spin);
+
+    RefSymmSCMatrix P = C_ao.kit()->symmmatrix(C_ao.rowdim()); P.assign(0.0);
+    P.accumulate_transform(C_ao, this->mo_density(spin));
+    return P;
+  }
+
+  RefSymmSCMatrix
   PsiSCF::mo_density(SpinCase1 spin) {
     if ((spin == Beta || spin == AnySpinCase1) && !this->spin_polarized())
       return mo_density(Alpha);
@@ -1137,6 +1148,281 @@ namespace sc {
     write_basic_input(convergence);
     input->write_keyword("psi:wfn", "scf");
     input->close();
+  }
+
+  const RefSCMatrix&
+  PsiHSOSHF::coefs_semicanonical(SpinCase1 s) {
+    if (coefs_sc_[s].nonnull())
+      return coefs_sc_[s];
+    semicanonical();
+    return coefs_sc_[s];
+  }
+
+  const RefDiagSCMatrix&
+  PsiHSOSHF::evals_semicanonical(SpinCase1 s) {
+    if (evals_sc_[s].nonnull())
+      return evals_sc_[s];
+    semicanonical();
+    return evals_sc_[s];
+  }
+
+#define DEBUG_SEMICANONICAL 0
+  void
+  PsiHSOSHF::semicanonical()
+  {
+    // May need to update this
+    if (value_needed())
+      compute();
+
+    const RefSCDimension modim = evals().dim();
+    const RefSCDimension sodim = so_dimension();
+    const unsigned int nirrep = molecule()->point_group()->char_table().nirrep();
+
+    Ref<PetiteList> plist = integral()->petite_list();
+    RefSCMatrix ao_eigenvector = coefs();
+    RefSCMatrix so_eigenvector = plist->evecs_to_SO_basis(ao_eigenvector);
+  #if DEBUG_SEMICANONICAL
+    evals().print("PsiHSOSSCF orbital energies");
+    ao_eigenvector.print("PsiHSOSSCF orbitals (AO basis)");
+  #endif
+
+    // initialize dimensions for occupied and virtual blocks
+    int* aoccpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) aoccpi[h] = 0;
+    int* boccpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) boccpi[h] = 0;
+    int* avirpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) avirpi[h] = 0;
+    int* bvirpi = new int[nirrep];  for(unsigned int h=0; h<nirrep; ++h) bvirpi[h] = 0;
+    for(unsigned int h=0, ii=0; h<nirrep; ++h) {
+      const unsigned int n = modim->blocks()->size(h);
+      for(unsigned int i=0; i<n; ++i, ++ii) {
+        const double o = occupation(ii);
+        if (o == 2.0) {
+          aoccpi[h] += 1;
+          boccpi[h] += 1;
+        }
+        if (o == 1.0) {
+          aoccpi[h] += 1;
+          bvirpi[h] += 1;
+        }
+        if (o == 0.0) {
+          avirpi[h] += 1;
+          bvirpi[h] += 1;
+        }
+      }
+    }
+    int naocc = 0;  for(unsigned int h=0; h<nirrep; ++h) naocc += aoccpi[h];
+    int nbocc = 0;  for(unsigned int h=0; h<nirrep; ++h) nbocc += boccpi[h];
+    int navir = 0;  for(unsigned int h=0; h<nirrep; ++h) navir += avirpi[h];
+    int nbvir = 0;  for(unsigned int h=0; h<nirrep; ++h) nbvir += bvirpi[h];
+    const RefSCDimension aoccdim = new SCDimension(naocc,nirrep,aoccpi,"I");
+    const RefSCDimension boccdim = new SCDimension(nbocc,nirrep,boccpi,"i");
+    const RefSCDimension avirdim = new SCDimension(navir,nirrep,avirpi,"A");
+    const RefSCDimension bvirdim = new SCDimension(nbvir,nirrep,bvirpi,"a");
+    for(int h=0; h<nirrep; ++h) {
+      aoccdim->blocks()->set_subdim(h,new SCDimension(aoccpi[h]));
+      boccdim->blocks()->set_subdim(h,new SCDimension(boccpi[h]));
+      avirdim->blocks()->set_subdim(h,new SCDimension(avirpi[h]));
+      bvirdim->blocks()->set_subdim(h,new SCDimension(bvirpi[h]));
+    }
+
+    // get occupied and virtual eigenvectors
+    RefSCMatrix aoccvec(so_dimension(), aoccdim, basis_matrixkit()); aoccvec.assign(0.0);
+    RefSCMatrix boccvec(so_dimension(), boccdim, basis_matrixkit()); boccvec.assign(0.0);
+    RefSCMatrix avirvec(so_dimension(), avirdim, basis_matrixkit()); avirvec.assign(0.0);
+    RefSCMatrix bvirvec(so_dimension(), bvirdim, basis_matrixkit()); bvirvec.assign(0.0);
+    {
+      for(unsigned int h=0; h<nirrep; ++h) {
+        const unsigned int nmo = modim->blocks()->size(h);
+        const unsigned int nso = sodim->blocks()->size(h);
+
+        if(aoccpi[h]) aoccvec.block(h).assign_subblock(so_eigenvector.block(h), 0, nso-1, 0, aoccpi[h]-1, 0, 0);
+        if(boccpi[h]) boccvec.block(h).assign_subblock(so_eigenvector.block(h), 0, nso-1, 0, boccpi[h]-1, 0, 0);
+        if(avirpi[h]) avirvec.block(h).assign_subblock(so_eigenvector.block(h), 0, nso-1, 0, avirpi[h]-1, 0, aoccpi[h]);
+        if(bvirpi[h]) bvirvec.block(h).assign_subblock(so_eigenvector.block(h), 0, nso-1, 0, bvirpi[h]-1, 0, boccpi[h]);
+
+      }
+    }
+
+    // get the Fock matrices in AO basis, then transform to SO basis
+    RefSymmSCMatrix Pa = this->ao_density(Alpha);
+    RefSymmSCMatrix Pb = this->ao_density(Beta);
+    RefSymmSCMatrix P = Pa + Pb;
+    RefSymmSCMatrix Po = Pa - Pb;
+    Ref<TwoBodyFockMatrixBuilder<true> >fbuild = new TwoBodyFockMatrixBuilder<true>(true, true, true,
+                                                                                    basis(), basis(), basis(),
+                                                                                    P, Po,
+                                                                                    integral(),
+                                                                                    MessageGrp::get_default_messagegrp(),
+                                                                                    ThreadGrp::get_default_threadgrp(),
+                                                                                    this->desired_value_accuracy() / 1000.0);
+    RefSymmSCMatrix Fa_ao = fbuild->F(Alpha);
+    RefSymmSCMatrix Fb_ao = fbuild->F(Beta);
+    fbuild = 0;
+    Ref< OneBodyFockMatrixBuilder<true> > hbuild = new OneBodyFockMatrixBuilder<true>(OneBodyFockMatrixBuilder<true>::NonRelativistic,
+                                                                                      basis(),
+                                                                                      basis(),
+                                                                                      0,
+                                                                                      integral(),
+                                                                                      this->desired_value_accuracy() / 1000.0);
+    Fa_ao.accumulate(hbuild->result());
+    Fb_ao.accumulate(hbuild->result());
+
+    //
+    // alpha case
+    //
+    // diagonalize occ-occ and virt-virt fock matrices
+    RefSymmSCMatrix afock_so = plist->to_SO_basis(Fa_ao);
+  #if DEBUG_SEMICANONICAL
+    {
+      RefSymmSCMatrix Fa(oso_dimension(), basis_matrixkit());
+      Fa.assign(0.0);
+      Fa.accumulate_transform(so_eigenvector, afock_so,
+                              SCMatrix::TransposeTransform);
+      Fa.print("Alpha Fock matrix (MO basis)");
+    }
+  #endif
+
+    RefSymmSCMatrix aoccfock(aoccdim, basis_matrixkit());
+    aoccfock.assign(0.0);
+    aoccfock.accumulate_transform(aoccvec, afock_so,
+                                  SCMatrix::TransposeTransform);
+    RefDiagSCMatrix aoccevals(aoccdim, basis_matrixkit());
+    RefSCMatrix aoccevecs(aoccdim, aoccdim, basis_matrixkit());
+    aoccfock.diagonalize(aoccevals, aoccevecs);
+
+    RefSymmSCMatrix avirfock(avirdim, basis_matrixkit());
+    avirfock.assign(0.0);
+    avirfock.accumulate_transform(avirvec, afock_so,
+                                  SCMatrix::TransposeTransform);
+    RefDiagSCMatrix avirevals(avirdim, basis_matrixkit());
+    RefSCMatrix avirevecs(avirdim, avirdim, basis_matrixkit());
+    avirfock.diagonalize(avirevals, avirevecs);
+    // form full eigenvectors and eigenvalues
+    if (evals_sc_[Alpha].null()) {
+      evals_sc_[Alpha] = evals(Alpha).clone();  evals_sc_[Alpha].assign(0.0);
+    }
+    RefSCMatrix aevecs(modim, modim, basis_matrixkit()); aevecs.assign(0.0);
+    {
+      unsigned int aoccoffset = 0;
+      unsigned int aviroffset = 0;
+      for(unsigned int h=0; h<nirrep; ++h) {
+        const unsigned int mostart = modim->blocks()->start(h);
+        const unsigned int moend = modim->blocks()->fence(h);
+        const unsigned int nmo = modim->blocks()->size(h);
+
+        if (aoccpi[h]) aevecs.block(h).assign_subblock(aoccevecs.block(h), 0, aoccpi[h]-1, 0, aoccpi[h]-1, 0, 0);
+        if (avirpi[h]) aevecs.block(h).assign_subblock(avirevecs.block(h), aoccpi[h], nmo-1, aoccpi[h], nmo-1, 0, 0);
+
+        int i = 0;
+        for(unsigned int mo=mostart; mo<mostart+aoccpi[h]; ++mo, ++i) {
+          const double e = aoccevals.get_element(aoccoffset + i);
+          evals_sc_[Alpha].set_element(mo,e);
+        }
+        i = 0;
+        for(unsigned int mo=mostart+aoccpi[h]; mo<moend; ++mo, ++i) {
+          const double e = avirevals.get_element(aviroffset + i);
+          evals_sc_[Alpha].set_element(mo,e);
+        }
+
+        aoccoffset += aoccpi[h];
+        aviroffset += avirpi[h];
+      }
+    }
+    coefs_sc_[Alpha] = ao_eigenvector * aevecs;
+  #if DEBUG_SEMICANONICAL
+    {
+      ao_eigenvector.print("Original eigenvector (AO basis)");
+      aevecs.print("Alpha transform matrix");
+      {
+        RefSymmSCMatrix afock_mo(modim, basis_matrixkit());
+        afock_mo.assign(0.0);
+        afock_mo.accumulate_transform(coefs_sc_[Alpha], Fa_ao,
+                                      SCMatrix::TransposeTransform);
+        afock_mo.print("Alpha Fock matrix in the semicanonical orbitals");
+      }
+      evals_sc_[Alpha].print("Alpha semicanonical orbital energies");
+      coefs_sc_[Alpha].print("Alpha semicanonical orbitals (AO basis)");
+    }
+  #endif
+    aevecs = 0;
+
+    //
+    // beta case
+    //
+    // diagonalize occ-occ and virt-virt fock matrices
+    RefSymmSCMatrix bfock_so = plist->to_SO_basis(Fb_ao);
+  #if DEBUG_SEMICANONICAL
+    {
+      RefSymmSCMatrix Fb(oso_dimension(), basis_matrixkit());
+      Fb.assign(0.0);
+      Fb.accumulate_transform(so_eigenvector, bfock_so,
+                              SCMatrix::TransposeTransform);
+      Fb.print("Beta Fock matrix");
+    }
+  #endif
+
+    RefSymmSCMatrix boccfock(boccdim, basis_matrixkit());
+    boccfock.assign(0.0);
+    boccfock.accumulate_transform(boccvec, bfock_so,
+                                  SCMatrix::TransposeTransform);
+    RefDiagSCMatrix boccevals(boccdim, basis_matrixkit());
+    RefSCMatrix boccevecs(boccdim, boccdim, basis_matrixkit());
+    boccfock.diagonalize(boccevals, boccevecs);
+
+    RefSymmSCMatrix bvirfock(bvirdim, basis_matrixkit());
+    bvirfock.assign(0.0);
+    bvirfock.accumulate_transform(bvirvec, bfock_so,
+                                  SCMatrix::TransposeTransform);
+    RefDiagSCMatrix bvirevals(bvirdim, basis_matrixkit());
+    RefSCMatrix bvirevecs(bvirdim, bvirdim, basis_matrixkit());
+    bvirfock.diagonalize(bvirevals, bvirevecs);
+    // form full eigenvectors and eigenvalues
+    if (evals_sc_[Beta].null()) {
+      evals_sc_[Beta] = evals(Beta).clone();  evals_sc_[Beta].assign(0.0);
+    }
+    RefSCMatrix bevecs(modim, modim, basis_matrixkit()); bevecs.assign(0.0);
+    {
+      unsigned int boccoffset = 0;
+      unsigned int bviroffset = 0;
+      for(unsigned int h=0; h<nirrep; ++h) {
+        const unsigned int mostart = modim->blocks()->start(h);
+        const unsigned int moend = modim->blocks()->fence(h);
+        const unsigned int nmo = modim->blocks()->size(h);
+
+        if (boccpi[h]) bevecs.block(h).assign_subblock(boccevecs.block(h), 0, boccpi[h]-1, 0, boccpi[h]-1, 0, 0);
+        if (bvirpi[h]) bevecs.block(h).assign_subblock(bvirevecs.block(h), boccpi[h], nmo-1, boccpi[h], nmo-1, 0, 0);
+
+        int i = 0;
+        for(unsigned int mo=mostart; mo<mostart+boccpi[h]; ++mo, ++i) {
+          const double e = boccevals.get_element(boccoffset + i);
+          evals_sc_[Beta].set_element(mo,e);
+        }
+        i = 0;
+        for(unsigned int mo=mostart+boccpi[h]; mo<moend; ++mo, ++i) {
+          const double e = bvirevals.get_element(bviroffset + i);
+          evals_sc_[Beta].set_element(mo,e);
+        }
+
+        boccoffset += boccpi[h];
+        bviroffset += bvirpi[h];
+      }
+    }
+    coefs_sc_[Beta] = ao_eigenvector * bevecs;
+  #if DEBUG_SEMICANONICAL
+    {
+      bevecs.print("Beta transform matrix");
+      {
+        RefSymmSCMatrix bfock_mo(modim, basis_matrixkit());
+        bfock_mo.assign(0.0);
+        bfock_mo.accumulate_transform(coefs_sc_[Beta], Fb_ao,
+                                      SCMatrix::TransposeTransform);
+        bfock_mo.print("Beta Fock matrix in the semicanonical orbitals");
+      }
+      evals_sc_[Beta].print("Beta semicanonical orbital energies");
+      coefs_sc_[Beta].print("Beta semicanonical orbitals (AO basis)");
+    }
+  #endif
+    bevecs = 0;
+
   }
 
   //////////////////////////////////////////////////////////////////////////

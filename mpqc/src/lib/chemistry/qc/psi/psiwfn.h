@@ -331,10 +331,16 @@ namespace sc {
       double alpha_occupation(int mo);
       /// Returns the occupation for beta orbitals
       double beta_occupation(int mo);
+
+      //@{ SO-basis densities
       RefSymmSCMatrix density();
       RefSymmSCMatrix alpha_density();
       RefSymmSCMatrix beta_density();
+      //@}
 
+      /// AO-basis densities
+      RefSymmSCMatrix ao_density(SpinCase1);
+      /// MO-basis density
       RefSymmSCMatrix mo_density(SpinCase1 spin = AnySpinCase1);
 
       /// number of MOs
@@ -391,6 +397,18 @@ namespace sc {
       PsiSCF::RefType reftype() const {
         return hsoshf;
       }
+
+      /// returns the semicanonical MO coefficients in AO basis
+      const RefSCMatrix& coefs_semicanonical(SpinCase1 s);
+      /// returns the eigenvalues of semicanonical MOs in AO basis
+      const RefDiagSCMatrix& evals_semicanonical(SpinCase1 s);
+
+    private:
+      RefSCMatrix coefs_sc_[NSpinCases1];
+      RefDiagSCMatrix evals_sc_[NSpinCases1];
+
+      // computes semicanonical MOs
+      void semicanonical();
   };
 
   ///////////////////////////////////////////////////////////////////

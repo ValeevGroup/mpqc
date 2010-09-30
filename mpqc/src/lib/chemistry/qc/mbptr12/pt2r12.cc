@@ -247,6 +247,9 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   assert(reference_ == rdm2_->wfn());
   rdm1_ = rdm2_->rdm_m_1();
 
+  // this may update the accuracy of reference_ object
+  this->set_desired_value_accuracy(desired_value_accuracy());
+
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   //world->memory(memory);
   const bool spin_restricted = true;
@@ -266,8 +269,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
 
   debug_ = keyval->intvalue("debug", KeyValValueint(0));
   r12eval_->debug(debug_);
-
-
 }
 
 PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
@@ -313,6 +314,17 @@ PT2R12::obsolete() {
   r12world_->world()->obsolete();
   r12world_->obsolete();
   Wavefunction::obsolete();
+}
+
+void
+PT2R12::set_desired_value_accuracy(double acc)
+{
+  Function::set_desired_value_accuracy(acc);
+  if (reference_->desired_value_accuracy_set_to_default()) {
+    // reference should be computed to higher accuracy
+    const double ref_acc = acc * ref_to_pt2r12_acc();
+    reference_->set_desired_value_accuracy(ref_acc);
+  }
 }
 
 RefSymmSCMatrix PT2R12::hcore_mo() {

@@ -77,6 +77,7 @@ namespace sc {
       int nelectron();
       int spin_polarized();
       int value_implemented() const { return 1; }
+      void set_desired_value_accuracy(double acc);
 
       /// PT2R12 is an R12 Wavefunction
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
@@ -84,6 +85,9 @@ namespace sc {
       void obsolete();
 
     private:
+
+      static double ref_to_pt2r12_acc() { return 0.01; }
+
       size_t memory_r12_;
       Ref<Wavefunction> reference_;
       Ref< RDM<Two> > rdm2_;

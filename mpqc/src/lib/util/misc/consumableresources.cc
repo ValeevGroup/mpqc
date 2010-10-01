@@ -214,15 +214,18 @@ size_t ConsumableResources::memory() const { return memory_; }
 size_t ConsumableResources::disk() const { return disk_.second; }
 
 void ConsumableResources::consume_memory(size_t value) {
+#define IGNORE_RESOURCE_OVERUSE 1
   rsize& resource = memory_;
   if (value <= resource)
     resource -= value;
+#if !IGNORE_RESOURCE_OVERUSE
   else
     throw LimitExceeded<size_t>("not enough memory",
                                 __FILE__, __LINE__,
                                 resource.max_value(),
                                 resource.max_value() - resource.value() + value,
                                 class_desc());
+#endif
 }
 void ConsumableResources::consume_disk(size_t value) {
   rsize& resource = disk_.second;

@@ -566,15 +566,11 @@ namespace sc {
     input->write_keyword("detci:convergence", convergence_);
     input->write_keyword("detci:maxiter", maxiter_);
 
-    if (!rasscf) {
       if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
       if (!ras2_.empty()) input->write_keyword_array("psi:ras2",ras2_);
       if (!ras3_.empty()) input->write_keyword_array("psi:ras3",ras3_);
       input->write_keyword("psi:ras3_max",ras3_max_);
-    }
-    else {
-      input->write_keyword_array("psi:active", ras2_);
-    }
+
 
     input->write_keyword("scf:levelshift",scf_levelshift_);
     input->write_keyword("scf:stop_levelshift",scf_stop_levelshift_);

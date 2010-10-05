@@ -175,8 +175,8 @@ namespace sc {
           <tr><td><tt>relax_core</tt><td>boolean<td>false<td>whether to keep the occupied orbitals that are not part of
           RAS I or II spaces fixed in RASSCF or to relax them.
 
-          <tr><td><tt>rasscf_target_sym</tt><td>integer<td>-1<td>the irrep of the target RAS states (the default value
-            <tt>-1</tt> means same symmetry as the reference Hartree-Fock state).
+          <tr><td><tt>rasscf_target_sym</tt><td>integer<td>-1<td>the irrep of the target RAS states, integer between 0 to ng-1, where ng is the
+          order of the point group (the default value <tt>-1</tt> means same symmetry as the reference Hartree-Fock state).
 
           <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
           an object that will provide the orbital ordering for the initial guess. It is recommended to use

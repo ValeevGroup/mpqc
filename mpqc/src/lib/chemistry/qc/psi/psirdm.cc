@@ -113,7 +113,7 @@ sc::PsiRDMTwo::orbs(SpinCase1 spin) const {
 RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
 
   if (scmat_[spin].nonnull()) return scmat_[spin];
-  if (wfn_->spin_polarized() && spin == BetaBeta)
+  if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
   Ref<PsiRASCI> psiciwfn_;

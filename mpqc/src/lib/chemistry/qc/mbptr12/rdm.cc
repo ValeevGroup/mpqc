@@ -264,7 +264,7 @@ Ref<OBWfnRDMTwo::rdm_m_1_type> sc::OBWfnRDMTwo::rdm_m_1() const
 RefSymmSCMatrix sc::OBWfnRDMTwo::scmat(SpinCase2 spin) const {
 
   if (scmat_[spin].nonnull()) return scmat_[spin];
-  if (wfn_->spin_polarized() && spin == BetaBeta)
+  if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
   Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();

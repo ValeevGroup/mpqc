@@ -387,7 +387,6 @@ namespace sc {
 
     h0_blocksize_ = keyval->intvalue("h0_blocksize", KeyValValueint(40));
     repl_otf_ = keyval->booleanvalue("repl_otf", KeyValValueboolean(false));
-    ex_lvl_ = keyval->intvalue("ex_lvl", KeyValValueint(this->nelectron()));
 
     /// construction of valence_obwfn_
     valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
@@ -408,7 +407,8 @@ namespace sc {
     ras1_ = read_occ(keyval,"ras1",nirrep_);
     ras2_ = read_occ(keyval,"ras2",nirrep_);
     ras3_ = read_occ(keyval,"ras3",nirrep_);
-    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(ex_lvl_));
+    ras1_max_ = keyval->intvalue("ras1_max", KeyValValueint(0));
+    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(0));
 
     vector<unsigned int> docc_act = this->docc_act();
     vector<unsigned int> socc = this->socc();
@@ -428,7 +428,7 @@ namespace sc {
     if(ras2_.empty()) {
       if (valence_obwfn_.nonnull()) { // if given, compute the valence space
         ras2_.resize(nirrep);
-        assert(false);
+        throw FeatureNotImplemented("automatic computation of RAS2", __FILE__, __LINE__, class_desc());
       }
       else
         InputError("valence_obwfn keyword is not given, thus ras2 vector must be specified",
@@ -466,7 +466,6 @@ namespace sc {
     s.get(multiplicity_);
     s.get(nroots_);
     s.get(h0_blocksize_);
-    s.get(ex_lvl_);
     s.get(repl_otf_);
     s.get(energy_convergence_);
     s.get(convergence_);
@@ -474,6 +473,7 @@ namespace sc {
     s.get(ras1_);
     s.get(ras2_);
     s.get(ras3_);
+    s.get(ras1_max_);
     s.get(ras3_max_);
     s.get(target_sym_);
 
@@ -493,7 +493,6 @@ namespace sc {
     s.put(multiplicity_);
     s.put(nroots_);
     s.put(h0_blocksize_);
-    s.put(ex_lvl_);
     s.put(repl_otf_);
     s.put(energy_convergence_);
     s.put(convergence_);
@@ -501,6 +500,7 @@ namespace sc {
     s.put(ras1_);
     s.put(ras2_);
     s.put(ras3_);
+    s.put(ras1_max_);
     s.put(ras3_max_);
     s.put(target_sym_);
 
@@ -554,8 +554,6 @@ namespace sc {
       input->write_keyword("detci:h0_blocksize",h0_blocksize_);
     }
 
-    input->write_keyword("detci:ex_lvl",ex_lvl_);
-
     if((repl_otf_==true) && !rasscf) {  /// don't use "repl_otf" keyword for CASSCF calculations.
       input->write_keyword("detci:repl_otf","true");
     }
@@ -569,6 +567,7 @@ namespace sc {
       if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
       if (!ras2_.empty()) input->write_keyword_array("psi:ras2",ras2_);
       if (!ras3_.empty()) input->write_keyword_array("psi:ras3",ras3_);
+      input->write_keyword("detci:ex_lvl",ras1_max_);
       input->write_keyword("psi:ras3_max",ras3_max_);
 
 
@@ -603,6 +602,7 @@ namespace sc {
     detail::print_blocks("ras1",ras1_,os);
     detail::print_blocks("ras2",ras2_,os);
     detail::print_blocks("ras3",ras3_,os);
+    os << indent << "ras1_max = " << ras1_max_ << std::endl;
     os << indent << "ras3_max = " << ras3_max_ << std::endl;
     PsiCorrWavefunction::print(os);
     os << decindent;

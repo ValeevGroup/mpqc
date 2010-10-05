@@ -48,24 +48,25 @@ namespace sc {
 
         <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-        <dt><tt>prerequisite</tt><dd> Specifies an object of class PsiWavefunction that must be "computed" prior to computing this object.
-        The default is null object, which means clean compute, i.e. start running Psi by invoking "input" module which will overwrite the
-        checkpoint file.
-
-        <dt><tt>root</tt><dd> Specifies which state to solve for. The default is 1, i.e. the ground state. Value of <tt>root</tt>
+        <tr><td><tt>root</tt><td>integer<td>1<td>Specifies which state to solve for. The default is the ground state. Value of <tt>root</tt>
         cannot be greater than <tt>nroots</tt>.
 
-        <dt><tt>nroots</tt><dd> Specifies the number of CI vectors to seek. The default is the value specified with keyword
-        root (see keyword <tt>nroots</tt>).
+        <tr><td><tt>nroots</tt><td>integer<td>value of <tt>root</tt><td>Specifies the number of CI vectors to seek.
 
-        <dt><tt>multiplicity</tt><dd> Specifies the multiplicity of the state to solve for. The default is the same as the multiplicity of
-        the object specified with the <tt>reference</tt> keyword. \sa PsiCorrWavefunction
+        <tr><td><tt>multiplicity</tt><td>integer<td>multiplicity of
+        the <tt>reference</tt> object<td> Specifies the multiplicity of the state to solve for. \sa PsiCorrWavefunction
 
         <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
         an object that will provide the orbital ordering for the initial guess. It is recommended to use
         an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
         For example, for a valence CASSCF this means that SCF with an STO-3G basis will suffice. For states
         with Rydberg character one may want to choose an appropriate ANO basis set.
+
+        <tr><td><tt>ras1</tt><td>array of integers<td>empty<td>Specifies the RAS I space. Up to <tt>ras1_max</tt> electrons can be excited from RAS I.
+        <tr><td><tt>ras2</tt><td>array of integers<td>none<td>Specifies the RAS II space. Any number of electrons is allowed in RAS II
+        <tr><td><tt>ras3</tt><td>array of integers<td>all orbitals - frozen core - RAS1 - RAS2<td>Specifies the RAS III space. Up to <tt>ras3_max</tt> electrons may be excited into RAS III.
+        <tr><td><tt>ras1_max</tt><td>integer<td>0<td>Specifies the maximum number of holes allowed in RAS I.
+        <tr><td><tt>ras3_max</tt><td>integer<td>0<td>Specifies the maximum number of electrons allowed in RAS III.
 
         </table>
      */
@@ -106,7 +107,6 @@ namespace sc {
       int nroots_;        /// number of roots for detci calculations
       int target_sym_;    /// the symmetry (irrep) of the target root
       int h0_blocksize_;  /// block size for the H0 guess
-      int ex_lvl_;        /// CI excitation level
       bool repl_otf_;     /// do CI string replacements on the fly. saves memory, but is slower.
 
       // this data may need to be modified by RASSCF
@@ -125,7 +125,8 @@ namespace sc {
       std::vector<unsigned int> ras1_;
       std::vector<unsigned int> ras2_;
       std::vector<unsigned int> ras3_;
-      int ras3_max_;
+      int ras1_max_;   //< max number of holes in RAS1
+      int ras3_max_;   //< max number of electrons in RAS3
 
       double scf_levelshift_;      /// Psi3 cscf levelshift
       int scf_stop_levelshift_;    /// number of iterations, for which the levelshift is applied
@@ -177,12 +178,6 @@ namespace sc {
 
           <tr><td><tt>rasscf_target_sym</tt><td>integer<td>-1<td>the irrep of the target RAS states, integer between 0 to ng-1, where ng is the
           order of the point group (the default value <tt>-1</tt> means same symmetry as the reference Hartree-Fock state).
-
-          <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
-          an object that will provide the orbital ordering for the initial guess. It is recommended to use
-          an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
-          For example, for a valence CASSCF this means that SCF with an STO-3G basis will suffice. For states
-          with Rydberg character one may want to choose an appropriate ANO basis set.
 
           </table>
        */

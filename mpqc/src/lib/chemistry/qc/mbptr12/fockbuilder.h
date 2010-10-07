@@ -267,10 +267,14 @@ namespace sc {
           }
         }
 
-        if (compute_F_ && !really_compute_F)
-          for(int t=0; t<ntypes_; ++t) {
-            result_[t][2] = result_[t][0] - result_[t][1];
+        if (compute_F_ && !really_compute_F) {
+          // F = J - K = J - 1/2 (Ka + Kb)
+          result_[0][2] = result_[0][0] - result_[0][1];
+          if (ntypes_ == 2) { // Fo = -Ko = -1/2 (Ka - Kb)
+            result_[1][2] = result_[1][1].copy();
+            result_[1][2].scale(-1.0);
           }
+        }
 
       }
 
@@ -281,7 +285,7 @@ namespace sc {
         return result_[t][2];
       }
       const ResultType& J(unsigned int t = 0) const {
-        assert(compute_J_ && t < ntypes_);
+        assert(compute_J_ && t < ntypes_ && t == 0);
         return result_[t][0];
       }
       const ResultType& K(unsigned int t = 0) const {

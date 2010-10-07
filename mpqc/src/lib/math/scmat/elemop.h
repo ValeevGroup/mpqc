@@ -34,6 +34,7 @@
 
 #include <util/state/state.h>
 #include <util/group/message.h>
+#include <cmath>
 
 namespace sc {
 
@@ -329,14 +330,14 @@ class SCElementMinAbs: public SCElementOp {
 };
 
 
-class SCElementSumAbs: public SCElementOp {
+class SCElementSum: public SCElementOp {
   private:
     int deferred_;
     double r;
   public:
-    SCElementSumAbs();
-    SCElementSumAbs(StateIn&);
-    ~SCElementSumAbs();
+    SCElementSum();
+    SCElementSum(StateIn&);
+    ~SCElementSum();
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&);
     int has_collect();
@@ -347,15 +348,20 @@ class SCElementSumAbs: public SCElementOp {
     void init() { r = 0.0; }
 };
 
-/// Computed k-norm of matrix.
+/// Computes k-norm of matrix.
 class SCElementKNorm: public SCElementOp {
   private:
     int deferred_;
     double r_;  // result
-    double k_;  // norm parameter
+    unsigned int k_;  // norm parameter
+
+    static double _process(SCMatrixBlockIter& i, int k);
+    static double _process1(SCMatrixBlockIter& i);
+    static double _process2(SCMatrixBlockIter& i);
+
   public:
     /// by default compute 2-norm
-    SCElementKNorm(double k = 2.0);
+    SCElementKNorm(unsigned int k = 2);
     SCElementKNorm(StateIn&);
     ~SCElementKNorm();
     void save_data_state(StateOut&);

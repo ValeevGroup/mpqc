@@ -47,11 +47,11 @@ namespace sc {
       A.element_op(maxabs_op);
       const double maxabs = maxabs_op->result();
 
-      Ref<SCElementKNorm> onenorm_op(new SCElementKNorm(1.0));
+      Ref<SCElementKNorm> onenorm_op(new SCElementKNorm(1));
       A.element_op(onenorm_op);
       const double onenorm = onenorm_op->result();
 
-      Ref<SCElementKNorm> twonorm_op(new SCElementKNorm(2.0));
+      Ref<SCElementKNorm> twonorm_op(new SCElementKNorm(2));
       A.element_op(twonorm_op);
       const double twonorm = twonorm_op->result();
 

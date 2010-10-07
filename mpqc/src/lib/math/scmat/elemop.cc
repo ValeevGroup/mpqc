@@ -695,7 +695,7 @@ static ClassDesc SCElementKNorm_cd(
   typeid(SCElementKNorm),"SCElementKNorm",1,"public SCElementOp",
   0, 0, create<SCElementKNorm>);
 
-SCElementKNorm::SCElementKNorm(double k):deferred_(0), r_(0.0), k_(k) {}
+SCElementKNorm::SCElementKNorm(unsigned int k):deferred_(0), r_(0.0), k_(k) {}
 SCElementKNorm::SCElementKNorm(StateIn&s):
   SCElementOp(s)
 {
@@ -713,9 +713,39 @@ SCElementKNorm::~SCElementKNorm() {}
 void
 SCElementKNorm::process(SCMatrixBlockIter&i)
 {
-  for (i.reset(); i; ++i) {
-    r_ += std::pow(std::abs(i.get()),k_);
+  switch (k_) {
+    case 1u:
+      r_ += _process1(i); break;
+    case 2u:
+      r_ += _process2(i); break;
+    default:
+      r_ += _process(i, k_);
   }
+}
+double
+SCElementKNorm::_process(SCMatrixBlockIter& i, int k) {
+  double result = 0.0;
+  for (i.reset(); i; ++i) {
+    result += std::pow(std::abs(i.get()),static_cast<double>(k));
+  }
+  return result;
+}
+double
+SCElementKNorm::_process1(SCMatrixBlockIter& i) {
+  double result = 0.0;
+  for (i.reset(); i; ++i) {
+    result += std::abs(i.get());
+  }
+  return result;
+}
+double
+SCElementKNorm::_process2(SCMatrixBlockIter& i) {
+  double result = 0.0;
+  for (i.reset(); i; ++i) {
+    const double v = i.get();
+    result += v * v;
+  }
+  return result;
 }
 double
 SCElementKNorm::result()
@@ -802,58 +832,58 @@ SCElementMinAbs::collect(const Ref<SCElementOp>&op)
 }
 
 /////////////////////////////////////////////////////////////////////////
-// SCElementSumAbs members
+// SCElementSum members
 
-static ClassDesc SCElementSumAbs_cd(
-  typeid(SCElementSumAbs),"SCElementSumAbs",1,"public SCElementOp",
-  0, 0, create<SCElementSumAbs>);
-SCElementSumAbs::SCElementSumAbs():deferred_(0), r(0.0) {}
-SCElementSumAbs::SCElementSumAbs(StateIn&s):
+static ClassDesc SCElementSum_cd(
+  typeid(SCElementSum),"SCElementSum",1,"public SCElementOp",
+  0, 0, create<SCElementSum>);
+SCElementSum::SCElementSum():deferred_(0), r(0.0) {}
+SCElementSum::SCElementSum(StateIn&s):
   SCElementOp(s)
 {
   s.get(r);
   s.get(deferred_);
 }
 void
-SCElementSumAbs::save_data_state(StateOut&s)
+SCElementSum::save_data_state(StateOut&s)
 {
   s.put(r);
   s.put(deferred_);
 }
-SCElementSumAbs::~SCElementSumAbs() {}
+SCElementSum::~SCElementSum() {}
 void
-SCElementSumAbs::process(SCMatrixBlockIter&i)
+SCElementSum::process(SCMatrixBlockIter&i)
 {
   for (i.reset(); i; ++i) {
-      r += fabs(i.get());
+      r += i.get();
     }
 }
 double
-SCElementSumAbs::result()
+SCElementSum::result()
 {
   return r;
 }
 int
-SCElementSumAbs::has_collect()
+SCElementSum::has_collect()
 {
   return 1;
 }
 void
-SCElementSumAbs::defer_collect(int h)
+SCElementSum::defer_collect(int h)
 {
   deferred_=h;
 }
 void
-SCElementSumAbs::collect(const Ref<MessageGrp>&msg)
+SCElementSum::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->sum(r);
 }
 void
-SCElementSumAbs::collect(const Ref<SCElementOp>&op)
+SCElementSum::collect(const Ref<SCElementOp>&op)
 {
   throw std::runtime_error(
-      "SCElementSumAbs::collect(const Ref<SCElementOp> &): not implemented");
+      "SCElementSum::collect(const Ref<SCElementOp> &): not implemented");
 }
 
 /////////////////////////////////////////////////////////////////////////

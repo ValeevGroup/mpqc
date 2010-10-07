@@ -1696,7 +1696,7 @@ MBPT2::compute_cs_grad()
     s2_diag = sqrt(s2_diag/(2*nocc_act));
     // compute the T1 matrix 1-norm
     double t1onenorm = 0.0;
-    Ref<SCElementSumAbs> sumabs = new SCElementSumAbs;
+    Ref<SCElementKNorm> sumabs = new SCElementKNorm(1);
     Ref<SCElementOp> genop = sumabs.pointer();
     for (a=0; a < nvir_act; a++) {
       sumabs->init();

@@ -552,7 +552,7 @@ SD_RefWavefunction::obsolete() {
 RefSymmSCMatrix
 SD_RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
-  if (spin_restricted()) s = Alpha;
+  if (spin_polarized() == false) s = Alpha;
   if (s == Alpha) return obwfn()->alpha_ao_density();
   return obwfn()->beta_ao_density();
 }

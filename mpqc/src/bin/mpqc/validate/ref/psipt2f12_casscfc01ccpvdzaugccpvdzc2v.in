@@ -63,8 +63,6 @@ mpqc: (
 
       value_accuracy = 1e-11
       nfzc = 1
-      ex_lvl = 10
-      ras1 = [0 0 0 0]
       ras2 = [3 0 1 1]
       root = 1
       nroots = 2

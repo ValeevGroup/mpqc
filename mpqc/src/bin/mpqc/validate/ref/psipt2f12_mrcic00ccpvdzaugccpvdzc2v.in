@@ -64,8 +64,6 @@ mpqc: (
 
       value_accuracy = 1e-9
       nfzc = 1
-      ex_lvl = 10
-      ras1 = [0 0 0 0]
       ras2 = [3 0 1 1]
       ras3_max = 2
       root = 1
@@ -85,10 +83,8 @@ mpqc: (
         )
 
         value_accuracy = 1e-9
-        nfzc = 1
-        ex_lvl = 10
-        ras1 = [0 0 0 0]
-        ras2 = [3 0 1 1]
+        nfzc = $..:nfzc
+        ras2 = $..:ras2
         nroots = 2
         valence_obwfn<CLHF>: (
           molecule = $:molecule

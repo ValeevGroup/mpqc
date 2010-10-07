@@ -82,8 +82,6 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
   // cannot do coupling=true either
   if (r12tech->coupling())
     throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- coupling = true is not yet implemented",__FILE__,__LINE__);
-
-  set_desired_value_accuracy(desired_value_accuracy());
 }
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
@@ -354,13 +352,15 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
           // NOTE: V_{xy}^{ia} T_a^j + V_{xy}^{aj} T_a^i = 2 * symm(V_{xy}^{ia} T_a^j)
           symmetrize(VT1);
           if (debug() >= DefaultPrintThresholds::allO4)
-            _print(spincase2, VT1, prepend_spincase(spincase2,"<R|(H*T1)|0>").c_str());
+            _print(spincase2, VT1, prepend_spincase(spincase2,"1/2<R|(H*T1)|0>").c_str());
           axpy(VT1, 2.0, HT);
         }
         else {
           axpy(VT1, 1.0, HT);
           // Vai^t . T1
           contract3(Vai[s],T1[spin2].t(),VT1);
+          if (debug() >= DefaultPrintThresholds::allO4)
+            _print(spincase2, VT1, prepend_spincase(spincase2,"<R|(H*T1)|0>").c_str());
           axpy(VT1, 1.0, HT);
         }
 

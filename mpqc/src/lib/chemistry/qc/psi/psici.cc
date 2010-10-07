@@ -336,7 +336,7 @@ namespace sc {
      *  MOs correspond to the respective MOs in the valence wfn. This vector
      *  can be used as the value of the "reorder" keyword in Psi to make the lowest-energy orbitals
      *  maximally similar to the valence orbitals. This is needed, for example, to avoid the inclusion
-     *  of diffuse orbitals into the active space of CASSCF calculations.
+     *  of diffuse orbitals into the active space of RASSCF calculations.
      *
      *  \param overlap is the overlap between a valence wfn (e.g. minimal basis HF) and a given wfn
      */
@@ -392,6 +392,7 @@ namespace sc {
     valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
     if (valence_obwfn_.nonnull()) {
       double valence_obwfn_energy = valence_obwfn_->energy();
+      this->reference()->compute();
       moorder_ = detail::ref_to_valence_moorder(this->reference(),
                                                 this->valence_obwfn_);
     }
@@ -428,7 +429,9 @@ namespace sc {
     if(ras2_.empty()) {
       if (valence_obwfn_.nonnull()) { // if given, compute the valence space
         ras2_.resize(nirrep);
-        throw FeatureNotImplemented("automatic computation of RAS2", __FILE__, __LINE__, class_desc());
+        // ras2_[i] = valence_obwfn_.orbs[i] - frozen_docc[i] - ras1_[i];
+        for(unsigned int h=0; h<nirrep; ++h)
+          ras2_[h] = valence_obwfn_->oso_dimension()->blocks()->size(h) - frozen_docc[h] - ras1_[h];
       }
       else
         InputError("valence_obwfn keyword is not given, thus ras2 vector must be specified",
@@ -554,7 +557,7 @@ namespace sc {
       input->write_keyword("detci:h0_blocksize",h0_blocksize_);
     }
 
-    if((repl_otf_==true) && !rasscf) {  /// don't use "repl_otf" keyword for CASSCF calculations.
+    if((repl_otf_==true) && !rasscf) {  /// don't use "repl_otf" keyword for RASSCF calculations.
       input->write_keyword("detci:repl_otf","true");
     }
 
@@ -564,12 +567,11 @@ namespace sc {
     input->write_keyword("detci:convergence", convergence_);
     input->write_keyword("detci:maxiter", maxiter_);
 
-      if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
-      if (!ras2_.empty()) input->write_keyword_array("psi:ras2",ras2_);
-      if (!ras3_.empty()) input->write_keyword_array("psi:ras3",ras3_);
-      input->write_keyword("detci:ex_lvl",ras1_max_);
-      input->write_keyword("psi:ras3_max",ras3_max_);
-
+    if (!ras1_.empty()) input->write_keyword_array("psi:ras1",ras1_);
+    if (!ras2_.empty()) input->write_keyword_array("psi:ras2",ras2_);
+    if (!ras3_.empty()) input->write_keyword_array("psi:ras3",ras3_);
+    input->write_keyword("detci:ex_lvl",ras1_max_);
+    input->write_keyword("psi:ras3_max",ras3_max_);
 
     input->write_keyword("scf:levelshift",scf_levelshift_);
     input->write_keyword("scf:stop_levelshift",scf_stop_levelshift_);
@@ -859,7 +861,8 @@ namespace sc {
     // reset some defaults for the RASCI class
     energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
-    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(0));
+    if (keyval->exists("ras3") == false)
+      std::fill(ras3_.begin(), ras3_.end(), 0);
 
   }
 
@@ -919,7 +922,7 @@ namespace sc {
     input->open();
 
     PsiCorrWavefunction::write_input_frozen2restricted(convergence, relax_core_);
-    input->write_keyword("psi:wfn", "casscf");
+    input->write_keyword("psi:wfn", "rasscf");
     if (run_detci_only_)
       input->write_keyword("psi:exec", "( \"cints\" \"transqt2\" \"detci\")");
 
@@ -950,6 +953,17 @@ namespace sc {
 
     const bool rasscf = true;
     write_rasci_input(convergence, rasscf);
+
+    // need to compute restricted_uocc as well
+    // ruocc[i] = mos[i] - frozen_docc[i] - ras1_[i] - ras2_[i] - ras3_[i] - frozen_uocc[i];
+    const unsigned int nirr = this->nirrep();
+    std::vector<unsigned int> ruocc(nirr);
+    std::vector<unsigned int> mos = reference()->mopi();
+    vector<unsigned int> frozen_docc = this->frozen_docc();
+    vector<unsigned int> frozen_uocc = this->frozen_uocc();
+    for(unsigned int h=0; h<nirr; ++h)
+      ruocc[h] =  mos[h] - frozen_docc[h] - ras1_[h] - ras2_[h] - ras3_[h] - frozen_uocc[h];
+    input->write_keyword_array("psi:restricted_uocc",ruocc);
 
     input->close();
 

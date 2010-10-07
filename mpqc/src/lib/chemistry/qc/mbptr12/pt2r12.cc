@@ -690,8 +690,15 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
 
   // find equivalent spaces in the registry
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
-  if (!oreg->value_exists(space1) || !oreg->value_exists(space2))
-    throw ProgrammingError("PT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
+  bool registered_space1=false, registered_space2=false;
+  if (!oreg->value_exists(space1)) {
+    oreg->add(make_keyspace_pair(space1));
+    registered_space1 = true;
+  }
+  if (!oreg->value_exists(space2)) {
+    oreg->add(make_keyspace_pair(space2));
+    registered_space2 = true;
+  }
   const std::string key1 = oreg->key(space1);
   Ref<OrbitalSpace> s1 = oreg->value(key1);
   const std::string key2 = oreg->key(space2);
@@ -709,6 +716,9 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
 
   r12eval_->compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(G,TwoBodyOper::eri,s1,s1,s2,s2,
       antisymmetrize,tforms);
+
+  if (registered_space1) oreg->remove(space1->id());
+  if (registered_space2) oreg->remove(space2->id());
 
   return(G);
 }
@@ -1225,6 +1235,12 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   RefSCMatrix TBT_tpdm = TBT*tpdm;
   RefSCMatrix HylleraasMatrix = TBT_tpdm;
   if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
+    //rdm2(pairspin).print(prepend_spincase(pairspin,"rdm2 (full)").c_str());
+    tpdm.print(prepend_spincase(pairspin,"rdm2").c_str());
+    rdm1(Alpha).print(prepend_spincase(Alpha,"rdm1 (full)").c_str());
+    rdm1_gg(Alpha).print(prepend_spincase(Alpha,"rdm1").c_str());
+    rdm1(Beta).print(prepend_spincase(Beta,"rdm1 (full)").c_str());
+    rdm1_gg(Beta).print(prepend_spincase(Beta,"rdm1").c_str());
     TBT.print(prepend_spincase(pairspin,"TBT").c_str());
     TBT_tpdm.print(prepend_spincase(pairspin,"TBTg").c_str());
   }
@@ -1306,9 +1322,9 @@ RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
   result.assign(0.0);
   // it's possible for gspace to be a superset of orbs
   std::vector<int> omap = map(*orbs, *gspace);
-  const int nmo = orbs->rank();
-
-  for(int R=0; R<nmo; ++R)
+  const int ng = gspace->rank();
+  
+  for(int R=0; R<ng; ++R)
     for(int C=0; C<=R; ++C) {
       const int rr = omap[R];
       const int cc = omap[C];
@@ -1487,12 +1503,12 @@ if (pt2_correction_)
   {
     ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
                                       cabs_singles_correction) << endl;
-    ExEnv::out0() << indent << scprintf("CASSCF+CABS singles correction:        %17.12lf",
+    ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
                                       reference_->energy() + cabs_singles_correction) << endl;
   }
   ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
                                     cabs_singles_correction_twobody_H0) << endl;
-  ExEnv::out0() << indent << scprintf("CASSCF+CABS (twobody H0):              %17.12lf",
+  ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
                                     reference_->energy() + cabs_singles_correction_twobody_H0) << endl;
 
 
@@ -2312,7 +2328,11 @@ PT2R12::energy_recomputed_from_densities() {
     // H and opdm might use different SCMatrixKits -> copy H into another matrix with the same kit as opdm
     RefSymmSCMatrix hh = opdm.clone();
     hh->convert(H);
-    oneparticle_energy[spin] = (hh * opdm)->trace();
+    hh->element_op(new SCElementScaleDiagonal(0.5));
+
+    Ref<SCElementScalarProduct> trace_op = new SCElementScalarProduct;
+    hh->element_op(trace_op, opdm);
+    oneparticle_energy[spin] = trace_op->result() * 2.0;
   }
 
   for(int spincase2=0; spincase2<npurespincases2; spincase2++) {
@@ -2323,9 +2343,16 @@ PT2R12::energy_recomputed_from_densities() {
     const Ref<OrbitalSpace>& space2 = rdm2_->orbs(spin2);
 
     const RefSymmSCMatrix tpdm = rdm2(pairspin);
-    const RefSCMatrix G = g(pairspin, space1, space2);
+    RefSCMatrix G = g(pairspin, space1, space2);
+    // G and opdm might use different SCMatrixKits -> copy G into another matrix with the same kit as opdm
+    RefSymmSCMatrix gg = tpdm.clone();  gg.assign(0.0);
+    gg->accumulate_subblock(G.pointer(), 0, G.nrow()-1, 0, G.ncol() - 1);  // his automatically scales off diagonal elements by 2
+                                                                           // no need to scale the diagonal when taking scalar product
+    G = 0;
 
-    twoparticle_energy[pairspin] = (G * tpdm).trace();
+    Ref<SCElementScalarProduct> trace_op = new SCElementScalarProduct;
+    gg->element_op(trace_op, tpdm);
+    twoparticle_energy[pairspin] = trace_op->result();
   }
 
   if(!spin_polarized()) {
@@ -2333,23 +2360,23 @@ PT2R12::energy_recomputed_from_densities() {
     oneparticle_energy[Beta] = oneparticle_energy[Alpha];
   }
 
-//#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS 0
 
   double energy_hcore = 0.0;
   for(int i=0; i<NSpinCases1; i++) {
     const SpinCase1 spin = static_cast<SpinCase1>(i);
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+#if ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
     ExEnv::out0() << ((spin==Alpha) ? "Alpha" : "Beta") << " hcore energy: "
                   << setprecision(12) << oneparticle_energy[i] << endl;
 #endif
     energy_hcore += oneparticle_energy[i];
   }
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+#if ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
   ExEnv::out0() << "hcore energy: " << setprecision(12) << energy_hcore << endl;
 #endif
   double energy_twoelec = 0.0;
   for(int i=0; i<NSpinCases2; i++) {
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+#if ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
     string pairspin_str = "";
     if(i==0) {
       pairspin_str = "AlphaBeta";
@@ -2364,7 +2391,7 @@ PT2R12::energy_recomputed_from_densities() {
 #endif
     energy_twoelec += twoparticle_energy[i];
   }
-#ifdef ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
+#if ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
   ExEnv::out0() << "two-electron energy: " << setprecision(12) << energy_twoelec << endl;
 #endif
   double energy = energy_hcore + energy_twoelec;

@@ -1584,6 +1584,8 @@ namespace sc {
           << endl;
       abort();
     }
+
+    set_desired_value_accuracy(desired_value_accuracy());
   }
 
   PsiCorrWavefunction::~PsiCorrWavefunction() {

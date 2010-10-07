@@ -59,11 +59,11 @@ namespace sc {
         <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
         an object that will provide the orbital ordering for the initial guess. It is recommended to use
         an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
-        For example, for a valence CASSCF this means that SCF with an STO-3G basis will suffice. For states
+        For example, for a valence RASSCF this means that SCF with an STO-3G basis will suffice. For states
         with Rydberg character one may want to choose an appropriate ANO basis set.
 
         <tr><td><tt>ras1</tt><td>array of integers<td>empty<td>Specifies the RAS I space. Up to <tt>ras1_max</tt> electrons can be excited from RAS I.
-        <tr><td><tt>ras2</tt><td>array of integers<td>none<td>Specifies the RAS II space. Any number of electrons is allowed in RAS II
+        <tr><td><tt>ras2</tt><td>array of integers<td>valence_obwfn orbitals - frozen core - RAS1<td>Specifies the RAS II space. Any number of electrons is allowed in RAS II
         <tr><td><tt>ras3</tt><td>array of integers<td>all orbitals - frozen core - RAS1 - RAS2<td>Specifies the RAS III space. Up to <tt>ras3_max</tt> electrons may be excited into RAS III.
         <tr><td><tt>ras1_max</tt><td>integer<td>0<td>Specifies the maximum number of holes allowed in RAS I.
         <tr><td><tt>ras3_max</tt><td>integer<td>0<td>Specifies the maximum number of electrons allowed in RAS III.
@@ -134,7 +134,7 @@ namespace sc {
       /** This OneBodyWavefunction defines valence orbitals.
        *
        * Purpose:
-       * If a basis set with diffuse functions is used for a CASSCF calculation,
+       * If a basis set with diffuse functions is used for a RASSCF calculation,
        * there may be energetically low lying diffuse obitals entering the active
        * space if the orbitals are not reordered. The reference wave function helps
        * to find the appropriate reordering by a 'black box' procedure which can be
@@ -169,6 +169,8 @@ namespace sc {
           <table border="1">
 
           <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+
+          <tr><td><tt>ras3</tt><td>array of integers<td>empty<td>Specifies the RAS III space. Up to <tt>ras3_max</tt> electrons may be excited into RAS III.
 
           <tr><td><tt>state_average</tt><td>boolean<td>false<td>whether to do state-averaging. The default is to
           compute optimal orbitals for the average of all states (see keyword <tt>num_states</tt>).

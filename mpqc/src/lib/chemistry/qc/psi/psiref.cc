@@ -93,7 +93,17 @@ RefSymmSCMatrix
 PsiSCF_RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
   if (!scf_->spin_polarized()) s = Alpha;
-  RefSymmSCMatrix result = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
+  RefSymmSCMatrix result;
+
+  Ref<PsiHSOSHF> hsoshf; hsoshf << scf_;
+
+  if (hsoshf.nonnull() && spin_restricted_ == false) { // HSOSHF + spin_unrestricted => must use semicanonical orbitals
+                                                       // but secmicanonical densities are not implemented
+    throw FeatureNotImplemented("semicanonical densities should not be used", __FILE__, __LINE__, class_desc());
+  }
+  else {
+    result = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
+  }
   return result;
 }
 
@@ -309,7 +319,6 @@ PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(StateIn& si) : RefWavefunctio
 }
 
 PsiRASCI_RefWavefunction::~PsiRASCI_RefWavefunction() {
-  throw "not implemented";
 }
 
 void

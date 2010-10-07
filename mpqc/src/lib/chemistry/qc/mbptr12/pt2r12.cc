@@ -161,7 +161,6 @@ namespace {
       throw ProgrammingError("lowerupper_index(p,q) -- p and q are not allowed to be equal.",__FILE__,__LINE__);
     }
   }
-
   double indexsizeorder_sign(int p,int q) {
     if(p>q) {
       return(1.0);
@@ -844,7 +843,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(S),r12eval_->dim_gg(S));
   if(S==AlphaBeta) {
     SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha), r12eval_->GGspace(Beta), S );
-    SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha), r12eval_->GGspace(Beta), S );
+    SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha), r12eval_->ggspace(Beta), S );
     Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
@@ -862,7 +861,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   else {
     SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
     SpinMOPairIter OW_iter(r12eval_->GGspace(spin), r12eval_->GGspace(spin), S );
-    SpinMOPairIter PQ_iter(r12eval_->ggspace(spin), r12eval_->GGspace(spin), S );
+    SpinMOPairIter PQ_iter(r12eval_->ggspace(spin), r12eval_->ggspace(spin), S );
     Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {

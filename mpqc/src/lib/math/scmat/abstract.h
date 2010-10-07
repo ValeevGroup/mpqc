@@ -489,12 +489,22 @@ class SymmSCMatrix: public DescribedClass {
     /// Return the generalized inverse of this using SVD decomposition. \sa SCMatrix::gen_invert_this()
     virtual void gen_invert_this(double condition_number_threshold = 1e8) = 0;
 
-    /// Perform the element operation op on each element of this.
+    //@{ Perform the element operation op on each element of this. Note that the operation is
+    ///   only applied to the unique elements of this. For example, to compute the sum of all matrix
+    ///   elements you need to do the following:
+    ///   \code
+    ///   SymmSCMatrix* A;   // presumed initialized elsewhere
+    ///   A->element_op(new SCElementScaleDiagonal(0.5));   // scale the diagonal by 1/2
+    ///   SCElementSum* sum_op = new SCElementSum;
+    ///   A->element_op(sum_op);
+    ///   std::cout << "Sum of element of matrix A = " << sum_op->result() * 2.0 << std::endl;
+    ///   \endcode
     virtual void element_op(const Ref<SCElementOp>&) = 0;
     virtual void element_op(const Ref<SCElementOp2>&,
                             SymmSCMatrix*) = 0;
     virtual void element_op(const Ref<SCElementOp3>&,
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
+    //@}
     /// Print out the matrix.
     void print(std::ostream&o=ExEnv::out0()) const;
     void print(const char* title=0,std::ostream& out=ExEnv::out0(),

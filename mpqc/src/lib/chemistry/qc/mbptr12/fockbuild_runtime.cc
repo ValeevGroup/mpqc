@@ -158,8 +158,8 @@ namespace {
   std::string
   alternatespin_key(const std::string& key, SpinCase1 new_spin) {
     ParsedOneBodyIntKey pkey(key);
-    std::string askey = ParsedOneBodyIntKey::key(pkey.ket(), pkey.bra(),
-                                                pkey.oper(), new_spin);
+    std::string askey = ParsedOneBodyIntKey::key(pkey.bra(), pkey.ket(),
+                                                 pkey.oper(), new_spin);
     return askey;
   }
 

@@ -224,7 +224,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
         uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
       }
       else // empty vbs
-        uocc_sb_ = vbs;
+        uocc_sb_ = new EmptyOrbitalSpace(id, oss.str(), vbs->basis(), vbs->integral(), OrbitalSpace::symmetry);
+      //uocc_sb_ = vbs;
     }
   }
   {

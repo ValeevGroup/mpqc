@@ -69,7 +69,7 @@ class Grid: public DescribedClass {
         <dt><tt>axisx</tt></dt><dd> The direction of the second axis of the
         grid. The defuault is [0 0 0].</dd>
 
-        <dt><tt>axisx</tt></dt><dd> The direction of the thirds axis of the
+        <dt><tt>axisx</tt></dt><dd> The direction of the third axis of the
         grid. The defuault is [0 0 0].</dd>
 
         <dt><tt>unit</tt></dt><dd> The unit in which the parameters are given.

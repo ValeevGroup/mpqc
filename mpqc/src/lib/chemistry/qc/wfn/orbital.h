@@ -34,6 +34,7 @@
 
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/wfn/obwfn.h>
+#include <math/mmisc/grid.h>
 
 namespace sc {
 
@@ -50,6 +51,31 @@ class Orbital: public Volume {
     virtual void boundingbox(double valuemin,
                              double valuemax,
                              SCVector3& p1, SCVector3& p2);
+};
+
+/** The WriteOrbital class writes an orbital at
+    user defined grid points to the standard output or to a separate file.*/
+class WriteOrbital: public WriteGrid {
+  protected:
+    Ref<OneBodyWavefunction> obwfn_;
+    int orbital_;
+
+    void label(char* buffer);
+    Ref<Molecule> get_molecule();
+    double calculate_value(SCVector3 point);
+    void initialize();
+  public:
+    /** The KeyVal constructor
+
+        <dl>
+
+        <dt><tt>obwfn</tt></dt><dd> The OneBodyWavefunction whose orbitals are calculated.
+        There is no default for this option.</dd>
+
+        <dt><tt>orbital</tt></dt><dd> Index of the orbital to be plotted. There is no default.</dd>
+
+        </dl> */
+    WriteOrbital(const Ref<KeyVal> &);
 };
 
 }

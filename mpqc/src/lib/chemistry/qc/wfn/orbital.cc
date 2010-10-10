@@ -37,8 +37,25 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/orbital.h>
+#include <util/class/scexception.h>
+#include <sstream>
 
 using namespace sc;
+
+namespace {
+  /** a simple function calculating the number of digits in an integer in base 10
+   */
+  int IntDigitNum(int II)
+  {
+    int NumDigit = 0;
+    while(II > 0)
+    {
+      NumDigit += 1;
+      II /= 10;
+    }
+    return NumDigit;
+  }
+}
 
 static ClassDesc Orbital_cd(
   typeid(Orbital),"Orbital",1,"public Volume",
@@ -58,9 +75,7 @@ Orbital::Orbital(const Ref<OneBodyWavefunction>& wfn, int orbital):
 {
 }
 
-Orbital::~Orbital()
-{
-}
+
 
 void
 Orbital::compute()
@@ -103,6 +118,58 @@ Orbital::boundingbox(double valuemin,
       p2[i] = p2[i] + 3.0;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// WriteOrbital
+
+static ClassDesc WriteOrbital_cd(
+    typeid(WriteOrbital),"WriteOrbital",1,
+    "public WriteGrid", 0, create<WriteOrbital>, 0);
+
+WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):  WriteGrid(keyval)
+{
+  obwfn_ << keyval->describedclassvalue("obwfn");
+  if (obwfn_.null()) {
+      InputError ex("valid \"obwfn\" missing",
+                    __FILE__, __LINE__, "obwfn", "(null)", class_desc());
+      try {
+          ex.elaborate()
+              << "WriteOrbital KeyVal ctor requires"
+              << " that \"obwfn\" specifies an object"
+              << " of type Wavefunction" << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
+  orbital_ = keyval->intvalue("orbital", KeyValValueint(-1));
+  if (orbital_ < 0 || orbital_ >= obwfn_->oso_dimension().n())
+  {
+    char buff[IntDigitNum(orbital_)];
+    sprintf(buff, "%d", orbital_);
+    throw InputError("invalid value", __FILE__, __LINE__, "orbital", buff, class_desc());
+  }
+}
+
+void
+WriteOrbital::label(char* buffer)
+{
+  sprintf(buffer, "WriteOrbital");
+}
+
+Ref<Molecule>
+WriteOrbital::get_molecule()
+{
+  return obwfn_->molecule();
+}
+
+double
+WriteOrbital::calculate_value(SCVector3 point)
+{
+	return obwfn_->orbital(point, orbital_);
+}
+
+void initialize(){}
 
 /////////////////////////////////////////////////////////////////////////////
 

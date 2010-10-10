@@ -244,9 +244,13 @@ void ConsumableResources::release_memory(size_t value) {
   if (value + resource <= resource.max_value())
     resource += value;
   else
+#if !IGNORE_RESOURCE_OVERUSE
     throw ProgrammingError("too much memory released -- some memory consumption must be untracked",
                            __FILE__, __LINE__,
                            class_desc());
+#else
+    resource += value;
+#endif
 }
 void ConsumableResources::release_disk(size_t value) {
   rsize& resource = disk_.second;

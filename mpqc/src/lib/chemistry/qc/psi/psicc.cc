@@ -206,7 +206,7 @@ namespace sc {
     }
 
     // Grab T matrices
-    const char* kwd = (spin2 != AlphaBeta && reftype != PsiSCF::rhf) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
+    const char* kwd = (spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
     T2_da4_[spin2] = T2_distarray4(spin2, kwd);
 
     return T2_da4_[spin2];

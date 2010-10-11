@@ -76,6 +76,7 @@ class WriteOrbital: public WriteGrid {
 
         </dl> */
     WriteOrbital(const Ref<KeyVal> &);
+    ~WriteOrbital();
 };
 
 }

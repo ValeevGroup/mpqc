@@ -75,7 +75,7 @@ Orbital::Orbital(const Ref<OneBodyWavefunction>& wfn, int orbital):
 {
 }
 
-
+Orbital::~Orbital() {}
 
 void
 Orbital::compute()
@@ -151,6 +151,8 @@ WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):  WriteGrid(keyval)
   }
 }
 
+WriteOrbital::~WriteOrbital() {}
+
 void
 WriteOrbital::label(char* buffer)
 {
@@ -169,7 +171,8 @@ WriteOrbital::calculate_value(SCVector3 point)
 	return obwfn_->orbital(point, orbital_);
 }
 
-void initialize(){}
+void
+WriteOrbital::initialize() {}
 
 /////////////////////////////////////////////////////////////////////////////
 

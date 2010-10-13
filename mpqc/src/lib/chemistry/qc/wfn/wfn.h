@@ -297,6 +297,11 @@ class Wavefunction: public MolecularEnergy {
     void obsolete();
 
     void print(std::ostream& = ExEnv::out0()) const;
+
+
+    /** output orbitals to some files to facilitate plotting, with the help of the WriteOrbital class.
+     */
+    void writeorbitals();
 };
 
 }

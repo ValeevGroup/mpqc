@@ -33,6 +33,8 @@
 #endif
 
 #include <chemistry/qc/wfn/wfn.h>
+#include <math/mmisc/grid.h>
+
 
 namespace sc {
 
@@ -48,6 +50,22 @@ class OneBodyWavefunction: public Wavefunction {
     double *occupations_;
     double *alpha_occupations_;
     double *beta_occupations_;
+    //the following variables are for writing out orbitals to a grid
+    /** 'write_to_grid_' decides whether to output orbitals to a grid file or not. default: false
+    *  only if the above 'write_to_gird_' is set to true, the following variables are to be used.
+    */
+    bool write_to_grid_;
+    /** the name of the file which contains grid points for orbitals, in a certain format, such as gaussian cube
+     default: 'GridFile'*/
+    std::string grid_filename_; //
+    /** the format for grid points, default: "gaussian_cube" */
+    std::string grid_format_;
+    /** the first and last orbitals for 'grid' since often we only need to a small number of orbitals for gird; defaults to all
+     default: 0, 0*/
+    int first_grid_orb_;
+    int last_grid_orb_;
+    Ref<sc::Grid> grid_;
+
 
     void init_sym_info();
 
@@ -179,6 +197,10 @@ class OneBodyWavefunction: public Wavefunction {
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 
     void print(std::ostream&o=ExEnv::out0()) const;
+
+    /** this function write orbitals from 'firstorb' to 'lastorb' to a file 'gridfile' in the format of 'formatt' on a grid defined by 'grid' */
+    void writegrids(Ref<sc::Grid> &grid, int firstorb, int lastorb, std::string formatt,
+                    std::string gridfile);
 };
 
 

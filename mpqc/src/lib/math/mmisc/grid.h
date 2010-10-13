@@ -80,6 +80,14 @@ class Grid: public DescribedClass {
     Grid(const Ref<KeyVal> &);
 };
 
+
+
+
+
+
+
+
+
 /** The abstract WriteGrid class provides an interface for writing the value
     of a scalar function evaluated at a given set of grid points to a file. */
 class WriteGrid: public Runnable {
@@ -130,6 +138,74 @@ class WriteGrid: public Runnable {
         </dd>
         </dl> */
     WriteGrid(const Ref<KeyVal> &);
+    /// Writes the grid data.
+    void run();
+};
+
+
+
+
+
+
+
+
+/**
+  WriteGrids is written to facilitate outputing many orbitals to one file, via modifying the class WriteGrid.
+  Eventually the writing is realized in the inherited class WriteOrbitals.
+  Basically, we add a pair of parameters, which (when used in writing orbitals) determining the first and last orbitals to be output.
+ */
+class WriteGrids: public Runnable {
+  private:
+    /** for now, only Gaussian cube file format is implemented; other formats can be done similarly when necessary.
+     */
+    void wf_gaussian_cube(std::ostream &out);
+  protected:
+    std::string filename_;
+    Ref<Grid> grid_;
+    std::string format_;
+    int first_;
+    int last_;
+
+
+    void (WriteGrids::*write_format_)(std::ostream &out);
+    /** Prepares some pre-caculated values before the repetitive grid calculations
+    are perfomed.*/
+    virtual void initialize() = 0;
+    /** A label that identifies the scalar function evaluated at the grid
+        points, is written to the buffer argument. The classname, concatenated
+        with some important properties should be sufficient. No whitespace
+        allowed, length of the string is limited to 256 characters. */
+    virtual void label(char* buffer) = 0;
+    /// Returns the molecule around which the grid values are calculated
+    virtual Ref<Molecule> get_molecule() = 0;
+    /// Returns the value of the scalar function at the given coordinate.
+    virtual double calculate_value(int orbitalnum, SCVector3 point) = 0;
+  public:
+    /** The KeyVal constructor.
+        <dl>
+
+        <dt><tt>grid</tt></dt><sdd> A Grid that specifies the grid points at
+        which the scalar function should be calculated.</dd>
+
+        <dt><tt>filename</tt></dt><dd> Specifies the filename of the file to
+        write the output to. If "-" is given, the output will be written to the
+        standard output. The default is "-".</dd>
+
+        <dt><tt>format</tt></dt><dd> The format in which the grid data is to be
+        written. Currently only guassian_cube format has been implemented:
+          <ul>
+            <li><tt>mpqc</tt>: A very comprehensive format.</li>
+            <li><tt>gaussian_cube</tt>: The format used by Gaussian.</li>
+            <li><tt>vtk2</tt>: This format is usefull for vizualizing the grid
+            data with the vtk library. (http://www.vtk.org/)</li>
+            <li><tt>mpqc_raw</tt>: A very simple format that contains both the
+            coordinates of the grid points and the value of the scalar function
+            at each point.</li>
+          </ul>
+        </dd>
+        </dl> */
+    WriteGrids(const Ref<KeyVal> &);
+    WriteGrids(const Ref<sc::Grid> & grid, int first, int last, std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
 };

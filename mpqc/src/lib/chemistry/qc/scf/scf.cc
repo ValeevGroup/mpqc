@@ -335,6 +335,10 @@ SCF::compute()
 
     set_actual_hessian_accuracy(delta/grad_to_val_acc/hess_to_grad_acc);
   }
+  if(write_to_grid_)  // this part is newly added to minimize the effort to write grid
+  {
+      this->writegrids(grid_, first_grid_orb_, last_grid_orb_, grid_format_, grid_filename_);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

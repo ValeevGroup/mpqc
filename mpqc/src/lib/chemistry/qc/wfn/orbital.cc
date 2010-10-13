@@ -119,6 +119,10 @@ Orbital::boundingbox(double valuemin,
     }
 }
 
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 // WriteOrbital
 
@@ -173,6 +177,118 @@ WriteOrbital::calculate_value(SCVector3 point)
 
 void
 WriteOrbital::initialize() {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// WriteOrbitals
+
+static ClassDesc WriteOrbitals_cd(
+    typeid(WriteOrbitals),"WriteOrbitals",1,
+    "public WriteGrids", 0, create<WriteOrbitals>, 0);
+
+
+
+WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteGrids(keyval)
+{
+  obwfn_ << keyval->describedclassvalue("obwfn");
+  if (obwfn_.null()) {
+      InputError ex("valid \"obwfn\" missing",
+                    __FILE__, __LINE__, "obwfn", "(null)", class_desc());
+      try {
+          ex.elaborate()
+              << "WriteOrbitals KeyVal ctor requires"
+              << " that \"obwfn\" specifies an object"
+              << " of type Wavefunction" << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
+  if ( (first_ < 0 || first_ >= obwfn_->oso_dimension().n()))
+  {
+    char buff[IntDigitNum(first_)];
+    sprintf(buff, "%d", first_);
+    throw InputError("invalid value", __FILE__, __LINE__, "first orbital", buff, class_desc());
+  }
+  if (last_ < 0 || last_ >= obwfn_->oso_dimension().n())
+  {
+    char buff[IntDigitNum(last_)];
+    sprintf(buff, "%d", last_);
+    throw InputError("invalid value", __FILE__, __LINE__, "last orbital", buff, class_desc());
+  }
+  if(last_ == 0) // we use this to indicate writing all orbitals
+  {
+      last_ = obwfn_->oso_dimension().n();
+  }
+}
+
+
+
+
+WriteOrbitals::WriteOrbitals(const Ref<OneBodyWavefunction> & onebodywfn, const Ref<sc::Grid> & grid, int first,
+                             int last, std::string gridformat, std::string gridfile)
+                             :WriteGrids(grid, first, last, gridformat, gridfile)
+{
+  obwfn_ = onebodywfn;
+  if ( (first_ < 1 || first_ > obwfn_->oso_dimension().n())) // we start numbering orbitals from '1' instead of '0'
+  {
+    char buff[IntDigitNum(first_)];
+    sprintf(buff, "%d", first_);
+    throw InputError("invalid value", __FILE__, __LINE__, "first orbital", buff, class_desc());
+  }
+  if (last_ < 0 || last_ > obwfn_->oso_dimension().n() || (last_ < first_ && last_ != 0)) // last_ == 0 indicates outputing all orbitals
+  {
+    char buff[IntDigitNum(last_)];
+    sprintf(buff, "%d", last_);
+    throw InputError("invalid value", __FILE__, __LINE__, "last orbital", buff, class_desc());
+  }
+  if(last_ == 0) // we use this to indicate writing all orbitals
+  {
+      last_ = obwfn_->oso_dimension().n();
+  }
+}
+
+
+
+
+WriteOrbitals::~WriteOrbitals() {}
+
+
+void
+WriteOrbitals::label(char* buffer)
+{
+  sprintf(buffer, "WriteOrbitals");
+}
+
+
+Ref<Molecule>
+WriteOrbitals::get_molecule()
+{
+  return obwfn_->molecule();
+}
+
+
+double
+WriteOrbitals::calculate_value(int orbitalnum, SCVector3 point)
+{
+    return obwfn_->orbital(point, orbitalnum);
+}
+
+void
+WriteOrbitals::initialize() {}
 
 /////////////////////////////////////////////////////////////////////////////
 

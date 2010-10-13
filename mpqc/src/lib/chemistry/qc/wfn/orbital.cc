@@ -238,29 +238,6 @@ WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteGrids(keyval)
 
 
 
-WriteOrbitals::WriteOrbitals(const Ref<OneBodyWavefunction> & onebodywfn, const Ref<sc::Grid> & grid, int first,
-                             int last, std::string gridformat, std::string gridfile)
-                             :WriteGrids(grid, first, last, gridformat, gridfile)
-{
-  obwfn_ = onebodywfn;
-  if ( (first_ < 1 || first_ > obwfn_->oso_dimension().n())) // we start numbering orbitals from '1' instead of '0'
-  {
-    char buff[IntDigitNum(first_)];
-    sprintf(buff, "%d", first_);
-    throw InputError("invalid value", __FILE__, __LINE__, "first orbital", buff, class_desc());
-  }
-  if (last_ < 0 || last_ > obwfn_->oso_dimension().n() || (last_ < first_ && last_ != 0)) // last_ == 0 indicates outputing all orbitals
-  {
-    char buff[IntDigitNum(last_)];
-    sprintf(buff, "%d", last_);
-    throw InputError("invalid value", __FILE__, __LINE__, "last orbital", buff, class_desc());
-  }
-  if(last_ == 0) // we use this to indicate writing all orbitals
-  {
-      last_ = obwfn_->oso_dimension().n();
-  }
-}
-
 
 
 

@@ -446,28 +446,7 @@ WriteGrids::WriteGrids(const Ref<KeyVal> &keyval)
     }
 }
 
-WriteGrids::WriteGrids(const Ref<sc::Grid> & grid, int first, int last, std::string gridformat, std::string gridfile)
-{
-  grid_ = grid;
-  filename_ = gridfile;
-  first_ = first;
-  last_ = last;
-  format_ = gridformat;
-  if (format_ != "gaussian_cube") {
-      InputError ex("valid \"format\" missing",
-                    __FILE__, __LINE__, "format", "(null)", class_desc());
-      try {
-          ex.elaborate()
-              << "WriteGrids KeyVal ctor requires"
-              << " that \"format\" is \"gaussian_cube\". "
-              << "The requested format was \""
-              << format_ << "\"." << std::endl;
-        }
-      catch (...) {}
-      throw ex;
-    }
-  else write_format_ = &WriteGrids::wf_gaussian_cube;
-}
+
 
 void
 WriteGrids::run()

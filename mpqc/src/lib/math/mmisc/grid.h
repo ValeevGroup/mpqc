@@ -64,13 +64,13 @@ class Grid: public DescribedClass {
         [0 0 0].</dd>
 
         <dt><tt>axisx</tt></dt><dd> The direction of the first axis of the grid.
-        The defuault is [0 0 0].</dd>
+        The default is [0 0 0].</dd>
 
         <dt><tt>axisx</tt></dt><dd> The direction of the second axis of the
-        grid. The defuault is [0 0 0].</dd>
+        grid. The default is [0 0 0].</dd>
 
         <dt><tt>axisx</tt></dt><dd> The direction of the third axis of the
-        grid. The defuault is [0 0 0].</dd>
+        grid. The default is [0 0 0].</dd>
 
         <dt><tt>unit</tt></dt><dd> The unit in which the parameters are given.
         Notice that this does not determine the unit used in the output file.

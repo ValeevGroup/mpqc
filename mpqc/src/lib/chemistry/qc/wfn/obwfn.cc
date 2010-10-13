@@ -41,8 +41,6 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/wfn/orbital.h>
-#include <math/mmisc/grid.h>
 
 
 using namespace std;
@@ -80,31 +78,7 @@ OneBodyWavefunction::OneBodyWavefunction(const Ref<KeyVal>&keyval):
     oso_eigenvectors_.set_desired_accuracy(DBL_EPSILON);
     eigenvalues_.set_desired_accuracy(DBL_EPSILON);
   }
-  // the following constructs member variables related to grid
-  write_to_grid_ = keyval->booleanvalue("write_grid", KeyValValueboolean(false));
-  //if write_to_grid_, then read in the related keywords
-  if(write_to_grid_)
-  {
-      grid_ << keyval->describedclassvalue("grid");
-      if (grid_.null())
-      {
-          InputError ex("valid \"grid\" missing",
-                        __FILE__, __LINE__, "grid", "(null)", class_desc());
-          try {
-              ex.elaborate()
-                  << "Here OneBodyWavefunction KeyVal ctor requires"
-                  << " that \"grid\" specifies an object"
-                  << " of type sc::Grid" << std::endl;
-            }
-          catch (...) {}
-          throw ex;
-        }
-      grid_filename_ = keyval->stringvalue("gridfile", KeyValValuestring("Grid"));
-      /** Notice that we start numbering orbitals from '1' instead of '0' */
-      first_grid_orb_ = keyval->intvalue("first_grid_orbital", KeyValValueint(1));
-      last_grid_orb_ = keyval->intvalue("last_grid_orbital", KeyValValueint(0));
-      grid_format_ = keyval->stringvalue("grid_format", KeyValValuestring("gaussian_cube"));
-  }
+
 }
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
@@ -437,8 +411,21 @@ OneBodyWavefunction::hcore_guess(RefDiagSCMatrix &val)
 double
 OneBodyWavefunction::orbital(const SCVector3& r, int iorb)
 {
-  return Wavefunction::orbital(r,iorb,eigenvectors());
+  Ref<PetiteList> pl = integral()->petite_list();
+  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
+  return Wavefunction::orbital(r,iorb, ao_orbital_coeff);
 }
+
+//RefSCMatrix orbitals(const std::vector<SCVector3> & Points, const std::vector<int> & Orbs)
+//{
+//  Ref<PetiteList> pl = integral()->petite_list();
+//  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
+//  RefSCMatrix GridPointVals(Points.size(), Orb);
+//  return Wavefunction::orbital(r,iorb, ao_orbital_coeff);
+//}
+
+
+
 
 // Function for returning an orbital value at a point
 double
@@ -662,13 +649,6 @@ OneBodyWavefunction::set_desired_value_accuracy(double eps)
   eigenvalues_.set_desired_accuracy(eps);
 }
 
-void
-OneBodyWavefunction::writegrids(Ref<sc::Grid> & grid, int firstorb, int lastorb,
-                                std::string formatt, std::string gridfile)
-{
-    sc::WriteOrbitals wts(this, grid, firstorb, lastorb, formatt, gridfile);
-    wts.run();  // generates the grid file
-}
 
 
 /////////////////////////////////////////////////////////////////////////////

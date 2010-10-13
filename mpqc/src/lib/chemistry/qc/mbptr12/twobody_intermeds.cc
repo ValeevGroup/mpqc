@@ -671,11 +671,17 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
       Ref<TwoBodyMOIntsTransform> tform =
           moints_runtime4()->get(tforms_f12_xmyn[t]);
       tform->compute();
+      // at this point V(diag) is only spatial integrals
       V.push_back(
                   extract(
                           tform->ints_acc(),
                           tform->intdescr()->intset(
                                                     corrfactor()->tbint_type_f12eri())));
+
+      // may need to antisymmetrize
+      if (antisymmetrize) {
+          sc::antisymmetrize(V.back());
+      }
     }
   }
   if (debug_ >= DefaultPrintThresholds::O4) {
@@ -710,7 +716,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
   contract_tbint_tensor<true, false> (V, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), -1.0,
                                         xspace1, xspace2, orbs1, orbs2, p1, p2,
-                                        orbs1, orbs2, spincase2 != AlphaBeta,
+                                        orbs1, orbs2, antisymmetrize,
                                         tforms_f12, tforms);
 
   if (debug_ >= DefaultPrintThresholds::O4) {

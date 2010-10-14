@@ -59,6 +59,10 @@ namespace sc {
       RefSymmSCMatrix B_[NSpinCases2];
       bool A_computed_;
       RefSCMatrix A_[NSpinCases2];
+      bool T1_cc_computed_;
+      RefSCMatrix T1_cc_[NSpinCases1];
+      bool T2_cc_computed_;
+      Ref<DistArray4> T2_cc_[NSpinCases2];
     public:
       typedef enum { V=0, X=1, B=2, A=3 } IntermediateType;
       R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
@@ -73,6 +77,8 @@ namespace sc {
       bool X_computed() const;
       bool B_computed() const;
       bool A_computed() const;
+      bool T1_cc_computed() const;
+      bool T2_cc_computed() const;
       const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
       void assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V);
       const RefSymmSCMatrix& get_X(const SpinCase2 &spincase2) const;
@@ -81,6 +87,10 @@ namespace sc {
       void assign_B(const SpinCase2 &spincase2, const RefSymmSCMatrix& B);
       const RefSCMatrix& get_A(const SpinCase2 &spincase2) const;
       void assign_A(const SpinCase2 &spincase2, const RefSCMatrix& A);
+      const RefSCMatrix& get_T1_cc(const SpinCase1 &spincase1) const;
+      void assign_T1_cc(const SpinCase1 &spincase1, const RefSCMatrix& T1_cc);
+      const Ref<DistArray4>& get_T2_cc(const SpinCase2 &spincase2) const;
+      void assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc);
   };
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
@@ -261,6 +271,11 @@ class MP2R12Energy_Diag : public MP2R12Energy
                           std::vector<Ref<DistArray4> >& Y_ints,
                           std::vector<Ref<DistArray4> >& F_ints,
                           double* P);
+    void contract_VT1(const Ref<DistArray4>& V,
+                         const int b1b2_k1k2,  const bool swap_e12_V,
+                         const double* const T1_array,
+                         const int nv, const bool VT1_offset,
+                         double* const VT1);
   public:
     MP2R12Energy_Diag(StateIn&);
     MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);

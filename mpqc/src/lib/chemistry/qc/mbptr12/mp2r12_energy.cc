@@ -74,6 +74,8 @@ R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
   X_computed_=false;
   B_computed_=false;
   A_computed_=false;
+  T1_cc_computed_=false;
+  T2_cc_computed_=false;
 }
 
 R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
@@ -134,6 +136,12 @@ bool R12EnergyIntermediates::A_computed() const {
   return(A_computed_);
 }
 
+bool R12EnergyIntermediates::T1_cc_computed() const {
+  return(T1_cc_computed_);
+}
+bool R12EnergyIntermediates::T2_cc_computed() const {
+  return(T2_cc_computed_);
+}
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
   return(V_[spincase2]);
 }
@@ -168,6 +176,24 @@ const RefSCMatrix& R12EnergyIntermediates::get_A(const SpinCase2 &spincase2) con
 void R12EnergyIntermediates::assign_A(const SpinCase2 &spincase2, const RefSCMatrix& A) {
   A_[spincase2]=A;
   A_computed_ = true;
+}
+
+const RefSCMatrix& R12EnergyIntermediates::get_T1_cc(const SpinCase1 &spincase1) const {
+  return(T1_cc_[spincase1]);
+}
+
+void R12EnergyIntermediates::assign_T1_cc(const SpinCase1 &spincase1, const RefSCMatrix& T1_cc) {
+  T1_cc_[spincase1]=T1_cc;
+  T1_cc_computed_ = true;
+}
+
+const Ref<DistArray4>& R12EnergyIntermediates::get_T2_cc(const SpinCase2 &spincase2) const {
+  return(T2_cc_[spincase2]);
+}
+
+void R12EnergyIntermediates::assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc) {
+  T2_cc_[spincase2]=T2_cc;
+  T2_cc_computed_ = true;
 }
 
 
@@ -879,7 +905,7 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12int
                                              bool use_jinmei_version) {
   Ref<MP2R12Energy> mp2r12energy;
   if(use_jinmei_version){
-    mp2r12energy = new MP2R12Energy_SpinOrbital_new(r12intermediates,debug);
+    mp2r12energy = new MP2R12Energy_Diag(r12intermediates,debug);
   }
   else {
     mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);

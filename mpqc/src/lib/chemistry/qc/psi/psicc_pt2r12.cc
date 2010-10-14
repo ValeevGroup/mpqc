@@ -174,7 +174,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
 
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
-  const int nspincases2 = r12eval()->nspincases2();
+  const int nspincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   for (int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
@@ -194,9 +194,12 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
     assert(Vpq_vec.size() == 1);
     Ref<DistArray4> Vpq = Vpq_vec[0];
+#define SKIP_R12INTEVAL_COMPUTE 0
+#if !SKIP_R12INTEVAL_COMPUTE
     Vij[s] = r12eval()->V(spincase2);
     X[s] = r12eval()->X(spincase2);
     B[s] = r12eval()->B(spincase2);
+#endif
 
     // extract Vab and Via from Vpq
     map(Vpq, x1, x2, p1, p2, Vab[s], x1, x2, v1, v2);
@@ -379,7 +382,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     }
   }
   // Make H1_R0[AlphaAlpha] if this is a closed-shell case (it isn't computed then)
-  if (nspincases2 == 1) {
+  if (nspincases2 == 2) {
     H1_R0[AlphaAlpha] = r12eval()->V(AlphaAlpha).clone();
     antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval()->xspace(Alpha),
                    r12eval()->occ_act(Alpha));
@@ -396,6 +399,20 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     if (r12eval()->dim_oo(spincase2i).n() == 0)
       continue;
     r12intermediates->assign_V(spincase2i,H1_R0[spincase2i]);
+  }
+
+  // Pass T1 to r12intermediates
+  for(int s=0; s<NSpinCases1; s++) {
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+    r12intermediates->assign_T1_cc(spin,T1[spin]);
+  }
+  //_print(AlphaBeta, T2[0], prepend_spincase(AlphaBeta,"CCSD T2[0] amplitudes:").c_str());
+  // Pass T2 to r12intermediates
+  for(int s=0; s<nspincases2; ++s) {
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
+    r12intermediates->assign_T2_cc(spincase2,T2[s]);
   }
 
   const bool new_energy=(diag==true) ? true : false;

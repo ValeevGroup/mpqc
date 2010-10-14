@@ -1151,6 +1151,8 @@ sc::A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval) {
     A.push_back(extract(tform->ints_acc(),
                         tform->intdescr()->intset(r12eval->corrfactor()->tbint_type_f12()),
                         pfac));
+    // transform computes spatial integrals -- antisymmetrize if necessary
+    if (spincase2 != AlphaBeta) sc::antisymmetrize(A.back());
   }
 
   if (part1_equiv_part2) {

@@ -499,11 +499,14 @@ namespace sc {
     RefSCDimension rowdim = new SCDimension(nij);
     RefSCDimension coldim = new SCDimension(nab);
     Ref<DistArray4> T;
+    // TODO make this work for non-disk-based storage
     {
       char* psio_filename;
       psio.get_volpath(CC_TAMPS, 0, &psio_filename);
-      char* da4_filename = new char[strlen(psio_filename) + 12];
-      sprintf(da4_filename, "%s.distarray4", psio_filename);
+      char* da4_filename = new char[strlen(psio_filename) + 15];
+      const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
+      sprintf(da4_filename, "%s.distarray4_%s",
+              psio_filename, spin12_label);
       T = new DistArray4_Node0File(da4_filename, 1, nocc1_act, nocc2_act,
                                    nuocc1_act, nuocc2_act);
       delete[] da4_filename;

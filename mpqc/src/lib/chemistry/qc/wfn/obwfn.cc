@@ -416,13 +416,27 @@ OneBodyWavefunction::orbital(const SCVector3& r, int iorb)
   return Wavefunction::orbital(r,iorb, ao_orbital_coeff);
 }
 
-//RefSCMatrix orbitals(const std::vector<SCVector3> & Points, const std::vector<int> & Orbs)
-//{
-//  Ref<PetiteList> pl = integral()->petite_list();
-//  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
-//  RefSCMatrix GridPointVals(Points.size(), Orb);
-//  return Wavefunction::orbital(r,iorb, ao_orbital_coeff);
-//}
+void OneBodyWavefunction::orbitals(const std::vector<int> & Orbs, const std::vector<SCVector3> & Points,
+                                   double * & Vals)
+{
+  Ref<PetiteList> pl = integral()->petite_list();
+  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
+  const int numpoints = Points.size();
+  const int numorbs = Orbs.size();
+  {
+      int i1, i2;
+      for(i1 = 0; i1 < numpoints; ++i1)
+      {
+          for(i2 = 0; i2 < numorbs; ++i2)
+          {
+              static int offse = 0;
+              Vals[offse] = Wavefunction::orbital(Points[i1], Orbs[i2], ao_orbital_coeff);
+              offse++;
+          }
+      }
+  }
+  return;
+}
 
 
 

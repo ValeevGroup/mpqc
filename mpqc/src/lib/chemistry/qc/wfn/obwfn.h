@@ -179,8 +179,8 @@ class OneBodyWavefunction: public Wavefunction {
     
     double orbital(const SCVector3& r, int iorb);
 
-    //Function returns a matrix of values of MOs at certain points
-  //  RefSCMatrix orbitals(const std::vector<SCVector3> & , const std::vector<int> &);
+    //Function returns values of MOs at certain points and store them in an array Vals
+    void orbitals(const std::vector<int> & Orbs, const std::vector<SCVector3> & Points, double * & Vals);
 
 
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);

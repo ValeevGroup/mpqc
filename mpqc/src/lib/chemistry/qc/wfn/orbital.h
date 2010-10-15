@@ -95,6 +95,7 @@ class WriteOrbitals: public WriteGrids {
     void label(char* buffer);
     Ref<Molecule> get_molecule();
     double calculate_value(int orbitalnum, SCVector3 point);
+    void  calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals);
     void initialize();
   public:
     WriteOrbitals(const Ref<KeyVal> &);

@@ -265,6 +265,12 @@ WriteOrbitals::calculate_value(int orbitalnum, SCVector3 point)
 }
 
 void
+WriteOrbitals::calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals)
+{
+    return obwfn_->orbitals(Orbs, Points, Vals);
+}
+
+void
 WriteOrbitals::initialize() {}
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,6 +27,7 @@
 #include <stdexcept>
 
 #include <math/scmat/vector3.h>
+#include <math/scmat/matrix.h>
 #include <math/mmisc/grid.h>
 #include <util/class/scexception.h>
 
@@ -535,7 +536,13 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
   SCVector3 pointz;
 
   out << std::scientific << std::uppercase << std::setprecision(5);
+  int numpoints = grid_->numx * grid_->numy * grid_->numz;
+  int numorbs = last_ - first_ + 1;
+  int totalnum = numorbs * numpoints;
 
+  std::vector<int> Orbs(numorbs);
+  std::vector<SCVector3> Points(numpoints);
+  double * Vals = new double [totalnum];
   for (int i=0; i<grid_->numx; i++)
   {
       pointx = grid_->origin + i * grid_->axisx;
@@ -544,18 +551,32 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
           pointy = pointx + j * grid_->axisy;
           for (int k=0; k<grid_->numz; k++)
           {
+              static int countpoint = 0;
               pointz = pointy + k * grid_->axisz;
-              for(int orbitalnum = first_; orbitalnum <= last_; orbitalnum++)
-              {
-                  static int countt = 0;
-                  if (countt % 6 == 0) out << std::endl;
-                  out << setw(13)
-                      << calculate_value(orbitalnum-1, pointz*to_atomic);
-                  countt ++;
-              }
+              Points[countpoint] = pointz;
+              countpoint++;
           }
       }
   }
+
+  for(int orbitalnum = first_; orbitalnum <= last_; orbitalnum++)
+  {
+      static int countt = 0;
+      Orbs[countt] = orbitalnum-1; // for convience, we number first_ and last_ starting with '1';
+      countt++;                    // but to be consistent with c++, we have decrease it by 1 here if
+  }                                // we don't want to change in other functions
+
+  this->calculate_values(Orbs, Points, Vals);
+  {
+      int val = 0;
+      for (val = 0; val < totalnum; ++val)
+      {
+          if(val%6 == 0) out << std::endl;
+          out << setw(13) << Vals[val];
+      }
+  }
+
+  delete Vals;
 }
 
 

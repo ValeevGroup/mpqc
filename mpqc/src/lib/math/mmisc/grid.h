@@ -180,6 +180,7 @@ class WriteGrids: public Runnable {
     virtual Ref<Molecule> get_molecule() = 0;
     /// Returns the value of the scalar function at the given coordinate.
     virtual double calculate_value(int orbitalnum, SCVector3 point) = 0;
+    virtual void calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals)=0;
   public:
     /** The KeyVal constructor.
         <dl>

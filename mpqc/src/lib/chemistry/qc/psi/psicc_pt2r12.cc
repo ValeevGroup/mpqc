@@ -361,7 +361,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
         else {
           axpy(VT1, 1.0, HT);
           // Vai^t . T1
-          contract3(Vai[s],T1[spin2].t(),VT1);
+          contract3(Vai[s],T1[spin1].t(),VT1);
           if (debug() >= DefaultPrintThresholds::allO4)
             _print(spincase2, VT1, prepend_spincase(spincase2,"<R|(H*T1)|0>").c_str());
           axpy(VT1, 1.0, HT);

@@ -189,8 +189,8 @@ class WriteGrids: public Runnable {
         which the scalar function should be calculated.</dd>
 
         <dt><tt>filename</tt></dt><dd> Specifies the filename of the file to
-        write the output to. If "-" is given, the output will be written to the
-        standard output. The default is "-".</dd>
+        write the output to. If it is not given, the output will be written to the
+        standard output. The default is "Grid".</dd>
 
         <dt><tt>format</tt></dt><dd> The format in which the grid data is to be
         written. Currently only guassian_cube format has been implemented:
@@ -206,7 +206,6 @@ class WriteGrids: public Runnable {
         </dd>
         </dl> */
     WriteGrids(const Ref<KeyVal> &);
-    WriteGrids(const Ref<sc::Grid> & grid, int first, int last, std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
 };

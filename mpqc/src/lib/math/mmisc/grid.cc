@@ -483,6 +483,8 @@ WriteGrids::run()
 
 
 
+
+
 void
 WriteGrids::wf_gaussian_cube(std::ostream &out) {
   double to_atomic = grid_->unit->to_atomic_units();
@@ -499,10 +501,20 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
   out.fill(' ');
   out << std::fixed << std::setprecision(6);
 
-  out << std::setw( 4) << (-1 * mol->natom())
-      << std::setw(12) << grid_->origin[0]*to_atomic*to_angstrom
-      << std::setw(12) << grid_->origin[1]*to_atomic*to_angstrom
-      << std::setw(12) << grid_->origin[2]*to_atomic*to_angstrom << std::endl;
+  if(first_ != last_) // multiple orbitals; depending on the number of orbitals, the gaussian cube format is different
+  {
+      out << std::setw( 4) << (-1 * mol->natom())
+          << std::setw(12) << grid_->origin[0]*to_atomic*to_angstrom
+          << std::setw(12) << grid_->origin[1]*to_atomic*to_angstrom
+          << std::setw(12) << grid_->origin[2]*to_atomic*to_angstrom << std::endl;
+  }
+  else // only one orbital
+  {
+      out << std::setw( 4) << mol->natom()
+          << std::setw(12) << grid_->origin[0]*to_atomic*to_angstrom
+          << std::setw(12) << grid_->origin[1]*to_atomic*to_angstrom
+          << std::setw(12) << grid_->origin[2]*to_atomic*to_angstrom << std::endl;
+  }
   out << std::setw( 4) << grid_->numx
       << std::setw(12) << grid_->axisx[0]*to_atomic*to_angstrom
       << std::setw(12) << grid_->axisx[1]*to_atomic*to_angstrom
@@ -526,11 +538,14 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
           << std::setw(12) << mol->r(atom, 2)*to_angstrom;
   }
   out << std::endl;
-  out << std::setw(4) << last_;
-  for (int var = first_; var <= last_; ++var) {
-      out << std::setw(6) << var;
+  if(first_ != last_)
+  {
+      out << std::setw(4) << last_ - first_ + 1; // give the number of orbitals
+      for (int var = first_; var <= last_; ++var)
+      {
+          out << std::setw(6) << var;
+      }
   }
-
   SCVector3 pointx;
   SCVector3 pointy;
   SCVector3 pointz;

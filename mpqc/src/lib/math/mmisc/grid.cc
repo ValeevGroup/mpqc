@@ -537,9 +537,9 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
           << std::setw(12) << mol->r(atom, 1)*to_angstrom
           << std::setw(12) << mol->r(atom, 2)*to_angstrom;
   }
-  out << std::endl;
   if(first_ != last_)
   {
+      out << std::endl;
       out << std::setw(4) << last_ - first_ + 1; // give the number of orbitals
       for (int var = first_; var <= last_; ++var)
       {

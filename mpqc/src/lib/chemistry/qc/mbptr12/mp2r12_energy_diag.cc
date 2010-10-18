@@ -2115,10 +2115,12 @@ void MP2R12Energy_Diag::compute_ef12() {
             Hij_pair_energy =  2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij])
                                    + C_1*C_1 * (Bij_ij[ij] - Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ij[ij] - Xij_ji[ij]));
 
-            if (this->r12eval()->coupling() == true
-                || this->r12eval()->ebc() == false) {
+            if (this->r12eval()->coupling() == true)
                 Hij_pair_energy += 2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
-            }
+
+            // For coupled cluster V coupling, 1/2 need to be multiplied
+            if ( this->r12eval()->ebc() == false)
+                Hij_pair_energy += C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
             // Get indices for the lower triangle matrix
             // index = nrow*(nrow-1) + ncolumn

@@ -2415,7 +2415,6 @@ void MP2R12Energy_Diag::compute_ef12() {
             const int ij = i1 * no2 + i2;
             const int i21 = i2 * (i2-1)/2 + i1;
             // 2.0 from Hylleraas functional
-            // TODO: figure out why is there no factor of 0.5 in front of VT2ij_ij
             const double Hij_pair_energy = 2.0*C_1*(0.5*VT2ij_ij[ij] + VT1ij_ij[ij]);
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }

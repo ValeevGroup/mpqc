@@ -78,7 +78,7 @@ class Int_Batch {
     // Initialize with a buffer size s and a basis set b on which to compute ints
     Int_Batch(int s, const Ref<TwoBodyInt>& tbint);
     ~Int_Batch();
-    int next();
+    bool next();
 
     const std::vector<ShellDesc>& shells_in_batch() {
       return shells_in_batch_;
@@ -115,11 +115,13 @@ Int_Batch::Int_Batch(int s, const Ref<TwoBodyInt>& t) :
   s_[3] = 0;
 }
 
+
+
 Int_Batch::~Int_Batch() {
 
 }
 
-int Int_Batch::next() {
+bool Int_Batch::next() {
   const double *in_buf = twoint_->buffer();
   const Ref<GaussianBasisSet> basis = twoint_->basis();
 
@@ -150,7 +152,7 @@ int Int_Batch::next() {
           const size_t new_size = buffer_.size() + n;
           s_ = s;
           if (new_size >= buffer_.capacity()) {
-            return 1; //return 1 if buffer is full and there are more to come
+            return true; //return 1 if buffer is full and there are more to come
           }
 
           shells_in_batch_.push_back(s_);
@@ -167,7 +169,7 @@ int Int_Batch::next() {
     }
   }
 
-  return 0; // if finish these loops, all integrals are done and returned
+  return false; // if finish these loops, all integrals are done and returned
 }
 // jtf: End of Int_Batch class declaration
 
@@ -220,15 +222,6 @@ MP2::MP2(StateIn &statein) :
   Wavefunction(statein) {
   ref_mp2_wfn_ << SavableState::restore_state(statein);
 }
-
-// function to checkpoint the current state
-void MP2::save_data_state(StateOut &stateout) {
-  Wavefunction::save_data_state(stateout);
-
-  SavableState::save_state(ref_mp2_wfn_.pointer(), stateout);
-}
-
-// principal function to obtain MP2 energy from reference wavefunction
 void MP2::compute(void) {
   // exit if gradient requested
   if (gradient_needed()) {
@@ -255,6 +248,14 @@ void MP2::compute(void) {
       * extra_hf_acc);
 }
 
+// function to checkpoint the current state
+void MP2::save_data_state(StateOut &stateout) {
+  Wavefunction::save_data_state(stateout);
+
+  SavableState::save_state(ref_mp2_wfn_.pointer(), stateout);
+}
+
+// principal function to obtain MP2 energy from reference wavefunction
 void MP2::obsolete(void) {
   Wavefunction::obsolete();
   ref_mp2_wfn_->obsolete();
@@ -283,15 +284,20 @@ double MP2::compute_mp2_energy() {
     throw FeatureNotImplemented("C1 symmetry only", __FILE__, __LINE__,
         class_desc());
   }
+  typedef detail::tuple<4, unsigned int> ShellSet;
 
   RefSCMatrix vec = ref_mp2_wfn_->eigenvectors();
   //Int_Batch batch(1024, integral()->electron_repulsion());
-  Ref< TwoBodyIntBatch<4> > batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
+
+  //TwoBodyIntBatchGeneric<4> *batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
+
+  TwoBodyIntBatchGeneric<4> batch(integral());
+
   int nao = vec.nrow();
   int nmo = vec.ncol();
   int nocc = ref_mp2_wfn_->nelectron() / 2;
   int nvir = nmo - nocc;
-
+  int i;
   auto_vec<double> cvec_av(new double[vec.nrow() * vec.ncol()]);
   double *cvec = cvec_av.get();
   vec->convert(cvec);
@@ -374,14 +380,18 @@ double MP2::compute_mp2_energy() {
     const double *pqrs = batch.buffer();
     int index = 0;
 
-    int ns = batch.shells_in_batch().size();
+    // jf OK
+    std::vector<ShellSet> sib = batch.current_batch(); // shells in this batch
+    std::vector<ShellSet>::iterator it;
 
-    for (int sq = 0; sq < ns; sq++) {
+    // jf OK
+    for (it=sib.begin(), i=0; it<sib.end(); it++, i++) {
 
-      ShellDesc s = batch.shells_in_batch()[sq];
-      ShellDesc p_i = batch.pqrs_start()[sq];
-      ShellDesc p_l = batch.pqrs_len()[sq];
-      ShellDesc p;
+      ShellSet cs = *it;
+      ShellSet p;
+      ShellSet p_i = batch.fao()[i];
+      ShellSet p_l = batch.lao()[i];
+
       // do 4-index transformation
       // may be better to implement as one loop over (index=0; < nint=p_l[0]*p_l[1]...)
       // that would require computing values of p, q, r, s from p_i and index - much harder, I think

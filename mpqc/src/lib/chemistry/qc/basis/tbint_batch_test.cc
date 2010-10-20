@@ -284,14 +284,14 @@ double MP2::compute_mp2_energy() {
     throw FeatureNotImplemented("C1 symmetry only", __FILE__, __LINE__,
         class_desc());
   }
-  typedef detail::tuple<4, unsigned int> ShellSet;
+  typedef detail::tuple<4, unsigned int> IntTuple;
 
   RefSCMatrix vec = ref_mp2_wfn_->eigenvectors();
   //Int_Batch batch(1024, integral()->electron_repulsion());
 
   //TwoBodyIntBatchGeneric<4> *batch = new TwoBodyIntBatchGeneric<4>( integral()->electron_repulsion() );
 
-  TwoBodyIntBatchGeneric<4> batch(integral());
+  TwoBodyIntBatchGeneric<4> batch(integral()->electron_repulsion());
 
   int nao = vec.nrow();
   int nmo = vec.ncol();
@@ -381,47 +381,35 @@ double MP2::compute_mp2_energy() {
     int index = 0;
 
     // jf OK
-    std::vector<ShellSet> sib = batch.current_batch(); // shells in this batch
-    std::vector<ShellSet>::iterator it;
+    std::vector<IntTuple> sib = batch.current_batch(); // shells in this batch
+    std::vector<IntTuple>::iterator it;
 
     // jf OK
-    for (it=sib.begin(), i=0; it<sib.end(); it++, i++) {
+    for (it = sib.begin(), i = 0; it < sib.end(); it++, i++) {
 
-      ShellSet cs = *it;
-      ShellSet p;
-      ShellSet p_i = batch.fao()[i];
-      ShellSet p_l = batch.lao()[i];
+      IntTuple start = batch.start()[i];
+      IntTuple fence = batch.fence()[i];
+      TensorIndexRangeIterator<4> function_range(start, fence);
 
       // do 4-index transformation
-      // may be better to implement as one loop over (index=0; < nint=p_l[0]*p_l[1]...)
-      // that would require computing values of p, q, r, s from p_i and index - much harder, I think
-      for (p[0] = p_i[0]; p[0] < p_i[0] + p_l[0]; p[0]++) {
-        int po = p[0]*nmo;
-        for (p[1] = p_i[1]; p[1] < p_i[1] + p_l[1]; p[1]++) {
-          int qo = p[1]*nmo;
-          for (p[2]= p_i[2]; p[2] < p_i[2] + p_l[2]; p[2]++) {
-            int ro = p[2]*nmo;
-            for (p[3]= p_i[3]; p[3] < p_i[3] + p_l[3]; p[3]++, index++) {
-              int so = p[3]*nmo;
-              int idx = 0;
-              // at this point, user has information and access to:
-              // p, q, r, s indices as p[]
-              // integral value at pqrs[idx] note lack of permutational symmetry, etc.
-              // offsets po, etc., for locating position in mo coefficient matrix cvec.
-              for (int i = 0; i < nmo; i++) {
-                for (int j = 0; j < nmo; j++) {
-                  for (int k = 0; k < nmo; k++) {
-                    for (int l = 0; l < nmo; l++, idx++) {
+      for (function_range.init();
+          function_range.in_range();
+          function_range.next(), ++index) {
+        const IntTuple& current = function_range.current();
+        // at this point, user has information and access to:
+        // p, q, r, s indices as p[]
+        // integral value at pqrs[idx] note lack of permutational symmetry, etc.
+        // offsets po, etc., for locating position in mo coefficient matrix cvec.
+        int mo_4idx = 0;
+        for (int i = 0; i < nmo; i++) {
+          for (int j = 0; j < nmo; j++) {
+            for (int k = 0; k < nmo; k++) {
+              for (int l = 0; l < nmo; l++, mo_4idx++) {
 
-                      // place each ao integral in the batch into the mo integral ijkl[idx]
-                      ijkl[idx] += cvec[po + i] *
-                                   cvec[qo + j] *
-                                   cvec[ro + k] *
-                                   cvec[so + l] * pqrs[index];
+                // place each ao integral in the batch into the mo integral ijkl[idx]
+                ijkl[mo_4idx] += cvec[current[0]*nmo + i] * cvec[current[1]*nmo + j] * cvec[current[2]*nmo + k]
+                    * cvec[current[3]*nmo + l] * pqrs[index];
 
-                    }
-                  }
-                }
               }
             }
           }

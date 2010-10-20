@@ -54,65 +54,61 @@ struct tuple {
 };
 }
 
-/// This is an abstract range of shell sets
-template <int NumCenters>
-class ShellRange:public RefCount {
+/// This is an abstract range of indices
+template <int NDIM>
+class IndexRangeIterator : public RefCount {
   public:
-    typedef detail::tuple<NumCenters, unsigned int> ShellSet;
-
-    virtual ~ShellRange();
+    typedef detail::tuple<NDIM, unsigned int> IntTuple;
 
     /// initialize the iterator
-    virtual void start() =0;
+    virtual void init() =0;
     /// returns false if there are no more
-    virtual bool have_next() =0;
+    virtual bool in_range() const =0;
     /// update current
-    virtual const ShellSet& next() const =0;
+    virtual void next() =0;
     /// current shell set
-    virtual const ShellSet& current() const =0;
-
-  protected:
-    ShellRange();
+    virtual const IntTuple& current() const =0;
 };
 
-/// TensorShellRange is a direct product of shell ranges for each center
-template <int NumCenters>
-class TensorShellRange:public ShellRange<NumCenters> {
+/// TensorIndexRangeIterator is a direct product of shell ranges for each center
+template <int NDIM>
+class TensorIndexRangeIterator : public IndexRangeIterator<NDIM> {
   public:
-    //typedef typename ShellRange<NumCenters>::ShellSet ShellSet;
-    typedef detail::tuple<NumCenters, unsigned int> ShellSet;
+    typedef typename IndexRangeIterator<NDIM>::IntTuple IntTuple;
 
-
-    /// Constructs a [start, fence) ShellRange
-    TensorShellRange(const ShellSet& start, const ShellSet& fence) :
-      start_(start), fence_(fence), have_next_(false) {
+    /// Constructs a [start, fence) IndexRangeIterator
+    TensorIndexRangeIterator(const IntTuple& start, const IntTuple& fence) :
+      start_(start), fence_(fence), in_range_(false) {
     }
 
-    void start() {
-      next_ = start_;
+    void init() {
+      current_ = start_;
+      next_ = current_;
       // if range is nonempty -- find next
-      if (is_nonempty())
+      if (is_nonempty()) {
+        in_range_ = true;
         next();
+      }
     }
 
-    bool have_next() {
-      return have_next_;
+    bool in_range() const {
+      return in_range_;
     }
 
-    const ShellSet& next()  {
+    void next() {
+      in_range_ = have_next_;
       current_ = next_;
       have_next_ = inc(next_);
-      return current_;
     }
 
-    const ShellSet& current() const {
+    const IntTuple& current() const {
       return current_;
     }
 
   private:
     // return true if can increment
-    bool inc(ShellSet & s) {
-      unsigned int d = NumCenters - 1;
+    bool inc(IntTuple & s) {
+      unsigned int d = NDIM - 1;
       ++s[d];
       while (s[d] >= fence_[d]) {
         if (d == 0)
@@ -124,20 +120,19 @@ class TensorShellRange:public ShellRange<NumCenters> {
     }
     // return true if range is nonempty
     bool is_nonempty() {
-      for (unsigned int d = 0; d < NumCenters; ++d)
+      for (unsigned int d = 0; d < NDIM; ++d)
         if (fence_[d] <= start_[d])
           return false;
       return true;
     }
 
-    ShellSet start_;
-    ShellSet fence_;
-    ShellSet current_;
-    ShellSet next_;
+    IntTuple start_;
+    IntTuple fence_;
+    IntTuple current_;
+    IntTuple next_;
+    bool in_range_;
     bool have_next_;
 };
-
-template <int NumCenters> class ShellRange;
 
 /** This is an abstract base type for classes that
  compute integrals involving two electrons and 2 functions per electron.
@@ -147,7 +142,7 @@ class TwoBodyIntBatch:public RefCount {
 
 
   public:
-    typedef detail::tuple<NumCenters, unsigned int> ShellSet;
+    typedef detail::tuple<NumCenters, unsigned int> IntTuple;
 
     //TwoBodyIntBatch(Integral *integral,
     //        const detail::tuple<NumCenters, Ref<GaussianBasisSet> >& bs); // breaks formatting in Eclipse
@@ -169,7 +164,7 @@ class TwoBodyIntBatch:public RefCount {
 
     /// prepare to iterate using seed s
     /// TODO JTF implement
-    template <typename Seed> void init(const Ref<ShellRange<NumCenters> >& n, Seed s = Seed());
+    template <typename Seed> void init(const Ref<IndexRangeIterator<NumCenters> >& n, Seed s = Seed());
 
     /// compute next batch, return true if have another
     /// may need to be split into have_next and next
@@ -177,7 +172,7 @@ class TwoBodyIntBatch:public RefCount {
     virtual bool next() = 0;
 
     /// returns the shell indices of the current batch
-    virtual const std::vector<ShellSet>& current_batch(TwoBodyOper::type type = TwoBodyOper::eri) const = 0;
+    virtual const std::vector<IntTuple>& current_batch() const = 0;
 
     /** The computed shell integrals will be put in the buffer returned
      by this member.  Some TwoBodyInt specializations have more than
@@ -226,9 +221,9 @@ class TwoBodyIntBatch:public RefCount {
 
 
     std::vector<double> buffer_;
-    std::vector<ShellSet> shells_in_buffer_;
-    std::vector<ShellSet> fao_;
-    std::vector<ShellSet> lao_;
+    std::vector<IntTuple> shells_in_buffer_;
+    std::vector<IntTuple> start_;
+    std::vector<IntTuple> fence_;
     size_t buf_cap_ ;
 };
 
@@ -238,7 +233,8 @@ template <int NumCenters> struct TwoBodyIntEvalType;
 template <int NumCenters>
 class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
 
-  typedef detail::tuple<NumCenters, unsigned int> ShellSet;
+  typedef TensorIndexRangeIterator<NumCenters> SRange;
+  typedef typename SRange::IntTuple IntTuple;
 
   public:
     typedef typename TwoBodyIntEvalType<NumCenters>::value TwoBodyIntEval;
@@ -248,9 +244,8 @@ class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
     }
 
     //    TwoBodyIntBatchGeneric(Integral *i, const detail::tuple<NumCenters, Ref<GaussianBasisSet> >& b) :
-    TwoBodyIntBatchGeneric(Ref<Integral> i) :
-      TwoBodyIntBatch<NumCenters>(i), tbint_(i->electron_repulsion()), basis_(tbint_->basis()) {
-      //tbint_(i->electron_repulsion()), basis_(tbint_->basis()) {
+    TwoBodyIntBatchGeneric(Ref<TwoBodyIntEval> tbint) :
+      TwoBodyIntBatch<NumCenters>(tbint->integral()), tbint_(tbint) {
 
       in_buf_ = tbint_->buffer();
 
@@ -261,8 +256,7 @@ class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
     }
 
     Ref<TwoBodyIntBatch<NumCenters> > clone() {
-      TwoBodyIntBatchGeneric h(this->integral_);
-      return &h;
+      return new TwoBodyIntBatchGeneric<NumCenters>(this->tbint_->clone());
     }
 
     TwoBodyOperSet::type type() const {
@@ -278,27 +272,24 @@ class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
       this->shells_in_buffer_.reserve(storage); // this seems dumb; but no other way to guarantee enough room (all <ss|ss>?)
     }
 
-    const std::vector<ShellSet>& current_batch(TwoBodyOper::type type = TwoBodyOper::eri) const {
-      if ( type != TwoBodyOper::eri ) {
-        exit(1);
-      }
+    const std::vector<IntTuple>& current_batch() const {
       return this->shells_in_buffer_ ;
     }
 
 
-    const std::vector<ShellSet>& fao(){
-      return this->fao_ ;
+    const std::vector<IntTuple>& start(){
+      return this->start_ ;
     }
 
-    const std::vector<ShellSet>& lao(){
-      return this->lao_ ;
+    const std::vector<IntTuple>& fence(){
+      return this->fence_ ;
     }
 
     const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const {
       return in_buf_;
     }
 
-    template <unsigned int> void init(const Ref<ShellRange<NumCenters> >& i, int s = int()) {
+    template <unsigned int> void init(const Ref<IndexRangeIterator<NumCenters> >& i, int s = int()) {
       //
       int sp;
       sr_(i);
@@ -318,7 +309,7 @@ class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
   private:
 
     const Ref<TwoBodyIntEval> tbint_;
-    const Ref<TensorShellRange<NumCenters> > sr_;
+    const Ref<SRange > sr_;
     const double *in_buf_;
     const Ref<GaussianBasisSet> basis_;
 

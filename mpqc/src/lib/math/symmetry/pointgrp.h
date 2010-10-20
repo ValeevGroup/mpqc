@@ -493,6 +493,9 @@ class PointGroup: public SavableState {
 
     PointGroup& operator=(const PointGroup&);
 
+    /// returns the order of the point group
+    int order() const { return char_table().order(); }
+
     /// Returns 1 if the point groups are equivalent, 0 otherwise.
     int equiv(const Ref<PointGroup> &, double tol = 1.0e-6) const;
 

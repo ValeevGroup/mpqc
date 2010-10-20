@@ -143,6 +143,115 @@ OneBodySOInt::reinitialize()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// OneBodySODerivInt
+
+OneBodySODerivInt::OneBodySODerivInt(const Ref<OneBodyDerivInt> &obd)
+{
+  throw FeatureNotImplemented("Justin, get on it!", __FILE__, __LINE__);
+  obd_ = obd;
+
+  b1_ = new SOBasis(obd->basis1(), obd->integral());
+
+  if (obd->basis2() == obd->basis1()) b2_ = b1_;
+  else b2_ = new SOBasis(obd->basis2(), obd->integral());
+
+  only_totally_symmetric_ = 0;
+
+  const int num_salc_coords = 12 * obd->basis1()->molecule()->point_group()->order();
+
+  buffer_ = new double[b1_->max_nfunction_in_shell()
+                      *b2_->max_nfunction_in_shell()
+                      *num_salc_coords];
+}
+
+OneBodySODerivInt::~OneBodySODerivInt()
+{
+  delete[] buffer_;
+}
+
+Ref<SOBasis>
+OneBodySODerivInt::basis() const
+{
+  return b1_;
+}
+
+Ref<SOBasis>
+OneBodySODerivInt::basis1() const
+{
+  return b1_;
+}
+
+Ref<SOBasis>
+OneBodySODerivInt::basis2() const
+{
+  return b2_;
+}
+
+void
+OneBodySODerivInt::compute_shell(int ish, int jsh)
+{
+  const double *aobuf = obd_->buffer();
+
+  const SOTransform &t1 = b1_->trans(ish);
+  const SOTransform &t2 = b2_->trans(jsh);
+
+  int nso1 = b1_->nfunction(ish);
+  int nso2 = b2_->nfunction(jsh);
+
+  //TODO: wrong size here, and in buffer_ allocation
+  memset(buffer_, 0, nso1*nso2*sizeof(double));
+
+  int nao2 = b2_->naofunction(jsh);
+
+
+
+  // loop through the AO shells that make up this SO shell
+  for (int i=0; i<t1.naoshell; i++) {
+    const SOTransformShell &s1 = t1.aoshell[i];
+    for (int j=0; j<t2.naoshell; j++) {
+      const SOTransformShell &s2 = t2.aoshell[j];
+      /** Compute the derivative integrals and place the result in the buffer
+              returned by buffer(). */
+       // TODO: last arg is center on which to compute derivative
+       obd_->compute_shell(s1.aoshell, s2.aoshell, 0);
+      // obd_->compute_shell(s1.aoshell, s2.aoshell);
+      for (int itr=0; itr<s1.nfunc; itr++) {
+        const SOTransformFunction &ifunc = s1.func[itr];
+        double icoef = ifunc.coef;
+        int iaofunc = ifunc.aofunc;
+        int isofunc = b1_->function_offset_within_shell(ish, ifunc.irrep)
+          + ifunc.sofunc;
+        int iaooff = iaofunc;
+        int isooff = isofunc;
+        for (int jtr=0; jtr<s2.nfunc; jtr++) {
+          const SOTransformFunction &jfunc = s2.func[jtr];
+          double jcoef = jfunc.coef * icoef;
+          int jaofunc = jfunc.aofunc;
+          int jsofunc = b2_->function_offset_within_shell(jsh, jfunc.irrep)
+            + jfunc.sofunc;
+          int jaooff = iaooff*nao2 + jaofunc;
+          int jsooff = isooff*nso2 + jsofunc;
+          buffer_[jsooff] += jcoef * aobuf[jaooff];
+#if DEBUG
+          if (fabs(aobuf[jaooff]*jcoef) > 1.0e-10) {
+            ExEnv::outn() <<"("<<isofunc
+                 <<"|"<<jsofunc
+                 <<") += "<<scprintf("%8.5f",jcoef)<<" * "
+                 <<"("<<iaofunc
+                 <<"|"<<jaofunc
+                 <<"): "
+                 <<scprintf("%8.5f -> %8.5f",
+                            aobuf[jaooff], buffer_[jsooff])
+                 << endl;
+          }
+#endif
+        }
+      }
+    }
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // TwoBodySOInt
 
 TwoBodySOInt::TwoBodySOInt(const Ref<TwoBodyInt> &tb)

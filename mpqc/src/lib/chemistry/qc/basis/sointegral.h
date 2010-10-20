@@ -76,6 +76,43 @@ class OneBodySOInt : public RefCount {
 };
 
 
+/** OneBodySODerivInt computes two-center one-electron integrals in a symmetry-adapted basis
+ */
+class OneBodySODerivInt : public RefCount {
+  protected:
+    Ref<OneBodyDerivInt> obd_;
+
+    Ref<SOBasis> b1_;
+    Ref<SOBasis> b2_;
+
+    double *buffer_;
+
+    int only_totally_symmetric_;
+  public:
+    OneBodySODerivInt(const Ref<OneBodyDerivInt> &);
+    virtual ~OneBodySODerivInt();
+
+    Ref<SOBasis> basis() const;
+    Ref<SOBasis> basis1() const;
+    Ref<SOBasis> basis2() const;
+
+    /// TODO document OneBodySODerivInt::buffer()
+    const double * buffer() const { return buffer_; }
+
+    /// computes an SO shell doublet of integrals
+    /// @param so_shell1 the SO shell index for center 1, so_shell1 \f$ \in \f$ [ 0, this->basis1()->nshell() )
+    /// @param so_shell2 the SO shell index for center 2, so_shell1 \f$ \in \f$ [ 0, this->basis2()->nshell() )
+    virtual void compute_shell(int so_shell1, int so_shell2);
+
+    // an index of -1 for a shell indicates any shell
+    //virtual int log2_shell_bound(int= -1,int= -1) = 0;
+
+    virtual void reinitialize();
+
+    int only_totally_symmetric() const { return only_totally_symmetric_; }
+    void set_only_totally_symmetric(int i) { only_totally_symmetric_ = i; }
+};
+
 /** TwoBodySOInt computes four-center two-electron integrals in a symmetry-adapted basis
  */
 class TwoBodySOInt : public RefCount {

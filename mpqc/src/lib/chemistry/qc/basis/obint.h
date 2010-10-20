@@ -440,6 +440,9 @@ class OneBodyDerivInt : public RefCount {
     /** Compute the derivative integrals with respect to the given center
         and place the result in the buffer returned by buffer(). */
     virtual void compute_shell(int ish, int jsh, int center) = 0;
+
+    /// Return the integral factory that was used to create this object.
+        Integral *integral() const { return integral_; }
 };
 
 // //////////////////////////////////////////////////////////////////////////

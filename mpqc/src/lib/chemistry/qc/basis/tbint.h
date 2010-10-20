@@ -602,6 +602,10 @@ class TwoBodyDerivInt : public RefCount {
     /** Return the maximum magnitude of any integral in a
         shell block.  An index of -1 for any argument indicates any shell.  */
     double shell_bound(int= -1,int= -1,int= -1,int= -1);
+
+    /// Return the integral factory that was used to create this object.
+    Integral *integral() const { return integral_; }
+
 };
 
 // //////////////////////////////////////////////////////////////////////////

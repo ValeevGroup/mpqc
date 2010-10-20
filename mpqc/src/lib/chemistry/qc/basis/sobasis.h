@@ -86,11 +86,16 @@ class SOTransform {
 };
 
 /** A SOBasis object describes the transformation from an atomic orbital
-    basis to a symmetry orbital basis.  */
+    basis to a symmetry orbital basis. The cental concept here is "SO shell".
+    An SO shell is defined as a collection of symmetry-adapated basis functions that
+    arise from one set of AO shells related by symmetry (an AO shell orbit).
+    Thus the number of SO shells = the number of symmetry-unique AO shells,
+    and each SO shell contains basis functions of potentially several symmetries.
+    */
 class SOBasis : public RefCount {
   protected:
     Ref<GaussianBasisSet> basis_;
-    int nshell_;
+    int nshell_;       //< number of unique AO shells
     int nirrep_;
     int *ncomp_;
     int **nfunc_;
@@ -143,7 +148,7 @@ class SOBasis : public RefCount {
     int function_within_irrep(int ishell, int ifunc) const;
 
     /// Return the SOTransform object for the given shell.
-    const SOTransform &trans(int i) const { return trans_[i]; }
+    const SOTransform &trans(int ishell) const { return trans_[ishell]; }
 
     void print(std::ostream &o=ExEnv::out0()) const;
 };

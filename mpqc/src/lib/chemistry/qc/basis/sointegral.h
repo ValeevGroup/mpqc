@@ -38,6 +38,8 @@
 
 namespace sc {
 
+/** OneBodySOInt computes two-center one-electron integrals in a symmetry-adapted basis
+ */
 class OneBodySOInt : public RefCount {
   protected:
     Ref<OneBodyInt> ob_;
@@ -56,9 +58,13 @@ class OneBodySOInt : public RefCount {
     Ref<SOBasis> basis1() const;
     Ref<SOBasis> basis2() const;
 
+    /// TODO document OneBodySOInt::buffer()
     const double * buffer() const { return buffer_; }
     
-    virtual void compute_shell(int,int);
+    /// computes an SO shell doublet of integrals
+    /// @param so_shell1 the SO shell index for center 1, so_shell1 \f$ \in \f$ [ 0, this->basis1()->nshell() )
+    /// @param so_shell2 the SO shell index for center 2, so_shell1 \f$ \in \f$ [ 0, this->basis2()->nshell() )
+    virtual void compute_shell(int so_shell1, int so_shell2);
 
     // an index of -1 for a shell indicates any shell
     //virtual int log2_shell_bound(int= -1,int= -1) = 0;
@@ -70,7 +76,8 @@ class OneBodySOInt : public RefCount {
 };
 
 
-
+/** TwoBodySOInt computes four-center two-electron integrals in a symmetry-adapted basis
+ */
 class TwoBodySOInt : public RefCount {
   protected:
     Ref<TwoBodyInt> tb_;
@@ -94,9 +101,63 @@ class TwoBodySOInt : public RefCount {
     Ref<SOBasis> basis3() const;
     Ref<SOBasis> basis4() const;
 
+    /// TODO document TwoBodySOInt::buffer()
     const double * buffer() const { return buffer_; }
     
-    virtual void compute_shell(int,int,int,int);
+    /// computes an SO shell quartet of integrals
+    /// @param so_shell1 the SO shell index for center 1, so_shell1 \f$ \in \f$ [ 0, this->basis1()->nshell() )
+    /// @param so_shell2 the SO shell index for center 2, so_shell1 \f$ \in \f$ [ 0, this->basis2()->nshell() )
+    /// @param so_shell3 the SO shell index for center 3, so_shell1 \f$ \in \f$ [ 0, this->basis3()->nshell() )
+    /// @param so_shell4 the SO shell index for center 4, so_shell1 \f$ \in \f$ [ 0, this->basis4()->nshell() )
+    virtual void compute_shell(int so_shell1, int so_shell2, int so_shell3, int so_shell4);
+
+    // an index of -1 for a shell indicates any shell
+    //virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
+
+    // if redundant is true, then keep redundant integrals in buffer_.  The
+    // default is true.
+    int redundant() const { return redundant_; }
+    // cannot do nonredundant at the moment
+    //void set_redundant(int i) { redundant_ = i; }
+
+    int only_totally_symmetric() const { return only_totally_symmetric_; }
+    void set_only_totally_symmetric(int i) { only_totally_symmetric_ = i; }
+};
+
+/** TwoBodySODerivInt computes four-center two-electron derivative integrals in a symmetry-adapted basis
+ */
+class TwoBodySODerivInt : public RefCount {
+  protected:
+    Ref<TwoBodyDerivInt> tb_;
+
+    Ref<SOBasis> b1_;
+    Ref<SOBasis> b2_;
+    Ref<SOBasis> b3_;
+    Ref<SOBasis> b4_;
+
+    double *buffer_;
+
+    int redundant_;
+    int only_totally_symmetric_;
+  public:
+    TwoBodySODerivInt(const Ref<TwoBodyDerivInt> &);
+    virtual ~TwoBodySODerivInt();
+
+    Ref<SOBasis> basis() const;
+    Ref<SOBasis> basis1() const;
+    Ref<SOBasis> basis2() const;
+    Ref<SOBasis> basis3() const;
+    Ref<SOBasis> basis4() const;
+
+    /// TODO document TwoBodySODerivInt::buffer()
+    const double * buffer() const { return buffer_; }
+
+    /// computes an SO shell quartet of derivative integrals
+    /// @param so_shell1 the SO shell index for center 1, so_shell1 \f$ \in \f$ [ 0, this->basis1()->nshell() )
+    /// @param so_shell2 the SO shell index for center 2, so_shell1 \f$ \in \f$ [ 0, this->basis2()->nshell() )
+    /// @param so_shell3 the SO shell index for center 3, so_shell1 \f$ \in \f$ [ 0, this->basis3()->nshell() )
+    /// @param so_shell4 the SO shell index for center 4, so_shell1 \f$ \in \f$ [ 0, this->basis4()->nshell() )
+    virtual void compute_shell(int so_shell1, int so_shell2, int so_shell3, int so_shell4);
 
     // an index of -1 for a shell indicates any shell
     //virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;

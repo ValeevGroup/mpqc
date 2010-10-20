@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/sointegral.h>
 
 using namespace std;
@@ -238,6 +239,167 @@ TwoBodySOInt::compute_shell(int ish, int jsh, int ksh, int lsh)
         for (int l=0; l<t4.naoshell; l++) {
           const SOTransformShell &s4 = t4.aoshell[l];
           tb_->compute_shell(s1.aoshell, s2.aoshell, s3.aoshell, s4.aoshell);
+          for (int itr=0; itr<s1.nfunc; itr++) {
+            const SOTransformFunction &ifunc = s1.func[itr];
+            double icoef = ifunc.coef;
+            int iaofunc = ifunc.aofunc;
+            int isofunc = b1_->function_offset_within_shell(ish,
+                                                            ifunc.irrep)
+                          + ifunc.sofunc;
+            int iaooff = iaofunc;
+            int isooff = isofunc;
+            for (int jtr=0; jtr<s2.nfunc; jtr++) {
+              const SOTransformFunction &jfunc = s2.func[jtr];
+              double jcoef = jfunc.coef * icoef;
+              int jaofunc = jfunc.aofunc;
+              int jsofunc = b2_->function_offset_within_shell(jsh,
+                                                              jfunc.irrep)
+                            + jfunc.sofunc;
+              int jaooff = iaooff*nao2 + jaofunc;
+              int jsooff = isooff*nso2 + jsofunc;
+              for (int ktr=0; ktr<s3.nfunc; ktr++) {
+                const SOTransformFunction &kfunc = s3.func[ktr];
+                double kcoef = kfunc.coef * jcoef;
+                int kaofunc = kfunc.aofunc;
+                int ksofunc = b3_->function_offset_within_shell(ksh,
+                                                                kfunc.irrep)
+                              + kfunc.sofunc;
+                int kaooff = jaooff*nao3 + kaofunc;
+                int ksooff = jsooff*nso3 + ksofunc;
+                for (int ltr=0; ltr<s4.nfunc; ltr++) {
+                  const SOTransformFunction &lfunc = s4.func[ltr];
+                  double lcoef = lfunc.coef * kcoef;
+                  int laofunc = lfunc.aofunc;
+                  int lsofunc = b4_->function_offset_within_shell(lsh,
+                                                                  lfunc.irrep)
+                                + lfunc.sofunc;
+                  int laooff = kaooff*nao4 + laofunc;
+                  int lsooff = ksooff*nso4 + lsofunc;
+                  buffer_[lsooff] += lcoef * aobuf[laooff];
+#if DEBUG
+                  if (fabs(aobuf[laooff]*lcoef) > 1.0e-10) {
+                      ExEnv::outn() <<"("<<isofunc<<jsofunc
+                           <<"|"<<ksofunc<<lsofunc
+                           <<") += "<<scprintf("%8.5f",lcoef)<<" * "
+                           <<"("<<iaofunc<<jaofunc
+                           <<"|"<<kaofunc<<laofunc
+                           <<"): "
+                           <<scprintf("%8.5f -> %8.5f",
+                                      aobuf[laooff], buffer_[lsooff])
+                           << endl;
+                    }
+#endif
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// TwoBodySODerivInt
+
+TwoBodySODerivInt::TwoBodySODerivInt(const Ref<TwoBodyDerivInt> &tb)
+{
+  throw FeatureNotImplemented("Justin, get on it!", __FILE__, __LINE__);
+  tb_ = tb;
+
+  b1_ = new SOBasis(tb->basis1(), tb->integral());
+
+  if (tb->basis2() == tb->basis1()) b2_ = b1_;
+  else b2_ = new SOBasis(tb->basis2(), tb->integral());
+
+  if (tb->basis3() == tb->basis1()) b3_ = b1_;
+  else if (tb->basis3() == tb->basis2()) b3_ = b2_;
+  else b3_ = new SOBasis(tb->basis3(), tb->integral());
+
+  if (tb->basis4() == tb->basis1()) b4_ = b1_;
+  else if (tb->basis4() == tb->basis2()) b4_ = b2_;
+  else if (tb->basis4() == tb->basis3()) b4_ = b3_;
+  else b4_ = new SOBasis(tb->basis4(), tb->integral());
+
+  redundant_ = 1;
+  only_totally_symmetric_ = 0;
+
+  const int num_salc_coords = 12 * tb->basis1()->molecule()->point_group()->order();
+
+  buffer_ = new double[b1_->max_nfunction_in_shell()
+                      *b2_->max_nfunction_in_shell()
+                      *b3_->max_nfunction_in_shell()
+                      *b4_->max_nfunction_in_shell()
+                      * num_salc_coords ];
+}
+
+TwoBodySODerivInt::~TwoBodySODerivInt()
+{
+  delete[] buffer_;
+}
+
+Ref<SOBasis>
+TwoBodySODerivInt::basis() const
+{
+  return b1_;
+}
+
+Ref<SOBasis>
+TwoBodySODerivInt::basis1() const
+{
+  return b1_;
+}
+
+Ref<SOBasis>
+TwoBodySODerivInt::basis2() const
+{
+  return b2_;
+}
+
+Ref<SOBasis>
+TwoBodySODerivInt::basis3() const
+{
+  return b3_;
+}
+
+Ref<SOBasis>
+TwoBodySODerivInt::basis4() const
+{
+  return b4_;
+}
+
+void
+TwoBodySODerivInt::compute_shell(int ish, int jsh, int ksh, int lsh)
+{
+  // TODO figure out if we need this here tb_->set_redundant(1);
+  const double *aobuf = tb_->buffer();
+
+  const SOTransform &t1 = b1_->trans(ish);
+  const SOTransform &t2 = b2_->trans(jsh);
+  const SOTransform &t3 = b3_->trans(ksh);
+  const SOTransform &t4 = b4_->trans(lsh);
+
+  int nso1 = b1_->nfunction(ish);
+  int nso2 = b2_->nfunction(jsh);
+  int nso3 = b3_->nfunction(ksh);
+  int nso4 = b4_->nfunction(lsh);
+
+  memset(buffer_, 0, nso1*nso2*nso3*nso4*sizeof(double));
+
+  int nao2 = b2_->naofunction(jsh);
+  int nao3 = b3_->naofunction(ksh);
+  int nao4 = b4_->naofunction(lsh);
+
+  // loop through the ao shells that make up this so shell
+  for (int i=0; i<t1.naoshell; i++) {
+    const SOTransformShell &s1 = t1.aoshell[i];
+    for (int j=0; j<t2.naoshell; j++) {
+      const SOTransformShell &s2 = t2.aoshell[j];
+      for (int k=0; k<t3.naoshell; k++) {
+        const SOTransformShell &s3 = t3.aoshell[k];
+        for (int l=0; l<t4.naoshell; l++) {
+          const SOTransformShell &s4 = t4.aoshell[l];
+          //tb_->compute_shell(s1.aoshell, s2.aoshell, s3.aoshell, s4.aoshell);
           for (int itr=0; itr<s1.nfunc; itr++) {
             const SOTransformFunction &ifunc = s1.func[itr];
             double icoef = ifunc.coef;

@@ -249,7 +249,8 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
       _print(spincase2, Via[s], prepend_spincase(spincase2,"Via matrix").c_str());
       if (Vai[s].nonnull())
         _print(spincase2, Vai[s], prepend_spincase(spincase2,"Vai matrix").c_str());
-      _print(spincase2, A[s], prepend_spincase(spincase2,"A matrix").c_str());
+      if (A[s].nonnull())
+        _print(spincase2, A[s], prepend_spincase(spincase2,"A matrix").c_str());
     }
     if (debug() >= DefaultPrintThresholds::mostO4) {
       Vij[s].print(prepend_spincase(spincase2,"Vij matrix").c_str());

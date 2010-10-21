@@ -174,6 +174,9 @@ R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 
 bool
 R12WavefunctionWorld::sdref() const {
+
+#define ALWAYS_USE_GENREF_ALGORITHM 0
+#if !ALWAYS_USE_GENREF_ALGORITHM
   // only references based on OneBodyWavefunction are detected as single-determinant references!
   {
     Ref<SD_RefWavefunction> sd; sd << ref();
@@ -184,6 +187,7 @@ R12WavefunctionWorld::sdref() const {
     Ref<PsiSCF_RefWavefunction> sd; sd << ref();
     if (sd.nonnull()) return true;
   }
+#endif
 #endif
   return false;
 }

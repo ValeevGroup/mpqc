@@ -1918,13 +1918,8 @@ namespace sma2 {
           for (typename blockmap_t::const_iterator i = blocks_.begin();
                i != blocks_.end();
                i++) {
-              int n = block_size(i->first);
-              double *data = i->second;
-              for (int j=0; j<n; j++) {
-                  double tmp = fabs(data[j]);
-                  if (tmp > max_abs) max_abs = tmp;
-                }
-            }
+            max_abs = std::max(max_abs, this->block_max_abs(i));
+          }
           return max_abs;
         }
         

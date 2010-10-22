@@ -193,7 +193,11 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 # else
   case TwoBodyOperSet::G12NC:
   {
+    typedef G12NCLibint2 Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
     break;
   }
 # endif
@@ -284,7 +288,11 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 # else
   case TwoBodyOperSet::G12NC:
   {
+    typedef G12NCLibint2 Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
     break;
   }
 # endif
@@ -375,7 +383,11 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 # else
   case TwoBodyOperSet::G12NC:
   {
+    typedef G12NCLibint2 Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
     break;
   }
 # endif

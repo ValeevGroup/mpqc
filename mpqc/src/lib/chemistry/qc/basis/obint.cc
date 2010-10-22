@@ -869,6 +869,11 @@ OneBodyDerivInt::buffer() const
   return buffer_;
 }
 
+void
+OneBodyDerivInt::reinitialize()
+{
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 OneBodyOneCenterDerivInt::OneBodyOneCenterDerivInt(Integral *integral,

@@ -251,6 +251,12 @@ OneBodySODerivInt::compute_shell(int ish, int jsh)
   }
 }
 
+void
+OneBodySODerivInt::reinitialize()
+{
+  obd_->reinitialize();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // TwoBodySOInt
 

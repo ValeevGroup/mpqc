@@ -441,6 +441,10 @@ class OneBodyDerivInt : public RefCount {
         and place the result in the buffer returned by buffer(). */
     virtual void compute_shell(int ish, int jsh, int center) = 0;
 
+    /** This is called for one body integrals that take data to let
+        them know that the data they reference has changed. */
+    virtual void reinitialize();
+
     /// Return the integral factory that was used to create this object.
         Integral *integral() const { return integral_; }
 };

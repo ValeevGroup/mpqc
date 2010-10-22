@@ -1,0 +1,14 @@
+
+molecule:
+    O    0.172   0.000   0.000
+    H    0.745   0.000   0.754
+    H    0.745   0.000  -0.754
+
+optimize: no
+checkpoint: no
+tmpdir: /tmp
+
+method: "CCSD(T)_R12" ( f12 = "stg-3g[1.5]" )
+basis: cc-pVDZ-F12
+auxbasis: cc-pVTZ (uc)
+dfbasis: cc-pVTZ-RI

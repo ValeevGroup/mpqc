@@ -446,7 +446,7 @@ class OneBodyDerivInt : public RefCount {
     virtual void reinitialize();
 
     /// Return the integral factory that was used to create this object.
-        Integral *integral() const { return integral_; }
+    Integral *integral() const { return integral_; }
 };
 
 // //////////////////////////////////////////////////////////////////////////
@@ -491,6 +491,13 @@ class OneBodyOneCenterDerivInt : public RefCount {
     /** Compute the derivative integrals with respect to the given center
         and place the result in the buffer returned by buffer(). */
     virtual void compute_shell(int ish, int center) = 0;
+
+    /** This is called for one body integrals that take data to let
+        them know that the data they reference has changed. */
+    virtual void reinitialize();
+
+    /// Return the integral factory that was used to create this object.
+    Integral *integral() const { return integral_; }
 };
 
 }

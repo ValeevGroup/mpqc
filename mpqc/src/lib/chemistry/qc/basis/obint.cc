@@ -938,6 +938,11 @@ OneBodyOneCenterDerivInt::buffer() const
   return buffer_;
 }
 
+void
+OneBodyDerivInt::reinitialize()
+{
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

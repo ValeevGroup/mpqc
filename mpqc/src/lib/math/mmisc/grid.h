@@ -195,13 +195,7 @@ class WriteGrids: public Runnable {
         <dt><tt>format</tt></dt><dd> The format in which the grid data is to be
         written. Currently only guassian_cube format has been implemented:
           <ul>
-            <li><tt>mpqc</tt>: A very comprehensive format.</li>
             <li><tt>gaussian_cube</tt>: The format used by Gaussian.</li>
-            <li><tt>vtk2</tt>: This format is usefull for vizualizing the grid
-            data with the vtk library. (http://www.vtk.org/)</li>
-            <li><tt>mpqc_raw</tt>: A very simple format that contains both the
-            coordinates of the grid points and the value of the scalar function
-            at each point.</li>
           </ul>
         </dd>
         </dl> */

@@ -49,6 +49,7 @@ namespace sc {
 	Log2Bounds() {}
 	virtual ~Log2Bounds() {}
 
+	/// computes bound for a given type of integrals
 	virtual int log2_bound(int sh1, int sh2, int sh3, int sh4) const =0;
 	static int_bound_t bound_cast(double);
     };
@@ -68,7 +69,6 @@ namespace sc {
 		     const Ref<IntParams>& params);
 	~BoundsLibint2();
 
-	/// Implements Log2Bounds::log2_bound()
 	int log2_bound(int sh1, int sh2, int sh3, int sh4) const;
 
     private:

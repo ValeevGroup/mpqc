@@ -93,18 +93,26 @@ RefSymmSCMatrix
 PsiSCF_RefWavefunction::ordm(SpinCase1 s) const {
   s = valid_spincase(s);
   if (!scf_->spin_polarized()) s = Alpha;
-  RefSymmSCMatrix result;
+  RefSymmSCMatrix P;
 
   Ref<PsiHSOSHF> hsoshf; hsoshf << scf_;
 
   if (hsoshf.nonnull() && spin_restricted_ == false) { // HSOSHF + spin_unrestricted => must use semicanonical orbitals
-                                                       // but secmicanonical densities are not implemented
-    throw FeatureNotImplemented("semicanonical densities should not be used", __FILE__, __LINE__, class_desc());
+    // compute semicanonical densities
+    RefSCMatrix C = hsoshf->coefs_semicanonical(s);
+    RefDiagSCMatrix P_mo = C.kit()->diagmatrix(C.coldim()); // density in MO basis
+    P_mo.assign(0.0);
+    const int nmo = P_mo.n();
+    for(int mo=0; mo<nmo; ++mo)
+      P_mo.set_element(mo, (s == Alpha) ? hsoshf->alpha_occupation(mo)
+                                        : hsoshf->beta_occupation(mo) );
+    P = C.kit()->symmmatrix(C.rowdim()); P.assign(0.0);
+    P.accumulate_transform(C, P_mo);
   }
   else {
-    result = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
+    P = (s == Alpha) ? scf()->alpha_ao_density() : scf()->beta_ao_density();
   }
-  return result;
+  return P;
 }
 
 RefSymmSCMatrix

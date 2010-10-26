@@ -939,7 +939,7 @@ OneBodyOneCenterDerivInt::buffer() const
 }
 
 void
-OneBodyDerivInt::reinitialize()
+OneBodyOneCenterDerivInt::reinitialize()
 {
 }
 

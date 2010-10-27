@@ -288,7 +288,8 @@ class GaussianBasisSet: virtual public SavableState
         to the value of basisdir.  Basis sets can be given in these files
         in the basis section at the top level as well.  If the named basis
         set still cannot be found, then GaussianBasisSet will try convert
-        the basis set name to a file name and check first in the directory
+        the basis set name to a file name (see the note below for the rules
+        of this conversion) and check first in the directory
         given by basisdir.  Next it checks for the environment variable
         SCLIBDIR.  If it is set it will look for the basis file in
         $SCLIBDIR/basis.  Otherwise it will look in the source code
@@ -296,6 +297,11 @@ class GaussianBasisSet: virtual public SavableState
         changed machines or the source code has be moved, then it may be
         necessary to copy the library files to your machine and set the
         SCLIBDIR environmental variable.
+
+        <b>Note</b>: translation of a basis name to a file name will convert
+        upper-case letters(A-Z) to the lower-case letters,
+        characters ',' and ' ' (whitespace) to '_', character '+' to 'P',
+        character '*' to 'S', character '(' to 'L', and character ')' to 'R'.
 
         The basis set itself is also given in the ParsedKeyVal format. There are two
         recognized formats for basis sets:

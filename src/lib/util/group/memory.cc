@@ -36,6 +36,7 @@
 #include <scconfig.h>
 #include <util/class/scexception.h>
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/group/memory.h>
 
 #include <util/group/memproc.h>
@@ -245,13 +246,13 @@ MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, int dlength,
 void*
 MemoryGrp::malloc_local(size_t nbyte)
 {
-  return new char[nbyte];
+  return static_cast<void*>(allocate<char>(nbyte));
 }
 
 void
 MemoryGrp::free_local(void *data)
 {
-  delete[] reinterpret_cast<char*>(data);
+  deallocate(reinterpret_cast<char*>(data));
 }
 
 double*

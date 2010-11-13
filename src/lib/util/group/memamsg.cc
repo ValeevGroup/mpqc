@@ -208,7 +208,7 @@ ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 void *
 ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
-  void *data = (void *) new char[size];
+  void *data = this->malloc_local(size);
   return data;
 }
 
@@ -217,7 +217,7 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readwrite: overall: offset = %ld size = %d\n",
           me(), (size_t)offset, size));
-  void *data = (void *) new char[size];
+  void *data = this->malloc_local(size);
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
     PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: working on:"
@@ -243,7 +243,7 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 void *
 ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
-  void *data = (void *) new char[size];
+  void *data = this->malloc_local(size);
   PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readonly:"
           "overall: offset = %ld size = %d\n",
           me(), (size_t)offset, size));
@@ -320,7 +320,7 @@ ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
 void
 ActiveMsgMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
-  delete[] (char*) data;
+  this->free_local(data);
 }
 
 void
@@ -345,7 +345,7 @@ ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
           replace_data(i.data(), i.node(), i.offset(), i.size(), 0);
         }
     }
-  delete[] (char*) data;
+  this->free_local(data);
 }
 
 void
@@ -375,7 +375,7 @@ ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
           replace_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
     }
-  delete[] (char*) data;
+  this->free_local(data);
   PRINTF(("%d: exiting ActiveMsgMemoryGrp::release_readwrite\n", me()));
 }
 

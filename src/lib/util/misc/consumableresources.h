@@ -117,9 +117,10 @@ namespace sc {
         managed_arrays_[array_ptr] = size;
         return array;
       }
+      //@{
       /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
       /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
-      template <typename T> void deallocate(T*& array) {
+      template <typename T> void deallocate(T* const & array) {
         if (array != 0) {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
@@ -134,9 +135,47 @@ namespace sc {
           else
             throw ProgrammingError("ConsumableResources::deallocate() -- non-managed array given",
                                    __FILE__, __LINE__, class_desc());
+        }
+      }
+      /// same as  before, but will set array to 0 after deallocation
+      template <typename T> void deallocate(T*& array) {
+        if (array != 0) {
+          deallocate<T>(const_cast<T* const &>(array));
           array = 0;
         }
       }
+      //@}
+
+      /// adds array to the list of managed arrays and decrements the memory counter
+      template <typename T> void manage_array(T* const & array, std::size_t size) {
+        if (array != 0) {
+          size *= sizeof(T);
+          void* array_ptr = static_cast<void*>(array);
+          // make sure it's NOT managed by me
+          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          if (pos != managed_arrays_.end())
+            throw ProgrammingError("ConsumableResources::manage_array() -- managed array given", __FILE__, __LINE__, class_desc());
+          consume_memory(size);
+          managed_arrays_[array_ptr] = size;
+        }
+      }
+      /// removes array to the list of managed arrays and increments the memory counter
+      template <typename T> void unmanage_array(T* const & array) {
+        if (array != 0) {
+          void* array_ptr = static_cast<void*>(array);
+          // make sure it's managed by me
+          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          if (pos != managed_arrays_.end()) {
+            const size_t size = pos->second;
+            release_memory(size);
+            managed_arrays_.erase(pos);
+          }
+          else
+            throw ProgrammingError("ConsumableResources::unmanage_array() -- non-managed array given",
+                                   __FILE__, __LINE__, class_desc());
+        }
+      }
+
 
     private:
       static ClassDesc class_desc_;
@@ -187,14 +226,28 @@ namespace sc {
   };
 
   //@{
-  // allocate and deallocate array of data using new or new[] (delete or delete[]) and using default ConsumableResources object
+  /// allocate and deallocate array of data using new or new[] (delete or delete[]) and using default ConsumableResources object
   template <typename T> T* allocate(std::size_t size) {
     return ConsumableResources::get_default_instance()->allocate<T>(size);
   }
   template <typename T> void deallocate(T*& array) {
     ConsumableResources::get_default_instance()->deallocate(array);
   }
+  /// this version will set array to 0 upon return \sa deallocate
+  template <typename T> void deallocate(T* const & array) {
+    ConsumableResources::get_default_instance()->deallocate(array);
+  }
   //@}
+
+  //@{
+  /// manage or unmanaged array of data using default ConsumableResources object
+  template <typename T> void manage_array(T* const & array, std::size_t size) {
+    ConsumableResources::get_default_instance()->manage_array(array, size);
+  }
+  template <typename T> void unmanage_array(T* const & array) {
+    ConsumableResources::get_default_instance()->unmanage_array(array);
+  }
+
 
 } // end of namespace sc
 

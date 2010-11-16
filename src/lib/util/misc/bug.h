@@ -61,6 +61,11 @@ class Debugger: public SavableState {
     void init();
 
     static Debugger *default_debugger_;
+
+    /// demangles a symbol
+    static std::string __demangle(const char* symbol);
+    /// prints out traceback if any methods are available
+    static void __traceback(const std::string& prefix, const char *reason = 0);
   public:
     Debugger(const char *exec = 0);
 
@@ -104,8 +109,8 @@ class Debugger: public SavableState {
     /** The traceback member attempts a stack traceback
      for the current process.  A symbol table must be saved for
      the executable if any sense is to be made of the traceback.
-     Tracebacks are currently available only for a limited number
-     of architectures. */
+     This feature is available on platforms with (1) libunwind,
+     (2) backtrace, or (3) certain platforms with hardwired unwinding. */
     virtual void traceback(const char *reason = 0);
     /// Turn on or off debugging on a signel.  The default is on.
     virtual void set_debug_on_signal(int);

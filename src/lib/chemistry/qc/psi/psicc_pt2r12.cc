@@ -86,10 +86,8 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
 
 PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
   // need to manually break up a cycle of smart pointers
-  R12WavefunctionWorld* r12world_ptr = r12world_.pointer();
-  r12world_.clear();
-  r12world_ptr->dereference();
-  r12world_ptr->~R12WavefunctionWorld();
+  r12world_->unmanage();
+  r12world_->~R12WavefunctionWorld();
 }
 
 PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :

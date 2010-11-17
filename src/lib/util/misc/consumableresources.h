@@ -33,6 +33,8 @@
 #define _mpqc_src_lib_util_misc_consumableresources_h
 
 #include <map>
+#include <limits>
+#include <assert.h>
 #include <util/keyval/keyval.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -99,12 +101,16 @@ namespace sc {
       /// Returns the default ConsumableResources object
       static const Ref<ConsumableResources>& get_default_instance();
 
-      /// prints definition to a string
+      /// @brief prints ConsumableResources
+      ///
+      /// @param os output stream
+      /// @param print_state set to true to print out currently available resources
+      /// @param print_stats set to true to print out maximum resource usage
+      void print(std::ostream& os = ExEnv::out0(),
+                 bool print_state = true,
+                 bool print_stats = false) const;
+      /// prints short definition to a string \sa print()
       std::string sprint() const;
-      /// prints definition
-      void print(std::ostream& o = ExEnv::out0()) const;
-      /// prints definition+status
-      void print_status(std::ostream& o = ExEnv::out0()) const;
 
       /// allocate array of T size elements long using operator new[] (keeps track of memory)
       template <typename T> T* allocate(std::size_t size) {
@@ -187,30 +193,104 @@ namespace sc {
 
       template <typename T> class ResourceCounter {
         public:
-          ResourceCounter(const T& max_value = T()) : max_value_(max_value), value_(max_value) {}
-          ResourceCounter(const T& max_value, const T& value) : max_value_(max_value), value_(value) {}
-          ResourceCounter(const ResourceCounter& other) : max_value_(other.max_value_), value_(other.value_) {}
-          ResourceCounter& operator=(const ResourceCounter& other) { max_value_ = other.max_value_; value_ = other.value_; return *this; }
+          ResourceCounter(const T& max_value = T()) :
+            max_value_(max_value),
+            value_(max_value),
+            lowest_value_(max_value)
+            {
+            }
+          ResourceCounter(const T& max_value, const T& value) :
+            max_value_(max_value),
+            value_(value),
+            lowest_value_(value)
+            {
+             assert(value <= max_value);
+            }
+          ResourceCounter(const ResourceCounter& other) :
+            max_value_(other.max_value_),
+            value_(other.value_),
+            lowest_value_(other.lowest_value_)
+          {
+          }
+          ResourceCounter& operator=(const ResourceCounter& other) {
+            max_value_ = other.max_value_;
+            value_ = other.value_;
+            lowest_value_ = other.lowest_value_;
+            return *this;
+          }
           operator T() const { return value_; }
           ResourceCounter& operator+=(const T& val) { value_ = std::min(max_value_, value_ + val); return *this; }
           // nonthrowing
-          ResourceCounter& operator-=(const T& val) { value_ = std::max(T(0), value_ - val); return *this; }
+          ResourceCounter& operator-=(const T& val) {
+            value_ = std::max(T(0), value_ - val);
+            lowest_value_ = std::min(value_,lowest_value_);
+            return *this;
+          }
 
           const T& max_value() const { return max_value_; }
           const T& value() const { return value_; }
+          const T& lowest_value() const { return lowest_value_; }
+
+          static std::string value_to_string(T value) {
+            return to_string(value, true);
+          }
+          static std::string difference_to_string(T value) {
+            return to_string(value, false);
+          }
 
           void operator &(StateIn& s) {
             s.get(max_value_);
             s.get(value_);
+            s.get(lowest_value_);
           }
           void operator &(StateOut& s) {
             s.put(max_value_);
             s.put(value_);
+            s.put(lowest_value_);
           }
 
         private:
           T max_value_;
           T value_;
+          T lowest_value_;  //< keeps track of the lowest value of the resource
+
+          static std::string to_string(T t, bool may_be_unlimited) {
+            const int prec = 3; // print this many digits
+
+            if (may_be_unlimited && t == std::numeric_limits<T>::max())
+              return "unlimited";
+
+            // determine m such that 1000^m <= t <= 1000^(m+1)
+            char m = 0;
+            double thousand_m = 1;
+            double thousand_mp1 = 1000;
+            while (t >= thousand_mp1) {
+              ++m;
+              thousand_m = thousand_mp1;
+              thousand_mp1 *= 1000;
+            }
+
+            // determine units
+            std::string unit;
+            switch (m) {
+              case 0: unit = "B"; break;
+              case 1: unit = "kB"; break;
+              case 2: unit = "MB"; break;
+              case 3: unit = "GB"; break;
+              case 4: unit = "TB"; break;
+              case 5: unit = "PB"; break;
+              case 6: unit = "EB"; break;
+              case 7: unit = "ZB"; break;
+              case 8: unit = "YB"; break;
+              default: assert(false);
+            }
+
+            // compute normalized mantissa
+            std::ostringstream oss;
+            oss.precision(prec);
+            oss << (double)t/(double)thousand_m << unit;
+            return oss.str();
+          }
       };
 
       typedef ResourceCounter<size_t> rsize;

@@ -86,7 +86,8 @@ ConsumableResources::~ConsumableResources() {
         v != managed_arrays_.end();
         ++v)
       total_unfreed_memory != v->second;
-    ExEnv::err0() << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
+    if (total_unfreed_memory > 0)
+      ExEnv::err0() << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
   }
 }
 
@@ -192,18 +193,27 @@ ConsumableResources::sprint() const {
 }
 
 void
-ConsumableResources::print(std::ostream& o) const {
+ConsumableResources::print(std::ostream& o, bool print_state, bool print_stats) const {
   o << indent << "ConsumableResources: (" << std::endl << incindent;
-  o << indent << "memory = " << memory_.max_value() << std::endl;
-  o << indent << "disk = [" << disk_.first << " " << disk_.second.max_value() <<"]" << std::endl << decindent;
-  o << indent << ")" << std::endl;
-}
 
-void
-ConsumableResources::print_status(std::ostream& o) const {
-  o << indent << "ConsumableResources: (" << std::endl << incindent;
-  o << indent << "memory = " << memory_.max_value() << " (avail: " << memory_.value() << ")"<< std::endl;
-  o << indent << "disk = [ " << disk_.first << " " << disk_.second.max_value() << " (avail: " << disk_.second.value() << ") ]" << std::endl << decindent;
+  o << indent << "memory = " << rsize::value_to_string(memory_.max_value());
+  if (print_state || print_stats) {
+    o << " (";
+    if (print_state) o << " avail: " << rsize::value_to_string(memory_.value()) << " ";
+    if (print_stats) o << " max used: " << rsize::difference_to_string(memory_.max_value() - memory_.lowest_value()) << " ";
+    o << ")";
+  }
+  o << std::endl;
+
+  o << indent << "disk = [" << disk_.first << " " << rsize::value_to_string(disk_.second.max_value()) <<"]";
+  if (print_state || print_stats) {
+    o << " (";
+    if (print_state) o << " avail: " << rsize::value_to_string(disk_.second.value()) << " ";
+    if (print_stats) o << " max used: " << rsize::difference_to_string(disk_.second.max_value() - disk_.second.lowest_value()) << " ";
+    o << ")";
+  }
+  o << std::endl << decindent;
+
   o << indent << ")" << std::endl;
 }
 

@@ -278,6 +278,8 @@ namespace sc {
       int charge_;
       int maxiter_;
       double diisdamp_;
+      double levelshift_;
+      bool diis_;
       static const int default_maxiter = 200;
       /// how much lower is the desired accuracy of the guess?
       static double guess_acc_ratio() { return 1e4; }

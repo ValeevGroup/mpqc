@@ -482,6 +482,8 @@ namespace sc {
     socc_ = read_occ(keyval, "socc", nirrep_);
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
     diisdamp_ = keyval->doublevalue("diisdamp",KeyValValuefloat(0.00));
+    levelshift_ = keyval->doublevalue("levelshift",KeyValValuedouble(1.0));
+    diis_ = keyval->booleanvalue("diis",KeyValValueboolean((int)true));
 
     guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
     if (guess_wfn_.nonnull()) {
@@ -1041,6 +1043,8 @@ namespace sc {
     input->write_keyword("scf:maxiter", maxiter_);
     if(diisdamp_ > 0) input->write_keyword("scf:diisdamp", diisdamp_);
     input->write_keyword("scf:convergence",convergence);
+    if(levelshift_ > 1.0) input->write_keyword("scf:levelshift", levelshift_);
+    if(!diis_) input->write_keyword("scf:diis", false);
   }
 
   void PsiCLHF::write_input(int convergence) {
@@ -1139,6 +1143,8 @@ namespace sc {
     }
     input->write_keyword("scf:maxiter", maxiter_);
     input->write_keyword("scf:convergence",convergence);
+    if(levelshift_ > 1.0) input->write_keyword("scf:levelshift", levelshift_);
+    if(!diis_) input->write_keyword("scf:diis", false);
   }
 
   void PsiHSOSHF::write_input(int convergence) {
@@ -1511,6 +1517,8 @@ namespace sc {
     }
     input->write_keyword("scf:maxiter", maxiter_);
     input->write_keyword("scf:convergence",convergence);
+    if(levelshift_ > 1.0) input->write_keyword("scf:levelshift", levelshift_);
+    if(!diis_) input->write_keyword("scf:diis", false);
   }
 
   void PsiUHF::write_input(int convergence) {

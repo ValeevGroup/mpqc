@@ -636,7 +636,7 @@ try_main(int argc, char *argv[])
        << indent << "optimize        = " << (do_opt ? "yes" : "no") << endl
        << indent << "write_pdb       = " << (do_pdb ? "yes" : "no") << endl
        << indent << "print_mole      = " << (print_mole ? "yes" : "no") << endl
-       << indent << "print_timings   = " << (print_timings ? "yes" : "no")
+       << indent << "print_timings   = " << (print_timings ? "yes" : "no") << endl
        << indent << "print_resources = " << (print_resources ? "yes" : "no")
        << endl << decindent;
 

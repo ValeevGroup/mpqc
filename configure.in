@@ -1168,10 +1168,55 @@ AC_CHECK_HEADER(perf.h,[
   ]
 )
 
+AC_CHECK_HEADER(libunwind.h,[
+ AC_MSG_CHECKING([libunwind])
+ dnl see if libunwind is automatically linked ...
+ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ LIBSSAV="$LIBS"
+ AC_TRY_LINK([#include <libunwind.h>],[unw_init_local(0,0);],[
+ HAVE_LIBUNWIND=yes],[
+ HAVE_LIBUNWIND=no])
+ AC_LANG_RESTORE
+
+ dnl see if posix threads are in -lpthread
+ if test X$HAVE_LIBUNWIND = Xno; then
+ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ LIBSSAV="$LIBS"
+ LIBS="$LIBS -lunwind"
+ AC_TRY_LINK([#include <libunwind.h>],[unw_init_local(0,0);],[
+ HAVE_LIBUNWIND=yes],[HAVE_LIBUNWIND=no]
+ )
+ AC_LANG_RESTORE
+ fi
+
+ AC_MSG_RESULT($HAVE_LIBUNWIND)
+ if test X$HAVE_LIBUNWIND = Xyes; then
+  AC_DEFINE(HAVE_LIBUNWIND)
+ fi
+ ]
+)
+
+AC_MSG_CHECKING([__cxa_demangle])
+dnl see if abi::__cxa_demangle is available
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_TRY_LINK([#include <cxxabi.h>],[int status; const char symbol[] = "main"; char* result = abi::__cxa_demangle(symbol, 0, 0, &status);],
+ [
+  AC_DEFINE(HAVE_CXA_DEMANGLE)
+  AC_MSG_RESULT(yes)
+ ],
+ [
+  AC_MSG_RESULT(no)
+ ]
+)
+AC_LANG_RESTORE
+
 AC_CHECK_HEADER(execinfo.h,HAVE_EXECINFO_H_INC=1)
 AC_CHECK_FUNC(backtrace, HAVE_BACKTRACE_FUNC=1)
-AC_CHECK_FUNC(backtrace_symbols_fd, HAVE_BACKTRACE_SYMBOLS_FD_FUNC=1)
-if test -n "$HAVE_EXECINFO_H_INC" -a -n "$HAVE_BACKTRACE_FUNC"  -a -n "$HAVE_BACKTRACE_SYMBOLS_FD_FUNC"; then
+AC_CHECK_FUNC(backtrace_symbols, HAVE_BACKTRACE_SYMBOLS_FUNC=1)
+if test -n "$HAVE_EXECINFO_H_INC" -a -n "$HAVE_BACKTRACE_FUNC"  -a -n "$HAVE_BACKTRACE_SYMBOLS_FUNC"; then
   AC_DEFINE(HAVE_BACKTRACE)
 fi
 

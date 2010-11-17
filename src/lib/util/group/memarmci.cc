@@ -40,6 +40,7 @@ extern "C" {
 #include <stdexcept>
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
 #include <util/group/memarmci.h>
 
@@ -83,13 +84,13 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
   ARMCI_AllFence();
 
   const size_t current_localsize = offsets_[me()+1] - offsets_[me()];
-  ConsumableResources::get_default_instance()->release_memory(current_localsize);
 
   // this will initialize the offsets_ array
   RDMAMemoryGrp::set_localsize(localsize);
 
   if (all_data_) {
       ARMCI_Free(data_);
+      unmanage_array(data_);
       delete[] all_data_;
       all_data_ = 0;
       data_ = 0;
@@ -102,7 +103,7 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
   int r;
   r = ARMCI_Malloc(all_data_, localsize);
   data_ = reinterpret_cast<char*>(all_data_[me()]);
-  ConsumableResources::get_default_instance()->consume_memory(localsize);
+  manage_array(data_, localsize);
 
   if (debug_) {
     for (int i=0; i<n(); i++) {
@@ -215,6 +216,7 @@ ARMCIMemoryGrp::malloc_local(size_t nbyte)
   if (buf == NULL)
     throw MemAllocFailed("malloc_local -- failed to allocate memory",
                          __FILE__, __LINE__, nbyte, this->class_desc());
+  manage_array(buf, nbyte);
   return buf;
 }
 
@@ -222,6 +224,7 @@ void
 ARMCIMemoryGrp::free_local(void *data)
 {
   ARMCI_Free_local(data);
+  unmanage_array(data);
 }
 
 ARMCIMemoryGrp::~ARMCIMemoryGrp()

@@ -39,7 +39,7 @@
 namespace sc {
   
   class R12IntEval;
-  
+
 /** R12Amplitudes gives the amplitudes of some R12-ansatz-related terms in wave function. The first-order wave function
     terms which result from F12 terms are:
     F<sub>ij</sub><sup>(1)</sup> = C<sub>kl</sub><sup>ij</sup> ( f<sub>12</sub> |kl> - 0.5 f<sub>ab</sub><sup>kl</sup> |ab> - 0.5 f<sub>mn</sub><sup>kl</sup> |mn> - f<sub>am</sub><sup>kl</sup> |am> - r<sub>a'm</sub><sup>kl</sup> |a'm> )

@@ -45,8 +45,15 @@
 #include <iostream>
 #include <signal.h>
 
-#ifdef HAVE_BACKTRACE
+#if HAVE_LIBUNWIND
+#  define UNW_LOCAL_ONLY
+#  include <libunwind.h>
+#elif HAVE_BACKTRACE
 #  include <execinfo.h>
+#endif
+
+#if HAVE_CXA_DEMANGLE
+#include <cxxabi.h>
 #endif
 
 #include <util/keyval/keyval.h>
@@ -443,25 +450,77 @@ Debugger::default_debugger()
 void
 Debugger::traceback(const char *reason)
 {
-#ifdef HAVE_BACKTRACE
-  ExEnv::outn() << prefix_ << "Debugger::traceback(using backtrace):";
+  Debugger::__traceback(prefix_,reason);
+}
+
+
+std::string
+Debugger::__demangle(const char* symbol)
+{
+  std::string dsymbol;
+#if HAVE_CXA_DEMANGLE
+  {
+    int status;
+    char* dsymbol_char = abi::__cxa_demangle(symbol, 0, 0, &status);
+    dsymbol = dsymbol_char;
+    free(dsymbol_char);
+  }
+#else
+  dsymbol = symbol;
+#endif
+  return dsymbol;
+}
+
+void
+Debugger::__traceback(const std::string& prefix, const char *reason)
+{
+#if HAVE_LIBUNWIND
+  ExEnv::outn() << prefix << "Debugger::traceback(using libunwind):";
   if (reason) ExEnv::outn() << reason;
   else ExEnv::outn() << "no reason given";
   ExEnv::outn() << endl;
 
-  const int n = 100;
+  {
+    unw_cursor_t cursor; unw_context_t uc;
+    unw_word_t ip, sp, offp;
+    int frame = 0;
+
+    unw_getcontext(&uc);
+    unw_init_local(&cursor, &uc);
+    while (unw_step(&cursor) > 0) {
+      unw_get_reg(&cursor, UNW_REG_IP, &ip);
+      unw_get_reg(&cursor, UNW_REG_SP, &sp);
+      char name[1024];
+      unw_get_proc_name(&cursor, name, 1024, &offp);
+      ExEnv::out0() << prefix
+                    << "frame " << frame
+                    << ": " << scprintf("ip = 0x%lx sp = 0x%lx ", (long) ip, (long) sp)
+                    << " symbol = " << __demangle(name)
+                    << std::endl;
+      ++frame;
+    }
+  }
+#elif HAVE_BACKTRACE // !HAVE_LIBUNWIND
+  ExEnv::outn() << prefix << "Debugger::traceback(using backtrace):";
+  if (reason) ExEnv::outn() << reason;
+  else ExEnv::outn() << "no reason given";
+  ExEnv::outn() << endl;
+
+  const int n = 128;
   void *p[n];
   int nret = backtrace(p,n);
+  char** frame_symbols = backtrace_symbols(p, nret);
   if (nret == 0) {
-      ExEnv::outn() << prefix_ << "backtrace returned no state information" << std::endl;
+      ExEnv::outn() << prefix << "backtrace returned no state information" << std::endl;
     }
   for (int i=0; i<nret; i++) {
-      ExEnv::outn() << prefix_
+      ExEnv::outn() << prefix
                     << "frame " << i
-                    << ": return address = " << p[i]
+                    << ": return address = " << p[i] << std::endl
+                    << "  symbol = " << __demangle(frame_symbols[i])
                     << std::endl;
     }
-#else // HAVE_BACKTRACE
+#else // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
 #if SIMPLE_STACK
   int bottom = 0x1234;
   void **topstack = (void**)0xffffffffL;
@@ -472,7 +531,7 @@ Debugger::traceback(const char *reason)
   void **bottext = (void**)0x00010000L;
 #endif // SIMPLE_STACK
 
-  ExEnv::outn() << prefix_ << "Debugger::traceback:";
+  ExEnv::outn() << prefix << "Debugger::traceback:";
   if (reason) ExEnv::outn() << reason;
   else ExEnv::outn() << "no reason given";
   ExEnv::outn() << endl;
@@ -497,17 +556,16 @@ Debugger::traceback(const char *reason)
         && frame_pointer < topstack
         && frame_pointer[1] >= bottext
         && frame_pointer[1] < toptext) {
-      ExEnv::outn() << prefix_ << "frame: " << (void*)frame_pointer;
+      ExEnv::outn() << prefix << "frame: " << (void*)frame_pointer;
       ExEnv::outn().flush();
       ExEnv::outn() << "  retaddr: " << frame_pointer[1] << endl;
       frame_pointer = (void**)*frame_pointer;
     }
 #else
-  ExEnv::outn() << prefix_ << "traceback not available for this arch" << endl;
+  ExEnv::outn() << prefix << "traceback not available for this arch" << endl;
 #endif // SIMPLE_STACK
 #endif // HAVE_BACKTRACE
 }
-
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

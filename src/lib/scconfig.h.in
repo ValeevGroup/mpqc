@@ -287,8 +287,14 @@
 /* Define if you have the <perf.h> header file and library.  */
 #undef HAVE_PERF
 
-/* Define if you have <execinfo.h> backtrace and backtrace_symbol_fd.  */
+/* Define if you have <libunwind.h> and unw_init_local.  */
+#undef HAVE_LIBUNWIND
+
+/* Define if you have <execinfo.h> backtrace and backtrace_symbol.  */
 #undef HAVE_BACKTRACE
+
+/* Define if you have abi::__cxa_demangle.  */
+#undef HAVE_CXA_DEMANGLE
 
 /* Define if MPIMessageGrp should be used by default. */
 #undef DEFAULT_MPI

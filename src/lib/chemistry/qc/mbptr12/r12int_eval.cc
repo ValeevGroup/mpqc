@@ -69,7 +69,6 @@ static ClassDesc R12IntEval_cd(
 R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   r12world_(r12w), evaluated_(false), debug_(0), emp2_obs_singles_(1.0), emp2_cabs_singles_(1.0)
 {
-  this->reference();   // increase count so that I can safely create and destroy Ref<> to this
   int naocc_a, naocc_b;
   int navir_a, navir_b;
   int nall_a, nall_b;
@@ -182,10 +181,6 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   if (r12world()->ints_method() != R12WavefunctionWorld::StoreMethod::posix && !mp2_only)
     throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
 #endif
-
-  Amps_ = new R12Amplitudes(this);
-
-  this->dereference();   // to match reference() above
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -385,6 +380,8 @@ R12IntEval::F12(SpinCase2 S) {
 Ref<R12Amplitudes>
 R12IntEval::amps()
 {
+  if (Amps_.null())  // using this assumes this is not called from a constructor
+    Amps_ = new R12Amplitudes(this);
   return Amps_;
 }
 

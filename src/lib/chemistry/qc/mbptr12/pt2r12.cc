@@ -284,9 +284,6 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
 }
 
 PT2R12::~PT2R12() {
-  // need to manually break up a cycle of smart pointers
-  r12world_->unmanage();
-  r12world_->~R12WavefunctionWorld();
 }
 
 void PT2R12::save_data_state(StateOut &s) {

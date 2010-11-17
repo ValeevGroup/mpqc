@@ -623,8 +623,8 @@ void MP2R12Energy_Diag::compute_ef12() {
   //
   // Obtain CC amplitudes from Psi
   //
-  RefSCMatrix T1[NSpinCases1] = NULL;
-  Ref<DistArray4> T2[NSpinCases2] = NULL;   // need to be outside for coupling term
+  RefSCMatrix T1[NSpinCases1];
+  Ref<DistArray4> T2[NSpinCases2];   // need to be outside for coupling term
   if (r12intermediates_->T1_cc_computed() &&
       r12intermediates_->T2_cc_computed() ) {
     // Obtain T1 amplitudes

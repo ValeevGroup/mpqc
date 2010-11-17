@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string.h>
 #include <util/state/stateio.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -210,7 +211,7 @@ SCMatrixRectBlock::SCMatrixRectBlock(int is, int ie, int js, int je):
   iend(ie),
   jend(je)
 {
-  data = new double[(ie-is)*(je-js)];
+  data = allocate<double>((ie-is)*(je-js));
 }
 
 SCMatrixRectBlock::SCMatrixRectBlock(StateIn&s):
@@ -258,7 +259,7 @@ SCMatrixRectBlock::ndat() const
 
 SCMatrixRectBlock::~SCMatrixRectBlock()
 {
-  delete[] data;
+  deallocate(data);
 }
 
 void
@@ -369,7 +370,7 @@ SCMatrixLTriBlock::SCMatrixLTriBlock(int s,int e):
   start(s),
   end(e)
 {
-  data = new double[((e-s)*(e-s+1))/2];
+  data = allocate<double>(((e-s)*(e-s+1))/2);
 }
 
 SCMatrixLTriBlock::SCMatrixLTriBlock(StateIn&s):
@@ -413,7 +414,7 @@ SCMatrixLTriBlock::ndat() const
 
 SCMatrixLTriBlock::~SCMatrixLTriBlock()
 {
-  delete[] data;
+  deallocate(data);
 }
 
 void
@@ -523,7 +524,7 @@ SCMatrixDiagBlock::SCMatrixDiagBlock(int s, int e):
   jstart(s),
   iend(e)
 {
-  data = new double[e-s];
+  data = allocate<double>(e-s);
 }
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
@@ -531,7 +532,7 @@ SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
   jstart(js),
   iend(ie)
 {
-  data = new double[ie-is];
+  data = allocate<double>(ie-is);
 }
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(StateIn&s):
@@ -577,7 +578,7 @@ SCMatrixDiagBlock::ndat() const
 
 SCMatrixDiagBlock::~SCMatrixDiagBlock()
 {
-  delete[] data;
+  deallocate(data);
 }
 
 void
@@ -695,7 +696,7 @@ SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
   istart(s),
   iend(e)
 {
-  data = new double[e-s];
+  data = allocate<double>(e-s);
 }
 
 SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
@@ -739,7 +740,7 @@ SCVectorSimpleBlock::ndat() const
 
 SCVectorSimpleBlock::~SCVectorSimpleBlock()
 {
-  delete[] data;
+  deallocate(data);
 }
 
 void

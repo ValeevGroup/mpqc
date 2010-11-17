@@ -32,6 +32,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
@@ -49,7 +50,7 @@ static ClassDesc ReplSCVector_cd(
 ReplSCVector::ReplSCVector(const RefSCDimension&a,ReplSCMatrixKit*k):
   SCVector(a,k)
 {
-  vector = new double[a->n()];
+  vector = allocate<double>(a->n());
   init_blocklist();
 }
 
@@ -94,7 +95,7 @@ ReplSCVector::init_blocklist()
 ReplSCVector::~ReplSCVector()
 {
   if (vector)
-      delete[] vector;
+      deallocate(vector);
   vector=0;
 }
 

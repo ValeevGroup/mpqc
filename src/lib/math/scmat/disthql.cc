@@ -5,6 +5,8 @@
 
 #include <util/group/message.h>
 
+#include <util/misc/consumableresources.h>
+
 #include <math/scmat/disthql.h>
 
 #include <math/scmat/blas.h>
@@ -57,13 +59,13 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
 {
   double *e = new double[n];
   double *sigma = new double[n];
-  double *z = new double[n*m];
+  double *z = allocate<double>(n*m);
   double *w = new double[3*n];
   int *ind = new int[n];
   dist_diagonalize_(n, m, a, d, e, sigma, z, v, w, ind, grp);
   delete[] e;
   delete[] sigma;
-  delete[] z;
+  deallocate(z);
   delete[] w;
   delete[] ind;
 }

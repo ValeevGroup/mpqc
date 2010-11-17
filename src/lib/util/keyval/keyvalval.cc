@@ -429,7 +429,9 @@ KeyValValuestring::sizevalue(size_t&val) const
           if (gotdigit) gotdigitspace = 1;
         }
       else if (strcmp(&_val[i],"KIB") == 0
-               || strcmp(&_val[i],"KiB") == 0) {
+               || strcmp(&_val[i],"KiB") == 0
+               || strcmp(&_val[i],"kIB") == 0
+               || strcmp(&_val[i],"kiB") == 0) {
           dval *= 1024;
           i+=2;
         }
@@ -443,7 +445,8 @@ KeyValValuestring::sizevalue(size_t&val) const
           dval *= 1073741824;
           i+=2;
         }
-      else if (strcmp(&_val[i],"KB") == 0) {
+      else if (strcmp(&_val[i],"KB") == 0
+               || strcmp(&_val[i],"kB") == 0) {
           dval *= 1000;
           i++;
         }
@@ -642,7 +645,9 @@ KeyValValueString::sizevalue(size_t&val) const
           if (gotdigit) gotdigitspace = 1;
         }
       else if (strcmp(&_val[i],"KIB") == 0
-               || strcmp(&_val[i],"KiB") == 0) {
+               || strcmp(&_val[i],"KiB") == 0
+               || strcmp(&_val[i],"kIB") == 0
+               || strcmp(&_val[i],"kiB") == 0) {
           dval *= 1024;
           i+=2;
         }
@@ -656,7 +661,8 @@ KeyValValueString::sizevalue(size_t&val) const
           dval *= 1073741824;
           i+=2;
         }
-      else if (strcmp(&_val[i],"KB") == 0) {
+      else if (strcmp(&_val[i],"KB") == 0
+               || strcmp(&_val[i],"kB") == 0) {
           dval *= 1000;
           i++;
         }

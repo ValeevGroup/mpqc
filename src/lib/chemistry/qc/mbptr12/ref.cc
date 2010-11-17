@@ -31,9 +31,6 @@
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/obintfactory.h>
 #include <chemistry/qc/mbptr12/orbitalspace_utils.h>
-#if HAVE_PSIMPQCIFACE
-# include <chemistry/qc/psi/psiref.h>
-#endif
 
 using namespace sc;
 
@@ -1001,6 +998,7 @@ ORDM_RefWavefunction::init_spaces_unrestricted() {
 
 ///////////////////////////////////////////////////////////////////
 
+#if !HAVE_PSIMPQCIFACE
 Ref<RefWavefunction>
 RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
                                 const Ref<Wavefunction> & ref,
@@ -1009,23 +1007,6 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
                                 unsigned int nfzv,
                                 Ref<OrbitalSpace> vir_space)
 {
-#if HAVE_PSIMPQCIFACE
-  { // PsiSCF
-    Ref<PsiSCF> cast; cast << ref;
-    if (cast.nonnull())
-      return new PsiSCF_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
-  }
-  { // PsiRASCI
-    Ref<PsiRASCI> cast; cast << ref;
-    if (cast.nonnull()) {
-      if (vir_space.nonnull() && vir_space->rank() != 0)
-        throw ProgrammingError("PsiRASCI_R12RefWavefunction can only be used with default virtual space",
-                               __FILE__, __LINE__);
-      const bool omit_uocc = vir_space.nonnull();
-      return new PsiRASCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
-    }
-  }
-#endif
   { // OneBodyWavefunction
     Ref<OneBodyWavefunction> cast; cast << ref;
     if (cast.nonnull())
@@ -1034,7 +1015,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
   throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",
                               __FILE__, __LINE__);
 }
-
+#endif
 
 
 

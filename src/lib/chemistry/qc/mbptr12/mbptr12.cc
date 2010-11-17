@@ -146,11 +146,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
 MBPT2_R12::~MBPT2_R12()
 {
-  // need to manually break up a cycle of smart pointers
-  R12WavefunctionWorld* r12world_ptr = r12world_.pointer();
-  r12world_.clear();
-  r12world_ptr->dereference();
-  r12world_ptr->~R12WavefunctionWorld();
 }
 
 void

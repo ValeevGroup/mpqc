@@ -448,6 +448,40 @@ PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
 
 /////////////////////////////////////////////////////////////////////////////
 
+Ref<RefWavefunction>
+RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
+                                const Ref<Wavefunction> & ref,
+                                bool spin_restricted,
+                                unsigned int nfzc,
+                                unsigned int nfzv,
+                                Ref<OrbitalSpace> vir_space)
+{
+  { // PsiSCF
+    Ref<PsiSCF> cast; cast << ref;
+    if (cast.nonnull())
+      return new PsiSCF_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
+  }
+  { // PsiRASCI
+    Ref<PsiRASCI> cast; cast << ref;
+    if (cast.nonnull()) {
+      if (vir_space.nonnull() && vir_space->rank() != 0)
+        throw ProgrammingError("PsiRASCI_R12RefWavefunction can only be used with default virtual space",
+                               __FILE__, __LINE__);
+      const bool omit_uocc = vir_space.nonnull();
+      return new PsiRASCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
+    }
+  }
+  { // OneBodyWavefunction
+    Ref<OneBodyWavefunction> cast; cast << ref;
+    if (cast.nonnull())
+      return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
+  }
+  throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",
+                              __FILE__, __LINE__);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ-CONDENSED"

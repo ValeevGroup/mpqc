@@ -187,8 +187,8 @@ ConsumableResources::get_default_instance()
 std::string
 ConsumableResources::sprint() const {
   std::ostringstream o;
-  o << indent << "ConsumableResources: ( memory = " << memory_.max_value();
-  o << indent << " disk = [" << disk_.first << " " << disk_.second.max_value() <<"] )";
+  o << indent << "ConsumableResources: ( memory = " << rsize::value_to_string(memory_.max_value());
+  o << indent << " disk = [" << disk_.first << " " << rsize::value_to_string(disk_.second.max_value()) <<"] )";
   return o.str();
 }
 

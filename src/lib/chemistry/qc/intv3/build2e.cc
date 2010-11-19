@@ -31,6 +31,7 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/intv3/utils.h>
@@ -190,7 +191,7 @@ Int2eV3::int_init_buildgc(int order,
       }
     }
 
-  int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
+  int_v0_buf = (double*) allocate<char>(sizeof(double)*int_v_bufsize);
   used_storage_build_ += sizeof(double)*int_v_bufsize;
   if (!int_v0_buf) {
     ExEnv::errn() << scprintf("couldn't allocate all integral intermediates\n");
@@ -265,7 +266,7 @@ Int2eV3::int_init_buildgc(int order,
         }
       }
     }
-  e0f0_con_int_buf = (double*) malloc(sizeof(double)*e0f0_con_int_bufsize);
+  e0f0_con_int_buf = (double*)allocate<char>(sizeof(double)*e0f0_con_int_bufsize);
   used_storage_build_ += e0f0_con_int_bufsize * sizeof(double);
 #if CHECK_INTEGRAL_ALGORITHM
   ExEnv::outn() << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
@@ -462,7 +463,7 @@ Int2eV3::_free_store(store_list_t* s, int n)
   int i;
   if (!s) return;
   for (i=0; i<n; i++) {
-    free(s->data[i]);
+    deallocate(static_cast<char*>(s->data[i]));
     }
   _free_store(s->p,STORAGE_CHUNK);
   free(s);

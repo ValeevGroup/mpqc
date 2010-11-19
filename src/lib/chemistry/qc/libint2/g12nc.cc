@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/g12nc.h>
@@ -81,8 +82,9 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
   size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_r12kg12)(lmax) * sizeof(LIBINT2_REALTYPE);
   LIBINT2_PREFIXED_NAME(libint2_init_r12kg12)(&Libint_,lmax,0);
-  target_ints_buffer_[0]= new double[num_te_types_*max_target_size];
-  cart_ints_[0] = new double[num_te_types_*max_cart_target_size];
+  manage_array(Libint_.stack, storage_needed);
+  target_ints_buffer_[0]= allocate<double>(num_te_types_*max_target_size);
+  cart_ints_[0] = allocate<double>(num_te_types_*max_cart_target_size);
   for(int te_type=1; te_type<num_te_types_; te_type++) {
     target_ints_buffer_[te_type] = target_ints_buffer_[te_type-1] + max_target_size;
     cart_ints_[te_type] = cart_ints_[te_type-1] + max_cart_target_size;
@@ -90,14 +92,14 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
   if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
       bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1 ||
       bs3_->max_ncontraction() != 1 || bs4_->max_ncontraction() != 1) {
-    sphharm_ints_ = new double[max_target_size];
+    sphharm_ints_ = allocate<double>(max_target_size);
     storage_needed += max_target_size*sizeof(double);
   }
   else {
     sphharm_ints_ = 0;
   }
   if (l1 || l2 || l3 || l4) {
-    perm_ints_ = new double[max_target_size];
+    perm_ints_ = allocate<double>(max_target_size);
     storage_needed += max_target_size*sizeof(double);
   }
   else
@@ -132,13 +134,14 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
 
 G12NCLibint2::~G12NCLibint2()
 { 
+  unmanage_array(Libint_.stack);
   LIBINT2_PREFIXED_NAME(libint2_cleanup_r12kg12)(&Libint_);
-  delete[] target_ints_buffer_[0];
-  delete[] cart_ints_[0];
+  deallocate(target_ints_buffer_[0]);
+  deallocate(cart_ints_[0]);
   if (sphharm_ints_)
-    delete[] sphharm_ints_;
+    deallocate(sphharm_ints_);
   if (perm_ints_)
-    delete[] perm_ints_;
+    deallocate(perm_ints_);
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif

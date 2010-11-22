@@ -159,6 +159,8 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     r12eval_->debug(debug_);
   }
 
+  const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
+
   Ref<DistArray4> Vab[NSpinCases2];
   Ref<DistArray4> Via[NSpinCases2];
   Ref<DistArray4> Vai[NSpinCases2];
@@ -170,6 +172,8 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
   const int nspincases2 = (r12eval()->spin_polarized() ? 3 : 2);
+
+  if (diag == false) {
   for (int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
@@ -261,6 +265,8 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     (Via[s] - Via_test).print("Via - Via (test): should be 0");
 #endif
   } // end of spincase2 loop
+  }
+
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
   //
@@ -303,6 +309,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
 
   // Compute Hamiltonian matrix elements
   RefSCMatrix H1_R0[NSpinCases2];
+  if (diag == false) {
   for (int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
@@ -383,18 +390,22 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
     antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval()->xspace(Alpha),
                    r12eval()->occ_act(Alpha));
   }
+  }
 
   // compute the second-order correction: E2 = - H1_0R . H0_RR^{-1} . H1_R0 = C . H1_R0
   // H0_RR is the usual B of the standard MP-R12 theory
   // if using screening approximations and replacing lambdas with Ts H1_0R = transpose(H1_R0)
-  const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
+  // const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
   Ref<R12EnergyIntermediates> r12intermediates=new R12EnergyIntermediates(r12eval(),r12eval()->r12world()->r12tech()->stdapprox());
+
+  if (diag == false) {
   // E2 = - Vbar . B^{-1} . Vbar, where Vbar = V + VT
   for(int i=0; i<NSpinCases2; i++) {
     SpinCase2 spincase2i=static_cast<SpinCase2>(i);
     if (r12eval()->dim_oo(spincase2i).n() == 0)
       continue;
     r12intermediates->assign_V(spincase2i,H1_R0[spincase2i]);
+  }
   }
 
   // Pass T1 to r12intermediates

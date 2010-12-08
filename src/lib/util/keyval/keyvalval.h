@@ -192,7 +192,7 @@ class KeyValValuestring: public KeyValValue {
     /// Converts the string to long.
     KeyValValue::KeyValValueError longvalue(long&) const;
     /// Converts the string to size_t. Various suffices are
-    /// recognized: KB, MB, GB, KIB, MIB, and GIB.
+    /// recognized: kB, KB, MB, GB, kiB, KIB, MIB, and GIB.
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
     /// Converts the string to a pointer to char (deprecated).
     DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;

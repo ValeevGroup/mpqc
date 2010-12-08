@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/eri.h>
@@ -84,19 +85,20 @@ EriLibint2::EriLibint2(Integral *integral,
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
   size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
   LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_,lmax,0);
-  target_ints_buffer_ = new double[max_target_size];
-  cart_ints_ = new double[max_cart_target_size];
+  manage_array(Libint_.stack, storage_needed);
+  target_ints_buffer_ = allocate<double>(max_target_size);
+  cart_ints_ = allocate<double>(max_cart_target_size);
   if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
       bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1 ||
       bs3_->max_ncontraction() != 1 || bs4_->max_ncontraction() != 1) {
-    sphharm_ints_ = new double[max_target_size];
+    sphharm_ints_ = allocate<double>(max_target_size);
     storage_needed += max_target_size*sizeof(double);
   }
   else {
     sphharm_ints_ = 0;
   }
   if (l1 || l2 || l3 || l4) {
-    perm_ints_ = new double[max_target_size];
+    perm_ints_ = allocate<double>(max_target_size);
     storage_needed += max_target_size*sizeof(double);
   }
   else
@@ -134,13 +136,14 @@ EriLibint2::EriLibint2(Integral *integral,
 
 EriLibint2::~EriLibint2()
 { 
-    LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_);
-  delete[] target_ints_buffer_;
-  delete[] cart_ints_;
+  unmanage_array(Libint_.stack);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_);
+  deallocate(target_ints_buffer_);
+  deallocate(cart_ints_);
   if (sphharm_ints_)
-    delete[] sphharm_ints_;
+    deallocate(sphharm_ints_);
   if (perm_ints_)
-    delete[] perm_ints_;
+    deallocate(perm_ints_);
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif

@@ -32,6 +32,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
@@ -69,7 +70,7 @@ ReplSCMatrix::ReplSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
   int nr = a->n();
   int nc = b->n();
 
-  matrix = new double[nr*nc];
+  matrix = allocate<double>(nr*nc);
 
   rows = init_rect_rows(matrix,nr,nc);
 
@@ -129,7 +130,7 @@ ReplSCMatrix::init_blocklist()
 
 ReplSCMatrix::~ReplSCMatrix()
 {
-  if (matrix) delete[] matrix;
+  if (matrix) deallocate(matrix);
   if (rows) delete[] rows;
 }
 
@@ -784,9 +785,9 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
     }
 
   // form a fortran style matrix for the SVD routines
-  double *dA = new double[m*n];
-  double *dU = new double[m*m];
-  double *dV = new double[n*n];
+  double *dA = allocate<double>(m*n);
+  double *dU = allocate<double>(m*m);
+  double *dV = allocate<double>(n*n);
   double *dsigma = new double[n];
   double *w = new double[(3*p-1>m)?(3*p-1):m];
 
@@ -817,9 +818,9 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
       lsigma->matrix[i] = dsigma[i];
     }
 
-  delete[] dA;
-  delete[] dU;
-  delete[] dV;
+  deallocate(dA);
+  deallocate(dU);
+  deallocate(dV);
   delete[] dsigma;
   delete[] w;
 }

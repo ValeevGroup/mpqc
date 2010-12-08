@@ -1,7 +1,7 @@
 % Emacs should use -*- KeyVal -*- mode.
 
 % check size type
-memory = [ 12345 102KB "103 KB" 1.23KB "1.23 KB" 1MB 1GB 1KIB 1MIB 1GIB 1.4GB ]
+memory = [ 12345 102KB "103 KB" 1.23KB "1.23 KB" 1.23kB "1.23 kB" 1MB 1GB 1KIB 1kiB 1MIB 1GIB 1.4GB ]
 
 % check strings
 

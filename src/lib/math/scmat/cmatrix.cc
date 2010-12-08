@@ -4,11 +4,16 @@
  * National Institutes of Health.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <string.h>
 #include <math/scmat/cmatrix.h>
+#include <util/misc/consumableresources.h>
+
+using namespace sc;
+
+extern "C" {
 
 static void ludcmp(double**, int, int*, double*);
 static void lubksb(double**, int, int*, double*);
@@ -25,13 +30,8 @@ cmat_new_square_matrix(int n)
   double *mat;
   double **r;
   if (n == 0) return 0;
-  mat = (double*) malloc(sizeof(double)*n*n);
-  if (!mat) return 0;
-  r = (double**) malloc(sizeof(double*)*n);
-  if (!r) {
-    free(mat);
-    return 0;
-  }
+  mat = allocate<double>(n*n);
+  r = new double*[n];
   cmat_matrix_pointers(r,mat,n,n);
   return r;
 }
@@ -42,13 +42,8 @@ cmat_new_rect_matrix(int n,int m)
   double *mat;
   double **r;
   if (n == 0 || m == 0) return 0;
-  mat = (double*) malloc(sizeof(double)*n*m);
-  if (!mat) return 0;
-  r = (double**) malloc(sizeof(double*)*n);
-  if (!r) {
-    free(mat);
-    return 0;
-  }
+  mat = allocate<double>(n*m);
+  r = new double*[n];
   cmat_matrix_pointers(r,mat,n,m);
   return r;
 }
@@ -58,8 +53,8 @@ void
 cmat_delete_matrix(double**m)
 {
   if (m) {
-      free(m[0]);
-      free(m);
+      deallocate(m[0]);
+      delete[] m;
     }
 }
 
@@ -104,12 +99,7 @@ cmat_transpose_matrix(double**a, int nr, int nc)
       return;
     };
 
-  tmp = (double*) malloc(sizeof(double)*nr*nc);
-  if (!tmp && nr && nc) {
-    fprintf(stderr,"cmat_transpose_matrix: malloc failed\n");
-    abort();
-  }
-
+  tmp = allocate<double>(nr*nc);
   tmpp = tmp;
   for (i=0; i<nc; i++) {
       for (j=0; j<nr; j++) {
@@ -120,7 +110,7 @@ cmat_transpose_matrix(double**a, int nr, int nc)
 
   memcpy(a[0],tmp,sizeof(double)*nr*nc);
 
-  if (tmp) free(tmp);
+  deallocate(tmp);
 }
 
 /* a is symmetric if sym is true */
@@ -133,9 +123,9 @@ cmat_determ(double** a, int sym, int dim)
   if (sym) {
     symm_lu_decomp(a,dim,&det);
   } else {
-    int *indx= (int*) malloc(sizeof(int)*dim);
+    int *indx= new int[dim];
     ludcmp(a,dim,indx,&det);
-    free(indx);
+    delete[] indx;
   }
 
   if (fabs(det) < 1.0e-16) return 0;
@@ -157,11 +147,11 @@ cmat_solve_lin(double** a, int sym, double* b, int dim)
     if (fabs(det) < 1.0e-16) return 0;
     symm_lu_back_sub(a,dim,b);
   } else {
-    int *indx= (int*) malloc(sizeof(int)*dim);
+    int *indx= new int[dim];
     ludcmp(a,dim,indx,&det);
     if (fabs(det) < 1.0e-16) return 0;
     lubksb(a,dim,indx,b);
-    free(indx);
+    delete[] indx;
   }
 
   for(i=0; i < dim; i++) det *= a[i][i];
@@ -178,7 +168,7 @@ cmat_invert(double**a, int sym, int dim)
   double **y;
   double *b;
 
-  b = (double*) malloc(sizeof(double)*dim);
+  b = new double[dim];
   y = cmat_new_square_matrix(dim);
 
   if (sym) {
@@ -200,7 +190,7 @@ cmat_invert(double**a, int sym, int dim)
         a[i][j] = y[i][j];
 
   } else {
-    int *indx= (int*) malloc(sizeof(int)*dim);
+    int *indx= new int[dim];
 
     ludcmp(a,dim,indx,&det);
     if (fabs(det) < 1.0e-16) return 0;
@@ -218,10 +208,10 @@ cmat_invert(double**a, int sym, int dim)
     for (i=0; i < dim; i++)
       for (j=0; j < dim; j++)
         a[i][j] = y[i][j];
-    free(indx);
+    delete[] indx;
   }
 
-  free(b);
+  delete[] b;
   cmat_delete_matrix(y);
 
   return det;
@@ -233,7 +223,7 @@ ludcmp(double** a, int n, int *indx, double *d)
   int i,imax=0,j,k;
   double big,dum,sum,temp;
 
-  double* vv = (double*) malloc(sizeof(double)*n);
+  double* vv = new double[n];
 
   *d = 1.0;
 
@@ -243,7 +233,7 @@ ludcmp(double** a, int n, int *indx, double *d)
 #if 1
     if (big == 0.0) {
       *d = 0.0;
-      free(vv);
+      delete[] vv;
       return;
       }
 #else
@@ -287,7 +277,7 @@ ludcmp(double** a, int n, int *indx, double *d)
       for (i=j+1; i < n ; i++) a[i][j] *= dum;
       }
     }
-  free(vv);
+  delete[] vv;
   }
 
 static void
@@ -341,7 +331,7 @@ symm_lu_decomp(double** a, int n, double *d)
   int i,j,k;
   double tmp;
 
-  double* v = (double*) malloc(sizeof(double)*n);
+  double* v = new double[n];
   memset(v,0,sizeof(double)*n);
 
   /* check for singular matrix */
@@ -361,7 +351,7 @@ symm_lu_decomp(double** a, int n, double *d)
     }
   }
 
-  free(v);
+  delete[] v;
 
   *d = 1.0;
 
@@ -440,11 +430,7 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
       cmat_transpose_matrix(a,nl,nr);
       if (nr > nl) {
           old_a = a;
-          a = (double**) malloc(nr*sizeof(double*));
-          if (!a) {
-            fprintf(stderr,"cmat_mxm: malloc a failed\n");
-            abort();
-          }
+          a = new double*[nr];
           a[0] = old_a[0];
         }
       cmat_matrix_pointers(a,a[0],nr,nl);
@@ -453,11 +439,7 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
       cmat_transpose_matrix(b,nl,nc);
       if (nc > nl) {
           old_b = b;
-          b = (double**) malloc(nc*sizeof(double*));
-          if (!b) {
-            fprintf(stderr,"cmat_mxm: malloc b failed\n");
-            abort();
-          }
+          b = new double*[nc];
           b[0] = old_b[0];
         }
       cmat_matrix_pointers(b,b[0],nc,nl);
@@ -571,7 +553,7 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
   if(ta) {
       cmat_transpose_matrix(a,nr,nl);
       if (old_a) {
-          free(a);
+          delete[] a;
           a = old_a;
         }
       cmat_matrix_pointers(a,a[0],nr,nl);
@@ -579,7 +561,7 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
   if(!tb) {
       cmat_transpose_matrix(b,nc,nl);
       if (old_b) {
-          free(b);
+          delete[] b;
           b = old_b;
         }
       cmat_matrix_pointers(b,b[0],nl,nc);
@@ -632,11 +614,7 @@ cmat_transform_symmetric_matrix(double**a,int na, /* a is (na,na) */
   t = cmat_new_rect_matrix(na,nb);
 
   /* t = transpose(b * transpose(c)) */
-  brow = (double*) malloc(sizeof(double)*nb);
-  if (!brow) {
-    fprintf(stderr,"cmat_transform_symmetric_matrix: malloc brow failed\n");
-    abort();
-  }
+  brow = new double[nb];
   for (i=0; i<nb; i++) {
       for (k=0; k<=i; k++) brow[k] = b[i][k];
       for (   ; k<nb; k++) brow[k] = b[k][i];
@@ -648,7 +626,7 @@ cmat_transform_symmetric_matrix(double**a,int na, /* a is (na,na) */
           t[j][i] = tmp;
         }
     }
-  free(brow);
+  delete[] brow;
 
   /* a = c * transpose(t) */
   for (i=0; i<na; i++) {
@@ -733,11 +711,7 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
     return;
     }
 
-  fv1 = (double*) malloc(sizeof(double)*n);
-  if (!fv1) {
-    fprintf(stderr,"cmat_diag: malloc fv1 failed\n");
-    abort();
-  }
+  fv1 = new double[n];
 
   for(i=0; i < n; i++) {
       for(j=0; j <= i; j++) {
@@ -753,7 +727,7 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
 
   eigsort(n,evals,evecs);
 
-  free(fv1);
+  delete[] fv1;
   }
 
 #define dsign(a,b) (((b) >= 0.0) ? fabs(a) : -fabs(a))
@@ -940,13 +914,8 @@ cmat_schmidt(double **C, double *S, int nrow, int nc)
   int i,j,ij;
   int m;
   double vtmp;
-  double *v = (double*) malloc(sizeof(double)*nrow);
+  double *v = new double[nrow];
 
-  if (!v) {
-    fprintf(stderr,"cmat_schmidt: could not malloc v(%d)\n",nrow);
-    abort();
-  }
-  
   for (m=0; m < nc; m++) {
     v[0] = C[0][m] * S[0];
 
@@ -998,14 +967,9 @@ cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
   int m;
   double vtmp;
   int northog = 0;
-  double *v = (double*) malloc(sizeof(double)*nrow);
+  double *v = new double[nrow];
 
   if (res) *res = 1.0;
-
-  if (!v) {
-    fprintf(stderr,"cmat_schmidt_tol: could not malloc v(%d)\n",nrow);
-    abort();
-  }
 
   /* Orthonormalize the columns of C wrt S. */
   for (m=0; m < ncol; m++) {
@@ -1044,3 +1008,5 @@ cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
   }
   return northog;
 }
+
+} // end of extern "C"

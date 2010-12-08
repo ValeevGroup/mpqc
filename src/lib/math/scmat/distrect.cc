@@ -32,6 +32,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
@@ -510,7 +511,7 @@ DistSCMatrix::create_vecform(Form f, int nvectors)
 
   // allocate storage
   vec = new double*[nvec];
-  vec[0] = new double[nvec*n2];
+  vec[0] = allocate<double>(nvec*n2);
   int i;
   for (i=1; i<nvec; i++) {
       vec[i] = &vec[0][i*n2];
@@ -531,7 +532,7 @@ DistSCMatrix::vecform_zero()
 void
 DistSCMatrix::delete_vecform()
 {
-  delete[] vec[0];
+  deallocate(vec[0]);
   delete[] vec;
   vec = 0;
   nvec = 0;

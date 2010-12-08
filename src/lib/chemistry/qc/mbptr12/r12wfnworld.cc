@@ -206,6 +206,7 @@ R12WavefunctionWorld::print(std::ostream& o) const {
   }
   r12tech()->print(o);
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
+  o << decindent << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

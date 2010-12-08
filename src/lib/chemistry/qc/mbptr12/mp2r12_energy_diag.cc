@@ -89,7 +89,7 @@ namespace {
           ExEnv::out0() << endl;
         }
     } else {
-        const int unique_ij = no1*(no1-1)/2;
+        const int unique_ij = no1*(no1+1)/2;
         double* const array_unique_ij = new double[unique_ij];
         for (int i=0 ; i < no1; ++i) {
           for (int j = i+1; j < no2; ++j) {
@@ -2250,9 +2250,10 @@ void MP2R12Energy_Diag::compute_ef12() {
       // extract Vab_ij from Vpq_ij
       Ref<DistArray4> Vab_ij;
       map(Vpq_ij, o1, o2, p1, p2, Vab_ij, o1, o2, v1, v2);
-      //_print(spincase2, Vab_ij, prepend_spincase(spincase2,"Vab_ij matrix").c_str());
+      _print(spincase2, Vab_ij, prepend_spincase(spincase2,"Vab_ij matrix").c_str());
 
       Vab_ij->activate();
+      _print(spincase2, T2[spincase2], prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());
       T2[s]->activate();
       compute_YxF(ij_ij, 1.0,
                   0, 0,
@@ -2274,6 +2275,7 @@ void MP2R12Energy_Diag::compute_ef12() {
           // extract Vba_ij from Vqp_ij
           Ref<DistArray4> Vba_ij;
           map(Vqp_ij, o1, o2, p2, p1, Vba_ij, o1, o2, v2, v1);
+          _print(spincase2, Vba_ij, prepend_spincase(spincase2,"Vba_ij matrix").c_str());
 
           Vba_ij->activate();
           double* const Vab_blk = new double[nv12];
@@ -2320,12 +2322,13 @@ void MP2R12Energy_Diag::compute_ef12() {
       // extract Via_ij from Vpq_ij
       Ref<DistArray4> Via_ij;
       map(Vpq_ij, o1, o2, p1, p2, Via_ij, o1, o2, o1, v2);
-      //_print(spincase2, Via_ij, prepend_spincase(spincase2,"Via_ij matrix").c_str());
+      _print(spincase2, Via_ij, prepend_spincase(spincase2,"Via_ij matrix").c_str());
 
       // Convert T1^j_a (spin2) to an array
       const int no2v2 = no2 * nv2;
       double* const raw_T1_ja = new double[no2v2];
       T1[spin2].convert(raw_T1_ja);
+      T1[spin2].print(prepend_spincase(spin2,"CCSD T1 amplitudes:").c_str());
 
       Via_ij->activate();
       contract_VT1(Via_ij,
@@ -2344,6 +2347,7 @@ void MP2R12Energy_Diag::compute_ef12() {
           // extract Vai_ij from Vqp_ij
           Ref<DistArray4> Vai_ij;
           map(Vqp_ij, o1, o2, p2, p1, Vai_ij, o1, o2, v2, o1);
+          _print(spincase2, Vai_ij, prepend_spincase(spincase2,"Vai_ij matrix").c_str());
 
           Vai_ij->activate();
           contract_VT1(Vai_ij,
@@ -2370,12 +2374,13 @@ void MP2R12Energy_Diag::compute_ef12() {
       // extract Vaj_ij from Vpq_ij
       Ref<DistArray4> Vaj_ij;
       map(Vpq_ij, o1, o2, p1, p2, Vaj_ij, o1, o2, v1, o2);
-      //_print(spincase2, Vaj_ij, prepend_spincase(spincase2,"Vaj_ij matrix").c_str());
+      _print(spincase2, Vaj_ij, prepend_spincase(spincase2,"Vaj_ij matrix").c_str());
 
       // Convert T1^i_a (spin1) to an array
       const int no1v1 = no1 * nv1;
       double* const raw_T1_ia = new double[no1v1];
       T1[spin1].convert(raw_T1_ia);
+      T1[spin1].print(prepend_spincase(spin1,"CCSD T1 amplitudes:").c_str());
 
       Vaj_ij->activate();
       contract_VT1(Vaj_ij,
@@ -2394,6 +2399,7 @@ void MP2R12Energy_Diag::compute_ef12() {
         if (num_unique_spincases2 == 3) {
           // extract Vja_ij from Vqp_ij
           map(Vqp_ij, o1, o2, p2, p1, Vja_ij, o1, o2, o2, v1);
+          _print(spincase2, Vja_ij, prepend_spincase(spincase2,"Vja_ij matrix").c_str());
         } else {
             Vja_ij = Via_ij;
         }
@@ -2418,6 +2424,8 @@ void MP2R12Energy_Diag::compute_ef12() {
             const int i21 = i2 * (i2-1)/2 + i1;
             // 2.0 from Hylleraas functional
             const double Hij_pair_energy = 2.0*C_1*(0.5*VT2ij_ij[ij] + VT1ij_ij[ij]);
+//            const double Hij_pair_energy = C_1*VT2ij_ij[ij];
+//            const double Hij_pair_energy = 2.0*C_1* VT1ij_ij[ij];
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
@@ -2429,6 +2437,8 @@ void MP2R12Energy_Diag::compute_ef12() {
               const double Hij_pair_energy = 2.0*( 0.5*(C_0+C_1) * VT2ij_ij[ij] + 0.5*(C_0-C_1) * VT2ij_ji[ij]
                                                  + 0.5*(C_0+C_1) * VT1ij_ij[ij] + 0.5*(C_0-C_1) * VT1ij_ji[ij]
                                                    );
+//              const double Hij_pair_energy = (C_0+C_1) * VT2ij_ij[ij] + (C_0-C_1) * VT2ij_ji[ij];
+//              const double Hij_pair_energy = (C_0+C_1) * VT1ij_ij[ij] + (C_0-C_1) * VT1ij_ji[ij];
               ef12_[s].accumulate_element(ij, Hij_pair_energy);
             }
           }

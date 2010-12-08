@@ -144,6 +144,9 @@ class.
 <dt><tt>print_timings</tt><dd> If this is true, timing information is
         printed at the end of the run.  The default is true.
 
+<dt><tt>print_resources</tt><dd> If this is true, resources usage information is
+        printed at the end of the run (\sa ConsumableResources class).  The default is true.
+
 <dt><tt>run</tt><dd> This gives a vector of objects of type
         Runnable.  The run method for each of these objects
         will be called after the calculation completes.  This

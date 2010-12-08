@@ -32,6 +32,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
@@ -64,7 +65,7 @@ ReplSymmSCMatrix::ReplSymmSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
 {
   int n = d->n();
 
-  matrix = new double[n*(n+1)>>1];
+  matrix = allocate<double>(n*(n+1)>>1);
   rows = init_symm_rows(matrix,n);
 
   init_blocklist();
@@ -119,7 +120,7 @@ ReplSymmSCMatrix::init_blocklist()
 
 ReplSymmSCMatrix::~ReplSymmSCMatrix()
 {
-  if (matrix) delete[] matrix;
+  if (matrix) deallocate(matrix);
   if (rows) delete[] rows;
 }
 

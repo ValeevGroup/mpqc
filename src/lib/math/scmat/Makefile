@@ -47,13 +47,13 @@ CXXSRC = dim.cc \
          blocked.cc \
          blockedvect.cc blockedrect.cc blockeddiag.cc blockedsymm.cc \
          matrix3.cc    vector3.cc    vector3_i.cc \
-         util.cc       stateutil.cc  blas.cc
+         util.cc       stateutil.cc  blas.cc cmatrix.cc
 
 TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 
 TESTPROGS = disttest localtest repltest blockedtest
 
-CSRC = cmatrix.c svd.c
+CSRC = svd.c
 
 FSRC = pdsteqr.f
 

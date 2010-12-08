@@ -26,6 +26,7 @@
 //
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/int2e.h>
 
@@ -119,9 +120,9 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
     if (off_ap1_bm1 > ndata12) ndata12 = off_ap1_bm1;
     }
   int ndatamax = (ndata12>ndata34?ndata12:ndata34);
-  buf34 = new double[ndata34];
-  buf12 = new double[ndata12];
-  bufshared = new double[ndatamax];
+  buf34 = allocate<double>(ndata34);
+  buf12 = allocate<double>(ndata12);
+  bufshared = allocate<double>(ndatamax);
 
   used_storage_shift_ += sizeof(double)*(ndata34+ndata12+ndatamax);
 
@@ -132,9 +133,9 @@ void
 Int2eV3::int_done_shiftgc()
 {
   used_storage_ -= used_storage_shift_;
-  delete[] buf12;
-  delete[] buf34;
-  delete[] bufshared;
+  deallocate(buf12);
+  deallocate(buf34);
+  deallocate(bufshared);
   }
 
 /* This is the principle entry point for the am shifting routines.

@@ -34,6 +34,7 @@
 #include <util/misc/math.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/basis/fjt.h>
 
 using namespace sc;
@@ -117,8 +118,8 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
   {
       const int nrow = max_T_+1;
       const int ncol = max_m_+1;
-      grid_ = new double*[nrow];
-      grid_[0] = new double[nrow*ncol];
+      grid_ = allocate<double*>(nrow);
+      grid_[0] = allocate<double>(nrow*ncol);
       for(int r=1; r<nrow; ++r)
 	  grid_[r] = grid_[r-1] + ncol;
   }
@@ -165,8 +166,8 @@ Taylor_Fjt::~Taylor_Fjt()
   delete[] F_;
   delete[] T_crit_;
   T_crit_ = 0;
-  delete[] grid_[0];
-  delete[] grid_;
+  deallocate(grid_[0]);
+  deallocate(grid_);
   grid_ = NULL;
 }
 
@@ -322,9 +323,9 @@ FJT::FJT(int max)
 
   /* Allocate storage for gtable and int_fjttable. */
   int_fjttable = new double[maxj+1];
-  gtable = new double*[ngtable()];
+  gtable = allocate<double*>(ngtable());
   for (i=0; i<ngtable(); i++) {
-      gtable[i] = new double[TABLESIZE];
+      gtable[i] = allocate<double>(TABLESIZE);
     }
 
   /* Tabulate the gamma function for t(=wval)=0.0. */

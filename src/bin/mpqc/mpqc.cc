@@ -578,6 +578,8 @@ try_main(int argc, char *argv[])
 
   int print_mole = keyval->booleanvalue("print_mole",truevalue);
 
+  int print_resources = keyval->booleanvalue("print_resources",truevalue);
+
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
   // Read in all of the runnable objects now, so we can get rid of
@@ -622,19 +624,20 @@ try_main(int argc, char *argv[])
 
   ExEnv::out0() << endl << indent
        << "MPQC options:" << endl << incindent
-       << indent << "matrixkit     = <"
+       << indent << "matrixkit       = <"
        << SCMatrixKit::default_matrixkit()->class_name() << ">" << endl
-       << indent << "filename      = " << molname << endl
-       << indent << "restart_file  = " << restartfile << endl
-       << indent << "restart       = " << (restart ? "yes" : "no") << endl
-       << indent << "checkpoint    = " << (checkpoint ? "yes" : "no") << endl
-       << indent << "savestate     = " << (savestate ? "yes" : "no") << endl
-       << indent << "do_energy     = " << (do_energy ? "yes" : "no") << endl
-       << indent << "do_gradient   = " << (do_grad ? "yes" : "no") << endl
-       << indent << "optimize      = " << (do_opt ? "yes" : "no") << endl
-       << indent << "write_pdb     = " << (do_pdb ? "yes" : "no") << endl
-       << indent << "print_mole    = " << (print_mole ? "yes" : "no") << endl
-       << indent << "print_timings = " << (print_timings ? "yes" : "no")
+       << indent << "filename        = " << molname << endl
+       << indent << "restart_file    = " << restartfile << endl
+       << indent << "restart         = " << (restart ? "yes" : "no") << endl
+       << indent << "checkpoint      = " << (checkpoint ? "yes" : "no") << endl
+       << indent << "savestate       = " << (savestate ? "yes" : "no") << endl
+       << indent << "do_energy       = " << (do_energy ? "yes" : "no") << endl
+       << indent << "do_gradient     = " << (do_grad ? "yes" : "no") << endl
+       << indent << "optimize        = " << (do_opt ? "yes" : "no") << endl
+       << indent << "write_pdb       = " << (do_pdb ? "yes" : "no") << endl
+       << indent << "print_mole      = " << (print_mole ? "yes" : "no") << endl
+       << indent << "print_timings   = " << (print_timings ? "yes" : "no") << endl
+       << indent << "print_resources = " << (print_resources ? "yes" : "no")
        << endl << decindent;
 
   int ready_for_freq = 1;
@@ -858,6 +861,12 @@ try_main(int argc, char *argv[])
 
   if (parsedkv.nonnull()) print_unseen(parsedkv, input);
 
+  if (print_resources) {
+    const bool print_resources_state = false;
+    const bool print_resources_stats = true;
+    ExEnv::out0() << endl;
+    resources->print(ExEnv::out0(),print_resources_state,print_resources_stats);
+  }
   if (print_timings)
     timer.print(ExEnv::out0());
 

@@ -45,6 +45,8 @@ ProcMemoryGrp::ProcMemoryGrp()
 {
   data_ = 0;
   offsets_ = 0;
+  n_ = 1;
+  me_ = 0;
 }
 
 ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
@@ -52,6 +54,8 @@ ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
 {
   data_ = 0;
   offsets_ = 0;
+  n_ = 1;
+  me_ = 0;
 }
 
 ProcMemoryGrp::~ProcMemoryGrp()
@@ -67,8 +71,6 @@ ProcMemoryGrp::set_localsize(size_t localsize)
   offsets_ = new distsize_t[2];
   offsets_[0] = 0;
   offsets_[1] = localsize;
-  n_ = 1;
-  me_ = 0;
   data_ = allocate<char>(localsize);
 }
 

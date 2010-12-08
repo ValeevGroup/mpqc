@@ -29,6 +29,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/types.h>
@@ -134,7 +135,7 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
                 *cs3->max_ncartesian_in_shell()
                 *(int_unit4?1:cs4->max_ncartesian_in_shell());
   if (order==0) {
-    int_buffer = (double *) malloc(sizeof(double) * maxsize);
+    int_buffer = allocate<double>(maxsize);
     int_derint_buffer = 0;
     }
   else if (order==1) {
@@ -145,8 +146,8 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
              *(int_unit4?1:cs4->max_ncartesian_in_shell(1));
 
     /* Allocate the integral buffers. */
-    int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
-    int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
+    int_buffer = allocate<double>(9*maxsize);
+    int_derint_buffer = allocate<double>(nderint);
     if (!int_derint_buffer) {
       ExEnv::errn() << scprintf("couldn't malloc intermed storage for derivative ints\n");
       fail();
@@ -285,8 +286,8 @@ void
 Int2eV3::int_done_erep()
 {
   if (int_unit_shell) delete_int_unit_shell();
-  if (int_derint_buffer) free(int_derint_buffer);
-  free(int_buffer);
+  if (int_derint_buffer) deallocate(int_derint_buffer);
+  deallocate(int_buffer);
   if (int_store1) {
     delete[] int_shell_to_prim;
     }

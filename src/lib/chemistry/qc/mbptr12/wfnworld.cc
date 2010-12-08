@@ -276,8 +276,9 @@ WavefunctionWorld::print(std::ostream& o) const {
   default:
     throw std::runtime_error("WavefunctionWorld::print -- invalid value of ints_method_");
   }
-  o << indent << "How to Store Transformed Integrals: " << ints_str << std::endl << std::endl;
-  o << indent << "Transformed Integrals file suffix: " << ints_file_ << std::endl << std::endl;
+  o << indent << "How to Store Transformed Integrals: " << ints_str << std::endl;
+  o << indent << "Transformed Integrals file suffix: " << ints_file_ << std::endl;
+  o << decindent << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -63,6 +63,15 @@ GrpMaxReduce<T>::reduce(T*target, T*data, int nelement)
     }
 }
 
+template <class T, class BinaryPredicate>
+void
+GrpCompareReduce<T, BinaryPredicate>::reduce(T*target, T*data, int nelement)
+{
+  for (int i=0; i<nelement; i++) {
+      if (Op(target[i], data[i])) target[i] = data[i];
+    }
+}
+
 template <class T>
 void
 GrpArithmeticAndReduce<T>::reduce(T*target, T*data, int nelement)
@@ -104,6 +113,44 @@ void
 GrpFunctionReduce<T>::reduce(T*target, T*data, int nelement)
 {
   (*func_)(target,data,nelement);
+}
+
+template <typename T>
+void
+MessageGrp::reduce(T* data, int n, GrpReduce<T>& red,
+                   T* scratch, int target)
+{
+  int tgop_max = gop_max_/sizeof(T);
+  if (tgop_max == 0) tgop_max = gop_max_?1:n;
+
+  int passed_scratch;
+  if (!scratch) {
+      scratch = new T[n>tgop_max?tgop_max:n];
+      passed_scratch = 0;
+    }
+  else passed_scratch = 1;
+
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
+                                                    (target== -1?0:target)));
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
+          if (i->send()) {
+              raw_send(i->sendto(), &data[idat], ndat*sizeof(T));
+            }
+          if (i->recv()) {
+              raw_recv(i->recvfrom(), scratch, ndat*sizeof(T));
+              red.reduce(&data[idat], scratch, ndat);
+            }
+        }
+      if (n > tgop_max) sync();
+    }
+
+  if (target == -1) {
+      raw_bcast(data, n*sizeof(T), 0);
+    }
+
+  if (!passed_scratch) delete[] scratch;
 }
 
 }

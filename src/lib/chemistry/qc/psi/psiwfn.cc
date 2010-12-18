@@ -1188,6 +1188,7 @@ namespace sc {
       evals_sc_[Beta] = chkpt.evals(Beta, seek_spin_restricted);
       coefs_sc_[Alpha] = chkpt.coefs(Alpha, seek_spin_restricted);
       coefs_sc_[Beta] = chkpt.coefs(Beta, seek_spin_restricted);
+      return;
     }
 
     const RefSCDimension modim = evals().dim();

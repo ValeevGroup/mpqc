@@ -29,6 +29,8 @@
 
 #include <math/scmat/util.h>
 #include <util/group/thread.h>
+#include <math/scmat/matrix.h>
+#include <math/scmat/blocked.h>
 
 namespace sc {
 
@@ -116,3 +118,51 @@ sc::scmat_perform_op_on_blocks(const Ref<SCElementOp>& op,
   delete[] ops;
 }
 
+void
+sc::canonicalize_column_phases(RefSCMatrix& A) {
+  Ref<BlockedSCMatrix> A_blkd = dynamic_cast<BlockedSCMatrix*>(A.pointer());
+  if (A_blkd.null()) { // if matrix is nonblocked, use SCElementOp
+    RefDiagSCMatrix U = A.kit()->diagmatrix(A.coldim());
+    const int ncol = A.ncol();
+
+    // find max element in each column
+    typedef SCElementMaxElement<SCMatrixIterationRanges::Columns, SCElement::fabs_less > ElOp;
+    Ref<ElOp> find_max_op = new ElOp;
+    A.element_op(find_max_op);
+    std::vector<SCElement> max_elems = find_max_op->result();
+
+    // scale each column, if needed
+    for(int c=0; c<ncol; ++c) {
+      const double phase_correction = (max_elems[c].value < 0.0) ? -1.0 : 1.0;
+      //ExEnv::out0() << indent << "col = " << c << ": max_value = " << max_elems[c].value << " phase = " << phase_correction << std::endl;
+      U.set_element(c, phase_correction);
+    }
+    A = A * U;
+  }
+  else { // with blocks don't be fancy, do serial but safe
+    const double soft_zero = 1e-12;
+
+    const int nrow = A.nrow();
+    const int ncol = A.ncol();
+    // in each column
+    for(int c=0; c<ncol; ++c) {
+      // find the largest-magnitude element
+      int rmax = -1;
+      int valmax = 0.0;
+      for(int r=0; r<nrow; ++r) {
+        const double value = fabs(A.get_element(r,c));
+        if (value - valmax > soft_zero) {
+          valmax = value;
+          rmax = r;
+        }
+      }
+      // if the largest-magnitude element is negative, scale the column by -1
+      if (A.get_element(rmax,c) < -soft_zero) {
+        for(int r=0; r<nrow; ++r) {
+          A.set_element(r,c, A.get_element(r,c) * (-1.0));
+        }
+      }
+    }
+
+  }
+}

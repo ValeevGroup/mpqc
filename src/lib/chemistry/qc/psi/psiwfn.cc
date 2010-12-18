@@ -43,6 +43,7 @@
 #include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
+#include <math/scmat/util.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blocked.h>
 #include <math/symmetry/pointgrp.h>
@@ -1188,6 +1189,8 @@ namespace sc {
       evals_sc_[Beta] = chkpt.evals(Beta, seek_spin_restricted);
       coefs_sc_[Alpha] = chkpt.coefs(Alpha, seek_spin_restricted);
       coefs_sc_[Beta] = chkpt.coefs(Beta, seek_spin_restricted);
+      //coefs_sc_[Alpha].print("Alpha semicanonical MOs (computed in Psi)");
+      //coefs_sc_[Beta].print("Beta semicanonical MOs (computed in Psi)");
       return;
     }
 
@@ -1345,6 +1348,7 @@ namespace sc {
       }
     }
     coefs_sc_[Alpha] = ao_eigenvector * aevecs;
+    canonicalize_column_phases(coefs_sc_[Alpha]);
   #if DEBUG_SEMICANONICAL
     {
       ao_eigenvector.print("Original eigenvector (AO basis)");
@@ -1424,6 +1428,7 @@ namespace sc {
       }
     }
     coefs_sc_[Beta] = ao_eigenvector * bevecs;
+    canonicalize_column_phases(coefs_sc_[Beta]);
   #if DEBUG_SEMICANONICAL
     {
       bevecs.print("Beta transform matrix");
@@ -1440,6 +1445,8 @@ namespace sc {
   #endif
     bevecs = 0;
 
+    //coefs_sc_[Alpha].print("Alpha semicanonical MOs (computed in MPQC)");
+    //coefs_sc_[Beta].print("Beta semicanonical MOs (computed in MPQC)");
   }
 
   //////////////////////////////////////////////////////////////////////////

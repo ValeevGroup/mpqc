@@ -400,16 +400,16 @@ namespace sc {
         return hsoshf;
       }
 
-      /// returns the semicanonical MO coefficients in AO basis
+      /// returns the semicanonical MO coefficients in AO basis \sa semicanonical
       const RefSCMatrix& coefs_semicanonical(SpinCase1 s);
-      /// returns the eigenvalues of semicanonical MOs in AO basis
+      /// returns the eigenvalues of semicanonical MOs in AO basis \sa semicanonical
       const RefDiagSCMatrix& evals_semicanonical(SpinCase1 s);
 
     private:
       RefSCMatrix coefs_sc_[NSpinCases1];
       RefDiagSCMatrix evals_sc_[NSpinCases1];
 
-      // computes semicanonical MOs
+      /// read semicanonical MOs; if not available, compute them
       void semicanonical();
   };
 

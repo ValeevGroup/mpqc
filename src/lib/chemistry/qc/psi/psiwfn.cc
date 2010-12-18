@@ -1180,6 +1180,16 @@ namespace sc {
     if (value_needed())
       compute();
 
+    // if orbitals are available read off disk
+    PsiChkpt chkpt(exenv(), integral(), debug());
+    if (chkpt.have_spin_unrestricted_mos()) {
+      const bool seek_spin_restricted = false;
+      evals_sc_[Alpha] = chkpt.evals(Alpha, seek_spin_restricted);
+      evals_sc_[Beta] = chkpt.evals(Beta, seek_spin_restricted);
+      coefs_sc_[Alpha] = chkpt.coefs(Alpha, seek_spin_restricted);
+      coefs_sc_[Beta] = chkpt.coefs(Beta, seek_spin_restricted);
+    }
+
     const RefSCDimension modim = evals().dim();
     const RefSCDimension sodim = so_dimension();
     const unsigned int nirrep = molecule()->point_group()->char_table().nirrep();

@@ -53,7 +53,7 @@ namespace sc {
 
           <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-          <tr><td><tt>memory</tt><td>integer<td>256000000<td>number of bytes; user is allowed to use KB/MB/GB abbreviations
+          <tr><td><tt>memory</tt><td>integer<td>256MB<td>number of bytes; user is allowed to use KB/MB/GB abbreviations \sa KeyValValuestring::sizevalue()
 
           <tr><td><tt>disk</tt><td>[string integer] pair<td>["./" 0]<td>specifies location of scratch files and available storage in bytes ("0" means unlimited)
 

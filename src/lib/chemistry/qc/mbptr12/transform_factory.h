@@ -105,17 +105,11 @@ private:
   DensityFittingInfo* df_info_;
 
   CreateTransformHints hints_;
-  size_t memory_;
   bool dynamic_;
   double print_percent_;
   int debug_;
   MOIntsTransform::StoreMethod::type ints_method_;
   std::string file_prefix_;
-
-  // some functions must be called from TwoBodyMOIntsTransform to allow proper memory management
-  friend class TwoBodyMOIntsTransform;
-  void release_memory(size_t nbytes);
-  void reserve_memory(size_t nbytes);
 
   template <typename TransformType> Ref<TwoBodyMOIntsTransform>
     twobody_transform(const std::string& name,
@@ -156,7 +150,6 @@ public:
   void set_debug(int debug);
   void set_print_percent(double print_percent);
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
-  void set_memory(size_t nbytes) { memory_ = nbytes; mem_->set_localsize(memory_); }
 
   /// Returns the MemoryGrp object
   Ref<MemoryGrp> mem() const { return mem_; }
@@ -179,7 +172,6 @@ public:
   const int debug() const { return debug_; }
   const double print_percent() const { return print_percent_; }
   const bool dynamic() const { return dynamic_; }
-  const size_t memory() const { return memory_; }
 
   /// Returns OrbitalSpace object 1
   Ref<OrbitalSpace> space1() const;

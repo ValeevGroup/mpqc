@@ -106,8 +106,6 @@ public:
 
     </dl>
 
-    <dt><tt>memory</tt><dd> This keyword specifies the amount of memory to be used. The default is 32000000 bytes.
-
     <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
     is used by MO integrals transforms. The default is false.
 
@@ -137,9 +135,6 @@ public:
   /** Sets name of the file used to store transformed integrals.
       Default depends on how the object was constructed. */
   void ints_file(const std::string& filename) { ints_file_ = filename; };
-  /** Sets the amount of memory to use for the calculation. Default is
-      determined by DEFAULT_SC_MEMORY. */
-  void memory(const size_t nbytes);
 
   Wavefunction* wfn() const { return wfn_; }
 
@@ -155,7 +150,6 @@ public:
   int debug_level() const { return debug_; };
   const StoreMethod::type ints_method() const { return ints_method_; };
   const std::string& ints_file() const;
-  const size_t memory() const { return memory_; };
 
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
@@ -179,7 +173,6 @@ private:
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
 
-  size_t memory_;
   bool dynamic_;
   double print_percent_;
   int debug_;

@@ -122,8 +122,6 @@ WavefunctionWorld::WavefunctionWorld(
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));
 
-  memory_ = keyval->sizevalue("memory", KeyValValuesize(DEFAULT_SC_MEMORY));
-
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
@@ -145,7 +143,6 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
   ints_method_ = static_cast<WavefunctionWorld::StoreMethod::type>(ints_method);
   si.get(ints_file_);
 
-  double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   si.get(dynamic_);
   si.get(print_percent_);
@@ -166,7 +163,6 @@ void WavefunctionWorld::save_data_state(StateOut& so)
 
   so.put((int)ints_method_);
   so.put(ints_file_);
-  so.put((double)memory_);
   so.put(debug_);
   so.put(dynamic_);
   so.put(print_percent_);
@@ -184,7 +180,6 @@ WavefunctionWorld::initialize()
   tfactory_->set_dynamic(dynamic_);
   tfactory_->set_ints_method(ints_method_);
   tfactory_->set_file_prefix(ints_file_);
-  this->memory(memory_);
 
   {
     // also create AO spaces
@@ -238,14 +233,6 @@ WavefunctionWorld::obsolete() {
 const std::string& WavefunctionWorld::ints_file() const
 {
   return ints_file_;
-}
-
-void
-WavefunctionWorld::memory(const size_t memory)
-{
-  if (memory > 0)
-    memory_ = memory;
-  tfactory_->set_memory(memory_);
 }
 
 void

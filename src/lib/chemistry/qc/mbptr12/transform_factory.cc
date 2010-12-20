@@ -71,15 +71,11 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral) :
   aoreg_ = AOSpaceRegistry::instance();
 
   // Default values
-  memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
   dynamic_ = false;
   print_percent_ = 10.0;
   ints_method_ = MOIntsTransform::StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
-
-  // allocate all memory at once
-  mem_->set_localsize(memory_);
 }
 
 MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
@@ -97,7 +93,6 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
@@ -122,7 +117,6 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
-  so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
@@ -183,7 +177,6 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-  reserve_memory(result->memory());
 
   return result;
 }
@@ -198,7 +191,6 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-  reserve_memory(result->memory());
 
   return result;
 }
@@ -232,7 +224,6 @@ MOIntsTransformFactory::twobody_transform(const std::string& name,
 #if 0
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
-  reserve_memory(result->memory());
 #endif
   return result;
 }
@@ -270,16 +261,6 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
       return twobody_transform<TwoBodyThreeCenterMOIntsTransform_ijR>(name,descrarg);
   }
   assert(false);  // should be unreachable
-}
-
-void
-MOIntsTransformFactory::reserve_memory(size_t bytes) {
-  memory_ -= bytes;
-}
-
-void
-MOIntsTransformFactory::release_memory(size_t bytes) {
-  memory_ += bytes;
 }
 
 void

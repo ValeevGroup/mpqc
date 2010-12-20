@@ -105,8 +105,6 @@ CCR12::~CCR12(){
 
 void CCR12::compute(){
 
-  r12world()->world()->memory(memorysize_);
-
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
   ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzcore(),nfzvirt(),
                   molecule()->point_group()->char_table().nirrep(),worksize_,memorysize_,mem_->n(),ndiis_,

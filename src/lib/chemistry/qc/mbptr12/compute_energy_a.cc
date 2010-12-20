@@ -82,7 +82,6 @@ MBPT2_R12::compute_energy_()
   if (r12eval_.null()) {
     // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
     r12world->world()->print_percent(print_percent_);
-    r12world->world()->memory(mem_alloc);
     r12eval_ = new R12IntEval(r12world_);
     r12eval_->debug(debug_);
   }

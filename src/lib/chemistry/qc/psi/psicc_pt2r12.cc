@@ -154,7 +154,6 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
 
   // to compute intermediates make sure r12eval_ is ready
   if (r12eval_.null()) {
-    r12world()->world()->memory(this->memory_);
     r12eval_ = new R12IntEval(r12world());
     r12eval_->debug(debug_);
   }

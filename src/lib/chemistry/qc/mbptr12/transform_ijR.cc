@@ -38,6 +38,7 @@
 #endif
 #include <util/group/memory.h>
 #include <util/group/memregion.h>
+#include <util/misc/consumableresources.h>
 #include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/print.h>
 
@@ -79,7 +80,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_transform_batchsize(size_t mem_st
 {
   // Check is have enough for even static objects
   size_t mem_dyn = 0;
-  const size_t max_memory = factory_->memory();
+  const size_t max_memory = ConsumableResources::get_default_instance()->memory();
   if (max_memory <= mem_static)
     return 0;
   else

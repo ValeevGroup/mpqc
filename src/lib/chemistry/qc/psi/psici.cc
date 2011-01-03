@@ -584,11 +584,13 @@ namespace sc {
 
   void PsiRASCI::compute() {
 
-    double energy_rasscf = 0.0;
+    // compute reference NOW so that orbital info is available for making the correlated wfn input
+    reference_->compute();
+    const double energy_scf = reference_energy();
     PsiWavefunction::compute();
 
-    const double energy_scf = reference_energy();
     const double energy_ci = exenv()->chkpt().rd_etot();
+    const double energy_rasscf = 0.0;
 
     ExEnv::out0() << indent << "SCF energy: " << setprecision(12) << energy_scf << endl;
     ExEnv::out0() << indent << "correlation (CI-SCF) energy: " << setprecision(12) << (energy_ci-energy_scf) << endl;
@@ -613,11 +615,11 @@ namespace sc {
   std::vector<unsigned int>
   PsiRASCI::map_density_to_sb() {
     // maps symm -> RAS
-    std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
-                                                             ras1(),
-                                                             ras2(),
-                                                             ras3(),
-                                                             frozen_uocc());
+    std::vector<unsigned int> fmap = index_map_symmtorasorder(frozen_docc(),
+                                                              ras1(),
+                                                              ras2(),
+                                                              ras3(),
+                                                              frozen_uocc());
     return index_map_inverse( fmap );
   }
 
@@ -717,7 +719,7 @@ namespace sc {
 
     // 1-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
     // map_density_to_sb() reports mapping from full RAS to full SB orders
-    // here lets map RAS (excluding RAS3 and frozen virtuals) to occ()
+    // here need to map RAS1+RAS2 (since ras3_max = 0) to full SB
     std::vector<unsigned int> dmap;
     {
       std::vector<unsigned int> empty(nirrep_, 0);
@@ -756,7 +758,7 @@ namespace sc {
 
     // 2-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
     // map_density_to_sb() reports mapping from full RAS to full SB orders
-    // here lets map RAS (excluding RAS3 and frozen virtuals) to occ()
+    // here need to map RAS1+RAS2 (since ras3_max = 0) to full SB
     std::vector<unsigned int> dmap;
     {
       std::vector<unsigned int> empty(nirrep_, 0);
@@ -775,60 +777,6 @@ namespace sc {
 
     return twopdm_occ_[spin];
   }
-
-#if 0
-  RefSymmSCMatrix
-  PsiRASCI::rdm1(const SpinCase1 &spin) const {
-    string opdm_label_str;
-    FILE *outfile;
-    if(spin==Alpha) {
-      opdm_label_str = "MO-basis Alpha OPDM";
-      outfile = fopen("psiout_opdm_Alpha","w");
-    }
-    else { // spin==Beta
-      opdm_label_str = "MO-basis Beta OPDM";
-      outfile = fopen("psiout_opdm_Beta","w");
-    }
-    char *opdm_label=(char *)opdm_label_str.c_str();
-    const int nmo = reference()->nmo();
-    double *opdm_arr = new double [nmo*nmo];
-    detail::rdopdm(PSIF_MO_OPDM,opdm_label,opdm_arr,nmo*nmo,0,1,outfile);
-    fclose(outfile);
-
-    const RefDiagSCMatrix evals = reference()->evals(spin);
-    const RefSCDimension modim = evals.dim();
-    RefSymmSCMatrix opdm_mat = evals.kit()->symmmatrix(modim);
-    opdm_mat.assign(opdm_arr);
-    delete [] opdm_arr;
-
-    if(debug_>=DefaultPrintThresholds::mostN2) {
-      opdm_mat.print(prepend_spincase(spin,"Psi opdm").c_str());
-    }
-
-    return(opdm_mat);
-  }
-#endif
-
-#if 0
-  void PsiRASCI::print_all_blocks(ostream &o) {
-    vector<unsigned int> mos = mo_blocks();
-    detail::print_blocks("mos",mos,o);
-    vector<unsigned int> frzc = frzcpi();
-    detail::print_blocks("frzc",frzc,o);
-    vector<unsigned int> docc = doccpi();
-    detail::print_blocks("docc",docc,o);
-    vector<unsigned int> docc_act = doccpi_act();
-    detail::print_blocks("docc_act",docc_act,o);
-    vector<unsigned int> socc = soccpi();
-    detail::print_blocks("socc",socc,o);
-    vector<unsigned int> uocc_act = uoccpi_act();
-    detail::print_blocks("uocc_act",uocc_act,o);
-    vector<unsigned int> uocc = uoccpi();
-    detail::print_blocks("uocc",uocc,o);
-    vector<unsigned int> frzv = frzvpi();
-    detail::print_blocks("frzv",frzv,o);
-  }
-#endif
 
 //////////////////////////////////////////////////////////
 
@@ -891,6 +839,8 @@ namespace sc {
 
     run_detci_only_ = false;
 
+    // compute reference NOW so that orbital info is available for making the correlated wfn input
+    reference_->compute();
     PsiWavefunction::compute();
     const double energy_rasscf = exenv()->chkpt().rd_etot();
     ExEnv::out0() << indent << "RASSCF energy: " << setprecision(12) << energy_rasscf << endl;

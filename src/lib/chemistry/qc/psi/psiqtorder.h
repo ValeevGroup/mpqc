@@ -38,23 +38,23 @@
 namespace sc {
   
   /** Returns map from symmetry-blocked orbitals to QT-ordered orbitals
-   *  \param frozen_docc -- vector of number of frozen doubly occupied orbitals in each irrep
-   *  \param docc_act -- vector of number of doubly occupied orbitals in each irrep
-   *  \param socc_act -- vector of number of singly occupied orbitals in each irrep
-   *  \param uocc_act -- vector of number of unoccupied orbitals in each irrep
-   *  \param frozen_uocc -- vector of number of frozen unoccupied orbitals in each irrep */
+   *  \param frozen_docc -- specifies the number of frozen doubly occupied orbitals in each irrep
+   *  \param docc_act -- specifies the number of doubly occupied orbitals in each irrep
+   *  \param socc_act -- specifies the number of singly occupied orbitals in each irrep
+   *  \param uocc_act -- specifies the number of unoccupied orbitals in each irrep
+   *  \param frozen_uocc -- specifies the number of frozen unoccupied orbitals in each irrep */
   std::vector<unsigned int> index_map_symmtoqtorder(const std::vector<unsigned int> &frozen_docc,
                                                     const std::vector<unsigned int> &docc_act,
                                                     const std::vector<unsigned int> &socc_act,
                                                     const std::vector<unsigned int> &uocc_act,
                                                     const std::vector<unsigned int> &frozen_uocc);
   
-  /** Returns map from symmetry-blocked orbitals to RAS-ordered orbitals
-   *  \param frozen_docc -- vector of number of frozen doubly occupied orbitals in each irrep
-   *  \param docc_act -- vector of number of doubly occupied orbitals in each irrep
-   *  \param socc_act -- vector of number of singly occupied orbitals in each irrep
-   *  \param uocc_act -- vector of number of unoccupied orbitals in each irrep
-   *  \param frozen_uocc -- vector of number of frozen unoccupied orbitals in each irrep */
+  /** Returns map from symmetry-blocked orbitals to RAS-ordered orbitals \sa index_map_symmtoqtorder
+   *  \param frozen_docc -- specifies the number of frozen doubly occupied orbitals in each irrep
+   *  \param ras1 -- specifies the number of RAS1 orbitals in each irrep
+   *  \param ras2 -- specifies the number of RAS2 orbitals in each irrep
+   *  \param ras3 -- specifies the number of RAS3 orbitals in each irrep
+   *  \param frozen_uocc -- specifies the number of frozen unoccupied orbitals in each irrep */
   std::vector<unsigned int> index_map_symmtorasorder(const std::vector<unsigned int> &frozen_docc,
                                                      const std::vector<unsigned int> &ras1,
                                                      const std::vector<unsigned int> &ras2,

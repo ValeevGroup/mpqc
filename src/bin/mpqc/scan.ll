@@ -75,6 +75,7 @@ qstring \"[^"\n]+\"
 "frozen_uocc"   { return T_FROZEN_UOCC; }
 "maxiter"       { return T_MAXITER; }
 "debug"         { return T_DEBUG; }
+"pccsd"         { return T_PCCSD; }
 "xc"            { return T_XC; }
 "grid"          { return T_GRID; }
 "f12"           { return T_F12; }

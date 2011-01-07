@@ -47,6 +47,8 @@ MPQCIn::MPQCIn():
   frozen_uocc_(0),
   debug_(0),
   scf_maxiter_(0),
+  pccsd_alpha_(0),
+  pccsd_beta_(0),
   dftmethod_xc_(0),
   dftmethod_grid_(0),
   r12method_f12_(0),
@@ -302,6 +304,13 @@ void
 MPQCIn::set_debug(char* c)
 {
   debug_ = c;
+}
+
+void
+MPQCIn::set_pccsd(char *a, char *b)
+{
+  pccsd_alpha_ = a;
+  pccsd_beta_ = b;
 }
 
 void
@@ -873,6 +882,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
                strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
                strncmp(method+1, "CCSD(T)_F12", 11) == 0) { // R/U
         guess_method = 0;
+        ask_auxbasis = true;
+        need_wfnworld = true;
         psi = true;
         if (method[0] == 'U')
           reference_method = "PsiUHF";
@@ -1053,10 +1064,13 @@ MPQCIn::write_energy_object(ostream &ostrs,
     ostrs << indent << "psienv = $:psienv" << endl;
   }
 
-  // a Psi-based CC(2)_R12 object currently needs an MP2-R12 object
+  // a Psi-based CC object
   if (psi_ccr12) {
-    write_energy_object(ostrs, "mbpt2r12",
-                        "MP2-R12", 0, 0, ifactory);
+    // TODO make sure this is a closed-shell
+    if (pccsd_alpha_.set())
+      ostrs << indent << "pccsd_alpha = " << pccsd_alpha_.val() << endl;;
+    if (pccsd_beta_.set())
+      ostrs << indent << "pccsd_beta = " << pccsd_beta_.val() << endl;;
   }
 
   ostrs << decindent;

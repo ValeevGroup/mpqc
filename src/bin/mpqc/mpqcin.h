@@ -99,6 +99,7 @@ class MPQCIn {
     MPQCInDatum<char *> r12method_ansatz_;
     MPQCInDatum<char *> pccsd_alpha_;
     MPQCInDatum<char *> pccsd_beta_;
+    MPQCInDatum<char *> pccsd_gamma_;
     MPQCInDatum<char *> symmetry_;
     MPQCInDatum<char *> memory_;
     MPQCInDatum<char *> tmpstore_;
@@ -175,7 +176,7 @@ class MPQCIn {
     void set_checkpoint(int);
     void set_molecule_bohr(int);
     void set_debug(char *);
-    void set_pccsd(char *, char *);
+    void set_pccsd(char *, char *, char *);
     void set_docc(std::vector<int> *);
     void set_socc(std::vector<int> *);
     void set_alpha(std::vector<int> *);

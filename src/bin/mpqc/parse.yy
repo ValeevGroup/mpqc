@@ -106,8 +106,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_frozen_docc($3); }
             |   T_FROZEN_UOCC T_COLON nonnegative_int_vector
                                                 { set_frozen_uocc($3); }
-            |   T_PCCSD T_COLON string string
-                                                { set_pccsd($3,$4); }
+            |   T_PCCSD T_COLON string string string
+                                                { set_pccsd($3,$4,$5); }
             |   T_SCF T_COLON scf_options_list
             |   T_DEBUG T_COLON string
                                                 { set_debug($3); }

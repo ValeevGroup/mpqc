@@ -49,6 +49,7 @@ MPQCIn::MPQCIn():
   scf_maxiter_(0),
   pccsd_alpha_(0),
   pccsd_beta_(0),
+  pccsd_gamma_(0),
   dftmethod_xc_(0),
   dftmethod_grid_(0),
   r12method_f12_(0),
@@ -307,10 +308,11 @@ MPQCIn::set_debug(char* c)
 }
 
 void
-MPQCIn::set_pccsd(char *a, char *b)
+MPQCIn::set_pccsd(char *a, char *b, char *c)
 {
   pccsd_alpha_ = a;
   pccsd_beta_ = b;
+  pccsd_gamma_ = c;
 }
 
 void
@@ -1071,6 +1073,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
       ostrs << indent << "pccsd_alpha = " << pccsd_alpha_.val() << endl;;
     if (pccsd_beta_.set())
       ostrs << indent << "pccsd_beta = " << pccsd_beta_.val() << endl;;
+    if (pccsd_gamma_.set())
+      ostrs << indent << "pccsd_gamma = " << pccsd_gamma_.val() << endl;;
   }
 
   ostrs << decindent;

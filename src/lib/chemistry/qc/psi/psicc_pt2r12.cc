@@ -72,6 +72,7 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
 
   pccsd_alpha_ = keyval->doublevalue("pccsd_alpha", KeyValValuedouble(1.0));
   pccsd_beta_ = keyval->doublevalue("pccsd_beta", KeyValValuedouble(1.0));
+  pccsd_gamma_ = keyval->doublevalue("pccsd_gamma", KeyValValuedouble(1.0));
 
   r12eval_ = 0;
   mp2r12_energy_ = 0;
@@ -138,6 +139,7 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   input->write_keyword("ccenergy:maxiter", maxiter_);
   input->write_keyword("ccenergy:pccsd_alpha", pccsd_alpha_);
   input->write_keyword("ccenergy:pccsd_beta", pccsd_beta_);
+  input->write_keyword("ccenergy:pccsd_gamma", pccsd_gamma_);
 }
 
  void PsiCCSD_PT2R12::compute() {
@@ -469,8 +471,8 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << incindent;
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << std::endl;
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << std::endl;
-  if (pccsd_alpha_ != 1.0 || pccsd_beta_ != 1.0) {
-    o << indent << "pCCSD(alpha,beta)     : (" << pccsd_alpha_ << "," << pccsd_beta_ << ")" << std::endl;
+  if (pccsd_alpha_ != 1.0 || pccsd_beta_ != 1.0 || pccsd_gamma_ != 1.0) {
+    o << indent << "pCCSD(alpha,beta, gamma)     : (" << pccsd_alpha_ << "," << pccsd_beta_ << "," << pccsd_gamma_ << ")" << std::endl;
   }
   if (cabs_singles_) {
     o << indent << "  E(CABS singles) = " << scprintf("%25.15lf", cabs_singles_energy_)

@@ -141,6 +141,7 @@ namespace sc {
   class PsiCCSD : public PsiCC {
       double pccsd_alpha_;
       double pccsd_beta_;
+      double pccsd_gamma_;
     protected:
       void write_input(int conv);
     public:

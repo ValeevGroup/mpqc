@@ -863,6 +863,7 @@ namespace sc {
     PsiCC(keyval) {
     pccsd_alpha_ = keyval->doublevalue("pccsd_alpha", KeyValValuedouble(1.0));
     pccsd_beta_ = keyval->doublevalue("pccsd_beta", KeyValValuedouble(1.0));
+    pccsd_gamma_ = keyval->doublevalue("pccsd_gamma", KeyValValuedouble(1.0));
   }
 
   PsiCCSD::~PsiCCSD() {
@@ -893,6 +894,7 @@ namespace sc {
     input->write_keyword("ccenergy:maxiter", maxiter_);
     input->write_keyword("ccenergy:pccsd_alpha", pccsd_alpha_);
     input->write_keyword("ccenergy:pccsd_beta", pccsd_beta_);
+    input->write_keyword("ccenergy:pccsd_gamma", pccsd_gamma_);
     input->close();
   }
 

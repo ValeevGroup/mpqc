@@ -70,7 +70,10 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
     lineopt_ << keyval->describedclassvalue("lineopt");
   }
   else {
-    lineopt_ = new MCSearch;
+    if (function_->gradient_implemented())
+      lineopt_ = new MCSearch;
+    else
+      lineopt_ = new Backtrack;
   }
 
   accuracy_ = keyval->doublevalue("accuracy");

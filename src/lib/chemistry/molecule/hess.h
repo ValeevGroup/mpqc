@@ -181,6 +181,57 @@ class DiagMolecularHessian: public MolecularHessian {
     RefSymmSCMatrix cartesian_hessian();
 };
 
+////
+
+/** MolecularGradient is an abstract class that computes a molecule's first
+    derivatives of the energy with respect to changes in the nuclear
+    coordinates. */
+class MolecularGradient: virtual public SavableState {
+  protected:
+    Ref<Molecule> mol_;
+    RefSCDimension d3natom_;
+    Ref<SCMatrixKit> matrixkit_;
+  public:
+    MolecularGradient();
+    /** The MolecularGradient KeyVal constructor is used to generate a
+        MolecularGradient  object from the input.  It reads the
+        keywords below.
+
+        <table border="1">
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
+        <tr><td><tt>molecule</tt><td>Molecule<td>none<td>The Molecule object.
+        </table>
+    */
+    MolecularGradient(const Ref<KeyVal>&);
+    MolecularGradient(StateIn&);
+    ~MolecularGradient();
+    void save_data_state(StateOut&);
+
+    RefSCDimension d3natom();
+    Ref<SCMatrixKit> matrixkit() const { return matrixkit_; }
+
+    /// Return the cartesian hessian.
+    virtual RefSCVector cartesian_gradient() = 0;
+
+    /** Some MolecularGradient specializations require a molecular energy
+        object.  The default implementations of this ignores the
+        argument. */
+    virtual void set_energy(const Ref<MolecularEnergy> &energy);
+    /** This returns a MolecularEnergy object, if used by
+        this specialization. Otherwise null is returned.  */
+    virtual MolecularEnergy* energy() const;
+
+    /// Write the gradient in a simple text format.
+    static void write_cartesian_gradient(const char *filename,
+                                         const Ref<Molecule> &m,
+                                         const RefSCVector &grad);
+
+    /// Read the hessian from a simple text format.
+    static void read_cartesian_gradient(const char *filename,
+                                        const Ref<Molecule> &m,
+                                        const RefSCVector &grad);
+};
+
 }
 
 #endif

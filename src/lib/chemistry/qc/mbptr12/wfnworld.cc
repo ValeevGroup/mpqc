@@ -182,14 +182,14 @@ WavefunctionWorld::initialize()
   tfactory_->set_file_prefix(ints_file_);
 
   {
-    // also create AO spaces
-    Ref<OrbitalSpaceRegistry> idxreg = tfactory_->orbital_registry();
-    Ref<AOSpaceRegistry> aoidxreg = tfactory_->ao_registry();
-    Ref<Integral> localints = integral()->clone();
-    // OBS
-    Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu", "OBS(AO)", wfn()->basis(), localints);
-    idxreg->add(make_keyspace_pair(mu));
-    aoidxreg->add(mu->basis(),mu);
+//    // also create AO spaces
+//    Ref<OrbitalSpaceRegistry> idxreg = tfactory_->orbital_registry();
+//    Ref<AOSpaceRegistry> aoidxreg = tfactory_->ao_registry();
+//    Ref<Integral> localints = integral()->clone();
+//    // OBS
+//    Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu", "OBS(AO)", wfn()->basis(), localints);
+//    idxreg->add(make_keyspace_pair(mu));
+//    aoidxreg->add(mu->basis(),mu);
 
     // create MO integrals runtime
     Ref<DensityFittingParams> dfparams;
@@ -213,13 +213,14 @@ WavefunctionWorld::initialize()
                                               thr());
     fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
 
-    if (bs_df_) { // DF-BS
-      Ref<Integral> integral = moints_runtime_->factory()->integral();
-      // TODO how to generate unique labels
-      Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", bs_df_, integral);
-      idxreg->add(make_keyspace_pair(fbs_space));
-      aoidxreg->add(bs_df_, fbs_space);
-    }
+//    if (bs_df_) { // DF-BS
+//      Ref<Integral> integral = moints_runtime_->factory()->integral();
+//      // TODO how to generate unique labels
+//      Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", bs_df_, integral);
+//      idxreg->add(make_keyspace_pair(fbs_space));
+//      aoidxreg->add(bs_df_, fbs_space);
+//    }
+    initialize_ao_spaces();
   }
 }
 
@@ -228,6 +229,32 @@ WavefunctionWorld::obsolete() {
   tfactory_->obsolete();
   moints_runtime_->obsolete();
   fockbuild_runtime_->obsolete();
+}
+
+void
+WavefunctionWorld::initialize_ao_spaces()
+{
+  // reinitialize AO spaces
+  Ref<OrbitalSpaceRegistry> idxreg = tfactory_->orbital_registry();
+  Ref<AOSpaceRegistry> aoidxreg = tfactory_->ao_registry();
+  // OBS
+  if (aoidxreg->key_exists(wfn()->basis()) == false &&
+      idxreg->key_exists("mu") == false) {
+    Ref<Integral> localints = integral()->clone();
+    Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu", "OBS(AO)", wfn()->basis(), localints);
+    idxreg->add(make_keyspace_pair(mu));
+    aoidxreg->add(mu->basis(),mu);
+  }
+  if (bs_df_) { // DF-BS
+    if (aoidxreg->key_exists(bs_df_) == false &&
+        idxreg->key_exists("Mu") == false) {
+      Ref<Integral> localints = integral()->clone();
+      // TODO how to generate unique labels
+      Ref<OrbitalSpace> fbs_space = new AtomicOrbitalSpace("Mu", "AO(FBS)", bs_df_, localints);
+      idxreg->add(make_keyspace_pair(fbs_space));
+      aoidxreg->add(bs_df_, fbs_space);
+    }
+  }
 }
 
 const std::string& WavefunctionWorld::ints_file() const

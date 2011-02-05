@@ -162,6 +162,9 @@ public:
 
   void print(std::ostream& o) const;
 
+  // call this after obsolete
+  void initialize_ao_spaces();
+
 private:
 
   /// whose World is it?

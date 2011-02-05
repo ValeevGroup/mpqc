@@ -22,8 +22,5 @@ mpqc: (
     basis = $:basis
     memory = 16000000
   )
-% vibrational frequency input
-  freq<MolecularFrequencies>: (
-    molecule = $:molecule
-  )
+  do_freq = true
 )

@@ -142,7 +142,10 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   input->write_keyword("ccenergy:pccsd_gamma", pccsd_gamma_);
 }
 
- void PsiCCSD_PT2R12::compute() {
+void PsiCCSD_PT2R12::compute() {
+
+  r12world()->initialize();
+
   // compute Psi3 CCSD wave function
   PsiCorrWavefunction::compute();
   // read Psi3 CCSD energy

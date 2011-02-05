@@ -280,6 +280,15 @@ main(int argc, char **argv)
       me->print();
     }
 
+  Ref<MolecularGradient> molgrad; molgrad << kv->describedclassvalue("grad");
+  RefSCVector xgradient;
+  if (molgrad.nonnull()) {
+    cout << "-------------- testing grad  --------------" << endl;
+    xgradient = molgrad->cartesian_gradient();
+    xgradient.print("Gradient computed with grad");
+    me->get_cartesian_gradient().print("Gradient computed analytically");
+  }
+
   Ref<MolecularHessian> molhess; molhess << kv->describedclassvalue("hess");
   RefSymmSCMatrix xhessian;
   if (molhess.nonnull()) {

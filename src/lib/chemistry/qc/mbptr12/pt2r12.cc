@@ -1449,33 +1449,30 @@ void sc::PT2R12::compute()
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
   const bool spin_polarized = r12world()->ref()->spin_polarized();
+  r12world()->initialize();
 
-
-
-
-
-if (pt2_correction_)
-{
-  for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
+  if (pt2_correction_)
   {
-    SpinCase2 pairspin = static_cast<SpinCase2>(i);
-    double scale = 1.0;
-    if (pairspin == BetaBeta && !spin_polarized) continue;
-    switch (r12world()->r12tech()->ansatz()->projector())
+    for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
     {
-      case R12Technology::Projector_1:
-        energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
-        break;
-      case R12Technology::Projector_2:
-        energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
-        break;
-      default:
-        abort();
+      SpinCase2 pairspin = static_cast<SpinCase2>(i);
+      double scale = 1.0;
+      if (pairspin == BetaBeta && !spin_polarized) continue;
+      switch (r12world()->r12tech()->ansatz()->projector())
+      {
+        case R12Technology::Projector_1:
+          energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
+          break;
+        case R12Technology::Projector_2:
+          energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
+          break;
+        default:
+          abort();
+      }
     }
   }
-}
 
-  //calculate basis set incompleteness error (BSIE) with two choices of H0
+  // calculate basis set incompleteness error (BSIE) with two choices of H0
   double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
   double cabs_singles_correction_twobody_H0 = 0.0;
   const bool keep_result_for_cabs_singles_with_Fock_Hamiltonian = false; // if false, only do [2]_S with Dyall Hamiltonian

@@ -52,6 +52,7 @@ class MolecularEnergy: public Function {
     Ref<Molecule> mol_;
     Ref<MolecularHessian> hess_;
     Ref<MolecularHessian> guesshess_;
+    Ref<MolecularGradient> grad_;
 
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
@@ -108,9 +109,9 @@ class MolecularEnergy: public Function {
         hessians are computed.  The default is 1.0e-4 atomic units.
 
         <dt><tt>hessian</tt><dd>Specifies a MolecularHessian object that is
-        used to compute the hessian.  If this MolecularEnergy
-        specialization does not provide a hessian of its own, and a hessian
-        is needed, then this keyword must be specified.
+        used to compute the hessian. This keyword may only need to be specified.
+        if "exact" hessian is needed but this MolecularEnergy
+        specialization does not provide a hessian of its own.
 
         <dt><tt>guess_hessian</tt><dd>Specifies a MolecularHessian object
         that is used to compute a guess hessian.  Guess hessians are used
@@ -164,10 +165,16 @@ class MolecularEnergy: public Function {
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    /** If a molecule hessian object is given, it will be used to provide a
-        hessian. */
+    /// if hessian_implemented() is false then calling this->hessian() will throw. Use this function to
+    /// provide MolecularHessian object that will be used to compute hessian. Call this function with null pointer to restore the state
+    /// to the original state.
+    void set_hessian(const Ref<MolecularHessian>& hess);
     RefSymmSCMatrix hessian();
-    int hessian_implemented() const;
+    /// if gradient_implemented() is false then calling this->gradient() will throw. Use this function to provide MolecularGradient object
+    /// that will be used to compute gradient. Call this function with null pointer to restore the state
+    /// to the original state.
+    void set_gradient(const Ref<MolecularGradient>& grad);
+    RefSCVector gradient();
 
     void set_x(const RefSCVector&);
 

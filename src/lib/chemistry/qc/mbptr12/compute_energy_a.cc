@@ -56,6 +56,7 @@ MBPT2_R12::compute_energy_()
 
   Ref<R12WavefunctionWorld> r12world = r12world_;
   Ref<R12Technology> r12tech = r12world->r12tech();
+  r12world->initialize();
 
   // test app. C general-density B builder by feeding HF densities to it
 #define TEST_GENERAL_FOCK_BUILD 0

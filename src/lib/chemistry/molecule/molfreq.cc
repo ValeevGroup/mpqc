@@ -65,6 +65,14 @@ MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
   freq_ = 0;
 }
 
+MolecularFrequencies::MolecularFrequencies(const Ref<Molecule>& mol) :
+    mol_(mol),
+    pg_(mol->point_group()),
+    nirrep_(mol->point_group()->char_table().nirrep()),
+    debug_(0), nfreq_(0), freq_(0)
+{
+}
+
 MolecularFrequencies::~MolecularFrequencies()
 {
   delete[] nfreq_;

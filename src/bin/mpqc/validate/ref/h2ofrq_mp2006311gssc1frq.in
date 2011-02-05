@@ -55,10 +55,6 @@ mpqc: (
         memory = 32000000
       )
     )
-    hessian<FinDispMolecularHessian>: (
-      checkpoint = no
-      restart = no
-    )
   )
   optimize = no
   % optimizer object for the molecular geometry
@@ -71,8 +67,5 @@ mpqc: (
       energy = $..:..:mole
     )
   )
-% vibrational frequency input
-  freq<MolecularFrequencies>: (
-    molecule = $:molecule
-  )
+  do_freq = true
 )

@@ -114,6 +114,7 @@ void R12WavefunctionWorld::save_data_state(StateOut& so)
 void
 R12WavefunctionWorld::initialize()
 {
+  ref_->world()->initialize_ao_spaces();
   // provide hints to the factory about the likely use of transforms
   {
     // 1) if stdapprox is A' or A'' most transforms will never be reused
@@ -145,12 +146,12 @@ R12WavefunctionWorld::initialize()
 
 void
 R12WavefunctionWorld::obsolete() {
-  ref_->obsolete(); // this obsoletes WavefunctionWorld
+  ref_->obsolete();
   abs_space_ = 0;
   ribs_space_ = 0;
   cabs_space_[Alpha] = 0;
   cabs_space_[Beta] = 0;
-  this->initialize();
+//  this->initialize();   // can't initialize because there is no guarantee we are ready to compute again
 }
 
 const Ref<OrbitalSpace>&

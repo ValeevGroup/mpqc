@@ -466,6 +466,7 @@ MPQCIn::parse_string(const char *s)
   ostrs << incindent;
   ostrs << indent << "do_gradient = " << gradient_.val() << endl;
   ostrs << indent << "optimize = " << optimize_.val() << endl;
+  ostrs << indent << "do_freq = " << frequencies_.val() << endl;
   ostrs << indent << "restart = " << restart_.val() << endl;
   ostrs << indent << "checkpoint = " << checkpoint_.val() << endl;
   ostrs << indent << "savestate = " << checkpoint_.val() << endl;
@@ -811,9 +812,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
               r12descr = R12TechDescr::default_instance();
               r12descr->corrfactor = "none";
               need_wfnworld = true;
-              if (optimize_.val() || gradient_.val() || frequencies_.val()) {
-                error("cannot do a gradient or optimization with density-fitting version of MP2");
-              }
             }
           }
           else { // open-shell will use MP2-R12 code
@@ -827,9 +825,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
             else {
               reference_method = "UHF";
             }
-            if (optimize_.val() || gradient_.val() || frequencies_.val()) {
-              error("cannot do a gradient or optimization with open-shell MP2");
-            }
           }
         }
       else if (!strcmp(method, "ZAPT2")) {
@@ -838,9 +833,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
           reference_method = "RHF";
           if (mult_.val() == 1) {
               error("ZAPT2 can only be used with multiplicity != 1: try MP2");
-            }
-          if (optimize_.val() || gradient_.val() || frequencies_.val()) {
-              error("cannot do a gradient or optimization with ZAPT2");
             }
         }
       // Local Perturbation Theory
@@ -851,9 +843,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
                            __FILE__, __LINE__);
         reference_method = "RHF";
         method_object = "LMP2";
-        if (optimize_.val() || gradient_.val() || frequencies_.val()) {
-          error("cannot do a gradient or optimization with LMP2");
-        }
       }
       // MP2-R12
       else if (strncmp(method,   "MP2-R12", 7) == 0 ||
@@ -931,14 +920,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
       else error2("invalid method: ", method);
     }
   else error("no method given");
-
-  // is this calculation possible?
-  if (r12descr != 0 &&
-      (optimize_.val() || gradient_.val() || frequencies_.val())
-     ) {  // no gradients for R12 methods
-      error("cannot do a gradient or optimization with R12 methods");
-    }
-
 
   ostrs << indent << keyword << "<" << method_object << ">: (" << endl;
   ostrs << incindent;

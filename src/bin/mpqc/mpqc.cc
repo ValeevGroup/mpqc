@@ -776,7 +776,10 @@ try_main(int argc, char *argv[])
       RefSymmSCMatrix xhessian;
       if (molhess.nonnull()) {
         // if "hess" input was given, use it to compute the hessian
+        const bool molhess_needs_mole = (molhess->energy() == 0);
+        if (molhess_needs_mole) molhess->set_energy(mole);
         xhessian = molhess->cartesian_hessian();
+        if (molhess_needs_mole) molhess->set_energy(0);
       }
       else if (mole->hessian_implemented()) {
         // if mole can compute the hessian, use that hessian
@@ -788,6 +791,7 @@ try_main(int argc, char *argv[])
         // differences to compute the hessian
         molhess = new FinDispMolecularHessian(mole);
         xhessian = molhess->cartesian_hessian();
+        molhess = 0;
       }
       else {
         ExEnv::out0() << "mpqc: WARNING: Frequencies cannot be computed" << endl;
@@ -903,16 +907,18 @@ try_main(int argc, char *argv[])
 
   renderer = 0;
   molfreq = 0;
+  molhess = 0;
+  molgrad = 0;
   opt = 0;
   mole = 0;
   integral = 0;
-  resources = 0;
   debugger = 0;
   thread = 0;
   keyval = 0;
   parsedkv = 0;
   grp = 0;
   memory = 0;
+  resources = 0;
   init.finalize();
 
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)

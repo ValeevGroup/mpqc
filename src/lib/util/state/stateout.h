@@ -33,7 +33,6 @@
 #endif
 
 #include <string>
-#include <vector>
 #include <map>
 
 #include <util/class/class.h>
@@ -140,12 +139,17 @@ class StateOut: public DescribedClass {
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
 
-    /// Write an std::vector. This also works if T is a Ref to a SavableState.
-    template <class T>
-    int put(typename std::vector<T> &v) {
+    /** Write standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
+      * @{
+      */
+
+    /// Write a Container that could be a standard (non-associative) C++ container such as std::vector or std::list.
+    template <template <typename, typename> class Container, class T, class A>
+    int put(const Container<T,A> &v) {
       const size_t l = v.size();
       int r = put(l);
-      if (l) { for (size_t i=0; i<l; ++i) detail::ToStateOut<T>::put(v[i],*this,r); }
+      for (typename Container<T,A>::const_iterator i=v.begin(); i!=v.end(); ++i)
+        detail::ToStateOut<T>::put(*i,*this,r);
       return r;
     }
 
@@ -173,6 +177,7 @@ class StateOut: public DescribedClass {
       detail::ToStateOut<R>::put(v.second,*this,s);
       return s;
     }
+    ///@}
 
     /** Don't keep track of pointers to objects.  Calling this
         causes duplicated references to objects to be copied.
@@ -207,6 +212,7 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
+  class RefSCVector;
   class RefSCMatrix;
   class RefSymmSCMatrix;
   class RefDiagSCMatrix;
@@ -223,6 +229,10 @@ class StateOut: public DescribedClass {
       static void put(const Ref<T>& t, StateOut& so, int& count) {
         SavableState::save_state(t.pointer(),so);
       }
+    };
+    /// specialization for RefSCVector
+    template <> struct ToStateOut<sc::RefSCVector> {
+      static void put(const sc::RefSCVector& t, StateOut& so, int& count);
     };
     /// specialization for RefSCMatrix
     template <> struct ToStateOut<sc::RefSCMatrix> {

@@ -127,6 +127,13 @@ namespace sc {
       /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
       /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
       template <typename T> void deallocate(T* const & array) {
+        if (this == 0) { // if smart pointers failed this method will get called on null object
+                         // warn the user here and return
+          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
+                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
+                        << std::endl;
+          return;
+        }
         if (array != 0) {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
@@ -145,6 +152,13 @@ namespace sc {
       }
       /// same as  before, but will set array to 0 after deallocation
       template <typename T> void deallocate(T*& array) {
+        if (this == 0) { // if smart pointers failed this method will get called on null object
+                         // warn the user here and return
+          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
+                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
+                        << std::endl;
+          return;
+        }
         if (array != 0) {
           deallocate<T>(const_cast<T* const &>(array));
           array = 0;
@@ -167,6 +181,13 @@ namespace sc {
       }
       /// removes array to the list of managed arrays and increments the memory counter
       template <typename T> void unmanage_array(T* const & array) {
+        if (this == 0) { // if smart pointers failed this method will get called on null object
+                         // warn the user here and return
+          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
+                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
+                        << std::endl;
+          return;
+        }
         if (array != 0) {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me

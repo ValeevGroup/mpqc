@@ -98,7 +98,8 @@ FinDispMolecularHessian::Params::Params()
   disp_pg_ = 0;
   disp_ = 1.0e-2;
   only_totally_symmetric_ = false;
-  eliminate_cubic_terms_ = true;
+  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
+  //eliminate_cubic_terms_ = true;
   do_null_displacement_ = true;
   accuracy_ = 1e-8;
   energy_accuracy_ = disp_/1.e6;
@@ -118,8 +119,9 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  KeyValValueboolean(false));
-  eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
-                                                KeyValValueboolean(true));
+  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
+  //eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
+  //                                              KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
   accuracy_ = keyval->doublevalue("accuracy",
@@ -907,17 +909,19 @@ static ClassDesc FinDispMolecularHessian_cd(
   typeid(FinDispMolecularHessian),"FinDispMolecularHessian",1,"public MolecularHessian",
   0, create<FinDispMolecularHessian>, create<FinDispMolecularHessian>);
 
-FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e)
+FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e) :
+    user_provided_eliminate_cubic_terms_(false)
 {
   params_ = new Params;
   init_pimpl(e);
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
-  MolecularHessian(keyval)
+  MolecularHessian(keyval), user_provided_eliminate_cubic_terms_(false)
 {
   Ref<MolecularEnergy> e; e << keyval->describedclassvalue("energy");
   params_ = new Params(keyval);
+  user_provided_eliminate_cubic_terms_ = keyval->exists("eliminate_cubic_terms");
   init_pimpl(e);
 }
 
@@ -926,11 +930,12 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
   MolecularHessian(s)
 {
   pimpl_ << SavableState::restore_state(s);
+  s.get(user_provided_eliminate_cubic_terms_);
 }
 
 FinDispMolecularHessian::~FinDispMolecularHessian()
 {
-  delete pimpl_;
+  pimpl_ = 0;
 }
 
 void
@@ -938,6 +943,7 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
   SavableState::save_state(pimpl_.pointer(),s);
+  s.put(user_provided_eliminate_cubic_terms_);
 }
 
 void
@@ -996,10 +1002,16 @@ FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   }
   else {
     pimpl_ = 0;
-    if (mole->gradient_implemented() && !params_->use_energies())
+    if (mole->gradient_implemented() && !params_->use_energies()) {
+      if (user_provided_eliminate_cubic_terms_ == false)
+        params_->set_eliminate_cubic_terms(true);
       pimpl_ = new GradientsImpl(mole, params_);
-    else
+    }
+    else {
+      if (user_provided_eliminate_cubic_terms_ == false)
+        params_->set_eliminate_cubic_terms(false);
       pimpl_ = new EnergiesImpl(mole, params_);
+    }
     pimpl_->init();
   }
 }

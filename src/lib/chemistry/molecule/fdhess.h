@@ -224,6 +224,7 @@ class FinDispMolecularHessian: public MolecularHessian {
       double energy_accuracy() const { return energy_accuracy_; }
       int nirrep() const { return disp_pg_->char_table().nirrep(); }
 
+      void set_eliminate_cubic_terms(bool e) { eliminate_cubic_terms_ = e; }
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
       void set_restart(bool r) { restart_ = r; }
 
@@ -398,6 +399,8 @@ class FinDispMolecularHessian: public MolecularHessian {
   private:
     Ref<Impl> pimpl_;
     Ref<Params> params_;
+    bool user_provided_eliminate_cubic_terms_; // default for eliminate_cubic_terms depends on type of Impl ...
+                                               // must know whether the default needs to vary
 
   protected:
 
@@ -443,12 +446,16 @@ class FinDispMolecularHessian: public MolecularHessian {
         hessian will not be complete, but it has enough information
         to use it in a geometry optimization.
 
-        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>true<td>
-        If true, then cubic terms will be eliminated.  This requires
-        that two displacements are done for each totally symmetric
-        coordinate, rather than one.  Setting this to false will reduce
-        the accuracy, but the results will still probably be accurate
-        enough for a geometry optimization.
+        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>see notes<td>
+        If <tt>true</tt>, then cubic terms will be eliminated. If implemented in terms of gradients,
+        this requires that two displacements are done for each totally symmetric
+        coordinate, rather than one. If implementd in terms of energies,
+        this requires twice as many displacements for each force constant regardless
+        of its symmetry. If using gradients, the default setting is <tt>true</tt>
+        (in such case seeting this keyword to <tt>false</tt> will produces lower
+        accuracy which will only be sufficient for geometry optimizations).
+        If using energies, the default setting is <tt>false</tt>.
+        Benchmark calculations should always set this to <tt>true</tt>.
 
         <tr><td><tt>do_null_displacement</tt><td>boolean<td>true<td>Run
         the calculation at the given geometry as well.

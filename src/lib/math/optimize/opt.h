@@ -166,6 +166,7 @@ class Backtrack: public LineOpt {
    int sufficient_decrease(RefSCVector& step);
 
  public:
+   Backtrack();
    Backtrack(const Ref<KeyVal>&);
    Backtrack(StateIn&s);
    ~Backtrack();

@@ -79,8 +79,6 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
-
-  initialize();
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
@@ -93,8 +91,6 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 
   abs_space_ << SavableState::restore_state(si);
   ribs_space_ << SavableState::restore_state(si);
-
-  initialize();
 }
 
 R12WavefunctionWorld::~R12WavefunctionWorld()

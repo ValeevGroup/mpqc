@@ -902,15 +902,12 @@ void MP2R12Energy_Diag::save_data_state(StateOut &so){
 
 Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
                                              int debug,
-                                             bool use_jinmei_version) {
-  Ref<MP2R12Energy> mp2r12energy;
-  if(use_jinmei_version){
-    mp2r12energy = new MP2R12Energy_Diag(r12intermediates,debug);
-  }
-  else {
-    mp2r12energy = new MP2R12Energy_SpinOrbital(r12intermediates,debug);
-  }
-  return(mp2r12energy);
+                                             bool diag) {
+  Ref<MP2R12Energy> mp2r12energy = diag
+      ? static_cast<MP2R12Energy*>(new MP2R12Energy_Diag(r12intermediates,debug))
+      : static_cast<MP2R12Energy*>(new MP2R12Energy_SpinOrbital(r12intermediates,debug));
+
+  return mp2r12energy;
 }
 
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>

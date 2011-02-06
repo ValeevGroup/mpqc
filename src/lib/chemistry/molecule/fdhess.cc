@@ -975,9 +975,11 @@ FinDispMolecularHessian::cartesian_hessian()
   if (params()->restart()) restart();
   else pimpl_->init();  // initialize original_geometry etc.
 
+  Ref<EnergiesImpl> eimpl; eimpl << pimpl_;
+
   ExEnv::out0() << indent
        << "Computing molecular hessian by finite differences of "
-       << (pimpl_->params()->use_energies() ? "energies" : "gradients") << " from "
+       << (eimpl.nonnull() ? "energies" : "gradients") << " from "
        << pimpl_->ndisplace() << " displacements:" << endl;
   ExEnv::out0() << indent << "Hessian options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << pimpl_->params()->disp_size()

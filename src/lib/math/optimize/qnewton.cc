@@ -244,6 +244,12 @@ QNewtonOpt::update()
     Ref<Backtrack> bt = dynamic_cast<Backtrack*>(lineopt_.pointer());
     if (bt.nonnull()) {
       // The Backtrack line search is a special case.
+      ExEnv::out0() << indent
+                    << "......................................."
+                    << endl
+                    << indent
+                    << "Starting \"backtrack\" line optimization."
+                    << endl;
 
       int force_search = bt->force_search();
 
@@ -294,6 +300,13 @@ QNewtonOpt::update()
 
         if( force_search ) bt->set_decrease_factor( factor );
       }
+
+      ExEnv::out0() << indent
+                    << "Finished \"backtrack\" line optimization."
+                    << endl
+                    << indent
+                    << "......................................."
+                    << endl;
     }
     else {
       // All line searches other than Backtrack use this

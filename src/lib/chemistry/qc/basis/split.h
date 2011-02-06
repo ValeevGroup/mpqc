@@ -53,7 +53,10 @@ class SplitBasisSet: public GaussianBasisSet {
         <dl>
 
         <dt><tt>basis</tt><dd> The gives the GaussianBasisSet object
-        that will be split to form this basis set.
+        that will be split to form this basis set. If <tt>basis</tt> is not given,
+        the constructor will try to construct
+        a GaussianBasisSet object from the current input and split it.
+
 
         </dl>
 

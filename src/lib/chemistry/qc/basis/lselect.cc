@@ -49,7 +49,9 @@ LSelectBasisSet::LSelectBasisSet(const Ref<KeyVal>&keyval)
   Ref<GaussianBasisSet> basis;
   basis << keyval->describedclassvalue("basis");
   if (basis.null()) {
-      throw InputError("missing basis value: must be GaussianBasisSet",
+    basis = new GaussianBasisSet(keyval);
+    if (basis.null())
+      throw InputError("could not construct a GaussianBasisSet",
                        __FILE__, __LINE__,
                        "basis", 0, class_desc());
   }

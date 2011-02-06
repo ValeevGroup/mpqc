@@ -38,7 +38,7 @@
 #include <math/optimize/conv.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 
 namespace sc {
 

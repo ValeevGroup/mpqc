@@ -32,7 +32,7 @@
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
 #include <util/state/state_bin.h>

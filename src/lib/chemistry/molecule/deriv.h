@@ -1,5 +1,5 @@
 //
-// hess.h
+// deriv.h
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_molecule_hess_h
-#define _chemistry_molecule_hess_h
+#ifndef _chemistry_molecule_deriv_h
+#define _chemistry_molecule_deriv_h
 
 #ifdef __GNUC__
 #pragma interface

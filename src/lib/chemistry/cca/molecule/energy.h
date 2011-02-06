@@ -38,7 +38,7 @@
 #include <math/optimize/function.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 
 #include <Chemistry_QC_ModelFactoryInterface.hxx>
 #include <ChemistryOpt_CoordinateModelInterface.hxx>

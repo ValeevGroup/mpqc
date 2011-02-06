@@ -1,5 +1,5 @@
 //
-// hess.cc
+// deriv.cc
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -37,7 +37,7 @@
 #include <util/keyval/keyval.h>
 #include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/molfreq.h>
 
 using namespace std;

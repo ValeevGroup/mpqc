@@ -1,5 +1,5 @@
 //
-// fdhess.cc
+// findisp.cc
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -43,7 +43,7 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/symmetry/corrtab.h>
-#include <chemistry/molecule/fdhess.h>
+#include <chemistry/molecule/findisp.h>
 
 using namespace std;
 using namespace sc;
@@ -1031,7 +1031,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<MolecularEnergy> &e
   eliminate_cubic_terms_ = 0;
   disp_ = 1.0e-2;
   debug_ = 0;
-  accuracy_ = disp_/1000;
+  accuracy_ = disp_/1e4;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.grad");

@@ -1,5 +1,5 @@
 //
-// fdhess.h
+// findisp.h
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_molecule_fdhess_h
-#define _chemistry_molecule_fdhess_h
+#ifndef _chemistry_molecule_findisp_h
+#define _chemistry_molecule_findisp_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -38,7 +38,7 @@
 #include <algorithm>
 
 #include <util/class/scexception.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/energy.h>
 
 namespace sc {

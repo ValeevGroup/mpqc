@@ -79,7 +79,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molfreq.h>
-#include <chemistry/molecule/fdhess.h>
+#include <chemistry/molecule/findisp.h>
 #include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
@@ -772,6 +772,17 @@ try_main(int argc, char *argv[])
 
   // Frequency calculation
   if (do_freq) {
+
+    // EFV Feb. 6 2011
+    // good idea to print optimized coordinates here
+    if (opt.nonnull()) {
+      Ref<MolecularCoor> mc = mole->molecularcoor();
+      if (mc)
+        mc->print(ExEnv::out0());
+      else
+        mole->molecule()->print(ExEnv::out0());
+    }
+
     if ((opt && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
       if (molhess.nonnull()) {

@@ -48,6 +48,9 @@ namespace sc {
 /** The QNewtonOpt implements a quasi-Newton optimization scheme. */
 class QNewtonOpt: public Optimize {
 
+  int assume_converged_; // if linesearch fails due to exceptional numerics (see MCSearch),
+                         // assume we are too close to the convergence. If happens again, throw exception
+
   protected:
     double maxabs_gradient;
     double accuracy_;

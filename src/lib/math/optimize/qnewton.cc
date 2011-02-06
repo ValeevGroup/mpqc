@@ -37,6 +37,7 @@
 #include <math/optimize/mcsearch.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 
 using namespace std;
 using namespace sc;
@@ -111,7 +112,8 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
 
 QNewtonOpt::QNewtonOpt(StateIn&s):
   SavableState(s),
-  Optimize(s)
+  Optimize(s),
+  assume_converged_(false)
 {
   ihessian_ = matrixkit()->symmmatrix(dimension());
   ihessian_.restore(s);
@@ -157,6 +159,7 @@ QNewtonOpt::init()
   Optimize::init();
   take_newton_step_ = 1;
   maxabs_gradient = -1.0;
+  assume_converged_ = false;
 }
 
 int
@@ -322,7 +325,23 @@ QNewtonOpt::update()
       for (int ilineopt=0; ilineopt<maxlineopt; ilineopt++) {
         double maxabs_gradient = function()->gradient()->maxabs();
 
-        int converged = lineopt_->update();
+        /// try line search step
+        int converged;
+        try {
+          converged = lineopt_->update();
+        }
+        /// if numerical exception occurred (see MCSearch) assume we are too close to the convergence,
+        /// set a flag; if this happens twice -- something is wrong, throw the exception
+        catch (ToleranceExceeded& e) {
+          if (assume_converged_)
+            throw e;
+          assume_converged_ = true;
+          ExEnv::out0() << indent
+                        << "WARNING: Insufficient tolerances for line optimization. Assuming near-convergence."
+                        << endl;
+          converged = true;
+        }
+
         msg_->bcast(converged);
 
         ExEnv::out0() << indent

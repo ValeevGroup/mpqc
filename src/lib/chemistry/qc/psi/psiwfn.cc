@@ -336,13 +336,26 @@ namespace sc {
       if (natom != natom_mpqc) {
         throw ProgrammingError("Number of atoms in MPQC and Psi3 do not match",__FILE__,__LINE__);
       }
+
+      // MPQC feeds Psi3 geometry in "native" symmetry frame -- convert Psi3 gradients to the "reference" frame
       RefSCVector gradientvec = basis()->matrixkit()->vector(moldim());
+      double grad_sf[3], grad_rf[3];
+      const SymmetryOperation rf_to_sf = molecule()->point_group()->symm_frame();
       for (int atom=0; atom<natom; atom++) {
-        gradientvec[3*atom] = file11->get_grad(0, atom, 0);
-        gradientvec[3*atom+1] = file11->get_grad(0, atom, 1);
-        gradientvec[3*atom+2] = file11->get_grad(0, atom, 2);
+        grad_sf[0] = file11->get_grad(0, atom, 0);
+        grad_sf[1] = file11->get_grad(0, atom, 1);
+        grad_sf[2] = file11->get_grad(0, atom, 2);
+        for(int i=0; i<3; ++i) {
+          grad_rf[i] = 0.0;
+          for(int j=0; j<3; ++j)
+            grad_rf[i] += grad_sf[j] * rf_to_sf[i][j];
+        }
+        const int offset = 3*atom;
+        for(int i=0; i<3; ++i)
+          gradientvec[offset+i] = grad_rf[i];
       }
       set_gradient(gradientvec);
+
       file11->close();
       file11->remove();
     } else {

@@ -853,6 +853,18 @@ namespace sc {
     return vir_act_sb_[spin];
   }
 
+  void
+  PsiCC::obsolete() {
+    occ_act_sb_[Alpha] = occ_act_sb_[Beta] = 0;
+    vir_act_sb_[Alpha] = vir_act_sb_[Beta] = 0;
+    T1_[Alpha] = T1_[Beta] = 0;
+    T2_[Alpha] = T2_[Beta] = 0;
+    T2_da4_[Alpha] = T2_da4_[Beta] = 0;
+    Tau2_[Alpha] = Tau2_[Beta] = 0;
+    Lambda1_[Alpha] = Lambda1_[Beta] = 0;
+    Lambda2_[Alpha] = Lambda2_[Beta] = 0;
+    PsiCorrWavefunction::obsolete();
+  }
 
   //////////////////////////////////////////////////////////////////////////
 

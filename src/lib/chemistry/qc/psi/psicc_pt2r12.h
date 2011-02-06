@@ -83,6 +83,7 @@ namespace sc {
       <dt><tt>pccsd_alpha</tt><dd> The default is 1.0 .
 
       <dt><tt>pccsd_beta</tt><dd> The default is 1.0 .
+
       <dt><tt>pccsd_gamma</tt><dd> The default is 1.0 .
 
       </dl> */
@@ -102,6 +103,8 @@ namespace sc {
       double eccsd();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
+
+      void obsolete();
   };
 
   ///////////////////////////////////////////////////////////////////

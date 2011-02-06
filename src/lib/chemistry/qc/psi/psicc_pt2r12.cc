@@ -496,6 +496,15 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
   o << decindent;
 }
 
+void
+PsiCCSD_PT2R12::obsolete() {
+  r12eval_ = 0;
+  cabs_singles_energy_ = 0.0;
+  r12world_->world()->obsolete();
+  r12world_->obsolete();
+  PsiCC::obsolete();
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 static ClassDesc PsiCCSD_PT2R12T_cd(typeid(PsiCCSD_PT2R12T), "PsiCCSD_PT2R12T", 1,

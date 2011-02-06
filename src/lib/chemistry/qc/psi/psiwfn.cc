@@ -472,6 +472,13 @@ namespace sc {
     return exenv()->chkpt().rd_enuc();
   }
 
+  void
+  PsiWavefunction::obsolete() {
+    if (prerequisite_.nonnull()) prerequisite_->obsolete();
+    this->exenv()->run_psiclean();  // do full cleanup
+    Wavefunction::obsolete();
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiSCF_cd(typeid(PsiSCF), "PsiSCF", 1,
@@ -978,6 +985,19 @@ namespace sc {
     // lastly, update multp_
     multp_ = 1 + accumulate(socc_.begin(), socc_.end(), 0);
 
+  }
+
+  void
+  PsiSCF::obsolete() {
+    orbs_sb_[Alpha] = orbs_sb_[Beta] = 0;
+    evals_[Alpha] = evals_[Beta] = 0;
+    coefs_[Alpha] = coefs_[Beta] = 0;
+    mo_density_[Alpha] = mo_density_[Beta] = 0;
+    occupation_[Alpha].resize(0); occupation_[Beta].resize(0);
+    occpi_[Alpha].resize(0); occpi_[Beta].resize(0);
+    uoccpi_[Alpha].resize(0); uoccpi_[Beta].resize(0);
+    mopi_.resize(0);
+    PsiWavefunction::obsolete();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -1699,6 +1719,13 @@ namespace sc {
     reference_->set_actual_value_accuracy(
         reference_->desired_value_accuracy()
         );
+  }
+
+  void PsiCorrWavefunction::obsolete() {
+    reference_->obsolete();
+    frozen_docc_.resize(0);
+    frozen_uocc_.resize(0);
+    PsiWavefunction::obsolete();
   }
 
   const Ref<PsiSCF>&

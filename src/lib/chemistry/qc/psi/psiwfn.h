@@ -129,6 +129,8 @@ namespace sc {
 
       /// return Psi3 nuclear repulsion energy
       double nuclear_repulsion_energy() const;
+
+      void obsolete();
   };
 
   class PsiSCF;
@@ -200,6 +202,7 @@ namespace sc {
       void set_desired_value_accuracy(double acc);
 
       void compute(); // compute is overloaded because reference object needs to be marked computed
+      void obsolete();
 
       const Ref<PsiSCF>& reference() const;
       /// Number of electrons
@@ -351,6 +354,8 @@ namespace sc {
       unsigned int nocc(SpinCase1 spin);
       /// spin multiplicity
       unsigned int multiplicity() const { return multp_; }
+
+      void obsolete();
   };
 
   ///////////////////////////////////////////////////////////////////

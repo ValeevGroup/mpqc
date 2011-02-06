@@ -479,6 +479,13 @@ namespace sc {
     Wavefunction::obsolete();
   }
 
+  void
+  PsiWavefunction::symmetry_changed() {
+    nirrep_ = molecule()->point_group()->char_table().order();
+    Wavefunction::symmetry_changed();
+    if (prerequisite_.nonnull()) prerequisite_->symmetry_changed();
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiSCF_cd(typeid(PsiSCF), "PsiSCF", 1,
@@ -993,11 +1000,19 @@ namespace sc {
     evals_[Alpha] = evals_[Beta] = 0;
     coefs_[Alpha] = coefs_[Beta] = 0;
     mo_density_[Alpha] = mo_density_[Beta] = 0;
+    PsiWavefunction::obsolete();
+  }
+
+  void
+  PsiSCF::symmetry_changed() {
+    PsiWavefunction::symmetry_changed();
     occupation_[Alpha].resize(0); occupation_[Beta].resize(0);
     occpi_[Alpha].resize(0); occpi_[Beta].resize(0);
     uoccpi_[Alpha].resize(0); uoccpi_[Beta].resize(0);
     mopi_.resize(0);
-    PsiWavefunction::obsolete();
+    docc_.resize(0);
+    socc_.resize(0);
+    if (guess_wfn_.nonnull()) guess_wfn_->symmetry_changed();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -1469,6 +1484,13 @@ namespace sc {
     //coefs_sc_[Beta].print("Beta semicanonical MOs (computed in MPQC)");
   }
 
+  void
+  PsiHSOSHF::obsolete() {
+    coefs_sc_[Alpha] = coefs_sc_[Beta] = 0;
+    evals_sc_[Alpha] = evals_sc_[Beta] = 0;
+    PsiSCF::obsolete();
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiUHF_cd(typeid(PsiUHF), "PsiUHF", 1, "public PsiSCF", 0,
@@ -1723,10 +1745,15 @@ namespace sc {
 
   void PsiCorrWavefunction::obsolete() {
     reference_->obsolete();
-    frozen_docc_.resize(0);
-    frozen_uocc_.resize(0);
     PsiWavefunction::obsolete();
   }
+  void PsiCorrWavefunction::symmetry_changed() {
+    PsiWavefunction::symmetry_changed();
+    reference_->symmetry_changed();
+    frozen_docc_.resize(0);
+    frozen_uocc_.resize(0);
+  }
+
 
   const Ref<PsiSCF>&
   PsiCorrWavefunction::reference() const {

@@ -131,6 +131,7 @@ namespace sc {
       double nuclear_repulsion_energy() const;
 
       void obsolete();
+      void symmetry_changed();
   };
 
   class PsiSCF;
@@ -203,6 +204,7 @@ namespace sc {
 
       void compute(); // compute is overloaded because reference object needs to be marked computed
       void obsolete();
+      void symmetry_changed();
 
       const Ref<PsiSCF>& reference() const;
       /// Number of electrons
@@ -356,6 +358,7 @@ namespace sc {
       unsigned int multiplicity() const { return multp_; }
 
       void obsolete();
+      void symmetry_changed();
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -416,6 +419,8 @@ namespace sc {
 
       /// read semicanonical MOs; if not available, compute them
       void semicanonical();
+
+      void obsolete();
   };
 
   ///////////////////////////////////////////////////////////////////

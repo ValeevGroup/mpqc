@@ -348,7 +348,7 @@ void PsiCCSD_PT2R12::compute() {
       H1_R0[s] = Vij[s].clone();
       H1_R0[s].assign(Vij[s]);
 
-      // the rest of terms (Vbar) are bugger than o^4, hence will be computed in DistArray4
+      // the rest of terms (Vbar) are bigger than o^4, hence will be computed in DistArray4
       {
         DistArray4Dimensions dims(1, x1->rank(), x2->rank(), occ1_act->rank(), occ2_act->rank());
         Ref<DistArray4> HT = Vab[s]->clone(dims);
@@ -441,14 +441,14 @@ void PsiCCSD_PT2R12::compute() {
   ExEnv::out0() << indent << "E2(AB)        = "<< scprintf("%20.15lf",E2[AlphaBeta])
                 << std::endl;
   if (num_unique_spincases2 > 2) {
-    e2 = E2[AlphaBeta] + E2[AlphaAlpha] + E2[BetaBeta];
+    e2 += E2[AlphaBeta] + E2[AlphaAlpha] + E2[BetaBeta];
     ExEnv::out0() << indent << "E2(BB)        = "<< scprintf("%20.15lf",E2[BetaBeta])
                   << std::endl;
     ExEnv::out0() << indent << "E2(AA)        = "<< scprintf("%20.15lf",E2[AlphaAlpha])
                   << std::endl;
   }
   else {
-    e2 = E2[AlphaBeta] + 2.0*E2[AlphaAlpha];
+    e2 += E2[AlphaBeta] + 2.0*E2[AlphaAlpha];
     ExEnv::out0() << indent << "E2(AA)        = "<< scprintf("%20.15lf",2.0*E2[AlphaAlpha])
                   << std::endl;
     ExEnv::out0() << indent << "E2(s)         = "<< scprintf("%20.15lf",E2[AlphaBeta] - E2[AlphaAlpha])

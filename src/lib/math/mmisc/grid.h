@@ -185,7 +185,7 @@ class WriteGrids: public Runnable {
     /** The KeyVal constructor.
         <dl>
 
-        <dt><tt>grid</tt></dt><sdd> A Grid that specifies the grid points at
+        <dt><tt>grid</tt></dt><dd> A Grid that specifies the grid points at
         which the scalar function should be calculated.</dd>
 
         <dt><tt>filename</tt></dt><dd> Specifies the filename of the file to

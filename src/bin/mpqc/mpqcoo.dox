@@ -46,8 +46,23 @@ class.
         specifies an Optimize object.  Usually, QNewtonOpt is best for
         finding minima and EFCOpt is best for transition states.
 
-<dt><tt>freq</tt><dd> This keyword must be specified to compute
-        frequencies.  It specifies a MolecularFrequencies object.
+<dt><tt>grad</tt><dd> This keyword specifies the MolecularGradient object
+        that will be used to compute nuclear forces, if they are necessary (i.e. if <tt>opt</tt>
+        was given or <tt>do_grad</tt> was set to true. The only useful
+        option at the moment is FinDispMolecularGradient. There is no need
+        to specify this keyword for mole objects that have analytic gradients
+        implemented.
+
+<dt><tt>freq</tt><dd> This optional keyword will be checked in frequency computations (if <tt>do_freq=true</tt>).
+        It specifies an MolecularFrequencies object. It may be necessary for testing purposes, i.e. for
+        computing frequencies in lower point groups than used for computing mole.
+        The default is to use MolecularFrequency object initialized with mole's molecule object.
+
+<dt><tt>hess</tt><dd> This keyword specifies the MolecularHessian object
+        that will be used to compute force constants. The only useful
+        option at the moment is FinDispMolecularHessian. There is no need
+        to specify this keyword for mole objects that have analytic hessians
+        implemented.
 
 <dt><tt>thread</tt><dd> This specifies an object of type ThreadGrp that can
         be used to advantage on shared-memory multiprocessor machines for
@@ -113,9 +128,16 @@ class.
         true.
 
 <dt><tt>do_gradient</tt><dd> The value of this keyword is boolean.  If true
-        a single point gradient calculation will be done for the
-        MolecularEnergy object given with the mole keyword.  The default is
-        false.
+        and <tt>opt</tt> was not given then a single point gradient calculation
+        will be done for the MolecularEnergy object given with the mole keyword.
+        The default is false.
+
+<dt><tt>do_freq</tt><dd> The value of this keyword is boolean.  If true
+        a frequency calculation will be done for the MolecularEnergy object
+        given with the mole keyword. If <tt>opt</tt> was also given then the frequency
+        calculation will occur after a successful geometry optimization (in other
+        words, if geometry optimization failed then the frequency computation will be skipped).
+        The default is false.
 
 <dt><tt>do_cca</tt><dd> The value of this keywork is boolean.  If true
         the cca embedded framework will be initialized.  The default is 
@@ -337,6 +359,7 @@ inputs that most nearly matches your problem.  The
   <li> \ref mpqcoosampmp2
   <li> \ref mpqcoosampmp2r12
   <li> \ref mpqcoosamphfopt
+  <li> \ref mpqcoosampzapt2opt
   <li> \ref mpqcoosamphessopt
   <li> \ref mpqcoosampoptnewt
   <li> \ref mpqcoosamphffreq
@@ -529,6 +552,72 @@ mpqc: (
 </pre>
 <br>
 
+\subsection mpqcoosampzapt2opt Optimization
+
+Some methods in MPQC cannot compute forces analytically. In this case it may be necessary
+to compute forces by finite diffrences. The following input will optimize the geometry of water using
+the quasi-Newton method with forces computed by finite differences of energies.
+
+<pre>
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+\% basis set specification
+basis<GaussianBasisSet>: (
+  name = "6-31G*"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  \% molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+  )
+  \% method for computing the molecule's energy
+  mole<MBPT2>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+    nfzc = 1
+    nfzv = 1
+    method = zapt
+    algorithm = v1
+    reference<HSOSHF>: (
+      multiplicity = 3
+      molecule = $:molecule
+      basis = $:basis
+      memory = 16000000
+    )
+  )
+  \% optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+  \% evaluate gradients by finite differences
+  grad<FinDispMolecularGradient>: (
+    energy = $..:mole
+  )
+)
+</pre>
+<br>
+
 \subsection mpqcoosamphessopt Optimization with a Computed Guess Hessian
 
 The following input will optimize the geometry of water using
@@ -702,10 +791,8 @@ mpqc: (
     basis = $:basis
     memory = 16000000
   )
-\% vibrational frequency input
-  freq<MolecularFrequencies>: (
-    molecule = $:molecule
-  )
+  do_freq = true
+  
 )
 </pre>
 <br>

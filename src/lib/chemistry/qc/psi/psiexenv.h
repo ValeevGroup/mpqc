@@ -171,6 +171,8 @@ class PsiChkpt : public RefCount {
     const Ref<PsiExEnv>& exenv() const { return exenv_; }
     const Ref<Integral>& integral() const { return integral_; }
 
+    /// are there spin-specific orbitals?
+    bool have_spin_unrestricted_mos() const;
     /// read the orbital energies for spincase s and return as a diagonal matrix
     RefDiagSCMatrix evals(SpinCase1 s,
                           bool spin_restricted = true) const;

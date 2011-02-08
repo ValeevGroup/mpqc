@@ -113,6 +113,9 @@ public:
   /// @sa Compute::obsolete()
   void obsolete();
 
+  /// makes R12WavefunctionWorld ready for use
+  void initialize();
+
 private:
 
   Ref<RefWavefunction> ref_;   //!< describes the reference wavefunction
@@ -142,9 +145,6 @@ private:
   void construct_orthog_aux_();
   // Construct orthog_ri_
   void construct_orthog_ri_();
-
-  ///
-  void initialize();
 };
 
 }

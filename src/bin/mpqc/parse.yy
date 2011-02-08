@@ -38,6 +38,7 @@ int yydebug =1;
 %token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_LINDEP T_MAXITER
 %token T_SCF T_UC
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
+%token T_PCCSD
 %token T_XC T_GRID
 %token T_RI T_F12 T_APP T_ANSATZ
 %token T_OO_INPUT_KEYWORD
@@ -105,6 +106,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_frozen_docc($3); }
             |   T_FROZEN_UOCC T_COLON nonnegative_int_vector
                                                 { set_frozen_uocc($3); }
+            |   T_PCCSD T_COLON string string string
+                                                { set_pccsd($3,$4,$5); }
             |   T_SCF T_COLON scf_options_list
             |   T_DEBUG T_COLON string
                                                 { set_debug($3); }

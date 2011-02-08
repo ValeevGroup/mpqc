@@ -33,6 +33,7 @@
 #include <cassert>
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/group/memregion.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
@@ -113,12 +114,31 @@ TwoBodyMOIntsTransform_ixjy_df::save_data_state(StateOut& so)
 distsize_t
 TwoBodyMOIntsTransform_ixjy_df::compute_transform_dynamic_memory_(int ni) const
 {
-  // integrals held by MemoryGrp
-  // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
-  const int nproc = msg()->n();
-  const int rank3 = space3()->rank();
-  int nij = compute_nij(ni, rank3, nproc, 0);
-  const distsize_t memsize_memgrp = num_te_types() * nij * (distsize_t) memgrp_blksize();
+  const bool ints_held_on_disk = (this->ints_method_ == MOIntsTransform::StoreMethod::posix) ||
+                                 (this->ints_method_ == MOIntsTransform::StoreMethod::mpi);
+
+  TwoBodyOperSet::type oset = intdescr()->operset();
+  const bool coulomb_only = (oset == TwoBodyOperSet::ERI);
+
+  const int n1 = space1_->basis()->nbasis();
+  const int n2 = space2_->basis()->nbasis();
+  const unsigned int rank2 = space2()->rank();
+  const unsigned int rank3 = space3()->rank();
+  const unsigned int rank4 = space4()->rank();
+  const unsigned int rankF = dfbasis12()->nbasis();
+  // TODO figure out precise memory requirements
+  distsize_t memsize_memgrp = std::max(num_te_types()*n1*n2 + rank2*rankF,  // to hold kernel and L12_buf
+                                       rank2*rank4           // to hold xy_buf
+                                      ) * (distsize_t)sizeof(double);
+
+  if (!ints_held_on_disk) {
+    // integrals held by MemoryGrp
+    // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
+    const int nproc = msg()->n();
+    const int rank3 = space3()->rank();
+    const int nij = compute_nij(ni, rank3, nproc, 0);
+    memsize_memgrp += num_te_types() * nij * (distsize_t) memgrp_blksize();
+  }
 
   // determine the peak memory requirements
   return memsize_memgrp;
@@ -372,7 +392,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       const int n2 = b2->nbasis();
       const int n12 = n1 * n2;
       for(int te_type=0; te_type<ntypes; ++te_type) {
-        kernel[te_type] = new double[n12];
+        kernel[te_type] = allocate<double>(n12);
         memset(kernel[te_type],0,n12*sizeof(double));
       }
 
@@ -430,7 +450,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       const unsigned int rank2 = space2()->rank();
       const unsigned int rankF12 = dfbasis12()->nbasis();
       const unsigned int rankF34 = dfbasis34()->nbasis();
-      double* L12_buf = new double[rank2 * rankF34];
+      double* L12_buf = allocate<double>(rank2 * rankF34);
 
       int task_count = 0;
       for(unsigned int te_type = 0; te_type<ntypes; ++te_type) {
@@ -447,10 +467,14 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
         }
       }
 
-      delete[] L12_buf;
+      deallocate(L12_buf);
     }
     if (L12->data_persistent()) L12->deactivate();
     if (C12->data_persistent()) C12->deactivate();
+    if (kernel != 0)
+      for (int te_type=0; te_type<num_te_types(); ++te_type)
+        deallocate(kernel[te_type]);
+    delete[] kernel;
   }
 
   // split the work between tasks who can write the integrals
@@ -467,7 +491,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   const unsigned int rank3 = space3()->rank();
   const unsigned int rank4 = space4()->rank();
   const unsigned int rankF = dfbasis12()->nbasis();
-  double* xy_buf = new double[rank2 * rank4];
+  double* xy_buf = allocate<double>(rank2 * rank4);
 
   ints_acc_->activate();
 
@@ -540,10 +564,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     if (C34->data_persistent())   C34->deactivate();
   }
 
-  delete[] xy_buf;
-  if (kernel != 0)
-    for (int te_type=0; te_type<num_te_types(); ++te_type)
-      delete[] kernel[te_type];
+  deallocate(xy_buf);
 
   restart_orbital_ = 1;
   tim.exit();

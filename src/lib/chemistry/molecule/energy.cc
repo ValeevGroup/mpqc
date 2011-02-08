@@ -81,10 +81,6 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
   initial_pg_ = new PointGroup(mol_->point_group());
 
-  hess_ << keyval->describedclassvalue("hessian");
-
-  guesshess_ << keyval->describedclassvalue("guess_hessian");
-
   moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");
 
   // the molecule coordinate object needs moldim_
@@ -133,6 +129,14 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   do_hessian(0);
 
   molecule_to_x();
+
+  guesshess_ << keyval->describedclassvalue("guess_hessian");
+
+  hess_ << keyval->describedclassvalue("hessian");
+  if (hess_.nonnull()) {
+    if (hess_->energy() == 0)
+      hess_->set_energy(this);
+  }
 }
 
 MolecularEnergy::~MolecularEnergy()
@@ -435,6 +439,13 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
     }
 }
 
+void
+MolecularEnergy::set_hessian(const Ref<MolecularHessian>& hess)
+{
+  if (!this->hessian_implemented())
+    hess_ = hess;
+}
+
 RefSymmSCMatrix
 MolecularEnergy::hessian()
 {
@@ -452,10 +463,28 @@ MolecularEnergy::hessian()
   return hessian_.result();
 }
 
-int
-MolecularEnergy::hessian_implemented() const
+void
+MolecularEnergy::set_gradient(const Ref<MolecularGradient>& grad)
 {
-  return hess_.nonnull();
+  //if (!this->gradient_implemented())
+    grad_ = grad;
+}
+
+RefSCVector
+MolecularEnergy::gradient()
+{
+  if (grad_.null()) return gradient_.result();
+
+  if (gradient_.computed()) return gradient_.result();
+
+  int nullmole = (grad_->energy() == 0);
+  this->reference();
+  if (nullmole) grad_->set_energy(this);
+  RefSCVector xgrad = grad_->cartesian_gradient();
+  if (nullmole) grad_->set_energy(0);
+  this->dereference();
+  set_gradient(xgrad);
+  return gradient_.result();
 }
 
 void

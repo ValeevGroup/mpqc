@@ -59,7 +59,6 @@ namespace sc {
         if (factory->top_mole_.nonnull())
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
-        factory->reserve_memory(result->memory());
 
         return result;
       }
@@ -82,7 +81,6 @@ namespace sc {
         if (factory->top_mole_.nonnull())
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
-        factory->reserve_memory(result->memory());
 
         return result;
       }
@@ -144,7 +142,6 @@ namespace sc {
     if (top_mole_.nonnull())
       result->set_top_mole(top_mole_);
 #endif
-    reserve_memory(result->memory());
     return result;
   }
 

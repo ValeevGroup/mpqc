@@ -133,16 +133,19 @@ namespace sc {
       virtual const RefSCMatrix& Lambda1(SpinCase1 spin1);
       /// return Lambda amplitudes of rank 2
       virtual const RefSCMatrix& Lambda2(SpinCase2 spin2);
+
+      void obsolete();
   };
   
   ///////////////////////////////////////////////////////////////////
   /// PsiCCSD is a concrete implementation of Psi CCSD wave function
 
   class PsiCCSD : public PsiCC {
-      double pccsd_alpha_;
-      double pccsd_beta_;
     protected:
       void write_input(int conv);
+      double pccsd_alpha_;
+      double pccsd_beta_;
+      double pccsd_gamma_;
     public:
       PsiCCSD(const Ref<KeyVal>&);
       PsiCCSD(StateIn&);

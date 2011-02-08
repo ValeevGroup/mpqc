@@ -56,6 +56,7 @@ MBPT2_R12::compute_energy_()
 
   Ref<R12WavefunctionWorld> r12world = r12world_;
   Ref<R12Technology> r12tech = r12world->r12tech();
+  r12world->initialize();
 
   // test app. C general-density B builder by feeding HF densities to it
 #define TEST_GENERAL_FOCK_BUILD 0
@@ -82,7 +83,6 @@ MBPT2_R12::compute_energy_()
   if (r12eval_.null()) {
     // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
     r12world->world()->print_percent(print_percent_);
-    r12world->world()->memory(mem_alloc);
     r12eval_ = new R12IntEval(r12world_);
     r12eval_->debug(debug_);
   }

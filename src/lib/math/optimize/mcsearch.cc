@@ -178,10 +178,12 @@ MCSearch::update()
 //                   SUFFICIENT DECREASE AND CURVATURE CONDITIONS. 
 //                   TOLERANCES MAY BE TOO SMALL. 
   if (info_ == 6) {
-      throw AlgorithmException("error in MCSearch: info == 6",
-                             __FILE__,
-                             __LINE__,
-                             class_desc());
+      throw ToleranceExceeded("error in MCSearch: info == 6",
+                              __FILE__,
+                              __LINE__,
+                              DBL_EPSILON,
+                              0.0,
+                              class_desc());
       return 1;
     }
 

@@ -129,6 +129,9 @@ namespace sc {
 
       /// return Psi3 nuclear repulsion energy
       double nuclear_repulsion_energy() const;
+
+      void obsolete();
+      void symmetry_changed();
   };
 
   class PsiSCF;
@@ -200,6 +203,8 @@ namespace sc {
       void set_desired_value_accuracy(double acc);
 
       void compute(); // compute is overloaded because reference object needs to be marked computed
+      void obsolete();
+      void symmetry_changed();
 
       const Ref<PsiSCF>& reference() const;
       /// Number of electrons
@@ -351,6 +356,9 @@ namespace sc {
       unsigned int nocc(SpinCase1 spin);
       /// spin multiplicity
       unsigned int multiplicity() const { return multp_; }
+
+      void obsolete();
+      void symmetry_changed();
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -400,17 +408,19 @@ namespace sc {
         return hsoshf;
       }
 
-      /// returns the semicanonical MO coefficients in AO basis
+      /// returns the semicanonical MO coefficients in AO basis \sa semicanonical
       const RefSCMatrix& coefs_semicanonical(SpinCase1 s);
-      /// returns the eigenvalues of semicanonical MOs in AO basis
+      /// returns the eigenvalues of semicanonical MOs in AO basis \sa semicanonical
       const RefDiagSCMatrix& evals_semicanonical(SpinCase1 s);
 
     private:
       RefSCMatrix coefs_sc_[NSpinCases1];
       RefDiagSCMatrix evals_sc_[NSpinCases1];
 
-      // computes semicanonical MOs
+      /// read semicanonical MOs; if not available, compute them
       void semicanonical();
+
+      void obsolete();
   };
 
   ///////////////////////////////////////////////////////////////////

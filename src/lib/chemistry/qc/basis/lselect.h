@@ -48,7 +48,10 @@ class LSelectBasisSet: public GaussianBasisSet {
 
         <dt><tt>basis</tt><dd> The gives the GaussianBasisSet object
         that will be used to form this basis set (the mother basis).
-	This basis may be split (see <tt>SplitBasisSet</tt>), if necessary.
+        If <tt>basis</tt> is not given, the constructor will try to construct
+        a GaussianBasisSet object from the current input and use it as
+        the mother basis.
+
 
         <dt><tt>lmin</tt><dd> Shells of this angular momentum and higher
 	will be used in this basis. Default is 0.

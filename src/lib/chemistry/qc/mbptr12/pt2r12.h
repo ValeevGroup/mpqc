@@ -88,7 +88,6 @@ namespace sc {
 
       static double ref_to_pt2r12_acc() { return 0.01; }
 
-      size_t memory_r12_;
       Ref<Wavefunction> reference_;
       Ref< RDM<Two> > rdm2_;
       Ref< RDM<One> > rdm1_;

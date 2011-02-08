@@ -33,7 +33,6 @@
 #endif
 
 #include <string>
-#include <vector>
 #include <map>
 
 #include <util/state/state.h>
@@ -183,12 +182,20 @@ class StateIn:  public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
 
-    /// Read an std::vector. This also works if T is a Ref to a SavableState.
-    template <typename T>
-    int get(std::vector<T>& v) {
+    /** Read standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
+      * @{
+      */
+
+    /// Read a Container that could be a standard (non-associative) C++ container such as std::vector or std::list.
+    template <template <typename, typename> class Container, class T, class A>
+    int get(Container<T,A> &v) {
       size_t l;
       int r = get(l);
-      if (l) { v.resize(l); for (size_t i=0; i<l; i++) detail::FromStateIn<T>::get(v[i],*this,r); }
+      for (size_t i=0; i<l; i++) {
+        T tmp;
+        detail::FromStateIn<T>::get(tmp,*this,r);
+        v.push_back(tmp);
+      }
       return r;
     }
 
@@ -216,6 +223,7 @@ class StateIn:  public DescribedClass {
       detail::FromStateIn<R>::get(v.second,*this,s);
       return s;
     }
+    ///@}
 
     /** True if this is a node to node save/restore.  This is
         for classes that try to avoid saving databases
@@ -247,6 +255,7 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
+  class RefSCVector;
   class RefSCMatrix;
   class RefSymmSCMatrix;
   class RefDiagSCMatrix;
@@ -263,6 +272,10 @@ class StateIn:  public DescribedClass {
       static void get(Ref<T>& t, StateIn& so, int& count) {
         t << SavableState::restore_state(so);
       }
+    };
+    /// specialization for RefSCVector
+    template <> struct FromStateIn<sc::RefSCVector> {
+      static void get(sc::RefSCVector& t, StateIn& so, int& count);
     };
     /// specialization for RefSCMatrix
     template <> struct FromStateIn<sc::RefSCMatrix> {

@@ -383,6 +383,15 @@ PsiChkpt::PsiChkpt(const Ref<PsiExEnv>& exenv,
 PsiChkpt::~PsiChkpt() {
 }
 
+bool
+PsiChkpt::have_spin_unrestricted_mos() const {
+  const bool result = exenv()->chkpt().exist_add_prefix("Alpha MO energies") &&
+      exenv()->chkpt().exist_add_prefix("Beta MO energies") &&
+      exenv()->chkpt().exist_add_prefix("Alpha MO coefficients") &&
+      exenv()->chkpt().exist_add_prefix("Beta MO coefficients");
+  return result;
+}
+
 RefDiagSCMatrix
 PsiChkpt::evals(SpinCase1 spin,
                 bool spin_restricted) const {

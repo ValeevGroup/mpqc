@@ -44,6 +44,7 @@ namespace sc {
 // //////////////////////////////////////////////////////////////////////
 // newton and related methods
 
+/// Implements Newton method
 class NewtonOpt: public Optimize {
   protected:
     double maxabs_gradient;
@@ -53,6 +54,7 @@ class NewtonOpt: public Optimize {
     int print_x_;
     int print_gradient_;
   public:
+    ///
     NewtonOpt(const Ref<KeyVal>&);
     NewtonOpt(StateIn&);
     ~NewtonOpt();

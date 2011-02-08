@@ -1,5 +1,5 @@
 //
-// hess.cc
+// deriv.cc
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -37,7 +37,7 @@
 #include <util/keyval/keyval.h>
 #include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/molfreq.h>
 
 using namespace std;
@@ -144,7 +144,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
   for (i=0; i<nmin; i++) {
       if (sigmaext(i) > epsilonext) rankext++;
     }
-  ExEnv::out0() << indent << "The external rank is " << rankext << endl;
+  //ExEnv::out0() << indent << "The external rank is " << rankext << endl;
   // find the projection onto the externalbasis perp space
   if (rankext) {
       RefSCDimension drankext_tilde = new SCDimension(d3natom.n() - rankext);
@@ -504,6 +504,150 @@ DiagMolecularHessian::cartesian_hessian()
   xhessian->assign(0.0);
   xhessian->shift_diagonal(diag_);
   return xhessian;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// MolecularGradient
+
+static ClassDesc MolecularGradient_cd(
+  typeid(MolecularGradient),"MolecularGradient",1,"public SavableState",
+  0, 0, 0);
+
+MolecularGradient::MolecularGradient()
+{
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+}
+
+MolecularGradient::MolecularGradient(const Ref<KeyVal>&keyval)
+{
+  mol_ << keyval->describedclassvalue("molecule");
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+}
+
+MolecularGradient::MolecularGradient(StateIn&s):
+  SavableState(s)
+{
+  mol_ << SavableState::restore_state(s);
+  d3natom_ << SavableState::restore_state(s);
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+}
+
+MolecularGradient::~MolecularGradient()
+{
+}
+
+void
+MolecularGradient::save_data_state(StateOut&s)
+{
+  SavableState::save_state(mol_.pointer(),s);
+  SavableState::save_state(d3natom_.pointer(),s);
+}
+
+RefSCDimension
+MolecularGradient::d3natom()
+{
+  if (d3natom_.null()) d3natom_ = new SCDimension(mol_->natom()*3);
+  return d3natom_;
+}
+
+void
+MolecularGradient::set_energy(const Ref<MolecularEnergy> &)
+{
+}
+
+MolecularEnergy*
+MolecularGradient::energy() const
+{
+  return 0;
+}
+
+void
+MolecularGradient::write_cartesian_gradient(const char *filename,
+                                            const Ref<Molecule> &mol,
+                                            const RefSCVector &grad)
+{
+  const int ncoord = 3 * mol->natom();
+  double *gradv = new double[ncoord];
+  grad->convert(gradv);
+  if (MessageGrp::get_default_messagegrp()->me() == 0) {
+      int i,j;
+      ofstream out(filename);
+      // file format is version text 1
+      out << "Gradient VT1" << endl;
+      out << mol->natom() << " atoms" << endl;
+      for (i=0; i<mol->natom(); i++) {
+          out << scprintf("%2d % 15.12f % 15.12f % 15.12f",
+                          mol->Z(i), mol->r(i,0), mol->r(i,1), mol->r(i,2))
+              << endl;
+
+        }
+      const int nrow = 5;
+      for (i=0; i<ncoord; ) {
+          for (j=0; j<nrow && i<ncoord; j++,i++) {
+              if (j>0) out << " ";
+              out << scprintf("% 20.15f", gradv[i]);
+            }
+          out << endl;
+        }
+      out << "End Gradient" << endl;
+    }
+  delete[] gradv;
+}
+
+void
+MolecularGradient::read_cartesian_gradient(const char *filename,
+                                           const Ref<Molecule> &mol,
+                                           const RefSCVector &grad)
+{
+  const int ncoord = 3 * mol->natom();
+  double *gradv = new double[ncoord];
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
+  if (grp->me() == 0) {
+      int i;
+      ifstream in(filename);
+      const int nline = 100;
+      char linebuf[nline];
+      in.getline(linebuf, nline);
+      if (strcmp(linebuf,"Gradient VT1")) {
+          throw FileOperationFailed("not given a gradient file",
+                                    __FILE__, __LINE__, filename,
+                                    FileOperationFailed::Corrupt);
+        }
+      int natom;
+      in >> natom;
+      if (natom != mol->natom()) {
+          throw FileOperationFailed("wrong number of atoms in gradient file",
+                                    __FILE__, __LINE__, filename,
+                                    FileOperationFailed::Corrupt);
+        }
+      in.getline(linebuf,nline);
+      //ExEnv::outn() << "READ: should be atoms: " << linebuf << endl;
+      for (i=0; i<mol->natom(); i++) {
+          int Z;
+          double x, y, z;
+          in >> Z >> x >> y >> z;
+          //ExEnv::outn() << "READ: " << Z << " " << x << " " << y << " " << z << endl;
+        }
+      for (i=0; i<ncoord; i++) {
+          in >> gradv[i];
+          //ExEnv::outn() << "READ: grad[" << i << "] = " << gradv[i] << endl;
+        }
+      in.getline(linebuf, nline);
+      //ExEnv::outn() << "READ: last line = " << linebuf << endl;
+      if (strcmp(linebuf,"End Gradient")) {
+          // try once more since there could be a left over new line
+          in.getline(linebuf, nline);
+          if (strcmp(linebuf,"End Gradient")) {
+              //ExEnv::outn() << "READ: last line = " << linebuf << endl;
+              throw FileOperationFailed("gradient file seems to be truncated",
+                                        __FILE__, __LINE__, filename,
+                                        FileOperationFailed::Corrupt);
+            }
+        }
+    }
+  grp->bcast(gradv,ncoord);
+  grad->assign(gradv);
+  delete[] gradv;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -286,7 +286,7 @@ class MP2R12Energy_Diag : public MP2R12Energy
 
 Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
                                          int debug,
-                                         bool use_new_version);
+                                         bool diag);
 
 }
 

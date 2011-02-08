@@ -79,8 +79,6 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
-
-  initialize();
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
@@ -93,8 +91,6 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 
   abs_space_ << SavableState::restore_state(si);
   ribs_space_ << SavableState::restore_state(si);
-
-  initialize();
 }
 
 R12WavefunctionWorld::~R12WavefunctionWorld()
@@ -114,6 +110,7 @@ void R12WavefunctionWorld::save_data_state(StateOut& so)
 void
 R12WavefunctionWorld::initialize()
 {
+  ref_->world()->initialize_ao_spaces();
   // provide hints to the factory about the likely use of transforms
   {
     // 1) if stdapprox is A' or A'' most transforms will never be reused
@@ -145,12 +142,12 @@ R12WavefunctionWorld::initialize()
 
 void
 R12WavefunctionWorld::obsolete() {
-  ref_->obsolete(); // this obsoletes WavefunctionWorld
+  ref_->obsolete();
   abs_space_ = 0;
   ribs_space_ = 0;
   cabs_space_[Alpha] = 0;
   cabs_space_[Beta] = 0;
-  this->initialize();
+//  this->initialize();   // can't initialize because there is no guarantee we are ready to compute again
 }
 
 const Ref<OrbitalSpace>&

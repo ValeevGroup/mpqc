@@ -38,7 +38,7 @@
 #include <math/optimize/function.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 
 #include <Chemistry_QC_ModelFactoryInterface.hxx>
 #include <ChemistryOpt_CoordinateModelInterface.hxx>
@@ -64,7 +64,8 @@ class MolecularEnergyCCA: public MolecularEnergy {
     sidl::array<double> sidlx_;
     sidl::array<double> sidlg_;
     RefSCDimension scdim_;
-
+    bool analytic_gradient_implemented() const { return true; }
+    bool analytic_hessian_implemented() const { return true; }
     
   protected:
 
@@ -76,8 +77,6 @@ class MolecularEnergyCCA: public MolecularEnergy {
 
     void save_data_state(StateOut&);
     int value_implemented() const { return 1; }
-    int gradient_implemented() const { return 1; }
-    int hessian_implemented() const { return 1; }
     void init_model();
     void compute();
     void set_x(const RefSCVector& v);

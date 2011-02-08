@@ -51,7 +51,7 @@ namespace sc {
       double cabs_singles_energy_;
       double pccsd_alpha_;
       double pccsd_beta_;
-
+      double pccsd_gamma_;
     protected:
       /// set to true to use Ts instead of Lambdas
       static const bool replace_Lambda_with_T_ = true;
@@ -84,6 +84,8 @@ namespace sc {
 
       <dt><tt>pccsd_beta</tt><dd> The default is 1.0 .
 
+      <dt><tt>pccsd_gamma</tt><dd> The default is 1.0 .
+
       </dl> */
       PsiCCSD_PT2R12(const Ref<KeyVal>&);
       PsiCCSD_PT2R12(StateIn&);
@@ -101,6 +103,8 @@ namespace sc {
       double eccsd();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
+
+      void obsolete();
   };
 
   ///////////////////////////////////////////////////////////////////

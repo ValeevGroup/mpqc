@@ -43,6 +43,7 @@
 #include <util/class/scexception.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
+#include <math/scmat/util.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blocked.h>
 #include <math/symmetry/pointgrp.h>
@@ -335,13 +336,26 @@ namespace sc {
       if (natom != natom_mpqc) {
         throw ProgrammingError("Number of atoms in MPQC and Psi3 do not match",__FILE__,__LINE__);
       }
+
+      // MPQC feeds Psi3 geometry in "native" symmetry frame -- convert Psi3 gradients to the "reference" frame
       RefSCVector gradientvec = basis()->matrixkit()->vector(moldim());
+      double grad_sf[3], grad_rf[3];
+      const SymmetryOperation rf_to_sf = molecule()->point_group()->symm_frame();
       for (int atom=0; atom<natom; atom++) {
-        gradientvec[3*atom] = file11->get_grad(0, atom, 0);
-        gradientvec[3*atom+1] = file11->get_grad(0, atom, 1);
-        gradientvec[3*atom+2] = file11->get_grad(0, atom, 2);
+        grad_sf[0] = file11->get_grad(0, atom, 0);
+        grad_sf[1] = file11->get_grad(0, atom, 1);
+        grad_sf[2] = file11->get_grad(0, atom, 2);
+        for(int i=0; i<3; ++i) {
+          grad_rf[i] = 0.0;
+          for(int j=0; j<3; ++j)
+            grad_rf[i] += grad_sf[j] * rf_to_sf[i][j];
+        }
+        const int offset = 3*atom;
+        for(int i=0; i<3; ++i)
+          gradientvec[offset+i] = grad_rf[i];
       }
       set_gradient(gradientvec);
+
       file11->close();
       file11->remove();
     } else {
@@ -469,6 +483,20 @@ namespace sc {
   PsiWavefunction::nuclear_repulsion_energy() const
   {
     return exenv()->chkpt().rd_enuc();
+  }
+
+  void
+  PsiWavefunction::obsolete() {
+    if (prerequisite_.nonnull()) prerequisite_->obsolete();
+    this->exenv()->run_psiclean();  // do full cleanup
+    Wavefunction::obsolete();
+  }
+
+  void
+  PsiWavefunction::symmetry_changed() {
+    nirrep_ = molecule()->point_group()->char_table().order();
+    Wavefunction::symmetry_changed();
+    if (prerequisite_.nonnull()) prerequisite_->symmetry_changed();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -979,6 +1007,27 @@ namespace sc {
 
   }
 
+  void
+  PsiSCF::obsolete() {
+    orbs_sb_[Alpha] = orbs_sb_[Beta] = 0;
+    evals_[Alpha] = evals_[Beta] = 0;
+    coefs_[Alpha] = coefs_[Beta] = 0;
+    mo_density_[Alpha] = mo_density_[Beta] = 0;
+    PsiWavefunction::obsolete();
+  }
+
+  void
+  PsiSCF::symmetry_changed() {
+    PsiWavefunction::symmetry_changed();
+    occupation_[Alpha].resize(0); occupation_[Beta].resize(0);
+    occpi_[Alpha].resize(0); occpi_[Beta].resize(0);
+    uoccpi_[Alpha].resize(0); uoccpi_[Beta].resize(0);
+    mopi_.resize(0);
+    docc_.resize(0);
+    socc_.resize(0);
+    if (guess_wfn_.nonnull()) guess_wfn_->symmetry_changed();
+  }
+
   //////////////////////////////////////////////////////////////////////////
 
   static ClassDesc PsiCLHF_cd(typeid(PsiCLHF), "PsiCLHF", 1, "public PsiSCF",
@@ -1180,6 +1229,19 @@ namespace sc {
     if (value_needed())
       compute();
 
+    // if orbitals are available read off disk
+    PsiChkpt chkpt(exenv(), integral(), debug());
+    if (chkpt.have_spin_unrestricted_mos()) {
+      const bool seek_spin_restricted = false;
+      evals_sc_[Alpha] = chkpt.evals(Alpha, seek_spin_restricted);
+      evals_sc_[Beta] = chkpt.evals(Beta, seek_spin_restricted);
+      coefs_sc_[Alpha] = chkpt.coefs(Alpha, seek_spin_restricted);
+      coefs_sc_[Beta] = chkpt.coefs(Beta, seek_spin_restricted);
+      //coefs_sc_[Alpha].print("Alpha semicanonical MOs (computed in Psi)");
+      //coefs_sc_[Beta].print("Beta semicanonical MOs (computed in Psi)");
+      return;
+    }
+
     const RefSCDimension modim = evals().dim();
     const RefSCDimension sodim = so_dimension();
     const unsigned int nirrep = molecule()->point_group()->char_table().nirrep();
@@ -1334,6 +1396,7 @@ namespace sc {
       }
     }
     coefs_sc_[Alpha] = ao_eigenvector * aevecs;
+    canonicalize_column_phases(coefs_sc_[Alpha]);
   #if DEBUG_SEMICANONICAL
     {
       ao_eigenvector.print("Original eigenvector (AO basis)");
@@ -1413,6 +1476,7 @@ namespace sc {
       }
     }
     coefs_sc_[Beta] = ao_eigenvector * bevecs;
+    canonicalize_column_phases(coefs_sc_[Beta]);
   #if DEBUG_SEMICANONICAL
     {
       bevecs.print("Beta transform matrix");
@@ -1429,6 +1493,15 @@ namespace sc {
   #endif
     bevecs = 0;
 
+    //coefs_sc_[Alpha].print("Alpha semicanonical MOs (computed in MPQC)");
+    //coefs_sc_[Beta].print("Beta semicanonical MOs (computed in MPQC)");
+  }
+
+  void
+  PsiHSOSHF::obsolete() {
+    coefs_sc_[Alpha] = coefs_sc_[Beta] = 0;
+    evals_sc_[Alpha] = evals_sc_[Beta] = 0;
+    PsiSCF::obsolete();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -1682,6 +1755,18 @@ namespace sc {
         reference_->desired_value_accuracy()
         );
   }
+
+  void PsiCorrWavefunction::obsolete() {
+    reference_->obsolete();
+    PsiWavefunction::obsolete();
+  }
+  void PsiCorrWavefunction::symmetry_changed() {
+    PsiWavefunction::symmetry_changed();
+    reference_->symmetry_changed();
+    frozen_docc_.resize(0);
+    frozen_uocc_.resize(0);
+  }
+
 
   const Ref<PsiSCF>&
   PsiCorrWavefunction::reference() const {

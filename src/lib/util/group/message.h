@@ -75,6 +75,16 @@ class GrpMaxReduce: public GrpReduce<T> {
     void reduce(T*target, T*data, int nelement);
 };
 
+template <class T, class BinaryPredicate = std::less<T> >
+class GrpCompareReduce: public GrpReduce<T> {
+  public:
+    GrpCompareReduce() : GrpReduce<T>() {}
+    ~GrpCompareReduce() {};
+    void reduce(T*target, T*data, int nelement);
+  private:
+    BinaryPredicate Op;
+};
+
 template <class T>
 class GrpArithmeticAndReduce: public GrpReduce<T> {
   public:
@@ -532,6 +542,10 @@ class MessageGrp: public DescribedClass {
 
     /** @name Global Generic Reduction Members. */
     //@{
+    /// T must be a POD (plain old data) type so that it can be copied bytewise
+    template <typename T>
+    void reduce(T*, int n, GrpReduce<T>&,
+                T*scratch = 0, int target = -1);
     virtual void reduce(double*, int n, GrpReduce<double>&,
                         double*scratch = 0, int target = -1);
     virtual void reduce(int*, int n, GrpReduce<int>&,

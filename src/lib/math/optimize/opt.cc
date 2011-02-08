@@ -50,7 +50,8 @@ static ClassDesc Optimize_cd(
   0, 0, 0);
 
 Optimize::Optimize() :
-  ckpt_(0)
+  ckpt_(0), print_timings_(0), ckpt_file_("opt_ckpt.dat"),
+  max_iterations_(10), max_stepsize_(0.6), conv_(new Convergence())
 {
   msg_ = MessageGrp::get_default_messagegrp();
 }
@@ -292,17 +293,23 @@ LineOpt::print(std::ostream&o) const
 
 static ClassDesc Backtrack_cd(
   typeid(Backtrack),"Backtrack",2,"public LineOpt",
-  0, create<Backtrack>, create<Backtrack>);
+  create<Backtrack>, create<Backtrack>, create<Backtrack>);
+
+Backtrack::Backtrack()
+  : LineOpt(), backtrack_factor_(0.1),
+    decrease_factor_(0.1), force_search_(0)
+{
+}
 
 Backtrack::Backtrack(const Ref<KeyVal>& keyval) 
   : LineOpt(keyval)
 { 
-  backtrack_factor_ = keyval->doublevalue("backtrack_factor");
-  if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.1;
-  decrease_factor_ = keyval->doublevalue("decrease_factor");	
-  if (keyval->error() != KeyVal::OK) decrease_factor_ = 0.1;
-  force_search_ = keyval->booleanvalue("force_search");
-  if (keyval->error() != KeyVal::OK) force_search_ = 0;
+  backtrack_factor_ = keyval->doublevalue("backtrack_factor",
+                                          KeyValValuedouble(0.1));
+  decrease_factor_ = keyval->doublevalue("decrease_factor",
+                                         KeyValValuedouble(0.1));
+  force_search_ = keyval->booleanvalue("force_search",
+                                       KeyValValueboolean(false));
 }
 
 Backtrack::Backtrack(StateIn&s):

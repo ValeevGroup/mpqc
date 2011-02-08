@@ -37,53 +37,106 @@
 using namespace sc;
 
 void
+sc::detail::FromStateIn<sc::RefSCVector>::get(sc::RefSCVector& t, StateIn& si, int& count) {
+  int nonnull;
+  count += si.get(nonnull);
+  if (nonnull) {
+    RefSCDimension dim;  dim << SavableState::restore_state(si);
+    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
+    Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
+    t = kit->vector(dim);
+    t.restore(si);
+  }
+}
+
+void
 sc::detail::FromStateIn<sc::RefSCMatrix>::get(sc::RefSCMatrix& t, StateIn& si, int& count) {
-  RefSCDimension rowdim;  rowdim << SavableState::restore_state(si);
-  RefSCDimension coldim;  coldim << SavableState::restore_state(si);
-  const bool blockeddim = rowdim->blocks().nonnull();
-  Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
-  Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
-  t = kit->matrix(rowdim,coldim);
-  t.restore(si);
+  int nonnull;
+  count += si.get(nonnull);
+  if (nonnull) {
+    RefSCDimension rowdim;  rowdim << SavableState::restore_state(si);
+    RefSCDimension coldim;  coldim << SavableState::restore_state(si);
+    const bool blockeddim = rowdim->blocks()->subdim(0).nonnull()
+                         && coldim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
+    Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
+    t = kit->matrix(rowdim,coldim);
+    t.restore(si);
+  }
 }
 
 void
 sc::detail::FromStateIn<sc::RefSymmSCMatrix>::get(sc::RefSymmSCMatrix& t, StateIn& si, int& count) {
-  RefSCDimension dim;  dim << SavableState::restore_state(si);
-  const bool blockeddim = dim->blocks().nonnull();
-  Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
-  Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
-  t = kit->symmmatrix(dim);
-  t.restore(si);
+  int nonnull;
+  count += si.get(nonnull);
+  if (nonnull) {
+    RefSCDimension dim;  dim << SavableState::restore_state(si);
+    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
+    Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
+    t = kit->symmmatrix(dim);
+    t.restore(si);
+  }
 }
 
 void
 sc::detail::FromStateIn<sc::RefDiagSCMatrix>::get(sc::RefDiagSCMatrix& t, StateIn& si, int& count) {
-  RefSCDimension dim;  dim << SavableState::restore_state(si);
-  const bool blockeddim = dim->blocks().nonnull();
-  Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
-  Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
-  t = kit->diagmatrix(dim);
-  t.restore(si);
+  int nonnull;
+  count += si.get(nonnull);
+  if (nonnull) {
+    RefSCDimension dim;  dim << SavableState::restore_state(si);
+    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
+    Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
+    t = kit->diagmatrix(dim);
+    t.restore(si);
+  }
+}
+
+void
+sc::detail::ToStateOut<sc::RefSCVector>::put(const sc::RefSCVector& t, StateOut& so, int& count) {
+  if (t.null())
+    count += so.put(0);
+  else {
+    count += so.put(1);
+    SavableState::save_state(t.dim().pointer(),so);
+    const_cast<RefSCVector&>(t).save(so);
+  }
 }
 
 void
 sc::detail::ToStateOut<sc::RefSCMatrix>::put(const sc::RefSCMatrix& t, StateOut& so, int& count) {
-  SavableState::save_state(t.rowdim().pointer(),so);
-  SavableState::save_state(t.coldim().pointer(),so);
-  (const_cast<SCMatrix*>(t.pointer()))->save(so);
+  if (t.null())
+    count += so.put(0);
+  else {
+    count += so.put(1);
+    SavableState::save_state(t.rowdim().pointer(),so);
+    SavableState::save_state(t.coldim().pointer(),so);
+    const_cast<RefSCMatrix&>(t).save(so);
+  }
 }
 
 void
 sc::detail::ToStateOut<sc::RefSymmSCMatrix>::put(const sc::RefSymmSCMatrix& t, StateOut& so, int& count) {
-  SavableState::save_state(t.dim().pointer(),so);
-  (const_cast<SymmSCMatrix*>(t.pointer()))->save(so);
+  if (t.null())
+    count += so.put(0);
+  else {
+    count += so.put(1);
+    SavableState::save_state(t.dim().pointer(),so);
+    const_cast<RefSymmSCMatrix&>(t).save(so);
+  }
 }
 
 void
 sc::detail::ToStateOut<sc::RefDiagSCMatrix>::put(const sc::RefDiagSCMatrix& t, StateOut& so, int& count) {
-  SavableState::save_state(t.dim().pointer(),so);
-  (const_cast<DiagSCMatrix*>(t.pointer()))->save(so);
+  if (t.null())
+    count += so.put(0);
+  else {
+    count += so.put(1);
+    SavableState::save_state(t.dim().pointer(),so);
+    const_cast<RefDiagSCMatrix&>(t).save(so);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

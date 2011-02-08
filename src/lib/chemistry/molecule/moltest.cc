@@ -32,7 +32,7 @@
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/hess.h>
+#include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
 #include <util/state/state_bin.h>
@@ -279,6 +279,15 @@ main(int argc, char **argv)
       cout << "-------------- testing energy  --------------" << endl;
       me->print();
     }
+
+  Ref<MolecularGradient> molgrad; molgrad << kv->describedclassvalue("grad");
+  RefSCVector xgradient;
+  if (molgrad.nonnull()) {
+    cout << "-------------- testing grad  --------------" << endl;
+    xgradient = molgrad->cartesian_gradient();
+    xgradient.print("Gradient computed with grad");
+    me->get_cartesian_gradient().print("Gradient computed analytically");
+  }
 
   Ref<MolecularHessian> molhess; molhess << kv->describedclassvalue("hess");
   RefSymmSCMatrix xhessian;

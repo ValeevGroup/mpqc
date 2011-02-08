@@ -79,7 +79,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molfreq.h>
-#include <chemistry/molecule/fdhess.h>
+#include <chemistry/molecule/findisp.h>
 #include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
@@ -541,13 +541,6 @@ try_main(int argc, char *argv[])
     else opt->set_checkpoint_file(devnull);
   }
 
-  // see if frequencies are wanted
-
-  Ref<MolecularHessian> molhess;
-  molhess << keyval->describedclassvalue("hess");
-  Ref<MolecularFrequencies> molfreq;
-  molfreq << keyval->describedclassvalue("freq");
-
   int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
   if (limit) {
@@ -568,23 +561,25 @@ try_main(int argc, char *argv[])
 
   timer.change("calc");
 
-  int do_energy = keyval->booleanvalue("do_energy",truevalue);
+  const int do_energy = keyval->booleanvalue("do_energy",truevalue);
 
-  int do_grad = keyval->booleanvalue("do_gradient",falsevalue);
+  const int do_grad = keyval->booleanvalue("do_gradient",falsevalue);
 
-  int do_opt = keyval->booleanvalue("optimize",truevalue);
+  const int do_opt = opt.null() ? 0 : keyval->booleanvalue("optimize",truevalue);
 
-  int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
+  const int do_freq = keyval->booleanvalue("do_freq",falsevalue);
 
-  int print_mole = keyval->booleanvalue("print_mole",truevalue);
+  const int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
 
-  int print_resources = keyval->booleanvalue("print_resources",truevalue);
+  const int print_mole = keyval->booleanvalue("print_mole",truevalue);
 
-  int print_timings = keyval->booleanvalue("print_timings",truevalue);
+  const int print_resources = keyval->booleanvalue("print_resources",truevalue);
+
+  const int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
   // Read in all of the runnable objects now, so we can get rid of
   // the reference to the input file.
-  int nrun = keyval->count("run");
+  const int nrun = keyval->count("run");
   std::vector<Ref<Runnable> > run(nrun);
   for (int i=0; i<nrun; i++) {
     run[i] << keyval->describedclassvalue("run",i);
@@ -603,6 +598,14 @@ try_main(int argc, char *argv[])
     }
   }
 
+  // see if the user specified how to compute gradients, hessians, and frequencies
+  Ref<MolecularGradient> molgrad;
+  molgrad << keyval->describedclassvalue("grad");
+  Ref<MolecularHessian> molhess;
+  molhess << keyval->describedclassvalue("hess");
+  Ref<MolecularFrequencies> molfreq;
+  molfreq << keyval->describedclassvalue("freq");
+
   // see if any pictures are desired
   Ref<Render> renderer;
   renderer << keyval->describedclassvalue("renderer");
@@ -619,9 +622,6 @@ try_main(int argc, char *argv[])
     parsedkv = 0;
   }
 
-  // sanity checks for the benefit of reasonable looking output
-  if (opt.null()) do_opt=0;
-
   ExEnv::out0() << endl << indent
        << "MPQC options:" << endl << incindent
        << indent << "matrixkit       = <"
@@ -633,6 +633,7 @@ try_main(int argc, char *argv[])
        << indent << "savestate       = " << (savestate ? "yes" : "no") << endl
        << indent << "do_energy       = " << (do_energy ? "yes" : "no") << endl
        << indent << "do_gradient     = " << (do_grad ? "yes" : "no") << endl
+       << indent << "do_freq         = " << (do_freq ? "yes" : "no") << endl
        << indent << "optimize        = " << (do_opt ? "yes" : "no") << endl
        << indent << "write_pdb       = " << (do_pdb ? "yes" : "no") << endl
        << indent << "print_mole      = " << (print_mole ? "yes" : "no") << endl
@@ -642,16 +643,27 @@ try_main(int argc, char *argv[])
 
   int ready_for_freq = 1;
   if (mole.nonnull()) {
-    if (((do_opt && opt.nonnull()) || do_grad)
-        && !mole->gradient_implemented()) {
+
+    const bool need_gradient = ((do_opt && opt.nonnull()) || do_grad);
+    bool have_gradient = mole->gradient_implemented() || molgrad.nonnull();
+    if (need_gradient && !have_gradient) {
       ExEnv::out0() << indent
            << "WARNING: optimization or gradient requested but the given"
            << endl
            << "         MolecularEnergy object cannot do gradients."
+           << endl
+           << "         Gradient will be computed numerically by finite differences."
            << endl;
+      molgrad = new FinDispMolecularGradient(mole);
+      have_gradient = true;
     }
 
-    if (do_opt && opt.nonnull() && mole->gradient_implemented()) {
+    if (do_opt && opt.nonnull() && have_gradient) { // optimize geometry
+
+      if (molgrad.nonnull()) {// && !mole->gradient_implemented()) {
+        mole->set_gradient(molgrad);
+      }
+
       ExEnv::out0() << std::endl
                     << indent
                     << "Optimizing using:"
@@ -672,44 +684,59 @@ try_main(int argc, char *argv[])
              << "The optimization has NOT converged." << endl << endl;
         ready_for_freq = 0;
       }
-    } else if (do_grad && mole->gradient_implemented()) {
-      mole->do_gradient(1);
-      ExEnv::out0() << endl << indent
-           << scprintf("Value of the MolecularEnergy: %15.10f",
-                       mole->energy())
-           << endl;
-      if (mole->value_result().actual_accuracy()
-          > mole->value_result().desired_accuracy()) {
-        ExEnv::out0() << indent
-             << "WARNING: desired accuracy not achieved in energy" << endl;
+
+      if (molgrad.nonnull()) { // && !mole->gradient_implemented()) {
+        mole->set_gradient(0);
       }
-      ExEnv::out0() << endl;
-      // Use result_noupdate since the energy might not have converged
-      // to the desired accuracy in which case grabbing the result will
-      // start up the calculation again.  However the gradient might
-      // not have been computed (if we are restarting and the gradient
-      // isn't in the save file for example).
+
+    } else if (do_grad && have_gradient) { // only compute the gradient
+
       RefSCVector grad;
-      if (mole->gradient_result().computed()) {
-        grad = mole->gradient_result().result_noupdate();
-      }
-      else {
-        grad = mole->gradient();
-      }
-      if (grad.nonnull()) {
-        grad.print("Gradient of the MolecularEnergy:");
+
+      if (mole->gradient_implemented()) {
+        mole->do_gradient(1);
+        ExEnv::out0() << endl << indent
+            << scprintf("Value of the MolecularEnergy: %15.10f", mole->energy())
+            << endl;
+        if (mole->value_result().actual_accuracy()
+            > mole->value_result().desired_accuracy()) {
+          ExEnv::out0() << indent
+              << "WARNING: desired accuracy not achieved in energy" << endl;
+        }
         if (mole->gradient_result().actual_accuracy()
             > mole->gradient_result().desired_accuracy()) {
           ExEnv::out0() << indent
                << "WARNING: desired accuracy not achieved in gradient" << endl;
         }
+        ExEnv::out0() << endl;
+        // Use result_noupdate since the energy might not have converged
+        // to the desired accuracy in which case grabbing the result will
+        // start up the calculation again.  However the gradient might
+        // not have been computed (if we are restarting and the gradient
+        // isn't in the save file for example).
+        if (mole->gradient_result().computed()) {
+          grad = mole->gradient_result().result_noupdate();
+        } else {
+          grad = mole->gradient();
+        }
       }
-    } else if (do_energy && mole->value_implemented()) {
+      else { // use molgrad
+        mole->set_gradient(molgrad);
+        grad = mole->gradient();
+        mole->set_gradient(0);
+      }
+
+      if (grad.nonnull()) {
+        grad.print("Gradient of the MolecularEnergy:");
+      }
+    }
+    else if (do_energy && mole->value_implemented()) { // only compute the energy
       ExEnv::out0() << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl << endl;
     }
+
   }
 
   timer.exit("calc");
@@ -743,36 +770,56 @@ try_main(int argc, char *argv[])
     }
   }
 
-  // Frequency calculation.
-  if (ready_for_freq && molfreq.nonnull()) {
-    RefSymmSCMatrix xhessian;
-    if (molhess.nonnull()) {
-      // if "hess" input was given, use it to compute the hessian
-      xhessian = molhess->cartesian_hessian();
-    }
-    else if (mole->hessian_implemented()) {
-      // if mole can compute the hessian, use that hessian
-      xhessian = mole->get_cartesian_hessian();
-    }
-    else if (mole->gradient_implemented()) {
-      // if mole can compute gradients, use gradients at finite
-      // displacements to compute the hessian
-      molhess = new FinDispMolecularHessian(mole);
-      xhessian = molhess->cartesian_hessian();
-    }
-    else {
-      ExEnv::out0() << "mpqc: WARNING: Frequencies cannot be computed" << endl;
+  // Frequency calculation
+  if (do_freq) {
+
+    // EFV Feb. 6 2011
+    // good idea to print optimized coordinates here
+    if (opt.nonnull()) {
+      Ref<MolecularCoor> mc = mole->molecularcoor();
+      if (mc)
+        mc->print(ExEnv::out0());
+      else
+        mole->molecule()->print(ExEnv::out0());
     }
 
-    if (xhessian.nonnull()) {
-      char *hessfile = SCFormIO::fileext_to_filename(".hess");
-      MolecularHessian::write_cartesian_hessian(hessfile,
-                                                mole->molecule(), xhessian);
-      delete[] hessfile;
+    if ((opt && ready_for_freq) || !opt) {
+      RefSymmSCMatrix xhessian;
+      if (molhess.nonnull()) {
+        // if "hess" input was given, use it to compute the hessian
+        const bool molhess_needs_mole = (molhess->energy() == 0);
+        if (molhess_needs_mole) molhess->set_energy(mole);
+        xhessian = molhess->cartesian_hessian();
+        if (molhess_needs_mole) molhess->set_energy(0);
+      }
+      else if (mole->hessian_implemented()) {
+        // if mole can compute the hessian, use that hessian
+        xhessian = mole->get_cartesian_hessian();
+      }
+      else if (mole->gradient_implemented() ||
+               mole->value_implemented()) {
+        // if mole can compute energies or gradients, use finite
+        // differences to compute the hessian
+        molhess = new FinDispMolecularHessian(mole);
+        xhessian = molhess->cartesian_hessian();
+        molhess = 0;
+      }
+      else {
+        ExEnv::out0() << "mpqc: WARNING: Frequencies cannot be computed" << endl;
+      }
 
-      molfreq->compute_frequencies(xhessian);
-      // DEGENERACY IS NOT CORRECT FOR NON-SINGLET CASES:
-      molfreq->thermochemistry(1);
+      if (xhessian.nonnull()) {
+        char *hessfile = SCFormIO::fileext_to_filename(".hess");
+        MolecularHessian::write_cartesian_hessian(hessfile,
+                                                  mole->molecule(), xhessian);
+        delete[] hessfile;
+
+        if (molfreq.null())
+          molfreq = new MolecularFrequencies(mole->molecule());
+        molfreq->compute_frequencies(xhessian);
+        // DEGENERACY IS NOT CORRECT FOR NON-SINGLET CASES:
+        molfreq->thermochemistry(1);
+      }
     }
   }
 
@@ -820,8 +867,7 @@ try_main(int argc, char *argv[])
     }
     Ref<MolFreqAnimate> molfreqanim;
     molfreqanim << keyval->describedclassvalue("animate_modes");
-    if (ready_for_freq && molfreq.nonnull()
-        && molfreqanim.nonnull()) {
+    if (molfreq.nonnull() && molfreqanim.nonnull()) {
       timer.enter("render");
       molfreq->animate(renderer, molfreqanim);
       timer.exit("render");
@@ -873,16 +919,17 @@ try_main(int argc, char *argv[])
   renderer = 0;
   molfreq = 0;
   molhess = 0;
+  molgrad = 0;
   opt = 0;
   mole = 0;
   integral = 0;
-  resources = 0;
   debugger = 0;
   thread = 0;
   keyval = 0;
   parsedkv = 0;
   grp = 0;
   memory = 0;
+  resources = 0;
   init.finalize();
 
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)

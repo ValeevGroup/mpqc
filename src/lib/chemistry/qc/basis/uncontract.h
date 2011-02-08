@@ -53,9 +53,13 @@ class UncontractedBasisSet: public GaussianBasisSet {
         <dl>
 
         <dt><tt>basis</tt><dd> The gives the GaussianBasisSet object
-        that will be uncontracted to form this basis set.
+        that will be uncontracted to form this basis set. If <tt>basis</tt> is not given,
+        the constructor will try to construct a GaussianBasisSet object from the
+        current input and uncontract it.
 
         </dl>
+
+
 
         */
     UncontractedBasisSet(const Ref<KeyVal>&);

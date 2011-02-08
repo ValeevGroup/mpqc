@@ -77,11 +77,7 @@ class MolecularFrequencies: public SavableState {
 
         <dl>
 
-        <dt><tt>mole</tt><dd> A MolecularEnergy object.  If this is not
-        given then molecule must be given.
-
-        <dt><tt>molecule</tt><dd> A Molecule object.  If this is not given
-        then mole must be given.
+        <dt><tt>molecule</tt><dd> A Molecule object. There is no default.
 
         <dt><tt>point_group</tt><dd> A PointGroup object.  This is the
         point group used to compute the finite displacements.  Since some
@@ -95,11 +91,9 @@ class MolecularFrequencies: public SavableState {
         <dt><tt>debug</tt><dd> An integer which, if nonzero, will cause
         extra output.
 
-        <dt><tt>displacement</tt><dd> The amount that coordinates will be
-        displaced.  The default is 0.001.
-
         </dl> */
     MolecularFrequencies(const Ref<KeyVal> &);
+    MolecularFrequencies(const Ref<Molecule>&);
     MolecularFrequencies(StateIn &);
     ~MolecularFrequencies();
     void save_data_state(StateOut&);

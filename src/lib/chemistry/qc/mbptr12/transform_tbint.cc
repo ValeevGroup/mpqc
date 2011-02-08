@@ -74,7 +74,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   dynamic_(factory()->dynamic()),
   ints_method_(factory()->ints_method()),
   file_prefix_(factory()->file_prefix()),
-  max_memory_(factory()->memory())
+  max_memory_(ConsumableResources::get_default_instance()->memory())
 {
   // all spaces must be given, even for partial transforms
   assert(space1_.nonnull());
@@ -107,7 +107,6 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
 {
   dealloc_mem();
-  factory_->release_memory(memory());
 }
 
 void

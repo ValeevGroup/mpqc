@@ -29,12 +29,16 @@
 #define _math_scmat_elemop_h
 
 #ifdef __GNUC__
-#pragma interface
+#pragma implementation
 #endif
 
 #include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 #include <util/group/message.h>
+#include <math/scmat/blkiter.h>
 #include <cmath>
+#include <stdexcept>
 
 namespace sc {
 
@@ -53,6 +57,27 @@ class SCMatrix;
 class SymmSCMatrix;
 class DiagSCMatrix;
 class SCVector;
+
+struct SCMatrixIterationRanges {
+  enum Values {AllElements = 0,
+  Columns = 1,
+  Rows = 2
+  };
+};
+struct SCElement {
+    SCElement() : irow(null.irow), icol(null.icol), value(null.value) {}
+    SCElement(int ir, int ic, double v) : irow(ir), icol(ic), value(v) {}
+    int irow;
+    int icol;
+    double value;
+
+    static SCElement null;
+
+    struct fabs_less {
+        bool operator()(const SCElement& a, const SCElement& b) const { return fabs(a.value) < fabs(b.value); }
+        bool operator()(const double& a, const double& b) const { return fabs(a) < fabs(b); }
+    };
+};
 
 /** Objects of class SCElementOp are used to perform operations on the
     elements of matrices.  When the SCElementOp object is given to the
@@ -292,6 +317,86 @@ class SCElementShiftDiagonal: public SCElementOp {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&);
 };
+
+/// Searches each range in IterationRanges for element i so that
+/// there is no element j in that Range for which Op(i<j) == true.
+/// Result of the search are returned as std::vector<SCElement>, whose elements
+/// correspond to each Range in IterationRanges
+/// \sa std::max_element
+template <SCMatrixIterationRanges::Values IterationRanges = SCMatrixIterationRanges::AllElements, class BinaryPredicate = std::less<double> >
+class SCElementMaxElement: public SCElementOp {
+  public:
+    typedef SCElementMaxElement<IterationRanges, BinaryPredicate> this_type;
+
+    SCElementMaxElement():deferred_(0), r(1) {}
+    SCElementMaxElement(StateIn& s): SCElementOp(s)
+    {
+      {
+        int nchar; s.get(nchar);
+        r.resize(nchar / sizeof(SCElement));
+        s.get((char*)(&r[0]));
+      }
+      s.get(deferred_);
+    }
+
+    ~SCElementMaxElement() {}
+
+    void save_data_state(StateOut& s)
+    {
+      {
+        int nchar = r.size() * sizeof(SCElement);
+        s.put(nchar);
+        s.put((char*)(&r[0]), nchar);
+      }
+      s.put(deferred_);
+    }
+
+    void process(SCMatrixBlockIter& i) {
+      for (i.reset(); i; ++i) {
+        int range;
+        switch(IterationRanges) {
+          case SCMatrixIterationRanges::AllElements: range = 0; break;
+          case SCMatrixIterationRanges::Columns: range = i.j(); break;
+          case SCMatrixIterationRanges::Rows: range = i.i(); break;
+        }
+        if (range >= r.size()) r.resize(range+1);
+        double value = i.get();
+        if (Op(r[range].value, value)) {
+          r[range] = SCElement(i.i(), i.j(), i.get());
+        }
+      }
+    }
+
+    int has_collect() { return 1; }
+    void defer_collect(int h) { deferred_=h; }
+
+    void collect(const Ref<MessageGrp>& msg) {
+      if (!deferred_) {
+        GrpCompareReduce<SCElement, SCElement::fabs_less> reduce;
+        msg->reduce<SCElement>(&r[0], r.size(), reduce);
+      }
+    }
+    void collect(const Ref<SCElementOp>& op) {
+      throw std::runtime_error(
+          "SCElementMaxAbs::collect(const Ref<SCElementOp> &): not implemented");
+    }
+
+    const std::vector<SCElement>& result() { return r; }
+
+  private:
+    int deferred_;
+    std::vector<SCElement> r;
+    BinaryPredicate Op;
+
+    static ClassDesc class_desc_;
+};
+
+template <SCMatrixIterationRanges::Values IterationRanges, class BinaryPredicate>
+ClassDesc SCElementMaxElement<IterationRanges,BinaryPredicate>::class_desc_(
+  typeid(this_type),
+  typeid(this_type).name(),
+  1,"public SCElementOp",
+  0, 0, create<this_type>);
 
 class SCElementMaxAbs: public SCElementOp {
   private:

@@ -213,35 +213,6 @@ class KeyValValueRefDescribedClass: public KeyValValue {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
-/// Represents a pointer to char value (deprecated, use KeyValValuestring).
-class KeyValValueString: public KeyValValue {
-  private:
-    const char* _val;
-    char *_val_to_delete;
-  public:
-    // Copy = copy the string data
-    // Steal = use the passed pointer and delete it in DTOR
-    // Use = use the passed pointer but do not delete it
-    enum Storage { Copy, Steal, Use };
-
-    DEPRECATED KeyValValueString(const char*,
-                      KeyValValueString::Storage s = KeyValValueString::Use);
-    DEPRECATED KeyValValueString(char*,
-                      KeyValValueString::Storage s = KeyValValueString::Use);
-    DEPRECATED KeyValValueString(const KeyValValueString&);
-    ~KeyValValueString();
-    KeyValValue::KeyValValueError doublevalue(double&) const;
-    KeyValValue::KeyValValueError booleanvalue(int&) const;
-    KeyValValue::KeyValValueError floatvalue(float&) const;
-    KeyValValue::KeyValValueError charvalue(char&) const;
-    KeyValValue::KeyValValueError intvalue(int&) const;
-    KeyValValue::KeyValValueError longvalue(long&) const;
-    KeyValValue::KeyValValueError sizevalue(size_t&) const;
-    DEPRECATED KeyValValue::KeyValValueError pcharvalue(const char*&) const;
-    KeyValValue::KeyValValueError stringvalue(std::string&) const;
-    void print(std::ostream &o=ExEnv::out0()) const;
-};
-
 }
 
 #endif /* _KeyVal_h */

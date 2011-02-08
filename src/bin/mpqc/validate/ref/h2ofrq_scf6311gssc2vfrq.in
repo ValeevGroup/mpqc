@@ -48,11 +48,6 @@ mpqc: (
       )
       memory = 32000000
     )
-    hessian<FinDispMolecularHessian>: (
-      point_group<PointGroup>: symmetry = C2V
-      checkpoint = no
-      restart = no
-    )
   )
   optimize = no
   % optimizer object for the molecular geometry
@@ -66,8 +61,14 @@ mpqc: (
     )
   )
 % vibrational frequency input
+  do_freq = true
   freq<MolecularFrequencies>: (
     point_group<PointGroup>: symmetry = C2V
     molecule = $:molecule
+  )
+  hess<FinDispMolecularHessian>: (
+    point_group<PointGroup>: symmetry = C2V
+    checkpoint = no
+    restart = no
   )
 )

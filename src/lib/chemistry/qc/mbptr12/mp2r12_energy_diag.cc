@@ -889,11 +889,7 @@ void MP2R12Energy_Diag::compute_ef12() {
     // sum(i<j,ab,a') C1* (R^ij_aa' f^a'_b T^ab_ij + R^ji_aa' f^a'_b T^ab_ji
     //                   - R^ji_aa' f^a'_b T^ab_ij - R^ij_aa' f^a'_b T^ab_ji)
     //
-    // Alpha-beta (close-shell):
-    // sum(i<j,a<b,a') (C0+C1)/2* (R^ij_aa' f^a'_b T^ab_ij + R^ji_aa' f^a'_b T^ab_ji)
-    //               + (C0-C1)/2* (R^ji_aa' f^a'_b T^ab_ij + R^ij_aa' f^a'_b T^ab_ji)
-    //
-    // Alpha-beta (open-shell): i:alpha, j:beta, a:alpha, b:beta
+    // Alpha-beta: i:alpha, j:beta, a:alpha, b:beta
     // sum(i<j,a<b,a') (C0+C1)/2* (R^ij_a'(alpha)b f^a'_a T^ab_ij + R^ij_aa'(beta) f^a'_b T^ab_ij)
     //               + (C0-C1)/2* (R^ji_a'(alpha)b f^a'_a T^ab_ij + R^ji_aa'(beta) f^a'_b T^ab_ij)
 
@@ -939,10 +935,12 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       // Vji_ji_coupling: R^ij_a'b f^a'_a T^ab_ij
       Ref<DistArray4> i1i2AF1a2_ints = NULL;
+      if (spin1 != spin2) {
       activate_ints(occ1_act->id(), occ2_act->id(),
                     fvir1_act->id(), vir2_act->id(),
                     descr_f12_key, moints4_rtime,
                     i1i2AF1a2_ints);
+      }
 
       Ref<DistArray4> i2i1AF1a2_ints = NULL;
       Ref<DistArray4> i2i1a1AF2_ints = NULL;
@@ -971,24 +969,35 @@ void MP2R12Energy_Diag::compute_ef12() {
         if (debug_ >= DefaultPrintThresholds::N2)
           ExEnv::out0() << endl << indent << "Coupled-cluster V coupling:" << endl;
         T2[spin]->activate();
-        compute_YxF(ij_ij, 1.0,
-                    f12_idx, 0,
-                    i1i2a1AF2_ints, T2[spin],
-                    Vij_ij_coupling);
-        compute_YxF(ij_ij, 1.0,
-                    f12_idx, 0,
-                    i1i2AF1a2_ints, T2[spin],
-                    Vij_ij_coupling);
+        if (spin1 != spin2) {
+          compute_YxF(ij_ij, 1.0,
+                      f12_idx, 0,
+                      i1i2a1AF2_ints, T2[spin],
+                      Vij_ij_coupling);
+          compute_YxF(ij_ij, 1.0,
+                      f12_idx, 0,
+                      i1i2AF1a2_ints, T2[spin],
+                      Vij_ij_coupling);
 
-        compute_YxF(ji_ij, 1.0,
-                    f12_idx, 0,
-                    i2i1AF1a2_ints, T2[spin],
-                    Vij_ji_coupling);
-        compute_YxF(ji_ij, 1.0,
-                    f12_idx, 0,
-                    i2i1a1AF2_ints, T2[spin],
-                    Vij_ji_coupling);
+          compute_YxF(ji_ij, 1.0,
+                      f12_idx, 0,
+                      i2i1AF1a2_ints, T2[spin],
+                      Vij_ji_coupling);
+          compute_YxF(ji_ij, 1.0,
+                      f12_idx, 0,
+                      i2i1a1AF2_ints, T2[spin],
+                      Vij_ji_coupling);
 
+        } else {
+            compute_YxF(ij_ij, 1.0,
+                        f12_idx, 0,
+                        i1i2a1AF2_ints, T2[spin],
+                        Vij_ij_coupling);
+            compute_YxF(ji_ij, 1.0,
+                        f12_idx, 0,
+                        i1i2a1AF2_ints, T2[spin],
+                        Vij_ji_coupling);
+        }
         T2[spin]->deactivate();
       } else {
           // Start computing MP2 V coupling
@@ -1029,7 +1038,7 @@ void MP2R12Energy_Diag::compute_ef12() {
                       i1i2a1AF2_ints, Tij_ab,
                       Vij_ij_coupling);
 
-          if (num_unique_spincases2 == 3 && spin1 != spin2){
+          if (spin1 != spin2){
 
               if (debug_ >= DefaultPrintThresholds::mostN2)
                 ExEnv::out0() << indent << spinletters << " Vij_ij_coupling(a':alpha): + R^ij_a'b f^a'_a T^ab_ij" << endl;
@@ -1070,9 +1079,12 @@ void MP2R12Energy_Diag::compute_ef12() {
           }
       } // end of V coupling computation
       i1i2a1AF2_ints->deactivate();
-      i1i2AF1a2_ints->deactivate();
-      i2i1AF1a2_ints->deactivate();
-      i2i1a1AF2_ints->deactivate();
+      if (spin1 != spin2)
+        i1i2AF1a2_ints->deactivate();
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        i2i1AF1a2_ints->deactivate();
+        i2i1a1AF2_ints->deactivate();
+      }
 
       if (debug_ >= DefaultPrintThresholds::N2) {
         if (spin1 == spin2) {
@@ -2115,12 +2127,9 @@ void MP2R12Energy_Diag::compute_ef12() {
             Hij_pair_energy =  2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij])
                                    + C_1*C_1 * (Bij_ij[ij] - Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ij[ij] - Xij_ji[ij]));
 
-            if (this->r12eval()->coupling() == true)
+            if (this->r12eval()->coupling() == true
+                || this->r12eval()->ebc() == false)
                 Hij_pair_energy += 2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
-
-            // For coupled cluster V coupling, 1/2 need to be multiplied
-            if ( this->r12eval()->ebc() == false)
-                Hij_pair_energy += C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
             // Get indices for the lower triangle matrix
             // index = nrow*(nrow-1) + ncolumn

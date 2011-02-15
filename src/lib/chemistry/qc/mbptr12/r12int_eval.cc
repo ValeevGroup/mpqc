@@ -73,7 +73,10 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   int navir_a, navir_b;
   int nall_a, nall_b;
   Ref<RefWavefunction> refinfo = r12world()->ref();
-  if (!spin_polarized()) {
+
+  const bool nalpha_eq_nbeta = r12world()->spinadapted() || (spin_polarized() == false && r12world()->spinadapted() == false);
+
+  if (nalpha_eq_nbeta) {
     const int nocc_act = refinfo->occ_act()->rank();
     const int nvir_act = refinfo->uocc_act()->rank();
     const int nall = refinfo->orbs()->rank();
@@ -141,14 +144,14 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
     dim_f12_[s] = new SCDimension(corrfactor()->nfunctions()*dim_GG_[s].n());
   }
 
-  if (!spin_polarized()) {
-    dim_ij_s_ = new SCDimension((naocc_a*(naocc_a+1))/2);
-    dim_ij_t_ = new SCDimension((naocc_a*(naocc_a-1))/2);
-  }
-
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   for(int s=0; s<NSpinCases2; s++) {
-    if (spin_polarized() || s != BetaBeta) {
+    // if spin-free calculation will only need to evaluate one type, will put into AlphaBeta's space
+    // if spin-orbital, and spin-polarized allocate all three
+    if ((r12world()->spinadapted() == true && s == AlphaBeta) ||
+        (r12world()->spinadapted() == false && spin_polarized() == false && s != BetaBeta) ||
+        (r12world()->spinadapted() == false && spin_polarized() == true)
+       ) {
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_gg_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
@@ -160,14 +163,15 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
           new CuspConsistentGeminalCoefficient(pairspin,
                                                r12w->r12tech()->corrfactor()->geminaldescriptor());
     }
-    else {
-      V_[BetaBeta] = V_[AlphaAlpha];
-      X_[BetaBeta] = X_[AlphaAlpha];
-      B_[BetaBeta] = B_[AlphaAlpha];
-      BB_[BetaBeta] = BB_[AlphaAlpha];
-      emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
-      cuspconsistentgeminalcoefficient_[BetaBeta] = cuspconsistentgeminalcoefficient_[AlphaAlpha];
-    }
+  }
+  // if spin-orbital, but non-spin-polarized allocate AlphaBeta and AlphaAlpha (AlphaAlpha equiv to BetaBeta)
+  if (spin_polarized() == false && r12world()->spinadapted() == false) {
+    V_[BetaBeta] = V_[AlphaAlpha];
+    X_[BetaBeta] = X_[AlphaAlpha];
+    B_[BetaBeta] = B_[AlphaAlpha];
+    BB_[BetaBeta] = BB_[AlphaAlpha];
+    emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
+    cuspconsistentgeminalcoefficient_[BetaBeta] = cuspconsistentgeminalcoefficient_[AlphaAlpha];
   }
 
 #if 0
@@ -296,6 +300,13 @@ R12IntEval::V(SpinCase2 S) {
                    ggspace(Alpha));
   return V_[S];
 }
+const RefSCMatrix&
+R12IntEval::V() {
+  assert(r12world()->spinadapted() == true);
+  compute();
+  return V_[AlphaBeta];
+}
+
 
 double R12IntEval::C_CuspConsistent(int i,int j,int k,int l,SpinCase2 pairspin) {
   return(cuspconsistentgeminalcoefficient_[pairspin]->C(i,j,k,l));
@@ -328,6 +339,13 @@ R12IntEval::X(SpinCase2 S) {
 }
 
 RefSymmSCMatrix
+R12IntEval::X() {
+  assert(r12world()->spinadapted() == true);
+  compute();
+  return to_lower_triangle(X_[AlphaBeta]);
+}
+
+RefSymmSCMatrix
 R12IntEval::B(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
@@ -337,6 +355,12 @@ R12IntEval::B(SpinCase2 S) {
   return to_lower_triangle(B_[S]);
 }
 
+RefSymmSCMatrix
+R12IntEval::B() {
+  assert(r12world()->spinadapted() == true);
+  compute();
+  return to_lower_triangle(B_[AlphaBeta]);
+}
 RefSymmSCMatrix
 R12IntEval::BB(SpinCase2 S) {
   if (stdapprox() != R12Technology::StdApprox_B)
@@ -1426,6 +1450,21 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
   }
   return gamma_p_p_[S];
 }
+const Ref<OrbitalSpace>&
+R12IntEval::gamma_p_p() {
+  assert(r12world()->spinadapted());
+
+  if (gamma_p_p_[Alpha].null()) {
+    const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
+    const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
+    std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
+    std::string name = "gamma-weighted space";
+    gamma_p_p_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(),
+                                     intspace->basis());
+    this->orbital_registry()->add(make_keyspace_pair(gamma_p_p_[Alpha]));
+  }
+  return gamma_p_p_[Alpha];
+}
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
@@ -2095,7 +2134,10 @@ R12IntEval::compute()
           contrib_to_VXB_a_();
         }
         else {
-          contrib_to_VX_GenRefansatz2_();
+          if (r12world()->spinadapted())
+            contrib_to_VX_GenRefansatz2_spinfree_();
+          else
+            contrib_to_VX_GenRefansatz2_();
         }
       }
     }
@@ -2359,6 +2401,16 @@ R12IntEval::ordm(SpinCase1 S) const {
   return ordm_[S];
 }
 
+RefSymmSCMatrix
+R12IntEval::ordm() const {
+  assert(r12world()->spinadapted());
+  if (ordm_[Alpha].nonnull())
+    return ordm_[Alpha];
+
+  ordm_[Alpha] = r12world()->ref()->ordm_orbs_sb(Alpha);
+  ordm_[Alpha].accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+  return ordm_[Alpha];
+}
 bool
 R12IntEval::bc() const {
   Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->ref();

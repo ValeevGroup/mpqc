@@ -54,7 +54,8 @@ namespace sc {
         <tr><td><tt>nroots</tt><td>integer<td>value of <tt>root</tt><td>Specifies the number of CI vectors to seek.
 
         <tr><td><tt>multiplicity</tt><td>integer<td>multiplicity of
-        the <tt>reference</tt> object<td> Specifies the multiplicity of the state to solve for. \sa PsiCorrWavefunction
+        the <tt>reference</tt> object<td> Specifies the multiplicity of the state to solve for.
+        The default is same as the multiplicity of the reference wave function. \sa PsiCorrWavefunction
 
         <tr><td><tt>valence_obwfn</tt><td>OneBodyWavefunction<td>null<td>This optional keyword specifies
         an object that will provide the orbital ordering for the initial guess. It is recommended to use
@@ -76,6 +77,9 @@ namespace sc {
       void save_data_state(StateOut &s);
       void compute();
       void print(std::ostream&) const;
+
+      /// spin_polarized() for RAS-CI is determined by the target M_s value
+      int spin_polarized() { return multiplicity_ != 1; }
 
       /// returns vector that specifies the number of RAS1 orbitals in each irrep
       const std::vector<unsigned int>& ras1() const { return ras1_; }

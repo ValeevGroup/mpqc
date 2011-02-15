@@ -44,7 +44,7 @@ namespace sc {
   class PT2R12 : public Wavefunction {
     public:
       /** A KeyVal constructor is used to generate a PT2R12
-          object from the input. This constructor uses keywords of WavefunctionWorld,
+          object from the input. This constructor uses keywords of R12WavefunctionWorld,
           plus following list of keywords.
 
           <table border="1">
@@ -64,6 +64,7 @@ namespace sc {
           CABS singes correction.
           <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
               this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.
+
           </table>
        */
       PT2R12(const Ref<KeyVal> &keyval);
@@ -95,15 +96,13 @@ namespace sc {
       Ref<R12WavefunctionWorld> r12world_;
       unsigned int nfzc_;
       bool omit_uocc_;
-      bool pt2_correction_;
+      bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
       bool cabs_singles_;
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
                          // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'
-      bool cabs_keep2A2pterm_; // keep the two-particle H with 2 CABS indices. This would lead to an algorithm scaling as n^6, instead of n^4. The
-                               // default should be 'false'. This keyword is deprecated, and only 'false' is implemented
       int debug_;
 
       /// 1-RDM as provided by the rdm1_ object
@@ -126,6 +125,7 @@ namespace sc {
       RefSCMatrix C(SpinCase2 S);
 
       RefSCMatrix V_genref_projector2(SpinCase2 pairspin);
+      RefSCMatrix V_genref_projector2();
       RefSCMatrix V_transformed_by_C(SpinCase2 pairspin);
       RefSymmSCMatrix X_transformed_by_C(SpinCase2 pairspin);
       RefSymmSCMatrix B_transformed_by_C(SpinCase2 pairspin);
@@ -136,7 +136,19 @@ namespace sc {
       double energy_PT2R12_projector1(SpinCase2 pairspin);
       double energy_PT2R12_projector2(SpinCase2 pairspin);
 
-      /// compute CABS singles correction using Fock operator as H0
+      /** for spin-adapted [2]R12, we separate the contributions into 3 parts: V contribution + the factorizable part of B and the nonfactorizable part of B */
+      double energy_PT2R12_projector2_spinfree();
+      double sf_V_contrib();
+      double sf_B_contrib_factorizable_part();
+      double sf_B_contrib_nonfactorizable_part();
+
+      // TODO reimplement using native spin-free densities from Psi3
+      RefSymmSCMatrix rdm1_sf();  // return spin-free 1/2 rdm
+      RefSymmSCMatrix rdm2_sf();
+      ///  return a * Gamma(pq; rs) + b Gamma(p;r) Gamma(q;s) + c Gamma(p; s) Gamma(q; r)
+      RefSymmSCMatrix rdm2_sf_interm(double a, double b, double c);
+
+      /** compute CABS singles correction using Fock operator as H0 */
       double energy_cabs_singles(SpinCase1 spin);
       /// compute CABS singles correction using two-body operators in H0
       double energy_cabs_singles_twobody_H0();

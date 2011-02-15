@@ -232,7 +232,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  cabs_keep2A2pterm_ = keyval->booleanvalue("cabs_keep2A2pterm", KeyValValueboolean(false));
 
 
   reference_ = require_dynamic_cast<Wavefunction*>(
@@ -262,7 +261,18 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
                                                           nfzc_,
                                                           0,
                                                           virspace);
-  r12world_ = new R12WavefunctionWorld(keyval, ref);
+
+  // some defaults need to be overridden for R12WavefunctionWorld
+  // spinadapted should by default be false
+  {
+    Ref<KeyVal> r12world_keyval = keyval;
+    if (keyval->exists("spinadapted") == false) {
+      Ref<AssignedKeyVal> akeyval = new AssignedKeyVal;
+      akeyval->assignboolean("spinadapted", false);
+      r12world_keyval = new AggregateKeyVal(keyval, akeyval);
+    }
+    r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
+  }
   r12eval_ = new R12IntEval(r12world_);
 
   debug_ = keyval->intvalue("debug", KeyValValueint(0));
@@ -902,6 +912,24 @@ RefSCMatrix PT2R12::V_genref_projector2(SpinCase2 pairspin) {
   return(V_genref);
 }
 
+RefSCMatrix PT2R12::V_genref_projector2() {
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  RefSCMatrix V_genref = localkit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
+  V_genref.assign(0.0);
+
+  const RefSCMatrix V_intermed = r12eval_->V();
+  const RefSymmSCMatrix tpdm = this->rdm2_sf();
+  V_genref.accumulate(V_intermed * tpdm);
+
+#if 0
+  V_intermed.print(prepend_spincase(pairspin, "V").c_str());
+  tpdm.print(prepend_spincase(pairspin, "gamma").c_str());
+  V_genref.print(prepend_spincase(pairspin, "V.gamma").c_str());
+#endif
+
+  return(V_genref);
+}
+
 RefSCMatrix PT2R12::V_transformed_by_C(SpinCase2 pairspin) {
   RefSCMatrix T = C(pairspin);
   RefSCMatrix V = r12eval_->V(pairspin);
@@ -1216,12 +1244,10 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
 }
 
 double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
-  const int nelectron = reference_->nelectron();
   SpinCase1 spin1 = case1(pairspin);
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
-  SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
 
   RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
@@ -1266,6 +1292,110 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 
   const double energy = this->compute_energy(HylleraasMatrix, pairspin);
   return(energy);
+}
+
+double PT2R12::energy_PT2R12_projector2_spinfree() {
+
+  // 2*V*T constribution
+  RefSCMatrix V_genref = V_genref_projector2();
+  RefSCMatrix T = C(AlphaBeta);
+  RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
+  RefSCMatrix HylleraasMatrix = V_t_T;
+  T=0;
+  V_genref=0;
+
+  const double energy = this->compute_energy(HylleraasMatrix, AlphaBeta);
+  return(energy);
+}
+
+double sc::PT2R12::sf_V_contrib()
+{
+
+}
+
+
+double sc::PT2R12::sf_B_contrib_factorizable_part()
+{
+  return 0.0;
+  //throw FeatureNotImplemented("to be implemented");
+}
+
+double sc::PT2R12::sf_B_contrib_nonfactorizable_part()
+{
+  return 0.0;
+  //throw FeatureNotImplemented("to be implemented");
+}
+
+RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+{
+  RefSymmSCMatrix sf_opdm;
+  if(spin_polarized())
+    sf_opdm = this->rdm1_gg(Alpha) + this->rdm1_gg(Beta);
+  else
+    sf_opdm = this->rdm1_gg(Alpha) * 2.0;
+  return(sf_opdm);
+}
+
+RefSymmSCMatrix sc::PT2R12::rdm2_sf()
+{
+  RefSymmSCMatrix rdm_ab = this->rdm2_gg(AlphaBeta);
+  RefSymmSCMatrix rdm_aa = this->rdm2_gg(AlphaAlpha);
+  RefSymmSCMatrix rdm_bb = 0;
+  if(spin_polarized()) RefSymmSCMatrix rdm_bb = this->rdm2_gg(BetaBeta);
+  RefSymmSCMatrix sf_rdm = rdm_ab.clone();
+  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha); // including doubly and partially occupied orbs
+  const unsigned int no = occ_space->rank();
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
+  // add BetaAlpha contribution to sf_rdm
+  for(upp_pair->start(); *upp_pair; upp_pair->next())
+  {
+    const int u1 = upp_pair->i();
+    const int u2 = upp_pair->j();
+    for(low_pair->start(); *low_pair; low_pair->next())
+     {
+       const int l1 = low_pair->i();
+       const int l2 = low_pair->j();
+       double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
+                           + rdm_ab.get_element(u2 * no + u1, l2* no + l1);
+       if(u1 != u2 && l1 != l2)
+       {
+         const int uppind = antisym_pairindex(u1, u2);
+         const int lowind = antisym_pairindex(l1, l2);
+         const double signn = indexsizeorder_sign(u1, u2) * indexsizeorder_sign(l1, l2);
+         if(spin_polarized())
+         {
+           rdmelement += signn * (rdm_aa.get_element(uppind, lowind) + rdm_bb.get_element(uppind, lowind));
+         }
+         else
+           rdmelement += 2 * signn * rdm_aa.get_element(uppind, lowind);
+       }
+       sf_rdm.set_element(upp_pair->ij(), low_pair->ij(), rdmelement);
+     }
+  }
+  return(sf_rdm);
+}
+
+RefSymmSCMatrix sc::PT2R12::rdm2_sf_interm(double a, double b, double c)
+{
+  RefSymmSCMatrix rdm2_int = this->rdm2_sf();
+  rdm2_int.scale(a);
+  RefSymmSCMatrix sf_opdm = rdm1_sf();
+  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha);
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
+  // add BetaAlpha contribution to sf_rdm
+  for(upp_pair->start(); *upp_pair; upp_pair->next())
+  {
+    for(low_pair->start(); *low_pair; low_pair->next())
+    {
+      const double element = rdm2_int.get_element(upp_pair->ij(), low_pair->ij())
+               + b * sf_opdm.get_element(upp_pair->i(), low_pair->i()) * sf_opdm.get_element(upp_pair->j(), low_pair->j())
+               + c * sf_opdm.get_element(upp_pair->i(), low_pair->j()) * sf_opdm.get_element(upp_pair->j(), low_pair->i());
+      rdm2_int.set_element(upp_pair->ij(), low_pair->ij(), element);
+    }
+  }
+  return(rdm2_int);
 }
 
 namespace {
@@ -1448,90 +1578,108 @@ void sc::PT2R12::compute()
 {
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
+  double energy_pt2r12_sf = 0.0;
+  double cabs_singles_corre_2b_H0 = 0.0;
   const bool spin_polarized = r12world()->ref()->spin_polarized();
-  r12world()->initialize();
 
   if (pt2_correction_)
   {
-    for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
+    if(r12world_->spinadapted())
     {
-      SpinCase2 pairspin = static_cast<SpinCase2>(i);
-      double scale = 1.0;
-      if (pairspin == BetaBeta && !spin_polarized) continue;
-      switch (r12world()->r12tech()->ansatz()->projector())
+      switch(r12world()->r12tech()->ansatz()->projector())
       {
-        case R12Technology::Projector_1:
-          energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
-          break;
         case R12Technology::Projector_2:
-          energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
+          energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
           break;
         default:
-          abort();
+          throw FeatureNotImplemented("For spin-adapted PT2R12, Projector 1 not yet implemented");
+      }
+    }
+    else // use spin-orbital version
+    {
+      for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
+      {
+        SpinCase2 pairspin = static_cast<SpinCase2>(i);
+        double scale = 1.0;
+        if (pairspin == BetaBeta && !spin_polarized) continue;
+        switch (r12world()->r12tech()->ansatz()->projector())
+        {
+          case R12Technology::Projector_1:
+            energy_pt2r12[i] = energy_PT2R12_projector1(pairspin);
+            break;
+          case R12Technology::Projector_2:
+            energy_pt2r12[i] = energy_PT2R12_projector2(pairspin);
+            break;
+          default:
+            abort();
+        }
       }
     }
   }
 
-  // calculate basis set incompleteness error (BSIE) with two choices of H0
-  double alpha_correction = 0.0, beta_correction = 0.0, cabs_singles_correction = 0.0;
-  double cabs_singles_correction_twobody_H0 = 0.0;
-  const bool keep_result_for_cabs_singles_with_Fock_Hamiltonian = false; // if false, only do [2]_S with Dyall Hamiltonian
+
   if(cabs_singles_)
   {
-    if(keep_result_for_cabs_singles_with_Fock_Hamiltonian)
+    //calculate basis set incompleteness error (BSIE) with two choices of H0
+    double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
+    double cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
+    const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
+    if(keep_Fock_result)
     {
-      alpha_correction = this->energy_cabs_singles(Alpha);
+      alpha_corre = this->energy_cabs_singles(Alpha);
       if (spin_polarized)
-        beta_correction =  this->energy_cabs_singles(Beta);
+        beta_corre =  this->energy_cabs_singles(Beta);
       else
-        beta_correction = alpha_correction;
-      cabs_singles_correction = alpha_correction + beta_correction;
+        beta_corre = alpha_corre;
+      cabs_singles_corre = alpha_corre + beta_corre;
+      ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
+                                        cabs_singles_corre) << endl;
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
+                                        reference_->energy() + cabs_singles_corre) << endl;
     }
-    cabs_singles_correction_twobody_H0 = this->energy_cabs_singles_twobody_H0();
+    ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
+                                      cabs_singles_corre_2b_H0) << endl;
+    ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
+                                      reference_->energy() + cabs_singles_corre_2b_H0) << endl;
   }
-  if(keep_result_for_cabs_singles_with_Fock_Hamiltonian)
+
+  if(r12world_->spinadapted()) energy_correction_r12 = energy_pt2r12_sf;
+  else
   {
-    ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
-                                      cabs_singles_correction) << endl;
-    ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
-                                      reference_->energy() + cabs_singles_correction) << endl;
+    if (!spin_polarized)
+         energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+    for(int i=0; i<NSpinCases2; i++)
+         energy_correction_r12 +=  energy_pt2r12[i];
   }
-  ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
-                                    cabs_singles_correction_twobody_H0) << endl;
-  ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
-                                    reference_->energy() + cabs_singles_correction_twobody_H0) << endl;
+  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_corre_2b_H0;
 
-
-  if (!spin_polarized)
-       energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
-  for(int i=0; i<NSpinCases2; i++)
-       energy_correction_r12 +=  energy_pt2r12[i];
-  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_correction_twobody_H0;
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                       reference_->energy()) << endl;
   #if 1
-  {
-  const double recomp_ref_energy = this->energy_recomputed_from_densities();
-  ExEnv::out0() << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
-                                      (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
-                                      recomp_ref_energy) << endl;
-  }
+    const double recomp_ref_energy = this->energy_recomputed_from_densities();
+    ExEnv::out0() << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
+                                        (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
+                                        recomp_ref_energy) << endl;
   #endif
-  ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
-                                      energy_pt2r12[AlphaBeta]) << endl;
-  ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
-                                      energy_pt2r12[AlphaAlpha]) << endl;
-  if (spin_polarized) {
-    ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
-                                        energy_pt2r12[BetaBeta]) << endl;
+
+  if (r12world_->spinadapted() == false) {
+    ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
+                                        energy_pt2r12[AlphaBeta]) << endl;
+    ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
+                                        energy_pt2r12[AlphaAlpha]) << endl;
+    if (spin_polarized) {
+      ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
+                                          energy_pt2r12[BetaBeta]) << endl;
+    }
+    else {
+      ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
+                                          energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
+      ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
+                                          3.0*energy_pt2r12[AlphaAlpha]) << endl;
+    }
   }
-  else {
-    ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
-                                        energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
-    ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
-                                        3.0*energy_pt2r12[AlphaAlpha]) << endl;
-  }
+
   ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
@@ -2017,8 +2165,9 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
                                                   +gamma1_beta.get_element(x1, j1) * gamma1_beta.get_element(k1, i1);
                             if(x1 != k1)
                             {
-                              semi_cumu_aa += indexsizeorder_sign(x1,k1) * indexsizeorder_sign(i1,j1) * gamma2_aa.get_element(ga2_x1k1i1j1_upp_ind, ga2_x1k1i1j1_low_ind);
-                              semi_cumu_bb += indexsizeorder_sign(x1,k1) * indexsizeorder_sign(i1,j1) * gamma2_bb.get_element(ga2_x1k1i1j1_upp_ind, ga2_x1k1i1j1_low_ind);
+                              const double signn = indexsizeorder_sign(x1,k1) * indexsizeorder_sign(i1,j1);
+                              semi_cumu_aa += signn * gamma2_aa.get_element(ga2_x1k1i1j1_upp_ind, ga2_x1k1i1j1_low_ind);
+                              semi_cumu_bb += signn * gamma2_bb.get_element(ga2_x1k1i1j1_upp_ind, ga2_x1k1i1j1_low_ind);
                             }
                             I_aa +=  0.5 * indexsizeorder_sign(i1, j1) * indexsizeorder_sign(y1, k1) * g_i1j1y1k1 * semi_cumu_aa;
                             I_bb +=  0.5 * indexsizeorder_sign(i1, j1) * indexsizeorder_sign(y1, k1) * g_i1j1y1k1 * semi_cumu_bb;

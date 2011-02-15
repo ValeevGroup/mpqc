@@ -408,10 +408,15 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   else {
     assert(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
-    RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
-    RefSCVector ef12_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector ef12_1 = localkit->vector(r12eval_->dim_oo_t());
+
+    const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
+    const int nocc = gspace->rank();
+    RefSCDimension dim_oo_s = new SCDimension(nocc * (nocc + 1) / 2);
+    RefSCDimension dim_oo_t = r12eval_->dim_oo(AlphaAlpha);
+    RefSCVector emp2f12_0 = localkit->vector(dim_oo_s);
+    RefSCVector emp2f12_1 = localkit->vector(dim_oo_t);
+    RefSCVector ef12_0 = localkit->vector(dim_oo_s);
+    RefSCVector ef12_1 = localkit->vector(dim_oo_t);
 
     // Triplet pairs are easy
     assign(emp2f12_1,emp2f12_[AlphaAlpha]);
@@ -424,7 +429,6 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
     const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
-    const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
     SpatialMOPairIter_eq ij_iter(gspace);
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {

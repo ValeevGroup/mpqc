@@ -83,12 +83,11 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_gg_[NSpinCases2];
 
   Ref<R12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
-  RefSCDimension dim_ij_s_, dim_ij_t_;
   double emp2_obs_singles_;
   double emp2_cabs_singles_;
   int debug_;
 
-  mutable RefSymmSCMatrix ordm_[NSpinCases1];  //!< 1-RDM in MO basis
+  mutable RefSymmSCMatrix ordm_[NSpinCases1];  //!< spin-orbital 1-RDM in MO basis
 
   /// "Spin-adapt" MO space id and name
   void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
@@ -227,6 +226,7 @@ class R12IntEval : virtual public SavableState {
   void contrib_to_VXB_a_();
   void contrib_to_VXB_c_ansatz1_();
   void contrib_to_VX_GenRefansatz2_();
+  void contrib_to_VX_GenRefansatz2_spinfree_();
   /// New version which uses tensor contract functions
   void contrib_to_VXB_a_vbsneqobs_();
   /// extra single-commutator contributions to B from relativistic terms
@@ -617,8 +617,6 @@ public:
   /// the R12World in which this object lives
   const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
 
-  RefSCDimension dim_oo_s() const { return dim_ij_s_; }
-  RefSCDimension dim_oo_t() const { return dim_ij_t_; }
   /// Dimension for active-occ/active-occ pairs of spin case S
   RefSCDimension dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
   /// Dimension for active-vir/active-vir pairs of spin case S
@@ -633,9 +631,15 @@ public:
   RefSCDimension dim_gg(SpinCase2 S) const { return dim_gg_[S]; }
 
   /// Returns the number of unique spin cases
-  int nspincases1() const { return ::sc::nspincases1(r12world()->ref()->spin_polarized()); }
+  int nspincases1() const {
+    if (r12world()->spinadapted()) return 1;
+    return ::sc::nspincases1(r12world()->ref()->spin_polarized());
+  }
   /// Returns the number of unique combinations of 2 spin cases
-  int nspincases2() const { return ::sc::nspincases2(r12world()->ref()->spin_polarized()); }
+  int nspincases2() const {
+    if (r12world()->spinadapted()) return 1;
+    return ::sc::nspincases2(r12world()->ref()->spin_polarized());
+  }
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
@@ -648,10 +652,16 @@ public:
 
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);
+  /// Returns spin-free intermediate V
+  const RefSCMatrix& V();
   /// Returns S block of intermediate X
   RefSymmSCMatrix X(SpinCase2 S);
+  /// Returns spin-free intermediate X
+  RefSymmSCMatrix X();
   /// Returns S block of intermediate B
   RefSymmSCMatrix B(SpinCase2 S);
+  /// Returns spin-free intermediate B
+  RefSymmSCMatrix B();
   /// Returns S block of the difference between intermediate B of approximations B and A'
   RefSymmSCMatrix BB(SpinCase2 S);
   /// Returns S block of intermediate A
@@ -699,6 +709,8 @@ public:
   const Ref<OrbitalSpace>& ggspace(SpinCase1 S) const;
   /// Returns the 1-RDM for spin S in the ``MO'' basis (i.e. that provided by orbs(S) )
   RefSymmSCMatrix ordm(SpinCase1 S) const;
+  /// Returns the total 1-RDM in the ``MO'' basis (i.e. that provided by orbs() )
+  RefSymmSCMatrix ordm() const;
 
   /// Form <P|h+J|x> space
   const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
@@ -841,6 +853,8 @@ public:
 
   /// Form <p|gamma|p> space
   const Ref<OrbitalSpace>& gamma_p_p(SpinCase1 S);
+  /// Form spin-free <p|gamma|p> space. Same as above, just uses full density
+  const Ref<OrbitalSpace>& gamma_p_p();
   /// Form <p|gammaFgamma|p> space
   const Ref<OrbitalSpace>& gammaFgamma_p_p(SpinCase1 S);
   /// Form <P|Fgamma|p> space

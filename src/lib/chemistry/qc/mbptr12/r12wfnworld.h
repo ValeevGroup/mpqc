@@ -62,11 +62,10 @@ public:
   R12WavefunctionWorld(StateIn&);
     /** KeyVal constructor uses keywords of R12Technology and the following keywords:
 
-    <dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
-    or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
-    systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
-    is not used.
-
+    <dt><tt>spinadapted</tt><dd> This boolean specifies whether to use spin-adapted (or spin-free)
+    algorithm for the R12 computation. Spin-free algorithm is only implemented for some R12 methods.
+    Hence the default value is false, i.e. to use the spin-orbital algorithm. Note that the ``owner'' Wavefunction
+    may override the default.
         </dl>
     */
   R12WavefunctionWorld(const Ref<KeyVal>& keyval,
@@ -90,7 +89,7 @@ public:
   bool obs_eq_vbs() const { return obs_eq_vbs_; }
   /// Returns true if RIBS is equivalent to OBS
   bool obs_eq_ribs() const { return obs_eq_ribs_; }
-
+  /// Returns true is spin-free algorithm to be used
   bool spinadapted() const { return spinadapted_; }
 
   OverlapOrthog::OrthogMethod orthog_method() const { return wfn()->orthog_method(); }

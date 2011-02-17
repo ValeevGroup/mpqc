@@ -136,6 +136,8 @@ namespace sc {
     /// returns the basis supporting unoccupied orbitals. The defauls is same as returned by basis().
     virtual const Ref<GaussianBasisSet>& uocc_basis() const { return basis(); }
 
+    /// if true, force alpha and beta 1-rdm the same for spin-free algorithms
+    void set_spinfree(bool TrueOrFalse);
     /// @sa MolecularEnergy::energy()
     virtual double energy() =0;
     /// Set the accuracy to which the value is to be computed. @sa Function::set_desired_value_accuracy()
@@ -186,6 +188,8 @@ namespace sc {
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
     bool omit_uocc_;
+    /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
+    bool force_average_AB_rdm1_;
 
     /// used to implement set_desired_value_accuracy()
     virtual void _set_desired_value_accuracy(double eps) =0;

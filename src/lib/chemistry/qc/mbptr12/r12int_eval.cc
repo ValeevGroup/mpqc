@@ -146,9 +146,10 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   for(int s=0; s<NSpinCases2; s++) {
-    // if spin-free calculation will only need to evaluate one type, will put into AlphaBeta's space
+    // if spin-free, calculation will only need to evaluate one type; but since many methods need to access all three (at least 2 spincases), we
+    // still create AA and AB case
     // if spin-orbital, and spin-polarized allocate all three
-    if ((r12world()->spinadapted() == true && s == AlphaBeta) ||
+    if ((r12world()->spinadapted() == true && s != BetaBeta) ||
         (r12world()->spinadapted() == false && spin_polarized() == false && s != BetaBeta) ||
         (r12world()->spinadapted() == false && spin_polarized() == true)
        ) {
@@ -165,7 +166,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
     }
   }
   // if spin-orbital, but non-spin-polarized allocate AlphaBeta and AlphaAlpha (AlphaAlpha equiv to BetaBeta)
-  if (spin_polarized() == false && r12world()->spinadapted() == false) {
+  if (spin_polarized() == false or r12world()->spinadapted()) {
     V_[BetaBeta] = V_[AlphaAlpha];
     X_[BetaBeta] = X_[AlphaAlpha];
     B_[BetaBeta] = B_[AlphaAlpha];
@@ -300,6 +301,8 @@ R12IntEval::V(SpinCase2 S) {
                    ggspace(Alpha));
   return V_[S];
 }
+
+
 const RefSCMatrix&
 R12IntEval::V() {
   assert(r12world()->spinadapted() == true);

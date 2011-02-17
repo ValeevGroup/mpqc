@@ -312,7 +312,7 @@ static ClassDesc R12RefWavefunction_cd(
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                        const Ref<GaussianBasisSet>& basis,
                                        const Ref<Integral>& integral) :
-  world_(world), basis_(basis), integral_(integral), omit_uocc_(true) {
+  world_(world), basis_(basis), integral_(integral), omit_uocc_(true), force_average_AB_rdm1_(false) {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
 }
 
@@ -329,6 +329,7 @@ RefWavefunction::RefWavefunction(StateIn& si) :
                      __FILE__,__LINE__);
   integral_->set_basis(basis_);
   si.get(omit_uocc_);
+  si.get(force_average_AB_rdm1_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
     spinspaces_[spin] << SavableState::restore_state(si);
@@ -345,6 +346,7 @@ RefWavefunction::save_data_state(StateOut& so)
   SavableState::save_state(basis_.pointer(),so);
   so.put(static_cast<int>(integral_->cartesian_ordering()));
   so.put(omit_uocc_);
+  so.put(force_average_AB_rdm1_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
     SavableState::save_state(spinspaces_[spin].pointer(),so);
@@ -367,7 +369,15 @@ RefWavefunction::init() const
     const double e = this_nonconst->energy();
     this_nonconst->init_spaces();
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
-    world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+    if(force_average_AB_rdm1_ == false)
+        world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+    else
+    {
+        RefSymmSCMatrix av_rdm = this->ordm(Alpha);
+        av_rdm.accumulate(this->ordm(Beta));
+        av_rdm.scale(0.5);
+        world_->fockbuild_runtime()->set_densities(av_rdm, av_rdm);
+    }
   }
 }
 
@@ -406,6 +416,13 @@ RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const {
   P_mo.assign(0.0);
   P_mo.accumulate_transform(C, SPS_ao, SCMatrix::TransposeTransform);
   return P_mo;
+}
+
+void
+RefWavefunction::set_spinfree(bool TrueOrFalse)
+{
+  this->force_average_AB_rdm1_ = TrueOrFalse;
+  return;
 }
 
 namespace {

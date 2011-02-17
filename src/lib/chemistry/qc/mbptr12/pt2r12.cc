@@ -179,6 +179,31 @@ namespace {
     return (max_ij -1)* max_ij/2 + min_ij;
   }
 
+  /** this is a wrapper method so that we can get elements from 4-index antisymmetric matrix just as other matrices;
+      as long as MM supports the method get_element */
+  template <typename MatrixType>
+  double get_4ind_antisym_matelement(MatrixType & MM, const int & U1, const int & U2, const int & L1, const int & L2)
+  {
+      if(U1 == U2 || L1 == L2) return 0.0;
+      else
+      {
+          int uppind = antisym_pairindex(U1, U2);
+          int lowind = antisym_pairindex(L1, L2);
+          const double totalsign = indexsizeorder_sign(U1,U2) * indexsizeorder_sign(L1, L2);
+          return totalsign * MM.get_element(uppind, lowind);
+      }
+  }
+
+  /** this is a wrapper method so that we can easily retrieve elements from 4-index matrix; as long as MM supports the method get_element */
+  template <typename MatrixType>
+  double get_4ind_matelement(MatrixType & MM, const int & U1, const int & U2, const int & L1, const int & L2, const int & UppDim, const int & LowDim)
+  {
+      int uppind = U1 * UppDim + U2;
+      int lowind = L1 * LowDim + L2;
+      return MM.get_element(uppind, lowind);
+  }
+
+
   template <typename MMatrix> // print out the elements from the two matrices which differ by more than thres
   void compare_element_diff(MMatrix & M1, MMatrix & M2, bool symmetry, unsigned int rowdim, unsigned int coldim, double thres)
   {
@@ -903,10 +928,10 @@ RefSCMatrix PT2R12::V_genref_projector2(SpinCase2 pairspin) {
   const RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
   V_genref.accumulate(V_intermed * tpdm);
 
-#if 0
-  V_intermed.print(prepend_spincase(pairspin, "V").c_str());
-  tpdm.print(prepend_spincase(pairspin, "gamma").c_str());
-  V_genref.print(prepend_spincase(pairspin, "V.gamma").c_str());
+#if 1
+  V_intermed.print(prepend_spincase(pairspin, "V (in PT2R12::V_genref_projector2)").c_str());
+  tpdm.print(prepend_spincase(pairspin, "gamma(in PT2R12::V_genref_projector2)").c_str());
+  V_genref.print(prepend_spincase(pairspin, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
 #endif
 
   return(V_genref);
@@ -918,13 +943,15 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   V_genref.assign(0.0);
 
   const RefSCMatrix V_intermed = r12eval_->V();
+  V_intermed.scale(0.5);
   const RefSymmSCMatrix tpdm = this->rdm2_sf();
   V_genref.accumulate(V_intermed * tpdm);
 
-#if 0
-  V_intermed.print(prepend_spincase(pairspin, "V").c_str());
-  tpdm.print(prepend_spincase(pairspin, "gamma").c_str());
-  V_genref.print(prepend_spincase(pairspin, "V.gamma").c_str());
+#if 1
+  SpinCase2 pairspin = AlphaBeta;
+  V_intermed.print(prepend_spincase(pairspin, "V(in PT2R12::V_genref_projector2)").c_str());
+  tpdm.print(prepend_spincase(pairspin, "gamma(in PT2R12::V_genref_projector2)").c_str());
+  V_genref.print(prepend_spincase(pairspin, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
 #endif
 
   return(V_genref);
@@ -1244,6 +1271,7 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
 }
 
 double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
+  ExEnv::out0() << indent << "in spin orbital code" << std::endl;
   SpinCase1 spin1 = case1(pairspin);
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
@@ -1277,6 +1305,9 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   TXT=0;
   Phi=0;
   TXT_t_Phi=0;
+#if 0
+  HylleraasMatrix.assign(0.0);
+#endif
 
   RefSCMatrix V_genref = V_genref_projector2(pairspin);
   RefSCMatrix T = C(pairspin);
@@ -1297,6 +1328,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // 2*V*T constribution
+  ExEnv::out0() << indent << "in spin free code" << std::endl;
   RefSCMatrix V_genref = V_genref_projector2();
   RefSCMatrix T = C(AlphaBeta);
   RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
@@ -1336,45 +1368,38 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   return(sf_opdm);
 }
 
+
 RefSymmSCMatrix sc::PT2R12::rdm2_sf()
 {
   RefSymmSCMatrix rdm_ab = this->rdm2_gg(AlphaBeta);
   RefSymmSCMatrix rdm_aa = this->rdm2_gg(AlphaAlpha);
   RefSymmSCMatrix rdm_bb = 0;
   if(spin_polarized()) RefSymmSCMatrix rdm_bb = this->rdm2_gg(BetaBeta);
-  RefSymmSCMatrix sf_rdm = rdm_ab.clone();
-  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha); // including doubly and partially occupied orbs
+  else
+      rdm_bb = rdm_aa;
+  RefSymmSCMatrix sf_rdm = rdm_ab.copy();
+  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
   const unsigned int no = occ_space->rank();
   Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
   Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
-  // add BetaAlpha contribution to sf_rdm
-  for(upp_pair->start(); *upp_pair; upp_pair->next())
+  for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
   {
-    const int u1 = upp_pair->i();
-    const int u2 = upp_pair->j();
-    for(low_pair->start(); *low_pair; low_pair->next())
+    for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
      {
-       const int l1 = low_pair->i();
-       const int l2 = low_pair->j();
-       double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
-                           + rdm_ab.get_element(u2 * no + u1, l2* no + l1);
-       if(u1 != u2 && l1 != l2)
-       {
-         const int uppind = antisym_pairindex(u1, u2);
-         const int lowind = antisym_pairindex(l1, l2);
-         const double signn = indexsizeorder_sign(u1, u2) * indexsizeorder_sign(l1, l2);
-         if(spin_polarized())
-         {
-           rdmelement += signn * (rdm_aa.get_element(uppind, lowind) + rdm_bb.get_element(uppind, lowind));
-         }
-         else
-           rdmelement += 2 * signn * rdm_aa.get_element(uppind, lowind);
-       }
-       sf_rdm.set_element(upp_pair->ij(), low_pair->ij(), rdmelement);
+         const int u1 = upp_pair->i();
+         const int u2 = upp_pair->j();
+         const int l1 = low_pair->i();
+         const int l2 = low_pair->j();
+         double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
+                             + rdm_ab.get_element(u2 * no + u1, l2* no + l1)
+                             + get_4ind_antisym_matelement(rdm_aa, u1, u2, l1, l2)
+                             + get_4ind_antisym_matelement(rdm_bb, u1, u2, l1, l2);
+         sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
   return(sf_rdm);
 }
+
 
 RefSymmSCMatrix sc::PT2R12::rdm2_sf_interm(double a, double b, double c)
 {
@@ -1576,6 +1601,8 @@ void sc::PT2R12::print(std::ostream & os) const
 
 void sc::PT2R12::compute()
 {
+  r12world()->initialize();
+
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
   double energy_pt2r12_sf = 0.0;
@@ -1586,6 +1613,7 @@ void sc::PT2R12::compute()
   {
     if(r12world_->spinadapted())
     {
+      r12world()->ref()->set_spinfree(true);
       switch(r12world()->r12tech()->ansatz()->projector())
       {
         case R12Technology::Projector_2:

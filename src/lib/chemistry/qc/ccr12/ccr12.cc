@@ -47,7 +47,7 @@ static ClassDesc CCR12_cd(
   0,create<CCR12>,create<CCR12>);
 
 CCR12::CCR12(StateIn& s): MBPT2_R12(s){
-  throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructer not yet implemented",__FILE__,__LINE__);
+  throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructor not yet implemented",__FILE__,__LINE__);
 }
 
 
@@ -104,6 +104,8 @@ CCR12::~CCR12(){
 }
 
 void CCR12::compute(){
+
+  r12world()->initialize();
 
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
   ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzcore(),nfzvirt(),

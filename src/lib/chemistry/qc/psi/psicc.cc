@@ -114,13 +114,13 @@ namespace sc {
       int* bocc_sym = to_C<int>(bocc->orbsym());
       int* bvir_sym = to_C<int>(bvir->orbsym());
 
-      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist,
+      dpd_init(0, nirrep(), this->memory_, 0, cachefiles, cachelist,
                NULL, 4, aoccpi, aocc_sym, avirpi, avir_sym,
                boccpi, bocc_sym, bvirpi, bvir_sym);
     }
     // RHF
     else {
-      dpd_init(0, nirrep(), 200000000, 0, cachefiles, cachelist,
+      dpd_init(0, nirrep(), this->memory_, 0, cachefiles, cachelist,
                NULL, 2, aoccpi, aocc_sym, avirpi, avir_sym);
     }
 

@@ -102,7 +102,7 @@ public:
   /// Returns the OrbitalSpace object for ABS
   const Ref<OrbitalSpace>& abs_space() const { return abs_space_; }
   /// Returns the OrbitalSpace object for RI-BS: approximates the identity
-  const Ref<OrbitalSpace>& ribs_space() const { return ribs_space_; }
+  const Ref<OrbitalSpace>& ribs_space() const;
   /// Returns subspace of ribs_space that is the complement to OBS. If abs_method = ABS/ABS+, this will throw
   const Ref<OrbitalSpace>& cabs_space(const SpinCase1& S) const;
 

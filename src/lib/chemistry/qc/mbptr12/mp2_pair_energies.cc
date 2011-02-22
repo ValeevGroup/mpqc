@@ -112,7 +112,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       << space2->id() << " " << space4->id() << ">";
   const std::string label = oss.str();
   ExEnv::out0() << endl << indent
-	       << "Entered MP2 pair energies (" << label << ") evaluator" << std::endl;
+	       << "Entered " << to_string(S) << " MP2 pair energies evaluator" << std::endl;
   ExEnv::out0() << incindent;
   if (debug_ >= DefaultPrintThresholds::diagnostics)
     ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
@@ -189,6 +189,6 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   if (accum->data_persistent()) accum->deactivate();
 
   ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited MP2 pair energies (" << label << ") evaluator" << endl;
+  ExEnv::out0() << indent << "Exited " << to_string(S) << " MP2 pair energies evaluator" << endl;
 }
 

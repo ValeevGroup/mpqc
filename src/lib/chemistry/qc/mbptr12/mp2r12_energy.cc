@@ -334,6 +334,7 @@ MP2R12Energy::compute() {
     }
   }
 
+  evaluated_ = true;
 }
 
 double MP2R12Energy::emp2f12tot(SpinCase2 s) {

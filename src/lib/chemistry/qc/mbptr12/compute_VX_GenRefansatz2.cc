@@ -1,5 +1,5 @@
 //
-// compute_VXB_GenRefansatz2.cc
+// compute_VX_GenRefansatz2.cc
 //
 // Copyright (C) 2008 Martin Torheyden
 //
@@ -38,10 +38,10 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     return;
 
   Ref<R12IntEval> thisref(this);
-  Timer timer("General reference VXB intermediate evaluator");
+  Timer timer("General reference VX intermediate evaluator");
 
   if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_2) {
-    throw InputError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
+    throw InputError("R12IntEval::contrib_to_VX_GenRefansatz2_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
   }
 
   for(int s=0; s<nspincases2(); s++) {
@@ -67,7 +67,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     const bool orbs1_eq_orbs2 = (orbs1==orbs2);
 
     if(gg1_eq_gg2 ^ GG1_eq_GG2) {
-      throw ProgrammingError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- gg1 and gg2 space must be of the same structure as GG1 and GG2 space",__FILE__,__LINE__);
+      throw ProgrammingError("R12IntEval::contrib_to_VX_GenRefansatz2_() -- gg1 and gg2 space must be of the same structure as GG1 and GG2 space",__FILE__,__LINE__);
     }
 
     // are particles 1 and 2 equivalent?

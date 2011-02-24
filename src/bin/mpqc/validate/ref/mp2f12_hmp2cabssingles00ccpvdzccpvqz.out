@@ -1,0 +1,296 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin10.5.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Thu Feb 24 17:32:28 2011
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralLibint2 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+
+  Reading file /Users/evaleev/Development/workspace/install/mpqc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+      Reading file /Users/evaleev/Development/workspace/install/mpqc/share/mpqc/3.0.0-alpha/basis/dz_LdunningR.kv.
+
+      HSOSSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             2     0     0     0     0     0     0     0
+      Maximum orthogonalization residual = 1.68306
+      Minimum orthogonalization residual = 0.31694
+      docc = [ 0 0 0 0 0 0 0 0 ]
+      socc = [ 1 0 0 0 0 0 0 0 ]
+
+  HSOSSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-02
+
+      nuclear repulsion energy =    0.0000000000
+
+      Beginning iterations.  Basis is DZ (Dunning).
+                         6 integrals
+      iter     1 energy =   -0.4969207075 delta = 3.11468e-01
+                         6 integrals
+      iter     2 energy =   -0.4975664611 delta = 2.05300e-02
+                         6 integrals
+      iter     3 energy =   -0.4976372444 delta = 9.43067e-03
+
+      HOMO is     1  Ag =  -0.175506
+      LUMO is     2  Ag =   1.074694
+
+      total scf energy =   -0.4976372444
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 1
+        Using symmetric orthogonalization.
+        n(basis):             2     0     0     0     0     1     1     1
+        Maximum orthogonalization residual = 1.68486
+        Minimum orthogonalization residual = 0.31514
+        The number of electrons in the projected density = 0.99751
+
+  docc = [ 0 0 0 0 0 0 0 0 ]
+  socc = [ 1 0 0 0 0 0 0 0 ]
+  ints_file = mp2f12_hmp2cabssingles00ccpvdzccpvqz.moints
+  Reading file /Users/evaleev/Development/workspace/install/mpqc/share/mpqc/3.0.0-alpha/basis/cc-pvqz.kv.
+
+  Molecular formula H
+
+  The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/mp2f12_hmp2cabssingles00ccpvdzccpvqz.in" were ignored:
+    mpqc:mole:coor
+    mpqc:coor
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = mp2f12_hmp2cabssingles00ccpvdzccpvqz
+    restart_file    = mp2f12_hmp2cabssingles00ccpvdzccpvqz.ckpt
+    restart         = no
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+switched off integral check in mbptr12.cc/compute
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    0.0000000000
+
+  Beginning iterations.  Basis is cc-pVDZ.
+                    78 integrals
+  iter     1 energy =   -0.4986617860 delta = 1.37006e-01
+                    78 integrals
+  iter     2 energy =   -0.4991994495 delta = 9.73082e-03
+                    78 integrals
+  iter     3 energy =   -0.4992784033 delta = 5.40251e-03
+                    78 integrals
+  iter     4 energy =   -0.4992784034 delta = 6.33061e-06
+                    78 integrals
+  iter     5 energy =   -0.4992784034 delta = 1.01568e-08
+                    69 integrals
+  iter     6 energy =   -0.4992784034 delta = 1.39415e-11
+
+  HOMO is     1  Ag =  -0.186647
+  LUMO is     2  Ag =   0.636550
+
+  total scf energy =   -0.4992784034
+
+  Alpha-beta MBPT2-R12/C pair energies:
+      i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
+    -----   -----   ------------   ------------   ------------
+
+  Alpha-alpha MBPT2-R12/C pair energies:
+      i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
+    -----   -----   ------------   ------------   ------------
+
+  Beta-beta MBPT2-R12/C pair energies:
+      i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
+    -----   -----   ------------   ------------   ------------
+
+  Entered OBS singles MP2 energy evaluator
+    E(MP2 OBS singles) =        -0.000000000000000
+  Exited OBS singles MP2 energy evaluator
+
+  RHF energy [au]:                                 -0.499278403420
+  Singles MP2 correlation energy [au]:             -0.000000000000
+  MP2 correlation energy [au]:                     -0.000000000000
+  (MBPT2)-R12/  C correlation energy [au]:          0.000000000000
+  MBPT2-R12/  C correlation energy [au]:           -0.000000000000
+  MBPT2-R12/  C energy [au]:                       -0.499278403420
+
+
+  Entered CABS singles MP2 energy evaluator
+    Orthogonalizing basis for space RIBS:
+      Using symmetric orthogonalization.
+      n(basis):            10     2     2     2     1     6     6     6
+      Maximum orthogonalization residual = 4.372
+      Minimum orthogonalization residual = 0.000153158
+    SVD-projecting out alpha occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Alpha)
+      1 basis function projected out of RIBS.
+      n(basis):             9     2     2     2     1     6     6     6
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out beta occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Beta)
+      SVD-projecting out alpha unoccupied symmetry-blocked MOs out of CABS (Alpha) to obtain space CABS (Alpha)
+        4 basis functions projected out of CABS (Alpha).
+        n(basis):             8     2     2     2     1     5     5     5
+        Maximum singular value = 1
+        Minimum singular value = 1
+      SVD-projecting out beta unoccupied symmetry-blocked MOs out of CABS (Beta) to obtain space CABS (Beta)
+        5 basis functions projected out of CABS (Beta).
+        n(basis):             8     2     2     2     1     5     5     5
+        Maximum singular value = 1
+        Minimum singular value = 1
+      E(MP2 CABS singles) =        -0.000628644663429
+    Exited CABS singles MP2 energy evaluator
+
+    Value of the MolecularEnergy:   -0.4999070481
+
+    MBPT2_R12:
+      Include CABS singles? : true
+        E(CABS singles) =        -0.000628644663429
+      R12WavefunctionWorld:
+        WavefunctionWorld:
+          How to Store Transformed Integrals: posix
+          Transformed Integrals file suffix: mp2f12_hmp2cabssingles00ccpvdzccpvqz.moints
+
+        Auxiliary Basis Set (ABS):
+          GaussianBasisSet:
+            nbasis = 30
+            nshell = 10
+            nprim  = 12
+            name = "cc-pVQZ"
+
+        R12Technology:
+          CorrelationFactor: none
+
+          Coupling included: false
+          GBC assumed: true
+          EBC assumed: true
+          EBC-free method: Valeev
+          Enforce positive definiteness of B, but not ~B(ij)
+          ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)
+          ABS linear depenendence tolerance = 1e-08
+          Standard Approximation: C
+          R12Ansatz:
+            Geminal orbital Product Space: ij
+            Space of orbital products from which geminal substitutions are allowed: ij
+            Projector: 2  , i.e. (1-O1)(1-O2)-V1V2
+            Ansatz: diagonal with fixed amplitudes
+            WOF: false
+          H0_dk_approx_pauli: false
+          Max # ABS indices: 2
+        Spin-adapted algorithm: false
+
+      MBPT2:
+        Function Parameters:
+          value_accuracy    = 1.394147e-13 (1.000000e-06) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+        Molecule:
+          Molecular formula: H
+          molecule<Molecule>: (
+            symmetry = d2h
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     H [    0.0000000000     0.0000000000     0.0000000000]
+            }
+          )
+          Atomic Masses:
+              1.00783
+          Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 5
+            nshell = 3
+            nprim  = 5
+            name = "cc-pVDZ"
+        Reference Wavefunction:
+          Function Parameters:
+            value_accuracy    = 1.394147e-11 (1.000000e-08) (computed)
+            gradient_accuracy = 0.000000e+00 (1.000000e-06)
+            hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+          Molecule:
+            Molecular formula: H
+            molecule<Molecule>: (
+              symmetry = d2h
+              unit = "angstrom"
+              {  n atoms                        geometry                     }={
+                 1     H [    0.0000000000     0.0000000000     0.0000000000]
+              }
+            )
+            Atomic Masses:
+                1.00783
+            Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+          Electronic basis:
+            GaussianBasisSet:
+              nbasis = 5
+              nshell = 3
+              nprim  = 5
+              name = "cc-pVDZ"
+          SCF Parameters:
+            maxiter = 100
+            density_reset_frequency = 10
+            level_shift = 0.250000
+
+          HSOSSCF Parameters:
+            charge = 0
+            ndocc = 0
+            nsocc = 1
+            docc = [ 0 0 0 0 0 0 0 0 ]
+            socc = [ 1 0 0 0 0 0 0 0 ]
+
+
+
+    ConsumableResources: (
+      memory = 256MB ( max used: 240MB )
+      disk = [./ 0B] ( max used: 0B )
+    )
+                                  CPU Wall
+mpqc:                            1.28 2.49
+  calc:                          1.18 2.38
+    mp2-r12 energy:              1.18 2.38
+      CABS singles MP2 energy:   1.00 1.00
+        build_only:              0.01 0.01
+          FockBuildThreads:      0.68 0.68
+      mp2-r12/c pair energies:   0.10 0.10
+        OBS singles MP2 energy:  0.10 0.10
+          build_only:            0.00 0.00
+            FockBuildThreads:    0.08 0.08
+      vector:                    0.07 0.07
+        density:                 0.00 0.00
+        evals:                   0.00 0.00
+        extrap:                  0.00 0.00
+        fock:                    0.02 0.02
+          start thread:          0.00 0.00
+          stop thread:           0.00 0.00
+  input:                         0.10 0.10
+    vector:                      0.02 0.02
+      density:                   0.00 0.00
+      evals:                     0.00 0.00
+      extrap:                    0.00 0.00
+      fock:                      0.00 0.00
+        start thread:            0.00 0.00
+        stop thread:             0.00 0.00
+
+    End Time: Thu Feb 24 17:32:31 2011
+

@@ -126,11 +126,13 @@ R12IntEval::compute_emp2_cabs_singles()
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
     Ref<OrbitalSpace> occ = this->occ(spin);
+    if (occ->rank() == 0) continue;
     Ref<OrbitalSpace> vir = this->vir(spin);
 #if 0
     Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
 #endif
     Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
+    if (cabs->rank() == 0) continue;
     RefSCMatrix FiA = fock(occ,cabs,spin);
     RefSCMatrix Fia = fock(occ,vir,spin);
     RefSCMatrix FaA = fock(vir,cabs,spin);

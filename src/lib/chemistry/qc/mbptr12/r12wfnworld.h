@@ -89,7 +89,7 @@ public:
   /// Returns true if VBS is equivalent to OBS
   bool obs_eq_vbs() const { return obs_eq_vbs_; }
   /// Returns true if RIBS is equivalent to OBS
-  bool obs_eq_ribs() const { return obs_eq_ribs_; }
+  bool obs_eq_ribs() const;
 
   bool spinadapted() const { return spinadapted_; }
 
@@ -123,7 +123,6 @@ private:
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12
   Ref<GaussianBasisSet> bs_ri_;   //!< the RI basis used in R12
   bool obs_eq_vbs_;
-  bool obs_eq_ribs_;
 
   bool spinadapted_;
   int nlindep_aux_;

@@ -92,7 +92,6 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
     construct_orthog_ri_();
   }
 
-  obs_eq_ribs_ = basis()->equiv(basis_ri());
   {
     // also create AO space for RI basis
     Ref<OrbitalSpaceRegistry> idxreg = world()->tfactory()->orbital_registry();

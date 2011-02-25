@@ -152,6 +152,12 @@ R12WavefunctionWorld::ribs_space() const
   return ribs_space_;
 }
 
+bool
+R12WavefunctionWorld::obs_eq_ribs() const {
+  if (bs_ri_.null()) ribs_space();
+  return basis()->equiv(bs_ri_);
+}
+
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 {

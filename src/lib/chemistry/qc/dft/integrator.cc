@@ -725,7 +725,7 @@ BeckeIntegrationWeight::init(const Ref<Molecule> &mol, double tolerance)
   // not charges.
   n_integration_centers = mol->n_non_q_atom();
 
-  double *atomic_radius = new double[n_integration_centers];
+  vector<double> atomic_radius(n_integration_centers);
   centers = new SCVector3[n_integration_centers];
 
   for (int icenter=0; icenter<n_integration_centers; icenter++) {

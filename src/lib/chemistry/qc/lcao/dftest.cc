@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
   char *infile = new char[strlen(SRCDIR) + strlen("/dftest.in") + 1];
   sprintf(infile,SRCDIR "/dftest.in");
   if (argc == 2) {
+    delete[] infile;
     infile = argv[1];
   }
 

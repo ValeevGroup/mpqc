@@ -25,7 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <math.h>
+#include <cmath>
+#include <memory>
 
 #include <util/class/scexception.h>
 #include <util/misc/formio.h>
@@ -216,9 +217,9 @@ IntMolecularCoor::read_keyval(const Ref<KeyVal>& keyval)
       // (atom numbering starts at 1)
       int nextra_bonds = keyval->count("extra_bonds");
       nextra_bonds /= 2;
-      int *extra_bonds;
+      vector<int> extra_bonds;
       if (nextra_bonds) {
-          extra_bonds = new int[nextra_bonds*2];
+          extra_bonds.resize(nextra_bonds*2);
           for (int i=0; i<nextra_bonds*2; i++) {
               extra_bonds[i] = keyval->intvalue("extra_bonds",i);
               if (keyval->error() != KeyVal::OK) {
@@ -228,10 +229,7 @@ IntMolecularCoor::read_keyval(const Ref<KeyVal>& keyval)
                 }
             }
         }
-      else {
-          extra_bonds = 0;
-        }
-      generator_ = new IntCoorGen(molecule_, nextra_bonds, extra_bonds);
+      generator_ = new IntCoorGen(molecule_, nextra_bonds, extra_bonds.size() ? &(extra_bonds[0]) : 0);
     }
           
 

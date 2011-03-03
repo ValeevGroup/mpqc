@@ -128,6 +128,7 @@ main(int argc, char **argv)
   char *infile = new char[strlen(SRCDIR)+strlen("/inttest.in")+1];
   sprintf(infile,SRCDIR "/inttest.in");
   if (argc == 2) {
+    delete[] infile;
     infile = argv[1];
     }
 

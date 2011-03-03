@@ -1330,7 +1330,7 @@ FinDispMolecularGradient::compute_gradient()
     int coord; double dispsize;
     get_disp(d, coord, dispsize);
     std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
-    double coeff;
+    double coeff = 0.0;
     if (!eliminate_cubic_terms_) {
       // 2-pt formula: f' = (f+ - f-)/(2.0 d)
       coeff = (dispsize == 1.0) ? 1.0 : -1.0;

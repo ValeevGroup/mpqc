@@ -591,7 +591,7 @@ WriteGrids::wf_gaussian_cube(std::ostream &out) {
       }
   }
 
-  delete Vals;
+  delete[] Vals;
 }
 
 

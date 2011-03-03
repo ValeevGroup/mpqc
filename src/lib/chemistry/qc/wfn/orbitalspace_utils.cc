@@ -107,7 +107,7 @@ namespace sc {
     const double toler = lindep_tol;
     double min_sigma = 1.0;
     double max_sigma = 0.0;
-    int* nvec_per_block = new int[nblocks];
+    vector<int> nvec_per_block(nblocks);
     // basis for orthogonal complement is a vector of nvecs by nbasis2
     // we don't know nvecs yet, so use rank2
     RefSCMatrix orthog2 = space2->coefs();
@@ -190,7 +190,7 @@ namespace sc {
 
     // convert vecs into orthog2
     // modify for the dimension
-    RefSCDimension orthog_dim = new SCDimension(v_offset, nblocks, nvec_per_block, "");
+    RefSCDimension orthog_dim = new SCDimension(v_offset, nblocks, &nvec_per_block[0], "");
     for(int b=0; b<nblocks; b++)
       orthog_dim->blocks()->set_subdim(b, new SCDimension(nvec_per_block[b]));
     RefSCMatrix orthog_vecs(orthog_dim,orthog2.rowdim(),so_matrixkit);
@@ -217,7 +217,6 @@ namespace sc {
     ExEnv::out0() << decindent;
 
     delete[] vecs;
-    delete[] nvec_per_block;
 
     Ref<OrbitalSpace> orthog_comp_space = new OrbitalSpace(id,name,orthog2,space2->basis(),space2->integral());
 
@@ -259,7 +258,7 @@ namespace sc {
     const double toler = lindep_tol;
     double min_sigma = 1.0;
     double max_sigma = 0.0;
-    int* nvec_per_block = new int[nblocks];
+    vector<int> nvec_per_block(nblocks);
 
     // projected vectors are a matrix of nvecs by nbasis2
     // we don't know nvecs yet, so use rank1
@@ -369,7 +368,6 @@ namespace sc {
     ExEnv::out0() << decindent;
 
     delete[] vecs;
-    delete[] nvec_per_block;
 
     Ref<OrbitalSpace> proj_space = new OrbitalSpace(id,name,proj,space2->basis(),space2->integral());
 

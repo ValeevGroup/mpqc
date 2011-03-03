@@ -207,8 +207,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
                                                                    dim_xc,
                                                                    nocc2_act);
 
-    double* ef12_vec = new double[noo];
-    memset(ef12_vec, 0, sizeof(double) * noo);
+    vector<double> ef12_vec(noo, 0.0);
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       util->print(prepend_spincase(spincase2, "V matrix").c_str(), V);
@@ -580,9 +579,8 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
     for (unsigned int ij = 0; ij < noo; ij++)
       if (ij % ntasks == me)
         ef12_vec[ij] = ef12(ij);
-    msg->sum(ef12_vec, noo, 0, -1);
-    ef12_[spin]->assign(ef12_vec);
-    delete[] ef12_vec;
+    msg->sum(&ef12_vec[0], noo, 0, -1);
+    ef12_[spin]->assign(&ef12_vec[0]);
   } // end of spincase loop
 
   // Set beta-beta energies to alpha-alpha for closed-shell

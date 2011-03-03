@@ -78,12 +78,10 @@ int CharacterTable::make_table()
   _inv = new int[g];
   
   // this array forms a reducible representation for rotations about x,y,z
-  double *rot = new double[g];
-  memset(rot,0,sizeof(double)*g);
+  vector<double> rot(g, 0.0);
 
   // this array forms a reducible representation for translations along x,y,z
-  double *trans = new double[g];
-  memset(trans,0,sizeof(double)*g);
+  vector<double> trans(g, 0.0);
 
   // the angle to rotate about the principal axis
   double theta = (nt) ? 2.0*M_PI/nt : 2.0*M_PI;
@@ -1034,9 +1032,6 @@ int CharacterTable::make_table()
     }
   }
 
-  delete[] rot;
-  delete[] trans;
-  
   // now find the inverse of each symop
   for (gi=0; gi < g; gi++) {
     int gj;

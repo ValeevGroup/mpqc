@@ -40,9 +40,9 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
-#include <chemistry/qc/mbptr12/registry.timpl.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
+#include <chemistry/qc/lcao/transform_factory.h>
+#include <util/misc/registry.timpl.h>
 #include <chemistry/qc/mbptr12/ref.h>
 #if HAVE_PSIMPQCIFACE
 # include <chemistry/qc/psi/psiref.h>

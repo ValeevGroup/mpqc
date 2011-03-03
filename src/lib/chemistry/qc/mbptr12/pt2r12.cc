@@ -30,8 +30,8 @@
 #endif
 
 #include <chemistry/qc/mbptr12/pt2r12.h>
-#include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <util/misc/print.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 
@@ -673,7 +673,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
                       const Ref<OrbitalSpace>& space1,
                       const Ref<OrbitalSpace>& space2) {
   const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  Ref<SpinMOPairIter> PQ_iter = new SpinMOPairIter(space1,space2,pairspin);
+  Ref<SpinMOPairIter> PQ_iter = new SpinMOPairIter(space1->rank(),space2->rank(),pairspin);
   const int nmo1 = space1->rank();
   const int nmo2 = space2->rank();
   const int pairrank = PQ_iter->nij();
@@ -723,8 +723,8 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
                       const Ref<OrbitalSpace>& ket2)
 {
       const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      Ref<SpinMOPairIter> braiter12 = new SpinMOPairIter(bra1,bra2,pairspin);
-      Ref<SpinMOPairIter> ketiter12 = new SpinMOPairIter(ket1,ket2,pairspin);
+      Ref<SpinMOPairIter> braiter12 = new SpinMOPairIter(bra1->rank(),bra2->rank(),pairspin);
+      Ref<SpinMOPairIter> ketiter12 = new SpinMOPairIter(ket1->rank(),ket2->rank(),pairspin);
       RefSCMatrix G = localkit->matrix(new SCDimension(braiter12->nij()),
                                        new SCDimension(ketiter12->nij()));
       G.assign(0.0);
@@ -836,8 +836,8 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(S),r12eval_->dim_gg(S));
   if(S==AlphaBeta) {
-    SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha), r12eval_->GGspace(Beta), S );
-    SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha), r12eval_->ggspace(Beta), S );
+    SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha)->rank(), r12eval_->GGspace(Beta)->rank(), S );
+    SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha)->rank(), r12eval_->ggspace(Beta)->rank(), S );
     Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
@@ -854,8 +854,8 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   }
   else {
     SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
-    SpinMOPairIter OW_iter(r12eval_->GGspace(spin), r12eval_->GGspace(spin), S );
-    SpinMOPairIter PQ_iter(r12eval_->ggspace(spin), r12eval_->ggspace(spin), S );
+    SpinMOPairIter OW_iter(r12eval_->GGspace(spin)->rank(), r12eval_->GGspace(spin)->rank(), S );
+    SpinMOPairIter PQ_iter(r12eval_->ggspace(spin)->rank(), r12eval_->ggspace(spin)->rank(), S );
     Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
     CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
@@ -1047,8 +1047,8 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
   const SpinCase1 spin2 = case2(spin12);
   Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
   Ref<OrbitalSpace> orbs2 = rdm2_->orbs(spin2);
-  SpinMOPairIter UV_iter(orbs1,orbs2,spin12);
-  SpinMOPairIter PQ_iter(orbs1,orbs2,spin12);
+  SpinMOPairIter UV_iter(orbs1->rank(),orbs2->rank(),spin12);
+  SpinMOPairIter PQ_iter(orbs1->rank(),orbs2->rank(),spin12);
 
   if (spin12 == AlphaBeta) {
     for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -1194,7 +1194,7 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
-  SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
+  SpinMOPairIter gg_iter(gg1space->rank(),gg2space->rank(),pairspin);
 
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
   RefSymmSCMatrix Phi = phi_gg(pairspin);
@@ -1221,7 +1221,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
-  SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
+  SpinMOPairIter gg_iter(gg1space->rank(),gg2space->rank(),pairspin);
 
   RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
@@ -1366,8 +1366,8 @@ RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
   // it's possible for gspace to be a superset of orbs
   std::vector<int> map1 = map(*orbs1, *gspace1);
   std::vector<int> map2 = map(*orbs2, *gspace2);
-  SpinMOPairIter UV_iter(gspace1,gspace2,spin);
-  SpinMOPairIter PQ_iter(gspace1,gspace2,spin);
+  SpinMOPairIter UV_iter(gspace1->rank(),gspace2->rank(),spin);
+  SpinMOPairIter PQ_iter(gspace1->rank(),gspace2->rank(),spin);
   const int nmo = orbs1->rank();
 
   for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
@@ -1557,7 +1557,7 @@ double PT2R12::compute_energy(const RefSCMatrix &hmat,
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
-  SpinMOPairIter gg_iter(gg1space,gg2space,pairspin);
+  SpinMOPairIter gg_iter(gg1space->rank(),gg2space->rank(),pairspin);
   double energy = 0.0;
 
   if (print_pair_energies) {

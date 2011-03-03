@@ -30,9 +30,9 @@
 #include <util/ref/ref.h>
 #include <math/scmat/matrix.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 
 namespace sc {
 

@@ -338,6 +338,10 @@ SCF::compute_vector(double& eelec, double nucrep)
 
   CharacterTable ct = molecule()->point_group()->char_table();
 
+  struct Orbital {
+
+  };
+
   int homo_ir=0, lumo_ir=0;
   int homo_mo = -1, lumo_mo = -1;
   double homo=-1e99, lumo=1e99;

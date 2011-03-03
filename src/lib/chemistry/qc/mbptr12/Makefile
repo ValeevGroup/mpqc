@@ -37,20 +37,11 @@ TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc \
-  distarray4.cc \
-  distarray4_node0file.cc distarray4_memgrp.cc \
-  orbitalspace.cc orbitalspace_utils.cc \
-  pairiter.cc ri_basis.cc \
-  transform_factory.cc transform_tbint.cc \
-  transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
-  transform_iRjS.cc \
-  transform_123inds.cc transform_13inds.cc transform_12inds.cc \
-  compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
-  compute_iRjS.cc \
-  ref.cc utils.cc \
+  ri_basis.cc \
+  ref.cc \
   r12wfnworld.cc \
-  twobodygrid.cc svd.cc intermeds_g12.cc \
-  twoparticlecontraction.cc spin.cc \
+  twobodygrid.cc intermeds_g12.cc \
+  twoparticlecontraction.cc \
   ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc FxFgen.cc \
   creator.cc approxC.cc approxCp.cc approxApp.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc \
@@ -59,45 +50,26 @@ CXXSRCS = mbptr12.cc \
   singles_emp2.cc fixedcoefficient.cc \
   compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
   compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \
-  moints_runtime.cc fockbuilder.cc fockbuild_runtime.cc \
-  wfnworld.cc transform_ijR.cc \
-  transform_ixjy_df.cc  tbint_runtime.cc \
   r12int_eval.cc \
   coulomb.cc exchange.cc fock.cc \
   r12_amps.cc compute_amps.cc \
   mp2_pair_energies.cc \
   compute_energy_a.cc mp2r12_energy.cc bc_contrib.cc dkh.cc \
-  pt2r12.cc rdm.cc
+  pt2r12.cc
   
-INC = distarray4_memgrp.h distarray4_mpiiofile.h \
-distarray4_node0file.h compute_tbint_tensor.h r12int_eval.h \
+INC = compute_tbint_tensor.h r12int_eval.h \
 container.h                     r12technology.h \
 contract_tbint_tensor.h  contract_tbint_tensors_to_obtensor.h \
 ref.h \
-creator.h                       spin.h \
-gaussianfit.h gaussianfit.timpl.h transform_123inds.h \
-transform_12inds.h transform_13inds.h \
-transform_factory.h \
-linkage.h                       transform_ijxy.h \
-mbptr12.h                       transform_ikjy.h \
-orbitalspace.h                  orbitalspace_utils.h \
-transform_ixjy.h \
-mp2r12_energy.h                 transform_tbint.h \
-mp2r12_energy_util.h            twobodygrid.h \
+creator.h \
+gaussianfit.h gaussianfit.timpl.h \
+linkage.h mbptr12.h \
+mp2r12_energy.h mp2r12_energy_util.h            twobodygrid.h \
 twobodytensorinfo.h \
 pairiter.h                      twoparticlecontraction.h \
-print.h                         utils.h \
-print_scmat_norms.h             utils.impl.h \
+print.h \
 r12_amps.h                      r12wfnworld.h \
-distarray4.h				moints_runtime.h \
-fockbuilder.h                   fockbuild_runtime.h \
-transform_ijR.h \
-tbint_runtime.h                 fixedcoefficient.h \
-pt2r12.h			rdm.h
-
-ifeq ($(HAVE_MPIIO),yes)
-  CXXSRCS += distarray4_mpiiofile.cc
-endif
+fixedcoefficient.h              pt2r12.h
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   DEFINES += -DHAVE_CHEMISTRY_CCA

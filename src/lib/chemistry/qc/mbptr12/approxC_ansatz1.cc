@@ -43,15 +43,15 @@
 #include <chemistry/qc/basis/integral.h>
 #include <math/scmat/blas.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
+#include <util/misc/print.h>
 
 using namespace std;
 using namespace sc;

@@ -37,17 +37,17 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
-#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/lcao/transform_factory.h>
+#include <chemistry/qc/lcao/utils.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/debug.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/basis/obintfactory.h>
 
 using namespace std;

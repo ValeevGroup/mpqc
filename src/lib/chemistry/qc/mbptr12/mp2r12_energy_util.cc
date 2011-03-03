@@ -30,7 +30,7 @@
 #endif
 
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 
 using namespace std;
 using namespace sc;
@@ -170,7 +170,7 @@ namespace sc {
                                                      const RefSymmSCMatrix& A,
                                                      RefSCMatrix& X,
                                                      const RefSCMatrix& B) const {
-    sc::exp::lapack_linsolv_symmnondef(A, X, B);
+    sc::lapack_linsolv_symmnondef(A, X, B);
   }
 
   void MP2R12EnergyUtil_Nondiag::solve_linear_system(unsigned int ij,
@@ -179,7 +179,7 @@ namespace sc {
                                                      const RefSCMatrix& B) const {
     RefSCVector Xij = X.get_column(ij);
     RefSCVector Bij = B.get_column(ij);
-    sc::exp::lapack_linsolv_symmnondef(A,Xij,Bij);
+    sc::lapack_linsolv_symmnondef(A,Xij,Bij);
     X.assign_column(Xij,ij);
   }
 
@@ -671,7 +671,7 @@ namespace sc {
 
       get(ij, A, Aij);
       get(ij, B, Bij);
-      sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+      sc::lapack_linsolv_symmnondef(Aij, Xij, Bij);
       put(ij, X, Xij);
     }
   }
@@ -707,7 +707,7 @@ namespace sc {
 
     get(ij, A, Aij);
     get(ij, B, Bij);
-    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    sc::lapack_linsolv_symmnondef(Aij, Xij, Bij);
     put(ij, X, Xij);
   }
 
@@ -1155,7 +1155,7 @@ namespace sc {
 
       get(ij, A, Aij);
       get(ij, B, Bij);
-      sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+      sc::lapack_linsolv_symmnondef(Aij, Xij, Bij);
       put(ij, X, Xij);
     }
   }
@@ -1182,7 +1182,7 @@ namespace sc {
 
     get(ij, A, Aij);
     get(ij, B, Bij);
-    sc::exp::lapack_linsolv_symmnondef(Aij, Xij, Bij);
+    sc::lapack_linsolv_symmnondef(Aij, Xij, Bij);
     put(ij, X, Xij);
   }
 
@@ -1354,7 +1354,7 @@ namespace sc {
     RefSCDimension gdim=new SCDimension(ngem);
     RefSCDimension two_gdim=new SCDimension(2*gdim.n());
 
-    SpinMOPairIter ij_iter(i1, i2, spincase2);
+    SpinMOPairIter ij_iter(i1->rank(), i2->rank(), spincase2);
     Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,xydim,xydim,f12dim,i2->rank());
 
     double Cp_ij_ij;  // singlet

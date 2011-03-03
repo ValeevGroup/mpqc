@@ -41,17 +41,17 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
-#include <chemistry/qc/mbptr12/svd.h>
-#include <chemistry/qc/mbptr12/print_scmat_norms.h>
+#include <chemistry/qc/lcao/transform_factory.h>
+#include <math/scmat/svd.h>
+#include <math/scmat/util.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
+#include <chemistry/qc/lcao/utils.h>
 
 using namespace std;
 using namespace sc;
-using namespace sc::exp;
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -389,7 +389,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
       const RefSCVector emp2f12 = emp2f12_[s];
       const Ref<OrbitalSpace> gspace1 = r12eval()->ggspace(case1(spincase2));
       const Ref<OrbitalSpace> gspace2 = r12eval()->ggspace(case2(spincase2));
-      SpinMOPairIter ij_iter(gspace1, gspace2, spincase2);
+      SpinMOPairIter ij_iter(gspace1->rank(), gspace2->rank(), spincase2);
 
       so << endl << indent << prepend_spincase(spincase2,"MBPT2-R12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
@@ -426,7 +426,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
     const RefSCVector ef12_ab = ef12_[AlphaBeta];
     const RefSCVector ef12_aa = ef12_[AlphaAlpha];
     const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
-    SpatialMOPairIter_eq ij_iter(gspace);
+    SpatialMOPairIter_eq ij_iter(gspace->rank());
     int ij_s = 0;
     for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
       const int ij_ab = ij_iter.ij_ab();
@@ -912,8 +912,8 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12int
 }
 
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy_compute.cc>
 #include <chemistry/qc/mbptr12/mp2r12_energy_diag.cc>
 

@@ -31,7 +31,7 @@
 
 #include <chemistry/qc/psi/psiref.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 
 using namespace sc;
 

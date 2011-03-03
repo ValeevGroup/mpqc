@@ -1,0 +1,66 @@
+% emacs should use -*- KeyVal -*- mode
+dimer<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+    Ne     [     0.00000000     0.00000000     0.00000000 ]
+    Ne     [     0.00000000     0.00000000     3.00000000 ]
+  }
+)
+
+monomer1<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+    Ne     [     0.00000000     0.00000000     0.00000000 ]
+  }
+)
+
+monomer2<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+    Ne     [     0.00000000     0.00000000     3.00000000 ]
+  }
+)
+
+basis_name = "DZ (Dunning)"
+
+dbasis<GaussianBasisSet>: (
+  name = $:basis_name
+  molecule = $:dimer
+)
+
+m1basis<GaussianBasisSet>: (
+  name = $:basis_name
+  molecule = $:monomer1
+)
+
+m2basis<GaussianBasisSet>: (
+  name = $:basis_name
+  molecule = $:monomer2
+)
+
+orthog_method = canonical
+
+etrain<ETraIn>: (
+  value_accuracy = 1e-9
+  scf12<CLHF>: (
+    molecule = $:dimer
+    basis = $:dbasis
+    memory = 16000000
+    orthog_method = $:orthog_method
+  )
+  scf1<CLHF>: (
+    molecule = $:monomer1
+    basis = $:m1basis
+    memory = 16000000
+    orthog_method = $:orthog_method
+  )
+  scf2<CLHF>: (
+    molecule = $:monomer2
+    basis = $:m2basis
+    memory = 16000000
+    orthog_method = $:orthog_method
+  )
+)

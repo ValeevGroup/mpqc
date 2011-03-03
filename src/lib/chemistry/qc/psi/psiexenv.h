@@ -38,7 +38,7 @@
 #include <libchkpt/chkpt.hpp>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 
 namespace sc {
 

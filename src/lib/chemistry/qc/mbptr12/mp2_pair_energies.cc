@@ -29,8 +29,8 @@
 
 #include <util/misc/regtime.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <math/mmisc/pairiter.h>
+#include <util/misc/print.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 
@@ -99,8 +99,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
 
   // Using spinorbital iterators means I don't take into account perm symmetry
   // More efficient algorithm will require generic code
-  SpinMOPairIter iter13(space1,space3,S);
-  SpinMOPairIter iter24(space2,space4,S);
+  SpinMOPairIter iter13(space1->rank(),space3->rank(),S);
+  SpinMOPairIter iter24(space2->rank(),space4->rank(),S);
 
   tform->compute();
   Ref<DistArray4> accum = tform->ints_acc();

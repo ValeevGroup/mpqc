@@ -34,7 +34,7 @@
 
 #include <stdexcept>
 #include <math/scmat/matrix.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 
 namespace sc {
   

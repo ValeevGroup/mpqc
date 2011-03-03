@@ -32,11 +32,11 @@
 #include <cmath>
 #include <ccfiles.h>
 #include <math/scmat/local.h>
-#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/lcao/utils.h>
 #include <math/scmat/blas.h>
-#include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
-#include <chemistry/qc/mbptr12/pairiter.impl.h>
+#include <util/misc/print.h>
+#include <chemistry/qc/lcao/utils.impl.h>
+#include <math/mmisc/pairiter.impl.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
 
 #define TEST_ViaT1 0

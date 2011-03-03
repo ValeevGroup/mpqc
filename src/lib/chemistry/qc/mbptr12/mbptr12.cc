@@ -38,10 +38,10 @@
 #include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
 
 using namespace std;
 using namespace sc;

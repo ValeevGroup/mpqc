@@ -43,17 +43,17 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 #include <math/scmat/blas.h>
-#include <chemistry/qc/mbptr12/distarray4.h>
+#include <math/distarray4/distarray4.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
+#include <util/misc/print.h>
 
 using namespace std;
 using namespace sc;
@@ -130,7 +130,7 @@ R12IntEval::compute_B_fX_()
       for(int f=0; f<num_f12; f++) {
         const int f_off = f*nxy;
 
-        SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
+        SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
         for(kl_iter.start(); kl_iter; kl_iter.next()) {
           const int kl = kl_iter.ij() + f_off;
           if (kl%ntasks != me)
@@ -141,7 +141,7 @@ R12IntEval::compute_B_fX_()
           for(int g=0; g<=f; g++) {
             const int g_off = g*nxy;
 
-            SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
+            SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
             for(ow_iter.start(); ow_iter; ow_iter.next()) {
               const int ow = ow_iter.ij() + g_off;
               const int o = ow_iter.i();

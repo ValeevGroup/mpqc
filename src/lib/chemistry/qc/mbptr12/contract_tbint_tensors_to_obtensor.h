@@ -33,11 +33,11 @@
 #define _chemistry_qc_mbptr12_contract_tbint_tensors_to_obtensor_h
 
 #include <cmath>
-#include <chemistry/qc/mbptr12/pairiter.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
+#include <math/mmisc/pairiter.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 
 
 namespace sc {

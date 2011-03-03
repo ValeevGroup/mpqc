@@ -40,11 +40,11 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
+#include <chemistry/qc/lcao/transform_factory.h>
 #include <chemistry/qc/mbptr12/ref.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
-#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
+#include <chemistry/qc/lcao/moints_runtime.h>
+#include <chemistry/qc/lcao/fockbuild_runtime.h>
 
 namespace sc {
 

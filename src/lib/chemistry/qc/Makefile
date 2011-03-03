@@ -33,7 +33,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(TOPDIR)/lib/Makedirlist
 
-SUBDIRS = basis oint3 intv3 wfn scf dft mbpt lmp2
+SUBDIRS = basis oint3 intv3 wfn lcao scf dft mbpt lmp2 etrain
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
 SUBDIRS := $(SUBDIRS) cc
 endif
@@ -44,7 +44,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
 SUBDIRS := $(SUBDIRS) libint2
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
-SUBDIRS := $(SUBDIRS) mbptr12 df
+SUBDIRS := $(SUBDIRS) mbptr12
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
 SUBDIRS := $(SUBDIRS) ccr12

@@ -32,7 +32,7 @@
 #define _chemistry_qc_psi_psici_h
 
 #include <chemistry/qc/psi/psiwfn.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 
 namespace sc {
 

@@ -42,7 +42,7 @@
 #endif
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 #include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
 using namespace std;

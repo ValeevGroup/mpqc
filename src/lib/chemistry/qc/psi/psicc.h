@@ -33,8 +33,8 @@
 #define _chemistry_qc_psi_psicc_h
 
 #include <chemistry/qc/psi/psiwfn.h>
-#include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/distarray4.h>
+#include <chemistry/qc/wfn/spin.h>
+#include <math/distarray4/distarray4.h>
 
 namespace sc {
   

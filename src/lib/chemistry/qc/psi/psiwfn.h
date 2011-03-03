@@ -35,8 +35,8 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/psi/psiexenv.h>
-#include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/wfn/spin.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 
 namespace sc {

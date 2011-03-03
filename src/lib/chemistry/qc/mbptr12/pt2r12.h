@@ -33,10 +33,10 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_pt2r12_h
 
 #include <chemistry/qc/wfn/wfn.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/rdm.h>
+#include <chemistry/qc/wfn/rdm.h>
 
 namespace sc {
 

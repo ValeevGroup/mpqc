@@ -34,10 +34,10 @@
 #include <ccfiles.h>
 #include <libdpd/dpd.h>
 
-#include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/pairiter.impl.h>
-#include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/distarray4_node0file.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
+#include <math/mmisc/pairiter.impl.h>
+#include <util/misc/print.h>
+#include <math/distarray4/distarray4_node0file.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
 

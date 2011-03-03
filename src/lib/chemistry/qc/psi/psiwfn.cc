@@ -51,13 +51,13 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/wfnworld.h>
-#include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <chemistry/qc/lcao/wfnworld.h>
+#include <chemistry/qc/wfn/spin.h>
+#include <util/misc/print.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
-#include <chemistry/qc/mbptr12/fockbuilder.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
+#include <chemistry/qc/lcao/fockbuilder.h>
 
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -65,7 +65,7 @@
 
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psiqtorder.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/scf/clscf.h>
 
 #include <libiwl/iwl.h>

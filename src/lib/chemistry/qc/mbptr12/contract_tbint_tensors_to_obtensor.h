@@ -260,11 +260,11 @@ namespace sc {
         const Ref<TwoBodyIntDescr>& intdescrb = tformb->intdescr();
         const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
-        Ref<DistArray4> accumb = tformb->ints_acc();
+        Ref<DistArray4> accumb = tformb->ints_distarray4();
         // if transforms have not been computed yet, compute
         if (accumb.null()) {
           tformb->compute();
-          accumb = tformb->ints_acc();
+          accumb = tformb->ints_distarray4();
         }
         accumb->activate();
 
@@ -275,10 +275,10 @@ namespace sc {
           const Ref<TwoBodyIntDescr>& intdescrk = tformk->intdescr();
           const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
 
-          Ref<DistArray4> accumk = tformk->ints_acc();
+          Ref<DistArray4> accumk = tformk->ints_distarray4();
           if (accumk.null()) {
             tformk->compute();
-            accumk = tformk->ints_acc();
+            accumk = tformk->ints_distarray4();
           }
           accumk->activate();
 

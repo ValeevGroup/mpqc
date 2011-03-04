@@ -274,7 +274,7 @@ class R12Technology: virtual public SavableState {
 
   };
 
-  /** NullCorrelationFactor stands for no correlation factor */
+  /** NullCorrelationFactor stands for no correlation factor; only for test */
   class NullCorrelationFactor : public CorrelationFactor {
     public:
     NullCorrelationFactor();
@@ -377,7 +377,7 @@ class R12Technology: virtual public SavableState {
   };
 
   /** G12NCCorrelationFactor stands for Gaussian geminals correlation factor,
-  usable with methods that do not require commutator integrals */
+  usable with methods that do not require commutator integrals; this is more for temporary tests or quick implementation. */
   class G12NCCorrelationFactor : public CorrelationFactor {
     public:
     /// Definitions of primitive and contracted Geminals

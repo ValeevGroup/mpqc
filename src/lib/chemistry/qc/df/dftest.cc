@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
                                          fbs, fbs);
 
     ixjy_tform->compute();
-    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_acc();
+    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_distarray4();
     ixjy_acc->activate();
 
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
                                          bs_space, bs_space);
 
     ixjy_tform->compute();
-    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_acc();
+    Ref<DistArray4> ixjy_acc = ixjy_tform->ints_distarray4();
     ixjy_acc->activate();
 
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;

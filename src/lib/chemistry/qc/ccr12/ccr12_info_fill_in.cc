@@ -243,7 +243,7 @@ CCR12_Info::compute_source_integrals_rhf() {
   Ref<TwoBodyMOIntsTransform> pppp_tform =
       r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
   pppp_tform->compute();
-  pppp_acc_[AlphaBeta] = pppp_tform->ints_acc();
+  pppp_acc_[AlphaBeta] = pppp_tform->ints_distarray4();
   pppp_acc_[AlphaBeta]->activate();
 
   // more integrals are needed for the (R12) calculations
@@ -276,7 +276,7 @@ CCR12_Info::compute_source_integrals_rhf() {
       Ref<TwoBodyMOIntsTransform> pppA_tform =
           r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
       pppA_tform->compute();
-      pppA_acc_[AlphaBeta] = pppA_tform->ints_acc();
+      pppA_acc_[AlphaBeta] = pppA_tform->ints_distarray4();
       pppA_acc_[AlphaBeta]->activate();
     }
 
@@ -295,7 +295,7 @@ CCR12_Info::compute_source_integrals_rhf() {
       Ref<TwoBodyMOIntsTransform> iiaA_tform =
         r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
       iiaA_tform->compute();
-      iiaA_acc_[AlphaBeta] = iiaA_tform->ints_acc();
+      iiaA_acc_[AlphaBeta] = iiaA_tform->ints_distarray4();
       iiaA_acc_[AlphaBeta]->activate();
     }
   } // (R12) contributions
@@ -486,7 +486,7 @@ CCR12_Info::compute_source_integrals_uhf() {
   Ref<TwoBodyMOIntsTransform> pppp_tform =
       r12world()->world()->moints_runtime()->runtime_4c()->get(tkey);
   pppp_tform->compute();
-  pppp_acc_[AlphaBeta] = pppp_tform->ints_acc();
+  pppp_acc_[AlphaBeta] = pppp_tform->ints_distarray4();
   pppp_acc_[AlphaBeta]->activate();
 
 }

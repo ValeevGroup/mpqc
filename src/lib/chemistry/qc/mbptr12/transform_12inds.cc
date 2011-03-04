@@ -92,7 +92,7 @@ TwoBodyMOIntsTransform_12Inds::run()
 {
   const Ref<MemoryGrp>& mem = tform_->mem();
   const Ref<MessageGrp>& msg = tform_->msg();
-  Ref<DistArray4> ints_acc = tform_->ints_acc();
+  Ref<DistArray4> ints_acc = tform_->ints_distarray4();
   const int me = msg->me();
   const int nproc = msg->n();
   const Ref<OrbitalSpace>& space1 = tform_->space1();

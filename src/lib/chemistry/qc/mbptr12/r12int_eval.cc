@@ -1436,7 +1436,6 @@ R12IntEval::h_P_P(SpinCase1 spin)
   return h_P_P_[s];
 }
 
-
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p(SpinCase1 S) {
   if (!spin_polarized() && S == Beta)
@@ -1453,8 +1452,11 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
   }
   return gamma_p_p_[S];
 }
+
+
+
 const Ref<OrbitalSpace>&
-R12IntEval::gamma_p_p() {
+R12IntEval::gamma_p_p_av() {
   assert(r12world()->spinadapted());
 
   if (gamma_p_p_[Alpha].null()) {
@@ -1462,12 +1464,13 @@ R12IntEval::gamma_p_p() {
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
     std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
     std::string name = "gamma-weighted space";
-    gamma_p_p_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(),
+    gamma_p_p_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm_av(),
                                      intspace->basis());
     this->orbital_registry()->add(make_keyspace_pair(gamma_p_p_[Alpha]));
   }
   return gamma_p_p_[Alpha];
 }
+
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
@@ -1502,6 +1505,22 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
     this->orbital_registry()->add(make_keyspace_pair(Fgamma_p_P_[S]));
   }
   return Fgamma_p_P_[S];
+}
+
+
+const Ref<OrbitalSpace>&
+R12IntEval::Fgamma_p_P() {
+  if(Fgamma_p_P_[Alpha].null()) {
+    const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
+    const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
+    RefSCMatrix F_i_e = fock(intspace,extspace,Alpha,1.0,1.0);
+    std::string id = extspace->id();  id += "_Fg(";  id += intspace->id();  id += ")";
+    std::string name = "Fgamma-weighted space";
+    Fgamma_p_P_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * F_i_e * this->ordm_av(),
+                                      intspace->basis());
+    this->orbital_registry()->add(make_keyspace_pair(Fgamma_p_P_[Alpha]));
+  }
+  return Fgamma_p_P_[Alpha];
 }
 
 Ref<OrbitalSpace> R12IntEval::obtensor_p_A(const RefSCMatrix &obtensor,SpinCase1 S) {
@@ -1666,6 +1685,24 @@ R12IntEval::F_m_P(SpinCase1 spin)
 	    null,
 	    extspace,intspace);
   return F_m_P_[s];
+}
+
+const Ref<OrbitalSpace>&
+R12IntEval::F_gg_P(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return F_gg_P(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  const Ref<OrbitalSpace>& extspace = ggspace(spin);
+  const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
+  Ref<OrbitalSpace> null;
+  f_bra_ket(spin,true,false,false,
+        F_gg_P_[s],
+        null,
+        null,
+        extspace,intspace);
+  return F_gg_P_[s];
 }
 
 const Ref<OrbitalSpace>&
@@ -2189,7 +2226,10 @@ R12IntEval::compute()
             compute_BC_();
           }
           else {
-            compute_BC_GenRefansatz2_();
+            if(r12world_->spinadapted())
+                compute_BC_GenRefansatz2_spinfree();
+            else
+                compute_BC_GenRefansatz2_();
           }
         }
         if (debug_ >= DefaultPrintThresholds::O4)
@@ -2414,6 +2454,24 @@ R12IntEval::ordm() const {
   ordm_[Alpha].accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
   return ordm_[Alpha];
 }
+
+
+
+RefSymmSCMatrix
+R12IntEval::ordm_av() const {
+  assert(r12world()->spinadapted());
+  RefSymmSCMatrix ordm_av = r12world()->ref()->ordm_orbs_sb(Alpha).copy();
+  ordm_av.accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+  ordm_av.scale(0.5);
+  return ordm_av;
+//  RefSymmSCMatrix adm = r12world()->ref()->ordm_orbs_sb(Alpha);
+//  adm.accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+//  adm.scale(0.5);
+//  ordm_[Alpha] = adm;
+//  return ordm_[Alpha] ;
+}
+
+
 bool
 R12IntEval::bc() const {
   Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->ref();
@@ -2635,6 +2693,7 @@ R12IntEval::J_x_p(SpinCase1 S)
 }
 
 
+
 namespace {
   /// Convert 2 spaces to SpinCase2
     SpinCase2
@@ -2737,6 +2796,8 @@ R12IntEval::spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::strin
     }
   }
 }
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 

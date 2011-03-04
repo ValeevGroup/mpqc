@@ -91,7 +91,7 @@ RefSCMatrix R12IntEval::exchange_(const SpinCase1 &spin, const Ref<OrbitalSpace>
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> rpsq_tform = tfactory->twobody_transform_13("(pr|qs)");
   rpsq_tform->compute();
-  Ref<DistArray4> rpsq_acc = rpsq_tform->ints_acc();
+  Ref<DistArray4> rpsq_acc = rpsq_tform->ints_distarray4();
 
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
@@ -180,7 +180,7 @@ R12IntEval::exchange_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
   mxny_tform->compute();
-  Ref<DistArray4> mnxy_acc = mxny_tform->ints_acc();
+  Ref<DistArray4> mnxy_acc = mxny_tform->ints_distarray4();
   mnxy_acc->activate();
 
   const int nocc = occ_space->rank();

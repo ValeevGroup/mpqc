@@ -34,6 +34,8 @@
 #include <chemistry/qc/mbptr12/orbitalspace_utils.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
+#include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/container.h>
 
 using namespace std;
 using namespace sc;
@@ -787,7 +789,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
                                                                                    std::string(TwoBodyIntLayout::b1b2_k1k2));
         Ref<TwoBodyMOIntsTransform> tform_b1k1_b2k2 = this->r12world()->world()->moints_runtime4()->get( tform_b1k1_b2k2_key );
         tform_b1k1_b2k2->compute();
-        da4_b1k1_b2k2 = tform_b1k1_b2k2->ints_acc();
+        da4_b1k1_b2k2 = tform_b1k1_b2k2->ints_distarray4();
       }
       da4_b1k1_b2k2->activate();
 
@@ -802,7 +804,7 @@ RefSCMatrix PT2R12::g(SpinCase2 pairspin,
                                                                                    std::string(TwoBodyIntLayout::b1b2_k1k2));
         Ref<TwoBodyMOIntsTransform> tform_b2k1_b1k2 = this->r12world()->world()->moints_runtime4()->get( tform_b2k1_b1k2_key );
         tform_b2k1_b1k2->compute();
-        da4_b2k1_b1k2 = tform_b2k1_b1k2->ints_acc();
+        da4_b2k1_b1k2 = tform_b2k1_b1k2->ints_distarray4();
         da4_b2k1_b1k2->activate();
       }
 
@@ -975,6 +977,18 @@ RefSymmSCMatrix PT2R12::X_transformed_by_C(SpinCase2 pairspin) {
 
   return(XT);
 }
+
+
+RefSymmSCMatrix PT2R12::X_transformed_by_C() {
+  RefSCMatrix T = C(AlphaBeta);
+  RefSymmSCMatrix X = r12eval_->X();
+  RefSCDimension transformed_dim = T.coldim();
+  RefSymmSCMatrix XT = T.kit()->symmmatrix(transformed_dim);
+  XT.assign(0.0);
+  XT.accumulate_transform(T, X, SCMatrix::TransposeTransform);
+  return(XT);
+}
+
 
 RefSymmSCMatrix PT2R12::B_transformed_by_C(SpinCase2 pairspin) {
   RefSymmSCMatrix B = r12eval_->B(pairspin);
@@ -1243,6 +1257,42 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
   return phi;
 }
 
+
+
+//
+RefSCMatrix PT2R12::X_term_T_Gamma_F_T() {
+  const Ref<OrbitalSpace> & gg_space = r12eval_->ggspace(Alpha);
+  const Ref<OrbitalSpace> & GG_space = r12eval_->ggspace(Alpha);
+  const int dimg = gg_space->dim()->n();
+  const int dimG = GG_space->dim()->n();
+  RefSCMatrix F_gg  = r12eval_->fock(gg_space,gg_space,Alpha);
+  RefSymmSCMatrix tpdm =  rdm2_sf();
+  RefSCMatrix T = this->C(AlphaBeta); // (dim_GG, dim_gg)
+  Ref<LocalSCMatrixKit> lmk = new LocalSCMatrixKit();
+  RefSCMatrix GammaF = lmk->matrix(r12eval_->dim_gg(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
+  for (int r = 0; r < dimg; ++r)
+  {
+      for (int s = 0; s < dimg; ++s)
+      {
+          const int rowind = r*dimg + s;
+          for (int v = 0; v < dimg; ++v)
+          {
+              for (int w = 0; w < dimg; ++w)
+              {
+                  const int colind = v*dimg + w;
+                  double rsvw = 0.0;
+                  for (int x = 0; x < dimg; ++x)
+                  {
+                      rsvw += tpdm(rowind, v*dimg + x) * F_gg(x, w);
+                  }
+                  GammaF(rowind, colind) = rsvw;
+              }
+          }
+      }
+  }
+  return T*GammaF*(T.t());
+}
+
 double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
   const int nelectron = reference_->nelectron();
   SpinCase1 spin1 = case1(pairspin);
@@ -1277,6 +1327,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
   Ref<OrbitalSpace> gg2space = r12eval_->ggspace(spin2);
 
+
   RefSymmSCMatrix TBT = B_transformed_by_C(pairspin);
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
   RefSCMatrix TBT_tpdm = TBT*tpdm;
@@ -1294,20 +1345,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   TBT=0;
   tpdm=0;
 
-  RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
-  RefSymmSCMatrix Phi = phi_gg(pairspin);
-  RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
-  HylleraasMatrix.accumulate(TXT_t_Phi);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
-    TXT.print(prepend_spincase(pairspin,"TXT").c_str());
-    TXT_t_Phi.print(prepend_spincase(pairspin,"-TXTf").c_str());
-  }
-  TXT=0;
-  Phi=0;
-  TXT_t_Phi=0;
-#if 0
-  HylleraasMatrix.assign(0.0);
-#endif
+
 
   RefSCMatrix V_genref = V_genref_projector2(pairspin);
   RefSCMatrix T = C(pairspin);
@@ -1321,12 +1359,30 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   T=0;
   V_genref=0;
 
+
+#if 1
+  HylleraasMatrix.assign(0.0);
+#endif
+
+
+
+  RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
+  RefSymmSCMatrix Phi = phi_gg(pairspin);
+  RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
+  HylleraasMatrix.accumulate(TXT_t_Phi);
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+    TXT.print(prepend_spincase(pairspin,"TXT").c_str());
+    TXT_t_Phi.print(prepend_spincase(pairspin,"-TXTf").c_str());
+  }
+  TXT=0;
+  Phi=0;
+  TXT_t_Phi=0;
+
   const double energy = this->compute_energy(HylleraasMatrix, pairspin);
   return(energy);
 }
 
 double PT2R12::energy_PT2R12_projector2_spinfree() {
-
   // 2*V*T constribution
   ExEnv::out0() << indent << "in spin free code" << std::endl;
   RefSCMatrix V_genref = V_genref_projector2();
@@ -1336,26 +1392,41 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   T=0;
   V_genref=0;
 
+
+  // X contributions
+  RefSCMatrix TGFT = X_term_T_Gamma_F_T();
+  TGFT.scale(-1.0);
+  HylleraasMatrix.accumulate(TGFT * r12eval_->X());
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+    TGFT.print(prepend_spincase(AlphaBeta,"TGFT").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"TGFT*X").c_str());
+  }
+
+
+  // B contribution
+  RefSCMatrix TBTG = (T*r12eval_->B())*T*(rdm2_sf());
+  TBTG.scale(0.5);
+  HylleraasMatrix.accumulate(TBTG);
+
+
+  // the last messy term
+  HylleraasMatrix.accumulate(sf_B_contrib_nonfactorizable_part());
+
+//#if 0
+//  HylleraasMatrix.assign(0.0)
+//#endif
+
   const double energy = this->compute_energy(HylleraasMatrix, AlphaBeta);
   return(energy);
 }
 
-double sc::PT2R12::sf_V_contrib()
+
+
+
+
+RefSCMatrix sc::PT2R12::sf_B_contrib_nonfactorizable_part()
 {
-
-}
-
-
-double sc::PT2R12::sf_B_contrib_factorizable_part()
-{
-  return 0.0;
-  //throw FeatureNotImplemented("to be implemented");
-}
-
-double sc::PT2R12::sf_B_contrib_nonfactorizable_part()
-{
-  return 0.0;
-  //throw FeatureNotImplemented("to be implemented");
+  return 0;
 }
 
 RefSymmSCMatrix sc::PT2R12::rdm1_sf()

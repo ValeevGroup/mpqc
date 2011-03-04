@@ -674,7 +674,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
       // at this point V(diag) is only spatial integrals
       V.push_back(
                   extract(
-                          tform->ints_acc(),
+                          tform->ints_distarray4(),
                           tform->intdescr()->intset(
                                                     corrfactor()->tbint_type_f12eri())));
 
@@ -1148,7 +1148,7 @@ sc::A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval) {
     Ref<TwoBodyMOIntsTransform> tform =
         r12eval->moints_runtime4()->get(tform4f_keys[t]);
     tform->compute();
-    A.push_back(extract(tform->ints_acc(),
+    A.push_back(extract(tform->ints_distarray4(),
                         tform->intdescr()->intset(r12eval->corrfactor()->tbint_type_f12()),
                         pfac));
     // transform computes spatial integrals -- antisymmetrize if necessary
@@ -1174,7 +1174,7 @@ sc::A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval) {
       Ref<TwoBodyMOIntsTransform> tform =
           r12eval->moints_runtime4()->get(tform4f_keys[t]);
       tform->compute();
-      Ref<DistArray4> A_2 = extract(tform->ints_acc(),
+      Ref<DistArray4> A_2 = extract(tform->ints_distarray4(),
                                     tform->intdescr()->intset(r12eval->corrfactor()->tbint_type_f12()));
       axpy(A_2, 1.0, A[t]);
     }

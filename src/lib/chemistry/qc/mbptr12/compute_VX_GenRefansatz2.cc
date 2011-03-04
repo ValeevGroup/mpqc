@@ -38,10 +38,10 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     return;
 
   Ref<R12IntEval> thisref(this);
-  Timer timer("General reference VXB intermediate evaluator");
+  Timer timer("General reference VX intermediate evaluator");
 
   if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_2) {
-    throw InputError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
+    throw InputError("R12IntEval::contrib_to_VX_GenRefansatz2_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
   }
 
   for(int s=0; s<nspincases2(); s++) {
@@ -67,7 +67,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     const bool orbs1_eq_orbs2 = (orbs1==orbs2);
 
     if(gg1_eq_gg2 ^ GG1_eq_GG2) {
-      throw ProgrammingError("R12IntEval::contrib_to_VXB_GenRefansatz2_() -- gg1 and gg2 space must be of the same structure as GG1 and GG2 space",__FILE__,__LINE__);
+      throw ProgrammingError("R12IntEval::contrib_to_VX_GenRefansatz2_() -- gg1 and gg2 space must be of the same structure as GG1 and GG2 space",__FILE__,__LINE__);
     }
 
     // are particles 1 and 2 equivalent?
@@ -120,9 +120,9 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
            spincase2!=AlphaBeta, tforms_f12, tforms);
     }
     if (debug_ >= DefaultPrintThresholds::O4) {
-      if (!antisymmetrize && part1_equiv_part2) {
-          symmetrize<false>(V_[s],V_[s],GG1_space,gg1_space);
-      }
+//      if (!antisymmetrize && part1_equiv_part2) {
+//          symmetrize<false>(V_[s],V_[s],GG1_space,gg1_space);
+//      }
       V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
     }
 
@@ -201,6 +201,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
 
     Timer Xtimer("General reference X intermediate evaluator");
 
+
     { /// OBS Term
       std::vector<std::string> tforms_f12;
       {
@@ -218,13 +219,15 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
            GG1_space, GG2_space, orbs1, orbs2,
            spincase2!=AlphaBeta, tforms_f12, tforms_f12);
 
-      if (debug_ >= DefaultPrintThresholds::O4) {
-        if (!antisymmetrize && part1_equiv_part2) {
-            symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
-        }
-        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
+
+      if (s == 0 && (debug_ >= DefaultPrintThresholds::O4)) {
+//        if (!antisymmetrize && part1_equiv_part2) {
+//            symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
+//        }
+        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution 1").c_str());
       }
     }
+
     { /// CABS Term
       Ref<OrbitalSpace> gamma_p_p1;
       Ref<OrbitalSpace> gamma_p_p2;
@@ -257,6 +260,9 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
            orbs1,cabs2,
            spincase2!=AlphaBeta,tforms_bra_f12,tforms_ket_f12
            );
+      if (s == AlphaBeta && (debug_ >= DefaultPrintThresholds::O4)) {
+          X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) final contribution").c_str());
+      }
       if(spincase2==AlphaBeta) {
         std::vector<std::string> tforms_bra_f12;
         {
@@ -290,8 +296,8 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     if (!antisymmetrize && part1_equiv_part2) {
         symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
     }
-    if (debug_ >= DefaultPrintThresholds::O4) {
-        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
+    if (s == AlphaBeta && (debug_ >= DefaultPrintThresholds::O4)) {
+        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) final contribution").c_str());
     }
 
     Xtimer.exit();
@@ -299,6 +305,9 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
 
   timer.exit();
 }
+
+
+
 
 void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
   if (evaluated_)
@@ -317,6 +326,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     const Ref<OrbitalSpace>& orbs = this->orbs(Alpha);
     const Ref<OrbitalSpace>& GG_space = GGspace(Alpha);
     const Ref<OrbitalSpace>& cabs = r12world()->cabs_space(Alpha);
+    const Ref<OrbitalSpace>& g_p_p_av = gamma_p_p_av(); //'p' menas obs; 'A': cabs; 'P': cbs
 
     // some transforms can be skipped if gg is a subset of GG
     // for now it's always true since can only use pq products to generate geminals
@@ -369,12 +379,11 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     // V_{p_2 p_3}^{r s} -= g^{q_3 \alpha'}_{p_2 p_3} \gamma^{q_2}_{q_3} r^{r s}_{q_2 \alpha'}
     //
     {
-      Ref<OrbitalSpace> g_p_p = gamma_p_p();
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tform_creator(
                             moints_runtime4(),
-                            GG_space,g_p_p,GG_space,cabs,
+                            GG_space,g_p_p_av,GG_space,cabs,
                             corrfactor(),true
                             );
         fill_container(tform_creator,tforms_f12);
@@ -389,9 +398,9 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
       }
       contract_tbint_tensor<true,false>(
           V_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-          -1.0,
+          -2.0,
           GG_space, GG_space,
-          g_p_p,cabs,
+          g_p_p_av,cabs,
           gg_space, gg_space,
           orbs,cabs,
           false, tforms_f12, tforms);
@@ -404,104 +413,115 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
 
     Vtimer.exit();
 
-#if 0
+
+
     Timer Xtimer("General reference X intermediate evaluator");
+
 
     { /// OBS Term
       std::vector<std::string> tforms_f12;
       {
         R12TwoBodyIntKeyCreator tform_creator(
                             moints_runtime4(),
-                            GG1_space,orbs1,GG2_space,orbs2,
+                            GG_space,orbs,GG_space,orbs,
                             corrfactor(),true
                             );
         fill_container(tform_creator,tforms_f12);
       }
       contract_tbint_tensor<true,true>
-          (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+          (X_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
            -1.0,
-           GG1_space, GG2_space, orbs1, orbs2,
-           GG1_space, GG2_space, orbs1, orbs2,
-           spincase2!=AlphaBeta, tforms_f12, tforms_f12);
+           GG_space, GG_space, orbs, orbs,
+           GG_space, GG_space, orbs, orbs,
+           false, tforms_f12, tforms_f12);
 
-      if (debug_ >= DefaultPrintThresholds::O4) {
-        if (!antisymmetrize && part1_equiv_part2) {
-            symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
-        }
-        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
+      if (debug_ >= DefaultPrintThresholds::O4)
+      {
+        //      if (!antisymmetrize && part1_equiv_part2) {
+        //          symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
+        //      }
+        X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS) contribution 1").c_str());
       }
     }
-    { /// CABS Term
-      Ref<OrbitalSpace> gamma_p_p1;
-      Ref<OrbitalSpace> gamma_p_p2;
-      gamma_p_p1 = gamma_p_p(spin1);
-      gamma_p_p2 = gamma_p_p(spin2);
-      std::vector<std::string> tforms_bra_f12;
-      {
-        R12TwoBodyIntKeyCreator tform_creator(
-                            moints_runtime4(),
-                            GG1_space,gamma_p_p1,GG2_space,cabs2,
-                            corrfactor(),true
-                            );
-        fill_container(tform_creator,tforms_bra_f12);
-      }
-      std::vector<std::string> tforms_ket_f12;
-      {
-        R12TwoBodyIntKeyCreator tform_creator(
-                            moints_runtime4(),
-                            GG1_space,orbs1,GG2_space,cabs2,
-                            corrfactor(),true
-                            );
-        fill_container(tform_creator,tforms_ket_f12);
-      }
-      contract_tbint_tensor<true,true>
-          (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-           -1.0,
-           GG1_space, GG2_space,
-           gamma_p_p1,cabs2,
-           GG1_space, GG2_space,
-           orbs1,cabs2,
-           spincase2!=AlphaBeta,tforms_bra_f12,tforms_ket_f12
-           );
-      if(spincase2==AlphaBeta) {
+
+
+    { /// first CABS Term
         std::vector<std::string> tforms_bra_f12;
         {
           R12TwoBodyIntKeyCreator tform_creator(
                               moints_runtime4(),
-                              GG1_space,cabs1,GG2_space,gamma_p_p2,
+                              GG_space,g_p_p_av,GG_space,cabs,
                               corrfactor(),true
                               );
           fill_container(tform_creator,tforms_bra_f12);
         }
+
         std::vector<std::string> tforms_ket_f12;
         {
           R12TwoBodyIntKeyCreator tform_creator(
                               moints_runtime4(),
-                              GG1_space,cabs1,GG2_space,orbs2,
+                              GG_space,orbs,GG_space,cabs,
                               corrfactor(),true
                               );
           fill_container(tform_creator,tforms_ket_f12);
         }
+
         contract_tbint_tensor<true,true>
-            (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+            (X_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
              -1.0,
-             GG1_space, GG2_space,
-             cabs1,gamma_p_p2,
-             GG1_space, GG2_space,
-             cabs1,orbs2,
-             spincase2!=AlphaBeta,tforms_bra_f12,tforms_ket_f12);
-      }
+             GG_space, GG_space,
+             g_p_p_av,cabs,
+             GG_space, GG_space,
+             orbs,cabs,
+             false,tforms_bra_f12,tforms_ket_f12
+             );
+        if (debug_ >= DefaultPrintThresholds::O4 )
+        {
+            X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
+        }
     }
 
-    if (!antisymmetrize && part1_equiv_part2) {
-        symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
+
+    { /// second CABS Term
+        std::vector<std::string> tforms_bra_f12;
+        {
+          R12TwoBodyIntKeyCreator tform_creator(
+                              moints_runtime4(),
+                              GG_space,cabs,GG_space,g_p_p_av,
+                              corrfactor(),true
+                              );
+          fill_container(tform_creator,tforms_bra_f12);
+        }
+
+        std::vector<std::string> tforms_ket_f12;
+        {
+          R12TwoBodyIntKeyCreator tform_creator(
+                              moints_runtime4(),
+                              GG_space,cabs,GG_space,orbs,
+                              corrfactor(),true
+                              );
+          fill_container(tform_creator,tforms_ket_f12);
+        }
+
+        contract_tbint_tensor<true,true>
+            (X_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
+             -1.0,
+             GG_space, GG_space,
+             cabs,g_p_p_av,
+             GG_space, GG_space,
+             cabs, orbs,
+             false,tforms_bra_f12,tforms_ket_f12);
+
     }
-    if (debug_ >= DefaultPrintThresholds::O4) {
-        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
+
+        symmetrize<false>(X_[AlphaBeta],X_[AlphaBeta],GG_space,GG_space);
+
+    if (debug_ >= DefaultPrintThresholds::O4)
+    {
+        X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
     }
 
     Xtimer.exit();
-#endif
 
   timer.exit();
 }

@@ -220,9 +220,9 @@ TwoBodyMOIntsTransform_iRjS::compute()
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
     Timer tim_mostore("MO ints store");
-    ints_acc_->activate();
-    detail::store_memorygrp(ints_acc_,mem_,restart_orbital_,ni,memgrp_blocksize);
-    if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+    ints_da4_->activate();
+    detail::store_memorygrp(ints_da4_,mem_,restart_orbital_,ni,memgrp_blocksize);
+    if (ints_da4_->data_persistent()) ints_da4_->deactivate();
     // if didn't throw can safely update the counter
     restart_orbital_ += ni;
     tim_mostore.exit();
@@ -255,7 +255,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
 #if DEBUG
         {
           ExEnv::out0() << indent << "TwoBodyMOIntsTransform_iRjS: name = " << this->name() << endl;
-          ints_acc_->activate();
+          ints_da4_->activate();
           for(int te_type=0; te_type<num_te_types(); ++te_type) {
             for(int i=0; i<rank1; ++i) {
               for(int j=0; j<rank3; ++j) {
@@ -264,22 +264,22 @@ TwoBodyMOIntsTransform_iRjS::compute()
                 RefSCMatrix yx_buf_mat = kit->matrix(new SCDimension(rank4),
                                                      new SCDimension(rank2));
 
-                const double* yx_buf = ints_acc_->retrieve_pair_block(i, j, te_type);
+                const double* yx_buf = ints_da4_->retrieve_pair_block(i, j, te_type);
                 yx_buf_mat.assign(yx_buf);
                 yx_buf_mat.print("block");
-                ints_acc_->release_pair_block(i, j, te_type);
+                ints_da4_->release_pair_block(i, j, te_type);
 
               }
             }
           }
-          if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+          if (ints_da4_->data_persistent()) ints_da4_->deactivate();
         }
 #endif
 
   print_footer();
 
-  // memory used by MemoryGrp can now be purged unless ints_acc_ uses it
-  if (ints_acc_->data_persistent()) dealloc_mem();
+  // memory used by MemoryGrp can now be purged unless ints_da4_ uses it
+  if (ints_da4_->data_persistent()) dealloc_mem();
 
 }
 

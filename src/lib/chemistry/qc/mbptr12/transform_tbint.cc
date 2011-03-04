@@ -87,7 +87,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 {
   si.get(name_);
   factory_ << SavableState::restore_state(si);
-  ints_acc_ << SavableState::restore_state(si);
+  ints_da4_ << SavableState::restore_state(si);
 
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
@@ -114,7 +114,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 {
   so.put(name_);
   SavableState::save_state(factory_.pointer(),so);
-  SavableState::save_state(ints_acc_.pointer(),so);
+  SavableState::save_state(ints_da4_.pointer(),so);
 
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
@@ -140,9 +140,9 @@ const Ref<TwoBodyIntDescr>&
 TwoBodyMOIntsTransform::intdescr() const { return tbintdescr_; }
 
 const Ref<DistArray4>&
-TwoBodyMOIntsTransform::ints_acc() {
+TwoBodyMOIntsTransform::ints_distarray4() {
   init_acc();
-  return ints_acc_;
+  return ints_da4_;
 }
 
 void
@@ -277,7 +277,7 @@ TwoBodyMOIntsTransform::init_vars()
   // DistArray4 object will either use none or all of the dynamical memory
   // this will call init_acc() implicitly
   const size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
-  if (!ints_acc()->data_persistent()) { // data is held in memory
+  if (!ints_distarray4()->data_persistent()) { // data is held in memory
     memory_ = static_memory_ + mem_dyn;
     peak_memory_ = memory_;
   }
@@ -290,8 +290,8 @@ TwoBodyMOIntsTransform::init_vars()
 void
 TwoBodyMOIntsTransform::reinit_acc()
 {
-  if (ints_acc_.nonnull())
-    ints_acc_ = 0;
+  if (ints_da4_.nonnull())
+    ints_da4_ = 0;
   init_acc();
 }
 

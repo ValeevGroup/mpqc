@@ -87,7 +87,7 @@ RefSCMatrix R12IntEval::coulomb_(const SpinCase1 &spin, const Ref<OrbitalSpace>&
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> rspq_tform = tfactory->twobody_transform_12("(pq|rs)");
   rspq_tform->compute();
-  Ref<DistArray4> rspq_acc = rspq_tform->ints_acc();
+  Ref<DistArray4> rspq_acc = rspq_tform->ints_distarray4();
   //double* J_pq = new double[nbraket];
   //memset(J_xy,0,nbraket*sizeof(double));
 
@@ -178,7 +178,7 @@ R12IntEval::coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> mnxy_tform = tfactory->twobody_transform_12("(mn|xy)");
   mnxy_tform->compute();
-  Ref<DistArray4> mnxy_acc = mnxy_tform->ints_acc();
+  Ref<DistArray4> mnxy_acc = mnxy_tform->ints_distarray4();
   mnxy_acc->activate();
 
   const int nocc = occ_space->rank();

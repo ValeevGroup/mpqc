@@ -289,7 +289,7 @@ namespace sc {
         const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
         tformb->compute();
-        Ref<DistArray4> accumb = tformb->ints_acc();
+        Ref<DistArray4> accumb = tformb->ints_distarray4();
         accumb->activate();
 
         unsigned int fketoffset = 0;
@@ -300,7 +300,7 @@ namespace sc {
           const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
 
           tformk->compute();
-          Ref<DistArray4> accumk = tformk->ints_acc();
+          Ref<DistArray4> accumk = tformk->ints_distarray4();
           accumk->activate();
 
           if (debug_ >= DefaultPrintThresholds::diagnostics) {
@@ -729,7 +729,7 @@ namespace sc {
             DistArray4Dimensions dims(1, space1_bra->rank(),
                                       space2_bra->rank(), space1_ket->rank(),
                                       space2_ket->rank());
-            Ref<DistArray4> result = transforms_bra[0]->ints_acc()->clone(dims);
+            Ref<DistArray4> result = transforms_bra[0]->ints_distarray4()->clone(dims);
             results.push_back(result);
           }
         }
@@ -815,7 +815,7 @@ namespace sc {
       const unsigned int intsetidx_bra = intdescrb->intset(tbint_type_bra);
 
       tformb->compute();
-      Ref<DistArray4> accumb = tformb->ints_acc();
+      Ref<DistArray4> accumb = tformb->ints_distarray4();
 
       unsigned int fketoffset = 0;
       for (unsigned int fket = 0; fket < nketsets; ++fket, ++fbraket) {
@@ -824,7 +824,7 @@ namespace sc {
           const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
 
           tformk->compute();
-          Ref<DistArray4> accumk = tformk->ints_acc();
+          Ref<DistArray4> accumk = tformk->ints_distarray4();
 
 
           if (debug_ >= DefaultPrintThresholds::diagnostics) {

@@ -125,7 +125,6 @@ namespace sc {
       RefSCMatrix C(SpinCase2 S);
 
       RefSCMatrix V_genref_projector2(SpinCase2 pairspin);
-      RefSCMatrix V_genref_projector2();
       RefSCMatrix V_transformed_by_C(SpinCase2 pairspin);
       RefSymmSCMatrix X_transformed_by_C(SpinCase2 pairspin);
       RefSymmSCMatrix B_transformed_by_C(SpinCase2 pairspin);
@@ -136,11 +135,13 @@ namespace sc {
       double energy_PT2R12_projector1(SpinCase2 pairspin);
       double energy_PT2R12_projector2(SpinCase2 pairspin);
 
-      /** for spin-adapted [2]R12, we separate the contributions into 3 parts: V contribution + the factorizable part of B and the nonfactorizable part of B */
+      /** methods for spin-free algorithm */
       double energy_PT2R12_projector2_spinfree();
-      double sf_V_contrib();
-      double sf_B_contrib_factorizable_part();
-      double sf_B_contrib_nonfactorizable_part();
+      RefSCMatrix V_genref_projector2();
+      /** computes t^pq_rs * Gamma^rs_vx * f^x_w * t^vw_tu; */
+      RefSCMatrix X_term_T_Gamma_F_T();
+      RefSymmSCMatrix X_transformed_by_C();
+      RefSCMatrix sf_B_contrib_nonfactorizable_part();
 
       // TODO reimplement using native spin-free densities from Psi3
       RefSymmSCMatrix rdm1_sf();  // return spin-free 1/2 rdm

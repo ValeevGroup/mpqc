@@ -114,7 +114,7 @@ TwoBodyMOIntsTransform_iRjS::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_iRjS::init_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_da4_.nonnull())
     return;
 
   const int nij = compute_nij(batchsize_, space4()->rank(), msg_->n(), msg_->me());
@@ -132,7 +132,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
@@ -145,7 +145,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
@@ -155,7 +155,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_da4_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1()->rank(), space3()->rank(),
                                          space2()->rank(), space4()->rank(),
                                          DistArray4Storage_YX);
@@ -167,7 +167,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     if (npass_ == 1 && !factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1()->rank(), space3()->rank(),
                                            space2()->rank(), space4()->rank(),
                                            memgrp_blksize(),
@@ -177,7 +177,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
     // else use the next case
 
   case MOIntsTransform::StoreMethod::mpi:
-    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_da4_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1()->rank(), space3()->rank(),
                                              space2()->rank(), space4()->rank(),
                                              DistArray4Storage_YX);

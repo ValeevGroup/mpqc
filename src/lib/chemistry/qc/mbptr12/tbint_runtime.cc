@@ -585,7 +585,7 @@ TwoBodyMOIntsRuntime<4>::create_eval(const std::string& key)
 
       if (evals_->key_exists(half_tform_key)) { // partially tformed integrals exist, use them
         tform = factory()->twobody_transform(MOIntsTransform::TwoBodyTransformType_ixjy,key,descr);
-        tform->partially_transformed_ints( evals_->value(half_tform_key)->ints_acc() );
+        tform->partially_transformed_ints( evals_->value(half_tform_key)->ints_distarray4() );
       }
 #if ALWAYS_USE_PARTIAL_TRANSFORMS
       else if (factory()->df_info() == 0) { // if not doing density-fitting create partial transform and use it

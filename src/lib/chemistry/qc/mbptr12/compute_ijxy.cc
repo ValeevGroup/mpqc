@@ -436,9 +436,9 @@ TwoBodyMOIntsTransform_ijxy::compute()
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
     Timer tim_intstore("MO ints store");
-    ints_acc_->activate();
-    detail::store_memorygrp(ints_acc_,mem_,restart_orbital_,ni,memgrp_blocksize);
-    if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+    ints_da4_->activate();
+    detail::store_memorygrp(ints_da4_,mem_,restart_orbital_,ni,memgrp_blocksize);
+    if (ints_da4_->data_persistent()) ints_da4_->deactivate();
     // if didn't throw can safely update the counter
     restart_orbital_ += ni;
     tim_intstore.exit();
@@ -477,8 +477,8 @@ TwoBodyMOIntsTransform_ijxy::compute()
   ExEnv::out0() << "none" << endl;
 #endif
 
-  // memory used by MemoryGrp can now be purged unless ints_acc_ uses it
-  if (ints_acc_->data_persistent()) dealloc_mem();
+  // memory used by MemoryGrp can now be purged unless ints_da4_ uses it
+  if (ints_da4_->data_persistent()) dealloc_mem();
 
 }
 

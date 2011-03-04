@@ -146,6 +146,7 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> F_m_a_[NSpinCases1];
   Ref<OrbitalSpace> F_m_p_[NSpinCases1];
   Ref<OrbitalSpace> F_m_P_[NSpinCases1];
+  Ref<OrbitalSpace> F_gg_P_[NSpinCases1];
   Ref<OrbitalSpace> F_m_A_[NSpinCases1];
   Ref<OrbitalSpace> F_i_A_[NSpinCases1];
   Ref<OrbitalSpace> F_i_m_[NSpinCases1];
@@ -536,6 +537,8 @@ class R12IntEval : virtual public SavableState {
   void compute_BC_();
   void compute_BC_ansatz1_();
   void compute_BC_GenRefansatz2_();
+  void compute_BC_GenRefansatz2_spinfree();
+
 
   /** Compute B using standard approximation C' */
   void compute_BCp_();
@@ -711,7 +714,8 @@ public:
   RefSymmSCMatrix ordm(SpinCase1 S) const;
   /// Returns the total 1-RDM in the ``MO'' basis (i.e. that provided by orbs() )
   RefSymmSCMatrix ordm() const;
-
+  /// Returns the average 1-RDM in the ``MO'' basis (i.e. that provided by orbs() ): (alpha-rdm1 + beta-rdm2)/2
+  RefSymmSCMatrix ordm_av() const;
   /// Form <P|h+J|x> space
   const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
   /// Form <A|h+J|x> space
@@ -820,6 +824,8 @@ public:
   const Ref<OrbitalSpace>& F_m_p(SpinCase1 S);
   /// Form <P|F|m> space
   const Ref<OrbitalSpace>& F_m_P(SpinCase1 S);
+  /// Form <P|F|gg> space
+  const Ref<OrbitalSpace>& F_gg_P(SpinCase1 S);
   /// Form <A|F|m> space
   const Ref<OrbitalSpace>& F_m_A(SpinCase1 S);
   /// Form <a|F|a> space
@@ -853,12 +859,14 @@ public:
 
   /// Form <p|gamma|p> space
   const Ref<OrbitalSpace>& gamma_p_p(SpinCase1 S);
-  /// Form spin-free <p|gamma|p> space. Same as above, just uses full density
-  const Ref<OrbitalSpace>& gamma_p_p();
+  /// Form spin-average <p|gamma|p> space using average (instead of total) rdm.
+    const Ref<OrbitalSpace>& gamma_p_p_av();
   /// Form <p|gammaFgamma|p> space
   const Ref<OrbitalSpace>& gammaFgamma_p_p(SpinCase1 S);
   /// Form <P|Fgamma|p> space
   const Ref<OrbitalSpace>& Fgamma_p_P(SpinCase1 S);
+  /// Form <P|Fgamma|p> space using spin-average rdm1
+  const Ref<OrbitalSpace>& Fgamma_p_P();
 //  const Ref<OrbitalSpace>& Fgamma_P_p(SpinCase1 S,const RefSymmSCMatrix &gamma,Ref<OrbitalSpace>& FGamma);
 //  const Ref<OrbitalSpace>& gammaF_p_P(SpinCase1 S,const RefSymmSCMatrix &gamma,Ref<OrbitalSpace>& GammaF);
   /** Form <A|obtensor|p> space

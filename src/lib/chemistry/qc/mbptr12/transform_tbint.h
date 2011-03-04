@@ -79,8 +79,8 @@ protected:
                           // is finialized in the derived class constructor (\sa init_acc())
   Ref<ThreadGrp> thr_;
   Ref<TwoBodyIntDescr> tbintdescr_;
-  // Integrals accumulator
-  Ref<DistArray4> ints_acc_;
+  // stores integrals
+  Ref<DistArray4> ints_da4_;
 
   Ref<OrbitalSpace> space1_;
   Ref<OrbitalSpace> space2_;
@@ -166,8 +166,8 @@ public:
   const Ref<MessageGrp>& msg() const;
   /// Returns the integral set descriptor
   const Ref<TwoBodyIntDescr>& intdescr() const;
-  /** Returns the integrals accumulator object. */
-  const Ref<DistArray4>& ints_acc();
+  /** Returns the DistArray4 object with the target integrals. */
+  const Ref<DistArray4>& ints_distarray4();
   /// Returns OrbitalSpace object 1
   const Ref<OrbitalSpace>& space1() const;
   /// Returns OrbitalSpace object 2

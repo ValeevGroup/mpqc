@@ -163,7 +163,7 @@ void MP2R12Energy_Diag::activate_ints(const std::string& occ1_act_id, const std:
                                                                       TwoBodyIntLayout::b1b2_k1k2);
   Ref<TwoBodyMOIntsTransform> i1i2i1i2_tform = moints4_rtime->get(i1i2i1i2_key);
   i1i2i1i2_tform->compute();
-  i1i2i1i2_ints = i1i2i1i2_tform->ints_acc();
+  i1i2i1i2_ints = i1i2i1i2_tform->ints_distarray4();
   i1i2i1i2_ints->activate();
 }
 

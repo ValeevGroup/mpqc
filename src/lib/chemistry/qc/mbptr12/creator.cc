@@ -43,7 +43,7 @@ DistArray4Creator::ObjT DistArray4Creator::operator()() {
   if (!can_create()) return null();
 
   const std::string& tform_key = tform_keys_.at(ncreated());
-  const ObjT& result = moints_rtime_->get(tform_key)->ints_acc();
+  const ObjT& result = moints_rtime_->get(tform_key)->ints_distarray4();
 
   return result;
 }

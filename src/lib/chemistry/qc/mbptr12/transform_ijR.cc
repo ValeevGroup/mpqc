@@ -188,7 +188,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
       Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem, num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -197,7 +197,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     // else use the next case
 
   case MOIntsTransform::StoreMethod::mpi:
-    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_da4_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              1, space1()->rank(), space2()->rank(), space3()->rank());
     break;
 #endif

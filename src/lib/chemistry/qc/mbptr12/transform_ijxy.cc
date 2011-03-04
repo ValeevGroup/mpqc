@@ -145,7 +145,7 @@ TwoBodyMOIntsTransform_ijxy::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_ijxy::init_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_da4_.nonnull())
     return;
 
   const int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
@@ -160,7 +160,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     {
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
                                            memgrp_blksize());
     }
@@ -175,7 +175,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -186,7 +186,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
-    ints_acc_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_da4_ = new DistArray4_Node0File((file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
     break;
 
@@ -197,7 +197,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 #if HAVE_R12IA_MEMGRP
       // use a subset of a MemoryGrp provided by TransformFactory
       set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+      ints_da4_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
                                            memgrp_blksize());
 #else
@@ -209,7 +209,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
   case MOIntsTransform::StoreMethod::mpi:
 #if HAVE_R12IA_MPIIO
-    ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
+    ints_da4_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
 #else
     assert(false);
@@ -227,7 +227,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 void
 TwoBodyMOIntsTransform_ijxy::check_int_symm(double threshold) throw (ProgrammingError)
 {
-  Ref<DistArray4> iacc = ints_acc();
+  Ref<DistArray4> iacc = ints_distarray4();
   iacc->activate();
 
   int num_te_types = iacc->num_te_types();

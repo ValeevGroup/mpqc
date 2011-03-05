@@ -30,7 +30,7 @@
 #endif
 
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 #include <math/scmat/blas.h>
 #include <math.h>
 

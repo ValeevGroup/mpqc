@@ -38,10 +38,10 @@
 #include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 #include <chemistry/qc/mbptr12/debug.h>
-#include <chemistry/qc/mbptr12/fockbuilder.h>
-#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
+#include <chemistry/qc/lcao/fockbuilder.h>
+#include <chemistry/qc/lcao/fockbuild_runtime.h>
 
 using namespace std;
 using namespace sc;

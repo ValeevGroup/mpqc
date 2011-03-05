@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+#include <vector>
 #include <string.h>
 #include <math/scmat/cmatrix.h>
 #include <util/misc/consumableresources.h>
@@ -331,8 +332,7 @@ symm_lu_decomp(double** a, int n, double *d)
   int i,j,k;
   double tmp;
 
-  double* v = new double[n];
-  memset(v,0,sizeof(double)*n);
+  std::vector<double> v(n, 0.0);
 
   /* check for singular matrix */
   for (i=0; i < n; i++) {
@@ -350,8 +350,6 @@ symm_lu_decomp(double** a, int n, double *d)
       return;
     }
   }
-
-  delete[] v;
 
   *d = 1.0;
 
@@ -914,7 +912,7 @@ cmat_schmidt(double **C, double *S, int nrow, int nc)
   int i,j,ij;
   int m;
   double vtmp;
-  double *v = new double[nrow];
+  std::vector<double> v(nrow);
 
   for (m=0; m < nc; m++) {
     v[0] = C[0][m] * S[0];
@@ -967,7 +965,7 @@ cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
   int m;
   double vtmp;
   int northog = 0;
-  double *v = new double[nrow];
+  std::vector<double> v(nrow);
 
   if (res) *res = 1.0;
 

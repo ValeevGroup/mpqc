@@ -49,7 +49,8 @@ TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
 
 TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
 
-INC = timer.h compute.h ieee.h bug.h exenv.h runnable.h consumableresources.h
+INC = timer.h compute.h ieee.h bug.h exenv.h runnable.h consumableresources.h \
+      registry.h registry.timpl.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 

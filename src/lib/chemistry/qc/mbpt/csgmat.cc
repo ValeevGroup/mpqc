@@ -368,7 +368,6 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
 
   double tnint=0.0;
   double pki_int,value;
-  double *gtmp=0, *ptmp=0;
   double *dpmat_ptr;
 
   char *shnfunc=0;
@@ -398,11 +397,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
     }
 
   // Allocate and assign ptmp (contains lower triangle of DPmat
-  ptmp = (double*) malloc(sizeof(double)*nbatri);
-  if (!(ptmp)) {
-    fprintf(stderr,"mkgdlb: could not malloc ptmp\n");
-    return -1;
-    }
+  std::vector<double> ptmp(nbatri);
   for (i=0; i<nbasis; i++) {
     dpmat_ptr = &DPmat[i*nbasis];
     for (j=0; j<=i; j++) {
@@ -421,7 +416,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
     }
 
   // Allocate and initialize gtmp
-  gtmp = (double *) malloc(sizeof(double)*nbatri);
+  std::vector<double> gtmp(nbatri);
   for (i=0; i<nbatri; i++) gtmp[i] = 0.0;
  
   // Allocate and assign shnfunc
@@ -673,7 +668,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
     }       // exit i loop
 
   // Sum up contributions to gtmp
-  msg_->sum(gtmp,nbatri,ptmp);
+  msg_->sum(&gtmp[0],nbatri,&ptmp[0]);
 
 
   // Put gtmp back into Gmat
@@ -687,9 +682,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
 
 
   // Free up memory
-  if (gtmp) free(gtmp);
   if (maxp) free(maxp);
-  if (ptmp) free(ptmp);
   if (shnfunc) free(shnfunc);
 
   return 0;

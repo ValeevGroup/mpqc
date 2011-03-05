@@ -35,7 +35,7 @@
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
-#include <chemistry/qc/mbptr12/print_scmat_norms.h>
+#include <math/scmat/util.h>
 
 using namespace std;
 using namespace sc;

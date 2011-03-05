@@ -113,6 +113,7 @@ density_test(const Ref<Wavefunction> &wfn, double resolution)
   ExEnv::out0() << scprintf(" ED Nele = %12.8f",nele_ed) << std::endl;
 }
 
+int
 main(int argc, char *argv[])
 {
   const char *input = (argc > 1) ? argv[1] : SRCDIR "/wfntest.kv";

@@ -33,7 +33,7 @@
 #define _chemistry_qc_mbptr12_creator_h
 
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
+#include <chemistry/qc/lcao/moints_runtime.h>
 
 namespace sc {
 

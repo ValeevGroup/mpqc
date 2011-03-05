@@ -35,7 +35,7 @@
 #include <util/group/memregion.h>
 #include <util/group/message.h>
 #include <util/group/thread.h>
-#include <chemistry/qc/mbptr12/distarray4.h>
+#include <math/distarray4/distarray4.h>
 
 // note disk-based algorithm does not support parallel execution so far.
 //#define DISK_BASED_SMITH

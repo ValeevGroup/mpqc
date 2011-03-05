@@ -40,9 +40,9 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
-#include <chemistry/qc/mbptr12/registry.timpl.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
+#include <chemistry/qc/lcao/transform_factory.h>
+#include <util/misc/registry.timpl.h>
 #include <chemistry/qc/mbptr12/ref.h>
 #if HAVE_PSIMPQCIFACE
 # include <chemistry/qc/psi/psiref.h>
@@ -123,20 +123,9 @@ R12WavefunctionWorld::initialize()
 
   nlindep_ri_ = nlindep_aux_ = -1;
   obs_eq_vbs_ = basis()->equiv(basis_vir());
-  construct_ri_basis_(r12tech()->safety_check());
-  obs_eq_ribs_ = basis()->equiv(basis_ri());
-
-  {
-    // also create AO spaces
-    Ref<OrbitalSpaceRegistry> idxreg = world()->tfactory()->orbital_registry();
-    Ref<AOSpaceRegistry> aoidxreg = world()->tfactory()->ao_registry();
-    Ref<Integral> localints = ref()->integral()->clone();
-    if (!obs_eq_ribs()) { // RI-BS
-      Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu'", "RIBS(AO)", basis_ri(), localints);
-      idxreg->add(make_keyspace_pair(mu));
-      aoidxreg->add(mu->basis(),mu);
-    }
-  }
+  bs_ri_ = 0;
+  ribs_space_ = 0;
+  cabs_space_[Alpha] = cabs_space_[Beta] = 0;
 }
 
 void
@@ -146,7 +135,26 @@ R12WavefunctionWorld::obsolete() {
   ribs_space_ = 0;
   cabs_space_[Alpha] = 0;
   cabs_space_[Beta] = 0;
+  nlindep_ri_ = nlindep_aux_ = -1;
+  bs_ri_ = 0;
+
 //  this->initialize();   // can't initialize because there is no guarantee we are ready to compute again
+}
+
+const Ref<OrbitalSpace>&
+R12WavefunctionWorld::ribs_space() const
+{
+  if (ribs_space_.null()) {
+    R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
+    this_nonconst_ptr->construct_ri_basis_(r12tech()->safety_check());
+  }
+  return ribs_space_;
+}
+
+bool
+R12WavefunctionWorld::obs_eq_ribs() const {
+  if (bs_ri_.null()) ribs_space();
+  return basis()->equiv(bs_ri_);
 }
 
 const Ref<OrbitalSpace>&

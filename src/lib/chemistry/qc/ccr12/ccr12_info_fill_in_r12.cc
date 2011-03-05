@@ -30,7 +30,7 @@
 #include <vector>
 #include <algorithm>
 #include <math/scmat/blas.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/mtensor.h>
 

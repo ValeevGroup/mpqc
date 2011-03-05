@@ -47,13 +47,14 @@ CXXSRC = dim.cc \
          blocked.cc \
          blockedvect.cc blockedrect.cc blockeddiag.cc blockedsymm.cc \
          matrix3.cc    vector3.cc    vector3_i.cc \
-         util.cc       stateutil.cc  blas.cc cmatrix.cc
+         util.cc       stateutil.cc  blas.cc cmatrix.cc \
+         svd.cc
 
 TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 
 TESTPROGS = disttest localtest repltest blockedtest
 
-CSRC = svd.c
+CSRC = c_svd.c
 
 FSRC = pdsteqr.f
 
@@ -61,7 +62,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF)) $(FSRC:%.f=%.$(OBJSU
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
        result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
-       blocked.h disthql.h dim.h
+       blocked.h disthql.h dim.h svd.h
 
 GENINC =
 

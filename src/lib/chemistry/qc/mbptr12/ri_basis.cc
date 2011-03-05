@@ -38,11 +38,11 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/svd.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <math/scmat/svd.h>
+#include <chemistry/qc/lcao/transform_factory.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
-#include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <util/misc/print.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
 
 using namespace sc;
 using namespace std;
@@ -50,9 +50,8 @@ using namespace std;
 void
 R12WavefunctionWorld::construct_ri_basis_(bool safe)
 {
-  // RI basis is only needed if corrfactor != none
-  Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech()->corrfactor();
-  const bool ri_basis_not_needed = null_cf.nonnull();
+  if (ribs_space_.nonnull())
+    return;
 
   Ref<GaussianBasisSet> obs = basis();
   const bool obs_eq_abs = bs_aux_->equiv(obs);
@@ -61,39 +60,47 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
     bs_ri_ = obs;
   }
   else {
-    if (ri_basis_not_needed) {
-      bs_ri_ = bs_aux_;
-    }
-    else {
-      switch(r12tech()->abs_method()) {
 
-        case R12Technology::ABS_ABS:
-          bs_ri_ = bs_aux_;
-          if (!abs_spans_obs_()) {
-            ExEnv::out0() << endl << indent << "WARNING: the auxiliary basis is not safe to use with the given orbital basis" << endl << endl;
-            if (safe)
-              throw std::runtime_error("R12WavefunctionWorld::construct_ri_basis_abs_ -- auxiliary basis is not safe to use with the given orbital basis");
-          }
-          break;
+    switch(r12tech()->abs_method()) {
 
-        case R12Technology::ABS_CABS:
-          bs_ri_ = bs_aux_;
-          break;
+      case R12Technology::ABS_ABS:
+        bs_ri_ = bs_aux_;
+        if (!abs_spans_obs_()) {
+          ExEnv::out0() << endl << indent << "WARNING: the auxiliary basis is not safe to use with the given orbital basis" << endl << endl;
+          if (safe)
+            throw std::runtime_error("R12WavefunctionWorld::construct_ri_basis_abs_ -- auxiliary basis is not safe to use with the given orbital basis");
+        }
+        break;
 
-        case R12Technology::ABS_ABSPlus:
-        case R12Technology::ABS_CABSPlus:
-          {
-            bs_ri_ = bs_aux_ + obs;
-            if (!vbs_eq_abs && !obs_eq_vbs_)
-              bs_ri_ = bs_ri_ + basis_vir();
-          }
-          break;
+      case R12Technology::ABS_CABS:
+        bs_ri_ = bs_aux_;
+        break;
 
-        default:
-          throw std::logic_error("R12WavefunctionWorld::construct_ri_basis_ -- invalid abs_method");
-
+      case R12Technology::ABS_ABSPlus:
+      case R12Technology::ABS_CABSPlus:
+      {
+        bs_ri_ = bs_aux_ + obs;
+        if (!vbs_eq_abs && !obs_eq_vbs_)
+          bs_ri_ = bs_ri_ + basis_vir();
       }
-      construct_orthog_ri_();
+      break;
+
+      default:
+        throw std::logic_error("R12WavefunctionWorld::construct_ri_basis_ -- invalid abs_method");
+
+    }
+    construct_orthog_ri_();
+  }
+
+  {
+    // also create AO space for RI basis
+    Ref<OrbitalSpaceRegistry> idxreg = world()->tfactory()->orbital_registry();
+    Ref<AOSpaceRegistry> aoidxreg = world()->tfactory()->ao_registry();
+    Ref<Integral> localints = ref()->integral()->clone();
+    if (!obs_eq_ribs()) { // RI-BS
+      Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu'", "RIBS(AO)", basis_ri(), localints);
+      idxreg->add(make_keyspace_pair(mu));
+      aoidxreg->add(mu->basis(),mu);
     }
   }
 }
@@ -101,23 +108,21 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
 void
 R12WavefunctionWorld::construct_cabs_()
 {
-  // CABS space is only needed if corrfactor != none ...
-  Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech()->corrfactor();
-  const bool ri_basis_not_needed = null_cf.nonnull();
+  if (cabs_space_[Alpha].nonnull())
+    return;
 
-  if (!ri_basis_not_needed) {
+  construct_ri_basis_(r12tech()->safety_check());
 
-    Ref<GaussianBasisSet> obs = ref()->basis();
-    if (bs_ri_->equiv(obs) &&
-        (r12tech()->abs_method() == R12Technology::ABS_CABS ||
-         r12tech()->abs_method() == R12Technology::ABS_CABSPlus
-        )
-       )
-      throw std::logic_error("R12WavefunctionWorld::construct_cabs_ -- CABS and CABS+ methods can only be used when ABS != OBS");
+  Ref<GaussianBasisSet> obs = ref()->basis();
+  if (bs_ri_->equiv(obs) &&
+      (r12tech()->abs_method() == R12Technology::ABS_CABS ||
+          r12tech()->abs_method() == R12Technology::ABS_CABSPlus
+      )
+  )
+    throw std::logic_error("R12WavefunctionWorld::construct_cabs_ -- CABS and CABS+ methods can only be used when ABS != OBS");
 
-    ref_acc_for_cabs_space_ = ref()->desired_value_accuracy();
-    construct_ortho_comp_svd_();
-  }
+  ref_acc_for_cabs_space_ = ref()->desired_value_accuracy();
+  construct_ortho_comp_svd_();
 }
 
 void

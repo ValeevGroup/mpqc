@@ -35,9 +35,9 @@
 #include <util/ref/ref.h>
 #include <math/scmat/matrix.h>
 #include <util/class/scexception.h>
-#include <chemistry/qc/mbptr12/spin.h>
-#include <chemistry/qc/mbptr12/svd.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
+#include <chemistry/qc/wfn/spin.h>
+#include <math/scmat/svd.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
 namespace sc {

@@ -41,7 +41,9 @@ BIN_OR_LIB = LIB
 
 CSRC =
 
-CXXSRC = grid.cc
+CXXSRC = grid.cc pairiter.cc
+
+INC = grid.h pairiter.h pairiter.timpl.h
 
 TESTSRC = 
 

@@ -89,6 +89,7 @@
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
+#include <chemistry/qc/etrain/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12

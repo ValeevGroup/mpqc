@@ -33,7 +33,7 @@
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/lcao/transform_factory.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 
 using namespace std;

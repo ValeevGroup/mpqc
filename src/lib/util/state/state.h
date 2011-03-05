@@ -43,7 +43,7 @@ class TranslateDataOut;
 
 /** Base class for objects that can save/restore state.
  */
-class SavableState: public DescribedClass {
+class SavableState: virtual public DescribedClass {
   protected:
     SavableState();
     SavableState(const SavableState&);

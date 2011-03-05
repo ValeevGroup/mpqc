@@ -32,9 +32,9 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
+#include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
 
 #ifndef _chemistry_qc_mbptr12_mp2r12energy_h

@@ -31,12 +31,12 @@
 #endif
 
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
-#include <chemistry/qc/mbptr12/svd.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
+#include <math/scmat/svd.h>
+#include <math/mmisc/pairiter.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 #include <math/scmat/local.h>
 
 using namespace std;
@@ -207,8 +207,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
                                                                    dim_xc,
                                                                    nocc2_act);
 
-    double* ef12_vec = new double[noo];
-    memset(ef12_vec, 0, sizeof(double) * noo);
+    vector<double> ef12_vec(noo, 0.0);
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       util->print(prepend_spincase(spincase2, "V matrix").c_str(), V);
@@ -327,7 +326,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
     if (same_B_for_all_pairs) {
       RefSymmSCMatrix B_ij = B.clone();
       B_ij.assign(B);
-      SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
+      SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
       for (xy_iter.start(); int(xy_iter); xy_iter.next()) {
         const int xy = xy_iter.ij();
         const int x = xy_iter.i();
@@ -348,7 +347,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
             // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
             if (coupling == true) {
               double fy = 0.0;
-              SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+              SpinMOPairIter cd_iter(vir1_act->rank(), vir2_act->rank(), spincase2);
               for (cd_iter.start(); cd_iter; cd_iter.next()) {
                 const int cd = cd_iter.ij();
                 const int c = cd_iter.i();
@@ -404,7 +403,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
     //
     else {
       RefSymmSCMatrix B_ij = B.clone();
-      SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+      SpinMOPairIter ij_iter(occ1_act->rank(), occ2_act->rank(), spincase2);
       for (ij_iter.start(); int(ij_iter); ij_iter.next()) {
         const int ij = ij_iter.ij();
         if (ij % ntasks != me)
@@ -422,7 +421,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
         for (int f = 0; f < num_f12; f++) {
           const int f_off = f * nxy;
 
-          SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
+          SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
           for (kl_iter.start(); kl_iter; kl_iter.next()) {
             const int kl = kl_iter.ij() + f_off;
             const int k = kl_iter.i();
@@ -431,7 +430,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
             for (int g = 0; g <= f; g++) {
               const int g_off = g * nxy;
 
-              SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
+              SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
               for (ow_iter.start(); ow_iter; ow_iter.next()) {
                 const int ow = ow_iter.ij() + g_off;
                 const int o = ow_iter.i();
@@ -449,7 +448,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
                 // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
                 if (coupling == true) {
                   double fy = 0.0;
-                  SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+                  SpinMOPairIter cd_iter(vir1_act->rank(), vir2_act->rank(), spincase2);
                   for (cd_iter.start(); cd_iter; cd_iter.next()) {
                     const int cd = cd_iter.ij();
                     const int c = cd_iter.i();
@@ -554,7 +553,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
           // solve B * C = V
           if (!need_to_transform_f12dim) {
             RefSCVector Cij = V_ij.clone();
-            sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
+            sc::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
             Cij.scale(-1.0);
             for (int kl = 0; kl < nxc; kl++)
               C_[spin].set_element(kl, ij, Cij.get_element(kl));
@@ -564,7 +563,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
             Bo.assign(0.0);
             Bo.accumulate_transform(UXB, B_ij);
             RefSCVector Co = Vo.clone();
-            sc::exp::lapack_linsolv_symmnondef(Bo, Co, Vo);
+            sc::lapack_linsolv_symmnondef(Bo, Co, Vo);
             RefSCVector Cij = UXB.t() * Co;
             Cij.scale(-1.0);
             for (int kl = 0; kl < nxc; kl++)
@@ -580,9 +579,8 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
     for (unsigned int ij = 0; ij < noo; ij++)
       if (ij % ntasks == me)
         ef12_vec[ij] = ef12(ij);
-    msg->sum(ef12_vec, noo, 0, -1);
-    ef12_[spin]->assign(ef12_vec);
-    delete[] ef12_vec;
+    msg->sum(&ef12_vec[0], noo, 0, -1);
+    ef12_[spin]->assign(&ef12_vec[0]);
   } // end of spincase loop
 
   // Set beta-beta energies to alpha-alpha for closed-shell
@@ -655,7 +653,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
   if (r12eval()->vir(Alpha)->rank() == 0 || r12eval()->vir(Beta)->rank() == 0
       || cabs_empty)
     coupling = false;
-  SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
+  SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
 
   Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,
                                                                    dim_oo,
@@ -686,7 +684,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
         // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
         if (coupling == true && include_coupling_in_B) {
           double fy = 0.0;
-          SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+          SpinMOPairIter cd_iter(vir1_act->rank(), vir2_act->rank(), spincase2);
           for (cd_iter.start(); cd_iter; cd_iter.next()) {
             const int cd = cd_iter.ij();
             const int c = cd_iter.i();
@@ -722,7 +720,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
             // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ex-ey)
             if (coupling == true && include_coupling_in_B) {
               double fy = 0.0;
-              SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+              SpinMOPairIter cd_iter(vir1_act->rank(), vir2_act->rank(), spincase2);
               for (cd_iter.start(); cd_iter; cd_iter.next()) {
                 const int cd = cd_iter.ij();
                 const int c = cd_iter.i();
@@ -785,7 +783,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
   if (r12eval()->vir(Alpha)->rank() == 0 || r12eval()->vir(Beta)->rank() == 0
       || cabs_empty)
     coupling = false;
-  SpinMOPairIter xy_iter(xspace1, xspace2, spincase2);
+  SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
 
   RefSymmSCMatrix B_ij = B.clone();
 
@@ -800,7 +798,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
   for (int f = 0; f < num_f12; f++) {
     const int f_off = f * nxy;
 
-    SpinMOPairIter kl_iter(xspace1, xspace2, spincase2);
+    SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
     for (kl_iter.start(); kl_iter; kl_iter.next()) {
       const int kl = kl_iter.ij() + f_off;
       const int k = kl_iter.i();
@@ -809,7 +807,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
       for (int g = 0; g <= f; g++) {
         const int g_off = g * nxy;
 
-        SpinMOPairIter ow_iter(xspace1, xspace2, spincase2);
+        SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
         for (ow_iter.start(); ow_iter; ow_iter.next()) {
           const int ow = ow_iter.ij() + g_off;
           const int o = ow_iter.i();
@@ -827,7 +825,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
           // If coupling is included add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
           if (coupling == true) {
             double fy = 0.0;
-            SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+            SpinMOPairIter cd_iter(vir1_act->rank(), vir2_act->rank(), spincase2);
             for (cd_iter.start(); cd_iter; cd_iter.next()) {
               const int cd = cd_iter.ij();
               const int c = cd_iter.i();
@@ -915,7 +913,7 @@ void MP2R12Energy_SpinOrbital_new::determine_C_pairspecific(
 
   // solve B * C = V
   RefSCVector Cij = V_ij.clone();
-  sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
+  sc::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
   Cij.scale(-1.0);
   for (int kl = 0; kl < nxc; kl++) {
     C_[spincase2].set_element(kl, ij, Cij.get_element(kl));
@@ -999,7 +997,7 @@ void MP2R12Energy_SpinOrbital_new::compute_MP2R12_nondiag() {
     const int nxy = nxc / num_f12;
     RefSCDimension dim_xy = new SCDimension(nxy);
 
-    SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+    SpinMOPairIter ij_iter(occ1_act->rank(), occ2_act->rank(), spincase2);
     for (ij_iter.start(); int(ij_iter); ij_iter.next()) {
       const int ij = ij_iter.ij();
       const int i = ij_iter.i();

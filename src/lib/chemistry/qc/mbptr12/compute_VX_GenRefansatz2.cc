@@ -1,5 +1,5 @@
 //
-// compute_VXB_GenRefansatz2.cc
+// compute_VX_GenRefansatz2.cc
 //
 // Copyright (C) 2008 Martin Torheyden
 //

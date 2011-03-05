@@ -40,11 +40,11 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
-#include <chemistry/qc/mbptr12/orbitalspace.h>
-#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
+#include <chemistry/qc/lcao/transform_factory.h>
 #include <chemistry/qc/mbptr12/ref.h>
-#include <chemistry/qc/mbptr12/moints_runtime.h>
-#include <chemistry/qc/mbptr12/fockbuild_runtime.h>
+#include <chemistry/qc/lcao/moints_runtime.h>
+#include <chemistry/qc/lcao/fockbuild_runtime.h>
 
 namespace sc {
 
@@ -88,7 +88,7 @@ public:
   /// Returns true if VBS is equivalent to OBS
   bool obs_eq_vbs() const { return obs_eq_vbs_; }
   /// Returns true if RIBS is equivalent to OBS
-  bool obs_eq_ribs() const { return obs_eq_ribs_; }
+  bool obs_eq_ribs() const;
   /// Returns true is spin-free algorithm to be used
   bool spinadapted() const { return spinadapted_; }
 
@@ -101,7 +101,7 @@ public:
   /// Returns the OrbitalSpace object for ABS
   const Ref<OrbitalSpace>& abs_space() const { return abs_space_; }
   /// Returns the OrbitalSpace object for RI-BS: approximates the identity
-  const Ref<OrbitalSpace>& ribs_space() const { return ribs_space_; }
+  const Ref<OrbitalSpace>& ribs_space() const;
   /// Returns subspace of ribs_space that is the complement to OBS. If abs_method = ABS/ABS+, this will throw
   const Ref<OrbitalSpace>& cabs_space(const SpinCase1& S) const;
 
@@ -122,7 +122,6 @@ private:
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12
   Ref<GaussianBasisSet> bs_ri_;   //!< the RI basis used in R12
   bool obs_eq_vbs_;
-  bool obs_eq_ribs_;
 
   bool spinadapted_;
   int nlindep_aux_;

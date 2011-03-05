@@ -96,7 +96,14 @@ MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
 MP2F12MASTER=mp2f12.qci
 MP2F12INPUTS=
 ifeq ($(RUN_MBPTF12),yes)
-  MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER))
+  # add CABS singles inputs
+  MP2CABSSINGLESINPUTS = mp2f12_h2omp2cabssingles00ccpvdzccpvdzf12cabsc1.in \
+    mp2f12_h2omp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
+    mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc1.in  \
+    mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
+    mp2f12_hmp2cabssingles00ccpvqz.in
+  MP2CABSSINGLESINPUTS := $(MP2CABSSINGLESINPUTS:%=$(INP)/%)
+  MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER)) $(MP2CABSSINGLESINPUTS)
 endif
 MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
 
@@ -351,6 +358,7 @@ $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
 $(INP)/mp2f12_h2omp2f12slashc% $(INP)/mp2f12_ch2mp2f12slashc% \
+$(INP)/mp2f12_h2omp2cabs% $(INP)/mp2f12_ch2mp2cabs% \
 $(INP)/mp2f12_mp2f12slashc%  $(INP)/psiccsdpt2f12% \
 $(INP)/pt2f12% $(INP)/psipt2f12% $(INP)/ccsdpt%
 endif

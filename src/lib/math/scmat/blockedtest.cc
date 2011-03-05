@@ -39,7 +39,6 @@ main(int argc, char **argv)
 {
   int i;
   int nblks;
-  int *blks1, *blks2, *blks3;
 
   Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
 
@@ -62,11 +61,7 @@ main(int argc, char **argv)
   nblks = keyval->intvalue("nblocks");
   if (!nblks)
     nblks=3;
-  
-  blks1 = new int[nblks];
-  blks2 = new int[nblks];
-  blks3 = new int[nblks];
-  
+
   RefSCDimension sd1; sd1 << keyval->describedclassvalue("d1");
   RefSCDimension sd2; sd2 << keyval->describedclassvalue("d2");
   RefSCDimension sd3; sd3 << keyval->describedclassvalue("d2");

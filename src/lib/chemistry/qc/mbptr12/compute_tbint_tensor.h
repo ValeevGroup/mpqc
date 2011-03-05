@@ -31,11 +31,11 @@
 
 #include <cmath>
 #include <util/misc/regtime.h>
-#include <chemistry/qc/mbptr12/pairiter.h>
-#include <chemistry/qc/mbptr12/utils.h>
-#include <chemistry/qc/mbptr12/utils.impl.h>
+#include <math/mmisc/pairiter.h>
+#include <chemistry/qc/lcao/utils.h>
+#include <chemistry/qc/lcao/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/print.h>
+#include <util/misc/print.h>
 
 #ifndef _chemistry_qc_mbptr12_computetbinttensor_h
 #define _chemistry_qc_mbptr12_computetbinttensor_h
@@ -129,8 +129,8 @@ namespace sc {
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
       const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
-      SpinMOPairIter iterbra(space1_bra,space2_bra,S);
-      SpinMOPairIter iterket(space1_ket,space2_ket,S);
+      SpinMOPairIter iterbra(space1_bra->rank(),space2_bra->rank(),S);
+      SpinMOPairIter iterket(space1_ket->rank(),space2_ket->rank(),S);
       // size of one block of <space1_bra space2_bra|
       const unsigned int nbra = iterbra.nij();
       // size of one block of |space1_ket space2_ket>

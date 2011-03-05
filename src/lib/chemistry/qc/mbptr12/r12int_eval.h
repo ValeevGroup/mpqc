@@ -33,7 +33,7 @@
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
-#include <chemistry/qc/mbptr12/spin.h>
+#include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
 #include <chemistry/qc/mbptr12/twobodytensorinfo.h>
 

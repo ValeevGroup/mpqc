@@ -34,9 +34,9 @@
 #include <ccfiles.h>
 #include <cmath>
 
-#include <chemistry/qc/mbptr12/pairiter.impl.h>
-#include <chemistry/qc/mbptr12/print.h>
-#include <chemistry/qc/mbptr12/orbitalspace_utils.h>
+#include <math/mmisc/pairiter.impl.h>
+#include <util/misc/print.h>
+#include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psici.h>

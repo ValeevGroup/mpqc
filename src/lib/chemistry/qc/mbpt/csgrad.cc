@@ -1755,7 +1755,7 @@ MBPT2::compute_cs_grad()
   // quit here if only the energy is needed
   if (!dograd) {
     delete[] tbints_; tbints_ = 0;
-    if (do_d1_) delete[] Laj;
+    if (do_d1_) free(Laj);
     delete[] scf_vector;
     delete[] scf_vector_dat;
     delete[] evals;

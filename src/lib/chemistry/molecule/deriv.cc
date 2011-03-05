@@ -334,7 +334,7 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
                                          const RefSymmSCMatrix &hess)
 {
   int ntri = (3*mol->natom()*(3*mol->natom()+1))/2;
-  double *hessv = new double[ntri];
+  vector<double> hessv(ntri);
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
       int i;
@@ -379,9 +379,8 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
             }
         }
     }
-  grp->bcast(hessv,ntri);
-  hess->assign(hessv);
-  delete[] hessv;
+  grp->bcast(&(hessv[0]),ntri);
+  hess->assign(&(hessv[0]));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -600,7 +599,7 @@ MolecularGradient::read_cartesian_gradient(const char *filename,
                                            const RefSCVector &grad)
 {
   const int ncoord = 3 * mol->natom();
-  double *gradv = new double[ncoord];
+  vector<double> gradv(ncoord);
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
       int i;
@@ -645,9 +644,8 @@ MolecularGradient::read_cartesian_gradient(const char *filename,
             }
         }
     }
-  grp->bcast(gradv,ncoord);
-  grad->assign(gradv);
-  delete[] gradv;
+  grp->bcast(&(gradv[0]),ncoord);
+  grad->assign(&(gradv[0]));
 }
 
 /////////////////////////////////////////////////////////////////////////////

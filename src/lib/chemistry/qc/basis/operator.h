@@ -30,6 +30,7 @@
 #endif
 
 #include <util/ref/ref.h>
+#include <math/distarray4/distarray4.h>
 #include <chemistry/qc/basis/intparams.h>
 
 #ifndef _chemistry_qc_basis_operator_h
@@ -94,7 +95,7 @@ namespace sc {
       g12t1g12 =8, g12p4g12_m_g12t1g12t1 =9, anti_g12g12 =10,
       r12_0_gg12 =11, r12_m1_gg12 =12, gg12t1gg12 =13};
     /// The max number of such types
-    static const int max_ntypes = 14;
+    static const int max_ntypes = DistArray4::max_num_te_types;
     /// Returns a descriptor for integral type t
     static const Ref<TwoBodyOperDescr>& descr(TwoBodyOper::type t);
   };

@@ -1449,26 +1449,25 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
   else
       rdm_bb = rdm_aa;
   RefSymmSCMatrix sf_rdm = rdm_ab.copy();
-//  abort();// once the code compiles, restore the original code below
-//  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
-//  const unsigned int no = occ_space->rank();
-//  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
-//  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
-//  for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
-//  {
-//    for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
-//     {
-//         const int u1 = upp_pair->i();
-//         const int u2 = upp_pair->j();
-//         const int l1 = low_pair->i();
-//         const int l2 = low_pair->j();
-//         double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
-//                             + rdm_ab.get_element(u2 * no + u1, l2* no + l1)
-//                             + get_4ind_antisym_matelement(rdm_aa, u1, u2, l1, l2)
-//                             + get_4ind_antisym_matelement(rdm_bb, u1, u2, l1, l2);
-//         sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
-//     }
-//  }
+  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
+  const unsigned int no = occ_space->rank();
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
+  {
+    for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
+     {
+         const int u1 = upp_pair->i();
+         const int u2 = upp_pair->j();
+         const int l1 = low_pair->i();
+         const int l2 = low_pair->j();
+         double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
+                             + rdm_ab.get_element(u2 * no + u1, l2* no + l1)
+                             + get_4ind_antisym_matelement(rdm_aa, u1, u2, l1, l2)
+                             + get_4ind_antisym_matelement(rdm_bb, u1, u2, l1, l2);
+         sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
+     }
+  }
   return(sf_rdm);
 }
 
@@ -1476,23 +1475,22 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
 RefSymmSCMatrix sc::PT2R12::rdm2_sf_interm(double a, double b, double c)
 {
   RefSymmSCMatrix rdm2_int = this->rdm2_sf();
-  abort(); // this is a temporary fix to make sure the compilation runs
-//  rdm2_int.scale(a);
-//  RefSymmSCMatrix sf_opdm = rdm1_sf();
-//  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha);
-//  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
-//  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space, occ_space, AlphaBeta);
-//  // add BetaAlpha contribution to sf_rdm
-//  for(upp_pair->start(); *upp_pair; upp_pair->next())
-//  {
-//    for(low_pair->start(); *low_pair; low_pair->next())
-//    {
-//      const double element = rdm2_int.get_element(upp_pair->ij(), low_pair->ij())
-//               + b * sf_opdm.get_element(upp_pair->i(), low_pair->i()) * sf_opdm.get_element(upp_pair->j(), low_pair->j())
-//               + c * sf_opdm.get_element(upp_pair->i(), low_pair->j()) * sf_opdm.get_element(upp_pair->j(), low_pair->i());
-//      rdm2_int.set_element(upp_pair->ij(), low_pair->ij(), element);
-//    }
-//  }
+  rdm2_int.scale(a);
+  RefSymmSCMatrix sf_opdm = rdm1_sf();
+  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha);
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  // add BetaAlpha contribution to sf_rdm
+  for(upp_pair->start(); *upp_pair; upp_pair->next())
+  {
+    for(low_pair->start(); *low_pair; low_pair->next())
+    {
+      const double element = rdm2_int.get_element(upp_pair->ij(), low_pair->ij())
+               + b * sf_opdm.get_element(upp_pair->i(), low_pair->i()) * sf_opdm.get_element(upp_pair->j(), low_pair->j())
+               + c * sf_opdm.get_element(upp_pair->i(), low_pair->j()) * sf_opdm.get_element(upp_pair->j(), low_pair->i());
+      rdm2_int.set_element(upp_pair->ij(), low_pair->ij(), element);
+    }
+  }
   return(rdm2_int);
 }
 

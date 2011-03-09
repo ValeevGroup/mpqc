@@ -450,6 +450,7 @@ namespace sc {
     deallocate(tmp_blk);
     if(A->data_persistent()) A->deactivate();
     if(result->data_persistent()) result->deactivate();
+    return result;
   }
 
 
@@ -955,7 +956,9 @@ namespace sc {
        DistArray4Dimensions  braket_dims(1, bra->ni(), MatBra1Dim, bra->ny(), MatBra2Dim);
        braket = bra->clone(braket_dims);
      }
-    Ref<DistArray4> DA_Aixy = permute23(permute34(bra));
+
+    Ref<DistArray4> DA_Aixy = permute34(bra);
+    DA_Aixy = permute23(DA_Aixy);
     Ref<DistArray4> DA_M;
     contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
     braket = permute23(DA_M);
@@ -1157,10 +1160,9 @@ namespace sc {
     return result;
   }
 
-  RefSCMatrix&
-  operator<<(RefSCMatrix& dst,
-             const Ref<DistArray4>& src) {
-
+ RefSCMatrix &
+  operator<<(RefSCMatrix& dst, const Ref<DistArray4>& src)
+  {
     assert(src->num_te_types() == 1);
     assert(src->has_access(src->msg()->me()));
 
@@ -1218,6 +1220,7 @@ namespace sc {
     }
 
     if (src->data_persistent()) src->deactivate();
+    return dst;
   }
 
 } // end of namespace sc

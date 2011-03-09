@@ -1390,8 +1390,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix T = C(AlphaBeta);
   RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
   RefSCMatrix HylleraasMatrix = V_t_T;
-  T=0;
-  V_genref=0;
+  V_genref = 0;
 
 
   // X contributions
@@ -1404,14 +1403,14 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   }
 
 
-  // B contribution
+  // B' contribution
   RefSCMatrix TBTG = (T*r12eval_->B())*T*(rdm2_sf());
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
 
 
   // the last messy term
-  HylleraasMatrix.accumulate(sf_B_contrib_nonfactorizable_part());
+  HylleraasMatrix.accumulate(sf_B_others());
 
 //#if 0
 //  HylleraasMatrix.assign(0.0)
@@ -1425,10 +1424,115 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
 
 
-RefSCMatrix sc::PT2R12::sf_B_contrib_nonfactorizable_part()
+RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 {
-  return 0;
+  Ref<OrbitalSpace> cabs = r12world_->cabs_space(Alpha);
+  Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
+  const int occ_dim = occ_space->rank();
+
+  Ref<DistArray4> wholeproduct; // for the whole contribution
+
+  Ref<DistArray4> RFtimesT; // X^Ax_vw(R^A kappa_tu f^x_kappa * t^vw_tu),
+  {
+
+    Ref<OrbitalSpace> F_RI_occ = r12eval_->F_m_P(Alpha);
+    R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
+                                       cabs, F_RI_occ, occ_space, occ_space,
+                                       r12eval_->corrfactor(), true);
+    std::vector<std::string> TensorString;
+    fill_container(IntCreator, TensorString);
+    Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
+    RFform->compute();
+    Ref<DistArray4> RF = RFform->ints_distarray4();
+    RefSCMatrix T = C(AlphaBeta);
+    assert((occ_dim * occ_dim == T.ncol()) && (occ_dim * occ_dim == T.nrow()));
+    contract34_DA4_RefMat(RFtimesT, 1.0, RF, 0, T, occ_dim, occ_dim);
+  }
+
+  Ref<DistArray4> RTgamma; // the terms in parentheses
+  {
+    Ref<DistArray4> RT; // X^Ay_rs = R^Ay pq * t^rs_pq
+    {
+      Ref<OrbitalSpace> cabs = r12world_->cabs_space(Alpha);
+      Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
+      const int occ_dim = occ_space->rank();
+      R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
+                                         cabs, occ_space, occ_space, occ_space,
+                                         r12eval_->corrfactor(), true);
+      std::vector<std::string> TensorString;
+      fill_container(IntCreator, TensorString);
+      Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
+      RFform->compute();
+      Ref<DistArray4> R = RFform->ints_distarray4();
+      RefSCMatrix T = C(AlphaBeta);
+      contract34_DA4_RefMat(RT, 1.0, R, 0, T, occ_dim, occ_dim);
+    }
+
+    RefSCMatrix onerdm = rdm1_sf().convert2RefSCMat(); // G^s_v
+
+    {
+      Ref<DistArray4> I1; //the first two sets uses contract4
+      contract4(RT, onerdm, I1);
+
+      //the first set
+      {
+        Ref<DistArray4> RTgamma1;
+        RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 0.5, -0.5);
+        rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
+        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
+        RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
+        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+        RTgamma = RTgamma1;
+      }
+      //the second set
+      {
+        Ref<DistArray4> RTgamma2;
+        RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 1.0, -0.25);
+        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
+        rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
+        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
+        RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
+        contract_DA4_RefMat_k1b2_34(RTgamma2, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+        RTgamma2 = permute34(RTgamma2);
+        axpy(RTgamma2, 1.0, RTgamma, 1.0);
+      }
+    } // 1st and 2nd sets done
+
+    {
+       Ref<DistArray4> I1; //the first two sets uses contract4
+       contract3(RT, onerdm, I1);
+
+       //the third
+       {
+         Ref<DistArray4> RTgamma3;
+         RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(1.0, -1.0, 0.0);
+         rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
+         rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
+         RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
+         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+         axpy(RTgamma3, 1.0, RTgamma, 1.0);
+       }
+       //the fourth set
+       {
+         Ref<DistArray4> RTgamma4;
+         RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 0.5, 0.0);
+         rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
+         rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
+         RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
+         contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+         RTgamma4 = permute34(RTgamma4);
+         axpy(RTgamma4, 1.0, RTgamma, 1.0);
+       }
+     } // 3rd and 4th sets done
+
+  } // RTgamma done
+  contract34(wholeproduct, 1.0, RFtimesT, 0, RTgamma, 0);
+  RefSCMatrix TotalMat = C(AlphaBeta)->clone();
+  TotalMat.assign(0.0);
+  TotalMat << wholeproduct;
+  return TotalMat;
 }
+
 
 RefSymmSCMatrix sc::PT2R12::rdm1_sf()
 {

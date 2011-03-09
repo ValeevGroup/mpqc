@@ -145,7 +145,7 @@ namespace sc {
       /** computes t^pq_rs * Gamma^rs_vx * f^x_w * t^vw_tu; */
       RefSCMatrix X_term_T_Gamma_F_T();
       RefSymmSCMatrix X_transformed_by_C();
-      RefSCMatrix sf_B_contrib_nonfactorizable_part();
+      RefSCMatrix sf_B_others();
 
       // TODO reimplement using native spin-free densities from Psi3
       RefSymmSCMatrix rdm1_sf();  // return spin-free 1/2 rdm

@@ -300,8 +300,12 @@ void contract4(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4
 
 
 /// copies contents of src into dst
-RefSCMatrix& operator<<(RefSCMatrix& dst,
+RefSCMatrix &
+operator<<(RefSCMatrix& dst,
                         const Ref<DistArray4>& src);
+
+/// add two DistArray4 together
+
 
 
 

@@ -1176,6 +1176,15 @@ RefSymmSCMatrix::block(int i) const
   return *this;
 }
 
+RefSCMatrix
+RefSymmSCMatrix::convert2RefSCMat()
+{
+  RefSCMatrix rect = this->kit()->matrix(this->dim(),this->dim());
+  rect.assign(0.0);
+  rect->accumulate(*this);
+  return rect;
+}
+
 
 ///////////////////////////////////////////////////////////////////
 // RefDiagSCMatrix members

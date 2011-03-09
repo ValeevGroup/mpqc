@@ -147,9 +147,6 @@ DistArray4::tasks_with_access(vector<int>& twa_map) const
 
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
-  int nproc_with_ints = 0;
-  for(int proc=0;proc<nproc;proc++)
-    if (has_access(proc)) nproc_with_ints++;
 
   twa_map.resize(nproc);
   int count = 0;
@@ -161,7 +158,7 @@ DistArray4::tasks_with_access(vector<int>& twa_map) const
     else
       twa_map[proc] = -1;
 
-  return nproc_with_ints;
+  return count;
 }
 
 namespace sc{ namespace detail {
@@ -414,6 +411,51 @@ namespace sc {
     return result;
   }
 
+
+
+  Ref<DistArray4> permute34(const Ref<DistArray4>& A)
+  {
+    assert(A->nx() == A->ny());
+
+    Ref<DistArray4> result = A->clone();
+    A->activate();
+    result->activate();
+
+    const unsigned int nbra1 = A->ni();
+    const unsigned int nbra2 = A->nj();
+    const unsigned int nket = A->nx();
+    const unsigned int ntypes = A->num_te_types();
+    double* tmp_blk = allocate<double>(nket * nket);
+
+    for (int t = 0; t < ntypes; ++t)
+    {
+      for (unsigned int b1 = 0; b1 < nbra1; ++b1)
+      {
+        for (unsigned int b2 = 0; b2 < nbra2; ++b2)
+        {
+          const double * b1b2_blk = A->retrieve_pair_block(b1, b2, t);
+          for (unsigned int k1 = 0; k1 < nket; ++k1)
+          {
+            for (unsigned int k2 = 0; k2 < nket; ++k2)
+            {
+              tmp_blk[k1 * nket + k2] = b1b2_blk[k2 * nket + k1];
+            }
+          }
+          A->release_pair_block(b1, b2, t);
+          result->store_pair_block(b1, b2, t, tmp_blk);
+        }
+      }
+    }
+
+    deallocate(tmp_blk);
+    if(A->data_persistent()) A->deactivate();
+    if(result->data_persistent()) result->deactivate();
+  }
+
+
+
+
+
   void axpy(const Ref<DistArray4>& X,
             double a,
             const Ref<DistArray4>& Y,
@@ -474,13 +516,22 @@ namespace sc {
     if (Y->data_persistent()) Y->deactivate();
   }
 
-  void contract34(const Ref<DistArray4>& braket,
+
+
+
+  void contract34(Ref<DistArray4>& braket,
                   double scale,
                   const Ref<DistArray4>& bra,
                   unsigned int intsetidx_bra,
                   const Ref<DistArray4>& ket,
                   unsigned int intsetidx_ket,
                   int debug) {
+    if(braket.null())
+    {
+      DistArray4Dimensions  braket_dims(1, bra->ni(), bra->nj(),
+                                        ket->ni(), ket->nj());
+      Ref<DistArray4> bkaket = bra->clone(braket_dims);
+    }
 
     bra->activate();
     ket->activate();
@@ -717,7 +768,200 @@ namespace sc {
     if (bra != ket && ket->data_persistent()) ket->deactivate();
     if (braket->data_persistent()) braket->deactivate();
 
+    bra->msg()->sync();
   }
+
+
+
+  void contract34_DA4_RefMat(Ref<DistArray4>& braket,
+                                  double scale,
+                                  const Ref<DistArray4>& bra,
+                                  unsigned int intsetidx_bra,
+                                  const RefSCMatrix& ket,
+                                  const int MatBra1Dim, const int MatBra2Dim)
+  {
+    if(braket.null())
+    {
+      DistArray4Dimensions  braket_dims(1, bra->ni(), bra->nj(),
+                                           MatBra1Dim, MatBra2Dim);
+      braket = bra->clone(braket_dims);
+    }
+    bra->activate();
+    braket->activate();
+
+    const unsigned int nb1 = bra->ni();
+    const unsigned int nb2 = bra->nj();
+    const unsigned int nk1 = MatBra1Dim;
+    const unsigned int nk2 = MatBra2Dim;
+    const unsigned int n1 =  bra->nx();
+    const unsigned int n2 =  bra->ny();
+    assert(braket->ni() == nb1);
+    assert(braket->nj() == nb2);
+    assert(braket->nx() == MatBra1Dim);
+    assert(braket->ny() == MatBra2Dim);
+//    abort();
+
+    // Using spinorbital iterators means I don't take into account perm symmetry
+    // More efficient algorithm will require generic code
+    typedef sc::fastpairiter::MOPairIter<sc::fastpairiter::ASymm> MOPairIter;
+    MOPairIter iterbra(nb1, nb2);
+    MOPairIter iterket(nk1, nk2);
+    MOPairIter iterint(n1,  n2);
+    // size of one block of <space1_bra space2_bra|
+    const unsigned int nbra = iterbra.nij();
+    // size of one block of <space1_ket space2_ket|
+    const unsigned int nket = iterket.nij();
+
+    // data will be accessed in tiles
+    // determine tiling here
+    //
+    // size of each integral block |int1 int2)
+    const unsigned int blksize_int = n1 * n2;
+
+
+    // maximum tile size is determined by the available memory
+    const size_t memory_available = ConsumableResources::get_default_instance()->memory();
+    const size_t max_tile_size = (memory_available - nket *blksize_int*sizeof(double)) / (blksize_int * sizeof(double));
+    if (max_tile_size == 0) {
+      throw AlgorithmException("not enough memory for a single tile, increase memory", __FILE__, __LINE__);
+    }
+    // try tiling nij_bra into nproc tiles
+    const int nproc = bra->msg()->n();
+    size_t try_tile_size_bra = (nbra + nproc - 1) / nproc;
+    try_tile_size_bra = std::min(try_tile_size_bra, max_tile_size);
+    const size_t ntiles_bra = (nbra + try_tile_size_bra - 1) / try_tile_size_bra;
+    const size_t tile_size_bra = (nbra + ntiles_bra - 1) / ntiles_bra;
+
+    // scratch buffers to hold tiles and the result of the contraction
+    double* T_bra = allocate<double>(tile_size_bra * blksize_int);
+    double* T_ket = allocate<double>(nket * blksize_int);
+    ket.convert(T_ket);
+    double* T_result = allocate<double>(tile_size_bra * nket);
+
+
+    // split work over tasks which have access to integrals
+    // WARNING: assuming same accessibility for both bra and ket transforms
+    std::vector<int> proc_with_ints;
+    const int nproc_with_ints = bra->tasks_with_access(proc_with_ints);
+    const int me = bra->msg()->me();
+
+    if (bra->has_access(me)) {
+
+      size_t task_count = 0; // task counts starts
+
+      typedef triple<unsigned int, unsigned int, unsigned int> uint3; // keep track of each tile's sets of i and j values
+      std::vector<uint3> bra_ij;
+      iterbra.start();
+      size_t tbra_offset = 0; // 'tbra' loops over bra tiles for this set; 'tbra_offset' tracks the block pos after each tile
+      for (size_t tbra = 0; tbra < ntiles_bra; ++tbra, tbra_offset += tile_size_bra, ++task_count) {
+        double* bra_tile = 0;   // zero indicates it needs to be loaded
+
+          // distribute tasks by round-robin
+          const int task_proc = task_count % nproc_with_ints;
+          if (task_proc != proc_with_ints[me])
+            continue;
+
+          // has the bra tile been loaded?
+          if (bra_tile == 0) {
+            bra_tile = T_bra;
+            for (size_t i=0; iterbra && i<tile_size_bra; ++i, iterbra.next()) {
+              const uint3 ijt(iterbra.i(), iterbra.j(), iterbra.ij());
+              bra_ij.push_back(ijt);
+
+              // where to read the integrals? if not antisymmetrizing read directly to T_bra, else read to scratch
+              // buffer, then antisymmetrize to T_bra
+              double* blk_ptr_read = bra_tile + i*blksize_int;
+              Timer tim_intsretrieve("MO ints retrieve");
+              const double* blk_cptr = bra->retrieve_pair_block(ijt.i0_,
+                                                                   ijt.i1_,
+                                                                   intsetidx_bra,
+                                                                   blk_ptr_read);
+              tim_intsretrieve.exit();
+            }
+          }
+
+
+          // contract bra and ket blocks
+          const size_t nbra_ij = bra_ij.size();
+          C_DGEMM('n', 't',
+                  nbra_ij, nket, blksize_int,
+                  scale, bra_tile, blksize_int,
+                  T_ket, blksize_int,
+                  0.0, T_result, nket);
+
+
+          // copy the result
+          for(size_t ij=0; ij<nbra_ij; ++ij) {
+            for(size_t kl=0; kl<nket; ++kl) {
+
+              const int i = bra_ij[ij].i0_;
+              const int j = bra_ij[ij].i1_;
+              braket->store_pair_block(i, j, 0, T_result);
+            }
+          }
+
+        if (bra_tile != 0) {
+          const size_t nbra_ij = bra_ij.size();
+          for(size_t ij=0; ij<nbra_ij; ++ij)
+          {
+            bra->release_pair_block(bra_ij[ij].i0_,
+                                       bra_ij[ij].i1_,
+                                       intsetidx_bra);
+          }
+          bra_tile = 0;
+          bra_ij.resize(0);
+        }
+
+      } // bra tile loop
+    } // loop over tasks with access
+
+    deallocate(T_bra);
+    deallocate(T_ket);
+    deallocate(T_result);
+
+    if (bra->data_persistent()) bra->deactivate();
+    if (braket->data_persistent()) braket->deactivate();
+  }
+
+
+  void contract_DA4_RefMat_k2b2_34(Ref<DistArray4>& braket,
+                         double scale,
+                         const Ref<DistArray4>& bra,
+                         unsigned int intsetidx_bra,
+                         const RefSCMatrix& ket,
+                         const int MatBra1Dim, const int MatBra2Dim)
+  {
+    if(braket.null())
+     {
+       DistArray4Dimensions  braket_dims(1, bra->ni(), MatBra1Dim, bra->nx(), MatBra2Dim);
+       braket = bra->clone(braket_dims);
+     }
+    Ref<DistArray4> DA_Aixy = permute23(bra);
+    Ref<DistArray4> DA_M;
+    contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
+    braket = permute23(DA_M);
+    return;
+  }
+
+  void contract_DA4_RefMat_k1b2_34(Ref<DistArray4>& braket,
+                         double scale,
+                         const Ref<DistArray4>& bra,
+                         unsigned int intsetidx_bra,
+                         const RefSCMatrix& ket,
+                         const int MatBra1Dim, const int MatBra2Dim)
+  {
+    if(braket.null())
+     {
+       DistArray4Dimensions  braket_dims(1, bra->ni(), MatBra1Dim, bra->ny(), MatBra2Dim);
+       braket = bra->clone(braket_dims);
+     }
+    Ref<DistArray4> DA_Aixy = permute23(permute34(bra));
+    Ref<DistArray4> DA_M;
+    contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
+    braket = permute23(DA_M);
+    return;
+  }
+
 
   namespace {
 
@@ -971,7 +1215,6 @@ namespace sc {
       dst.assign_row(row, b12);
 
       src->release_pair_block(b1, b2, 0);
-
     }
 
     if (src->data_persistent()) src->deactivate();

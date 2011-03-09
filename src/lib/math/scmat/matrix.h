@@ -374,6 +374,8 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
      * Otherwise return this as block 0.
      */
     RefSymmSCMatrix block(int i) const;
+    /// convert RefSymmSCMatrix to RefSCMatrix
+    RefSCMatrix convert2RefSCMat();
 };
 /// Allow multiplication with a scalar on the left.
 RefSymmSCMatrix operator*(double,const RefSymmSCMatrix&);

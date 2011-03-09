@@ -105,6 +105,10 @@ namespace sc {
                          // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'
       int debug_;
 
+
+      /// this is to help combine similar functions to one
+      enum Tensor4_Permute {Permute23 =1, Permute34 = 2};
+
       /// 1-RDM as provided by the rdm1_ object
       RefSymmSCMatrix rdm1(SpinCase1 spin);
       /// 2-RDM as provided by the rdm2_ object
@@ -148,6 +152,10 @@ namespace sc {
       RefSymmSCMatrix rdm2_sf();
       ///  return a * Gamma(pq; rs) + b Gamma(p;r) Gamma(q;s) + c Gamma(p; s) Gamma(q; r)
       RefSymmSCMatrix rdm2_sf_interm(double a, double b, double c);
+
+      template<Tensor4_Permute HowPermute>
+      RefSymmSCMatrix rdm2_sf_inter_permu(RefSymmSCMatrix SFrdm2inter);
+
 
       /** compute CABS singles correction using Fock operator as H0 */
       double energy_cabs_singles(SpinCase1 spin);

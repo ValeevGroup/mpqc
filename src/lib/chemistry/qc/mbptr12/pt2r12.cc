@@ -42,6 +42,7 @@ using namespace sc;
 
 namespace {
 
+
   int triang_half_INDEX_ordered(int i, int j) {
     return(i*(i+1)/2+j);
   }
@@ -1493,6 +1494,37 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf_interm(double a, double b, double c)
   }
   return(rdm2_int);
 }
+
+
+template<sc::PT2R12::Tensor4_Permute HowPermute>
+RefSymmSCMatrix sc::PT2R12::rdm2_sf_inter_permu(RefSymmSCMatrix SFrdm2inter)
+{
+  RefSymmSCMatrix rdmPermute = SFrdm2inter.clone();
+  rdmPermute.assign(0.0);
+  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
+  const unsigned int no = occ_space->rank();
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
+  {
+    for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
+      {
+         const int u1 = upp_pair->i();
+         const int u2 = upp_pair->j();
+         const int l1 = low_pair->i();
+         const int l2 = low_pair->j();
+         double oneelement;
+         if(HowPermute == sc::PT2R12::Permute34)
+             oneelement = SFrdm2inter.get_element(upp_pair->ij(), l2* no + l1);
+         else if(HowPermute == sc::PT2R12::Permute23)
+             oneelement = SFrdm2inter.get_element(u1*no + l1, u2* no + l2);
+         rdmPermute(upp_pair->ij(), low_pair->ij()) = oneelement;
+      }
+  }
+  return rdmPermute;
+}
+
+
 
 namespace {
   RefSymmSCMatrix convert_to_local_kit(const RefSymmSCMatrix& A) {

@@ -214,6 +214,11 @@ extract(const Ref<DistArray4>& A,
 */
 Ref<DistArray4> permute23(const Ref<DistArray4>& src);
 
+/** creates an array in which indices 3 and 4 are permuted
+*/
+Ref<DistArray4> permute34(const Ref<DistArray4>& src);
+
+
 /// axpy followed by scaling: Y += a*X; Y *= scale.
 void
 axpy(const Ref<DistArray4>& X,
@@ -236,7 +241,7 @@ void antisymmetrize(const Ref<DistArray4>& A);
 void symmetrize(const Ref<DistArray4>& A);
 
 /// contracts ijxy ("bra") with klxy ("ket") to produce ijkl ("braket")
-void contract34(const Ref<DistArray4>& braket,
+void contract34(Ref<DistArray4>& braket,
                 double scale,
                 const Ref<DistArray4>& bra,
                 unsigned int intsetidx_bra,
@@ -244,24 +249,61 @@ void contract34(const Ref<DistArray4>& braket,
                 unsigned int intsetidx_ket,
                 int debug = 0);
 
+
+/// contracts ijxy("bra") with klxy ("ket", a RefSCMatrix) to produce ijkl ("braket"); The last two arguments
+/// definie the dimension for the resultant DistArray4 object, since a RefSCMatrix itself only gives the the product of dimensions
+void contract34_DA4_RefMat(Ref<DistArray4>& braket,
+                                              double scale,
+                                              const Ref<DistArray4>& bra,
+                                              unsigned int intsetidx_bra,
+                                              const RefSCMatrix& ket,
+                                              const int MatBra1Dim, const int MatBra2Dim);
+
+
+/// Contract  X^Aj_ik = DA^Ax_iy * M^jk_xy; This is written for spin free[2]R12, where rdm matrices can be
+/// easily permuted to assume the needed form; while write a general function involving, say, M^jy_kx
+/// would need to permute k&y, which then needs the dimension information. So we prefer to pre-arrange M
+/// so that we can directly use contract34_DA4_RefMat.
+/// procedure: DA'^Ai_xy <- DA^Ax_iy from permute23
+///            then C^Ai_jk <- DA'^Ai_xy ** M^jk_xy from contract34_DA4_RefMat
+///            then X^Aj_ik <- C^Ai_jk from permute23 again.
+
+
+void contract_DA4_RefMat_k2b2_34(Ref<DistArray4>& braket,
+                       double scale,
+                       const Ref<DistArray4>& bra,
+                       unsigned int intsetidx_bra,
+                       const RefSCMatrix& ket,
+                       const int MatBra1Dim, const int MatBra2Dim);
+
+
+/// Contract  X^Aj_ik = DA^Ax_yi * M^jk_xy;
+/// procedure: DA'^Ax_iy <- DA^Ax_yi from permute34
+///            DA''^Ai_xy <- DA'^Ax_iy from permute23
+///            then C^Ai_jk <- DA'^Ai_xy ** M^jk_xy from contract34_DA4_RefMat
+///            then X^Aj_ik <- C^Ai_jk from permute23 again.
+
+void contract_DA4_RefMat_k1b2_34(Ref<DistArray4>& braket,
+                       double scale,
+                       const Ref<DistArray4>& bra,
+                       unsigned int intsetidx_bra,
+                       const RefSCMatrix& ket,
+                       const int MatBra1Dim, const int MatBra2Dim);
+
+
 /// contracts ijxy with T_xz to produce ijzy
 void contract3(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijzy);
 
 /// contracts ijxy with T_yz to produce ijxz
 void contract4(const Ref<DistArray4>& ijxy, const RefSCMatrix& T, Ref<DistArray4>& ijxz);
 
-/// contracts ijxy ("bra") with klxy ("ket") to produce ijkl ("braket")
-void contract_44_k1b2_k1b2(const Ref<DistArray4>& braket,
-                           double scale,
-                           const Ref<DistArray4>& bra,
-                           unsigned int intsetidx_bra,
-                           const Ref<DistArray4>& ket,
-                           unsigned int intsetidx_ket,
-                           int debug = 0);
+
 
 /// copies contents of src into dst
 RefSCMatrix& operator<<(RefSCMatrix& dst,
                         const Ref<DistArray4>& src);
+
+
 
 namespace detail {
 

@@ -37,6 +37,7 @@
 #include <util/group/thread.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/gpetite.h>
+#include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/scf/fockbuild.h>
 #include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/scf/hsoshfcontrib.h>
@@ -89,6 +90,45 @@ namespace sc {
         }
       };
     };
+
+    typedef Ref<OneBodyInt> (Integral::*OneBodyIntCreator)();
+    template <OneBodyIntCreator OpEval>
+    RefSymmSCMatrix onebodyint(const Ref<GaussianBasisSet>& bas,
+                               const Ref<Integral>& integral) {
+      Ref<Integral> localints = integral->clone();
+      localints->set_basis(bas);
+      Ref<PetiteList> pl = localints->petite_list();
+
+      // form skeleton operator matrix in AO basis
+      RefSymmSCMatrix opmat_ao(bas->basisdim(), bas->matrixkit());
+      opmat_ao.assign(0.0);
+      Ref<SCElementOp> elemop =
+          new OneBodyIntOp(new SymmOneBodyIntIter( (localints->*OpEval)(), pl));
+      opmat_ao.element_op(elemop);
+      elemop= 0;
+
+      // now symmetrize
+      RefSymmSCMatrix opmat(pl->SO_basisdim(), bas->so_matrixkit());
+      pl->symmetrize(opmat_ao, opmat);
+
+      return opmat;
+    }
+
+    template <OneBodyIntCreator OpEval>
+    RefSCMatrix onebodyint(const Ref<GaussianBasisSet>& brabas,
+                           const Ref<GaussianBasisSet>& ketbas,
+                           const Ref<Integral>& integral) {
+
+      Ref<Integral> localints = integral->clone();
+      Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
+      localints->set_basis(brabas,ketbas);
+
+      // form overlap in AO basis
+      RefSCMatrix sao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
+      sao.assign(0.0);
+
+      abort();
+    }
 
     /// computes overlap matrix in SO basis
     RefSymmSCMatrix overlap(const Ref<GaussianBasisSet>& bas,

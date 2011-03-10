@@ -34,6 +34,7 @@
 
 #include <util/class/scexception.h>
 #include <util/misc/runnable.h>
+#include <math/mmisc/grid.h>
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/basis/orthog.h>
@@ -48,8 +49,28 @@ namespace sc {
 class ETraIn: public Function, public Runnable {
 
   public:
-  // Only KeyVal constructor is provided. SavableState functionality will not be used
+  /** A KeyVal constructor is used to generate a name
+      object from the input. The full list of keywords
+      that are accepted is below.
+
+      <table border="1">
+
+      <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+
+      <tr><td><tt>wfn1</tt><td>OneBodyWavefunction<td>none<td>Specifies how to compute fragment 1 orbitals
+      <tr><td><tt>wfn2</tt><td>OneBodyWavefunction<td>none<td>Specifies how to compute fragment 2 orbitals
+      <tr><td><tt>wfn12</tt><td>OneBodyWavefunction<td>none<td>Specifies how to compute the Fock operator
+                                (typically it's a wavefunction for the combination of fragment 1 and 2)
+
+      <tr><td><tt>nocc</tt><td>int<td>-1<td>Number of occupied orbitals from each fragment to consider. The default, -1, means to include all.
+      <tr><td><tt>nuocc</tt><td>int<td>-1<td>Number of unoccupied orbitals from each fragment to consider. The default, -1, means to include all.
+
+      <tr><td><tt>grid</tt><td>Grid<td>null<td>If specified, ETraIn will evaluate fragment 1 and 2 orbitals on this Grid.
+
+      </table>
+   */
   ETraIn(const Ref<KeyVal>&);
+  // Only KeyVal constructor is provided. SavableState functionality will not be used
 
   // Implementation of Runnable::run()
   void run();
@@ -61,19 +82,21 @@ class ETraIn: public Function, public Runnable {
   private:
 
   // n-mer wave function
-  Ref<OneBodyWavefunction> scf12_;
+  Ref<OneBodyWavefunction> obwfn12_;
   // Monomer wave functions
-  Ref<OneBodyWavefunction> scf1_;
-  Ref<OneBodyWavefunction> scf2_;
+  Ref<OneBodyWavefunction> obwfn1_;
+  Ref<OneBodyWavefunction> obwfn2_;
   // because the computational frames for monomers may not coincide with that of the n-mer
   // compute the atom maps from monomers to the n-mer
   std::vector<unsigned int> atom_map1_;
   std::vector<unsigned int> atom_map2_;
 
   // Number of monomer HOMOs and LUMOs specifies the basis in which to compute transfer matrices
-  int nhomo_, nlumo_;
+  int nocc_, nuocc_;
   // debug level
   unsigned int debug_;
+  // grid
+  Ref<Grid> grid_;
 
   // this function computes and prints out transfer integral (and overlap) matrix
   void compute_train();

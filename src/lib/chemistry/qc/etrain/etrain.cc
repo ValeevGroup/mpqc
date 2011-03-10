@@ -42,8 +42,10 @@
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/wfn/orbital.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/etrain/etrain.h>
+#include <chemistry/qc/lcao/fockbuilder.h>
 
 using namespace sc;
 
@@ -57,44 +59,45 @@ static ClassDesc ETraIn_cd(typeid(ETraIn), "ETraIn", 1,
 
 ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
 {
-  scf12_ << keyval->describedclassvalue("scf12");
-  scf1_ << keyval->describedclassvalue("scf1");
-  scf2_ << keyval->describedclassvalue("scf2");
+  obwfn12_ << keyval->describedclassvalue("wfn12");
+  obwfn1_ << keyval->describedclassvalue("wfn1");
+  obwfn2_ << keyval->describedclassvalue("wfn2");
+  grid_ << keyval->describedclassvalue("grid");
 
   //
   // Check wave functions. Must be for closed-shell systems and derived from OneBodyWavefunction
   //
-  if (scf12_.null())
-    throw InputError("scf12 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
-  if (scf1_.null())
-    throw InputError("scf1 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
-  if (scf2_.null())
-    throw InputError("scf2 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
-  if (scf12_->nelectron()%2)
-    throw InputError("scf12 wave function must be of closed-shell type");
-  if (scf1_->nelectron()%2)
-    throw InputError("scf1 wave function must be of closed-shell type");
-  if (scf2_->nelectron()%2)
-    throw InputError("scf2 wave function must be of closed-shell type");
+  if (obwfn12_.null())
+    throw InputError("wfn12 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
+  if (obwfn1_.null())
+    throw InputError("wfn1 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
+  if (obwfn2_.null())
+    throw InputError("wfn2 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
+  if (obwfn12_->nelectron()%2)
+    throw InputError("wfn12 wave function must be of closed-shell type");
+  if (obwfn1_->nelectron()%2)
+    throw InputError("wfn1 wave function must be of closed-shell type");
+  if (obwfn2_->nelectron()%2)
+    throw InputError("wfn2 wave function must be of closed-shell type");
 
   // Must use canonical orthogonalization method since symmetric does not drop redundant combinations
-  if (scf12_->orthog_method() != OverlapOrthog::Canonical ||
-      scf1_->orthog_method() != OverlapOrthog::Canonical ||
-      scf2_->orthog_method() != OverlapOrthog::Canonical) {
+  if (obwfn12_->orthog_method() != OverlapOrthog::Canonical ||
+      obwfn1_->orthog_method() != OverlapOrthog::Canonical ||
+      obwfn2_->orthog_method() != OverlapOrthog::Canonical) {
     throw InputError("all Wavefunctions must use canonical orthogonalization method",__FILE__,__LINE__);
   }
 
-  // nhomo_ and nlumo_ default to -1, which means to use all monomer orbitals
-  nhomo_  = keyval->intvalue("nhomo",KeyValValueint(-1));
-  nlumo_  = keyval->intvalue("nlumo",KeyValValueint(-1));
+  // nocc_ and nuocc_ default to -1, which means to use all monomer orbitals
+  nocc_  = keyval->intvalue("nocc",KeyValValueint(-1));
+  nuocc_  = keyval->intvalue("nuocc",KeyValValueint(-1));
   debug_  = keyval->intvalue("debug",KeyValValueint(0));
 
   // check that monomer atoms are subsets of the n-mer and construct atom maps
   // since Molecule does not rotate atoms, the difference in coordinates can be only due to different
   // origins
-  Ref<Molecule> mol1 = scf1_->molecule();
-  Ref<Molecule> mol2 = scf2_->molecule();
-  Ref<Molecule> mol12 = scf12_->molecule();
+  Ref<Molecule> mol1 = obwfn1_->molecule();
+  Ref<Molecule> mol2 = obwfn2_->molecule();
+  Ref<Molecule> mol12 = obwfn12_->molecule();
   // monomer 1
   {
     SCVector3 shift1 = mol12->ref_origin() - mol1->ref_origin();
@@ -140,9 +143,9 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
 void
 ETraIn::obsolete() {
   Function::obsolete();
-  scf12_->obsolete();
-  scf1_->obsolete();
-  scf2_->obsolete();
+  obwfn12_->obsolete();
+  obwfn1_->obsolete();
+  obwfn2_->obsolete();
 }
 
 void
@@ -158,12 +161,12 @@ ETraIn::compute(void)
     abort();
   }
 
-  scf12_->set_desired_value_accuracy(desired_value_accuracy());
-  scf1_->set_desired_value_accuracy(desired_value_accuracy());
-  scf2_->set_desired_value_accuracy(desired_value_accuracy());
-  double energy12 = scf12_->energy();
-  double energy1 = scf1_->energy();
-  double energy2 = scf2_->energy();
+  obwfn12_->set_desired_value_accuracy(desired_value_accuracy());
+  obwfn1_->set_desired_value_accuracy(desired_value_accuracy());
+  obwfn2_->set_desired_value_accuracy(desired_value_accuracy());
+  double energy12 = obwfn12_->energy();
+  double energy1 = obwfn1_->energy();
+  double energy2 = obwfn2_->energy();
   compute_train();
 
   set_value(0.0);
@@ -175,19 +178,19 @@ ETraIn::compute_train()
 {
   // Effective Hailtonian for SCF and other (ExtendedHuckel) wave functions is recovered via different members
   // thus need to determine which wave function we have
-  Ref<CLSCF> scf12_clscf; scf12_clscf << scf12_;
+  Ref<CLSCF> obwfn12_clscf; obwfn12_clscf << obwfn12_;
 
-  if (! scf12_->integral()->equiv(scf1_->integral()) ||
-      ! scf12_->integral()->equiv(scf2_->integral()) )
+  if (! obwfn12_->integral()->equiv(obwfn1_->integral()) ||
+      ! obwfn12_->integral()->equiv(obwfn2_->integral()) )
     throw InputError("Integral factories must match for all calculations",__FILE__,__LINE__);
-  const Ref<Integral>& integral = scf12_->integral();
+  const Ref<Integral>& integral = obwfn12_->integral();
 
-  RefSCMatrix vec12_so = scf12_->eigenvectors();
-  RefSCMatrix vec1_so = scf1_->eigenvectors();
-  RefSCMatrix vec2_so = scf2_->eigenvectors();
-  Ref<PetiteList> plist12 = scf12_->integral()->petite_list();
-  Ref<PetiteList> plist1 = scf1_->integral()->petite_list();
-  Ref<PetiteList> plist2 = scf2_->integral()->petite_list();
+  RefSCMatrix vec12_so = obwfn12_->eigenvectors();
+  RefSCMatrix vec1_so = obwfn1_->eigenvectors();
+  RefSCMatrix vec2_so = obwfn2_->eigenvectors();
+  Ref<PetiteList> plist12 = obwfn12_->integral()->petite_list();
+  Ref<PetiteList> plist1 = obwfn1_->integral()->petite_list();
+  Ref<PetiteList> plist2 = obwfn2_->integral()->petite_list();
   RefSCMatrix vec12 = plist12->evecs_to_AO_basis(vec12_so);
   RefSCMatrix vec1 = plist1->evecs_to_AO_basis(vec1_so);
   RefSCMatrix vec2 = plist2->evecs_to_AO_basis(vec2_so);
@@ -197,9 +200,9 @@ ETraIn::compute_train()
   // we thank ye, MPQC gods!
   //
   // because frames may be shifted, however, can't just say bs12 << bs1
-  Ref<GaussianBasisSet> bs1 = scf1_->basis();
-  Ref<GaussianBasisSet> bs2 = scf2_->basis();
-  Ref<GaussianBasisSet> bs12 = scf12_->basis();
+  Ref<GaussianBasisSet> bs1 = obwfn1_->basis();
+  Ref<GaussianBasisSet> bs2 = obwfn2_->basis();
+  Ref<GaussianBasisSet> bs12 = obwfn12_->basis();
   std::vector<unsigned int> basis_map1(bs1->nbasis());  // maps basis functions of bs1 to bs12
   std::vector<unsigned int> basis_map2(bs2->nbasis());  // etc.
   {  // map bs1 to bs12
@@ -234,7 +237,7 @@ ETraIn::compute_train()
 
       const int nshell = bs2->nshell_on_center(a);
       for(int s=0; s<nshell; ++s) {
-        const int S = bs1->shell_on_center(a, s);
+        const int S = bs2->shell_on_center(a, s);
         int s12;
         try {
           s12 = ishell_on_center(a12, bs12, bs2->shell(S));
@@ -279,32 +282,32 @@ ETraIn::compute_train()
   // Compute how many monomer orbitals to consider for the transfer matrices
   int  nomo_omit1, nomo_omit2;
   int  numo_omit1, numo_omit2;
-  const int nocc1 = scf1_->nelectron()/2;
-  const int nocc2 = scf2_->nelectron()/2;
-  if (nhomo_ == -1) {
+  const int nocc1 = obwfn1_->nelectron()/2;
+  const int nocc2 = obwfn2_->nelectron()/2;
+  if (nocc_ == -1) {
     nomo_omit1 = 0;
     nomo_omit2 = 0;
   }
   else {
-    nomo_omit1 = nocc1 - nhomo_;
-    nomo_omit2 = nocc2 - nhomo_;
+    nomo_omit1 = nocc1 - nocc_;
+    nomo_omit2 = nocc2 - nocc_;
   }
-  if (nlumo_ == -1) {
+  if (nuocc_ == -1) {
     numo_omit1 = 0;
     numo_omit2 = 0;
   }
   else {
-    numo_omit1 = vec1_12.coldim().n() - nocc1 - nlumo_;
-    numo_omit2 = vec2_12.coldim().n() - nocc2 - nlumo_;
+    numo_omit1 = vec1_12.coldim().n() - nocc1 - nuocc_;
+    numo_omit2 = vec2_12.coldim().n() - nocc2 - nuocc_;
   }
   if (nomo_omit1 < 0) nomo_omit1 = 0;
   if (nomo_omit2 < 0) nomo_omit2 = 0;
   if (numo_omit1 < 0) numo_omit1 = 0;
   if (numo_omit2 < 0) numo_omit2 = 0;
   // select only the requested HOMOs and LUMOs
-  Ref<OrbitalSpace> dspace =  new OrbitalSpace("D", "n-mer basis set space", vec12, scf12_->basis(), scf12_->integral(), scf12_->eigenvalues(), 0, 0);
-  Ref<OrbitalSpace> m1space = new OrbitalSpace("m1", "Monomer 1 active MO space", vec1_12, scf12_->basis(), scf1_->integral(), scf1_->eigenvalues(), nomo_omit1, numo_omit1);
-  Ref<OrbitalSpace> m2space = new OrbitalSpace("m2", "Monomer 2 active MO space", vec2_12, scf12_->basis(), scf2_->integral(), scf2_->eigenvalues(), nomo_omit2, numo_omit2);
+  Ref<OrbitalSpace> dspace =  new OrbitalSpace("D", "n-mer basis set space", vec12, obwfn12_->basis(), obwfn12_->integral(), obwfn12_->eigenvalues(), 0, 0);
+  Ref<OrbitalSpace> m1space = new OrbitalSpace("m1", "Monomer 1 active MO space", vec1_12, obwfn12_->basis(), obwfn1_->integral(), obwfn1_->eigenvalues(), nomo_omit1, numo_omit1);
+  Ref<OrbitalSpace> m2space = new OrbitalSpace("m2", "Monomer 2 active MO space", vec2_12, obwfn12_->basis(), obwfn2_->integral(), obwfn2_->eigenvalues(), nomo_omit2, numo_omit2);
   vec1_12 = 0; vec2_12 = 0;
 
   if (debug_ > 0) {
@@ -335,26 +338,26 @@ ETraIn::compute_train()
 #endif
 
   // Compute the n-mer Fock matrix in SO basis -- must transform from MO basis to SO basis
-  RefSymmSCMatrix fock12_so(scf12_->so_dimension(), scf12_->basis_matrixkit());
+  RefSymmSCMatrix fock12_so(obwfn12_->so_dimension(), obwfn12_->basis_matrixkit());
   fock12_so.assign(0.0);
-  RefSCMatrix sobymo = scf12_->mo_to_so();
+  RefSCMatrix sobymo = obwfn12_->mo_to_so();
   // SCF Hamiltonian is obtained with effective_fock()
 #if 1
-  if (scf12_clscf.nonnull()) {
-    fock12_so.accumulate_transform(scf12_->mo_to_so(), scf12_clscf->effective_fock());
+  if (obwfn12_clscf.nonnull()) {
+    fock12_so.accumulate_transform(obwfn12_->mo_to_so(), obwfn12_clscf->effective_fock());
   }
   // Other (incl. Huckel) Hamiltonian are assumed to be simply the eigenvalues
   else {
 #else
   {
 #endif
-    RefSymmSCMatrix fock12_mo(scf12_->oso_dimension(), scf12_->basis_matrixkit());
-    const int nmo = scf12_->oso_dimension().n();
-    RefDiagSCMatrix fock12_evals = scf12_->eigenvalues();
+    RefSymmSCMatrix fock12_mo(obwfn12_->oso_dimension(), obwfn12_->basis_matrixkit());
+    const int nmo = obwfn12_->oso_dimension().n();
+    RefDiagSCMatrix fock12_evals = obwfn12_->eigenvalues();
     fock12_mo.assign(0.0);
     for(int i=0; i<nmo; i++)
       fock12_mo.set_element(i,i,fock12_evals(i));
-    fock12_so.accumulate_transform(scf12_->mo_to_so(), fock12_mo);
+    fock12_so.accumulate_transform(obwfn12_->mo_to_so(), fock12_mo);
   }
 
   // now transform the n-mer Fock matrix to AO basis
@@ -362,6 +365,9 @@ ETraIn::compute_train()
 
   // Compute n-mer Fock matrix between M1d and M2d
   RefSCMatrix F12 = C1projT * fock12_ao * C2proj;
+#if 0 // need to look at other one-electron operators?
+  F12 = C1projT * plist12->to_AO_basis(sc::detail::onebodyint<&Integral::hcore>(m1space->basis(), Integral::get_default_integral())) * C2proj;
+#endif
   F12.print("Transfer Fock matrix");
 
   // Compute overlap matrix between M1d and M2d
@@ -389,6 +395,23 @@ ETraIn::compute_train()
     RefSCMatrix S2D = compute_overlap_ints(m2space,dspace);  S2D.print("Overlap between monomer 1 and n-mer orbitals");
   }
 
+  // optional: print orbitals on the grid
+  if (grid_.nonnull()) {
+    // merge the two spaces together
+    Ref<OrbitalSpace> m12space = new OrbitalSpaceUnion("m1+m2", "Monomers 1+2 active MO space",
+                                                       *m1space, *m2space, true);
+    // create labels for mos: fragment 1 will be negative, fragment 2 positive
+    std::vector<int> labels;
+    for(int o=0; o<m1space->rank(); ++o)
+      labels.push_back(- (o + nomo_omit1 + 1));
+    for(int o=0; o<m2space->rank(); ++o)
+      labels.push_back(  (o + nomo_omit2 + 1));
+    Ref<WriteOrbitals> wrtorbs = new WriteOrbitals(m12space, labels,
+                                                   grid_,
+                                                   std::string("gaussian_cube"),
+                                                   std::string("mo.cube"));
+    wrtorbs->run();
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

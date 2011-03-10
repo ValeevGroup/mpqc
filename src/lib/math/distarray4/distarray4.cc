@@ -534,7 +534,7 @@ namespace sc {
     {
       DistArray4Dimensions  braket_dims(1, bra->ni(), bra->nj(),
                                         ket->ni(), ket->nj());
-      Ref<DistArray4> bkaket = bra->clone(braket_dims);
+      braket = bra->clone(braket_dims);
     }
 
     bra->activate();

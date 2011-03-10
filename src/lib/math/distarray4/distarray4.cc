@@ -346,6 +346,7 @@ namespace sc {
     const int njy = nj * ny;
     DistArray4Dimensions result_dims(nt, ni, nx, nj, ny, DistArray4Storage_XY);
     Ref<DistArray4> result = src->clone(result_dims);
+    src->activate();
     result->activate();
 
     // determine the size and number of x tiles
@@ -407,6 +408,8 @@ namespace sc {
 
     deallocate(xjy_buf);
     deallocate(xy_buf);
+    if(src->data_persistent()) src->deactivate();
+    if(result->data_persistent()) result->deactivate();
 
     return result;
   }
@@ -957,8 +960,8 @@ namespace sc {
        braket = bra->clone(braket_dims);
      }
 
-    Ref<DistArray4> DA_Aixy = permute34(bra);
-    DA_Aixy = permute23(DA_Aixy);
+    Ref<DistArray4> DA1 = permute34(bra);
+    Ref<DistArray4> DA_Aixy = permute23(DA1);
     Ref<DistArray4> DA_M;
     contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
     braket = permute23(DA_M);

@@ -40,6 +40,7 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 #include <util/class/scexception.h>
 
 
@@ -412,34 +413,46 @@ double
 OneBodyWavefunction::orbital(const SCVector3& r, int iorb)
 {
   Ref<PetiteList> pl = integral()->petite_list();
-  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
+  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo().t());
   return Wavefunction::orbital(r,iorb, ao_orbital_coeff);
 }
 
-void OneBodyWavefunction::orbitals(const std::vector<int> & Orbs, const std::vector<SCVector3> & Points,
-                                   double * & Vals)
+void OneBodyWavefunction::orbitals(const std::vector<SCVector3> & Points,
+                                   std::vector<double>& Vals,
+                                   unsigned int first, unsigned int last,
+                                   bool energy_ordered)
 {
   Ref<PetiteList> pl = integral()->petite_list();
-  RefSCMatrix ao_orbital_coeff = pl->evecs_to_AO_basis(this->so_to_mo());
-  const int numpoints = Points.size();
-  const int numorbs = Orbs.size();
-  {
-      int i1, i2;
-      for(i1 = 0; i1 < numpoints; ++i1)
-      {
-          for(i2 = 0; i2 < numorbs; ++i2)
-          {
-              static int offse = 0;
-              Vals[offse] = Wavefunction::orbital(Points[i1], Orbs[i2], ao_orbital_coeff);
-              offse++;
-          }
-      }
+  RefSCMatrix aocoefs_full = pl->evecs_to_AO_basis(this->so_to_mo().t());
+  RefSCMatrix aocoefs;
+  if (energy_ordered) {
+    Ref<OrbitalSpace> mospace = new OrbitalSpace("p", "energy-ordered MOs to evaluate",
+                                                 aocoefs_full, this->basis(), this->integral(),
+                                                 this->eigenvalues(),
+                                                 first, aocoefs_full.ncol() - last - 1);
+    aocoefs = mospace->coefs_nb();
   }
-  return;
+  else {
+    aocoefs = this->matrixkit()->matrix(aocoefs_full.rowdim(),
+                                        new SCDimension(last - first + 1));
+    for(int r=0; r<aocoefs.nrow(); ++r)
+      for(int c=0; c<aocoefs.ncol(); ++c)
+        aocoefs(r,c) = aocoefs_full(r,c+first);  // select mos \in [first,last]
+  }
+
+  // Wavefunction::orbitals wants transposed MOs (nmo by nao)
+  aocoefs = aocoefs.t();
+  const int numpoints = Points.size();
+  const int nmo = aocoefs.nrow();
+  Vals.resize(numpoints * nmo);
+  int count = 0;
+  RefSCVector values = aocoefs->kit()->vector(aocoefs.rowdim());
+  for(int i1 = 0; i1 < numpoints; ++i1) {
+    Wavefunction::orbitals(Points[i1], aocoefs, values);
+    values.convert(&(Vals[count]));
+    count += nmo;
+  }
 }
-
-
-
 
 // Function for returning an orbital value at a point
 double

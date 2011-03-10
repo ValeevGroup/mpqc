@@ -80,14 +80,6 @@ class Grid: public DescribedClass {
     Grid(const Ref<KeyVal> &);
 };
 
-
-
-
-
-
-
-
-
 /** The abstract WriteGrid class provides an interface for writing the value
     of a scalar function evaluated at a given set of grid points to a file. */
 class WriteGrid: public Runnable {
@@ -142,33 +134,33 @@ class WriteGrid: public Runnable {
     void run();
 };
 
-
-
-
-
-
-
-
 /**
-  WriteGrids is written to facilitate outputing many orbitals to one file, via modifying the class WriteGrid.
-  Eventually the writing is realized in the inherited class WriteOrbitals.
-  Basically, we add a pair of parameters, which (when used in writing orbitals) determining the first and last orbitals to be output.
+  WriteVectorGrid provides an interface for writing the value
+  of a vector function evaluated at a given set of grid points to a file (compare to WriteGrid).
  */
-class WriteGrids: public Runnable {
+class WriteVectorGrid: public Runnable {
+  public:
+    // see wf_gaussian_cube
+    struct DimensionMap {
+      virtual int operator()(int d) const {
+        return d;
+      }
+    };
+
   private:
     /** for now, only Gaussian cube file format is implemented; other formats can be done similarly when necessary.
+     *
+     *  @param DimensionMap vector's dimensions are assumed to be a noncontiguous subset of a larger (super)set of dimensions.
+     *         DimensionMap is a functor that maps dimensions to the superset.
      */
-    void wf_gaussian_cube(std::ostream &out);
+    void wf_gaussian_cube(std::ostream &out, const DimensionMap& dmap);
   protected:
     std::string filename_;
     Ref<Grid> grid_;
     std::string format_;
-    int first_;
-    int last_;
+    void (WriteVectorGrid::*write_format_)(std::ostream &out, const DimensionMap& dmap);
 
-
-    void (WriteGrids::*write_format_)(std::ostream &out);
-    /** Prepares some pre-caculated values before the repetitive grid calculations
+    /** Prepares some pre-calculated values before the repetitive grid calculations
     are perfomed.*/
     virtual void initialize() = 0;
     /** A label that identifies the scalar function evaluated at the grid
@@ -178,9 +170,12 @@ class WriteGrids: public Runnable {
     virtual void label(char* buffer) = 0;
     /// Returns the molecule around which the grid values are calculated
     virtual Ref<Molecule> get_molecule() = 0;
-    /// Returns the value of the scalar function at the given coordinate.
-    virtual double calculate_value(int orbitalnum, SCVector3 point) = 0;
-    virtual void calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals)=0;
+    /// Returns the value of the vector function at the given coordinate.
+    virtual void calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Vals)=0;
+    /// number of dimensions of the vector
+    virtual std::size_t ndim() const =0;
+    /// dimension map \sa DimensionMap
+    virtual const DimensionMap& dimension_map() const =0;
   public:
     /** The KeyVal constructor.
         <dl>
@@ -199,7 +194,9 @@ class WriteGrids: public Runnable {
           </ul>
         </dd>
         </dl> */
-    WriteGrids(const Ref<KeyVal> &);
+    WriteVectorGrid(const Ref<KeyVal> &);
+    WriteVectorGrid(const Ref<sc::Grid> & grid,
+                    std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
 };

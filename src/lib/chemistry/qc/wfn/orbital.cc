@@ -30,6 +30,7 @@
 #endif
 
 #include <math.h>
+#include <cassert>
 
 #include <util/misc/formio.h>
 
@@ -178,30 +179,14 @@ WriteOrbital::calculate_value(SCVector3 point)
 void
 WriteOrbital::initialize() {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 // WriteOrbitals
 
 static ClassDesc WriteOrbitals_cd(
     typeid(WriteOrbitals),"WriteOrbitals",1,
-    "public WriteGrids", 0, create<WriteOrbitals>, 0);
+    "public WriteVectorGrid", 0, create<WriteOrbitals>, 0);
 
-
-
-WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteGrids(keyval)
+WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteVectorGrid(keyval)
 {
   obwfn_ << keyval->describedclassvalue("obwfn");
   if (obwfn_.null()) {
@@ -217,29 +202,34 @@ WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteGrids(keyval)
       throw ex;
     }
 
-  if ( (first_ < 0 || first_ >= obwfn_->oso_dimension().n()))
-  {
-    char buff[IntDigitNum(first_)];
-    sprintf(buff, "%d", first_);
-    throw InputError("invalid value", __FILE__, __LINE__, "first orbital", buff, class_desc());
-  }
-  if (last_ < 0 || last_ >= obwfn_->oso_dimension().n())
-  {
-    char buff[IntDigitNum(last_)];
-    sprintf(buff, "%d", last_);
-    throw InputError("invalid value", __FILE__, __LINE__, "last orbital", buff, class_desc());
-  }
-  if(last_ == 0) // we use this to indicate writing all orbitals
-  {
-      last_ = obwfn_->oso_dimension().n();
-  }
+  int first = keyval->intvalue("first", KeyValValueint(1));
+  const int last = keyval->intvalue("last", KeyValValueint(obwfn_->oso_dimension().n()));
+  assert(first < obwfn_->oso_dimension().n());
+  assert(last <= obwfn_->oso_dimension().n());
+  const int nmo = last - first + 1;
+  for(int o=0; o<nmo; ++o)
+    omap_.map.push_back(first++);
 }
 
-
-
-
-
-
+WriteOrbitals::WriteOrbitals(const Ref<OrbitalSpace> & orbs,
+                             const std::vector<int>& labels,
+                             const Ref<sc::Grid> & grid,
+                             std::string gridformat,
+                             std::string gridfile) : WriteVectorGrid(grid,
+                                                                     gridformat,
+                                                                     gridfile),
+                                                     orbs_(orbs)
+{
+  if (labels.empty() == false) {
+    assert(orbs_->rank() == labels.size());
+    omap_.map = labels;
+  }
+  else {
+    omap_.map.resize(orbs->rank());
+    for(int o=0; o<orbs->rank(); ++o)
+      omap_.map[o] = o + 1;
+  }
+}
 
 WriteOrbitals::~WriteOrbitals() {}
 
@@ -250,24 +240,19 @@ WriteOrbitals::label(char* buffer)
   sprintf(buffer, "WriteOrbitals");
 }
 
-
 Ref<Molecule>
 WriteOrbitals::get_molecule()
 {
-  return obwfn_->molecule();
-}
-
-
-double
-WriteOrbitals::calculate_value(int orbitalnum, SCVector3 point)
-{
-    return obwfn_->orbital(point, orbitalnum);
+  return obwfn_.nonnull() ? obwfn_->molecule() : orbs_->basis()->molecule();
 }
 
 void
-WriteOrbitals::calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals)
+WriteOrbitals::calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values)
 {
-    return obwfn_->orbitals(Orbs, Points, Vals);
+  if (obwfn_.nonnull())
+    obwfn_->orbitals(Points, Values, omap_.map.front()-1, omap_.map.back()-1, true);
+  else
+    Wavefunction::orbitals(orbs_, Points, Values);
 }
 
 void

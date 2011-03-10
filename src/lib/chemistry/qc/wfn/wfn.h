@@ -41,6 +41,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/orthog.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 
 namespace sc {
 
@@ -177,6 +178,12 @@ class Wavefunction: public MolecularEnergy {
     double natural_orbital_density(const SCVector3& r,
                                    int orb, double* orbval = 0);
     double orbital(const SCVector3& r, int iorb, const RefSCMatrix& orbs);
+    // same as above, except computes all orbital AND orbs must be transposed (i.e. mo rows, ao columns)
+    void orbitals(const SCVector3& r, const RefSCMatrix& orbs, RefSCVector& values);
+    // same as above except it evaluates on a set of values, and is static
+    static void orbitals(const Ref<OrbitalSpace>& orbs,
+                         const std::vector<SCVector3>& r,
+                         std::vector<double>& values);
 
     double orbital_density(const SCVector3& r,
                            int iorb,

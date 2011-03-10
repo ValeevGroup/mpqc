@@ -34,7 +34,9 @@
 
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/wfn/obwfn.h>
+#include <chemistry/qc/wfn/orbitalspace.h>
 #include <math/mmisc/grid.h>
+
 namespace sc {
 
 //class OneBodyWavefunction;
@@ -80,27 +82,41 @@ class WriteOrbital: public WriteGrid {
     ~WriteOrbital();
 };
 
-
-
-
-
-
-/** The WriteOrbitals class writes an orbital at
+/** The WriteOrbitals class writes orbitals at
  *  user defined grid points to the standard output or to a separate file.
  */
-class WriteOrbitals: public WriteGrids {
+class WriteOrbitals: public WriteVectorGrid {
+  private:
+    struct OrbitalMap : public DimensionMap {
+      std::vector<int> map;
+      int operator()(int o) const { return map[o]; }
+      std::size_t ndim() const { return map.size(); }
+    };
   protected:
+    // provide either obwfn+omap or orbs
     Ref<OneBodyWavefunction> obwfn_;
+    OrbitalMap omap_;
+    Ref<OrbitalSpace> orbs_;
 
     void label(char* buffer);
     Ref<Molecule> get_molecule();
-    double calculate_value(int orbitalnum, SCVector3 point);
-    void  calculate_values(std::vector<int> Orbs, std::vector<SCVector3> Points, double * Vals);
+    void  calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values);
+    std::size_t ndim() const { return omap_.ndim(); }
+    const DimensionMap& dimension_map() const { return omap_; }
     void initialize();
   public:
+    /** The KeyVal constructor accepts keywords of WriteVectorGrid and the following additional keywords.
+        <dl>
+
+        <dt><tt>first</tt></dt><dd> The index of the first orbital to be plotted. MOs are indexed according to their energy,
+        hence <tt>first=1</tt> refers to the lowest-energy orbital. The default value is 1.</dd>
+
+        <dt><tt>last</tt></dt><dd> The index of the last orbital to be plotted. By default the highest energy orbital is selected.
+        MOs are indexed according to their energy, hence <tt>last=<# of orbitals></tt> refers to the highest-energy orbital.</dd>
+        </dl> */
     WriteOrbitals(const Ref<KeyVal> &);
-    WriteOrbitals(const Ref<OneBodyWavefunction> & onebodywfn, const Ref<sc::Grid> & grid, int first,
-                  int last, std::string gridformat, std::string gridfile);
+    WriteOrbitals(const Ref<OrbitalSpace> & orbs, const std::vector<int>& labels, const Ref<sc::Grid> & grid,
+                  std::string gridformat, std::string gridfile);
     ~WriteOrbitals();
 };
 

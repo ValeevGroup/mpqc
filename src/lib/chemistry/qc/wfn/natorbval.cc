@@ -52,7 +52,7 @@ double Wavefunction::orbital(const SCVector3& r,
                              int iorb,
                              const RefSCMatrix& orbs)
 {
-    int nbasis = basis()->nbasis();
+    const int nbasis = basis()->nbasis();
     if (!bs_values) bs_values=new double[nbasis];
 
     // compute the basis set values
@@ -63,11 +63,63 @@ double Wavefunction::orbital(const SCVector3& r,
     
     // loop over basis functions
     double orb_value = 0;
-    for (int i=0; i<nbasis; i++)
+    for (int i=0; i<nbasis; i++) {
+      //std::cout << "iorb = " << iorb << " i = " << i << " bf = " << bs_values[i] << " C = " << orbs.get_element(i,iorb) << " orb_value = " << orb_value << std::endl;
         orb_value += orbs.get_element(i,iorb)*bs_values[i];
+    }
 
     return orb_value;
 }     
+
+// Function for returning orbital values at a point
+void Wavefunction::orbitals(const SCVector3& r,
+                            const RefSCMatrix& orbs,
+                            RefSCVector& values)
+{
+    const int nbasis = basis()->nbasis();
+    if (!bs_values) bs_values=new double[nbasis];
+
+    // compute the basis set values
+    GaussianBasisSet::ValueData *valdat
+        = new GaussianBasisSet::ValueData(basis(), integral_);
+    basis()->values(r,valdat,bs_values);
+    delete valdat;
+    RefSCVector bs_values_scvec = orbs->kit()->vector(orbs.coldim());
+    bs_values_scvec.assign(bs_values);
+    if (values.null()) values = orbs->kit()->vector(orbs.rowdim());
+    values.assign(0.0);
+    values.accumulate_product(orbs, bs_values_scvec);
+}
+
+void
+Wavefunction::orbitals(const Ref<OrbitalSpace>& orbs,
+                       const std::vector<SCVector3> & Points,
+                       std::vector<double>& Vals)
+{
+  const int numpoints = Points.size();
+  RefSCMatrix aocoefs = orbs->coefs_nb().t();
+  const int nmo = aocoefs.nrow();
+  Vals.resize(numpoints * nmo);
+
+  RefSCVector values = aocoefs->kit()->vector(aocoefs.rowdim());
+  Ref<GaussianBasisSet> basis = orbs->basis();
+  GaussianBasisSet::ValueData *valdat
+      = new GaussianBasisSet::ValueData(basis, orbs->integral());
+  std::vector<double> bs_values(aocoefs.ncol());
+  RefSCVector bs_values_scvec = aocoefs->kit()->vector(aocoefs.coldim());
+
+  int count = 0;
+  for(int i1 = 0; i1 < numpoints; ++i1) {
+    basis->values(Points[i1], valdat, &bs_values[0]);
+    bs_values_scvec.assign(&bs_values[0]);
+    values.assign(0.0);
+    values.accumulate_product(aocoefs, bs_values_scvec);
+    values.convert(&(Vals[count]));
+    count += nmo;
+  }
+
+  delete valdat;
+}
 
 double Wavefunction::orbital_density(const SCVector3& r,
                                      int iorb,

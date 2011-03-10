@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <vector>
 #include <chemistry/qc/wfn/wfn.h>
 
 
@@ -177,11 +178,14 @@ class OneBodyWavefunction: public Wavefunction {
 
     void symmetry_changed();
     
+    /// returns the value of MO iorb at point r. To compute several MOs at several points use orbitals() instead
     double orbital(const SCVector3& r, int iorb);
 
-    //Function returns values of MOs at certain points and store them in an array Vals
-    void orbitals(const std::vector<int> & Orbs, const std::vector<SCVector3> & Points, double * & Vals);
-
+    /// computes values of MOs in range [first,last] at points r and store them in an array values
+    /// @param energy_ordered if true, first and last refer to orbital indices in energy order, from lowest (0) to highest (nmo-1)
+    void orbitals(const std::vector<SCVector3> & r, std::vector<double>& values,
+                  unsigned int first, unsigned int last,
+                  bool energy_ordered = false);
 
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 

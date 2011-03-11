@@ -330,6 +330,11 @@ namespace sc {
              Ref<OrbitalSpace> vir_space = 0);
   };
 
+  /// canonicalize A
+  Ref<OrbitalSpace>
+  compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
+                         const Ref<OrbitalSpace>& A,
+                         SpinCase1 spin);
 };
 
 #endif

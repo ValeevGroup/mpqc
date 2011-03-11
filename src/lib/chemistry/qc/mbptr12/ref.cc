@@ -113,6 +113,30 @@ namespace {
     coefs = coefs_no;
     coefs_inv = coefs_no_inv;
   }
+
+}
+
+Ref<OrbitalSpace>
+sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
+                           const Ref<OrbitalSpace>& vir_space,
+                           SpinCase1 spin) {
+  // compute the Fock matrix in VBS space, convert to symmetric form
+  const std::string key = ParsedOneBodyIntKey::key(vir_space->id(),vir_space->id(),
+                                                   std::string("F"),
+                                                   spin);
+  RefSCMatrix F = fb_rtime->get(key);
+  RefSymmSCMatrix Fs = F.kit()->symmmatrix(F.rowdim());
+  const int n = Fs.n();
+  Fs->assign_subblock(F.pointer(), 0, n-1, 0, n-1);
+
+  Ref<OrbitalSpace> result = new OrbitalSpace("e(sym)", "canonical symmetry-blocked VBS",
+                                              vir_space->coefs()*Fs.eigvecs(),
+                                              vir_space->basis(),
+                                              vir_space->integral(),
+                                              Fs.eigvals(),
+                                              0, 0,
+                                              OrbitalSpace::symmetry);
+  return result;
 }
 
 /////////////

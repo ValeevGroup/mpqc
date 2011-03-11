@@ -416,48 +416,80 @@ namespace sc {
 
 
 
-  Ref<DistArray4> permute34(const Ref<DistArray4>& A)
+  Ref<DistArray4> permute34(const Ref<DistArray4>& src)
   {
-    assert(A->nx() == A->ny());
-
-    Ref<DistArray4> result = A->clone();
-    A->activate();
+    const int ni = src->ni();
+    const int nj = src->nj();
+    const int nx = src->nx();
+    const int ny = src->ny();
+    const unsigned int ntypes = src->num_te_types();
+    DistArray4Dimensions result_dims(ntypes, ni, nj, ny, nx, DistArray4Storage_XY);
+    Ref<DistArray4> result = src->clone(result_dims);
+    src->activate();
     result->activate();
 
-    const unsigned int nbra1 = A->ni();
-    const unsigned int nbra2 = A->nj();
-    const unsigned int nket = A->nx();
-    const unsigned int ntypes = A->num_te_types();
-    double* tmp_blk = allocate<double>(nket * nket);
+    double* tmp_blk = allocate<double>(nx * ny);
 
     for (int t = 0; t < ntypes; ++t)
     {
-      for (unsigned int b1 = 0; b1 < nbra1; ++b1)
+      for (unsigned int b1 = 0; b1 < ni; ++b1)
       {
-        for (unsigned int b2 = 0; b2 < nbra2; ++b2)
+        for (unsigned int b2 = 0; b2 < nj; ++b2)
         {
-          const double * b1b2_blk = A->retrieve_pair_block(b1, b2, t);
-          for (unsigned int k1 = 0; k1 < nket; ++k1)
+          const double * b1b2_blk = src->retrieve_pair_block(b1, b2, t);
+          for (unsigned int k1 = 0; k1 < nx; ++k1)
           {
-            for (unsigned int k2 = 0; k2 < nket; ++k2)
+            for (unsigned int k2 = 0; k2 < ny; ++k2)
             {
-              tmp_blk[k1 * nket + k2] = b1b2_blk[k2 * nket + k1];
+              tmp_blk[k1 * ny + k2] = b1b2_blk[k2 * nx + k1];
             }
           }
-          A->release_pair_block(b1, b2, t);
           result->store_pair_block(b1, b2, t, tmp_blk);
+          src->release_pair_block(b1, b2, t);
         }
       }
     }
 
     deallocate(tmp_blk);
-    if(A->data_persistent()) A->deactivate();
+    if(src->data_persistent()) src->deactivate();
     if(result->data_persistent()) result->deactivate();
     return result;
   }
 
 
+  Ref<DistArray4> permute12(const Ref<DistArray4>& src)
+ {
+    const int ni = src->ni();
+    const int nj = src->nj();
+    const int nx = src->nx();
+    const int ny = src->ny();
+    const unsigned int ntypes = src->num_te_types();
+    DistArray4Dimensions result_dims(ntypes, nj, ni, nx, ny, DistArray4Storage_XY);
+    Ref<DistArray4> result = src->clone(result_dims);
+    src->activate();
+    result->activate();
 
+    double* tmp_blk = allocate<double>(nx * ny);
+
+    for (int t = 0; t < ntypes; ++t)
+    {
+      for (unsigned int b1 = 0; b1 < ni; ++b1)
+      {
+        for (unsigned int b2 = 0; b2 < nj; ++b2)
+        {
+          const double * b1b2_blk = src->retrieve_pair_block(b1, b2, t, tmp_blk);
+          result->store_pair_block(b2, b1, t, tmp_blk);
+          src->release_pair_block(b1, b2, t);
+
+        }
+      }
+    }
+
+    deallocate(tmp_blk);
+    if(src->data_persistent()) src->deactivate();
+    if(result->data_persistent()) result->deactivate();
+    return result;
+  }
 
 
   void axpy(const Ref<DistArray4>& X,

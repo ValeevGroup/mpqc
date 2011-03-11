@@ -218,6 +218,9 @@ Ref<DistArray4> permute23(const Ref<DistArray4>& src);
 */
 Ref<DistArray4> permute34(const Ref<DistArray4>& src);
 
+/** creates an array in which indices 3 and 4 are permuted*/
+Ref<DistArray4> permute12(const Ref<DistArray4>& src);
+
 
 /// axpy followed by scaling: Y += a*X; Y *= scale.
 void

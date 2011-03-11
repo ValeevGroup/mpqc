@@ -1361,7 +1361,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   V_genref=0;
 
 
-#if 1
+#if 0
   HylleraasMatrix.assign(0.0);
 #endif
 
@@ -1390,7 +1390,10 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix T = C(AlphaBeta);
   RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
   RefSCMatrix HylleraasMatrix = V_t_T;
-  V_genref = 0;
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+    V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
+  }
 
 
   // X contributions
@@ -1398,8 +1401,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   TGFT.scale(-1.0);
   HylleraasMatrix.accumulate(TGFT * r12eval_->X());
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
-    TGFT.print(prepend_spincase(AlphaBeta,"TGFT").c_str());
-    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"TGFT*X").c_str());
+    TGFT.print(prepend_spincase(AlphaBeta,"X").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:X").c_str());
   }
 
 
@@ -1407,17 +1410,22 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix TBTG = (T*r12eval_->B())*T*(rdm2_sf());
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+    TGFT.print(prepend_spincase(AlphaBeta,"B").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:B").c_str());
+  }
 
 
   // the last messy term
-  HylleraasMatrix.accumulate(sf_B_others());
+  RefSCMatrix others = sf_B_others();
+  HylleraasMatrix.accumulate(others);
 
 //#if 0
 //  HylleraasMatrix.assign(0.0)
 //#endif
 
-  const double energy = this->compute_energy(HylleraasMatrix, AlphaBeta);
-  return(energy);
+  const double energy = compute_energy(HylleraasMatrix, AlphaBeta);
+  return energy;
 }
 
 
@@ -1526,7 +1534,9 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
      } // 3rd and 4th sets done
 
   } // RTgamma done
-  contract34(wholeproduct, 1.0, RFtimesT, 0, RTgamma, 0);
+
+  contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
+                                permute23(permute34(permute12(permute23(RTgamma)))), 0);
   RefSCMatrix TotalMat = C(AlphaBeta)->clone();
   TotalMat.assign(0.0);
   TotalMat << wholeproduct;
@@ -1821,14 +1831,8 @@ void sc::PT2R12::compute()
     if(r12world_->spinadapted())
     {
       r12world()->ref()->set_spinfree(true);
-      switch(r12world()->r12tech()->ansatz()->projector())
-      {
-        case R12Technology::Projector_2:
-          energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
-          break;
-        default:
-          throw FeatureNotImplemented("For spin-adapted PT2R12, Projector 1 not yet implemented");
-      }
+      assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
+      energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
     }
     else // use spin-orbital version
     {

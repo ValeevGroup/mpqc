@@ -89,12 +89,6 @@ namespace sc {
                               RefSCMatrix& MXZ,
                               RefSCMatrix& MYZ);
 
-  /// canonicalize A
-  Ref<OrbitalSpace>
-  compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
-                         const Ref<OrbitalSpace>& A,
-                         SpinCase1 spin);
-
 } // end of namespace sc
 
 #include <chemistry/qc/wfn/orbitalspace_utils.timpl.h>

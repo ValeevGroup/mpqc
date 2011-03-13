@@ -945,12 +945,14 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   RefSCMatrix V_genref = localkit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
   V_genref.assign(0.0);
 
-  const RefSCMatrix V_intermed = r12eval_->V();
+  Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
+
+  RefSCMatrix V_intermed = r12eval_->V(); // V_intermed(GG, gg)
   V_intermed.scale(0.5);
-  const RefSymmSCMatrix tpdm = this->rdm2_sf();
+  RefSCMatrix tpdm = rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
   V_genref.accumulate(V_intermed * tpdm);
 
-#if 1
+#if 0
   SpinCase2 pairspin = AlphaBeta;
   V_intermed.print(prepend_spincase(pairspin, "V(in PT2R12::V_genref_projector2)").c_str());
   tpdm.print(prepend_spincase(pairspin, "gamma(in PT2R12::V_genref_projector2)").c_str());
@@ -1267,7 +1269,7 @@ RefSCMatrix PT2R12::X_term_T_Gamma_F_T() {
   const int dimg = gg_space->dim()->n();
   const int dimG = GG_space->dim()->n();
   RefSCMatrix F_gg  = r12eval_->fock(gg_space,gg_space,Alpha);
-  RefSymmSCMatrix tpdm =  rdm2_sf();
+  RefSCMatrix tpdm =  rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
   RefSCMatrix T = this->C(AlphaBeta); // (dim_GG, dim_gg)
   Ref<LocalSCMatrixKit> lmk = new LocalSCMatrixKit();
   RefSCMatrix GammaF = lmk->matrix(r12eval_->dim_gg(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
@@ -1291,7 +1293,7 @@ RefSCMatrix PT2R12::X_term_T_Gamma_F_T() {
           }
       }
   }
-  return T*GammaF*(T.t());
+  return T*GammaF*(T.t());//(GG, GG)
 }
 
 double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
@@ -1386,10 +1388,10 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 double PT2R12::energy_PT2R12_projector2_spinfree() {
   // 2*V*T constribution
   ExEnv::out0() << indent << "in spin free code" << std::endl;
-  RefSCMatrix V_genref = V_genref_projector2();
-  RefSCMatrix T = C(AlphaBeta);
-  RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
-  RefSCMatrix HylleraasMatrix = V_t_T;
+  RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
+  RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
+  RefSCMatrix V_t_T = 2.0*V_genref*T.t();
+  RefSCMatrix HylleraasMatrix = V_t_T; // (GG,GG)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
@@ -1397,9 +1399,9 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
 
   // X contributions
-  RefSCMatrix TGFT = X_term_T_Gamma_F_T();
+  RefSCMatrix TGFT = X_term_T_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
-  HylleraasMatrix.accumulate(TGFT * r12eval_->X());
+  HylleraasMatrix.accumulate(TGFT * r12eval_->X());//X:(GG, GG)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     TGFT.print(prepend_spincase(AlphaBeta,"X").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:X").c_str());
@@ -1407,7 +1409,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
 
   // B' contribution
-  RefSCMatrix TBTG = (T*r12eval_->B())*T*(rdm2_sf());
+  Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
+  RefSCMatrix TBTG =  r12eval_->B() * T * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space) * T.t();
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
@@ -1436,7 +1439,11 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 {
   Ref<OrbitalSpace> cabs = r12world_->cabs_space(Alpha);
   Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
+  Ref<OrbitalSpace> GG_space = r12eval_->GGspace(Alpha);
+  Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
+//  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
   const int occ_dim = occ_space->rank();
+  const int gg_dim = gg_space->rank();
 
   Ref<DistArray4> wholeproduct; // for the whole contribution
 
@@ -1445,16 +1452,16 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 
     Ref<OrbitalSpace> F_RI_occ = r12eval_->F_m_P(Alpha);
     R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
-                                       cabs, F_RI_occ, occ_space, occ_space,
+                                       cabs, F_RI_occ, GG_space, GG_space,
                                        r12eval_->corrfactor(), true);
     std::vector<std::string> TensorString;
     fill_container(IntCreator, TensorString);
     Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
     RFform->compute();
     Ref<DistArray4> RF = RFform->ints_distarray4();
-    RefSCMatrix T = C(AlphaBeta);
+    RefSCMatrix T = C(AlphaBeta).t(); // inverse of T^GG_gg, in principle we should use the transpose matrix
     assert((occ_dim * occ_dim == T.ncol()) && (occ_dim * occ_dim == T.nrow()));
-    contract34_DA4_RefMat(RFtimesT, 1.0, RF, 0, T, occ_dim, occ_dim);
+    contract34_DA4_RefMat(RFtimesT, 1.0, RF, 0, T, gg_dim, gg_dim);
   }
 
   Ref<DistArray4> RTgamma; // the terms in parentheses
@@ -1465,18 +1472,18 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
       const int occ_dim = occ_space->rank();
       R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
-                                         cabs, occ_space, occ_space, occ_space,
+                                         cabs, occ_space, GG_space, GG_space,
                                          r12eval_->corrfactor(), true);
       std::vector<std::string> TensorString;
       fill_container(IntCreator, TensorString);
       Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
       RFform->compute();
       Ref<DistArray4> R = RFform->ints_distarray4();
-      RefSCMatrix T = C(AlphaBeta);
-      contract34_DA4_RefMat(RT, 1.0, R, 0, T, occ_dim, occ_dim);
+      RefSCMatrix T = C(AlphaBeta).t();
+      contract34_DA4_RefMat(RT, 1.0, R, 0, T, gg_dim, gg_dim);
     }
 
-    RefSCMatrix onerdm = rdm1_sf().convert2RefSCMat(); // G^s_v
+    RefSCMatrix onerdm = rdm1_gg_sf().convert2RefSCMat(); // G^s_v
 
     {
       Ref<DistArray4> I1; //the first two sets uses contract4
@@ -1485,22 +1492,20 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       //the first set
       {
         Ref<DistArray4> RTgamma1;
-        RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 0.5, -0.5);
-        rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
-        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
-        RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
-        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+        RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, -0.5, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
         RTgamma = RTgamma1;
       }
       //the second set
       {
         Ref<DistArray4> RTgamma2;
-        RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 1.0, -0.25);
-        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
-        rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
-        rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
-        RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
-        contract_DA4_RefMat_k1b2_34(RTgamma2, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+        RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 1.0, -0.25, occ_space, gg_space, occ_space, gg_space);
+        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, occ_space, gg_space);
+        rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        contract_DA4_RefMat_k1b2_34(RTgamma2, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
         RTgamma2 = permute34(RTgamma2);
         axpy(RTgamma2, 1.0, RTgamma, 1.0);
       }
@@ -1513,21 +1518,19 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
        //the third
        {
          Ref<DistArray4> RTgamma3;
-         RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(1.0, -1.0, 0.0);
-         rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
-         rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
-         RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
-         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(1.0, -1.0, 0.0, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
        }
        //the fourth set
        {
          Ref<DistArray4> RTgamma4;
-         RefSymmSCMatrix rdm2interSym = rdm2_sf_interm(-0.5, 0.5, 0.0);
-         rdm2interSym = rdm2_sf_inter_permu<Permute23>(rdm2interSym);
-         rdm2interSym = rdm2_sf_inter_permu<Permute34>(rdm2interSym);
-         RefSCMatrix rdm2inter = rdm2interSym.convert2RefSCMat();
-         contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I1, 0, rdm2inter, occ_dim, occ_dim); //RTgamma is initialized
+         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, 0.0, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
        }
@@ -1537,37 +1540,84 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
                                 permute23(permute34(permute12(permute23(RTgamma)))), 0);
-  RefSCMatrix TotalMat = C(AlphaBeta)->clone();
+
+  RefSCDimension totalmat_dim = new SCDimension(gg_dim * gg_dim);
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+  RefSCMatrix TotalMat = local_kit->matrix(totalmat_dim, totalmat_dim);
+
   TotalMat.assign(0.0);
   TotalMat << wholeproduct;
   return TotalMat;
 }
 
 
-RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+
+
+
+RefSymmSCMatrix sc::PT2R12::rdm1_gg_sf()
 {
-  RefSymmSCMatrix sf_opdm;
-  if(spin_polarized())
-    sf_opdm = this->rdm1_gg(Alpha) + this->rdm1_gg(Beta);
-  else
-    sf_opdm = this->rdm1_gg(Alpha) * 2.0;
+  RefSymmSCMatrix sf_opdm = rdm1_gg(Alpha) + rdm1_gg(Beta);
   return(sf_opdm);
 }
 
 
+RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+{
+  RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);
+  return(sf_opdm);
+}
+
+RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> k1space)
+{
+  const unsigned int b1dim = b1space->rank();
+  const unsigned int k1dim = k1space->rank();
+  RefSCDimension upp_scdim = new SCDimension(b1dim);
+  RefSCDimension low_scdim = new SCDimension(k1dim);
+
+  RefSCMatrix sfrdm1 = rdm1_sf().convert2RefSCMat();
+  RefSCMatrix result = sfrdm1->kit()->matrix(upp_scdim, low_scdim);
+
+  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
+  const unsigned int n_pdmspace = pdmspace->rank();
+
+  std::vector<int> b1map = map(*pdmspace, *b1space);
+  std::vector<int> k1map = map(*pdmspace, *k1space);
+
+  for (int nb1 = 0; nb1 < b1dim; ++nb1)
+  {
+    if(b1map[nb1] == -1)
+      throw ProgrammingError("some orbital in b1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+  for (int nk1 = 0; nk1 < k1dim; ++nk1)
+  {
+    if(k1map[nk1] == -1)
+      throw ProgrammingError("some orbital in k1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+
+  for (int nb1 = 0; nb1 < b1dim; ++nb1)
+  {
+    for (int nk1 = 0; nk1 < k1dim; ++nk1)
+    {
+      const double rdmelement = sfrdm1.get_element(b1map[nb1], k1map[nk1]);
+      result(nb1, nk1) = rdmelement;
+    }
+  }
+  return result;
+}
+
 RefSymmSCMatrix sc::PT2R12::rdm2_sf()
 {
-  RefSymmSCMatrix rdm_ab = this->rdm2_gg(AlphaBeta);
-  RefSymmSCMatrix rdm_aa = this->rdm2_gg(AlphaAlpha);
+  RefSymmSCMatrix rdm_ab = rdm2(AlphaBeta);
+  RefSymmSCMatrix rdm_aa = rdm2(AlphaAlpha);
   RefSymmSCMatrix rdm_bb = 0;
-  if(spin_polarized()) RefSymmSCMatrix rdm_bb = this->rdm2_gg(BetaBeta);
+  if(spin_polarized()) RefSymmSCMatrix rdm_bb = rdm2(BetaBeta);
   else
       rdm_bb = rdm_aa;
   RefSymmSCMatrix sf_rdm = rdm_ab.copy();
-  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
-  const unsigned int no = occ_space->rank();
-  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
-  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha); // including doubly and partially occupied orbs
+  const unsigned int n_pdmorb = pdmspace->rank();
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(n_pdmorb, n_pdmorb, AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(n_pdmorb, n_pdmorb, AlphaBeta);
   for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
   {
     for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
@@ -1577,65 +1627,178 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
          const int l1 = low_pair->i();
          const int l2 = low_pair->j();
          double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
-                             + rdm_ab.get_element(u2 * no + u1, l2* no + l1)
+                             + rdm_ab.get_element(u2 * n_pdmorb + u1, l2* n_pdmorb + l1)
                              + get_4ind_antisym_matelement(rdm_aa, u1, u2, l1, l2)
                              + get_4ind_antisym_matelement(rdm_bb, u1, u2, l1, l2);
          sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
-  return(sf_rdm);
+  return sf_rdm;
 }
 
 
-RefSymmSCMatrix sc::PT2R12::rdm2_sf_interm(double a, double b, double c)
+RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> b2space,const Ref<OrbitalSpace> k1space, const Ref<OrbitalSpace> k2space)
 {
-  RefSymmSCMatrix rdm2_int = this->rdm2_sf();
-  rdm2_int.scale(a);
-  RefSymmSCMatrix sf_opdm = rdm1_sf();
-  Ref<OrbitalSpace> occ_space = rdm1_->orbs(Alpha);
-  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
-  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
-  // add BetaAlpha contribution to sf_rdm
+  const unsigned int b1dim = b1space->rank();
+  const unsigned int b2dim = b2space->rank();
+  const unsigned int k1dim = k1space->rank();
+  const unsigned int k2dim = k2space->rank();
+  const unsigned int upp_dim = b1dim * b2dim;
+  const unsigned int low_dim = k1dim * k2dim;
+  RefSCDimension upp_scdim = new SCDimension(upp_dim);
+  RefSCDimension low_scdim = new SCDimension(low_dim);
+
+  RefSCMatrix sf2rdm = rdm2_sf().convert2RefSCMat();
+  RefSCMatrix result = sf2rdm->kit()->matrix(upp_scdim, low_scdim);
+
+  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
+  const unsigned int n_pdmspace = pdmspace->rank();
+
+  std::vector<int> b1map = map(*pdmspace, *b1space);
+  std::vector<int> b2map = map(*pdmspace, *b2space);
+  std::vector<int> k1map = map(*pdmspace, *k1space);
+  std::vector<int> k2map = map(*pdmspace, *k2space);
+
+  for (int nb1 = 0; nb1 < b1dim; ++nb1)
+  {
+    if(b1map[nb1] == -1)
+      throw ProgrammingError("some orbital in b1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+  for (int nb2 = 0; nb2 < b2dim; ++nb2)
+  {
+    if(b2map[nb2] == -1)
+      throw ProgrammingError("some orbital in b2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+  for (int nk1 = 0; nk1 < k1dim; ++nk1)
+  {
+    if(k1map[nk1] == -1)
+      throw ProgrammingError("some orbital in k1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+  for (int nk2 = 0; nk2 < k2dim; ++nk2)
+  {
+    if(k2map[nk2] == -1)
+      throw ProgrammingError("some orbital in k2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+  }
+
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(b1dim, b2dim, AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(k1dim, k2dim, AlphaBeta);
+  for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
+  {
+    for(low_pair->start(); *low_pair; low_pair->next())
+     {
+         const int nb1 = upp_pair->i();
+         const int nb2 = upp_pair->j();
+         const int nk1 = low_pair->i();
+         const int nk2 = low_pair->j();
+         double rdmelement = sf2rdm.get_element(b1map[nb1] * n_pdmspace + b2map[nb2], k1map[nk1] * n_pdmspace + k2map[nk2]);
+         result(upp_pair->ij(), low_pair->ij()) = rdmelement;
+     }
+  }
+  return result;
+}
+
+
+
+//'int' means intermediate
+RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, double const c,
+                                                  const Ref<OrbitalSpace> b1space,
+                                                  const Ref<OrbitalSpace> b2space,
+                                                  const Ref<OrbitalSpace> k1space,
+                                                  const Ref<OrbitalSpace> k2space)
+{
+  const unsigned int nb1 = b1space->rank();
+  const unsigned int nb2 = b2space->rank();
+  const unsigned int nk1 = k1space->rank();
+  const unsigned int nk2 = k2space->rank();
+
+  RefSCMatrix rdm2 = rdm2_sf_4spaces(b1space, b2space, k1space, k2space);
+  rdm2.scale(a);
+  RefSCMatrix opdm1a = rdm1_sf_2spaces(b1space, k1space);
+  RefSCMatrix opdm1b = rdm1_sf_2spaces(b2space, k2space);
+  RefSCMatrix opdm2a = rdm1_sf_2spaces(b1space, k2space);
+  RefSCMatrix opdm2b = rdm1_sf_2spaces(b2space, k1space);
+#if 0
+  ExEnv::out0() << indent << "Print rdm in rmd2_sf_interm" << std::endl;
+  ExEnv::out0() << indent << nb1 << ", " << nb2 << ", " << nk1 << ", " << nk2 << std::endl;
+  opdm1a.print();
+  rdm2.print();
+#endif
+  Ref<OrbitalSpace> occ_space = r12eval_->ggspace(Alpha);
+  ExEnv::out0() << indent << occ_space->rank() << std::endl;
+  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(b1space->rank(), b2space->rank(), AlphaBeta);
+  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(k1space->rank(), k2space->rank(), AlphaBeta);
   for(upp_pair->start(); *upp_pair; upp_pair->next())
   {
     for(low_pair->start(); *low_pair; low_pair->next())
     {
-      const double element = rdm2_int.get_element(upp_pair->ij(), low_pair->ij())
-               + b * sf_opdm.get_element(upp_pair->i(), low_pair->i()) * sf_opdm.get_element(upp_pair->j(), low_pair->j())
-               + c * sf_opdm.get_element(upp_pair->i(), low_pair->j()) * sf_opdm.get_element(upp_pair->j(), low_pair->i());
-      rdm2_int.set_element(upp_pair->ij(), low_pair->ij(), element);
+      const unsigned int b1 = upp_pair->i();
+      const unsigned int b2 = upp_pair->j();
+      const unsigned int k1 = low_pair->i();
+      const unsigned int k2 = low_pair->j();
+#if 1
+      ExEnv::out0() << indent << upp_pair->ij() << "," << low_pair->ij() << ", " << std::endl;
+      ExEnv::out0() << indent << b1 << "," << b2 << ", " << k1 << "," << k2 << std::endl;
+#endif
+      const double element = rdm2.get_element(upp_pair->ij(), low_pair->ij())
+               + b * opdm1a.get_element(b1,k1) * opdm1b.get_element(b2,k2)
+               + c * opdm2a.get_element(b1,k2) * opdm2b.get_element(b2,k1);
+      rdm2.set_element(upp_pair->ij(), low_pair->ij(), element);
     }
   }
-  return(rdm2_int);
+  return rdm2;
 }
 
 
 template<sc::PT2R12::Tensor4_Permute HowPermute>
-RefSymmSCMatrix sc::PT2R12::rdm2_sf_inter_permu(RefSymmSCMatrix SFrdm2inter)
+RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
+                                      const Ref<OrbitalSpace> b1space,
+                                      const Ref<OrbitalSpace> b2space,
+                                      const Ref<OrbitalSpace> k1space,
+                                      const Ref<OrbitalSpace> k2space)
 {
-  RefSymmSCMatrix rdmPermute = SFrdm2inter.clone();
-  rdmPermute.assign(0.0);
-  Ref<OrbitalSpace> occ_space = this->r12eval_->ggspace(Alpha); // including doubly and partially occupied orbs
-  const unsigned int no = occ_space->rank();
-  Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
-  Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(occ_space->rank(), occ_space->rank(), AlphaBeta);
+  RefSCMatrix result;
+  const unsigned int b1dim = b1space->rank();
+  const unsigned int b2dim = b2space->rank();
+  const unsigned int k1dim = k1space->rank();
+  const unsigned int k2dim = k2space->rank();
+  Ref<SpinMOPairIter> upp_pair, low_pair;
+  if(HowPermute == Permute34)
+  {
+    result = rdm2_4space_int.clone();
+    result.assign(0.0);
+    upp_pair = new SpinMOPairIter(b1dim, b2dim, AlphaBeta);
+    low_pair = new SpinMOPairIter(k2dim, k1dim, AlphaBeta);
+  }
+  else if(HowPermute == Permute23)
+  {
+    const unsigned int upp_dim = b1dim * k1dim;
+    const unsigned int low_dim = b2dim * k2dim;
+    RefSCDimension upp_scdim = new SCDimension(upp_dim);
+    RefSCDimension low_scdim = new SCDimension(low_dim);
+    result = rdm2_4space_int->kit()->matrix(upp_scdim, low_scdim);
+    result.assign(0.0);
+    upp_pair = new SpinMOPairIter(b1dim, k1dim, AlphaBeta);
+    low_pair = new SpinMOPairIter(b2dim, k2dim, AlphaBeta);
+  }
+
+
   for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
   {
-    for(low_pair->start(); *low_pair && low_pair->ij() <= upp_pair->ij(); low_pair->next())
+    for(low_pair->start(); *low_pair; low_pair->next())
       {
-         const int u1 = upp_pair->i();
-         const int u2 = upp_pair->j();
-         const int l1 = low_pair->i();
-         const int l2 = low_pair->j();
+         const int b1 = upp_pair->i();
+         const int b2 = upp_pair->j();
+         const int k1 = low_pair->i();
+         const int k2 = low_pair->j();
          double oneelement;
-         if(HowPermute == sc::PT2R12::Permute34)
-             oneelement = SFrdm2inter.get_element(upp_pair->ij(), l2* no + l1);
-         else if(HowPermute == sc::PT2R12::Permute23)
-             oneelement = SFrdm2inter.get_element(u1*no + l1, u2* no + l2);
-         rdmPermute(upp_pair->ij(), low_pair->ij()) = oneelement;
+         if(HowPermute == Permute34)
+             oneelement = rdm2_4space_int.get_element(upp_pair->ij(), k2* k2dim + k1);
+         else if(HowPermute == Permute23)
+             oneelement = rdm2_4space_int.get_element(b1 * b2dim + k1, b2* k2dim + k2);
+         result(upp_pair->ij(), low_pair->ij()) = oneelement;
       }
   }
-  return rdmPermute;
+  return result;
 }
 
 

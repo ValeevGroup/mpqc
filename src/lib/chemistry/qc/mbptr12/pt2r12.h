@@ -148,13 +148,27 @@ namespace sc {
       RefSCMatrix sf_B_others();
 
       // TODO reimplement using native spin-free densities from Psi3
-      RefSymmSCMatrix rdm1_sf();  // return spin-free 1/2 rdm
-      RefSymmSCMatrix rdm2_sf();
-      ///  return a * Gamma(pq; rs) + b Gamma(p;r) Gamma(q;s) + c Gamma(p; s) Gamma(q; r)
-      RefSymmSCMatrix rdm2_sf_interm(double a, double b, double c);
+      RefSymmSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
+      RefSymmSCMatrix rdm1_sf();
+      RefSCMatrix rdm1_sf_2spaces(const Ref<OrbitalSpace> bspace, const Ref<OrbitalSpace> kspace);
 
+      RefSymmSCMatrix rdm2_sf();
+      // return 2-RDM in certain spaces; all the spaces should be subsets of 1-RDM/2-RDM orbital space
+      RefSCMatrix rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> b2space, const Ref<OrbitalSpace> k1space, const Ref<OrbitalSpace> k2space);
+      ///  return a * Gamma(pq; rs) + b Gamma(p;r) Gamma(q;s) + c Gamma(p; s) Gamma(q; r)
+      RefSCMatrix rdm2_sf_4spaces_int(const double a, const double b, double const c,
+                                                  const Ref<OrbitalSpace> b1space,
+                                                  const Ref<OrbitalSpace> b2space,
+                                                  const Ref<OrbitalSpace> k1space,
+                                                  const Ref<OrbitalSpace> k2space);
+
+      //permute a 2rdm matrix specified by 4 orbital spaces
       template<Tensor4_Permute HowPermute>
-      RefSymmSCMatrix rdm2_sf_inter_permu(RefSymmSCMatrix SFrdm2inter);
+      RefSCMatrix rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
+                                            const Ref<OrbitalSpace> b1space,
+                                            const Ref<OrbitalSpace> b2space,
+                                            const Ref<OrbitalSpace> k1space,
+                                            const Ref<OrbitalSpace> k2space);
 
 
       /** compute CABS singles correction using Fock operator as H0 */

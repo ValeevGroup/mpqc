@@ -146,7 +146,7 @@ namespace sc {
   ClassDesc
   RDM<R>::class_desc_(typeid(this_type),
                       (std::string("RDM<") +
-                       char("1" + R - 1) +
+                       char('1' + R - 1) +
                        std::string(">")
                       ).c_str(), 1,
                       "virtual public SavableState", 0, 0, 0 );
@@ -214,7 +214,7 @@ namespace sc {
   ClassDesc
   RDMCumulant<R>::class_desc_(typeid(this_type),
 			      (std::string("RDMCumulant<") +
-			       char("1" + R - 1) +
+			       char('1' + R - 1) +
 			       std::string(">")
 			      ).c_str(), 1,
 			      "virtual public SavableState", 0, 0, 0 );

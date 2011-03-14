@@ -1404,7 +1404,7 @@ Molecule::read_pdb(const char *filename)
           int have_fragment = 0;
           int fragment;
           for(int c=0; c<5; ++c) {
-            if (resSeq[c] = ' ')
+            if (resSeq[c] == ' ')
               continue;
             else {
               have_fragment = 1;

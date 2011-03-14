@@ -232,7 +232,7 @@ namespace sc {
     const RefDiagSCMatrix evals2_intk = space2_intk->evals();
     const RefDiagSCMatrix evals3_intk = space3_intk->evals();
 
-    SpinMOPairIter iterint(space2_intb,(alphabeta ? space3_intb : space2_intb),S);
+    SpinMOPairIter iterint(space2_intb->rank(),(alphabeta ? space3_intb : space2_intb)->rank(),S);
     // size of one block of |space1_int space2_int>
     const unsigned int nint = iterint.nij();
     RefSCDimension space1_bra_dim = space1_bra->dim();

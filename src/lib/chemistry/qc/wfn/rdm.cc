@@ -139,8 +139,10 @@ RDM<Two>::ndim(SpinCase2 spincase) const {
       return n1 * (n1-1) / 2;
     case AlphaBeta:
       return n1 * n2;
+    default:
+      assert(false); // should not be reachable
   }
-  assert(false);  // unreachable
+  assert(false);  // not reachable
 }
 
 template<>

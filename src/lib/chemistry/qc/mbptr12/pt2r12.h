@@ -143,7 +143,7 @@ namespace sc {
       double energy_PT2R12_projector2_spinfree();
       RefSCMatrix V_genref_projector2();
       /** computes t^pq_rs * Gamma^rs_vx * f^x_w * t^vw_tu; */
-      RefSCMatrix X_term_T_Gamma_F_T();
+      RefSCMatrix X_term_Gamma_F_T();
       RefSymmSCMatrix X_transformed_by_C();
       RefSCMatrix sf_B_others();
 

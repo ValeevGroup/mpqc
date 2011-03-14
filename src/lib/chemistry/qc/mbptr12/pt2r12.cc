@@ -1263,14 +1263,15 @@ RefSymmSCMatrix PT2R12::phi_cumulant(SpinCase2 spin12) {
 
 
 //
-RefSCMatrix PT2R12::X_term_T_Gamma_F_T() {
+RefSCMatrix PT2R12::X_term_Gamma_F_T() {
   const Ref<OrbitalSpace> & gg_space = r12eval_->ggspace(Alpha);
   const Ref<OrbitalSpace> & GG_space = r12eval_->ggspace(Alpha);
   const int dimg = gg_space->dim()->n();
   const int dimG = GG_space->dim()->n();
+  RefSCMatrix T = this->C(AlphaBeta); // (dim_GG, dim_gg)
+
   RefSCMatrix F_gg  = r12eval_->fock(gg_space,gg_space,Alpha);
   RefSCMatrix tpdm =  rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
-  RefSCMatrix T = this->C(AlphaBeta); // (dim_GG, dim_gg)
   Ref<LocalSCMatrixKit> lmk = new LocalSCMatrixKit();
   RefSCMatrix GammaF = lmk->matrix(r12eval_->dim_gg(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
   for (int r = 0; r < dimg; ++r)
@@ -1293,7 +1294,7 @@ RefSCMatrix PT2R12::X_term_T_Gamma_F_T() {
           }
       }
   }
-  return T*GammaF*(T.t());//(GG, GG)
+  return GammaF*(T.t());//(gg, GG)   (Gamma^rs_vx * f^x_w) * t^vw_tu
 }
 
 double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
@@ -1390,8 +1391,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   ExEnv::out0() << indent << "in spin free code" << std::endl;
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
-  RefSCMatrix V_t_T = 2.0*V_genref*T.t();
-  RefSCMatrix HylleraasMatrix = V_t_T; // (GG,GG)
+  RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
+  RefSCMatrix HylleraasMatrix = V_t_T; // (gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
@@ -1399,9 +1400,9 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
 
   // X contributions
-  RefSCMatrix TGFT = X_term_T_Gamma_F_T(); //(GG, GG)
+  RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
-  HylleraasMatrix.accumulate(TGFT * r12eval_->X());//X:(GG, GG)
+  HylleraasMatrix.accumulate(TGFT * r12eval_->X() * T);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     TGFT.print(prepend_spincase(AlphaBeta,"X").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:X").c_str());
@@ -1410,7 +1411,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // B' contribution
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
-  RefSCMatrix TBTG =  r12eval_->B() * T * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space) * T.t();
+  RefSCMatrix TBTG =  T.t() * r12eval_->B() * T  * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);//(gg,gg)
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
@@ -1420,7 +1421,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
 
   // the last messy term
-  RefSCMatrix others = sf_B_others();
+  RefSCMatrix others = sf_B_others(); //(gg, gg)
   HylleraasMatrix.accumulate(others);
 
 //#if 0
@@ -1539,7 +1540,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
   } // RTgamma done
 
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
-                                permute23(permute34(permute12(permute23(RTgamma)))), 0);
+                                permute23(permute34(permute12(permute23(RTgamma)))), 0); //(gg, gg)
 
   RefSCDimension totalmat_dim = new SCDimension(gg_dim * gg_dim);
   Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
@@ -2099,7 +2100,7 @@ int sc::PT2R12::spin_polarized()
   return reference_->spin_polarized();
 }
 
-double PT2R12::compute_energy(const RefSCMatrix &hmat,
+double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
                               SpinCase2 pairspin,
                               bool print_pair_energies,
                               std::ostream& os) {

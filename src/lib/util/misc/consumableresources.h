@@ -214,7 +214,13 @@ namespace sc {
 
       template <typename T> class ResourceCounter {
         public:
-          ResourceCounter(const T& max_value = T()) :
+          ResourceCounter() :
+            max_value_(),
+            value_(),
+            lowest_value_()
+            {
+            }
+          ResourceCounter(const T& max_value) :
             max_value_(max_value),
             value_(max_value),
             lowest_value_(max_value)

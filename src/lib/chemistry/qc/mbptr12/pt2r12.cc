@@ -1748,7 +1748,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
       const unsigned int b2 = upp_pair->j();
       const unsigned int k1 = low_pair->i();
       const unsigned int k2 = low_pair->j();
-#if 1
+#if 0
       ExEnv::out0() << indent << upp_pair->ij() << "," << low_pair->ij() << ", " << std::endl;
       ExEnv::out0() << indent << b1 << "," << b2 << ", " << k1 << "," << k2 << std::endl;
 #endif

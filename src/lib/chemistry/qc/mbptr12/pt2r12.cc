@@ -1368,10 +1368,13 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
     const double E_X = TXT_t_Phi.trace();
     const double E_B = TBT_tpdm.trace();
 
-    ExEnv::out0() << indent << "individual contributions::" << std::endl;
-    ExEnv::out0() << indent << "V:                        " << E_V << std::endl;
-    ExEnv::out0() << indent << "X:                        " << E_X << std::endl;
-    ExEnv::out0() << indent << "B:                        " << E_B << std::endl;
+    if(pairspin == AlphaBeta){
+      ExEnv::out0() << indent << "individual contributions::" << std::endl;
+      ExEnv::out0() << indent << "V:                        " << E_V << std::endl;
+      ExEnv::out0() << indent << "X:                        " << E_X << std::endl;
+      ExEnv::out0() << indent << "B:                        " << E_B << std::endl;
+  //    ExEnv::out0() << indent << "total contributions::     " << (E_V + E_X + E_B) << std::endl;
+    }
   }
 
 
@@ -1424,15 +1427,19 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     TBTG.print(prepend_spincase(AlphaBeta,"sf:TBTG").c_str());
     others.print(prepend_spincase(AlphaBeta,"sf:others").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"sf:Hy").c_str());
+    (HylleraasMatrix- V_t_T - Xpart - TBTG - others).print(prepend_spincase(AlphaBeta,"sf:diff").c_str());
     const double E_V_t_T = V_t_T.trace();
     const double E_Xpart = Xpart.trace();
     const double E_TBTG = TBTG.trace();
     const double E_others = others.trace();
+    const double E_total = E_V_t_T + E_Xpart + E_TBTG + E_others;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << "V:                        " << E_V_t_T << std::endl;
     ExEnv::out0() << indent << "X:                        " << E_Xpart << std::endl;
     ExEnv::out0() << indent << "B':                       " << E_TBTG << std::endl;
     ExEnv::out0() << indent << "B remain:                 " << E_others << std::endl;
+    ExEnv::out0() << indent << "total contributions::     " << E_total << std::endl;
+    ExEnv::out0() << indent << "total trace::             " << HylleraasMatrix.trace() << std::endl;
   }
 
 
@@ -2141,6 +2148,10 @@ double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
   }
   if (print_pair_energies)
     os << indent << endl;
+#if 1
+  os << indent << "energy from spin " << pairspin << " :" << energy << std::endl;
+  os << indent << "trace: " << hmat.trace() << std::endl;
+#endif
   return energy;
 }
 

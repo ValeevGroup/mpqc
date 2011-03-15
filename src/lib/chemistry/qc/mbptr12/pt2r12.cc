@@ -1388,7 +1388,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
   RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
-  RefSCMatrix HylleraasMatrix = V_t_T; // (gg, gg)
+  RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
@@ -1399,6 +1399,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
+  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before Xpart").c_str());
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
@@ -1410,16 +1411,22 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
   RefSCMatrix TBTG =  T.t() * r12eval_->B() * T  * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);//(gg,gg)
   TBTG.scale(0.5);
+  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before TBTG").c_str());
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     TBTG.print(prepend_spincase(AlphaBeta,"TBTG").c_str());
-    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:B").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:TBTG").c_str());
   }
 
 
   // the last messy term
   RefSCMatrix others = sf_B_others(); //(gg, gg)
+  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before others").c_str());
   HylleraasMatrix.accumulate(others);
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+      others.print(prepend_spincase(AlphaBeta,"others").c_str());
+      HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:others").c_str());
+  }
 
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
     V_t_T.print(prepend_spincase(AlphaBeta,"sf:V_t_T").c_str());
@@ -1427,7 +1434,10 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     TBTG.print(prepend_spincase(AlphaBeta,"sf:TBTG").c_str());
     others.print(prepend_spincase(AlphaBeta,"sf:others").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"sf:Hy").c_str());
+    RefSCMatrix ident = HylleraasMatrix->clone();
+    ident.assign(1.0);
     (HylleraasMatrix- V_t_T - Xpart - TBTG - others).print(prepend_spincase(AlphaBeta,"sf:diff").c_str());
+    (HylleraasMatrix- V_t_T - Xpart - TBTG - others + ident).print(prepend_spincase(AlphaBeta,"sf:diff+1").c_str());
     const double E_V_t_T = V_t_T.trace();
     const double E_Xpart = Xpart.trace();
     const double E_TBTG = TBTG.trace();
@@ -2148,7 +2158,7 @@ double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
   }
   if (print_pair_energies)
     os << indent << endl;
-#if 1
+#if 0
   os << indent << "energy from spin " << pairspin << " :" << energy << std::endl;
   os << indent << "trace: " << hmat.trace() << std::endl;
 #endif

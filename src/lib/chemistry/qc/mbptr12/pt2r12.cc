@@ -1325,7 +1325,6 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
 }
 
 double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
-  ExEnv::out0() << indent << "in spin orbital code" << std::endl;
   SpinCase1 spin1 = case1(pairspin);
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
@@ -1336,7 +1335,27 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
   RefSCMatrix TBT_tpdm = TBT*tpdm;
   RefSCMatrix HylleraasMatrix = TBT_tpdm;
+
+
+
+  RefSCMatrix V_genref = V_genref_projector2(pairspin);
+  RefSCMatrix T = C(pairspin);
+  RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
+  HylleraasMatrix.accumulate(V_t_T);
+
+
+  RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
+  RefSymmSCMatrix Phi = phi_gg(pairspin);
+  RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
+  HylleraasMatrix.accumulate(TXT_t_Phi);
+
   if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
+    V_genref.print(prepend_spincase(pairspin,"Vg").c_str());
+    V_t_T.print(prepend_spincase(pairspin,"gVT").c_str());
+
+    TXT.print(prepend_spincase(pairspin,"TXT").c_str());
+    TXT_t_Phi.print(prepend_spincase(pairspin,"-TXTf").c_str());
+
     //rdm2(pairspin).print(prepend_spincase(pairspin,"rdm2 (full)").c_str());
     tpdm.print(prepend_spincase(pairspin,"rdm2").c_str());
     rdm1(Alpha).print(prepend_spincase(Alpha,"rdm1 (full)").c_str());
@@ -1345,42 +1364,16 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
     rdm1_gg(Beta).print(prepend_spincase(Beta,"rdm1").c_str());
     TBT.print(prepend_spincase(pairspin,"TBT").c_str());
     TBT_tpdm.print(prepend_spincase(pairspin,"TBTg").c_str());
+    const double E_V = V_t_T.trace();
+    const double E_X = TXT_t_Phi.trace();
+    const double E_B = TBT_tpdm.trace();
+
+    ExEnv::out0() << indent << "individual contributions::" << std::endl;
+    ExEnv::out0() << indent << "V:                        " << E_V << std::endl;
+    ExEnv::out0() << indent << "X:                        " << E_X << std::endl;
+    ExEnv::out0() << indent << "B:                        " << E_B << std::endl;
   }
-  TBT=0;
-  tpdm=0;
 
-
-
-  RefSCMatrix V_genref = V_genref_projector2(pairspin);
-  RefSCMatrix T = C(pairspin);
-  RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
-  HylleraasMatrix.accumulate(V_t_T);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
-    V_genref.print(prepend_spincase(pairspin,"Vg").c_str());
-    V_t_T.print(prepend_spincase(pairspin,"gVT").c_str());
-    HylleraasMatrix.print(prepend_spincase(pairspin,"H2").c_str());
-  }
-  T=0;
-  V_genref=0;
-
-
-#if 0
-  HylleraasMatrix.assign(0.0);
-#endif
-
-
-
-  RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
-  RefSymmSCMatrix Phi = phi_gg(pairspin);
-  RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
-  HylleraasMatrix.accumulate(TXT_t_Phi);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
-    TXT.print(prepend_spincase(pairspin,"TXT").c_str());
-    TXT_t_Phi.print(prepend_spincase(pairspin,"-TXTf").c_str());
-  }
-  TXT=0;
-  Phi=0;
-  TXT_t_Phi=0;
 
   const double energy = this->compute_energy(HylleraasMatrix, pairspin);
   return(energy);
@@ -1402,9 +1395,10 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   // X contributions
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
-  HylleraasMatrix.accumulate(TGFT * r12eval_->X() * T);//(gg, gg)
+  RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
+  HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
-    TGFT.print(prepend_spincase(AlphaBeta,"X").c_str());
+    Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:X").c_str());
   }
 
@@ -1415,7 +1409,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
-    TGFT.print(prepend_spincase(AlphaBeta,"B").c_str());
+    TBTG.print(prepend_spincase(AlphaBeta,"TBTG").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:B").c_str());
   }
 
@@ -1423,6 +1417,24 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   // the last messy term
   RefSCMatrix others = sf_B_others(); //(gg, gg)
   HylleraasMatrix.accumulate(others);
+
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+    V_t_T.print(prepend_spincase(AlphaBeta,"sf:V_t_T").c_str());
+    Xpart.print(prepend_spincase(AlphaBeta,"sf:Xpart").c_str());
+    TBTG.print(prepend_spincase(AlphaBeta,"sf:TBTG").c_str());
+    others.print(prepend_spincase(AlphaBeta,"sf:others").c_str());
+    HylleraasMatrix.print(prepend_spincase(AlphaBeta,"sf:Hy").c_str());
+    const double E_V_t_T = V_t_T.trace();
+    const double E_Xpart = Xpart.trace();
+    const double E_TBTG = TBTG.trace();
+    const double E_others = others.trace();
+    ExEnv::out0() << indent << "individual contributions::" << std::endl;
+    ExEnv::out0() << indent << "V:                        " << E_V_t_T << std::endl;
+    ExEnv::out0() << indent << "X:                        " << E_Xpart << std::endl;
+    ExEnv::out0() << indent << "B':                       " << E_TBTG << std::endl;
+    ExEnv::out0() << indent << "B remain:                 " << E_others << std::endl;
+  }
+
 
 //#if 0
 //  HylleraasMatrix.assign(0.0)

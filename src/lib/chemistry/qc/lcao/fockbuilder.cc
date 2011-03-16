@@ -1162,7 +1162,7 @@ namespace sc {
       {
         Ref<DistArray4> Ctmp = permute23(C);
         if (C->data_persistent()) C->deactivate();
-        C = Ctmp;
+        C = Ctmp;  C->activate();
       }
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(ketspace->id(),

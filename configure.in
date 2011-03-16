@@ -2268,27 +2268,31 @@ dnl --------- Print out a configuration summary. ---------
 echo
 echo "Configuration Summary:"
 echo "---------------------------------------------------------------"
-echo "Install prefix   $prefix"
-echo "C compiler       $CC"
-echo "C++ compiler     $CXX"
-echo "F77 compiler     $F77"
-echo "DEFAULT_PARALLEL ${DEFAULT_PARALLEL:-<not set>}"
-echo "HAVE_PTHREAD     ${HAVE_PTHREAD:-no}"
-echo "HAVE_MPI         ${HAVE_MPI:-no}"
+echo "Install prefix          $prefix"
+echo "C compiler              $CC"
+echo "C++ compiler            $CXX"
+echo "F77 compiler            $F77"
+echo "C preprocessor flags    $CPPFLAGS"
+echo "C++ compiler flags      $CXXFLAGS"
+echo "Linker flags            $LDFLAGS"
+echo "Linker libraries        $LIBS"
+echo "DEFAULT_PARALLEL        ${DEFAULT_PARALLEL:-<not set>}"
+echo "HAVE_PTHREAD            ${HAVE_PTHREAD:-no}"
+echo "HAVE_MPI                ${HAVE_MPI:-no}"
 if test "$HAVE_MPI" = yes; then
   if test "$ALWAYS_USE_MPI" = yes; then
-     echo "                 (MPI_Init always called)"
+     echo "                        (MPI_Init always called)"
   fi
 fi
-echo "HAVE_ARMCI       ${HAVE_ARMCI:-no}"
-echo "HAVE_LIBINT      ${HAVE_LIBINT:-no}"
-echo "HAVE_LIBR12      ${HAVE_LIBR12:-no}"
-echo "HAVE_LIBDERIV    ${HAVE_LIBDERIV:-no}"
-echo "HAVE_LIBINT2     ${HAVE_LIBINT2:-no}"
-echo "Psi interface    ${HAVE_PSIMPQCIFACE:-no}"
-echo "components       ${components:-<not set>}"
+echo "HAVE_ARMCI              ${HAVE_ARMCI:-no}"
+echo "HAVE_LIBINT             ${HAVE_LIBINT:-no}"
+echo "HAVE_LIBR12             ${HAVE_LIBR12:-no}"
+echo "HAVE_LIBDERIV           ${HAVE_LIBDERIV:-no}"
+echo "HAVE_LIBINT2            ${HAVE_LIBINT2:-no}"
+echo "Psi interface           ${HAVE_PSIMPQCIFACE:-no}"
+echo "components              ${components:-<not set>}"
 if test "$components" = yes; then
-   echo "                 (CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"
+   echo "                        (CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"
 fi
 echo "---------------------------------------------------------------"
 

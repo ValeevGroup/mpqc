@@ -50,7 +50,7 @@ static ClassDesc Tensor_cd(
   0, 0, 0);
 
 Tensor::Tensor(string filename, const Ref<MemoryGrp>& mem): mem_(mem) {
-  filename_ = "smith_" + filename;
+  filename_ = SCFormIO::fileext_to_filename(".smith.") + filename;
   file_allocated_ = false;
 }
 

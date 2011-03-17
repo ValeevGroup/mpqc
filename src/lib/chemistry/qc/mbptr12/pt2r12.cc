@@ -1534,15 +1534,6 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       const unsigned int f12int_index = intdescr->intset(f12int_type);
       RefSCMatrix T = C(AlphaBeta).t();
       contract34_DA4_RefMat(RT, 1.0, R, f12int_index, T, gg_dim, gg_dim);
-#if 1
-        ExEnv::out0() << "print R and T:" << f12int_index << std::endl;
-        RefSCMatrix RMat = copy_to_RefSCMat(R,f12int_index);
-        RefSCMatrix RTMat = copy_to_RefSCMat(RT, 0);
-        RMat.print(prepend_spincase(AlphaBeta,"R").c_str());
-        T.print(prepend_spincase(AlphaBeta,"T").c_str());
-        C(AlphaBeta).print(prepend_spincase(AlphaBeta,"C").c_str());
-        RTMat.print(prepend_spincase(AlphaBeta,"RT").c_str());
-#endif
     }
 
     RefSCMatrix onerdm = rdm1_gg_sf().convert2RefSCMat(); // G^s_v
@@ -1555,80 +1546,24 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       {
         Ref<DistArray4> RTgamma1;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, -0.5, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1a").c_str());
-#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1b").c_str());
-#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1c").c_str());
-#endif
-//        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
         Ref<DistArray4> pI1 = permute23(permute34(I1));
-#if 1
-        copy_to_RefSCMat(pI1,0).print(prepend_spincase(AlphaBeta,"pI1").c_str());;
-#endif
         contract34_DA4_RefMat(RTgamma1, 1.0, pI1, 0, rdm2inter, occ_dim, gg_dim);
-#if 1
-        copy_to_RefSCMat(RTgamma1,0).print(prepend_spincase(AlphaBeta,"RTgamma1a").c_str());;
-#endif
         RTgamma1 = permute23(RTgamma1);
-#if 1
-        copy_to_RefSCMat(RTgamma1,0).print(prepend_spincase(AlphaBeta,"RTgamma1b").c_str());;
-#endif
         RTgamma = RTgamma1;
-#if 1
-        ExEnv::out0() << "print I1 and RTgamma1" << std::endl;
-        RefSCMatrix I1Mat = copy_to_RefSCMat(I1,0);
-        RefSCMatrix RTMat = copy_to_RefSCMat(RT,0);
-        RefSCMatrix RTgamma1Mat = copy_to_RefSCMat(RTgamma1,0);
-//        print_full_mat(RTMat);
-//        print_full_mat(I1Mat);
-//        print_full_mat(RTgamma1Mat);
-        RTMat.print(prepend_spincase(AlphaBeta,"RT").c_str());
-        I1Mat.print(prepend_spincase(AlphaBeta,"I1").c_str());
-        RTgamma1Mat.print(prepend_spincase(AlphaBeta,"RTgamma1").c_str());
-#endif
       }
       //the second set
       {
         Ref<DistArray4> RTgamma2;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 1.0, -0.25, occ_space, gg_space, occ_space, gg_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
-#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, occ_space, gg_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
-#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
-#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
-#endif
         Ref<DistArray4> I_Aw_yr = permute23(permute34(I1));
-#if 1
-        copy_to_RefSCMat(I_Aw_yr,0).print(prepend_spincase(AlphaBeta,"I_Aw_yr").c_str());;
-#endif
         contract34_DA4_RefMat(RTgamma2, 1.0, I_Aw_yr, 0, rdm2inter, occ_dim, gg_dim);
-#if 1
-        copy_to_RefSCMat(RTgamma2,0).print(prepend_spincase(AlphaBeta,"RTgamma2a").c_str());;
-#endif
         RTgamma2 = permute34(permute23(RTgamma2));
         axpy(RTgamma2, 1.0, RTgamma, 1.0);
-#if 1
-        ExEnv::out0() << "RTgamma2" << std::endl;
-        RefSCMatrix RTgamma2Mat = copy_to_RefSCMat(RTgamma2,0);
-//        print_full_mat(RTgamma2Mat);
-        RTgamma2Mat.print(prepend_spincase(AlphaBeta,"RTgamma2").c_str());
-//        copy_to_RefSCMat(RTgamma1).print(prepend_spincase(AlphaBeta,"RTgamma1").c_str());
-#endif
       }
     } // 1st and 2nd sets done
 
@@ -1640,36 +1575,11 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
        {
          Ref<DistArray4> RTgamma3;
          RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(1.0, -1.0, 0.0, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
-#endif
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 2").c_str());
-#endif
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-#if 1
-        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 3").c_str());
-#endif
          contract34_DA4_RefMat(RTgamma3, 1.0, permute23(I2), 0, rdm2inter, occ_dim, gg_dim);
-#if 1
-        copy_to_RefSCMat(RTgamma3,0).print(prepend_spincase(AlphaBeta,"RTgamma3a").c_str());
-#endif
          RTgamma3 = permute23(RTgamma3);
-#if 1
-        copy_to_RefSCMat(RTgamma3,0).print(prepend_spincase(AlphaBeta,"RTgamma3b").c_str());
-#endif
-//         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim);
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
-#if 1
-        ExEnv::out0() << "print I2 and RTgamma3" << std::endl;
-        RefSCMatrix I2Mat = copy_to_RefSCMat(I2,0);
-        RefSCMatrix RTgamma3Mat = copy_to_RefSCMat(RTgamma3,0);
-//        print_full_mat(I2Mat);
-//        print_full_mat(RTgamma3Mat);
-        I2Mat.print(prepend_spincase(AlphaBeta,"I2").c_str());
-        RTgamma3Mat.print(prepend_spincase(AlphaBeta,"RTgamma3").c_str());
-#endif
        }
        //the fourth set
        {
@@ -1680,12 +1590,6 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
-#if 1
-        ExEnv::out0() << "print RTgamma4" << std::endl;
-        RefSCMatrix RTgamma4Mat = copy_to_RefSCMat(RTgamma4,0);
-//        print_full_mat(RTgamma4Mat);
-        RTgamma4Mat.print(prepend_spincase(AlphaBeta,"RTgamma4").c_str());
-#endif
        }
      } // 3rd and 4th sets done
 
@@ -1698,11 +1602,6 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
                                 permute23(permute34(permute12(permute23(RTgamma)))), 0); //(gg, gg)
 
-//  RefSCDimension totalmat_dim = new SCDimension(gg_dim * gg_dim);
-//  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-//  RefSCMatrix TotalMat = local_kit->matrix(totalmat_dim, totalmat_dim);
-//  TotalMat.assign(0.0);
-//  TotalMat << wholeproduct;
   RefSCMatrix TotalMat = copy_to_RefSCMat(wholeproduct,0);
   return TotalMat;
 }
@@ -1854,9 +1753,6 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
          result(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
-#if 1
-  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces").c_str());
-#endif
   return result;
 }
 
@@ -1882,12 +1778,6 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
   RefSCMatrix opdm1b = rdm1_sf_2spaces(b2space, k2space);
   RefSCMatrix opdm2a = rdm1_sf_2spaces(b1space, k2space);
   RefSCMatrix opdm2b = rdm1_sf_2spaces(b2space, k1space);
-#if 0
-  ExEnv::out0() << indent << "Print rdm in rmd2_sf_interm" << std::endl;
-  ExEnv::out0() << indent << nb1 << ", " << nb2 << ", " << nk1 << ", " << nk2 << std::endl;
-  opdm1a.print();
-  rdm2.print();
-#endif
   Ref<OrbitalSpace> occ_space = r12eval_->ggspace(Alpha);
   ExEnv::out0() << indent << occ_space->rank() << std::endl;
   Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(b1space->rank(), b2space->rank(), AlphaBeta);
@@ -1900,21 +1790,12 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
       const unsigned int b2 = upp_pair->j();
       const unsigned int k1 = low_pair->i();
       const unsigned int k2 = low_pair->j();
-#if 0
-      ExEnv::out0() << indent << upp_pair->ij() << "," << low_pair->ij() << ", " << std::endl;
-      ExEnv::out0() << indent << b1 << "," << b2 << ", " << k1 << "," << k2 << std::endl;
-#endif
       const double element = rdm2.get_element(upp_pair->ij(), low_pair->ij())
                + b * opdm1a.get_element(b1,k1) * opdm1b.get_element(b2,k2)
                + c * opdm2a.get_element(b1,k2) * opdm2b.get_element(b2,k1);
       result.set_element(upp_pair->ij(), low_pair->ij(), element);
     }
   }
-
-#if 1
-  ExEnv::out0() << indent << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
-  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces with coefficients").c_str());
-#endif
   return result;
 }
 
@@ -1968,12 +1849,6 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
          result(upp_pair->ij(), low_pair->ij()) = oneelement;
       }
   }
-#if 1
-  rdm2_4space_int.print(prepend_spincase(AlphaBeta,"rdm2-4spaces before permute").c_str());
-  if(HowPermute == Permute34) ExEnv::out0() << "34" << std::endl;
-  else ExEnv::out0() << "23" << std::endl;
-  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces permute").c_str());
-#endif
   return result;
 }
 

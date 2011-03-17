@@ -38,7 +38,9 @@
 #include <sstream>
 #include <stdio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/exenv.h>
 #include <math/scmat/blas.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
@@ -50,7 +52,10 @@ static ClassDesc Tensor_cd(
   0, 0, 0);
 
 Tensor::Tensor(string filename, const Ref<MemoryGrp>& mem): mem_(mem) {
-  filename_ = SCFormIO::fileext_to_filename(".smith.") + filename;
+  const std::string basename_prefix = SCFormIO::fileext_to_filename(".smith.");
+  const std::string full_prefix = ConsumableResources::get_default_instance()->disk_location() +
+                                  basename_prefix;
+  filename_ = full_prefix + filename;
   file_allocated_ = false;
 }
 

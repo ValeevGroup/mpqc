@@ -1594,7 +1594,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
      } // 3rd and 4th sets done
 
   } // RTgamma done
-#if 1 // check RTgamma
+#if 0 // check RTgamma; it should be zero for CLHF
   RefSCMatrix RTgammaMat = copy_to_RefSCMat(RTgamma,0);
   RTgammaMat.print(prepend_spincase(AlphaBeta,"RTgammaMat").c_str());
 #endif

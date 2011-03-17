@@ -42,6 +42,19 @@ using namespace sc;
 
 namespace {
 
+  void print_full_mat(RefSCMatrix & Mat)
+  {
+    const int nrow = Mat.nrow();
+    const int ncol = Mat.ncol();
+    for (int a = 0; a < nrow; ++a)
+    {
+      for (int b = 0; b < ncol; ++b)
+      {
+        ExEnv::out0() << Mat(a,b) << "  ";
+      }
+      ExEnv::out0() << std::endl;
+    }
+  }
 
   int triang_half_INDEX_ordered(int i, int j) {
     return(i*(i+1)/2+j);
@@ -244,7 +257,7 @@ namespace {
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",0,create<PT2R12>,create<PT2R12>);
 
-PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval)
+PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_()
 {
   ///* comment out the following to test cabs singles correction
   std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
@@ -1335,6 +1348,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   RefSymmSCMatrix tpdm = rdm2_gg(pairspin);
   RefSCMatrix TBT_tpdm = TBT*tpdm;
   RefSCMatrix HylleraasMatrix = TBT_tpdm;
+  B_.push_back(TBT_tpdm.trace());
 
 
 
@@ -1342,12 +1356,13 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
   RefSCMatrix T = C(pairspin);
   RefSCMatrix V_t_T = 2.0*V_genref.t()*T;
   HylleraasMatrix.accumulate(V_t_T);
-
+  V_.push_back(V_t_T.trace());
 
   RefSymmSCMatrix TXT = X_transformed_by_C(pairspin);
   RefSymmSCMatrix Phi = phi_gg(pairspin);
   RefSCMatrix TXT_t_Phi = TXT*Phi; TXT_t_Phi.scale(-1.0);
   HylleraasMatrix.accumulate(TXT_t_Phi);
+  X_.push_back(TXT_t_Phi.trace());
 
   if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
     V_genref.print(prepend_spincase(pairspin,"Vg").c_str());
@@ -1368,7 +1383,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
     const double E_X = TXT_t_Phi.trace();
     const double E_B = TBT_tpdm.trace();
 
-    if(pairspin == AlphaBeta){
+    if(pairspin == AlphaBeta && false){
       ExEnv::out0() << indent << "individual contributions::" << std::endl;
       ExEnv::out0() << indent << "V:                        " << E_V << std::endl;
       ExEnv::out0() << indent << "X:                        " << E_X << std::endl;
@@ -1489,10 +1504,15 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
     Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
     RFform->compute();
     Ref<DistArray4> RF = RFform->ints_distarray4();
+    const Ref<TwoBodyIntDescr> & intdescr = RFform->intdescr();
+    TwoBodyOper::type f12int_type = r12eval_->corrfactor()->tbint_type_f12();
+    const unsigned int f12int_index = intdescr->intset(f12int_type);
+
     RefSCMatrix T = C(AlphaBeta).t(); // inverse of T^GG_gg, in principle we should use the transpose matrix
     assert((occ_dim * occ_dim == T.ncol()) && (occ_dim * occ_dim == T.nrow()));
-    contract34_DA4_RefMat(RFtimesT, 1.0, RF, 0, T, gg_dim, gg_dim);
+    contract34_DA4_RefMat(RFtimesT, 1.0, RF, f12int_index, T, gg_dim, gg_dim);
   }
+
 
   Ref<DistArray4> RTgamma; // the terms in parentheses
   {
@@ -1506,11 +1526,23 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
                                          r12eval_->corrfactor(), true);
       std::vector<std::string> TensorString;
       fill_container(IntCreator, TensorString);
-      Ref<TwoBodyMOIntsTransform> RFform = r12eval_->moints_runtime4()->get(TensorString[0]);
-      RFform->compute();
-      Ref<DistArray4> R = RFform->ints_distarray4();
+      Ref<TwoBodyMOIntsTransform> Rform = r12eval_->moints_runtime4()->get(TensorString[0]);
+      Rform->compute();
+      Ref<DistArray4> R = Rform->ints_distarray4();
+      const Ref<TwoBodyIntDescr> & intdescr = Rform->intdescr();
+      TwoBodyOper::type f12int_type = r12eval_->corrfactor()->tbint_type_f12();
+      const unsigned int f12int_index = intdescr->intset(f12int_type);
       RefSCMatrix T = C(AlphaBeta).t();
-      contract34_DA4_RefMat(RT, 1.0, R, 0, T, gg_dim, gg_dim);
+      contract34_DA4_RefMat(RT, 1.0, R, f12int_index, T, gg_dim, gg_dim);
+#if 1
+        ExEnv::out0() << "print R and T:" << f12int_index << std::endl;
+        RefSCMatrix RMat = copy_to_RefSCMat(R,f12int_index);
+        RefSCMatrix RTMat = copy_to_RefSCMat(RT, 0);
+        RMat.print(prepend_spincase(AlphaBeta,"R").c_str());
+        T.print(prepend_spincase(AlphaBeta,"T").c_str());
+        C(AlphaBeta).print(prepend_spincase(AlphaBeta,"C").c_str());
+        RTMat.print(prepend_spincase(AlphaBeta,"RT").c_str());
+#endif
     }
 
     RefSCMatrix onerdm = rdm1_gg_sf().convert2RefSCMat(); // G^s_v
@@ -1523,36 +1555,121 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       {
         Ref<DistArray4> RTgamma1;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, -0.5, occ_space, gg_space, gg_space, occ_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1a").c_str());
+#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1b").c_str());
+#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1c").c_str());
+#endif
+//        contract_DA4_RefMat_k1b2_34(RTgamma1, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
+        Ref<DistArray4> pI1 = permute23(permute34(I1));
+#if 1
+        copy_to_RefSCMat(pI1,0).print(prepend_spincase(AlphaBeta,"pI1").c_str());;
+#endif
+        contract34_DA4_RefMat(RTgamma1, 1.0, pI1, 0, rdm2inter, occ_dim, gg_dim);
+#if 1
+        copy_to_RefSCMat(RTgamma1,0).print(prepend_spincase(AlphaBeta,"RTgamma1a").c_str());;
+#endif
+        RTgamma1 = permute23(RTgamma1);
+#if 1
+        copy_to_RefSCMat(RTgamma1,0).print(prepend_spincase(AlphaBeta,"RTgamma1b").c_str());;
+#endif
         RTgamma = RTgamma1;
+#if 1
+        ExEnv::out0() << "print I1 and RTgamma1" << std::endl;
+        RefSCMatrix I1Mat = copy_to_RefSCMat(I1,0);
+        RefSCMatrix RTMat = copy_to_RefSCMat(RT,0);
+        RefSCMatrix RTgamma1Mat = copy_to_RefSCMat(RTgamma1,0);
+//        print_full_mat(RTMat);
+//        print_full_mat(I1Mat);
+//        print_full_mat(RTgamma1Mat);
+        RTMat.print(prepend_spincase(AlphaBeta,"RT").c_str());
+        I1Mat.print(prepend_spincase(AlphaBeta,"I1").c_str());
+        RTgamma1Mat.print(prepend_spincase(AlphaBeta,"RTgamma1").c_str());
+#endif
       }
       //the second set
       {
         Ref<DistArray4> RTgamma2;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 1.0, -0.25, occ_space, gg_space, occ_space, gg_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
+#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, occ_space, gg_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
+#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
+#endif
         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-        contract_DA4_RefMat_k1b2_34(RTgamma2, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
-        RTgamma2 = permute34(RTgamma2);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
+#endif
+        Ref<DistArray4> I_Aw_yr = permute23(permute34(I1));
+#if 1
+        copy_to_RefSCMat(I_Aw_yr,0).print(prepend_spincase(AlphaBeta,"I_Aw_yr").c_str());;
+#endif
+        contract34_DA4_RefMat(RTgamma2, 1.0, I_Aw_yr, 0, rdm2inter, occ_dim, gg_dim);
+#if 1
+        copy_to_RefSCMat(RTgamma2,0).print(prepend_spincase(AlphaBeta,"RTgamma2a").c_str());;
+#endif
+        RTgamma2 = permute34(permute23(RTgamma2));
         axpy(RTgamma2, 1.0, RTgamma, 1.0);
+#if 1
+        ExEnv::out0() << "RTgamma2" << std::endl;
+        RefSCMatrix RTgamma2Mat = copy_to_RefSCMat(RTgamma2,0);
+//        print_full_mat(RTgamma2Mat);
+        RTgamma2Mat.print(prepend_spincase(AlphaBeta,"RTgamma2").c_str());
+//        copy_to_RefSCMat(RTgamma1).print(prepend_spincase(AlphaBeta,"RTgamma1").c_str());
+#endif
       }
     } // 1st and 2nd sets done
 
     {
-       Ref<DistArray4> I1; //the first two sets uses contract4
-       contract3(RT, onerdm, I1);
+       Ref<DistArray4> I2; //the first two sets uses contract4
+       contract3(RT, onerdm, I2);
 
        //the third
        {
          Ref<DistArray4> RTgamma3;
          RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(1.0, -1.0, 0.0, occ_space, gg_space, gg_space, occ_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 1").c_str());
+#endif
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 2").c_str());
+#endif
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
+#if 1
+        rdm2inter.print(prepend_spincase(AlphaBeta,"2nd rdm 3").c_str());
+#endif
+         contract34_DA4_RefMat(RTgamma3, 1.0, permute23(I2), 0, rdm2inter, occ_dim, gg_dim);
+#if 1
+        copy_to_RefSCMat(RTgamma3,0).print(prepend_spincase(AlphaBeta,"RTgamma3a").c_str());
+#endif
+         RTgamma3 = permute23(RTgamma3);
+#if 1
+        copy_to_RefSCMat(RTgamma3,0).print(prepend_spincase(AlphaBeta,"RTgamma3b").c_str());
+#endif
+//         contract_DA4_RefMat_k2b2_34(RTgamma3, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim);
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
+#if 1
+        ExEnv::out0() << "print I2 and RTgamma3" << std::endl;
+        RefSCMatrix I2Mat = copy_to_RefSCMat(I2,0);
+        RefSCMatrix RTgamma3Mat = copy_to_RefSCMat(RTgamma3,0);
+//        print_full_mat(I2Mat);
+//        print_full_mat(RTgamma3Mat);
+        I2Mat.print(prepend_spincase(AlphaBeta,"I2").c_str());
+        RTgamma3Mat.print(prepend_spincase(AlphaBeta,"RTgamma3").c_str());
+#endif
        }
        //the fourth set
        {
@@ -1560,23 +1677,33 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, 0.0, occ_space, gg_space, gg_space, occ_space);
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
          rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-         contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I1, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
+         contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
+#if 1
+        ExEnv::out0() << "print RTgamma4" << std::endl;
+        RefSCMatrix RTgamma4Mat = copy_to_RefSCMat(RTgamma4,0);
+//        print_full_mat(RTgamma4Mat);
+        RTgamma4Mat.print(prepend_spincase(AlphaBeta,"RTgamma4").c_str());
+#endif
        }
      } // 3rd and 4th sets done
 
   } // RTgamma done
+#if 1 // check RTgamma
+  RefSCMatrix RTgammaMat = copy_to_RefSCMat(RTgamma,0);
+  RTgammaMat.print(prepend_spincase(AlphaBeta,"RTgammaMat").c_str());
+#endif
 
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
                                 permute23(permute34(permute12(permute23(RTgamma)))), 0); //(gg, gg)
 
-  RefSCDimension totalmat_dim = new SCDimension(gg_dim * gg_dim);
-  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-  RefSCMatrix TotalMat = local_kit->matrix(totalmat_dim, totalmat_dim);
-
-  TotalMat.assign(0.0);
-  TotalMat << wholeproduct;
+//  RefSCDimension totalmat_dim = new SCDimension(gg_dim * gg_dim);
+//  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+//  RefSCMatrix TotalMat = local_kit->matrix(totalmat_dim, totalmat_dim);
+//  TotalMat.assign(0.0);
+//  TotalMat << wholeproduct;
+  RefSCMatrix TotalMat = copy_to_RefSCMat(wholeproduct,0);
   return TotalMat;
 }
 
@@ -1640,10 +1767,12 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
   RefSymmSCMatrix rdm_ab = rdm2(AlphaBeta);
   RefSymmSCMatrix rdm_aa = rdm2(AlphaAlpha);
   RefSymmSCMatrix rdm_bb = 0;
-  if(spin_polarized()) RefSymmSCMatrix rdm_bb = rdm2(BetaBeta);
+  if(spin_polarized())
+      rdm_bb = rdm2(BetaBeta);
   else
       rdm_bb = rdm_aa;
-  RefSymmSCMatrix sf_rdm = rdm_ab.copy();
+  RefSymmSCMatrix sf_rdm = rdm_ab.clone();
+  sf_rdm.assign(0.0);
   Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha); // including doubly and partially occupied orbs
   const unsigned int n_pdmorb = pdmspace->rank();
   Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(n_pdmorb, n_pdmorb, AlphaBeta);
@@ -1656,7 +1785,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
          const int u2 = upp_pair->j();
          const int l1 = low_pair->i();
          const int l2 = low_pair->j();
-         double rdmelement = sf_rdm.get_element(upp_pair->ij(), low_pair->ij())
+         double rdmelement = rdm_ab.get_element(upp_pair->ij(), low_pair->ij())
                              + rdm_ab.get_element(u2 * n_pdmorb + u1, l2* n_pdmorb + l1)
                              + get_4ind_antisym_matelement(rdm_aa, u1, u2, l1, l2)
                              + get_4ind_antisym_matelement(rdm_bb, u1, u2, l1, l2);
@@ -1680,6 +1809,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
 
   RefSCMatrix sf2rdm = rdm2_sf().convert2RefSCMat();
   RefSCMatrix result = sf2rdm->kit()->matrix(upp_scdim, low_scdim);
+  result.assign(0.0);
 
   Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
   const unsigned int n_pdmspace = pdmspace->rank();
@@ -1724,6 +1854,9 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
          result(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
+#if 1
+  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces").c_str());
+#endif
   return result;
 }
 
@@ -1742,6 +1875,8 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
   const unsigned int nk2 = k2space->rank();
 
   RefSCMatrix rdm2 = rdm2_sf_4spaces(b1space, b2space, k1space, k2space);
+  RefSCMatrix result = rdm2.clone();
+  result.assign(0.0);
   rdm2.scale(a);
   RefSCMatrix opdm1a = rdm1_sf_2spaces(b1space, k1space);
   RefSCMatrix opdm1b = rdm1_sf_2spaces(b2space, k2space);
@@ -1772,10 +1907,15 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
       const double element = rdm2.get_element(upp_pair->ij(), low_pair->ij())
                + b * opdm1a.get_element(b1,k1) * opdm1b.get_element(b2,k2)
                + c * opdm2a.get_element(b1,k2) * opdm2b.get_element(b2,k1);
-      rdm2.set_element(upp_pair->ij(), low_pair->ij(), element);
+      result.set_element(upp_pair->ij(), low_pair->ij(), element);
     }
   }
-  return rdm2;
+
+#if 1
+  ExEnv::out0() << indent << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
+  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces with coefficients").c_str());
+#endif
+  return result;
 }
 
 
@@ -1796,7 +1936,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
   {
     result = rdm2_4space_int.clone();
     result.assign(0.0);
-    upp_pair = new SpinMOPairIter(b1dim, b2dim, AlphaBeta);
+    upp_pair = new SpinMOPairIter(b1dim, b2dim, AlphaBeta); // the iterators are for the resultant matrices
     low_pair = new SpinMOPairIter(k2dim, k1dim, AlphaBeta);
   }
   else if(HowPermute == Permute23)
@@ -1816,22 +1956,69 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
   {
     for(low_pair->start(); *low_pair; low_pair->next())
       {
-         const int b1 = upp_pair->i();
-         const int b2 = upp_pair->j();
-         const int k1 = low_pair->i();
-         const int k2 = low_pair->j();
+         const int U1 = upp_pair->i();
+         const int U2 = upp_pair->j();
+         const int L1 = low_pair->i();
+         const int L2 = low_pair->j();
          double oneelement;
          if(HowPermute == Permute34)
-             oneelement = rdm2_4space_int.get_element(upp_pair->ij(), k2* k2dim + k1);
+             oneelement = rdm2_4space_int.get_element(upp_pair->ij(), L2* k2dim + L1);
          else if(HowPermute == Permute23)
-             oneelement = rdm2_4space_int.get_element(b1 * b2dim + k1, b2* k2dim + k2);
+             oneelement = rdm2_4space_int.get_element(U1 * b2dim + L1, U2* k2dim + L2);
          result(upp_pair->ij(), low_pair->ij()) = oneelement;
       }
   }
+#if 1
+  rdm2_4space_int.print(prepend_spincase(AlphaBeta,"rdm2-4spaces before permute").c_str());
+  if(HowPermute == Permute34) ExEnv::out0() << "34" << std::endl;
+  else ExEnv::out0() << "23" << std::endl;
+  result.print(prepend_spincase(AlphaBeta,"rdm2-4spaces permute").c_str());
+#endif
   return result;
 }
 
 
+
+void PT2R12::check_sf_r12_rdm()
+{
+  RefSCMatrix rdm1sf = rdm1_sf().convert2RefSCMat();
+  RefSCMatrix rdm2sf = rdm2_sf().convert2RefSCMat();
+  const int norbs = rdm1_->orbs(Alpha)->rank();
+  double summ = 0.0;
+  for (int s = 0; s < norbs; ++s)
+  {
+    for (int v = 0; v < norbs; ++v)
+    {
+      for (int x = 0; x < norbs; ++x)
+      {
+        for (int r = 0; r < norbs; ++r)
+        {
+          for (int y = 0; y < norbs; ++y)
+          {
+            for (int w = 0; w < norbs; ++w)
+            {
+              summ += rdm1sf(s, v) * (-0.5 * rdm2sf(x * norbs + r, w *norbs + y)
+                                             + 0.5 *rdm1sf(x, w) * rdm1sf(r,y) - 0.5 * rdm1sf(r,w) * rdm1sf(x,y));
+              summ += rdm1sf(s, w) * (-0.5 * rdm2sf(x * norbs + r, y *norbs + v)
+                                                           + 1.0 *rdm1sf(r,v) * rdm1sf(x,y) - 0.25 * rdm1sf(r,y) * rdm1sf(x,v));
+              summ += rdm1sf(r, v) * (1.0 * rdm2sf(x * norbs + s, w *norbs + y)
+                                                                         - 1.0 *rdm1sf(s,y) * rdm1sf(x,w));
+              summ += rdm1sf(r, w) * (-0.5 * rdm2sf(x * norbs + s, v *norbs + y)
+                                                                         + 0.5 *rdm1sf(s,y) * rdm1sf(x,v));
+              if(fabs(summ) > 1.0e-12)
+              {
+                ExEnv::out0() << "s, v, x, r, y, w: "  << std::endl;
+                ExEnv::out0() << s << ", " << v << ", " << x << ", " << r << ", " << y << ", " << w << std::endl;
+                ExEnv::out0() << summ << std::endl;
+
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 namespace {
   RefSymmSCMatrix convert_to_local_kit(const RefSymmSCMatrix& A) {
@@ -2015,6 +2202,9 @@ void sc::PT2R12::compute()
 
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
+  double B_so = 0.0;
+  double V_so = 0.0;
+  double X_so = 0.0;
   double energy_pt2r12_sf = 0.0;
   double cabs_singles_corre_2b_H0 = 0.0;
   const bool spin_polarized = r12world()->ref()->spin_polarized();
@@ -2023,6 +2213,9 @@ void sc::PT2R12::compute()
   {
     if(r12world_->spinadapted())
     {
+#if 0 // passed.
+      check_sf_r12_rdm();
+#endif
       r12world()->ref()->set_spinfree(true);
       assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
       energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
@@ -2079,9 +2272,19 @@ void sc::PT2R12::compute()
   else
   {
     if (!spin_polarized)
-         energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+    {
+      energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+      B_.push_back(B_[AlphaAlpha]);
+      V_.push_back(V_[AlphaAlpha]);
+      X_.push_back(X_[AlphaAlpha]);
+    }
     for(int i=0; i<NSpinCases2; i++)
+    {
          energy_correction_r12 +=  energy_pt2r12[i];
+         B_so += B_[i];
+         V_so += V_[i];
+         X_so += X_[i];
+    }
   }
   const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_corre_2b_H0;
 
@@ -2116,6 +2319,13 @@ void sc::PT2R12::compute()
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
                                       energy) << endl;
+#if 1
+  if(r12world_->spinadapted() == false) {
+    ExEnv::out0() << indent << scprintf("V term [au]:                           %17.12lf", V_so) << endl;
+    ExEnv::out0() << indent << scprintf("B term [au]:                           %17.12lf", B_so) << endl;
+    ExEnv::out0() << indent << scprintf("X term [au]:                           %17.12lf", X_so) << endl;}
+#endif
+
   set_energy(energy);
 }
 

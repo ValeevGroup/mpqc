@@ -104,6 +104,9 @@ namespace sc {
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
                          // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'
       int debug_;
+      std::vector<double> B_;
+      std::vector<double> X_;
+      std::vector<double> V_; // store the values for different spins
 
 
       /// this is to help combine similar functions to one
@@ -162,13 +165,15 @@ namespace sc {
                                                   const Ref<OrbitalSpace> k1space,
                                                   const Ref<OrbitalSpace> k2space);
 
-      //permute a 2rdm matrix specified by 4 orbital spaces
+      ///permute a 2rdm matrix specified by 4 orbital spaces
       template<Tensor4_Permute HowPermute>
       RefSCMatrix rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
                                             const Ref<OrbitalSpace> b1space,
                                             const Ref<OrbitalSpace> b2space,
                                             const Ref<OrbitalSpace> k1space,
                                             const Ref<OrbitalSpace> k2space);
+      /// check the G1 * G2 temrs for RHF case; every element should sum up to zero.
+      void check_sf_r12_rdm();
 
 
       /** compute CABS singles correction using Fock operator as H0 */

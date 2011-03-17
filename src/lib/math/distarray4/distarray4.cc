@@ -161,6 +161,8 @@ DistArray4::tasks_with_access(vector<int>& twa_map) const
   return count;
 }
 
+
+
 namespace sc{ namespace detail {
 
 void store_memorygrp(Ref<DistArray4>& acc, Ref<MemoryGrp>& mem, int i_offset,
@@ -928,13 +930,10 @@ namespace sc {
 
           // copy the result
           for(size_t ij=0; ij<nbra_ij; ++ij) {
-            for(size_t kl=0; kl<nket; ++kl) {
-
               const int i = bra_ij[ij].i0_;
               const int j = bra_ij[ij].i1_;
-              braket->store_pair_block(i, j, 0, T_result);
+              braket->store_pair_block(i, j, 0, &(T_result[ij * nket]));
             }
-          }
 
         if (bra_tile != 0) {
           const size_t nbra_ij = bra_ij.size();
@@ -974,7 +973,7 @@ namespace sc {
      }
     Ref<DistArray4> DA_Aixy = permute23(bra);
     Ref<DistArray4> DA_M;
-    contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
+    contract34_DA4_RefMat(DA_M, scale, DA_Aixy,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
     braket = permute23(DA_M);
     return;
   }
@@ -992,10 +991,9 @@ namespace sc {
        braket = bra->clone(braket_dims);
      }
 
-    Ref<DistArray4> DA1 = permute34(bra);
-    Ref<DistArray4> DA_Aixy = permute23(DA1);
+    Ref<DistArray4> DA_Aixy = permute23(permute34(bra));
     Ref<DistArray4> DA_M;
-    contract34_DA4_RefMat(DA_M, scale, bra,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
+    contract34_DA4_RefMat(DA_M, scale, DA_Aixy,intsetidx_bra, ket, MatBra1Dim, MatBra2Dim);
     braket = permute23(DA_M);
     return;
   }
@@ -1195,10 +1193,11 @@ namespace sc {
     return result;
   }
 
- RefSCMatrix &
-  operator<<(RefSCMatrix& dst, const Ref<DistArray4>& src)
+
+  RefSCMatrix &
+  copy_to_RefSCMat(RefSCMatrix& dst,
+                          const Ref<DistArray4>& src, const int tensor_index)
   {
-    assert(src->num_te_types() == 1);
     assert(src->has_access(src->msg()->me()));
 
     // is dst bra packed?
@@ -1235,7 +1234,7 @@ namespace sc {
       const unsigned int b1 = bra_iter.i();
       const unsigned int b2 = bra_iter.j();
       const unsigned int b12 = bra_iter.ij();
-      const double* b12_blk = src->retrieve_pair_block(b1, b2, 0);
+      const double* b12_blk = src->retrieve_pair_block(b1, b2, tensor_index);
 
       if (!ket_packed) {
         row.assign(b12_blk);
@@ -1251,12 +1250,37 @@ namespace sc {
       }
       dst.assign_row(row, b12);
 
-      src->release_pair_block(b1, b2, 0);
+      src->release_pair_block(b1, b2, tensor_index);
     }
 
     if (src->data_persistent()) src->deactivate();
     return dst;
   }
+
+  RefSCMatrix
+  copy_to_RefSCMat(const Ref<DistArray4>& src, int tensor_index)
+  {
+    RefSCDimension upp_scdim = new SCDimension(src->ni() * src->nj());
+    RefSCDimension low_scdim = new SCDimension(src->nx() * src->ny());
+    Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
+    RefSCMatrix dst = local_kit->matrix(upp_scdim, low_scdim);
+    dst.assign(0.0);
+    copy_to_RefSCMat(dst, src, tensor_index);
+    return dst;
+  }
+
+ RefSCMatrix &
+  operator<<(RefSCMatrix& dst, const Ref<DistArray4>& src)
+  {
+    assert(src->num_te_types() == 1);
+    copy_to_RefSCMat(dst, src, 0);
+    return dst;
+  }
+
+
+
+
+
 
 } // end of namespace sc
 

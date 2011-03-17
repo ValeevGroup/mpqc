@@ -174,6 +174,7 @@ class DistArray4: virtual public SavableState {
 
     const Ref<MessageGrp>& msg() const { return msg_; }
 
+
   private:
     /// Set to nonzero to debug this and derived classes
     static const int classdebug_ = 0;
@@ -307,7 +308,16 @@ RefSCMatrix &
 operator<<(RefSCMatrix& dst,
                         const Ref<DistArray4>& src);
 
-/// add two DistArray4 together
+/// copy a specific tensor to RefSCMatrix
+RefSCMatrix &
+copy_to_RefSCMat(RefSCMatrix& dst,
+                        const Ref<DistArray4>& src, const int tensor_type);
+
+RefSCMatrix
+copy_to_RefSCMat(const Ref<DistArray4>& src, int tensor_index);
+
+
+
 
 
 

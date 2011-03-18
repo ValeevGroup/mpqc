@@ -337,10 +337,10 @@ namespace sc {
   template <typename T> T* allocate(std::size_t size) {
     return ConsumableResources::get_default_instance()->allocate<T>(size);
   }
+  /// this version will set array to 0 upon return \sa deallocate
   template <typename T> void deallocate(T*& array) {
     ConsumableResources::get_default_instance()->deallocate(array);
   }
-  /// this version will set array to 0 upon return \sa deallocate
   template <typename T> void deallocate(T* const & array) {
     ConsumableResources::get_default_instance()->deallocate(array);
   }

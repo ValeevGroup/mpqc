@@ -42,8 +42,8 @@ namespace sc {
   RefSCMatrix spinadapt(const RefSCMatrix &A,
                         const Ref<OrbitalSpace> &bra,
                         const Ref<OrbitalSpace> &ket){
-    SpatialMOPairIter_eq ij_iter(bra);
-    SpatialMOPairIter_eq kl_iter(ket);
+    SpatialMOPairIter_eq ij_iter(bra->rank());
+    SpatialMOPairIter_eq kl_iter(ket->rank());
     const unsigned int brablock_size_ab = ij_iter.nij_ab();
     const unsigned int ketblock_size_ab = kl_iter.nij_ab();
     if (A.rowdim().n()%brablock_size_ab)

@@ -33,6 +33,7 @@
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/petite.h>
 #include <util/class/scexception.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/lcao/df_runtime.h>
 
 using namespace sc;
@@ -112,11 +113,13 @@ WavefunctionWorld::WavefunctionWorld(
   }
 
   // Get the filename prefix to store the integrals
-  const std::string ints_file_default = SCFormIO::fileext_to_filename(".moints");
-  ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(ints_file_default));
+  const std::string default_basename_prefix = SCFormIO::fileext_to_filename(".moints");
+  const std::string default_full_prefix = ConsumableResources::get_default_instance()->disk_location() +
+                                          default_basename_prefix;
+  ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(default_full_prefix));
   // if the last character of ints_file is '/' then append the default basename
   if (*(ints_file_.rbegin()) == '/')
-    ints_file_ += ints_file_default;
+    ints_file_ += default_basename_prefix;
   ExEnv::out0() << indent << "ints_file = " << ints_file_ << std::endl;
 
   // dynamic load balancing?

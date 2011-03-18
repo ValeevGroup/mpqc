@@ -56,10 +56,8 @@ CCSDT::CCSDT(StateIn& s): CCR12(s){
 
 
 CCSDT::CCSDT(const Ref<KeyVal>& keyval): CCR12(keyval){
-
-  keyval_ = keyval;
   string theory_ = "CCSDT";
-  common_init(theory_);
+  common_init(theory_, keyval);
 }
 
 

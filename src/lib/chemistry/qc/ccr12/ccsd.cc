@@ -70,10 +70,8 @@ CCSD::CCSD(StateIn& s): CCR12(s){
 
 
 CCSD::CCSD(const Ref<KeyVal>& keyval): CCR12(keyval){
-
-  keyval_ = keyval;
   string theory_ = "CCSD";
-  common_init(theory_);
+  common_init(theory_, keyval);
 }
 
 

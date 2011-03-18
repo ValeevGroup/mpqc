@@ -675,12 +675,12 @@ void
 AVLMMap<K,T,C,A>::next(const AVLMMapNode<K,T>*& node)
 {
   const AVLMMapNode<K,T>* r;
-  if (r = rlink(node)) {
+  if ((r = rlink(node))) {
       node = r;
-      while (r = llink(node)) node = r;
+      while ((r = llink(node))) node = r;
       return;
     }
-  while (r = uplink(node)) {
+  while ((r = uplink(node))) {
       if (node == llink(r)) {
           node = r;
           return;
@@ -695,12 +695,12 @@ void
 AVLMMap<K,T,C,A>::next(AVLMMapNode<K,T>*& node)
 {
   AVLMMapNode<K,T>* r;
-  if (r = rlink(node)) {
+  if ((r = rlink(node))) {
       node = r;
-      while (r = llink(node)) node = r;
+      while ((r = llink(node))) node = r;
       return;
     }
-  while (r = uplink(node)) {
+  while ((r = uplink(node))) {
       if (node == llink(r)) {
           node = r;
           return;

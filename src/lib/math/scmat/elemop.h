@@ -334,7 +334,10 @@ class SCElementMaxElement: public SCElementOp {
       {
         int nchar; s.get(nchar);
         r.resize(nchar / sizeof(SCElement));
-        s.get((char*)(&r[0]));
+        char* r_char;
+        s.get(r_char);
+        memcpy(&r[0], r_char, nchar);
+        delete[] r_char;
       }
       s.get(deferred_);
     }

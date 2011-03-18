@@ -101,7 +101,7 @@ OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
   if (evals.null())
     throw std::runtime_error(
                              "OrbitalSpace::OrbitalSpace() -- null eigenvalues matrix");
-  if (nfzc < 0 || nfzc > full_coefs.coldim().n())
+  if (nfzc > full_coefs.coldim().n())
     throw std::runtime_error("OrbitalSpace::OrbitalSpace() -- invalid nfzc");
   if (nfzc + nfzv > full_coefs.coldim().n())
     throw std::runtime_error(
@@ -257,7 +257,7 @@ void OrbitalSpace::check_orbsym() const {
   for (std::vector<unsigned int>::const_iterator p = orbsym_.begin();
        p != orbsym_.end();
        ++p) {
-    if (*p < 0 || *p >= ng)
+    if (*p >= ng)
       throw ProgrammingError("OrbitalSpace::check_orbsym() -- invalid value in the list of orbital irreps",
                              __FILE__,__LINE__,class_desc());
   }

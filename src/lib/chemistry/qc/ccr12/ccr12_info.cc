@@ -325,7 +325,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 }
 
 CCR12_Info::~CCR12_Info(){
-
+  mem_->set_localsize(0);
 }
 
 

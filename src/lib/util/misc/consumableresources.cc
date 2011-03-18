@@ -85,7 +85,7 @@ ConsumableResources::~ConsumableResources() {
     for(std::map<void*, std::size_t>::const_iterator v=managed_arrays_.begin();
         v != managed_arrays_.end();
         ++v)
-      total_unfreed_memory != v->second;
+      total_unfreed_memory += v->second;
     if (total_unfreed_memory > 0)
       ExEnv::err0() << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
   }

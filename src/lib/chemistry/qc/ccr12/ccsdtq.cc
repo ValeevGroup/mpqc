@@ -62,10 +62,8 @@ CCSDTQ::CCSDTQ(StateIn& s): CCR12(s){
 
 
 CCSDTQ::CCSDTQ(const Ref<KeyVal>& keyval): CCR12(keyval) {
-
-  keyval_ = keyval;
   string theory_ = "CCSDTQ";
-  common_init(theory_);
+  common_init(theory_, keyval);
 }
 
 

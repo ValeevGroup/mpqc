@@ -46,19 +46,16 @@ static ClassDesc CCR12_cd(
   typeid(CCR12),"CCR12",1,"public MBPT2_R12",
   0,create<CCR12>,create<CCR12>);
 
-CCR12::CCR12(StateIn& s): MBPT2_R12(s){
+CCR12::CCR12(StateIn& s): MBPT2_R12(s), ccr12_info_(0) {
   throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructor not yet implemented",__FILE__,__LINE__);
 }
 
 
-CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2_R12(keyval){
-
-  keyval_ = keyval;
-
+CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2_R12(keyval), ccr12_info_(0) {
 }
 
 
-void CCR12::common_init(string theory){
+void CCR12::common_init(string theory, const Ref<KeyVal>& kv){
 
   theory_ = theory;
   thrgrp_ = ThreadGrp::get_default_threadgrp();
@@ -73,24 +70,24 @@ void CCR12::common_init(string theory){
   if(theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
 
   ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl << endl;
-  perturbative_ = keyval_->stringvalue("perturbative", KeyValValuechar());
+  perturbative_ = kv->stringvalue("perturbative", KeyValValuestring(""));
   std::transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
   ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
 
-  ndiis_=keyval_->intvalue("ndiis", KeyValValueint(2));
-  diis_start_ = keyval_->intvalue("diis_start", KeyValValueint(0));
+  ndiis_=kv->intvalue("ndiis", KeyValValueint(2));
+  diis_start_ = kv->intvalue("diis_start", KeyValValueint(0));
 
   CLSCF* clscfref=dynamic_cast<CLSCF*>(ref().pointer());
   rhf_=(clscfref!=0);
 
   // maxiter
-  maxiter_=keyval_->intvalue("maxiter",   KeyValValueint(100));
+  maxiter_=kv->intvalue("maxiter",   KeyValValueint(100));
   // cctresh
-  ccthresh_=keyval_->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
+  ccthresh_=kv->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
   // get the memory sizes
-  memorysize_ = keyval_->longvalue("memory",   KeyValValuelong(200000000));
+  memorysize_ = kv->longvalue("memory",   KeyValValuelong(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
-  worksize_ = keyval_->longvalue("workmemory",   KeyValValuelong(50000000));
+  worksize_ = kv->longvalue("workmemory",   KeyValValuelong(50000000));
 #ifdef DISK_BASED_SMITH
   worksize_ = memorysize_; 
 #endif
@@ -100,7 +97,7 @@ void CCR12::common_init(string theory){
 
 CCR12::~CCR12(){
   mem_->sync();
-  delete ccr12_info_;
+  if (ccr12_info_ != 0) delete ccr12_info_;
 }
 
 void CCR12::compute(){
@@ -108,6 +105,7 @@ void CCR12::compute(){
   r12world()->initialize();
 
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
+  if (ccr12_info_ != 0) delete ccr12_info_;
   ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzcore(),nfzvirt(),
                   molecule()->point_group()->char_table().nirrep(),worksize_,memorysize_,mem_->n(),ndiis_,
                   theory_,perturbative_);

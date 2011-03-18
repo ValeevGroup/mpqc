@@ -57,7 +57,6 @@ class CCR12: public MBPT2_R12 {
     Ref<ThreadGrp> thrgrp_;
     Ref<MessageGrp> msggrp_;
     Ref<MemoryGrp> mem_;
-    Ref<KeyVal> keyval_;
     CCR12_Info* ccr12_info_;
     long worksize_;
     long memorysize_;
@@ -82,7 +81,7 @@ class CCR12: public MBPT2_R12 {
   protected:
     /// always execute this from Derived's compute()
     void compute();
-    void common_init(std::string);
+    void common_init(std::string, const Ref<KeyVal>& kv);
 
     // print nutilities
     void print_iteration_header(std::string);

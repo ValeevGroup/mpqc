@@ -1392,7 +1392,6 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
-  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before Xpart").c_str());
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
@@ -1404,7 +1403,6 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
   RefSCMatrix TBTG =  T.t() * r12eval_->B() * T  * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);//(gg,gg)
   TBTG.scale(0.5);
-  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before TBTG").c_str());
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     TBTG.print(prepend_spincase(AlphaBeta,"TBTG").c_str());
@@ -1414,7 +1412,6 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // the last messy term
   RefSCMatrix others = sf_B_others(); //(gg, gg)
-  HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before others").c_str());
   HylleraasMatrix.accumulate(others);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
       others.print(prepend_spincase(AlphaBeta,"others").c_str());
@@ -1434,14 +1431,13 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     const double E_TBTG = TBTG.trace();
     const double E_others = others.trace();
     const double E_total = E_V_t_T + E_Xpart + E_TBTG + E_others;
+    ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
-    ExEnv::out0() << indent << "V:                        " << E_V_t_T << std::endl;
-    ExEnv::out0() << indent << "X:                        " << E_Xpart << std::endl;
-    ExEnv::out0() << indent << "B':                       " << E_TBTG << std::endl;
-    ExEnv::out0() << indent << "B remain:                 " << E_others << std::endl;
-    ExEnv::out0() << indent << "total contributions::     " << E_total << std::endl;
+    ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
+    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_Xpart) << std::endl;
+    ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
+    ExEnv::out0() << indent << scprintf("Total:                    %17.12lf", E_total) << std::endl << std::endl << std::endl;
   }
-
 
 //#if 0
 //  HylleraasMatrix.assign(0.0)
@@ -1754,7 +1750,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
   RefSCMatrix opdm2a = rdm1_sf_2spaces(b1space, k2space);
   RefSCMatrix opdm2b = rdm1_sf_2spaces(b2space, k1space);
   Ref<OrbitalSpace> occ_space = r12eval_->ggspace(Alpha);
-  ExEnv::out0() << indent << occ_space->rank() << std::endl;
+//  ExEnv::out0() << indent << occ_space->rank() << std::endl;
   Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(b1space->rank(), b2space->rank(), AlphaBeta);
   Ref<SpinMOPairIter> low_pair = new SpinMOPairIter(k1space->rank(), k2space->rank(), AlphaBeta);
   for(upp_pair->start(); *upp_pair; upp_pair->next())

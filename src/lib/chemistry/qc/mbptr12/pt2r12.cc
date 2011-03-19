@@ -42,20 +42,6 @@ using namespace sc;
 
 namespace {
 
-  void print_full_mat(RefSCMatrix & Mat)
-  {
-    const int nrow = Mat.nrow();
-    const int ncol = Mat.ncol();
-    for (int a = 0; a < nrow; ++a)
-    {
-      for (int b = 0; b < ncol; ++b)
-      {
-        ExEnv::out0() << Mat(a,b) << "  ";
-      }
-      ExEnv::out0() << std::endl;
-    }
-  }
-
   int triang_half_INDEX_ordered(int i, int j) {
     return(i*(i+1)/2+j);
   }
@@ -1382,14 +1368,6 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
     const double E_V = V_t_T.trace();
     const double E_X = TXT_t_Phi.trace();
     const double E_B = TBT_tpdm.trace();
-
-    if(pairspin == AlphaBeta && false){
-      ExEnv::out0() << indent << "individual contributions::" << std::endl;
-      ExEnv::out0() << indent << "V:                        " << E_V << std::endl;
-      ExEnv::out0() << indent << "X:                        " << E_X << std::endl;
-      ExEnv::out0() << indent << "B:                        " << E_B << std::endl;
-  //    ExEnv::out0() << indent << "total contributions::     " << (E_V + E_X + E_B) << std::endl;
-    }
   }
 
 
@@ -1399,12 +1377,12 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 
 double PT2R12::energy_PT2R12_projector2_spinfree() {
   // 2*V*T constribution
-  ExEnv::out0() << indent << "in spin free code" << std::endl;
+  const bool print_all = false;// for debugging
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
   RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
   RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
   }
@@ -1416,7 +1394,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
   HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before Xpart").c_str());
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:X").c_str());
   }
@@ -1428,7 +1406,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   TBTG.scale(0.5);
   HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before TBTG").c_str());
   HylleraasMatrix.accumulate(TBTG);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     TBTG.print(prepend_spincase(AlphaBeta,"TBTG").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:TBTG").c_str());
   }
@@ -1438,21 +1416,19 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix others = sf_B_others(); //(gg, gg)
   HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:before others").c_str());
   HylleraasMatrix.accumulate(others);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
       others.print(prepend_spincase(AlphaBeta,"others").c_str());
       HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:others").c_str());
   }
 
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || true) {
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     V_t_T.print(prepend_spincase(AlphaBeta,"sf:V_t_T").c_str());
     Xpart.print(prepend_spincase(AlphaBeta,"sf:Xpart").c_str());
     TBTG.print(prepend_spincase(AlphaBeta,"sf:TBTG").c_str());
     others.print(prepend_spincase(AlphaBeta,"sf:others").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"sf:Hy").c_str());
-    RefSCMatrix ident = HylleraasMatrix->clone();
-    ident.assign(1.0);
-    (HylleraasMatrix- V_t_T - Xpart - TBTG - others).print(prepend_spincase(AlphaBeta,"sf:diff").c_str());
-    (HylleraasMatrix- V_t_T - Xpart - TBTG - others + ident).print(prepend_spincase(AlphaBeta,"sf:diff+1").c_str());
+  }
+  {
     const double E_V_t_T = V_t_T.trace();
     const double E_Xpart = Xpart.trace();
     const double E_TBTG = TBTG.trace();
@@ -1464,7 +1440,6 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << indent << "B':                       " << E_TBTG << std::endl;
     ExEnv::out0() << indent << "B remain:                 " << E_others << std::endl;
     ExEnv::out0() << indent << "total contributions::     " << E_total << std::endl;
-    ExEnv::out0() << indent << "total trace::             " << HylleraasMatrix.trace() << std::endl;
   }
 
 
@@ -2088,9 +2063,6 @@ void sc::PT2R12::compute()
   {
     if(r12world_->spinadapted())
     {
-#if 0 // passed.
-      check_sf_r12_rdm();
-#endif
       r12world()->ref()->set_spinfree(true);
       assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
       energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
@@ -2193,16 +2165,17 @@ void sc::PT2R12::compute()
   ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
-                                      energy) << endl;
-#if 1
-  if(r12world_->spinadapted() == false) {
-    ExEnv::out0() << indent << scprintf("V term [au]:                           %17.12lf", V_so) << endl;
-    ExEnv::out0() << indent << scprintf("B term [au]:                           %17.12lf", B_so) << endl;
-    ExEnv::out0() << indent << scprintf("X term [au]:                           %17.12lf", X_so) << endl;}
-#endif
-
+                                      energy) << std::endl;
+  if(r12world_->spinadapted() == false)
+  {
+    ExEnv::out0() << std::endl << std::endl;
+    ExEnv::out0() << indent << scprintf("V term [au]:                           %17.12lf", V_so) << std::endl;
+    ExEnv::out0() << indent << scprintf("B term [au]:                           %17.12lf", B_so) << std::endl;
+    ExEnv::out0() << indent << scprintf("X term [au]:                           %17.12lf", X_so) << std::endl;
+  }
   set_energy(energy);
 }
+
 
 int sc::PT2R12::nelectron()
 {

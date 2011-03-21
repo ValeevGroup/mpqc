@@ -63,14 +63,18 @@ extern "C" {
 
 };
 
-template<>
-eval_f_ptr sc::mbptr12::__to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::f_ptr(__eval_slater);
-template<>
-eval_dfdp_ptr sc::mbptr12::__to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::dfdp_ptr(__eval_slater_dfdp);
-template<>
-eval_f_ptr sc::mbptr12::__to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::f_ptr(__eval_slater_pgauss);
-template<>
-eval_dfdp_ptr sc::mbptr12::__to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::dfdp_ptr(__eval_slater_dfdp_pgauss);
+namespace sc {
+  namespace mbptr12 {
+    template<>
+    eval_f_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::f_ptr(__eval_slater);
+    template<>
+    eval_dfdp_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::dfdp_ptr(__eval_slater_dfdp);
+    template<>
+    eval_f_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::f_ptr(__eval_slater_pgauss);
+    template<>
+    eval_dfdp_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::dfdp_ptr(__eval_slater_dfdp_pgauss);
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -1434,7 +1434,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
-    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_Xpart) << std::endl;
+    ExEnv::out0() << indent << scprintf("X:                        %17.12lf", E_Xpart) << std::endl;
+    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_TBTG) << std::endl;
     ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
     ExEnv::out0() << indent << scprintf("Total:                    %17.12lf", E_total) << std::endl << std::endl << std::endl;
   }
@@ -2090,7 +2091,7 @@ void sc::PT2R12::compute()
   {
     //calculate basis set incompleteness error (BSIE) with two choices of H0
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
-    double cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
+    cabs_singles_corre_2b_H0 = energy_cabs_singles_twobody_H0();
     const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
     if(keep_Fock_result)
     {

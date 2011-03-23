@@ -111,7 +111,7 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
   else {
     nscratch_ = 1;
     scratch_ = new string[nscratch_];
-    scratch_[0] = ConsumableResources::get_default_instance()->disk_location();
+    scratch_[0] = cwd_ + "/";
   }
 
   char *s = new char[cwd_.size() + inputname_.size() + 2];

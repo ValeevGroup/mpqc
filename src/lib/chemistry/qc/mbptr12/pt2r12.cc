@@ -1434,8 +1434,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
-    ExEnv::out0() << indent << scprintf("X:                        %17.12lf", E_Xpart) << std::endl;
-    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_TBTG) << std::endl;
+    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_Xpart) << std::endl;
     ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
     ExEnv::out0() << indent << scprintf("Total:                    %17.12lf", E_total) << std::endl << std::endl << std::endl;
   }
@@ -1481,7 +1480,6 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
     const unsigned int f12int_index = intdescr->intset(f12int_type);
 
     RefSCMatrix T = C(AlphaBeta).t(); // inverse of T^GG_gg, in principle we should use the transpose matrix
-    assert((occ_dim * occ_dim == T.ncol()) && (occ_dim * occ_dim == T.nrow()));
     contract34_DA4_RefMat(RFtimesT, 1.0, RF, f12int_index, T, gg_dim, gg_dim);
   }
 
@@ -2091,7 +2089,7 @@ void sc::PT2R12::compute()
   {
     //calculate basis set incompleteness error (BSIE) with two choices of H0
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
-    cabs_singles_corre_2b_H0 = energy_cabs_singles_twobody_H0();
+    cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
     const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
     if(keep_Fock_result)
     {

@@ -105,7 +105,7 @@ class PsiExEnv: public DescribedClass {
 
          <tr><td><tt>stderr</tt><td>string<td>fileprefix.stderr<td>the file to which Psi standard error will be written
 
-         <tr><td><tt>scratch</tt><td>array of strings<td>[ cwd/ ]<td> the location to which large scratch files will be written
+         <tr><td><tt>scratch</tt><td>array of strings<td>[ <ConsumableResources::disk_location()> ]<td> the location to which large scratch files will be written
 
          </table>
 

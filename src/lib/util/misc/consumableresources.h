@@ -140,7 +140,7 @@ namespace sc {
           std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             const size_t size = pos->second;
-            if (size > 1) delete[] array;
+            if (size / sizeof(T) > 1) delete[] array;
             else delete array;
             release_memory(size);
             managed_arrays_.erase(pos);

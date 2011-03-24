@@ -109,6 +109,35 @@ void R12WavefunctionWorld::save_data_state(StateOut& so)
 void
 R12WavefunctionWorld::initialize()
 {
+  // annotate parameters
+  Ref<ParamsRegistry> pregistry = ParamsRegistry::instance();
+  Ref<R12Technology::CorrelationFactor> corrfactor = r12tech_->corrfactor();
+  Ref<R12Technology::NullCorrelationFactor> nullcorrfactor;  nullcorrfactor << corrfactor;
+  if (nullcorrfactor.null()) { // real correlation factor
+    const unsigned int ncorrfunctions = corrfactor->nfunctions();
+    for (unsigned int f = 0; f < ncorrfunctions; ++f) {
+      std::ostringstream oss;
+      oss << "[" << f << "]";
+      const std::string pkey = oss.str();
+      if (pregistry->key_exists(pkey) == false) {
+        pregistry->add(pkey,
+                       corrfactor->tbintdescr(this->integral(), f)->params());
+      }
+    }
+    for (unsigned int f = 0; f < ncorrfunctions; ++f) {
+      for (unsigned int g = 0; g < ncorrfunctions; ++g) {
+        std::ostringstream oss;
+        oss << "[" << f << "," << g << "]";
+        const std::string pkey = oss.str();
+        if (pregistry->key_exists(pkey) == false) {
+          pregistry->add(
+                         pkey,
+                         corrfactor->tbintdescr(this->integral(), f, g)->params());
+        }
+      }
+    }
+  }
+
   ref_->world()->initialize_ao_spaces();
   // provide hints to the factory about the likely use of transforms
   {

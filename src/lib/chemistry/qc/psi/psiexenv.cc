@@ -44,6 +44,7 @@
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <psifiles.h>
 #include <util/misc/print.h>
@@ -111,7 +112,7 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
   else {
     nscratch_ = 1;
     scratch_ = new string[nscratch_];
-    scratch_[0] = cwd_ + "/";
+    scratch_[0] = ConsumableResources::get_default_instance()->disk_location();
   }
 
   char *s = new char[cwd_.size() + inputname_.size() + 2];

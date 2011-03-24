@@ -682,6 +682,10 @@ public:
   std::vector<Ref<DistArray4> > V_distarray4(SpinCase2 spincase2,
                                const Ref<OrbitalSpace>& p,
                                const Ref<OrbitalSpace>& q);
+  /** Compute \f$ U_{pq}^{xy} = \frac{1}{2} \bar{R}_{p \alpha'}^{x l} \bar{g}_{q l}^{y \alpha'} \f$. */
+  std::vector<Ref<DistArray4> > U_distarray4(SpinCase2 spincase2,
+                                             const Ref<OrbitalSpace>& p,
+                                             const Ref<OrbitalSpace>& q);
   /// Compute \f$ P_{uv}^{xy} = \frac{1}{4} \bar{R}^{\alpha\beta}_{uv} \bar{g}_{\alpha\beta}^{\gamma\delta} \bar{R}_{\gamma\delta}^{xy}\f$ P = RgR
   RefSymmSCMatrix P(SpinCase2 S);
   /** Returns the cusp consistent coefficient \f$C_{ij}^{kl}\f$. */

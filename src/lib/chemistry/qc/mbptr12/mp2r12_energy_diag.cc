@@ -283,8 +283,7 @@ void MP2R12Energy_Diag::compute_YxF(const int b1b2_k1k2, const double prefactor,
     break;
   }
 
-  // Now only V^ij_ij V^ij_ji X^ij_ij X^ij_ji B^ij_ji are computed,
-  // so the index for array which stores V^ij_ij ... is always ij
+  // the index for array which stores V^ij_ij, V^ij_ji, V^ji_ij, and V^ji_ji is always ij
   // ij = i * nocc2_act + j which increase one for each loop
   int array_idx = 0;
 
@@ -684,6 +683,7 @@ void MP2R12Energy_Diag::compute_ef12() {
 
   double* Xij_ij = new double[nijij];
   double* Xij_ji = new double[nijij];
+
   double* Bij_ij = new double[nijij];
   double* Pij_ij = new double[nijij];
   double* Qij_ij = new double[nijij];
@@ -1098,7 +1098,7 @@ void MP2R12Energy_Diag::compute_ef12() {
     } // end of V coupling computation
 
     //
-    // Compute X intermediate matrix: X^ij_ij and X^ij_ji
+    // Compute X intermediate matrix: X^ij_ij, X^ij_ji, X^ji_ij, X^ji_ji,
     //
     // Alpha_beta X^ij_ij and X^ij_ji are antisymmetrized
     // Alpha_alpha or beta_beta antisymmetrized X = X^ij_ij - X^ij_ji
@@ -1144,6 +1144,61 @@ void MP2R12Energy_Diag::compute_ef12() {
                f12_ij_ints, f12_ji_ints,
                Xij_ji);
 
+    double* Xji_ij = NULL;
+    double* Xji_ji = NULL;
+    if (spin1 != spin2) {
+      Xji_ij = new double[nocc12];
+      Xji_ji = new double[nocc12];
+
+      // Xji_ij = X^ji_ij = f^ji_ab f^ab_ij
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << spinletters << " X^ji_ij : " << endl;
+      fill_n(Xji_ij, nocc12, 0.0);
+
+      // X^ji_ij = (f12f12)^ji_ij
+      Ref<DistArray4> i2i1i1i2_f12f12_ints;
+      if (num_unique_spincases2 == 3){
+        activate_ints(occ2_act->id(), occ1_act->id(),
+                      occ1_act->id(), occ2_act->id(),
+                      descr_f12f12_key, moints4_rtime,
+                      i2i1i1i2_f12f12_ints);
+      } else {
+          i2i1i1i2_f12f12_ints = i1i2i1i2_f12f12_ints;
+      }
+
+      compute_VX(ji_ij,  VX_output,
+                 f12f12_idx, i2i1i1i2_f12f12_ints,
+                 f12_idx, f12_idx,
+                 f12_ji_ints, f12_ij_ints,
+                 Xji_ij);
+      if (num_unique_spincases2 == 3)
+        i2i1i1i2_f12f12_ints->deactivate();
+
+      // Xji_ji = X^ji_ji = f^ji_ab f^ab_ji
+      if (debug_ >= DefaultPrintThresholds::mostN2)
+      ExEnv::out0() << endl << indent << spinletters << " X^ji_ji : " << endl;
+      fill_n(Xji_ji, nocc12, 0.0);
+
+      // X^ji_ji = (f12f12)^ji_ji
+      Ref<DistArray4> i2i1i2i1_f12f12_ints;
+      if (num_unique_spincases2 == 3){
+        activate_ints(occ2_act->id(), occ1_act->id(),
+                      occ2_act->id(), occ1_act->id(),
+                      descr_f12f12_key, moints4_rtime,
+                      i2i1i2i1_f12f12_ints);
+      } else {
+          i2i1i2i1_f12f12_ints = i1i2i1i2_f12f12_ints;
+      }
+
+      compute_VX(ji_ji,  VX_output,
+                 f12f12_idx, i2i1i2i1_f12f12_ints,
+                 f12_idx, f12_idx,
+                 f12_ji_ints, f12_ji_ints,
+                 Xji_ji);
+      if (num_unique_spincases2 == 3)
+        i2i1i2i1_f12f12_ints->deactivate();
+    }
+
     if (debug_ >= DefaultPrintThresholds::N2 && spin1 == spin2)
       print_antisym_intermediate(spincase,"X^ij_ij",Xij_ij,Xij_ji,nocc1_act,nocc2_act);
 
@@ -1151,6 +1206,8 @@ void MP2R12Energy_Diag::compute_ef12() {
       // Alpha-beta case
       print_intermediate(spincase,"X^ij_ij",Xij_ij,nocc1_act,nocc2_act);
       print_intermediate(spincase,"X^ij_ji",Xij_ji,nocc1_act,nocc2_act);
+      print_intermediate(spincase,"X^ji_ij",Xji_ij,nocc1_act,nocc2_act);
+      print_intermediate(spincase,"X^ji_ji",Xji_ji,nocc1_act,nocc2_act);
     }
 
     //
@@ -1185,13 +1242,13 @@ void MP2R12Energy_Diag::compute_ef12() {
     std::vector<int> Pijij_idx;
     std::vector<std::string> Pijij_output;
 
-    // P +=  f^ij_PQ K^Q_R f^PR_ij    (antisymmetrized)
+    // P +=  f^ij_PQ K^P_R f^RQ_ij    (antisymmetrized)
 
-    //    =   f^ij_QP K^Q_R f^RP_ij - f^ij_QP K^Q_R f^RP_ji
-    //      - f^ji_QP K^Q_R f^RP_ij + f^ji_QP K^Q_R f^RP_ji
+    //    =   f^ij_PQ K^P_R f^RQ_ij - f^ij_PQ K^P_R f^RQ_ji  =>B^ij_ij
+    //      - f^ji_PQ K^P_R f^RQ_ij + f^ji_PQ K^P_R f^RQ_ji  =>B^ji_ji
     //
-    // when spin1 != spin2: P+= f^ij_QP K^Q_R f^RP_ij + f^ji_QP K^Q_R f^RP_ji
-    //                        = f^ij_QP f^Q_K P _ij + f^ji_QP f^Q_K P _ji ;
+    // when spin1 != spin2: P+= f^ij_PQ K^P_R f^RQ_ij + f^ji_PQ K^P_R f^RQ_ji
+    //                        = f^ij_PQ f^P_K Q _ij + f^ji_PQ f^P_K Q _ji ;
 
     Ref<DistArray4> b_i1i2P1P2_ints;
     activate_ints(occ1_act->id(), occ2_act->id(),
@@ -1205,7 +1262,7 @@ void MP2R12Energy_Diag::compute_ef12() {
                   descr_f12_key, moints4_rtime,
                   b_i1i2PK1P2_ints);
 
-    // P += f^ji_QP K^Q_K P _ji
+    // P += f^ji_PQ K^P_K Q _ji
     Ref<DistArray4> b_i2i1P1P2_ints;
     Ref<DistArray4> b_i2i1PK1P2_ints;
     if(num_unique_spincases2 == 3 && spin1 != spin2) {
@@ -1224,7 +1281,7 @@ void MP2R12Energy_Diag::compute_ef12() {
 
     }
 
-    Pijij_output.push_back("P(f^ij_PQ K^Q_R f^PR_ij)");
+    Pijij_output.push_back("P(f^ij_PQ K^P_R f^RQ_ij)");
     P_prefactors.push_back(1.0);
     Pijij_f12_ints.push_back(b_i1i2P1P2_ints);
     Pijij_fx12_ints.push_back(b_i1i2PK1P2_ints);
@@ -2069,6 +2126,7 @@ void MP2R12Energy_Diag::compute_ef12() {
           (*it)->deactivate();
       }
       i1i2i1i2_f12f12_ints->deactivate();
+
       if (num_unique_spincases2 == 3 && spin1 != spin2) {
           i1i2i2i1_ints->deactivate();
           for (std::vector<Ref<DistArray4> >::iterator it = f12_ji_ints.begin();
@@ -2147,8 +2205,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               Hij_pair_energy =   2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij])
                                   + pow(0.5*(C_0+C_1), 2) * (Bij_ij[ij]- (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-                                  + 0.25*(C_0*C_0 - C_1*C_1)*2.0*(Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ji[ij])
-                                  + pow(0.5*(C_0-C_1), 2) * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
+                                  + 0.25*(C_0*C_0 - C_1*C_1)*(2.0*Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
+                                  + pow(0.5*(C_0-C_1), 2) * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
 
               if (this->r12eval()->coupling() == true
                   || this->r12eval()->ebc() == false) {
@@ -2170,8 +2228,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               Hij_pair_energy =   2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij])
                                 + pow(0.5*(C_0+C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-                                + 0.25*(C_0*C_0 - C_1*C_1)*2.0*((Bij_ji[ij] +Bij_ji_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xij_ji[ij])
-                                + pow(0.5*(C_0-C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
+                                + 0.25*(C_0*C_0 - C_1*C_1)*((Bij_ji[ij] +Bij_ji_beta[ji]) - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
+                                + pow(0.5*(C_0-C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
 
               if (this->r12eval()->coupling() == true
                   || this->r12eval()->ebc() == false) {
@@ -2186,6 +2244,8 @@ void MP2R12Energy_Diag::compute_ef12() {
           // deallocate memory for B_beta (it will be used once)
           delete[] Bij_ij_beta;
           delete[] Bij_ji_beta;
+          delete[] Xji_ij;
+          delete[] Xji_ji;
       }
 
   } // end of spincase loop

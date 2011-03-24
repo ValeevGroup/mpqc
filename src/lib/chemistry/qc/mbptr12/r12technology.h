@@ -285,6 +285,10 @@ class R12Technology: virtual public SavableState {
     unsigned int max_num_tbint_types() const { return 1; }
     /// Implementation of CorrelationFactor::value()
     double value(unsigned int c, double r12) const;
+    /// Overload of CorrelationFactor::tbintdescr(f)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
   };
 
   /** R12CorrelationFactor stands for no correlation factor */
@@ -302,8 +306,8 @@ class R12Technology: virtual public SavableState {
     TwoBodyOper::type tbint_type_t1f12() const;
     /// Reimplementation of CorrelationFactor::tbint_type_t2f12()
     TwoBodyOper::type tbint_type_t2f12() const;
-    /// Overload of CorrelationFactor::tbintdescr(f)
     Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f, unsigned int g) const;
     /// Implementation of CorrelationFactor::value()
     double value(unsigned int c, double r12) const;
   };

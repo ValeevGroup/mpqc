@@ -890,6 +890,7 @@ namespace sc {
     }
 
     input->write_keyword("detcas:convergence",rasscf_convergence_);
+    input->write_keyword("detcas:energy_convergence",rasscf_energy_convergence_);
     input->write_keyword("default:ncasiter",rasscf_maxiter_);
     if(diis_start_ < 0) {
       input->write_keyword("detcas:diis_start",1000000);

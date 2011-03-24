@@ -1468,7 +1468,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 
     Ref<OrbitalSpace> F_RI_occ = r12eval_->F_m_P(Alpha);
     R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
-                                       cabs, F_RI_occ, GG_space, GG_space,
+                                       cabs, GG_space, F_RI_occ, GG_space,
                                        r12eval_->corrfactor(), true);
     std::vector<std::string> TensorString;
     fill_container(IntCreator, TensorString);
@@ -1492,7 +1492,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
       const int occ_dim = occ_space->rank();
       R12TwoBodyIntKeyCreator IntCreator(r12eval_->moints_runtime4(),
-                                         cabs, occ_space, GG_space, GG_space,
+                                         cabs, GG_space, occ_space, GG_space,
                                          r12eval_->corrfactor(), true);
       std::vector<std::string> TensorString;
       fill_container(IntCreator, TensorString);

@@ -611,6 +611,18 @@ R12Technology::NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) co
   return cf_null.nonnull();
 }
 
+Ref<TwoBodyIntDescr>
+R12Technology::NullCorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  return new TwoBodyIntDescrERI(IF);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::NullCorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f, unsigned int g) const
+{
+  return new TwoBodyIntDescrERI(IF);
+}
+
 ////
 
 R12Technology::R12CorrelationFactor::R12CorrelationFactor()
@@ -640,6 +652,12 @@ R12Technology::R12CorrelationFactor::tbint_type_t2f12() const
 
 Ref<TwoBodyIntDescr>
 R12Technology::R12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  return new TwoBodyIntDescrR12(IF);
+}
+
+Ref<TwoBodyIntDescr>
+R12Technology::R12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f, unsigned int g) const
 {
   return new TwoBodyIntDescrR12(IF);
 }

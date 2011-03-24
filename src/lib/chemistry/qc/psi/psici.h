@@ -69,6 +69,9 @@ namespace sc {
         <tr><td><tt>ras1_max</tt><td>integer<td>0<td>Specifies the maximum number of holes allowed in RAS I.
         <tr><td><tt>ras3_max</tt><td>integer<td>0<td>Specifies the maximum number of electrons allowed in RAS III.
 
+        <tr><td><tt>repl_otf</tt><td>boolean<td>false<td>Set to true to avoid precomputing single replacement lists (this makes memory requirement in MRCI lower,
+        at the cost of possibly increased computation time). Not used in RASSCF computations.
+
         </table>
      */
       PsiRASCI(const Ref<KeyVal> &keyval);

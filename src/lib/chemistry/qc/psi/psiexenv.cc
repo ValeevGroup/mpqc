@@ -44,6 +44,7 @@
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <chemistry/qc/psi/psiexenv.h>
 #include <psifiles.h>
 #include <util/misc/print.h>

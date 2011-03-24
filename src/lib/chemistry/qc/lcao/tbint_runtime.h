@@ -180,6 +180,10 @@ namespace sc {
       /// this is a singleton
       static const Ref<ParamsRegistry>& instance();
 
+      /// erases all entries
+      void clear();
+      /// key exists?
+      bool key_exists(const std::string& key) const;
       /** Returns key that describes params. If not registered, will do so using register_params(params)
        */
       std::string key(const Ref<IntParams>& params) const;

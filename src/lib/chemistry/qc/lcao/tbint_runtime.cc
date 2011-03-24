@@ -375,6 +375,16 @@ ParamsRegistry::ParamsRegistry() : params_(RegistryType::instance()){
   params_->add(key,voidparams);
 }
 
+void
+ParamsRegistry::clear() {
+  params_->clear();
+}
+
+bool
+ParamsRegistry::key_exists(const std::string& key) const {
+  return params_->key_exists(key);
+}
+
 std::string
 ParamsRegistry::key(const Ref<IntParams>& params) const
 {

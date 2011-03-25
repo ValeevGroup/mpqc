@@ -48,7 +48,6 @@
 #include <chemistry/qc/psi/psiexenv.h>
 #include <psifiles.h>
 #include <util/misc/print.h>
-#include <util/misc/consumableresources.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/shellrot.h>

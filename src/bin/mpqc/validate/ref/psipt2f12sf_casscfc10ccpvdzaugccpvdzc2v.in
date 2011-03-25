@@ -1,0 +1,98 @@
+% Emacs should use -*- KeyVal -*- mode
+molecule<Molecule>: (
+  unit = angstrom
+  {atoms geometry} = {
+    H   [ 0.0 0.0 0.0 ]
+    F   [ 0.0 0.0 0.916808 ]
+  }
+  symmetry = auto
+)
+
+mbasis<GaussianBasisSet>: (
+  name = "6-31G"
+  puream = true
+  molecule = $:molecule
+)
+basis<SplitBasisSet>: (
+  basis = $:mbasis
+)
+
+mvbasis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+vbasis<SplitBasisSet>: (
+  basis = $:mvbasis
+)
+
+% unfortunately, Psi3 cannot write scratch files to the current directory
+psienv<PsiExEnv>: (
+  nscratch = 1
+  scratch = [ "/tmp/" ]
+)
+
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  integrals<IntegralLibint2>: ()
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<PT2R12>: (
+    value_accuracy = 1e-11
+    molecule = $:molecule
+    basis = $:basis
+    memory = 32000000
+    spinadapted = true
+
+    nfzc = 1
+    omit_uocc = false
+
+    reference<PsiRASSCF>: (
+      molecule = $:molecule
+      basis = $:basis
+      psienv = $:psienv
+      memory = 32000000
+
+      reference<PsiCLHF>: (
+        molecule = $:molecule
+        basis = $:basis
+        docc = [3 0 1 1]
+        psienv = $:psienv
+      )
+
+      value_accuracy = 1e-11
+      nfzc = 1
+      ras2 = [3 0 1 1]
+      root = 1
+      nroots = 2
+
+      valence_obwfn<CLHF>: (
+        molecule = $:molecule
+        basis = $:vbasis
+        docc = [3 0 1 1]
+      )
+    )
+
+    rdm2<PsiRDMTwo>: (
+      wfn = $..:reference
+    )
+
+    stdapprox = C
+    corr_factor = stg-3g
+    corr_param = 1.5
+    integrals<IntegralLibint2>: ()
+    aux_basis<GaussianBasisSet>: (
+      name = "aug-cc-pVDZ"
+      molecule = $:molecule
+    )
+    df_basis<GaussianBasisSet>: (
+      name = "cc-pVTZ-RI"
+      molecule = $:molecule
+    )
+    abs_method = cabs+
+  )
+  optimize = no
+)
+

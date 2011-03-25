@@ -1,0 +1,1078 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin10.6.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Thu Mar 24 17:39:19 2011
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralLibint2 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/6-31g.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+
+  CLSCF::init: total charge = 0
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 6
+
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  nuclear repulsion energy =    5.1947575076
+
+  integral intermediate storage = 29899976 bytes
+  integral cache = 2099688 bytes
+  Starting from core Hamiltonian guess
+
+  Using symmetric orthogonalization.
+  n(basis):             4     0     1     1
+  Maximum orthogonalization residual = 1.61784
+  Minimum orthogonalization residual = 0.412943
+  Beginning iterations.  Basis is Split(STO-3G).
+                   345 integrals
+  iter     1 energy =  -98.3313816271 delta = 9.33253e-01
+                   345 integrals
+  iter     2 energy =  -98.5523529302 delta = 2.09269e-01
+                   345 integrals
+  iter     3 energy =  -98.5705002774 delta = 7.24992e-02
+                   345 integrals
+  iter     4 energy =  -98.5707571583 delta = 8.53804e-03
+                   345 integrals
+  iter     5 energy =  -98.5707584815 delta = 4.71566e-04
+                   345 integrals
+  iter     6 energy =  -98.5707584825 delta = 1.84483e-05
+                   345 integrals
+  iter     7 energy =  -98.5707584825 delta = 3.34874e-07
+
+  HOMO is     1  B1 =  -0.464170
+  LUMO is     4  A1 =   0.629230
+
+  total scf energy =  -98.5707584825
+  Using symmetric orthogonalization.
+  n(basis):             7     0     2     2
+  Maximum orthogonalization residual = 2.78805
+  Minimum orthogonalization residual = 0.108886
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/cc-pvtz-ri.kv.
+  ints_file = ./psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.moints
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
+  Using symmetric orthogonalization.
+  n(basis):             7     0     2     2
+  Maximum orthogonalization residual = 2.78805
+  Minimum orthogonalization residual = 0.108886
+  RASSCF energy: -100.009807542
+
+  Molecular formula HF
+
+  The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.in" were ignored:
+    mpqc:optimize
+    mpqc:mole:memory
+    mpqc:integrals
+    psienv:nscratch
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v
+    restart_file    = psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.ckpt
+    restart         = no
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+
+    Orthogonalizing basis for space RIBS:
+    Using symmetric orthogonalization.
+    n(basis):            23     2     9     9
+    Maximum orthogonalization residual = 6.5781295111
+    Minimum orthogonalization residual = 3.06049240559e-06
+
+  Entered G12 diagonal intermediates evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu >
+      Built DensityFitting: name = (i(sym) mu|DF|Mu)
+      Built TransformedDensityFitting: name = (i(sym) i(sym)|DF|Mu)
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu >
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|i(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2)
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu >
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2)
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+  Exited G12 diagonal intermediates evaluator
+  SVD-projecting out  occupied symmetry-blocked MOs out of RIBS to obtain space CABS
+    6 basis functions projected out of RIBS.
+    n(basis):            19     2     8     8
+    Maximum singular value = 1
+    Minimum singular value = 1
+  SVD-projecting out  unoccupied symmetry-blocked MOs out of CABS to obtain space CABS
+    Built TransformedDensityFitting: name = (i(sym) p(sym)|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym) >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2)
+
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|ERI|p(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+    Built TransformedDensityFitting: name = (i(sym) p(sym)_gamma(p(sym))|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu' >
+    Built DensityFitting: name = (i(sym) mu'|DF|Mu)
+    Built TransformedDensityFitting: name = (i(sym) a'|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu' >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|a' >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_gamma(p(sym)) >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym)_gamma(p(sym)) a'>(b1 b2|k1 k2)
+
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|ERI|a' >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|p(sym) a'>(b1 b2|k1 k2)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
+
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) a'>(b1 b2|k1 k2)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a' p(sym)_gamma(p(sym))>(b1 b2|k1 k2)
+
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a' p(sym)>(b1 b2|k1 k2)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
+
+    Entered B(app. C) general reference Ansatz2 spin-adapated intermediate evaluator
+
+      Entered Coulomb(DF) matrix evaluator
+        Begin computation of Coulomb(DF) matrix
+        Built TwoBodyMOIntsTransform_ijR: name = <mu Mu|ERI|mu >
+        Built DensityFitting: name = (mu mu|DF|Mu)
+        Built TwoBodyMOIntsTransform_ijR: name = <mu' Mu|ERI|mu >
+        End of computation of Coulomb(DF) matrix
+      Exited Coulomb(DF) matrix evaluator
+
+      Entered Alpha-beta Q(C) Ansatz 2 intermediate evaluator
+        Entered generic X intermediate evaluator
+
+          Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
+            Built TransformedDensityFitting: name = (i(sym) i(sym)_hJ(p')[A]|DF|Mu)
+            Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu' >
+            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >
+            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2)
+          Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
+        Exited generic X intermediate evaluator
+      Exited Alpha-beta Q(C) Ansatz 2 intermediate evaluator
+
+      Entered Alpha-beta P(C) Ansatz 2 intermediate evaluator
+
+        Entered exchange(DF) matrix evaluator
+          Begin computation of exchange(DF) matrix
+          Built TwoBodyMOIntsTransform_ijR: name = <dd Mu|ERI|mu' >
+          Built DensityFitting: name = (dd mu'|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu' Mu|ERI|dd >
+          End of computation of exchange(DF) matrix
+        Exited exchange(DF) matrix evaluator
+
+        Entered Coulomb(DF) matrix evaluator
+          Begin computation of Coulomb(DF) matrix
+          Built TwoBodyMOIntsTransform_ijR: name = <mu' Mu|ERI|mu' >
+          End of computation of Coulomb(DF) matrix
+        Exited Coulomb(DF) matrix evaluator
+        Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p'_K(p')[A]|DF|Mu)
+          Built TransformedDensityFitting: name = (i(sym) p'|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p' >
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p'_K(p')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2)
+
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
+            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
+        Exited generic FxF intermediate evaluator
+
+        Entered Coulomb(DF) matrix evaluator
+          Begin computation of Coulomb(DF) matrix
+          End of computation of Coulomb(DF) matrix
+        Exited Coulomb(DF) matrix evaluator
+
+        Entered exchange(DF) matrix evaluator
+          Begin computation of exchange(DF) matrix
+          Built TransformedDensityFitting: name = (mu dd|DF|Mu)
+          Built PermutedDensityFitting: name = (dd mu|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu Mu|ERI|dd >
+          End of computation of exchange(DF) matrix
+        Exited exchange(DF) matrix evaluator
+        Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p(sym)_F(p(sym))[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] p(sym)>(b1 b2|k1 k2)
+
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+        Exited generic FxF intermediate evaluator
+
+        Entered exchange(DF) matrix evaluator
+          Begin computation of exchange(DF) matrix
+          End of computation of exchange(DF) matrix
+        Exited exchange(DF) matrix evaluator
+        Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p(sym)_F(a')[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2)
+
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+        Exited generic FxF intermediate evaluator
+
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'_F(a')[A]>^T)
+          Built TransformedDensityFitting: name = (i(sym) a'_F(a')[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|a'_F(a')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) a'_F(a')[A]>(b1 b2|k1 k2)
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'_F(a')[A]>^T)
+
+        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a'_F(a')[A] p(sym)>^T)
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a'_F(a')[A] p(sym)>(b1 b2|k1 k2)
+        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a'_F(a')[A] p(sym)>^T)
+        Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p(sym)_Fg(p')|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_Fg(p') >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym)_Fg(p') a'>(b1 b2|k1 k2)
+
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_Fg(p') a'> . <i(sym) i(sym)|p(sym) a'>^T)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_Fg(p') a'> . <i(sym) i(sym)|p(sym) a'>^T)
+        Exited generic FxF intermediate evaluator
+
+        Alpha-beta P(C) contribution
+                       1               2               3
+            1   19.7854617918   -1.0368545908    0.2643953957
+            2   -1.0368545908    1.6070813357   -0.1747075963
+            3    0.2643953957   -0.1747075963    1.3607116498
+            4    0.3166572091   -0.5803104680   -0.9985888822
+            5    0.0000000000    0.0000000000    0.0000000000
+            6    0.0000000000    0.0000000000    0.0000000000
+            7   -1.0368545908    0.0722396943   -0.0098871349
+            8    0.0841622456    0.0072632143    0.0065037898
+            9   -0.0100922320    0.0061160500   -0.0008931351
+           10   -0.0380448066   -0.0030899332    0.0013637903
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0000000000    0.0000000000    0.0000000000
+           13    0.2643953957   -0.0098871349    0.0542597612
+           14   -0.0100922320    0.0128258562    0.0405383600
+           15    0.0729571170    0.0382581426   -0.0168299832
+           16   -0.0721174953   -0.0297202262    0.0008620079
+           17    0.0000000000    0.0000000000    0.0000000000
+           18    0.0000000000    0.0000000000    0.0000000000
+           19    0.3166572091   -0.0306314281   -0.0479134910
+           20   -0.0380448066   -0.0167033584   -0.0425809026
+           21   -0.0721174953   -0.0396338830    0.0158087057
+           22    0.0982902341    0.0290501664   -0.0001256711
+           23    0.0000000000    0.0000000000    0.0000000000
+           24    0.0000000000    0.0000000000    0.0000000000
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29    0.0931883487    0.0499136181   -0.0126377956
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0931883487    0.0499136181   -0.0126377956
+
+                       4               5               6
+            1    0.3166572091    0.0000000000    0.0000000000
+            2   -0.5803104680    0.0000000000    0.0000000000
+            3   -0.9985888822    0.0000000000    0.0000000000
+            4    1.2307758657    0.0000000000    0.0000000000
+            5    0.0000000000    1.6472003663    0.0000000000
+            6    0.0000000000    0.0000000000    1.6472003663
+            7   -0.0306314281    0.0000000000    0.0000000000
+            8   -0.0058610361    0.0000000000    0.0000000000
+            9    0.0003675941    0.0000000000    0.0000000000
+           10    0.0033579821    0.0000000000    0.0000000000
+           11    0.0000000000    0.0016505768    0.0000000000
+           12    0.0000000000    0.0000000000    0.0016505768
+           13   -0.0479134910    0.0000000000    0.0000000000
+           14   -0.0354196543    0.0000000000    0.0000000000
+           15    0.0025115588    0.0000000000    0.0000000000
+           16    0.0161799687    0.0000000000    0.0000000000
+           17    0.0000000000   -0.0008463405    0.0000000000
+           18    0.0000000000    0.0000000000   -0.0008463405
+           19    0.0641181528    0.0000000000    0.0000000000
+           20    0.0386893191    0.0000000000    0.0000000000
+           21   -0.0012785071    0.0000000000    0.0000000000
+           22   -0.0187352934    0.0000000000    0.0000000000
+           23    0.0000000000   -0.0022109531    0.0000000000
+           24    0.0000000000    0.0000000000   -0.0022109531
+           25    0.0000000000    0.0670731563    0.0000000000
+           26    0.0000000000    0.0534432479    0.0000000000
+           27    0.0000000000   -0.0133369329    0.0000000000
+           28    0.0000000000   -0.0149330913    0.0000000000
+           29   -0.0134445723    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0670731563
+           32    0.0000000000    0.0000000000    0.0534432479
+           33    0.0000000000    0.0000000000   -0.0133369329
+           34    0.0000000000    0.0000000000   -0.0149330913
+           35    0.0000000000    0.0000000000    0.0000000000
+           36   -0.0134445723    0.0000000000    0.0000000000
+
+                       7               8               9
+            1   -1.0368545908    0.0841622456   -0.0100922320
+            2    0.0722396943    0.0072632143    0.0061160500
+            3   -0.0098871349    0.0065037898   -0.0008931351
+            4   -0.0306314281   -0.0058610361    0.0003675941
+            5    0.0000000000    0.0000000000    0.0000000000
+            6    0.0000000000    0.0000000000    0.0000000000
+            7    1.6070813357    0.0072632143    0.0128258562
+            8    0.0072632143   -0.0448225751    0.0061486430
+            9    0.0128258562    0.0061486430   -0.0507751245
+           10   -0.0167033584    0.0211416310    0.0385227937
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0000000000    0.0000000000    0.0000000000
+           13   -0.1747075963    0.0065037898    0.0405383600
+           14    0.0061160500    0.0061486430   -0.0178151593
+           15    0.0382581426   -0.0114399919    0.0157449830
+           16   -0.0396338830    0.0057070636   -0.0102054803
+           17    0.0000000000    0.0000000000    0.0000000000
+           18    0.0000000000    0.0000000000    0.0000000000
+           19   -0.5803104680   -0.0058610361   -0.0354196543
+           20   -0.0030899332    0.0211416310    0.0070768132
+           21   -0.0297202262    0.0057070636    0.0093132066
+           22    0.0290501664   -0.0150747425   -0.0152326865
+           23    0.0000000000    0.0000000000    0.0000000000
+           24    0.0000000000    0.0000000000    0.0000000000
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29    0.0499136181   -0.0145139852    0.0067718739
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0499136181   -0.0145139852    0.0067718739
+
+                      10              11              12
+            1   -0.0380448066    0.0000000000    0.0000000000
+            2   -0.0030899332    0.0000000000    0.0000000000
+            3    0.0013637903    0.0000000000    0.0000000000
+            4    0.0033579821    0.0000000000    0.0000000000
+            5    0.0000000000    0.0016505768    0.0000000000
+            6    0.0000000000    0.0000000000    0.0016505768
+            7   -0.0167033584    0.0000000000    0.0000000000
+            8    0.0211416310    0.0000000000    0.0000000000
+            9    0.0385227937    0.0000000000    0.0000000000
+           10   -0.0767005644    0.0000000000    0.0000000000
+           11    0.0000000000   -0.0688320941    0.0000000000
+           12    0.0000000000    0.0000000000   -0.0688320941
+           13   -0.0425809026    0.0000000000    0.0000000000
+           14    0.0070768132    0.0000000000    0.0000000000
+           15   -0.0130272998    0.0000000000    0.0000000000
+           16   -0.0054300053    0.0000000000    0.0000000000
+           17    0.0000000000    0.0141582706    0.0000000000
+           18    0.0000000000    0.0000000000    0.0141582706
+           19    0.0386893191    0.0000000000    0.0000000000
+           20   -0.0247167022    0.0000000000    0.0000000000
+           21   -0.0191514886    0.0000000000    0.0000000000
+           22    0.0289069694    0.0000000000    0.0000000000
+           23    0.0000000000    0.0238854903    0.0000000000
+           24    0.0000000000    0.0000000000    0.0238854903
+           25    0.0000000000    0.0534432479    0.0000000000
+           26    0.0000000000   -0.0236425248    0.0000000000
+           27    0.0000000000    0.0069801445    0.0000000000
+           28    0.0000000000    0.0073296527    0.0000000000
+           29    0.0055401827    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0534432479
+           32    0.0000000000    0.0000000000   -0.0236425248
+           33    0.0000000000    0.0000000000    0.0069801445
+           34    0.0000000000    0.0000000000    0.0073296527
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0055401827    0.0000000000    0.0000000000
+
+                      13              14              15
+            1    0.2643953957   -0.0100922320    0.0729571170
+            2   -0.0098871349    0.0128258562    0.0382581426
+            3    0.0542597612    0.0405383600   -0.0168299832
+            4   -0.0479134910   -0.0354196543    0.0025115588
+            5    0.0000000000    0.0000000000    0.0000000000
+            6    0.0000000000    0.0000000000    0.0000000000
+            7   -0.1747075963    0.0061160500    0.0382581426
+            8    0.0065037898    0.0061486430   -0.0114399919
+            9    0.0405383600   -0.0178151593    0.0157449830
+           10   -0.0425809026    0.0070768132   -0.0130272998
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0000000000    0.0000000000    0.0000000000
+           13    1.3607116498   -0.0008931351   -0.0168299832
+           14   -0.0008931351   -0.0507751245    0.0157449830
+           15   -0.0168299832    0.0157449830   -0.0607493002
+           16    0.0158087057    0.0093132066    0.0364347943
+           17    0.0000000000    0.0000000000    0.0000000000
+           18    0.0000000000    0.0000000000    0.0000000000
+           19   -0.9985888822    0.0003675941    0.0025115588
+           20    0.0013637903    0.0385227937   -0.0130272998
+           21    0.0008620079   -0.0102054803    0.0364347943
+           22   -0.0001256711   -0.0152326865   -0.0411256277
+           23    0.0000000000    0.0000000000    0.0000000000
+           24    0.0000000000    0.0000000000    0.0000000000
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29   -0.0126377956    0.0067718739    0.0033246694
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000    0.0000000000
+           36   -0.0126377956    0.0067718739    0.0033246694
+
+                      16              17              18
+            1   -0.0721174953    0.0000000000    0.0000000000
+            2   -0.0297202262    0.0000000000    0.0000000000
+            3    0.0008620079    0.0000000000    0.0000000000
+            4    0.0161799687    0.0000000000    0.0000000000
+            5    0.0000000000   -0.0008463405    0.0000000000
+            6    0.0000000000    0.0000000000   -0.0008463405
+            7   -0.0396338830    0.0000000000    0.0000000000
+            8    0.0057070636    0.0000000000    0.0000000000
+            9   -0.0102054803    0.0000000000    0.0000000000
+           10   -0.0054300053    0.0000000000    0.0000000000
+           11    0.0000000000    0.0141582706    0.0000000000
+           12    0.0000000000    0.0000000000    0.0141582706
+           13    0.0158087057    0.0000000000    0.0000000000
+           14    0.0093132066    0.0000000000    0.0000000000
+           15    0.0364347943    0.0000000000    0.0000000000
+           16   -0.0629602813    0.0000000000    0.0000000000
+           17    0.0000000000   -0.0616677945    0.0000000000
+           18    0.0000000000    0.0000000000   -0.0616677945
+           19   -0.0012785071    0.0000000000    0.0000000000
+           20   -0.0191514886    0.0000000000    0.0000000000
+           21   -0.0394222905    0.0000000000    0.0000000000
+           22    0.0356092661    0.0000000000    0.0000000000
+           23    0.0000000000    0.0464390157    0.0000000000
+           24    0.0000000000    0.0000000000    0.0464390157
+           25    0.0000000000   -0.0133369329    0.0000000000
+           26    0.0000000000    0.0069801445    0.0000000000
+           27    0.0000000000   -0.0108915604    0.0000000000
+           28    0.0000000000    0.0031258255    0.0000000000
+           29   -0.0047346992    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000   -0.0133369329
+           32    0.0000000000    0.0000000000    0.0069801445
+           33    0.0000000000    0.0000000000   -0.0108915604
+           34    0.0000000000    0.0000000000    0.0031258255
+           35    0.0000000000    0.0000000000    0.0000000000
+           36   -0.0047346992    0.0000000000    0.0000000000
+
+                      19              20              21
+            1    0.3166572091   -0.0380448066   -0.0721174953
+            2   -0.0306314281   -0.0167033584   -0.0396338830
+            3   -0.0479134910   -0.0425809026    0.0158087057
+            4    0.0641181528    0.0386893191   -0.0012785071
+            5    0.0000000000    0.0000000000    0.0000000000
+            6    0.0000000000    0.0000000000    0.0000000000
+            7   -0.5803104680   -0.0030899332   -0.0297202262
+            8   -0.0058610361    0.0211416310    0.0057070636
+            9   -0.0354196543    0.0070768132    0.0093132066
+           10    0.0386893191   -0.0247167022   -0.0191514886
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0000000000    0.0000000000    0.0000000000
+           13   -0.9985888822    0.0013637903    0.0008620079
+           14    0.0003675941    0.0385227937   -0.0102054803
+           15    0.0025115588   -0.0130272998    0.0364347943
+           16   -0.0012785071   -0.0191514886   -0.0394222905
+           17    0.0000000000    0.0000000000    0.0000000000
+           18    0.0000000000    0.0000000000    0.0000000000
+           19    1.2307758657    0.0033579821    0.0161799687
+           20    0.0033579821   -0.0767005644   -0.0054300053
+           21    0.0161799687   -0.0054300053   -0.0629602813
+           22   -0.0187352934    0.0289069694    0.0356092661
+           23    0.0000000000    0.0000000000    0.0000000000
+           24    0.0000000000    0.0000000000    0.0000000000
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29   -0.0134445723    0.0055401827   -0.0047346992
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000    0.0000000000
+           36   -0.0134445723    0.0055401827   -0.0047346992
+
+                      22              23              24
+            1    0.0982902341    0.0000000000    0.0000000000
+            2    0.0290501664    0.0000000000    0.0000000000
+            3   -0.0001256711    0.0000000000    0.0000000000
+            4   -0.0187352934    0.0000000000    0.0000000000
+            5    0.0000000000   -0.0022109531    0.0000000000
+            6    0.0000000000    0.0000000000   -0.0022109531
+            7    0.0290501664    0.0000000000    0.0000000000
+            8   -0.0150747425    0.0000000000    0.0000000000
+            9   -0.0152326865    0.0000000000    0.0000000000
+           10    0.0289069694    0.0000000000    0.0000000000
+           11    0.0000000000    0.0238854903    0.0000000000
+           12    0.0000000000    0.0000000000    0.0238854903
+           13   -0.0001256711    0.0000000000    0.0000000000
+           14   -0.0152326865    0.0000000000    0.0000000000
+           15   -0.0411256277    0.0000000000    0.0000000000
+           16    0.0356092660    0.0000000000    0.0000000000
+           17    0.0000000000    0.0464390157    0.0000000000
+           18    0.0000000000    0.0000000000    0.0464390157
+           19   -0.0187352934    0.0000000000    0.0000000000
+           20    0.0289069694    0.0000000000    0.0000000000
+           21    0.0356092660    0.0000000000    0.0000000000
+           22   -0.1198873171    0.0000000000    0.0000000000
+           23    0.0000000000   -0.0757060803    0.0000000000
+           24    0.0000000000    0.0000000000   -0.0757060803
+           25    0.0000000000   -0.0149330913    0.0000000000
+           26    0.0000000000    0.0073296527    0.0000000000
+           27    0.0000000000    0.0031258255    0.0000000000
+           28    0.0000000000   -0.0064577168    0.0000000000
+           29    0.0004744781    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000   -0.0149330913
+           32    0.0000000000    0.0000000000    0.0073296527
+           33    0.0000000000    0.0000000000    0.0031258255
+           34    0.0000000000    0.0000000000   -0.0064577168
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0004744781    0.0000000000    0.0000000000
+
+                      25              26              27
+            1    0.0000000000    0.0000000000    0.0000000000
+            2    0.0000000000    0.0000000000    0.0000000000
+            3    0.0000000000    0.0000000000    0.0000000000
+            4    0.0000000000    0.0000000000    0.0000000000
+            5    0.0670731563    0.0534432479   -0.0133369329
+            6    0.0000000000    0.0000000000    0.0000000000
+            7    0.0000000000    0.0000000000    0.0000000000
+            8    0.0000000000    0.0000000000    0.0000000000
+            9    0.0000000000    0.0000000000    0.0000000000
+           10    0.0000000000    0.0000000000    0.0000000000
+           11    0.0534432479   -0.0236425248    0.0069801445
+           12    0.0000000000    0.0000000000    0.0000000000
+           13    0.0000000000    0.0000000000    0.0000000000
+           14    0.0000000000    0.0000000000    0.0000000000
+           15    0.0000000000    0.0000000000    0.0000000000
+           16    0.0000000000    0.0000000000    0.0000000000
+           17   -0.0133369329    0.0069801445   -0.0108915604
+           18    0.0000000000    0.0000000000    0.0000000000
+           19    0.0000000000    0.0000000000    0.0000000000
+           20    0.0000000000    0.0000000000    0.0000000000
+           21    0.0000000000    0.0000000000    0.0000000000
+           22    0.0000000000    0.0000000000    0.0000000000
+           23   -0.0149330913    0.0073296527    0.0031258255
+           24    0.0000000000    0.0000000000    0.0000000000
+           25    1.6472003663    0.0016505768   -0.0008463405
+           26    0.0016505768   -0.0688320941    0.0141582706
+           27   -0.0008463405    0.0141582706   -0.0616677945
+           28   -0.0022109531    0.0238854903    0.0464390157
+           29    0.0000000000    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0000000000    0.0000000000    0.0000000000
+
+                      28              29              30
+            1    0.0000000000    0.0931883487    0.0000000000
+            2    0.0000000000    0.0499136181    0.0000000000
+            3    0.0000000000   -0.0126377956    0.0000000000
+            4    0.0000000000   -0.0134445723    0.0000000000
+            5   -0.0149330913    0.0000000000    0.0000000000
+            6    0.0000000000    0.0000000000    0.0000000000
+            7    0.0000000000    0.0499136181    0.0000000000
+            8    0.0000000000   -0.0145139852    0.0000000000
+            9    0.0000000000    0.0067718739    0.0000000000
+           10    0.0000000000    0.0055401827    0.0000000000
+           11    0.0073296527    0.0000000000    0.0000000000
+           12    0.0000000000    0.0000000000    0.0000000000
+           13    0.0000000000   -0.0126377956    0.0000000000
+           14    0.0000000000    0.0067718739    0.0000000000
+           15    0.0000000000    0.0033246694    0.0000000000
+           16    0.0000000000   -0.0047346992    0.0000000000
+           17    0.0031258255    0.0000000000    0.0000000000
+           18    0.0000000000    0.0000000000    0.0000000000
+           19    0.0000000000   -0.0134445723    0.0000000000
+           20    0.0000000000    0.0055401827    0.0000000000
+           21    0.0000000000   -0.0047346992    0.0000000000
+           22    0.0000000000    0.0004744781    0.0000000000
+           23   -0.0064577168    0.0000000000    0.0000000000
+           24    0.0000000000    0.0000000000    0.0000000000
+           25   -0.0022109531    0.0000000000    0.0000000000
+           26    0.0238854903    0.0000000000    0.0000000000
+           27    0.0464390157    0.0000000000    0.0000000000
+           28   -0.0757060803    0.0000000000    0.0000000000
+           29    0.0000000000   -0.0835348334    0.0000000000
+           30    0.0000000000    0.0000000000   -0.0785904309
+           31    0.0000000000    0.0000000000    0.0000000000
+           32    0.0000000000    0.0000000000    0.0000000000
+           33    0.0000000000    0.0000000000    0.0000000000
+           34    0.0000000000    0.0000000000    0.0000000000
+           35    0.0000000000    0.0000000000   -0.0107695899
+           36    0.0000000000    0.0058251874    0.0000000000
+
+                      31              32              33
+            1    0.0000000000    0.0000000000    0.0000000000
+            2    0.0000000000    0.0000000000    0.0000000000
+            3    0.0000000000    0.0000000000    0.0000000000
+            4    0.0000000000    0.0000000000    0.0000000000
+            5    0.0000000000    0.0000000000    0.0000000000
+            6    0.0670731563    0.0534432479   -0.0133369329
+            7    0.0000000000    0.0000000000    0.0000000000
+            8    0.0000000000    0.0000000000    0.0000000000
+            9    0.0000000000    0.0000000000    0.0000000000
+           10    0.0000000000    0.0000000000    0.0000000000
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0534432479   -0.0236425248    0.0069801445
+           13    0.0000000000    0.0000000000    0.0000000000
+           14    0.0000000000    0.0000000000    0.0000000000
+           15    0.0000000000    0.0000000000    0.0000000000
+           16    0.0000000000    0.0000000000    0.0000000000
+           17    0.0000000000    0.0000000000    0.0000000000
+           18   -0.0133369329    0.0069801445   -0.0108915604
+           19    0.0000000000    0.0000000000    0.0000000000
+           20    0.0000000000    0.0000000000    0.0000000000
+           21    0.0000000000    0.0000000000    0.0000000000
+           22    0.0000000000    0.0000000000    0.0000000000
+           23    0.0000000000    0.0000000000    0.0000000000
+           24   -0.0149330913    0.0073296527    0.0031258255
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29    0.0000000000    0.0000000000    0.0000000000
+           30    0.0000000000    0.0000000000    0.0000000000
+           31    1.6472003663    0.0016505768   -0.0008463405
+           32    0.0016505768   -0.0688320941    0.0141582706
+           33   -0.0008463405    0.0141582706   -0.0616677945
+           34   -0.0022109531    0.0238854903    0.0464390157
+           35    0.0000000000    0.0000000000    0.0000000000
+           36    0.0000000000    0.0000000000    0.0000000000
+
+                      34              35              36
+            1    0.0000000000    0.0000000000    0.0931883487
+            2    0.0000000000    0.0000000000    0.0499136181
+            3    0.0000000000    0.0000000000   -0.0126377956
+            4    0.0000000000    0.0000000000   -0.0134445723
+            5    0.0000000000    0.0000000000    0.0000000000
+            6   -0.0149330913    0.0000000000    0.0000000000
+            7    0.0000000000    0.0000000000    0.0499136181
+            8    0.0000000000    0.0000000000   -0.0145139852
+            9    0.0000000000    0.0000000000    0.0067718739
+           10    0.0000000000    0.0000000000    0.0055401827
+           11    0.0000000000    0.0000000000    0.0000000000
+           12    0.0073296527    0.0000000000    0.0000000000
+           13    0.0000000000    0.0000000000   -0.0126377956
+           14    0.0000000000    0.0000000000    0.0067718739
+           15    0.0000000000    0.0000000000    0.0033246694
+           16    0.0000000000    0.0000000000   -0.0047346992
+           17    0.0000000000    0.0000000000    0.0000000000
+           18    0.0031258255    0.0000000000    0.0000000000
+           19    0.0000000000    0.0000000000   -0.0134445723
+           20    0.0000000000    0.0000000000    0.0055401827
+           21    0.0000000000    0.0000000000   -0.0047346992
+           22    0.0000000000    0.0000000000    0.0004744781
+           23    0.0000000000    0.0000000000    0.0000000000
+           24   -0.0064577168    0.0000000000    0.0000000000
+           25    0.0000000000    0.0000000000    0.0000000000
+           26    0.0000000000    0.0000000000    0.0000000000
+           27    0.0000000000    0.0000000000    0.0000000000
+           28    0.0000000000    0.0000000000    0.0000000000
+           29    0.0000000000    0.0000000000    0.0058251874
+           30    0.0000000000   -0.0107695899    0.0000000000
+           31   -0.0022109531    0.0000000000    0.0000000000
+           32    0.0238854903    0.0000000000    0.0000000000
+           33    0.0464390157    0.0000000000    0.0000000000
+           34   -0.0757060803    0.0000000000    0.0000000000
+           35    0.0000000000   -0.0785904309    0.0000000000
+           36    0.0000000000    0.0000000000   -0.0835348334
+
+      Exited Alpha-beta P(C) Ansatz 2 intermediate evaluator
+
+    Exited B(app. C) general reference Ansatz2 intermediate evaluator
+    Built PermutedDensityFitting: name = (a' i(sym)|DF|Mu)
+    Built TransformedDensityFitting: name = (i(sym) m(sym)_F(p')[A]|DF|Mu)
+    Built PermutedDensityFitting: name = (m(sym)_F(p')[A] i(sym)|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <m(sym)_F(p')[A] Mu|G12'[0]|mu >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <m(sym)_F(p')[A] Mu|G12'[0]|i(sym) >
+    Built TwoBodyMOIntsTransform_ijR: name = <a' Mu|G12'[0]|mu >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <a' Mu|G12'[0]|i(sym) >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <a' m(sym)_F(p')[A]|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2)
+    Built TransformedDensityFitting: name = (i(sym) m(sym)|DF|Mu)
+    Built PermutedDensityFitting: name = (m(sym) i(sym)|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <m(sym) Mu|G12'[0]|mu >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <m(sym) Mu|G12'[0]|i(sym) >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <a' m(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2)
+
+
+    individual contributions::
+    V:                          -0.762329843930
+    B':                          0.157692455035
+    B remain:                   -0.000005704617
+    Total:                      -0.440783364159
+
+
+    Alpha-beta [2]_R12 pair energies:
+        i       j        e (ij)   
+      -----   -----   ------------
+        1       1     -0.097224372
+        1       2     -0.041586732
+        1       3     -0.024438115
+        1       4     -0.000169507
+        1       5     -0.031075825
+        1       6     -0.031075825
+        2       1      0.000931041
+        2       2     -0.011231139
+        2       3     -0.011442495
+        2       4     -0.000053209
+        2       5     -0.013793478
+        2       6     -0.013793478
+        3       1      0.005724601
+        3       2     -0.009427452
+        3       3     -0.015385896
+        3       4      0.000072011
+        3       5     -0.015041142
+        3       6     -0.015041142
+        4       1      0.000017676
+        4       2     -0.000049209
+        4       3      0.000042694
+        4       4      0.001305080
+        4       5     -0.000038930
+        4       6     -0.000038930
+        5       1      0.007000196
+        5       2     -0.011175047
+        5       3     -0.014803537
+        5       4     -0.000055792
+        5       5     -0.022892119
+        5       6     -0.017058496
+        6       1      0.007000196
+        6       2     -0.011175047
+        6       3     -0.014803537
+        6       4     -0.000055792
+        6       5     -0.017058496
+        6       6     -0.022892119
+    
+    Reference energy [au]:                 -100.009807542451
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|ERI|i(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|i(sym) i(sym)>(b1 b2|k1 k2)
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)||i(sym) i(sym)>) evaluator
+    Exited generic tensor (<i(sym) i(sym)||i(sym) i(sym)>) evaluator
+    Reference energy (recomp+DF) [au]:     -100.009779682813
+    [2]_R12 energy [au]:                     -0.440783364159
+    Total [2]_R12 energy [au]:             -100.450590906610
+Value of the MolecularEnergy: -100.4505909066
+
+    PT2R12:
+      nfzc = 0
+      omit_uocc = true
+      PsiRASSCF:
+        relax_core = false
+        PsiRASCI:
+                frzocc = [    1    0    0    0]
+                  ras1 = [    0    0    0    0]
+                  ras2 = [    3    0    1    1]
+                  ras3 = [    0    0    0    0]
+          ras1_max = 0
+          ras3_max = 0
+          PsiCorrWavefunction:
+            Function Parameters:
+              value_accuracy    = 1.000000e-11 (1.000000e-11) (computed)
+              gradient_accuracy = 0.000000e+00 (1.000000e-06)
+              hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+            Molecule:
+              Molecular formula: HF
+              molecule<Molecule>: (
+                symmetry = c2v
+                unit = "angstrom"
+                {  n atoms                        geometry                     }={
+                   1     H [    0.0000000000     0.0000000000    -0.8706232798]
+                   2     F [    0.0000000000     0.0000000000     0.0461847202]
+                }
+              )
+              Atomic Masses:
+                  1.00783   18.99840
+              Reference origin =  [    0.0000000000     0.0000000000    -1.6452394380]
+
+            Electronic basis:
+              GaussianBasisSet:
+                nbasis = 11
+                nshell = 7
+                nprim  = 18
+                name = "Split(6-31G)"
+
+            PsiExEnv:
+              Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+              Current Psi Working Directory: .
+              Current Psi File Prefix: psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.psi
+              Number of Scratch Groups: 1
+              Scratch Group 0: /tmp/
+
+            PsiCLHF:
+              total_charge = 0
+              docc = [ 3 0 1 1 ]
+              Function Parameters:
+                value_accuracy    = 1.000000e-13 (1.000000e-13) (computed)
+                gradient_accuracy = 0.000000e+00 (1.000000e-06)
+                hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+              Molecule:
+                Molecular formula: HF
+                molecule<Molecule>: (
+                  symmetry = c2v
+                  unit = "angstrom"
+                  {  n atoms                        geometry                     }={
+                     1     H [    0.0000000000     0.0000000000    -0.8706232798]
+                     2     F [    0.0000000000     0.0000000000     0.0461847202]
+                  }
+                )
+                Atomic Masses:
+                    1.00783   18.99840
+                Reference origin =  [    0.0000000000     0.0000000000    -1.6452394380]
+
+              Electronic basis:
+                GaussianBasisSet:
+                  nbasis = 11
+                  nshell = 7
+                  nprim  = 18
+                  name = "Split(6-31G)"
+
+              PsiExEnv:
+                Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+                Current Psi Working Directory: .
+                Current Psi File Prefix: psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.psi
+                Number of Scratch Groups: 1
+                Scratch Group 0: /tmp/
+
+
+            frozen_docc = [1 0 0 0 ]
+            frozen_uocc = [0 0 0 0 ]
+      R12WavefunctionWorld:
+        WavefunctionWorld:
+          Density-Fitting Parameters:
+            basis set:
+              GaussianBasisSet:
+                nbasis = 111
+                nshell = 33
+                nprim  = 33
+                name = "cc-pVTZ-RI"
+            kernel = coulomb
+            solver = Bunch-Kaufman (refine)
+          How to Store Transformed Integrals: posix
+          Transformed Integrals file suffix: ./psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.moints
+
+        Auxiliary Basis Set (ABS):
+          GaussianBasisSet:
+            nbasis = 32
+            nshell = 13
+            nprim  = 24
+            name = "aug-cc-pVDZ"
+
+        R12Technology:
+          CorrelationFactor: STG-3G[1.5]
+            [ Exponent Coefficient] = [ [0.549916472018 0.360094087079] [3.13185676873 0.346981689534] [20.6110275818 0.198984286765]  ]
+
+          Coupling included: false
+          GBC assumed: true
+          EBC assumed: true
+          EBC-free method: Valeev
+          Enforce positive definiteness of B, but not ~B(ij)
+          ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)
+          ABS linear depenendence tolerance = 1e-08
+          Standard Approximation: C
+          R12Ansatz:
+            Geminal orbital Product Space: ij
+            Space of orbital products from which geminal substitutions are allowed: ij
+            Projector: 2  , i.e. (1-O1)(1-O2)-V1V2
+            Ansatz: orbital-invariant with optimized amplitudes
+            WOF: false
+          H0_dk_approx_pauli: false
+          Max # ABS indices: 2
+        Spin-adapted algorithm: true
+
+      Function Parameters:
+        value_accuracy    = 0.000000e+00 (1.000000e-11) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: HF
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     H [    0.0000000000     0.0000000000    -0.8706232798]
+             2     F [    0.0000000000     0.0000000000     0.0461847202]
+          }
+        )
+        Atomic Masses:
+            1.00783   18.99840
+        Reference origin =  [    0.0000000000     0.0000000000    -1.6452394380]
+
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 11
+          nshell = 7
+          nprim  = 18
+          name = "Split(6-31G)"
+
+    ConsumableResources: (
+      memory = 256MB ( max used: 241MB )
+      disk = [./ 0B] ( max used: 0B )
+    )
+                                                                                                  CPU  Wall
+mpqc:                                                                                            3.82 20.21
+  Generic tensor:                                                                                0.00  0.00
+    MO ints retrieve:                                                                            0.00  0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|ERI|i(sym) i(sym)>(b1 b2|k1 k2):                          0.00  0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|ERI|i(sym) >:                                         0.00  0.00
+  MO ints retrieve:                                                                              0.00  0.01
+  calc:                                                                                          2.93  2.96
+    "diagonal" part of G12 intermediates:                                                        0.49  0.49
+      Generic tensor:                                                                            0.49  0.49
+        MO ints retrieve:                                                                        0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2):                0.16  0.16
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym) >:                               0.11  0.11
+            tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu >:                                           0.11  0.11
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):                  0.33  0.33
+          DensityFitting (i(sym) mu|DF|Mu):                                                      0.23  0.23
+            tbint_tform_ijR <i(sym) Mu|ERI|mu >:                                                 0.10  0.10
+          TransformedDensityFitting (i(sym) i(sym)|DF|Mu):                                       0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|i(sym) >:                                 0.06  0.06
+            tbint_tform_ijR <i(sym) Mu|G12'[0]|mu >:                                             0.06  0.06
+    B(app. C) general reference Ansatz2 intermediate:                                            1.70  1.73
+      Alpha-beta Q(C) Ansatz 2 intermediate:                                                     0.38  0.38
+        generic X intermediate:                                                                  0.38  0.38
+          Generic tensor:                                                                        0.38  0.38
+            MO ints retrieve:                                                                    0.00  0.00
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2):  0.38  0.38
+              TransformedDensityFitting (i(sym) i(sym)_hJ(p')[A]|DF|Mu):                         0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >:                 0.33  0.33
+                tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu' >:                                      0.33  0.33
+      Generic tensor contract:                                                                   0.11  0.11
+        MO ints retrieve:                                                                        0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a'_F(a')[A] p(sym)>(b1 b2|k1 k2):             0.05  0.05
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) a'_F(a')[A]>(b1 b2|k1 k2):             0.05  0.05
+          TransformedDensityFitting (i(sym) a'_F(a')[A]|DF|Mu):                                  0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a'_F(a')[A] >:                            0.01  0.01
+      coulomb(DF):                                                                               0.50  0.51
+        DensityFitting (mu mu|DF|Mu):                                                            0.18  0.18
+          tbint_tform_ijR <mu Mu|ERI|mu >:                                                       0.10  0.10
+        tbint_tform_ijR <mu' Mu|ERI|mu >:                                                        0.13  0.13
+        tbint_tform_ijR <mu' Mu|ERI|mu' >:                                                       0.20  0.20
+      exchange(DF):                                                                              0.26  0.27
+        DensityFitting (dd mu'|DF|Mu):                                                           0.24  0.24
+          tbint_tform_ijR <dd Mu|ERI|mu' >:                                                      0.13  0.13
+        PermutedDensityFitting (dd mu|DF|Mu):                                                    0.00  0.00
+        TransformedDensityFitting (mu dd|DF|Mu):                                                 0.00  0.00
+        tbint_tform_ijR_using_iqR <mu Mu|ERI|dd >:                                               0.00  0.00
+        tbint_tform_ijR_using_iqR <mu' Mu|ERI|dd >:                                              0.00  0.00
+      generic FxF intermediate:                                                                  0.36  0.37
+        Generic tensor contract:                                                                 0.12  0.13
+          MO ints retrieve:                                                                      0.00  0.01
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2):                        0.09  0.09
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                 0.11  0.11
+          TransformedDensityFitting (i(sym) p'_K(p')[A]|DF|Mu):                                  0.00  0.00
+          TransformedDensityFitting (i(sym) p'|DF|Mu):                                           0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p' >:                                     0.01  0.01
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_K(p')[A] >:                            0.01  0.01
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2):         0.04  0.04
+          TransformedDensityFitting (i(sym) p(sym)_F(a')[A]|DF|Mu):                              0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >:                        0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] p(sym)>(b1 b2|k1 k2):     0.04  0.05
+          TransformedDensityFitting (i(sym) p(sym)_F(p(sym))[A]|DF|Mu):                          0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >:                    0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_Fg(p') a'>(b1 b2|k1 k2):               0.05  0.05
+          TransformedDensityFitting (i(sym) p(sym)_Fg(p')|DF|Mu):                                0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_Fg(p') >:                          0.00  0.00
+    General reference spin-free VX intermediate evaluator:                                       0.72  0.73
+      General reference X intermediate evaluator:                                                0.16  0.16
+        Generic tensor contract:                                                                 0.11  0.11
+          MO ints retrieve:                                                                      0.00  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a' p(sym)>(b1 b2|k1 k2):                    0.05  0.05
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) a'>(b1 b2|k1 k2):                    0.04  0.04
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a' p(sym)_gamma(p(sym))>(b1 b2|k1 k2):        0.05  0.05
+      General reference spin-free V intermediate evaluator:                                      0.55  0.55
+        Generic tensor contract:                                                                 0.01  0.02
+          MO ints retrieve:                                                                      0.00  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|ERI|p(sym) a'>(b1 b2|k1 k2):                        0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|ERI|a' >:                                       0.00  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):                    0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|ERI|p(sym) >:                                   0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2):                  0.04  0.04
+          TransformedDensityFitting (i(sym) p(sym)|DF|Mu):                                       0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym) >:                                 0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_gamma(p(sym)) a'>(b1 b2|k1 k2):        0.50  0.50
+          DensityFitting (i(sym) mu'|DF|Mu):                                                     0.28  0.28
+            tbint_tform_ijR <i(sym) Mu|ERI|mu' >:                                                0.13  0.13
+          TransformedDensityFitting (i(sym) a'|DF|Mu):                                           0.00  0.00
+          TransformedDensityFitting (i(sym) p(sym)_gamma(p(sym))|DF|Mu):                         0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a' >:                                     0.17  0.17
+            tbint_tform_ijR <i(sym) Mu|G12'[0]|mu' >:                                            0.16  0.16
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_gamma(p(sym)) >:                   0.00  0.00
+  input:                                                                                         0.21 16.56
+    vector:                                                                                      0.06  0.06
+      density:                                                                                   0.00  0.00
+      evals:                                                                                     0.00  0.00
+      extrap:                                                                                    0.00  0.00
+      fock:                                                                                      0.01  0.01
+        accum:                                                                                   0.00  0.00
+        ao_gmat:                                                                                 0.01  0.01
+          start thread:                                                                          0.01  0.01
+          stop thread:                                                                           0.00  0.00
+        init pmax:                                                                               0.00  0.00
+        local data:                                                                              0.00  0.00
+        setup:                                                                                   0.00  0.00
+        sum:                                                                                     0.00  0.00
+        symm:                                                                                    0.00  0.00
+  tbint_tform_ixjy_df <a' m(sym)_F(p')[A]|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):                   0.39  0.40
+    PermutedDensityFitting (a' i(sym)|DF|Mu):                                                    0.00  0.00
+    PermutedDensityFitting (m(sym)_F(p')[A] i(sym)|DF|Mu):                                       0.00  0.00
+    TransformedDensityFitting (i(sym) m(sym)_F(p')[A]|DF|Mu):                                    0.00  0.00
+    tbint_tform_ijR_using_iqR <a' Mu|G12'[0]|i(sym) >:                                           0.17  0.17
+      tbint_tform_ijR <a' Mu|G12'[0]|mu >:                                                       0.16  0.16
+    tbint_tform_ijR_using_iqR <m(sym)_F(p')[A] Mu|G12'[0]|i(sym) >:                              0.15  0.15
+      tbint_tform_ijR <m(sym)_F(p')[A] Mu|G12'[0]|mu >:                                          0.14  0.14
+  tbint_tform_ixjy_df <a' m(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):                            0.14  0.14
+    PermutedDensityFitting (m(sym) i(sym)|DF|Mu):                                                0.00  0.00
+    TransformedDensityFitting (i(sym) m(sym)|DF|Mu):                                             0.00  0.00
+    tbint_tform_ijR_using_iqR <m(sym) Mu|G12'[0]|i(sym) >:                                       0.06  0.06
+      tbint_tform_ijR <m(sym) Mu|G12'[0]|mu >:                                                   0.06  0.06
+    WARNING: 1056832 bytes managed by ConsumableResources was not explicitly deallocated!
+
+    End Time: Thu Mar 24 17:39:39 2011
+

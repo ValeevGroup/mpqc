@@ -72,7 +72,7 @@ class PsiExEnv: public DescribedClass {
     std::string stdout_;     // Standard output of psi modules
     std::string stderr_;     // Standard error of psi modules
     int nscratch_;
-    std::string *scratch_;
+    std::vector<std::string> scratch_;
     Ref<PsiInput> psiinput_;
     Ref<PsiFile11> psifile11_;
 

@@ -105,13 +105,13 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
 
   if (keyval->exists("scratch")) {
     nscratch_ = keyval->count("scratch");
-    scratch_ = new string[nscratch_];
+    scratch_.resize(nscratch_);
     for (int i=0; i<nscratch_; i++)
       scratch_[i] = keyval->stringvalue("scratch", i);
   }
   else {
     nscratch_ = 1;
-    scratch_ = new string[nscratch_];
+    scratch_.resize(1);
     scratch_[0] = ConsumableResources::get_default_instance()->disk_location();
   }
 
@@ -130,7 +130,9 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval) :
 
 PsiExEnv::PsiExEnv() :
     psio_(), chkpt_(0), me_(MessageGrp::get_default_messagegrp()->me()),
-    cwd_(defaultcwd_), nscratch_(1), keep_output_(false)
+    cwd_(defaultcwd_), nscratch_(1),
+    scratch_(1,ConsumableResources::get_default_instance()->disk_location()),
+    keep_output_(false)
 {
   // Find Psi
   char *psibin = getenv("PSIBIN");
@@ -139,10 +141,6 @@ PsiExEnv::PsiExEnv() :
   else
     psiprefix_ = string(defaultpsiprefix_);
   add_to_path(psiprefix_);
-
-  scratch_ = new string[nscratch_];
-  for (int i=0; i<nscratch_; i++)
-    scratch_[i] = cwd_ + '/';
 
   fileprefix_ = SCFormIO::fileext_to_filename(".") + defaultfileprefix_;
   inputname_ = fileprefix_ + "." + defaultinputname_;
@@ -156,7 +154,6 @@ PsiExEnv::PsiExEnv() :
 PsiExEnv::~PsiExEnv()
 {
   run_psiclean();
-  delete[] scratch_;
   if (chkpt_) delete chkpt_;
 }
 

@@ -265,10 +265,16 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
         keyval->describedclassvalue("reference").pointer(),
         "PT2R12::PT2R12\n"
         );
+  if (reference_.null()) throw InputError("missing reference", __FILE__, __LINE__,
+                                          "reference", 0,
+                                          this->class_desc());
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
         "PT2R12::PT2R12\n"
         );
+  if (rdm2_.null()) throw InputError("missing rdm2", __FILE__, __LINE__,
+                                    "rdm2", 0,
+                                    this->class_desc());
   assert(reference_ == rdm2_->wfn());
   rdm1_ = rdm2_->rdm_m_1();
 

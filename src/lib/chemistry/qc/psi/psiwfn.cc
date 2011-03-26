@@ -1906,7 +1906,7 @@ namespace sc {
   std::vector<unsigned int>
   PsiCorrWavefunction::map_density_to_sb() {
     // maps symm -> QT
-    std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
+    std::vector<unsigned int> fmap = index_map_symmtocorrorder(frozen_docc(),
                                                              docc_act(),
                                                              socc(),
                                                              uocc_act(),

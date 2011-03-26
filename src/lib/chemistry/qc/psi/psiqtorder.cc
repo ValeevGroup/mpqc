@@ -37,42 +37,42 @@
 
 namespace sc {
   
-  std::vector<unsigned int> index_map_symmtoqtorder(const std::vector<unsigned int> &frozen_docc,
-                                                    const std::vector<unsigned int> &docc_act,
-                                                    const std::vector<unsigned int> &socc_act,
-                                                    const std::vector<unsigned int> &uocc_act,
-                                                    const std::vector<unsigned int> &frozen_uocc) {
+  std::vector<unsigned int> index_map_symmtocorrorder(const std::vector<unsigned int> &class1,
+                                                    const std::vector<unsigned int> &class2,
+                                                    const std::vector<unsigned int> &class3,
+                                                    const std::vector<unsigned int> &class4,
+                                                    const std::vector<unsigned int> &class5) {
     
-    const int nirrep = frozen_docc.size();
+    const int nirrep = class1.size();
     std::vector<unsigned int> mos(nirrep);
     for(int i=0; i<nirrep; i++) {
-      mos[i] = frozen_docc[i] + docc_act[i] + socc_act[i] + uocc_act[i] + frozen_uocc[i];
+      mos[i] = class1[i] + class2[i] + class3[i] + class4[i] + class5[i];
     }
     
 #if 0
     ExEnv::out0() << "frozen_docc:" << std::endl;
-    for(int i=0; i<frozen_docc.size(); i++) {
-      ExEnv::out0() << std::setw(5) << frozen_docc[i];
+    for(int i=0; i<class1.size(); i++) {
+      ExEnv::out0() << std::setw(5) << class1[i];
     }
     ExEnv::out0() << std::endl;
     ExEnv::out0() << "docc_act:" << std::endl;
-    for(int i=0; i<docc_act.size(); i++) {
-      ExEnv::out0() << std::setw(5) << docc_act[i];
+    for(int i=0; i<class2.size(); i++) {
+      ExEnv::out0() << std::setw(5) << class2[i];
     }
     ExEnv::out0() << std::endl;
     ExEnv::out0() << "socc_act:" << std::endl;
-    for(int i=0; i<socc_act.size(); i++) {
-      ExEnv::out0() << std::setw(5) << socc_act[i];
+    for(int i=0; i<class3.size(); i++) {
+      ExEnv::out0() << std::setw(5) << class3[i];
     }
     ExEnv::out0() << std::endl;
     ExEnv::out0() << "uocc_act:" << std::endl;
-    for(int i=0; i<uocc_act.size(); i++) {
-      ExEnv::out0() << std::setw(5) << uocc_act[i];
+    for(int i=0; i<class4.size(); i++) {
+      ExEnv::out0() << std::setw(5) << class4[i];
     }
     ExEnv::out0() << std::endl;
     ExEnv::out0() << "frozen_uocc:" << std::endl;
-    for(int i=0; i<frozen_uocc.size(); i++) {
-      ExEnv::out0() << std::setw(5) << frozen_uocc[i];
+    for(int i=0; i<class5.size(); i++) {
+      ExEnv::out0() << std::setw(5) << class5[i];
     }
     ExEnv::out0() << std::endl;
     
@@ -84,11 +84,11 @@ namespace sc {
 #endif
     
     // compute initial offsets
-    unsigned int frozen_docc_offset = 0;
-    unsigned int docc_act_offset = std::accumulate(frozen_docc.begin(),frozen_docc.end(),frozen_docc_offset);
-    unsigned int socc_act_offset = std::accumulate(docc_act.begin(),docc_act.end(),docc_act_offset);
-    unsigned int uocc_act_offset = std::accumulate(socc_act.begin(),socc_act.end(),socc_act_offset);
-    unsigned int frozen_uocc_offset = std::accumulate(uocc_act.begin(),uocc_act.end(),uocc_act_offset);
+    unsigned int class1_offset = 0;
+    unsigned int class2_offset = std::accumulate(class1.begin(),class1.end(),class1_offset);
+    unsigned int class3_offset = std::accumulate(class2.begin(),class2.end(),class2_offset);
+    unsigned int class4_offset = std::accumulate(class3.begin(),class3.end(),class3_offset);
+    unsigned int class5_offset = std::accumulate(class4.begin(),class4.end(),class4_offset);
     const unsigned int nmo = std::accumulate(mos.begin(), mos.end(), 0);
     
     // generate index_map mapping symmetry ordered data to QT ordered data
@@ -97,48 +97,48 @@ namespace sc {
     for(int i=0; i<nirrep; i++) {
       
       // irrep i block of frozen_docc
-      for(int j=0; j<frozen_docc[i]; j++) {
-        index_map[ind] = frozen_docc_offset;
+      for(int j=0; j<class1[i]; j++) {
+        index_map[ind] = class1_offset;
         
-        frozen_docc_offset += 1;
+        class1_offset += 1;
         ind += 1;
       }
       
       // irrep i block of docc_act
-      for(int j=0; j<docc_act[i]; j++) {
-        index_map[ind] = docc_act_offset;
+      for(int j=0; j<class2[i]; j++) {
+        index_map[ind] = class2_offset;
         
-        docc_act_offset += 1;
+        class2_offset += 1;
         ind += 1;
       }
       
       // irrep i block of socc_act
-      for(int j=0; j<socc_act[i]; j++) {
-        index_map[ind] = socc_act_offset;
+      for(int j=0; j<class3[i]; j++) {
+        index_map[ind] = class3_offset;
         
-        socc_act_offset += 1;
+        class3_offset += 1;
         ind +=1;
       }
       
       // irrep i block of uocc_act
-      for(int j=0; j<uocc_act[i]; j++) {
-        index_map[ind] = uocc_act_offset;
+      for(int j=0; j<class4[i]; j++) {
+        index_map[ind] = class4_offset;
         
-        uocc_act_offset += 1;
+        class4_offset += 1;
         ind +=1;
       }
       
       // irrep i block of frozen_uocc
-      for(int j=0; j<frozen_uocc[i]; j++) {
-        index_map[ind] = frozen_uocc_offset;
+      for(int j=0; j<class5[i]; j++) {
+        index_map[ind] = class5_offset;
         
-        frozen_uocc_offset += 1;
+        class5_offset += 1;
         ind += 1;
       }
     }
    
 #if 0
-    ExEnv::out0() << "index_map from symmetric to QT order:" << std::endl;
+    ExEnv::out0() << "index_map from symmetric to correlated order:" << std::endl;
     for(int i=0; i<index_map.size(); i++) {
       ExEnv::out0() << " " << index_map[i];
     }
@@ -148,82 +148,6 @@ namespace sc {
     return(index_map);
   }
   
-  std::vector<unsigned int> index_map_symmtorasorder(const std::vector<unsigned int> &frozen_docc,
-                                                     const std::vector<unsigned int> &ras1,
-                                                     const std::vector<unsigned int> &ras2,
-                                                     const std::vector<unsigned int> &ras3,
-                                                     const std::vector<unsigned int> &frozen_uocc) {
-    int nirrep = frozen_docc.size();
-    std::vector<unsigned int> mos(nirrep);
-    for(int i=0; i<nirrep; i++) {
-      mos[i] = frozen_docc[i] + ras1[i] + ras2[i] + ras3[i] + frozen_uocc[i];
-    }
-    
-    // compute initial offsets
-    unsigned int frozen_docc_offset = 0;
-    unsigned int ras1_offset = std::accumulate(frozen_docc.begin(),frozen_docc.end(),frozen_docc_offset);
-    unsigned int ras2_offset = std::accumulate(ras1.begin(),ras1.end(),ras1_offset);
-    unsigned int ras3_offset = std::accumulate(ras2.begin(),ras2.end(),ras2_offset);
-    unsigned int frozen_uocc_offset = std::accumulate(ras3.begin(),ras3.end(),ras3_offset);
-    const unsigned int nmo = std::accumulate(mos.begin(), mos.end(), 0);
-
-    // generate index_map mapping symmetry ordered data to ras ordered data
-    std::vector<unsigned int> index_map(nmo);
-    unsigned int ind = 0;
-    for(int i=0; i<nirrep; i++) {
-      
-      // irrep i block of frozen_docc
-      for(int j=0; j<frozen_docc[i]; j++) {
-        index_map[ind] = frozen_docc_offset;
-        
-        frozen_docc_offset += 1;
-        ind += 1;
-      }
-      
-      // irrep i block of ras1
-      for(int j=0; j<ras1[i]; j++) {
-        index_map[ind] = ras1_offset;
-        
-        ras1_offset += 1;
-        ind += 1;
-      }
-      
-      // irrep i block of ras2
-      for(int j=0; j<ras2[i]; j++) {
-        index_map[ind] = ras2_offset;
-        
-        ras2_offset += 1;
-        ind +=1;
-      }
-      
-      // irrep i block of ras3
-      for(int j=0; j<ras3[i]; j++) {
-        index_map[ind] = ras3_offset;
-        
-        ras3_offset += 1;
-        ind +=1;
-      }
-      
-      // irrep i block of frozen_uocc
-      for(int j=0; j<frozen_uocc[i]; j++) {
-        index_map[ind] = frozen_uocc_offset;
-        
-        frozen_uocc_offset += 1;
-        ind += 1;
-      }
-    }
-    
-#if 0
-    ExEnv::out0() << "index_map from symmetric to ras order:" << std::endl;
-    for(int i=0; i<index_map.size(); i++) {
-      ExEnv::out0() << " " << index_map[i];
-    }
-    ExEnv::out0() << std::endl;
-#endif
-    
-    return(index_map);
-  }
-
   std::vector<unsigned int> index_map_inverse(const std::vector<unsigned int>& map) {
     typedef std::vector<unsigned int>::iterator iter;
     const unsigned int min_index = * min_element(map.begin(), map.end());

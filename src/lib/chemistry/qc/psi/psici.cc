@@ -33,6 +33,7 @@
 #include <psifiles.h>
 #include <ccfiles.h>
 #include <cmath>
+#include <numeric>
 
 #include <math/mmisc/pairiter.impl.h>
 #include <util/misc/print.h>
@@ -540,12 +541,8 @@ namespace sc {
     input->write_keyword("detci:opdm","true");
     input->write_keyword("detci:tpdm","true");
 
-    if(opdm_print_==true) {
-      input->write_keyword("detci:opdm_print","true");
-    }
-    if(tpdm_print_==true) {
-      input->write_keyword("detci:tpdm_print","true");
-    }
+    input->write_keyword("detci:opdm_print",opdm_print_);
+    input->write_keyword("detci:tpdm_print",tpdm_print_);
 
     input->write_keyword("detci:root",root_);
     input->write_keyword("detci:s",(multiplicity_ - 1)/2);
@@ -615,11 +612,11 @@ namespace sc {
   std::vector<unsigned int>
   PsiRASCI::map_density_to_sb() {
     // maps symm -> RAS
-    std::vector<unsigned int> fmap = index_map_symmtorasorder(frozen_docc(),
-                                                              ras1(),
-                                                              ras2(),
-                                                              ras3(),
-                                                              frozen_uocc());
+    std::vector<unsigned int> fmap = index_map_symmtocorrorder(frozen_docc(),
+                                                             ras1(),
+                                                             ras2(),
+                                                             ras3(),
+                                                             frozen_uocc());
     return index_map_inverse( fmap );
   }
 
@@ -703,7 +700,7 @@ namespace sc {
 
   RefSymmSCMatrix PsiRASCI::onepdm_occ(SpinCase1 spin) {
 
-    if (ras3_max_ > 0) return this->mo_density(spin);
+    if (ras3_max_ > 0 && this->nfzv() == 0) return this->mo_density(spin);
 
     if ((spin == Beta || spin == AnySpinCase1) && !this->spin_polarized())
       return onepdm_occ(Alpha);
@@ -717,30 +714,68 @@ namespace sc {
     // ensure that this has been computed
     { const double energy = this->value(); }
 
+    // What is about to happen:
     // 1-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
-    // map_density_to_sb() reports mapping from full RAS to full SB orders
-    // here need to map RAS1+RAS2 (since ras3_max = 0) to full SB
-    std::vector<unsigned int> dmap;
+    // Psi reports density in terms of occupied + CI orbitals defined as frozen_docc + ras1 + ras2 + ras3
+    // this does not depend on whether ras3_max_ > 0 or not! Since we are here this means ras3_max_ = 0.
+    // thus, will first extract density in FRZOCC+RAS1+RAS2+RAS3, then filter them out RAS3 if necessary
+
+    // here need to map RAS1+RAS2+RAS3 to full SB
+    std::vector<unsigned int> dmap1;
     {
       std::vector<unsigned int> empty(nirrep_, 0);
-      std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
+      std::vector<unsigned int> fmap = index_map_symmtocorrorder(frozen_docc(),
                                                                ras1(),
                                                                ras2(),
-                                                               empty,
+                                                               ras3(),
                                                                empty);
-      dmap = index_map_inverse( fmap );
+      dmap1 = index_map_inverse( fmap );
     }
-    std::vector<unsigned int> occpi(nirrep_);
+    std::vector<unsigned int> opdm_orbs_pi(nirrep_);
     for(int i=0; i<nirrep_; i++) {
-      occpi[i] = frozen_docc_[i] + ras1_[i] + ras2_[i];
+      opdm_orbs_pi[i] = frozen_docc_[i] + ras1_[i] + ras2_[i] + ras3_[i];
     }
     onepdm_occ_[spin] = detail::rdopdm(spin,
-                                       occpi,
-                                       dmap,
+                                       opdm_orbs_pi,
+                                       dmap1,
                                        this->basis_matrixkit());
 
+    const unsigned int norbs_in_ras3 = std::accumulate(ras3_.begin(), ras3_.end(), 0u);
+    if (norbs_in_ras3 > 0) { // filter out RAS3 orbitals since ras3_max is 0
+      std::vector<unsigned int> opdm_occ_pi(nirrep_);
+      for(int i=0; i<nirrep_; i++) {
+        opdm_occ_pi[i] = frozen_docc_[i] + ras1_[i] + ras2_[i];
+      }
+      const unsigned int nocc = std::accumulate(opdm_occ_pi.begin(), opdm_occ_pi.end(), 0);
+      RefSCDimension occdim = new SCDimension(nocc,
+                                              nirrep_,
+                                              reinterpret_cast<int*>(const_cast<unsigned int*>(&(opdm_occ_pi[0])))
+                                            );
+      for (unsigned int h=0; h<nirrep_; ++h)
+        occdim->blocks()->set_subdim(h, new SCDimension(opdm_occ_pi[h]));
+      RefSymmSCMatrix opdm_occ = this->basis_matrixkit()->symmmatrix(occdim);
+
+      unsigned int occ_offset = 0;
+      unsigned int orbs_offset = 0;
+      for(unsigned int h=0; h<nirrep_; h++) {
+        const unsigned int nocc = opdm_occ_pi[h];
+        const unsigned int norbs = opdm_orbs_pi[h];
+        for(unsigned int r=0; r<nocc; ++r) {
+          for(unsigned int c=0; c<=r; ++c) {
+            const double value = onepdm_occ_[spin].get_element( orbs_offset + r, orbs_offset + c );
+            opdm_occ.set_element( occ_offset + r, occ_offset + c, value );
+          }
+        }
+        occ_offset += nocc;
+        orbs_offset += norbs;
+      }
+      // tada!
+      onepdm_occ_[spin] = opdm_occ;
+    }
+    // else this is what we need
+
     if(debug_>=DefaultPrintThresholds::mostN2) {
-      onepdm_occ_[spin].print(prepend_spincase(spin,"Psi opdm").c_str());
+      onepdm_occ_[spin].print(prepend_spincase(spin,"Psi opdm (occupied part)").c_str());
     }
 
     return onepdm_occ_[spin];
@@ -748,7 +783,7 @@ namespace sc {
 
   RefSymmSCMatrix PsiRASCI::twopdm_occ(SpinCase2 spin) {
 
-    if (ras3_max_ > 0) return this->twopdm_dirac(spin);
+    if (ras3_max_ > 0 && this->nfzv() == 0) return this->twopdm_dirac(spin);
 
     if (spin == BetaBeta && !this->spin_polarized())
       return twopdm_occ(AlphaAlpha);
@@ -762,7 +797,7 @@ namespace sc {
     std::vector<unsigned int> dmap;
     {
       std::vector<unsigned int> empty(nirrep_, 0);
-      std::vector<unsigned int> fmap = index_map_symmtoqtorder(frozen_docc(),
+      std::vector<unsigned int> fmap = index_map_symmtocorrorder(frozen_docc(),
                                                                ras1(),
                                                                ras2(),
                                                                empty,

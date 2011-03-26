@@ -37,30 +37,28 @@
 
 namespace sc {
   
-  /** Returns map from symmetry-blocked orbitals to QT-ordered orbitals
-   *  \param frozen_docc -- specifies the number of frozen doubly occupied orbitals in each irrep
-   *  \param docc_act -- specifies the number of doubly occupied orbitals in each irrep
-   *  \param socc_act -- specifies the number of singly occupied orbitals in each irrep
-   *  \param uocc_act -- specifies the number of unoccupied orbitals in each irrep
-   *  \param frozen_uocc -- specifies the number of frozen unoccupied orbitals in each irrep */
-  std::vector<unsigned int> index_map_symmtoqtorder(const std::vector<unsigned int> &frozen_docc,
-                                                    const std::vector<unsigned int> &docc_act,
-                                                    const std::vector<unsigned int> &socc_act,
-                                                    const std::vector<unsigned int> &uocc_act,
-                                                    const std::vector<unsigned int> &frozen_uocc);
-  
-  /** Returns map from symmetry-blocked orbitals to RAS-ordered orbitals \sa index_map_symmtoqtorder
-   *  \param frozen_docc -- specifies the number of frozen doubly occupied orbitals in each irrep
-   *  \param ras1 -- specifies the number of RAS1 orbitals in each irrep
-   *  \param ras2 -- specifies the number of RAS2 orbitals in each irrep
-   *  \param ras3 -- specifies the number of RAS3 orbitals in each irrep
-   *  \param frozen_uocc -- specifies the number of frozen unoccupied orbitals in each irrep */
-  std::vector<unsigned int> index_map_symmtorasorder(const std::vector<unsigned int> &frozen_docc,
-                                                     const std::vector<unsigned int> &ras1,
-                                                     const std::vector<unsigned int> &ras2,
-                                                     const std::vector<unsigned int> &ras3,
-                                                     const std::vector<unsigned int> &frozen_uocc);
-  
+  /** Returns map from symmetry-blocked orbitals to correlated-order orbitals.
+   *  The former blocks orbitals by irrep, and within each block orbitals are ordered by occupation or other correlation
+   *  attribute (RAS, etc.), then by energy. The latter orders by the attribute, then by
+   *  irrep, then by energy.
+   *
+   *  The common orderings used by Psi are:
+   *  QT ("quantum trio") -- orbitals are classified as follows: frozen docc, docc, socc, uocc, frozen uocc
+   *  RAS -- orbitals are classified as follows: frozen docc, RAS1, RAS2, RAS3, frozen uocc (not sure about RAS4)
+   *  since both orderings define 5 classes of attributes, we only need 1 function
+   *
+   *  \param class1 -- specifies the number of orbitals of class 1 (e.g., frozen docc) in each irrep
+   *  \param class2 -- specifies the number of orbitals of class 2 (e.g., RAS1) in each irrep
+   *  \param class3 -- specifies the number of orbitals of class 3 (e.g., RAS2) in each irrep
+   *  \param class4 -- specifies the number of orbitals of class 4 (e.g., RAS3) in each irrep
+   *  \param class5 -- specifies the number of orbitals of class 5 (e.g., frozen uocc) in each irrep
+   *  */
+  std::vector<unsigned int> index_map_symmtocorrorder(const std::vector<unsigned int> &class1,
+                                                      const std::vector<unsigned int> &class2,
+                                                      const std::vector<unsigned int> &class3,
+                                                      const std::vector<unsigned int> &class4,
+                                                      const std::vector<unsigned int> &class5);
+
   /// inverts an (isomorphic) index map that maps [0,n) onto itself
   std::vector<unsigned int> index_map_inverse(const std::vector<unsigned int>& map);
 

@@ -81,8 +81,8 @@ namespace sc {
       void compute();
       void print(std::ostream&) const;
 
-      /// spin_polarized() for RAS-CI is determined by the target M_s value
-      int spin_polarized() { return multiplicity_ != 1; }
+      /// returns true if alpha<->beta swap leaves densities unchanged
+      int spin_polarized();
 
       /// returns vector that specifies the number of RAS1 orbitals in each irrep
       const std::vector<unsigned int>& ras1() const { return ras1_; }
@@ -125,7 +125,7 @@ namespace sc {
       Ref<OrbitalSpace> occ_[NSpinCases1];
 
       RefSymmSCMatrix onepdm_occ_[NSpinCases1];
-      RefSymmSCMatrix twopdm_occ_[NSpinCases1];
+      RefSymmSCMatrix twopdm_occ_[NSpinCases2];
 
       // optional RAS info
       // it is initialized automatically

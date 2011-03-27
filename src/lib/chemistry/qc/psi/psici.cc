@@ -546,6 +546,8 @@ namespace sc {
 
     input->write_keyword("detci:root",root_);
     input->write_keyword("detci:s",(multiplicity_ - 1)/2);
+    input->write_keyword("detci:ms0",(multiplicity_%2 == 1));
+    input->write_keyword("detci:calc_ssq",true);
     input->write_keyword("detci:num_roots",nroots_);
     if (target_sym_ != -1 && !rasscf)
       input->write_keyword("detci:ref_sym",target_sym_);
@@ -812,6 +814,20 @@ namespace sc {
 
     return twopdm_occ_[spin];
   }
+
+  int
+  PsiRASCI::spin_polarized() {
+    // this is not correct -- Ms = 0 nonsinglet calculations are not spin-polarized, but this returns true
+    //return multiplicity_ != 1;
+
+    /// spin_polarized() for RAS-CI is determined as follows
+    /// 1) true if odd number of electrons
+    /// I'm not sure if this covers all cases ... we don't have enough experience with MRCI codes yet ...
+    const bool result = (this->nelectron() % 2 == 1);
+
+    return result;
+  }
+
 
 //////////////////////////////////////////////////////////
 

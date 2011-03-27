@@ -546,7 +546,9 @@ namespace sc {
 
     input->write_keyword("detci:root",root_);
     input->write_keyword("detci:s",(multiplicity_ - 1)/2);
-    input->write_keyword("detci:ms0",(multiplicity_%2 == 1));
+    // If computing a non-singlet state using closed-shell as a reference need to tell detci to solve for M_S = 0 state
+    const bool m_s_eq_0 = this->reference()->spin_polarized() == false;
+    input->write_keyword("detci:ms0",m_s_eq_0);
     input->write_keyword("detci:calc_ssq",true);
     input->write_keyword("detci:num_roots",nroots_);
     if (target_sym_ != -1 && !rasscf)
@@ -820,10 +822,11 @@ namespace sc {
     // this is not correct -- Ms = 0 nonsinglet calculations are not spin-polarized, but this returns true
     //return multiplicity_ != 1;
 
-    /// spin_polarized() for RAS-CI is determined as follows
-    /// 1) true if odd number of electrons
+    /// spin_polarized() for RAS-CI is true if M_s != 0
+    /// -> true if # of electrons is odd
+    /// -> true if starting from high-spin reference & S != 0
     /// I'm not sure if this covers all cases ... we don't have enough experience with MRCI codes yet ...
-    const bool result = (this->nelectron() % 2 == 1);
+    const bool result = (this->nelectron() % 2 == 1) || (this->reference()->spin_polarized() && multiplicity_ != 1);
 
     return result;
   }

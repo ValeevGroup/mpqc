@@ -212,6 +212,7 @@ MolecularEnergy::save_data_state(StateOut&s)
   s.put(ckpt_freq_);
   cartesian_gradient_.save(s);
   cartesian_hessian_.save(s);
+  efield_.save(s);
  }
 
 bool

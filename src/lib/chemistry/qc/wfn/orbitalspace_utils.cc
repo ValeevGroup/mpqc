@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/obintfactory.h>

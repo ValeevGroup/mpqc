@@ -28,10 +28,6 @@
 #ifndef TWOBODYTENSORINFO_H_
 #define TWOBODYTENSORINFO_H_
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/ref/ref.h>
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/tbint.h>

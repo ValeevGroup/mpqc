@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_triangle_h
 #define _math_isosurf_triangle_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/isosurf/tricoef.h>
 #include <math/isosurf/edge.h>
 

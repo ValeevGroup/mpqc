@@ -28,10 +28,6 @@
 #ifndef _math_optimize_scextrap_h
 #define _math_optimize_scextrap_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>

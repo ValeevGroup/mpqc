@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_isosurf_h
 #define _math_isosurf_isosurf_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <vector>
 
 #include <math/isosurf/surf.h>

@@ -69,10 +69,6 @@
 // and the interpretation of the reference count data.
 
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifndef _util_ref_ref_h
 #define _util_ref_ref_h
 

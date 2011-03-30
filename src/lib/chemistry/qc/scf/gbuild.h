@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_gbuild_h
 #define _chemistry_qc_scf_gbuild_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/group/thread.h>
 #include <chemistry/qc/scf/scf.h>
 

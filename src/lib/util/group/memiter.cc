@@ -29,10 +29,6 @@
 #ifndef _util_group_memiter_cc
 #define _util_group_memiter_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/group/memiter.h>
 
 using namespace sc;

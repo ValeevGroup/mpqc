@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_lgbuild_h
 #define _chemistry_qc_scf_lgbuild_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #undef SCF_CHECK_INTS
 #undef SCF_CHECK_BOUNDS
 #undef SCF_DONT_USE_BOUNDS

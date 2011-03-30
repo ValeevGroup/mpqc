@@ -2,10 +2,6 @@
 // extent.cc
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/extent.h>
 

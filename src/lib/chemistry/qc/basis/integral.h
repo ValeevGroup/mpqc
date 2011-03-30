@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_integral_h
 #define _chemistry_qc_basis_integral_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <stddef.h>
 
 #include <util/state/state.h>

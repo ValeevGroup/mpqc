@@ -28,10 +28,6 @@
 #ifndef _util_group_thpthd_h
 #define _util_group_thpthd_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <pthread.h>
 #include <util/group/thread.h>
 

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_shellrot_h
 #define _chemistry_qc_basis_shellrot_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/symmetry/pointgrp.h>
 
 namespace sc {

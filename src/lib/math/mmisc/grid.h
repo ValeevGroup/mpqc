@@ -23,10 +23,6 @@
 #ifndef _util_misc_grid_h
 #define _util_misc_grid_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/molecule/molecule.h>
 #include <util/class/class.h>
 #include <util/misc/runnable.h>

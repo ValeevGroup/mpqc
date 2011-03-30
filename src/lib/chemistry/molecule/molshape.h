@@ -28,10 +28,6 @@
 #ifndef _chemistry_molecule_molshape_h
 #define _chemistry_molecule_molshape_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/misc/formio.h>
 
 #include <math/isosurf/shape.h>

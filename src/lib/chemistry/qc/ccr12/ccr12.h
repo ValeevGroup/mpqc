@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_ccr12_ccr12_h
 #define _chemistry_qc_ccr12_ccr12_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <string>
 #include <util/misc/compute.h>
 #include <util/group/memory.h>

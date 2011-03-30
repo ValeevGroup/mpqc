@@ -29,10 +29,6 @@
 #ifndef _chemistry_qc_dft_am05_h
 #define _chemistry_qc_dft_am05_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/dft/functional.h>
 
 namespace sc {

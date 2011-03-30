@@ -28,10 +28,6 @@
 #ifndef _util_ref_identity_h
 #define _util_ref_identity_h
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include <iostream>
 
 #include <scconfig.h>

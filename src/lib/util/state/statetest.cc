@@ -40,11 +40,6 @@
 using namespace std;
 using namespace sc;
 
-#ifdef __GNUG__
-#pragma implementation "stattmpl"
-#pragma implementation "clastmpl"
-#endif
-
 #if 0 // normally 0
 #  define StateOutTypeA StateOutText
 #  define StateInTypeA StateInText

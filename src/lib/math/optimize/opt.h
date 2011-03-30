@@ -28,10 +28,6 @@
 #ifndef _math_optimize_opt_h
 #define _math_optimize_opt_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/group/message.h>
 #include <util/state/state.h>
 #include <util/class/class.h>

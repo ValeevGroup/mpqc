@@ -28,10 +28,6 @@
 #ifndef _util_group_memmsg_cc
 #define _util_group_memmsg_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/group/memmsg.h>
 
 using namespace std;

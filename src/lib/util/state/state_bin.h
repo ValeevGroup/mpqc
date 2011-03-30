@@ -28,10 +28,6 @@
 #ifndef _util_state_state_bin_h
 #define _util_state_state_bin_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state_file.h>
 
 namespace sc {

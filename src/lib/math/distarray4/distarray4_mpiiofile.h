@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_distarray4_mpiiofile_h
 #define _chemistry_qc_mbptr12_distarray4_mpiiofile_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #define MPICH_SKIP_MPICXX
 #include <mpi.h>
 #include <util/ref/ref.h>

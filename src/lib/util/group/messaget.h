@@ -28,10 +28,6 @@
 #ifndef _util_group_messaget_h
 #define _util_group_messaget_h
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/group/message.h>
 
 namespace sc {

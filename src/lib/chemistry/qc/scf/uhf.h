@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_uhf_h
 #define _chemistry_qc_scf_uhf_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/scf/uscf.h>
 
 namespace sc {

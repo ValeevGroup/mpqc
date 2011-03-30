@@ -1,4 +1,3 @@
-
 /* simple.h -- definition of the simple internal coordinate classes
  *
  *      THIS SOFTWARE FITS THE DESCRIPTION IN THE U.S. COPYRIGHT ACT OF A
@@ -21,10 +20,6 @@
 
 #ifndef _intco_simple_h
 #define _intco_simple_h
-
-#ifdef __GNUC__
-#pragma interface
-#endif
 
 
 #include <iostream>

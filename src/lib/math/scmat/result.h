@@ -27,9 +27,6 @@
 
 #ifndef _math_scmat_result_h
 #define _math_scmat_result_h
-#ifdef __GNUC__
-#pragma interface
-#endif
 
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>

@@ -28,10 +28,6 @@
 #ifndef _chemistry_molecule_coor_h
 #define _chemistry_molecule_coor_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 #include <vector>
 

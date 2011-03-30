@@ -29,10 +29,6 @@
 #ifndef _util_group_memarmci_cc
 #define _util_group_memarmci_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 extern "C" {
 #include <armci.h>
 }

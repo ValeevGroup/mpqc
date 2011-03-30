@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_gaussshell_h
 #define _chemistry_qc_basis_gaussshell_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>

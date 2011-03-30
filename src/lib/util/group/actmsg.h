@@ -27,10 +27,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifndef _util_group_actmsg_h
 #define _util_group_actmsg_h
 

@@ -28,10 +28,6 @@
 #ifndef _util_group_memshm_cc
 #define _util_group_memshm_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memshm.h>

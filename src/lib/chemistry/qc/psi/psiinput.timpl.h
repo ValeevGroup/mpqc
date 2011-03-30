@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #ifndef _chemistry_qc_psi_input_timpl_h
 #define _chemistry_qc_psi_input_timpl_h
 

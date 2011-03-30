@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <util/misc/math.h>
 
 #include <chemistry/qc/libint2/int1e.h>

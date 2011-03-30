@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _chemistry_qc_oint3_build_h
 #define _chemistry_qc_oint3_build_h
 

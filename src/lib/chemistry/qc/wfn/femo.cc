@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/wfn/femo.h>
 #include <math/scmat/blocked.h>
 #include <util/class/scexception.h>

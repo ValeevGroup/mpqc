@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbpt_mp2extrap_h
 #define _chemistry_qc_mbpt_mp2extrap_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/molecule/energy.h>
 
 namespace sc {

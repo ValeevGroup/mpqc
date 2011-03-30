@@ -25,10 +25,6 @@
 //
 
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #ifndef _chemistry_qc_mbptr12_contract_tbint_tensors_to_obtensor_h
 #define _chemistry_qc_mbptr12_contract_tbint_tensors_to_obtensor_h
 

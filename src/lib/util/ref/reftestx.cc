@@ -25,11 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation "reftmpl.h"
-#pragma implementation "reftestx.h"
-#endif
-
 #include <util/ref/reftestx.h>
 
 using sc::X;

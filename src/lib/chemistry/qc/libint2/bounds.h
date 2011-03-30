@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _chemistry_qc_libint2_bounds_h
 #define _chemistry_qc_libint2_bounds_h
 

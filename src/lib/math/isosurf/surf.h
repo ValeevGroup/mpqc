@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_surf_h
 #define _math_isosurf_surf_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif

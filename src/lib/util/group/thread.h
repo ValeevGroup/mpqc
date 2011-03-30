@@ -28,10 +28,6 @@
 #ifndef _util_group_thread_h
 #define _util_group_thread_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/class/class.h>
 
 namespace sc {

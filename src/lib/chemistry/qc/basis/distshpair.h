@@ -30,10 +30,6 @@
 #ifndef _chemistry_qc_basis_distshpair_h
 #define _chemistry_qc_basis_distshpair_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/misc/regtime.h>
 #include <util/group/message.h>
 #include <util/group/thread.h>

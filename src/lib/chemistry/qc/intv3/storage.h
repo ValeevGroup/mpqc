@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_intv3_storage_h
 #define _chemistry_qc_intv3_storage_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifdef __cplusplus
 
 #include <stddef.h>

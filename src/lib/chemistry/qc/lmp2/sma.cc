@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2009 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
@@ -25,10 +24,6 @@
 #include <algorithm>
 
 #include <chemistry/qc/lmp2/sma.h>
-
-//  #ifdef __GNUC__
-//  #pragma implementation
-//  #endif
 
 namespace sc {
 

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_obint_h
 #define _chemistry_qc_basis_obint_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/ref/ref.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>

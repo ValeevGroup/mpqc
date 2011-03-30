@@ -28,10 +28,6 @@
 #ifndef _util_state_state_file_h
 #define _util_state_state_file_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>

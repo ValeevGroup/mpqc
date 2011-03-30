@@ -27,10 +27,6 @@
 #ifndef _chemistry_qc_basis_lselect_h
 #define _chemistry_qc_basis_lselect_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/basis/gaussbas.h>
 
 namespace sc {

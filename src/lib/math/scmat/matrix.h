@@ -27,9 +27,6 @@
 
 #ifndef _math_scmat_matrix_h
 #define _math_scmat_matrix_h
-#ifdef __GNUC__
-#pragma interface
-#endif
 
 #include <iostream>
 

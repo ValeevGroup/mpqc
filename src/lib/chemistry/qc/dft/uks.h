@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_uks_h
 #define _chemistry_qc_scf_uks_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/scf/uscf.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>

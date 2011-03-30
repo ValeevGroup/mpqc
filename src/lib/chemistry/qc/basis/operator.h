@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include <util/ref/ref.h>
 #include <math/distarray4/distarray4.h>
 #include <chemistry/qc/basis/intparams.h>

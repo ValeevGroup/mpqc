@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_petite_h
 #define _chemistry_qc_basis_petite_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <scconfig.h>
 #include <iostream>
 #include <scconfig.h>

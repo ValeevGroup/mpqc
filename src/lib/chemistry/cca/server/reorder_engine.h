@@ -4,7 +4,6 @@
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <sidl_SIDLException.hxx>
-#pragma implementation "ccaiter.h"
 #include <ccaiter.h>
 #include <buffer_size.h>
 

@@ -20,10 +20,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <stdexcept>
 
 #include <math/scmat/vector3.h>

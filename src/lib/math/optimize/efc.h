@@ -28,10 +28,6 @@
 #ifndef _math_optimize_efc_h
 #define _math_optimize_efc_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_wfn_h
 #define _chemistry_qc_wfn_wfn_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 
 #include <util/misc/compute.h>

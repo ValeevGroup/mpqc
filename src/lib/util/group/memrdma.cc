@@ -29,10 +29,6 @@
 #ifndef _util_group_memrdma_cc
 #define _util_group_memrdma_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/group/pool.h>

@@ -28,10 +28,6 @@
 #ifndef _util_group_memamsg_cc
 #define _util_group_memamsg_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>
 #include <util/group/pool.h>

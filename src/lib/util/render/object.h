@@ -28,10 +28,6 @@
 #ifndef _util_render_object_h
 #define _util_render_object_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 
 #include <util/keyval/keyval.h>

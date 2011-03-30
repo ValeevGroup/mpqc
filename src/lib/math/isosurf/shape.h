@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_shape_h
 #define _math_isosurf_shape_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <set>
 
 #include <math/isosurf/volume.h>

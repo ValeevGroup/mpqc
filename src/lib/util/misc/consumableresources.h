@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _mpqc_src_lib_util_misc_consumableresources_h
 #define _mpqc_src_lib_util_misc_consumableresources_h
 

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbpt_mbpt_h
 #define _chemistry_qc_mbpt_mbpt_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/group/memory.h>
 #include <util/group/message.h>
 #include <util/group/thread.h>

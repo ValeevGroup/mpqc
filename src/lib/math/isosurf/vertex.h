@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_vertex_h
 #define _math_isosurf_vertex_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <stdlib.h>
 #include <math.h>
 #include <util/ref/ref.h>

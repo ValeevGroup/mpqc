@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>

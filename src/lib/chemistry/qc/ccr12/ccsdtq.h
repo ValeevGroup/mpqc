@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_ccr12_ccsdtq_h
 #define _chemistry_qc_ccr12_ccsdtq_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/stateio.h>
 #include <chemistry/qc/ccr12/ccr12.h>
 

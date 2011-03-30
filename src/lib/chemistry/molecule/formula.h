@@ -26,10 +26,6 @@
 #ifndef _chemistry_molecule_formula_h
 #define _chemistry_molecule_formula_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/molecule/molecule.h>
 
 namespace sc {

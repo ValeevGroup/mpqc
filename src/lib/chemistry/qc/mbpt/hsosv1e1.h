@@ -29,10 +29,6 @@
 #ifndef _chemistry_qc_mbpt_hsosv1e1_h
 #define _chemistry_qc_mbpt_hsosv1e1_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/misc/regtime.h>
 #include <util/group/memory.h>
 #include <util/group/thread.h>

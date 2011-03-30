@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_scf_h
 #define _chemistry_qc_scf_scf_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/group/thread.h>
 
 #include <math/optimize/scextrap.h>

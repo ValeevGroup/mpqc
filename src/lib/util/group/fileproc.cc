@@ -28,10 +28,6 @@
 #ifndef _util_group_fileproc_cc
 #define _util_group_fileproc_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/group/fileproc.h>
 
 using namespace sc;

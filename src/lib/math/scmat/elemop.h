@@ -28,10 +28,6 @@
 #ifndef _math_scmat_elemop_h
 #define _math_scmat_elemop_h
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/state/state.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>

@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/psi/psiref.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/spin.h>

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_dft_clks_h
 #define _chemistry_qc_dft_clks_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>

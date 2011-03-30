@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/lcao/transform_iRjS.h>
 #include <chemistry/qc/lcao/transform_13inds.h>
 #include <math/distarray4/distarray4_memgrp.h>

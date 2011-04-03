@@ -28,10 +28,6 @@
 #ifndef _chemistry_molecule_deriv_h
 #define _chemistry_molecule_deriv_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 
 #include <chemistry/molecule/molecule.h>

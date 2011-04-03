@@ -29,10 +29,6 @@
 #ifndef _util_group_memmtmpi_cc
 #define _util_group_memmtmpi_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <assert.h>
 
 #include <util/misc/formio.h>

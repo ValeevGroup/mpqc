@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_distarray4_memgrp_h
 #define _chemistry_qc_mbptr12_distarray4_memgrp_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
 #include <math/distarray4/distarray4.h>

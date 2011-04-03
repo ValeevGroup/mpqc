@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_r12amps_h
 #define _chemistry_qc_mbptr12_r12amps_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <stdexcept>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/wfn/spin.h>

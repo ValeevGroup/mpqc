@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_solvent_h
 #define _chemistry_qc_wfn_solvent_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/solvent/bem.h>
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/wfn/accum.h>

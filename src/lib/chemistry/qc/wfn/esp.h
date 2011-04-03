@@ -23,10 +23,6 @@
 #ifndef _chemistry_qc_wfn_esp_h
 #define _chemistry_qc_wfn_esp_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/molecule/molecule.h>
 #include <math/mmisc/grid.h>

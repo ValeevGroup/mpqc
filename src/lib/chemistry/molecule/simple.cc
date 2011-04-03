@@ -1,4 +1,3 @@
-
 /* simple.cc -- implementation of the simple internal coordinate classes
  *
  *      THIS SOFTWARE FITS THE DESCRIPTION IN THE U.S. COPYRIGHT ACT OF A
@@ -18,10 +17,6 @@
  *      Internet: seidl@alw.nih.gov
  *      February, 1993
  */
-
-#ifdef __GNUC__
-#pragma implementation
-#endif
 
 #include <string.h>
 #include <math.h>

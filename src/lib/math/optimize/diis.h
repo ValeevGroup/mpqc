@@ -28,10 +28,6 @@
 #ifndef _math_optimize_diis_h
 #define _math_optimize_diis_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/optimize/scextrap.h>
 
 namespace sc {

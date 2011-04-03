@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_sointegral_h
 #define _chemistry_qc_basis_sointegral_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/sobasis.h>

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_effh_h
 #define _chemistry_qc_scf_effh_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/scmat/blkiter.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/scf/scf.h>

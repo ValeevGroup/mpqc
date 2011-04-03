@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation "junk.h"
-#endif
-
 #include <libint2/libint2.h>
 
 #include <util/class/class.h>

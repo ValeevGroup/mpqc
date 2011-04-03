@@ -28,10 +28,6 @@
 #ifndef _util_state_stateout_h
 #define _util_state_stateout_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <string>
 #include <map>
 

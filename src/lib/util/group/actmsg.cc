@@ -27,10 +27,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include "actmsg.h"
 #include <util/misc/formio.h>
 #include <util/group/mstate.h>

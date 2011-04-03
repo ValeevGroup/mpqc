@@ -1,8 +1,3 @@
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <iostream>
 
 #include <util/misc/formio.h>

@@ -1,10 +1,6 @@
 // These routines were translated from lbfgs.f by f2c (version 20030320)
 // and modified by Curtis Janssen.
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <math.h>
 #include <util/class/scexception.h>
 #include <math/optimize/mcsearch.h>

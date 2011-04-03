@@ -28,10 +28,6 @@
 #ifndef _util_group_message_cc
 #define _util_group_message_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/group/message.h>
 
 #endif

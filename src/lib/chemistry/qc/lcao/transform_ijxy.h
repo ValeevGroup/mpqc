@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _chemistry_qc_mbptr12_transformijxy_h
 #define _chemistry_qc_mbptr12_transformijxy_h
 

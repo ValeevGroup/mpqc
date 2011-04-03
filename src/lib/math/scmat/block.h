@@ -28,10 +28,6 @@
 #ifndef _math_scmat_block_h
 #define _math_scmat_block_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 
 namespace sc {

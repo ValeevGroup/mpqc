@@ -5,10 +5,6 @@
 #ifndef _chemistry_qc_basis_extent_h
 #define _chemistry_qc_basis_extent_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <vector>
 
 #include <float.h>

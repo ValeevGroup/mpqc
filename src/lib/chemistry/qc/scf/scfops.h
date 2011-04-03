@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_scfops_h
 #define _chemistry_qc_scf_scfops_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/scmat/elemop.h>
 #include <math/scmat/blocked.h>
 

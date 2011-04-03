@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <stdlib.h>
 #include <math.h>
 #include <stdexcept>
@@ -212,6 +208,7 @@ MolecularEnergy::save_data_state(StateOut&s)
   s.put(ckpt_freq_);
   cartesian_gradient_.save(s);
   cartesian_hessian_.save(s);
+  efield_.save(s);
  }
 
 bool

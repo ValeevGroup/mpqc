@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/cints/int2e.h>
 #include <chemistry/qc/cints/macros.h>
 #ifdef DMALLOC

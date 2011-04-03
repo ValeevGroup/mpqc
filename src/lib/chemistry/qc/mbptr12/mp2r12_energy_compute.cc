@@ -26,10 +26,6 @@
 //
 
 #if 0
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <math/scmat/svd.h>
 #include <math/mmisc/pairiter.h>

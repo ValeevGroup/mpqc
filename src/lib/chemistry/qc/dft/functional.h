@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_dft_functional_h
 #define _chemistry_qc_dft_functional_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>

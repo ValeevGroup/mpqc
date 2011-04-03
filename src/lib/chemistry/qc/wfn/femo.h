@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_femo_h
 #define _chemistry_qc_wfn_femo_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <vector>
 #include <math/scmat/matrix.h>
 

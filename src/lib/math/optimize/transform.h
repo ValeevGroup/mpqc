@@ -28,10 +28,6 @@
 #ifndef _math_optimize_transform_h
 #define _math_optimize_transform_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/scmat/matrix.h>
 
 namespace sc {

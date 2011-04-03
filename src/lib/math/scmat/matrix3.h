@@ -27,10 +27,6 @@
 
 #ifndef _math_scmat_matrix3_h
 #define _math_scmat_matrix3_h
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 #include <math.h>
 

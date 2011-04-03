@@ -28,10 +28,6 @@
 #ifndef _chemistry_molecule_energy_h
 #define _chemistry_molecule_energy_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <iostream>
 
 #include <math/optimize/function.h>

@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_cartiter_h
 #define _chemistry_qc_basis_cartiter_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 namespace sc {
 
 /** CartesianIter gives the ordering of the Cartesian functions

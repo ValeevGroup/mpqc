@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_sobasis_h
 #define _chemistry_qc_basis_sobasis_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/basis/basis.h>
 
 namespace sc {

@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include <cmath>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>

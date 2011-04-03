@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_r12technology_h
 #define _chemistry_qc_mbptr12_r12technology_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/mbptr12/gaussianfit.h>

@@ -25,10 +25,6 @@
 #ifndef _chemistry_qc_lmp2_sma_h
 #define _chemistry_qc_lmp2_sma_h
 
-//  #ifdef __GNUC__
-//  #pragma interface
-//  #endif
-
 //#define USE_HASH
 //#define USE_STL_MULTIMAP 1
 

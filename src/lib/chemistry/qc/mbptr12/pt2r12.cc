@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>

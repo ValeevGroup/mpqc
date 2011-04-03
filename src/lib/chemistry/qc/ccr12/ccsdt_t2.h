@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_ccr12_ccsdt_t2_h
 #define _chemistry_qc_ccr12_ccsdt_t2_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 namespace sc {

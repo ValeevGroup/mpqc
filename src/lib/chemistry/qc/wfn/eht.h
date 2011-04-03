@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_eht_h
 #define _chemistry_qc_wfn_eht_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/wfn/obwfn.h>
 
 namespace sc {

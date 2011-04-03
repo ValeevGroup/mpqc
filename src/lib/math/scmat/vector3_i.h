@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifdef INLINE_FUNCTIONS
 #define INLINE inline
 #else

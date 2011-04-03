@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_orbital_h
 #define _chemistry_qc_wfn_orbital_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/wfn/orbitalspace.h>

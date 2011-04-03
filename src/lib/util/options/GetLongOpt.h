@@ -1,10 +1,6 @@
 /* $Id$ */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #ifndef _GetLongOpt_h_
 #define _GetLongOpt_h_
 

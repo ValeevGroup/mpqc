@@ -28,10 +28,6 @@
 #ifndef _chemistry_molecule_molecule_h
 #define _chemistry_molecule_molecule_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <stdio.h>
 #include <iostream>
 #include <util/class/class.h>

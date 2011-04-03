@@ -23,10 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <sstream>
 #include <map>
 #include <chemistry/molecule/formula.h>

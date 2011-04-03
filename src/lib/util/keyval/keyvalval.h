@@ -27,9 +27,6 @@
 
 #ifndef _util_keyval_keyvalval_h
 #define _util_keyval_keyvalval_h
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include <string>
 

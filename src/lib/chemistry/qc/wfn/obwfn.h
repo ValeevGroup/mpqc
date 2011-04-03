@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_wfn_obwfn_h
 #define _chemistry_qc_wfn_obwfn_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <vector>
 #include <chemistry/qc/wfn/wfn.h>
 

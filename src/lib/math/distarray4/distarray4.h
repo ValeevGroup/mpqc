@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_distarray4_h
 #define _chemistry_qc_mbptr12_distarray4_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <vector>
 #include <util/ref/ref.h>
 #include <util/state/state.h>

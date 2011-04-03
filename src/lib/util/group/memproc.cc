@@ -28,10 +28,6 @@
 #ifndef _util_group_memproc_cc
 #define _util_group_memproc_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/misc/consumableresources.h>
 #include <util/group/memproc.h>
 

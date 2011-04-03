@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _ccr12_mtensor_timpl_h
 #define _ccr12_mtensor_timpl_h
 

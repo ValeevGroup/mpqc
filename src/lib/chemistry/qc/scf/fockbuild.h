@@ -29,10 +29,6 @@
 #ifndef _chemistry_qc_scf_fockbuild_h
 #define _chemistry_qc_scf_fockbuild_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <scconfig.h>
 #include <util/misc/regtime.h>
 #include <util/group/thread.h>

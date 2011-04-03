@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _chemistry_qc_psi_file11_h
 #define _chemistry_qc_psi_file11_h
 

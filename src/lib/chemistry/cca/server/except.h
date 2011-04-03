@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _except_h
 #define _except_h
 

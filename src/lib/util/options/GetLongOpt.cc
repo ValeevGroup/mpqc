@@ -1,10 +1,6 @@
 /* $Id$ */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <util/options/GetLongOpt.h>
 
 using namespace std;

@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 // includes go here
 #include <chemistry/qc/lcao/df.h>
 #include <util/state/statein.h>

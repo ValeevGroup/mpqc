@@ -1,9 +1,4 @@
 
-
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <math.h>
 
 #include <util/class/scexception.h>

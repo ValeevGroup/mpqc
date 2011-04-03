@@ -1,7 +1,3 @@
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _socket_h
 #define _socket_h
 

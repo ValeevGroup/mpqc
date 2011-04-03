@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_integral_symmint_h
 #define _chemistry_qc_integral_symmint_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>

@@ -25,10 +25,6 @@
 //
 
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
 
 namespace sc {

@@ -1,8 +1,3 @@
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
 #include <util/state/state_bin.h>
 #include <util/state/proxy.h>
 #include <util/keyval/keyval.h>

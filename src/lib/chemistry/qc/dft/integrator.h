@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_dft_integrator_h
 #define _chemistry_qc_dft_integrator_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/state/state.h>
 #include <util/group/thread.h>
 #include <chemistry/qc/dft/functional.h>

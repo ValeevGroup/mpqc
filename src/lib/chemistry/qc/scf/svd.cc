@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <stdexcept>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/basis/petite.h>

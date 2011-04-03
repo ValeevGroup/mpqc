@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_basis_tbint_h
 #define _chemistry_qc_basis_tbint_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/ref/ref.h>
 #include <util/group/message.h>
 #include <chemistry/qc/basis/gaussbas.h>

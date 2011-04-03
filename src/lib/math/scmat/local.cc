@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <math.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>

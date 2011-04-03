@@ -28,10 +28,6 @@
 #ifndef _chemistry_qc_scf_clhf_h
 #define _chemistry_qc_scf_clhf_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <chemistry/qc/scf/clscf.h>
 
 namespace sc {

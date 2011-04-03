@@ -28,10 +28,6 @@
 #ifndef _util_group_memregion_cc
 #define _util_group_memregion_cc
 
-#ifdef __GNUC__
-#pragma implementation
-#endif
-
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>

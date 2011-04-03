@@ -28,10 +28,6 @@
 #ifndef _math_isosurf_volume_h
 #define _math_isosurf_volume_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/optimize/function.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>

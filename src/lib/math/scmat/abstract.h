@@ -28,10 +28,6 @@
 #ifndef _math_scmat_abstract_h
 #define _math_scmat_abstract_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <util/group/message.h>
 
 #include <util/state/state.h>

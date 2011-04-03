@@ -7,10 +7,6 @@
 #ifndef _math_optimize_mcsearch_h
 #define _math_optimize_mcsearch_h
 
-#ifdef __GNUC__
-#pragma interface
-#endif
-
 #include <math/optimize/opt.h>
 #include <util/misc/autovec.h>
 

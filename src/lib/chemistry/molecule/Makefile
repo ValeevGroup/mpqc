@@ -37,14 +37,16 @@ CXXSRC = molecule.cc molsymm.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc stors.cc linip.cc linop.cc \
          energy.cc coor.cc imcoor.cc symmcoor.cc redund.cc cartcoor.cc \
          molshape.cc taylor.cc deriv.cc findisp.cc \
-         molrender.cc atominfo.cc molfreq.cc formula.cc
+         molrender.cc atominfo.cc molfreq.cc formula.cc \
+         frag.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = molecule.h \
       simple.h localdef.h \
       coor.h energy.h molshape.h taylor.h deriv.h findisp.h \
-      molrender.h atominfo.h molfreq.h formula.h
+      molrender.h atominfo.h molfreq.h formula.h \
+      frag.h
 
 DEPENDINCLUDE = $(INC)
 

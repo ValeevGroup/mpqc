@@ -787,25 +787,63 @@ IntCoorGen::print(ostream& out) const
       << decindent;
 }
 
-static void
-find_bonds(Molecule &m, BitArrayLTri &bonds,
-           double radius_scale_factor_)
+std::vector< std::set<int> >
+IntCoorGen::find_disconnected_subgraphs(const BitArrayLTri &bonds)
 {
-  int i, j;
-  for(i=0; i < m.natom(); i++) {
-    double at_rad_i = m.atominfo()->atomic_radius(m.Z(i));
-    SCVector3 ri(m.r(i));
+  const int natom = bonds.nrow();
 
-    for(j=0; j < i; j++) {
-      double at_rad_j = m.atominfo()->atomic_radius(m.Z(j));
-      SCVector3 rj(m.r(j));
+  std::vector< std::set<int> > subgraphs;
 
-      if (ri.dist(rj)
-          < radius_scale_factor_*(at_rad_i+at_rad_j))
-        bonds.set(i,j);
+  // using "atoms-in-molecules" terminology here to avoid renaming bunch of variable
+  std::set<int> remaining_atoms; // atoms still not in subgraphs
+  for(int atom=0; atom<natom; ++atom) remaining_atoms.insert(atom); // initially all of them
+
+  while (remaining_atoms.empty() == false) {
+    std::set<int> boundatoms;  // current subgraph
+    std::set<int> newatoms, nextnewatoms; // updated through iterations
+    // start out with first atom among remaining
+    newatoms.insert( *remaining_atoms.begin());
+
+    std::set<int>::iterator iatom;
+    while (newatoms.size() > 0) {
+      // newatoms gets merged into boundatoms
+      for (iatom = newatoms.begin(); iatom != newatoms.end(); iatom++) {
+        boundatoms.insert(*iatom);
+      }
+      // set nextnewatoms to atoms bound to boundatoms that are not already
+      // in boundatoms
+      nextnewatoms.clear();
+      for (iatom = newatoms.begin(); iatom != newatoms.end(); iatom++) {
+        int atom = *iatom;
+        for (int i = 0; i < natom; i++) {
+          if (bonds(i, atom) && boundatoms.find(i) == boundatoms.end()) {
+            nextnewatoms.insert(i);
+          }
+        }
+      }
+      // set newatoms to nextnewatoms to start off the next iteration
+      newatoms.clear();
+      for (iatom = nextnewatoms.begin(); iatom != nextnewatoms.end(); iatom++) {
+        newatoms.insert(*iatom);
       }
     }
 
+    // erase all atoms included in this subgraph from remaining_atoms
+    std::set<int> new_remaining_atoms;
+    set_difference(remaining_atoms.begin(), remaining_atoms.end(),
+                   boundatoms.begin(), boundatoms.end(),
+                   inserter(new_remaining_atoms, new_remaining_atoms.begin()));
+    swap(remaining_atoms,new_remaining_atoms);
+
+    subgraphs.push_back(boundatoms);
+  }
+
+  return subgraphs;
+}
+
+void
+IntCoorGen::connect_subgraphs(const Molecule &m, BitArrayLTri &bonds)
+{
   // check for groups of atoms bound to nothing
   std::set<int> boundatoms;
   std::set<int> newatoms, nextnewatoms;
@@ -824,7 +862,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
       nextnewatoms.clear();
       for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
         int atom = *iatom;
-        for (i=0; i<m.natom(); i++) {
+        for (int i=0; i<m.natom(); i++) {
           if (bonds(i,atom) && boundatoms.find(i) == boundatoms.end()) {
             nextnewatoms.insert(i);
             }
@@ -841,14 +879,14 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
       if (!warning_printed) {
         warning_printed = 1;
         ExEnv::out0()
-             << indent << "WARNING: two unbound groups of atoms" << endl
+             << indent << "WARNING: two or more unbound groups of atoms" << endl
              << indent << "         consider using extra_bonds input" << endl
              << endl;
         }
       // find an unbound group
       double nearest_dist;
       int nearest_bound = -1, nearest_unbound = -1;
-      for(i=0; i < m.natom(); i++) {
+      for(int i=0; i < m.natom(); i++) {
         if (boundatoms.find(i) == boundatoms.end()) {
           SCVector3 ri(m.r(i));
           for (iatom=boundatoms.begin(); iatom!=boundatoms.end(); iatom++) {
@@ -894,15 +932,16 @@ IntCoorGen::generate(const Ref<SetIntCoor>& sic)
   // let's go through the geometry and find all the close contacts
   // bonds is a lower triangle matrix of 1's and 0's indicating whether
   // there is a bond between atoms i and j
+  BitArrayLTri bonds = adjacency_matrix(m, radius_scale_factor_);
 
-  BitArrayLTri bonds(m.natom(),m.natom());
-
+  // add extra bonds provided by the user
   for (i=0; i<nextra_bonds_; i++) {
     bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
   }
 
-  find_bonds(m, bonds, radius_scale_factor_);
-      
+  // check the adjacency matrix and add bonds if needed to make all atoms connected
+  connect_subgraphs(m, bonds);
+
   // compute the simple internal coordinates by type
   add_bonds(sic,bonds,m);
   add_bends(sic,bonds,m);
@@ -1153,6 +1192,30 @@ IntCoorGen::nearest_contact(int i, Molecule& m)
   
   return n;
 }
+
+BitArrayLTri
+IntCoorGen::adjacency_matrix(const Molecule &m,
+                             double radius_scale_factor)
+{
+  BitArrayLTri adjmat(m.natom(), m.natom());
+
+  int i, j;
+  for(i=0; i < m.natom(); i++) {
+    double at_rad_i = m.atominfo()->atomic_radius(m.Z(i));
+    SCVector3 ri(m.r(i));
+
+    for(j=0; j < i; j++) {
+      double at_rad_j = m.atominfo()->atomic_radius(m.Z(j));
+      SCVector3 rj(m.r(j));
+
+      if (ri.dist(rj) < radius_scale_factor*(at_rad_i+at_rad_j))
+        adjmat.set(i,j);
+      }
+    }
+
+  return adjmat;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

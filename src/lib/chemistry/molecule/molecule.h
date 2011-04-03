@@ -245,7 +245,7 @@ class Molecule: public SavableState
         <tt>pdb_file</tt> is given.
 
         <tr><td><tt>atoms</tt><td>string[]<td>none<td>This gives the
-        Cartesian coordinates of the molecule.  This is ignored if
+        chemical element symbol for each atom.  This is ignored if
         <tt>pdb_file</tt> is given.
 
         <tr><td><tt>ghost</tt><td>boolean[]<td>none<td>If true, the atom
@@ -295,6 +295,9 @@ class Molecule: public SavableState
                                     int print_pg = 1,
                                     int print_unit = 1,
                                     int number_atoms = 1) const;
+
+    /// in which units Molecule was specified and in which units it will be reported
+    const Ref<Units>& geometry_units() const { return geometry_units_; }
 
     /// Returns the number of atoms in the molecule.
     int natom() const { return natoms_; }

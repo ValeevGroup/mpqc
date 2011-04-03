@@ -267,6 +267,11 @@ class IntCoorGen: public SavableState
     void add_bends(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
     void add_tors(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
     void add_out(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
+
+    /// (potentially) modifies the adjacency matrix to make sure that there are no disconnected subgraphs
+    void connect_subgraphs(const Molecule& mol,
+                           BitArrayLTri& adjacency_matrix);
+
   public:
     /** Create an IntCoorGen given a Molecule and, optionally, extra bonds.
         IntCoorGen keeps a reference to extra and deletes it when the
@@ -326,6 +331,14 @@ class IntCoorGen: public SavableState
 
     /// Print out information about this.
     virtual void print(std::ostream& out=ExEnv::out0()) const;
+
+    /// computes the adjacency matrix for this molecule using atomic radii
+    /// and the scaling_factor
+    static BitArrayLTri adjacency_matrix(const Molecule& mol,
+                                         double radius_scaling_factor = 1.1);
+    /// given the adjacency matrix find all disconnected subgraphs,
+    /// each subgraph is specified by a set of vertex indices
+    static std::vector<std::set<int> > find_disconnected_subgraphs(const BitArrayLTri& adjmat);
 };
 
 

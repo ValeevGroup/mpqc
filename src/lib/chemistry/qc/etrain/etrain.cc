@@ -412,6 +412,10 @@ ETraIn::compute_train()
                                                    std::string("mo.cube"));
     wrtorbs->run();
   }
+
+  obwfn12_->print();
+  obwfn1_->print();
+  obwfn2_->print();
 }
 
 /////////////////////////////////////////////////////////////////////////////

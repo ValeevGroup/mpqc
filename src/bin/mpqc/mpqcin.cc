@@ -737,8 +737,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
   if (nelectron < 0) {
       error("charge is impossibly large");
     }
-  if (nelectron%2 == 0 && mult_.val()%2 == 0
-      ||nelectron%2 == 1 && mult_.val()%2 == 1) {
+  if ((nelectron%2 == 0 && mult_.val()%2 == 0) ||
+      (nelectron%2 == 1 && mult_.val()%2 == 1) ) {
       error("given multiplicity is not possible");
     }
 

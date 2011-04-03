@@ -49,8 +49,9 @@
 #ifndef _util_container_bitarray_h
 #define _util_container_bitarray_h
 
-#include <string.h>
-#include <stdlib.h>
+#include <vector>
+#include <cstring>
+#include <cstdlib>
 
 #include <util/misc/formio.h>
 
@@ -67,7 +68,7 @@ namespace sc {
 
 class BitArrayLTri {
   private:
-    unsigned char *a;
+    std::vector<unsigned char> a;
     int n;
     int nm;
     int na;

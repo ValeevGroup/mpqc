@@ -54,7 +54,7 @@ using namespace std;
 using sc::BitArrayLTri;
 
 BitArrayLTri::BitArrayLTri(int i, int j)
-  : a(0), n(0), nm(0), na(0)
+  : a(), n(0), nm(0), na(0)
 {
   if (i!=j) {
     ExEnv::err0() << indent << "BitArrayLTri(int,int): i != j"
@@ -65,15 +65,14 @@ BitArrayLTri::BitArrayLTri(int i, int j)
 
   if(sz) {
     n = sz/8 + ((sz%8)?1:0);
-    a = new unsigned char[n];
-    memset(a,'\0',n);
+    a.resize(n, '\0');
     na=sz; nm=i;
   }
 }
 
 BitArrayLTri::~BitArrayLTri()
 {
-  if (a) delete[] a; a=0; n=0;
+  n=0; na = 0; nm = 0;
 }
 
 // Local Variables:

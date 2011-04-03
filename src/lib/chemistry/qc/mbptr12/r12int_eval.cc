@@ -1444,7 +1444,11 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
   if (gamma_p_p_[S].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = this->orbs(S);
-    std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
+    std::string id = extspace->id();
+    id += "_gamma";
+    if (spin_polarized())
+      id += (S == Alpha ? "[A]" : "[B]");
+    id += "(";  id += intspace->id();  id += ")";
     std::string name = "gamma-weighted space";
     gamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S),
                                      intspace->basis());
@@ -1481,7 +1485,10 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = this->orbs(S);
     RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
-    std::string id = extspace->id();  id += "_gFg(";  id += intspace->id();  id += ")";
+    std::string id = extspace->id();  id += "_gFg";
+    if (spin_polarized())
+      id += (S == Alpha ? "[A]" : "[B]");
+    id += "(";  id += intspace->id();  id += ")";
     std::string name = "gammaFgamma-weighted space";
     gammaFgamma_p_p_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm(S) * F_i_e * this->ordm(S),
                                            intspace->basis());
@@ -1498,7 +1505,10 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
     RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
-    std::string id = extspace->id();  id += "_Fg(";  id += intspace->id();  id += ")";
+    std::string id = extspace->id();  id += "_Fg";
+    if (spin_polarized())
+      id += (S == Alpha ? "[A]" : "[B]");
+    id += "(";  id += intspace->id();  id += ")";
     std::string name = "Fgamma-weighted space";
     Fgamma_p_P_[S] = new OrbitalSpace(id, name, extspace, intspace->coefs() * F_i_e * this->ordm(S),
                                       intspace->basis());

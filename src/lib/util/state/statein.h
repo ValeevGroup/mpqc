@@ -199,6 +199,22 @@ class StateIn:  public DescribedClass {
       return r;
     }
 
+    /// Read an std::set. This also works if Key or Value is a Ref to a SavableState.
+    template <typename Key, typename Compare, typename Alloc>
+    int get(std::set<Key,Compare,Alloc>& s) {
+      typedef std::set<Key,Compare,Alloc> Set;
+      size_t size;
+      int r = get(size);
+      if (size) {
+        for(size_t i=0; i<size; ++i) {
+          Key k;
+          detail::FromStateIn<Key>::get(k,*this,r);
+          s.insert(k);
+        }
+      }
+      return r;
+    }
+
     /// Read an std::map. This also works if Key or Value is a Ref to a SavableState.
     template <typename Key, typename Value>
     int get(std::map<Key,Value>& map) {
@@ -208,7 +224,7 @@ class StateIn:  public DescribedClass {
       if (size) {
         for(size_t i=0; i<size; ++i) {
           std::pair<Key,Value> v;
-          get(v);
+          r += get(v);
           map[v.first] = v.second;
         }
       }

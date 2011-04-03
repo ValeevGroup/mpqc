@@ -153,6 +153,16 @@ class StateOut: public DescribedClass {
       return r;
     }
 
+    /// Write an std::set. This also works if Key or Value is a Ref to a SavableState.
+    template <typename Key, typename Compare, typename Alloc>
+    int put(const std::set<Key,Compare,Alloc> &s) {
+      const size_t l = s.size();
+      int r = put(l);
+      for (typename std::set<Key,Compare,Alloc>::const_iterator i=s.begin(); i!=s.end(); ++i)
+        detail::ToStateOut<Key>::put(*i,*this,r);
+      return r;
+    }
+
     /// Write an std::map. This also works if Key or Value is a Ref to a SavableState.
     template <typename Key, typename Value>
     int put(const std::map<Key,Value>& map) {

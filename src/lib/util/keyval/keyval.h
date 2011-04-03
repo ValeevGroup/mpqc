@@ -627,6 +627,14 @@ class Keyword {
       return *this;
     }
 
+    template <typename T> Keyword& operator>>(std::set<T>& c) {
+      const std::size_t n = kv_->count(key_);
+      for(std::size_t i=0; i<n; ++i) {
+        c.insert( detail::GetValue<T>::eval(kv_, key_, i) );
+      }
+      return *this;
+    }
+
   private:
     Ref<KeyVal> kv_;
     const char* key_;

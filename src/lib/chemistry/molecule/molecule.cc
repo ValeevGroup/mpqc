@@ -155,6 +155,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
       // check for new style units input
       else {
           std::string tmp = input->stringvalue("unit");
+          if (input->exists("unit") == false && input->exists("units") == true)
+            tmp = input->stringvalue("units");
           geometry_units_ = new Units(tmp.c_str());
         }
 

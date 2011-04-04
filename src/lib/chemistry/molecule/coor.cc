@@ -26,6 +26,7 @@
 //
 
 #include <set>
+#include <algorithm>
 
 #include <util/misc/math.h>
 

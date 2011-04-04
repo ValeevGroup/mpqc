@@ -25,10 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
+#include <algorithm>
 #include <cassert>
 #include <chemistry/molecule/frag.h>
 #include <util/class/scexception.h>
@@ -153,7 +150,7 @@ MolecularFragment::process_keyval(const Ref<KeyVal>& kv,
   }
 
   // compute the adjacency matrix and the subgraphs of the molecular graph
-  const BitArrayLTri adjmat = IntCoorGen::adjacency_matrix(*protomol, 0.75);
+  const BitArrayLTri adjmat = IntCoorGen::adjacency_matrix(*protomol, 1.1);
   std::vector<std::set<int> > subgraphs = IntCoorGen::find_disconnected_subgraphs(adjmat);
   const size_t nsubgraphs = subgraphs.size();
 

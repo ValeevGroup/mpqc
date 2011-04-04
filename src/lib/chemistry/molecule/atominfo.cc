@@ -589,7 +589,7 @@ AtomInfo::mass(int Z) const
 }
 
 std::string
-AtomInfo::name(int Z)
+AtomInfo::name(int Z) const
 {
   std::map<int,std::string>::const_iterator found = Z_to_names_.find(Z);
   if (found == Z_to_names_.end()) {
@@ -600,7 +600,7 @@ AtomInfo::name(int Z)
 }
 
 std::string
-AtomInfo::symbol(int Z)
+AtomInfo::symbol(int Z) const
 {
   std::map<int,std::string>::const_iterator found = Z_to_symbols_.find(Z);
   if (found == Z_to_symbols_.end()) {
@@ -608,6 +608,30 @@ AtomInfo::symbol(int Z)
       throw std::runtime_error("invalid Z");
     }
   return found->second;
+}
+
+void
+AtomInfo::print(std::ostream& os) const {
+  os << indent << "AtomInfo:" << endl << incindent;
+  os << indent << "vdw_radius_scale = " << vdw_radius_scale_ << endl;
+  os << indent << "bragg_radius_scale = " << bragg_radius_scale_ << endl;
+  os << indent << "atomic_radius_scale = " << atomic_radius_scale_ << endl;
+  os << indent << "maxprob_radius_scale = " << maxprob_radius_scale_ << endl;
+  for(int Z=1; Z<=Nelement; ++Z) {
+    os << indent << "atomic number " << Z << ":" << endl << incindent;
+
+    os << indent << "symbol               = " << symbol(Z) << endl;
+    os << indent << "name                 = " << name(Z) << endl;
+    os << indent << "mass                 = " << mass(Z) << endl;
+    os << indent << "radius (VdW)         = " << vdw_radius(Z) << endl;
+    os << indent << "radius (Bragg)       = " << bragg_radius(Z) << endl;
+    os << indent << "radius (atomic)      = " << atomic_radius(Z) << endl;
+    os << indent << "radius (maxprob)     = " << maxprob_radius(Z) << endl;
+    os << indent << "ionization potential = " << ip(Z) << endl;
+
+    os << decindent;
+  }
+  os << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

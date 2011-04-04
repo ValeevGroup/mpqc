@@ -209,12 +209,15 @@ class AtomInfo: public SavableState {
     double mass(int Z) const;
 
     /// This returns the full name of the element.
-    std::string name(int Z);
+    std::string name(int Z) const;
     /// This returns the symbol for the element.
-    std::string symbol(int Z);
+    std::string symbol(int Z) const;
 
     /// This converts a name or symbol to the atomic number.
     int string_to_Z(const std::string &, int allow_exceptions = 1);
+
+    /// prints out the contents of AtomInfo to ostream os
+    void print(std::ostream& os = ExEnv::out0()) const;
 };
 
 }

@@ -44,10 +44,12 @@ class VDWShape: public UnionShape {
  private:
     Ref<AtomInfo> atominfo_;
  public:
-    VDWShape(const Ref<Molecule>&);
+    VDWShape(const Ref<Molecule>&,
+             double radius_scale_factor = 1.0);
     VDWShape(const Ref<KeyVal>&);
     ~VDWShape();
-    void initialize(const Ref<Molecule>&);
+    void initialize(const Ref<Molecule>&,
+                    double radius_scale_factor = 1.0);
 };  
 
 /** DiscreteConnollyShape and ConnollyShape should produce the same result.

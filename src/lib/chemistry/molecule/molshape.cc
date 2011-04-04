@@ -44,9 +44,10 @@ static ClassDesc VDWShape_cd(
   typeid(VDWShape),"VDWShape",1,"public UnionShape",
   0, create<VDWShape>, 0);
 
-VDWShape::VDWShape(const Ref<Molecule>&mol)
+VDWShape::VDWShape(const Ref<Molecule>&mol,
+                   double radius_scale_factor)
 {
-  initialize(mol);
+  initialize(mol, radius_scale_factor);
 }
 
 VDWShape::VDWShape(const Ref<KeyVal>&keyval)
@@ -57,7 +58,8 @@ VDWShape::VDWShape(const Ref<KeyVal>&keyval)
 }
 
 void
-VDWShape::initialize(const Ref<Molecule>&mol)
+VDWShape::initialize(const Ref<Molecule>&mol,
+                     double radius_scale_factor)
 {
   Ref<AtomInfo> a;
   if (atominfo_.null()) a = mol->atominfo();
@@ -68,7 +70,7 @@ VDWShape::initialize(const Ref<Molecule>&mol)
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->r(i,j);
       add_shape(
-          new SphereShape(r,a->vdw_radius(mol->Z(i)))
+          new SphereShape(r, radius_scale_factor * a->vdw_radius(mol->Z(i)))
           );
     }
 }

@@ -56,17 +56,15 @@ class Grid: public DescribedClass {
         <dt><tt>numz</tt></dt><dd> The number of voxels along axisz
         (defined below). The default value is 1.</dd>
 
-        <dt><tt>origin</tt></dt><dd> The origin of the grid. The defuault is
+        <dt><tt>origin</tt></dt><dd> The origin of the grid. The default is
         [0 0 0].</dd>
 
-        <dt><tt>axisx</tt></dt><dd> The direction of the first axis of the grid.
-        The default is [0 0 0].</dd>
+        <dt><tt>axisx</tt></dt><dd> Defines volume element length and direction for the first axis of the grid.
+        The default is [1 0 0].</dd>
 
-        <dt><tt>axisx</tt></dt><dd> The direction of the second axis of the
-        grid. The default is [0 0 0].</dd>
+        <dt><tt>axisy</tt></dt><dd> Same as <tt>axisx</tt>, but for the second axis. The default is [0 1 0].</dd>
 
-        <dt><tt>axisx</tt></dt><dd> The direction of the third axis of the
-        grid. The default is [0 0 0].</dd>
+        <dt><tt>axisz</tt></dt><dd> Same as <tt>axisx</tt>, but for the third axis. The default is [0 0 1].</dd>
 
         <dt><tt>unit</tt></dt><dd> The unit in which the parameters are given.
         Notice that this does not determine the unit used in the output file.
@@ -74,6 +72,13 @@ class Grid: public DescribedClass {
 
         </dl> */
     Grid(const Ref<KeyVal> &);
+    Grid(int numx = 1, int numy = 1, int numz = 1,
+         SCVector3 origin = SCVector3(0.0, 0.0, 0.0),
+         SCVector3 axisx = SCVector3(1.0, 0.0, 0.0),
+         SCVector3 axisy = SCVector3(0.0, 1.0, 0.0),
+         SCVector3 axisz = SCVector3(0.0, 0.0, 1.0),
+         Ref<Units> unit = new Units("bohr")
+         );
 };
 
 /** The abstract WriteGrid class provides an interface for writing the value

@@ -39,9 +39,9 @@ static ClassDesc Grid_cd(
 
 Grid::Grid(const Ref<KeyVal> &keyval):
   origin(0.,0.,0.),
-  axisx(0.,0.,0.),
-  axisy(0.,0.,0.),
-  axisz(0.,0.,0.)
+  axisx(1.,0.,0.),
+  axisy(0.,1.,0.),
+  axisz(0.,0.,1.)
 {
   KeyValValueint default_numx(1);
   numx = keyval->intvalue("numx", default_numx);
@@ -80,13 +80,20 @@ Grid::Grid(const Ref<KeyVal> &keyval):
     }
 }
 
-
-
-
-
-
-
-
+Grid::Grid(int nx, int ny, int nz,
+           SCVector3 o,
+           SCVector3 ax,
+           SCVector3 ay,
+           SCVector3 az,
+           Ref<Units> u) :
+           numx(nx), numy(ny), numz(nz),
+           origin(o),
+           axisx(ax),
+           axisy(ay),
+           axisz(az),
+           unit(u)
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // WriteGrid

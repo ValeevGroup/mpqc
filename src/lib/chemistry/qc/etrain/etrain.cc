@@ -37,6 +37,7 @@
 #include <util/options/GetLongOpt.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>
+#include <chemistry/molecule/molshape.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/wfn/orbital.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
@@ -58,7 +59,6 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
   obwfn12_ << keyval->describedclassvalue("wfn12");
   obwfn1_ << keyval->describedclassvalue("wfn1");
   obwfn2_ << keyval->describedclassvalue("wfn2");
-  grid_ << keyval->describedclassvalue("grid");
 
   //
   // Check wave functions. Must be for closed-shell systems and derived from OneBodyWavefunction
@@ -81,6 +81,26 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
       obwfn1_->orthog_method() != OverlapOrthog::Canonical ||
       obwfn2_->orthog_method() != OverlapOrthog::Canonical) {
     throw InputError("all Wavefunctions must use canonical orthogonalization method",__FILE__,__LINE__);
+  }
+
+  if (keyval->exists("grid")) {
+    grid_ << keyval->describedclassvalue("grid");
+    if (grid_.null()) { // check if grid = auto was used
+      const std::string make_grid = keyval->stringvalue("grid", KeyValValuestring(""));
+      if (make_grid == "auto") { // construct the grid automatically
+        const Ref<VDWShape> vdwshape = new VDWShape(obwfn12_->molecule(), 1.1);
+        SCVector3 gmin, gmax;
+        vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
+        SCVector3 gorigin = gmin;
+        SCVector3 gsize = gmax - gmin;
+        const double resolution = 0.2;
+        int n[3]; for(int i=0; i<3; ++i) n[i] = int(std::ceil(gsize[i] / 0.2));
+        SCVector3 axis0(gsize[0]/n[0], 0.0, 0.0);
+        SCVector3 axis1(0.0, gsize[1]/n[1], 0.0);
+        SCVector3 axis2(0.0, 0.0, gsize[2]/n[2]);
+        grid_ = new Grid(n[0], n[1], n[2], gorigin, axis0, axis1, axis2);
+      }
+    }
   }
 
   // nocc_ and nuocc_ default to -1, which means to use all monomer orbitals
@@ -405,7 +425,7 @@ ETraIn::compute_train()
     Ref<WriteOrbitals> wrtorbs = new WriteOrbitals(m12space, labels,
                                                    grid_,
                                                    std::string("gaussian_cube"),
-                                                   std::string("mo.cube"));
+                                                   SCFormIO::fileext_to_filename(".mo.cube"));
     wrtorbs->run();
   }
 

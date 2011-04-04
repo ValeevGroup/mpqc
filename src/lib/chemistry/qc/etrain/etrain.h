@@ -62,6 +62,8 @@ class ETraIn: public Function, public Runnable {
       <tr><td><tt>nuocc</tt><td>int<td>-1<td>Number of unoccupied orbitals from each fragment to consider. The default, -1, means to include all.
 
       <tr><td><tt>grid</tt><td>Grid<td>null<td>If specified, ETraIn will evaluate fragment 1 and 2 orbitals on this Grid.
+      If you wish to have program construct the grid automatically, set <tt>grid = auto</tt> (grid size is determined
+      using the bounding box of VDWShape for wfn12::molecule; grid resolution is 0.2 bohr).
 
       </table>
    */

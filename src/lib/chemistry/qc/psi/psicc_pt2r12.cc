@@ -29,7 +29,6 @@
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/lcao/utils.h>
-#include <math/scmat/blas.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/lcao/utils.impl.h>
 #include <math/mmisc/pairiter.impl.h>

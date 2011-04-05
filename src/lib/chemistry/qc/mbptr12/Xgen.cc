@@ -42,7 +42,6 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
-#include <math/scmat/blas.h>
 #include <math/distarray4/distarray4.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <math/mmisc/pairiter.h>

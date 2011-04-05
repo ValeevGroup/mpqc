@@ -37,7 +37,6 @@
 #include <chemistry/qc/lcao/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <util/misc/print.h>
-#include <math/scmat/blas.h>
 
 namespace sc {
 

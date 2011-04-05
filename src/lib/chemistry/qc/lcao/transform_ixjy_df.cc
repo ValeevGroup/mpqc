@@ -37,8 +37,8 @@
 #include <chemistry/qc/lcao/transform_ixjy_df.h>
 #include <chemistry/qc/lcao/transform_ijR.h>
 #include <chemistry/qc/lcao/transform_13inds.h>
-#include <math/scmat/blas.h>
 #include <chemistry/qc/lcao/df.h>
+#include <math/scmat/blas.h>
 
 #include <math/distarray4/distarray4_memgrp.h>
 #include <math/distarray4/distarray4_node0file.h>

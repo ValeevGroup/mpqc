@@ -382,7 +382,7 @@ double CCR12_Info::enengy_lagrangian_r2(const Ref<Tensor>& r2) const {
          double factor=1.0; 
          if (h3b==h4b) factor=factor/2.0; 
          if (p1b==p2b) factor=factor/2.0; 
-         result += factor * ddot_(&dim,k_a0,&unit,k_a1,&unit);
+         result += factor * F77_DDOT(&dim,k_a0,&unit,k_a1,&unit);
          mem()->free_local_double(k_a1); 
          mem()->free_local_double(k_a0); 
         } 
@@ -425,7 +425,7 @@ double CCR12_Info::enengy_lagrangian_r3(const Ref<Tensor>& r3) const {
          else if (h3b==h4b || h4b==h5b) factor = factor*0.5;
          if (p1b==p2b && p0b==p1b)      factor = factor/6.0; 
          else if (p1b==p2b || p0b==p1b) factor = factor*0.5;     
-         result += factor * ddot_(&dim,k_a0,&unit,k_a1,&unit);
+         result += factor * F77_DDOT(&dim,k_a0,&unit,k_a1,&unit);
          mem()->free_local_double(k_a1); 
          mem()->free_local_double(k_a0); 
         } 

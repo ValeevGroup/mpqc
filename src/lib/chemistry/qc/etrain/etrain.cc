@@ -83,12 +83,20 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
     throw InputError("all Wavefunctions must use canonical orthogonalization method",__FILE__,__LINE__);
   }
 
+  // known monomer ionization potentials?
+  if (keyval->exists("ip1")) {
+    read_ip(keyval, "ip1", ip1_, obwfn1_->nelectron()/2);
+  }
+  if (keyval->exists("ip2")) {
+    read_ip(keyval, "ip2", ip2_, obwfn2_->nelectron()/2);
+  }
+
   if (keyval->exists("grid")) {
     grid_ << keyval->describedclassvalue("grid");
     if (grid_.null()) { // check if grid = auto was used
       const std::string make_grid = keyval->stringvalue("grid", KeyValValuestring(""));
       if (make_grid == "auto") { // construct the grid automatically
-        const Ref<VDWShape> vdwshape = new VDWShape(obwfn12_->molecule(), 1.1);
+        const Ref<VDWShape> vdwshape = new VDWShape(obwfn12_->molecule());
         SCVector3 gmin, gmax;
         vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
         SCVector3 gorigin = gmin;
@@ -187,6 +195,86 @@ ETraIn::compute(void)
 
   set_value(0.0);
   set_actual_value_accuracy(0.0);
+}
+
+// based on LocalDiagSCMatrix::vprint
+void
+ip_print(const char *title1, const char *title2, std::ostream& os, int prec, double conv, RefDiagSCMatrix m1, RefDiagSCMatrix m2)
+{
+  assert(m1.n() == m2.n()); // meant to print 2 matrices side by side
+
+  double max = std::max(m1->maxabs()*conv, m2->maxabs()*conv);
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
+
+  const int twidth = std::max(strlen(title1), strlen(title2));
+  const int lwidth = std::max(prec + 5 + (int) max, twidth);
+
+  os << std::endl << indent << scprintf("      %*s %*s\n", lwidth, title1, lwidth, title2);
+
+  if (m1.n()==0) {
+    os << indent << "empty matrices\n";
+    return;
+  }
+
+  for (int i=0; i<m1.n(); i++)
+    os << indent
+       << scprintf("%5d %*.*f %*.*f\n",
+                   i+1,
+                   lwidth,prec,m1.get_element(i)*conv,
+                   lwidth,prec,m2.get_element(i)*conv
+                  );
+  os << std::endl;
+
+  os.flush();
+}
+
+namespace sc {
+  template <typename T>
+  T max(T t1, T t2, T t3) {
+    return std::max(std::max(t1,t2),t3);
+  }
+}
+
+void
+ip_print(const char *title1, const char *title2, const char *title3,
+       std::ostream& os, int prec, double conv,
+       RefDiagSCMatrix m1, RefDiagSCMatrix m2, RefDiagSCMatrix m3
+      )
+{
+  assert(m1.n() == m2.n()); // meant to print 3 matrices side by side
+  assert(m1.n() == m3.n());
+
+  double max = sc::max(m1->maxabs()*conv, m2->maxabs()*conv, m3->maxabs()*conv);
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
+
+  const int twidth = sc::max(strlen(title1), strlen(title2), strlen(title3));
+  const int lwidth = std::max(prec + 5 + (int) max, twidth);
+
+  os << std::endl << indent << scprintf("      %*s %*s %*s\n", lwidth, title1, lwidth, title2, lwidth, title3);
+
+  if (m1.n()==0) {
+    os << indent << "empty matrices\n";
+    return;
+  }
+
+  for (int i=m1.n()-1; i >= 0; i--) {
+    const double ip1 = m1.get_element(i)*conv;
+    const double ip2 = m2.get_element(i)*conv;
+    const double ip3 = m3.get_element(i)*conv;
+    if (ip1 >= 0.0 && ip2 >= 0.0 && ip3 >= 0.0)
+      os << indent
+         << scprintf("%5d %*.*f %*.*f %*.*f\n",
+                     m1.n()-i,
+                     lwidth,prec,ip1,
+                     lwidth,prec,ip2,
+                     lwidth,prec,ip3
+                    );
+  }
+  os << std::endl;
+
+  os.flush();
 }
 
 void
@@ -324,7 +412,6 @@ ETraIn::compute_train()
   Ref<OrbitalSpace> dspace =  new OrbitalSpace("D", "n-mer basis set space", vec12, obwfn12_->basis(), obwfn12_->integral(), obwfn12_->eigenvalues(), 0, 0);
   Ref<OrbitalSpace> m1space = new OrbitalSpace("m1", "Monomer 1 active MO space", vec1_12, obwfn12_->basis(), obwfn1_->integral(), obwfn1_->eigenvalues(), nomo_omit1, numo_omit1);
   Ref<OrbitalSpace> m2space = new OrbitalSpace("m2", "Monomer 2 active MO space", vec2_12, obwfn12_->basis(), obwfn2_->integral(), obwfn2_->eigenvalues(), nomo_omit2, numo_omit2);
-  vec1_12 = 0; vec2_12 = 0;
 
   if (debug_ > 0) {
     RefSCMatrix S11 = compute_overlap_ints(m1space,m1space);
@@ -342,16 +429,8 @@ ETraIn::compute_train()
     S22.print("S22 matrix after projection");
   }
 
-  // Get monomer MOs projected on the n-mer basis (M1d and M2d)
-#if 0
-  Ref<OrbitalSpace> proj1 = gen_project(m1space,dspace,"m1->D", "m1->D space",1e-10);
-  Ref<OrbitalSpace> proj2 = gen_project(m2space,dspace,"m2->D", "m2->D space",1e-10);
-  RefSCMatrix C1projT = proj1->coefs().t();
-  RefSCMatrix C2proj = proj2->coefs();
-#else
   RefSCMatrix C1projT = m1space->coefs().t();
   RefSCMatrix C2proj  = m2space->coefs();
-#endif
 
   // Compute the n-mer Fock matrix in SO basis -- must transform from MO basis to SO basis
   RefSymmSCMatrix fock12_so(obwfn12_->so_dimension(), obwfn12_->basis_matrixkit());
@@ -411,6 +490,117 @@ ETraIn::compute_train()
     RefSCMatrix S2D = compute_overlap_ints(m2space,dspace);  S2D.print("Overlap between monomer 1 and n-mer orbitals");
   }
 
+  //
+  // if given ip1 or ip2, use them to recompute adiabatic states
+  //
+  if (ip1_.empty() == false ||
+      ip2_.empty() == false) {
+
+    const int nuocc1 = vec1_12.coldim().n() - nocc1;
+    const int nuocc2 = vec2_12.coldim().n() - nocc2;
+    Ref<OrbitalSpace> ospace1 = new OrbitalSpace("om1", "Monomer 1 occupied subspace", vec1_12, obwfn12_->basis(), obwfn1_->integral(), obwfn1_->eigenvalues(), 0, nuocc1);
+    Ref<OrbitalSpace> ospace2 = new OrbitalSpace("om2", "Monomer 2 occupied subspace", vec2_12, obwfn12_->basis(), obwfn2_->integral(), obwfn2_->eigenvalues(), 0, nuocc2);
+    Ref<OrbitalSpace> space1 = new OrbitalSpace("m1", "Monomer 1 subspace", vec1_12, obwfn12_->basis(), obwfn1_->integral(), obwfn1_->eigenvalues(), 0, 0);
+    Ref<OrbitalSpace> space2 = new OrbitalSpace("m2", "Monomer 2 subspace", vec2_12, obwfn12_->basis(), obwfn2_->integral(), obwfn2_->eigenvalues(), 0, 0);
+
+    // use 2 methods
+    for(int method=0; method<=1; ++method) {
+      // method 1: use occupied space only
+      // method 2: use all orbitals
+      Ref<OrbitalSpace> s1 = (method == 0) ? ospace1 : space1;
+      Ref<OrbitalSpace> s2 = (method == 0) ? ospace2 : space2;
+
+      // make union of spaces
+      Ref<OrbitalSpace> s12 = new OrbitalSpaceUnion("m1+m2", "Dimer subspace",
+                                                    *s1, *s2, true);
+      // map smaller to larger spaces
+      MOIndexMap map_1_to_12;  map_1_to_12 = *s12 << *s1;  // will throw in case of error
+      MOIndexMap map_2_to_12;  map_2_to_12 = *s12 << *s2;
+      MOIndexMap map_o1_to_1;  map_o1_to_1 = *s1 << *ospace1;  // will throw in case of error
+      MOIndexMap map_o2_to_2;  map_o2_to_2 = *s2 << *ospace2;
+
+      // prepare dimer fock and overlap matrices in s12
+      RefSymmSCMatrix F12 = s12->coefs()->kit()->symmmatrix(s12->coefs()->coldim());
+      F12.assign(0.0);
+      RefSymmSCMatrix S12 = F12.copy();
+      F12.accumulate_transform(s12->coefs(), fock12_ao, SCMatrix::TransposeTransform);
+      RefSymmSCMatrix S12_so = sc::detail::overlap(s12->basis(), integral);
+      RefSymmSCMatrix S12_ao = plist12->to_AO_basis(S12_so);
+      S12.accumulate_transform(s12->coefs(), S12_ao, SCMatrix::TransposeTransform);
+      RefDiagSCMatrix e12 = s12->evals();  // eigenvalues of *monomer* fock operators (i.e. not including intermonomer polarization)
+
+      //F12.print("F12");
+      //S12.print("S12");
+
+      // solve unperturbed eigensystem
+      RefDiagSCMatrix evals_0 = F12->kit()->diagmatrix(F12.dim());
+      RefSCMatrix evecs_0 = F12->kit()->matrix(F12.dim(), F12.dim());
+      try {
+        F12->eigensystem(S12.pointer(), evals_0.pointer(), evecs_0.pointer());
+      }
+      catch (AlgorithmException& e) {
+        // failure is likely due to monomer orbitals being strongly nonorthogonal!
+        // very likely an error in geometry, or something else
+        throw AlgorithmException("generalized eigensolver failed, possible reason could be monomers too close together, etc.",
+                                 __FILE__, __LINE__, this->class_desc());
+      }
+
+      // modify F using provided IPs
+      // for monomer 1
+      typedef IPs::iterator iter;
+      Ref<Units> eV = new Units("eV");
+      const double eV_to_au = eV->to_atomic_units();
+      const double au_to_eV = 1.0 / eV_to_au;
+      for(iter o1=ip1_.begin(); o1!=ip1_.end(); ++o1) {
+        // map occ index to s12
+        const unsigned int i1 = map_o1_to_1[ nocc1 - o1->first ];
+        const unsigned int i12 = map_1_to_12[ i1 ];
+        const double e0 = F12.get_element(i12, i12);
+        const double delta_e0 = -o1->second * eV_to_au - e12.get_element(i12);
+        const double e1 = e0 + delta_e0;
+        F12.set_element(i12, i12, e1);
+      }
+      // and monomer 2
+      for(iter o2=ip2_.begin(); o2!=ip2_.end(); ++o2) {
+        // map occ index to s12
+        const unsigned int i2 = map_o2_to_2[ nocc2 - o2->first ];
+        const unsigned int i12 = map_2_to_12[ i2 ];
+        const double e0 = F12.get_element(i12, i12);
+        const double delta_e0 = -o2->second * eV_to_au - e12.get_element(i12);
+        const double e1 = e0 + delta_e0;
+        F12.set_element(i12, i12, e1);
+      }
+
+      // and solve perturbed eigensystem
+      RefDiagSCMatrix evals_1 = F12->kit()->diagmatrix(F12.dim());
+      RefSCMatrix evecs_1 = F12->kit()->matrix(F12.dim(), F12.dim());
+      try {
+        F12->eigensystem(S12.pointer(), evals_1.pointer(), evecs_1.pointer());
+      }
+      catch (AlgorithmException& e) {
+        // failure is likely due to monomer orbitals being strongly nonorthogonal!
+        // very likely an error in geometry, or something else
+        throw AlgorithmException("generalized eigensolver failed, possible reason could be monomers too close together, etc.",
+                                 __FILE__, __LINE__, this->class_desc());
+      }
+
+      // print out IPs side-by-side
+      ExEnv::out0() << indent << "Ionization potentials (n-mer IPs obtained with "
+                    << (method == 0 ? "occ" : "full") << " Fock operator)" << std::endl;
+      {
+        // sort monomer IPs
+        RefDiagSCMatrix evals_m = s12->evals().clone();
+        std::vector<double> evals_m_vec(evals_m.n());
+        s12->evals().convert(&evals_m_vec[0]);
+        std::sort(evals_m_vec.begin(), evals_m_vec.end());
+        evals_m.assign(&evals_m_vec[0]);
+
+        ip_print("1-mer", "n-mer", "n-mer+extIP", ExEnv::out0(), 6, -au_to_eV, evals_m, evals_0, evals_1);
+      }
+    }
+
+  }
+
   // optional: print orbitals on the grid
   if (grid_.nonnull()) {
     // merge the two spaces together
@@ -432,6 +622,26 @@ ETraIn::compute_train()
   obwfn12_->print();
   obwfn1_->print();
   obwfn2_->print();
+}
+
+void
+ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip, unsigned int norbs)
+{
+  Keyword kw(kv, ip_key);
+  kw >> ip;
+  // validate orbital indices and IP signs
+  typedef IPs::iterator iter;
+  for(iter i=ip.begin(); i!=ip.end(); ++i) {
+    if (i->first < 1 || i->first > norbs) {
+      std::ostringstream oss;
+      oss << ip_key << ":" << i->first;
+      throw InputError("invalid orbital index",
+                       __FILE__, __LINE__,
+                       oss.str().c_str(), "", this->class_desc());
+    }
+    if (i->second < 0)
+      ExEnv::out0() << indent << "WARNING: negative IP # " << i->first << " in " << ip_key << ", did you mean positive?"<< std::endl;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

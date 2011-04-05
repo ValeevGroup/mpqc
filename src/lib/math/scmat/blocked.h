@@ -241,6 +241,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
+    /// like diagonalize(), but with general metric S
+    void eigensystem(SymmSCMatrix* S, DiagSCMatrix* e, SCMatrix* V);
 
     void accumulate(const SymmSCMatrix*);
     void accumulate_symmetric_outer_product(SCVector*);

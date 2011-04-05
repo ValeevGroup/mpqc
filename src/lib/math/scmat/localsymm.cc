@@ -452,6 +452,48 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   if (!lb) cmat_delete_matrix(eigvecs);
 }
 
+void
+LocalSymmSCMatrix::eigensystem(SymmSCMatrix*s, DiagSCMatrix*a, SCMatrix*b)
+{
+  if (n() == 0) return;
+
+  const char* name = "LocalSymmSCMatrix::eigensystem";
+  // make sure that the arguments is of the correct type
+  LocalSymmSCMatrix* ls = require_dynamic_cast<LocalSymmSCMatrix*>(s,name);
+  LocalDiagSCMatrix* la = require_dynamic_cast<LocalDiagSCMatrix*>(a,name);
+  LocalSCMatrix* lb = require_dynamic_cast<LocalSCMatrix*>(b,name);
+
+  if (!dim()->equiv(ls->dim()) ||
+      !dim()->equiv(la->dim()) ||
+      !dim()->equiv(lb->coldim()) ||
+      !dim()->equiv(lb->rowdim())) {
+      ExEnv::errn() << indent
+           << "LocalSymmSCMatrix::eigensystem: bad dims";
+      abort();
+    }
+
+  double *eigvals;
+  double **eigvecs;
+  if (!la) {
+    eigvals = new double[n()];
+  }
+  else {
+    eigvals = la->block->data;
+  }
+
+  if (!lb) {
+    eigvecs = cmat_new_square_matrix(n());
+  }
+  else {
+    eigvecs = lb->rows;
+  }
+
+  cmat_eigensystem(this->rows, ls->rows, eigvals, eigvecs,n(), 1);
+
+  if (!la) delete[] eigvals;
+  if (!lb) cmat_delete_matrix(eigvecs);
+}
+
 // computes this += a * a.t
 void
 LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)

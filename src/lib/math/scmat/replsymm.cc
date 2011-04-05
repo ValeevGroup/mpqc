@@ -644,6 +644,43 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
     }
 }
 
+void
+ReplSymmSCMatrix::eigensystem(SymmSCMatrix*s, DiagSCMatrix*a, SCMatrix*b)
+{
+  int i;
+
+  const char* name = "ReplSymmSCMatrix::eigensystem";
+  // make sure that the arguments is of the correct type
+  ReplSymmSCMatrix* ls = require_dynamic_cast<ReplSymmSCMatrix*>(s,name);
+  ReplDiagSCMatrix* la = require_dynamic_cast<ReplDiagSCMatrix*>(a,name);
+  ReplSCMatrix* lb = require_dynamic_cast<ReplSCMatrix*>(b,name);
+
+  if (!dim()->equiv(ls->dim()) ||
+      !dim()->equiv(la->dim()) ||
+      !dim()->equiv(lb->coldim()) ||
+      !dim()->equiv(lb->rowdim())) {
+      ExEnv::errn() << indent
+           << "ReplSymmSCMatrix::eigensystem: bad dims\n";
+      abort();
+  }
+
+  // This sets up the index list of columns to be stored on this node
+  int n = dim()->n();
+  int me = messagegrp()->me();
+  int nproc = messagegrp()->n();
+
+  // if there is one processor or only a few vectors, do serial diagonalization
+  if (nproc==1) {
+    double *eigvals = la->matrix;
+    double **eigvecs = lb->rows;
+    cmat_eigensystem(this->rows, ls->rows, eigvals, eigvecs, n, 1);
+  }
+  else {
+    throw FeatureNotImplemented("ReplSymmSCMatrix::eigensystem with nproc > 1 is not implemented",
+                                __FILE__, __LINE__, this->class_desc());
+  }
+}
+
 // computes this += a * a.t
 void
 ReplSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)

@@ -49,5 +49,10 @@ extern void F77_DPPRFS(const char* uplo, const int* n, const int* nrhs, const do
                        const double* B, const int* ldb, const double* X,
                        const int* ldx, double* ferr, double* berr, double* work, int* iwork, int* info);
 
+extern void F77_DSYGV(const int* itype, const char* jobz, const char* uplo, const int* n,
+                      double* Asq, const int* lda, double* Bsq, const int* ldb, double* evals,
+                      double* work, const int* lwork,
+                      int* info);
+
 }
 

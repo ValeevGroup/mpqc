@@ -10,6 +10,7 @@
 #include <vector>
 #include <string.h>
 #include <math/scmat/cmatrix.h>
+#include <math/scmat/lapack.h>
 #include <util/misc/consumableresources.h>
 
 using namespace sc;
@@ -1005,6 +1006,72 @@ cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
     northog++;
   }
   return northog;
+}
+
+void
+cmat_eigensystem(/*const*/ double**atri, /*const*/ double**stri, double*evals, double**evecs, int n,
+                 int matz)
+{
+  if (n == 0) return;
+
+  // Convert to the lapack storage format.
+  const int n2 = n*n;
+  double *a = new double[n2];
+  double *s = new double[n2];
+  for (int i=0; i<n; i++) {
+    for (int j=0; j<=i; j++) {
+      a[i*n+j] = atri[i][j];
+      a[j*n+i] = atri[i][j];
+      s[i*n+j] = stri[i][j];
+      s[j*n+i] = stri[i][j];
+    }
+  }
+
+  // solve generalized eigenvalue problem with DSYGV
+  const int itype = 1;
+  const char jobz_V = 'V';
+  const char uplo_U = 'U';  // lower triangle in C -> upper triange in Fortran
+  int lwork = -1;
+  int info;
+  double optlwork;
+  F77_DSYGV(&itype,&jobz_V,&uplo_U, &n,
+            a, &n,
+            s, &n,
+            evals,
+            &optlwork,&lwork,
+            &info);
+  if (info) {
+    ExEnv::outn() << "dsygv could not determine work size: info = "
+                  << info << std::endl;
+    abort();
+  }
+  lwork = (int)optlwork;
+  double *work = new double[lwork];
+  F77_DSYGV(&itype,&jobz_V,&uplo_U, &n,
+              a, &n,
+              s, &n,
+              evals,
+              work,&lwork,
+              &info);
+  if (info) {
+    std::ostringstream oss;
+    oss << "dsygv could not solve eigensystem: info = " << info;
+    throw AlgorithmException(oss.str().c_str(),
+                             __FILE__, __LINE__);
+  }
+
+  // the vector is placed in a -> transpose to C order
+  int ij=0;
+  for (int i=0; i<n; i++) {
+    for (int j=0; j<n; j++, ++ij) {
+      evecs[i][j] = a[ij];
+    }
+  }
+
+  // cleanup
+  delete[] a;
+  delete[] s;
+  delete[] work;
 }
 
 } // end of extern "C"

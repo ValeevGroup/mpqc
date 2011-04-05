@@ -460,6 +460,11 @@ class SymmSCMatrix: public DescribedClass {
     /** Diagonalize this, placing the eigenvalues in d and the eigenvectors
         in m. */
     virtual void diagonalize(DiagSCMatrix*d,SCMatrix*m) = 0;
+    /** Solve generalized eigensystem for this with metric s, placing the eigenvalues in d and the eigenvectors
+        in m.
+        \exception AlgorithmException eigensystem could not be solved within available precision. Check condition number of s.
+      */
+    virtual void eigensystem(SymmSCMatrix*s,DiagSCMatrix*d,SCMatrix*m) = 0;
     /// Sum m into this.
     virtual void accumulate(const SymmSCMatrix* m) = 0;
     /// Sum into this the products of various vectors or matrices.

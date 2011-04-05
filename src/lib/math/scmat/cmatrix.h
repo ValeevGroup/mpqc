@@ -62,6 +62,8 @@ extern "C" {
     void cmat_matrix_pointers(double**ptrs,double*matrix,int nrow, int ncol);
     void cmat_diag(double**symm_a, double*evals, double**evecs, int n,
                    int matz, double tol);
+    void cmat_eigensystem(/*const*/ double**symm_a, /*const*/ double**symm_s, double*evals, double**evecs, int n,
+                          int matz);
     void cmat_schmidt(double **rows, double *S, int nrow, int nc);
     int cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
                          double tolerance, double *res);

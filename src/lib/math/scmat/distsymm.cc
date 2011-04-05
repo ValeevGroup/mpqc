@@ -403,6 +403,12 @@ DistSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   delete[] ivec;
 }
 
+void
+DistSymmSCMatrix::eigensystem(SymmSCMatrix*s, DiagSCMatrix*a, SCMatrix*b)
+{
+  throw FeatureNotImplemented("DistSymmSCMatrix::eigensystem", __FILE__, __LINE__, this->class_desc());
+}
+
 // computes this += a + a.t
 void
 DistSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)

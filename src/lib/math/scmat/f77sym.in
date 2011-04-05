@@ -23,3 +23,4 @@
 #define F77_DPPTRS
 #define F77_DSPRFS
 #define F77_DPPRFS
+#define F77_DSYGV

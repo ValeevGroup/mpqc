@@ -794,6 +794,32 @@ BlockedSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
   }
 }
 
+void
+BlockedSymmSCMatrix::eigensystem(SymmSCMatrix* s, DiagSCMatrix*a, SCMatrix*b) {
+
+  const char* name = "BlockedSymmSCMatrix::eigensystem";
+  // make sure that the arguments is of the correct type
+  BlockedSymmSCMatrix* ls = require_dynamic_cast<BlockedSymmSCMatrix*>(s,name);
+  BlockedDiagSCMatrix* la = require_dynamic_cast<BlockedDiagSCMatrix*>(a,name);
+  BlockedSCMatrix* lb = require_dynamic_cast<BlockedSCMatrix*>(b,name);
+
+  if (!dim()->equiv(ls->dim()) ||
+      !dim()->equiv(la->dim()) ||
+      !dim()->equiv(lb->coldim()) ||
+      !dim()->equiv(lb->rowdim())) {
+    ExEnv::errn() << indent << "BlockedSymmSCMatrix::"
+                  << "eigensystem(SymmSCMatrix*s,DiagSCMatrix*a,SCMatrix*b): bad dims\n";
+    abort();
+  }
+
+  for (int i=0; i < d->blocks()->nblock(); i++) {
+    if (mats_[i].nonnull())
+      mats_[i]->eigensystem(ls->mats_[i].pointer(),
+                            la->mats_[i].pointer(),
+                            lb->mats_[i].pointer());
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

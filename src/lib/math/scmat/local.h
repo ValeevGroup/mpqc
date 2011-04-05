@@ -195,6 +195,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
+    void eigensystem(SymmSCMatrix*,DiagSCMatrix*,SCMatrix*);
     void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);

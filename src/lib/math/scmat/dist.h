@@ -216,6 +216,7 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     void gen_invert_this(double condition_number_threshold = 1e8);
 
     void diagonalize(DiagSCMatrix*,SCMatrix*);
+    void eigensystem(SymmSCMatrix*,DiagSCMatrix*,SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

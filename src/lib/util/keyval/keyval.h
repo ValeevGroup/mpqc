@@ -38,6 +38,7 @@
 #include <stdarg.h>
 
 #include <util/class/class.h>
+#include <util/class/scexception.h>
 #include <util/keyval/keyvalval.h>
 
 namespace sc {
@@ -569,72 +570,125 @@ namespace detail {
     static bool eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->booleanvalue(key, i);
     }
+    static bool eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->booleanvalue(key, i, j);
+    }
   };
   template <> struct GetValue<double> {
     static double eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->doublevalue(key, i);
+    }
+    static double eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->doublevalue(key, i, j);
     }
   };
   template <> struct GetValue<float> {
     static float eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->floatvalue(key, i);
     }
+    static float eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->floatvalue(key, i, j);
+    }
   };
   template <> struct GetValue<int> {
     static int eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->intvalue(key, i);
+    }
+    static int eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->intvalue(key, i, j);
     }
   };
   template <> struct GetValue<long> {
     static long eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->longvalue(key, i);
     }
+    static long eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->longvalue(key, i, j);
+    }
   };
   template <> struct GetValue<std::size_t> {
     static std::size_t eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->sizevalue(key, i);
+    }
+    static std::size_t eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->sizevalue(key, i, j);
     }
   };
   template <> struct GetValue<char> {
     static char eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->charvalue(key, i);
     }
+    static char eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->charvalue(key, i, j);
+    }
   };
   template <> struct GetValue<std::string> {
     static std::string eval(const Ref<KeyVal>& kv, const char* key, int i) {
       return kv->stringvalue(key, i);
     }
+    static std::string eval(const Ref<KeyVal>& kv, const char* key, int i, int j) {
+      return kv->stringvalue(key, i, j);
+    }
   };
 }
 
+/**
+ * Provides convenient way to fill standard containers from KeyVal
+ */
 class Keyword {
   public:
     Keyword(const Ref<KeyVal>& kv,
-            const char* key) : kv_(kv), key_(key) {}
+            const std::string& key) : kv_(kv), key_(key) {}
 
     const Ref<KeyVal>& keyval() const { return kv_; }
-    const char* key() const { return key_; }
+    const std::string& key() const { return key_; }
 
-    template <typename T> Keyword& operator>>(std::vector<T>& vec) {
-      const std::size_t n = kv_->count(key_);
+    /// fills up std::vector using KeyVal object of the following form
+    /// key = [ value0 value1 value2 .... ]
+    template <typename Value, typename Alloc>
+    Keyword& operator>>(std::vector<Value,Alloc>& vec) {
+      const std::size_t n = kv_->count(key_.c_str());
       vec.resize(n);
       for(std::size_t i=0; i<n; ++i) {
-        vec[i] = detail::GetValue<T>::eval(kv_, key_, i);
+        vec[i] = detail::GetValue<Value>::eval(kv_, key_.c_str(), i);
       }
       return *this;
     }
 
-    template <typename T> Keyword& operator>>(std::set<T>& c) {
-      const std::size_t n = kv_->count(key_);
+    /// fills up std::set using KeyVal object of the following form
+    /// key = [ key0 key1 key2 ..... ]
+    template <typename Key, typename Compare, typename Alloc>
+    Keyword& operator>>(std::set<Key, Compare, Alloc>& c) {
+      const std::size_t n = kv_->count(key_.c_str());
       for(std::size_t i=0; i<n; ++i) {
-        c.insert( detail::GetValue<T>::eval(kv_, key_, i) );
+        c.insert( detail::GetValue<Key>::eval(kv_, key_.c_str(), i) );
+      }
+      return *this;
+    }
+
+    /// fills up std::map using KeyVal object of the following form
+    /// key = [ [key0 value0] [key1 value1] [key2 value2] ....]
+    template <typename Key, typename Data, typename Compare, typename Alloc>
+    Keyword& operator>>(std::map<Key, Data, Compare, Alloc>& c) {
+      const std::size_t n = kv_->count(key_.c_str());
+      for(std::size_t i=0; i<n; ++i) {
+        if (kv_->count(key_.c_str(),i) != 2) {
+          std::ostringstream oss;
+          oss << key_ << ":" << i;
+          throw sc::InputError("invalid std::map specification in KeyVal",
+                               __FILE__, __LINE__,
+                               oss.str().c_str());
+        }
+        Key k = detail::GetValue<Key>::eval(kv_, key_.c_str(), i, 0);
+        Data d = detail::GetValue<Data>::eval(kv_, key_.c_str(), i, 1);
+        c.insert(std::make_pair(k,d));
       }
       return *this;
     }
 
   private:
     Ref<KeyVal> kv_;
-    const char* key_;
+    std::string key_;
 };
 
 }

@@ -67,6 +67,11 @@ class ETraIn: public Function, public Runnable {
 
       <tr><td><tt>ip2</tt><td>double[]<td>none<td>(optional)same as <tt>ip1</tt>, but for <tt>wfn2</tt>.
 
+      <tr><td><tt>ip1_orbs</tt><td>OneBodyWavefunction<td>none<td>(optional)Provides the orbitals which correspond
+      to the ionization potentials provided in <tt>ip1</tt> in Koopmans' sense. If not given the orbitals of
+      <tt>wfn1</tt> will be used.
+      <tr><td><tt>ip2_orbs</tt><td>OneBodyWavefunction<td>none<td>(optional)analogous to <tt>ip1_orbs</tt>
+
       <tr><td><tt>nocc</tt><td>int<td>-1<td>Number of occupied orbitals from each fragment to consider. The default, -1, means to include all.
       <tr><td><tt>nuocc</tt><td>int<td>-1<td>Number of unoccupied orbitals from each fragment to consider. The default, -1, means to include all.
 
@@ -106,9 +111,10 @@ class ETraIn: public Function, public Runnable {
   Ref<Grid> grid_;
 
   typedef std::map<int,double> IPs;
-  IPs ip1_;
-  IPs ip2_;
-  void read_ip(const Ref<KeyVal>& kv, const std::string& ip_key, IPs& ip, unsigned int nmos);
+  IPs ip1_, ip2_;
+  Ref<OrbitalSpace> ip1_orbs_, ip2_orbs_;
+  void read_ip(const Ref<KeyVal>& kv, const std::string& ip_key, IPs& ip,
+               unsigned int nmos, Ref<OrbitalSpace>& ip_orbs);
 
   // this function computes and prints out transfer integral (and overlap) matrix
   void compute_train();

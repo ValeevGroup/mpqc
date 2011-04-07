@@ -85,10 +85,10 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
 
   // known monomer ionization potentials?
   if (keyval->exists("ip1")) {
-    read_ip(keyval, "ip1", ip1_, obwfn1_->nelectron()/2);
+    read_ip(keyval, "ip1", ip1_, obwfn1_->nelectron()/2, ip1_orbs_);
   }
   if (keyval->exists("ip2")) {
-    read_ip(keyval, "ip2", ip2_, obwfn2_->nelectron()/2);
+    read_ip(keyval, "ip2", ip2_, obwfn2_->nelectron()/2, ip2_orbs_);
   }
 
   if (keyval->exists("grid")) {
@@ -523,10 +523,21 @@ ETraIn::compute_train()
       RefSymmSCMatrix F12 = s12->coefs()->kit()->symmmatrix(s12->coefs()->coldim());
       F12.assign(0.0);
       RefSymmSCMatrix S12 = F12.copy();
-      F12.accumulate_transform(s12->coefs(), fock12_ao, SCMatrix::TransposeTransform);
+      RefSCMatrix s12_coefs;
+      if (s12->nblocks() == 1) // c1 symmetry? coefficient matrix row dimension is blocked by shells,
+                               // but fock12_ao has 1 block (see PetiteList::AO_basisdim())
+                               // convert to compatible shape
+      {
+        s12_coefs = s12->coefs()->kit()->matrix(fock12_ao.dim(), s12->coefs().coldim());
+        s12_coefs->convert(s12->coefs());
+      }
+      else {
+        s12_coefs = s12->coefs();
+      }
+      F12.accumulate_transform(s12_coefs, fock12_ao, SCMatrix::TransposeTransform);
       RefSymmSCMatrix S12_so = sc::detail::overlap(s12->basis(), integral);
       RefSymmSCMatrix S12_ao = plist12->to_AO_basis(S12_so);
-      S12.accumulate_transform(s12->coefs(), S12_ao, SCMatrix::TransposeTransform);
+      S12.accumulate_transform(s12_coefs, S12_ao, SCMatrix::TransposeTransform);
       RefDiagSCMatrix e12 = s12->evals();  // eigenvalues of *monomer* fock operators (i.e. not including intermonomer polarization)
 
       //F12.print("F12");
@@ -552,7 +563,9 @@ ETraIn::compute_train()
       const double eV_to_au = eV->to_atomic_units();
       const double au_to_eV = 1.0 / eV_to_au;
       for(iter o1=ip1_.begin(); o1!=ip1_.end(); ++o1) {
+        //
         // map occ index to s12
+        //
         const unsigned int i1 = map_o1_to_1[ nocc1 - o1->first ];
         const unsigned int i12 = map_1_to_12[ i1 ];
         const double e0 = F12.get_element(i12, i12);
@@ -625,7 +638,8 @@ ETraIn::compute_train()
 }
 
 void
-ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip, unsigned int norbs)
+ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
+                unsigned int norbs, Ref<OrbitalSpace>& ip_orbs)
 {
   Keyword kw(kv, ip_key);
   kw >> ip;
@@ -641,6 +655,29 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip, uns
     }
     if (i->second < 0)
       ExEnv::out0() << indent << "WARNING: negative IP # " << i->first << " in " << ip_key << ", did you mean positive?"<< std::endl;
+  }
+
+  // ip_orbs is optional
+  const std::string ip_orbs_key = ip_key + "_orbs";
+  if (kv->exists(ip_orbs_key.c_str())) {
+    Ref<OneBodyWavefunction> ip_orbs_wfn;
+    ip_orbs_wfn << kv->describedclassvalue(ip_orbs_key.c_str());
+    if (ip_orbs_wfn.null())
+      ExEnv::out0() << indent << "WARNING: could not understand value for the optional keyword " << ip_orbs_key << ", will ignore";
+    else {
+      const int nocc = ip_orbs_wfn->nelectron() / 2;
+      assert(ip_orbs_wfn->nelectron() % 2 == 0);
+      const int norbs = ip_orbs_wfn->so_dimension().n();
+      const int nuocc = norbs - nocc;
+
+      RefSCMatrix vec_so = ip_orbs_wfn->eigenvectors();
+      Ref<PetiteList> plist = ip_orbs_wfn->integral()->petite_list();
+      RefSCMatrix vec = plist->evecs_to_AO_basis(vec_so);
+
+      ip_orbs = new OrbitalSpace(ip_key.c_str(), ip_key.c_str(), vec, ip_orbs_wfn->basis(), ip_orbs_wfn->integral(),
+                                 ip_orbs_wfn->eigenvalues(), 0, nuocc);
+      assert(false); // not implemented yet
+    }
   }
 }
 

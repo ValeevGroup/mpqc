@@ -171,7 +171,8 @@ class PetiteList : public RefCount {
 
     void print(std::ostream& =ExEnv::out0(), int verbose=1);
 
-    /// blocked AO dimension (number of blocks = 1, the lone subdimension is blocked by shells)
+    /// blocked AO dimension (if symmetry = c1, equivalent to SO_basisdim();
+    /// otherwise number of blocks = 1, the lone subdimension is blocked by shells)
     RefSCDimension AO_basisdim();
     /// blocked SO dimension (number of blocks = order of the point group, each subdimension has 1 block)
     RefSCDimension SO_basisdim();

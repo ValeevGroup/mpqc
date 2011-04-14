@@ -405,8 +405,8 @@ namespace sc {
     ras1_ = read_occ(keyval,"ras1",nirrep_);
     ras2_ = read_occ(keyval,"ras2",nirrep_);
     ras3_ = read_occ(keyval,"ras3",nirrep_);
-    ras1_max_ = keyval->intvalue("ras1_max", KeyValValueint(0));
-    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(0));
+    ras1_max_ = keyval->intvalue("ras1_max", KeyValValueint(2));
+    ras3_max_ = keyval->intvalue("ras3_max",KeyValValueint(2));
 
     vector<unsigned int> docc_act = this->docc_act();
     vector<unsigned int> socc = this->socc();
@@ -861,6 +861,9 @@ namespace sc {
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
     if (keyval->exists("ras3") == false)
       std::fill(ras3_.begin(), ras3_.end(), 0);
+
+    ras1_max_ = keyval->intvalue("ras1_max", KeyValValueint(0)); // overwrite ras1_max in PsiRASSCF to make the defaults proper
+    ras3_max_ = keyval->intvalue("ras3_max", KeyValValueint(0)); // overwrite ras3_max in PsiRASSCF to make the defaults proper
 
   }
 

@@ -1432,13 +1432,20 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     const double E_Xpart = Xpart.trace();
     const double E_TBTG = TBTG.trace();
     const double E_others = others.trace();
-    const double E_total = E_V_t_T + E_Xpart + E_TBTG + E_others;
+    const double Btotal =  E_Xpart + E_TBTG + E_others;
+    const double E_total = E_V_t_T + Btotal;
+    const double VBratio = -E_V_t_T/(2*Btotal);
+    const double R12min = - E_V_t_T*E_V_t_T/(4 * Btotal);
+    const double deviation = 1- E_total/R12min;
     ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
     ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_Xpart) << std::endl;
     ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
-    ExEnv::out0() << indent << scprintf("Total:                    %17.12lf", E_total) << std::endl << std::endl << std::endl;
+    ExEnv::out0() << indent << scprintf("VBratio remain:           %17.12lf", VBratio) << std::endl;
+    ExEnv::out0() << indent << scprintf("R12 min:                  %17.12lf", R12min) << std::endl;
+    ExEnv::out0() << indent << scprintf("Spin Free Hylleraas:      %17.12lf", E_total) << std::endl;
+    ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
 
 //#if 0
@@ -2165,10 +2172,15 @@ void sc::PT2R12::compute()
                                       energy) << std::endl;
   if(r12world_->spinadapted() == false)
   {
+
+    const double Btotal = B_so + X_so;
+    const double R12min = -V_so * V_so/(4 * Btotal);
     ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << scprintf("V term [au]:                           %17.12lf", V_so) << std::endl;
     ExEnv::out0() << indent << scprintf("B term [au]:                           %17.12lf", B_so) << std::endl;
     ExEnv::out0() << indent << scprintf("X term [au]:                           %17.12lf", X_so) << std::endl;
+    ExEnv::out0() << indent << scprintf("R12 minimum:                           %17.12lf", R12min) << std::endl;
+    ExEnv::out0() << indent << scprintf("error percentage:                      %17.12lf", 1-energy_correction_r12/R12min) << std::endl;
   }
   set_energy(energy);
 }

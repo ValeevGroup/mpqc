@@ -128,8 +128,9 @@ namespace sc {
       std::vector<unsigned int> ras1_;
       std::vector<unsigned int> ras2_;
       std::vector<unsigned int> ras3_;
-      int ras1_max_;   //< max number of holes in RAS1
-      int ras3_max_;   //< max number of electrons in RAS3
+      int ras1_max_;   //< max number of holes in RAS1; in PsiRASCI, defaults to 2; in PsiRASSCF, defaults to 0. It appears that this keyword is created pratically as
+                       // an 'alias' to ex_lvl in Psi3, but ras1_max_ is a better name than ex_lvl
+      int ras3_max_;   //< max number of electrons in RAS3; in PsiRASCI, defaults to 2; in PsiRASSCF, defaults to 0
 
       double scf_levelshift_;      /// Psi3 cscf levelshift
       int scf_stop_levelshift_;    /// number of iterations, for which the levelshift is applied

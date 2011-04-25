@@ -1064,7 +1064,7 @@ cmat_eigensystem(/*const*/ double**atri, /*const*/ double**stri, double*evals, d
   int ij=0;
   for (int i=0; i<n; i++) {
     for (int j=0; j<n; j++, ++ij) {
-      evecs[i][j] = a[ij];
+      evecs[j][i] = a[ij];
     }
   }
 

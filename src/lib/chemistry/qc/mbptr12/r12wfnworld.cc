@@ -59,7 +59,7 @@ static ClassDesc R12WavefunctionWorld_cd(
 R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<KeyVal>& keyval,
     const Ref<RefWavefunction>& ref) :
-    ref_(ref)
+    ref_(ref), ref_acc_for_cabs_space_(DBL_MAX)
 {
   // by default use spin-adapted algorithms for closed-shell
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));

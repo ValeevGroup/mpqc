@@ -71,17 +71,28 @@ EriLibint2::EriLibint2(Integral *integral,
   }
 
   /*--- Initialize storage ---*/
-  int max_num_prim_comb = bs1_->max_nprimitive_in_shell()*
+  const int max_num_prim_comb = bs1_->max_nprimitive_in_shell()*
     bs2_->max_nprimitive_in_shell()*
     bs3_->max_nprimitive_in_shell()*
     bs4_->max_nprimitive_in_shell();
-  int max_cart_target_size = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell()*
+  // need one Libint_t object for each primitive combination
+  // if Libint2 does not support contractions, just allocate 1
+#if LIBINT2_CONTRACTED_INTS
+  Libint_.resize(max_num_prim_comb);
+#else
+  Libint_.resize(1);
+#endif
+  ConsumableResources::get_default_instance()->consume_memory(Libint_.size() * sizeof(Libint_[0]));
+
+  const int max_cart_target_size = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell()*
     bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
-  int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
+  const int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
+
   size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
-  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_,lmax,0);
-  manage_array(Libint_.stack, storage_needed);
+  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_[0],lmax,0);  // only need to initialize stack of the first Libint_t object
+  manage_array(Libint_[0].stack, storage_needed/sizeof(LIBINT2_REALTYPE));
+
   target_ints_buffer_ = allocate<double>(max_target_size);
   cart_ints_ = allocate<double>(max_cart_target_size);
   if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
@@ -132,8 +143,9 @@ EriLibint2::EriLibint2(Integral *integral,
 
 EriLibint2::~EriLibint2()
 { 
-  unmanage_array(Libint_.stack);
-  LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_);
+  unmanage_array(Libint_[0].stack);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_[0]);
+  ConsumableResources::get_default_instance()->release_memory(Libint_.size() * sizeof(Libint_[0]));
   deallocate(target_ints_buffer_);
   deallocate(cart_ints_);
   if (sphharm_ints_)
@@ -171,13 +183,19 @@ EriLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
 
   size_t storage_required = storage_required_(bs1,bs2,bs3,bs4);
 
-  int max_num_prim_comb = bs1->max_nprimitive_in_shell()*
+  const int max_num_prim_comb = bs1->max_nprimitive_in_shell()*
     bs2->max_nprimitive_in_shell()*
     bs3->max_nprimitive_in_shell()*
     bs4->max_nprimitive_in_shell();
-  int max_cart_target_size = bs1->max_ncartesian_in_shell()*bs2->max_ncartesian_in_shell()*
+#if LIBINT2_CONTRACTED_INTS
+  storage_required += max_num_prim_comb * sizeof(Libint_t);
+#else
+  storage_required += sizeof(Libint_t);
+#endif
+
+  const int max_cart_target_size = bs1->max_ncartesian_in_shell()*bs2->max_ncartesian_in_shell()*
     bs3->max_ncartesian_in_shell()*bs4->max_ncartesian_in_shell();
-  int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
+  const int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
     bs3->max_nfunction_in_shell()*bs4->max_nfunction_in_shell();
 
   storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);

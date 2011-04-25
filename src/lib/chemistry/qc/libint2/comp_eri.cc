@@ -131,15 +131,15 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
   /* Test the arguments to make sure that they are sensible. */
   if (   sh1 < 0 || sh1 >= bs1_->nbasis()
-	 || sh2 < 0 || sh2 >= bs2_->nbasis()
-	 || sh3 < 0 || sh3 >= bs3_->nbasis()
-	 || sh4 < 0 || sh4 >= bs4_->nbasis() ) {
+      || sh2 < 0 || sh2 >= bs2_->nbasis()
+      || sh3 < 0 || sh3 >= bs3_->nbasis()
+      || sh4 < 0 || sh4 >= bs4_->nbasis() ) {
     ExEnv::errn() << scprintf("compute_erep has been incorrectly used\n");
     ExEnv::errn() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
-            sh1,bs1_->nbasis()-1,
-            sh2,bs2_->nbasis()-1,
-            sh3,bs3_->nbasis()-1,
-            sh4,bs4_->nbasis()-1);
+                              sh1,bs1_->nbasis()-1,
+                              sh2,bs2_->nbasis()-1,
+                              sh3,bs3_->nbasis()-1,
+                              sh4,bs4_->nbasis()-1);
     fail();
   }
 
@@ -180,7 +180,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       int_shell3_->has_pure() ||
       int_shell4_->has_pure())
     need_cart2sph_transform = true;
-      
+
 
   /* See if contraction quartets need to be resorted into a shell quartet */
   bool need_sort_to_shell_quartet = false;
@@ -212,7 +212,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     if ( e12 || e34 || e13e24 )
       need_unique_ints_only = true;
   }
-    
+
 
 #ifdef EREP_TIMING
   sprintf(section,"erep am=%02d",am12+am34);
@@ -278,24 +278,25 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   int ctr2 = pbs2->shell_to_center(sh2);
   int ctr3 = pbs3->shell_to_center(sh3);
   int ctr4 = pbs4->shell_to_center(sh4);
-  Libint_.AB_x[0] = pbs1->r(ctr1,0) - pbs2->r(ctr2,0);
-  Libint_.AB_y[0] = pbs1->r(ctr1,1) - pbs2->r(ctr2,1);
-  Libint_.AB_z[0] = pbs1->r(ctr1,2) - pbs2->r(ctr2,2);
-  Libint_.CD_x[0] = pbs3->r(ctr3,0) - pbs4->r(ctr4,0);
-  Libint_.CD_y[0] = pbs3->r(ctr3,1) - pbs4->r(ctr4,1);
-  Libint_.CD_z[0] = pbs3->r(ctr3,2) - pbs4->r(ctr4,2);
+  Libint_t& libint0 = Libint_[0];
+  libint0.AB_x[0] = pbs1->r(ctr1,0) - pbs2->r(ctr2,0);
+  libint0.AB_y[0] = pbs1->r(ctr1,1) - pbs2->r(ctr2,1);
+  libint0.AB_z[0] = pbs1->r(ctr1,2) - pbs2->r(ctr2,2);
+  libint0.CD_x[0] = pbs3->r(ctr3,0) - pbs4->r(ctr4,0);
+  libint0.CD_y[0] = pbs3->r(ctr3,1) - pbs4->r(ctr4,1);
+  libint0.CD_z[0] = pbs3->r(ctr3,2) - pbs4->r(ctr4,2);
   for(i=0;i<3;i++) {
     quartet_info_.A[i] = pbs1->r(ctr1,i);
     quartet_info_.B[i] = pbs2->r(ctr2,i);
     quartet_info_.C[i] = pbs3->r(ctr3,i);
     quartet_info_.D[i] = pbs4->r(ctr4,i);
   }
-  quartet_info_.AB2  = Libint_.AB_x[0]*Libint_.AB_x[0];
-  quartet_info_.AB2 += Libint_.AB_y[0]*Libint_.AB_y[0];
-  quartet_info_.AB2 += Libint_.AB_z[0]*Libint_.AB_z[0];
-  quartet_info_.CD2  = Libint_.CD_x[0]*Libint_.CD_x[0];
-  quartet_info_.CD2 += Libint_.CD_y[0]*Libint_.CD_y[0];
-  quartet_info_.CD2 += Libint_.CD_z[0]*Libint_.CD_z[0];
+  quartet_info_.AB2  = libint0.AB_x[0]*libint0.AB_x[0];
+  quartet_info_.AB2 += libint0.AB_y[0]*libint0.AB_y[0];
+  quartet_info_.AB2 += libint0.AB_z[0]*libint0.AB_z[0];
+  quartet_info_.CD2  = libint0.CD_x[0]*libint0.CD_x[0];
+  quartet_info_.CD2 += libint0.CD_y[0]*libint0.CD_y[0];
+  quartet_info_.CD2 += libint0.CD_z[0]*libint0.CD_z[0];
 
   /* Set up pointers to the current shell pairs. */
   quartet_info_.shell_pair12 = shell_pairs12_->shell_pair(osh1,osh2);
@@ -328,38 +329,38 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     if (need_sort_to_shell_quartet) {
       prim_ints_ = cart_ints_;
       if (need_cart2sph_transform)
-	contr_quartets_ = sphharm_ints_;
+        contr_quartets_ = sphharm_ints_;
       else
-	contr_quartets_ = cart_ints_;
+        contr_quartets_ = cart_ints_;
       shell_quartet_ = perm_ints_;
     }
     else {
       prim_ints_ = cart_ints_;
       if (need_cart2sph_transform) {
-	contr_quartets_ = sphharm_ints_;
-	shell_quartet_ = contr_quartets_;
+        contr_quartets_ = sphharm_ints_;
+        shell_quartet_ = contr_quartets_;
       }
       else
-	shell_quartet_ = cart_ints_;
+        shell_quartet_ = cart_ints_;
     }
   else
     if (need_sort_to_shell_quartet) {
       prim_ints_ = cart_ints_;
       if (need_cart2sph_transform)
-	contr_quartets_ = sphharm_ints_;
+        contr_quartets_ = sphharm_ints_;
       else
-	contr_quartets_ = cart_ints_;
+        contr_quartets_ = cart_ints_;
       shell_quartet_ = target_ints_buffer_;
     }
     else {
       if (need_cart2sph_transform) {
-	prim_ints_ = cart_ints_;
-	contr_quartets_ = target_ints_buffer_;
-	shell_quartet_ = target_ints_buffer_;
+        prim_ints_ = cart_ints_;
+        contr_quartets_ = target_ints_buffer_;
+        shell_quartet_ = target_ints_buffer_;
       }
       else {
-	prim_ints_ = target_ints_buffer_;
-	shell_quartet_ = target_ints_buffer_;
+        prim_ints_ = target_ints_buffer_;
+        shell_quartet_ = target_ints_buffer_;
       }
     }
 
@@ -376,54 +377,84 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       for (gck=0; gck<int_shell3_->ncontraction(); gck++) {
         tam3 = int_shell3_->am(gck);
         int tsize3 = INT_NCART_NN(tam3);
-	quartet_info_.gc3 = gck;
+        quartet_info_.gc3 = gck;
         for (gcl=0; gcl<int_shell4_->ncontraction(); gcl++) {
           tam4 = int_shell4_->am(gcl);
           int tsize4 = INT_NCART_NN(tam4);
-	  quartet_info_.gc4 = gcl;
-	  quartet_info_.am = tam1 + tam2 + tam3 + tam4;
-	  int size = tsize1*tsize2*tsize3*tsize4;
+          quartet_info_.gc4 = gcl;
+          quartet_info_.am = tam1 + tam2 + tam3 + tam4;
+          int size = tsize1*tsize2*tsize3*tsize4;
 
+#if !LIBINT2_CONTRACTED_INTS
           // zero out the contracted integrals buffer
           memset(&(prim_ints_[buffer_offset]),0,size*sizeof(double));
-#if LIBINT2_ACCUM_INTS
-	  // zero out targets in Libint_
-	  Libint_.zero_out_targets = 1;
+#  if LIBINT2_ACCUM_INTS
+          // zero out targets in Libint_
+          Libint_.zero_out_targets = 1;
+#  endif
 #endif
-	  /* Begin loop over primitives. */
-	  for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
-	    quartet_info_.p1 = pi;
-	    for (pj=0; pj<int_shell2_->nprimitive(); pj++) {
-	      quartet_info_.p2 = pj;
-	      for (pk=0; pk<int_shell3_->nprimitive(); pk++) {
-		quartet_info_.p3 = pk;
-		for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
-		  quartet_info_.p4 = pl;
-		  
-		  // Compute primitive data for Libint
-		  eri_quartet_data_(&Libint_, 1.0);
+
+          /* Begin loop over primitives. */
+          int num_prim_combinations = 0;
+          for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
+            quartet_info_.p1 = pi;
+            for (pj=0; pj<int_shell2_->nprimitive(); pj++) {
+              quartet_info_.p2 = pj;
+              for (pk=0; pk<int_shell3_->nprimitive(); pk++) {
+                quartet_info_.p3 = pk;
+                for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
+                  quartet_info_.p4 = pl;
+
+                  // Compute primitive data for Libint
+                  eri_quartet_data_(&Libint_[num_prim_combinations], 1.0);
+
+#if !LIBINT2_CONTRACTED_INTS
                   if (quartet_info_.am) {
-		    // Compute the integrals
-		    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);
-#if !LIBINT2_ACCUM_INTS
+                    // Compute the integrals
+                    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_[0]);
+#  if !LIBINT2_ACCUM_INTS
                     // Copy the integrals over to prim_ints_
-                    const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
-	            for(int ijkl=0; ijkl<size; ijkl++)
-	              prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
-#endif
+                    const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
+                    for(int ijkl=0; ijkl<size; ijkl++)
+                      prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
+#  endif
                   }
                   else {
-                    prim_ints_[buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
+                    prim_ints_[buffer_offset] += Libint_[0].LIBINT_T_SS_EREP_SS(0)[0];
                   }
-		}}}}
-#if LIBINT2_ACCUM_INTS
-	  // Copy the accumulated integrals over to prim_ints_
-	  const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
-	  for(int ijkl=0; ijkl<size; ijkl++)
-	      prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];	  
 #endif
-	  buffer_offset += size;
-	}}}}
+
+#if LIBINT2_CONTRACTED_INTS
+                  ++num_prim_combinations;
+#endif
+                }}}}
+
+#if LIBINT2_CONTRACTED_INTS
+          if (quartet_info_.am) {
+            // Compute the integrals
+            Libint_[0].contrdepth = num_prim_combinations;
+            LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_[0]);
+            // Copy the contracted integrals over to prim_ints_
+            const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
+            for(int ijkl=0; ijkl<size; ijkl++)
+              prim_ints_[buffer_offset + ijkl] = (double) prim_ints[ijkl];
+          }
+          else {
+            double ssss = 0.0;
+            for(int p=0; p<num_prim_combinations; ++p)
+              ssss += Libint_[p].LIBINT_T_SS_EREP_SS(0)[0];
+            prim_ints_[buffer_offset] = ssss;
+          }
+#else
+#  if LIBINT2_ACCUM_INTS
+          // Copy the accumulated integrals over to prim_ints_
+          const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
+          for(int ijkl=0; ijkl<size; ijkl++)
+            prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
+#  endif
+#endif
+          buffer_offset += size;
+        }}}}
 
   /*-------------------------------------------
     Transform to spherical harmonics if needed

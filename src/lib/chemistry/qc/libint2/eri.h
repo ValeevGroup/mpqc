@@ -82,7 +82,7 @@ class EriLibint2: public Int2eLibint2 {
     typedef Libint_t prim_data;
     void eri_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
-    Libint_t Libint_;
+    std::vector<Libint_t> Libint_;
     // set to 1 use taylor interpolation
     static const bool use_taylor_fjt_ = 1;
     Ref<Fjt> Fm_Eval_;

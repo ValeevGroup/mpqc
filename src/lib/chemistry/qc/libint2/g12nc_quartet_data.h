@@ -37,9 +37,13 @@ namespace sc {
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
 
-  gamma is the exponent of the Gaussian geminal in the integral
+  gamma is the exponents of the Gaussian geminal in the integral
+
+  r12_2_g12_pfac is the prefactor by which the r12^2 * g12 integrals are scaled
+  it's necessary to produce [g12,[T1,g12]]
  --------------------------------------------------------------------------------*/
-inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, double gamma, bool eri_only)
+inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, double gamma, double r12_2_g12_pfac,
+                                              bool eri_only)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -149,8 +153,8 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, dou
   //
   // (00|0|00) and (00|2|00) need to start recursion for (ab|0|cd), (ab|2|cd)
   //
-  double rorg = rho * oorhog;
-  double sqrt_rorg = sqrt(rorg);
+  const double rorg = rho * oorhog;
+  const double sqrt_rorg = sqrt(rorg);
   Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * exp(-gamma*rorg*PQ2) * pfac_normovlp;
   Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
 
@@ -248,6 +252,9 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, dou
       Data->R12kG12_pfac4_1_z[0] = -T[2];
     }
   }
+
+  // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
+  Data->R12_2_G12_scale_to_G12T1G12[0] = r12_2_g12_pfac;
 
   return;
 }

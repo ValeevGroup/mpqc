@@ -102,10 +102,10 @@ class G12NCLibint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void g12nc_quartet_data_(prim_data *Data, double scale, double gamma,
+    void g12nc_quartet_data_(prim_data *Data, double scale, double gamma, double r12_2_g12_pfac = 1.0,
 			     bool eri_only = false);
     /*--- Compute engines ---*/
-    Libint_t Libint_;
+    std::vector<Libint_t> Libint_;
     Ref<Fjt> Fm_Eval_;
 
     class ExpensiveMath {

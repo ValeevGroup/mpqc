@@ -589,6 +589,9 @@ ETraIn::compute_train()
       RefSCMatrix evecs_1 = F12->kit()->matrix(F12.dim(), F12.dim());
       try {
         F12->eigensystem(S12.pointer(), evals_1.pointer(), evecs_1.pointer());
+
+        // test normalization
+        //(evecs_1.t() * S12 * evecs_1).print("V^t . S . V: should be one");
       }
       catch (AlgorithmException& e) {
         // failure is likely due to monomer orbitals being strongly nonorthogonal!
@@ -610,11 +613,28 @@ ETraIn::compute_train()
 
         ip_print("1-mer", "n-mer", "n-mer+extIP", ExEnv::out0(), 6, -au_to_eV, evals_m, evals_0, evals_1);
       }
+
+      // optional: print adiabatic occupied dimer orbitals on the grid
+      if (grid_.nonnull() && method == 0) {
+        // compute adiabatic orbitals
+        Ref<OrbitalSpace> as12 = new OrbitalSpace("d12", "Dimer active MO space", s12->coefs() * evecs_1,
+                                                  s12->basis(), s12->integral(), evals_1, 0, 0);
+        // create labels for mos
+        std::vector<int> labels;
+        for(int o=0; o<as12->rank(); ++o)
+          labels.push_back(o + 1);
+        Ref<WriteOrbitals> wrtorbs = new WriteOrbitals(as12, labels,
+                                                       grid_,
+                                                       std::string("gaussian_cube"),
+                                                       SCFormIO::fileext_to_filename(".dimer_mo.cube"));
+        wrtorbs->run();
+      }
+
     }
 
   }
 
-  // optional: print orbitals on the grid
+  // optional: print monomer orbitals on the grid
   if (grid_.nonnull()) {
     // merge the two spaces together
     Ref<OrbitalSpace> m12space = new OrbitalSpaceUnion("m1+m2", "Monomers 1+2 active MO space",

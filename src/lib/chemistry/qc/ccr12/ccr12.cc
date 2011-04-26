@@ -42,48 +42,51 @@ static ClassDesc CCR12_cd(
   typeid(CCR12),"CCR12",1,"public MBPT2_R12",
   0,create<CCR12>,create<CCR12>);
 
-CCR12::CCR12(StateIn& s): MBPT2_R12(s), ccr12_info_(0) {
+CCR12::CCR12(StateIn& s): MBPT2(s), ccr12_info_(0) {
   throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructor not yet implemented",__FILE__,__LINE__);
 }
 
 
-CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2_R12(keyval), ccr12_info_(0) {
-}
-
-
-void CCR12::common_init(string theory, const Ref<KeyVal>& kv){
-
-  theory_ = theory;
+CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2(keyval), ccr12_info_(0) {
   thrgrp_ = ThreadGrp::get_default_threadgrp();
   msggrp_ = MessageGrp::get_default_messagegrp();
   mem_ = MemoryGrp::get_default_memorygrp();
   timer_ = new RegionTimer();
 
+  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
+  Ref<OrbitalSpace> vbs;
+  Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
+                                                        nfzcore(), nfzvirt(),
+                                                        vbs);
+  r12world_ = new R12WavefunctionWorld(keyval, refinfo);
+  Ref<R12Technology> r12tech = r12world_->r12tech();
+
+#if 0
+  // CABS singles is not supported yet in CCR12.
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+#endif
+
+  this->set_desired_value_accuracy(desired_value_accuracy());
+
   ExEnv::out0() << endl << indent << "-------- CCR12 calculation --------"<< endl;
   if (sizeof(long) < 8)
     ExEnv::out0() << indent << "!!!!!!!!!! \"long int\" less than 8 bytes !!!!!!!!!!" << endl;
 
-  if(theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
-
-  ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl << endl;
-  perturbative_ = kv->stringvalue("perturbative", KeyValValuestring(""));
-  std::transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
-  ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
-
-  ndiis_=kv->intvalue("ndiis", KeyValValueint(2));
-  diis_start_ = kv->intvalue("diis_start", KeyValValueint(0));
+  ndiis_=keyval->intvalue("ndiis", KeyValValueint(2));
+  diis_start_ = keyval->intvalue("diis_start", KeyValValueint(0));
 
   CLSCF* clscfref=dynamic_cast<CLSCF*>(ref().pointer());
   rhf_=(clscfref!=0);
 
   // maxiter
-  maxiter_=kv->intvalue("maxiter",   KeyValValueint(100));
+  maxiter_=keyval->intvalue("maxiter",   KeyValValueint(100));
   // cctresh
-  ccthresh_=kv->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
+  ccthresh_=keyval->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
   // get the memory sizes
-  memorysize_ = kv->longvalue("memory",   KeyValValuelong(200000000));
+  memorysize_ = keyval->longvalue("memory",   KeyValValuelong(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
-  worksize_ = kv->longvalue("workmemory",   KeyValValuelong(50000000));
+  worksize_ = keyval->longvalue("workmemory",   KeyValValuelong(50000000));
 #ifdef DISK_BASED_SMITH
   worksize_ = memorysize_; 
 #endif
@@ -111,6 +114,13 @@ void CCR12::compute(){
 
 
 /// utilities >>>>>>> form here >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+void CCR12::print_theory() {
+  if (theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
+  ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl;
+  if (perturbative_ != "")
+    ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
+}
 
 void CCR12::print_iteration_header(string theory){
   if (mem_->me()==0) {

@@ -39,6 +39,8 @@ class CCSDTQ: public CCR12 {
     CCSDTQ(StateIn&);
     CCSDTQ(const Ref<KeyVal>&);
     ~CCSDTQ();
+
+  protected:
     void compute();
 
 };

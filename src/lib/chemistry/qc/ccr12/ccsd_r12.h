@@ -33,15 +33,14 @@
 
 namespace sc {
 
-//class R12IntEval;
-class R12WavefunctionWorld;
-
 class CCSD_R12: public CCR12 {
 
   public:
     CCSD_R12(StateIn&);
     CCSD_R12(const Ref<KeyVal>&);
     ~CCSD_R12();
+
+  protected:
     void compute();
 
 };

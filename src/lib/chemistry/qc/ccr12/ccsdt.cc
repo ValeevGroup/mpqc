@@ -29,8 +29,6 @@
 #include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/ccr12/tensor.h>
-#include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/ccsdt.h>
 #include <chemistry/qc/ccr12/ccsdt_t1.h>
 #include <chemistry/qc/ccr12/ccsdt_t2.h>

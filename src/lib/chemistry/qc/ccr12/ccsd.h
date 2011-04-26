@@ -39,6 +39,8 @@ class CCSD: public CCR12 {
     CCSD(StateIn&);
     CCSD(const Ref<KeyVal>&);
     ~CCSD();
+
+  protected:
     void compute();
 
 };

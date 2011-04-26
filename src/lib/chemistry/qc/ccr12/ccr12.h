@@ -45,18 +45,20 @@
 
 namespace sc {
 
-//class R12IntEval;
 class R12WavefunctionWorld;
 
-class CCR12: public MBPT2_R12 {
+class CCR12: public MBPT2 {
   protected:
     Ref<ThreadGrp> thrgrp_;
     Ref<MessageGrp> msggrp_;
     Ref<MemoryGrp> mem_;
+
+    Ref<R12IntEval> r12eval_;              // the R12 intermediates evaluator
+    Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
+
     CCR12_Info* ccr12_info_;
     long worksize_;
     long memorysize_;
-    Ref<R12IntEval> r12eval_;
     bool rhf_;
     int maxiter_;
     Ref<RegionTimer> timer_;
@@ -73,13 +75,15 @@ class CCR12: public MBPT2_R12 {
     ~CCR12();
     CCR12_Info* info() const { return ccr12_info_;};
 
+    const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
+    const Ref<R12IntEval>& r12eval() const { return r12eval_; }
 
   protected:
     /// always execute this from Derived's compute()
     void compute();
-    void common_init(std::string, const Ref<KeyVal>& kv);
 
     // print nutilities
+    void print_theory();
     void print_iteration_header(std::string);
     void print_iteration_footer();
     void print_iteration(int,double,double,double,double);

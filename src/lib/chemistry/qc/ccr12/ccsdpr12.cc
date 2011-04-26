@@ -60,8 +60,11 @@ CCSDPR12::CCSDPR12(StateIn& s): CCR12(s){
 
 
 CCSDPR12::CCSDPR12(const Ref<KeyVal>& keyval): CCR12(keyval){
-  string theory_ = "CCSD(R12)";
-  common_init(theory_, keyval);
+  string theory("CCSD(R12)");
+  theory_ = theory;
+  perturbative_ = keyval->stringvalue("perturbative", KeyValValuestring(""));
+  transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
+  print_theory();
 }
 
 

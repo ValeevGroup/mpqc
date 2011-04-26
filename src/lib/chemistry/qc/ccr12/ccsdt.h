@@ -39,6 +39,8 @@ class CCSDT: public CCR12 {
     CCSDT(StateIn&);
     CCSDT(const Ref<KeyVal>&);
     ~CCSDT();
+
+  protected:
     void compute();
 
 };

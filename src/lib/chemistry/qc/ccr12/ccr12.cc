@@ -26,9 +26,9 @@
 //
 
 #include <util/class/scexception.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/ccr12/ccr12.h>
+#include <chemistry/qc/scf/hsosscf.h>
+#include <chemistry/qc/scf/clscf.h>
 
 using namespace std;
 using namespace sc;
@@ -39,15 +39,23 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc CCR12_cd(
-  typeid(CCR12),"CCR12",1,"public MBPT2_R12",
+  typeid(CCR12),"CCR12",1,"public Wavefunction",
   0,create<CCR12>,create<CCR12>);
 
-CCR12::CCR12(StateIn& s): MBPT2(s), ccr12_info_(0) {
+CCR12::CCR12(StateIn& s): SavableState(s), Wavefunction(s), ccr12_info_(0) {
   throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructor not yet implemented",__FILE__,__LINE__);
 }
 
 
-CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2(keyval), ccr12_info_(0) {
+CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
+
+  reference_ << keyval->describedclassvalue("reference");
+  if (reference_.null()) {
+    ExEnv::err0() << "MBPT2::MBPT2: no reference wavefunction" << endl;
+    abort();
+  }
+  copy_orthog_info(reference_);
+
   thrgrp_ = ThreadGrp::get_default_threadgrp();
   msggrp_ = MessageGrp::get_default_messagegrp();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -56,6 +64,19 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2(keyval), ccr12_info_(0) {
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
   Ref<OrbitalSpace> vbs;
+
+  nfzc_ = keyval->intvalue("nfzc");
+  string nfzc_charval = keyval->stringvalue("nfzc");
+  if (nfzc_charval == "auto") {
+    if (molecule()->max_z() > 30) {
+      ExEnv::err0() << "CCR12: cannot use \"nfzc = auto\" for Z > 30" << endl;
+      abort();
+    }
+    nfzc_ = molecule()->n_core_electrons()/2;
+    ExEnv::out0() << "  CCR12: auto-freezing " << nfzc_ << " core orbitals" << endl;
+  }
+  nfzv_ = keyval->intvalue("nfzv");
+
   Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
                                                         nfzcore(), nfzvirt(),
                                                         vbs);
@@ -101,6 +122,8 @@ CCR12::~CCR12(){
 
 void CCR12::compute(){
 
+  reference_->set_desired_value_accuracy(desired_value_accuracy()/ref_to_ccr12_acc());
+
   r12world()->initialize();
 
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
@@ -112,6 +135,10 @@ void CCR12::compute(){
 }
 
 
+void CCR12::obsolete() {
+  if (reference_.nonnull()) reference_->obsolete();
+  Wavefunction::obsolete();
+}
 
 /// utilities >>>>>>> form here >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

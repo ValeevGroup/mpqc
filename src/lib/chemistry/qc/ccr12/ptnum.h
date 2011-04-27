@@ -34,12 +34,15 @@
 
 namespace sc {
 
+/** PTNum is the base class for the numerator in various (T) models.  */
 class PTNum : public RefCount {
 
   protected:
    CCR12_Info* z;
 
+   /// input tensors
    std::vector<Tensor*> in; 
+   /// intermediate tensors
    std::vector<Tensor*> i1xn; 
 
   public:

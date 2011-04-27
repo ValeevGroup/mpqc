@@ -34,6 +34,7 @@
 
 namespace sc {
 
+/** CCSD_Sub_R12 is the base class for some (2)R12 methods */
 class CCSD_Sub_R12 : public RefCount {
 
   protected:
@@ -56,10 +57,8 @@ class CCSD_Sub_R12 : public RefCount {
       z->offset_e(energy_);
     };
 
-    ~CCSD_Sub_R12() {};
-
-    virtual double compute() { assert(false); };
-
+    virtual ~CCSD_Sub_R12() {};
+    virtual double compute() = 0;
 };
 
 }

@@ -40,6 +40,7 @@
 
 namespace sc {
 
+/** CCR12 is the base class for CC and CC-R12 methods.  */
 class CCR12: public Wavefunction {
   protected:
     Ref<ThreadGrp> thrgrp_;
@@ -74,9 +75,6 @@ class CCR12: public Wavefunction {
     const Ref<R12IntEval>& r12eval() const { return r12eval_; }
     Ref<SCF> ref() { return reference_; }
 
-    /// virtual functions of Wavefunction 
-    int nfzcore() const { return nfzc_; };
-    int nfzvirt() const { return nfzv_; };
     int spin_polarized() { return ccr12_info_->restricted(); };
 
     RefSymmSCMatrix density() { return 0; };
@@ -85,11 +83,10 @@ class CCR12: public Wavefunction {
     int value_implemented() const { return 1; };
 
   protected:
-    /// always execute this from Derived's compute()
-    virtual void compute();
+    void compute();
     static double ref_to_ccr12_acc() { return 100.0; }
 
-    // print nutilities
+    // print utilities
     void print_theory();
     void print_iteration_header(std::string);
     void print_iteration_footer();

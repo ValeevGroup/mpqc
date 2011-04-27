@@ -78,7 +78,7 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
   nfzv_ = keyval->intvalue("nfzv");
 
   Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
-                                                        nfzcore(), nfzvirt(),
+                                                        nfzc_, nfzv_,
                                                         vbs);
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
   Ref<R12Technology> r12tech = r12world_->r12tech();
@@ -128,7 +128,7 @@ void CCR12::compute(){
 
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
   if (ccr12_info_ != 0) delete ccr12_info_;
-  ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzcore(),nfzvirt(),
+  ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzc_,nfzv_,
                   molecule()->point_group()->char_table().nirrep(),worksize_,memorysize_,mem_->n(),ndiis_,
                   theory_,perturbative_);
 

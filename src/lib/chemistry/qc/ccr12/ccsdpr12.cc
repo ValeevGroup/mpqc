@@ -25,7 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <cmath>
 #include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <math/optimize/diis.h>

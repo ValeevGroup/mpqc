@@ -29,12 +29,9 @@
 #define _chemistry_qc_ccr12_ccsdpr12_h
 
 #include <util/state/stateio.h>
-#include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/ccr12/ccr12.h>
 
 namespace sc {
-
-class R12WavefunctionWorld;
 
 class CCSDPR12: public CCR12 {
 
@@ -42,6 +39,8 @@ class CCSDPR12: public CCR12 {
     CCSDPR12(StateIn&);
     CCSDPR12(const Ref<KeyVal>&);
     ~CCSDPR12();
+
+  protected:
     void compute();
 
 };

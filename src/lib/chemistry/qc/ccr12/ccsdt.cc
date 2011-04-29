@@ -25,12 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <cmath>
 #include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/ccr12/tensor.h>
-#include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/ccsdt.h>
 #include <chemistry/qc/ccr12/ccsdt_t1.h>
 #include <chemistry/qc/ccr12/ccsdt_t2.h>
@@ -52,8 +49,9 @@ CCSDT::CCSDT(StateIn& s): CCR12(s){
 
 
 CCSDT::CCSDT(const Ref<KeyVal>& keyval): CCR12(keyval){
-  string theory_ = "CCSDT";
-  common_init(theory_, keyval);
+  string theory("CCSDT");
+  theory_ = theory;
+  print_theory();
 }
 
 

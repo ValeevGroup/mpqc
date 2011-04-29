@@ -33,7 +33,8 @@
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 namespace sc {
-
+ 
+/** PTNum is the base class for the numerator in various (2)T/(2)Q models.  */
 class Parenthesis2tNum : public RefCount {
 
   protected:

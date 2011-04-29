@@ -29,34 +29,32 @@
 #define _chemistry_qc_ccr12_ccr12_h
 
 #include <string>
-#include <util/misc/compute.h>
 #include <util/group/memory.h>
 #include <util/group/message.h>
 #include <util/group/thread.h>
-#include <chemistry/qc/basis/obint.h>
-#include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
 
 namespace sc {
 
-//class R12IntEval;
-class R12WavefunctionWorld;
-
-class CCR12: public MBPT2_R12 {
+/** CCR12 is the base class for CC and CC-R12 methods.  */
+class CCR12: public Wavefunction {
   protected:
     Ref<ThreadGrp> thrgrp_;
     Ref<MessageGrp> msggrp_;
     Ref<MemoryGrp> mem_;
+
+    Ref<R12IntEval> r12eval_;              // the R12 intermediates evaluator
+    Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
+    Ref<SCF> reference_;
+
     CCR12_Info* ccr12_info_;
+    int nfzc_, nfzv_;
     long worksize_;
     long memorysize_;
-    Ref<R12IntEval> r12eval_;
     bool rhf_;
     int maxiter_;
     Ref<RegionTimer> timer_;
@@ -73,13 +71,23 @@ class CCR12: public MBPT2_R12 {
     ~CCR12();
     CCR12_Info* info() const { return ccr12_info_;};
 
+    const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
+    const Ref<R12IntEval>& r12eval() const { return r12eval_; }
+    Ref<SCF> ref() { return reference_; }
+
+    int spin_polarized() { return ccr12_info_->restricted(); };
+
+    RefSymmSCMatrix density() { return 0; };
+    int nelectron() { return ccr12_info_->naoa()+ccr12_info_->naob(); };
+    void obsolete();
+    int value_implemented() const { return 1; };
 
   protected:
-    /// always execute this from Derived's compute()
     void compute();
-    void common_init(std::string, const Ref<KeyVal>& kv);
+    static double ref_to_ccr12_acc() { return 100.0; }
 
-    // print nutilities
+    // print utilities
+    void print_theory();
     void print_iteration_header(std::string);
     void print_iteration_footer();
     void print_iteration(int,double,double,double,double);

@@ -26,9 +26,9 @@
 //
 
 #include <util/class/scexception.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/ccr12/ccr12.h>
+#include <chemistry/qc/scf/hsosscf.h>
+#include <chemistry/qc/scf/clscf.h>
 
 using namespace std;
 using namespace sc;
@@ -39,51 +39,75 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc CCR12_cd(
-  typeid(CCR12),"CCR12",1,"public MBPT2_R12",
+  typeid(CCR12),"CCR12",1,"public Wavefunction",
   0,create<CCR12>,create<CCR12>);
 
-CCR12::CCR12(StateIn& s): MBPT2_R12(s), ccr12_info_(0) {
+CCR12::CCR12(StateIn& s): SavableState(s), Wavefunction(s), ccr12_info_(0) {
   throw ProgrammingError("sc::CCR12::CCR12(StateIn&) -- constructor not yet implemented",__FILE__,__LINE__);
 }
 
 
-CCR12::CCR12(const Ref<KeyVal>& keyval): MBPT2_R12(keyval), ccr12_info_(0) {
-}
+CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
 
+  reference_ << keyval->describedclassvalue("reference");
+  if (reference_.null()) {
+    ExEnv::err0() << "MBPT2::MBPT2: no reference wavefunction" << endl;
+    abort();
+  }
+  copy_orthog_info(reference_);
 
-void CCR12::common_init(string theory, const Ref<KeyVal>& kv){
-
-  theory_ = theory;
   thrgrp_ = ThreadGrp::get_default_threadgrp();
   msggrp_ = MessageGrp::get_default_messagegrp();
   mem_ = MemoryGrp::get_default_memorygrp();
   timer_ = new RegionTimer();
 
+  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
+  Ref<OrbitalSpace> vbs;
+
+  nfzc_ = keyval->intvalue("nfzc");
+  string nfzc_charval = keyval->stringvalue("nfzc");
+  if (nfzc_charval == "auto") {
+    if (molecule()->max_z() > 30) {
+      ExEnv::err0() << "CCR12: cannot use \"nfzc = auto\" for Z > 30" << endl;
+      abort();
+    }
+    nfzc_ = molecule()->n_core_electrons()/2;
+    ExEnv::out0() << "  CCR12: auto-freezing " << nfzc_ << " core orbitals" << endl;
+  }
+  nfzv_ = keyval->intvalue("nfzv");
+
+  Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
+                                                        nfzc_, nfzv_,
+                                                        vbs);
+  r12world_ = new R12WavefunctionWorld(keyval, refinfo);
+  Ref<R12Technology> r12tech = r12world_->r12tech();
+
+#if 0
+  // CABS singles is not supported yet in CCR12.
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+#endif
+
+  this->set_desired_value_accuracy(desired_value_accuracy());
+
   ExEnv::out0() << endl << indent << "-------- CCR12 calculation --------"<< endl;
   if (sizeof(long) < 8)
     ExEnv::out0() << indent << "!!!!!!!!!! \"long int\" less than 8 bytes !!!!!!!!!!" << endl;
 
-  if(theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
-
-  ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl << endl;
-  perturbative_ = kv->stringvalue("perturbative", KeyValValuestring(""));
-  std::transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
-  ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
-
-  ndiis_=kv->intvalue("ndiis", KeyValValueint(2));
-  diis_start_ = kv->intvalue("diis_start", KeyValValueint(0));
+  ndiis_=keyval->intvalue("ndiis", KeyValValueint(2));
+  diis_start_ = keyval->intvalue("diis_start", KeyValValueint(0));
 
   CLSCF* clscfref=dynamic_cast<CLSCF*>(ref().pointer());
   rhf_=(clscfref!=0);
 
   // maxiter
-  maxiter_=kv->intvalue("maxiter",   KeyValValueint(100));
+  maxiter_=keyval->intvalue("maxiter",   KeyValValueint(100));
   // cctresh
-  ccthresh_=kv->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
+  ccthresh_=keyval->doublevalue("ccthresh", KeyValValuedouble(1.0e-9));
   // get the memory sizes
-  memorysize_ = kv->longvalue("memory",   KeyValValuelong(200000000));
+  memorysize_ = keyval->longvalue("memory",   KeyValValuelong(200000000));
   ExEnv::out0() << indent << "Memory size per node: " << memorysize_ << endl;
-  worksize_ = kv->longvalue("workmemory",   KeyValValuelong(50000000));
+  worksize_ = keyval->longvalue("workmemory",   KeyValValuelong(50000000));
 #ifdef DISK_BASED_SMITH
   worksize_ = memorysize_; 
 #endif
@@ -98,19 +122,32 @@ CCR12::~CCR12(){
 
 void CCR12::compute(){
 
+  reference_->set_desired_value_accuracy(desired_value_accuracy()/ref_to_ccr12_acc());
+
   r12world()->initialize();
 
   // CCR12_Info will do integral evaluation, before MemoryGrp is used by Tensors
   if (ccr12_info_ != 0) delete ccr12_info_;
-  ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzcore(),nfzvirt(),
+  ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzc_,nfzv_,
                   molecule()->point_group()->char_table().nirrep(),worksize_,memorysize_,mem_->n(),ndiis_,
                   theory_,perturbative_);
 
 }
 
 
+void CCR12::obsolete() {
+  if (reference_.nonnull()) reference_->obsolete();
+  Wavefunction::obsolete();
+}
 
 /// utilities >>>>>>> form here >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+void CCR12::print_theory() {
+  if (theory_ == "notheory") throw InputError("CCR12::CCR12 -- no theory specified",__FILE__,__LINE__);
+  ExEnv::out0() << endl << indent << "Theory:       " << theory_ << endl;
+  if (perturbative_ != "")
+    ExEnv::out0() << endl << indent << "Perturbative: " << perturbative_ << endl << endl;
+}
 
 void CCR12::print_iteration_header(string theory){
   if (mem_->me()==0) {

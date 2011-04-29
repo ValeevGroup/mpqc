@@ -45,6 +45,8 @@
 
 namespace sc {
 
+/** CCR12_Info is the compilation of members that are used in CC and CC-R12 methods.
+    It should be strictly owned by these classes. Usually initialized by CCR12::compute() */
 class CCR12_Info : virtual public RefCount {
   protected:
     const Ref<SCF> ref_;

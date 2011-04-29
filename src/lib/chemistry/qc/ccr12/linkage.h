@@ -29,7 +29,7 @@
 #define _chemistry_qc_ccr12_linkage_h
 
 #include <util/class/class.h>
-#include <chemistry/qc/mbptr12/linkage.h>
+#include <chemistry/qc/scf/linkage.h>
 
 #include <chemistry/qc/ccr12/ccsd.h>
 #include <chemistry/qc/ccr12/ccsdt.h>

@@ -25,12 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <cmath>
 #include <util/misc/regtime.h>
 #include <util/state/stateio.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/ccr12/tensor.h>
-#include <chemistry/qc/ccr12/ccr12_info.h>
 #include <chemistry/qc/ccr12/ccsdpr12.h>
 #include <chemistry/qc/ccr12/ccsd_r12_e.h>
 #include <chemistry/qc/ccr12/ccsdpr12_t1.h>
@@ -60,8 +57,11 @@ CCSDPR12::CCSDPR12(StateIn& s): CCR12(s){
 
 
 CCSDPR12::CCSDPR12(const Ref<KeyVal>& keyval): CCR12(keyval){
-  string theory_ = "CCSD(R12)";
-  common_init(theory_, keyval);
+  string theory("CCSD(R12)");
+  theory_ = theory;
+  perturbative_ = keyval->stringvalue("perturbative", KeyValValuestring(""));
+  transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
+  print_theory();
 }
 
 

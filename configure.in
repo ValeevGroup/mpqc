@@ -1690,6 +1690,7 @@ dnl ----------- libint2 library checks --------------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libint2/libint2.h,
+
   AC_MSG_CHECKING([for libint2_static_init in -lint2])
   REF_LIBS=$LIBS  LIBS="-lint2 $LIBS"
   AC_LINK_IFELSE(
@@ -1700,12 +1701,13 @@ AC_CHECK_HEADERS(libint2/libint2.h,
         void (*funcptr)() = LIBINT2_PREFIXED_NAME(libint2_static_init);
         funcptr();
       ]]
-      ),
+    ),
     [can_link_libint2=yes
      AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)]
   )
   LIBS=$REF_LIBS
+  
   if test X$can_link_libint2 = Xyes; then
     AC_MSG_CHECKING([libint2 ordering of cartesian gaussians in shells])
     libint2_cgshell_ordering=none
@@ -1786,6 +1788,7 @@ AC_CHECK_HEADERS(libint2/libint2.h,
        AC_MSG_RESULT(yes)],
       [AC_MSG_RESULT(no)]
     )
+    HAVE_LIBINT2_G12_T1G12=no
     if test X$HAVE_LIBINT2_G12 = Xyes; then
       AC_MSG_CHECKING([if libint2 can compute T1G12 commutators])
       AC_COMPILE_IFELSE(
@@ -1805,6 +1808,25 @@ AC_CHECK_HEADERS(libint2/libint2.h,
         [AC_MSG_RESULT(no)]
       )
     fi
+    
+    if test X$HAVE_LIBINT2_G12 = Xyes && test X$HAVE_LIBINT2_G12_T1G12 = Xno; then
+      AC_MSG_CHECKING([API version of -lint2])
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+         [[#include <libint2/libint2.h>
+         ]],
+         [[
+           Libint_t eval;
+           double** ptr = reinterpret_cast<double**>(&(eval.R12_2_G12_scale_to_G12T1G12));
+         ]]
+        ),
+        [AC_MSG_RESULT(yes)],
+        [AC_MSG_RESULT(no)
+         AC_MSG_ERROR([[libint2 API is not up-to-date, please obtain the most recent library at libint.valeyev.net]],1)
+        ]
+      )
+    fi
+    
     AC_MSG_CHECKING([if libint2 can compute general G12])
     AC_COMPILE_IFELSE(
       AC_LANG_PROGRAM(

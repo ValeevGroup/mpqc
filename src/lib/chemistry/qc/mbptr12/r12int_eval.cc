@@ -2176,15 +2176,13 @@ R12IntEval::compute()
         R12IntEval::contrib_to_VXB_c_ansatz1_();
       }
       else {
-        if (r12world()->sdref()) { // single-determinant reference
+        if (r12world()->spinadapted()) // to compute in spin-adapted fashion assume general reference
+                                       // would be more efficient to have specialized single-determinant spin-adapated version, but not there yet
+          contrib_to_VX_GenRefansatz2_spinfree_();
+        else if (r12world()->sdref()) // single-determinant reference
           contrib_to_VXB_a_();
-        }
-        else {
-          if (r12world()->spinadapted())
-            contrib_to_VX_GenRefansatz2_spinfree_();
-          else
-            contrib_to_VX_GenRefansatz2_();
-        }
+        else // spin-orbital general-reference case
+          contrib_to_VX_GenRefansatz2_();
       }
     }
     else {
@@ -2228,15 +2226,12 @@ R12IntEval::compute()
                                         __FILE__,__LINE__);
         }
         else {
-          if(r12world()->sdref()) { // single-determinant reference
+          if(r12world_->spinadapted()) // see comments above -- treat all spinadapted computations as general-reference
+            compute_BC_GenRefansatz2_spinfree();
+          else if(r12world()->sdref()) // spin-orbital single-determinant reference
             compute_BC_();
-          }
-          else {
-            if(r12world_->spinadapted())
-                compute_BC_GenRefansatz2_spinfree();
-            else
-                compute_BC_GenRefansatz2_();
-          }
+          else // spin-orbital general reference
+            compute_BC_GenRefansatz2_();
         }
         if (debug_ >= DefaultPrintThresholds::O4)
           for(int s=0; s<nspincases2(); s++)

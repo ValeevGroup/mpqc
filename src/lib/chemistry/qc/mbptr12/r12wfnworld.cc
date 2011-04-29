@@ -61,7 +61,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<RefWavefunction>& ref) :
     ref_(ref), ref_acc_for_cabs_space_(DBL_MAX)
 {
-  // by default use spin-adapted algorithms for closed-shell
+  // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
 
   bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(

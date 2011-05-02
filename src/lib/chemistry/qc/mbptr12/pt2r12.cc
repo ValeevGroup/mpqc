@@ -2058,10 +2058,12 @@ void sc::PT2R12::compute()
   double energy_pt2r12[NSpinCases2];
   double B_so = 0.0;
   double V_so = 0.0;
-  double X_so = 0.0;
+  double X_so = 0.0; // these 3 varialbes store the final values for B, V, X
   double energy_pt2r12_sf = 0.0;
   double cabs_singles_corre_2b_H0 = 0.0;
   const bool spin_polarized = r12world()->ref()->spin_polarized();
+
+
 
   if (pt2_correction_)
   {
@@ -2119,7 +2121,8 @@ void sc::PT2R12::compute()
                                       reference_->energy() + cabs_singles_corre_2b_H0) << endl;
   }
 
-  if(r12world_->spinadapted()) energy_correction_r12 = energy_pt2r12_sf;
+  if(r12world_->spinadapted())
+    {energy_correction_r12 = energy_pt2r12_sf;}
   else
   {
     if (!spin_polarized)
@@ -2137,7 +2140,8 @@ void sc::PT2R12::compute()
          X_so += X_[i];
     }
   }
-  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_corre_2b_H0;
+
+  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
 
 
   ExEnv::out0() << indent << scprintf("Reference energy [au]:                 %17.12lf",
@@ -2149,16 +2153,19 @@ void sc::PT2R12::compute()
                                         recomp_ref_energy) << endl;
   #endif
 
-  if (r12world_->spinadapted() == false) {
+  if (r12world_->spinadapted() == false) // if true, use spinadapted algorithm, then spin component contributions are not separated.
+  {
     ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
                                         energy_pt2r12[AlphaBeta]) << endl;
     ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
                                         energy_pt2r12[AlphaAlpha]) << endl;
-    if (spin_polarized) {
+    if (spin_polarized)
+    {
       ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
                                           energy_pt2r12[BetaBeta]) << endl;
     }
-    else {
+    else // if not polarized, then BebaBeta contribution == AlaphAlpha contribution
+    {
       ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
                                           energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
       ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
@@ -2170,18 +2177,6 @@ void sc::PT2R12::compute()
                                       energy_correction_r12) << endl;
   ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
                                       energy) << std::endl;
-  if(r12world_->spinadapted() == false)
-  {
-
-    const double Btotal = B_so + X_so;
-    const double R12min = -V_so * V_so/(4 * Btotal);
-    ExEnv::out0() << std::endl << std::endl;
-    ExEnv::out0() << indent << scprintf("V term [au]:                           %17.12lf", V_so) << std::endl;
-    ExEnv::out0() << indent << scprintf("B term [au]:                           %17.12lf", B_so) << std::endl;
-    ExEnv::out0() << indent << scprintf("X term [au]:                           %17.12lf", X_so) << std::endl;
-    ExEnv::out0() << indent << scprintf("R12 minimum:                           %17.12lf", R12min) << std::endl;
-    ExEnv::out0() << indent << scprintf("error percentage:                      %17.12lf", 1-energy_correction_r12/R12min) << std::endl;
-  }
   set_energy(energy);
 }
 

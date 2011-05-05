@@ -202,6 +202,8 @@ namespace sc {
       int rasscf_maxiter_;    //< max number of iterations in rasscf
       int rasscf_target_sym_; //< target symmetry
       int diis_start_; /// after X cycles, diis starts
+      double max_step_;
+
 
       bool state_average_;   //< state average?
       bool relax_core_;

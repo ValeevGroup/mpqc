@@ -1820,8 +1820,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
            double** ptr = reinterpret_cast<double**>(&(eval.R12_2_G12_scale_to_G12T1G12));
          ]]
         ),
-        [AC_MSG_RESULT(yes)],
-        [AC_MSG_RESULT(no)
+        [AC_MSG_RESULT(recent)],
+        [AC_MSG_RESULT(too old)
          AC_MSG_ERROR([[libint2 API is not up-to-date, please obtain the most recent library at libint.valeyev.net]],1)
         ]
       )

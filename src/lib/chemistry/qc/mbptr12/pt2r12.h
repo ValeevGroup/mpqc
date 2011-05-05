@@ -56,7 +56,7 @@ namespace sc {
           reference will be omitted from consideration. This is useful if only geminal functions
           are used to treat electron correlation.
 
-          <tr><td><tt>cabs_singles</tt><td>boolean<td>false<td>if set to true, compute 2nd-order
+          <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
           <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
               this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.

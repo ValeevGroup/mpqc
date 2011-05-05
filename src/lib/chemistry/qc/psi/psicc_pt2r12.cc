@@ -61,7 +61,7 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
                                                               this->nfzc(), this->nfzv());
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
   Ref<R12Technology> r12tech = r12world_->r12tech();
-  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(true));
   const bool openshell = this->reference()->spin_polarized();
   spinadapted_ = keyval->booleanvalue("spinadapted", KeyValValueboolean(openshell ? 0 : 1));
 

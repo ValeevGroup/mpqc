@@ -85,7 +85,7 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
 
 #if 0
   // CABS singles is not supported yet in CCR12.
-  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(true));
 #endif
 
   this->set_desired_value_accuracy(desired_value_accuracy());

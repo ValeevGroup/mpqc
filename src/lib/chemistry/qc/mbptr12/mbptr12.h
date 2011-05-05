@@ -97,7 +97,7 @@ class MBPT2_R12: public MBPT2 {
     specifies which pair function to plot.
 
     <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
-    CABS singles and include it into the MBPT(2)-R12 energy. The default is false.
+    CABS singles and include it into the MBPT(2)-R12 energy. The default is true, except if <tt>corr_factor=none</tt>.
 
     </dl> */
     MBPT2_R12(const Ref<KeyVal>&);

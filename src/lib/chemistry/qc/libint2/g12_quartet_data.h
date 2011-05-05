@@ -101,6 +101,8 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
 #if LIBINT2_DEFINED(g12,gamma)
   Data->gamma[0] = gamma;
 #endif
+#if LIBINT2_DEFINED(g12,R12_2_G12_scale_to_G12T1G12)
+  Data->R12_2_G12_scale_to_G12T1G12[0] = g2_4;
   
   //
   // prefactors for (ab|-1|cd) are same as for OSRR, only (00|-1|00)^m are different

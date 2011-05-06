@@ -111,6 +111,9 @@ namespace sc {
       int maxiter_;   //< max number of CC iterations
       static const int default_maxiter = 50;
       
+      bool diis_;
+      int diis_nvector_;
+
     public:
       PsiCC(const Ref<KeyVal>&);
       PsiCC(StateIn&);

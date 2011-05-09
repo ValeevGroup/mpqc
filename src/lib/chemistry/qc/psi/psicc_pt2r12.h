@@ -74,7 +74,7 @@ namespace sc {
     is not used.
 
       <dt><tt>cabs_singles</tt><dd> Evaluate the second-order energy contribution from
-      CABS singles and include it into the CC-R12 energy. The default is false.
+      CABS singles and include it into the CC-R12 energy. The default is true.
 
       <dt><tt>pccsd_alpha</tt><dd> The default is 1.0 .
 

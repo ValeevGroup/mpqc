@@ -107,7 +107,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
-  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean((int)false));
+  Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech->corrfactor();
+  const bool default_cabs_singles = null_cf.nonnull() ? false : true;
+  cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(default_cabs_singles));
 
   const bool diag = r12tech->ansatz()->diag();
   // use jinmei's code for diagonal ansatz

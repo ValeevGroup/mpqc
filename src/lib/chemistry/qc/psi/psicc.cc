@@ -72,6 +72,8 @@ namespace sc {
   PsiCC::PsiCC(const Ref<KeyVal>&keyval) :
     PsiCorrWavefunction(keyval) {
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(default_maxiter));
+    diis_ = keyval->booleanvalue("diis",KeyValValueboolean(true));
+    diis_nvector_ = keyval->intvalue("diis_nvector",KeyValValueint(true));
   }
 
   PsiCC::~PsiCC() {
@@ -900,6 +902,8 @@ namespace sc {
     input->write_keyword("psi:wfn", "ccsd");
     input->write_keyword("ccenergy:convergence", convergence);
     input->write_keyword("ccenergy:maxiter", maxiter_);
+    input->write_keyword("ccenergy:diis", diis_);
+    input->write_keyword("ccenergy:diis_nvector", diis_nvector_);
     input->write_keyword("ccenergy:pccsd_alpha", pccsd_alpha_);
     input->write_keyword("ccenergy:pccsd_beta", pccsd_beta_);
     input->write_keyword("ccenergy:pccsd_gamma", pccsd_gamma_);

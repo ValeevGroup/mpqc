@@ -1719,6 +1719,12 @@ namespace sc {
     this->write_input_frozen2restricted(convergence, false);
   }
 
+  namespace {
+    int accuracy_to_convergence( double acc ) {
+      return -(int)(ceil(log10(acc)));
+    }
+  }
+
   void PsiCorrWavefunction::write_input_frozen2restricted(int convergence,
                                                           bool frozen2restricted) {
     if (gradient_needed())
@@ -1728,7 +1734,7 @@ namespace sc {
 
     Ref<PsiInput> input = get_psi_input();
     PsiWavefunction::write_basic_input(convergence);
-    reference_->write_basic_input(convergence);
+    reference_->write_basic_input( accuracy_to_convergence(reference_->desired_value_accuracy()) );
     input->write_keyword("psi:tolerance", convergence + 5);
     if (frozen2restricted) {
       input->write_keyword_array("psi:restricted_docc", this->frozen_docc());

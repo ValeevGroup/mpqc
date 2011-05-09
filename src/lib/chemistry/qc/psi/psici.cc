@@ -859,6 +859,8 @@ namespace sc {
     // reset some defaults for the RASCI class
     energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
+    if (keyval->exists("max_step"))
+      max_step_ = keyval->doublevalue("max_step",KeyValValuedouble(0.30));
     if (keyval->exists("ras3") == false)
       std::fill(ras3_.begin(), ras3_.end(), 0);
 
@@ -942,6 +944,7 @@ namespace sc {
       input->write_keyword_array("detci:average_weights", average_weights);
     }
 
+
     input->write_keyword("detcas:convergence",rasscf_convergence_);
     input->write_keyword("detcas:energy_convergence",rasscf_energy_convergence_);
     input->write_keyword("default:ncasiter",rasscf_maxiter_);
@@ -950,6 +953,8 @@ namespace sc {
     }
     else
       input->write_keyword("detcas:diis_start", diis_start_);
+    if(max_step_ != 0.3)
+      input->write_keyword("detcas:max_step", max_step_);
     input->write_keyword("detci:maxiter",rasscf_maxiter_);
 
     if (rasscf_target_sym_ != -1)

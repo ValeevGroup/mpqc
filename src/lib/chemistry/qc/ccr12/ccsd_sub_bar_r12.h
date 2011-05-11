@@ -31,7 +31,6 @@
 
 #include <chemistry/qc/ccr12/ccsd_sub_r12.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
-#include <iostream>
 
 namespace sc {
 

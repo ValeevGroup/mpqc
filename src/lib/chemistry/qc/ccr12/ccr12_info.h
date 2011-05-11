@@ -382,7 +382,7 @@ class CCR12_Info : virtual public RefCount {
     long momap(long i) const {return momap_[i];};
 
     /// utilities for Lambda contribution in fixed-amp approaches
-    void prod_iiii(Ref<Tensor>&, Ref<Tensor>&, Ref<Tensor>&, const bool transpose = false);
+    void prod_iiii(const Ref<Tensor>&, const Ref<Tensor>&, Ref<Tensor>&, const bool transpose = false);
 
     /// returns B and X intermediate for perturbative methods etc.
     RefSymmSCMatrix B() { return B_; };

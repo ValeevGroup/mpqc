@@ -70,7 +70,7 @@ CCSD::CCSD(const Ref<KeyVal>& keyval): CCR12(keyval){
   print_theory();
 
   // validate user input
-  if (perturbative_ == "(T)R12" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(2)R12" || perturbative_ == "(2)R12FULL") {
+  if (perturbative_ == "(2)R12FULL" || perturbative_ == "(T)R12[DT]") {
     // diagonal ansatz not implemented
     if (this->r12world()->r12tech()->ansatz()->diag())
       throw FeatureNotImplemented("diagonal ansatz for perturbative R12 corrections in SMITH-based code (use Psi-based code)",

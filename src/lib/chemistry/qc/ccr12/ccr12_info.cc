@@ -227,7 +227,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
     // F * gt2 (\tilde{t} in our papers)
     // filled at run-time
     // those are not needed in (2)R12 type theories
-    if (need_gt2()) {
+    if (need_gt2() && need_F_) {
       d_qy = new Tensor("qy", mem_);
       offset_qy();
       static_size += d_qy->get_filesize() * sizeof(double);
@@ -282,12 +282,12 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   // prediagonalization set-up for certain class of methods.
-  if (need_w1()) {
+  if (need_w1() && theory_ != "CCSD(R12)") {
     prediagon(bdiag_, lmatrix_);
   }
 
   // Making initial guess for t2.
-  if (!need_gt2()) {
+  if (!need_gt2() || need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12")) {
     guess_t2(d_t2);
   } else if (r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
     // assuming d_gt2 is already filled in.
@@ -488,6 +488,9 @@ void CCR12_Info::needs(){
   // screened version
   if (perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12" || perturbative_ == "(2)R12") {
     need_w1_ = true;
+    if (this->r12world()->r12tech()->ansatz()->diag()) {
+      need_gt2_ = true;
+    }
   }
 
 }

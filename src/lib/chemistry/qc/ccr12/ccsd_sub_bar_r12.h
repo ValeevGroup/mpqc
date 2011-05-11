@@ -31,6 +31,7 @@
 
 #include <chemistry/qc/ccr12/ccsd_sub_r12.h>
 #include <chemistry/qc/ccr12/ccr12_info.h>
+#include <iostream>
 
 namespace sc {
 
@@ -48,9 +49,23 @@ class CCSD_Sub_Bar_R12 : public CCSD_Sub_R12 {
 
     double compute() {
       compute_amp();
-      denom_contraction();
-      z->prod_iiii(tildeV_, intermediate_, energy_, true); 
-      return z->get_e(energy_);
+      if (!z->r12world()->r12tech()->ansatz()->diag()) {
+        // ijkl ansatz
+        z->denom_contraction(tildeV_, intermediate_);
+        z->prod_iiii(tildeV_, intermediate_, energy_, true); 
+        return z->get_e(energy_);
+      } else {
+        // fixed diagonal ansatz
+        const Ref<Tensor> gt2 = z->gt2();
+        intermediate_->zero();
+        z->denom_contraction(gt2, intermediate_);
+        z->prod_iiii(gt2, intermediate_, energy_, true);
+        const double bterm = z->get_e(energy_);
+        energy_->zero();
+        z->prod_iiii(tildeV_, gt2, energy_, false); 
+        const double direct_en = 2.0*(z->get_e(energy_));
+        return direct_en - bterm;
+      }
     };
 
 };

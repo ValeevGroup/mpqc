@@ -43,7 +43,7 @@ class CCSD_Sub_R12 : public RefCount {
     Ref<Tensor> intermediate_;
     Ref<Tensor> energy_;
 
-    void denom_contraction();
+    void denom_contraction() { z->denom_contraction(tildeV_, intermediate_); };
 
   public:
     CCSD_Sub_R12(CCR12_Info* inz, const bool do_init) : z(inz) {

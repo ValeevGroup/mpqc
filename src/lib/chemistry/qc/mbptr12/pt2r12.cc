@@ -2466,7 +2466,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()
 {
-  # define DEBUGG false
+  # define DEBUGG true
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();

@@ -2510,6 +2510,8 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   // RDMs
   RefSymmSCMatrix gamma1_alpha = rdm1_->scmat(spin);
   RefSymmSCMatrix gamma1_beta = rdm1_->scmat(other(spin));
+  gamma1_alpha.print("Alpha spin 1-RDM");
+  gamma1_beta.print("Beta spin 1-RDM");
   RefSymmSCMatrix gamma2_aa = this->rdm2( case12(spin,spin) );
   RefSymmSCMatrix gamma2_bb = this->rdm2( case12(other(spin),other(spin)) );
   RefSymmSCMatrix gamma2_ab = this->rdm2( case12(spin,other(spin)) );

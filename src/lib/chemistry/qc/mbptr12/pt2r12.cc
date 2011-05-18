@@ -2101,7 +2101,7 @@ void sc::PT2R12::compute()
     //calculate basis set incompleteness error (BSIE) with two choices of H0
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
     cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
-    const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
+    const bool keep_Fock_result = true; // if false, only do [2]_S with Dyall Hamiltonian
     if(keep_Fock_result)
     {
       alpha_corre = this->energy_cabs_singles(Alpha);
@@ -2113,7 +2113,7 @@ void sc::PT2R12::compute()
       ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
                                         cabs_singles_corre) << endl;
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
-                                        reference_->energy() + cabs_singles_corre) << endl;
+                                        reference_->energy() + cabs_singles_corre) << endl << endl;
     }
     ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
                                       cabs_singles_corre_2b_H0) << endl;

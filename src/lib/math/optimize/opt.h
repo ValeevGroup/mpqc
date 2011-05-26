@@ -110,6 +110,8 @@ class Optimize: virtual public SavableState {
 
     /// Returns information about the Function being optimized.
     Ref<Function> function() const { return function_; }
+    /// Return information about the Convergence object being used
+    Ref<Convergence> convergence() const { return conv_; }
     Ref<SCMatrixKit> matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }
 

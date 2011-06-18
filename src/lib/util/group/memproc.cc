@@ -43,6 +43,7 @@ ProcMemoryGrp::ProcMemoryGrp()
   offsets_ = 0;
   n_ = 1;
   me_ = 0;
+  set_localsize(0);
 }
 
 ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
@@ -52,6 +53,7 @@ ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
   offsets_ = 0;
   n_ = 1;
   me_ = 0;
+  set_localsize(0);
 }
 
 ProcMemoryGrp::~ProcMemoryGrp()

@@ -1,5 +1,5 @@
 
-#include <chemistry/qc/scf/fockdist.h>
+#include <chemistry/qc/lcao/fockdist.h>
 
 #include <util/class/scexception.h>
 #include <util/state/statein.h>

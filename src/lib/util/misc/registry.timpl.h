@@ -29,6 +29,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_registrytimpl_h
 
 #include <cassert>
+#include <iterator>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/misc/registry.h>
@@ -199,6 +200,7 @@ namespace sc {
     }
     else {
       lock_->unlock();
+      this->print(ExEnv::out0());
       throw not_found("key not found");
     }
     // unreachable
@@ -211,8 +213,10 @@ namespace sc {
                                           const Value& value)
   {
     // check if key already exists
-    if (key_exists(key))
+    if (key_exists(key)) {
+      this->print(ExEnv::out0());
       throw std::logic_error("key already exists");
+    }
     lock_->lock();
     map_[key] = value;
     lock_->unlock();
@@ -233,6 +237,17 @@ namespace sc {
     if (v != map_.end())
       map_.erase(v);
     lock_->unlock();
+  }
+
+  template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
+  void
+  Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::print(std::ostream& os) const
+  {
+      for(typename Map::const_iterator iter = map_.begin();
+          iter != map_.end();
+          ++iter) {
+        os << iter->first << " " << iter->second << std::endl;
+      }
   }
 
 } // end of namespace sc

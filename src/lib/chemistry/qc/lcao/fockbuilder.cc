@@ -1086,15 +1086,19 @@ namespace sc {
       // get square root of P
       Ref<OrbitalSpace> Sspace;
       if (psqrtregistry->key_exists(P) == false) {
+
         RefDiagSCMatrix Pevals = P.eigvals();
         RefSCMatrix Pevecs = P.eigvecs();
         const double Peval_max = Pevals->maxabs();
         const double Peval_threshold = Peval_max * 1e-8;
         const int nao = obs_space->rank();
         int Srank = 0;
-        for(int ao=0; ao<nao; ++ao)
-          if (Pevals(ao) > Peval_threshold)
+        for(int ao=0; ao<nao; ++ao) {
+          const double value = Pevals(ao);
+          assert(value > -1e-8); // Negative eigenvalues? BAD
+          if (value > Peval_threshold)
             ++Srank;
+        }
 
         // handle the case of zero electrons
         if (Srank == 0) {
@@ -1226,6 +1230,12 @@ namespace sc {
       if (C->data_persistent()) C->deactivate();
       ExEnv::out0() << indent << "End of computation of exchange(DF) matrix" << endl;
 
+      // remove P-depenedent entries from registries
+      psqrtregistry->remove(P);
+      oreg->remove(Sspace->id());
+      df_rtime->remove_if(Sspace->id());
+      int3c_rtime->remove_if(Sspace->id());
+
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
       Ref<PetiteList> brapl = localints->petite_list();
@@ -1239,9 +1249,6 @@ namespace sc {
 
       result.assign(K);
       delete[] K;
-
-      /// remove sqrt(P) space from the OrbitalSpaceRegistry
-      oreg->remove(Sspace->id());
 
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;

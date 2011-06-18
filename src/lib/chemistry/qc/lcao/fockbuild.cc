@@ -42,8 +42,8 @@
 #include <math/scmat/elemop.h>
 #include <math/scmat/blkiter.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/scf/fockbuild.h>
-#include <chemistry/qc/scf/fockdist.h>
+#include <chemistry/qc/lcao/fockbuild.h>
+#include <chemistry/qc/lcao/fockdist.h>
 
 #undef DEBUG
 #define DEBUG 0

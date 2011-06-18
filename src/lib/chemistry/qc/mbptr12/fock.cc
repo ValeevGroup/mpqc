@@ -31,7 +31,6 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/uncontract.h>
-#include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <util/misc/print.h>

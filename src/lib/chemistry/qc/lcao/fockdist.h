@@ -1,6 +1,6 @@
 
-#ifndef _chemistry_qc_scf_fockdist_h
-#define _chemistry_qc_scf_fockdist_h
+#ifndef _chemistry_qc_lcao_fockdist_h
+#define _chemistry_qc_lcao_fockdist_h
 
 #include <vector>
 #include <util/misc/scint.h>

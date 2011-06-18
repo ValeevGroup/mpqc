@@ -359,6 +359,63 @@ ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& oper_key,
 
 /////////////////////////////////////////////////////////////////////////////
 
+namespace sc {
+
+template <int NumCenters> struct ParsedTwoBodyNCenterIntKeyInvolvesSpace {
+    ParsedTwoBodyNCenterIntKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
+    bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<NumCenters>::refvalue >& i) const;
+    std::string space_key;
+};
+
+template <> bool
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<4>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<4>::refvalue>& i) const
+{
+  const ParsedTwoBodyFourCenterIntKey pkey(i.first);
+  return pkey.bra1() == space_key || pkey.bra2() == space_key || pkey.ket1() == space_key || pkey.ket2() == space_key;
+}
+
+template <> bool
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<3>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<3>::refvalue>& i) const
+{
+  const ParsedTwoBodyThreeCenterIntKey pkey(i.first);
+  return pkey.bra1() == space_key || pkey.bra2() == space_key || pkey.ket1() == space_key;
+}
+
+template <> bool
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<2>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<2>::refvalue>& i) const
+{
+  const ParsedTwoBodyTwoCenterIntKey pkey(i.first);
+  return pkey.bra1() == space_key || pkey.bra2() == space_key;
+}
+
+template <>
+void
+TwoBodyMOIntsRuntime<4>::remove_if(const std::string& space_key)
+{
+  ParsedTwoBodyNCenterIntKeyInvolvesSpace<4> pred(space_key);
+  evals_->remove_if(pred);
+}
+
+template <>
+void
+TwoBodyMOIntsRuntime<3>::remove_if(const std::string& space_key)
+{
+  ParsedTwoBodyNCenterIntKeyInvolvesSpace<3> pred(space_key);
+  evals_->remove_if(pred);
+}
+
+template <>
+void
+TwoBodyMOIntsRuntime<2>::remove_if(const std::string& space_key)
+{
+  ParsedTwoBodyNCenterIntKeyInvolvesSpace<2> pred(space_key);
+  evals_->remove_if(pred);
+}
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 Ref<ParamsRegistry> ParamsRegistry::instance_ = new ParamsRegistry;
 
 const Ref<ParamsRegistry>&

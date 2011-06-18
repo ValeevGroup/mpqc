@@ -26,8 +26,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_fockbuild_h
-#define _chemistry_qc_scf_fockbuild_h
+#ifndef _chemistry_qc_lcao_fockbuild_h
+#define _chemistry_qc_lcao_fockbuild_h
 
 #include <scconfig.h>
 #include <util/misc/regtime.h>
@@ -36,7 +36,7 @@
 #include <chemistry/qc/basis/integral.h>
 
 #include <util/group/actmsg.h>
-#include <chemistry/qc/scf/fockdist.h>
+#include <chemistry/qc/lcao/fockdist.h>
 
 namespace sc {
 

@@ -31,13 +31,14 @@
 #include <string>
 
 #include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/fockbuild.h>
+#include <chemistry/qc/lcao/fockbuild.h>
+#include <chemistry/qc/lcao/df_runtime.h>
 
 namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
-/// CLHF is a Hartree-Fock specialization of CLSCF.
+/// FockBuildCLHF is a specialization of CLHF that uses FockBuild class for computing fock matrices
 class FockBuildCLHF: public CLHF {
   protected:
     Ref<FockDistribution> fockdist_;
@@ -53,6 +54,26 @@ class FockBuildCLHF: public CLHF {
     void init_threads();
     void done_threads();
     void print(std::ostream&o=ExEnv::out0()) const;
+};
+
+/// DFCLHF is a specialization of CLHF that uses a density-fitting FockBuild class for computing fock matrices
+class DFCLHF: public CLHF {
+  protected:
+    void ao_fock(double accuracy);
+    void reset_density();
+  public:
+    DFCLHF(StateIn&);
+    /**
+     * N.B. <tt>density_reset_freq</tt> is ignored by this method -- full Fock matrix is always constructed.
+     */
+    DFCLHF(const Ref<KeyVal>&);
+    ~DFCLHF();
+    void save_data_state(StateOut&);
+    void print(std::ostream&o=ExEnv::out0()) const;
+  private:
+    RefSymmSCMatrix gmat_;
+    Ref<DensityFittingInfo> dfinfo_;
+    static ClassDesc cd_;
 };
 
 }

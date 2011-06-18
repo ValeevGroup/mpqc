@@ -94,6 +94,9 @@ namespace sc {
       /// returns the runtime used to compute results
       const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; }
 
+      /// removes all entries that contain this space
+      void remove_if(const std::string& space_key);
+
     private:
       Ref<MOIntsRuntime> moints_runtime_;
       DensityFitting::SolveMethod solver_;
@@ -119,8 +122,8 @@ namespace sc {
      * @return
      */
       DensityFittingParams(const Ref<GaussianBasisSet>& basis,
-                           const std::string& kernel,
-                           const std::string& solver);
+                           const std::string& kernel = std::string("1/r_{12}"),
+                           const std::string& solver = std::string("cholesky_refine"));
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
       void save_data_state(StateOut&);

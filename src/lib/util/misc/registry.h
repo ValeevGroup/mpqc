@@ -117,6 +117,19 @@ namespace sc {
 
         /// erases all entries
         void clear();
+        /// removes the object corresponding to key
+        void remove(const Key& key);
+        /// removes all objects whose keys evaluate predicate to true:  p(key) == true
+        template <typename Pred> void remove_if(const Pred& p) {
+          typename Map::iterator i = map_.begin();
+          for(; i != map_.end(); ) {
+                      if (p(*i)) {
+                        map_.erase(i++);
+                      } else {
+                        ++i;
+                      }
+          }
+        }
         /// key exists?
         bool key_exists(const Key& key) const;
         /// value exists?
@@ -130,8 +143,8 @@ namespace sc {
                  const Value& obj);
         /// a useful variation of Registry::add(const Key&, const Value&)
         void add(const std::pair<Key,Value>& keyval_pair);
-        /// removes the object corresponding to key
-        void remove(const Key& key);
+
+        void print(std::ostream& os) const;
 
         class not_found : public std::runtime_error {
           public:

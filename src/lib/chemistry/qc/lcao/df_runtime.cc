@@ -127,6 +127,21 @@ DensityFittingRuntime::exists(const std::string& key) const
   return results_->key_exists(key);
 }
 
+struct ParsedDensityFittingKeyInvolvesSpace {
+    ParsedDensityFittingKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
+    bool operator()(const std::pair<std::string, sc::Ref<sc::DistArray4> >& i) const {
+      const ParsedDensityFittingKey pkey(i.first);
+      return pkey.space1() == space_key || pkey.space2() == space_key || pkey.fspace() == space_key;
+    }
+    std::string space_key;
+};
+
+void
+DensityFittingRuntime::remove_if(const std::string& space_key)
+{
+  ParsedDensityFittingKeyInvolvesSpace pred(space_key);
+  results_->remove_if(pred);
+}
 
 DensityFittingRuntime::ResultRef
 DensityFittingRuntime::get(const std::string& key)

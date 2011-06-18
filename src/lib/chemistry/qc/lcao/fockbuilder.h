@@ -34,9 +34,9 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/basis/symmint.h>
-#include <chemistry/qc/scf/fockbuild.h>
-#include <chemistry/qc/scf/clhfcontrib.h>
-#include <chemistry/qc/scf/hsoshfcontrib.h>
+#include <chemistry/qc/lcao/fockbuild.h>
+#include <chemistry/qc/lcao/clhfcontrib.h>
+#include <chemistry/qc/lcao/hsoshfcontrib.h>
 #include <chemistry/qc/lcao/moints_runtime.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 

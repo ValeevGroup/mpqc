@@ -292,6 +292,9 @@ namespace sc {
         */
       std::string descr_key(const Ref<TwoBodyIntDescr>& descr);
 
+      /// removes all entries that contain this space
+      void remove_if(const std::string& space_key);
+
       /// returns the factory
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
 
@@ -360,7 +363,6 @@ namespace sc {
   {
     return evals_->key_exists(key);
   }
-
 
   template <int NumCenters>
   typename TwoBodyMOIntsRuntime<NumCenters>::TwoBodyIntEvalRef

@@ -26,7 +26,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/scf/clhfcontrib.h>
+#include <chemistry/qc/lcao/clhfcontrib.h>
 
 #include <iomanip>
 

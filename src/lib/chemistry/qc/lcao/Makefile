@@ -46,7 +46,9 @@ CXXSRC = df.cc df_runtime.cc \
   wfnworld.cc transform_ijR.cc \
   transform_ixjy_df.cc  tbint_runtime.cc \
   compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
-  compute_iRjS.cc utils.cc
+  compute_iRjS.cc utils.cc \
+  fockbuild.cc clhfcontrib.cc hsoshfcontrib.cc \
+  fockdist.cc
 
 INC = df.h df_runtime.h \
 utils.h utils.impl.h

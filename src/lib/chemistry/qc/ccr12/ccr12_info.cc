@@ -282,9 +282,10 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   // prediagonalization set-up for certain class of methods.
-  if (need_w1() && theory_ != "CCSD(R12)") {
+  // EFV: 06/19/2011 seem to need this even in CCSD(R12)?
+//  if (need_w1() && theory_ != "CCSD(R12)") {
     prediagon(bdiag_, lmatrix_);
-  }
+//  }
 
   // Making initial guess for t2.
   if (!need_gt2() || need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12")) {

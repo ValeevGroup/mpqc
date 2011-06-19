@@ -368,21 +368,21 @@ template <int NumCenters> struct ParsedTwoBodyNCenterIntKeyInvolvesSpace {
 };
 
 template <> bool
-ParsedTwoBodyNCenterIntKeyInvolvesSpace<4>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<4>::refvalue>& i) const
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<4>::operator()(const std::pair<std::string, detail::TwoBodyIntEval<4>::refvalue>& i) const
 {
   const ParsedTwoBodyFourCenterIntKey pkey(i.first);
   return pkey.bra1() == space_key || pkey.bra2() == space_key || pkey.ket1() == space_key || pkey.ket2() == space_key;
 }
 
 template <> bool
-ParsedTwoBodyNCenterIntKeyInvolvesSpace<3>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<3>::refvalue>& i) const
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<3>::operator()(const std::pair<std::string, detail::TwoBodyIntEval<3>::refvalue>& i) const
 {
   const ParsedTwoBodyThreeCenterIntKey pkey(i.first);
   return pkey.bra1() == space_key || pkey.bra2() == space_key || pkey.ket1() == space_key;
 }
 
 template <> bool
-ParsedTwoBodyNCenterIntKeyInvolvesSpace<2>::operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<2>::refvalue>& i) const
+ParsedTwoBodyNCenterIntKeyInvolvesSpace<2>::operator()(const std::pair<std::string, detail::TwoBodyIntEval<2>::refvalue>& i) const
 {
   const ParsedTwoBodyTwoCenterIntKey pkey(i.first);
   return pkey.bra1() == space_key || pkey.bra2() == space_key;

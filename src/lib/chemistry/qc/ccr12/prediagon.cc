@@ -63,29 +63,14 @@ void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	eigvals = beig;
 	eigvecs = mtilde * U;
 
-	// printing out some test cases if defined.
-//#define LOCAL_DEBUG_PREDIAGON
-#ifdef LOCAL_DEBUG_PREDIAGON
-	RefDiagSCMatrix unit(mtilde.coldim(), mtilde.kit());
-	unit.assign(1.0);
-
-	const double coeff = 3.0;
-	(B_ - coeff * X_).gi().print();
-    (eigvecs * (eigvals - coeff * unit).gi() * eigvecs.t()).print();
-
-    Ref<Tensor> in = new Tensor("testin", mem());
-    offset_gt2(in, false);
-    Ref<Tensor> out = new Tensor("testout", mem());
-    offset_gt2(out, false);
-	denom_contraction(in, out);
-#endif
-
+    // make a inverse of eigvs
+    if (r12world()->r12tech()->ansatz()->diag()) {
+      U = eigvecs;
+      eigvecs = U.gi().t();
+    }
 }
 
 void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
-
-#define USE_MATRIX_DECOMP
-#ifdef USE_MATRIX_DECOMP
 
   // requires lmatrix_.
   assert(lmatrix_.nonnull());
@@ -135,7 +120,7 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
               const size_t h21s = h2tot + nocc_act * h1tot;
               const size_t h21r = h1tot + nocc_act * h2tot;
 
-              // Retrieving source data; not a efficient code since
+              // Retrieving source data; not an efficient code since
               // the stride for read isn't small...
               const double src1 = lmatrix_(h21s, pair);
               const double src2 = lmatrix_(h21r, pair);
@@ -193,7 +178,6 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
                   // read tilde from in
                   ltensor1->get_block(h6b+noab()*(h5b+noab()*pair), k_a1);
 
-                  // read denominator
                   in->get_block(h2b_1+noab()*(h1b_1+noab()*(h6b_1+noab()*h5b_1)), k_a0);
 
                   const double factor = h5b == h6b ? 0.5 : 1.0;
@@ -211,11 +195,21 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
           // divide by the denominator
           const double diag_element = bdiag_->get_element(pair);
           int iall = 0;
-          for (int h1 = 0; h1 != get_range(h1b); ++h1) {
-            for (int h2 = 0; h2 != get_range(h2b); ++h2, ++iall) {
-              const double eh1 = get_orb_energy(get_offset(h1b) + h1);
-              const double eh2 = get_orb_energy(get_offset(h2b) + h2);
-              k_c[iall] /= eh1 + eh2 - diag_element;
+          if (!r12world()->r12tech()->ansatz()->diag()) {
+            for (int h1 = 0; h1 != get_range(h1b); ++h1) {
+              for (int h2 = 0; h2 != get_range(h2b); ++h2, ++iall) {
+                const double eh1 = get_orb_energy(get_offset(h1b) + h1);
+                const double eh2 = get_orb_energy(get_offset(h2b) + h2);
+                k_c[iall] /= eh1 + eh2 - diag_element;
+              }
+            }
+          } else {
+            for (int h1 = 0; h1 != get_range(h1b); ++h1) {
+              for (int h2 = 0; h2 != get_range(h2b); ++h2, ++iall) {
+                const double eh1 = get_orb_energy(get_offset(h1b) + h1);
+                const double eh2 = get_orb_energy(get_offset(h2b) + h2);
+                k_c[iall] *= eh1 + eh2 - diag_element;
+              }
             }
           }
           intermediate_tensor->put_block(h2b+noab()*(h1b+noab()*pair), k_c);
@@ -276,148 +270,6 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
     mem()->free_local_double(k_c);
     mem()->sync();
   }
-
-#else
-
-  const size_t singles = maxtilesize() * maxtilesize();
-  const size_t doubles = singles * singles;
-  double* k_a0      = mem()->malloc_local_double(doubles);
-  double* k_a1      = mem()->malloc_local_double(doubles);
-  double* k_c       = mem()->malloc_local_double(doubles);
-  double* k_c_sort  = mem()->malloc_local_double(singles);
-
-  const int nocc_act = naoa();
-  MTensor<4>::tile_ranges iiii(4, MTensor<4>::tile_range(0, noab()));
-  MTensor<4>::element_ranges iiii_erange(4, MTensor<4>::element_range(0, nocc_act) );
-  vector<long> amap;
-  {
-    vector<int> intmap = sc::map(*(r12world()->ref()->occ_act_sb(Alpha)), *corr_space(), false);
-    amap.resize(intmap.size());
-    std::copy(intmap.begin(), intmap.end(), amap.begin());
-  }
-
-  RefDiagSCMatrix unit(lmatrix_.coldim(), lmatrix_.kit());
-  unit.assign(1.0);
-
-  // this loop structure minimizes the O(o^8) operation...
-  int count = 0;
-  for (long h3b = 0L; h3b < noab(); ++h3b) {
-    for (long h4b = h3b; h4b < noab(); ++h4b) {
-      for (int h3 = 0; h3 < get_range(h3b); ++h3) {
-        for (int h4 = 0; h4 < get_range(h4b); ++h4, ++count) {
-          if (get_offset(h3b) + h3 >= get_offset(h4b) + h4) continue;
-          if (count % mem()->n() != mem()->me() ) continue;
-
-          // orbital energies
-          const double eh3 = get_orb_energy(get_offset(h3b) + h3);
-          const double eh4 = get_orb_energy(get_offset(h4b) + h4);
-
-          // current denominator tensor
-          stringstream ss;
-          ss << "denom" << count;
-          Ref<Tensor> denom = new Tensor(ss.str(), mem());
-          offset_gt2(denom, false);
-          MTensor<4> D(this, denom.pointer(), iiii);
-
-          // this does not help removing O(n^8) steps, as matrix-matrix multiplication
-          // already involves that scaling.
-#if 0
-          RefSymmSCMatrix refxminusb = X() * (eh3 + eh4) - B();
-          RefSymmSCMatrix refinverse = refxminusb.gi();
-#else
-          RefDiagSCMatrix kernel = (unit * (eh3 + eh4) - bdiag_).gi();
-          RefSCMatrix geninverse = lmatrix_ * kernel * lmatrix_.t();
-          RefSymmSCMatrix refinverse(X_.dim(), X_.kit());
-          refinverse.assign_subblock(geninverse, 0, geninverse.nrow()-1, 0, geninverse.ncol()-1);
-#endif
-          D.convert(refinverse, nocc_act, nocc_act, false, false,
-                    amap, amap, amap, amap, &iiii_erange);
-
-          for (long h1b = 0L; h1b < noab(); ++h1b) {
-            for (long h2b = h1b; h2b < noab(); ++h2b) {
-
-              if (!restricted() || get_spin(h3b)+get_spin(h4b)+get_spin(h1b)+get_spin(h2b) != 8L) {
-                if (get_spin(h3b)+get_spin(h4b) == get_spin(h1b)+get_spin(h2b)) {
-                  if ((get_sym(h3b)^(get_sym(h4b)^(get_sym(h1b)^get_sym(h2b)))) == irrep_t()) {
-
-                    // target size
-                    const long dimc_singles = get_range(h1b)*get_range(h2b);
-                    std::fill(k_c_sort, k_c_sort+dimc_singles, 0.0);
-
-                    for (long h5b = 0L; h5b < noab(); ++h5b) {
-                      for (long h6b = h5b; h6b < noab(); ++h6b) {
-
-                        if (get_spin(h3b)+get_spin(h4b) == get_spin(h5b)+get_spin(h6b)) {
-                          if ((get_sym(h3b)^(get_sym(h4b)^(get_sym(h5b)^get_sym(h6b)))) == irrep_e()) {
-
-                            long h3b_0, h4b_0, h5b_0, h6b_0;
-                            restricted_4(h3b, h4b, h5b, h6b, h3b_0, h4b_0, h5b_0, h6b_0);
-                            long h5b_1, h6b_1, h1b_1, h2b_1;
-                            restricted_4(h5b, h6b, h1b, h2b, h5b_1, h6b_1, h1b_1, h2b_1);
-                            const int dim_common = get_range(h5b) * get_range(h6b);
-                            const int dima0_sort = get_range(h3b) * get_range(h4b);
-                            const int dima1_sort = get_range(h1b) * get_range(h2b);
-
-                            // read tilde V (redundant read is involved...)
-                            in->get_block(h4b_0+noab()*(h3b_0+noab()*(h6b_0+noab()*(h5b_0))), k_a0);
-
-                            // read denominator
-                            denom->get_block(h6b_1+noab()*(h5b_1+noab()*(h2b_1+noab()*(h1b_1))), k_a1);
-                            double factor = 1.0;
-                            if (h5b == h6b) factor *= 0.5;
-                            const int unit = 1;
-                            const int h34 = h4 + get_range(h4b) * h3;
-                            const int stride = get_range(h3b) * get_range(h4b);
-                            const double one = 1.0;
-                            F77_DGEMV("t", &dim_common, &dima1_sort,
-                            		&factor, k_a1, &dim_common,
-                            		k_a0 + h34, &stride,
-                            		&one, k_c_sort, &unit);
-                          }
-                        }
-                      }
-                    }
-                    const long dimc = get_range(h3b)*get_range(h4b)*get_range(h1b)*get_range(h2b);
-                    std::fill(k_c, k_c+dimc, 0.0);
-                    {
-                      const size_t h34 = h4 + get_range(h4b) * h3;
-                      const size_t stride = get_range(h3b) * get_range(h4b);
-                      size_t iall = h34;
-                      size_t i = 0;
-                      for (int h1 = 0; h1 != get_range(h1b); ++h1) {
-                        for (int h2 = 0; h2 != get_range(h2b); ++h2, iall += stride, ++i) {
-                          k_c[iall] += k_c_sort[i];
-                        }
-                      }
-                    }
-                    // taking care of permutation symmetry.
-                    if (h3b == h4b) {
-                      const size_t h43 = h3 + get_range(h4b) * h4;
-                      const size_t stride = get_range(h3b) * get_range(h4b);
-                      size_t iall = h43;
-                      size_t i = 0;
-                      for (int h1 = 0; h1 != get_range(h1b); ++h1) {
-                        for (int h2 = 0; h2 != get_range(h2b); ++h2, iall += stride, ++i) {
-                          k_c[iall] -= k_c_sort[i];
-                        }
-                      }
-                    }
-                    out->add_block(h4b+noab()*(h3b+noab()*(h2b+noab()*(h1b))),k_c);
-                  }
-                }
-              }
-            }
-          }
-        }
-      } // orbital loops
-    }
-  }
-  mem()->free_local_double(k_a1);
-  mem()->free_local_double(k_a0);
-  mem()->free_local_double(k_c_sort);
-  mem()->free_local_double(k_c);
-  mem()->sync();
-#endif
 
 }
 

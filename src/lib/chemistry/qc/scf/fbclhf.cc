@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include <util/class/scexception.h>
+#include <util/misc/consumableresources.h>
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
@@ -9,8 +10,9 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/fbclhf.h>
-#include <chemistry/qc/scf/fockbuild.h>
-#include <chemistry/qc/scf/clhfcontrib.h>
+#include <chemistry/qc/lcao/fockbuild.h>
+#include <chemistry/qc/lcao/fockbuild_runtime.h>
+#include <chemistry/qc/lcao/clhfcontrib.h>
 
 using namespace std;
 using namespace sc;
@@ -148,6 +150,7 @@ FockBuildCLHF::ao_fock(double accuracy)
 
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
+  dd.print("G");
   cl_fock_.result_noupdate().accumulate(dd);
   accumddh_->accum(cl_fock_.result_noupdate());
   cl_fock_.computed()=1;
@@ -161,4 +164,141 @@ FockBuildCLHF::print(std::ostream&o) const
                 << "fockbuildmatrixtype = " << fockbuildmatrixtype_
                 << std::endl;
   fockdist_->print(o);
+}
+
+////////////////////////////////////////////////////////
+
+ClassDesc DFCLHF::cd_(
+  typeid(DFCLHF),"DFCLHF",1,"public CLHF",
+  0, create<DFCLHF>, create<DFCLHF>);
+
+DFCLHF::DFCLHF(StateIn& s) :
+  SavableState(s),
+  CLHF(s)
+{
+  dfinfo_ << SavableState::restore_state(s);
+}
+
+DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
+  CLHF(keyval)
+{
+  dens_reset_freq_ = 1;
+
+  Ref<MOIntsTransformFactory> tform_factory = new MOIntsTransformFactory(integral());
+  tform_factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
+  Ref<DensityFittingRuntime::MOIntsRuntime> mo_rtime = new DensityFittingRuntime::MOIntsRuntime(tform_factory);
+  Ref<DensityFittingRuntime> df_rtime = new DensityFittingRuntime(mo_rtime);
+
+  Ref<GaussianBasisSet> df_basis; df_basis << keyval->describedclassvalue("df_basis");
+  Ref<DensityFittingParams> df_params = new DensityFittingParams(df_basis);
+  dfinfo_ = new DensityFittingInfo(df_params, df_rtime);
+
+  Ref<OrbitalSpaceRegistry> oreg = mo_rtime->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = mo_rtime->factory()->ao_registry();
+  if (aoreg->key_exists(df_basis) == false) {
+    Ref<OrbitalSpace> dfaospace = new AtomicOrbitalSpace("Mu", "DFCLHF DF AO basis set", df_basis, integral());
+    aoreg->add(df_basis, dfaospace);
+    assert(oreg->key_exists("Mu") == false);
+    oreg->add(make_keyspace_pair(dfaospace));
+  }
+
+  // need a nonblocked cl_gmat_ in this method
+  Ref<PetiteList> pl = integral()->petite_list();
+  gmat_ = basis()->so_matrixkit()->symmmatrix(pl->SO_basisdim());
+  gmat_.assign(0.0);
+}
+
+DFCLHF::~DFCLHF()
+{
+}
+
+void
+DFCLHF::save_data_state(StateOut& s)
+{
+  CLHF::save_data_state(s);
+  SavableState::save_state(dfinfo_.pointer(),s);
+}
+
+void
+DFCLHF::ao_fock(double accuracy)
+{
+  Timer routine_tim("ao_fock");
+  Timer step_tim("misc");
+  int nthread = threadgrp_->nthread();
+  assert(nthread == 1);
+
+  // transform the density difference to the AO basis
+  RefSymmSCMatrix dd = cl_dens_diff_;
+  Ref<PetiteList> pl = integral()->petite_list();
+  cl_dens_diff_ = pl->to_AO_basis(dd);
+
+  double gmat_accuracy = accuracy;
+  if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
+
+  if (debug_>1) {
+    cl_dens_diff_.print("cl_dens_diff before set_pmat");
+  }
+
+  Ref<OrbitalSpaceRegistry> oreg = dfinfo_->runtime()->moints_runtime()->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = dfinfo_->runtime()->moints_runtime()->factory()->ao_registry();
+  if (aoreg->key_exists(basis()) == false) {
+    Ref<OrbitalSpace> aospace = new AtomicOrbitalSpace("mu", "DFCLHF AO basis set", basis(), integral());
+    aoreg->add(basis(), aospace);
+    assert(oreg->key_exists("mu") == false);
+    oreg->add(make_keyspace_pair(aospace));
+  }
+  Ref<FockBuildRuntime> fb_rtime = new FockBuildRuntime(oreg, aoreg,
+                                                        basis(),
+                                                        cl_dens_diff_,
+                                                        cl_dens_diff_,
+                                                        integral(),
+                                                        0);
+  fb_rtime->dfinfo(dfinfo_);
+  //dfinfo_->runtime()->moints_runtime()->factory()->mem()->set_localsize( ConsumableResources::get_default_instance()->memory());
+  //dfinfo_->runtime()->moints_runtime()->factory()->mem()->set_localsize( 200000000 );
+
+  step_tim.change("build");
+  Ref<OrbitalSpace> aospace = oreg->value("mu");
+  RefSCMatrix G;
+  {
+    const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
+    RefSCMatrix J = fb_rtime->get(jkey);
+    G = J;
+  }
+  {
+    const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
+    RefSCMatrix K = fb_rtime->get(kkey);
+    G.accumulate( -1.0 * K);
+  }
+  G.scale(0.5); // includes alpha and beta contributions -- need to halve it now
+  Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
+  RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
+  G_symm.element_op(accum_G_op); G = 0;
+  G_symm = pl->to_SO_basis(G_symm);
+  gmat_.accumulate(G_symm); G_symm = 0;
+  step_tim.change("misc");
+
+  // get rid of the AO basis density difference
+  cl_dens_diff_ = dd;
+
+  // F = H+G
+  cl_fock_.result_noupdate().assign(hcore_);
+  gmat_.print("G");
+  cl_fock_.result_noupdate().accumulate(gmat_);
+  accumddh_->accum(cl_fock_.result_noupdate());
+  cl_fock_.computed()=1;
+  //this->reset_density();
+}
+
+void
+DFCLHF::reset_density() {
+  CLHF::reset_density();
+  gmat_.assign(0.0);
+}
+
+void
+DFCLHF::print(std::ostream&o) const
+{
+  CLHF::print(o);
+  dfinfo_->print(o);
 }

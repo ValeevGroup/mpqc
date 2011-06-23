@@ -6,10 +6,8 @@
 #include <util/group/message.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/fockbuild.h>
-#include <chemistry/qc/scf/clhfcontrib.h>
 #include <chemistry/qc/scf/fbclhf.h>
-#include <chemistry/qc/scf/fockdist.h>
+#include <chemistry/qc/lcao/fockdist.h>
 
 #include <chemistry/qc/scf/linkage.h>
 

@@ -168,7 +168,7 @@ mem()->sync();
 } 
 
 
-void CCR12_Info::prod_iiii(Ref<Tensor>& a, Ref<Tensor>& b, Ref<Tensor>& out, const bool transpose){ 
+void CCR12_Info::prod_iiii(const Ref<Tensor>& a, const Ref<Tensor>& b, Ref<Tensor>& out, const bool transpose){ 
       
 if (out->is_this_local(0L)) { 
   double k_c =0.0;

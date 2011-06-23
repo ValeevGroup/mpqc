@@ -351,6 +351,7 @@ class AssignedKeyVal: public KeyVal {
     void assign(const char* key, int val);
     void assign(const char* key, long val);
     void assign(const char* key, const char* val);
+    void assign(const char* key, const std::string& val);
     void assign(const char* key, const Ref<DescribedClass>& val);
     //@}
 

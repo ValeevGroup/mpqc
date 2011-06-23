@@ -252,7 +252,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
 
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
-  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(true));
+  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
 
@@ -2101,7 +2101,7 @@ void sc::PT2R12::compute()
     //calculate basis set incompleteness error (BSIE) with two choices of H0
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
     cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
-    const bool keep_Fock_result = true; // if false, only do [2]_S with Dyall Hamiltonian
+    const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
     if(keep_Fock_result)
     {
       alpha_corre = this->energy_cabs_singles(Alpha);
@@ -2113,7 +2113,7 @@ void sc::PT2R12::compute()
       ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
                                         cabs_singles_corre) << endl;
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
-                                        reference_->energy() + cabs_singles_corre) << endl << endl;
+                                        reference_->energy() + cabs_singles_corre) << endl;
     }
     ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
                                       cabs_singles_corre_2b_H0) << endl;
@@ -2314,7 +2314,8 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   }
 
   if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
-   {ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
+   {
+    //ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
     unsigned int offset1 = 0;
     for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
     { for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind) // in each symmetry block, the OBS virtual indices are put before CABS indices
@@ -2466,7 +2467,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()
 {
-  # define DEBUGG true
+  # define DEBUGG false
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
@@ -2510,8 +2511,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   // RDMs
   RefSymmSCMatrix gamma1_alpha = rdm1_->scmat(spin);
   RefSymmSCMatrix gamma1_beta = rdm1_->scmat(other(spin));
-  gamma1_alpha.print("Alpha spin 1-RDM");
-  gamma1_beta.print("Beta spin 1-RDM");
   RefSymmSCMatrix gamma2_aa = this->rdm2( case12(spin,spin) );
   RefSymmSCMatrix gamma2_bb = this->rdm2( case12(other(spin),other(spin)) );
   RefSymmSCMatrix gamma2_ab = this->rdm2( case12(spin,other(spin)) );
@@ -2533,6 +2532,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   rhs_vector->assign(0.0);
 
 
+#if 0
   ExEnv::out0()  << "  primary, virtual and cabs space dimensions: " << no << ", " << nv << ", " << n_cabs << endl;
   ExEnv::out0()  << "  block dimensions of pspace, vspace, cabsspace: " << endl << "  ";
   { for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
@@ -2544,12 +2544,12 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     for (int block_counter = 0; block_counter < num_blocks; ++block_counter)
       ExEnv::out0()  << scprintf("%5d", cabs_block_sizes[block_counter]);
     ExEnv::out0() << endl;}
-
+#endif
 
 
   if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
    {
-    ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
+    //ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
     unsigned int offset1 = 0;
     for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
     {

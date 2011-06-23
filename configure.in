@@ -2215,7 +2215,7 @@ AC_SUBST(ENABLESHARED)
 
 dnl --------- CCA component configuration ---------
 
-if test $components == "yes"; then
+if test "$components" == "yes"; then
 
   if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
     AC_MSG_ERROR([cca-chem-config is required to build CCA component code])

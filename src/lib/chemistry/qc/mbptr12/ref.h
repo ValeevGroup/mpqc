@@ -179,6 +179,9 @@ namespace sc {
     /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
 
+    /// which DensityFittingRuntime used to compute this reference wave function
+    virtual Ref<DensityFittingInfo> dfinfo() const =0;
+
     private:
     Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
@@ -247,6 +250,7 @@ namespace sc {
       unsigned int nfzc() const { return nfzc_; }
       unsigned int nfzv() const { return nfzv_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
+      Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<OneBodyWavefunction> obwfn_;
       Ref<OrbitalSpace> vir_space_;
@@ -313,6 +317,8 @@ namespace sc {
       void _set_desired_value_accuracy(double eps) {
         // do nothing
       }
+
+      Ref<DensityFittingInfo> dfinfo() const;
   };
 
   /// This factory produces the RefWavefunction that corresponds to the type of ref object

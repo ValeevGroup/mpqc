@@ -392,6 +392,17 @@ RefWavefunction::init() const
     // make sure it's computed first
     const double e = this_nonconst->energy();
     this_nonconst->init_spaces();
+
+    // make sure that FockBuildRuntime uses same density fitting info as this reference
+    // currently, if this-> has non-null dfinfo (i.e. uses density fitting) it does not use same WavefunctionWorld as other wave functions
+    // this means that other wave functions cannot simply use its dfinfo (some spaces may have been added to their registries, etc.)
+    // TODO: Wavefunctions to properly initialize and share WavafunctionWorld. Reference wave function should be made part of the world of the
+    // wave function that uses it
+    if (this->dfinfo().nonnull()) throw FeatureNotImplemented("DF-based references cannot be currently used in correlated computations yet",
+                                                              __FILE__, __LINE__,
+                                                              this->class_desc());
+    world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false)
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
@@ -763,6 +774,13 @@ SD_RefWavefunction::init_spaces_unrestricted()
   }
 }
 
+Ref<DensityFittingInfo>
+SD_RefWavefunction::dfinfo() const {
+  Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
+  if (scf_ptr.nonnull())
+    return scf_ptr->dfinfo();
+  return 0;
+}
 
 ///////////////////////////////////////////////////////////////////
 
@@ -1035,6 +1053,11 @@ ORDM_RefWavefunction::init_spaces_unrestricted() {
     }
 #endif
   } // end of spincase1 loop
+}
+
+Ref<DensityFittingInfo>
+ORDM_RefWavefunction::dfinfo() const {
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////

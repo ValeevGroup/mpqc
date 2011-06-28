@@ -44,6 +44,7 @@
 
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/lcao/df_runtime.h>
 
 using namespace std;
 using namespace sc;
@@ -757,6 +758,11 @@ SCF::purge() {
 Ref<SCExtrapData>
 SCF::initial_extrap_data()
 {
+  return 0;
+}
+
+Ref<DensityFittingInfo>
+SCF::dfinfo() const {
   return 0;
 }
 

@@ -77,6 +77,7 @@ namespace sc {
       unsigned int nfzc() const { return nfzc_; }
       unsigned int nfzv() const { return nfzv_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
+      Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<PsiSCF> scf_;
       Ref<OrbitalSpace> vir_space_;
@@ -129,6 +130,7 @@ namespace sc {
       bool omit_uocc() const { return omit_uocc_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
       RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
+      Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<PsiRASCI> wfn_;
       bool spin_restricted_;

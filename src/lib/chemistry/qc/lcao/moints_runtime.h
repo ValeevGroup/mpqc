@@ -68,6 +68,7 @@ namespace sc {
 
       Ref<MOIntsTransformFactory> factory_;
       Ref<DensityFittingParams> dfparams_;
+      Ref<DensityFittingInfo> dfinfo_;
       Ref<DensityFittingRuntime> runtime_df_;
       Ref<TwoBodyTwoCenterMOIntsRuntime> runtime_2c_;
       Ref<TwoBodyThreeCenterMOIntsRuntime> runtime_3c_;

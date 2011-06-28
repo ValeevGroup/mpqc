@@ -38,6 +38,8 @@
 
 namespace sc {
 
+  class DensityFittingInfo;
+
 // //////////////////////////////////////////////////////////////////////////
 
 /** The SCF class is the base for all classes that use a self-consistent
@@ -221,6 +223,10 @@ class SCF: public OneBodyWavefunction {
 
     // return the effective MO fock matrix
     virtual RefSymmSCMatrix effective_fock() =0;
+
+    /// return the DensityFittingInfo object used to implement compute()
+    /// this is important to be able to reconstruct the Fock matrix
+    virtual Ref<DensityFittingInfo> dfinfo() const;
 
     virtual double one_body_energy();
     virtual void two_body_energy(double &ec, double &ex);

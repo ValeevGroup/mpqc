@@ -130,6 +130,10 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
 
 void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   Ref<PsiInput> input = get_psi_input();
+  // make sure Psi uses semicanonical orbitals, even for CCSD
+  const bool openshell_ref = this->reference()->spin_polarized();
+  if (openshell_ref)
+    input->write_keyword("psi:semicanonical", "true");
   input->write_keyword("ccenergy:convergence", convergence);
   input->write_keyword("ccenergy:maxiter", maxiter_);
   input->write_keyword("ccenergy:pccsd_alpha", pccsd_alpha_);

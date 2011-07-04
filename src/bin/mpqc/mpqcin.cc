@@ -871,7 +871,11 @@ MPQCIn::write_energy_object(ostream &ostrs,
                strncmp(method,   "CCSD(T)_R12", 11) == 0 ||
                strncmp(method,   "CCSD(T)_F12", 11) == 0 ||
                strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
-               strncmp(method+1, "CCSD(T)_F12", 11) == 0) { // R/U
+               strncmp(method+1, "CCSD(T)_F12", 11) == 0 || // R/U
+               strncmp(method,   "CC3(2)_R12", 11)  == 0 ||
+               strncmp(method,   "CC3(2)_F12", 11)  == 0 ||
+               strncmp(method+1, "CC3(2)_R12", 11)  == 0 || // R/U
+               strncmp(method+1, "CC3(2)_F12", 11)  == 0) { //R/U
         guess_method = 0;
         ask_auxbasis = true;
         need_wfnworld = true;
@@ -883,10 +887,15 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else
           error2("invalid method: ", method);
 
-        if (method[5] == '2' || method[6] == '2') // (2)
-          method_object = "PsiCCSD_PT2R12";
-        else  // (T)
-          method_object = "PsiCCSD_PT2R12T";
+        if ((method[2] == 'S' || method[3] == 'S')) { // CCSD
+          if (method[5] == '2' || method[6] == '2') // CCSD(2)
+            method_object = "PsiCCSD_PT2R12";
+          else  // CCSD(T)
+            method_object = "PsiCCSD_PT2R12T";
+        }
+        else { // CC3
+          method_object = "PsiCC3_PT2R12";
+        }
 
         r12descr = R12TechDescr::default_instance();
         r12descr->coupling = false;  // inclusion of coupling in CC-R12 not implemented
@@ -1126,6 +1135,10 @@ MPQCIn::psi_method(const char* method) {
           strncmp(method,   "CCSD(2)_F12", 11) == 0 ||
           strncmp(method+1, "CCSD(2)_R12", 11) == 0 || // R/U
           strncmp(method+1, "CCSD(2)_F12", 11) == 0 || // R/U
+          strncmp(method,   "CC3(2)_R12", 11)  == 0 ||
+          strncmp(method,   "CC3(2)_F12", 11)  == 0 ||
+          strncmp(method+1, "CC3(2)_R12", 11)  == 0 || // R/U
+          strncmp(method+1, "CC3(2)_F12", 11)  == 0 || // R/U
           strncmp(method,   "CCSD(T)_R12", 11) == 0 ||
           strncmp(method,   "CCSD(T)_F12", 11) == 0 ||
           strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U

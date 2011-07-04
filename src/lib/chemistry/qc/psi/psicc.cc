@@ -948,6 +948,82 @@ namespace sc {
     input->close();
   }
 
+  //////////////////////////////////////////////////////////////////////////
+
+  static ClassDesc PsiCC2_cd(typeid(PsiCC2), "PsiCC2", 1,
+                             "public PsiCC", 0, create<PsiCC2>, create<
+                             PsiCC2>);
+
+  PsiCC2::PsiCC2(const Ref<KeyVal>&keyval) :
+    PsiCC(keyval) {
+  }
+
+  PsiCC2::~PsiCC2() {
+  }
+
+  PsiCC2::PsiCC2(StateIn&s) :
+    PsiCC(s) {
+  }
+
+  int PsiCC2::gradient_implemented() const {
+    int impl = 0;
+    PsiSCF::RefType reftype = reference_->reftype();
+    return impl;
+  }
+
+  void PsiCC2::save_data_state(StateOut&s) {
+    PsiCC::save_data_state(s);
+    SavableState::save_state(reference_.pointer(), s);
+  }
+
+  void PsiCC2::write_input(int convergence) {
+    Ref<PsiInput> input = get_psi_input();
+    input->open();
+    PsiCorrWavefunction::write_input(convergence);
+    input->write_keyword("psi:wfn", "cc2");
+    input->write_keyword("ccenergy:convergence", convergence);
+    input->write_keyword("ccenergy:maxiter", maxiter_);
+    input->close();
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+
+  static ClassDesc PsiCC3_cd(typeid(PsiCC3), "PsiCC3", 1,
+                             "public PsiCC", 0, create<PsiCC3>, create<
+                             PsiCC3>);
+
+  PsiCC3::PsiCC3(const Ref<KeyVal>&keyval) :
+    PsiCC(keyval) {
+  }
+
+  PsiCC3::~PsiCC3() {
+  }
+
+  PsiCC3::PsiCC3(StateIn&s) :
+    PsiCC(s) {
+  }
+
+  int PsiCC3::gradient_implemented() const {
+    int impl = 0;
+    PsiSCF::RefType reftype = reference_->reftype();
+    return impl;
+  }
+
+  void PsiCC3::save_data_state(StateOut&s) {
+    PsiCC::save_data_state(s);
+    SavableState::save_state(reference_.pointer(), s);
+  }
+
+  void PsiCC3::write_input(int convergence) {
+    Ref<PsiInput> input = get_psi_input();
+    input->open();
+    PsiCorrWavefunction::write_input(convergence);
+    input->write_keyword("psi:wfn", "cc3");
+    input->write_keyword("ccenergy:convergence", convergence);
+    input->write_keyword("ccenergy:maxiter", maxiter_);
+    input->close();
+  }
+
 } // namespace
 
 //////////////////

@@ -167,7 +167,36 @@ namespace sc {
       void save_data_state(StateOut&);
       int gradient_implemented() const;
   };
+
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCC2 is a concrete implementation of Psi ground-state CC2 wave function
+  class PsiCC2 : public PsiCC {
+    protected:
+      void write_input(int conv);
+    public:
+      PsiCC2(const Ref<KeyVal>&);
+      PsiCC2(StateIn&);
+      ~PsiCC2();
+
+      void save_data_state(StateOut&);
+      int gradient_implemented() const;
+  };
   
+
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCC3 is a concrete implementation of Psi ground-state CC3 wave function
+  class PsiCC3 : public PsiCC {
+    protected:
+      void write_input(int conv);
+    public:
+      PsiCC3(const Ref<KeyVal>&);
+      PsiCC3(StateIn&);
+      ~PsiCC3();
+
+      void save_data_state(StateOut&);
+      int gradient_implemented() const;
+  };
+
 } // namespace
 
 #endif /* header guard */

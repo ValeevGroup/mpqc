@@ -35,10 +35,8 @@
 namespace sc {
 
   ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD_PT2R12 is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12}}\f$ method
-  class PsiCCSD_PT2R12 : public PsiCC {
-      double eccsd_;
-
+  /// PsiCC_PT2R12 is used to implement \f$\mathrm{CC}-(2)_{\overline{R12}}\f$ methods
+  class PsiCC_PT2R12 : public PsiCC {
       Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
       Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
       Ref<MP2R12Energy> mp2r12_energy_;
@@ -61,8 +59,9 @@ namespace sc {
           completeness_order_for_intermediates_ = completeness_order_for_energy_
               - 1;
 
-      void write_input(int conv);
       void write_basic_input(int conv);
+
+      void compute_ept2r12();
 
     public:
       /** The KeyVal constructor uses keywords of PsiCC, WavefunctionWorld, and R12WavefunctionWorld, and the following keywords
@@ -83,20 +82,17 @@ namespace sc {
       <dt><tt>pccsd_gamma</tt><dd> The default is 1.0 .
 
       </dl> */
-      PsiCCSD_PT2R12(const Ref<KeyVal>&);
-      PsiCCSD_PT2R12(StateIn&);
-      ~PsiCCSD_PT2R12();
+      PsiCC_PT2R12(const Ref<KeyVal>&);
+      PsiCC_PT2R12(StateIn&);
+      ~PsiCC_PT2R12();
       void save_data_state(StateOut&);
       int gradient_implemented() const;
-      void compute();
 
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
       const Ref<R12IntEval>& r12eval() const { return r12eval_; }
       // CABS singles contribution to the total energy
       double cabs_singles_energy();
 
-      /// CCSD energy
-      double eccsd();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
 
@@ -104,16 +100,53 @@ namespace sc {
   };
 
   ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12,T}}\f$ method
-  class PsiCCSD_PT2R12T : public PsiCCSD_PT2R12 {
+  /// PsiCCSD_PT2R12 is a concrete implementation of the \f$\mathrm{CCSD}-(2)_{\overline{R12}}\f$ method
+  class PsiCCSD_PT2R12 : public PsiCC_PT2R12 {
+      double eccsd_;
+      void write_input(int conv);
+    public:
+      /** The KeyVal constructor uses keywords of PsiCC_PT2R12.
+      */
+      PsiCCSD_PT2R12(const Ref<KeyVal>&);
+      PsiCCSD_PT2R12(StateIn&);
+      ~PsiCCSD_PT2R12();
+      void save_data_state(StateOut&);
+      int gradient_implemented() const;
+      void compute();
+      /// print
+      void print(std::ostream&o=ExEnv::out0()) const;
+  };
+
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}(T)_{\overline{R12}\f$ method
+  class PsiCCSD_PT2R12T : public PsiCC_PT2R12 {
+      double eccsd_;
       double e_t_;
       void write_input(int conv);
     public:
-      /** The KeyVal constructor uses keywords of PsiCCSD_PT2R12.
+      /** The KeyVal constructor uses keywords of PsiCC_PT2R12.
       */
       PsiCCSD_PT2R12T(const Ref<KeyVal>&);
       PsiCCSD_PT2R12T(StateIn&);
       ~PsiCCSD_PT2R12T();
+      void save_data_state(StateOut&);
+      int gradient_implemented() const;
+      void compute();
+      /// print
+      void print(std::ostream&o=ExEnv::out0()) const;
+  };
+
+  ///////////////////////////////////////////////////////////////////
+  /// PsiCC3_PT2R12 is a concrete implementation of the ground-state \f$\mathrm{CC3}-(2)_{\overline{R12}}\f$ method
+  class PsiCC3_PT2R12 : public PsiCC_PT2R12 {
+      double ecc3_;
+      void write_input(int conv);
+    public:
+      /** The KeyVal constructor uses keywords of PsiCC_PT2R12.
+      */
+      PsiCC3_PT2R12(const Ref<KeyVal>&);
+      PsiCC3_PT2R12(StateIn&);
+      ~PsiCC3_PT2R12();
       void save_data_state(StateOut&);
       int gradient_implemented() const;
       void compute();

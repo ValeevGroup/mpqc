@@ -1744,7 +1744,25 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       )
     fi
     if test X$libint2_cgshell_ordering = Xnone; then
+      dnl -- else try gamess --
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+          [[#include <libint2/libint2.h>
+            #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+            void present_if_defined() {}
+            #endif
+          ]],
+          [[
+            present_if_defined();
+          ]]
+        ),
+        [libint2_cgshell_ordering=gamess
+         AC_MSG_RESULT(gamess)]
+      )
+    fi
+    if test X$libint2_cgshell_ordering = Xnone; then
       AC_MSG_RESULT([could not determine (this libint2 library is too old or uses an unsupported ordering)])
+      AC_MSG_RESULT([[libint2 API is not compatible with MPQC]])
     else
       HAVE_LIBINT2=yes
       AC_DEFINE(HAVE_LIBINT2)

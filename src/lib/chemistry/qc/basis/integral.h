@@ -139,7 +139,8 @@ class Integral : public SavableState {
     /// Describes the ordering of the cartesian functions in a shell
     typedef enum {
     IntV3CartesianOrdering,
-    CCACartesianOrdering
+    CCACartesianOrdering,
+    GAMESSCartesianOrdering,
     } CartesianOrdering;
     /// returns the ordering used by this factory
     virtual CartesianOrdering cartesian_ordering() const =0;

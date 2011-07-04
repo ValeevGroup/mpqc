@@ -32,6 +32,8 @@
 #  include <chemistry/cca/int/macros.h>
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
 #  include <chemistry/qc/intv3/macros.h>
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+#  include <chemistry/qc/libint2/macros_gamess.h>
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif

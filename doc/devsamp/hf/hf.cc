@@ -4,9 +4,9 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/intv3/intv3.h>
-#include <chemistry/qc/scf/fockbuild.h>
-#include <chemistry/qc/scf/fockdist.h>
-#include <chemistry/qc/scf/clhfcontrib.h>
+#include <chemistry/qc/lcao/fockbuild.h>
+#include <chemistry/qc/lcao/fockdist.h>
+#include <chemistry/qc/lcao/clhfcontrib.h>
 #include <math/optimize/scextrap.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>

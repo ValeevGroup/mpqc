@@ -59,6 +59,7 @@ class GaussianShell: public SavableState
     int max_am_;
     int ncart_;
     int has_pure_;
+    int has_cartesian_;
     int* contr_to_func_;
     int* func_to_contr_;
     void init_computed_data();
@@ -155,6 +156,8 @@ class GaussianShell: public SavableState
     int ncartesian(int con) const { return ((l[con]+2)*(l[con]+1))>>1; }
     /// Returns nonzero if contraction con is Cartesian.
     int is_cartesian(int con) const { return !puream[con]; }
+    /// Returns nonzero if any contraction is Cartesian.
+    int has_cartesian() const { return has_cartesian_; }
     /// Returns nonzero if contraction con is solid harmonics.
     int is_pure(int con) const { return puream[con]; }
     /// Returns nonzero if any contraction is solid harmonics.

@@ -255,6 +255,7 @@ GaussianShell::init_computed_data()
   int nc = 0;
   int nf = 0;
   has_pure_ = 0;
+  has_cartesian_ = 0;
   contr_to_func_ = new int[ncontraction()];
   for (int i=0; i<ncontraction(); i++) {
       int maxi = l[i];
@@ -269,6 +270,7 @@ GaussianShell::init_computed_data()
       nf += nfunction(i);
 
       if (is_pure(i)) has_pure_ = 1;
+      else has_cartesian_ = 1;
     }
   max_am_ = max;
   min_am_ = min;

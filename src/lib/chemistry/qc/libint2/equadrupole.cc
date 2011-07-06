@@ -164,7 +164,7 @@ void Int1eLibint2::equadrupole_full_general_()
 
   // If not CCA-compliant normalization -- re-normalize all integrals
 #if INTEGRALLIBINT2_NORMCONV != INTEGRALLIBINT2_NORMCONV_CCA
-  norm_contrcart1_(need_cart2sph_transform ? contr_doublets_ : prim_ints_);
+  norm_contrcart_<6u>(need_cart2sph_transform ? contr_doublets_ : prim_ints_);
 #endif
 
   if (need_sort_to_shell_doublet)

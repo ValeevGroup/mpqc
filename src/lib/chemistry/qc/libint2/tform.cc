@@ -35,6 +35,8 @@
 #include <chemistry/qc/libint2/tform.h>
 #include <chemistry/qc/libint2/int1e.h>
 #include <chemistry/qc/libint2/int2e.h>
+#include <chemistry/qc/libint2/gto.h>
+#include <chemistry/qc/libint2/tform.timpl.h>
 
 using namespace std;
 using namespace sc;
@@ -466,6 +468,20 @@ static void transform2e_4(SphericalTransformIter& sti, double *s, double *t, int
   }
 }
 
+
+/*!------------------------------------------------------------------------------------
+    Normalizes cartesian components according to appropriate convention (see GTOInfo)
+ ------------------------------------------------------------------------------------*/
+void
+Int1eLibint2::norm_contrcart1_(double* data) {
+  this->norm_contrcart_<1u>(data);
+}
+
+void
+Int2eLibint2::norm_contrcart1_(double *data)
+{
+  this->norm_contrcart_<1u>(data);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

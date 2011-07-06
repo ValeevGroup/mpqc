@@ -100,6 +100,8 @@ class Int1eLibint2: public RefCount {
     void zero_buffers_();
     void transform_contrquartets_(double *, double *);
     void sort_contrdoublets_to_shelldoublet_(double *, double *);
+    void norm_contrcart1_(double* data);
+    template <unsigned int ntypes> void norm_contrcart_(double* data);
     // same tasks, but adapted for the case of several sets of integrals (multipole, etc.)
     void zero_buffers_vec_(const int);
     void transform_contrquartets_vec_(const int, double *, double *);

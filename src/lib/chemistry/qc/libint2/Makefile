@@ -41,7 +41,7 @@ TESTCSRC = libint2test.cc
 
 CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc bounds.cc storage.cc \
 	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
-	hcore.cc obosrr.cc edipole.cc equadrupole.cc p4.cc
+	hcore.cc obosrr.cc edipole.cc equadrupole.cc p4.cc gto.cc
 ifeq ($(HAVE_LIBINT2_ERI),yes)
   CXXSRC += eri.cc comp_eri.cc
 endif
@@ -59,7 +59,7 @@ ifeq ($(HAVE_LIBINT2_G12DKH),yes)
   CXXSRC += g12dkh.cc comp_g12dkh.cc
 endif
 
-INC = libint2.h obintlibint2.h tbintlibint2.h tform.h macros.h primpairs.h shellpairs.h
+INC = libint2.h obintlibint2.h tbintlibint2.h tform.h macros.h primpairs.h shellpairs.h gto.h
 
 LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))

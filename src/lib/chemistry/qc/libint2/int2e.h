@@ -84,6 +84,9 @@ class Int2eLibint2: public RefCount {
     /*--- helper functions ---*/
     // cart.->sph.harm. transform functions
     void transform_contrquartets_(double *,double *);
+    // normalize cartesian quartets, if needed
+    void norm_contrcart1_(double* data);
+    template <unsigned int ntypes> void norm_contrcart_(double* data);
     // sort from by-contraction-quartet to shell-quartet order
     void sort_contrquartets_to_shellquartet_(double *,double *);
     // permute perm_ints_ into target_int_buf_

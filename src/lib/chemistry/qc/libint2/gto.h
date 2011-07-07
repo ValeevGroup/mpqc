@@ -41,6 +41,7 @@ namespace sc {
   class GTOInfo : public RefCount {
     public:
     static const Ref<GTOInfo>& instance();
+    ~GTOInfo();
 
     const double* norm(unsigned int l);
     const double* fp1();
@@ -50,7 +51,6 @@ namespace sc {
       static const unsigned int lmax_ = LIBINT_MAX_AM;
 
       GTOInfo();
-      ~GTOInfo();
 
       std::vector< std::vector<double> > norm_;
       std::vector<double> df_; // double factorials

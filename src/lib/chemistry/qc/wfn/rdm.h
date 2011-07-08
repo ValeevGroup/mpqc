@@ -95,7 +95,7 @@ namespace sc {
         SavableState::save_state(wfn_.pointer(), so);
       }
 
-      void obsolete() {
+      virtual void obsolete() {
         wfn_->obsolete();
         for(int s=0; s<__nspincases<R>::value; ++s)
           scmat_[s] = 0;
@@ -103,7 +103,7 @@ namespace sc {
 
       /// the corresponding Wavefunction
       Ref<Wavefunction> wfn() const { return wfn_; }
-      void compute() {
+      virtual void compute() {
         const double energy = wfn_->value();
       }
       /// the orbital space of spincase s in which the density is reported

@@ -2,6 +2,25 @@
 #include <iostream>
 #include <exception>
 
+// Force linkages:
+#include <util/group/linkage.h>
+#include <chemistry/qc/basis/linkage.h>
+#include <chemistry/qc/wfn/linkage.h>
+#include <chemistry/qc/scf/linkage.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
+#  include <chemistry/qc/mbptr12/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#  include <chemistry/qc/libint2/linkage.h>
+#endif
+#include <util/state/linkage.h>
+
+#ifdef HAVE_MPI
+#define MPICH_SKIP_MPICXX
+#include <mpi.h>
+#include <util/group/messmpi.h>
+#endif
+
 using std::cout;
 using std::endl;
 

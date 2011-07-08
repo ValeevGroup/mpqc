@@ -17,6 +17,7 @@
 #include <util/group/thread.h>
 #include <exception>
 #include <mpqcinit.h>
+#include <moinfo.h>
 
 using namespace sc;
 using std::cout;
@@ -42,28 +43,14 @@ int main_gamess(int argc, char **argv)
     opt.usage(std::cout);
     return 1;
   }
-
-  // initialize molecule given description
-  Ref<Molecule> molecule = new Molecule;
-  {
-    molecule->add_atom(8, 0.0, 0.0, 0.0);
-  }
-  molecule->set_point_group(new PointGroup("d2h"));
-
-  // initialize basis set given name
-  Ref<GaussianBasisSet> basis;
-  {
-    Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-    tmpkv->assign("name", "cc-pVDZ");
-    tmpkv->assign("molecule", molecule.pointer());
-    Ref<KeyVal> kv = tmpkv;
-    basis = new GaussianBasisSet(kv);
-  }
+  Ref<KeyVal> kv = init.init_keyval(MessageGrp::get_default_messagegrp(), inputfile);
+  init.init_integrals(kv);
 
   // print environment
   Ref<sc::ThreadGrp> thr = sc::ThreadGrp::get_default_threadgrp();
   Ref<sc::MessageGrp> msg = sc::MessageGrp::get_default_messagegrp();
   Ref<sc::Integral> integral = sc::Integral::get_default_integral()->clone();
+  ExEnv::out0() << indent << "Using " << integral->class_name() << " for integrals by default" << std::endl;
   if (opt.retrieve("verbose")) {
     sc::ExEnv::out0() << indent
                       << "nthread = " << thr->nthread() << std::endl;
@@ -71,7 +58,58 @@ int main_gamess(int argc, char **argv)
                       << "nnode   = " << msg->n() << std::endl;
   }
 
-#define TEST_R12_INFRASTRUCTURE 1
+  //
+  // Read molecule, basis, and orbitals
+  //
+  ExternReadMOInfo rdorbs("GAMESS_MOINFO.TXT");
+  Ref<GaussianBasisSet> basis = rdorbs.basis();
+  RefSCMatrix C_ao = rdorbs.coefs();
+  std::vector<unsigned int> orbsym = rdorbs.orbsym();
+  const unsigned int nocc = rdorbs.nocc();
+  const unsigned int nfzc = rdorbs.nfzc();
+  const unsigned int nfzv = rdorbs.nfzv();
+
+  // make an OrbitalSpace object that represents these orbitals
+  Ref<OrbitalSpace> orbs = new OrbitalSpace("p", "MOInfo orbitals", C_ao, basis, integral);
+
+  //
+  // Read 1-RDM
+  //
+  Ref<ExternReadRDMOne> rdrdm1 = new ExternReadRDMOne("GAMESS_RDM1.TXT",
+                                                      orbs);
+  RefSymmSCMatrix P_mo = rdrdm1->scmat(AnySpinCase1);
+
+  //
+  // Test orbs and 1-rdm
+  //
+  // create CLHF object
+  Ref<CLHF> clhf;
+  {
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("molecule", basis->molecule().pointer());
+    akv->assign("basis", basis.pointer());
+    Ref<KeyVal> kv = akv;
+    clhf = new CLHF(kv);
+  }
+
+  // compute CLHF object
+  sc::ExEnv::out0() << "Energy = " << clhf->energy() << std::endl;
+  clhf->eigenvectors().print("MO coefficients from CLHF");
+
+  // create World in which we will compute
+  // use defaults for all params
+  Ref<WavefunctionWorld> world = new WavefunctionWorld(Ref<KeyVal>(new AssignedKeyVal), clhf);
+
+  // use its orbitals to initialize Extern_RefWavefunction
+  P_mo.scale(0.5);
+  integral->set_basis(basis);
+  Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
+                                                            C_ao, orbsym,
+                                                            P_mo, P_mo,
+                                                            nocc, nfzc, nfzv);
+
+
+#define TEST_R12_INFRASTRUCTURE 0
 #if TEST_R12_INFRASTRUCTURE
   {
     // create CLHF object

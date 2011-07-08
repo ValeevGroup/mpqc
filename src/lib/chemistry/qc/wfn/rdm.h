@@ -182,7 +182,7 @@ namespace sc {
       /// the corresponding Density
       Ref<density_type> density() const { return density_; }
       /// bra/ket dimension
-      size_t ndim(spincase spincase) const { return density->ndim(); }
+      size_t ndim(spincase spincase) const { return density_->ndim(); }
       /// returns the ket block for the given bra index
       virtual const double* obtain_block(spincase spin,  size_t bra) const {
         throw ProgrammingError("RDMCumulant<R>::obtain_block() is not yet implemented",
@@ -239,7 +239,7 @@ namespace sc {
       OBWfnRDMTwo(const Ref<KeyVal>& kv);
       OBWfnRDMTwo(StateIn& si);
       OBWfnRDMTwo(const Ref<OneBodyWavefunction>& wfn);
-      ~OBWfnRDMTwo();
+      virtual ~OBWfnRDMTwo();
       void save_data_state(StateOut& so);
 
       Ref<OneBodyWavefunction> wfn() const { return wfn_; }
@@ -261,7 +261,7 @@ namespace sc {
     public:
       OBWfnRDMCumulantTwo(const Ref<OBWfnRDMTwo>& density);
       OBWfnRDMCumulantTwo(StateIn& si);
-      ~OBWfnRDMCumulantTwo();
+      virtual ~OBWfnRDMCumulantTwo();
       void save_data_state(StateOut& so);
 
       void compute();
@@ -355,7 +355,7 @@ namespace sc {
       OBWfnRDMOne(const Ref<KeyVal>& kv);
       OBWfnRDMOne(StateIn& si);
       OBWfnRDMOne(const Ref<OneBodyWavefunction>& wfn);
-      ~OBWfnRDMOne();
+      virtual ~OBWfnRDMOne();
       void save_data_state(StateOut& so);
 
       Ref<OneBodyWavefunction> wfn() const { return wfn_; }

@@ -57,17 +57,20 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
   // initialize basis set given a hardwired name
   {
     Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-    tmpkv->assign("name", "6-31G*");
-    //tmpkv->assign("basisdir", "./");
+    tmpkv->assign("name", "mod6-31Gs");
+    tmpkv->assign("basisdir", "./");
     tmpkv->assign("molecule", molecule.pointer());
     Ref<KeyVal> kv = tmpkv;
     Ref<GaussianBasisSet> basis = new GaussianBasisSet(kv);
 
+#if 0
     // split generally contracted shells -- IntegralLibint2 can't handle such shells
     Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
     tmpkv1->assign("basis", basis.pointer());
     kv = tmpkv1;
     basis_ = new SplitBasisSet(kv);
+#endif
+    basis_ = basis;
   }
   basis_->print();
 
@@ -88,10 +91,11 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
   }
   unsigned int junk; in >> junk;
 
-  Ref<Integral> integral = Integral::get_default_integral()->clone();
-  integral->set_basis(basis_);
-  Ref<PetiteList> pl = integral->petite_list();
-  coefs_ = basis_->so_matrixkit()->matrix(pl->AO_basisdim(), pl->SO_basisdim());
+  RefSCDimension aodim = new SCDimension(nao, 1);
+  aodim->blocks()->set_subdim(0, new SCDimension(nao));
+  RefSCDimension modim = new SCDimension(nmo, 1);
+  modim->blocks()->set_subdim(0, new SCDimension(nmo));
+  coefs_ = basis_->so_matrixkit()->matrix(aodim, modim);
   coefs_.assign(0.0);
   bool have_coefs = true;
   while(have_coefs) {

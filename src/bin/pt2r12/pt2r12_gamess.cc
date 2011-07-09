@@ -4,8 +4,10 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/basis/files.h>
+#include <chemistry/qc/basis/cart.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/lcao/wfnworld.h>
+#include <chemistry/qc/lcao/fockbuilder.h>
 #include <chemistry/qc/mbptr12/ref.h>
 #include <chemistry/qc/scf/clhf.h>
 #include <math/optimize/scextrap.h>
@@ -69,6 +71,42 @@ int main_gamess(int argc, char **argv)
   const unsigned int nfzc = rdorbs.nfzc();
   const unsigned int nfzv = rdorbs.nfzv();
 
+  // GAMESS reports MO coefficients in *cartesian* basis
+  // need to transform to the "real" basis?
+  if (C_ao.rowdim().n() != basis->nbasis()) { // yes
+    integral->set_basis(basis);
+    Ref<CartesianBasisSet> cbasis = new CartesianBasisSet(basis, integral);
+    assert(C_ao.rowdim().n() == cbasis->nbasis()); // if number of AOs different from computed here, give up
+
+    // now compute overlap between spherical and cartesian basis
+    Ref<Integral> localints = integral->clone();
+    localints->set_basis(basis,cbasis);
+    RefSCMatrix S_sph_cart = detail::onebodyint_ao<&Integral::overlap>(basis, cbasis, localints);
+
+    // SO basis is always blocked, so first make sure S_sph_cart is blocked
+    {
+      Ref<Integral> braints = integral->clone();  braints->set_basis(basis);
+      Ref<PetiteList> brapl = braints->petite_list();
+      Ref<Integral> ketints = integral->clone();  ketints->set_basis(cbasis);
+      Ref<PetiteList> ketpl = ketints->petite_list();
+
+      RefSCMatrix S_sph_cart_blk = basis->so_matrixkit()->matrix(brapl->AO_basisdim(),ketpl->AO_basisdim());
+      S_sph_cart_blk->convert(S_sph_cart);
+      S_sph_cart = S_sph_cart_blk;
+    }
+
+    // compute projector from cart to spherical basis
+    // P(cart->sph) = S^-1 (sph/sph) * S (sph/cart)
+    RefSymmSCMatrix S_sph_sph;
+    {
+      localints->set_basis(basis,basis);
+      S_sph_sph = detail::onebodyint<&Integral::overlap>(basis, localints);
+    }
+    Ref<OverlapOrthog> orthog = new OverlapOrthog(OverlapOrthog::Symmetric, S_sph_sph,
+                                                  S_sph_sph.kit(), 1e-8, 0);
+    C_ao = orthog->overlap_inverse() * S_sph_cart * C_ao;
+  }
+
   // make an OrbitalSpace object that represents these orbitals
   Ref<OrbitalSpace> orbs = new OrbitalSpace("p", "MOInfo orbitals", C_ao, basis, integral);
 
@@ -94,7 +132,8 @@ int main_gamess(int argc, char **argv)
 
   // compute CLHF object
   sc::ExEnv::out0() << "Energy = " << clhf->energy() << std::endl;
-  clhf->eigenvectors().print("MO coefficients from CLHF");
+//  clhf->eigenvectors().print("MO coefficients from CLHF");
+//  C_ao.print("MO coefficients from GAMESS");
 
   // create World in which we will compute
   // use defaults for all params
@@ -108,61 +147,5 @@ int main_gamess(int argc, char **argv)
                                                             P_mo, P_mo,
                                                             nocc, nfzc, nfzv);
 
-
-#define TEST_R12_INFRASTRUCTURE 0
-#if TEST_R12_INFRASTRUCTURE
-  {
-    // create CLHF object
-    Ref<CLHF> clhf;
-    {
-      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-      akv->assign("molecule", molecule.pointer());
-      akv->assign("basis", basis.pointer());
-      Ref<KeyVal> kv = akv;
-      clhf = new CLHF(kv);
-    }
-
-    // compute CLHF object
-    sc::ExEnv::out0() << "Energy = " << clhf->energy() << std::endl;
-
-    // grab orbitals and their symmetries
-    RefSCMatrix C_so = clhf->eigenvectors();
-    integral->set_basis(basis);
-    Ref<PetiteList> pl = integral->petite_list();
-    RefSCMatrix C_ao = pl->evecs_to_AO_basis(C_so);
-    std::vector<unsigned int> orbsym(C_ao.coldim().n(), 0);
-    {
-      Ref<SCBlockInfo> blocks = C_ao.coldim()->blocks();
-      if (blocks.nonnull()) {
-        const unsigned int nirreps = blocks->nblock();
-        for(unsigned int irrep=0; irrep<nirreps; ++irrep) {
-          const unsigned int first_orb_in_irrep = blocks->start(irrep);
-          const unsigned int norbs_in_irrep = blocks->size(irrep);
-          const unsigned int plast_orb_in_irrep = first_orb_in_irrep + norbs_in_irrep;
-          for(unsigned int o=first_orb_in_irrep; o<plast_orb_in_irrep; ++o) {
-            orbsym[o] = irrep;
-          }
-        }
-      }
-    }
-
-    // grab densities
-    RefSymmSCMatrix P_so = clhf->density(); P_so.scale(0.5);
-    RefSymmSCMatrix P_mo = P_so.kit()->symmmatrix(C_ao.coldim());  P_mo.assign(0.0);
-    P_mo.accumulate_transform(clhf->mo_to_so(), P_so, SCMatrix::TransposeTransform);
-    P_mo.print("MO density");
-
-    // create World in which we will compute
-    // use defaults for all params
-    Ref<WavefunctionWorld> world = new WavefunctionWorld(Ref<KeyVal>(new AssignedKeyVal), clhf);
-
-    // use its orbitals to initialize Extern_RefWavefunction
-    Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
-                                                              C_ao, orbsym,
-                                                              P_mo, P_mo,
-                                                              clhf->nelectron()/2, 3, 1);
-  }
-#endif
-  
   return 0;
 }

@@ -85,7 +85,7 @@ class GaussianShell: public SavableState
           <li> e gives the exponents (length nprm)
           <li> am gives the angular momentum (length ncn)
           <li> pure is 1 for pure am and 0 for cartesian (length ncn)
-          <li> c are the contraction coefficients (length ncn by nprm)
+          <li> c are the contraction coefficients (C-style array of arrays!! not single block ncn by nprm)
           <li> pt describes whether the primitive functions are to be
             considered normalized or unnormalized.  This effects whether
             or not c is manipulated to give the correct normalization.
@@ -119,6 +119,8 @@ class GaussianShell: public SavableState
     GaussianShell(const Ref<KeyVal>&);
     /// Restore a GaussianShell from a StateIn object.
     GaussianShell(StateIn&);
+    /// Copy constructor (deep :-)
+    GaussianShell(const GaussianShell& other);
     /** Construct a GaussianShell from KeyVal input.  If pure
         is nonzero Cartesian functions will be used, otherwise,
         solid harmonics will be used. */

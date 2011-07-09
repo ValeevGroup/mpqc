@@ -96,6 +96,21 @@ GaussianShell::GaussianShell(
   normalize_shell();
 }
 
+GaussianShell::GaussianShell(const GaussianShell & other) :
+  nprim(other.nprim), ncon(other.ncon)
+{
+  l = new int[ncon];  std::copy(other.l, other.l + ncon, l);
+  puream = new int[ncon];  std::copy(other.puream, other.puream + ncon, puream);
+  exp = new double[nprim];  std::copy(other.exp, other.exp + nprim, exp);
+  coef = new double*[ncon];
+  for(int c=0; c<ncon; ++c) {
+    coef[c] = new double[nprim];
+    std::copy(other.coef[c], other.coef[c] + nprim, coef[c]);
+  }
+
+  init_computed_data();
+}
+
 GaussianShell::GaussianShell(const Ref<KeyVal>&keyval)
 {
   // read in the shell

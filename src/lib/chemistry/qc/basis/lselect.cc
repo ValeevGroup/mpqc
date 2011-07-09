@@ -190,11 +190,10 @@ LSelectBasisSet::lselect(const Ref<GaussianBasisSet>&basis)
 	    // storage
 	    int *am = new int[ncon];
 	    int *pure = new int[ncon];
-	    double *exponents = new double[nprim*ncon];
+	    double *exponents = new double[nprim];
 	    double **c = new double*[ncon];
-	    c[0] = new double[nprim*ncon];
-	    for(int i=1; i<ncon; ++i)
-		c[i] = c[i-1] + nprim;
+	    for(int i=0; i<ncon; ++i)
+	      c[i] = new double[nprim];
 
 	    // loop over all contractions of the original shell
 	    const int ncon_orig = shell.ncontraction();

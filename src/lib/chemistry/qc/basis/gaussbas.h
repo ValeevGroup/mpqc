@@ -411,6 +411,8 @@ class GaussianBasisSet: virtual public SavableState
 
     void save_data_state(StateOut&);
 
+    GaussianBasisSet& operator=(const GaussianBasisSet& A);
+
     /// Return the name of the basis set (is nonnull only if keyword "name" was provided)
     const char* name() const { return name_.c_str(); }
     /** Return the label of the basis set. label() returns the same string as name() if

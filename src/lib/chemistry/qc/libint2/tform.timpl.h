@@ -74,10 +74,10 @@ namespace sc {
       puream i-functions were computed properly.
      ------------------------------------------------------------------------------------*/
         for (unsigned ii = 0; ii < n1; ii++) {
-          const double norm_i = ptr1[ii];
+          const double norm_i = (is_pure1 ? 1.0 : ptr1[ii]);
           for (unsigned jj = 0; jj < n2; jj++) {
-            const double norm_ij = norm_i * ptr2[jj];
-            for(unsigned int t=0; t<ntypes; ++t)
+            const double norm_ij = norm_i * (is_pure2 ? 1.0 : ptr2[jj]);
+            for (unsigned int t = 0; t < ntypes; ++t)
               *(data++) *= norm_ij;
           }
         }
@@ -134,13 +134,13 @@ namespace sc {
       puream i-functions were computed properly.
      ------------------------------------------------------------------------------------*/
             for (unsigned ii = 0; ii < n1; ii++) {
-              const double norm_i = ptr1[ii];
+              const double norm_i = is_pure1 ? 1.0 : ptr1[ii];
               for (unsigned jj = 0; jj < n2; jj++) {
-                const double norm_ij = norm_i * ptr2[jj];
+                const double norm_ij = norm_i * (is_pure2 ? 1.0 : ptr2[jj]);
                 for (unsigned kk = 0; kk < n3; kk++) {
-                  const double norm_ijk = norm_ij * ptr3[kk];
+                  const double norm_ijk = norm_ij * (is_pure3 ? 1.0 : ptr3[kk]);
                   for (unsigned ll = 0; ll < n4; ll++) {
-                    const double norm_ijkl = norm_ijk * ptr4[ll];
+                    const double norm_ijkl = norm_ijk * (is_pure4 ? 1.0 : ptr4[ll]);
                     for(unsigned int t=0; t<ntypes; ++t)
                       *(data++) *= norm_ijkl;
                   }

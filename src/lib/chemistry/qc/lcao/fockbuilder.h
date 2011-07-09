@@ -111,19 +111,78 @@ namespace sc {
     }
 
     template <OneBodyIntCreator OpEval>
-    RefSCMatrix onebodyint(const Ref<GaussianBasisSet>& brabas,
+    RefSCMatrix onebodyint_ao(const Ref<GaussianBasisSet>& brabas,
                            const Ref<GaussianBasisSet>& ketbas,
                            const Ref<Integral>& integral) {
 
       Ref<Integral> localints = integral->clone();
       Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
       localints->set_basis(brabas,ketbas);
+      Ref<OneBodyInt> ov_ints = localints->overlap();
 
       // form overlap in AO basis
       RefSCMatrix sao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
       sao.assign(0.0);
 
-      abort();
+      // TODO make more efficient and parallelizable by switching to operators
+      const Ref<GaussianBasisSet>& bs1 = brabas;
+      const Ref<GaussianBasisSet>& bs2 = ketbas;
+      const int nshell1 = bs1->nshell();
+      const int nshell2 = bs2->nshell();
+      for(int sh1=0; sh1<nshell1; sh1++) {
+        const int bf1_offset = bs1->shell_to_function(sh1);
+        const int nbf1 = bs1->shell(sh1).nfunction();
+
+        for(int sh2=0; sh2<nshell2; sh2++) {
+          const int bf2_offset = bs2->shell_to_function(sh2);
+          const int nbf2 = bs2->shell(sh2).nfunction();
+
+          ov_ints->compute_shell(sh1,sh2);
+          const double *ovintsptr = ov_ints->buffer();
+
+          int bf1_index = bf1_offset;
+          for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, ovintsptr+=nbf2) {
+            int bf2_index = bf2_offset;
+            const double *ptr = ovintsptr;
+            for(int bf2=0; bf2<nbf2; bf2++, bf2_index++) {
+
+              sao.set_element(bf1_index, bf2_index, *(ptr++));
+
+            }
+          }
+        }
+      }
+
+      return sao;
+
+    }
+
+    template <OneBodyIntCreator OpEval>
+    RefSCMatrix onebodyint(const Ref<GaussianBasisSet>& brabas,
+                           const Ref<GaussianBasisSet>& ketbas,
+                           const Ref<Integral>& integral) {
+
+      RefSCMatrix sao = onebodyint_ao<OpEval>(brabas, ketbas, integral);
+      Ref<Integral> braints = integral->clone();  braints->set_basis(brabas);
+      Ref<PetiteList> brapl = braints->petite_list();
+      Ref<Integral> ketints = integral->clone();  ketints->set_basis(ketbas);
+      Ref<PetiteList> ketpl = ketints->petite_list();
+
+      // SO basis is always blocked, so first make sure a is blocked
+      RefSCMatrix sao_blk = dynamic_cast<BlockedSCMatrix*>(sao.pointer());
+      if (sao_blk.null()) {
+        sao_blk = brabas->so_matrixkit()->matrix(brapl->AO_basisdim(),ketpl->AO_basisdim());
+        sao_blk->convert(sao);
+      }
+      // if C1, then do nothing
+      if (brabas->molecule()->point_group()->order() == 1)
+        return sao_blk;
+
+      // convert to SO basis
+      RefSCMatrix ssoao = brapl->aotoso().t() * sao_blk;
+      RefSCMatrix result = ssoao * ketpl->aotoso();
+
+      return result;
     }
 
     /// computes overlap matrix in SO basis

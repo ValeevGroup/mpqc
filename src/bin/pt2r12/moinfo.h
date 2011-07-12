@@ -68,6 +68,10 @@ namespace sc {
       /// assumes that 1-rdm is expressed in orbs
       ExternReadRDMOne(const std::string& filename,
                        const Ref<OrbitalSpace>& orbs);
+      /// receives 1-rdm as a constructor argument
+      /// assumes that 1-rdm is expressed in orbs
+      ExternReadRDMOne(const RefSymmSCMatrix& rdm,
+                       const Ref<OrbitalSpace>& orbs);
       virtual ~ExternReadRDMOne();
 
       /// cannot be obsoleted
@@ -76,7 +80,7 @@ namespace sc {
       void compute() {}
       /// the orbital space of spincase s in which the density is reported
       Ref<OrbitalSpace> orbs(SpinCase1 s) const { return orbs_; }
-      /// full density matrix
+      /// density matrix
       RefSymmSCMatrix scmat(SpinCase1 spin) const { return rdm_; }
 
     private:
@@ -86,6 +90,38 @@ namespace sc {
       Ref<OrbitalSpace> orbs_;
       // spin-independent
       RefSymmSCMatrix rdm_;
+  };
+
+  /// Reads 2-RDM from a text file
+  class ExternReadRDMTwo : public RDM<Two>{
+    public:
+      typedef RDMCumulant<Two> cumulant_type;
+
+      /// reads 2-rdm from filename
+      /// assumes that 2-rdm is expressed in orbs
+      ExternReadRDMTwo(const std::string& filename,
+                       const Ref<OrbitalSpace>& orbs);
+      virtual ~ExternReadRDMTwo();
+
+      /// cannot be obsoleted
+      void obsolete() {}
+      /// already computed
+      void compute() {}
+      /// the orbital space of spincase s in which the density is reported
+      Ref<OrbitalSpace> orbs(SpinCase1 s) const { return orbs_; }
+      /// density matrix
+      RefSymmSCMatrix scmat(SpinCase2 spin) const { return rdm_; }
+      Ref<cumulant_type> cumulant() const;
+      Ref< RDM<One> > rdm_m_1() const;
+
+    private:
+      static ClassDesc class_desc_;
+
+    private:
+      Ref<OrbitalSpace> orbs_;
+      // spin-independent
+      RefSymmSCMatrix rdm_;
+      std::string filename_; // filename from which this was constructed -- may be useful to find rdm1 file
   };
 
 } // end of namespace sc

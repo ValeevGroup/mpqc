@@ -118,6 +118,14 @@ int main_gamess(int argc, char **argv)
   RefSymmSCMatrix P_mo = rdrdm1->scmat(AnySpinCase1);
 
   //
+  // Read 2-RDM
+  //
+  Ref<ExternReadRDMTwo> rdrdm2 = new ExternReadRDMTwo("GAMESS_RDM2.TXT",
+                                                      orbs);
+  Ref<RDM<One> > rdm1_recomputed = rdrdm2->rdm_m_1();
+  RefSymmSCMatrix P2_mo = rdrdm2->scmat(AnySpinCase2);
+
+  //
   // Test orbs and 1-rdm
   //
   // create CLHF object

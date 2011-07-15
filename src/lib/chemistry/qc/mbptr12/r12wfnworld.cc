@@ -63,6 +63,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
+  ref_->set_spinfree(spinadapted_);
 
   bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
       keyval->describedclassvalue("aux_basis").pointer(),
@@ -74,6 +75,8 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
+  correlate_min_occ_ = keyval->doublevalue("correlate_min_occ", KeyValValuedouble(0.0));
+  ref_->occ_thres() = correlate_min_occ_; // somewhat awkward ...
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
@@ -82,7 +85,9 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
   bs_aux_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
 
+
   si.get(spinadapted_);
+  si.get(correlate_min_occ_);
 
   abs_space_ << SavableState::restore_state(si);
   ribs_space_ << SavableState::restore_state(si);
@@ -98,6 +103,7 @@ void R12WavefunctionWorld::save_data_state(StateOut& so)
   SavableState::save_state(bs_aux_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
   so.put(spinadapted_);
+  so.put(correlate_min_occ_);
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
 }

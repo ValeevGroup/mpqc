@@ -156,6 +156,7 @@ public:
   /// Returns the FockBuildRuntime object that can build Fock matrices
   const Ref<FockBuildRuntime>& fockbuild_runtime() const { return fockbuild_runtime_; };
 
+
   void print(std::ostream& o) const;
 
   // call this after obsolete

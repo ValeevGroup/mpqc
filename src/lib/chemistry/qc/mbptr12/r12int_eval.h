@@ -51,6 +51,7 @@ class R12IntEval : virtual public SavableState {
   // change to false to use the old fock builder
   static const bool USE_FOCKBUILD = true;
 
+
   bool evaluated_;
 
   // Calculation information (number of basis functions, R12 approximation, etc.)

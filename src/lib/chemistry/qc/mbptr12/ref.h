@@ -71,6 +71,16 @@ namespace sc {
                             Ref<OrbitalSpace> vbs = 0,
                             Ref<FockBuildRuntime> fbrun = 0
                            );
+      PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
+                                  SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
+                                  const Ref<Integral>& integral,
+                                  RefSCMatrix& coefs,
+                                  const std::vector<double>& occs,
+                                  std::vector<bool>& active,
+                                  const RefDiagSCMatrix& energies,
+                                  bool eorder_increasing = true,
+                                  Ref<OrbitalSpace> vbs = 0,
+                                  Ref<FockBuildRuntime> fbrun = 0); // this is to construct screened orb spaces
       PopulatedOrbitalSpace(StateIn& si);
       ~PopulatedOrbitalSpace();
       void save_data_state(StateOut& so);
@@ -178,6 +188,10 @@ namespace sc {
     const Ref<OrbitalSpace>& uocc(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
+    double& occ_thres() {return occ_thres_;}
+    Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
+    Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
+
 
     private:
     Ref<WavefunctionWorld> world_;   // who owns this?
@@ -186,6 +200,9 @@ namespace sc {
     bool omit_uocc_;
     /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
     bool force_average_AB_rdm1_;
+    double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
+                        // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.
+
 
     /// used to implement set_desired_value_accuracy()
     virtual void _set_desired_value_accuracy(double eps) =0;
@@ -196,6 +213,10 @@ namespace sc {
     /// calling this will cause the object to be re-initialized next time it is used
     virtual void reset();
     mutable Ref<PopulatedOrbitalSpace> spinspaces_[NSpinCases1];
+    mutable Ref<PopulatedOrbitalSpace> screened_spinspaces_[NSpinCases1]; // this is used to construct the orbital spaces which are screened based on occ number using natural orbitals.
+    bool screened_space_init_ed_; // to avoid potential complexity and redundancy, we use this parameter to monitor whether "screened_spincases_" is initialized or not,
+                                  // so that we only construct it once.
+    bool orig_space_init_ed_; // created to potentially monitor the initialization state of spincases_; I find the space is initialized again and again now by calling init_spaces(), confusing.
 
     /// initialize OrbitalSpace objects
     virtual void init_spaces() = 0;

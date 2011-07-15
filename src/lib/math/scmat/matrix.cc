@@ -114,6 +114,8 @@ RefSCMatrix::operator=(const RefSCMatrix & c)
   return *this;
 }
 
+
+
 RefSCMatrix::RefSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
                          const Ref<SCMatrixKit>&k)
 {
@@ -646,6 +648,20 @@ RefSymmSCMatrix::operator=(const RefSymmSCMatrix & c)
 {
   Ref<SymmSCMatrix>::operator=(c);
   return *this;
+}
+
+void
+RefSymmSCMatrix::copyRefSCMatrix(const RefSCMatrix & c)
+{
+  int nn = this->n();
+  if( !(this->n()== c->nrow() and this->n() == c->ncol())) abort();
+  for (int i = 0; i < nn; ++i)
+  {
+    for (int j = 0; j <= i; ++j)
+    {
+      this->set_element(i,j, c->get_element(i,j));
+    }
+  }
 }
 
 RefSymmSCMatrix::RefSymmSCMatrix(const RefSCDimension&a,

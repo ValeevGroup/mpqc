@@ -63,6 +63,8 @@ namespace sc {
 
           </table>
        */
+
+      static const double zero_occupation;
       PT2R12(const Ref<KeyVal> &keyval);
       PT2R12(StateIn &s);
       ~PT2R12();
@@ -78,6 +80,11 @@ namespace sc {
 
       /// PT2R12 is an R12 Wavefunction
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
+      Ref<R12IntEval>& get_r12eval() {return r12eval_;}
+      RefSCMatrix transform_MO(); // when using screening, we rotate (occ_act) orbitals; row: new orbs, col: old MO
+                                  // new orbs differ from old orbs in that the occ_act part is rotated to natural orbs.
+                                  // this is used to get RDM in new orbitals spaces so that later on the orbital space comparison with ggspace()
+                                  // can be done (since ggspace etc already use rotated and screened orbitals).
 
       void obsolete();
 
@@ -147,7 +154,7 @@ namespace sc {
       RefSCMatrix sf_B_others();
 
       // TODO reimplement using native spin-free densities from Psi3
-      RefSymmSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
+      RefSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
       RefSymmSCMatrix rdm1_sf();
       RefSCMatrix rdm1_sf_2spaces(const Ref<OrbitalSpace> bspace, const Ref<OrbitalSpace> kspace);
 

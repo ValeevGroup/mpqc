@@ -301,7 +301,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
     posix_spawn_file_actions_destroy(&file_actions);
   }
 #else
-  // no posix_spawn? must use system them
+  // no posix_spawn? must use system then
   {
     std::ostringstream oss;
     oss << "cd " << cwd_ << "; pwd >> " << stdout_ << "; env >> " << stdout_ << "; " << psiprefix_ << "/" << module << " -f " << inputname_ << " -o " << outputname_

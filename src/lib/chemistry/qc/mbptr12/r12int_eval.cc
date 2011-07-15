@@ -73,7 +73,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   const bool nalpha_eq_nbeta = r12world()->spinadapted() || (spin_polarized() == false && r12world()->spinadapted() == false);
 
   if (nalpha_eq_nbeta) {
-    const int nocc_act = refinfo->occ_act()->rank();
+    const int nocc_act = refinfo->occ_act()->rank(); // this will lead to RASCI computation and orbital space initilization
     const int nvir_act = refinfo->uocc_act()->rank();
     const int nall = refinfo->orbs()->rank();
     naocc_a = naocc_b = nocc_act;

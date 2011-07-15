@@ -31,6 +31,10 @@
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/obintfactory.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
+#include <chemistry/qc/mbptr12/pt2r12.h>
+#include <math/scmat/local.h>
+
+
 
 using namespace sc;
 
@@ -162,7 +166,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
                                              Ref<FockBuildRuntime> fbrun) :
                                              oreg_(oreg)
 {
-  const int nmo = occs.size();
+  const int nmo = occs.size();//active tells which orbitals are active; the 'masks' are selectors;
   std::vector<bool> occ_mask(nmo, false);
   std::vector<bool> occ_act_mask(nmo, false);
   std::vector<bool> uocc_mask(nmo, false);
@@ -295,6 +299,230 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
 #endif
 }
 
+
+
+PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMatrix OBS_mo_ordm,
+                                             const Ref<OrbitalSpaceRegistry>& oreg,
+                                             SpinCase1 spin,
+                                             const Ref<GaussianBasisSet>& bs,
+                                             const Ref<Integral>& integral,
+                                             RefSCMatrix& old_coefs,
+                                             const std::vector<double>& occs,
+                                             std::vector<bool>& old_active,
+                                             const RefDiagSCMatrix& energies,
+                                             bool eorder_increasing,
+                                             Ref<OrbitalSpace> vbs,
+                                             Ref<FockBuildRuntime> fbrun) :
+                                             oreg_(oreg)
+{ // for R12, only occ_act needs to be changed-> change active correspondingly
+
+  const int nmo = occs.size();//active tells which orbitals are active; the 'masks' are selectors;
+  std::vector<bool> occ_mask(nmo, false);
+  std::vector<bool> occ_act_mask(nmo, false);
+  std::vector<bool> uocc_mask(nmo, false);
+  std::vector<bool> uocc_act_mask(nmo, false);
+  std::vector<bool> active = old_active;
+  RefSCMatrix coefs = old_coefs->copy();
+  const int num_ao = coefs.coldim().n();
+  Ref<SCBlockInfo> blockinfo = coefs.coldim()->blocks();
+  assert(nmo == blockinfo->nelem());
+  const int nblocks = blockinfo->nblock();
+
+  for(int i=0; i<nmo; i++) {
+    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation) {
+      occ_mask[i] = true;
+      occ_act_mask[i] = true && active[i];
+    }
+    else {
+      uocc_mask[i] = true;
+      uocc_act_mask[i] = true && active[i];
+    }
+  }
+
+  // if VBS is given, recompute the masks for the virtuals
+  if (vbs.nonnull()) {
+    assert(fbrun.nonnull());
+    const int nvirt = vbs->rank();
+    uocc_mask.resize(nvirt);
+    uocc_act_mask.resize(nvirt);
+    std::fill(uocc_mask.begin(), uocc_mask.end(), true);
+    std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
+  }
+
+
+  for (int i = 0; i < nblocks; ++i) // we do svd in each block to avoid problems in symmetry blocks, since svd doesn't uniquely fix the ordering of columns or rows
+  {
+    std::vector<int> occ_act_orb_inds; //record the position of occ_act orbitals
+    for (int j = 0; j < blockinfo->size(i); ++j)
+    {
+      const int ind = blockinfo->start(i) + j;
+      if (occ_mask[i] and active[ind]) occ_act_orb_inds.push_back(ind);
+    }
+    const int num_occ_act = occ_act_orb_inds.size();
+//    Ref<SCBlockInfo> occ_act_pseduoBlock = new SCBlockInfo(num_occ_act, 1, &num_occ_act);
+//    SCDimension* block_dim = new SCDimension(occ_act_pseduoBlock);
+    SCDimension* dim = new SCDimension(num_occ_act);
+    SCDimension * ao_dim = new SCDimension(num_ao);
+    Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
+    RefSCMatrix occ_act_blockmat = local_kit->matrix(dim, dim);
+    RefSCMatrix occ_act_coefsmat = local_kit->matrix(ao_dim, dim);
+    for (int k1 = 0; k1 < num_occ_act; ++k1)
+    {
+      for (int k2 = 0; k2 < num_occ_act; ++k2)
+      {
+        const double element = OBS_mo_ordm->get_element(occ_act_orb_inds[k1], occ_act_orb_inds[k2]);
+        occ_act_blockmat->set_element(k1,k2, element);
+      }
+    } // finish constructing a block of RDM matrix: occ_act
+    RefSCMatrix UU = occ_act_blockmat->clone();
+    RefSCMatrix VV = occ_act_blockmat->clone();
+    RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
+    occ_act_blockmat->svd_this(UU,DD,VV);
+    for (int xx = 0; xx < num_occ_act; ++xx)
+    {
+      int indd = occ_act_orb_inds[xx];
+      active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
+    } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
+    for (int i2 = 0; i2 < num_occ_act; ++i2)
+    {
+      for (int j2 = 0; j2 < num_ao; ++j2)
+      {
+        double x = 0;
+        for (int j3 = 0; j3 < num_occ_act; ++j3)
+        {
+          x += coefs->get_element(j2, j3) * UU->get_element(i2, j3);
+        }
+        occ_act_coefsmat->set_element(j2, i2, x);
+      }
+    }// construct the new AO-MO coefficients
+    for (int ii = 0; ii < num_occ_act; ++ii)
+    {
+      for (int jj = 0; jj < num_ao; ++jj)
+      {
+        coefs->set_element(jj, occ_act_orb_inds[ii], occ_act_coefsmat->get_element(jj,ii));
+      }
+    } // update RefSCVector
+  }
+
+  //here we can not simply call the previous constructor, since the orbital registry will complain ('id' conflicts)
+  // so, we simply add '-' to each id to distinguish
+  // with updated 'active', we reset occ_act_mask, which is responsible for ggspace, etc
+  for(int i=0; i<nmo; i++)
+  {
+    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation)
+    {
+      if (occ_act_mask[i] == true) occ_act_mask[i] = active[i]; //reset occ_act_mask
+    }
+  }
+  const std::string prefix(to_string(spin));
+  using std::ostringstream;
+  {
+    ostringstream oss;
+    oss << prefix << " symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p(sym)"),spin);
+    orbs_sb_ = new OrbitalSpace(id, oss.str(), coefs, bs, integral, energies, 0, 0, OrbitalSpace::symmetry);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " energy-ordered MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p"),spin);
+    orbs_ = blocked_to_nonblocked_space(id, oss.str(),
+                                        orbs_sb_,
+                                        eorder_increasing);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " occupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m(sym)"),spin);
+    occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_mask);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active occupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
+    occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " occupied MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m"),spin);
+    occ_ = blocked_to_nonblocked_space(id, oss.str(),
+                                       occ_sb_,
+                                       eorder_increasing);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active occupied MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
+    occ_act_ = blocked_to_nonblocked_space(id, oss.str(),
+                                           occ_act_sb_,
+                                           eorder_increasing);
+  }
+
+  {
+    ostringstream oss;
+    oss << prefix << " unoccupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-e(sym)"),spin);
+    if (vbs.null())
+      uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
+    else {
+      if (vbs->rank() > 0) {
+        uocc_sb_ = orthog_comp(occ_sb_, vbs, id, "VBS", OverlapOrthog::default_lindep_tol());
+        // canonicalize
+        uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
+      }
+      else // empty vbs
+        uocc_sb_ = new EmptyOrbitalSpace(id, oss.str(), vbs->basis(), vbs->integral(), OrbitalSpace::symmetry);
+      //uocc_sb_ = vbs;
+    }
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active unoccupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a(sym)"),spin);
+    if (vbs.null())
+      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
+    else
+      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " unoccupied MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-e"),spin);
+    uocc_ = blocked_to_nonblocked_space(id, oss.str(),
+                                        uocc_sb_,
+                                        eorder_increasing);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active unoccupied MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a"),spin);
+    uocc_act_ = blocked_to_nonblocked_space(id, oss.str(),
+                                            uocc_act_sb_,
+                                            eorder_increasing);
+  }
+
+
+  // register all spaces
+  Ref<OrbitalSpaceRegistry> idxreg = oreg_;
+  idxreg->add(make_keyspace_pair(orbs_sb_));
+  idxreg->add(make_keyspace_pair(orbs_));
+  idxreg->add(make_keyspace_pair(occ_sb_));
+  idxreg->add(make_keyspace_pair(occ_));
+  idxreg->add(make_keyspace_pair(uocc_sb_));
+  idxreg->add(make_keyspace_pair(uocc_));
+  idxreg->add(make_keyspace_pair(occ_act_sb_));
+  idxreg->add(make_keyspace_pair(occ_act_));
+  idxreg->add(make_keyspace_pair(uocc_act_sb_));
+  idxreg->add(make_keyspace_pair(uocc_act_));
+
+#if 0
+  orbs_sb_->print_detail();
+  occ_sb_->print_detail();
+  uocc_sb_->print_detail();
+#endif
+}
+
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
   oreg_ = OrbitalSpaceRegistry::restore_instance(si);
   orbs_sb_ << SavableState::restore_state(si);
@@ -336,7 +564,10 @@ static ClassDesc R12RefWavefunction_cd(
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                        const Ref<GaussianBasisSet>& basis,
                                        const Ref<Integral>& integral) :
-  world_(world), basis_(basis), integral_(integral), omit_uocc_(true), force_average_AB_rdm1_(false) {
+  world_(world), basis_(basis), integral_(integral), omit_uocc_(true),
+  force_average_AB_rdm1_(false), screened_space_init_ed_(false),
+  orig_space_init_ed_(false), occ_thres_(0.0)
+{
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
 }
 
@@ -393,8 +624,8 @@ RefWavefunction::init() const
     const double e = this_nonconst->energy();
     this_nonconst->init_spaces();
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
-    if(force_average_AB_rdm1_ == false)
-        world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
+    if(force_average_AB_rdm1_ == false) // the densites are in AO basis
+        world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//her computes ordm
     else
     {
         RefSymmSCMatrix av_rdm = this->ordm(Alpha);
@@ -405,15 +636,19 @@ RefWavefunction::init() const
   }
 }
 
+
 void
 RefWavefunction::obsolete() {
   reset();
 }
 
 void
-RefWavefunction::reset() {
+RefWavefunction::reset()
+{
   spinspaces_[Alpha] = 0;
   spinspaces_[Beta] = 0;
+  screened_spinspaces_[Alpha] = 0;
+  screened_spinspaces_[Beta] = 0;
 }
 
 RefSymmSCMatrix
@@ -445,8 +680,11 @@ RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const {
 void
 RefWavefunction::set_spinfree(bool TrueOrFalse)
 {
-  this->force_average_AB_rdm1_ = TrueOrFalse;
-  return;
+  if (TrueOrFalse != this->force_average_AB_rdm1_)
+  {
+    this->reset();
+    this->force_average_AB_rdm1_ = TrueOrFalse;
+  }
 }
 
 namespace {
@@ -460,7 +698,14 @@ RefWavefunction::orbs_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->orbs_sb();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->orbs_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -468,7 +713,14 @@ RefWavefunction::orbs(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->orbs();
+  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->orbs();
 }
 
 const Ref<OrbitalSpace>&
@@ -476,7 +728,14 @@ RefWavefunction::occ_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->occ_sb();
+  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->occ_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -484,7 +743,14 @@ RefWavefunction::occ_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->occ_act_sb();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->occ_act_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -492,7 +758,14 @@ RefWavefunction::occ(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->occ();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->occ();
 }
 
 const Ref<OrbitalSpace>&
@@ -500,7 +773,14 @@ RefWavefunction::occ_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->occ_act();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->occ_act();
 }
 
 const Ref<OrbitalSpace>&
@@ -508,7 +788,14 @@ RefWavefunction::uocc_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->uocc_sb();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->uocc_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -516,7 +803,14 @@ RefWavefunction::uocc_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->uocc_act_sb();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->uocc_act_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -524,15 +818,32 @@ RefWavefunction::uocc(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->uocc();
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->uocc();
 }
+
+
+
 
 const Ref<OrbitalSpace>&
 RefWavefunction::uocc_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  return spinspaces_[s]->uocc_act();
+  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
+  }
+  else
+    return spinspaces_[s]->uocc_act();
 }
 
 ///////////////////////////////////////////////////////////////////

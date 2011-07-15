@@ -2227,7 +2227,7 @@ namespace sc {
     mo_density_[spin] = detail::rdopdm(spin,
                                        this->reference()->mopi(),
                                        dmap,
-                                       this->basis_matrixkit());
+                                       this->basis_matrixkit());//read rdm
 
     if(debug_>=DefaultPrintThresholds::mostN2) {
       mo_density_[spin].print(prepend_spincase(spin,"Psi opdm").c_str());

@@ -33,6 +33,7 @@
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 
+
 using namespace std;
 using namespace sc;
 
@@ -232,12 +233,97 @@ namespace {
     }
   }
 
+  RefSCMatrix convert_RefSC_to_local_kit(const RefSCMatrix& A)
+  {
+    RefSCMatrix result;
+    Ref<LocalSCMatrixKit> kit_cast_to_local; kit_cast_to_local << A.kit();
+    if (kit_cast_to_local.null()) {
+      Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
+      RefSCMatrix A_local = local_kit->matrix(A.rowdim(), A.coldim());
+      A_local->convert(A);
+      result = A_local;
+    }
+    else
+      result = A;
+    return result;
+  }
+
+
+  RefSCMatrix transform_one_ind(RefSCMatrix AA, RefSCMatrix BB, int whichindex, int onedim) // transform one index. A is a two-index tensor;
+  {                       // B is a 4-ind tensor; whichindex tells which to transform; onedim (1-4) tells the dimension of one ind; the second ind of A is the dummy
+#if 1
+    ExEnv::out0() << "test transform_one_ind:\n";
+    ExEnv::out0() << (onedim*onedim)<< ", " << BB->nrow() << ", "<< BB->ncol() << "\n";
+#endif
+    assert(((onedim*onedim) == BB->nrow()) and (BB->nrow() == BB->ncol()));
+    RefSCMatrix res = BB->clone();
+    BB.assign(0.0);
+    int ext_ind, int_ind, row, col, Ap, Bp, Cp, Dp, A, B, C, D, a, b, c, d, f;
+    ext_ind = int_ind = row = col = Ap = Bp = Cp = Dp = A = B = C = D = a = b = c = d = f = 0;
+    double xx = 0;
+    for (a = 0; a < onedim; ++a) // the external index of A
+    {
+      for (b = 0; b < onedim; ++b)
+      {
+        for (c = 0; c < onedim; ++c)
+        {
+          for (d = 0; d < onedim; ++d)
+          {
+            xx = 0;
+            for (f = 0; f < onedim; ++f) // dummy index
+            {
+              switch (whichindex)
+              {
+                case 1: // Gamma^AB_CD * C_A^Ap
+                  ext_ind = Ap = a; int_ind = A = f;  B = b; C = c; D = d;// by renaming, we have BB always of the same form, convenient
+                  break;
+                case 2: // Gamma^AB_CD * C_B^Bp
+                  ext_ind = Bp = a; int_ind = B = f; A = b; C = c; D = d;
+                  break;
+                case 3: // C_Cp^C * Gamma^AB_CD
+                  ext_ind = Cp = a; int_ind = C = f; A = b; B = c; D = d;
+                  break;
+                case 4: // C_Dp^D * Gamma^AB_CD
+                  ext_ind = Dp = a; int_ind = D = f; A = b; B = c; C = d;
+                  break;
+                default: abort();
+              }
+              xx += BB->get_element(C*onedim + D, A*onedim + B)*AA->get_element(ext_ind, int_ind);
+           }
+           switch (whichindex)
+           {
+             case 1:// Gamma^AB_CD * C_A^Ap
+               row = C*onedim + D; col = Ap*onedim +B;
+               break;
+             case 2:// Gamma^AB_CD * C_B^Bp
+               row = C*onedim + D; col = A*onedim + Bp;
+               break;
+             case 3: // C_Cp^C * Gamma^AB_CD
+               row = Cp *onedim + D; col = A*onedim + B;
+               break;
+             case 4: // C_Dp^D * Gamma^AB_CD
+               row = C*onedim + Dp; col = A*onedim + B;
+               break;
+             default: abort();
+           }
+           res->set_element(row, col, xx);
+          }
+        }
+      }
+    }
+    return res;
+  }
+
+  RefSymmSCMatrix convert_to_local_kit(const RefSymmSCMatrix& A);//forward declaration
+
 }
 
 ////////////////////
 
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",0,create<PT2R12>,create<PT2R12>);
+
+const double PT2R12::zero_occupation = 1e-12;
 
 PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_()
 {
@@ -1515,7 +1601,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       contract34_DA4_RefMat(RT, 1.0, R, f12int_index, T, gg_dim, gg_dim);
     }
 
-    RefSCMatrix onerdm = rdm1_gg_sf().convert2RefSCMat(); // G^s_v
+    RefSCMatrix onerdm = rdm1_gg_sf(); // G^s_v
 
     {
       Ref<DistArray4> I1; //the first two sets uses contract4
@@ -1587,20 +1673,109 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 
 
 
+RefSCMatrix sc::PT2R12::transform_MO() //between occupied orbitals
+{                                       // assume mo_density is of the same ordering as occ_sb()
+  RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
+  Ref<PopulatedOrbitalSpace> t_orbs = r12world()->ref()->get_screened_poporbspace(Alpha);
+  Ref<OrbitalSpace> occ_act = t_orbs->occ_act_sb();
+  Ref<OrbitalSpace> occ = t_orbs->occ_sb();
+  std::vector<int> map1 = map(*occ, *occ_act);
+  int num_occ_act = occ_act->rank();
+  int num_occ = occ->rank();
+  int rdmdim = mo_density->n();
+  assert(rdmdim == num_occ);
+  std::vector<int> occ_act_inds;
+  std::vector<int> occ_act_mask(num_occ, 0);
+  for (int i = 0; i < num_occ_act; ++i)
+  {
+    if(map1[i] == -1)
+      throw ProgrammingError("some orbital in occ_act not belong to OBS;", __FILE__,__LINE__);
+    else
+      {
+        occ_act_inds.push_back(map1[i]);
+        occ_act_mask[map1[i]] = 1;
+      }
+  }
 
+  RefSCDimension mo_dim = occ->coefs()->coldim();
+  assert(mo_dim->n() == num_occ);
+  RefSCMatrix TransformMat = occ->coefs()->kit()->matrix(mo_dim, mo_dim);
+  TransformMat.assign(0.0);
+  for (int kk = 0; kk < num_occ; ++kk)
+  {
+    if(occ_act_mask[kk] == 0) TransformMat.set_element(kk, kk, 1.0);
+  } // don't transform unrelated orbitals
 
-RefSymmSCMatrix sc::PT2R12::rdm1_gg_sf()
+  //the following code is copied from ref.cc: PopulatedOrbitalSpace(...)
+  std::vector<unsigned int> blocks = occ->block_sizes();
+  int nblocks = occ->nblocks();
+  int blockoffset = 0;
+  for (int i = 0; i < nblocks; ++i)
+  {
+    std::vector<int> occ_act_orb_inds; //record the position of occ_act orbitals
+    for (int j = 0; j < blocks[i]; ++j)
+    {
+      const int ind = blockoffset + j;
+      if (occ_act_mask[ind] == 1) occ_act_orb_inds.push_back(ind);
+    }
+    blockoffset += blocks[i];
+    const int num_occ_act = occ_act_orb_inds.size();
+    SCDimension *dim = new SCDimension(num_occ_act);
+    Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
+    RefSCMatrix occ_act_blockmat = local_kit->matrix(dim, dim);
+    for (int k1 = 0; k1 < num_occ_act; ++k1)
+    {
+      for (int k2 = 0; k2 < num_occ_act; ++k2)
+      {
+        const double element = mo_density->get_element(occ_act_orb_inds[k1], occ_act_orb_inds[k2]);
+        occ_act_blockmat->set_element(k1,k2, element);
+      }
+    } // finish constructing a block of RDM matrix: occ_act
+    RefSCMatrix UU = occ_act_blockmat->clone();
+    RefSCMatrix VV = occ_act_blockmat->clone();
+    RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
+    UU.assign(0.0); VV.assign(0.0);DD.assign(0.0);
+    occ_act_blockmat->svd_this(UU,DD,VV);
+    for (int i2 = 0; i2 < num_occ_act; ++i2)
+    {
+      for (int j2 = 0; j2 < num_occ_act; ++j2)
+      {
+        TransformMat->set_element(i2, j2, UU->get_element(j2, i2)); // in the final transform matrix, row:new, col:old
+      }
+    }// finish building MO transform matrix in the block
+  }
+  return TransformMat;
+}
+
+RefSCMatrix sc::PT2R12::rdm1_gg_sf()
 {
-  RefSymmSCMatrix sf_opdm = rdm1_gg(Alpha) + rdm1_gg(Beta);
-  return(sf_opdm);
+      Ref<OrbitalSpace> ggspace = r12eval_->ggspace(Alpha);
+      return rdm1_sf_2spaces(ggspace, ggspace);
 }
 
 
 RefSymmSCMatrix sc::PT2R12::rdm1_sf()
 {
-  RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);
-  return(sf_opdm);
+  RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  {
+    RefSCMatrix transMO_nonlocal = this->transform_MO();
+    assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
+    RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
+    RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
+    RefSymmSCMatrix final = sf_opdm->clone();
+    final->assign(0.0);
+    final.copyRefSCMatrix(res);// convert a symmscmatrix
+#if 1
+    final.print(prepend_spincase(AlphaBeta, "one SF rdm").c_str());
+#endif
+    return final;
+  }
+  else
+    return(sf_opdm);
 }
+
+
 
 RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> k1space)
 {
@@ -1612,7 +1787,13 @@ RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const R
   RefSCMatrix sfrdm1 = rdm1_sf().convert2RefSCMat();
   RefSCMatrix result = sfrdm1->kit()->matrix(upp_scdim, low_scdim);
 
-  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
+  // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
+  // 2. take care of screening
+  Ref<OrbitalSpace> pdmspace;
+  const bool screen = (get_r12eval()->r12world()->correlate_min_occ_ > 0);
+  if(screen) pdmspace = get_r12eval()->r12world()->ref()->get_screened_poporbspace()->orbs_sb();
+  else pdmspace = get_r12eval()->r12world()->ref()->get_poporbspace()->orbs_sb();
+
   const unsigned int n_pdmspace = pdmspace->rank();
 
   std::vector<int> b1map = map(*pdmspace, *b1space);
@@ -1670,7 +1851,30 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
          sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
-  return sf_rdm;
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  {
+    RefSymmSCMatrix res = sf_rdm->clone();
+    res->assign(0.0);
+    RefSCMatrix transMO = this->transform_MO();
+    const int n = transMO->nrow();
+    RefSCMatrix RefSCrdm = sf_rdm->kit()->matrix(sf_rdm->dim(), sf_rdm->dim());
+    RefSCrdm->assign(0.0);
+    RefSCrdm->accumulate(sf_rdm);
+#if 1
+    ExEnv::out0() << "test 2rdm_sf:\n";
+    ExEnv::out0() << RefSCrdm->nrow() << ", "<< RefSCrdm->ncol() << "\n";
+    RefSCrdm.print(prepend_spincase(AlphaBeta, "2rdm").c_str());
+#endif
+    RefSCMatrix one = transform_one_ind(transMO, RefSCrdm, 1, n);
+    RefSCMatrix two = transform_one_ind(transMO, one, 2, n);
+    RefSCMatrix three = transform_one_ind(transMO, two, 3, n);
+    RefSCMatrix four = transform_one_ind(transMO, three, 4, n);
+    res.copyRefSCMatrix(four);
+
+    return res;
+  }
+  else
+    return sf_rdm;
 }
 
 
@@ -1689,9 +1893,46 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   RefSCMatrix result = sf2rdm->kit()->matrix(upp_scdim, low_scdim);
   result.assign(0.0);
 
-  Ref<OrbitalSpace> pdmspace = rdm1_->orbs(Alpha);
+  // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
+  // 2. take care of screening
+  Ref<OrbitalSpace> pdmspace;
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+    pdmspace = get_r12eval()->r12world()->ref()->get_screened_poporbspace()->occ_sb();
+  else
+    pdmspace = get_r12eval()->r12world()->ref()->get_poporbspace()->occ_sb();
+
   const unsigned int n_pdmspace = pdmspace->rank();
 
+#if 1
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  {
+    // first test 1rdm, which shall be diagonal in our test case
+    RefSymmSCMatrix ABX = rdm1_sf();
+    ExEnv::out0() << "ordm dimension: " << ABX->n() << "\n";
+    ABX.print(prepend_spincase(AlphaBeta, "trans ordm").c_str());
+
+    RefSCMatrix old_mocoef = r12world()->ref()->get_poporbspace()->orbs()->coefs();
+    ExEnv::out0() << "print old Mo coefs of dimension: " << old_mocoef->ncol() << " (AO dimensin: )" << old_mocoef->nrow() << "\n";
+    old_mocoef.print(prepend_spincase(AlphaBeta, "old mo").c_str());
+
+    RefSCMatrix old_mocoef2 = r12world()->ref()->get_poporbspace()->orbs_sb()->coefs();
+    ExEnv::out0() << "print old symmetry-block Mo coefs of dimension: " << old_mocoef2->ncol() << " (AO dimensin: )" << old_mocoef2->nrow() << "\n";
+    old_mocoef2.print(prepend_spincase(AlphaBeta, "symm old mo").c_str());
+
+    RefSCMatrix new_mocoef = r12world()->ref()->get_screened_poporbspace()->orbs()->coefs();
+    ExEnv::out0() << "print new Mo coefs of dimension: " << new_mocoef->ncol() << " (AO dimensin: )" << new_mocoef->nrow() << "\n";
+    new_mocoef.print(prepend_spincase(AlphaBeta, "new mo").c_str());
+
+    RefSCMatrix new_mocoef2 = r12world()->ref()->get_screened_poporbspace()->orbs_sb()->coefs();
+    ExEnv::out0() << "print new symmetry-block Mo coefs of dimension: " << new_mocoef2->ncol() << " (AO dimensin: )" << new_mocoef2->nrow() << "\n";
+    new_mocoef2.print(prepend_spincase(AlphaBeta, "symm new mo").c_str());
+
+    ExEnv::out0() << "print b1space of dimension: " << b1space->coefs()->ncol() << " (AO dimensin: )" << b1space->coefs()->nrow() << "\n";
+    b1space->coefs().print(prepend_spincase(AlphaBeta, "b1space").c_str());
+    ExEnv::out0() << "\n\nprint pdmspace of dimension: " << pdmspace->coefs()->ncol() << " (AO dimensin: )" << pdmspace->coefs()->nrow() << "\n";
+    pdmspace->coefs().print(prepend_spincase(AlphaBeta, "pdmspace").c_str());
+  }
+#endif
   std::vector<int> b1map = map(*pdmspace, *b1space);
   std::vector<int> b2map = map(*pdmspace, *b2space);
   std::vector<int> k1map = map(*pdmspace, *k1space);
@@ -1700,22 +1941,23 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   for (int nb1 = 0; nb1 < b1dim; ++nb1)
   {
     if(b1map[nb1] == -1)
-      throw ProgrammingError("some orbital in b1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+      {abort(); // debug now
+      throw ProgrammingError("some orbital in b1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);}
   }
   for (int nb2 = 0; nb2 < b2dim; ++nb2)
   {
     if(b2map[nb2] == -1)
-      throw ProgrammingError("some orbital in b2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+      {abort();throw ProgrammingError("some orbital in b2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);}
   }
   for (int nk1 = 0; nk1 < k1dim; ++nk1)
   {
     if(k1map[nk1] == -1)
-      throw ProgrammingError("some orbital in k1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+      {abort();throw ProgrammingError("some orbital in k1space not belong to pdmspace; unexpected.", __FILE__,__LINE__);}
   }
   for (int nk2 = 0; nk2 < k2dim; ++nk2)
   {
     if(k2map[nk2] == -1)
-      throw ProgrammingError("some orbital in k2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);
+      {abort();throw ProgrammingError("some orbital in k2space not belong to pdmspace; unexpected.", __FILE__,__LINE__);}
   }
 
   Ref<SpinMOPairIter> upp_pair = new SpinMOPairIter(b1dim, b2dim, AlphaBeta);
@@ -1890,10 +2132,15 @@ namespace {
   }
 }
 
+
+
+
 RefSymmSCMatrix sc::PT2R12::rdm1(SpinCase1 spin)
 {
   return convert_to_local_kit(rdm1_->scmat(spin));
 }
+
+
 
 RefSymmSCMatrix sc::PT2R12::rdm2(SpinCase2 spin)
 {
@@ -1903,12 +2150,16 @@ RefSymmSCMatrix sc::PT2R12::rdm2(SpinCase2 spin)
 
 RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
 {
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   // since LocalSCMatrixKit is used everywhere, convert to Local kit
   return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
 }
 
 RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 {
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+    throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm1(spin);
   Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
   Ref<OrbitalSpace> gspace = r12eval_->ggspace(spin);
@@ -1937,6 +2188,8 @@ RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 
 RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 {
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm2(spin);
   return this->_rdm2_to_gg(spin, rdm);
 }
@@ -1956,6 +2209,8 @@ RefSymmSCMatrix sc::PT2R12::phi_gg(SpinCase2 spin)
 RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
                                         RefSymmSCMatrix rdm)
 {
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
   Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);

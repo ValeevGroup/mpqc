@@ -271,6 +271,7 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     RefSymmSCMatrix& operator=(SymmSCMatrix* m);
     /// Make this and m refer to the same matrix.
     RefSymmSCMatrix& operator=(const RefSymmSCMatrix& m);
+    void copyRefSCMatrix(const RefSCMatrix& m);// the same dimension, do elementwise copying
 
     // matrix specific members
   public:

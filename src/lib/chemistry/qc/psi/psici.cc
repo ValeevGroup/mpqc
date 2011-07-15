@@ -388,8 +388,8 @@ namespace sc {
     /// construction of valence_obwfn_
     valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
     if (valence_obwfn_.nonnull()) {
-      double valence_obwfn_energy = valence_obwfn_->energy();
-      this->reference()->compute();
+      double valence_obwfn_energy = valence_obwfn_->energy();//compute CLHF guess wavefunc
+      this->reference()->compute();// compute reference, e.g. PsiCLHF
       moorder_ = detail::ref_to_valence_moorder(this->reference(),
                                                 this->valence_obwfn_);
     }
@@ -410,7 +410,7 @@ namespace sc {
 
     vector<unsigned int> docc_act = this->docc_act();
     vector<unsigned int> socc = this->socc();
-    vector<unsigned int> uocc_act = this->uocc_act();
+    vector<unsigned int> uocc_act = this->uocc_act();//these 3 lines are redundant.
     vector<unsigned int> mos = reference()->mopi();
     vector<unsigned int> frozen_docc = this->frozen_docc();
     vector<unsigned int> frozen_uocc = this->frozen_uocc();
@@ -654,7 +654,8 @@ namespace sc {
       const int nirrep = this->nirrep();
       std::vector<unsigned int> mopi = this->reference()->mopi();
       std::vector<bool>::iterator mo = occ_mask.begin();
-      for(int h=0; h<nirrep; ++h) {
+      for(int h=0; h<nirrep; ++h)
+      {
         const int nocc = frozen_docc_[h] + ras1_[h] + ras2_[h];
         std::fill(mo, mo+nocc, true);
         mo += mopi[h];
@@ -685,7 +686,7 @@ namespace sc {
       const int nmo = orbs_sb->rank();
 
       for(int R=0; R<nmo; ++R)
-        for(int C=0; C<=R; ++C) {
+        for(int C=0; C<=R; ++C) { //lower triangle
           const int rr = omap[R];
           const int cc = omap[C];
           if (rr == -1 || cc == -1) continue;

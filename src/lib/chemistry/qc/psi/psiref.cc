@@ -24,7 +24,7 @@
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
-
+#include <chemistry/qc/mbptr12/pt2r12.h>
 #include <chemistry/qc/psi/psiref.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/spin.h>
@@ -357,13 +357,15 @@ PsiRASCI_RefWavefunction::init_spaces()
   const unsigned int ras3_max = wfn()->ras3_max();
   const int nirrep = wfn()->nirrep();
   unsigned int mo = 0;
-  for(int h=0; h<nirrep; ++h) {
+  for(int h=0; h<nirrep; ++h)
+  {
     const unsigned int nmo = mopi.at(h);
     const unsigned int nocc = frzcpi[h] +
                               ras1[h] +
                               ras2[h] +
                               (ras3_max > 0 ? ras3[h] : 0);
-    for(int i=0; i<nocc; ++i, ++mo) {
+    for(int i=0; i<nocc; ++i, ++mo)
+    {
       occs[mo] = 1.0;
       occmask[mo] = true;
     }
@@ -400,6 +402,15 @@ PsiRASCI_RefWavefunction::init_spaces()
   spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                  occs, actmask, evals, moorder);
   spinspaces_[Beta] = spinspaces_[Alpha];
+  orig_space_init_ed_ = true;
+  if((! screened_space_init_ed_) and fabs(occ_thres()) > sc::PT2R12::zero_occupation)
+  {
+    RefSymmSCMatrix OBS_mo_ordm = this->ordm_orbs_sb(Alpha) + this->ordm_orbs_sb(Beta); // get spin-free RDM in MO basis
+    screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
+                                                            occs, actmask, evals, moorder);
+    screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
+    screened_space_init_ed_ = true;
+  }
 }
 
 RefSymmSCMatrix

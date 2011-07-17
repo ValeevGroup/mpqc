@@ -165,6 +165,7 @@ namespace sc {
     virtual RefSymmSCMatrix ordm(SpinCase1 spin) const =0;
     /// return the MO basis density (MOs are given by orbs_sb())
     virtual RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
+    virtual RefSymmSCMatrix ordm_occ_sb(SpinCase1 spin) const;
 
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<OrbitalSpace>& oso_space() const;

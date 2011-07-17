@@ -1500,6 +1500,21 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
+#if 0
+  ExEnv::out0() << "test some X terms\n";
+  RefSCMatrix XX = T->clone();
+  XX.assign(0.0);
+  const int n = T->nrow();
+  for (int x1 = 0; x1 < n; ++x1)
+  {
+    for (int x2 = 0; x2 < n; ++x2)
+    {
+      double yy = (x1 == x2)?x1: 0; //make a delta matrix
+      XX->set_element(x1,x2,yy);
+    }
+  }
+  RefSCMatrix Xpart = TGFT * XX * T;
+#endif
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
@@ -1546,7 +1561,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << std::endl << std::endl;
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
-    ExEnv::out0() << indent << scprintf("B':                       %17.12lf", E_Xpart) << std::endl;
+    ExEnv::out0() << indent << scprintf("B'(0):                    %17.12lf", E_TBTG) << std::endl;
+    ExEnv::out0() << indent << scprintf("B'(X):                    %17.12lf", E_Xpart) << std::endl;
     ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
     ExEnv::out0() << indent << scprintf("VBratio remain:           %17.12lf", VBratio) << std::endl;
     ExEnv::out0() << indent << scprintf("R12 min:                  %17.12lf", R12min) << std::endl;
@@ -1816,6 +1832,10 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
 #if 1
     final.print(prepend_spincase(AlphaBeta, "one SF rdm").c_str());
 #endif
+#if 0
+    ExEnv::out0() << "rdm2_sf: try this way\n";
+    if(true) return r12world()->ref()->ordm_occ_sb(Alpha);
+#endif
     return final;
   }
   else
@@ -1898,13 +1918,25 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
          sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
+#if 0
+    ExEnv::out0() << "reset 2rdm_sf:\n";
+    const int dd = sf_rdm->n();
+    for (int x1 = 0; x1 < dd; ++x1)
+    {
+      for (int x2 = 0; x2 < dd; ++x2)
+      {
+        double xx = (x1 == x2)?1:0;
+        sf_rdm->set_element(x1,x2,xx);
+      }
+    }
+#endif
   if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
   {
     RefSymmSCMatrix res = sf_rdm->clone();
     res->assign(0.0);
     RefSCMatrix transMO = this->transform_MO();
     const int n = transMO->nrow();
-    RefSCMatrix RefSCrdm = sf_rdm->kit()->matrix(sf_rdm->dim(), sf_rdm->dim());
+    RefSCMatrix RefSCrdm = sf_rdm->kit()->matrix(sf_rdm->dim(), sf_rdm->dim());//get a RefSCMatrix instead of RefSymm..
     RefSCrdm->assign(0.0);
     RefSCrdm->accumulate(sf_rdm);
 #if 1
@@ -1922,7 +1954,19 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
     RefSCMatrix four = transform_one_ind(transMO, three, 4, n);
     four.print(prepend_spincase(AlphaBeta, "rdm2_sf: four").c_str());
     res.copyRefSCMatrix(four);
-#if 1
+#if 0
+    for (int x1 = 0; x1 < n*n; ++x1)
+    {
+      for (int x2 = 0; x2 < n*n; ++x2)
+      {
+        double xx = RefSCrdm->get_element(x1,x2),yy=res->get_element(x1,x2);
+        if(fabs(xx-yy) > 1e-12)
+        {ExEnv::out0() << "rdm2s differ! " << x1 << ", " << x2 << ", " << xx << ", " << yy << "\n";
+         abort();}
+      }
+    }
+#endif
+#if 0
     ExEnv::out0() << "rdm1_sf: an alternative way of getting 2RDM\n";
     RefSCMatrix DoubleT = four->clone();
     DoubleT.assign(0.0);
@@ -1959,6 +2003,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
     res.print(prepend_spincase(AlphaBeta, "rdm2_sf: transformed 2rdm").c_str());
 #endif
 #if 0
+    ExEnv::out0() << "zero 2rdm\n";
     res.assign(0.0);
 #endif
     return res;

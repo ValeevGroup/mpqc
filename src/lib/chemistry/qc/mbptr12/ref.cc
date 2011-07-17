@@ -441,6 +441,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     std::string id = ParsedOrbitalSpaceKey::key(std::string("-p(sym)"),spin);
     orbs_sb_ = new OrbitalSpace(id, oss.str(), coefs, bs, integral, energies, 0, 0, OrbitalSpace::symmetry);
   }
+
   {
     ostringstream oss;
     oss << prefix << " energy-ordered MOs";
@@ -449,6 +450,9 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
                                         orbs_sb_,
                                         eorder_increasing);
   }
+#if 1
+   orbs_->coefs().print(prepend_spincase(AlphaBeta, "poporbitals: orbs_").c_str());
+#endif
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
@@ -672,7 +676,7 @@ RefWavefunction::reset()
 
 RefSymmSCMatrix
 RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const {
-  // need to transform density from AO basis to orbs basis
+  // need to transform density from AO basis to orbs basis; assuming AO density can be obtained from ordm()
   // P' = C^t S P S C
   RefSCMatrix C = orbs_sb(spin)->coefs();
   RefSymmSCMatrix P_ao = this->ordm(spin);
@@ -695,6 +699,33 @@ RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const {
   P_mo.accumulate_transform(C, SPS_ao, SCMatrix::TransposeTransform);
   return P_mo;
 }
+
+RefSymmSCMatrix
+RefWavefunction::ordm_occ_sb(SpinCase1 spin) const {
+  // need to transform density from AO basis to orbs basis; assuming AO density can be obtained from ordm()
+  // P' = C^t S P S C
+  RefSCMatrix C = occ_sb(spin)->coefs();
+  RefSymmSCMatrix P_ao = this->ordm(spin);
+  Ref<PetiteList> plist = integral_->petite_list();
+  RefSymmSCMatrix S_so = compute_onebody_matrix<&Integral::overlap>(plist);
+  RefSymmSCMatrix S_ao = plist->to_AO_basis(S_so);
+  S_so = 0;
+  RefSymmSCMatrix SPS_ao = P_ao.kit()->symmmatrix(S_ao.dim()); SPS_ao.assign(0.0);
+  SPS_ao.accumulate_transform(S_ao, P_ao);
+#if 0
+  if (! S_ao.dim()->equiv(P_ao.dim())) { // may need to change the dimension of P_ao to match that of S
+    RefSymmSCMatrix P_ao_redim = P_ao.kit()->symmmatrix(S_ao.dim());
+    P_ao_redim->convert(P_ao);
+    P_ao = P_ao_redim;
+    P_ao.print(prepend_spincase(S, "AO density matrix (after redimensioning)").c_str());
+  }
+#endif
+  RefSymmSCMatrix P_mo = C.kit()->symmmatrix(C.coldim());
+  P_mo.assign(0.0);
+  P_mo.accumulate_transform(C, SPS_ao, SCMatrix::TransposeTransform);
+  return P_mo;
+}
+
 
 void
 RefWavefunction::set_spinfree(bool TrueOrFalse)

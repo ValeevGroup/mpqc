@@ -404,9 +404,8 @@ PsiRASCI_RefWavefunction::init_spaces()
   spinspaces_[Beta] = spinspaces_[Alpha];
   orig_space_init_ed_ = true;
   if((! screened_space_init_ed_) and fabs(occ_thres()) > sc::PT2R12::zero_occupation)
-//  if(! screened_space_init_ed_)
-  {
-    RefSymmSCMatrix OBS_mo_ordm = this->ordm_orbs_sb(Alpha) + this->ordm_orbs_sb(Beta); // get spin-free RDM in MO basis
+  {  // must get spin-free RDM and orbital space coefficients in the original MO basis, since we are constructing new ones.
+    RefSymmSCMatrix OBS_mo_ordm = this->orig_ordm_orbs_sb(Alpha) + this->orig_ordm_orbs_sb(Beta);
     screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                             occs, actmask, evals, moorder);
     screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
@@ -422,8 +421,10 @@ PsiRASCI_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet>
   return wfn()->core_hamiltonian_for_basis(basis, p_basis);
 }
 
+
+
 RefSymmSCMatrix
-PsiRASCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
+PsiRASCI_RefWavefunction::orig_ordm_orbs_sb(SpinCase1 spin) const
 {
   RefSymmSCMatrix opdm_full = wfn()->mo_density(spin);
   RefSymmSCMatrix result;
@@ -444,10 +445,11 @@ PsiRASCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
   return result;
 }
 
+
 RefSymmSCMatrix
 PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
-{
-  RefSymmSCMatrix P = this->ordm_orbs_sb(spin);
+{ // this AO density is computed from the unscreened RDM and orbital spaces. RDM is in OBS
+  RefSymmSCMatrix P = this->orig_ordm_orbs_sb(spin);//'P' and 'C_ao' must be consistent
   RefSCMatrix C_ao = this->orig_orbs_sb(spin)->coefs(); //must call orig_orbs_sb for consistency with ordm_orbs_sb() and to avoid infinite loop
   RefSymmSCMatrix P_ao = P.kit()->symmmatrix(C_ao.rowdim());
   P_ao.assign(0.0);

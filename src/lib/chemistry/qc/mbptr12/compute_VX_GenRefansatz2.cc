@@ -444,7 +444,6 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
       }
     }
 
-
     { /// first CABS Term
         std::vector<std::string> tforms_bra_f12;
         {
@@ -511,7 +510,6 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
              GG_space, GG_space,
              cabs, orbs,
              false,tforms_bra_f12,tforms_ket_f12);
-
     }
 
         symmetrize<false>(X_[AlphaBeta],X_[AlphaBeta],GG_space,GG_space);

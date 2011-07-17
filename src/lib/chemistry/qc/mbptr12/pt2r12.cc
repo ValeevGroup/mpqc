@@ -254,12 +254,26 @@ namespace {
 #if 1
     ExEnv::out0() << "test transform_one_ind:\n";
     ExEnv::out0() << (onedim*onedim)<< ", " << BB->nrow() << ", "<< BB->ncol() << "\n";
+    AA.print(prepend_spincase(AlphaBeta, "transform_one_ind: AA").c_str());
+    BB.print(prepend_spincase(AlphaBeta, "transform_one_ind: BB").c_str());
 #endif
     assert(((onedim*onedim) == BB->nrow()) and (BB->nrow() == BB->ncol()));
     RefSCMatrix res = BB->clone();
-    BB.assign(0.0);
+    res.assign(0.0);
     int ext_ind, int_ind, row, col, Ap, Bp, Cp, Dp, A, B, C, D, a, b, c, d, f;
     ext_ind = int_ind = row = col = Ap = Bp = Cp = Dp = A = B = C = D = a = b = c = d = f = 0;
+//#if 1
+    //check symmetry; this is wrong, since after the first index transformation, BB is not symmetric anymore
+//    const int nn = onedim*onedim;
+//    for (int xxx = 0; xxx < nn; ++xxx)
+//    {
+//      for (int yyy = 0; yyy < nn; ++yyy)
+//      {
+//        if(fabs(BB->get_element(xxx,yyy) -BB->get_element(yyy,xxx)) > 1e-10)
+//          ExEnv::out0() << "symmetry broken: (row, col) and vlaue: " << xxx << ", " << yyy << ", " << BB->get_element(xxx,yyy) << ", " << BB->get_element(yyy,xxx) << "\n";
+//      }
+//    }
+//#endif
     double xx = 0;
     for (a = 0; a < onedim; ++a) // the external index of A
     {
@@ -276,41 +290,46 @@ namespace {
               {
                 case 1: // Gamma^AB_CD * C_A^Ap
                   ext_ind = Ap = a; int_ind = A = f;  B = b; C = c; D = d;// by renaming, we have BB always of the same form, convenient
+                  xx += AA->get_element(ext_ind, int_ind) * BB->get_element(A*onedim + B, C*onedim + D);
                   break;
                 case 2: // Gamma^AB_CD * C_B^Bp
                   ext_ind = Bp = a; int_ind = B = f; A = b; C = c; D = d;
+                  xx += AA->get_element(ext_ind, int_ind) *BB->get_element(A*onedim + B, C*onedim + D);
                   break;
                 case 3: // C_Cp^C * Gamma^AB_CD
                   ext_ind = Cp = a; int_ind = C = f; A = b; B = c; D = d;
+                  xx += BB->get_element(A*onedim + B, C*onedim + D)*AA->get_element(ext_ind, int_ind);//AA->(ext,int) == Transpose(AA)(int, ext)
                   break;
                 case 4: // C_Dp^D * Gamma^AB_CD
                   ext_ind = Dp = a; int_ind = D = f; A = b; B = c; C = d;
+                  xx += BB->get_element(A*onedim + B, C*onedim + D)*AA->get_element(ext_ind, int_ind);
                   break;
                 default: abort();
               }
-              xx += BB->get_element(C*onedim + D, A*onedim + B)*AA->get_element(ext_ind, int_ind);
            }
            switch (whichindex)
            {
              case 1:// Gamma^AB_CD * C_A^Ap
-               row = C*onedim + D; col = Ap*onedim +B;
+               col = C*onedim + D; row = Ap*onedim +B;
                break;
              case 2:// Gamma^AB_CD * C_B^Bp
-               row = C*onedim + D; col = A*onedim + Bp;
+               col = C*onedim + D; row = A*onedim + Bp;
                break;
              case 3: // C_Cp^C * Gamma^AB_CD
-               row = Cp *onedim + D; col = A*onedim + B;
+               col = Cp *onedim + D; row = A*onedim + B;
                break;
              case 4: // C_Dp^D * Gamma^AB_CD
-               row = C*onedim + Dp; col = A*onedim + B;
+               col = C*onedim + Dp; row = A*onedim + B;
                break;
              default: abort();
            }
-           res->set_element(row, col, xx);
+           res->set_element(row,col, xx);
+//           ExEnv::out0() << "row, col, xx: " << row << ", " << col << ", " << xx << "\n";
           }
         }
       }
     }
+    res.print(prepend_spincase(AlphaBeta, "transform_one_ind: res").c_str());
     return res;
   }
 
@@ -1464,6 +1483,7 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 }
 
 double PT2R12::energy_PT2R12_projector2_spinfree() {
+
   // 2*V*T constribution
   const bool print_all = false;// for debugging
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
@@ -1673,13 +1693,20 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 
 
 
-RefSCMatrix sc::PT2R12::transform_MO() //between occupied orbitals
+RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied orbitals (this also defines the matrix dimension); row: new MO, column: old MO
 {                                       // assume mo_density is of the same ordering as occ_sb()
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
+#if 1
+  mo_density.print(prepend_spincase(AlphaBeta, "transform_MO: mo_density (occ)").c_str());
+#endif
   Ref<PopulatedOrbitalSpace> t_orbs = r12world()->ref()->get_screened_poporbspace(Alpha);
   Ref<OrbitalSpace> occ_act = t_orbs->occ_act_sb();
   Ref<OrbitalSpace> occ = t_orbs->occ_sb();
   std::vector<int> map1 = map(*occ, *occ_act);
+#if 1
+  occ->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ coeffients").c_str());
+  occ_act->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ_act coeffients").c_str());
+#endif
   int num_occ_act = occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
@@ -1705,6 +1732,9 @@ RefSCMatrix sc::PT2R12::transform_MO() //between occupied orbitals
   {
     if(occ_act_mask[kk] == 0) TransformMat.set_element(kk, kk, 1.0);
   } // don't transform unrelated orbitals
+#if 1
+  TransformMat.print(prepend_spincase(AlphaBeta, "transform_MO: TransformMat initial").c_str());
+#endif
 
   //the following code is copied from ref.cc: PopulatedOrbitalSpace(...)
   std::vector<unsigned int> blocks = occ->block_sizes();
@@ -1736,14 +1766,27 @@ RefSCMatrix sc::PT2R12::transform_MO() //between occupied orbitals
     RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
     UU.assign(0.0); VV.assign(0.0);DD.assign(0.0);
     occ_act_blockmat->svd_this(UU,DD,VV);
+#if 1
+    ExEnv::out0() << "block number and dimension " << i << ", " << blocks[i] << "\n";
+    occ_act_blockmat.print(prepend_spincase(AlphaBeta, "transform_MO: occ_act_block").c_str());
+    UU.print(prepend_spincase(AlphaBeta, "transform_MO: UU").c_str());
+    DD.print(prepend_spincase(AlphaBeta, "transform_MO: DD").c_str());
+    VV.print(prepend_spincase(AlphaBeta, "transform_MO: VV").c_str());
+#endif
     for (int i2 = 0; i2 < num_occ_act; ++i2)
     {
       for (int j2 = 0; j2 < num_occ_act; ++j2)
       {
-        TransformMat->set_element(i2, j2, UU->get_element(j2, i2)); // in the final transform matrix, row:new, col:old
+        TransformMat->set_element(occ_act_orb_inds[i2], occ_act_orb_inds[j2], UU->get_element(j2, i2)); // in the final transform matrix, row:new, col:old
       }
     }// finish building MO transform matrix in the block
+#if 1
+    TransformMat.print(prepend_spincase(AlphaBeta, "transform_MO: TransformMat").c_str());
+#endif
   }
+#if 1
+    TransformMat.print(prepend_spincase(AlphaBeta, "transform_MO: final TransformMat").c_str());
+#endif
   return TransformMat;
 }
 
@@ -1762,6 +1805,10 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
     RefSCMatrix transMO_nonlocal = this->transform_MO();
     assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
     RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
+#if 1
+    sf_opdm.print(prepend_spincase(AlphaBeta, "rdm1_sf: rdm before transformation").c_str());
+    transMO.print(prepend_spincase(AlphaBeta, "rdm1_sf: transMO").c_str());
+#endif
     RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
     RefSymmSCMatrix final = sf_opdm->clone();
     final->assign(0.0);
@@ -1863,18 +1910,65 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
 #if 1
     ExEnv::out0() << "test 2rdm_sf:\n";
     ExEnv::out0() << RefSCrdm->nrow() << ", "<< RefSCrdm->ncol() << "\n";
-    RefSCrdm.print(prepend_spincase(AlphaBeta, "2rdm").c_str());
+    RefSCrdm.print(prepend_spincase(AlphaBeta, "rdm2_sf: orginal 2rdm").c_str());
+    transMO.print(prepend_spincase(AlphaBeta, "rdm2_sf: transMO").c_str());
 #endif
     RefSCMatrix one = transform_one_ind(transMO, RefSCrdm, 1, n);
+    one.print(prepend_spincase(AlphaBeta, "rdm2_sf: one").c_str());
     RefSCMatrix two = transform_one_ind(transMO, one, 2, n);
+    two.print(prepend_spincase(AlphaBeta, "rdm2_sf: two").c_str());
     RefSCMatrix three = transform_one_ind(transMO, two, 3, n);
+    three.print(prepend_spincase(AlphaBeta, "rdm2_sf: three").c_str());
     RefSCMatrix four = transform_one_ind(transMO, three, 4, n);
+    four.print(prepend_spincase(AlphaBeta, "rdm2_sf: four").c_str());
     res.copyRefSCMatrix(four);
-
+#if 1
+    ExEnv::out0() << "rdm1_sf: an alternative way of getting 2RDM\n";
+    RefSCMatrix DoubleT = four->clone();
+    DoubleT.assign(0.0);
+    for (int x1 = 0; x1 < n; ++x1)
+    {
+      for (int x2 = 0; x2 < n; ++x2)
+      {
+        for (int x3 = 0; x3 < n; ++x3)
+        {
+          for (int x4 = 0; x4 < n; ++x4)
+          {
+            int row = x1 *n + x2;
+            int col = x3 * n + x4;
+            DoubleT->set_element(row, col, transMO->get_element(x1,x3) *transMO->get_element(x2,x4));
+          }
+        }
+      }
+    }
+    RefSCMatrix res2 = (DoubleT*RefSCrdm)*(DoubleT.t());
+    ExEnv::out0() << "rdm2_sf: simple check\n";
+    for (int xxx = 0; xxx < n*n; ++xxx)
+    {
+      for (int yyy = 0; yyy < n*n; ++yyy)
+      {
+        double aa = res2->get_element(xxx,yyy);
+        double bb = res2->get_element(yyy,xxx);
+        if(fabs(aa-bb)>1e-12)
+          ExEnv::out0() << "difference: " << xxx << ", " << yyy << ", " <<aa << ", " << bb << "\n";
+      }
+    }
+    res.copyRefSCMatrix(res2);
+#endif
+#if 1
+    res.print(prepend_spincase(AlphaBeta, "rdm2_sf: transformed 2rdm").c_str());
+#endif
+#if 0
+    res.assign(0.0);
+#endif
     return res;
   }
   else
-    return sf_rdm;
+    {
+#if 0
+    sf_rdm.assign(0.0);
+#endif
+    return sf_rdm;}
 }
 
 

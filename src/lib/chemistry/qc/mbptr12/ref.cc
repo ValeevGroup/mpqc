@@ -316,13 +316,18 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
                                              oreg_(oreg)
 { // for R12, only occ_act needs to be changed-> change active correspondingly
 
-  const int nmo = occs.size();//active tells which orbitals are active; the 'masks' are selectors;
+  const int nmo = occs.size();//'active' tells which orbitals are active; the 'masks' are selectors;
   std::vector<bool> occ_mask(nmo, false);
   std::vector<bool> occ_act_mask(nmo, false);
   std::vector<bool> uocc_mask(nmo, false);
   std::vector<bool> uocc_act_mask(nmo, false);
   std::vector<bool> active = old_active;
   RefSCMatrix coefs = old_coefs->copy();
+#if 1
+  OBS_mo_ordm.print(prepend_spincase(AlphaBeta, "poporbitals: OBS_mo_ordm").c_str());
+  old_coefs.print(prepend_spincase(AlphaBeta, "poporbitals: old_coefs").c_str());
+  coefs.print(prepend_spincase(AlphaBeta, "poporbitals: coefs").c_str());
+#endif
   const int num_ao = coefs.coldim().n();
   Ref<SCBlockInfo> blockinfo = coefs.coldim()->blocks();
   assert(nmo == blockinfo->nelem());
@@ -340,7 +345,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
   }
 
   // if VBS is given, recompute the masks for the virtuals
-  if (vbs.nonnull()) {
+  if (vbs.nonnull())
+  {
     assert(fbrun.nonnull());
     const int nvirt = vbs->rank();
     uocc_mask.resize(nvirt);
@@ -378,31 +384,42 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     RefSCMatrix VV = occ_act_blockmat->clone();
     RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
     occ_act_blockmat->svd_this(UU,DD,VV);
+#if 1
+    ExEnv::out0() << "block number: " << i << "\n";
+    UU.print(prepend_spincase(AlphaBeta, "poporbitals: UU").c_str());
+    DD.print(prepend_spincase(AlphaBeta, "poporbitals: DD").c_str());
+    VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
+#endif
+#if 0
     for (int xx = 0; xx < num_occ_act; ++xx)
     {
       int indd = occ_act_orb_inds[xx];
       active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
     } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
-    for (int i2 = 0; i2 < num_occ_act; ++i2)
+#endif
+    for (int i2 = 0; i2 < num_occ_act; ++i2) //i2: the new MO index
     {
-      for (int j2 = 0; j2 < num_ao; ++j2)
+      for (int j2 = 0; j2 < num_ao; ++j2) //j2: the new AO index
       {
         double x = 0;
-        for (int j3 = 0; j3 < num_occ_act; ++j3)
+        for (int j3 = 0; j3 < num_occ_act; ++j3) // j3: the old/contraction index
         {
-          x += coefs->get_element(j2, j3) * UU->get_element(i2, j3);
+          x += old_coefs->get_element(j2, j3) * UU->get_element(j3, i2);
         }
         occ_act_coefsmat->set_element(j2, i2, x);
       }
-    }// construct the new AO-MO coefficients
+    }// next reconstruct (part of) the new AO-MO coefficients
     for (int ii = 0; ii < num_occ_act; ++ii)
     {
       for (int jj = 0; jj < num_ao; ++jj)
       {
         coefs->set_element(jj, occ_act_orb_inds[ii], occ_act_coefsmat->get_element(jj,ii));
       }
-    } // update RefSCVector
-  }
+    } // one block done
+#if 1
+    coefs.print(prepend_spincase(AlphaBeta, "poporbitals: coefs").c_str());
+#endif
+  }//doen constructing the new AO-MO coefs
 
   //here we can not simply call the previous constructor, since the orbital registry will complain ('id' conflicts)
   // so, we simply add '-' to each id to distinguish
@@ -411,9 +428,11 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
   {
     if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation)
     {
-      if (occ_act_mask[i] == true) occ_act_mask[i] = active[i]; //reset occ_act_mask
+      if (occ_act_mask[i] == true) occ_act_mask[i] = active[i]; //reset occ_act_mask based the updated active
     }
   }
+
+
   const std::string prefix(to_string(spin));
   using std::ostringstream;
   {
@@ -622,7 +641,7 @@ RefWavefunction::init() const
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
     // make sure it's computed first
     const double e = this_nonconst->energy();
-    this_nonconst->init_spaces();
+    this_nonconst->init_spaces();//should pay great attention to this!
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//her computes ordm
@@ -707,6 +726,16 @@ RefWavefunction::orbs_sb(SpinCase1 s) const
   else
     return spinspaces_[s]->orbs_sb();
 }
+
+
+const Ref<OrbitalSpace>&
+RefWavefunction::orig_orbs_sb(SpinCase1 s) const
+{
+  init();
+  s = valid_spincase(s);
+  return spinspaces_[s]->orbs_sb();
+}
+
 
 const Ref<OrbitalSpace>&
 RefWavefunction::orbs(SpinCase1 s) const

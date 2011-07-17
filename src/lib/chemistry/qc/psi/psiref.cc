@@ -404,6 +404,7 @@ PsiRASCI_RefWavefunction::init_spaces()
   spinspaces_[Beta] = spinspaces_[Alpha];
   orig_space_init_ed_ = true;
   if((! screened_space_init_ed_) and fabs(occ_thres()) > sc::PT2R12::zero_occupation)
+//  if(! screened_space_init_ed_)
   {
     RefSymmSCMatrix OBS_mo_ordm = this->ordm_orbs_sb(Alpha) + this->ordm_orbs_sb(Beta); // get spin-free RDM in MO basis
     screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
@@ -411,6 +412,7 @@ PsiRASCI_RefWavefunction::init_spaces()
     screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
     screened_space_init_ed_ = true;
   }
+
 }
 
 RefSymmSCMatrix
@@ -427,10 +429,10 @@ PsiRASCI_RefWavefunction::ordm_orbs_sb(SpinCase1 spin) const
   RefSymmSCMatrix result;
   if (omit_uocc() == false)
     result = opdm_full;
-  else {  // if uoccs were omitted map the density from wfn()->orbs_sb() to this->orbs_sb()
-    result = opdm_full.kit()->symmmatrix(this->orbs_sb(spin)->dim());
-    MOIndexMap o2f = (*(wfn()->orbs_sb(spin)) << *(this->orbs_sb(spin)));
-    const unsigned int nocc = this->orbs_sb(spin)->rank();
+  else {  // if uoccs were omitted, map the density from wfn()->orbs_sb() to this->orbs_sb()
+    result = opdm_full.kit()->symmmatrix(this->orig_orbs_sb(spin)->dim());
+    MOIndexMap o2f = (*(wfn()->orbs_sb(spin)) << *(this->orig_orbs_sb(spin)));// call 'orig_orbs_sb' instead of 'orbs_sb'
+    const unsigned int nocc = this->orig_orbs_sb(spin)->rank();
     for(unsigned int r=0; r<nocc; ++r) {
       unsigned int rr = o2f[r];
       for(unsigned int c=0; c<=r; ++c) {
@@ -446,7 +448,7 @@ RefSymmSCMatrix
 PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
 {
   RefSymmSCMatrix P = this->ordm_orbs_sb(spin);
-  RefSCMatrix C_ao = this->orbs_sb(spin)->coefs();
+  RefSCMatrix C_ao = this->orig_orbs_sb(spin)->coefs(); //must call orig_orbs_sb for consistency with ordm_orbs_sb() and to avoid infinite loop
   RefSymmSCMatrix P_ao = P.kit()->symmmatrix(C_ao.rowdim());
   P_ao.assign(0.0);
   P_ao.accumulate_transform(C_ao, P);

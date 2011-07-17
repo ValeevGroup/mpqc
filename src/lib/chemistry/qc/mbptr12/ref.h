@@ -188,6 +188,10 @@ namespace sc {
     const Ref<OrbitalSpace>& uocc(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
+
+    // 'original' orbs_sb: without transformation to the screened orbital space
+    const Ref<OrbitalSpace>& orig_orbs_sb(SpinCase1 spin = AnySpinCase1) const;
+
     double& occ_thres() {return occ_thres_;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
     Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
